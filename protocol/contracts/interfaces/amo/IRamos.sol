@@ -42,18 +42,19 @@ interface IRamos {
     event SetPostRebalanceSlippage(uint64 slippageBps);
     event SetCooldown(uint64 cooldownSecs);
     event SetRebalancePercentageBounds(uint64 belowTpi, uint64 aboveTpi);
-    event SetAmoStaking(address indexed amoStaking);
     event TpiOracleSet(address indexed tpiOracle);
     event ProtocolTokenVaultSet(address indexed vault);
     event SetPoolHelper(address poolHelper);
     event SetMaxRebalanceAmounts(uint256 bptMaxAmount, uint256 quoteTokenMaxAmount, uint256 protocolTokenMaxAmount);
     event RebalanceFeesSet(uint256 rebalanceJoinFeeBps, uint256 rebalanceExitFeeBps);
+    event FeeCollectorSet(address indexed feeCollector);
 
     // Rebalance events
     event RebalanceUpExit(uint256 bptAmountIn, uint256 protocolTokenAmountOut);
     event RebalanceDownExit(uint256 bptAmountIn, uint256 quoteTokenAmountOut, address recipient);
     event RebalanceUpJoin(uint256 quoteTokenAmountIn, uint256 bptOut);
     event RebalanceDownJoin(uint256 protocolTokenAmountIn, uint256 bptOut);
+    event FeeCollected(address indexed token, address indexed feeCollector, uint256 feeAmount);
 
     // Add/remove liquidity events
     event LiquidityAdded(uint256 quoteTokenAdded, uint256 protocolTokenAdded, uint256 bptReceived);

@@ -206,7 +206,6 @@ describe("RAMOS", async () => {
             amoStaking.address,
             0,
             TEMPLE_BB_A_USD_BALANCER_POOL_ID,
-            tpiOracle.address,
             await feeCollector.getAddress(),
             maxRebalanceFee
         );
@@ -226,6 +225,7 @@ describe("RAMOS", async () => {
         );
         
         await amo.setPoolHelper(poolHelper.address);
+        await amo.setTpiOracle(tpiOracle.address);
         await setExplicitAccess(amoStaking, "withdrawAndUnwrap", amo.address, true);
         await setExplicitAccess(amoStaking, "depositAndStake", amo.address, true);
         await amoStaking.setRewardsRecipient(executorAddress);
@@ -358,11 +358,12 @@ describe("RAMOS", async () => {
             const connectAMO = amo.connect(alan);
             await expect(connectAMO.setCoolDown(1800)).to.be.revertedWithCustomError(amo, "InvalidAccess");
             await expect(connectAMO.setPoolHelper(alanAddress)).to.be.revertedWithCustomError(amo, "InvalidAccess");
-            await expect(connectAMO.setAmoStaking(alanAddress)).to.be.revertedWithCustomError(amo, "InvalidAccess");
             await expect(connectAMO.setTpiOracle(alanAddress)).to.be.revertedWithCustomError(amo, "InvalidAccess");
             await expect(connectAMO.setProtocolTokenVault(alanAddress)).to.be.revertedWithCustomError(amo, "InvalidAccess");
             await expect(connectAMO.setRebalanceFees(0, 0)).to.be.revertedWithCustomError(amo, "InvalidAccess");
             await expect(amo.setRebalanceFees(0, 0)).to.be.revertedWithCustomError(amo, "InvalidAccess");
+            await expect(connectAMO.setFeeCollector(alanAddress)).to.be.revertedWithCustomError(amo, "InvalidAccess");
+            await expect(amo.setFeeCollector(alanAddress)).to.be.revertedWithCustomError(amo, "InvalidAccess");
             await expect(connectAMO.setRebalancePercentageBounds(100,100)).to.be.revertedWithCustomError(amo, "InvalidAccess");
             await expect(connectAMO.setMaxRebalanceAmounts(100, 100, 100)).to.be.revertedWithCustomError(amo, "InvalidAccess");
             await expect(connectAMO.setPostRebalanceSlippage(100)).to.be.revertedWithCustomError(amo, "InvalidAccess");
@@ -386,18 +387,13 @@ describe("RAMOS", async () => {
             await amo.setTpiOracle(tpiOracle.address);
             await amo.setProtocolTokenVault(tokenVault.address);
             await amo.connect(feeCollector).setRebalanceFees(0, 0);
+            await amo.connect(feeCollector).setFeeCollector(alanAddress);
         });
 
         it("sets pool helper", async () => {
             await expect(amo.setPoolHelper(poolHelper.address))
                 .to.emit(amo, "SetPoolHelper")
                 .withArgs(poolHelper.address);
-        });
-
-        it("sets amo staking", async () => {
-            await expect(amo.setAmoStaking(amoStaking.address))
-                .to.emit(amo, "SetAmoStaking")
-                .withArgs(amoStaking.address);
         });
 
         it("sets aura pool info", async () => {
@@ -437,6 +433,13 @@ describe("RAMOS", async () => {
             expect(await templeToken.allowance(amo.address, newTokenVault.address)).eq(ethers.constants.MaxUint256);
         });
     
+        it("sets fee collector", async () => {
+            await expect(amo.connect(feeCollector).setFeeCollector(alanAddress))
+                .to.emit(amo, "FeeCollectorSet")
+                .withArgs(alanAddress);
+            expect(await amo.feeCollector()).to.eq(alanAddress);
+        });
+
         it("sets rebalance fees", async () => {
             await expect(amo.connect(feeCollector).setRebalanceFees(100, 200))
                 .to.emit(amo, "RebalanceFeesSet")
@@ -720,6 +723,7 @@ describe("RAMOS", async () => {
 
             // success
             await expect(amo.rebalanceUpJoin(amountIn, bptOut))
+                .to.emit(amo, "FeeCollected").withArgs(bbaUsdToken.address, await feeCollector.getAddress(), feeAmt)
                 .to.emit(amo, "RebalanceUpJoin").withArgs(amountIn, bptOut)
                 .to.emit(auraBooster, "Deposited").withArgs(amoStaking.address, bbaUsdTempleAuraPID, bptOut);
 
@@ -842,12 +846,13 @@ describe("RAMOS", async () => {
             const stakedBalanceBefore = await bbaUsdTempleAuraRewardPool.balanceOf(amoStaking.address);
             const amoBalanceBefore = await bbaUsdToken.balanceOf(amo.address);
 
+            const feeAmt = quoteTokenAmountOut.mul(100).div(10_000);
+
             // Success
             await expect(amo.rebalanceDownExit(bptIn, quoteTokenAmountOut, alanAddress))
+                .to.emit(amo, "FeeCollected").withArgs(bbaUsdToken.address, await feeCollector.getAddress(), feeAmt)
                 .to.emit(amo, "RebalanceDownExit").withArgs(bptIn, quoteTokenAmountOut, alanAddress)
                 .to.emit(auraBooster, "Withdrawn").withArgs(amoStaking.address, bbaUsdTempleAuraPID, bptIn);
-
-            const feeAmt = quoteTokenAmountOut.mul(100).div(10_000);
 
             // The fee collector gets the expected fees - paid in stables
             expect(await bbaUsdToken.balanceOf(feeCollector.getAddress())).eq(feeAmt);
@@ -949,15 +954,16 @@ describe("RAMOS", async () => {
 
             const templeTotalSupplyBefore = await templeToken.totalSupply();
 
-            await expect(amo.rebalanceUpExit(bptIn, minTempleAmountOut))
-                .to.emit(amo, "RebalanceUpExit");
-
             // Balancer gives us a bit more Temple in the exit than what we actually asked for.
             const actualTempleAmountOut = ethers.utils.parseEther("10.000062858762470863");
             expect(actualTempleAmountOut).to.be.approximately(minTempleAmountOut, ethers.utils.parseEther("0.0001"));
+            const feeAmt = actualTempleAmountOut.mul(100).div(10_000);
+
+            await expect(amo.rebalanceUpExit(bptIn, minTempleAmountOut))
+                .to.emit(amo, "FeeCollected").withArgs(templeToken.address, await feeCollector.getAddress(), feeAmt)
+                .to.emit(amo, "RebalanceUpExit");
 
             // Fee collector gets the Temple, total supply reduces by the correct amount.
-            const feeAmt = actualTempleAmountOut.mul(100).div(10_000);
             expect(await templeToken.balanceOf(feeCollector.getAddress())).eq(feeAmt);
             expect(await templeToken.totalSupply()).eq(templeTotalSupplyBefore.sub(actualTempleAmountOut.sub(feeAmt)));
         });
@@ -1040,6 +1046,7 @@ describe("RAMOS", async () => {
 
             // Success
             await expect(amo.rebalanceDownJoin(templeAmountIn, reqData.bptOut))
+                .to.emit(amo, "FeeCollected").withArgs(templeToken.address, await feeCollector.getAddress(), feeAmt)
                 .to.emit(amo, "RebalanceDownJoin")
                 .withArgs(templeAmountIn, reqData.bptOut);
 

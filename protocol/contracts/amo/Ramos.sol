@@ -49,7 +49,7 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
     IBalancerPoolHelper public override poolHelper;
     
     /// @notice AMO contract for staking into aura 
-    IAuraStaking public override amoStaking;
+    IAuraStaking public immutable override amoStaking;
 
     /// @notice The Protocol token
     IERC20 public immutable override protocolToken;
@@ -92,7 +92,7 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
     uint64 public immutable override protocolTokenBalancerPoolIndex;
 
     /// @notice The address to send proportion of rebalance as fees to
-    address public immutable override feeCollector;
+    address public override feeCollector;
 
     // @notice The maximum rebalance fee which can be set
     uint256 public override immutable maxRebalanceFee;
@@ -110,7 +110,6 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
         address _amoStaking,
         uint64 _protocolTokenIndexInPool,
         bytes32 _balancerPoolId,
-        address _tpiOracle,
         address _feeCollector,
         uint256 _maxRebalanceFee
     ) TempleElevatedAccess(_initialRescuer, _initialExecutor) {
@@ -121,7 +120,6 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
         amoStaking = IAuraStaking(_amoStaking);
         protocolTokenBalancerPoolIndex = _protocolTokenIndexInPool;
         balancerPoolId = _balancerPoolId;
-        tpiOracle = ITreasuryPriceIndexOracle(_tpiOracle);
         feeCollector = _feeCollector;
         maxRebalanceFee = _maxRebalanceFee;
     }
@@ -133,15 +131,6 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
         poolHelper = IBalancerPoolHelper(_poolHelper);
 
         emit SetPoolHelper(_poolHelper);
-    }
-
-    /**
-     * @notice Set the AMO staking contract, used to automatically stake BPT positions in Aura
-     */
-    function setAmoStaking(address _amoStaking) external onlyElevatedAccess {
-        amoStaking = IAuraStaking(_amoStaking);
-
-        emit SetAmoStaking(_amoStaking);
     }
 
     /**
@@ -209,6 +198,15 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
             protocolToken.safeApprove(vault, 0);
             protocolToken.safeIncreaseAllowance(vault, type(uint256).max);
         }
+    }
+
+    /**
+     * @notice Update the fee collector address - only callable by the existing feeCollector
+     */
+    function setFeeCollector(address _feeCollector) external {
+        if (msg.sender != feeCollector) revert CommonEventsAndErrors.InvalidAccess();
+        feeCollector = _feeCollector;
+        emit FeeCollectorSet(_feeCollector);
     }
 
     /**
@@ -301,6 +299,7 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
         // Collect the fees on the output protocol token
         uint256 feeAmt = protocolTokenAmountOut * rebalanceFees.rebalanceExitFeeBps / BPS_PRECISION;
         if (feeAmt != 0) {
+            emit FeeCollected(address(protocolToken), feeCollector, feeAmt);
             protocolToken.safeTransfer(feeCollector, feeAmt);
         }
 
@@ -340,6 +339,7 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
         // Collect the fees on the output quote token
         uint256 feeAmt = quoteTokenAmountOut * rebalanceFees.rebalanceExitFeeBps / BPS_PRECISION;
         if (feeAmt != 0) {
+            emit FeeCollected(address(quoteToken), feeCollector, feeAmt);
             quoteToken.safeTransfer(feeCollector, feeAmt);
         }
 
@@ -369,6 +369,7 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
         // Collect the fees from the input quote token
         uint256 feeAmt = quoteTokenAmountIn * rebalanceFees.rebalanceJoinFeeBps / BPS_PRECISION;
         if (feeAmt != 0) {
+            emit FeeCollected(address(quoteToken), feeCollector, feeAmt);
             quoteToken.safeTransfer(feeCollector, feeAmt);
         }
 
@@ -411,6 +412,7 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
         // Collect the fees from the input protocol token amount
         uint256 feeAmt = protocolTokenAmountIn * rebalanceFees.rebalanceJoinFeeBps / BPS_PRECISION;
         if (feeAmt != 0) {
+            emit FeeCollected(address(protocolToken), feeCollector, feeAmt);
             protocolToken.safeTransfer(feeCollector, feeAmt);
         }
 
