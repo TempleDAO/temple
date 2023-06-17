@@ -168,7 +168,7 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
      */
     function mint(address _debtor, uint256 _mintAmount) external override {
         if (!minters[msg.sender]) revert CannotMintOrBurn(msg.sender);
-        if (_debtor == address(0)) revert CommonEventsAndErrors.InvalidAddress(_debtor);
+        if (_debtor == address(0)) revert CommonEventsAndErrors.InvalidAddress();
         if (_mintAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
 
         // Checkpoint the (base) debt and the (risk premium) debt for this borrower
@@ -217,7 +217,7 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
         uint256 burnedAmount
     ) {
         if (!minters[msg.sender]) revert CannotMintOrBurn(msg.sender);
-        if (_debtor == address(0)) revert CommonEventsAndErrors.InvalidAddress(_debtor);
+        if (_debtor == address(0)) revert CommonEventsAndErrors.InvalidAddress();
         if (_burnAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
 
         Debtor storage debtor = debtors[_debtor];
@@ -243,7 +243,7 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
      */
     function burnAll(address _debtor) external override returns (uint256 burnedAmount) {
         if (!minters[msg.sender]) revert CannotMintOrBurn(msg.sender);
-        if (_debtor == address(0)) revert CommonEventsAndErrors.InvalidAddress(_debtor);
+        if (_debtor == address(0)) revert CommonEventsAndErrors.InvalidAddress();
 
         Debtor storage debtor = debtors[_debtor];
         uint256 _totalPrincipalAndBase = _compoundedBaseInterest();

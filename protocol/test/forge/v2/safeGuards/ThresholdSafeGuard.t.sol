@@ -80,8 +80,8 @@ contract ThresholdSafeGuardTestAdmin is ThresholdSafeGuardTestBase {
     event SafeTxExecutorRemoved(address indexed executor);
 
     function test_initalization() public {
-        assertEq(guard.executors(executor), true);
-        assertEq(guard.rescuers(rescuer), true);
+        assertEq(guard.executor(), executor);
+        assertEq(guard.rescuer(), rescuer);
         assertEq(guard.VERSION(), "1.0.0");
         assertEq(guard.disableGuardChecks(), false);
         assertEq(guard.defaultSignaturesThreshold(), DEFAULT_SIGNATURES_THRESHOLD);
@@ -105,7 +105,7 @@ contract ThresholdSafeGuardTestAdmin is ThresholdSafeGuardTestBase {
         vm.startPrank(executor);
 
         {
-            vm.expectRevert(abi.encodeWithSelector(IThresholdSafeGuard.InvalidAddress.selector));
+            vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
             guard.addSafeTxExecutor(address(0));
 
             vm.expectEmit();
@@ -124,7 +124,7 @@ contract ThresholdSafeGuardTestAdmin is ThresholdSafeGuardTestBase {
         }
 
         {
-            vm.expectRevert(abi.encodeWithSelector(IThresholdSafeGuard.InvalidAddress.selector));
+            vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
             guard.removeSafeTxExecutor(address(0));
 
             vm.expectEmit();
@@ -222,7 +222,7 @@ contract ThresholdSafeGuardTest is ThresholdSafeGuardTestBase {
         vm.startPrank(executor);
 
         if (contractAddr == address(0)) {
-            vm.expectRevert(abi.encodeWithSelector(IThresholdSafeGuard.InvalidAddress.selector));
+            vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
             guard.setFunctionThreshold(contractAddr, functionSignature, threshold);
         } else if (functionSignature == bytes4(0)) {
             vm.expectRevert(abi.encodeWithSelector(IThresholdSafeGuard.InvalidFunctionSignature.selector));
@@ -251,7 +251,7 @@ contract ThresholdSafeGuardTest is ThresholdSafeGuardTestBase {
         fnSels[1] = functionSignature2;
 
         if (contractAddr == address(0)) {
-            vm.expectRevert(abi.encodeWithSelector(IThresholdSafeGuard.InvalidAddress.selector));
+            vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
             guard.setFunctionThresholdBatch(contractAddr, fnSels, threshold);
         } else if (functionSignature1 == bytes4(0) || functionSignature2 == bytes4(0)) {
             vm.expectRevert(abi.encodeWithSelector(IThresholdSafeGuard.InvalidFunctionSignature.selector));

@@ -66,7 +66,7 @@ abstract contract AbstractStrategy is ITempleStrategy, TempleElevatedAccess {
      * @notice Governance can set the address of the treasury reserves vault.
      */
     function setTreasuryReservesVault(address _trv) external override onlyElevatedAccess {
-        if (_trv == address(0)) revert CommonEventsAndErrors.InvalidAddress(_trv);
+        if (_trv == address(0)) revert CommonEventsAndErrors.InvalidAddress();
 
         // Remove stable approvals from the old TRV, and give to the new TRV.
         stableToken.safeApprove(address(treasuryReservesVault), 0);

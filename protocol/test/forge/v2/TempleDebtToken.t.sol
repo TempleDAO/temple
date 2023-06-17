@@ -264,7 +264,7 @@ contract TempleDebtTokenTestBaseInterestOnly is TempleDebtTokenTestBase {
 
     function test_mint_invalidParams() public {
         vm.startPrank(executor);
-        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector, address(0)));
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
         dUSD.mint(address(0), 100);
 
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
@@ -346,7 +346,7 @@ contract TempleDebtTokenTestBaseInterestOnly is TempleDebtTokenTestBase {
 
     function test_burn_invalidParams() public {
         vm.startPrank(executor);
-        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector, address(0)));
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
         dUSD.burn(address(0), 100);
 
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
@@ -613,7 +613,7 @@ contract TempleDebtTokenTestBaseInterestOnly is TempleDebtTokenTestBase {
 
     function test_burnAll_zeroAmount() public {
         vm.startPrank(executor);
-        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector, address(0)));
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
         dUSD.burnAll(address(0));
 
         // Noop as there's no debt

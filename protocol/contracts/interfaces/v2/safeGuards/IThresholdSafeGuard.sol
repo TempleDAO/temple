@@ -12,7 +12,6 @@ interface IThresholdSafeGuard is Guard {
     event SafeTxExecutorRemoved(address indexed executor);
 
     error InvalidExecutor();
-    error InvalidAddress();
     error InvalidFunctionSignature();
     error DynamicSignatureThresholdNotMet(uint256 required, uint256 found);
 

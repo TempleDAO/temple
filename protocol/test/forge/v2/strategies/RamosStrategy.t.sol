@@ -77,7 +77,7 @@ contract RamosStrategyTestBase is TempleTest {
                 rescuer, executor, balancerVault, 
                 address(temple), address(dai), address(bptToken), 
                 address(amoStaking), 
-                templeIndexPool, balancerPoolId, address(tpiOracle), feeCollector, 200
+                templeIndexPool, balancerPoolId, feeCollector, 200
             );
         }
 
@@ -112,6 +112,7 @@ contract RamosStrategyTestBase is TempleTest {
         strategy.setExplicitAccess(address(ramos), RamosStrategy.repayProtocolToken.selector, true);
 
         ramos.setProtocolTokenVault(address(strategy));
+        ramos.setTpiOracle(address(tpiOracle));
 
         // `templeToken` settings
         {
@@ -160,8 +161,8 @@ contract RamosStrategyTestAdmin is RamosStrategyTestBase {
     }
 
     function test_initalization() public {
-        assertEq(strategy.executors(executor), true);
-        assertEq(strategy.rescuers(rescuer), true);
+        assertEq(strategy.executor(), executor);
+        assertEq(strategy.rescuer(), rescuer);
         assertEq(strategy.apiVersion(), "1.0.0");
         assertEq(strategy.strategyName(), "RamosStrategy");
         assertEq(strategy.strategyVersion(), "1.0.0");
@@ -356,7 +357,7 @@ contract RamosStrategyTestBorrowAndRepay is RamosStrategyTestBase {
         assetBalances = strategy.latestAssetBalances();
         uint256 daiBalanceBefore = assetBalances[0].balance;
 
-        (, uint256 bptOut,, IBalancerVault.JoinPoolRequest memory requestData) = ramos.proportionalAddLiquidityQuote(amount, slippageBps);
+        (, uint256 bptOut,, IBalancerVault.JoinPoolRequest memory requestData) = strategy.proportionalAddLiquidityQuote(amount, slippageBps);
 
         vm.prank(executor);
         {
@@ -417,7 +418,7 @@ contract RamosStrategyTestBorrowAndRepay is RamosStrategyTestBase {
         uint256 daiBalanceBefore = assetBalances[0].balance;
 
         // Remove liquidity and repay
-        (, uint256 repayAmount,,, IBalancerVault.ExitPoolRequest memory requestDataForRemoveLiquidity) = ramos.proportionalRemoveLiquidityQuote(bptToRemove, slippageBps);
+        (, uint256 repayAmount,,, IBalancerVault.ExitPoolRequest memory requestDataForRemoveLiquidity) = strategy.proportionalRemoveLiquidityQuote(bptToRemove, slippageBps);
 
         vm.startPrank(executor);
         uint256 dusdAmount = 3_000_000e18;
@@ -460,7 +461,7 @@ contract RamosStrategyTestBorrowAndRepay is RamosStrategyTestBase {
 
         // Paying off more than the dUSD debt results in a Realised Gain
         bptToRemove = 1_000_000e18;
-        (, repayAmount,,, requestDataForRemoveLiquidity) = ramos.proportionalRemoveLiquidityQuote(bptToRemove, slippageBps);
+        (, repayAmount,,, requestDataForRemoveLiquidity) = strategy.proportionalRemoveLiquidityQuote(bptToRemove, slippageBps);
         {
             vm.expectEmit(address(trv));
             emit Repay(address(strategy), address(strategy), repayAmount);

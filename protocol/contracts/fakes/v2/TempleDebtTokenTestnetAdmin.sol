@@ -39,14 +39,22 @@ contract TempleDebtTokenTestnetAdmin {
         dUSD.setRescueMode(value);
     }
 
-    function setRescuer(address account, bool value) external {
-        dUSD.setRescuer(account, value);
+    function proposeNewRescuer(address account) external {
+        dUSD.proposeNewRescuer(account);
     }
 
-    function setExecutor(address account, bool value) external {
-        dUSD.setExecutor(account, value);
+    function acceptRescuer() external {
+        dUSD.acceptRescuer();
     }
 
+    function proposeNewExecutor(address account) external {
+        dUSD.proposeNewExecutor(account);
+    }
+
+    function acceptExecutor() external {
+        dUSD.acceptExecutor();
+    }
+    
     function setExplicitAccess(address allowedCaller, bytes4 fnSelector, bool value) external {
         dUSD.setExplicitAccess(allowedCaller, fnSelector, value);
     }

@@ -434,22 +434,6 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
     }
 
     /**
-     * @notice Get the quote used to add liquidity proportionally
-     * @dev Since this is not the view function, this should be called with `callStatic`
-     */
-    function proportionalAddLiquidityQuote(
-        uint256 quoteTokenAmount,
-        uint256 slippageBps
-    ) external override returns (
-        uint256 protocolTokenAmount,
-        uint256 expectedBptAmount,
-        uint256 minBptAmount,
-        IBalancerVault.JoinPoolRequest memory requestData
-    ) {
-        return poolHelper.proportionalAddLiquidityQuote(quoteTokenAmount, slippageBps);
-    }
-
-    /**
      * @notice Add liquidity with both `protocolToken` and `quoteToken` into balancer pool. 
      * TPI is expected to be within bounds of multisig set range.
      * BPT tokens are then deposited and staked in Aura.
@@ -497,23 +481,6 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
         amoStaking.depositAndStake(bptIn);
 
         emit LiquidityAdded(quoteTokenAmount, protocolTokenAmount, bptIn);
-    }
-
-    /**
-     * @notice Get the quote used to remove liquidity
-     * @dev Since this is not the view function, this should be called with `callStatic`
-     */
-    function proportionalRemoveLiquidityQuote(
-        uint256 bptAmount,
-        uint256 slippageBps
-    ) external override returns (
-        uint256 expectedProtocolTokenAmount,
-        uint256 expectedQuoteTokenAmount,
-        uint256 minProtocolTokenAmount,
-        uint256 minQuoteTokenAmount,
-        IBalancerVault.ExitPoolRequest memory requestData
-    ) {
-        return poolHelper.proportionalRemoveLiquidityQuote(bptAmount, slippageBps);
     }
 
     /**

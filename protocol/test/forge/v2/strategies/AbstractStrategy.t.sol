@@ -56,8 +56,8 @@ contract AbstractStrategyTestAdmin is AbstractStrategyTestBase {
     }
 
     function test_initalization() public {
-        assertEq(strategy.executors(executor), true);
-        assertEq(strategy.rescuers(rescuer), true);
+        assertEq(strategy.executor(), executor);
+        assertEq(strategy.rescuer(), rescuer);
         assertEq(strategy.apiVersion(), "1.0.0");
         assertEq(strategy.superApiVersion(), "1.0.0");
         assertEq(strategy.strategyName(), "MockStrategy");
@@ -92,7 +92,7 @@ contract AbstractStrategyTestAdmin is AbstractStrategyTestBase {
 
         vm.startPrank(executor);
 
-        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector, address(0)));
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
         strategy.setTreasuryReservesVault(address(0));
 
         vm.expectRevert();

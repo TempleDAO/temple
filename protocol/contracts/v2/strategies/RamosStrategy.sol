@@ -95,7 +95,7 @@ contract RamosStrategy  is AbstractStrategy, IRamosProtocolTokenVault {
         uint256 minBptAmount,
         IBalancerVault.JoinPoolRequest memory requestData
     ) {
-        return ramos.proportionalAddLiquidityQuote(_stablesAmount, _slippageBps);
+        return ramos.poolHelper().proportionalAddLiquidityQuote(_stablesAmount, _slippageBps);
     }
 
     /**
@@ -123,7 +123,7 @@ contract RamosStrategy  is AbstractStrategy, IRamosProtocolTokenVault {
         uint256 minStablesAmount,
         IBalancerVault.ExitPoolRequest memory requestData
     ) {
-        return ramos.proportionalRemoveLiquidityQuote(_bptAmount, _slippageBps);
+        return ramos.poolHelper().proportionalRemoveLiquidityQuote(_bptAmount, _slippageBps);
     }
 
     /**

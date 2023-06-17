@@ -225,20 +225,6 @@ interface IRamos {
     ) external;
 
     /**
-     * @notice Get the quote used to add liquidity proportionally
-     * @dev Since this is not the view function, this should be called with `callStatic`
-     */
-    function proportionalAddLiquidityQuote(
-        uint256 quoteTokenAmount,
-        uint256 slippageBps
-    ) external returns (
-        uint256 protocolTokenAmount,
-        uint256 expectedBptAmount,
-        uint256 minBptAmount,
-        IBalancerVault.JoinPoolRequest memory requestData
-    );
-
-    /**
      * @notice Add liquidity with both `protocolToken` and `quoteToken` into balancer pool. 
      * TPI is expected to be within bounds of multisig set range.
      * BPT tokens are then deposited and staked in Aura.
@@ -248,21 +234,6 @@ interface IRamos {
     function addLiquidity(
         IBalancerVault.JoinPoolRequest memory request
     ) external;
-
-    /**
-     * @notice Get the quote used to remove liquidity
-     * @dev Since this is not the view function, this should be called with `callStatic`
-     */
-    function proportionalRemoveLiquidityQuote(
-        uint256 bptAmount,
-        uint256 slippageBps
-    ) external returns (
-        uint256 expectedProtocolTokenAmount,
-        uint256 expectedQuoteTokenAmount,
-        uint256 minProtocolTokenAmount,
-        uint256 minQuoteTokenAmount,
-        IBalancerVault.ExitPoolRequest memory requestData
-    );
     
     /**
      * @notice Remove liquidity from balancer pool receiving both `protocolToken` and `quoteToken` from balancer pool. 

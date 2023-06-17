@@ -21,8 +21,8 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
             defaultDaiConfig()
         );
 
-        assertEq(newTlc.executors(executor), true);
-        assertEq(newTlc.rescuers(rescuer), true);
+        assertEq(newTlc.executor(), executor);
+        assertEq(newTlc.rescuer(), rescuer);
 
         assertEq(address(newTlc.templeToken()), address(templeToken));
         assertEq(address(newTlc.daiToken()), address(daiToken));

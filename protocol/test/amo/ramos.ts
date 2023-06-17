@@ -960,7 +960,7 @@ describe("RAMOS", async () => {
             const feeAmt = actualTempleAmountOut.mul(100).div(10_000);
 
             await expect(amo.rebalanceUpExit(bptIn, minTempleAmountOut))
-                .to.emit(amo, "FeeCollected").withArgs(templeToken.address, await feeCollector.getAddress(), feeAmt)
+                .to.emit(amo, "FeeCollected").withArgs(ethers.utils.getAddress(templeToken.address), await feeCollector.getAddress(), feeAmt)
                 .to.emit(amo, "RebalanceUpExit");
 
             // Fee collector gets the Temple, total supply reduces by the correct amount.
@@ -1046,7 +1046,7 @@ describe("RAMOS", async () => {
 
             // Success
             await expect(amo.rebalanceDownJoin(templeAmountIn, reqData.bptOut))
-                .to.emit(amo, "FeeCollected").withArgs(templeToken.address, await feeCollector.getAddress(), feeAmt)
+                .to.emit(amo, "FeeCollected").withArgs(ethers.utils.getAddress(templeToken.address), await feeCollector.getAddress(), feeAmt)
                 .to.emit(amo, "RebalanceDownJoin")
                 .withArgs(templeAmountIn, reqData.bptOut);
 
@@ -1062,7 +1062,7 @@ describe("RAMOS", async () => {
             const positionsBefore = await amo.positions();
             const spotPriceBefore = await poolHelper.getSpotPrice();
 
-            const addQuote = await amo.callStatic.proportionalAddLiquidityQuote(toAtto(100_000), 100);
+            const addQuote = await poolHelper.callStatic.proportionalAddLiquidityQuote(toAtto(100_000), 100);
             await amo.addLiquidity(addQuote.requestData);
             const positionsAfter = await amo.positions();
             const spotPriceAfter = await poolHelper.getSpotPrice();
@@ -1074,7 +1074,7 @@ describe("RAMOS", async () => {
             expect(positionsAfter.quoteTokenBalance).to.be.approximately(positionsBefore.quoteTokenBalance.add(toAtto(100_000)), 1e12);
 
             const bptAmount = toAtto(50_000);
-            const removeQuote = await amo.callStatic.proportionalRemoveLiquidityQuote(bptAmount, 100);
+            const removeQuote = await poolHelper.callStatic.proportionalRemoveLiquidityQuote(bptAmount, 100);
             await amo.removeLiquidity(removeQuote.requestData, bptAmount, executorAddress);
             const positionsAfter2 = await amo.positions();
             const spotPriceAfter2 = await poolHelper.getSpotPrice();

@@ -6,20 +6,24 @@ pragma solidity ^0.8.17;
  * @notice Inherit to add Executor and Rescuer roles for DAO elevated access.
  */ 
 interface ITempleElevatedAccess {
-    event ExecutorSet(address indexed account, bool indexed value);
-    event RescuerSet(address indexed account, bool indexed value);
     event ExplicitAccessSet(address indexed account, bytes4 indexed fnSelector, bool indexed value);
     event RescueModeSet(bool indexed value);
+
+    event NewRescuerProposed(address indexed oldRescuer, address indexed oldProposedRescuer, address indexed newProposedRescuer);
+    event NewRescuerAccepted(address indexed oldRescuer, address indexed newRescuer);
+
+    event NewExecutorProposed(address indexed oldExecutor, address indexed oldProposedExecutor, address indexed newProposedExecutor);
+    event NewExecutorAccepted(address indexed oldExecutor, address indexed newExecutor);
 
     /**
      * @notice A set of addresses which are approved to execute emergency operations.
      */ 
-    function rescuers(address account) external returns (bool);
+    function rescuer() external returns (address);
 
     /**
      * @notice A set of addresses which are approved to execute normal operations on behalf of the DAO.
      */ 
-    function executors(address account) external returns (bool);
+    function executor() external returns (address);
 
     /**
      * @notice Explicit approval for an address to execute a function.
@@ -40,14 +44,28 @@ interface ITempleElevatedAccess {
     function setRescueMode(bool value) external;
 
     /**
-     * @notice Grant `account` the emergency operations role
+     * @notice Proposes a new Rescuer.
+     * Can only be called by the current rescuer.
      */
-    function setRescuer(address account, bool value) external;
+    function proposeNewRescuer(address account) external;
 
     /**
-     * @notice Grant `account` the executor role
+     * @notice Caller accepts the role as new Rescuer.
+     * Can only be called by the proposed rescuer
      */
-    function setExecutor(address account, bool value) external;
+    function acceptRescuer() external;
+
+    /**
+     * @notice Proposes a new Executor.
+     * Can only be called by the current executor or resucer (if in resuce mode)
+     */
+    function proposeNewExecutor(address account) external;
+
+    /**
+     * @notice Caller accepts the role as new Executor.
+     * Can only be called by the proposed executor
+     */
+    function acceptExecutor() external;
 
     /**
      * @notice Grant `allowedCaller` the rights to call the function determined by the selector `fnSelector`

@@ -97,11 +97,11 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
 
         // Ensure the new base strategy has it's TRV set as this contract.
         if (address(baseStrategy.treasuryReservesVault()) != address(this)) 
-            revert CommonEventsAndErrors.InvalidAddress(address(baseStrategy.treasuryReservesVault()));
+            revert CommonEventsAndErrors.InvalidAddress();
 
         // Also check the API version matches.
         if (keccak256(abi.encodePacked(baseStrategy.apiVersion())) != keccak256(abi.encodePacked(API_VERSION)))
-            revert CommonEventsAndErrors.InvalidAddress(address(baseStrategy.treasuryReservesVault()));
+            revert CommonEventsAndErrors.InvalidAddress();
 
         emit BaseStrategySet(_baseStrategy);
     }
