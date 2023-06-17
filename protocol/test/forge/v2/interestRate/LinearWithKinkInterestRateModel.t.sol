@@ -6,153 +6,301 @@ import {TempleTest} from '../../TempleTest.sol';
 import {LinearWithKinkInterestRateModel} from 'contracts/v2/interestRate/LinearWithKinkInterestRateModel.sol';
 import {CommonEventsAndErrors} from 'contracts/common/CommonEventsAndErrors.sol';
 import {IInterestRateModel} from 'contracts/interfaces/v2/interestRate/IInterestRateModel.sol';
-import { SafeCast } from "contracts/common/SafeCast.sol";
+import {SafeCast} from 'contracts/common/SafeCast.sol';
 
 contract LinearWithKinkInterestRateModelTestBase is TempleTest {
-  LinearWithKinkInterestRateModel public daiInterestRateModel;
-  uint256 public utilizationRatioPct;
-  uint256 public expectedDaiDebt;
-  uint96 public expectedDaiInterestRate;
-  uint256 public expectedUtilizationRatio;
-  uint256 public constant BORROW_CEILING = 100_000e18;
+    LinearWithKinkInterestRateModel public interestRateModelKinkNinety;
+    LinearWithKinkInterestRateModel public interestRateModelFlat;
+    uint256 public UTILIZATION_RATIO_90 = 0.9e18; // 90%
 
-  function setUp() public {
-    uint256 borrowDaiAmount = 50_000e18; // 50% UR, ... At kink approximately 10% interest rate
-    utilizationRatioPct = ud(borrowDaiAmount).div(ud(BORROW_CEILING)).unwrap();
+    uint256 public IR_AT_0_UR = 0.05e18; // 5%
+    uint256 public IR_AT_100_UR = 0.2e18; // 20%
+    uint256 public IR_AT_KINK_90 = 0.1e18; // 10%
 
-    daiInterestRateModel = new LinearWithKinkInterestRateModel(
-      rescuer,
-      executor,
-      0.05e18, // 5% interest rate (rate% at 0% UR)
-      0.2e18, // 20% percent interest rate (rate% at 100% UR)
-      0.9e18, // 90% utilization (UR for when the kink starts)
-      0.1e18 // 10% percent interest rate (rate% at kink% UR)
-    );
+    uint256 public FLAT_IR_12 = 0.1e18; // 12%
 
-    expectedDaiInterestRate = calculateInterestRate(
-      daiInterestRateModel,
-      borrowDaiAmount,
-      BORROW_CEILING
-    ); // 7.77 %
+    function setUp() public {
+        interestRateModelKinkNinety = new LinearWithKinkInterestRateModel(
+            rescuer,
+            executor,
+            IR_AT_0_UR, // 5% interest rate (rate% at 0% UR)
+            IR_AT_100_UR, // 20% percent interest rate (rate% at 100% UR)
+            UTILIZATION_RATIO_90, // 90% utilization (UR for when the kink starts)
+            IR_AT_KINK_90 // 10% percent interest rate (rate% at kink% UR)
+        );
 
-    expectedDaiDebt = approxInterest(
-      borrowDaiAmount,
-      expectedDaiInterestRate,
-      365 days
-    ); // ~54k
+        // check we didn't forget to set any param
+        assertNewRateParams(
+            interestRateModelKinkNinety,
+            uint80(IR_AT_0_UR),
+            uint80(IR_AT_100_UR),
+            UTILIZATION_RATIO_90,
+            uint80(IR_AT_KINK_90)
+        );
 
-    expectedUtilizationRatio = utilizationRatio(
-      expectedDaiDebt,
-      BORROW_CEILING
-    ); // ~54%
-  }
+        interestRateModelFlat = new LinearWithKinkInterestRateModel(
+            rescuer,
+            executor,
+            FLAT_IR_12, // 12% interest rate (rate% at 0% UR)
+            FLAT_IR_12, // 12% percent interest rate (rate% at 100% UR)
+            UTILIZATION_RATIO_90, // 90% utilization (UR for when the kink starts)
+            FLAT_IR_12 // 12% percent interest rate (rate% at kink% UR)
+        );
+    }
 
-  function utilizationRatio(
-    uint256 borrowed,
-    uint256 cap
-  ) internal pure returns (uint256) {
-    return (borrowed * 1e18) / cap;
-  }
+    function assertNewRateParams(
+        LinearWithKinkInterestRateModel baseModel,
+        uint80 newBaseInterestRate,
+        uint80 newMaxInterestRate,
+        uint256 newKinkUtilizationRatio,
+        uint80 newKinkInterestRate
+    ) internal {
+        // get initial params
+        (
+            uint80 baseInterestRate,
+            uint80 maxInterestRate,
+            uint80 kinkInterestRate,
+            uint256 kinkUtilizationRatio
+        ) = baseModel.rateParams();
 
-  function calculateInterestRate(
-    IInterestRateModel model,
-    uint256 borrowed,
-    uint256 cap
-  ) internal view returns (uint96) {
-    return model.calculateInterestRate(utilizationRatio(borrowed, cap));
-  }
-
-  function approxInterest(
-    uint256 principal,
-    uint96 rate,
-    uint256 age
-  ) internal pure returns (uint256) {
-    // Approxmiate as P * (1 + r/365 days)^(age)
-    // ie compounding every 1 second (almost but not quite continuous)
-    uint256 onePlusRate = uint256(rate / 365 days + 1e18);
-
-    return ud(principal).mul(ud(onePlusRate).powu(age)).unwrap();
-  }
+        assertEq(baseInterestRate, newBaseInterestRate);
+        assertEq(maxInterestRate, newMaxInterestRate);
+        assertEq(kinkInterestRate, newKinkInterestRate);
+        assertEq(kinkUtilizationRatio, newKinkUtilizationRatio);
+    }
 }
 
 contract LinearWithKinkInterestRateModelTestModifiers is
-  LinearWithKinkInterestRateModelTestBase
+    LinearWithKinkInterestRateModelTestBase
 {
-  event InterestRateParamsSet(
-    uint256 _baseInterestRate,
-    uint256 _maxInterestRate,
-    uint256 _kinkUtilizationRatio,
-    uint256 _kinkInterestRate
-  );
+    event InterestRateParamsSet(
+        uint256 _baseInterestRate,
+        uint256 _maxInterestRate,
+        uint256 _kinkUtilizationRatio,
+        uint256 _kinkInterestRate
+    );
 
-  using SafeCast for uint256;
+    using SafeCast for uint256;
 
-  function test_accessSetRateParams() public {
-    // no access for alice
-    {
-      vm.startPrank(alice);
-      vm.expectRevert(
-        abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector)
-      );
-      daiInterestRateModel.setRateParams(0.02e18, 0.75e18, 0.5e18, 0.1e18);
-      vm.stopPrank();
+    function test_accessAliceSetRateParams() public {
+        vm.startPrank(alice);
+        vm.expectRevert(
+            abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector)
+        );
+        interestRateModelKinkNinety.setRateParams(
+            0.02e18,
+            0.75e18,
+            0.5e18,
+            0.1e18
+        );
+
+        // assert params were not changed
+        assertNewRateParams(
+            interestRateModelKinkNinety,
+            uint80(IR_AT_0_UR),
+            uint80(IR_AT_100_UR),
+            UTILIZATION_RATIO_90,
+            uint80(IR_AT_KINK_90)
+        );
     }
 
-    // access for executor
-    {
-      vm.startPrank(executor);
-      vm.expectEmit();
-      emit InterestRateParamsSet(0.02e18, 0.75e18, 0.5e18, 0.1e18);
-      daiInterestRateModel.setRateParams(0.02e18, 0.75e18, 0.5e18, 0.1e18);
-      vm.stopPrank();
+    function test_accessExecutorSetRateParams() public {
+        vm.startPrank(executor);
+        vm.expectEmit();
+        emit InterestRateParamsSet(0.02e18, 0.75e18, 0.5e18, 0.1e18);
+        interestRateModelKinkNinety.setRateParams(
+            0.02e18,
+            0.75e18,
+            0.5e18,
+            0.1e18
+        );
+        assertNewRateParams(
+            interestRateModelKinkNinety,
+            0.02e18,
+            0.75e18,
+            0.5e18,
+            0.1e18
+        );
     }
 
-    // access for rescuer
-    {
-      vm.startPrank(rescuer);
-      vm.expectRevert(
-        abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector)
-      );
-      daiInterestRateModel.setRateParams(0.02e18, 0.75e18, 0.5e18, 0.1e18);
-
-      daiInterestRateModel.setRescueMode(true);
-      vm.expectEmit();
-      emit InterestRateParamsSet(0.02e18, 0.75e18, 0.5e18, 0.1e18);
-      daiInterestRateModel.setRateParams(0.02e18, 0.75e18, 0.5e18, 0.1e18);
-      vm.stopPrank();
+    function test_expectInvalidParams_Zero() public {
+        vm.startPrank(executor);
+        vm.expectRevert(
+            abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector)
+        );
+        interestRateModelKinkNinety.setRateParams(0e18, 0e18, 0e18, 0e18);
     }
-  }
 
-  function test_getRateParams() public {    
-    uint80 testBaseInterestRate = uint256(0.05e18).encodeUInt80(); // 5%
-    uint80 testMaxInterestRate = uint256(0.2e18).encodeUInt80(); // 20%
-    uint80 testKinkInterestRate = uint256(0.1e18).encodeUInt80(); // 10%
-    uint256 testKinkUtilizationRatio = uint256(0.9e18); // %90%
-    
-    // get initial params
-    (
-      uint256 baseInterestRate,
-      uint256 maxInterestRate,
-      uint256 kinkInterestRate,
-      uint256 kinkUtilizationRatio
-    ) = daiInterestRateModel.rateParams();
-    
-    assertEq(baseInterestRate, testBaseInterestRate);
-    assertEq(maxInterestRate, testMaxInterestRate);
-    assertEq(kinkInterestRate, testKinkInterestRate);
-    assertEq(kinkUtilizationRatio, testKinkUtilizationRatio);
-  }
+    function test_expectInvalidParams_Max() public {
+        vm.startPrank(executor);
+        vm.expectRevert(
+            abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector)
+        );
+        interestRateModelKinkNinety.setRateParams(
+            type(uint256).max,
+            type(uint256).max,
+            type(uint256).max,
+            type(uint256).max
+        );
+    }
 
-  function test_utilizationRation() public {
-    assertEq(utilizationRatioPct, 0.5e18); // 50%
-  }
-  function test_expectedInterestRate() public {
-    assertEq(expectedDaiInterestRate, 0.077777777777777777e18); // ~7%
-  }
-  function test_expectedDebtAmount() public {
-    assertEq(expectedDaiDebt, 54_044.121788100384500000e18); // ~54k
-  }
-  function test_expectedUtilizationRatio() public {
-    assertEq(expectedUtilizationRatio, 0.540441217881003845e18); // ~54%
-  }
+    function test_accessRescuerSetRateParams() public {
+        vm.startPrank(rescuer);
+        vm.expectRevert(
+            abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector)
+        );
+        interestRateModelKinkNinety.setRateParams(
+            0.03e18,
+            0.85e18,
+            0.55e18,
+            0.15e18
+        );
+
+        interestRateModelKinkNinety.setRescueMode(true);
+        vm.expectEmit();
+        emit InterestRateParamsSet(0.03e18, 0.85e18, 0.55e18, 0.15e18);
+        interestRateModelKinkNinety.setRateParams(
+            0.03e18,
+            0.85e18,
+            0.55e18,
+            0.15e18
+        );
+        assertNewRateParams(
+            interestRateModelKinkNinety,
+            0.03e18,
+            0.85e18,
+            0.55e18,
+            0.15e18
+        );
+    }
+
+    function test_calculateInterestRateKink_zeroUR() public {
+        uint256 utilizationRatio = 0.0e18; // 0% UR
+        uint256 expectedInterestRate = interestRateModelKinkNinety
+            .calculateInterestRate(utilizationRatio);
+        assertEq(expectedInterestRate, IR_AT_0_UR); // 5% IR
+    }
+
+    function test_calculateInterestRateKink_oneUR() public {
+        uint256 utilizationRatio = 0.01e18; // 1% UR
+        uint256 expectedInterestRate = interestRateModelKinkNinety
+            .calculateInterestRate(utilizationRatio);
+        assertEq(expectedInterestRate, 0.050555555555555555e18); // ~5.06% IR
+    }
+
+    function test_calculateInterestRateKink_HalfUR() public {
+        uint256 expectedInterestRate = interestRateModelKinkNinety
+            .calculateInterestRate(UTILIZATION_RATIO_90 / 2);
+        assertEq(expectedInterestRate, 0.074999999999999999e18); // ~7.49% IR
+    }
+
+    function test_calculateInterestRateKink_BeforeKink() public {
+        uint256 expectedInterestRate = interestRateModelKinkNinety
+            .calculateInterestRate(UTILIZATION_RATIO_90 - 1);
+        assertEq(expectedInterestRate, 0.099999999999999999e18); // <10% IR
+    }
+
+    function test_calculateInterestRateKink_AtKink() public {
+        uint256 expectedInterestRate = interestRateModelKinkNinety
+            .calculateInterestRate(UTILIZATION_RATIO_90);
+
+        // the following should be 10% at kink, but calc is not exact
+        assertEq(expectedInterestRate, 0.099999999999999999e18); // ~10% IR
+    }
+
+    function test_calculateInterestRateKink_AfterKink() public {
+        uint256 expectedInterestRate = interestRateModelKinkNinety
+            .calculateInterestRate(UTILIZATION_RATIO_90 + 1);
+        assertEq(expectedInterestRate, 0.100000000000000001e18); // >10% IR
+    }
+
+    function test_calculateInterestRateKink_HalfWayUpKink() public {
+        uint256 expectedInterestRate = interestRateModelKinkNinety
+            .calculateInterestRate(
+                UTILIZATION_RATIO_90 + (1e18 - UTILIZATION_RATIO_90) / 2
+            );
+        assertEq(expectedInterestRate, 0.15e18); // 15% IR
+    }
+
+    function test_calculateInterestRateKink_BeforeHundredUR() public {
+        uint256 expectedInterestRate = interestRateModelKinkNinety
+            .calculateInterestRate(1e18 - 1);
+        assertEq(expectedInterestRate, 0.199999999999999999e18); // ~19.99% IR
+    }
+
+    function test_calculateInterestRateKink_HundredUR() public {
+        uint256 expectedInterestRate = interestRateModelKinkNinety
+            .calculateInterestRate(1e18);
+        assertEq(expectedInterestRate, IR_AT_100_UR); // ~20% IR
+    }
+
+    function test_calculateInterestRateKink_AfterHundredUR() public {
+        uint256 expectedInterestRate = interestRateModelKinkNinety
+            .calculateInterestRate(1e18 + 1);
+        assertEq(expectedInterestRate, IR_AT_100_UR); // ~20% IR
+    }
+
+    function test_calculateInterestRateFlat_ZeroUR() public {
+        uint256 utilizationRatio = 0e18; // 0% UR
+        uint256 expectedInterestRate = interestRateModelFlat
+            .calculateInterestRate(utilizationRatio);
+        assertEq(expectedInterestRate, FLAT_IR_12); // 12% IR
+    }
+
+    function test_calculateInterestRateFlat_OneUR() public {
+        uint256 utilizationRatio = 0.01e18; // 1% UR
+        uint256 expectedInterestRate = interestRateModelFlat
+            .calculateInterestRate(utilizationRatio);
+        assertEq(expectedInterestRate, FLAT_IR_12); // 12% IR
+    }
+
+    function test_calculateInterestRateFlat_HalfUR() public {
+        uint256 expectedInterestRate = interestRateModelFlat
+            .calculateInterestRate(UTILIZATION_RATIO_90 / 2);
+        assertEq(expectedInterestRate, FLAT_IR_12); // 12% IR
+    }
+
+    function test_calculateInterestRateFlat_BeforeKink() public {
+        uint256 expectedInterestRate = interestRateModelFlat
+            .calculateInterestRate(UTILIZATION_RATIO_90 - 1);
+        assertEq(expectedInterestRate, FLAT_IR_12); // 12% IR
+    }
+
+    function test_calculateInterestRateFlat_AtKink() public {
+        uint256 expectedInterestRate = interestRateModelFlat
+            .calculateInterestRate(UTILIZATION_RATIO_90);
+        assertEq(expectedInterestRate, FLAT_IR_12); // 12% IR
+    }
+
+    function test_calculateInterestRateFlat_AfterKink() public {
+        uint256 expectedInterestRate = interestRateModelFlat
+            .calculateInterestRate(UTILIZATION_RATIO_90 + 1);
+        assertEq(expectedInterestRate, FLAT_IR_12); // 12% IR
+    }
+
+    function test_calculateInterestRateFlat_HundredUR() public {
+        uint256 expectedInterestRate = interestRateModelFlat
+            .calculateInterestRate(100e18);
+        assertEq(expectedInterestRate, FLAT_IR_12); // 12% IR
+    }
+
+    function test_calculateInterestRateFlat_AfterHundredUR() public {
+        uint256 expectedInterestRate = interestRateModelFlat
+            .calculateInterestRate(100e18 + 1);
+        assertEq(expectedInterestRate, FLAT_IR_12); // 12% IR
+    }
+
+    function test_calculateInterest_ExceedPrecission() public {
+        uint256 utilizationRatio = 0.1e20;
+        uint256 expectedInterestRate = interestRateModelFlat
+            .calculateInterestRate(utilizationRatio);
+        assertEq(expectedInterestRate, FLAT_IR_12); // 12% IR
+    }
+
+    function test_calculateInterest_MaxUR() public {
+        uint256 utilizationRatio = type(uint256).max;
+        uint256 expectedInterestRate = interestRateModelFlat
+            .calculateInterestRate(utilizationRatio);
+        assertEq(expectedInterestRate, FLAT_IR_12); // 12% IR
+    }
 }
