@@ -111,7 +111,7 @@ contract RamosStrategyTestBase is TempleTest {
         strategy.setExplicitAccess(address(ramos), RamosStrategy.borrowProtocolToken.selector, true);
         strategy.setExplicitAccess(address(ramos), RamosStrategy.repayProtocolToken.selector, true);
 
-        ramos.setProtocolTokenVault(address(strategy));
+        ramos.setTokenVault(address(strategy));
         ramos.setTpiOracle(address(tpiOracle));
 
         // `templeToken` settings

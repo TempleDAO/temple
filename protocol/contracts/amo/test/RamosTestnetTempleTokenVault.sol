@@ -3,11 +3,11 @@ pragma solidity ^0.8.17;
 // Temple (amo/test/RamosTestnetTempleTokenVault.sol)
 
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { IRamosProtocolTokenVault } from "contracts/interfaces/amo/helpers/IRamosProtocolTokenVault.sol";
+import { IRamosTokenVault } from "contracts/interfaces/amo/helpers/IRamosTokenVault.sol";
 import { ITempleERC20Token } from "contracts/interfaces/core/ITempleERC20Token.sol";
 
 /// @notice A version of the Protocol Token Vault which has mint/burn rights on the Temple ERC20
-contract RamosTestnetTempleTokenVault is IRamosProtocolTokenVault {
+contract RamosTestnetTempleTokenVault is IRamosTokenVault {
     using SafeERC20 for ITempleERC20Token;
 
     ITempleERC20Token public immutable templeToken;

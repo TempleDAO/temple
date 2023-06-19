@@ -1,8 +1,8 @@
 pragma solidity ^0.8.17;
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Temple (interfaces/amo/helpers/IProtocolTokenVault.sol)
+// Temple (interfaces/amo/helpers/ITokenVault.sol)
 
-interface IRamosProtocolTokenVault {
+interface IRamosTokenVault {
     function borrowProtocolToken(uint256 amount, address recipient) external;
 
     function repayProtocolToken(uint256 amount) external;
