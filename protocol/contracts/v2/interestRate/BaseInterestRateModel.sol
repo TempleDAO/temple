@@ -31,7 +31,7 @@ abstract contract BaseInterestRateModel is IInterestRateModel {
 
         interestRate = computeInterestRateImpl(utilizationRatio);
 
-		if (interestRate > MAX_ALLOWED_INTEREST_RATE) {
+        if (interestRate > MAX_ALLOWED_INTEREST_RATE) {
             interestRate = MAX_ALLOWED_INTEREST_RATE;
         }
     }
