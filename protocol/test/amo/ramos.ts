@@ -211,7 +211,7 @@ describe("RAMOS", async () => {
         );
 
         tokenVault = await new RamosTestnetTempleTokenVault__factory(executor).deploy(TEMPLE);
-        await amo.setProtocolTokenVault(tokenVault.address);
+        await amo.setTokenVault(tokenVault.address);
 
         poolHelper = await new BalancerPoolHelper__factory(executor).deploy(
             BALANCER_VAULT,
@@ -359,7 +359,7 @@ describe("RAMOS", async () => {
             await expect(connectAMO.setCoolDown(1800)).to.be.revertedWithCustomError(amo, "InvalidAccess");
             await expect(connectAMO.setPoolHelper(alanAddress)).to.be.revertedWithCustomError(amo, "InvalidAccess");
             await expect(connectAMO.setTpiOracle(alanAddress)).to.be.revertedWithCustomError(amo, "InvalidAccess");
-            await expect(connectAMO.setProtocolTokenVault(alanAddress)).to.be.revertedWithCustomError(amo, "InvalidAccess");
+            await expect(connectAMO.setTokenVault(alanAddress)).to.be.revertedWithCustomError(amo, "InvalidAccess");
             await expect(connectAMO.setRebalanceFees(0, 0)).to.be.revertedWithCustomError(amo, "InvalidAccess");
             await expect(amo.setRebalanceFees(0, 0)).to.be.revertedWithCustomError(amo, "InvalidAccess");
             await expect(connectAMO.setFeeCollector(alanAddress)).to.be.revertedWithCustomError(amo, "InvalidAccess");
@@ -371,7 +371,7 @@ describe("RAMOS", async () => {
             await expect(connectAMO.unpause()).to.be.revertedWithCustomError(amo, "InvalidAccess");
             await expect(connectAMO.recoverToken(TEMPLE , alanAddress, 100)).to.be.revertedWithCustomError(amo, "InvalidAccess");
             await expect(connectAMO.rebalanceUpExit(ONE_ETH, 1)).to.be.revertedWithCustomError(amo, "InvalidAccess");
-            await expect(connectAMO.rebalanceDownExit(ONE_ETH, 1, alanAddress)).to.be.revertedWithCustomError(amo, "InvalidAccess");
+            await expect(connectAMO.rebalanceDownExit(ONE_ETH, 1)).to.be.revertedWithCustomError(amo, "InvalidAccess");
             await expect(connectAMO.rebalanceUpJoin(ONE_ETH, 1)).to.be.revertedWithCustomError(amo, "InvalidAccess");
             await expect(connectAMO.rebalanceDownJoin(ONE_ETH, 1)).to.be.revertedWithCustomError(amo, "InvalidAccess");
             await expect(connectAMO.addLiquidity(joinPoolRequest)).to.be.revertedWithCustomError(amo, "InvalidAccess");
@@ -385,7 +385,7 @@ describe("RAMOS", async () => {
             await amo.unpause();
             await amo.setCoolDown(1800);
             await amo.setTpiOracle(tpiOracle.address);
-            await amo.setProtocolTokenVault(tokenVault.address);
+            await amo.setTokenVault(tokenVault.address);
             await amo.connect(feeCollector).setRebalanceFees(0, 0);
             await amo.connect(feeCollector).setFeeCollector(alanAddress);
         });
@@ -425,10 +425,10 @@ describe("RAMOS", async () => {
     
         it("sets protocol token vault", async () => {
             const newTokenVault = await new RamosTestnetTempleTokenVault__factory(executor).deploy(TEMPLE);
-            await expect(amo.setProtocolTokenVault(newTokenVault.address))
-                .to.emit(amo, "ProtocolTokenVaultSet")
+            await expect(amo.setTokenVault(newTokenVault.address))
+                .to.emit(amo, "TokenVaultSet")
                 .withArgs(newTokenVault.address);
-            expect(await amo.protocolTokenVault()).to.eq(newTokenVault.address);
+            expect(await amo.TokenVault()).to.eq(newTokenVault.address);
             expect(await templeToken.allowance(amo.address, tokenVault.address)).eq(0);
             expect(await templeToken.allowance(amo.address, newTokenVault.address)).eq(ethers.constants.MaxUint256);
         });
@@ -739,8 +739,8 @@ describe("RAMOS", async () => {
         it("rebalances down by removing stable", async () => {
             // fail checks
             const maxAmounts = await amo.maxRebalanceAmounts();
-            await expect(amo.rebalanceDownExit(100, 0, amo.address)).to.be.revertedWithCustomError(amo, "ZeroSwapLimit");
-            await expect(amo.rebalanceDownExit(maxAmounts.bpt.add(1), 1, amo.address)).to.be.revertedWithCustomError(amo, "AboveCappedAmount");
+            await expect(amo.rebalanceDownExit(100, 0)).to.be.revertedWithCustomError(amo, "ZeroSwapLimit");
+            await expect(amo.rebalanceDownExit(maxAmounts.bpt.add(1), 1)).to.be.revertedWithCustomError(amo, "AboveCappedAmount");
 
             await ownerDepositAndStakeBpt(toAtto(20_000));
             
@@ -748,9 +748,9 @@ describe("RAMOS", async () => {
             await singleSideDepositTemple(toAtto(50_000));
             await tpiOracle.setTreasuryPriceIndex(ethers.utils.parseEther("0.97"));
             expect(await amo.treasuryPriceIndex()).to.equal(ethers.utils.parseEther("0.97"));
-            await expect(amo.rebalanceDownExit(ONE_ETH, 1, amo.address)).to.be.revertedWithCustomError(poolHelper, "NoRebalanceDown");
+            await expect(amo.rebalanceDownExit(ONE_ETH, 1)).to.be.revertedWithCustomError(poolHelper, "NoRebalanceDown");
             await amo.pause();
-            await expect(amo.rebalanceDownExit(1, 1, amo.address)).to.be.revertedWith("Pausable: paused");
+            await expect(amo.rebalanceDownExit(1, 1)).to.be.revertedWith("Pausable: paused");
             await amo.unpause();
             // skew price above TPI
             await singleSideDepositQuoteToken(toAtto(200_000));
@@ -772,11 +772,11 @@ describe("RAMOS", async () => {
             const stakedBalanceBefore = await bbaUsdTempleAuraRewardPool.balanceOf(amoStaking.address);
             // willQuoteTokenExitTakePriceBelowTpiLowerBound
             await amo.setMaxRebalanceAmounts(stakeAmount, stakeAmount, stakeAmount);
-            await expect(amo.rebalanceDownExit(bptIn, exitTokenAmountOut.add(toAtto(300_000)), amo.address))
+            await expect(amo.rebalanceDownExit(bptIn, exitTokenAmountOut.add(toAtto(300_000))))
                 .to.be.revertedWithCustomError(poolHelper, "HighSlippage");
 
             // Success
-            await expect(amo.rebalanceDownExit(bptIn, exitTokenAmountOut, amo.address))
+            await expect(amo.rebalanceDownExit(bptIn, exitTokenAmountOut))
                 .to.emit(amo, "RebalanceDownExit").withArgs(bptIn, exitTokenAmountOut, amo.address)
                 .to.emit(auraBooster, "Withdrawn").withArgs(amoStaking.address, bbaUsdTempleAuraPID, bptIn);
 
@@ -788,7 +788,7 @@ describe("RAMOS", async () => {
             {
                 await amo.setCoolDown(1_800);
                 await time.increase((await amo.cooldownSecs()).sub(10));
-                await expect(amo.rebalanceDownExit(toAtto(10_000), 1, alanAddress)).to.be.revertedWithCustomError(amo, "NotEnoughCooldown");
+                await expect(amo.rebalanceDownExit(toAtto(10_000), 1)).to.be.revertedWithCustomError(amo, "NotEnoughCooldown");
             }
         });
 
@@ -815,7 +815,7 @@ describe("RAMOS", async () => {
             const stakedBalanceBefore = await bbaUsdTempleAuraRewardPool.balanceOf(amoStaking.address);
 
             // Success
-            await expect(amo.rebalanceDownExit(bptIn, exitTokenAmountOut, alanAddress))
+            await expect(amo.rebalanceDownExit(bptIn, exitTokenAmountOut))
                 .to.emit(amo, "RebalanceDownExit").withArgs(bptIn, exitTokenAmountOut, alanAddress)
                 .to.emit(auraBooster, "Withdrawn").withArgs(amoStaking.address, bbaUsdTempleAuraPID, bptIn);
 
@@ -849,7 +849,7 @@ describe("RAMOS", async () => {
             const feeAmt = quoteTokenAmountOut.mul(100).div(10_000);
 
             // Success
-            await expect(amo.rebalanceDownExit(bptIn, quoteTokenAmountOut, alanAddress))
+            await expect(amo.rebalanceDownExit(bptIn, quoteTokenAmountOut))
                 .to.emit(amo, "FeeCollected").withArgs(bbaUsdToken.address, await feeCollector.getAddress(), feeAmt)
                 .to.emit(amo, "RebalanceDownExit").withArgs(bptIn, quoteTokenAmountOut, alanAddress)
                 .to.emit(auraBooster, "Withdrawn").withArgs(amoStaking.address, bbaUsdTempleAuraPID, bptIn);

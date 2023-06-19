@@ -24,4 +24,8 @@ contract RamosTestnetTempleTokenVault is IRamosTokenVault {
         templeToken.safeTransferFrom(msg.sender, address(this), amount);
         templeToken.burn(amount);
     }
+
+	function repayQuoteToken() external view returns(address) {
+        return address(templeToken);
+	}
 }

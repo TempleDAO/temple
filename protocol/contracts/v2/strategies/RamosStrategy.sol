@@ -57,6 +57,10 @@ contract RamosStrategy  is AbstractStrategy, IRamosTokenVault {
         templeToken.burn(amount);
     }
 
+	function repayQuoteToken() external view returns(address) {
+        return address(templeToken);
+	}
+
     /**
      * @notice The latest checkpoint of each asset balance this stratgy holds, and the current debt.
      * This will be used to report equity performance: `sum(asset value in STABLE) - debt`

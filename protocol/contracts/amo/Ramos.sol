@@ -316,15 +316,14 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
      * The remainder `quoteToken` are repaid to the recipient
      * @param bptAmountIn Amount of BPT tokens to deposit into balancer pool
      * @param minQuoteTokenAmountOut Minimum amount of `quoteToken` expected to receive
-     * @param recipient Address to which the `quoteToken` withdrawn are transferred
      */
     function rebalanceDownExit(
         uint256 bptAmountIn,
-        uint256 minQuoteTokenAmountOut,
-        address recipient
+        uint256 minQuoteTokenAmountOut
     ) external override onlyElevatedAccess whenNotPaused enoughCooldown {
         _validateParams(minQuoteTokenAmountOut, bptAmountIn, maxRebalanceAmounts.bpt);
         lastRebalanceTimeSecs = uint64(block.timestamp);
+		address recipient = TokenVault.repayQuoteToken();
 
         // Unstake and send the BPT to the poolHelper
         amoStaking.withdrawAndUnwrap(bptAmountIn, false, address(poolHelper));

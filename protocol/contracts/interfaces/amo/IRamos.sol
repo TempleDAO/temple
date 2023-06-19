@@ -186,12 +186,10 @@ interface IRamos {
      * The remainder `quoteToken` are repaid to the recipient
      * @param bptAmountIn Amount of BPT tokens to deposit into balancer pool
      * @param minQuoteTokenAmountOut Minimum amount of `quoteToken` expected to receive
-     * @param recipient Address to which the `quoteToken` withdrawn are transferred
      */
     function rebalanceDownExit(
         uint256 bptAmountIn,
-        uint256 minQuoteTokenAmountOut,
-        address recipient
+        uint256 minQuoteTokenAmountOut
     ) external;
 
     /**
