@@ -4,7 +4,7 @@ pragma solidity ^0.8.17;
 import {TempleTest} from '../../TempleTest.sol';
 import {CompoundedInterest} from 'contracts/v2/interestRate/CompoundedInterest.sol';
 import {PRBMath_MulDiv18_Overflow} from '@prb/math/src/Common.sol';
-import {PRBMath_UD60x18_Exp_InputTooBig} from '@prb/math/src/ud60x18.sol';
+import {PRBMath_UD60x18_Exp_InputTooBig} from '@prb/math/src/UD60x18.sol';
 
 contract CompoundedInterestTest is TempleTest {
     using CompoundedInterest for uint256;
