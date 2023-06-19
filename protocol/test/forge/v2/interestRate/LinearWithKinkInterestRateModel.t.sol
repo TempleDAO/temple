@@ -14,7 +14,9 @@ contract LinearWithKinkInterestRateModelTestBase is TempleTest {
     uint256 public IR_AT_100_UR = 0.2e18; // 20%
     uint256 public IR_AT_KINK_90 = 0.1e18; // 10%
 
-    uint256 public FLAT_IR_12 = 0.1e18; // 12%
+    uint256 public FLAT_IR_12 = 0.12e18; // 12%
+
+	uint96 internal constant MAX_ALLOWED_INTEREST_RATE = 5e18; // 500% APR
 
     function setUp() public {
         interestRateModelKinkNinety = new LinearWithKinkInterestRateModel(
@@ -299,5 +301,34 @@ contract LinearWithKinkInterestRateModelTestModifiers is
         uint256 expectedInterestRate = interestRateModelFlat
             .calculateInterestRate(utilizationRatio);
         assertEq(expectedInterestRate, FLAT_IR_12); // 12% IR
+    }
+
+    function test_calculateInterestRateKink900_HundredUR() public {
+        vm.startPrank(executor);
+        vm.expectEmit();
+        emit InterestRateParamsSet(
+			uint80(IR_AT_0_UR),
+            9e18,
+            UTILIZATION_RATIO_90,
+            uint80(IR_AT_KINK_90)
+		);
+        interestRateModelKinkNinety.setRateParams(
+            uint80(IR_AT_0_UR), // 5% at 0% UR
+            9e18, // 900% Max interest rate at 100% UR
+            UTILIZATION_RATIO_90, // Kink at 90%
+            uint80(IR_AT_KINK_90) // 10% IR at kink
+        );
+        assertNewRateParams(
+            interestRateModelKinkNinety,
+            uint80(IR_AT_0_UR),
+            9e18,
+            UTILIZATION_RATIO_90,
+            uint80(IR_AT_KINK_90)
+        );
+		
+		// we should expect 900% IR  at 100% UR, however, there is a hard cap at 500%
+		uint256 expectedInterestRate = interestRateModelKinkNinety
+            .calculateInterestRate(100e18);
+        assertEq(expectedInterestRate, MAX_ALLOWED_INTEREST_RATE); // 500% IR
     }
 }
