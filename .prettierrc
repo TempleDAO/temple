@@ -3,5 +3,14 @@
   "tabWidth": 2,
   "semi": true,
   "singleQuote": true,
-  "useTabs": false
+  "useTabs": false,
+  "overrides": [
+    {
+      "files": "*.sol",
+      "options": {
+        "semi": true,
+        "tabWidth": 4
+      }
+    }
+  ]
 }
