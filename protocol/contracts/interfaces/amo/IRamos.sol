@@ -150,7 +150,7 @@ interface IRamos {
     /**
      * @notice The vault from where to borrow and repay the Protocol Token
      */
-    function TokenVault() external view returns (IRamosTokenVault);
+    function tokenVault() external view returns (IRamosTokenVault);
 
     /**
      * @notice Set the Treasury Price Index (TPI) Oracle
@@ -239,12 +239,10 @@ interface IRamos {
      * Withdraw and unwrap BPT tokens from Aura staking and send to balancer pool to receive both tokens.
      * @param request Request for use in balancer pool exit
      * @param bptIn Amount of BPT tokens to send into balancer pool
-     * @param to Address to which the `quoteToken` received from balancer pool are transferred
      */
     function removeLiquidity(
         IBalancerVault.ExitPoolRequest memory request, 
-        uint256 bptIn, 
-        address to
+        uint256 bptIn
     ) external;
 
     /**

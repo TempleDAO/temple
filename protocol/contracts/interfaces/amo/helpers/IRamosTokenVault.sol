@@ -3,9 +3,9 @@ pragma solidity ^0.8.17;
 // Temple (interfaces/amo/helpers/ITokenVault.sol)
 
 interface IRamosTokenVault {
-    function borrowProtocolToken(uint256 amount, address recipient) external;
+    function borrowProtocolToken(uint256 amount, address recipient) external;    
+    function borrowQuoteToken(uint256 amount, address recipient) external;
 
     function repayProtocolToken(uint256 amount) external;
-
-	function repayQuoteToken() external view returns(address);
+    function repayQuoteToken(uint256 amount) external;
 }

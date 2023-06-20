@@ -106,7 +106,7 @@ contract RamosStrategyTestBase is TempleTest {
         }
 
         // solhint-disable-next-line reentrancy
-        strategy = new RamosStrategy(rescuer, executor, "RamosStrategy", address(trv), address(ramos), address(temple));
+        strategy = new RamosStrategy(rescuer, executor, "RamosStrategy", address(trv), address(ramos), address(temple), address(dai));
         // @todo Should allow set batch?
         strategy.setExplicitAccess(address(ramos), RamosStrategy.borrowProtocolToken.selector, true);
         strategy.setExplicitAccess(address(ramos), RamosStrategy.repayProtocolToken.selector, true);

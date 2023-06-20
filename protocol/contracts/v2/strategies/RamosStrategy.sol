@@ -23,6 +23,7 @@ contract RamosStrategy  is AbstractStrategy, IRamosTokenVault {
     IRamos public ramos;
 
     ITempleERC20Token public immutable templeToken;
+    IERC20 public immutable quoteToken;
 
     event BorrowAndAddLiquidity(uint256 amount);
     event RemoveLiquidityAndRepay(uint256 amount);
@@ -33,10 +34,12 @@ contract RamosStrategy  is AbstractStrategy, IRamosTokenVault {
         string memory _strategyName,
         address _treasuryReservesVault,
         address _ramos,
-        address _templeToken
+        address _templeToken,
+        address _quoteToken
     ) AbstractStrategy(_initialRescuer, _initialExecutor, _strategyName, _treasuryReservesVault) {
         ramos = IRamos(_ramos);
         templeToken = ITempleERC20Token(_templeToken);
+        quoteToken = IERC20(_quoteToken);
     }
 
     /**
@@ -51,15 +54,19 @@ contract RamosStrategy  is AbstractStrategy, IRamosTokenVault {
         templeToken.mint(recipient, amount);
     }
 
+    function borrowQuoteToken(uint256 amount, address recipient) external {
+        quoteToken.safeTransfer(recipient, amount);
+    }
+
     function repayProtocolToken(uint256 amount) external onlyElevatedAccess {
         // @todo This should be repaid to the TRV, so the dTemple can be burned
         templeToken.safeTransferFrom(msg.sender, address(this), amount);
         templeToken.burn(amount);
     }
 
-	function repayQuoteToken() external view returns(address) {
-        return address(templeToken);
-	}
+    function repayQuoteToken(uint256 amount) external {
+        quoteToken.safeTransferFrom(msg.sender, address(this), amount);
+    }
 
     /**
      * @notice The latest checkpoint of each asset balance this stratgy holds, and the current debt.
@@ -136,7 +143,7 @@ contract RamosStrategy  is AbstractStrategy, IRamosTokenVault {
      */
     function removeLiquidityAndRepay(IBalancerVault.ExitPoolRequest memory _requestData, uint256 _bptAmount) external onlyElevatedAccess {
         // Remove liquidity
-        ramos.removeLiquidity(_requestData, _bptAmount, address(this));
+        ramos.removeLiquidity(_requestData, _bptAmount);
 
         // Repay debt back to the Treasury Reserves
         uint256 stableBalance = stableToken.balanceOf(address(this));
@@ -180,6 +187,6 @@ contract RamosStrategy  is AbstractStrategy, IRamosTokenVault {
      */
     function doShutdown(bytes memory shutdownData) internal virtual override {
         (ShutdownParams memory params) = abi.decode(shutdownData, (ShutdownParams));
-        ramos.removeLiquidity(params.requestData, params.bptAmount, address(this));
+        ramos.removeLiquidity(params.requestData, params.bptAmount);
     }
 }
