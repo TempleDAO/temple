@@ -2,10 +2,10 @@ pragma solidity ^0.8.17;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (amo/test/RamosTestnetTempleTokenVault.sol)
 
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IRamosTokenVault } from "contracts/interfaces/amo/helpers/IRamosTokenVault.sol";
 import { ITempleERC20Token } from "contracts/interfaces/core/ITempleERC20Token.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /// @notice A version of the Protocol Token Vault which has mint/burn rights on the Temple ERC20
 contract RamosTestnetTempleTokenVault is IRamosTokenVault {
@@ -20,12 +20,12 @@ contract RamosTestnetTempleTokenVault is IRamosTokenVault {
         quoteToken = IERC20(_quoteToken);
     }
 
-    function borrowProtocolToken(uint256 amount, address recipient ) external {
+    function borrowProtocolToken(uint256 amount, address recipient) external {
         templeToken.mint(recipient, amount);
     }
 
     function borrowQuoteToken(uint256 amount, address recipient) external {
-        quoteToken.safeTransferFrom(address(this), recipient, amount);
+        quoteToken.safeTransfer(recipient, amount);
     }
 
     function repayProtocolToken(uint256 amount) external {

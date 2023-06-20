@@ -183,7 +183,7 @@ interface IRamos {
      * BPT tokens are withdrawn from Aura rewards staking contract and used for balancer
      * pool exit. 
      * Ramos rebalance fees are deducted from the amount of `quoteToken` returned from the exit
-     * The remainder `quoteToken` are repaid to the recipient
+     * The remainder `quoteToken` are repaid via the token vault
      * @param bptAmountIn Amount of BPT tokens to deposit into balancer pool
      * @param minQuoteTokenAmountOut Minimum amount of `quoteToken` expected to receive
      */

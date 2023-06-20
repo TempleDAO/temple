@@ -317,7 +317,7 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
      * BPT tokens are withdrawn from Aura rewards staking contract and used for balancer
      * pool exit. 
      * Ramos rebalance fees are deducted from the amount of `quoteToken` returned from the exit
-     * The remainder `quoteToken` are repaid to the recipient
+     * The remainder `quoteToken` are repaid via the token vault
      * @param bptAmountIn Amount of BPT tokens to deposit into balancer pool
      * @param minQuoteTokenAmountOut Minimum amount of `quoteToken` expected to receive
      */
@@ -460,7 +460,6 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
         {
             protocolToken.safeIncreaseAllowance(address(balancerVault), protocolTokenAmount);
             uint256 quoteTokenAllowance = quoteToken.allowance(address(this), address(balancerVault));
-            quoteToken.safeIncreaseAllowance(address(balancerVault), quoteTokenAmount);
             if (quoteTokenAllowance < quoteTokenAmount) {
                 quoteToken.safeApprove(address(balancerVault), 0);
                 quoteToken.safeIncreaseAllowance(address(balancerVault), quoteTokenAmount);
@@ -495,7 +494,7 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
     function removeLiquidity(
         IBalancerVault.ExitPoolRequest memory request,
         uint256 bptIn
-    ) external onlyElevatedAccess {
+    ) external override onlyElevatedAccess {
         // validate request
         if (request.assets.length != request.minAmountsOut.length || 
             request.assets.length != 2 || 
