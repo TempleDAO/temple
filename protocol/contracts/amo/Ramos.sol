@@ -336,7 +336,7 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
             bptAmountIn, minQuoteTokenAmountOut, rebalancePercentageBoundLow, rebalancePercentageBoundUp,
             postRebalanceSlippage, 1-protocolTokenBalancerPoolIndex, treasuryPriceIndex(), quoteToken
         );
-        emit RebalanceDownExit(bptAmountIn, quoteTokenAmountOut, address(quoteToken));
+        emit RebalanceDownExit(bptAmountIn, quoteTokenAmountOut);
 
         // Collect the fees on the output quote token
         uint256 feeAmt = quoteTokenAmountOut * rebalanceFees.rebalanceExitFeeBps / BPS_PRECISION;
@@ -370,12 +370,12 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
         uint256 feeAmt = quoteTokenAmountIn * rebalanceFees.rebalanceJoinFeeBps / BPS_PRECISION;
         if (feeAmt != 0) {
             emit FeeCollected(address(quoteToken), feeCollector, feeAmt);
-            tokenVault.borrowQuoteToken(feeAmt, feeCollector);
+            quoteToken.safeTransfer(feeCollector, feeAmt);
         }
 
         // Send the remaining quote tokens to the poolHelper
         uint256 joinAmountIn = quoteTokenAmountIn - feeAmt;
-        tokenVault.borrowQuoteToken(joinAmountIn, address(poolHelper));
+        quoteToken.safeTransfer(address(poolHelper), joinAmountIn);
 
         // quoteToken single side join
         uint256 bptOut = poolHelper.joinPool(
@@ -454,6 +454,7 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
             ? (request.maxAmountsIn[0], request.maxAmountsIn[1])
             : (request.maxAmountsIn[1], request.maxAmountsIn[0]);
         tokenVault.borrowProtocolToken(protocolTokenAmount, address(this));
+        tokenVault.borrowQuoteToken(quoteTokenAmount, address(this));
 
         // safe allowance quoteToken and protocolToken
         {
@@ -461,7 +462,8 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
             uint256 quoteTokenAllowance = quoteToken.allowance(address(this), address(balancerVault));
             quoteToken.safeIncreaseAllowance(address(balancerVault), quoteTokenAmount);
             if (quoteTokenAllowance < quoteTokenAmount) {
-                tokenVault.borrowQuoteToken(0, address(balancerVault));
+                quoteToken.safeApprove(address(balancerVault), 0);
+                quoteToken.safeIncreaseAllowance(address(balancerVault), quoteTokenAmount);
             }
         }
 

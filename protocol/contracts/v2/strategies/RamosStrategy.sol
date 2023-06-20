@@ -55,6 +55,7 @@ contract RamosStrategy  is AbstractStrategy, IRamosTokenVault {
     }
 
     function borrowQuoteToken(uint256 amount, address recipient) external {
+        treasuryReservesVault.borrow(amount, address(this));
         quoteToken.safeTransfer(recipient, amount);
     }
 
@@ -66,6 +67,7 @@ contract RamosStrategy  is AbstractStrategy, IRamosTokenVault {
 
     function repayQuoteToken(uint256 amount) external {
         quoteToken.safeTransferFrom(msg.sender, address(this), amount);
+        treasuryReservesVault.repay(amount, address(this));
     }
 
     /**

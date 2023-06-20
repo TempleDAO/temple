@@ -51,7 +51,7 @@ interface IRamos {
 
     // Rebalance events
     event RebalanceUpExit(uint256 bptAmountIn, uint256 protocolTokenAmountOut);
-    event RebalanceDownExit(uint256 bptAmountIn, uint256 quoteTokenAmountOut, address recipient);
+    event RebalanceDownExit(uint256 bptAmountIn, uint256 quoteTokenAmountOut);
     event RebalanceUpJoin(uint256 quoteTokenAmountIn, uint256 bptOut);
     event RebalanceDownJoin(uint256 protocolTokenAmountIn, uint256 bptOut);
     event FeeCollected(address indexed token, address indexed feeCollector, uint256 feeAmount);
