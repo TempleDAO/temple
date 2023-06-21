@@ -52,6 +52,7 @@ contract AbstractStrategyTestAdmin is AbstractStrategyTestBase {
     // ITreasuryReservesVault
     event StrategyIsShuttingDownSet(address indexed strategy, bool isShuttingDown);
     event StrategyShutdownCreditAndDebt(address indexed strategy, address indexed token, uint256 outstandingCredit, uint256 outstandingDebt);
+    event StrategyCreditAndDebtBalance(address indexed strategy, address indexed token, uint256 credit, uint256 debt);
     event Repay(address indexed strategy, address indexed token, address indexed from, uint256 stablesAmount);
 
     function setUp() public {
@@ -164,6 +165,10 @@ contract AbstractStrategyTestAdmin is AbstractStrategyTestBase {
         // The strategy first repays any remaining stables (the mock does 2 * 10 + 5)
         vm.expectEmit(address(trv));
         emit Repay(address(strategy), address(dai), address(strategy), 25);
+
+        // There was an outstanding debt of 35
+        vm.expectEmit(address(trv));
+        emit StrategyCreditAndDebtBalance(address(strategy), address(dai), 0, 35);
 
         // The strategy shuts down
         vm.expectEmit(address(strategy));

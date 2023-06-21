@@ -126,6 +126,7 @@ contract DsrBaseStrategyTestBorrowAndRepay is DsrBaseStrategyTestBase {
     event Shutdown();
     event Repay(address indexed strategy, address indexed token, address indexed from, uint256 amount);
     event StrategyShutdownCreditAndDebt(address indexed strategy, address indexed token, uint256 outstandingCredit, uint256 outstandingDebt);
+    event StrategyCreditAndDebtBalance(address indexed strategy, address indexed token, uint256 credit, uint256 debt);
     event StrategyRemoved(address indexed strategy);
 
     function setUp() public {
@@ -310,6 +311,10 @@ contract DsrBaseStrategyTestBorrowAndRepay is DsrBaseStrategyTestBase {
 
             vm.expectEmit(address(trv));
             emit Repay(address(strategy), address(dai), address(strategy), borrowAmount-1);
+
+            // 1 wei rounding left over as debt
+            vm.expectEmit(address(trv));
+            emit StrategyCreditAndDebtBalance(address(strategy), address(dai), 0, 1);
 
             vm.expectEmit(address(strategy));
             emit Shutdown();

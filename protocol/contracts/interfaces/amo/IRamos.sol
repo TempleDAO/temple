@@ -8,7 +8,7 @@ import { IBalancerBptToken } from "contracts/interfaces/external/balancer/IBalan
 import { IBalancerPoolHelper } from "contracts/interfaces/amo/helpers/IBalancerPoolHelper.sol";
 import { IAuraStaking } from "contracts/interfaces/amo/IAuraStaking.sol";
 import { ITreasuryPriceIndexOracle } from "contracts/interfaces/v2/ITreasuryPriceIndexOracle.sol";
-import { IRamosProtocolTokenVault } from "contracts/interfaces/amo/helpers/IRamosProtocolTokenVault.sol";
+import { IRamosTokenVault } from "contracts/interfaces/amo/helpers/IRamosTokenVault.sol";
 
 /**
  * @title AMO built for a 50/50 balancer pool
@@ -43,7 +43,7 @@ interface IRamos {
     event SetCooldown(uint64 cooldownSecs);
     event SetRebalancePercentageBounds(uint64 belowTpi, uint64 aboveTpi);
     event TpiOracleSet(address indexed tpiOracle);
-    event ProtocolTokenVaultSet(address indexed vault);
+    event TokenVaultSet(address indexed vault);
     event SetPoolHelper(address poolHelper);
     event SetMaxRebalanceAmounts(uint256 bptMaxAmount, uint256 quoteTokenMaxAmount, uint256 protocolTokenMaxAmount);
     event RebalanceFeesSet(uint256 rebalanceJoinFeeBps, uint256 rebalanceExitFeeBps);
@@ -149,12 +149,12 @@ interface IRamos {
     /**
      * @notice The vault from where to borrow and repay the Protocol Token
      */
-    function protocolTokenVault() external view returns (IRamosProtocolTokenVault);
+    function tokenVault() external view returns (IRamosTokenVault);
 
     /**
      * @notice Set the Treasury Price Index (TPI) Oracle
      */
-    function setProtocolTokenVault(address vault) external;
+    function setTokenVault(address vault) external;
 
     /**
      * @notice The Treasury Price Index - the target price of the Treasury, in `quoteTokenToken` terms.
@@ -167,7 +167,7 @@ interface IRamos {
      * BPT tokens are withdrawn from Aura rewards staking contract and used for balancer
      * pool exit. 
      * Ramos rebalance fees are deducted from the amount of `protocolToken` returned from the exit
-     * The remainder `protocolToken` are repaid to the `protocolTokenVault`
+     * The remainder `protocolToken` are repaid to the `TokenVault`
      * @param bptAmountIn amount of BPT tokens going in balancer pool for exit
      * @param minProtocolTokenOut amount of `protocolToken` expected out of balancer pool
      */
@@ -182,15 +182,13 @@ interface IRamos {
      * BPT tokens are withdrawn from Aura rewards staking contract and used for balancer
      * pool exit. 
      * Ramos rebalance fees are deducted from the amount of `quoteToken` returned from the exit
-     * The remainder `quoteToken` are repaid to the recipient
+     * The remainder `quoteToken` are repaid via the token vault
      * @param bptAmountIn Amount of BPT tokens to deposit into balancer pool
      * @param minQuoteTokenAmountOut Minimum amount of `quoteToken` expected to receive
-     * @param recipient Address to which the `quoteToken` withdrawn are transferred
      */
     function rebalanceDownExit(
         uint256 bptAmountIn,
-        uint256 minQuoteTokenAmountOut,
-        address recipient
+        uint256 minQuoteTokenAmountOut
     ) external;
 
     /**
@@ -214,7 +212,7 @@ interface IRamos {
      * Returned BPT tokens are deposited and staked into Aura for rewards using the staking contract.
      * Ramos rebalance fees are deducted from the amount of `protocolToken` input
      * The remainder `protocolToken` are added into the balancer pool
-     * @dev The `protocolToken` are borrowed from the `protocolTokenVault`
+     * @dev The `protocolToken` are borrowed from the `TokenVault`
      * @param protocolTokenAmountIn Amount of `protocolToken` tokens to deposit into balancer pool
      * @param minBptOut Minimum amount of BPT tokens expected to receive
      */
@@ -240,12 +238,10 @@ interface IRamos {
      * Withdraw and unwrap BPT tokens from Aura staking and send to balancer pool to receive both tokens.
      * @param request Request for use in balancer pool exit
      * @param bptIn Amount of BPT tokens to send into balancer pool
-     * @param to Address to which the `quoteToken` received from balancer pool are transferred
      */
     function removeLiquidity(
         IBalancerVault.ExitPoolRequest memory request, 
-        uint256 bptIn, 
-        address to
+        uint256 bptIn
     ) external;
 
     /**
