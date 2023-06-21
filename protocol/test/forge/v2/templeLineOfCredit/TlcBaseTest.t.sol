@@ -15,6 +15,7 @@ import { TempleDebtToken } from "contracts/v2/TempleDebtToken.sol";
 import { LinearWithKinkInterestRateModel } from "contracts/v2/interestRate/LinearWithKinkInterestRateModel.sol";
 import { TempleERC20Token } from "contracts/core/TempleERC20Token.sol";
 import { TreasuryPriceIndexOracle } from "contracts/v2/TreasuryPriceIndexOracle.sol";
+import { ITempleStrategy } from "contracts/interfaces/v2/strategies/ITempleStrategy.sol";
 
 /* solhint-disable func-name-mixedcase, contract-name-camelcase, not-rely-on-time */
 contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
@@ -33,6 +34,7 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
     TreasuryPriceIndexOracle public tpiOracle;
     TreasuryReservesVault public trv;
     TempleDebtToken public dUSD;
+    TempleDebtToken public dTEMPLE;
     uint96 public constant DEFAULT_BASE_INTEREST = 0.01e18; // 1%
     uint96 public constant MIN_BORROW_RATE = 0.05e18;  // 5% interest rate (rate% at 0% UR)
 
@@ -56,12 +58,14 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
             vm.label(address(daiToken), "DAI");
             templeToken = new TempleERC20Token();
             vm.label(address(templeToken), "TEMPLE");
-            dUSD = new TempleDebtToken("Temple Debt", "dUSD", rescuer, executor, DEFAULT_BASE_INTEREST);
+            dUSD = new TempleDebtToken("Temple Debt USD", "dUSD", rescuer, executor, DEFAULT_BASE_INTEREST);
+            dTEMPLE = new TempleDebtToken("Temple Debt TEMPLE", "dTEMPLE", rescuer, executor, DEFAULT_BASE_INTEREST);
             vm.label(address(dUSD), "dUSD");
+            vm.label(address(dTEMPLE), "dTEMPLE");
         }
 
         tpiOracle = new TreasuryPriceIndexOracle(rescuer, executor, templePrice, 0.1e18, 0);
-        trv = new TreasuryReservesVault(rescuer, executor, address(templeToken), address(daiToken), address(dUSD), address(tpiOracle));
+        trv = new TreasuryReservesVault(rescuer, executor, address(tpiOracle));
         
         daiInterestRateModel = new LinearWithKinkInterestRateModel(
             rescuer,
@@ -86,24 +90,33 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
             "TempleLineOfCredit",
             address(trv), 
             address(tlc), 
-            address(templeToken)
+            address(daiToken)
         );
+
+        vm.startPrank(executor);
+
+        // Add the TLC Strategy into TRV so it can borrow DAI
+        {
+            dUSD.addMinter(address(trv));
+            dTEMPLE.addMinter(address(trv));
+
+            ITempleStrategy.AssetBalance[] memory debtCeiling = new ITempleStrategy.AssetBalance[](1);
+            debtCeiling[0] = ITempleStrategy.AssetBalance(address(daiToken), BORROW_CEILING);
+            trv.addStrategy(address(tlcStrategy), 0, debtCeiling);
+            trv.setBorrowToken(daiToken, address(0), 0, 0, address(dUSD));
+            trv.setBorrowToken(templeToken, address(0), 0, 0, address(dTEMPLE));
+
+            deal(address(daiToken), address(trv), TRV_STARTING_BALANCE, true);
+        }
 
         // Post create steps
         {
-            vm.startPrank(executor);
             tlc.setTlcStrategy(address(tlcStrategy));
             tlc.setWithdrawCollateralRequestConfig(COLLATERAL_REQUEST_MIN_SECS, COLLATERAL_REQUEST_MAX_SECS);
             tlc.setBorrowRequestConfig(BORROW_REQUEST_MIN_SECS, BORROW_REQUEST_MAX_SECS);
         }
 
-        // Add the TLC Strategy into TRV so it can borrow DAI
-        {
-            dUSD.addMinter(address(trv));
-            trv.addNewStrategy(address(tlcStrategy), BORROW_CEILING, 0);
-            vm.stopPrank();
-            deal(address(daiToken), address(trv), TRV_STARTING_BALANCE, true);
-        }
+        vm.stopPrank();
     }
 
     function defaultDaiConfig() internal view returns (ITempleLineOfCredit.DebtTokenConfig memory) {

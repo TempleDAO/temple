@@ -22,6 +22,8 @@ contract RamosStrategy  is AbstractStrategy, IRamosProtocolTokenVault {
      */
     IRamos public ramos;
 
+    IERC20 public immutable stableToken;
+
     ITempleERC20Token public immutable templeToken;
 
     event BorrowAndAddLiquidity(uint256 amount);
@@ -33,10 +35,21 @@ contract RamosStrategy  is AbstractStrategy, IRamosProtocolTokenVault {
         string memory _strategyName,
         address _treasuryReservesVault,
         address _ramos,
-        address _templeToken
+        address _templeToken,
+        address _stableToken
     ) AbstractStrategy(_initialRescuer, _initialExecutor, _strategyName, _treasuryReservesVault) {
         ramos = IRamos(_ramos);
         templeToken = ITempleERC20Token(_templeToken);
+        stableToken = IERC20(_stableToken);
+        _updateTrvApprovals(address(0), _treasuryReservesVault);
+    }
+
+    /**
+     * @notice A hook where strategies can optionally update approvals when the trv is updated
+     */
+    function _updateTrvApprovals(address oldTrv, address newTrv) internal override {
+        _setMaxAllowance(stableToken, oldTrv, newTrv);
+        _setMaxAllowance(templeToken, oldTrv, newTrv);
     }
 
     /**
@@ -47,14 +60,12 @@ contract RamosStrategy  is AbstractStrategy, IRamosProtocolTokenVault {
     }
 
     function borrowProtocolToken(uint256 amount, address recipient) external onlyElevatedAccess {
-        // @todo This should be sourced from the TRV, so the strategy can be minted dTemple
-        templeToken.mint(recipient, amount);
+        treasuryReservesVault.borrow(templeToken, amount, recipient);
     }
 
     function repayProtocolToken(uint256 amount) external onlyElevatedAccess {
-        // @todo This should be repaid to the TRV, so the dTemple can be burned
         templeToken.safeTransferFrom(msg.sender, address(this), amount);
-        templeToken.burn(amount);
+        treasuryReservesVault.repay(templeToken, amount, address(this));
     }
 
     /**
@@ -102,9 +113,9 @@ contract RamosStrategy  is AbstractStrategy, IRamosProtocolTokenVault {
      * @notice Borrow a fixed amount from the Treasury Reserves and add liquidity
      * These stables are sent to the RAMOS to add liquidity and stake BPT
      */
-    function borrowAndAddLiquidity(uint256 _amount, IBalancerVault.JoinPoolRequest memory _requestData) external onlyElevatedAccess {
+    function borrowAndAddLiquidity(uint256 _amount, IBalancerVault.JoinPoolRequest calldata _requestData) external onlyElevatedAccess {
         // Borrow the DAI and send it to RAMOS. This will also mint `dUSD` debt.
-        treasuryReservesVault.borrow(_amount, address(ramos));
+        treasuryReservesVault.borrow(stableToken, _amount, address(ramos));
         emit BorrowAndAddLiquidity(_amount);
 
         // Add liquidity
@@ -130,14 +141,14 @@ contract RamosStrategy  is AbstractStrategy, IRamosProtocolTokenVault {
      * @notice Remove liquidity and repay debt back to the Treasury Reserves
      * The stables from the removed liquidity are sent from RAMOS to this address to repay debt
      */
-    function removeLiquidityAndRepay(IBalancerVault.ExitPoolRequest memory _requestData, uint256 _bptAmount) external onlyElevatedAccess {
+    function removeLiquidityAndRepay(IBalancerVault.ExitPoolRequest calldata _requestData, uint256 _bptAmount) external onlyElevatedAccess {
         // Remove liquidity
         ramos.removeLiquidity(_requestData, _bptAmount, address(this));
 
         // Repay debt back to the Treasury Reserves
         uint256 stableBalance = stableToken.balanceOf(address(this));
 
-        treasuryReservesVault.repay(stableBalance, address(this));
+        treasuryReservesVault.repay(stableToken, stableBalance, address(this));
         emit RemoveLiquidityAndRepay(stableBalance);
     }
 
@@ -157,7 +168,7 @@ contract RamosStrategy  is AbstractStrategy, IRamosProtocolTokenVault {
      * @return shutdownData abi encoded data of struct `ShutdownParams`
      */
     function populateShutdownData(
-        bytes memory populateParamsData
+        bytes calldata populateParamsData
     ) external virtual override returns (
         bytes memory shutdownData
     ) {
@@ -174,8 +185,18 @@ contract RamosStrategy  is AbstractStrategy, IRamosProtocolTokenVault {
      * First unstake all BPT and liquidate into stables, and then repay the stables to the TRV.
      * @param shutdownData abi encoded data of struct `PopulateShutdownParams`
      */
-    function doShutdown(bytes memory shutdownData) internal virtual override {
+    function _doShutdown(bytes calldata shutdownData) internal virtual override {
         (ShutdownParams memory params) = abi.decode(shutdownData, (ShutdownParams));
         ramos.removeLiquidity(params.requestData, params.bptAmount, address(this));
+
+        uint256 stableBalance = stableToken.balanceOf(address(this));
+        if (stableBalance != 0) {
+            treasuryReservesVault.repay(stableToken, stableBalance, address(this));
+        }
+
+        uint256 templeBalance = templeToken.balanceOf(address(this));
+        if (templeBalance != 0) {
+            treasuryReservesVault.repay(templeToken, templeBalance, address(this));
+        }
     }
 }

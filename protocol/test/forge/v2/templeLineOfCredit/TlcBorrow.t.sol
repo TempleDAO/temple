@@ -96,7 +96,7 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
             tlc.requestBorrow(1_000e18);
 
             changePrank(executor);
-            tlc.setExplicitAccess(operator, TempleLineOfCredit.cancelBorrowRequest.selector, true);
+            setExplicitAccess(tlc, address(operator), TempleLineOfCredit.cancelBorrowRequest.selector, true);
 
             changePrank(operator);
             vm.expectEmit(address(tlc));
@@ -324,10 +324,10 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
         }
 
         // Gas tests
-        // borrow(alice, 10 ether, 1 ether, BORROW_REQUEST_MIN_SECS);
-        // borrow(unauthorizedUser, 10 ether, 1 ether, BORROW_REQUEST_MIN_SECS);
-        // borrow(rescuer, 10 ether, 1 ether, BORROW_REQUEST_MIN_SECS);
-        // borrow(rescuer, 0.1e18, 1 ether, BORROW_REQUEST_MIN_SECS);
+        // borrow(alice, 10000 ether, 1000 ether, BORROW_REQUEST_MIN_SECS);
+        // borrow(unauthorizedUser, 10000 ether, 1000 ether, BORROW_REQUEST_MIN_SECS);
+        // borrow(rescuer, 10000 ether, 1000 ether, BORROW_REQUEST_MIN_SECS);
+        // borrow(rescuer, 10000 ether, 1000 ether, BORROW_REQUEST_MIN_SECS);
     }
 
     function test_borrow_differentRecipient() public {

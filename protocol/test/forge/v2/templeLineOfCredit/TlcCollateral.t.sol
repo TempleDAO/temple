@@ -166,7 +166,7 @@ contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
             tlc.requestRemoveCollateral(50);
 
             changePrank(executor);
-            tlc.setExplicitAccess(operator, TempleLineOfCredit.cancelRemoveCollateralRequest.selector, true);
+            setExplicitAccess(tlc, address(operator), TempleLineOfCredit.cancelRemoveCollateralRequest.selector, true);
 
             changePrank(operator);
             vm.expectEmit(address(tlc));

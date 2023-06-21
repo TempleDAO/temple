@@ -9,7 +9,6 @@ import { mulDiv } from "@prb/math/src/Common.sol";
 import { ITempleDebtToken } from "contracts/interfaces/v2/ITempleDebtToken.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { CompoundedInterest } from "contracts/v2/interestRate/CompoundedInterest.sol";
-import { CompoundedInterest } from "contracts/v2/interestRate/CompoundedInterest.sol";
 import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
 import { SafeCast } from "contracts/common/SafeCast.sol";
 
@@ -427,7 +426,7 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
      * @notice Checkpoint multiple accounts (risk premium) interest (no principal) owed up to this block.
      * @dev Provided in case there needs to be block synchronisation on the total debt.
      */
-    function checkpointDebtorsInterest(address[] memory _debtors) external override {
+    function checkpointDebtorsInterest(address[] calldata _debtors) external override {
         uint256 _length = _debtors.length;
         for (uint256 i; i < _length; ++i) {
             _checkpointDebtor(debtors[_debtors[i]]);

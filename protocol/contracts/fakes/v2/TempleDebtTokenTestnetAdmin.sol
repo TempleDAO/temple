@@ -2,6 +2,7 @@ pragma solidity ^0.8.17;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { ITempleDebtToken } from "contracts/interfaces/v2/ITempleDebtToken.sol";
+import { ITempleElevatedAccess } from "contracts/interfaces/v2/access/ITempleElevatedAccess.sol";
 
 contract TempleDebtTokenTestnetAdmin {
 
@@ -55,7 +56,7 @@ contract TempleDebtTokenTestnetAdmin {
         dUSD.acceptExecutor();
     }
     
-    function setExplicitAccess(address allowedCaller, bytes4 fnSelector, bool value) external {
-        dUSD.setExplicitAccess(allowedCaller, fnSelector, value);
+    function setExplicitAccess(address allowedCaller, ITempleElevatedAccess.ExplicitAccess[] memory access) external {
+        dUSD.setExplicitAccess(allowedCaller, access);
     }
 }

@@ -8,6 +8,7 @@ import { IInterestRateModel } from "contracts/interfaces/v2/interestRate/IIntere
 import { TempleLineOfCredit } from "contracts/v2/templeLineOfCredit/TempleLineOfCredit.sol";
 import { TreasuryReservesVault } from "contracts/v2/TreasuryReservesVault.sol";
 import { TlcStrategy } from "contracts/v2/templeLineOfCredit/TlcStrategy.sol";
+import { ITempleStrategy } from "contracts/interfaces/v2/strategies/ITempleStrategy.sol";
 
 /* solhint-disable func-name-mixedcase, contract-name-camelcase, not-rely-on-time */
 contract TempleLineOfCreditTest_Admin is TlcBaseTest {
@@ -109,19 +110,24 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
         assertEq(address(tlc.tlcStrategy()), address(tlcStrategy));
         assertEq(address(tlc.treasuryReservesVault()), address(trv));
 
-        TreasuryReservesVault newTrv = new TreasuryReservesVault(rescuer, executor, address(templeToken), address(daiToken), address(dUSD), address(tpiOracle));
+        TreasuryReservesVault newTrv = new TreasuryReservesVault(rescuer, executor, address(tpiOracle));
         TlcStrategy newTlcStrategy = new TlcStrategy(
             rescuer, 
             executor, 
             "TempleLineOfCredit",
             address(newTrv), 
-            address(tlc), 
-            address(templeToken)
+            address(tlc),
+            address(daiToken)
         );
 
         // Add the new strategy with the ceiling at 100%
         // so the interest rate needs updating.
-        newTrv.addNewStrategy(address(newTlcStrategy), 15_000e18, 0);
+        {
+            ITempleStrategy.AssetBalance[] memory debtCeiling = new ITempleStrategy.AssetBalance[](1);
+            debtCeiling[0] = ITempleStrategy.AssetBalance(address(daiToken), 15_000e18);
+            newTrv.addStrategy(address(newTlcStrategy), 0, debtCeiling);
+            newTrv.setBorrowToken(daiToken, address(0), 0, 0, address(dUSD));
+        }
 
         {
             vm.expectEmit(address(tlc));
@@ -485,7 +491,7 @@ contract TempleLineOfCreditTestInterestAccrual is TlcBaseTest {
         }
 
         vm.prank(executor);
-        trv.setStrategyDebtCeiling(address(tlcStrategy), 50_000e18);
+        trv.setStrategyDebtCeiling(address(tlcStrategy), daiToken, 50_000e18);
 
         // Still the same after the TRV cap was halved
         {

@@ -350,7 +350,7 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
      * then no action is performed for that account.
      */
     function batchLiquidate(
-        address[] memory accounts
+        address[] calldata accounts
     ) external override returns (
         uint256 totalCollateralClaimed,
         uint256 totalDebtWiped
@@ -381,7 +381,7 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
         // burn the temple collateral by repaying to TRV. This will burn the equivalent dUSD debt too.
         if (totalCollateralClaimed != 0) {
             templeToken.safeIncreaseAllowance(address(treasuryReservesVault), totalCollateralClaimed);
-            treasuryReservesVault.repayTemple(totalCollateralClaimed, address(tlcStrategy));
+            treasuryReservesVault.repay(templeToken, totalCollateralClaimed, address(tlcStrategy));
             totalCollateral -= totalCollateralClaimed;
         }
 
@@ -563,7 +563,7 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
      * requests for Collateral Withdraw or Borrow. 
      */
     function computeLiquidity(
-        address[] memory accounts,
+        address[] calldata accounts,
         bool includePendingRequests
     ) external override view returns (LiquidationStatus[] memory status) {
         uint256 _numAccounts = accounts.length;
@@ -672,7 +672,7 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
         // Set the debt ceiling and price.
         {
             ITreasuryReservesVault _trv = treasuryReservesVault;
-            _cache.trvDebtCeiling = _trv.strategyDebtCeiling(address(tlcStrategy));
+            _cache.trvDebtCeiling = _trv.strategyDebtCeiling(address(tlcStrategy), daiToken);
             _cache.price = _trv.treasuryPriceIndex();
         }
         
@@ -793,7 +793,7 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
         // Pull the stables, and repay the TRV debt on behalf of the strategy.
         {
             daiToken.safeTransferFrom(_fromAccount, address(this), _repayAmount);
-            treasuryReservesVault.repay(_repayAmount, address(tlcStrategy));
+            treasuryReservesVault.repay(daiToken, _repayAmount, address(tlcStrategy));
         }
     }
 

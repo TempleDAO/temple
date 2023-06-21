@@ -94,14 +94,19 @@ abstract contract TempleElevatedAccess is ITempleElevatedAccess {
     }
 
     /**
-     * @notice Grant `allowedCaller` the rights to call the function determined by the selector `fnSelector`
+     * @notice Grant `allowedCaller` the rights to call the function selectors in the access list.
      * @dev fnSelector == bytes4(keccak256("fn(argType1,argType2,...)"))
      */
-    function setExplicitAccess(address allowedCaller, bytes4 fnSelector, bool value) external override onlyElevatedAccess {
+    function setExplicitAccess(address allowedCaller, ExplicitAccess[] calldata access) external override onlyElevatedAccess {
         if (allowedCaller == address(0)) revert CommonEventsAndErrors.InvalidAddress();
-        if (fnSelector == bytes4(0)) revert CommonEventsAndErrors.InvalidParam();
-        emit ExplicitAccessSet(allowedCaller, fnSelector, value);
-        explicitFunctionAccess[allowedCaller][fnSelector] = value;
+        uint256 _length = access.length;
+        ExplicitAccess memory _access;
+        for (uint256 i; i < _length; ++i) {
+            _access = access[i];
+            if (_access.fnSelector == bytes4(0)) revert CommonEventsAndErrors.InvalidParam();
+            emit ExplicitAccessSet(allowedCaller, _access.fnSelector, _access.allowed);
+            explicitFunctionAccess[allowedCaller][_access.fnSelector] = _access.allowed;
+        }
     }
 
     function isElevatedAccess(address caller, bytes4 fnSelector) internal view returns (bool) {

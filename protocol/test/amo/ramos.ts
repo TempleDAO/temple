@@ -226,8 +226,7 @@ describe("RAMOS", async () => {
         
         await amo.setPoolHelper(poolHelper.address);
         await amo.setTpiOracle(tpiOracle.address);
-        await setExplicitAccess(amoStaking, "withdrawAndUnwrap", amo.address, true);
-        await setExplicitAccess(amoStaking, "depositAndStake", amo.address, true);
+        await setExplicitAccess(amoStaking, amo.address, ["withdrawAndUnwrap", "depositAndStake"], true);
         await amoStaking.setRewardsRecipient(executorAddress);
         await bbaUsdToken.connect(executor).transfer(amo.address, toAtto(500_000));
         await templeMultisigConnect.addMinter(tokenVault.address);
@@ -686,7 +685,7 @@ describe("RAMOS", async () => {
 
             // success
             await expect(amo.rebalanceUpJoin(amountIn, bptOut))
-                .to.emit(amo, "RebalanceUpJoin").withArgs(amountIn, bptOut)
+                .to.emit(amo, "RebalanceUpJoin").withArgs(amountIn, bptOut, 0)
                 .to.emit(auraBooster, "Deposited").withArgs(amoStaking.address, bbaUsdTempleAuraPID, bptOut);
 
             const stakedBalanceAfter = await bbaUsdTempleAuraRewardPool.balanceOf(amoStaking.address);
@@ -723,8 +722,7 @@ describe("RAMOS", async () => {
 
             // success
             await expect(amo.rebalanceUpJoin(amountIn, bptOut))
-                .to.emit(amo, "FeeCollected").withArgs(bbaUsdToken.address, await feeCollector.getAddress(), feeAmt)
-                .to.emit(amo, "RebalanceUpJoin").withArgs(amountIn, bptOut)
+                .to.emit(amo, "RebalanceUpJoin").withArgs(amountIn, bptOut, feeAmt)
                 .to.emit(auraBooster, "Deposited").withArgs(amoStaking.address, bbaUsdTempleAuraPID, bptOut);
 
             const stakedBalanceAfter = await bbaUsdTempleAuraRewardPool.balanceOf(amoStaking.address);
@@ -777,7 +775,7 @@ describe("RAMOS", async () => {
 
             // Success
             await expect(amo.rebalanceDownExit(bptIn, exitTokenAmountOut, amo.address))
-                .to.emit(amo, "RebalanceDownExit").withArgs(bptIn, exitTokenAmountOut, amo.address)
+                .to.emit(amo, "RebalanceDownExit").withArgs(bptIn, exitTokenAmountOut, 0)
                 .to.emit(auraBooster, "Withdrawn").withArgs(amoStaking.address, bbaUsdTempleAuraPID, bptIn);
 
             const quoteTokenBalanceAfter = await bbaUsdToken.balanceOf(amo.address);
@@ -811,19 +809,19 @@ describe("RAMOS", async () => {
             const bptIn = reqData.bptIn;
             await amo.setMaxRebalanceAmounts(bptIn, bptIn, bptIn);
 
+            const quoteTokenBalanceAmoBefore = await bbaUsdToken.balanceOf(amo.address);
             const quoteTokenBalanceAlanBefore = await bbaUsdToken.balanceOf(alanAddress);
             const stakedBalanceBefore = await bbaUsdTempleAuraRewardPool.balanceOf(amoStaking.address);
 
             // Success
             await expect(amo.rebalanceDownExit(bptIn, exitTokenAmountOut, alanAddress))
-                .to.emit(amo, "RebalanceDownExit").withArgs(bptIn, exitTokenAmountOut, alanAddress)
+                .to.emit(amo, "RebalanceDownExit").withArgs(bptIn, exitTokenAmountOut, 0)
                 .to.emit(auraBooster, "Withdrawn").withArgs(amoStaking.address, bbaUsdTempleAuraPID, bptIn);
 
             const quoteTokenBalanceAmoAfter = await bbaUsdToken.balanceOf(amo.address);
             const quoteTokenBalanceAlanAfter = await bbaUsdToken.balanceOf(alanAddress);
 
-            // No bba left in ramos -- all sent to alan
-            expect(quoteTokenBalanceAmoAfter).to.eq(0);
+            expect(quoteTokenBalanceAmoAfter).to.eq(quoteTokenBalanceAmoBefore);
             expect(quoteTokenBalanceAlanAfter).to.gte(quoteTokenBalanceAlanBefore.add(exitTokenAmountOut));
             expect(await bbaUsdTempleAuraRewardPool.balanceOf(amoStaking.address)).to.eq(stakedBalanceBefore.sub(bptIn));
         });
@@ -850,15 +848,16 @@ describe("RAMOS", async () => {
 
             // Success
             await expect(amo.rebalanceDownExit(bptIn, quoteTokenAmountOut, alanAddress))
-                .to.emit(amo, "FeeCollected").withArgs(bbaUsdToken.address, await feeCollector.getAddress(), feeAmt)
-                .to.emit(amo, "RebalanceDownExit").withArgs(bptIn, quoteTokenAmountOut, alanAddress)
+                .to.emit(amo, "RebalanceDownExit").withArgs(bptIn, quoteTokenAmountOut.sub(feeAmt), feeAmt)
                 .to.emit(auraBooster, "Withdrawn").withArgs(amoStaking.address, bbaUsdTempleAuraPID, bptIn);
 
             // The fee collector gets the expected fees - paid in stables
             expect(await bbaUsdToken.balanceOf(feeCollector.getAddress())).eq(feeAmt);
 
             const quoteTokenBalanceAlanAfter = await bbaUsdToken.balanceOf(alanAddress);
-            const alanExpected = amoBalanceBefore.add(quoteTokenAmountOut).sub(feeAmt);
+            const alanExpected = quoteTokenAmountOut.sub(feeAmt);
+            const amoBalanceAfter = await bbaUsdToken.balanceOf(amo.address);
+            expect(amoBalanceAfter).to.eq(amoBalanceBefore);
             expect(quoteTokenBalanceAlanAfter).to.eq(alanExpected);
             expect(await bbaUsdTempleAuraRewardPool.balanceOf(amoStaking.address)).to.eq(stakedBalanceBefore.sub(bptIn));
         });
@@ -908,8 +907,13 @@ describe("RAMOS", async () => {
             await amo.setMaxRebalanceAmounts(totalBptStaked, bptIn, bptIn);
             await expect(amo.rebalanceUpExit(totalBptStaked, templeAmountOut))
                 .to.be.revertedWithCustomError(poolHelper, "HighSlippage");
+
+            // The actual amount pulled out from the exit is slightly more than what we got a quote for.
+            const actualTokenRepaid = ethers.utils.parseEther("20001.844178172997797619");
+            expect(actualTokenRepaid).to.be.approximately(templeAmountOut, ethers.utils.parseEther("1"));
             await expect(amo.rebalanceUpExit(bptIn, templeAmountOut))
-                .to.emit(amo, "RebalanceUpExit");
+                .to.emit(amo, "RebalanceUpExit")
+                .withArgs(bptIn, actualTokenRepaid, 0);
             const newMaxAmount = toAtto(200_000);
             await amo.setMaxRebalanceAmounts(newMaxAmount, newMaxAmount, newMaxAmount);
             // stake some more to have enough bpt to unwrap and trigger price drop
@@ -958,10 +962,9 @@ describe("RAMOS", async () => {
             const actualTempleAmountOut = ethers.utils.parseEther("10.000062858762470863");
             expect(actualTempleAmountOut).to.be.approximately(minTempleAmountOut, ethers.utils.parseEther("0.0001"));
             const feeAmt = actualTempleAmountOut.mul(100).div(10_000);
-
             await expect(amo.rebalanceUpExit(bptIn, minTempleAmountOut))
-                .to.emit(amo, "FeeCollected").withArgs(ethers.utils.getAddress(templeToken.address), await feeCollector.getAddress(), feeAmt)
-                .to.emit(amo, "RebalanceUpExit");
+                .to.emit(amo, "RebalanceUpExit")
+                .withArgs(bptIn, actualTempleAmountOut.sub(feeAmt), feeAmt);
 
             // Fee collector gets the Temple, total supply reduces by the correct amount.
             expect(await templeToken.balanceOf(feeCollector.getAddress())).eq(feeAmt);
@@ -1009,7 +1012,7 @@ describe("RAMOS", async () => {
             // Success
             await expect(amo.rebalanceDownJoin(reqData.templeAmountIn, reqData.bptOut))
                 .to.emit(amo, "RebalanceDownJoin")
-                .withArgs(reqData.templeAmountIn, reqData.bptOut);
+                .withArgs(reqData.templeAmountIn, reqData.bptOut, 0);
 
             const newMaxAmount = toAtto(1_000_000);
             await amo.setMaxRebalanceAmounts(newMaxAmount, newMaxAmount, newMaxAmount);
@@ -1046,9 +1049,8 @@ describe("RAMOS", async () => {
 
             // Success
             await expect(amo.rebalanceDownJoin(templeAmountIn, reqData.bptOut))
-                .to.emit(amo, "FeeCollected").withArgs(ethers.utils.getAddress(templeToken.address), await feeCollector.getAddress(), feeAmt)
                 .to.emit(amo, "RebalanceDownJoin")
-                .withArgs(templeAmountIn, reqData.bptOut);
+                .withArgs(templeAmountIn, reqData.bptOut, feeAmt);
 
             expect(await templeToken.balanceOf(feeCollector.getAddress())).eq(feeAmt);
             expect(await templeToken.totalSupply()).eq(totalSupplyBefore.add(templeAmountIn));

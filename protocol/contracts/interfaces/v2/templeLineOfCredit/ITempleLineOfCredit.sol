@@ -96,7 +96,7 @@ interface ITempleLineOfCredit is ITlcDataTypes, ITlcEventsAndErrors {
      * then no action is performed for that account.
      */
     function batchLiquidate(
-        address[] memory accounts
+        address[] calldata accounts
     ) external returns (
         uint256 totalCollateralClaimed,
         uint256 totalDaiDebtWiped
@@ -214,7 +214,7 @@ interface ITempleLineOfCredit is ITlcDataTypes, ITlcEventsAndErrors {
      * requests for Collateral Withdraw or Borrow. 
      */
     function computeLiquidity(
-        address[] memory accounts,
+        address[] calldata accounts,
         bool includePendingRequests
     ) external view returns (LiquidationStatus[] memory status);
 

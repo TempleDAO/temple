@@ -50,11 +50,10 @@ interface IRamos {
     event FeeCollectorSet(address indexed feeCollector);
 
     // Rebalance events
-    event RebalanceUpExit(uint256 bptAmountIn, uint256 protocolTokenAmountOut);
-    event RebalanceDownExit(uint256 bptAmountIn, uint256 quoteTokenAmountOut, address recipient);
-    event RebalanceUpJoin(uint256 quoteTokenAmountIn, uint256 bptOut);
-    event RebalanceDownJoin(uint256 protocolTokenAmountIn, uint256 bptOut);
-    event FeeCollected(address indexed token, address indexed feeCollector, uint256 feeAmount);
+    event RebalanceUpExit(uint256 bptAmountIn, uint256 protocolTokenRepaid, uint256 protocolTokenFee);
+    event RebalanceDownExit(uint256 bptAmountIn, uint256 quoteTokenRepaid, uint256 quoteTokenFee);
+    event RebalanceUpJoin(uint256 quoteTokenAmountIn, uint256 bptTokensStaked, uint256 quoteTokenFee);
+    event RebalanceDownJoin(uint256 protocolTokenAmountIn, uint256 bptTokensStaked, uint256 protocolTokenFee);
 
     // Add/remove liquidity events
     event LiquidityAdded(uint256 quoteTokenAdded, uint256 protocolTokenAdded, uint256 bptReceived);

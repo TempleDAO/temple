@@ -15,6 +15,11 @@ interface ITempleElevatedAccess {
     event NewExecutorProposed(address indexed oldExecutor, address indexed oldProposedExecutor, address indexed newProposedExecutor);
     event NewExecutorAccepted(address indexed oldExecutor, address indexed newExecutor);
 
+    struct ExplicitAccess {
+        bytes4 fnSelector;
+        bool allowed;
+    }
+
     /**
      * @notice A set of addresses which are approved to execute emergency operations.
      */ 
@@ -68,8 +73,8 @@ interface ITempleElevatedAccess {
     function acceptExecutor() external;
 
     /**
-     * @notice Grant `allowedCaller` the rights to call the function determined by the selector `fnSelector`
+     * @notice Grant `allowedCaller` the rights to call the function selectors in the access list.
      * @dev fnSelector == bytes4(keccak256("fn(argType1,argType2,...)"))
      */
-    function setExplicitAccess(address allowedCaller, bytes4 fnSelector, bool value) external;
+    function setExplicitAccess(address allowedCaller, ExplicitAccess[] calldata access) external;
 }

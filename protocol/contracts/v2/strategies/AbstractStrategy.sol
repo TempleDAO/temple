@@ -7,7 +7,6 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import { ITempleStrategy, ITreasuryReservesVault } from "contracts/interfaces/v2/strategies/ITempleStrategy.sol";
-import { ITempleDebtToken } from "contracts/interfaces/v2/ITempleDebtToken.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
 
@@ -32,16 +31,6 @@ abstract contract AbstractStrategy is ITempleStrategy, TempleElevatedAccess {
     ITreasuryReservesVault public override treasuryReservesVault;
 
     /**
-     * @notice The address of the stable token (eg DAI) used to value all strategy's assets and debt.
-     */
-    IERC20 public immutable override stableToken;
-
-    /**
-     * @notice The address of the internal debt token used by all strategies.
-     */
-    ITempleDebtToken public immutable override internalDebtToken;
-
-    /**
      * @notice The Strategy Executor may set manual updates to asset balances
      * if they cannot be reported automatically - eg a staked position with no receipt token.
      */
@@ -55,25 +44,17 @@ abstract contract AbstractStrategy is ITempleStrategy, TempleElevatedAccess {
     ) TempleElevatedAccess(_initialRescuer, _initialExecutor) {
         strategyName = _strategyName;
         treasuryReservesVault = ITreasuryReservesVault(_treasuryReservesVault);
-        stableToken = treasuryReservesVault.stableToken();
-        internalDebtToken = treasuryReservesVault.internalDebtToken();
-
-        // Give the TRV rights to pull back the stables at any time.
-        stableToken.safeApprove(_treasuryReservesVault, type(uint256).max);
     }
 
     /**
-     * @notice Governance can set the address of the treasury reserves vault.
+     * @notice Executors can set the address of the treasury reserves vault.
      */
     function setTreasuryReservesVault(address _trv) external override onlyElevatedAccess {
         if (_trv == address(0)) revert CommonEventsAndErrors.InvalidAddress();
 
-        // Remove stable approvals from the old TRV, and give to the new TRV.
-        stableToken.safeApprove(address(treasuryReservesVault), 0);
-        stableToken.safeApprove(_trv, 0);
-        stableToken.safeApprove(_trv, type(uint256).max);
-
         emit TreasuryReservesVaultSet(_trv);
+        _updateTrvApprovals(address(treasuryReservesVault), _trv);
+
         treasuryReservesVault = ITreasuryReservesVault(_trv);
 
         string memory trvVersion = treasuryReservesVault.apiVersion();
@@ -82,20 +63,26 @@ abstract contract AbstractStrategy is ITempleStrategy, TempleElevatedAccess {
     }
 
     /**
-     * @notice A strategy's current amount borrowed from the TRV, and how much remaining is free to borrow
-     * @dev The remaining amount free to borrow is bound by:
-     *   1/ How much stables is globally available (in this contract + in the base strategy)
-     *   2/ The amount each individual strategy is whitelisted to borrow.
-     * @return debt The current debt position for the strategy, 
-     * @return availableToBorrow The remaining amount which the strategy can borrow
-     * @return debtCeiling The debt ceiling of the stratgy
+     * @notice A hook where strategies can optionally update approvals when the trv is updated
      */
-    function trvBorrowPosition() external override view returns (
-        uint256 debt, 
-        uint256 availableToBorrow,
-        uint256 debtCeiling
-    ) {
-        return treasuryReservesVault.strategyBorrowPosition(address(this));
+    function _updateTrvApprovals(
+        address oldTrv, 
+        address newTrv
+    ) internal virtual;
+    
+    /**
+     * @dev Optionally remove max allowance for a given token from the old spender, and give to the new spender.
+     */
+    function _setMaxAllowance(IERC20 token, address oldSpender, address newSpender) internal {
+        if (oldSpender != address(0)) {
+            token.safeApprove(oldSpender, 0);
+        }
+
+        uint256 _allowance = token.allowance(address(this), newSpender);
+        if (_allowance < type(uint256).max) {
+            token.safeApprove(newSpender, 0);
+            token.safeIncreaseAllowance(newSpender, type(uint256).max);
+        }
     }
 
     /**
@@ -110,7 +97,7 @@ abstract contract AbstractStrategy is ITempleStrategy, TempleElevatedAccess {
      * if they cannot be reported automatically - eg a staked position with no receipt token.
      */
     function setManualAdjustments(
-        AssetBalanceDelta[] memory adjustments
+        AssetBalanceDelta[] calldata adjustments
     ) external virtual onlyElevatedAccess {
         delete _manualAdjustments;
         uint256 _length = adjustments.length;
@@ -127,26 +114,6 @@ abstract contract AbstractStrategy is ITempleStrategy, TempleElevatedAccess {
         AssetBalanceDelta[] memory adjustments
     ) {
         return _manualAdjustments;
-    }
-
-    /**
-     * @notice The strategy's current asset balances, any manual adjustments and the current debt
-     * of the strategy.
-     * 
-     * This will be used to report equity performance: `sum($assetValue +- $manualAdj) - debt`
-     * The conversion of each asset price into the stable token (eg DAI) will be done off-chain
-     * along with formulating the union of asset balances and manual adjustments
-     */
-    function balanceSheet() public virtual override view returns (
-        AssetBalance[] memory assetBalances, 
-        AssetBalanceDelta[] memory manAdjustments, 
-        uint256 debt
-    ) {
-        return (
-            latestAssetBalances(), 
-            _manualAdjustments,
-            internalDebtToken.balanceOf(address(this))
-        );
     }
 
     /**
@@ -181,7 +148,7 @@ abstract contract AbstractStrategy is ITempleStrategy, TempleElevatedAccess {
      * The intention is for clients to call as 'static', like a view
      */
     function populateShutdownData(
-        bytes memory populateParamsData
+        bytes calldata populateParamsData
     ) external virtual override returns (
         bytes memory shutdownParamsData
     // solhint-disable-next-line no-empty-blocks
@@ -189,36 +156,35 @@ abstract contract AbstractStrategy is ITempleStrategy, TempleElevatedAccess {
         // Not implemented by default.
     }
 
+    /**
+     * @notice The strategy executor can shutdown this strategy, only after Executors have
+     * marked the strategy as `isShuttingDown` in the TRV.
+     * This should handle all liquidations and send all funds back to the TRV, and will then call `TRV.shutdown()`
+     * to apply the shutdown.
+     * @dev Each strategy may require a different set of params to do the shutdown. It can abi encode/decode
+     * that data off chain, or by first calling populateShutdownData()
+     */
     function automatedShutdown(
-        bytes memory shutdownParamsData
-    ) external virtual override onlyElevatedAccess returns (
-        uint256 stablesRepaid
-    ) {
+        bytes calldata shutdownParamsData
+    ) external virtual override onlyElevatedAccess {
         // Instruct the underlying strategy to liquidate
-        doShutdown(shutdownParamsData);
+        _doShutdown(shutdownParamsData);
 
         // NB: solc warns that this is unreachable - but that's a bug and not true
         // It's a a virtual function where not all implementations revert (eg DsrBaseStrategy)
-        
-        // Repay any stables back to the TRV
-        stablesRepaid = stableToken.balanceOf(address(this));
-        if (stablesRepaid != 0) {
-            treasuryReservesVault.repay(stablesRepaid, address(this));
-        }
- 
-        emit Shutdown(stablesRepaid);
+        emit Shutdown();
 
         // Now mark as shutdown in the TRV.
-        // This will only succeed if governance has first set the strategy to `isShuttingDown`
+        // This will only succeed if executors have first set the strategy to `isShuttingDown`
         treasuryReservesVault.shutdown(address(this));
     }  
 
-    function doShutdown(
-        bytes memory shutdownParams
+    function _doShutdown(
+        bytes calldata shutdownParams
     ) internal virtual;
 
     /**
-     * @notice Governance can recover any token from the strategy.
+     * @notice Executors can recover any token from the strategy.
      */
     function recoverToken(
         address token, 
@@ -227,5 +193,19 @@ abstract contract AbstractStrategy is ITempleStrategy, TempleElevatedAccess {
     ) external virtual override onlyElevatedAccess {
         emit CommonEventsAndErrors.TokenRecovered(to, token, amount);
         IERC20(token).safeTransfer(to, amount);
+    }
+
+    /**
+     * @notice Executors can set the allowance of any token spend from the strategy
+     */
+    function setTokenAllowance(IERC20 token, address spender, uint256 amount) external override onlyElevatedAccess {
+        if (amount == token.allowance(address(this), spender)) return;
+
+        emit TokenAllowanceSet(address(token), spender, amount);
+        token.safeApprove(spender, 0);
+
+        if (amount != 0) {
+            token.safeIncreaseAllowance(spender, amount);
+        }
     }
 }
