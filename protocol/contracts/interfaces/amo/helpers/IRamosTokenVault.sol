@@ -3,40 +3,37 @@ pragma solidity ^0.8.17;
 // Temple (interfaces/amo/helpers/IRamosTokenVault.sol)
 
 /**
- * @title Ramos token vault store
+ * @title Ramos Token Vault
  *
- * @notice Ramos strategy uses this vault to borrow and repay protocol and quote tokens
- * 
- * Tokens have two generic functions:
- *  1/ Borrow specified tokens from the Protocol Reserve Vault (PRV) to Ramos
- *  2/ Repay the specified tokens from Ramos to the PRV, effectively cancelling the initial
- *     debt acquired by the strategy. Debt can be cancelled in multiple payments. 
- *  
+ * @notice A vault to provide protocol and quote tokens to Ramos as it rebalances or updates liquidity.
+ * These two tokens are the pair of tokens in a liquidity pool, eg:
+ *   protocolToken = TEMPLE
+ *   quoteToken = DAI
  */
 interface IRamosTokenVault {
     /**
-     * @notice borrow protocol token from the PRV to the recipient
-     * @param amount the requested amount to borrow
-     * @param recipient the recipient to send the amount requested to
+     * @notice Send `protocolToken` to recipient
+     * @param amount The requested amount to borrow
+     * @param recipient The recipient to send the `protocolToken` tokens to
      */
     function borrowProtocolToken(uint256 amount, address recipient) external;    
 
     /**
-     * @notice borrow quote token from the PRV to the recipient
-     * @param amount the requested amount to borrow
-     * @param recipient the recipient to send the amount requested to
+     * @notice Send `quoteToken` to recipient
+     * @param amount The requested amount to borrow
+     * @param recipient The recipient to send the `quoteToken` tokens to
      */
     function borrowQuoteToken(uint256 amount, address recipient) external;
 
     /**
-     * @notice repay protocol token from the recipient to the PRV
-     * @param amount the requested amount to repay
+     * @notice Pull `protocolToken` from the caller
+     * @param amount The requested amount to repay
      */
     function repayProtocolToken(uint256 amount) external;
 
     /**
-     * @notice repay quote token from the recipient to the PRV
-     * @param amount the requested amount to repay
+     * @notice Pull `quoteToken` from the caller
+     * @param amount The requested amount to repay
      */
     function repayQuoteToken(uint256 amount) external;
 }
