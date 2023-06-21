@@ -39,19 +39,19 @@ interface ITempleLineOfCredit is ITlcDataTypes, ITlcEventsAndErrors {
      * Subsequent requests override previous requests.
      * @param amount The amount of collateral to remove
      */
-    function requestRemoveCollateral(uint256 amount) external;
+    // function requestRemoveCollateral(uint256 amount) external;
 
     /**
      * @notice An account (or elevated access) cancels an existing Remove Collateral request
      * @param account The account to cancel the request for.
      */
-    function cancelRemoveCollateralRequest(address account) external;
+    // function cancelRemoveCollateralRequest(address account) external;
 
     /**
      * @notice Execute the remove collateral request, within the window of the prior issued request
      * @param recipient Send the Temple collateral to a specified recipient address.
      */
-    function removeCollateral(address recipient) external;
+    function removeCollateral(uint256 amount, address recipient) external;
 
     /**
      * @notice An account requests to borrow DAI
@@ -60,19 +60,19 @@ interface ITempleLineOfCredit is ITlcDataTypes, ITlcEventsAndErrors {
      * Subsequent requests override previous requests.
      * @param amount The amount to borrow
      */
-    function requestBorrow(uint256 amount) external;
+    // function requestBorrow(uint256 amount) external;
     
     /**
      * @notice An account (or elevated access) cancels an existing Borrow request
      * @param account The account to cancel the request for.
      */
-    function cancelBorrowRequest(address account) external;
+    // function cancelBorrowRequest(address account) external;
     
     /**
      * @notice Execute the borrow request, within the window of the prior issued request
      * @param recipient Send the borrowed token to a specified recipient address.
      */
-    function borrow(address recipient) external;
+    function borrow(uint256 amount, address recipient) external;
 
     /**
      * @notice An account repays some of its borrowed DAI debt
@@ -113,14 +113,14 @@ interface ITempleLineOfCredit is ITlcDataTypes, ITlcEventsAndErrors {
      * @param minSecs The number of seconds which must elapse between a request and the action
      * @param maxSecs The number of seconds until a request expires
      */
-    function setWithdrawCollateralRequestConfig(uint256 minSecs, uint256 maxSecs) external;
+    // function setWithdrawCollateralRequestConfig(uint256 minSecs, uint256 maxSecs) external;
     
     /**
      * @notice Set the Borrow Request window parameters
      * @param minSecs The number of seconds which must elapse between a request and the action
      * @param maxSecs The number of seconds until a request expires
      */
-    function setBorrowRequestConfig(uint256 minSecs, uint256 maxSecs) external;
+    // function setBorrowRequestConfig(uint256 minSecs, uint256 maxSecs) external;
     
     /**
      * @notice Update the interest rate model contract for DAI borrows
@@ -178,7 +178,7 @@ interface ITempleLineOfCredit is ITlcDataTypes, ITlcEventsAndErrors {
      * The request also has an expiry time.
      * If a request expires, a new request will need to be made or the actual withdraw will then revert.
      */
-    function removeCollateralRequestConfig() external view returns (uint32 minSecs, uint32 maxSecs);
+    // function removeCollateralRequestConfig() external view returns (uint32 minSecs, uint32 maxSecs);
 
     /**
      * @notice A record of the total amount of collateral deposited by users/accounts.
@@ -188,12 +188,12 @@ interface ITempleLineOfCredit is ITlcDataTypes, ITlcEventsAndErrors {
     /**
      * @notice An view of an accounts current and up to date position as of this block
      * @param account The account to get a position for
-     * @param includePendingRequests Whether to include any pending but not yet executed
-     * requests for Collateral Withdraw or Borrow. 
+     * xxparam includePendingRequests Whether to include any pending but not yet executed
+     * xxrequests for Collateral Withdraw or Borrow. 
      */
     function accountPosition(
-        address account,
-        bool includePendingRequests
+        address account
+        // bool includePendingRequests
     ) external view returns (
         AccountPosition memory position
     );
@@ -210,12 +210,12 @@ interface ITempleLineOfCredit is ITlcDataTypes, ITlcEventsAndErrors {
      * @notice Compute the liquidity status for a set of accounts.
      * @dev This can be used to verify if accounts can be liquidated or not.
      * @param accounts The accounts to get the status for.
-     * @param includePendingRequests Whether to include any pending but not yet executed
-     * requests for Collateral Withdraw or Borrow. 
+     * xxparam includePendingRequests Whether to include any pending but not yet executed
+     * xxrequests for Collateral Withdraw or Borrow. 
      */
     function computeLiquidity(
-        address[] calldata accounts,
-        bool includePendingRequests
+        address[] calldata accounts
+        // bool includePendingRequests
     ) external view returns (LiquidationStatus[] memory status);
 
     /**
