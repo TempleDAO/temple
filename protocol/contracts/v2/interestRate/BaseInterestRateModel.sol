@@ -12,7 +12,6 @@ abstract contract BaseInterestRateModel is IInterestRateModel {
     uint256 internal constant PRECISION = 1e18;
 
     uint96 internal constant MAX_ALLOWED_INTEREST_RATE = 5e18; // 500% APR
-    uint96 internal constant MIN_ALLOWED_INTEREST_RATE = 0;
 
     /**
      * @notice Derived interest rate model contracts need to implement.
@@ -34,8 +33,6 @@ abstract contract BaseInterestRateModel is IInterestRateModel {
 
         if (interestRate > MAX_ALLOWED_INTEREST_RATE) {
             interestRate = MAX_ALLOWED_INTEREST_RATE;
-        } else if (interestRate < MIN_ALLOWED_INTEREST_RATE) {
-            interestRate = MIN_ALLOWED_INTEREST_RATE;
         }
     }
 }
