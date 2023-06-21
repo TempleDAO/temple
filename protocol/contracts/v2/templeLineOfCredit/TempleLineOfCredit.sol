@@ -21,13 +21,6 @@ import { CompoundedInterest } from "contracts/v2/interestRate/CompoundedInterest
  * @title Temple Line of Credit (TLC)
  * @notice Users supply Temple as collateral, and can then borrow DAI.
  * 
- * Both borrows and collateral withdraws require two transactions:
- *   1/ Request the borrow | collateral withdrawal
- *   2/ Wait until the min request time has passed (and before the max time)
- *      and then do the borrow | collateral withdrawal.
- * This is in order to further mitigate money market attack vectors. Requests 
- * can be cancelled by the user or with elevated access on behalf of users.
- * 
  * Temple is valued at the Temple Treasury Price Index (TPI)
  * User debt increases at a continuously compounding rate.
  * Liquidations occur when users LTV exceeds the maximum allowed.
@@ -62,14 +55,6 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
      * @notice The Strategy contract managing the TRV borrows and equity positions of TLC.
      */
     ITlcStrategy public override tlcStrategy;
-
-    /**
-     * @notice Users/accounts must first request to remove collateral. 
-     * The user must wait a period of time after the request before they can action the withdraw.
-     * The request also has an expiry time.
-     * If a request expires, a new request will need to be made or the actual withdraw will then revert.
-     */
-    // FundsRequestConfig public override removeCollateralRequestConfig;
     
     /**
      * @notice A record of the total amount of collateral deposited by users/accounts.
@@ -151,57 +136,12 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
         );
     }
 
-    // /**
-    //  * @notice An account requests to remove Temple collateral.
-    //  * @dev After this request is issued, the account must then execute the `removeCollateral()`
-    //  * within the `removeCollateralRequestConfig`
-    //  * Subsequent requests override previous requests.
-    //  * @param amount The amount of collateral to remove
-    //  */
-    // function requestRemoveCollateral(uint256 amount) external override {
-    //     if (amount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
-    //     AccountData storage _accountData = allAccountsData[msg.sender];
-    //     if (amount > _accountData.collateral) revert CommonEventsAndErrors.InvalidAmount(address(templeToken), amount);
-
-    //     _accountData.removeCollateralRequestAmount = amount.encodeUInt128();
-    //     _accountData.removeCollateralRequestAt = uint64(block.timestamp);
-    //     checkLiquidity(_accountData);
-
-    //     emit RemoveCollateralRequested(msg.sender, amount);
-    // }
-
-    // /**
-    //  * @notice An account (or elevated access) cancels an existing Remove Collateral request
-    //  * @param account The account to cancel the request for.
-    //  */
-    // function cancelRemoveCollateralRequest(address account) external override {
-    //     // Either the account holder or the DAO elevated access is allowed to cancel individual requests
-    //     if (msg.sender != account && !isElevatedAccess(msg.sender, msg.sig)) revert CommonEventsAndErrors.InvalidAccess();
-        
-    //     AccountData storage _accountData = allAccountsData[account];
-    //     if (_accountData.removeCollateralRequestAt == 0) revert CommonEventsAndErrors.InvalidParam();
-
-    //     _accountData.removeCollateralRequestAmount = _accountData.removeCollateralRequestAt = 0;
-    //     emit RemoveCollateralRequestCancelled(account);
-    // }
-
     /**
-     * @notice Execute the remove collateral request, within the window of the prior issued request
+     * @notice Remove Temple collateral. (active borrow positions are not allowed to go above the max LTV)
      * @param recipient Send the Temple collateral to a specified recipient address.
      */
     function removeCollateral(uint256 amount, address recipient) external override {
         AccountData storage _accountData = allAccountsData[msg.sender];
-
-        // uint256 _removeAmount;
-        // {
-        //     checkWithdrawalCooldown(
-        //         removeCollateralRequestConfig.minSecs, 
-        //         removeCollateralRequestConfig.maxSecs, 
-        //         _accountData.removeCollateralRequestAt
-        //     );
-        //     _removeAmount = _accountData.removeCollateralRequestAmount;
-        //     _accountData.removeCollateralRequestAmount = _accountData.removeCollateralRequestAt = 0;
-        // }
 
         // Update the collateral, and then verify that it doesn't make the debt unsafe.
         // A subtraction in collateral (where the removeAmount is always <= existing collateral
@@ -222,58 +162,13 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
     /*                           BORROW                           */
     /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
 
-    // /**
-    //  * @notice An account requests to borrow DAI
-    //  * @dev After this request is issued, the account must then execute the `borrow()`
-    //  * within the valid borrow request window
-    //  * Subsequent requests override previous requests.
-    //  * @param amount The amount to borrow
-    //  */
-    // function requestBorrow(uint256 amount) external override {
-    //     if (amount < MIN_BORROW_AMOUNT) revert InsufficientAmount(MIN_BORROW_AMOUNT, amount);
-
-    //     AccountData storage _accountData = allAccountsData[msg.sender];
-    //     _accountData.borrowRequestAmount = amount.encodeUInt128();
-    //     _accountData.borrowRequestAt = uint64(block.timestamp);
-    //     emit BorrowRequested(msg.sender, amount);
-
-    //     checkLiquidity(_accountData);
-    // }
-
-    // /**
-    //  * @notice An account (or elevated access) cancels an existing Borrow request
-    //  * @param account The account to cancel the request for.
-    //  */
-    // function cancelBorrowRequest(address account) external override {
-    //     // Either the account holder or the DAO elevated access is allowed to cancel individual requests
-    //     if (msg.sender != account && !isElevatedAccess(msg.sender, msg.sig)) revert CommonEventsAndErrors.InvalidAccess();
-
-    //     AccountData storage _accountData = allAccountsData[account];
-    //     if (_accountData.borrowRequestAt == 0) revert CommonEventsAndErrors.InvalidParam();
-
-    //     _accountData.borrowRequestAmount = _accountData.borrowRequestAt = 0;
-    //     emit BorrowRequestCancelled(account);
-    // }
-
     /**
-     * @notice Execute the borrow request, within the window of the prior issued request
+     * @notice Borrow DAI (not allowed to borrow over the max LTV)
      * @param recipient Send the borrowed token to a specified recipient address.
      */
     function borrow(uint256 amount, address recipient) external override {
         AccountData storage _accountData = allAccountsData[msg.sender];
         DebtTokenCache memory _debtTokenCache = debtTokenCache();
-
-        // // Validate and pop the borrow request
-        // uint256 _borrowAmount;
-        // {
-        //     checkWithdrawalCooldown(
-        //         _debtTokenCache.config.borrowRequestConfig.minSecs, 
-        //         _debtTokenCache.config.borrowRequestConfig.maxSecs, 
-        //         _accountData.borrowRequestAt
-        //     );
-        //     _borrowAmount = _accountData.borrowRequestAmount;
-        //     _accountData.borrowRequestAmount = _accountData.borrowRequestAt = 0;
-        // }
 
         // Apply the new borrow
         {
@@ -423,32 +318,6 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
         updateInterestRates(debtTokenCache());
     }
 
-    // /**
-    //  * @notice Set the Withdrawal Collateral Request window parameters
-    //  * @param minSecs The number of seconds which must elapse between a request and the action
-    //  * @param maxSecs The number of seconds until a request expires
-    //  */
-    // function setWithdrawCollateralRequestConfig(
-    //     uint256 minSecs,
-    //     uint256 maxSecs
-    // ) external override onlyElevatedAccess {
-    //     emit RemoveCollateralRequestConfigSet(minSecs, maxSecs);
-    //     removeCollateralRequestConfig = FundsRequestConfig(uint32(minSecs), uint32(maxSecs));
-    // }
-
-    // /**
-    //  * @notice Set the Borrow Request window parameters
-    //  * @param minSecs The number of seconds which must elapse between a request and the action
-    //  * @param maxSecs The number of seconds until a request expires
-    //  */
-    // function setBorrowRequestConfig(
-    //     uint256 minSecs,
-    //     uint256 maxSecs
-    // ) external override onlyElevatedAccess {
-    //     emit BorrowRequestConfigSet(minSecs, maxSecs);
-    //     debtTokenConfig.borrowRequestConfig = FundsRequestConfig(uint32(minSecs), uint32(maxSecs));
-    // }
-
     /**
      * @notice Update the interest rate model contract for DAI borrows
      * @param interestRateModel The contract address of the new model
@@ -512,12 +381,9 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
     /**
      * @notice An view of an accounts current and up to date position as of this block
      * @param account The account to get a position for
-     * xxparam includePendingRequests Whether to include any pending but not yet executed
-     * xxrequests for Collateral Withdraw or Borrow. 
      */
     function accountPosition(
         address account
-        // bool includePendingRequests
     ) external override view returns (
         AccountPosition memory position
     ) {
@@ -531,11 +397,6 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
             _accountData.interestAccumulator,
             true
         );
-
-        // if (includePendingRequests) {
-        //     position.collateral -= _accountData.removeCollateralRequestAmount;
-        //     position.currentDebt += _accountData.borrowRequestAmount; 
-        // }
 
         position.maxBorrow = maxBorrowLimit(_debtTokenCache, position.collateral);
         position.healthFactor = healthFactor(_debtTokenCache, position.collateral, position.currentDebt);
@@ -559,12 +420,9 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
      * @notice Compute the liquidity status for a set of accounts.
      * @dev This can be used to verify if accounts can be liquidated or not.
      * @param accounts The accounts to get the status for.
-     * xxparam includePendingRequests Whether to include any pending but not yet executed
-     * xxrequests for Collateral Withdraw or Borrow. 
      */
     function computeLiquidity(
         address[] calldata accounts
-        // bool includePendingRequests
     ) external override view returns (LiquidationStatus[] memory status) {
         uint256 _numAccounts = accounts.length;
         status = new LiquidationStatus[](_numAccounts);
@@ -572,7 +430,6 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
             status[i] = computeLiquidity(
                 allAccountsData[accounts[i]], 
                 debtTokenCacheRO()
-                // includePendingRequests
             );
         }
     }
@@ -741,22 +598,6 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
     }
 
     /**
-     * @dev ensure a collateral withdraw or borrow is within the allowed window after the request.
-     */
-    function checkWithdrawalCooldown(
-        uint32 _minSecs,
-        uint32 _maxSecs,
-        uint64 _requestedAt
-    ) internal view {
-        unchecked {
-            if (block.timestamp < _requestedAt+_minSecs)
-                revert NotInFundsRequestWindow(block.timestamp, _requestedAt, _minSecs, _maxSecs);
-            if (block.timestamp > _requestedAt+_maxSecs)
-                revert NotInFundsRequestWindow(block.timestamp, _requestedAt, _minSecs, _maxSecs);
-        }
-    }
-
-    /**
      * @dev The implementation of the debt token repayment, used by repay() and repayAll()
      */
     function repayToken(
@@ -800,12 +641,10 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
     /**
      * @dev Generate the LiquidationStatus struct with current details 
      * for this account.
-     * Optionally include pending collateral withdraw / borrow requests
      */
     function computeLiquidity(
         AccountData storage _accountData,
         DebtTokenCache memory _debtTokenCache
-        // bool _includePendingRequests
     ) internal view returns (LiquidationStatus memory status) {
         status.collateral = _accountData.collateral;
 
@@ -815,11 +654,6 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
             _accountData.interestAccumulator,
             true // round up for user reported debt
         );
-
-        // if (_includePendingRequests) {
-        //     status.collateral -= _accountData.removeCollateralRequestAmount;
-        //     status.currentDebt += _accountData.borrowRequestAmount; 
-        // }
 
         status.collateralValue = status.collateral * _debtTokenCache.price / 1e18;
 
