@@ -7,11 +7,11 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import { IRamos } from "contracts/interfaces/amo/IRamos.sol";
 import { IBalancerVault } from "contracts/interfaces/external/balancer/IBalancerVault.sol";
-import { IRamosProtocolTokenVault } from "contracts/interfaces/amo/helpers/IRamosProtocolTokenVault.sol";
+import { IRamosTokenVault } from "contracts/interfaces/amo/helpers/IRamosTokenVault.sol";
 import { AbstractStrategy } from "contracts/v2/strategies/AbstractStrategy.sol";
 import { ITempleERC20Token } from "contracts/interfaces/core/ITempleERC20Token.sol";
 
-contract RamosStrategy  is AbstractStrategy, IRamosProtocolTokenVault {
+contract RamosStrategy  is AbstractStrategy, IRamosTokenVault {
     using SafeERC20 for IERC20;
     using SafeERC20 for ITempleERC20Token;
     
@@ -23,9 +23,10 @@ contract RamosStrategy  is AbstractStrategy, IRamosProtocolTokenVault {
     IRamos public ramos;
 
     ITempleERC20Token public immutable templeToken;
+    IERC20 public immutable quoteToken;
 
-    event BorrowAndAddLiquidity(uint256 amount);
-    event RemoveLiquidityAndRepay(uint256 amount);
+    event AddLiquidity();
+    event RemoveLiquidity();
 
     constructor(
         address _initialRescuer,
@@ -33,10 +34,12 @@ contract RamosStrategy  is AbstractStrategy, IRamosProtocolTokenVault {
         string memory _strategyName,
         address _treasuryReservesVault,
         address _ramos,
-        address _templeToken
+        address _templeToken,
+        address _quoteToken
     ) AbstractStrategy(_initialRescuer, _initialExecutor, _strategyName, _treasuryReservesVault) {
         ramos = IRamos(_ramos);
         templeToken = ITempleERC20Token(_templeToken);
+        quoteToken = IERC20(_quoteToken);
     }
 
     /**
@@ -51,10 +54,19 @@ contract RamosStrategy  is AbstractStrategy, IRamosProtocolTokenVault {
         templeToken.mint(recipient, amount);
     }
 
+    function borrowQuoteToken(uint256 amount, address recipient) external {
+        treasuryReservesVault.borrow(amount, recipient);
+    }
+
     function repayProtocolToken(uint256 amount) external onlyElevatedAccess {
         // @todo This should be repaid to the TRV, so the dTemple can be burned
         templeToken.safeTransferFrom(msg.sender, address(this), amount);
         templeToken.burn(amount);
+    }
+
+    function repayQuoteToken(uint256 amount) external {
+        quoteToken.safeTransferFrom(msg.sender, address(this), amount);
+        treasuryReservesVault.repay(amount, address(this));
     }
 
     /**
@@ -99,16 +111,12 @@ contract RamosStrategy  is AbstractStrategy, IRamosProtocolTokenVault {
     }
 
     /**
-     * @notice Borrow a fixed amount from the Treasury Reserves and add liquidity
-     * These stables are sent to the RAMOS to add liquidity and stake BPT
+     * @notice Add liquidity
+     * This is a wrapper function for Ramos:addLiquidity.
      */
-    function borrowAndAddLiquidity(uint256 _amount, IBalancerVault.JoinPoolRequest memory _requestData) external onlyElevatedAccess {
-        // Borrow the DAI and send it to RAMOS. This will also mint `dUSD` debt.
-        treasuryReservesVault.borrow(_amount, address(ramos));
-        emit BorrowAndAddLiquidity(_amount);
-
-        // Add liquidity
+    function addLiquidity(IBalancerVault.JoinPoolRequest memory _requestData) external onlyElevatedAccess {
         ramos.addLiquidity(_requestData);
+        emit AddLiquidity();
     }
 
     /// @notice Get the quote used to remove liquidity
@@ -127,18 +135,12 @@ contract RamosStrategy  is AbstractStrategy, IRamosProtocolTokenVault {
     }
 
     /**
-     * @notice Remove liquidity and repay debt back to the Treasury Reserves
-     * The stables from the removed liquidity are sent from RAMOS to this address to repay debt
+     * @notice Remove liquidity
+     * This is a wrapper function for Ramos:removeLiquidity.
      */
-    function removeLiquidityAndRepay(IBalancerVault.ExitPoolRequest memory _requestData, uint256 _bptAmount) external onlyElevatedAccess {
-        // Remove liquidity
-        ramos.removeLiquidity(_requestData, _bptAmount, address(this));
-
-        // Repay debt back to the Treasury Reserves
-        uint256 stableBalance = stableToken.balanceOf(address(this));
-
-        treasuryReservesVault.repay(stableBalance, address(this));
-        emit RemoveLiquidityAndRepay(stableBalance);
+    function removeLiquidity(IBalancerVault.ExitPoolRequest memory _requestData, uint256 _bptAmount) external onlyElevatedAccess {
+        ramos.removeLiquidity(_requestData, _bptAmount);
+        emit RemoveLiquidity();
     }
 
     struct PopulateShutdownParams {
@@ -176,6 +178,6 @@ contract RamosStrategy  is AbstractStrategy, IRamosProtocolTokenVault {
      */
     function doShutdown(bytes memory shutdownData) internal virtual override {
         (ShutdownParams memory params) = abi.decode(shutdownData, (ShutdownParams));
-        ramos.removeLiquidity(params.requestData, params.bptAmount, address(this));
+        ramos.removeLiquidity(params.requestData, params.bptAmount);
     }
 }

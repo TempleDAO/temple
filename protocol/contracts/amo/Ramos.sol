@@ -7,7 +7,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { Pausable } from "@openzeppelin/contracts/security/Pausable.sol";
 
 import { IRamos } from "contracts/interfaces/amo/IRamos.sol";
-import { IRamosProtocolTokenVault } from "contracts/interfaces/amo/helpers/IRamosProtocolTokenVault.sol";
+import { IRamosTokenVault } from "contracts/interfaces/amo/helpers/IRamosTokenVault.sol";
 import { ITreasuryPriceIndexOracle } from "contracts/interfaces/v2/ITreasuryPriceIndexOracle.sol";
 import { IBalancerPoolHelper } from "contracts/interfaces/amo/helpers/IBalancerPoolHelper.sol";
 import { IBalancerVault } from "contracts/interfaces/external/balancer/IBalancerVault.sol";
@@ -75,7 +75,7 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
     ITreasuryPriceIndexOracle public override tpiOracle;
 
     /// @notice The vault from where to borrow and repay the Protocol Token
-    IRamosProtocolTokenVault public override protocolTokenVault;
+    IRamosTokenVault public override tokenVault;
 
     /// @notice The percentage bounds (in bps) beyond which to rebalance up or down
     uint64 public override rebalancePercentageBoundLow;
@@ -182,21 +182,25 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
     /**
      * @notice Set the Treasury Price Index (TPI) Oracle
      */
-    function setProtocolTokenVault(address vault) external override onlyElevatedAccess {
-        emit ProtocolTokenVaultSet(vault);
+    function setTokenVault(address vault) external override onlyElevatedAccess {
+        emit TokenVaultSet(vault);
 
         // Remove allowance from the old vault
-        address previousVault = address(protocolTokenVault);
+        address previousVault = address(tokenVault);
         if (previousVault != address(0)) {
             protocolToken.safeApprove(previousVault, 0);
+            quoteToken.safeApprove(previousVault, 0);
         }
 
-        protocolTokenVault = IRamosProtocolTokenVault(vault);
+        tokenVault = IRamosTokenVault(vault);
 
         // Set max allowance on the new TRV
         {
             protocolToken.safeApprove(vault, 0);
             protocolToken.safeIncreaseAllowance(vault, type(uint256).max);
+            
+            quoteToken.safeApprove(vault, 0);
+            quoteToken.safeIncreaseAllowance(vault, type(uint256).max);
         }
     }
 
@@ -274,7 +278,7 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
      * BPT tokens are withdrawn from Aura rewards staking contract and used for balancer
      * pool exit. 
      * Ramos rebalance fees are deducted from the amount of `protocolToken` returned from the balancer pool
-     * The remainder `protocolToken` are repaid to the `protocolTokenVault`
+     * The remainder `protocolToken` are repaid to the `tokenVault`
      * @param bptAmountIn amount of BPT tokens going in balancer pool for exit
      * @param minProtocolTokenOut amount of `protocolToken` expected out of balancer pool
      */
@@ -304,7 +308,7 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
         }
 
         // Repay the remaining protocol tokens withdrawn from the pool
-        protocolTokenVault.repayProtocolToken(protocolTokenAmountOut-feeAmt);
+        tokenVault.repayProtocolToken(protocolTokenAmountOut-feeAmt);
     }
 
     /**
@@ -313,15 +317,13 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
      * BPT tokens are withdrawn from Aura rewards staking contract and used for balancer
      * pool exit. 
      * Ramos rebalance fees are deducted from the amount of `quoteToken` returned from the exit
-     * The remainder `quoteToken` are repaid to the recipient
+     * The remainder `quoteToken` are repaid via the token vault
      * @param bptAmountIn Amount of BPT tokens to deposit into balancer pool
      * @param minQuoteTokenAmountOut Minimum amount of `quoteToken` expected to receive
-     * @param recipient Address to which the `quoteToken` withdrawn are transferred
      */
     function rebalanceDownExit(
         uint256 bptAmountIn,
-        uint256 minQuoteTokenAmountOut,
-        address recipient
+        uint256 minQuoteTokenAmountOut
     ) external override onlyElevatedAccess whenNotPaused enoughCooldown {
         _validateParams(minQuoteTokenAmountOut, bptAmountIn, maxRebalanceAmounts.bpt);
         lastRebalanceTimeSecs = uint64(block.timestamp);
@@ -334,7 +336,7 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
             bptAmountIn, minQuoteTokenAmountOut, rebalancePercentageBoundLow, rebalancePercentageBoundUp,
             postRebalanceSlippage, 1-protocolTokenBalancerPoolIndex, treasuryPriceIndex(), quoteToken
         );
-        emit RebalanceDownExit(bptAmountIn, quoteTokenAmountOut, recipient);
+        emit RebalanceDownExit(bptAmountIn, quoteTokenAmountOut);
 
         // Collect the fees on the output quote token
         uint256 feeAmt = quoteTokenAmountOut * rebalanceFees.rebalanceExitFeeBps / BPS_PRECISION;
@@ -343,10 +345,8 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
             quoteToken.safeTransfer(feeCollector, feeAmt);
         }
 
-        if (recipient != address(this) && recipient != address(0)) {
-            uint256 quoteTokenBalance = quoteToken.balanceOf(address(this));
-            quoteToken.safeTransfer(recipient, quoteTokenBalance);
-        }
+        quoteTokenAmountOut = quoteToken.balanceOf(address(this));
+        tokenVault.repayQuoteToken(quoteTokenAmountOut);
     }
 
     /**
@@ -395,7 +395,7 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
      * Returned BPT tokens are deposited and staked into Aura for rewards using the staking contract.
      * Ramos rebalance fees are deducted from the amount of `protocolToken` input
      * The remainder `protocolToken` are added into the balancer pool
-     * @dev The `protocolToken` are borrowed from the `protocolTokenVault`
+     * @dev The `protocolToken` are borrowed from the `tokenVault`
      * @param protocolTokenAmountIn Amount of `protocolToken` tokens to deposit into balancer pool
      * @param minBptOut Minimum amount of BPT tokens expected to receive
      */
@@ -407,7 +407,7 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
         lastRebalanceTimeSecs = uint64(block.timestamp);
 
         // Borrow the protocol token
-        protocolTokenVault.borrowProtocolToken(protocolTokenAmountIn, address(this));
+        tokenVault.borrowProtocolToken(protocolTokenAmountIn, address(this));
 
         // Collect the fees from the input protocol token amount
         uint256 feeAmt = protocolTokenAmountIn * rebalanceFees.rebalanceJoinFeeBps / BPS_PRECISION;
@@ -453,7 +453,8 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
         (uint256 protocolTokenAmount, uint256 quoteTokenAmount) = protocolTokenBalancerPoolIndex == 0
             ? (request.maxAmountsIn[0], request.maxAmountsIn[1])
             : (request.maxAmountsIn[1], request.maxAmountsIn[0]);
-        protocolTokenVault.borrowProtocolToken(protocolTokenAmount, address(this));
+        tokenVault.borrowProtocolToken(protocolTokenAmount, address(this));
+        tokenVault.borrowQuoteToken(quoteTokenAmount, address(this));
 
         // safe allowance quoteToken and protocolToken
         {
@@ -489,12 +490,10 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
      * Withdraw and unwrap BPT tokens from Aura staking and send to balancer pool to receive both tokens.
      * @param request Request for use in balancer pool exit
      * @param bptIn Amount of BPT tokens to send into balancer pool
-     * @param to Address to which the `quoteToken` received from balancer pool are transferred
      */
     function removeLiquidity(
         IBalancerVault.ExitPoolRequest memory request,
-        uint256 bptIn,
-        address to
+        uint256 bptIn
     ) external override onlyElevatedAccess {
         // validate request
         if (request.assets.length != request.minAmountsOut.length || 
@@ -518,14 +517,14 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
                     protocolTokenReceivedAmount = protocolToken.balanceOf(address(this)) - protocolTokenAmountBefore;
                 }
                 if (protocolTokenReceivedAmount != 0) {
-                    protocolTokenVault.repayProtocolToken(protocolTokenReceivedAmount);
+                    tokenVault.repayProtocolToken(protocolTokenReceivedAmount);
                 }
             } else if (request.assets[i] == address(quoteToken)) {
                 unchecked {
                     quoteTokenReceivedAmount = quoteToken.balanceOf(address(this)) - quoteTokenAmountBefore;
                 }
                 if (quoteTokenReceivedAmount != 0) {
-                    quoteToken.safeTransfer(to, quoteTokenReceivedAmount);
+                    tokenVault.repayQuoteToken(quoteTokenReceivedAmount);
                 }
             }
         }
