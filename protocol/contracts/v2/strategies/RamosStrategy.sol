@@ -25,8 +25,8 @@ contract RamosStrategy  is AbstractStrategy, IRamosTokenVault {
     ITempleERC20Token public immutable templeToken;
     IERC20 public immutable quoteToken;
 
-    event BorrowAndAddLiquidity(uint256 amount);
-    event RemoveLiquidityAndRepay(uint256 amount);
+    event AddLiquidity();
+    event RemoveLiquidity();
 
     constructor(
         address _initialRescuer,
@@ -111,16 +111,12 @@ contract RamosStrategy  is AbstractStrategy, IRamosTokenVault {
     }
 
     /**
-     * @notice Borrow a fixed amount from the Treasury Reserves and add liquidity
-     * These stables are sent to the RAMOS to add liquidity and stake BPT
+     * @notice Add liquidity
+     * This is a wrapper function for Ramos:addLiquidity.
      */
-    function borrowAndAddLiquidity(uint256 _amount, IBalancerVault.JoinPoolRequest memory _requestData) external onlyElevatedAccess {
-        // Borrow the DAI and send it to RAMOS. This will also mint `dUSD` debt.
-        treasuryReservesVault.borrow(_amount, address(ramos));
-        emit BorrowAndAddLiquidity(_amount);
-
-        // Add liquidity
+    function addLiquidity(IBalancerVault.JoinPoolRequest memory _requestData) external onlyElevatedAccess {
         ramos.addLiquidity(_requestData);
+        emit AddLiquidity();
     }
 
     /// @notice Get the quote used to remove liquidity
@@ -139,18 +135,12 @@ contract RamosStrategy  is AbstractStrategy, IRamosTokenVault {
     }
 
     /**
-     * @notice Remove liquidity and repay debt back to the Treasury Reserves
-     * The stables from the removed liquidity are sent from RAMOS to this address to repay debt
+     * @notice Remove liquidity
+     * This is a wrapper function for Ramos:removeLiquidity.
      */
-    function removeLiquidityAndRepay(IBalancerVault.ExitPoolRequest memory _requestData, uint256 _bptAmount) external onlyElevatedAccess {
-        // Remove liquidity
+    function removeLiquidity(IBalancerVault.ExitPoolRequest memory _requestData, uint256 _bptAmount) external onlyElevatedAccess {
         ramos.removeLiquidity(_requestData, _bptAmount);
-
-        // Repay debt back to the Treasury Reserves
-        uint256 stableBalance = stableToken.balanceOf(address(this));
-
-        treasuryReservesVault.repay(stableBalance, address(this));
-        emit RemoveLiquidityAndRepay(stableBalance);
+        emit RemoveLiquidity();
     }
 
     struct PopulateShutdownParams {
