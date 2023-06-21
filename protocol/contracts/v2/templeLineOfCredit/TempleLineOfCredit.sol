@@ -138,6 +138,7 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
 
     /**
      * @notice Remove Temple collateral. (active borrow positions are not allowed to go above the max LTV)
+     * @param amount The amount of collateral to remove
      * @param recipient Send the Temple collateral to a specified recipient address.
      */
     function removeCollateral(uint256 amount, address recipient) external override {
@@ -164,6 +165,7 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
 
     /**
      * @notice Borrow DAI (not allowed to borrow over the max LTV)
+     * @param amount The amount to borrow
      * @param recipient Send the borrowed token to a specified recipient address.
      */
     function borrow(uint256 amount, address recipient) external override {
