@@ -25,8 +25,8 @@ contract RamosStrategy  is AbstractStrategy, IRamosTokenVault {
     ITempleERC20Token public immutable templeToken;
     IERC20 public immutable quoteToken;
 
-    event AddLiquidity();
-    event RemoveLiquidity();
+    event AddLiquidity(uint256 quoteTokenAmount, uint256 protocolTokenAmount, uint256 bptTokensStaked);
+    event RemoveLiquidity(uint256 quoteTokenAmount, uint256 protocolTokenAmount, uint256 bptIn);
 
     constructor(
         address _initialRescuer,
@@ -118,8 +118,12 @@ contract RamosStrategy  is AbstractStrategy, IRamosTokenVault {
      * This is a wrapper function for Ramos::addLiquidity
      */
     function addLiquidity(IBalancerVault.JoinPoolRequest calldata _requestData) external onlyElevatedAccess {
-        ramos.addLiquidity(_requestData);
-        emit AddLiquidity();
+        (
+            uint256 quoteTokenAmount,
+            uint256 protocolTokenAmount,
+            uint256 bptTokensStaked
+        ) = ramos.addLiquidity(_requestData);
+        emit AddLiquidity(quoteTokenAmount, protocolTokenAmount, bptTokensStaked);
     }
 
     /// @notice Get the quote used to remove liquidity
@@ -142,8 +146,11 @@ contract RamosStrategy  is AbstractStrategy, IRamosTokenVault {
      * This is a wrapper function for Ramos:removeLiquidity.
      */
     function removeLiquidity(IBalancerVault.ExitPoolRequest calldata _requestData, uint256 _bptAmount) external onlyElevatedAccess {
-        ramos.removeLiquidity(_requestData, _bptAmount);
-        emit RemoveLiquidity();
+        (
+            uint256 quoteTokenAmount, 
+            uint256 protocolTokenAmount
+        ) = ramos.removeLiquidity(_requestData, _bptAmount);
+        emit RemoveLiquidity(quoteTokenAmount, protocolTokenAmount, _bptAmount);
     }
 
     struct PopulateShutdownParams {

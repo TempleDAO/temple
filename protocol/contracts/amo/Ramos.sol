@@ -454,7 +454,11 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
      */
     function addLiquidity(
         IBalancerVault.JoinPoolRequest memory request
-    ) external override onlyElevatedAccess {
+    ) external override onlyElevatedAccess returns (
+        uint256 quoteTokenAmount,
+        uint256 protocolTokenAmount,
+        uint256 bptTokensStaked
+    ) {
         // validate request
         if (request.assets.length != request.maxAmountsIn.length || 
             request.assets.length != 2 || 
@@ -462,7 +466,7 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
                 revert AMOCommon.InvalidBalancerVaultRequest();
         }
 
-        (uint256 protocolTokenAmount, uint256 quoteTokenAmount) = protocolTokenBalancerPoolIndex == 0
+        (protocolTokenAmount, quoteTokenAmount) = protocolTokenBalancerPoolIndex == 0
             ? (request.maxAmountsIn[0], request.maxAmountsIn[1])
             : (request.maxAmountsIn[1], request.maxAmountsIn[0]);
         tokenVault.borrowProtocolToken(protocolTokenAmount, address(this));
@@ -479,7 +483,6 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
         }
 
         // join pool
-        uint256 bptTokensStaked;
         {
             uint256 bptAmountBefore = bptToken.balanceOf(address(this));
             balancerVault.joinPool(balancerPoolId, address(this), address(this), request);
@@ -508,7 +511,10 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
     function removeLiquidity(
         IBalancerVault.ExitPoolRequest memory request,
         uint256 bptIn
-    ) external override onlyElevatedAccess {
+    ) external override onlyElevatedAccess returns (
+        uint256 quoteTokenAmount, 
+        uint256 protocolTokenAmount
+    ) {
         // validate request
         if (request.assets.length != request.minAmountsOut.length || 
             request.assets.length != 2 || 
@@ -520,30 +526,27 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
         uint256 quoteTokenAmountBefore = quoteToken.balanceOf(address(this));
 
         amoStaking.withdrawAndUnwrap(bptIn, false, address(this));
-
         balancerVault.exitPool(balancerPoolId, address(this), address(this), request);
-        // validate amounts received
-        uint256 protocolTokenAmountOut;
-        uint256 quoteTokenAmountOut;
+
         for (uint i=0; i<request.assets.length; ++i) {
             if (request.assets[i] == address(protocolToken)) {
                 unchecked {
-                    protocolTokenAmountOut = protocolToken.balanceOf(address(this)) - protocolTokenAmountBefore;
+                    protocolTokenAmount = protocolToken.balanceOf(address(this)) - protocolTokenAmountBefore;
                 }
-                if (protocolTokenAmountOut != 0) {
-                    tokenVault.repayProtocolToken(protocolTokenAmountOut);
+                if (protocolTokenAmount != 0) {
+                    tokenVault.repayProtocolToken(protocolTokenAmount);
                 }
             } else if (request.assets[i] == address(quoteToken)) {
                 unchecked {
-                    quoteTokenAmountOut = quoteToken.balanceOf(address(this)) - quoteTokenAmountBefore;
+                    quoteTokenAmount = quoteToken.balanceOf(address(this)) - quoteTokenAmountBefore;
                 }
-                if (quoteTokenAmountOut != 0) {
-                    tokenVault.repayQuoteToken(quoteTokenAmountOut);
+                if (quoteTokenAmount != 0) {
+                    tokenVault.repayQuoteToken(quoteTokenAmount);
                 }
             }
         }
 
-        emit LiquidityRemoved(quoteTokenAmountOut, protocolTokenAmountOut, bptIn);
+        emit LiquidityRemoved(quoteTokenAmount, protocolTokenAmount, bptIn);
     }
 
     /**

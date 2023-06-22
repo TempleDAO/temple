@@ -400,8 +400,8 @@ contract RamosStrategyTestBorrowAndRepay is RamosStrategyTestBase {
     event StrategyCreditAndDebtBalance(address indexed strategy, address indexed token, uint256 credit, uint256 debt);
 
     // Strategy
-    event AddLiquidity();
-    event RemoveLiquidity();
+    event AddLiquidity(uint256 quoteTokenAmount, uint256 protocolTokenAmount, uint256 bptTokensStaked);
+    event RemoveLiquidity(uint256 quoteTokenAmount, uint256 protocolTokenAmount, uint256 bptIn);
 
     function setUp() public {
         _setUp();
@@ -459,7 +459,7 @@ contract RamosStrategyTestBorrowAndRepay is RamosStrategyTestBase {
             emit StrategyCreditAndDebtBalance(address(strategy), address(dai), 0, amount);
 
             vm.expectEmit(address(strategy));
-            emit AddLiquidity();
+            emit AddLiquidity(amount, templeAmount, bptOut);
 
             strategy.addLiquidity(requestData);
         }
@@ -524,7 +524,7 @@ contract RamosStrategyTestBorrowAndRepay is RamosStrategyTestBase {
             emit Repay(address(strategy), address(dai), address(strategy), repayDaiAmount);
 
             vm.expectEmit(address(strategy));
-            emit RemoveLiquidity();
+            emit RemoveLiquidity(repayDaiAmount, burnTempleAmount, bptToRemove);
 
             strategy.removeLiquidity(requestDataForRemoveLiquidity, bptToRemove);
         }
@@ -563,7 +563,7 @@ contract RamosStrategyTestBorrowAndRepay is RamosStrategyTestBase {
             emit Repay(address(strategy), address(dai), address(strategy), repayDaiAmount);
 
             vm.expectEmit(address(strategy));
-            emit RemoveLiquidity();
+            emit RemoveLiquidity(repayDaiAmount, burnTempleAmount, bptToRemove);
 
             strategy.removeLiquidity(requestDataForRemoveLiquidity, bptToRemove);
         }

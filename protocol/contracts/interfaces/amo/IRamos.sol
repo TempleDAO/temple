@@ -230,7 +230,11 @@ interface IRamos {
      */
     function addLiquidity(
         IBalancerVault.JoinPoolRequest memory request
-    ) external;
+    ) external returns (
+        uint256 quoteTokenAmount,
+        uint256 protocolTokenAmount,
+        uint256 bptTokensStaked
+    );
     
     /**
      * @notice Remove liquidity from balancer pool receiving both `protocolToken` and `quoteToken` from balancer pool. 
@@ -242,7 +246,10 @@ interface IRamos {
     function removeLiquidity(
         IBalancerVault.ExitPoolRequest memory request, 
         uint256 bptIn
-    ) external;
+    ) external returns (
+        uint256 quoteTokenAmount,
+        uint256 protocolTokenAmount
+    );
 
     /**
      * @notice Allow owner to deposit and stake bpt tokens directly
