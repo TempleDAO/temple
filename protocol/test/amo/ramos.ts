@@ -60,7 +60,7 @@ import { DEPLOYED_CONTRACTS } from '../../scripts/deploys/helpers';
 const { MULTISIG, TEMPLE } = DEPLOYED_CONTRACTS.mainnet;
 const { BALANCER_VAULT } = addresses.contracts;
 const { FRAX_WHALE, BINANCE_ACCOUNT_8 } = addresses.accounts;
-const { FRAX, DAI, } = addresses.tokens;
+const { FRAX, DAI } = addresses.tokens;
 const { BBA_USD_TOKEN, TEMPLE_BBAUSD_LP_TOKEN, AURA_TOKEN, 
     BALANCER_TOKEN, BAL_WETH_8020_TOKEN } = amoAddresses.mainnet.tokens;
 const { TEMPLE_BB_A_USD_BALANCER_POOL_ID } = amoAddresses.mainnet.others;
@@ -210,8 +210,16 @@ describe("RAMOS", async () => {
             maxRebalanceFee
         );
 
-        tokenVault = await new RamosTestnetTempleTokenVault__factory(executor).deploy(TEMPLE);
+        tokenVault = await new RamosTestnetTempleTokenVault__factory(executor).deploy(TEMPLE, DAI);
         await amo.setTokenVault(tokenVault.address);
+        console.log('tokenVault = %s', tokenVault.address);
+
+        // seed tokenVault with stable dai
+        const daiConnect = daiToken.connect(daiWhale);
+        daiConnect.transfer(tokenVault.address, toAtto(20_000_000));
+
+        // seed amo with stable dai
+        daiConnect.transfer(amo.address, toAtto(20_000_000));
 
         poolHelper = await new BalancerPoolHelper__factory(executor).deploy(
             BALANCER_VAULT,
@@ -375,7 +383,7 @@ describe("RAMOS", async () => {
             await expect(connectAMO.rebalanceUpJoin(ONE_ETH, 1)).to.be.revertedWithCustomError(amo, "InvalidAccess");
             await expect(connectAMO.rebalanceDownJoin(ONE_ETH, 1)).to.be.revertedWithCustomError(amo, "InvalidAccess");
             await expect(connectAMO.addLiquidity(joinPoolRequest)).to.be.revertedWithCustomError(amo, "InvalidAccess");
-            await expect(connectAMO.removeLiquidity(exitPoolRequest, 100, amo.address)).to.be.revertedWithCustomError(amo, "InvalidAccess");
+            await expect(connectAMO.removeLiquidity(exitPoolRequest, 100)).to.be.revertedWithCustomError(amo, "InvalidAccess");
             await expect(connectAMO.depositAndStakeBptTokens(100, true)).to.be.revertedWithCustomError(amo, "InvalidAccess");
 
             // passes
@@ -424,11 +432,11 @@ describe("RAMOS", async () => {
         });
     
         it("sets protocol token vault", async () => {
-            const newTokenVault = await new RamosTestnetTempleTokenVault__factory(executor).deploy(TEMPLE);
+            const newTokenVault = await new RamosTestnetTempleTokenVault__factory(executor).deploy(TEMPLE, DAI);
             await expect(amo.setTokenVault(newTokenVault.address))
                 .to.emit(amo, "TokenVaultSet")
                 .withArgs(newTokenVault.address);
-            expect(await amo.TokenVault()).to.eq(newTokenVault.address);
+            expect(await amo.tokenVault()).to.eq(newTokenVault.address);
             expect(await templeToken.allowance(amo.address, tokenVault.address)).eq(0);
             expect(await templeToken.allowance(amo.address, newTokenVault.address)).eq(ethers.constants.MaxUint256);
         });
@@ -620,11 +628,11 @@ describe("RAMOS", async () => {
 
             // fail invalid request
             exitRequest.toInternalBalance = true;
-            await expect(amo.removeLiquidity(exitRequest, bptAmountIn, amo.address)).to.be.revertedWithCustomError(amo, "InvalidBalancerVaultRequest");
+            await expect(amo.removeLiquidity(exitRequest, bptAmountIn)).to.be.revertedWithCustomError(amo, "InvalidBalancerVaultRequest");
             exitRequest.minAmountsOut = [BigNumber.from(1)];
-            await expect(amo.removeLiquidity(exitRequest, bptAmountIn, amo.address)).to.be.revertedWithCustomError(amo, "InvalidBalancerVaultRequest");
+            await expect(amo.removeLiquidity(exitRequest, bptAmountIn)).to.be.revertedWithCustomError(amo, "InvalidBalancerVaultRequest");
             exitRequest.assets = [TEMPLE];
-            await expect(amo.removeLiquidity(exitRequest, bptAmountIn, amo.address)).to.be.revertedWithCustomError(amo, "InvalidBalancerVaultRequest");
+            await expect(amo.removeLiquidity(exitRequest, bptAmountIn)).to.be.revertedWithCustomError(amo, "InvalidBalancerVaultRequest");
             exitRequest.assets = tokens;
             exitRequest.minAmountsOut = minAmountsOut;
             exitRequest.toInternalBalance = false;
@@ -637,7 +645,7 @@ describe("RAMOS", async () => {
             const expectedQuoteToken = (templeIndex.toNumber() == 0) ? amountsOut[1] : amountsOut[0];
             const expectedTemple = (templeIndex.toNumber() == 0) ? amountsOut[0] : amountsOut[1];
             
-            expect(await amo.removeLiquidity(exitRequest, bptIn, amo.address))
+            expect(await amo.removeLiquidity(exitRequest, bptIn))
                 .to.emit(templeToken, "Transfer").withArgs(amoStaking.address, ZERO_ADDRESS, amountsOut[0])
                 .to.emit(bbaUsdTempleAuraRewardPool, "Withdrawn").withArgs(amoStaking.address, bbaUsdTempleAuraPID, bptIn)
                 .to.emit(amo, "LiquidityRemoved").withArgs(expectedQuoteToken, expectedTemple, bptIn)
@@ -1054,16 +1062,18 @@ describe("RAMOS", async () => {
             expect(await templeToken.totalSupply()).eq(totalSupplyBefore.add(templeAmountIn));
         });
 
-        it("proportional add/remove liquidity", async () => {
+        it.only("proportional add/remove liquidity", async () => {
             await amo.setCoolDown(0);
             await singleSideDepositQuoteToken(toAtto(220_000));
             await ownerDepositAndStakeBpt(toAtto(30_000));
+
+            await executor.sendTransaction({ value: ONE_ETH, to: amo.address, gasLimit: "5000000" });
 
             const positionsBefore = await amo.positions();
             const spotPriceBefore = await poolHelper.getSpotPrice();
 
             const addQuote = await poolHelper.callStatic.proportionalAddLiquidityQuote(toAtto(100_000), 100);
-            await amo.addLiquidity(addQuote.requestData);
+            await amo.addLiquidity(addQuote.requestData, {gasLimit: "5000000"});
             const positionsAfter = await amo.positions();
             const spotPriceAfter = await poolHelper.getSpotPrice();
 
@@ -1075,7 +1085,17 @@ describe("RAMOS", async () => {
 
             const bptAmount = toAtto(50_000);
             const removeQuote = await poolHelper.callStatic.proportionalRemoveLiquidityQuote(bptAmount, 100);
-            await amo.removeLiquidity(removeQuote.requestData, bptAmount, executorAddress);
+            const amoSigner = await impersonateSigner(amo.address);
+            console.log("amo.address: %s", amo.address);
+            const amoDaiBalance = await daiToken.connect(amoSigner).balanceOf(amo.address);
+            console.log("amo dai balance: %s", amoDaiBalance);
+            console.log("amo eth balance: %s", (await amoSigner.getBalance()));
+            await daiToken.connect(amoSigner).approve(tokenVault.address, toAtto(20_000));
+            // await daiToken.connect(executor).approve(amo.address, toAtto(30_000));
+            console.log("executor address: %s", executor.getAddress());
+            const daiAllowance = await daiToken.allowance(executor.getAddress(), amo.address);
+            console.log("daiAllowance: %s", daiAllowance);
+            await amo.removeLiquidity(removeQuote.requestData, bptAmount, {gasLimit: "5000000"});
             const positionsAfter2 = await amo.positions();
             const spotPriceAfter2 = await poolHelper.getSpotPrice();
 

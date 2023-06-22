@@ -6,6 +6,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IRamosTokenVault } from "contracts/interfaces/amo/helpers/IRamosTokenVault.sol";
 import { ITempleERC20Token } from "contracts/interfaces/core/ITempleERC20Token.sol";
+import "hardhat/console.sol";
 
 /// @notice A version of the Protocol Token Vault which has mint/burn rights on the Temple ERC20
 contract RamosTestnetTempleTokenVault is IRamosTokenVault {
@@ -34,6 +35,9 @@ contract RamosTestnetTempleTokenVault is IRamosTokenVault {
     }
 
     function repayQuoteToken(uint256 amount) external {
+        console.log("repayQuoteToken sender: %s", msg.sender);
+        console.log("repayQuoteToken receiver: %s", address(this));
+        console.log("repayQuoteToken amount: %s", amount);
         quoteToken.safeTransferFrom(msg.sender, address(this), amount);
     }
 }
