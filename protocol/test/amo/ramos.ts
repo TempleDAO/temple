@@ -178,7 +178,7 @@ describe("RAMOS", async () => {
         // seed balancer pool
         await swapDaiForBbaUsd(balancerVault, daiToken, daiWhale, toAtto(2_000_000), executorAddress);
         await seedTempleBbaUsdPool(templeToken, balancerVault, balancerHelpers, executor, toAtto(1_000_000), executorAddress);
-        
+
         await executor.sendTransaction({value: ONE_ETH, to: BAL_MULTISIG });
         await executor.sendTransaction({value: ONE_ETH, to: await auraMultisig.getAddress()});
 
@@ -210,16 +210,12 @@ describe("RAMOS", async () => {
             maxRebalanceFee
         );
 
-        tokenVault = await new RamosTestnetTempleTokenVault__factory(executor).deploy(TEMPLE, DAI);
+        tokenVault = await new RamosTestnetTempleTokenVault__factory(executor).deploy(TEMPLE, BBA_USD_TOKEN);
         await amo.setTokenVault(tokenVault.address);
         console.log('tokenVault = %s', tokenVault.address);
 
-        // seed tokenVault with stable dai
-        const daiConnect = daiToken.connect(daiWhale);
-        daiConnect.transfer(tokenVault.address, toAtto(20_000_000));
-
-        // seed amo with stable dai
-        daiConnect.transfer(amo.address, toAtto(20_000_000));
+        // seed token vault and amo with stables
+        await bbaUsdToken.connect(executor).transfer(amo.address, toAtto(500_000));
 
         poolHelper = await new BalancerPoolHelper__factory(executor).deploy(
             BALANCER_VAULT,
@@ -237,7 +233,6 @@ describe("RAMOS", async () => {
         await setExplicitAccess(amoStaking, "withdrawAndUnwrap", amo.address, true);
         await setExplicitAccess(amoStaking, "depositAndStake", amo.address, true);
         await amoStaking.setRewardsRecipient(executorAddress);
-        await bbaUsdToken.connect(executor).transfer(amo.address, toAtto(500_000));
         await templeMultisigConnect.addMinter(tokenVault.address);
 
         // set params
@@ -432,7 +427,7 @@ describe("RAMOS", async () => {
         });
     
         it("sets protocol token vault", async () => {
-            const newTokenVault = await new RamosTestnetTempleTokenVault__factory(executor).deploy(TEMPLE, DAI);
+            const newTokenVault = await new RamosTestnetTempleTokenVault__factory(executor).deploy(TEMPLE, BBA_USD_TOKEN);
             await expect(amo.setTokenVault(newTokenVault.address))
                 .to.emit(amo, "TokenVaultSet")
                 .withArgs(newTokenVault.address);
@@ -1062,18 +1057,17 @@ describe("RAMOS", async () => {
             expect(await templeToken.totalSupply()).eq(totalSupplyBefore.add(templeAmountIn));
         });
 
-        it.only("proportional add/remove liquidity", async () => {
+        it("proportional add/remove liquidity", async () => {
             await amo.setCoolDown(0);
             await singleSideDepositQuoteToken(toAtto(220_000));
             await ownerDepositAndStakeBpt(toAtto(30_000));
-
-            await executor.sendTransaction({ value: ONE_ETH, to: amo.address, gasLimit: "5000000" });
+            await bbaUsdToken.transfer(tokenVault.address, toAtto(100));
 
             const positionsBefore = await amo.positions();
             const spotPriceBefore = await poolHelper.getSpotPrice();
-
-            const addQuote = await poolHelper.callStatic.proportionalAddLiquidityQuote(toAtto(100_000), 100);
-            await amo.addLiquidity(addQuote.requestData, {gasLimit: "5000000"});
+            const addQuote = await poolHelper.callStatic.proportionalAddLiquidityQuote(toAtto(100), 100);
+            // await bbaUsdToken.transfer(tokenVault.address, toAtto(100));
+            await amo.addLiquidity(addQuote.requestData);
             const positionsAfter = await amo.positions();
             const spotPriceAfter = await poolHelper.getSpotPrice();
 
@@ -1081,21 +1075,11 @@ describe("RAMOS", async () => {
             expect(spotPriceAfter).eq(spotPriceBefore);
             expect(positionsAfter.bptBalance).to.be.approximately(positionsBefore.bptBalance.add(addQuote.expectedBptAmount), 1e8);
             expect(positionsAfter.protocolTokenBalance).to.be.approximately(positionsBefore.protocolTokenBalance.add(addQuote.protocolTokenAmount), 1e12);
-            expect(positionsAfter.quoteTokenBalance).to.be.approximately(positionsBefore.quoteTokenBalance.add(toAtto(100_000)), 1e12);
+            expect(positionsAfter.quoteTokenBalance).to.be.approximately(positionsBefore.quoteTokenBalance.add(toAtto(100)), 1e12);
 
             const bptAmount = toAtto(50_000);
             const removeQuote = await poolHelper.callStatic.proportionalRemoveLiquidityQuote(bptAmount, 100);
-            const amoSigner = await impersonateSigner(amo.address);
-            console.log("amo.address: %s", amo.address);
-            const amoDaiBalance = await daiToken.connect(amoSigner).balanceOf(amo.address);
-            console.log("amo dai balance: %s", amoDaiBalance);
-            console.log("amo eth balance: %s", (await amoSigner.getBalance()));
-            await daiToken.connect(amoSigner).approve(tokenVault.address, toAtto(20_000));
-            // await daiToken.connect(executor).approve(amo.address, toAtto(30_000));
-            console.log("executor address: %s", executor.getAddress());
-            const daiAllowance = await daiToken.allowance(executor.getAddress(), amo.address);
-            console.log("daiAllowance: %s", daiAllowance);
-            await amo.removeLiquidity(removeQuote.requestData, bptAmount, {gasLimit: "5000000"});
+            await amo.removeLiquidity(removeQuote.requestData, bptAmount);
             const positionsAfter2 = await amo.positions();
             const spotPriceAfter2 = await poolHelper.getSpotPrice();
 
@@ -1293,6 +1277,8 @@ describe("RAMOS", async () => {
             const withdrawalAmount1 = depositedBpt2.div(2);
             const withdrawalAmount2 = depositedBpt2;
 
+            await bbaUsdToken.transfer(tokenVault.address, toAtto(100_000));
+
             // Deposit by adding liquidity, which gets staked in Aura
             {
                 await ownerAddLiquidity(amount);
@@ -1479,7 +1465,7 @@ async function ownerAddLiquidity(
 ) {
     const reqData = await getAmoJoinPoolRequest(amo.address, [bptAmountIn, bptAmountIn]);
     const req = reqData.joinPoolRequest;
-    await amo.addLiquidity(req);
+    await amo.addLiquidity(req, {gasLimit: "5000000"});
 }
 
 async function getAmoJoinPoolRequest(
