@@ -50,7 +50,6 @@ contract TempleCircuitBreaker is TempleElevatedAccess {
         emit ConfigSet(_duration, _nBuckets, _cap);
     }
 
-    // @todo make internal after it's tested
     function bucketIndexFromTime(uint256 timestamp) public view returns (uint256) {
         // eg timestamp = 'now', duration = 48 hrs
         uint256 secsElapsed = timestamp % duration;
@@ -70,7 +69,7 @@ contract TempleCircuitBreaker is TempleElevatedAccess {
         // Unchecked is safe here because we know previous entries are under the cap.
         unchecked {
             for (uint256 i = 0; i < _nBuckets; ++i) {
-                console.log("\tbucket[%d] = %d", i, buckets[i]);
+                // console.log("\tbucket[%d] = %d", i, buckets[i]);
                 amount += buckets[i];
             }
         }
@@ -85,7 +84,7 @@ contract TempleCircuitBreaker is TempleElevatedAccess {
 
         uint256 _nBuckets = nBuckets;
         uint256 _currentBucket = currentBucket;
-        console.log("_currentBucket = %d, _bucketIndex = %d", _currentBucket, _bucketIndex);
+        // console.log("_currentBucket = %d, _bucketIndex = %d", _currentBucket, _bucketIndex);
         
         // If a full duration has passed since the last clearout
         // then clear all
@@ -93,16 +92,17 @@ contract TempleCircuitBreaker is TempleElevatedAccess {
             for (uint256 i; i < nBuckets; ++i) {
                 buckets[i % _nBuckets] = 0;
             }
-        }
-
-        if (_currentBucket != _bucketIndex) {
+        } else if (_currentBucket != _bucketIndex) {
             uint256 i = (_currentBucket + 1) % _nBuckets;
-            console.log("test i:", (_currentBucket % _nBuckets) + 1);
-            console.log("\ti=%d", _currentBucket, i);
+            // console.log("test i:", (_currentBucket % _nBuckets) + 1);
+            // console.log("\ti=%d", _currentBucket, i);
             for (; i < _bucketIndex; ++i) {
-                console.log("clearing:", i, _nBuckets, i % _nBuckets);
+                // console.log("clearing:", i, _nBuckets, i % _nBuckets);
                 buckets[i % _nBuckets] = 0;
             }
+        }
+
+        if (_bucketIndex != currentBucket) {
             currentBucket = _bucketIndex;
         }
 
@@ -111,7 +111,7 @@ contract TempleCircuitBreaker is TempleElevatedAccess {
 
         buckets[_bucketIndex % _nBuckets] += amount;
         currentTime = _ts;
-        console.log("NEXT _currentBucket = %d, _currentTime = %d", currentBucket, _ts);
+        // console.log("NEXT _currentBucket = %d, _currentTime = %d", currentBucket, _ts);
     }
 }
 

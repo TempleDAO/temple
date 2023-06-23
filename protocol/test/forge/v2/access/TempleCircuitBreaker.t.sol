@@ -302,6 +302,13 @@ contract TempleCircuitBreakerTestBase is TempleTest {
             vm.expectRevert(abi.encodeWithSelector(TempleCircuitBreaker.CapBreached.selector, 100e18 + 1, 100e18));
             breaker.addTx(1);
         }
+
+        // day 5, 10:00:00
+        {
+            warp(5, 10, 0, 0);
+            ebkts[10] = 50e18;
+            doCheck(50e18, 10, 50e18);
+        }
     }
 
     function test_addTx_2day_8buckets() public {
@@ -445,6 +452,13 @@ contract TempleCircuitBreakerTestBase is TempleTest {
             warp(6, 6, 0, 2);
             vm.expectRevert(abi.encodeWithSelector(TempleCircuitBreaker.CapBreached.selector, 100e18 + 1, 100e18));
             breaker.addTx(1);
+        }
+
+        // day 10, 19:00:00
+        {
+            warp(10, 19, 0, 0);
+            ebkts[3] = 50e18;
+            doCheck(50e18, 3, 50e18);
         }
     }
 }
