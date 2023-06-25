@@ -8,9 +8,16 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IRamos } from "contracts/interfaces/amo/IRamos.sol";
 import { IBalancerVault } from "contracts/interfaces/external/balancer/IBalancerVault.sol";
 import { IRamosTokenVault } from "contracts/interfaces/amo/helpers/IRamosTokenVault.sol";
+import { IRamosTokenVault } from "contracts/interfaces/amo/helpers/IRamosTokenVault.sol";
 import { AbstractStrategy } from "contracts/v2/strategies/AbstractStrategy.sol";
 import { ITempleERC20Token } from "contracts/interfaces/core/ITempleERC20Token.sol";
 
+/**
+ * @title Ramos Strategy
+ * @notice Executors can add/remove proportional liquidity into Ramos via the strategy
+ * It also serves as the 'token vault' - Ramos will call into this strategy
+ * to obtain Temple and QuoteToken (eg DAI)
+ */
 contract RamosStrategy  is AbstractStrategy, IRamosTokenVault {
     using SafeERC20 for IERC20;
     using SafeERC20 for ITempleERC20Token;
@@ -22,11 +29,18 @@ contract RamosStrategy  is AbstractStrategy, IRamosTokenVault {
      */
     IRamos public ramos;
 
+    /**
+     * @notice The Temple token, one side of the Balancer LP used by Ramos
+     */
     ITempleERC20Token public immutable templeToken;
+
+    /**
+     * @notice The Quote token - eg DAI, one side of the Balancer LP used by Ramos
+     */
     IERC20 public immutable quoteToken;
 
-    event AddLiquidity();
-    event RemoveLiquidity();
+    event AddLiquidity(uint256 quoteTokenAmount, uint256 protocolTokenAmount, uint256 bptTokensStaked);
+    event RemoveLiquidity(uint256 quoteTokenAmount, uint256 protocolTokenAmount, uint256 bptIn);
 
     constructor(
         address _initialRescuer,
@@ -40,6 +54,15 @@ contract RamosStrategy  is AbstractStrategy, IRamosTokenVault {
         ramos = IRamos(_ramos);
         templeToken = ITempleERC20Token(_templeToken);
         quoteToken = IERC20(_quoteToken);
+        _updateTrvApprovals(address(0), _treasuryReservesVault);
+    }
+
+    /**
+     * @notice A hook where strategies can optionally update approvals when the trv is updated
+     */
+    function _updateTrvApprovals(address oldTrv, address newTrv) internal override {
+        _setMaxAllowance(quoteToken, oldTrv, newTrv);
+        _setMaxAllowance(templeToken, oldTrv, newTrv);
     }
 
     /**
@@ -49,24 +72,40 @@ contract RamosStrategy  is AbstractStrategy, IRamosTokenVault {
         return VERSION;
     }
 
+    /**
+     * @notice Send `protocolToken` to recipient
+     * @param amount The requested amount to borrow
+     * @param recipient The recipient to send the `protocolToken` tokens to
+     */
     function borrowProtocolToken(uint256 amount, address recipient) external onlyElevatedAccess {
-        // @todo This should be sourced from the TRV, so the strategy can be minted dTemple
-        templeToken.mint(recipient, amount);
+        treasuryReservesVault.borrow(templeToken, amount, recipient);
     }
 
-    function borrowQuoteToken(uint256 amount, address recipient) external {
-        treasuryReservesVault.borrow(amount, recipient);
+    /**
+     * @notice Send `quoteToken` to recipient
+     * @param amount The requested amount to borrow
+     * @param recipient The recipient to send the `quoteToken` tokens to
+     */
+    function borrowQuoteToken(uint256 amount, address recipient) external onlyElevatedAccess {
+        treasuryReservesVault.borrow(quoteToken, amount, recipient);
     }
 
+    /**
+     * @notice Pull `protocolToken` from the caller
+     * @param amount The requested amount to repay
+     */
     function repayProtocolToken(uint256 amount) external onlyElevatedAccess {
-        // @todo This should be repaid to the TRV, so the dTemple can be burned
         templeToken.safeTransferFrom(msg.sender, address(this), amount);
-        templeToken.burn(amount);
+        treasuryReservesVault.repay(templeToken, amount, address(this));
     }
 
-    function repayQuoteToken(uint256 amount) external {
+    /**
+     * @notice Pull `quoteToken` from the caller
+     * @param amount The requested amount to repay
+     */
+    function repayQuoteToken(uint256 amount) external onlyElevatedAccess {
         quoteToken.safeTransferFrom(msg.sender, address(this), amount);
-        treasuryReservesVault.repay(amount, address(this));
+        treasuryReservesVault.repay(quoteToken, amount, address(this));
     }
 
     /**
@@ -80,17 +119,13 @@ contract RamosStrategy  is AbstractStrategy, IRamosTokenVault {
     function latestAssetBalances() public override view returns (
         AssetBalance[] memory assetBalances
     ) {
-        // RAMOS strategy assets = RAMOS's DAI balance + claimed AURA & BPT rewards =
-        // (bpt.balanceOf(RAMOS) / bpt.totalSupply() * Total_DAI_Balance in the LP) + 
-        // claimed AURA & BAL rewards
-
-        // get RAMOS's Stable's balance
-        (,, uint256 stableBalanceInRamos) = ramos.positions();
+        // get RAMOS's quote token balance
+        (,, uint256 quoteTokenBalance) = ramos.positions();
 
         assetBalances = new AssetBalance[](1);
         assetBalances[0] = AssetBalance({
-            asset: address(stableToken),
-            balance: stableBalanceInRamos
+            asset: address(quoteToken),
+            balance: quoteTokenBalance
         });
     }
 
@@ -99,7 +134,7 @@ contract RamosStrategy  is AbstractStrategy, IRamosTokenVault {
      * @dev Since this is not the view function, this should be called with `callStatic`
      */
     function proportionalAddLiquidityQuote(
-        uint256 _stablesAmount,
+        uint256 _quoteTokenAmount,
         uint256 _slippageBps
     ) external returns (
         uint256 templeAmount,
@@ -107,16 +142,20 @@ contract RamosStrategy  is AbstractStrategy, IRamosTokenVault {
         uint256 minBptAmount,
         IBalancerVault.JoinPoolRequest memory requestData
     ) {
-        return ramos.poolHelper().proportionalAddLiquidityQuote(_stablesAmount, _slippageBps);
+        return ramos.poolHelper().proportionalAddLiquidityQuote(_quoteTokenAmount, _slippageBps);
     }
 
     /**
      * @notice Add liquidity
-     * This is a wrapper function for Ramos:addLiquidity.
+     * This is a wrapper function for Ramos::addLiquidity
      */
-    function addLiquidity(IBalancerVault.JoinPoolRequest memory _requestData) external onlyElevatedAccess {
-        ramos.addLiquidity(_requestData);
-        emit AddLiquidity();
+    function addLiquidity(IBalancerVault.JoinPoolRequest calldata _requestData) external onlyElevatedAccess {
+        (
+            uint256 quoteTokenAmount,
+            uint256 protocolTokenAmount,
+            uint256 bptTokensStaked
+        ) = ramos.addLiquidity(_requestData);
+        emit AddLiquidity(quoteTokenAmount, protocolTokenAmount, bptTokensStaked);
     }
 
     /// @notice Get the quote used to remove liquidity
@@ -126,9 +165,9 @@ contract RamosStrategy  is AbstractStrategy, IRamosTokenVault {
         uint256 _slippageBps
     ) public returns (
         uint256 expectedTempleAmount,
-        uint256 expectedStablesAmount,
+        uint256 expectedQuoteTokenAmount,
         uint256 minTempleAmount,
-        uint256 minStablesAmount,
+        uint256 minQuoteTokenAmount,
         IBalancerVault.ExitPoolRequest memory requestData
     ) {
         return ramos.poolHelper().proportionalRemoveLiquidityQuote(_bptAmount, _slippageBps);
@@ -138,9 +177,12 @@ contract RamosStrategy  is AbstractStrategy, IRamosTokenVault {
      * @notice Remove liquidity
      * This is a wrapper function for Ramos:removeLiquidity.
      */
-    function removeLiquidity(IBalancerVault.ExitPoolRequest memory _requestData, uint256 _bptAmount) external onlyElevatedAccess {
-        ramos.removeLiquidity(_requestData, _bptAmount);
-        emit RemoveLiquidity();
+    function removeLiquidity(IBalancerVault.ExitPoolRequest calldata _requestData, uint256 _bptAmount) external onlyElevatedAccess {
+        (
+            uint256 quoteTokenAmount, 
+            uint256 protocolTokenAmount
+        ) = ramos.removeLiquidity(_requestData, _bptAmount);
+        emit RemoveLiquidity(quoteTokenAmount, protocolTokenAmount, _bptAmount);
     }
 
     struct PopulateShutdownParams {
@@ -154,12 +196,12 @@ contract RamosStrategy  is AbstractStrategy, IRamosTokenVault {
 
     /**
      * @notice Populate data to automatically shutdown.
-     * This gets a quote to unstake all BPT and liquidate into stables.
+     * This gets a quote to unstake all BPT and liquidate proportionally into stables & temple.
      * @param populateParamsData abi encoded data of struct `PopulateShutdownParams`
      * @return shutdownData abi encoded data of struct `ShutdownParams`
      */
     function populateShutdownData(
-        bytes memory populateParamsData
+        bytes calldata populateParamsData
     ) external virtual override returns (
         bytes memory shutdownData
     ) {
@@ -173,11 +215,21 @@ contract RamosStrategy  is AbstractStrategy, IRamosTokenVault {
 
     /**
      * @notice Shutdown the strategy.
-     * First unstake all BPT and liquidate into stables, and then repay the stables to the TRV.
+     * First unstake all BPT and liquidate into temple & stables, and then repay to the TRV.
      * @param shutdownData abi encoded data of struct `PopulateShutdownParams`
      */
-    function doShutdown(bytes memory shutdownData) internal virtual override {
+    function _doShutdown(bytes calldata shutdownData) internal virtual override {
         (ShutdownParams memory params) = abi.decode(shutdownData, (ShutdownParams));
         ramos.removeLiquidity(params.requestData, params.bptAmount);
+
+        uint256 stableBalance = quoteToken.balanceOf(address(this));
+        if (stableBalance != 0) {
+            treasuryReservesVault.repay(quoteToken, stableBalance, address(this));
+        }
+
+        uint256 templeBalance = templeToken.balanceOf(address(this));
+        if (templeBalance != 0) {
+            treasuryReservesVault.repay(templeToken, templeBalance, address(this));
+        }
     }
 }

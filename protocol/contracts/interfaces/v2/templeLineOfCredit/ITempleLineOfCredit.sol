@@ -7,18 +7,12 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ITlcEventsAndErrors } from "contracts/interfaces/v2/templeLineOfCredit/ITlcEventsAndErrors.sol";
 import { ITlcDataTypes } from "contracts/interfaces/v2/templeLineOfCredit/ITlcDataTypes.sol";
 import { ITreasuryReservesVault } from "contracts/interfaces/v2/ITreasuryReservesVault.sol";
-import { ITlcStrategy } from "contracts/interfaces/v2/templeLineOfCredit/ITlcStrategy.sol";
+import { ITlcStrategy } from "contracts/interfaces/v2/strategies/ITlcStrategy.sol";
+import { ITempleCircuitBreakerProxy } from "contracts/interfaces/v2/circuitBreaker/ITempleCircuitBreakerProxy.sol";
 
 /**
  * @title Temple Line of Credit (TLC)
  * @notice Users supply Temple as collateral, and can then borrow DAI.
- * 
- * Both borrows and collateral withdraws require two transactions:
- *   1/ Request the borrow | collateral withdrawal
- *   2/ Wait until the min request time has passed (and before the max time)
- *      and then do the borrow | collateral withdrawal.
- * This is in order to further mitigate money market attack vectors. Requests 
- * can be cancelled by the user or with elevated access on behalf of users.
  * 
  * Temple is valued at the Temple Treasury Price Index (TPI)
  * User debt increases at a continuously compounding rate.
@@ -33,49 +27,21 @@ interface ITempleLineOfCredit is ITlcDataTypes, ITlcEventsAndErrors {
     function addCollateral(uint256 collateralAmount, address onBehalfOf) external;
 
     /**
-     * @notice An account requests to remove Temple collateral.
-     * @dev After this request is issued, the account must then execute the `removeCollateral()`
-     * within the `removeCollateralRequestConfig`
-     * Subsequent requests override previous requests.
+     * @notice Remove Temple collateral. (active borrow positions are not allowed to go above the max LTV)
      * @param amount The amount of collateral to remove
-     */
-    function requestRemoveCollateral(uint256 amount) external;
-
-    /**
-     * @notice An account (or elevated access) cancels an existing Remove Collateral request
-     * @param account The account to cancel the request for.
-     */
-    function cancelRemoveCollateralRequest(address account) external;
-
-    /**
-     * @notice Execute the remove collateral request, within the window of the prior issued request
      * @param recipient Send the Temple collateral to a specified recipient address.
      */
-    function removeCollateral(address recipient) external;
+    function removeCollateral(uint256 amount, address recipient) external;
 
     /**
-     * @notice An account requests to borrow DAI
-     * @dev After this request is issued, the account must then execute the `borrow()`
-     * within the valid borrow request window
-     * Subsequent requests override previous requests.
+     * @notice Borrow DAI (not allowed to borrow over the max LTV)
      * @param amount The amount to borrow
-     */
-    function requestBorrow(uint256 amount) external;
-    
-    /**
-     * @notice An account (or elevated access) cancels an existing Borrow request
-     * @param account The account to cancel the request for.
-     */
-    function cancelBorrowRequest(address account) external;
-    
-    /**
-     * @notice Execute the borrow request, within the window of the prior issued request
      * @param recipient Send the borrowed token to a specified recipient address.
      */
-    function borrow(address recipient) external;
+    function borrow(uint256 amount, address recipient) external;
 
     /**
-     * @notice An account repays some of its borrowed DAI debt
+     * @notice An account repays some of its DAI debt
      * @param repayAmount The amount to repay. Cannot be more than the current debt.
      * @param onBehalfOf Another address can repay the debt on behalf of someone else
      */
@@ -96,31 +62,22 @@ interface ITempleLineOfCredit is ITlcDataTypes, ITlcEventsAndErrors {
      * then no action is performed for that account.
      */
     function batchLiquidate(
-        address[] memory accounts
+        address[] calldata accounts
     ) external returns (
         uint256 totalCollateralClaimed,
         uint256 totalDaiDebtWiped
     );
 
     /**
+     * @notice New borrows of DAI may be paused in an emergency to protect user funds
+     */
+    function setBorrowPaused(bool isPaused) external;
+
+    /**
      * @notice Update the TLC Strategy contract, and Treasury Reserves Vault (TRV)
      * @dev The TRV is granted access to spend DAI, in order to repay debt.
      */
     function setTlcStrategy(address _tlcStrategy) external;
-    
-    /**
-     * @notice Set the Withdrawal Collateral Request window parameters
-     * @param minSecs The number of seconds which must elapse between a request and the action
-     * @param maxSecs The number of seconds until a request expires
-     */
-    function setWithdrawCollateralRequestConfig(uint256 minSecs, uint256 maxSecs) external;
-    
-    /**
-     * @notice Set the Borrow Request window parameters
-     * @param minSecs The number of seconds which must elapse between a request and the action
-     * @param maxSecs The number of seconds until a request expires
-     */
-    function setBorrowRequestConfig(uint256 minSecs, uint256 maxSecs) external;
     
     /**
      * @notice Update the interest rate model contract for DAI borrows
@@ -173,14 +130,6 @@ interface ITempleLineOfCredit is ITlcDataTypes, ITlcEventsAndErrors {
     function tlcStrategy() external view returns (ITlcStrategy);
 
     /**
-     * @notice Users/accounts must first request to remove collateral. 
-     * The user must wait a period of time after the request before they can action the withdraw.
-     * The request also has an expiry time.
-     * If a request expires, a new request will need to be made or the actual withdraw will then revert.
-     */
-    function removeCollateralRequestConfig() external view returns (uint32 minSecs, uint32 maxSecs);
-
-    /**
      * @notice A record of the total amount of collateral deposited by users/accounts.
      */
     function totalCollateral() external view returns (uint256);
@@ -188,12 +137,9 @@ interface ITempleLineOfCredit is ITlcDataTypes, ITlcEventsAndErrors {
     /**
      * @notice An view of an accounts current and up to date position as of this block
      * @param account The account to get a position for
-     * @param includePendingRequests Whether to include any pending but not yet executed
-     * requests for Collateral Withdraw or Borrow. 
      */
     function accountPosition(
-        address account,
-        bool includePendingRequests
+        address account
     ) external view returns (
         AccountPosition memory position
     );
@@ -210,12 +156,9 @@ interface ITempleLineOfCredit is ITlcDataTypes, ITlcEventsAndErrors {
      * @notice Compute the liquidity status for a set of accounts.
      * @dev This can be used to verify if accounts can be liquidated or not.
      * @param accounts The accounts to get the status for.
-     * @param includePendingRequests Whether to include any pending but not yet executed
-     * requests for Collateral Withdraw or Borrow. 
      */
     function computeLiquidity(
-        address[] memory accounts,
-        bool includePendingRequests
+        address[] calldata accounts
     ) external view returns (LiquidationStatus[] memory status);
 
     /**
@@ -232,4 +175,10 @@ interface ITempleLineOfCredit is ITlcDataTypes, ITlcEventsAndErrors {
         DebtTokenConfig memory config, 
         DebtTokenData memory data
     );
+
+    /**
+     * @notice New borrows and collateral withdrawals are checked against a circuit breaker
+     * to ensure no more than a cap is withdrawn in a given period
+     */
+    function circuitBreakerProxy() external view returns (ITempleCircuitBreakerProxy);
 }

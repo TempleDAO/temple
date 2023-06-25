@@ -3,49 +3,20 @@ pragma solidity ^0.8.17;
 
 import { TlcBaseTest } from "./TlcBaseTest.t.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
-import { ITlcEventsAndErrors } from "contracts/interfaces/v2/templeLineOfCredit/ITlcEventsAndErrors.sol";
 import { TempleLineOfCredit } from "contracts/v2/templeLineOfCredit/TempleLineOfCredit.sol";
-import { SafeCast } from "contracts/common/SafeCast.sol";
 import { ITempleStrategy } from "contracts/interfaces/v2/strategies/ITempleStrategy.sol";
+import { TempleCircuitBreakerAllUsersPerPeriod } from "contracts/v2/circuitBreaker/TempleCircuitBreakerAllUsersPerPeriod.sol";
 
 /* solhint-disable func-name-mixedcase, contract-name-camelcase, not-rely-on-time */
 contract TempleLineOfCreditTestBorrow is TlcBaseTest {
-
-    function test_requestBorrow_failsZeroBalance() external {
-        vm.expectRevert(abi.encodeWithSelector(InsufficientAmount.selector, 1_000e18, 0));
-        vm.prank(alice);
-        tlc.requestBorrow(0);
-    }
-
-    function test_requestBorrow_failsUnderMinAmount() external {
-        vm.expectRevert(abi.encodeWithSelector(InsufficientAmount.selector, 1_000e18, 999e18));
-        vm.prank(alice);
-        tlc.requestBorrow(999e18);
-    }
-
-    function test_requestBorrow_failsNoCollateral() external {
-        vm.expectRevert(abi.encodeWithSelector(ExceededMaxLtv.selector, 0, 0, 1_000e18));
-        vm.prank(alice);
-        tlc.requestBorrow(1_000e18);
-    }
-
-    function test_requestBorrow_failsNotEnoughCollateral() external {
-        addCollateral(alice, 1_000e18);
-        vm.prank(alice);
-
-        vm.expectRevert(abi.encodeWithSelector(ExceededMaxLtv.selector, 1_000e18, collateralValue(1_000e18), 1_000e18));
-        tlc.requestBorrow(1_000e18);
-    }
-
-    function test_requestBorrow_failsOverflow() external {
+    function test_borrow_failsUnderMinAmount() external {
         addCollateral(alice, 10_000e18);
         vm.prank(alice);
-
-        vm.expectRevert(abi.encodeWithSelector(SafeCast.Overflow.selector, 2**128 + 1));
-        tlc.requestBorrow(2**128 + 1);
+        vm.expectRevert(abi.encodeWithSelector(InsufficientAmount.selector, 1_000e18, 999e18));
+        tlc.borrow(999e18, alice);
     }
 
-    function test_requestBorrow_failsZeroLtv() external {
+    function test_borrow_failsZeroLtv() external {
         addCollateral(alice, 10_000e18);
         
         vm.prank(executor);
@@ -53,153 +24,7 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
 
         vm.prank(alice);
         vm.expectRevert(abi.encodeWithSelector(ExceededMaxLtv.selector, 10_000e18, collateralValue(10_000e18), 1_000e18));
-        tlc.requestBorrow(1_000e18);
-    }
-
-    function test_requestBorrow_success() external {
-        addCollateral(alice, 10_000e18);
-        vm.prank(alice);
-
-        vm.expectEmit(address(tlc));
-        emit BorrowRequested(alice, 1_000e18);
-        tlc.requestBorrow(1_000e18);
-
-        AccountData memory accountData = tlc.accountData(alice);
-        assertEq(accountData.borrowRequestAmount, 1_000e18);
-        assertEq(accountData.borrowRequestAt, block.timestamp);
-    }
-
-    function test_cancelBorrowRequest_failsBadAccess() public {
-        addCollateral(alice, 10_000e18);
-
-        // Works for alice
-        {
-            vm.startPrank(alice);
-            tlc.requestBorrow(1_000e18);
-            vm.expectEmit(address(tlc));
-            emit BorrowRequestCancelled(alice);
-            tlc.cancelBorrowRequest(alice);
-        }
-
-        // Works for executor
-        {
-            tlc.requestBorrow(1_000e18);
-            changePrank(executor);
-            vm.expectEmit(address(tlc));
-            emit BorrowRequestCancelled(alice);
-            tlc.cancelBorrowRequest(alice);
-        }
-
-        // Works for operator when whitelisted
-        {
-            changePrank(alice);
-            tlc.requestBorrow(1_000e18);
-
-            changePrank(executor);
-            tlc.setExplicitAccess(operator, TempleLineOfCredit.cancelBorrowRequest.selector, true);
-
-            changePrank(operator);
-            vm.expectEmit(address(tlc));
-            emit BorrowRequestCancelled(alice);
-            tlc.cancelBorrowRequest(alice);
-        }
-
-        // Fails for bob
-        {
-            changePrank(alice);
-            tlc.requestBorrow(1_000e18);
-            changePrank(bob);
-            vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
-            tlc.cancelBorrowRequest(alice);
-        }
-    }
-
-    function test_cancelBorrowRequest_failsNoRequest() public {
-        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
-        vm.startPrank(alice);
-        tlc.cancelBorrowRequest(alice);
-    }       
-
-    function test_cancelBorrowRequest_success() public {
-        uint256 collateralAmount = 10_000e18;
-        addCollateral(alice, collateralAmount);
-
-        vm.startPrank(alice);
-        tlc.requestBorrow(1_000e18);
-
-        vm.expectEmit(address(tlc));
-        emit BorrowRequestCancelled(alice);
-        tlc.cancelBorrowRequest(alice);
-
-        AccountData memory accountData = tlc.accountData(alice);
-        assertEq(accountData.borrowRequestAmount, 0);
-        assertEq(accountData.borrowRequestAt, 0);
-    }
-
-    function test_borrow_failBeforeCooldown() public {
-        uint256 collateralAmount = 10_000e18;
-        addCollateral(alice, collateralAmount);
-
-        vm.startPrank(alice);
-        tlc.requestBorrow(1_000e18);
-
-        uint32 ts = uint32(block.timestamp);
-        vm.warp(block.timestamp + 30);
-        vm.expectRevert(abi.encodeWithSelector(NotInFundsRequestWindow.selector, block.timestamp, ts, BORROW_REQUEST_MIN_SECS, BORROW_REQUEST_MAX_SECS));
-        tlc.borrow(alice);
-    }
-
-    function test_borrow_successAtCooldownMin() public {
-        uint256 collateralAmount = 10_000e18;
-        addCollateral(alice, collateralAmount);
-
-        vm.startPrank(alice);
-        tlc.requestBorrow(1_000e18);
-
-        vm.warp(block.timestamp + BORROW_REQUEST_MIN_SECS);
-
-        vm.expectEmit(address(tlc));
-        emit Borrow(alice, alice, 1_000e18);
-        tlc.borrow(alice);
-
-        // Check the request has been removed
-        AccountData memory accountData = tlc.accountData(alice);
-        assertEq(accountData.borrowRequestAmount, 0);
-        assertEq(accountData.borrowRequestAt, 0);
-    }
-
-    function test_borrow_failAfterExpiry() public {
-        uint256 collateralAmount = 10_000e18;
-        addCollateral(alice, collateralAmount);
-
-        vm.startPrank(alice);
-        tlc.requestBorrow(1_000e18);
-
-        uint32 ts = uint32(block.timestamp);
-        vm.warp(block.timestamp + 121);
-        vm.expectRevert(abi.encodeWithSelector(NotInFundsRequestWindow.selector, block.timestamp, ts, BORROW_REQUEST_MIN_SECS, BORROW_REQUEST_MAX_SECS));
-        tlc.borrow(alice);
-    }
-
-    function test_borrow_successAtCooldownMax() public {
-        uint256 collateralAmount = 10_000e18;
-        addCollateral(alice, collateralAmount);
-
-        vm.startPrank(alice);
-        tlc.requestBorrow(1_000e18);
-
-        vm.warp(block.timestamp + BORROW_REQUEST_MAX_SECS);
-
-        vm.expectEmit(address(tlc));
-        emit Borrow(alice, alice, 1_000e18);
-        tlc.borrow(alice);
-    }
-
-    function test_borrow_failsNoRequest() external {
-        addCollateral(alice, 10_000e18);
-        vm.prank(alice);
-        vm.expectRevert(abi.encodeWithSelector(NotInFundsRequestWindow.selector, block.timestamp, 0, BORROW_REQUEST_MIN_SECS, BORROW_REQUEST_MAX_SECS));
-        tlc.borrow(alice);
+        tlc.borrow(1_000e18, alice);
     }
 
     function test_borrow_failCheckLiquidity() external {
@@ -210,44 +35,23 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
         // Borrow 80% of max
         uint256 borrowAmount = maxBorrowInfo.daiMaxBorrow * 8/10;
 
-        vm.startPrank(alice);
-        tlc.requestBorrow(borrowAmount);
-
         // Lower the maxLTV       
-        changePrank(executor);
+        vm.startPrank(executor);
         tlc.setMaxLtvRatio(0.5e18);
 
-        // Alice is now underwater for that borrow amount
-        AccountPosition memory position = tlc.accountPosition(alice, true);
-        assertEq(position.maxBorrow, 48_500e18);
-        assertApproxEqRel(position.healthFactor, 0.73529e18, 0.0001e18);
-        assertEq(position.loanToValueRatio, 0.68e18);
-
         // Now alice can't execute on the borrow
-        vm.warp(block.timestamp + BORROW_REQUEST_MIN_SECS);
         changePrank(alice);
         vm.expectRevert(abi.encodeWithSelector(ExceededMaxLtv.selector, collateralAmount, collateralValue(collateralAmount), borrowAmount));
-        tlc.borrow(alice);
-
-        // But she can still cancel the request, and re-go for a smaller amount
-        tlc.cancelBorrowRequest(alice);
-
-        // Position now drops
-        position = tlc.accountPosition(alice, true);
-        assertEq(position.maxBorrow, 48_500e18);
-        assertEq(position.healthFactor, type(uint256).max);
-        assertEq(position.loanToValueRatio, 0);
+        tlc.borrow(borrowAmount, alice);
 
         // Can now borrow a smaller amount and still be healthy.
         borrowAmount = maxBorrowInfo.daiMaxBorrow * 4/10;
-        tlc.requestBorrow(borrowAmount);
-        vm.warp(block.timestamp + BORROW_REQUEST_MIN_SECS);
-        tlc.borrow(alice);
-        position = tlc.accountPosition(alice, true);
+        tlc.borrow(borrowAmount, alice);
+        AccountPosition memory position = tlc.accountPosition(alice);
         assertGt(position.healthFactor, 1e18);
     }
 
-    function test_borrowDaiOnly_success() external {
+    function test_borrowDai_success() external {
         // For DAI, borrowing 90k / 100k available, so it's right at the kink - 10% interest rate
         uint256 borrowAmount = 90_000e18;
 
@@ -262,7 +66,6 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
 
         {
             vm.startPrank(alice);
-            tlc.requestBorrow(borrowAmount);
             vm.warp(block.timestamp+BORROW_REQUEST_MIN_SECS);
 
             // An IR update is logged for DAI
@@ -272,18 +75,7 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
             vm.expectEmit(address(tlc));
             emit Borrow(alice, alice, borrowAmount);
 
-            tlc.borrow(alice);
-
-            // Fails now since the request was cleared.
-            vm.expectRevert(abi.encodeWithSelector(
-                ITlcEventsAndErrors.NotInFundsRequestWindow.selector,
-                block.timestamp,
-                0,
-                BORROW_REQUEST_MIN_SECS,
-                BORROW_REQUEST_MAX_SECS
-            ));
-            tlc.borrow(alice);
-            vm.stopPrank();
+            tlc.borrow(borrowAmount, alice);
         }
 
         uint256 expectedDaiAccumulator = approxInterest(INITIAL_INTEREST_ACCUMULATOR, MIN_BORROW_RATE, BORROW_REQUEST_MIN_SECS);
@@ -298,11 +90,8 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
                     collateralAmount, borrowAmount, maxBorrowInfo
                 ),
                 expectedDaiDebtCheckpoint: borrowAmount,
-                expectedDaiAccumulatorCheckpoint: expectedDaiAccumulator,
-                expectedRemoveCollateralRequest: 0,
-                expectedRemoveCollateralRequestAt: 0
-            }),
-            true
+                expectedDaiAccumulatorCheckpoint: expectedDaiAccumulator
+            })
         );
 
         uint256 trvBalAfter = daiToken.balanceOf(address(trv));
@@ -324,10 +113,10 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
         }
 
         // Gas tests
-        // borrow(alice, 10 ether, 1 ether, BORROW_REQUEST_MIN_SECS);
-        // borrow(unauthorizedUser, 10 ether, 1 ether, BORROW_REQUEST_MIN_SECS);
-        // borrow(rescuer, 10 ether, 1 ether, BORROW_REQUEST_MIN_SECS);
-        // borrow(rescuer, 0.1e18, 1 ether, BORROW_REQUEST_MIN_SECS);
+        // borrow(alice, 10000 ether, 1000 ether, BORROW_REQUEST_MIN_SECS);
+        // borrow(unauthorizedUser, 10000 ether, 1000 ether, BORROW_REQUEST_MIN_SECS);
+        // borrow(rescuer, 10000 ether, 1000 ether, BORROW_REQUEST_MIN_SECS);
+        // borrow(rescuer, 10000 ether, 1000 ether, BORROW_REQUEST_MIN_SECS);
     }
 
     function test_borrow_differentRecipient() public {
@@ -336,50 +125,108 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
 
         uint256 borrowAmount = 50_000e18;
         vm.startPrank(alice);
-        tlc.requestBorrow(borrowAmount);
-        tlc.requestBorrow(borrowAmount);
-        vm.warp(block.timestamp + BORROW_REQUEST_MIN_SECS);
 
         vm.expectEmit(address(tlc));
         emit Borrow(alice, bob, borrowAmount);
-        tlc.borrow(bob);
+        tlc.borrow(borrowAmount, bob);
         
         assertEq(daiToken.balanceOf(alice), 0);
         assertEq(daiToken.balanceOf(bob), borrowAmount);
-    }
-
-    function test_borrow_noWait() public {
-        uint256 collateralAmount = 100_000e18;
-        addCollateral(alice, collateralAmount);
-
-        vm.prank(executor);
-        tlc.setBorrowRequestConfig(0, 0);
-
-        uint256 borrowAmount = 50_000e18;
-        vm.startPrank(alice);
-        tlc.requestBorrow(borrowAmount);
-
-        vm.expectEmit(address(tlc));
-        emit Borrow(alice, alice, borrowAmount);
-        tlc.borrow(alice);
     }
 
     function test_pause_borrow() public {
         uint256 collateralAmount = 100_000e18;
         addCollateral(alice, collateralAmount);
 
-        vm.prank(executor);
-        tlc.setBorrowRequestConfig(1, 0);
+        vm.startPrank(executor);
+        tlc.setBorrowPaused(true);
 
         uint256 borrowAmount = 50_000e18;
-        vm.startPrank(alice);
-        tlc.requestBorrow(borrowAmount);
+        changePrank(alice);
 
-        vm.expectRevert(abi.encodeWithSelector(NotInFundsRequestWindow.selector, block.timestamp, block.timestamp, 1, 0));
-        tlc.borrow(alice);
+        vm.expectRevert(abi.encodeWithSelector(Paused.selector));
+        tlc.borrow(borrowAmount, alice);
 
-        vm.warp(block.timestamp + 1);
-        vm.expectRevert(abi.encodeWithSelector(NotInFundsRequestWindow.selector, block.timestamp, block.timestamp-1, 1, 0));
-        tlc.borrow(alice);
+        // Unpause
+        changePrank(executor);
+        tlc.setBorrowPaused(false);
+
+        changePrank(alice);
+        tlc.borrow(borrowAmount, alice);
+    }
+
+    function test_borrow_rescueMode() public {
+        uint256 collateralAmount = 100_000e18;
+        uint256 borrowAmount = 50_000e18;
+        addCollateral(alice, collateralAmount);
+
+        {
+            vm.startPrank(rescuer);
+            tlc.setRescueMode(true);
+
+            changePrank(alice);
+            vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
+            tlc.borrow(borrowAmount, alice);
+
+            changePrank(rescuer);
+            tlc.setRescueMode(false);
+
+            changePrank(alice);
+            tlc.borrow(borrowAmount, alice);
+        }
+    }
+
+    function test_borrow_circuitBreaker() public {
+        uint256 collateralAmount = 1_000_000e18;
+        addCollateral(alice, collateralAmount);
+        
+        vm.startPrank(executor);
+        daiCircuitBreaker.updateCap(10_000e18);
+
+        changePrank(alice);
+        tlc.borrow(10_000e18, alice);
+
+        // Circuit breaker breached
+        vm.expectRevert(abi.encodeWithSelector(TempleCircuitBreakerAllUsersPerPeriod.CapBreached.selector, 11_000e18, 10_000e18));
+        tlc.borrow(1_000e18, alice);
+
+        // OK again after a day
+        vm.warp(block.timestamp + 26 hours);
+        tlc.borrow(1_000e18, alice);
+    }
+
+    function _borrowIteration(address account) internal returns (uint256 first, uint256 second, uint256 third) {
+        uint256 collateralAmount = 100_000e18;
+        uint256 borrowAmount = 1_000e18;
+
+        addCollateral(account, collateralAmount);
+        vm.startPrank(account);
+        uint256 gasStart = gasleft();
+        tlc.borrow(borrowAmount, account);
+        first = gasStart-gasleft();
+        gasStart = gasleft();
+        tlc.borrow(borrowAmount, account);
+        second = gasStart-gasleft();
+        vm.warp(block.timestamp + 2 days);
+        gasStart = gasleft();
+        tlc.borrow(borrowAmount, account);
+        third = gasStart-gasleft();
+    }
+
+    function test_borrow_gas() public {
+        (uint256 first, uint256 second, uint256 third) = _borrowIteration(makeAddr("acct1"));
+        assertLt(first, 353_000, "acct1 1");
+        assertLt(second, 76_000, "acct1 2");
+        assertLt(third, 99_000, "acct1 3");
+
+        (first, second, third) = _borrowIteration(makeAddr("acct2"));
+        assertLt(first, 120_000, "acct2 1");
+        assertLt(second, 76_000, "acct2 2");
+        assertLt(third, 94_000, "acct2 3");
+        
+        (first, second, third) = _borrowIteration(makeAddr("acct3"));
+        assertLt(first, 120_000, "acct3 1");
+        assertLt(second, 76_000, "acct3 2");
+        assertLt(third, 93_000, "acct3 3");
     }
 }

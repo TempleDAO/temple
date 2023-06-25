@@ -22,8 +22,8 @@ contract GnosisStrategy is AbstractStrategy {
     address[] public assets;
 
     event AssetsSet(address[] _assets);
-    event Borrow(uint256 amount);
-    event Repay(uint256 amount);
+    event Borrow(address indexed token, uint256 amount);
+    event Repay(address indexed token, uint256 amount);
 
     constructor(
         address _initialRescuer,
@@ -33,6 +33,18 @@ contract GnosisStrategy is AbstractStrategy {
         address _gnosisSafeWallet
     ) AbstractStrategy(_initialRescuer, _initialExecutor, _strategyName, _treasuryReservesVault) {
         gnosisSafeWallet = _gnosisSafeWallet;
+    }
+
+    /**
+     * @notice A hook where strategies can optionally update approvals when the trv is updated
+     */
+    function _updateTrvApprovals(
+        address oldTrv, 
+        address newTrv
+    ) internal override
+    // solhint-disable-next-line no-empty-blocks
+    {
+        // Tokens for Gnosis strategy are approved 'just in time'
     }
 
     /**
@@ -63,36 +75,38 @@ contract GnosisStrategy is AbstractStrategy {
      * @notice Borrow a fixed amount from the Treasury Reserves
      * These stables are sent to the Gnosis wallet
      */
-    function borrow(uint256 amount) external onlyElevatedAccess {
-        emit Borrow(amount);
-        treasuryReservesVault.borrow(amount, gnosisSafeWallet);
+    function borrow(IERC20 token, uint256 amount) external onlyElevatedAccess {
+        emit Borrow(address(token), amount);
+        treasuryReservesVault.borrow(token, amount, gnosisSafeWallet);
     }
 
     /**
      * @notice Borrow the max amount from the Treasury Reserves
      * These stables are sent to the Gnosis wallet
      */
-    function borrowMax() external onlyElevatedAccess returns (uint256 borrowedAmount) {
-        borrowedAmount = treasuryReservesVault.borrowMax(gnosisSafeWallet);
-        emit Borrow(borrowedAmount);
+    function borrowMax(IERC20 token) external onlyElevatedAccess returns (uint256 borrowedAmount) {
+        borrowedAmount = treasuryReservesVault.borrowMax(token, gnosisSafeWallet);
+        emit Borrow(address(token), borrowedAmount);
     }
 
     /**
      * @notice Repay debt back to the Treasury Reserves.
      * First send the stable tokens to this strategy prior to calling.
      */
-    function repay(uint256 amount) external onlyElevatedAccess {
-        emit Repay(amount);
-        treasuryReservesVault.repay(amount, address(this));
+    function repay(IERC20 token, uint256 amount) external onlyElevatedAccess {
+        emit Repay(address(token), amount);
+        _setMaxAllowance(token, address(0), address(treasuryReservesVault));
+        treasuryReservesVault.repay(token, amount, address(this));
     }
 
     /**
      * @notice Repay debt back to the Treasury Reserves.
      * First send the stable tokens to this strategy prior to calling.
      */
-    function repayAll() external onlyElevatedAccess returns (uint256 repaidAmount) {
-        repaidAmount = treasuryReservesVault.repayAll(address(this));
-        emit Repay(repaidAmount);
+    function repayAll(IERC20 token) external onlyElevatedAccess returns (uint256 repaidAmount) {
+        _setMaxAllowance(token, address(0), address(treasuryReservesVault));
+        repaidAmount = treasuryReservesVault.repayAll(token, address(this));
+        emit Repay(address(token), repaidAmount);
     }
 
     /** 
@@ -142,7 +156,7 @@ contract GnosisStrategy is AbstractStrategy {
      * Once done, they can give the all clear for governance to then shutdown the strategy
      * by calling TRV.shutdown(strategy, stables recovered)
      */
-    function doShutdown(bytes memory /*data*/) internal virtual override {
+    function _doShutdown(bytes calldata /*data*/) internal virtual override {
         revert Unimplemented();
     }
 

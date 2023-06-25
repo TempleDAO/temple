@@ -2,7 +2,7 @@ pragma solidity ^0.8.17;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { TempleTest } from "../../TempleTest.sol";
-import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
+import { TempleElevatedAccess, ITempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 
 /* solhint-disable func-name-mixedcase */
@@ -116,7 +116,7 @@ contract TempleElevatedAccessTest is TempleElevatedAccessTestBase {
     
     function test_access_setExplicitAccess() public {
         expectElevatedAccess();
-        mock.setExplicitAccess(alice, msg.sig, false);
+        setExplicitAccess(mock, alice, msg.sig, true);
     }
 }
 
@@ -179,29 +179,51 @@ contract TempleElevatedAccessTestSetters is TempleElevatedAccessTestBase {
         assertEq(mock.executor(), alice);
     }
 
-    function test_setExplicitAccess() public {
+    function test_setExplicitAccess_single() public {
         bytes4 fnSig = bytes4(keccak256("someFunctionSignature(uint256)"));
         bytes4 fnSig2 = bytes4(keccak256("someFunctionSignature(uint256,string)"));
         assertEq(mock.explicitFunctionAccess(alice, fnSig), false);
         vm.startPrank(executor);
 
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
-        mock.setExplicitAccess(address(0), msg.sig, true);
+        setExplicitAccess(mock, address(0), msg.sig, true);
 
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
-        mock.setExplicitAccess(alice, bytes4(0), true);
+        setExplicitAccess(mock, alice, bytes4(0), true);
 
         vm.expectEmit(address(mock));
         emit ExplicitAccessSet(alice, fnSig, true);
-        mock.setExplicitAccess(alice, fnSig, true);
+        setExplicitAccess(mock, alice, fnSig, true);
         assertEq(mock.explicitFunctionAccess(alice, fnSig), true);
         assertEq(mock.explicitFunctionAccess(alice, fnSig2), false);
 
         vm.expectEmit(address(mock));
         emit ExplicitAccessSet(alice, fnSig, false);
-        mock.setExplicitAccess(alice, fnSig, false);
+        setExplicitAccess(mock, alice, fnSig, false);
         assertEq(mock.explicitFunctionAccess(alice, fnSig), false);
         assertEq(mock.explicitFunctionAccess(alice, fnSig2), false);
+    }
+
+    function test_setExplicitAccess_multiple() public {
+        bytes4 fnSig = bytes4(keccak256("someFunctionSignature(uint256)"));
+        bytes4 fnSig2 = bytes4(keccak256("someFunctionSignature(uint256,string)"));
+        assertEq(mock.explicitFunctionAccess(alice, fnSig), false);
+        vm.startPrank(executor);
+
+        // Single
+        setExplicitAccess(mock, alice, fnSig, true);
+
+        // Now update to switch
+        ITempleElevatedAccess.ExplicitAccess[] memory access = new ITempleElevatedAccess.ExplicitAccess[](2);
+        access[0] = ITempleElevatedAccess.ExplicitAccess(fnSig, false);
+        access[1] = ITempleElevatedAccess.ExplicitAccess(fnSig2, true);
+
+        vm.expectEmit(address(mock));
+        emit ExplicitAccessSet(alice, fnSig, false);
+        emit ExplicitAccessSet(alice, fnSig2, true);
+        mock.setExplicitAccess(alice, access);
+        assertEq(mock.explicitFunctionAccess(alice, fnSig), false);
+        assertEq(mock.explicitFunctionAccess(alice, fnSig2), true);
     }
 }
 
@@ -257,7 +279,7 @@ contract TempleElevatedAccessTestModifiers is TempleElevatedAccessTestBase {
         mock.validateOnlyElevatedAccess();
 
         // Set alice to now have explicit access too
-        mock.setExplicitAccess(alice, Mock.validateOnlyElevatedAccess.selector, true);
+        setExplicitAccess(mock, alice, Mock.validateOnlyElevatedAccess.selector, true);
         changePrank(alice);
         mock.validateOnlyElevatedAccess();
     }
@@ -281,7 +303,7 @@ contract TempleElevatedAccessTestModifiers is TempleElevatedAccessTestBase {
         mock.validateOnlyElevatedAccess();
 
         // Set alice to now have explicit access too -- but still no access
-        mock.setExplicitAccess(alice, Mock.validateOnlyElevatedAccess.selector, true);
+        setExplicitAccess(mock, alice, Mock.validateOnlyElevatedAccess.selector, true);
         changePrank(alice);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         mock.validateOnlyElevatedAccess();
@@ -299,7 +321,7 @@ contract TempleElevatedAccessTestModifiers is TempleElevatedAccessTestBase {
             mock.checkSig();
 
             changePrank(executor);
-            mock.setExplicitAccess(alice, Mock.checkSig.selector, true);
+            setExplicitAccess(mock, alice, Mock.checkSig.selector, true);
 
             changePrank(alice);
             mock.checkSig();
@@ -313,7 +335,7 @@ contract TempleElevatedAccessTestModifiers is TempleElevatedAccessTestBase {
             mock.checkSigThis();
 
             changePrank(executor);
-            mock.setExplicitAccess(address(mock), Mock.validateOnlyElevatedAccess.selector, true);
+            setExplicitAccess(mock, address(mock), Mock.validateOnlyElevatedAccess.selector, true);
 
             changePrank(alice);
             mock.checkSigThis();

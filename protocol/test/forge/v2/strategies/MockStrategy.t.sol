@@ -1,10 +1,11 @@
 pragma solidity ^0.8.17;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { AbstractStrategy } from "contracts/v2/strategies/AbstractStrategy.sol";
-import { FakeERC20 } from "contracts/fakes/FakeERC20.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+
+import { AbstractStrategy } from "contracts/v2/strategies/AbstractStrategy.sol";
+import { FakeERC20 } from "contracts/fakes/FakeERC20.sol";
 
 contract MockStrategy is AbstractStrategy {
     using SafeERC20 for IERC20;
@@ -16,15 +17,28 @@ contract MockStrategy is AbstractStrategy {
 
     address[] public assets;
 
+    IERC20 public immutable dai;
+
+    IERC20 public immutable weth;
+
+    IERC20 public immutable temple;
+
     constructor(
         address _initialRescuer,
         address _initialExecutor,
         string memory _strategyName,
         address _treasuryReservesVault,
+        address _dai,
+        address _weth,
+        address _temple,
         address[] memory _assets 
     ) AbstractStrategy(_initialRescuer, _initialExecutor, _strategyName, _treasuryReservesVault) {
+        dai = IERC20(_dai);
+        weth = IERC20(_weth);
+        temple = IERC20(_temple);
         assets = _assets;
         API_VERSION_X = "1.0.0";
+        _updateTrvApprovals(address(0), _treasuryReservesVault);
     }
 
     function strategyVersion() external pure returns (string memory) {
@@ -41,6 +55,23 @@ contract MockStrategy is AbstractStrategy {
 
     function setApiVersion(string memory v) external {
         API_VERSION_X = v;
+    }
+
+    function borrow(IERC20 token, uint256 amount) external {
+        treasuryReservesVault.borrow(token, amount, address(this));
+    }
+
+    /**
+     * @notice A hook where strategies can optionally update approvals when the trv is updated
+     */
+    function _updateTrvApprovals(address oldTrv, address newTrv) internal override {
+        _setMaxAllowance(dai, oldTrv, newTrv);
+        _setMaxAllowance(weth, oldTrv, newTrv);
+        _setMaxAllowance(temple, oldTrv, newTrv);
+    }
+
+    function repay(IERC20 token, uint256 amount) external {
+        treasuryReservesVault.repay(token, amount, address(this));
     }
 
     function latestAssetBalances() public virtual override view returns (
@@ -91,9 +122,10 @@ contract MockStrategy is AbstractStrategy {
         }));
     }
 
-    function doShutdown(bytes memory data) internal virtual override {
+    function _doShutdown(bytes calldata data) internal virtual override {
         ShutdownInputData memory inputData = abi.decode(data, (ShutdownInputData));
         uint256 amount = inputData.x * inputData.y + inputData.c;
-        stableToken.safeTransferFrom(inputData.pullTokenFrom, address(this), amount);
+        dai.safeTransferFrom(inputData.pullTokenFrom, address(this), amount);
+        treasuryReservesVault.repay(dai, amount, address(this));
     }
 }

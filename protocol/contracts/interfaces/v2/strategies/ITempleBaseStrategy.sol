@@ -13,21 +13,18 @@ import { ITempleStrategy } from "contracts/interfaces/v2/strategies/ITempleStrat
  * at any time, for example when another strategy wants to borrow funds.
  */
 interface ITempleBaseStrategy is ITempleStrategy {
-
-    /**
-     * @notice Periodically, the Base Strategy will pull as many idle reserves
-     * from the TRV contract and apply in order to generate base yield 
-     * (the basis of the dUSD base in interest rate.)
-     *
-     * These idle reserves will only be drawn from a balance of tokens in the TRV itself.
-     */
-    function borrowAndDepositMax() external returns (uint256);
-
     /**
      * @notice The same as `borrowMax()` but for a pre-determined amount to borrow,
      * such that something upstream/off-chain can determine the amount.
      */
     function borrowAndDeposit(uint256 amount) external;
+
+    /**
+     * @notice When the TRV has a surplus of funds (over the configured buffer threshold)
+     * it will transfer tokens to the base strategy, and call this function to apply
+     * the new captial.
+     */
+    function trvDeposit(uint256 amount) external;
 
     /**
      * @notice The TRV is able to withdraw on demand in order to fund other strategies which 

@@ -1,21 +1,27 @@
 pragma solidity ^0.8.17;
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Temple (v2/templeLineOfCredit/TlcStrategy.sol)
+// Temple (v2/strategies/TlcStrategy.sol)
 
-// solhint-disable-next-line no-unused-import
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 import { ITempleStrategy } from "contracts/interfaces/v2/strategies/ITempleStrategy.sol";
-import { ITlcStrategy } from "contracts/interfaces/v2/templeLineOfCredit/ITlcStrategy.sol";
+import { ITlcStrategy } from "contracts/interfaces/v2/strategies/ITlcStrategy.sol";
 import { ITempleLineOfCredit } from "contracts/interfaces/v2/templeLineOfCredit/ITempleLineOfCredit.sol";
 
 import { AbstractStrategy } from "contracts/v2/strategies/AbstractStrategy.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 
+/**
+ * @title Temple Line of Credit Strategy
+ * @notice A simple wrapper strategy over TLC, where
+ * the assets is the current total user debt.
+ */
 contract TlcStrategy is ITlcStrategy, AbstractStrategy {
     string public constant VERSION = "1.0.0";
 
     ITempleLineOfCredit public immutable tlc;
 
-    address public immutable templeToken;
+    IERC20 public immutable daiToken;
 
     event Borrow(uint256 amount, address recipient);
 
@@ -25,10 +31,22 @@ contract TlcStrategy is ITlcStrategy, AbstractStrategy {
         string memory _strategyName,
         address _treasuryReservesVault,
         address _tlc,
-        address _templeToken
+        address _daiToken
     ) AbstractStrategy(_initialRescuer, _initialExecutor, _strategyName, _treasuryReservesVault) {
         tlc = ITempleLineOfCredit(_tlc);
-        templeToken = _templeToken;
+        daiToken = IERC20(_daiToken);
+    }
+
+    /**
+     * @notice A hook where strategies can optionally update approvals when the trv is updated
+     */
+    function _updateTrvApprovals(
+        address oldTrv, 
+        address newTrv
+    ) internal override
+    // solhint-disable-next-line no-empty-blocks
+    {
+        // TLC repays the DAI directly on behalf of the strategy - no automated approvals required
     }
 
     /**
@@ -56,7 +74,7 @@ contract TlcStrategy is ITlcStrategy, AbstractStrategy {
         // The total accrued debt of DAI in TLC
         assetBalances = new AssetBalance[](1);
         assetBalances[0] = AssetBalance({
-            asset: address(stableToken),
+            asset: address(daiToken),
             balance: daiPosition.totalDebt
         });
     }
@@ -68,14 +86,17 @@ contract TlcStrategy is ITlcStrategy, AbstractStrategy {
      * Once done, they can give the all clear for governance to then shutdown the strategy
      * by calling TRV.shutdown(strategy, stables recovered)
      */
-    function doShutdown(bytes memory /*data*/) internal virtual override {
+    function _doShutdown(bytes calldata /*data*/) internal virtual override {
         revert Unimplemented();
     }
 
+    /**
+     * @notice TLC (only) will call on this to fund user borrows of DAI
+     */
     function fundFromTrv(uint256 amount, address recipient) external override {
         if (msg.sender != address(tlc)) revert CommonEventsAndErrors.InvalidAccess();
 
         emit Borrow(amount, recipient);
-        treasuryReservesVault.borrow(amount, recipient);
+        treasuryReservesVault.borrow(daiToken, amount, recipient);
     }
 }

@@ -26,12 +26,12 @@
   runs = 1000
 
 [fmt]
-  bracket_spacing = false
+  bracket_spacing = true
   int_types = "long"
-  line_length = 100
+  line_length = 120
   multiline_func_header = "attributes_first"
   number_underscore = "thousands"
   quote_style = "double"
   single_line_statement_blocks = "single"
-  tab_width = 2
+  tab_width = 4
   wrap_comments = true
