@@ -8,6 +8,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IRamos } from "contracts/interfaces/amo/IRamos.sol";
 import { IBalancerVault } from "contracts/interfaces/external/balancer/IBalancerVault.sol";
 import { IRamosTokenVault } from "contracts/interfaces/amo/helpers/IRamosTokenVault.sol";
+import { IRamosTokenVault } from "contracts/interfaces/amo/helpers/IRamosTokenVault.sol";
 import { AbstractStrategy } from "contracts/v2/strategies/AbstractStrategy.sol";
 import { ITempleERC20Token } from "contracts/interfaces/core/ITempleERC20Token.sol";
 
@@ -32,6 +33,7 @@ contract RamosStrategy  is AbstractStrategy, IRamosTokenVault {
      * @notice The Temple token, one side of the Balancer LP used by Ramos
      */
     ITempleERC20Token public immutable templeToken;
+    IERC20 public immutable quoteToken;
 
     /**
      * @notice The Quote token - eg DAI, one side of the Balancer LP used by Ramos
