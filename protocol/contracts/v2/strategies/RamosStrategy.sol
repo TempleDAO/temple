@@ -33,7 +33,6 @@ contract RamosStrategy  is AbstractStrategy, IRamosTokenVault {
      * @notice The Temple token, one side of the Balancer LP used by Ramos
      */
     ITempleERC20Token public immutable templeToken;
-    IERC20 public immutable quoteToken;
 
     /**
      * @notice The Quote token - eg DAI, one side of the Balancer LP used by Ramos
