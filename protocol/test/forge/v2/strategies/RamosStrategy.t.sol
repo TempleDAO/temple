@@ -116,6 +116,7 @@ contract RamosStrategyTestBase is TempleTest {
         setExplicitAccess(strategy, address(ramos), RamosStrategy.borrowQuoteToken.selector, RamosStrategy.repayQuoteToken.selector, true);
 
         ramos.setTokenVault(address(strategy));
+        ramos.setTokenVault(address(strategy));
         ramos.setTpiOracle(address(tpiOracle));
 
         // `templeToken` settings
@@ -452,6 +453,7 @@ contract RamosStrategyTestBorrowAndRepay is RamosStrategyTestBase {
         uint256 daiBalanceBefore = assetBalances[0].balance;
 
         (uint256 templeAmount, uint256 bptOut,, IBalancerVault.JoinPoolRequest memory requestData) = strategy.proportionalAddLiquidityQuote(amount, slippageBps);
+
 
         vm.prank(executor);
         {

@@ -8,6 +8,7 @@ import { Pausable } from "@openzeppelin/contracts/security/Pausable.sol";
 
 import { IRamos } from "contracts/interfaces/amo/IRamos.sol";
 import { IRamosTokenVault } from "contracts/interfaces/amo/helpers/IRamosTokenVault.sol";
+import { IRamosTokenVault } from "contracts/interfaces/amo/helpers/IRamosTokenVault.sol";
 import { ITreasuryPriceIndexOracle } from "contracts/interfaces/v2/ITreasuryPriceIndexOracle.sol";
 import { IBalancerPoolHelper } from "contracts/interfaces/amo/helpers/IBalancerPoolHelper.sol";
 import { IBalancerVault } from "contracts/interfaces/external/balancer/IBalancerVault.sol";

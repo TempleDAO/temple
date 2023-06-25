@@ -9,6 +9,7 @@ import { IBalancerPoolHelper } from "contracts/interfaces/amo/helpers/IBalancerP
 import { IAuraStaking } from "contracts/interfaces/amo/IAuraStaking.sol";
 import { ITreasuryPriceIndexOracle } from "contracts/interfaces/v2/ITreasuryPriceIndexOracle.sol";
 import { IRamosTokenVault } from "contracts/interfaces/amo/helpers/IRamosTokenVault.sol";
+import { IRamosTokenVault } from "contracts/interfaces/amo/helpers/IRamosTokenVault.sol";
 
 /**
  * @title AMO built for a 50/50 balancer pool
