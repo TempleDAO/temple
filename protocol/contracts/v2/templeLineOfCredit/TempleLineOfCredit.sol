@@ -91,6 +91,12 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
      */
     uint256 public constant MIN_BORROW_AMOUNT = 1000e18;
 
+    /**
+     * @notice The precision used for Price, LTV, notional
+     */
+    uint256 internal constant PRECISION = 1e18;
+    uint256 internal constant DOUBLE_PRECISION = 1e36;
+
     constructor(
         address _initialRescuer,
         address _initialExecutor,
@@ -106,7 +112,7 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
         templeToken = IERC20(_templeToken);
         daiToken = IERC20(_daiToken);
 
-        if (_maxLtvRatio > 1e18) revert CommonEventsAndErrors.InvalidParam();
+        if (_maxLtvRatio > PRECISION) revert CommonEventsAndErrors.InvalidParam();
         if (_interestRateModel == address(0)) revert CommonEventsAndErrors.ExpectedNonZero();
 
         debtTokenConfig = DebtTokenConfig(
@@ -318,7 +324,9 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
         }
 
         // Remove debt from the totals
-        _repayTotalDebt(_cache, totalDebtWiped.encodeUInt128());
+        if (totalDebtWiped != 0) {
+            _repayTotalDebt(_cache, totalDebtWiped.encodeUInt128());
+        }
     }
     
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
@@ -377,7 +385,7 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
     function setMaxLtvRatio(
         uint256 maxLtvRatio
     ) external override onlyElevatedAccess {
-        if (maxLtvRatio > 1e18) revert CommonEventsAndErrors.InvalidParam();
+        if (maxLtvRatio > PRECISION) revert CommonEventsAndErrors.InvalidParam();
 
         emit MaxLtvRatioSet(maxLtvRatio);
         debtTokenConfig.maxLtvRatio = uint96(maxLtvRatio);
@@ -700,7 +708,7 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
             true // round up for user reported debt
         );
 
-        status.collateralValue = status.collateral * _cache.price / 1e18;
+        status.collateralValue = status.collateral * _cache.price / PRECISION;
 
         status.hasExceededMaxLtv = status.currentDebt > _maxBorrowLimit(
             _cache,
@@ -757,7 +765,7 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
     ) internal pure returns (uint256) {
         return _cache.trvDebtCeiling == 0
             ? 0
-            : mulDiv(_cache.totalDebt, 1e18, _cache.trvDebtCeiling);
+            : mulDiv(_cache.totalDebt, PRECISION, _cache.trvDebtCeiling);
     }
     
     /**
@@ -802,7 +810,7 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
         return mulDiv(
             _collateral * _cache.price,
             _cache.config.maxLtvRatio,
-            1e36
+            DOUBLE_PRECISION
         );
     }
 
@@ -821,7 +829,7 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
             : mulDiv(
                 _collateral * _cache.price,
                 _cache.config.maxLtvRatio,
-                _debt * 1e18
+                _debt * PRECISION
             );
     }
 
@@ -839,7 +847,7 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
             ? type(uint256).max
             : mulDiv(
                 _debt,
-                1e36,
+                DOUBLE_PRECISION,
                 _collateral * _cache.price
             );
     }

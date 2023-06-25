@@ -13,7 +13,7 @@ contract GnosisStrategy is AbstractStrategy {
     /**
      * @notice The underlying gnosis safe wallet which is reported on.
      */
-    address public gnosisSafeWallet;
+    address public immutable gnosisSafeWallet;
 
     /**
      * @notice The list of assets which are reporting on for equity performance updates
