@@ -264,6 +264,17 @@ contract RamosStrategyTestAdmin is RamosStrategyTestBase {
         assertEq(stableAmountAfter, 0);
         assertEq(trvBalAfter-trvBalBefore, _stablesRepaid);
     }
+
+    function test_setTreasuryReservesVault() public {
+        vm.startPrank(executor);
+        TreasuryReservesVault trv2 = new TreasuryReservesVault(rescuer, executor, address(tpiOracle));
+        assertEq(address(strategy.treasuryReservesVault()), address(trv2));
+
+        assertEq(dai.allowance(address(strategy), address(trv)), 0);
+        assertEq(temple.allowance(address(strategy), address(trv)), 0);
+        assertEq(dai.allowance(address(strategy), address(trv2)), type(uint256).max);
+        assertEq(temple.allowance(address(strategy), address(trv2)), type(uint256).max);
+    }
 }
 
 contract RamosStrategyTestAccess is RamosStrategyTestBase {

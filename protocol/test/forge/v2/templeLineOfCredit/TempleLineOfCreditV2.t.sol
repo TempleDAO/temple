@@ -4,10 +4,9 @@ pragma solidity ^0.8.17;
 import { TlcBaseTest } from "./TlcBaseTest.t.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { LinearWithKinkInterestRateModel } from "contracts/v2/interestRate/LinearWithKinkInterestRateModel.sol";
-import { IInterestRateModel } from "contracts/interfaces/v2/interestRate/IInterestRateModel.sol";
 import { TempleLineOfCredit } from "contracts/v2/templeLineOfCredit/TempleLineOfCredit.sol";
 import { TreasuryReservesVault } from "contracts/v2/TreasuryReservesVault.sol";
-import { TlcStrategy } from "contracts/v2/templeLineOfCredit/TlcStrategy.sol";
+import { TlcStrategy } from "contracts/v2/strategies/TlcStrategy.sol";
 import { ITempleStrategy } from "contracts/interfaces/v2/strategies/ITempleStrategy.sol";
 
 /* solhint-disable func-name-mixedcase, contract-name-camelcase, not-rely-on-time */
@@ -16,10 +15,12 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
     function test_creation() public {
         TempleLineOfCredit newTlc = new TempleLineOfCredit(
             rescuer, 
-            executor, 
+            executor,
+            address(circuitBreakerProxy),
             address(templeToken),
             address(daiToken),
-            defaultDaiConfig()
+            daiMaxLtvRatio,
+            address(daiInterestRateModel)
         );
 
         assertEq(newTlc.executor(), executor);
@@ -30,15 +31,6 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
         assertEq(newTlc.totalCollateral(), 0);
 
         assertEq(address(newTlc.treasuryReservesVault()), address(0));
-        {
-            (uint32 minSecs, uint32 maxSecs) = newTlc.removeCollateralRequestConfig();
-            assertEq(minSecs, 0);
-            assertEq(maxSecs, 0);
-
-            (DebtTokenConfig memory cfg,) = newTlc.debtTokenDetails();
-            assertEq(cfg.borrowRequestConfig.minSecs, BORROW_REQUEST_MIN_SECS);
-            assertEq(cfg.borrowRequestConfig.maxSecs, BORROW_REQUEST_MAX_SECS);
-        }
 
         (DebtTokenConfig memory config, DebtTokenData memory totals) = newTlc.debtTokenDetails();
         checkDebtTokenConfig(config, getDefaultConfig());
@@ -59,14 +51,6 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
         {
             assertEq(address(tlc.treasuryReservesVault()), address(trv));
             assertEq(daiToken.allowance(address(tlc), address(trv)), type(uint256).max);
-
-            (uint32 minSecs, uint32 maxSecs) = tlc.removeCollateralRequestConfig();
-            assertEq(minSecs, COLLATERAL_REQUEST_MIN_SECS);
-            assertEq(maxSecs, COLLATERAL_REQUEST_MAX_SECS);
-
-            (DebtTokenConfig memory cfg,) = tlc.debtTokenDetails();
-            assertEq(cfg.borrowRequestConfig.minSecs, BORROW_REQUEST_MIN_SECS);
-            assertEq(cfg.borrowRequestConfig.maxSecs, BORROW_REQUEST_MAX_SECS);
         }
     }
 
@@ -74,27 +58,23 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
         TempleLineOfCredit newTlc = new TempleLineOfCredit(
             rescuer, 
-            executor, 
+            executor,
+            address(circuitBreakerProxy), 
             address(templeToken),
             address(daiToken),
-            DebtTokenConfig({
-                interestRateModel: IInterestRateModel(address(0)),
-                maxLtvRatio: daiMaxLtvRatio,
-                borrowRequestConfig: FundsRequestConfig(0, 0)
-            })
+            daiMaxLtvRatio,
+            address(0)
         );
 
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
         newTlc = new TempleLineOfCredit(
             rescuer, 
             executor, 
+            address(circuitBreakerProxy),
             address(templeToken),
             address(daiToken),
-            DebtTokenConfig({
-                interestRateModel: daiInterestRateModel,
-                maxLtvRatio: 1.01e18,
-                borrowRequestConfig: FundsRequestConfig(0, 0)
-            })
+            1.01e18,
+            address(daiInterestRateModel)
         );
     }
 
@@ -146,49 +126,6 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
 
         vm.expectRevert();
         tlc.setTlcStrategy(alice);
-    }
-
-    function test_setWithdrawCollateralRequestConfig() public {
-        vm.startPrank(executor);
-        (uint32 minSecs, uint32 maxSecs) = tlc.removeCollateralRequestConfig();
-        assertEq(minSecs, COLLATERAL_REQUEST_MIN_SECS);
-        assertEq(maxSecs, COLLATERAL_REQUEST_MAX_SECS);
-        
-        vm.expectEmit(address(tlc));
-        emit RemoveCollateralRequestConfigSet(2 days, 4 days);
-
-        tlc.setWithdrawCollateralRequestConfig(2 days, 4 days);
-        (minSecs, maxSecs) = tlc.removeCollateralRequestConfig();
-        assertEq(minSecs, 2 days);
-        assertEq(maxSecs, 4 days);
-
-        // Intentionally no restrictions if the max < min (effectively pausing withdrawals in emergency)
-        tlc.setWithdrawCollateralRequestConfig(3 days, 1 days);
-        (minSecs, maxSecs) = tlc.removeCollateralRequestConfig();
-        assertEq(minSecs, 3 days);
-        assertEq(maxSecs, 1 days);
-    }
-
-    function test_setBorrowRequestConfig() public {
-        vm.startPrank(executor);
-
-        (DebtTokenConfig memory cfg,) = tlc.debtTokenDetails();
-        assertEq(cfg.borrowRequestConfig.minSecs, BORROW_REQUEST_MIN_SECS);
-        assertEq(cfg.borrowRequestConfig.maxSecs, BORROW_REQUEST_MAX_SECS);
-        
-        vm.expectEmit(address(tlc));
-        emit BorrowRequestConfigSet(2 days, 4 days);
-
-        tlc.setBorrowRequestConfig(2 days, 4 days);
-        (cfg,) = tlc.debtTokenDetails();
-        assertEq(cfg.borrowRequestConfig.minSecs, 2 days);
-        assertEq(cfg.borrowRequestConfig.maxSecs, 4 days);
-
-        // Intentionally no restrictions if the max < min (effectively pausing withdrawals in emergency)
-        tlc.setBorrowRequestConfig(3 days, 1 days);
-        (cfg,) = tlc.debtTokenDetails();
-        assertEq(cfg.borrowRequestConfig.minSecs, 3 days);
-        assertEq(cfg.borrowRequestConfig.maxSecs, 1 days);
     }
 
     function test_setInterestRateModel_noDebt() public {
@@ -299,7 +236,7 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
         checkDebtTokenConfig(config, DebtTokenConfig({
             interestRateModel: daiInterestRateModel,
             maxLtvRatio: maxLtvRatio,
-            borrowRequestConfig: FundsRequestConfig(BORROW_REQUEST_MIN_SECS, BORROW_REQUEST_MAX_SECS)
+            borrowsPaused: false
         }));
 
         checkDebtTokenData(totals, DebtTokenData({
@@ -351,22 +288,28 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
             tlc.recoverToken(address(templeToken), alice, 2 ether);
         }
     }
+
+    function test_setBorrowPaused() public {
+        vm.startPrank(executor);
+        vm.expectEmit();
+        emit BorrowPausedSet(true);
+        tlc.setBorrowPaused(true);
+
+        (DebtTokenConfig memory config,) = tlc.debtTokenDetails();
+        assertEq(config.borrowsPaused, true);
+
+        vm.expectEmit();
+        emit BorrowPausedSet(false);
+        tlc.setBorrowPaused(false);
+        (config,) = tlc.debtTokenDetails();
+        assertEq(config.borrowsPaused, false);
+    }
 }
 
 contract TempleLineOfCreditTest_Access is TlcBaseTest {
     function test_access_setTlcStrategy() public {
         expectElevatedAccess();
         tlc.setTlcStrategy(alice);
-    }
-
-    function test_access_setWithdrawCollateralRequestConfig() public {
-        expectElevatedAccess();
-        tlc.setWithdrawCollateralRequestConfig(0, 0);
-    }
-
-    function test_access_setBorrowRequestConfig() public {
-        expectElevatedAccess();
-        tlc.setBorrowRequestConfig(0, 0);
     }
 
     function test_access_setInterestRateModel() public {
@@ -384,14 +327,9 @@ contract TempleLineOfCreditTest_Access is TlcBaseTest {
         tlc.recoverToken(address(daiToken), alice, 0);
     }
 
-    function test_access_cancelRemoveCollateralRequest() public {
+    function test_access_setBorrowPaused() public {
         expectElevatedAccess();
-        tlc.cancelRemoveCollateralRequest(alice);
-    }
-
-    function test_access_cancelBorrowRequest() public {
-        expectElevatedAccess();
-        tlc.cancelBorrowRequest(alice);
+        tlc.setBorrowPaused(true);
     }
 }
 
@@ -407,38 +345,8 @@ contract TempleLineOfCreditTest_Positions is TlcBaseTest {
                 expectedDaiBalance: 0,
                 expectedAccountPosition: createAccountPosition(collateralAmount, 0, maxBorrowInfo),
                 expectedDaiDebtCheckpoint: 0,
-                expectedDaiAccumulatorCheckpoint: 0,
-                expectedRemoveCollateralRequest: 0,
-                expectedRemoveCollateralRequestAt: 0
-            }),
-            true
-        );
-    }
-
-    function test_accountPosition_includePendingRequests() external {
-        uint256 collateralAmount = 100_000e18;
-        addCollateral(alice, collateralAmount);
-
-        uint256 borrowAmount = 5_000e18;
-        uint256 removeCollateralAmount = 20_000e18;
-        vm.startPrank(alice);
-        tlc.requestBorrow(borrowAmount);
-        tlc.requestRemoveCollateral(removeCollateralAmount);
-
-        MaxBorrowInfo memory maxBorrowInfo = expectedMaxBorrows(collateralAmount-removeCollateralAmount);
-        checkAccountPosition(
-            CheckAccountPositionParams({
-                account: alice,
-                expectedDaiBalance: 0,
-                expectedAccountPosition: createAccountPosition(
-                    collateralAmount-removeCollateralAmount, borrowAmount, maxBorrowInfo
-                ),
-                expectedDaiDebtCheckpoint: 0,
-                expectedDaiAccumulatorCheckpoint: 0,
-                expectedRemoveCollateralRequest: removeCollateralAmount,
-                expectedRemoveCollateralRequestAt: uint32(block.timestamp)
-            }),
-            true
+                expectedDaiAccumulatorCheckpoint: 0
+            })
         );
     }
 }
@@ -482,11 +390,8 @@ contract TempleLineOfCreditTestInterestAccrual is TlcBaseTest {
                         params.collateralAmount, expectedDaiDebt, maxBorrowInfo
                     ),
                     expectedDaiDebtCheckpoint: params.borrowDaiAmount,
-                    expectedDaiAccumulatorCheckpoint: expectedDaiAccumulator,
-                    expectedRemoveCollateralRequest: 0,
-                    expectedRemoveCollateralRequestAt: 0
-                }),
-                true
+                    expectedDaiAccumulatorCheckpoint: expectedDaiAccumulator
+                })
             );
         }
 
@@ -505,11 +410,8 @@ contract TempleLineOfCreditTestInterestAccrual is TlcBaseTest {
                         params.collateralAmount, expectedDaiDebt, maxBorrowInfo
                     ),
                     expectedDaiDebtCheckpoint: params.borrowDaiAmount,
-                    expectedDaiAccumulatorCheckpoint: expectedDaiAccumulator,
-                    expectedRemoveCollateralRequest: 0,
-                    expectedRemoveCollateralRequestAt: 0
-                }),
-                true
+                    expectedDaiAccumulatorCheckpoint: expectedDaiAccumulator
+                })
             );
         }
 
@@ -531,11 +433,8 @@ contract TempleLineOfCreditTestInterestAccrual is TlcBaseTest {
                         params.collateralAmount, expectedDaiDebt, maxBorrowInfo
                     ),
                     expectedDaiDebtCheckpoint: params.borrowDaiAmount,
-                    expectedDaiAccumulatorCheckpoint: expectedDaiAccumulator,
-                    expectedRemoveCollateralRequest: 0,
-                    expectedRemoveCollateralRequestAt: 0
-                }),
-                true
+                    expectedDaiAccumulatorCheckpoint: expectedDaiAccumulator
+                })
             );
         }
     }
@@ -565,11 +464,8 @@ contract TempleLineOfCreditTestInterestAccrual is TlcBaseTest {
                         params.collateralAmount, params.borrowDaiAmount, maxBorrowInfo
                     ),
                     expectedDaiDebtCheckpoint: params.borrowDaiAmount,
-                    expectedDaiAccumulatorCheckpoint: expectedDaiAccumulator,
-                    expectedRemoveCollateralRequest: 0,
-                    expectedRemoveCollateralRequestAt: 0
-                }),
-                true
+                    expectedDaiAccumulatorCheckpoint: expectedDaiAccumulator
+                })
             );
         }
 
@@ -592,11 +488,8 @@ contract TempleLineOfCreditTestInterestAccrual is TlcBaseTest {
                         params.collateralAmount, expectedDaiDebt, maxBorrowInfo
                     ),
                     expectedDaiDebtCheckpoint: params.borrowDaiAmount,
-                    expectedDaiAccumulatorCheckpoint: expectedDaiAccumulator,
-                    expectedRemoveCollateralRequest: 0,
-                    expectedRemoveCollateralRequestAt: 0
-                }),
-                true
+                    expectedDaiAccumulatorCheckpoint: expectedDaiAccumulator
+                })
             );
         }
 
@@ -616,11 +509,9 @@ contract TempleLineOfCreditTestInterestAccrual is TlcBaseTest {
                     params.collateralAmount, expectedDaiDebt, maxBorrowInfo
                 ),
                 expectedDaiDebtCheckpoint: params.borrowDaiAmount,
-                expectedDaiAccumulatorCheckpoint: expectedDaiAccumulator,
-                expectedRemoveCollateralRequest: 0,
-                expectedRemoveCollateralRequestAt: 0
+                expectedDaiAccumulatorCheckpoint: expectedDaiAccumulator
             });
-            checkAccountPosition(posiParams, true);
+            checkAccountPosition(posiParams);
         }
 
         // Borrow the min amount more and the account checkpoint will update too
@@ -628,9 +519,8 @@ contract TempleLineOfCreditTestInterestAccrual is TlcBaseTest {
             maxBorrowInfo = expectedMaxBorrows(params.collateralAmount);
             vm.startPrank(alice);
             {
-                tlc.requestBorrow(1000e18);
                 vm.warp(block.timestamp + BORROW_REQUEST_MIN_SECS);
-                tlc.borrow(alice);
+                tlc.borrow(1000e18, alice);
             }
 
             // Update the expected amounts/rates - 30 seconds more of interest.
@@ -650,11 +540,9 @@ contract TempleLineOfCreditTestInterestAccrual is TlcBaseTest {
                     params.collateralAmount, expectedDaiDebt, maxBorrowInfo
                 ),
                 expectedDaiDebtCheckpoint: expectedDaiDebt,
-                expectedDaiAccumulatorCheckpoint: expectedDaiAccumulator2,
-                expectedRemoveCollateralRequest: 0,
-                expectedRemoveCollateralRequestAt: 0
+                expectedDaiAccumulatorCheckpoint: expectedDaiAccumulator2
             });
-            checkAccountPosition(posiParams, true);
+            checkAccountPosition(posiParams);
         }
     }
 }

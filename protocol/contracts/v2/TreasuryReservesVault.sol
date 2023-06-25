@@ -274,12 +274,13 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
     function borrow(IERC20 token, uint256 borrowAmount, address recipient) external override {
         StrategyConfig storage _strategyConfig = _getStrategyConfig(msg.sender);
         BorrowTokenConfig storage _tokenConfig = _getBorrowTokenConfig(token);
+        uint256 _dTokenBalance = _tokenConfig.dToken.balanceOf(msg.sender);
 
         // This is not allowed to take the borrower over the debt ceiling
-        uint256 available = _availableForStrategyToBorrow(msg.sender, _strategyConfig, token, _tokenConfig);
+        uint256 available = _availableForStrategyToBorrow(msg.sender, _strategyConfig, token, _dTokenBalance);
         if (borrowAmount > available) revert DebtCeilingBreached(available, borrowAmount);
 
-        _borrow(msg.sender, token, recipient, _tokenConfig, _strategyConfig, borrowAmount);
+        _borrow(msg.sender, token, recipient, _tokenConfig, _strategyConfig, borrowAmount, _dTokenBalance);
     }
 
     /**
@@ -290,8 +291,9 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
     function borrowMax(IERC20 token, address recipient) external override returns (uint256 borrowedAmount) {
         StrategyConfig storage _strategyConfig = _getStrategyConfig(msg.sender);
         BorrowTokenConfig storage _tokenConfig = _getBorrowTokenConfig(token);
-        borrowedAmount = _availableForStrategyToBorrow(msg.sender, _strategyConfig, token, _tokenConfig);
-        _borrow(msg.sender, token, recipient, _tokenConfig, _strategyConfig, borrowedAmount);
+        uint256 _dTokenBalance = _tokenConfig.dToken.balanceOf(msg.sender);
+        borrowedAmount = _availableForStrategyToBorrow(msg.sender, _strategyConfig, token, _dTokenBalance);
+        _borrow(msg.sender, token, recipient, _tokenConfig, _strategyConfig, borrowedAmount, _dTokenBalance);
     }
 
     /**
@@ -300,7 +302,8 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
      */
     function repay(IERC20 token, uint256 repayAmount, address strategy) external override {
         BorrowTokenConfig storage _tokenConfig = _getBorrowTokenConfig(token);
-        _repay(msg.sender, strategy, token, _tokenConfig, repayAmount);
+        uint256 _dTokenBalance = _tokenConfig.dToken.balanceOf(strategy);
+        _repay(msg.sender, strategy, token, _tokenConfig, repayAmount, _dTokenBalance);
         _depositIntoBaseStrategy(token, _tokenConfig, strategy);
     }
 
@@ -311,7 +314,7 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
     function repayAll(IERC20 token, address strategy) external override returns (uint256 amountRepaid) {
         BorrowTokenConfig storage _tokenConfig = _getBorrowTokenConfig(token);
         amountRepaid = _tokenConfig.dToken.balanceOf(strategy);
-        _repay(msg.sender, strategy, token, _tokenConfig, amountRepaid);
+        _repay(msg.sender, strategy, token, _tokenConfig, amountRepaid, amountRepaid);
         _depositIntoBaseStrategy(token, _tokenConfig, strategy);
     }
 
@@ -429,7 +432,9 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
         address strategy, 
         IERC20 token
     ) external override view returns (uint256) {
-        return _availableForStrategyToBorrow(strategy, _getStrategyConfig(strategy), token, _getBorrowTokenConfig(token));
+        BorrowTokenConfig storage _tokenConfig = _getBorrowTokenConfig(token);
+        uint256 _dTokenBalance = _tokenConfig.dToken.balanceOf(strategy);
+        return _availableForStrategyToBorrow(strategy, _getStrategyConfig(strategy), token, _dTokenBalance);
     }
 
     /**
@@ -454,14 +459,13 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
         address strategy,
         StrategyConfig storage strategyConfig,
         IERC20 token,
-        BorrowTokenConfig storage tokenConfig
+        uint256 dTokenBalance
     ) internal view returns (uint256) {
         // available == min(ceiling + credit - debt, 0)
-        uint256 _debt = tokenConfig.dToken.balanceOf(strategy);
         uint256 _ceiling = strategyConfig.debtCeiling[token];
         uint256 _credit = strategyTokenCredits[strategy][token];
 
-        int256 _net  = int256(_ceiling + _credit) - int256(_debt);
+        int256 _net  = int256(_ceiling + _credit) - int256(dTokenBalance);
         return _net > 0 ? uint256(_net) : 0;
     }
 
@@ -471,7 +475,8 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
         address recipient, 
         BorrowTokenConfig storage tokenConfig, 
         StrategyConfig storage strategyConfig, 
-        uint256 borrowAmount
+        uint256 borrowAmount,
+        uint256 dTokenBalance
     ) internal {
         if (borrowAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
         if (globalBorrowPaused) revert BorrowPaused();
@@ -481,7 +486,7 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
         emit Borrow(strategy, address(token), recipient, borrowAmount);
 
         // Mint any required dToken (after taking into consideration any credits)
-        _mintDToken(strategy, token, tokenConfig, borrowAmount);
+        _mintDToken(strategy, token, tokenConfig, borrowAmount, dTokenBalance);
 
         // Source the token from the baseStrategy and send to the strategy.
         _withdrawFromBaseStrategy(strategy, token, tokenConfig, recipient, borrowAmount);
@@ -525,7 +530,8 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
                 uint256 _withdrawnAmount = _baseStrategy.trvWithdraw(_withdrawFromBaseStrategyAmount);
 
                 // Burn the dTokens from the base strategy.
-                _burnDToken(address(_baseStrategy), token, tokenConfig, _withdrawnAmount);
+                uint256 _dTokenBalance = tokenConfig.dToken.balanceOf(address(_baseStrategy));
+                _burnDToken(address(_baseStrategy), token, tokenConfig, _withdrawnAmount, _dTokenBalance);
             }
         }
 
@@ -537,17 +543,20 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
      * @dev Increase the dToken debt balance by `toMintAmount`. 
      * Use up any available 'token credits' first, and only mint the balance outstanding.
      */
-    function _mintDToken(address strategy, IERC20 token, BorrowTokenConfig storage tokenConfig, uint256 toMintAmount) internal {
+    function _mintDToken(
+        address strategy, 
+        IERC20 token, 
+        BorrowTokenConfig storage tokenConfig, 
+        uint256 toMintAmount,
+        uint256 dTokenBalance
+    ) internal {
         mapping(IERC20 => uint256) storage _tokenCredits = strategyTokenCredits[strategy];
-        (uint256 _creditBalance, uint256 _debtBalance) = (
-            _tokenCredits[token],
-            tokenConfig.dToken.balanceOf(strategy)
-        );
+        uint256 _creditBalance = _tokenCredits[token];
 
         if (toMintAmount > _creditBalance) {
             // Mint new dToken for the amount not covered by prior credit balance credit
             uint256 _newDebt = toMintAmount - _creditBalance;
-            _debtBalance += _newDebt;
+            dTokenBalance += _newDebt;
             tokenConfig.dToken.mint(strategy, _newDebt);
 
             // The credit is now 0
@@ -558,7 +567,7 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
             _tokenCredits[token] = _creditBalance;
         }
 
-        emit StrategyCreditAndDebtBalance(strategy, address(token), _creditBalance, _debtBalance);
+        emit StrategyCreditAndDebtBalance(strategy, address(token), _creditBalance, dTokenBalance);
     }
 
     /**
@@ -566,16 +575,19 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
      * If there is no more dToken balance (ie fully repaid), then the strategy can go into 'credit'
      * which is just kept as state on this contract (no aToken is minted)
      */
-    function _burnDToken(address strategy, IERC20 token, BorrowTokenConfig storage tokenConfig, uint256 toBurnAmount) internal {
+    function _burnDToken(
+        address strategy, 
+        IERC20 token, 
+        BorrowTokenConfig storage tokenConfig, 
+        uint256 toBurnAmount,
+        uint256 dTokenBalance
+    ) internal {
         mapping(IERC20 => uint256) storage _tokenCredits = strategyTokenCredits[strategy];
-        (uint256 _creditBalance, uint256 _debtBalance) = (
-            _tokenCredits[token],
-            tokenConfig.dToken.balanceOf(strategy)
-        );
+        uint256 _creditBalance = _tokenCredits[token];
 
         uint256 _burnedAmount = tokenConfig.dToken.burn(strategy, toBurnAmount);
         unchecked {
-            _debtBalance -= _burnedAmount;
+            dTokenBalance -= _burnedAmount;
         }
 
         // If there is any remaining which is not burned, then the debt is now 0
@@ -588,7 +600,7 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
             _tokenCredits[token] = _creditBalance;
         }
 
-        emit StrategyCreditAndDebtBalance(strategy, address(token), _creditBalance, _debtBalance);
+        emit StrategyCreditAndDebtBalance(strategy, address(token), _creditBalance, dTokenBalance);
     }
 
     function _getStrategyConfig(address strategy) internal view returns (StrategyConfig storage strategyConfig) {
@@ -625,7 +637,8 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
                 }
 
                 // Mint new dToken's for this base strategy.
-                _mintDToken(address(_baseStrategy), token, tokenConfig, _balance);
+                uint256 _dTokenBalance = tokenConfig.dToken.balanceOf(address(_baseStrategy));
+                _mintDToken(address(_baseStrategy), token, tokenConfig, _balance, _dTokenBalance);
 
                 // Deposit the tokens into the base strategy
                 token.safeTransfer(address(_baseStrategy), _balance);
@@ -639,7 +652,8 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
         address strategy, 
         IERC20 token, 
         BorrowTokenConfig storage tokenConfig, 
-        uint256 repayAmount
+        uint256 repayAmount,
+        uint256 dTokenBalance
     ) internal {
         if (repayAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
         if (globalRepaysPaused) revert RepaysPaused();
@@ -649,7 +663,7 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
         emit Repay(strategy, address(token), from, repayAmount);
 
         // Burn the dToken tokens / add credits
-        _burnDToken(strategy, token, tokenConfig, repayAmount);
+        _burnDToken(strategy, token, tokenConfig, repayAmount, dTokenBalance);
 
         // Pull the stables from the strategy.
         token.safeTransferFrom(from, address(this), repayAmount);
