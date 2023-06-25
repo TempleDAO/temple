@@ -20,6 +20,9 @@ contract TempleTokenBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
 
     string public constant VERSION = "1.0.0";
 
+    /**
+     * @notice The Temple token which is directly minted/burned.
+     */
     ITempleERC20Token public immutable templeToken;
 
     event TempleMinted(uint256 amount);

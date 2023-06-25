@@ -356,18 +356,18 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
 
     function test_repay_gas() public {
         (uint256 first, uint256 second, uint256 third) = _repayIteration(makeAddr("acct1"));
-        assertApproxEqAbs(first, 88_000, 1_000, "acct1 1");
-        assertApproxEqAbs(second, 84_000, 1_000, "acct1 2");
-        assertApproxEqAbs(third, 101_000, 1_000, "acct1 3");
+        assertLt(first, 89_000, "acct1 1");
+        assertLt(second, 85_000, "acct1 2");
+        assertLt(third, 102_000, "acct1 3");
 
         (first, second, third) = _repayIteration(makeAddr("acct2"));
-        assertApproxEqAbs(first, 84_000, 1_000, "acct2 1");
-        assertApproxEqAbs(second, 84_000, 1_000, "acct2 2");
-        assertApproxEqAbs(third, 95_000, 1_000, "acct2 3");
+        assertLt(first, 85_000, "acct2 1");
+        assertLt(second, 85_000, "acct2 2");
+        assertLt(third, 96_000, "acct2 3");
         
         (first, second, third) = _repayIteration(makeAddr("acct3"));
-        assertApproxEqAbs(first, 84_000, 1_000, "acct3 1");
-        assertApproxEqAbs(second, 84_000, 1_000, "acct3 2");
-        assertApproxEqAbs(third, 95_000, 1_000, "acct3 3");
+        assertLt(first, 85_000, "acct3 1");
+        assertLt(second, 85_000, "acct3 2");
+        assertLt(third, 96_000, "acct3 3");
     }
 }

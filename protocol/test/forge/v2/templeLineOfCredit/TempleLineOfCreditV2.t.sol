@@ -6,10 +6,8 @@ import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.so
 import { LinearWithKinkInterestRateModel } from "contracts/v2/interestRate/LinearWithKinkInterestRateModel.sol";
 import { TempleLineOfCredit } from "contracts/v2/templeLineOfCredit/TempleLineOfCredit.sol";
 import { TreasuryReservesVault } from "contracts/v2/TreasuryReservesVault.sol";
-import { TlcStrategy } from "contracts/v2/templeLineOfCredit/TlcStrategy.sol";
+import { TlcStrategy } from "contracts/v2/strategies/TlcStrategy.sol";
 import { ITempleStrategy } from "contracts/interfaces/v2/strategies/ITempleStrategy.sol";
-
-// @todo add in and check circuit breaker
 
 /* solhint-disable func-name-mixedcase, contract-name-camelcase, not-rely-on-time */
 contract TempleLineOfCreditTest_Admin is TlcBaseTest {

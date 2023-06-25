@@ -9,7 +9,7 @@ import { ITlcDataTypes } from "contracts/interfaces/v2/templeLineOfCredit/ITlcDa
 import { FakeERC20 } from "contracts/fakes/FakeERC20.sol";
 import { SafeCast } from "contracts/common/SafeCast.sol";
 import { TempleLineOfCredit, ITempleLineOfCredit } from "contracts/v2/templeLineOfCredit/TempleLineOfCredit.sol";
-import { TlcStrategy } from "contracts/v2/templeLineOfCredit/TlcStrategy.sol";
+import { TlcStrategy } from "contracts/v2/strategies/TlcStrategy.sol";
 import { TreasuryReservesVault } from "contracts/v2/TreasuryReservesVault.sol";
 import { TempleDebtToken } from "contracts/v2/TempleDebtToken.sol";
 import { LinearWithKinkInterestRateModel } from "contracts/v2/interestRate/LinearWithKinkInterestRateModel.sol";

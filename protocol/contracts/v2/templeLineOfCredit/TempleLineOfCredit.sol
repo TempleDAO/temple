@@ -8,7 +8,7 @@ import { mulDiv } from "@prb/math/src/Common.sol";
 import { ITreasuryReservesVault } from "contracts/interfaces/v2/ITreasuryReservesVault.sol";
 import { IInterestRateModel } from "contracts/interfaces/v2/interestRate/IInterestRateModel.sol";
 import { ITempleLineOfCredit } from "contracts/interfaces/v2/templeLineOfCredit/ITempleLineOfCredit.sol";
-import { ITlcStrategy } from "contracts/interfaces/v2/templeLineOfCredit/ITlcStrategy.sol";
+import { ITlcStrategy } from "contracts/interfaces/v2/strategies/ITlcStrategy.sol";
 import { CompoundedInterest } from "contracts/v2/interestRate/CompoundedInterest.sol";
 import { ITempleCircuitBreakerProxy } from "contracts/interfaces/v2/circuitBreaker/ITempleCircuitBreakerProxy.sol";
 

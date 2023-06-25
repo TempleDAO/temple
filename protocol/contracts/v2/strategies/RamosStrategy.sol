@@ -11,6 +11,12 @@ import { IRamosTokenVault } from "contracts/interfaces/amo/helpers/IRamosTokenVa
 import { AbstractStrategy } from "contracts/v2/strategies/AbstractStrategy.sol";
 import { ITempleERC20Token } from "contracts/interfaces/core/ITempleERC20Token.sol";
 
+/**
+ * @title Ramos Strategy
+ * @notice Executors can add/remove proportional liquidity into Ramos via the strategy
+ * It also serves as the 'token vault' - Ramos will call into this strategy
+ * to obtain Temple and QuoteToken (eg DAI)
+ */
 contract RamosStrategy  is AbstractStrategy, IRamosTokenVault {
     using SafeERC20 for IERC20;
     using SafeERC20 for ITempleERC20Token;
@@ -22,7 +28,14 @@ contract RamosStrategy  is AbstractStrategy, IRamosTokenVault {
      */
     IRamos public ramos;
 
+    /**
+     * @notice The Temple token, one side of the Balancer LP used by Ramos
+     */
     ITempleERC20Token public immutable templeToken;
+
+    /**
+     * @notice The Quote token - eg DAI, one side of the Balancer LP used by Ramos
+     */
     IERC20 public immutable quoteToken;
 
     event AddLiquidity(uint256 quoteTokenAmount, uint256 protocolTokenAmount, uint256 bptTokensStaked);
@@ -58,19 +71,37 @@ contract RamosStrategy  is AbstractStrategy, IRamosTokenVault {
         return VERSION;
     }
 
+    /**
+     * @notice Send `protocolToken` to recipient
+     * @param amount The requested amount to borrow
+     * @param recipient The recipient to send the `protocolToken` tokens to
+     */
     function borrowProtocolToken(uint256 amount, address recipient) external onlyElevatedAccess {
         treasuryReservesVault.borrow(templeToken, amount, recipient);
     }
 
+    /**
+     * @notice Send `quoteToken` to recipient
+     * @param amount The requested amount to borrow
+     * @param recipient The recipient to send the `quoteToken` tokens to
+     */
     function borrowQuoteToken(uint256 amount, address recipient) external onlyElevatedAccess {
         treasuryReservesVault.borrow(quoteToken, amount, recipient);
     }
 
+    /**
+     * @notice Pull `protocolToken` from the caller
+     * @param amount The requested amount to repay
+     */
     function repayProtocolToken(uint256 amount) external onlyElevatedAccess {
         templeToken.safeTransferFrom(msg.sender, address(this), amount);
         treasuryReservesVault.repay(templeToken, amount, address(this));
     }
 
+    /**
+     * @notice Pull `quoteToken` from the caller
+     * @param amount The requested amount to repay
+     */
     function repayQuoteToken(uint256 amount) external onlyElevatedAccess {
         quoteToken.safeTransferFrom(msg.sender, address(this), amount);
         treasuryReservesVault.repay(quoteToken, amount, address(this));

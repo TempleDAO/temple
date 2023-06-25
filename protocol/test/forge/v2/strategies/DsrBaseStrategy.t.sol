@@ -81,6 +81,15 @@ contract DsrBaseStrategyTestAdmin is DsrBaseStrategyTestBase {
         assertEq(address(strategy.pot()), address(pot));
         assertEq(strategy.RAY(), 1e27);
     }
+
+    function test_setTreasuryReservesVault() public {
+        vm.startPrank(executor);
+        TreasuryReservesVault trv2 = new TreasuryReservesVault(rescuer, executor, address(tpiOracle));
+        assertEq(address(strategy.treasuryReservesVault()), address(trv2));
+
+        assertEq(dai.allowance(address(strategy), address(trv)), 0);
+        assertEq(dai.allowance(address(strategy), address(trv2)), type(uint256).max);
+    }
 }
 
 contract DsrBaseStrategyTestAccess is DsrBaseStrategyTestBase {

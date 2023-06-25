@@ -53,8 +53,6 @@ contract GnosisStrategyTestAdmin is GnosisStrategyTestBase {
         assertEq(strategy.strategyName(), "GnosisStrategy");
         assertEq(strategy.strategyVersion(), "1.0.0");
         assertEq(address(strategy.treasuryReservesVault()), address(trv));
-        // assertEq(address(strategy.stableToken()), address(dai));
-        // assertEq(address(strategy.internalDebtToken()), address(dUSD));
         ITempleStrategy.AssetBalanceDelta[] memory adjs = strategy.manualAdjustments();
         assertEq(adjs.length, 0);
 

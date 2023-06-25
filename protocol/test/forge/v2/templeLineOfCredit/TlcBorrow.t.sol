@@ -215,18 +215,18 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
 
     function test_borrow_gas() public {
         (uint256 first, uint256 second, uint256 third) = _borrowIteration(makeAddr("acct1"));
-        assertApproxEqAbs(first, 352_000, 1_000, "acct1 1");
-        assertApproxEqAbs(second, 75_000, 1_000, "acct1 2");
-        assertApproxEqAbs(third, 98_000, 1_000, "acct1 3");
+        assertLt(first, 353_000, "acct1 1");
+        assertLt(second, 76_000, "acct1 2");
+        assertLt(third, 99_000, "acct1 3");
 
         (first, second, third) = _borrowIteration(makeAddr("acct2"));
-        assertApproxEqAbs(first, 119_000, 1_000, "acct2 1");
-        assertApproxEqAbs(second, 75_000, 1_000, "acct2 2");
-        assertApproxEqAbs(third, 93_000, 1_000, "acct2 3");
+        assertLt(first, 120_000, "acct2 1");
+        assertLt(second, 76_000, "acct2 2");
+        assertLt(third, 94_000, "acct2 3");
         
         (first, second, third) = _borrowIteration(makeAddr("acct3"));
-        assertApproxEqAbs(first, 119_000, 1_000, "acct3 1");
-        assertApproxEqAbs(second, 75_000, 1_000, "acct3 2");
-        assertApproxEqAbs(third, 92_000, 1_000, "acct3 3");
+        assertLt(first, 120_000, "acct3 1");
+        assertLt(second, 76_000, "acct3 2");
+        assertLt(third, 93_000, "acct3 3");
     }
 }

@@ -4,6 +4,7 @@ pragma solidity ^0.8.17;
 import { TempleTest } from "../../TempleTest.sol";
 import { TempleCircuitBreakerAllUsersPerPeriod } from "contracts/v2/circuitBreaker/TempleCircuitBreakerAllUsersPerPeriod.sol";
 import { console2 } from "forge-std/Test.sol";
+import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 
 contract MockCaller {
     TempleCircuitBreakerAllUsersPerPeriod public breaker;
@@ -31,6 +32,9 @@ contract TempleCircuitBreakerTestBase is TempleTest {
     // Expected buckets - cleared after every check
     uint256[100] internal ebkts;
 
+    event ConfigSet(uint256 periodDuration, uint256 nBuckets, uint256 cap);
+    event CapSet(uint256 cap);
+
     function test_initialization() public {
         breaker = new TempleCircuitBreakerAllUsersPerPeriod(rescuer, executor, 1 days, 24, 100e18);
         assertEq(breaker.nBuckets(), 24);
@@ -40,6 +44,53 @@ contract TempleCircuitBreakerTestBase is TempleTest {
         assertEq(breaker.cap(), 100e18);
     }
 
+    function test_access_setConfig() public {
+        breaker = new TempleCircuitBreakerAllUsersPerPeriod(rescuer, executor, 1 days, 24, 100e18);
+        expectElevatedAccess();
+        breaker.setConfig(0, 0, 0);
+    }
+
+    function test_access_updateCap() public {
+        breaker = new TempleCircuitBreakerAllUsersPerPeriod(rescuer, executor, 1 days, 24, 100e18);
+        expectElevatedAccess();
+        breaker.updateCap(0);
+    }
+
+    function test_setConfig() public {
+        breaker = new TempleCircuitBreakerAllUsersPerPeriod(rescuer, executor, 1 days, 24, 100e18);
+        vm.startPrank(executor);
+
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
+        breaker.setConfig(0, 0, 0);
+
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
+        breaker.setConfig(24, 23, 0);
+
+        vm.expectEmit(address(breaker));
+        emit ConfigSet(10, 2, 0);
+        breaker.setConfig(10, 2, 0);
+        assertEq(breaker.nBuckets(), 2);
+        assertEq(breaker.periodDuration(), 10); 
+        assertEq(breaker.secondsPerBucket(), 5);
+        assertEq(breaker.bucketIndex(), 0);
+        assertEq(breaker.cap(), 0);
+        for (uint256 i = 0; i < 5; ++i) {
+            assertEq(breaker.buckets(i), 1);
+        }
+    }
+
+    function test_updateCap() public {
+        breaker = new TempleCircuitBreakerAllUsersPerPeriod(rescuer, executor, 1 days, 24, 100e18);
+        vm.startPrank(executor);
+
+        vm.expectEmit(address(breaker));
+        emit CapSet(20e18);
+        breaker.updateCap(20e18);
+        assertEq(breaker.cap(), 20e18);
+    }
+}
+
+contract TempleCircuitBreakerTestPreCheck is TempleCircuitBreakerTestBase {
 
     function test_preCheck_addSameBucket() public {
         breaker = new TempleCircuitBreakerAllUsersPerPeriod(rescuer, executor, 1 days, 24, 100e18);

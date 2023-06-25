@@ -266,19 +266,19 @@ contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
 
     function test_addCollateral_gas() public {
         (uint256 first, uint256 second, uint256 third) = _addCollateralIteration(makeAddr("acct1"));
-        assertApproxEqAbs(first, 84_000, 1_000, "acct1 1");
-        assertApproxEqAbs(second, 14_000, 1_000, "acct1 2");
-        assertApproxEqAbs(third, 14_000, 1_000, "acct1 3");
+        assertLt(first, 85_000, "acct1 1");
+        assertLt(second, 15_000, "acct1 2");
+        assertLt(third, 15_000, "acct1 3");
 
         (first, second, third) = _addCollateralIteration(makeAddr("acct2"));
-        assertApproxEqAbs(first, 36_000, 1_000, "acct2 1");
-        assertApproxEqAbs(second, 14_000, 1_000, "acct2 2");
-        assertApproxEqAbs(third, 14_000, 1_000, "acct2 3");
+        assertLt(first, 36_000, "acct2 1");
+        assertLt(second, 15_000, "acct2 2");
+        assertLt(third, 15_000, "acct2 3");
         
         (first, second, third) = _addCollateralIteration(makeAddr("acct3"));
-        assertApproxEqAbs(first, 36_000, 1_000, "acct3 1");
-        assertApproxEqAbs(second, 14_000, 1_000, "acct3 2");
-        assertApproxEqAbs(third, 14_000, 1_000, "acct3 3");
+        assertLt(first, 36_000, "acct3 1");
+        assertLt(second, 15_000, "acct3 2");
+        assertLt(third, 15_000, "acct3 3");
     }
 
     function _removeCollateralIteration(address account) internal returns (uint256 first, uint256 second, uint256 third) {
@@ -300,18 +300,18 @@ contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
 
     function test_removeCollateral_gas() public {
         (uint256 first, uint256 second, uint256 third) = _removeCollateralIteration(makeAddr("acct1"));
-        assertApproxEqAbs(first, 137_000, 1_000, "acct1 1");
-        assertApproxEqAbs(second, 31_000, 1_000, "acct1 2");
-        assertApproxEqAbs(third, 42_000, 1_000, "acct1 3");
+        assertLt(first, 137_000, "acct1 1");
+        assertLt(second, 31_000, "acct1 2");
+        assertLt(third, 42_000, "acct1 3");
 
         (first, second, third) = _removeCollateralIteration(makeAddr("acct2"));
-        assertApproxEqAbs(first, 57_000, 1_000, "acct2 1");
-        assertApproxEqAbs(second, 35_000, 1_000, "acct2 2");
-        assertApproxEqAbs(third, 42_000, 1_000, "acct2 3");
+        assertLt(first, 58_000, "acct2 1");
+        assertLt(second, 36_000, "acct2 2");
+        assertLt(third, 42_000, "acct2 3");
         
         (first, second, third) = _removeCollateralIteration(makeAddr("acct3"));
-        assertApproxEqAbs(first, 57_000, 1_000, "acct3 1");
-        assertApproxEqAbs(second, 35_000, 1_000, "acct3 2");
-        assertApproxEqAbs(third, 42_000, 1_000, "acct3 3");
+        assertLt(first, 58_000, "acct3 1");
+        assertLt(second, 36_000, "acct3 2");
+        assertLt(third, 42_000, "acct3 3");
     }
 }

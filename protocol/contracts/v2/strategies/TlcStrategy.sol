@@ -1,16 +1,21 @@
 pragma solidity ^0.8.17;
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Temple (v2/templeLineOfCredit/TlcStrategy.sol)
+// Temple (v2/strategies/TlcStrategy.sol)
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import { ITempleStrategy } from "contracts/interfaces/v2/strategies/ITempleStrategy.sol";
-import { ITlcStrategy } from "contracts/interfaces/v2/templeLineOfCredit/ITlcStrategy.sol";
+import { ITlcStrategy } from "contracts/interfaces/v2/strategies/ITlcStrategy.sol";
 import { ITempleLineOfCredit } from "contracts/interfaces/v2/templeLineOfCredit/ITempleLineOfCredit.sol";
 
 import { AbstractStrategy } from "contracts/v2/strategies/AbstractStrategy.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 
+/**
+ * @title Temple Line of Credit Strategy
+ * @notice A simple wrapper strategy over TLC, where
+ * the assets is the current total user debt.
+ */
 contract TlcStrategy is ITlcStrategy, AbstractStrategy {
     string public constant VERSION = "1.0.0";
 
@@ -85,6 +90,9 @@ contract TlcStrategy is ITlcStrategy, AbstractStrategy {
         revert Unimplemented();
     }
 
+    /**
+     * @notice TLC (only) will call on this to fund user borrows of DAI
+     */
     function fundFromTrv(uint256 amount, address recipient) external override {
         if (msg.sender != address(tlc)) revert CommonEventsAndErrors.InvalidAccess();
 
