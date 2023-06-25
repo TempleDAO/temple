@@ -103,11 +103,8 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
                         collateralAmount, expectedDaiDebt, maxBorrowInfo
                     ),
                     expectedDaiDebtCheckpoint: expectedDaiDebt,
-                    expectedDaiAccumulatorCheckpoint: expectedDaiAccumulator,
-                    expectedRemoveCollateralRequest: 0,
-                    expectedRemoveCollateralRequestAt: 0
-                }),
-                true
+                    expectedDaiAccumulatorCheckpoint: expectedDaiAccumulator
+                })
             );
         }
 
@@ -145,7 +142,7 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
         uint256 collateralAmount = 200_000e18;
         borrow(alice, collateralAmount, borrowDaiAmount, BORROW_REQUEST_MIN_SECS);
         vm.warp(block.timestamp + 365 days); // 1 year continuously compunding
-        AccountPosition memory position = tlc.accountPosition(alice, true);
+        AccountPosition memory position = tlc.accountPosition(alice);
         
         dealAdditional(daiToken, bob, position.currentDebt);
 
@@ -175,7 +172,7 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
 
         vm.warp(block.timestamp + 365 days); // 1 year continuously compunding
 
-        AccountPosition memory position = tlc.accountPosition(alice, true);
+        AccountPosition memory position = tlc.accountPosition(alice);
 
         // Repay the whole debt amount
         {
@@ -216,11 +213,8 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
                         collateralAmount, 0, maxBorrowInfo
                     ),
                     expectedDaiDebtCheckpoint: 0,
-                    expectedDaiAccumulatorCheckpoint: expectedDaiAccumulator,
-                    expectedRemoveCollateralRequest: 0,
-                    expectedRemoveCollateralRequestAt: 0
-                }),
-                true
+                    expectedDaiAccumulatorCheckpoint: expectedDaiAccumulator
+                })
             );
         }
     }
@@ -240,7 +234,7 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
 
         vm.warp(block.timestamp + 365 days); // 1 year continuously compunding
 
-        AccountPosition memory position = tlc.accountPosition(alice, true);
+        AccountPosition memory position = tlc.accountPosition(alice);
 
         // RepayAll
         {
@@ -281,11 +275,8 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
                         collateralAmount, 0, maxBorrowInfo
                     ),
                     expectedDaiDebtCheckpoint: 0,
-                    expectedDaiAccumulatorCheckpoint: expectedDaiAccumulator,
-                    expectedRemoveCollateralRequest: 0,
-                    expectedRemoveCollateralRequestAt: 0
-                }),
-                true
+                    expectedDaiAccumulatorCheckpoint: expectedDaiAccumulator
+                })
             );
         }
     }
@@ -295,7 +286,7 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
         uint256 collateralAmount = 200_000e18;
         borrow(alice, collateralAmount, borrowDaiAmount, BORROW_REQUEST_MIN_SECS);
         vm.warp(block.timestamp + 365 days); // 1 year continuously compunding
-        AccountPosition memory position = tlc.accountPosition(alice, true);
+        AccountPosition memory position = tlc.accountPosition(alice);
         
         dealAdditional(daiToken, bob, position.currentDebt);
 
@@ -316,4 +307,31 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
         assertEq(balancesAfter.daiBob, 0);
     }
 
+    function test_repay_rescueMode() public {
+        uint256 borrowDaiAmount = 50_000e18;
+        uint256 collateralAmount = 200_000e18;
+        borrow(alice, collateralAmount, borrowDaiAmount, BORROW_REQUEST_MIN_SECS);
+        
+        vm.startPrank(rescuer);
+        tlc.setRescueMode(true);
+
+        changePrank(alice);
+        daiToken.approve(address(tlc), borrowDaiAmount);
+        {
+            vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
+            tlc.repay(1, alice);
+
+            vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
+            tlc.repayAll(alice);
+        }
+
+        changePrank(rescuer);
+        tlc.setRescueMode(false);
+
+        {
+            changePrank(alice);
+            tlc.repay(1, alice);
+            tlc.repayAll(alice);
+        }
+    }
 }

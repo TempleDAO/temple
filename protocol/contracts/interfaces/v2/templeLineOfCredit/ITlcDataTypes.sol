@@ -13,9 +13,8 @@ interface ITlcDataTypes {
         /// @notice The borrow interest rate model contract
         IInterestRateModel interestRateModel;
 
-        /// @notice The min/max seconds after a borrow request in which the borrow action 
-        /// can then be performed
-        FundsRequestConfig borrowRequestConfig;
+        /// @notice Pause new borrows
+        bool borrowsPaused;
     }
 
     /// @notice The latest checkpoint of Debt Token data
@@ -32,16 +31,6 @@ interface ITlcDataTypes {
 
         /// @notice The accumulator index used to track the compounding of debt.
         uint256 interestAccumulator;
-    }
-
-    /// @notice The min/max seconds after a borrow or collateral removal request
-    /// in which the borrow action can then be performed
-    struct FundsRequestConfig {
-        /// @notice The minimum numer of seconds after a request has been made before the action can be done
-        uint32 minSecs;
-
-        /// @notice The maximum number of seconds after a request has been made before the request expires.
-        uint32 maxSecs;
     }
 
     /// @notice The record of an account's collateral, requests

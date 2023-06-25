@@ -68,6 +68,11 @@ interface ITempleLineOfCredit is ITlcDataTypes, ITlcEventsAndErrors {
     );
 
     /**
+     * @notice New borrows of DAI may be paused in an emergency to protect user funds
+     */
+    function setBorrowPaused(bool isPaused) external;
+
+    /**
      * @notice Update the TLC Strategy contract, and Treasury Reserves Vault (TRV)
      * @dev The TRV is granted access to spend DAI, in order to repay debt.
      */

@@ -17,7 +17,7 @@ import { TempleERC20Token } from "contracts/core/TempleERC20Token.sol";
 import { TreasuryPriceIndexOracle } from "contracts/v2/TreasuryPriceIndexOracle.sol";
 import { ITempleStrategy } from "contracts/interfaces/v2/strategies/ITempleStrategy.sol";
 
-/* solhint-disable func-name-mixedcase, contract-name-camelcase, not-rely-on-time */
+/* solhint-disable private-vars-leading-underscore, func-name-mixedcase, contract-name-camelcase, not-rely-on-time */
 contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
     TempleLineOfCredit public tlc;
     TlcStrategy public tlcStrategy;
@@ -42,11 +42,7 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
     uint256 public constant BORROW_CEILING = 100_000e18;
 
     uint256 internal constant INITIAL_INTEREST_ACCUMULATOR = 1e27;
-    
-    uint32 public constant COLLATERAL_REQUEST_MIN_SECS = 30;
-    uint32 public constant COLLATERAL_REQUEST_MAX_SECS = 45;
     uint32 public constant BORROW_REQUEST_MIN_SECS = 60;
-    uint32 public constant BORROW_REQUEST_MAX_SECS = 120;
 
     function setUp() public {
         // Default starts at 0 which can hide some issues
@@ -81,7 +77,8 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
             executor, 
             address(templeToken),
             address(daiToken),
-            defaultDaiConfig()
+            daiMaxLtvRatio,
+            address(daiInterestRateModel)
         );
 
         tlcStrategy = new TlcStrategy(
@@ -112,8 +109,6 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
         // Post create steps
         {
             tlc.setTlcStrategy(address(tlcStrategy));
-            tlc.setWithdrawCollateralRequestConfig(COLLATERAL_REQUEST_MIN_SECS, COLLATERAL_REQUEST_MAX_SECS);
-            tlc.setBorrowRequestConfig(BORROW_REQUEST_MIN_SECS, BORROW_REQUEST_MAX_SECS);
         }
 
         vm.stopPrank();
@@ -123,7 +118,7 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
         return DebtTokenConfig({
             interestRateModel: daiInterestRateModel,
             maxLtvRatio: daiMaxLtvRatio,
-            borrowRequestConfig: FundsRequestConfig(BORROW_REQUEST_MIN_SECS, BORROW_REQUEST_MAX_SECS)
+            borrowsPaused: false
         });
     }
 
@@ -149,8 +144,7 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
     ) internal {
         assertEq(address(actual.interestRateModel), address(expected.interestRateModel), "DebtTokenConfig__interestRateModel");
         assertEq(actual.maxLtvRatio, expected.maxLtvRatio, "DebtTokenConfig__maxLtvRatio");
-        assertEq(actual.borrowRequestConfig.minSecs, expected.borrowRequestConfig.minSecs, "DebtTokenConfig__borrowRequestConfig.minSecs");
-        assertEq(actual.borrowRequestConfig.maxSecs, expected.borrowRequestConfig.maxSecs, "DebtTokenConfig__borrowRequestConfig.maxSecs");
+        assertEq(actual.borrowsPaused, expected.borrowsPaused, "DebtTokenConfig__borrowsPaused");
     }
 
     function checkDebtTokenData(
@@ -199,18 +193,14 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
         AccountPosition expectedAccountPosition;
         uint256 expectedDaiDebtCheckpoint;
         uint256 expectedDaiAccumulatorCheckpoint;
-        uint256 expectedRemoveCollateralRequest;
-        uint256 expectedRemoveCollateralRequestAt;
     }
 
-    function checkAccountPosition(CheckAccountPositionParams memory params, bool includePendingRequests) internal {
-        AccountPosition memory actualAccountPosition = tlc.accountPosition(params.account, includePendingRequests);        
+    function checkAccountPosition(CheckAccountPositionParams memory params) internal {
+        AccountPosition memory actualAccountPosition = tlc.accountPosition(params.account);        
         AccountData memory accountData = tlc.accountData(params.account);
 
         assertEq(actualAccountPosition.collateral, params.expectedAccountPosition.collateral, "collateral");
-        assertEq(accountData.collateral, actualAccountPosition.collateral + params.expectedRemoveCollateralRequest, "collateral with request");
-        assertEq(accountData.removeCollateralRequestAmount, params.expectedRemoveCollateralRequest, "removeCollateralRequest.amount");
-        assertEq(accountData.removeCollateralRequestAt, uint32(params.expectedRemoveCollateralRequestAt), "removeCollateralRequest.requestedAt");
+        assertEq(accountData.collateral, actualAccountPosition.collateral, "collateral2");
 
         // The 'as of now' data
         assertEq(daiToken.balanceOf(params.account), params.expectedDaiBalance, "expectedDaiBalance");
@@ -255,14 +245,10 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
         }
         vm.startPrank(_account);
         
-        if (daiBorrowAmount != 0) {
-            tlc.requestBorrow(daiBorrowAmount);
-        }
-        
-        // Sleep it off...
+        // Optionally sleep for some time in order to accrue interest from prior calls...
         vm.warp(block.timestamp + cooldownSecs);
 
-        if (daiBorrowAmount != 0) tlc.borrow(_account);
+        if (daiBorrowAmount != 0) tlc.borrow(daiBorrowAmount, _account);
 
         vm.stopPrank();
     }
@@ -311,14 +297,13 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
 
     function checkLiquidationStatus(
         address account,
-        bool includePendingRequests,
         bool expectedHasExceededMaxLtv,
         uint256 expectedCollateral,
         uint256 expectedCurrentDaiDebt
     ) internal {
         address[] memory accounts = new address[](1);
         accounts[0] = account;
-        LiquidationStatus[] memory status = tlc.computeLiquidity(accounts, includePendingRequests);
+        LiquidationStatus[] memory status = tlc.computeLiquidity(accounts);
 
         assertEq(status[0].hasExceededMaxLtv, expectedHasExceededMaxLtv, "hasExceededMaxLtv");
         assertEq(status[0].collateral, expectedCollateral, "collateral");

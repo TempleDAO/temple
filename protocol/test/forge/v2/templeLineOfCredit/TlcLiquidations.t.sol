@@ -6,66 +6,13 @@ import { TlcBaseTest } from "./TlcBaseTest.t.sol";
 /* solhint-disable func-name-mixedcase, contract-name-camelcase, not-rely-on-time */
 contract TempleLineOfCreditTestCheckLiquidity is TlcBaseTest {
     function test_computeLiquidity_noBorrowsNoCollateral() external {
-        checkLiquidationStatus(alice, true, false, 0, 0);
-        checkLiquidationStatus(alice, false, false, 0, 0);
+        checkLiquidationStatus(alice, false, 0, 0);
     }
 
     function test_computeLiquidity_noBorrowsWithCollateral() external {
         uint256 collateralAmount = 100_000;
         addCollateral(alice, collateralAmount);
-        checkLiquidationStatus(alice, true, false, collateralAmount, 0);
-        checkLiquidationStatus(alice, false, false, collateralAmount, 0);
-    }
-
-    function test_computeLiquidity_noBorrowsWithCollateralAndRemoveRequest() external {
-        uint256 collateralAmount = 100_000;
-        addCollateral(alice, collateralAmount);
-        vm.prank(alice);
-        tlc.requestRemoveCollateral(50_000);
-
-        checkLiquidationStatus(alice, true, false, 50_000, 0);
-        checkLiquidationStatus(alice, false, false, collateralAmount, 0);
-    }
-
-    function test_computeLiquidity_withBorrowRequestUnderMaxLTV() external {
-        uint256 collateralAmount = 100_000e18;
-        uint256 daiBorrowAmount = 20_000e18;
-
-        addCollateral(alice, collateralAmount);
-        vm.prank(alice);
-        tlc.requestBorrow(daiBorrowAmount);
-        
-        checkLiquidationStatus(alice, true, false, collateralAmount, daiBorrowAmount);
-        checkLiquidationStatus(alice, false, false, collateralAmount, 0);
-    }
-
-    function test_computeLiquidity_withBorrowRequestAtMaxLTV() external {
-        uint256 collateralAmount = 100_000e18;
-
-        addCollateral(alice, collateralAmount);
-        vm.prank(alice);
-        MaxBorrowInfo memory maxBorrowInfo = expectedMaxBorrows(collateralAmount);
-        uint256 daiBorrowAmount = maxBorrowInfo.daiMaxBorrow;
-        tlc.requestBorrow(daiBorrowAmount);
-
-        checkLiquidationStatus(alice, true, false, collateralAmount, daiBorrowAmount);
-        checkLiquidationStatus(alice, false, false, collateralAmount, 0);
-    }
-
-    function test_computeLiquidity_withBorrowRequestOverMaxLTV() external {
-        uint256 collateralAmount = 100_000e18;
-
-        addCollateral(alice, collateralAmount);
-        vm.prank(alice);
-        MaxBorrowInfo memory maxBorrowInfo = expectedMaxBorrows(collateralAmount);
-        uint256 daiBorrowAmount = maxBorrowInfo.daiMaxBorrow;
-        tlc.requestBorrow(daiBorrowAmount);
-
-        vm.prank(executor);
-        tlc.setMaxLtvRatio(0.8e18);
-
-        checkLiquidationStatus(alice, true, true, collateralAmount, daiBorrowAmount);
-        checkLiquidationStatus(alice, false, false, collateralAmount, 0);
+        checkLiquidationStatus(alice, false, collateralAmount, 0);
     }
 
     function test_computeLiquidity_withBorrowUnderMaxLTV() external {
@@ -73,8 +20,7 @@ contract TempleLineOfCreditTestCheckLiquidity is TlcBaseTest {
         uint256 daiBorrowAmount = 1_000e18;
         borrow(alice, collateralAmount, daiBorrowAmount, BORROW_REQUEST_MIN_SECS);
 
-        checkLiquidationStatus(alice, true, false, collateralAmount, daiBorrowAmount);
-        checkLiquidationStatus(alice, false, false, collateralAmount, daiBorrowAmount);
+        checkLiquidationStatus(alice, false, collateralAmount, daiBorrowAmount);
     }
 
     function test_computeLiquidity_withBorrowAtMaxLTV() external {
@@ -83,8 +29,7 @@ contract TempleLineOfCreditTestCheckLiquidity is TlcBaseTest {
         uint256 daiBorrowAmount = maxBorrowInfo.daiMaxBorrow;
         borrow(alice, collateralAmount, daiBorrowAmount, BORROW_REQUEST_MIN_SECS);
 
-        checkLiquidationStatus(alice, true, false, collateralAmount, daiBorrowAmount);
-        checkLiquidationStatus(alice, false, false, collateralAmount, daiBorrowAmount);
+        checkLiquidationStatus(alice, false, collateralAmount, daiBorrowAmount);
     }
 
     function test_computeLiquidity_withBorrowOverMaxLTV() external {
@@ -96,80 +41,13 @@ contract TempleLineOfCreditTestCheckLiquidity is TlcBaseTest {
         vm.prank(executor);
         tlc.setMaxLtvRatio(0.8e18);
 
-        checkLiquidationStatus(alice, true, true, collateralAmount, daiBorrowAmount);
-        checkLiquidationStatus(alice, false, true, collateralAmount, daiBorrowAmount);
-    }
-    
-    function test_computeLiquidity_withBorrowAndRequestUnderMaxLTV() external {
-        uint256 collateralAmount = 50_000e18;
-        uint256 daiBorrowAmount = 2_000e18;
-        borrow(alice, collateralAmount, daiBorrowAmount, BORROW_REQUEST_MIN_SECS);
-        vm.prank(alice);
-        tlc.requestBorrow(1_000e18);
-
-
-        checkLiquidationStatus(alice, true, false, collateralAmount, daiBorrowAmount+1_000e18);
-        checkLiquidationStatus(alice, false, false, collateralAmount, daiBorrowAmount);
-    }
-
-    function test_computeLiquidity_withBorrowAndRequestAtMaxLTV() external {
-        uint256 collateralAmount = 50_000e18;
-        uint256 daiBorrowAmount = 1_000e18;
-        borrow(alice, collateralAmount, daiBorrowAmount, BORROW_REQUEST_MIN_SECS);
-        MaxBorrowInfo memory maxBorrowInfo = expectedMaxBorrows(collateralAmount);
-        vm.prank(alice);
-        tlc.requestBorrow(maxBorrowInfo.daiMaxBorrow-daiBorrowAmount);
-
-        checkLiquidationStatus(alice, true, false, collateralAmount, maxBorrowInfo.daiMaxBorrow);
-        checkLiquidationStatus(alice, false, false, collateralAmount, daiBorrowAmount);
-
-        // After a day of interest this is now over
-        vm.warp(block.timestamp + 86400);
-        checkLiquidationStatus(alice, true, true, collateralAmount, 41_225.13851796411244e18);
-        checkLiquidationStatus(alice, false, false, collateralAmount, 1_000.13851796411244e18);
-    }
-
-    function test_computeLiquidity_withBorrowAndRequestOverMaxLTV() external {
-        uint256 collateralAmount = 10_000e18;
-        uint256 daiBorrowAmount = 1_000e18;
-        borrow(alice, collateralAmount, daiBorrowAmount, BORROW_REQUEST_MIN_SECS);
-        MaxBorrowInfo memory maxBorrowInfo = expectedMaxBorrows(collateralAmount);
-        vm.prank(alice);
-        tlc.requestBorrow(maxBorrowInfo.daiMaxBorrow-daiBorrowAmount);
-
-        vm.prank(executor);
-        tlc.setMaxLtvRatio(0.8e18);
-
-        checkLiquidationStatus(alice, true, true, collateralAmount, maxBorrowInfo.daiMaxBorrow);
-        checkLiquidationStatus(alice, false, false, collateralAmount, daiBorrowAmount);
-    }
-
-    function test_computeLiquidity_withBorrowAndRequestOverMaxLTV_afterRepayOK() external {
-        uint256 collateralAmount = 50_000e18;
-        uint256 daiBorrowAmount = 8_000e18;
-        borrow(alice, collateralAmount, daiBorrowAmount, BORROW_REQUEST_MIN_SECS);
-        MaxBorrowInfo memory maxBorrowInfo = expectedMaxBorrows(collateralAmount);
-        vm.prank(alice);
-        tlc.requestBorrow(maxBorrowInfo.daiMaxBorrow-daiBorrowAmount);
-
-        vm.prank(executor);
-        tlc.setMaxLtvRatio(0.8e18);
-
-        vm.startPrank(alice);
-        daiToken.approve(address(tlc), maxBorrowInfo.daiMaxBorrow/10);
-        tlc.repay(maxBorrowInfo.daiMaxBorrow/10, alice);
-
-        checkLiquidationStatus(alice, true, false, collateralAmount, maxBorrowInfo.daiMaxBorrow*9/10);
-        checkLiquidationStatus(alice, false, false, collateralAmount, daiBorrowAmount-maxBorrowInfo.daiMaxBorrow/10);
+        checkLiquidationStatus(alice, true, collateralAmount, daiBorrowAmount);
     }
 
     function test_computeLiquidity_afterRepayAll() external {
         uint256 collateralAmount = 50_000e18;
         uint256 daiBorrowAmount = 8_000e18;
         borrow(alice, collateralAmount, daiBorrowAmount, BORROW_REQUEST_MIN_SECS);
-        MaxBorrowInfo memory maxBorrowInfo = expectedMaxBorrows(collateralAmount);
-        vm.prank(alice);
-        tlc.requestBorrow(maxBorrowInfo.daiMaxBorrow-daiBorrowAmount);
 
         vm.prank(executor);
         tlc.setMaxLtvRatio(0.8e18);
@@ -178,21 +56,10 @@ contract TempleLineOfCreditTestCheckLiquidity is TlcBaseTest {
         daiToken.approve(address(tlc), daiBorrowAmount);
         tlc.repayAll(alice);
 
-        checkLiquidationStatus(alice, true, false, collateralAmount, maxBorrowInfo.daiMaxBorrow-daiBorrowAmount);
-        checkLiquidationStatus(alice, false, false, collateralAmount, 0);
+        checkLiquidationStatus(alice, false, collateralAmount, 0);
 
-        tlc.cancelBorrowRequest(alice);
-        checkLiquidationStatus(alice, true, false, collateralAmount, 0);
-        checkLiquidationStatus(alice, false, false, collateralAmount, 0);
-
-        tlc.requestRemoveCollateral(collateralAmount);
-        checkLiquidationStatus(alice, true, false, 0, 0);
-        checkLiquidationStatus(alice, false, false, collateralAmount, 0);
-
-        vm.warp(block.timestamp + COLLATERAL_REQUEST_MIN_SECS);
-        tlc.removeCollateral(alice);
-        checkLiquidationStatus(alice, true, false, 0, 0);
-        checkLiquidationStatus(alice, false, false, 0, 0);
+        tlc.removeCollateral(collateralAmount, alice);
+        checkLiquidationStatus(alice, false, 0, 0);
     }
 }
 
@@ -314,11 +181,8 @@ contract TempleLineOfCreditTestBatchLiquidate is TlcBaseTest {
                     0, 0, maxBorrowInfo
                 ),
                 expectedDaiDebtCheckpoint: 0,
-                expectedDaiAccumulatorCheckpoint: 0,
-                expectedRemoveCollateralRequest: 0,
-                expectedRemoveCollateralRequestAt: 0
-            }),
-            true
+                expectedDaiAccumulatorCheckpoint: 0
+            })
         );
     }
 
@@ -384,14 +248,10 @@ contract TempleLineOfCreditTestBatchLiquidate is TlcBaseTest {
                     0, 0, maxBorrowInfo
                 ),
                 expectedDaiDebtCheckpoint: 0,
-                expectedDaiAccumulatorCheckpoint: 0,
-                expectedRemoveCollateralRequest: 0,
-                expectedRemoveCollateralRequestAt: 0
-            }),
-            true
+                expectedDaiAccumulatorCheckpoint: 0
+            })
         );
-        checkLiquidationStatus(alice, true, false, 0, 0);
-        checkLiquidationStatus(alice, false, false, 0, 0);
+        checkLiquidationStatus(alice, false, 0, 0);
 
         // Not for Bob
         maxBorrowInfo = expectedMaxBorrows(collateralAmount);
@@ -405,15 +265,11 @@ contract TempleLineOfCreditTestBatchLiquidate is TlcBaseTest {
                 ),
                 expectedDaiDebtCheckpoint: 1_000e18,
                 // The IR after 60 seconds of compounded interest, UR = Alice's initial debt
-                expectedDaiAccumulatorCheckpoint: approxInterest(expectedInitialAccumulator, initialAliceInterestRate, BORROW_REQUEST_MIN_SECS),
-                expectedRemoveCollateralRequest: 0,
-                expectedRemoveCollateralRequestAt: 0
-            }),
-            true
+                expectedDaiAccumulatorCheckpoint: approxInterest(expectedInitialAccumulator, initialAliceInterestRate, BORROW_REQUEST_MIN_SECS)
+            })
         );
 
-        checkLiquidationStatus(bob, true, false, collateralAmount, expectedBobDaiDebt);
-        checkLiquidationStatus(bob, false, false, collateralAmount, expectedBobDaiDebt);
+        checkLiquidationStatus(bob, false, collateralAmount, expectedBobDaiDebt);
     }
 
     function test_batchLiquidate_twoAccounts_twoLiquidate() external {
@@ -489,11 +345,8 @@ contract TempleLineOfCreditTestBatchLiquidate is TlcBaseTest {
                     0, 0, maxBorrowInfo
                 ),
                 expectedDaiDebtCheckpoint: 0,
-                expectedDaiAccumulatorCheckpoint: 0,
-                expectedRemoveCollateralRequest: 0,
-                expectedRemoveCollateralRequestAt: 0
-            }),
-            true
+                expectedDaiAccumulatorCheckpoint: 0
+            })
         );
         checkAccountPosition(
             CheckAccountPositionParams({
@@ -503,11 +356,8 @@ contract TempleLineOfCreditTestBatchLiquidate is TlcBaseTest {
                     0, 0, maxBorrowInfo
                 ),
                 expectedDaiDebtCheckpoint: 0,
-                expectedDaiAccumulatorCheckpoint: 0,
-                expectedRemoveCollateralRequest: 0,
-                expectedRemoveCollateralRequestAt: 0
-            }),
-            true
+                expectedDaiAccumulatorCheckpoint: 0
+            })
         );
     }
 
@@ -515,9 +365,6 @@ contract TempleLineOfCreditTestBatchLiquidate is TlcBaseTest {
         uint256 collateralAmount = 10_000e18;
         uint256 daiBorrowAmount = 1_000e18;
         borrow(alice, collateralAmount, daiBorrowAmount, BORROW_REQUEST_MIN_SECS);
-        MaxBorrowInfo memory maxBorrowInfo = expectedMaxBorrows(collateralAmount);
-        vm.prank(alice);
-        tlc.requestBorrow(maxBorrowInfo.daiMaxBorrow-daiBorrowAmount);
 
         vm.prank(executor);
         tlc.setMaxLtvRatio(0.8e18);
@@ -525,8 +372,7 @@ contract TempleLineOfCreditTestBatchLiquidate is TlcBaseTest {
         address[] memory accounts = new address[](1);
         accounts[0] = alice;
 
-        checkLiquidationStatus(alice, true, true, collateralAmount, maxBorrowInfo.daiMaxBorrow);
-        checkLiquidationStatus(alice, false, false, collateralAmount, daiBorrowAmount);
+        checkLiquidationStatus(alice, false, collateralAmount, daiBorrowAmount);
         checkBatchLiquidate(accounts, 0, 0);
     }
 }

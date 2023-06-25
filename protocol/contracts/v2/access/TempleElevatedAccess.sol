@@ -138,4 +138,9 @@ abstract contract TempleElevatedAccess is ITempleElevatedAccess {
         if (!(inRescueMode && msg.sender == rescuer)) revert CommonEventsAndErrors.InvalidAccess();
         _;
     }
+
+    modifier notInRescueMode() {
+        if (inRescueMode) revert CommonEventsAndErrors.InvalidAccess();
+        _;
+    }
 }
