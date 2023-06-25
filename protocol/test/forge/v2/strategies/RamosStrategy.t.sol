@@ -268,6 +268,7 @@ contract RamosStrategyTestAdmin is RamosStrategyTestBase {
     function test_setTreasuryReservesVault() public {
         vm.startPrank(executor);
         TreasuryReservesVault trv2 = new TreasuryReservesVault(rescuer, executor, address(tpiOracle));
+        strategy.setTreasuryReservesVault(address(trv2));
         assertEq(address(strategy.treasuryReservesVault()), address(trv2));
 
         assertEq(dai.allowance(address(strategy), address(trv)), 0);

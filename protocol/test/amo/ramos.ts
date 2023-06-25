@@ -210,8 +210,11 @@ describe("RAMOS", async () => {
             maxRebalanceFee
         );
 
-        tokenVault = await new RamosTestnetTempleTokenVault__factory(executor).deploy(TEMPLE);
+        tokenVault = await new RamosTestnetTempleTokenVault__factory(executor).deploy(TEMPLE, BBA_USD_TOKEN);
         await amo.setTokenVault(tokenVault.address);
+
+        // seed token vault with stables
+        await bbaUsdToken.connect(executor).transfer(tokenVault.address, toAtto(500_000));
 
         poolHelper = await new BalancerPoolHelper__factory(executor).deploy(
             BALANCER_VAULT,
@@ -228,7 +231,6 @@ describe("RAMOS", async () => {
         await amo.setTpiOracle(tpiOracle.address);
         await setExplicitAccess(amoStaking, amo.address, ["withdrawAndUnwrap", "depositAndStake"], true);
         await amoStaking.setRewardsRecipient(executorAddress);
-        await bbaUsdToken.connect(executor).transfer(amo.address, toAtto(500_000));
         await templeMultisigConnect.addMinter(tokenVault.address);
 
         // set params
@@ -374,7 +376,7 @@ describe("RAMOS", async () => {
             await expect(connectAMO.rebalanceUpJoin(ONE_ETH, 1)).to.be.revertedWithCustomError(amo, "InvalidAccess");
             await expect(connectAMO.rebalanceDownJoin(ONE_ETH, 1)).to.be.revertedWithCustomError(amo, "InvalidAccess");
             await expect(connectAMO.addLiquidity(joinPoolRequest)).to.be.revertedWithCustomError(amo, "InvalidAccess");
-            await expect(connectAMO.removeLiquidity(exitPoolRequest, 100, amo.address)).to.be.revertedWithCustomError(amo, "InvalidAccess");
+            await expect(connectAMO.removeLiquidity(exitPoolRequest, 100)).to.be.revertedWithCustomError(amo, "InvalidAccess");
             await expect(connectAMO.depositAndStakeBptTokens(100, true)).to.be.revertedWithCustomError(amo, "InvalidAccess");
 
             // passes
@@ -423,11 +425,11 @@ describe("RAMOS", async () => {
         });
     
         it("sets protocol token vault", async () => {
-            const newTokenVault = await new RamosTestnetTempleTokenVault__factory(executor).deploy(TEMPLE);
+            const newTokenVault = await new RamosTestnetTempleTokenVault__factory(executor).deploy(TEMPLE, BBA_USD_TOKEN);
             await expect(amo.setTokenVault(newTokenVault.address))
                 .to.emit(amo, "TokenVaultSet")
                 .withArgs(newTokenVault.address);
-            expect(await amo.TokenVault()).to.eq(newTokenVault.address);
+            expect(await amo.tokenVault()).to.eq(newTokenVault.address);
             expect(await templeToken.allowance(amo.address, tokenVault.address)).eq(0);
             expect(await templeToken.allowance(amo.address, newTokenVault.address)).eq(ethers.constants.MaxUint256);
         });
@@ -619,31 +621,31 @@ describe("RAMOS", async () => {
 
             // fail invalid request
             exitRequest.toInternalBalance = true;
-            await expect(amo.removeLiquidity(exitRequest, bptAmountIn, amo.address)).to.be.revertedWithCustomError(amo, "InvalidBalancerVaultRequest");
+            await expect(amo.removeLiquidity(exitRequest, bptAmountIn)).to.be.revertedWithCustomError(amo, "InvalidBalancerVaultRequest");
             exitRequest.minAmountsOut = [BigNumber.from(1)];
-            await expect(amo.removeLiquidity(exitRequest, bptAmountIn, amo.address)).to.be.revertedWithCustomError(amo, "InvalidBalancerVaultRequest");
+            await expect(amo.removeLiquidity(exitRequest, bptAmountIn)).to.be.revertedWithCustomError(amo, "InvalidBalancerVaultRequest");
             exitRequest.assets = [TEMPLE];
-            await expect(amo.removeLiquidity(exitRequest, bptAmountIn, amo.address)).to.be.revertedWithCustomError(amo, "InvalidBalancerVaultRequest");
+            await expect(amo.removeLiquidity(exitRequest, bptAmountIn)).to.be.revertedWithCustomError(amo, "InvalidBalancerVaultRequest");
             exitRequest.assets = tokens;
             exitRequest.minAmountsOut = minAmountsOut;
             exitRequest.toInternalBalance = false;
 
             exitRequest.minAmountsOut = amountsOut;
             exitRequest.userData = ethers.utils.defaultAbiCoder.encode(["uint256", "uint256"], [1, bptAmountIn]);
-            const amoQuoteTokenBefore = await bbaUsdToken.balanceOf(amo.address);
+            const amoQuoteTokenBefore = await bbaUsdToken.balanceOf(tokenVault.address);
             
             const templeIndex = await amo.protocolTokenBalancerPoolIndex();
             const expectedQuoteToken = (templeIndex.toNumber() == 0) ? amountsOut[1] : amountsOut[0];
             const expectedTemple = (templeIndex.toNumber() == 0) ? amountsOut[0] : amountsOut[1];
             
-            expect(await amo.removeLiquidity(exitRequest, bptIn, amo.address))
+            expect(await amo.removeLiquidity(exitRequest, bptIn))
                 .to.emit(templeToken, "Transfer").withArgs(amoStaking.address, ZERO_ADDRESS, amountsOut[0])
                 .to.emit(bbaUsdTempleAuraRewardPool, "Withdrawn").withArgs(amoStaking.address, bbaUsdTempleAuraPID, bptIn)
                 .to.emit(amo, "LiquidityRemoved").withArgs(expectedQuoteToken, expectedTemple, bptIn)
             expect(await bptToken.balanceOf(amo.address)).to.eq(bptAmountIn.sub(bptIn));
 
             const amoTempleAfter= await templeToken.balanceOf(amo.address);
-            const amoQuoteTokenAfter = await bbaUsdToken.balanceOf(amo.address);
+            const amoQuoteTokenAfter = await bbaUsdToken.balanceOf(tokenVault.address);
             expect(amoQuoteTokenAfter).to.eq(amoQuoteTokenBefore.add(expectedQuoteToken))
             expect(amoTempleAfter).to.eq(0);
         });
@@ -681,7 +683,7 @@ describe("RAMOS", async () => {
             const reqData = await getAmoJoinPoolRequest(amo.address, [BigNumber.from(0), amountIn]);
             const bptOut = reqData.bptOut;
             const stakedBalanceBefore = await bbaUsdTempleAuraRewardPool.balanceOf(amoStaking.address);
-            const quoteTokenBalanceBefore = await bbaUsdToken.balanceOf(amo.address); 
+            const quoteTokenBalanceBefore = await bbaUsdToken.balanceOf(tokenVault.address); 
 
             // success
             await expect(amo.rebalanceUpJoin(amountIn, bptOut))
@@ -689,7 +691,7 @@ describe("RAMOS", async () => {
                 .to.emit(auraBooster, "Deposited").withArgs(amoStaking.address, bbaUsdTempleAuraPID, bptOut);
 
             const stakedBalanceAfter = await bbaUsdTempleAuraRewardPool.balanceOf(amoStaking.address);
-            const quoteTokenBalanceAfter = await bbaUsdToken.balanceOf(amo.address);
+            const quoteTokenBalanceAfter = await bbaUsdToken.balanceOf(tokenVault.address);
             expect(stakedBalanceAfter).to.eq(stakedBalanceBefore.add(bptOut));
             expect(quoteTokenBalanceAfter).to.eq(quoteTokenBalanceBefore.sub(reqData.joinPoolRequest.maxAmountsIn[1]));
 
@@ -718,7 +720,7 @@ describe("RAMOS", async () => {
             const reqData = await getAmoJoinPoolRequest(amo.address, [BigNumber.from(0), joinAmt]);
             const bptOut = reqData.bptOut;
             const stakedBalanceBefore = await bbaUsdTempleAuraRewardPool.balanceOf(amoStaking.address);
-            const quoteTokenBalanceBefore = await bbaUsdToken.balanceOf(amo.address); 
+            const quoteTokenBalanceBefore = await bbaUsdToken.balanceOf(tokenVault.address); 
 
             // success
             await expect(amo.rebalanceUpJoin(amountIn, bptOut))
@@ -726,7 +728,7 @@ describe("RAMOS", async () => {
                 .to.emit(auraBooster, "Deposited").withArgs(amoStaking.address, bbaUsdTempleAuraPID, bptOut);
 
             const stakedBalanceAfter = await bbaUsdTempleAuraRewardPool.balanceOf(amoStaking.address);
-            const quoteTokenBalanceAfter = await bbaUsdToken.balanceOf(amo.address);
+            const quoteTokenBalanceAfter = await bbaUsdToken.balanceOf(tokenVault.address);
             expect(stakedBalanceAfter).to.eq(stakedBalanceBefore.add(bptOut));
             expect(quoteTokenBalanceAfter).to.eq(quoteTokenBalanceBefore.sub(reqData.joinPoolRequest.maxAmountsIn[1]).sub(feeAmt));
 
@@ -766,7 +768,7 @@ describe("RAMOS", async () => {
             const bptIn = reqData.bptIn;
             await amo.setMaxRebalanceAmounts(bptIn, bptIn, bptIn);
 
-            const quoteTokenBalanceBefore = await bbaUsdToken.balanceOf(amo.address);
+            const quoteTokenBalanceBefore = await bbaUsdToken.balanceOf(tokenVault.address);
             const stakedBalanceBefore = await bbaUsdTempleAuraRewardPool.balanceOf(amoStaking.address);
             // willQuoteTokenExitTakePriceBelowTpiLowerBound
             await amo.setMaxRebalanceAmounts(stakeAmount, stakeAmount, stakeAmount);
@@ -778,7 +780,7 @@ describe("RAMOS", async () => {
                 .to.emit(amo, "RebalanceDownExit").withArgs(bptIn, exitTokenAmountOut, 0)
                 .to.emit(auraBooster, "Withdrawn").withArgs(amoStaking.address, bbaUsdTempleAuraPID, bptIn);
 
-            const quoteTokenBalanceAfter = await bbaUsdToken.balanceOf(amo.address);
+            const quoteTokenBalanceAfter = await bbaUsdToken.balanceOf(tokenVault.address);
             expect(quoteTokenBalanceAfter).to.gte(quoteTokenBalanceBefore.add(exitTokenAmountOut));
             expect(await bbaUsdTempleAuraRewardPool.balanceOf(amoStaking.address)).to.eq(stakedBalanceBefore.sub(bptIn));
 
@@ -809,8 +811,7 @@ describe("RAMOS", async () => {
             const bptIn = reqData.bptIn;
             await amo.setMaxRebalanceAmounts(bptIn, bptIn, bptIn);
 
-            const quoteTokenBalanceAmoBefore = await bbaUsdToken.balanceOf(amo.address);
-            const quoteTokenBalanceAlanBefore = await bbaUsdToken.balanceOf(alanAddress);
+            const quoteTokenBalanceAmoBefore = await bbaUsdToken.balanceOf(tokenVault.address);
             const stakedBalanceBefore = await bbaUsdTempleAuraRewardPool.balanceOf(amoStaking.address);
 
             // Success
@@ -818,11 +819,9 @@ describe("RAMOS", async () => {
                 .to.emit(amo, "RebalanceDownExit").withArgs(bptIn, exitTokenAmountOut, 0)
                 .to.emit(auraBooster, "Withdrawn").withArgs(amoStaking.address, bbaUsdTempleAuraPID, bptIn);
 
-            const quoteTokenBalanceAmoAfter = await bbaUsdToken.balanceOf(amo.address);
-            const quoteTokenBalanceAlanAfter = await bbaUsdToken.balanceOf(alanAddress);
+            const quoteTokenBalanceAmoAfter = await bbaUsdToken.balanceOf(tokenVault.address);
 
-            expect(quoteTokenBalanceAmoAfter).to.eq(quoteTokenBalanceAmoBefore);
-            expect(quoteTokenBalanceAlanAfter).to.gte(quoteTokenBalanceAlanBefore.add(exitTokenAmountOut));
+            expect(quoteTokenBalanceAmoAfter).to.eq(quoteTokenBalanceAmoBefore.add(exitTokenAmountOut));
             expect(await bbaUsdTempleAuraRewardPool.balanceOf(amoStaking.address)).to.eq(stakedBalanceBefore.sub(bptIn));
         });
 
@@ -842,7 +841,7 @@ describe("RAMOS", async () => {
             await amo.setMaxRebalanceAmounts(bptIn, bptIn, bptIn);
 
             const stakedBalanceBefore = await bbaUsdTempleAuraRewardPool.balanceOf(amoStaking.address);
-            const amoBalanceBefore = await bbaUsdToken.balanceOf(amo.address);
+            const amoBalanceBefore = await bbaUsdToken.balanceOf(tokenVault.address);
 
             const feeAmt = quoteTokenAmountOut.mul(100).div(10_000);
 
@@ -854,11 +853,9 @@ describe("RAMOS", async () => {
             // The fee collector gets the expected fees - paid in stables
             expect(await bbaUsdToken.balanceOf(feeCollector.getAddress())).eq(feeAmt);
 
-            const quoteTokenBalanceAlanAfter = await bbaUsdToken.balanceOf(alanAddress);
-            const alanExpected = quoteTokenAmountOut.sub(feeAmt);
-            const amoBalanceAfter = await bbaUsdToken.balanceOf(amo.address);
-            expect(amoBalanceAfter).to.eq(amoBalanceBefore);
-            expect(quoteTokenBalanceAlanAfter).to.eq(alanExpected);
+            const amoBalanceAfter = await bbaUsdToken.balanceOf(tokenVault.address);
+
+            expect(amoBalanceAfter).to.eq(amoBalanceBefore.add(quoteTokenAmountOut).sub(feeAmt));
             expect(await bbaUsdTempleAuraRewardPool.balanceOf(amoStaking.address)).to.eq(stakedBalanceBefore.sub(bptIn));
         });
 
@@ -1077,7 +1074,7 @@ describe("RAMOS", async () => {
 
             const bptAmount = toAtto(50_000);
             const removeQuote = await poolHelper.callStatic.proportionalRemoveLiquidityQuote(bptAmount, 100);
-            await amo.removeLiquidity(removeQuote.requestData, bptAmount, executorAddress);
+            await amo.removeLiquidity(removeQuote.requestData, bptAmount);
             const positionsAfter2 = await amo.positions();
             const spotPriceAfter2 = await poolHelper.getSpotPrice();
 
