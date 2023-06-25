@@ -5,6 +5,7 @@ import { TlcBaseTest } from "./TlcBaseTest.t.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { SafeCast } from "contracts/common/SafeCast.sol";
 import { TempleLineOfCredit } from "contracts/v2/templeLineOfCredit/TempleLineOfCredit.sol";
+import { TempleCircuitBreakerAllUsersPerPeriod } from "contracts/v2/circuitBreaker/TempleCircuitBreakerAllUsersPerPeriod.sol";
 
 /* solhint-disable func-name-mixedcase, contract-name-camelcase, not-rely-on-time */
 contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
@@ -224,5 +225,93 @@ contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
             changePrank(alice);
             tlc.removeCollateral(50, alice);
         }
+    }
+
+    function test_removeCollateral_circuitBreaker() public {
+        uint256 collateralAmount = 1_000_000e18;
+        addCollateral(alice, collateralAmount);
+        
+        vm.startPrank(executor);
+        templeCircuitBreaker.updateCap(100_000e18);
+
+        changePrank(alice);
+        tlc.removeCollateral(100_000e18, alice);
+
+        // Circuit breaker breached
+        vm.expectRevert(abi.encodeWithSelector(TempleCircuitBreakerAllUsersPerPeriod.CapBreached.selector, 100_000e18+1, 100_000e18));
+        tlc.removeCollateral(1, alice);
+
+        // OK again after a day
+        vm.warp(block.timestamp + 26 hours);
+        tlc.removeCollateral(1, alice);
+    }
+
+    function _addCollateralIteration(address account) internal returns (uint256 first, uint256 second, uint256 third) {
+        uint256 collateralAmount = 100_000e18;
+
+        deal(address(templeToken), account, collateralAmount*3);
+        vm.startPrank(account);
+        templeToken.approve(address(tlc), collateralAmount*3);
+        uint256 gasStart = gasleft();
+        tlc.addCollateral(collateralAmount, account);
+        first = gasStart-gasleft();
+        gasStart = gasleft();
+        tlc.addCollateral(collateralAmount, account);
+        second = gasStart-gasleft();
+        vm.warp(block.timestamp + 2 days);
+        gasStart = gasleft();
+        tlc.addCollateral(collateralAmount, account);
+        third = gasStart-gasleft();
+    }
+
+    function test_addCollateral_gas() public {
+        (uint256 first, uint256 second, uint256 third) = _addCollateralIteration(makeAddr("acct1"));
+        assertApproxEqAbs(first, 84_000, 1_000, "acct1 1");
+        assertApproxEqAbs(second, 14_000, 1_000, "acct1 2");
+        assertApproxEqAbs(third, 14_000, 1_000, "acct1 3");
+
+        (first, second, third) = _addCollateralIteration(makeAddr("acct2"));
+        assertApproxEqAbs(first, 36_000, 1_000, "acct2 1");
+        assertApproxEqAbs(second, 14_000, 1_000, "acct2 2");
+        assertApproxEqAbs(third, 14_000, 1_000, "acct2 3");
+        
+        (first, second, third) = _addCollateralIteration(makeAddr("acct3"));
+        assertApproxEqAbs(first, 36_000, 1_000, "acct3 1");
+        assertApproxEqAbs(second, 14_000, 1_000, "acct3 2");
+        assertApproxEqAbs(third, 14_000, 1_000, "acct3 3");
+    }
+
+    function _removeCollateralIteration(address account) internal returns (uint256 first, uint256 second, uint256 third) {
+        uint256 collateralAmount = 100_000e18;
+
+        addCollateral(account, collateralAmount*3);
+        vm.startPrank(account);
+        uint256 gasStart = gasleft();
+        tlc.removeCollateral(collateralAmount, account);
+        first = gasStart-gasleft();
+        gasStart = gasleft();
+        tlc.removeCollateral(collateralAmount, account);
+        second = gasStart-gasleft();
+        vm.warp(block.timestamp + 2 days);
+        gasStart = gasleft();
+        tlc.removeCollateral(collateralAmount, account);
+        third = gasStart-gasleft();
+    }
+
+    function test_removeCollateral_gas() public {
+        (uint256 first, uint256 second, uint256 third) = _removeCollateralIteration(makeAddr("acct1"));
+        assertApproxEqAbs(first, 137_000, 1_000, "acct1 1");
+        assertApproxEqAbs(second, 31_000, 1_000, "acct1 2");
+        assertApproxEqAbs(third, 42_000, 1_000, "acct1 3");
+
+        (first, second, third) = _removeCollateralIteration(makeAddr("acct2"));
+        assertApproxEqAbs(first, 57_000, 1_000, "acct2 1");
+        assertApproxEqAbs(second, 35_000, 1_000, "acct2 2");
+        assertApproxEqAbs(third, 42_000, 1_000, "acct2 3");
+        
+        (first, second, third) = _removeCollateralIteration(makeAddr("acct3"));
+        assertApproxEqAbs(first, 57_000, 1_000, "acct3 1");
+        assertApproxEqAbs(second, 35_000, 1_000, "acct3 2");
+        assertApproxEqAbs(third, 42_000, 1_000, "acct3 3");
     }
 }

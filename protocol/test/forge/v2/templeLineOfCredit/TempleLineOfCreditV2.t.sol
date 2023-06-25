@@ -17,7 +17,8 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
     function test_creation() public {
         TempleLineOfCredit newTlc = new TempleLineOfCredit(
             rescuer, 
-            executor, 
+            executor,
+            address(circuitBreakerProxy),
             address(templeToken),
             address(daiToken),
             daiMaxLtvRatio,
@@ -59,7 +60,8 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
         TempleLineOfCredit newTlc = new TempleLineOfCredit(
             rescuer, 
-            executor, 
+            executor,
+            address(circuitBreakerProxy), 
             address(templeToken),
             address(daiToken),
             daiMaxLtvRatio,
@@ -70,6 +72,7 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
         newTlc = new TempleLineOfCredit(
             rescuer, 
             executor, 
+            address(circuitBreakerProxy),
             address(templeToken),
             address(daiToken),
             1.01e18,

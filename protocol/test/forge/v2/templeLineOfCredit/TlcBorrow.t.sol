@@ -5,6 +5,7 @@ import { TlcBaseTest } from "./TlcBaseTest.t.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { TempleLineOfCredit } from "contracts/v2/templeLineOfCredit/TempleLineOfCredit.sol";
 import { ITempleStrategy } from "contracts/interfaces/v2/strategies/ITempleStrategy.sol";
+import { TempleCircuitBreakerAllUsersPerPeriod } from "contracts/v2/circuitBreaker/TempleCircuitBreakerAllUsersPerPeriod.sol";
 
 /* solhint-disable func-name-mixedcase, contract-name-camelcase, not-rely-on-time */
 contract TempleLineOfCreditTestBorrow is TlcBaseTest {
@@ -173,5 +174,59 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
             changePrank(alice);
             tlc.borrow(borrowAmount, alice);
         }
+    }
+
+    function test_borrow_circuitBreaker() public {
+        uint256 collateralAmount = 1_000_000e18;
+        addCollateral(alice, collateralAmount);
+        
+        vm.startPrank(executor);
+        daiCircuitBreaker.updateCap(10_000e18);
+
+        changePrank(alice);
+        tlc.borrow(10_000e18, alice);
+
+        // Circuit breaker breached
+        vm.expectRevert(abi.encodeWithSelector(TempleCircuitBreakerAllUsersPerPeriod.CapBreached.selector, 11_000e18, 10_000e18));
+        tlc.borrow(1_000e18, alice);
+
+        // OK again after a day
+        vm.warp(block.timestamp + 26 hours);
+        tlc.borrow(1_000e18, alice);
+    }
+
+    function _borrowIteration(address account) internal returns (uint256 first, uint256 second, uint256 third) {
+        uint256 collateralAmount = 100_000e18;
+        uint256 borrowAmount = 1_000e18;
+
+        addCollateral(account, collateralAmount);
+        vm.startPrank(account);
+        uint256 gasStart = gasleft();
+        tlc.borrow(borrowAmount, account);
+        first = gasStart-gasleft();
+        gasStart = gasleft();
+        tlc.borrow(borrowAmount, account);
+        second = gasStart-gasleft();
+        vm.warp(block.timestamp + 2 days);
+        gasStart = gasleft();
+        tlc.borrow(borrowAmount, account);
+        third = gasStart-gasleft();
+    }
+
+    function test_borrow_gas() public {
+        (uint256 first, uint256 second, uint256 third) = _borrowIteration(makeAddr("acct1"));
+        assertApproxEqAbs(first, 352_000, 1_000, "acct1 1");
+        assertApproxEqAbs(second, 75_000, 1_000, "acct1 2");
+        assertApproxEqAbs(third, 98_000, 1_000, "acct1 3");
+
+        (first, second, third) = _borrowIteration(makeAddr("acct2"));
+        assertApproxEqAbs(first, 119_000, 1_000, "acct2 1");
+        assertApproxEqAbs(second, 75_000, 1_000, "acct2 2");
+        assertApproxEqAbs(third, 93_000, 1_000, "acct2 3");
+        
+        (first, second, third) = _borrowIteration(makeAddr("acct3"));
+        assertApproxEqAbs(first, 119_000, 1_000, "acct3 1");
+        assertApproxEqAbs(second, 75_000, 1_000, "acct3 2");
+        assertApproxEqAbs(third, 92_000, 1_000, "acct3 3");
     }
 }

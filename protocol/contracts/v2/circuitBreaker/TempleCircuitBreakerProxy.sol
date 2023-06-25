@@ -1,12 +1,12 @@
 pragma solidity ^0.8.17;
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Temple (v2/access/ITempleCircuitBreakerProxy.sol)
+// Temple (v2/circuitBreaker/ITempleCircuitBreakerProxy.sol)
 
 import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
-import { ITempleCircuitBreaker } from "contracts/interfaces/v2/access/ITempleCircuitBreaker.sol";
-import { ITempleCircuitBreakerProxy } from "contracts/interfaces/v2/access/ITempleCircuitBreakerProxy.sol";
+import { ITempleCircuitBreaker } from "contracts/interfaces/v2/circuitBreaker/ITempleCircuitBreaker.sol";
+import { ITempleCircuitBreakerProxy } from "contracts/interfaces/v2/circuitBreaker/ITempleCircuitBreakerProxy.sol";
 
 /**
  * @title Temple Circuit Breaker Proxy
@@ -57,12 +57,12 @@ contract TempleCircuitBreakerProxy is ITempleCircuitBreakerProxy, TempleElevated
     function preCheck(
         bytes32 identifier,
         address token,
-        address sender,
+        address onBehalfOf,
         uint256 amount
     ) external override onlyElevatedAccess {
         // Don't bother checking the identifier exists to give a nicer error, as
         // it consumes extra gas when it will fail regardless
-        circuitBreakers[identifier][token].preCheck(sender, amount);
+        circuitBreakers[identifier][token].preCheck(onBehalfOf, msg.sender, amount);
     }
 
     /**

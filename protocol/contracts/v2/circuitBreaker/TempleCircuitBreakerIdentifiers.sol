@@ -1,6 +1,6 @@
 pragma solidity ^0.8.17;
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Temple (v2/access/TempleCircuitBreakerIdentifiers.sol)
+// Temple (v2/circuitBreaker/TempleCircuitBreakerIdentifiers.sol)
 
 library TempleCircuitBreakerIdentifiers {
     /// @notice The circuit breaker ID to group all external users - for TLC, Spice Bazaar, etc.

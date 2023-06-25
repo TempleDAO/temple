@@ -1,11 +1,11 @@
 pragma solidity ^0.8.17;
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Temple (v2/access/TempleCircuitBreakerAllUsersPerPeriod.sol)
+// Temple (v2/circuitBreaker/TempleCircuitBreakerAllUsersPerPeriod.sol)
 
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
 import { SafeCast } from "contracts/common/SafeCast.sol";
-import { ITempleCircuitBreaker } from "contracts/interfaces/v2/access/ITempleCircuitBreaker.sol";
+import { ITempleCircuitBreaker } from "contracts/interfaces/v2/circuitBreaker/ITempleCircuitBreaker.sol";
 
 /**
  * @title Temple Circuit Breaker -- total volumes (across all users) in a rolling period window
@@ -81,7 +81,7 @@ contract TempleCircuitBreakerAllUsersPerPeriod is ITempleCircuitBreaker, TempleE
     /**
      * @notice Verify the new amount requested does not breach the cap in this rolling period.
      */
-    function preCheck(address /*sender*/, uint256 amount) external override onlyElevatedAccess {
+    function preCheck(address /*onBehalfOf*/, address /*sender*/, uint256 amount) external override onlyElevatedAccess {
         uint32 _nextBucketIndex = uint32(block.timestamp / secondsPerBucket);
         uint32 _bucketIndex = bucketIndex;
         uint32 _nBuckets = nBuckets;

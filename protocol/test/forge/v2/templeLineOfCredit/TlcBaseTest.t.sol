@@ -16,6 +16,9 @@ import { LinearWithKinkInterestRateModel } from "contracts/v2/interestRate/Linea
 import { TempleERC20Token } from "contracts/core/TempleERC20Token.sol";
 import { TreasuryPriceIndexOracle } from "contracts/v2/TreasuryPriceIndexOracle.sol";
 import { ITempleStrategy } from "contracts/interfaces/v2/strategies/ITempleStrategy.sol";
+import { TempleCircuitBreakerAllUsersPerPeriod } from "contracts/v2/circuitBreaker/TempleCircuitBreakerAllUsersPerPeriod.sol";
+import { TempleCircuitBreakerProxy } from "contracts/v2/circuitBreaker/TempleCircuitBreakerProxy.sol";
+import { TempleCircuitBreakerIdentifiers } from "contracts/v2/circuitBreaker/TempleCircuitBreakerIdentifiers.sol";
 
 /* solhint-disable private-vars-leading-underscore, func-name-mixedcase, contract-name-camelcase, not-rely-on-time */
 contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
@@ -43,6 +46,10 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
 
     uint256 internal constant INITIAL_INTEREST_ACCUMULATOR = 1e27;
     uint32 public constant BORROW_REQUEST_MIN_SECS = 60;
+
+    TempleCircuitBreakerAllUsersPerPeriod public templeCircuitBreaker;
+    TempleCircuitBreakerAllUsersPerPeriod public daiCircuitBreaker;
+    TempleCircuitBreakerProxy public circuitBreakerProxy;
 
     function setUp() public {
         // Default starts at 0 which can hide some issues
@@ -72,9 +79,12 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
             10e18 / 100  // 10% percent interest rate (rate% at kink% UR)
         );
 
+        circuitBreakerProxy = new TempleCircuitBreakerProxy(rescuer, executor);
+
         tlc = new TempleLineOfCredit(
             rescuer, 
-            executor, 
+            executor,
+            address(circuitBreakerProxy),
             address(templeToken),
             address(daiToken),
             daiMaxLtvRatio,
@@ -109,6 +119,15 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
         // Post create steps
         {
             tlc.setTlcStrategy(address(tlcStrategy));
+            templeCircuitBreaker = new TempleCircuitBreakerAllUsersPerPeriod(rescuer, executor, 26 hours, 13, 1_000_000e18);
+            daiCircuitBreaker = new TempleCircuitBreakerAllUsersPerPeriod(rescuer, executor, 26 hours, 13, 1_000_000e18);
+
+            circuitBreakerProxy.setCircuitBreaker(TempleCircuitBreakerIdentifiers.EXTERNAL_ALL_USERS, address(templeToken), address(templeCircuitBreaker));
+            circuitBreakerProxy.setCircuitBreaker(TempleCircuitBreakerIdentifiers.EXTERNAL_ALL_USERS, address(daiToken), address(daiCircuitBreaker));
+
+            setExplicitAccess(templeCircuitBreaker, address(circuitBreakerProxy), templeCircuitBreaker.preCheck.selector, true);
+            setExplicitAccess(daiCircuitBreaker, address(circuitBreakerProxy), daiCircuitBreaker.preCheck.selector, true);
+            setExplicitAccess(circuitBreakerProxy, address(tlc), circuitBreakerProxy.preCheck.selector, true);
         }
 
         vm.stopPrank();

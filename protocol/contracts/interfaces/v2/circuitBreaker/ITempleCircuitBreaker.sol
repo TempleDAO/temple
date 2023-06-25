@@ -1,6 +1,6 @@
 pragma solidity ^0.8.17;
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Temple (interfaces/v2/access/ITempleCircuitBreaker.sol)
+// Temple (interfaces/v2/circuitBreaker/ITempleCircuitBreaker.sol)
 
 import { ITempleElevatedAccess } from "contracts/interfaces/v2/access/ITempleElevatedAccess.sol";
 
@@ -17,5 +17,5 @@ interface ITempleCircuitBreaker is ITempleElevatedAccess {
      * @notice Verify the new amount requested for the sender does not breach the
      * cap in this rolling period.
      */
-    function preCheck(address sender, uint256 amount) external;
+    function preCheck(address onBehalfOf, address sender, uint256 amount) external;
 }

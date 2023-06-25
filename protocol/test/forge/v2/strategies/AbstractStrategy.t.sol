@@ -72,7 +72,7 @@ contract AbstractStrategyTestAdmin is AbstractStrategyTestBase {
         ITempleStrategy.AssetBalanceDelta[] memory adjs = strategy.manualAdjustments();
         assertEq(adjs.length, 0);
 
-        vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.StrategyNotEnabled.selector));
+        vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.BorrowTokenNotEnabled.selector));
         trv.availableForStrategyToBorrow(address(strategy), dai);
     }
 

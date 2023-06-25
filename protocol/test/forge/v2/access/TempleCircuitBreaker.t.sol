@@ -2,7 +2,7 @@ pragma solidity ^0.8.17;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { TempleTest } from "../../TempleTest.sol";
-import { TempleCircuitBreakerAllUsersPerPeriod } from "contracts/v2/access/TempleCircuitBreakerAllUsersPerPeriod.sol";
+import { TempleCircuitBreakerAllUsersPerPeriod } from "contracts/v2/circuitBreaker/TempleCircuitBreakerAllUsersPerPeriod.sol";
 import { console2 } from "forge-std/Test.sol";
 
 contract MockCaller {
@@ -13,7 +13,7 @@ contract MockCaller {
     }
 
     modifier preCheck(uint256 amt) {
-        breaker.preCheck(address(this), amt);
+        breaker.preCheck(address(this), address(this), amt);
         _;
     }
 
@@ -34,7 +34,7 @@ contract TempleCircuitBreakerTestBase is TempleTest {
     function test_initialization() public {
         breaker = new TempleCircuitBreakerAllUsersPerPeriod(rescuer, executor, 1 days, 24, 100e18);
         assertEq(breaker.nBuckets(), 24);
-        assertEq(breaker.periodDuration(), 1 days);
+        assertEq(breaker.periodDuration(), 1 days); 
         assertEq(breaker.secondsPerBucket(), 60*60);
         assertEq(breaker.bucketIndex(), 0);
         assertEq(breaker.cap(), 100e18);
@@ -47,7 +47,7 @@ contract TempleCircuitBreakerTestBase is TempleTest {
 
         // Add works
         {
-            breaker.preCheck(address(this), 1);
+            breaker.preCheck(address(this), address(this), 1);
             assertEq(breaker.bucketIndex(), 0);
             assertEq(breaker.buckets(0), 2);
         }
@@ -55,12 +55,12 @@ contract TempleCircuitBreakerTestBase is TempleTest {
         // Breached the cap
         {
             vm.expectRevert(abi.encodeWithSelector(TempleCircuitBreakerAllUsersPerPeriod.CapBreached.selector, 100e18+1, 100e18));
-            breaker.preCheck(address(this), 100e18);
+            breaker.preCheck(address(this), address(this), 100e18);
         }
 
         // One less works - right at the cap
         {
-            breaker.preCheck(address(this), 100e18-1);
+            breaker.preCheck(address(this), address(this), 100e18-1);
             assertEq(breaker.bucketIndex(), 0);
             assertEq(breaker.buckets(0), 100e18 + 1);
         }
@@ -87,7 +87,7 @@ contract TempleCircuitBreakerTestBase is TempleTest {
     }
 
     function doCheck(uint256 amt, uint256 bucketIndex, uint256 utilisation) internal {
-        breaker.preCheck(address(this), amt);
+        breaker.preCheck(address(this), address(this), amt);
         assertEq(breaker.bucketIndex() % breaker.nBuckets(), bucketIndex, "bucketIndex");
         assertEq(breaker.currentUtilisation(), utilisation, "utilisation");
 
@@ -189,7 +189,7 @@ contract TempleCircuitBreakerTestBase is TempleTest {
             doCheck(10e18, 23, 100e18);
 
             vm.expectRevert(abi.encodeWithSelector(TempleCircuitBreakerAllUsersPerPeriod.CapBreached.selector, 100e18+1, 100e18));
-            breaker.preCheck(address(this), 1);
+            breaker.preCheck(address(this), address(this), 1);
         }
 
         // day 1, 00:00:00
@@ -229,7 +229,7 @@ contract TempleCircuitBreakerTestBase is TempleTest {
         {
             warp(3, 1, 0, 2);
             vm.expectRevert(abi.encodeWithSelector(TempleCircuitBreakerAllUsersPerPeriod.CapBreached.selector, 100e18 + 1, 100e18));
-            breaker.preCheck(address(this), 1);
+            breaker.preCheck(address(this), address(this), 1);
         }
 
         // day 5, 10:00:00
@@ -276,7 +276,7 @@ contract TempleCircuitBreakerTestBase is TempleTest {
         }
 
         uint256 avgGas = totalGas / 4000;
-        assertLt(avgGas, 11_500);
+        assertLt(avgGas, 11_600);
 
         if (LOG) console2.log("totalGas:", totalGas, totalGas/4000);
     }
@@ -368,7 +368,7 @@ contract TempleCircuitBreakerTestBase is TempleTest {
             doCheck(10e18, 7, 100e18);
 
             vm.expectRevert(abi.encodeWithSelector(TempleCircuitBreakerAllUsersPerPeriod.CapBreached.selector, 100e18+1, 100e18));
-            breaker.preCheck(address(this), 1);
+            breaker.preCheck(address(this), address(this), 1);
         }
 
         // day 2, 00:00:00
@@ -408,7 +408,7 @@ contract TempleCircuitBreakerTestBase is TempleTest {
         {
             warp(6, 6, 0, 2);
             vm.expectRevert(abi.encodeWithSelector(TempleCircuitBreakerAllUsersPerPeriod.CapBreached.selector, 100e18 + 1, 100e18));
-            breaker.preCheck(address(this), 1);
+            breaker.preCheck(address(this), address(this), 1);
         }
 
         // day 10, 19:00:00
@@ -440,7 +440,7 @@ contract TempleCircuitBreakerTestBase is TempleTest {
         {
             warp(1, 12, 59, 59);
             vm.expectRevert(abi.encodeWithSelector(TempleCircuitBreakerAllUsersPerPeriod.CapBreached.selector, 100e18 + 1, 100e18));
-            breaker.preCheck(address(this), 1);
+            breaker.preCheck(address(this), address(this), 1);
         }
 
         {
@@ -449,25 +449,5 @@ contract TempleCircuitBreakerTestBase is TempleTest {
             ebkts[23] = 25e18;
             doCheck(1, 13, 25e18 + 1);
         }
-
-        // // day 0, 0:00:01
-        // // Add 10 (total=10)
-        // {
-        //     warp(1, 12, 59, 59);
-        //     // vm.expectRevert(abi.encodeWithSelector(TempleCircuitBreakerAllUsersPerPeriod.CapBreached.selector, 101.9e18, 100e18));
-        //     // breaker.preCheck(address(this), 1e18);
-
-        //     ebkts[13] = 1e18; //90e18;
-        //     ebkts[8] = 9.9e18;
-        //     doCheck(1e18, 13, 10.9e18); //99.9e18);
-        // }
-
-        // // day 0, 0:30:01
-        // // Add 10 (total=20)
-        // {
-        //     warp(0, 0, 30, 1);
-        //     ebkts[0] = 20e18;
-        //     doCheck(10e18, 0, 20e18);
-        // }
     }
 }

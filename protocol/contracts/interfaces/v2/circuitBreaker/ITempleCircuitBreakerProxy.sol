@@ -1,9 +1,9 @@
 pragma solidity ^0.8.17;
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Temple (interfaces/v2/access/ITempleCircuitBreakerProxy.sol)
+// Temple (interfaces/v2/circuitBreaker/ITempleCircuitBreakerProxy.sol)
 
 import { ITempleElevatedAccess } from "contracts/interfaces/v2/access/ITempleElevatedAccess.sol";
-import { ITempleCircuitBreaker } from "contracts/interfaces/v2/access/ITempleCircuitBreaker.sol";
+import { ITempleCircuitBreaker } from "contracts/interfaces/v2/circuitBreaker/ITempleCircuitBreaker.sol";
 
 /**
  * @title Temple Circuit Breaker Proxy

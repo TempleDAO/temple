@@ -8,6 +8,7 @@ import { ITlcEventsAndErrors } from "contracts/interfaces/v2/templeLineOfCredit/
 import { ITlcDataTypes } from "contracts/interfaces/v2/templeLineOfCredit/ITlcDataTypes.sol";
 import { ITreasuryReservesVault } from "contracts/interfaces/v2/ITreasuryReservesVault.sol";
 import { ITlcStrategy } from "contracts/interfaces/v2/templeLineOfCredit/ITlcStrategy.sol";
+import { ITempleCircuitBreakerProxy } from "contracts/interfaces/v2/circuitBreaker/ITempleCircuitBreakerProxy.sol";
 
 /**
  * @title Temple Line of Credit (TLC)
@@ -174,4 +175,10 @@ interface ITempleLineOfCredit is ITlcDataTypes, ITlcEventsAndErrors {
         DebtTokenConfig memory config, 
         DebtTokenData memory data
     );
+
+    /**
+     * @notice New borrows and collateral withdrawals are checked against a circuit breaker
+     * to ensure no more than a cap is withdrawn in a given period
+     */
+    function circuitBreakerProxy() external view returns (ITempleCircuitBreakerProxy);
 }

@@ -334,4 +334,40 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
             tlc.repayAll(alice);
         }
     }
+
+    function _repayIteration(address account) internal returns (uint256 first, uint256 second, uint256 third) {
+        uint256 collateralAmount = 100_000e18;
+        uint256 borrowAmount = 1_000e18;
+
+        borrow(account, collateralAmount, borrowAmount*3, 0);
+        vm.startPrank(account);
+        daiToken.approve(address(tlc), borrowAmount*3);
+        uint256 gasStart = gasleft();
+        tlc.repay(borrowAmount, account);
+        first = gasStart-gasleft();
+        gasStart = gasleft();
+        tlc.repay(borrowAmount, account);
+        second = gasStart-gasleft();
+        vm.warp(block.timestamp + 2 days);
+        gasStart = gasleft();
+        tlc.repay(borrowAmount, account);
+        third = gasStart-gasleft();
+    }
+
+    function test_repay_gas() public {
+        (uint256 first, uint256 second, uint256 third) = _repayIteration(makeAddr("acct1"));
+        assertApproxEqAbs(first, 88_000, 1_000, "acct1 1");
+        assertApproxEqAbs(second, 84_000, 1_000, "acct1 2");
+        assertApproxEqAbs(third, 101_000, 1_000, "acct1 3");
+
+        (first, second, third) = _repayIteration(makeAddr("acct2"));
+        assertApproxEqAbs(first, 84_000, 1_000, "acct2 1");
+        assertApproxEqAbs(second, 84_000, 1_000, "acct2 2");
+        assertApproxEqAbs(third, 95_000, 1_000, "acct2 3");
+        
+        (first, second, third) = _repayIteration(makeAddr("acct3"));
+        assertApproxEqAbs(first, 84_000, 1_000, "acct3 1");
+        assertApproxEqAbs(second, 84_000, 1_000, "acct3 2");
+        assertApproxEqAbs(third, 95_000, 1_000, "acct3 3");
+    }
 }
