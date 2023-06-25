@@ -270,10 +270,8 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
         // Calculate what can be repaid out of the (base interest) and (risk premium interest).
         // Pay off the the item with the higher interest rate first.
         if (debtor.rate > baseRate) {
-            _debtorDebtRepaid = _burnDebtorInterest(
-                _burnAmount,
-                _debtorCheckpoint
-            );
+            // The minimum of what debt is still outstanding, and the requested amount to be burned
+            _debtorDebtRepaid = _debtorCheckpoint < _burnAmount ? _debtorCheckpoint : _burnAmount;
             _burnAmount -= _debtorDebtRepaid;
 
             _baseDebtRepaid = _burnBaseInterest(
@@ -294,10 +292,8 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
             );
             _burnAmount -= _baseDebtRepaid;
 
-            _debtorDebtRepaid = _burnDebtorInterest(
-                _burnAmount,
-                _debtorCheckpoint
-            );
+            // The minimum of what debt is still outstanding, and the requested amount to be burned
+            _debtorDebtRepaid = _debtorCheckpoint < _burnAmount ? _debtorCheckpoint : _burnAmount;
             _burnAmount -= _debtorDebtRepaid;
         }
 
@@ -330,17 +326,6 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
                 estimatedTotalRiskPremiumInterest -= _debtorDebtRepaid;
             }
         }
-    }
-
-    function _burnDebtorInterest(
-        uint256 _burnAmount, 
-        uint256 _debtorCheckpoint
-    ) internal pure returns (
-        uint256 _debtRepaid
-    ) {
-        // Repay the per debtor interest - the minimum of what debt is still outstanding, 
-        // and what of the repayment amount is still unallocated
-        _debtRepaid = _debtorCheckpoint < _burnAmount ? _debtorCheckpoint : _burnAmount;
     }
 
     function _burnBaseInterest(
