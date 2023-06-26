@@ -15,7 +15,6 @@ import { ITempleCircuitBreakerProxy } from "contracts/interfaces/v2/circuitBreak
 import { SafeCast } from "contracts/common/SafeCast.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
-import { TempleCircuitBreakerIdentifiers } from "contracts/v2/circuitBreaker/TempleCircuitBreakerIdentifiers.sol";
 
 /* solhint-disable not-rely-on-time */
 
@@ -169,7 +168,6 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
 
         // Ensure that this withdrawal doesn't break the circuit breaker limits (across all users)
         circuitBreakerProxy.preCheck(
-            TempleCircuitBreakerIdentifiers.EXTERNAL_ALL_USERS, 
             address(templeToken), 
             msg.sender, 
             amount
@@ -208,7 +206,6 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
 
         // Ensure that this new borrow doesn't break the circuit breaker limits (across all users)
         circuitBreakerProxy.preCheck(
-            TempleCircuitBreakerIdentifiers.EXTERNAL_ALL_USERS, 
             address(daiToken), 
             msg.sender, 
             amount

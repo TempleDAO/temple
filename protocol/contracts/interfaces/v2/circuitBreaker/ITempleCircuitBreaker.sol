@@ -17,5 +17,5 @@ interface ITempleCircuitBreaker is ITempleElevatedAccess {
      * @notice Verify the new amount requested for the sender does not breach the
      * cap in this rolling period.
      */
-    function preCheck(address onBehalfOf, address sender, uint256 amount) external;
+    function preCheck(address onBehalfOf, uint256 amount) external;
 }

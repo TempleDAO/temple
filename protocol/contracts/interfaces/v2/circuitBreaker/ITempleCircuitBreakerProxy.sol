@@ -13,15 +13,30 @@ import { ITempleCircuitBreaker } from "contracts/interfaces/v2/circuitBreaker/IT
  */
 interface ITempleCircuitBreakerProxy is ITempleElevatedAccess {
     event CircuitBreakerSet(bytes32 indexed identifier, address indexed token, address circuitBreaker);
+    event IdentifierForCallerSet(address indexed caller, string identifierString, bytes32 identifier);
 
     /**
-     * @notice The mapping of identifier (listed in TempleCircuitBreakerIdentifiers)
-     * to the underlying circuit breaker contract
+     * @notice A calling contract of the circuit breaker (eg TLC) is mapped to an identifier
+     * which means circuit breaker caps can be shared across multiple callers.
+     */
+    function callerToIdentifier(address) external view returns (bytes32);
+
+    /**
+     * @notice The mapping of a (identifier, tokenAddress) tuple to the underlying circuit breaker contract
      */
     function circuitBreakers(
         bytes32 identifier, 
         address token
     ) external view returns (ITempleCircuitBreaker);
+
+    /**
+     * @notice Set the identifier for a given caller of the circuit breaker. These identifiers
+     * can be shared, such that multiple contracts share the same cap limits for a given token.
+     */
+    function setIdentifierForCaller(
+        address caller, 
+        string memory identifierString
+    ) external;
 
     /**
      * @notice Set the address of the circuit breaker for a particular identifier and token
@@ -37,9 +52,8 @@ interface ITempleCircuitBreakerProxy is ITempleElevatedAccess {
      * cap in this rolling period.
      */
     function preCheck(
-        bytes32 identifier,
         address token,
-        address sender,
+        address onBehalfOf,
         uint256 amount
     ) external;
 

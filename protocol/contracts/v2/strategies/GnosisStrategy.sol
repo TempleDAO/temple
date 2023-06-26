@@ -5,6 +5,7 @@ pragma solidity ^0.8.17;
 import { SafeERC20, IERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { AbstractStrategy } from "contracts/v2/strategies/AbstractStrategy.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
+import { ITempleCircuitBreakerProxy } from "contracts/interfaces/v2/circuitBreaker/ITempleCircuitBreakerProxy.sol";
 
 contract GnosisStrategy is AbstractStrategy {
     using SafeERC20 for IERC20;
@@ -21,6 +22,12 @@ contract GnosisStrategy is AbstractStrategy {
      */
     address[] public assets;
 
+    /**
+     * @notice New withdrawals of tokens from TRV are checked against a circuit breaker
+     * to ensure no more than a cap is withdrawn in a given period
+     */
+    ITempleCircuitBreakerProxy public immutable circuitBreakerProxy;
+
     event AssetsSet(address[] _assets);
     event Borrow(address indexed token, uint256 amount);
     event Repay(address indexed token, uint256 amount);
@@ -30,9 +37,11 @@ contract GnosisStrategy is AbstractStrategy {
         address _initialExecutor,
         string memory _strategyName,
         address _treasuryReservesVault,
-        address _gnosisSafeWallet
+        address _gnosisSafeWallet,
+        address _circuitBreakerProxy
     ) AbstractStrategy(_initialRescuer, _initialExecutor, _strategyName, _treasuryReservesVault) {
         gnosisSafeWallet = _gnosisSafeWallet;
+        circuitBreakerProxy = ITempleCircuitBreakerProxy(_circuitBreakerProxy);
     }
 
     /**
@@ -77,6 +86,11 @@ contract GnosisStrategy is AbstractStrategy {
      */
     function borrow(IERC20 token, uint256 amount) external onlyElevatedAccess {
         emit Borrow(address(token), amount);
+        circuitBreakerProxy.preCheck(
+            address(token), 
+            msg.sender, 
+            amount
+        );
         treasuryReservesVault.borrow(token, amount, gnosisSafeWallet);
     }
 
@@ -86,6 +100,11 @@ contract GnosisStrategy is AbstractStrategy {
      */
     function borrowMax(IERC20 token) external onlyElevatedAccess returns (uint256 borrowedAmount) {
         borrowedAmount = treasuryReservesVault.borrowMax(token, gnosisSafeWallet);
+        circuitBreakerProxy.preCheck(
+            address(token), 
+            msg.sender, 
+            borrowedAmount
+        );
         emit Borrow(address(token), borrowedAmount);
     }
 

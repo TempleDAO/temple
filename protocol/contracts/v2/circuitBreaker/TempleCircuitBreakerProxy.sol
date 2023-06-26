@@ -18,8 +18,13 @@ contract TempleCircuitBreakerProxy is ITempleCircuitBreakerProxy, TempleElevated
     using EnumerableSet for EnumerableSet.Bytes32Set;
 
     /**
-     * @notice The mapping of identifier (listed in TempleCircuitBreakerIdentifiers)
-     * to the underlying circuit breaker contract
+     * @notice A calling contract of the circuit breaker (eg TLC) is mapped to an identifier
+     * which means circuit breaker caps can be shared across multiple callers.
+     */
+    mapping(address => bytes32) public override callerToIdentifier;
+
+    /**
+     * @notice The mapping of a (identifier, tokenAddress) tuple to the underlying circuit breaker contract
      */
     mapping(bytes32 => mapping(address => ITempleCircuitBreaker)) public override circuitBreakers;
 
@@ -34,19 +39,38 @@ contract TempleCircuitBreakerProxy is ITempleCircuitBreakerProxy, TempleElevated
     ) TempleElevatedAccess(_initialRescuer, _initialExecutor)
     // solhint-disable-next-line no-empty-blocks
     {}
-    
+
+    /**
+     * @notice Set the identifier for a given caller of the circuit breaker. These identifiers
+     * can be shared, such that multiple contracts share the same cap limits for a given token.
+     */
+    function setIdentifierForCaller(
+        address caller, 
+        string memory identifierString
+    ) external override onlyElevatedAccess {
+        if (caller == address(0)) revert CommonEventsAndErrors.InvalidAddress();
+        if (bytes(identifierString).length == 0) revert CommonEventsAndErrors.InvalidParam();
+
+        bytes32 _identifier = keccak256(bytes(identifierString));
+        callerToIdentifier[caller] = _identifier;
+        _identifiers.add(_identifier);
+
+        emit IdentifierForCallerSet(caller, identifierString, _identifier);
+    }
+
     /**
      * @notice Set the address of the circuit breaker for a particular identifier and token
+     * @dev address(0) is allowed as a special case for native ETH
      */
     function setCircuitBreaker(
         bytes32 identifier,
         address token,
         address circuitBreaker
     ) external override onlyElevatedAccess {
-        if (identifier == bytes32(0)) revert CommonEventsAndErrors.InvalidParam();
+        if (!_identifiers.contains(identifier)) revert CommonEventsAndErrors.InvalidParam();
         if (circuitBreaker == address(0)) revert CommonEventsAndErrors.InvalidAddress();
+
         circuitBreakers[identifier][token] = ITempleCircuitBreaker(circuitBreaker);
-        _identifiers.add(identifier);
         emit CircuitBreakerSet(identifier, token, circuitBreaker);
     }
 
@@ -55,14 +79,15 @@ contract TempleCircuitBreakerProxy is ITempleCircuitBreakerProxy, TempleElevated
      * cap in this rolling period.
      */
     function preCheck(
-        bytes32 identifier,
         address token,
         address onBehalfOf,
         uint256 amount
-    ) external override onlyElevatedAccess {
-        // Don't bother checking the identifier exists to give a nicer error, as
-        // it consumes extra gas when it will fail regardless
-        circuitBreakers[identifier][token].preCheck(onBehalfOf, msg.sender, amount);
+    ) external override {
+        bytes32 _identifier = callerToIdentifier[msg.sender];
+
+        // This will fail with an EVM error if not in the mapping, which is fine.
+        // Not worth a specific custom error check prior.
+        circuitBreakers[_identifier][token].preCheck(onBehalfOf, amount);
     }
 
     /**

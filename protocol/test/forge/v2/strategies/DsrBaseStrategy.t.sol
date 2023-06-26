@@ -13,6 +13,8 @@ import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.so
 import { FakeERC20 } from "contracts/fakes/FakeERC20.sol";
 import { ITempleStrategy } from "contracts/interfaces/v2/strategies/ITempleStrategy.sol";
 import { TreasuryPriceIndexOracle } from "contracts/v2/TreasuryPriceIndexOracle.sol";
+import { TempleCircuitBreakerAllUsersPerPeriod } from "contracts/v2/circuitBreaker/TempleCircuitBreakerAllUsersPerPeriod.sol";
+import { TempleCircuitBreakerProxy } from "contracts/v2/circuitBreaker/TempleCircuitBreakerProxy.sol";
 
 import { IMakerDaoDaiJoinLike } from "contracts/interfaces/external/makerDao/IMakerDaoDaiJoinLike.sol";
 import { IMakerDaoPotLike } from "contracts/interfaces/external/makerDao/IMakerDaoPotLike.sol";
@@ -359,10 +361,15 @@ contract DsrBaseStrategyTestTrvWithdraw is DsrBaseStrategyTestBase {
     uint256 public constant DSR_BORROW_CEILING = 100e18;
     uint256 public constant GNOSIS_BORROW_CEILING = 25e18;
 
+    TempleCircuitBreakerAllUsersPerPeriod public daiCircuitBreaker;
+    TempleCircuitBreakerProxy public circuitBreakerProxy;
+    bytes32 public constant INTERNAL_STRATEGY = keccak256("INTERNAL_STRATEGY");
+
     function setUp() public {
         _setUp();
 
-        gnosisStrategy = new GnosisStrategy(rescuer, executor, "GnosisStrategy", address(trv), gnosisSafeWallet);
+        circuitBreakerProxy = new TempleCircuitBreakerProxy(rescuer, executor);
+        gnosisStrategy = new GnosisStrategy(rescuer, executor, "GnosisStrategy", address(trv), gnosisSafeWallet, address(circuitBreakerProxy));
 
         vm.startPrank(executor);
 
@@ -377,6 +384,14 @@ contract DsrBaseStrategyTestTrvWithdraw is DsrBaseStrategyTestBase {
         debtCeiling = new ITempleStrategy.AssetBalance[](1);
         debtCeiling[0] = ITempleStrategy.AssetBalance(address(dai), GNOSIS_BORROW_CEILING);
         trv.addStrategy(address(gnosisStrategy), -123, debtCeiling);
+
+        // Circuit Breaker
+        {
+            daiCircuitBreaker = new TempleCircuitBreakerAllUsersPerPeriod(rescuer, executor, 26 hours, 13, 20_000_000e18);
+            circuitBreakerProxy.setIdentifierForCaller(address(gnosisStrategy), "INTERNAL_STRATEGY");
+            circuitBreakerProxy.setCircuitBreaker(INTERNAL_STRATEGY, address(dai), address(daiCircuitBreaker));
+            setExplicitAccess(daiCircuitBreaker, address(circuitBreakerProxy), daiCircuitBreaker.preCheck.selector, true);
+        }
 
         vm.stopPrank();
     }

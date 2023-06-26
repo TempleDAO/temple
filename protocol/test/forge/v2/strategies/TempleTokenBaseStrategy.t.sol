@@ -11,6 +11,8 @@ import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.so
 import { TempleERC20Token } from "contracts/core/TempleERC20Token.sol";
 import { ITempleStrategy } from "contracts/interfaces/v2/strategies/ITempleStrategy.sol";
 import { TreasuryPriceIndexOracle } from "contracts/v2/TreasuryPriceIndexOracle.sol";
+import { TempleCircuitBreakerAllUsersPerPeriod } from "contracts/v2/circuitBreaker/TempleCircuitBreakerAllUsersPerPeriod.sol";
+import { TempleCircuitBreakerProxy } from "contracts/v2/circuitBreaker/TempleCircuitBreakerProxy.sol";
 
 /* solhint-disable func-name-mixedcase, not-rely-on-time */
 contract TempleTokenBaseStrategyTestBase is TempleTest {
@@ -154,10 +156,15 @@ contract TempleTokenBaseStrategyTrvWithdraw is TempleTokenBaseStrategyTestBase {
     uint256 public constant TEMPLE_BASE_BORROW_CEILING = 100e18;
     uint256 public constant GNOSIS_BORROW_CEILING = 25e18;
 
+    TempleCircuitBreakerAllUsersPerPeriod public templeCircuitBreaker;
+    TempleCircuitBreakerProxy public circuitBreakerProxy;
+    bytes32 public constant INTERNAL_STRATEGY = keccak256("INTERNAL_STRATEGY");
+
     function setUp() public {
         _setUp();
 
-        gnosisStrategy = new GnosisStrategy(rescuer, executor, "GnosisStrategy", address(trv), gnosisSafeWallet);
+        circuitBreakerProxy = new TempleCircuitBreakerProxy(rescuer, executor);
+        gnosisStrategy = new GnosisStrategy(rescuer, executor, "GnosisStrategy", address(trv), gnosisSafeWallet, address(circuitBreakerProxy));
 
         vm.startPrank(executor);
 
@@ -172,6 +179,14 @@ contract TempleTokenBaseStrategyTrvWithdraw is TempleTokenBaseStrategyTestBase {
         debtCeiling = new ITempleStrategy.AssetBalance[](1);
         debtCeiling[0] = ITempleStrategy.AssetBalance(address(temple), GNOSIS_BORROW_CEILING);
         trv.addStrategy(address(gnosisStrategy), -123, debtCeiling);
+
+        // Circuit Breaker
+        {
+            templeCircuitBreaker = new TempleCircuitBreakerAllUsersPerPeriod(rescuer, executor, 26 hours, 13, 20_000_000e18);
+            circuitBreakerProxy.setIdentifierForCaller(address(gnosisStrategy), "INTERNAL_STRATEGY");
+            circuitBreakerProxy.setCircuitBreaker(INTERNAL_STRATEGY, address(temple), address(templeCircuitBreaker));
+            setExplicitAccess(templeCircuitBreaker, address(circuitBreakerProxy), templeCircuitBreaker.preCheck.selector, true);
+        }
 
         vm.stopPrank();
     }

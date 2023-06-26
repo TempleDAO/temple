@@ -11,6 +11,7 @@ import { IRamosTokenVault } from "contracts/interfaces/amo/helpers/IRamosTokenVa
 import { IRamosTokenVault } from "contracts/interfaces/amo/helpers/IRamosTokenVault.sol";
 import { AbstractStrategy } from "contracts/v2/strategies/AbstractStrategy.sol";
 import { ITempleERC20Token } from "contracts/interfaces/core/ITempleERC20Token.sol";
+import { ITempleCircuitBreakerProxy } from "contracts/interfaces/v2/circuitBreaker/ITempleCircuitBreakerProxy.sol";
 
 /**
  * @title Ramos Strategy
@@ -39,6 +40,12 @@ contract RamosStrategy  is AbstractStrategy, IRamosTokenVault {
      */
     IERC20 public immutable quoteToken;
 
+    /**
+     * @notice New withdrawals of tokens from TRV are checked against a circuit breaker
+     * to ensure no more than a cap is withdrawn in a given period
+     */
+    ITempleCircuitBreakerProxy public immutable circuitBreakerProxy;
+
     event AddLiquidity(uint256 quoteTokenAmount, uint256 protocolTokenAmount, uint256 bptTokensStaked);
     event RemoveLiquidity(uint256 quoteTokenAmount, uint256 protocolTokenAmount, uint256 bptIn);
 
@@ -49,11 +56,13 @@ contract RamosStrategy  is AbstractStrategy, IRamosTokenVault {
         address _treasuryReservesVault,
         address _ramos,
         address _templeToken,
-        address _quoteToken
+        address _quoteToken,
+        address _circuitBreakerProxy
     ) AbstractStrategy(_initialRescuer, _initialExecutor, _strategyName, _treasuryReservesVault) {
         ramos = IRamos(_ramos);
         templeToken = ITempleERC20Token(_templeToken);
         quoteToken = IERC20(_quoteToken);
+        circuitBreakerProxy = ITempleCircuitBreakerProxy(_circuitBreakerProxy);
         _updateTrvApprovals(address(0), _treasuryReservesVault);
     }
 
@@ -78,6 +87,11 @@ contract RamosStrategy  is AbstractStrategy, IRamosTokenVault {
      * @param recipient The recipient to send the `protocolToken` tokens to
      */
     function borrowProtocolToken(uint256 amount, address recipient) external onlyElevatedAccess {
+        circuitBreakerProxy.preCheck(
+            address(templeToken), 
+            msg.sender, 
+            amount
+        );
         treasuryReservesVault.borrow(templeToken, amount, recipient);
     }
 
@@ -87,6 +101,11 @@ contract RamosStrategy  is AbstractStrategy, IRamosTokenVault {
      * @param recipient The recipient to send the `quoteToken` tokens to
      */
     function borrowQuoteToken(uint256 amount, address recipient) external onlyElevatedAccess {
+        circuitBreakerProxy.preCheck(
+            address(quoteToken), 
+            msg.sender, 
+            amount
+        );
         treasuryReservesVault.borrow(quoteToken, amount, recipient);
     }
 

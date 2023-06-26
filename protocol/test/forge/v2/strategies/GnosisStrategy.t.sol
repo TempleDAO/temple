@@ -10,6 +10,8 @@ import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.so
 import { FakeERC20 } from "contracts/fakes/FakeERC20.sol";
 import { ITempleStrategy } from "contracts/interfaces/v2/strategies/ITempleStrategy.sol";
 import { TreasuryPriceIndexOracle } from "contracts/v2/TreasuryPriceIndexOracle.sol";
+import { TempleCircuitBreakerAllUsersPerPeriod } from "contracts/v2/circuitBreaker/TempleCircuitBreakerAllUsersPerPeriod.sol";
+import { TempleCircuitBreakerProxy } from "contracts/v2/circuitBreaker/TempleCircuitBreakerProxy.sol";
 
 /* solhint-disable func-name-mixedcase */
 contract GnosisStrategyTestBase is TempleTest {
@@ -28,14 +30,28 @@ contract GnosisStrategyTestBase is TempleTest {
 
     address[] public reportedAssets = [address(dai), address(weth), address(0)];
 
+    TempleCircuitBreakerAllUsersPerPeriod public daiCircuitBreaker;
+    TempleCircuitBreakerProxy public circuitBreakerProxy;
+    bytes32 public constant INTERNAL_STRATEGY = keccak256("INTERNAL_STRATEGY");
+
     function _setUp() internal {
         dUSD = new TempleDebtToken("Temple Debt", "dUSD", rescuer, executor, DEFAULT_BASE_INTEREST);
         tpiOracle = new TreasuryPriceIndexOracle(rescuer, executor, 0.97e18, 0.1e18, 0);
         trv = new TreasuryReservesVault(rescuer, executor, address(tpiOracle));
-        strategy = new GnosisStrategy(rescuer, executor, "GnosisStrategy", address(trv), gnosisSafeWallet);
+        circuitBreakerProxy = new TempleCircuitBreakerProxy(rescuer, executor);
+        strategy = new GnosisStrategy(rescuer, executor, "GnosisStrategy", address(trv), gnosisSafeWallet, address(circuitBreakerProxy));
 
         vm.startPrank(executor);
         dUSD.addMinter(executor);
+
+        // Circuit Breaker
+        {
+            daiCircuitBreaker = new TempleCircuitBreakerAllUsersPerPeriod(rescuer, executor, 26 hours, 13, 1_000_000e18);
+            circuitBreakerProxy.setIdentifierForCaller(address(strategy), "INTERNAL_STRATEGY");
+            circuitBreakerProxy.setCircuitBreaker(INTERNAL_STRATEGY, address(dai), address(daiCircuitBreaker));
+            setExplicitAccess(daiCircuitBreaker, address(circuitBreakerProxy), daiCircuitBreaker.preCheck.selector, true);
+        }
+
         vm.stopPrank();
     }
 }
@@ -274,6 +290,14 @@ contract GnosisStrategyTestBorrowAndRepay is GnosisStrategyTestBase {
         vm.stopPrank();
     }
 
+    function test_borrow_failCircuitBreaker() public {
+        uint256 amount = 1e18;
+        vm.startPrank(executor);
+        daiCircuitBreaker.updateCap(amount-1);
+        vm.expectRevert(abi.encodeWithSelector(TempleCircuitBreakerAllUsersPerPeriod.CapBreached.selector, amount, amount-1));
+        strategy.borrow(dai, amount);
+    }
+
     function test_borrow() public {       
         uint256 amount = 1e18;
         assertEq(dai.balanceOf(address(trv)), TRV_STARTING_BALANCE);
@@ -301,6 +325,13 @@ contract GnosisStrategyTestBorrowAndRepay is GnosisStrategyTestBase {
         vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.DebtCeilingBreached.selector, 0.01e18, 0.02e18));
         strategy.borrow(dai, 0.02e18);
     }  
+
+    function test_borrowMax_failCircuitBreaker() public {
+        vm.startPrank(executor);
+        daiCircuitBreaker.updateCap(BORROW_CEILING - 1);
+        vm.expectRevert(abi.encodeWithSelector(TempleCircuitBreakerAllUsersPerPeriod.CapBreached.selector, BORROW_CEILING, BORROW_CEILING-1));
+        strategy.borrowMax(dai);
+    }
 
     function test_borrowMax() public {       
         assertEq(dai.balanceOf(address(trv)), TRV_STARTING_BALANCE);

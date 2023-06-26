@@ -13,13 +13,8 @@ contract MockCaller {
         breaker = TempleCircuitBreakerAllUsersPerPeriod(_breaker);
     }
 
-    modifier preCheck(uint256 amt) {
-        breaker.preCheck(address(this), address(this), amt);
-        _;
-    }
-
-    function doStuff(uint256 amt) external preCheck(amt) {
-        
+    function doStuff(uint256 amt) external {
+        breaker.preCheck(address(this), amt);       
     }
 }
 
@@ -98,7 +93,7 @@ contract TempleCircuitBreakerTestPreCheck is TempleCircuitBreakerTestBase {
 
         // Add works
         {
-            breaker.preCheck(address(this), address(this), 1);
+            breaker.preCheck(address(this), 1);
             assertEq(breaker.bucketIndex(), 0);
             assertEq(breaker.buckets(0), 2);
         }
@@ -106,12 +101,12 @@ contract TempleCircuitBreakerTestPreCheck is TempleCircuitBreakerTestBase {
         // Breached the cap
         {
             vm.expectRevert(abi.encodeWithSelector(TempleCircuitBreakerAllUsersPerPeriod.CapBreached.selector, 100e18+1, 100e18));
-            breaker.preCheck(address(this), address(this), 100e18);
+            breaker.preCheck(address(this), 100e18);
         }
 
         // One less works - right at the cap
         {
-            breaker.preCheck(address(this), address(this), 100e18-1);
+            breaker.preCheck(address(this), 100e18-1);
             assertEq(breaker.bucketIndex(), 0);
             assertEq(breaker.buckets(0), 100e18 + 1);
         }
@@ -138,7 +133,7 @@ contract TempleCircuitBreakerTestPreCheck is TempleCircuitBreakerTestBase {
     }
 
     function doCheck(uint256 amt, uint256 bucketIndex, uint256 utilisation) internal {
-        breaker.preCheck(address(this), address(this), amt);
+        breaker.preCheck(address(this), amt);
         assertEq(breaker.bucketIndex() % breaker.nBuckets(), bucketIndex, "bucketIndex");
         assertEq(breaker.currentUtilisation(), utilisation, "utilisation");
 
@@ -240,7 +235,7 @@ contract TempleCircuitBreakerTestPreCheck is TempleCircuitBreakerTestBase {
             doCheck(10e18, 23, 100e18);
 
             vm.expectRevert(abi.encodeWithSelector(TempleCircuitBreakerAllUsersPerPeriod.CapBreached.selector, 100e18+1, 100e18));
-            breaker.preCheck(address(this), address(this), 1);
+            breaker.preCheck(address(this), 1);
         }
 
         // day 1, 00:00:00
@@ -280,7 +275,7 @@ contract TempleCircuitBreakerTestPreCheck is TempleCircuitBreakerTestBase {
         {
             warp(3, 1, 0, 2);
             vm.expectRevert(abi.encodeWithSelector(TempleCircuitBreakerAllUsersPerPeriod.CapBreached.selector, 100e18 + 1, 100e18));
-            breaker.preCheck(address(this), address(this), 1);
+            breaker.preCheck(address(this), 1);
         }
 
         // day 5, 10:00:00
@@ -419,7 +414,7 @@ contract TempleCircuitBreakerTestPreCheck is TempleCircuitBreakerTestBase {
             doCheck(10e18, 7, 100e18);
 
             vm.expectRevert(abi.encodeWithSelector(TempleCircuitBreakerAllUsersPerPeriod.CapBreached.selector, 100e18+1, 100e18));
-            breaker.preCheck(address(this), address(this), 1);
+            breaker.preCheck(address(this), 1);
         }
 
         // day 2, 00:00:00
@@ -459,7 +454,7 @@ contract TempleCircuitBreakerTestPreCheck is TempleCircuitBreakerTestBase {
         {
             warp(6, 6, 0, 2);
             vm.expectRevert(abi.encodeWithSelector(TempleCircuitBreakerAllUsersPerPeriod.CapBreached.selector, 100e18 + 1, 100e18));
-            breaker.preCheck(address(this), address(this), 1);
+            breaker.preCheck(address(this), 1);
         }
 
         // day 10, 19:00:00
@@ -491,7 +486,7 @@ contract TempleCircuitBreakerTestPreCheck is TempleCircuitBreakerTestBase {
         {
             warp(1, 12, 59, 59);
             vm.expectRevert(abi.encodeWithSelector(TempleCircuitBreakerAllUsersPerPeriod.CapBreached.selector, 100e18 + 1, 100e18));
-            breaker.preCheck(address(this), address(this), 1);
+            breaker.preCheck(address(this), 1);
         }
 
         {

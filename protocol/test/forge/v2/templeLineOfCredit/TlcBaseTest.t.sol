@@ -18,7 +18,6 @@ import { TreasuryPriceIndexOracle } from "contracts/v2/TreasuryPriceIndexOracle.
 import { ITempleStrategy } from "contracts/interfaces/v2/strategies/ITempleStrategy.sol";
 import { TempleCircuitBreakerAllUsersPerPeriod } from "contracts/v2/circuitBreaker/TempleCircuitBreakerAllUsersPerPeriod.sol";
 import { TempleCircuitBreakerProxy } from "contracts/v2/circuitBreaker/TempleCircuitBreakerProxy.sol";
-import { TempleCircuitBreakerIdentifiers } from "contracts/v2/circuitBreaker/TempleCircuitBreakerIdentifiers.sol";
 
 /* solhint-disable private-vars-leading-underscore, func-name-mixedcase, contract-name-camelcase, not-rely-on-time */
 contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
@@ -50,6 +49,7 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
     TempleCircuitBreakerAllUsersPerPeriod public templeCircuitBreaker;
     TempleCircuitBreakerAllUsersPerPeriod public daiCircuitBreaker;
     TempleCircuitBreakerProxy public circuitBreakerProxy;
+    bytes32 public constant EXTERNAL_ALL_USERS = keccak256("EXTERNAL_USER");
 
     function setUp() public {
         // Default starts at 0 which can hide some issues
@@ -122,12 +122,12 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
             templeCircuitBreaker = new TempleCircuitBreakerAllUsersPerPeriod(rescuer, executor, 26 hours, 13, 1_000_000e18);
             daiCircuitBreaker = new TempleCircuitBreakerAllUsersPerPeriod(rescuer, executor, 26 hours, 13, 1_000_000e18);
 
-            circuitBreakerProxy.setCircuitBreaker(TempleCircuitBreakerIdentifiers.EXTERNAL_ALL_USERS, address(templeToken), address(templeCircuitBreaker));
-            circuitBreakerProxy.setCircuitBreaker(TempleCircuitBreakerIdentifiers.EXTERNAL_ALL_USERS, address(daiToken), address(daiCircuitBreaker));
+            circuitBreakerProxy.setIdentifierForCaller(address(tlc), "EXTERNAL_USER");
+            circuitBreakerProxy.setCircuitBreaker(EXTERNAL_ALL_USERS, address(templeToken), address(templeCircuitBreaker));
+            circuitBreakerProxy.setCircuitBreaker(EXTERNAL_ALL_USERS, address(daiToken), address(daiCircuitBreaker));
 
             setExplicitAccess(templeCircuitBreaker, address(circuitBreakerProxy), templeCircuitBreaker.preCheck.selector, true);
             setExplicitAccess(daiCircuitBreaker, address(circuitBreakerProxy), daiCircuitBreaker.preCheck.selector, true);
-            setExplicitAccess(circuitBreakerProxy, address(tlc), circuitBreakerProxy.preCheck.selector, true);
         }
 
         vm.stopPrank();

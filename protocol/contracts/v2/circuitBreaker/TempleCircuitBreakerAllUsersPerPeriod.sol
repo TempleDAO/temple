@@ -81,7 +81,7 @@ contract TempleCircuitBreakerAllUsersPerPeriod is ITempleCircuitBreaker, TempleE
     /**
      * @notice Verify the new amount requested does not breach the cap in this rolling period.
      */
-    function preCheck(address /*onBehalfOf*/, address /*sender*/, uint256 amount) external override onlyElevatedAccess {
+    function preCheck(address /*onBehalfOf*/, uint256 amount) external override onlyElevatedAccess {
         uint32 _nextBucketIndex = uint32(block.timestamp / secondsPerBucket);
         uint32 _bucketIndex = bucketIndex;
         uint32 _nBuckets = nBuckets;

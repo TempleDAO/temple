@@ -20,6 +20,8 @@ import { AuraStaking } from "contracts/amo/AuraStaking.sol";
 import { TempleDebtToken } from "contracts/v2/TempleDebtToken.sol";
 import { ITreasuryReservesVault, TreasuryReservesVault } from "contracts/v2/TreasuryReservesVault.sol";
 import { TreasuryPriceIndexOracle } from "contracts/v2/TreasuryPriceIndexOracle.sol";
+import { TempleCircuitBreakerAllUsersPerPeriod } from "contracts/v2/circuitBreaker/TempleCircuitBreakerAllUsersPerPeriod.sol";
+import { TempleCircuitBreakerProxy } from "contracts/v2/circuitBreaker/TempleCircuitBreakerProxy.sol";
 
 /* solhint-disable func-name-mixedcase, max-states-count */
 
@@ -55,7 +57,14 @@ contract RamosStrategyTestBase is TempleTest {
 
     TempleTokenBaseStrategy public templeBaseStrategy;
 
+    uint256 public constant TRV_STARTING_BALANCE = 10e25;
+
     address public feeCollector = makeAddr("feeCollector");
+    
+    TempleCircuitBreakerAllUsersPerPeriod public templeCircuitBreaker;
+    TempleCircuitBreakerAllUsersPerPeriod public daiCircuitBreaker;
+    TempleCircuitBreakerProxy public circuitBreakerProxy;
+    bytes32 public constant INTERNAL_STRATEGY = keccak256("INTERNAL_STRATEGY");
 
     function _setUp() internal {
         fork("mainnet", 17300437);
@@ -110,8 +119,10 @@ contract RamosStrategyTestBase is TempleTest {
             ramos.depositAndStakeBptTokens(bptBalance, true);
         }
 
+        circuitBreakerProxy = new TempleCircuitBreakerProxy(rescuer, executor);
+
         // solhint-disable-next-line reentrancy
-        strategy = new RamosStrategy(rescuer, executor, "RamosStrategy", address(trv), address(ramos), address(temple), address(dai));
+        strategy = new RamosStrategy(rescuer, executor, "RamosStrategy", address(trv), address(ramos), address(temple), address(dai), address(circuitBreakerProxy));
         setExplicitAccess(strategy, address(ramos), RamosStrategy.borrowProtocolToken.selector, RamosStrategy.repayProtocolToken.selector, true);
         setExplicitAccess(strategy, address(ramos), RamosStrategy.borrowQuoteToken.selector, RamosStrategy.repayQuoteToken.selector, true);
 
@@ -129,6 +140,38 @@ contract RamosStrategyTestBase is TempleTest {
         dUSD.addMinter(executor);
         dUSD.addMinter(address(trv));
         dTEMPLE.addMinter(address(trv));
+
+        // Circuit Breaker
+        {
+            templeCircuitBreaker = new TempleCircuitBreakerAllUsersPerPeriod(rescuer, executor, 26 hours, 13, 20_000_000e18);
+            daiCircuitBreaker = new TempleCircuitBreakerAllUsersPerPeriod(rescuer, executor, 26 hours, 13, 20_000_000e18);
+
+            circuitBreakerProxy.setIdentifierForCaller(address(strategy), "INTERNAL_STRATEGY");
+            circuitBreakerProxy.setCircuitBreaker(INTERNAL_STRATEGY, address(temple), address(templeCircuitBreaker));
+            circuitBreakerProxy.setCircuitBreaker(INTERNAL_STRATEGY, address(dai), address(daiCircuitBreaker));
+
+            setExplicitAccess(templeCircuitBreaker, address(circuitBreakerProxy), templeCircuitBreaker.preCheck.selector, true);
+            setExplicitAccess(daiCircuitBreaker, address(circuitBreakerProxy), daiCircuitBreaker.preCheck.selector, true);
+        }
+    }
+
+    function _setupTrv() internal {
+        vm.startPrank(executor);
+
+        // Add the new strategy, and setup TRV such that it has stables to lend and issue dUSD.
+        ITempleStrategy.AssetBalance[] memory debtCeiling = new ITempleStrategy.AssetBalance[](2);
+        debtCeiling[0] = ITempleStrategy.AssetBalance(address(dai), BORROW_CEILING);
+        debtCeiling[1] = ITempleStrategy.AssetBalance(address(temple), BORROW_CEILING);
+        trv.addStrategy(address(strategy), -123, debtCeiling);
+
+        trv.setBorrowToken(dai, address(0), 0, 0, address(dUSD));
+        trv.setBorrowToken(temple, address(templeBaseStrategy), 0, 0, address(dTEMPLE));
+
+        deal(address(dai), address(trv), TRV_STARTING_BALANCE, true);
+        dUSD.addMinter(address(trv));
+        // Set the explicit access to RAMOS functions
+        setExplicitAccess(ramos, address(strategy), ramos.addLiquidity.selector, ramos.removeLiquidity.selector, true);
+        vm.stopPrank();
     }
 
     struct Balances {
@@ -323,10 +366,29 @@ contract RamosStrategyTestAccess is RamosStrategyTestBase {
 contract RamosStrategyTestVaultFunctions is RamosStrategyTestBase {
     function setUp() public {
         _setUp();
+        _setupTrv();
+    }
+
+    function test_borrowProtocolToken_failCircuitBreaker() public {
+        vm.startPrank(executor);
+        uint256 amount = 1e18;
+        templeCircuitBreaker.updateCap(amount-1);
+
+        vm.expectRevert(abi.encodeWithSelector(TempleCircuitBreakerAllUsersPerPeriod.CapBreached.selector, amount, amount-1));
+        strategy.borrowProtocolToken(amount, alice);
     }
 
     function test_borrowProtocolToken() public {
         // @todo
+    }
+
+    function test_borrowQuoteToken_failCircuitBreaker() public {
+        vm.startPrank(executor);
+        uint256 amount = 1e18;
+        daiCircuitBreaker.updateCap(amount-1);
+
+        vm.expectRevert(abi.encodeWithSelector(TempleCircuitBreakerAllUsersPerPeriod.CapBreached.selector, amount, amount-1));
+        strategy.borrowQuoteToken(amount, alice);
     }
 
     function test_borrowQuoteToken() public {
@@ -404,7 +466,6 @@ contract RamosStrategyTestBalances is RamosStrategyTestBase {
 }
 
 contract RamosStrategyTestBorrowAndRepay is RamosStrategyTestBase {
-    uint256 public constant TRV_STARTING_BALANCE = 10e25;
 
     // TRV
     event Borrow(address indexed strategy, address indexed token, address indexed recipient, uint256 amount);
@@ -417,24 +478,7 @@ contract RamosStrategyTestBorrowAndRepay is RamosStrategyTestBase {
 
     function setUp() public {
         _setUp();
-
-        vm.startPrank(executor);
-
-        // Add the new strategy, and setup TRV such that it has stables to lend and issue dUSD.
-        ITempleStrategy.AssetBalance[] memory debtCeiling = new ITempleStrategy.AssetBalance[](2);
-        debtCeiling[0] = ITempleStrategy.AssetBalance(address(dai), BORROW_CEILING);
-        debtCeiling[1] = ITempleStrategy.AssetBalance(address(temple), BORROW_CEILING);
-        trv.addStrategy(address(strategy), -123, debtCeiling);
-
-        trv.setBorrowToken(dai, address(0), 0, 0, address(dUSD));
-        trv.setBorrowToken(temple, address(templeBaseStrategy), 0, 0, address(dTEMPLE));
-
-        // strategy.setAssets(reportedAssets);
-        deal(address(dai), address(trv), TRV_STARTING_BALANCE, true);
-        dUSD.addMinter(address(trv));
-        // Set the explicit access to RAMOS functions
-        setExplicitAccess(ramos, address(strategy), ramos.addLiquidity.selector, ramos.removeLiquidity.selector, true);
-        vm.stopPrank();
+        _setupTrv();
     }
 
     function test_addLiquidity() public {
