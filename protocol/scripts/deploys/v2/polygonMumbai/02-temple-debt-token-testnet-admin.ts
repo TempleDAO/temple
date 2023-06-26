@@ -20,8 +20,8 @@ async function main() {
   );
 
   const dUSD = TempleDebtToken__factory.connect(V2_DEPLOYED_CONTRACTS.TEMPLE.TEMPLE_DEBT_TOKEN, owner);
-  await mine(dUSD.proposeNewGov(admin.address));
-  await mine(admin.acceptGov());
+  await mine(dUSD.proposeNewExecutor(admin.address));
+  await mine(admin.acceptExecutor());
   await mine(admin.addMinter(admin.address));
 }
         

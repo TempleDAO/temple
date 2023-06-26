@@ -10,11 +10,11 @@ export interface V2DeployedContracts {
 const V2_DEPLOYED_CONTRACTS: {[key: string]: V2DeployedContracts} = {
     polygonMumbai: {
         TEMPLE: {
-            TEMPLE_DEBT_TOKEN: '0x014a9d284ef12e5E0D79a153a954e72FA9963Fb0',
-            // yarn hardhat verify --network polygonMumbai 0x014a9d284ef12e5E0D79a153a954e72FA9963Fb0 "Temple Debt Token" dUSD 0xA7F0F04efB55eaEfBC4649C523F7a773f91D5526 10000000000000000
+            TEMPLE_DEBT_TOKEN: '0x1894037752b79CD81d8093A67174722f3b516EFD',
+            // yarn hardhat verify --network polygonMumbai 0x1894037752b79CD81d8093A67174722f3b516EFD "Temple Debt Token" dUSD 0xA7F0F04efB55eaEfBC4649C523F7a773f91D5526 0xA7F0F04efB55eaEfBC4649C523F7a773f91D5526 34304803691990293
 
-            TEMPLE_DEBT_TOKEN_TESTNET_ADMIN: '0x0e216536cAcd0c137b087924E929212bF4F62e2f',
-            // yarn hardhat verify --network polygonMumbai 0x0e216536cAcd0c137b087924E929212bF4F62e2f 0xFE0A7607f9D5f0A6669ed010Aba8fC64a7c86874
+            TEMPLE_DEBT_TOKEN_TESTNET_ADMIN: '0x102b2CC5459df5865E53A30D56B414b6BE40640d',
+            // yarn hardhat verify --network polygonMumbai 0x102b2CC5459df5865E53A30D56B414b6BE40640d 0x1894037752b79CD81d8093A67174722f3b516EFD
         }
     },
 }
