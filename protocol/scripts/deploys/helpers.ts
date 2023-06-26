@@ -2,10 +2,12 @@ import { ethers, network } from 'hardhat';
 import {
   BaseContract,
   BigNumber,
+  Contract,
   ContractFactory,
   ContractTransaction,
   Signer,
 } from 'ethers';
+import { ITempleElevatedAccess } from '../../typechain';
 
 interface TeamPayments {
   TEMPLE_TEAM_FIXED_PAYMENTS: string;
@@ -514,6 +516,10 @@ export function expectAddressWithPrivateKey() {
   if (network.name == 'polygonMumbai' && !process.env.MUMBAI_ADDRESS_PRIVATE_KEY) {
     throw new Error("Missing environment variable MUMBAI_ADDRESS_PRIVATE_KEY. A mumbai address private key with eth is required to deploy/manage contracts");
   }
+
+  if (network.name == 'sepolia' && !process.env.SEPOLIA_ADDRESS_PRIVATE_KEY) {
+    throw new Error("Missing environment variable SEPOLIA_ADDRESS_PRIVATE_KEY. A mumbai address private key with eth is required to deploy/manage contracts");
+  }
 }
 
 const expectedEnvvars: { [key: string]: string[] } = {
@@ -528,6 +534,7 @@ const expectedEnvvars: { [key: string]: string[] } = {
   gnosis: ['GNOSIS_ADDRESS_PRIVATE_KEY', 'GNOSIS_RPC_URL'],
   gnosisChiado: ['GNOSIS_CHIADO_ADDRESS_PRIVATE_KEY', 'GNOSIS_CHIADO_RPC_URL'],
   polygonMumbai: ['MUMBAI_ADDRESS_PRIVATE_KEY', 'MUMBAI_RPC_URL'],
+  sepolia: ['SEPOLIA_ADDRESS_PRIVATE_KEY', 'SEPOLIA_RPC_URL'],
   localhost: [],
 };
 
@@ -579,6 +586,16 @@ export async function waitForMaxGas(
     if (!currentGasPrice) throw new Error('No current gas price');
   }
   return currentGasPrice;
+}
+
+export async function setExplicitAccess(contract: Contract, allowedCaller: string, fnNames: string[], value: boolean) {
+    const access: ITempleElevatedAccess.ExplicitAccessStruct[] = fnNames.map(fn => {
+        return {
+            fnSelector: contract.interface.getSighash(contract.interface.getFunction(fn)),
+            allowed: value
+        }
+    });
+    await contract.setExplicitAccess(allowedCaller, access);
 }
 
 const { AddressZero } = ethers.constants;

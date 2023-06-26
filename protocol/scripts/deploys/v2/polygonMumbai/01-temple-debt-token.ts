@@ -11,11 +11,17 @@ async function main() {
   const [owner] = await ethers.getSigners();
 
   const factory = new TempleDebtToken__factory(owner);
+
+  // See the forge test: test_dsr_interest_equivalence()
+  // The DAI rate is 3.49% APR
+  // Continuously compounded representation == ln(1.0349)
+  const dsrRateAPY = ethers.utils.parseEther("0.034304803691990293");
+
   await deployAndMine(
     'templeDebtToken', factory, factory.deploy,
     'Temple Debt Token', 'dUSD', 
-    await owner.getAddress(),
-    ethers.utils.parseEther("0.01"), 
+    await owner.getAddress(), await owner.getAddress(),
+    dsrRateAPY, 
   );
 }
         
