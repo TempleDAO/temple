@@ -224,9 +224,6 @@ contract ThresholdSafeGuardTest is ThresholdSafeGuardTestBase {
         if (contractAddr == address(0)) {
             vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
             guard.setFunctionThreshold(contractAddr, functionSignature, threshold);
-        } else if (functionSignature == bytes4(0)) {
-            vm.expectRevert(abi.encodeWithSelector(IThresholdSafeGuard.InvalidFunctionSignature.selector));
-            guard.setFunctionThreshold(contractAddr, functionSignature, threshold);
         } else {
             vm.expectEmit();
             emit FunctionThresholdSet(contractAddr, functionSignature, threshold);
@@ -402,6 +399,35 @@ contract ThresholdSafeGuardTest is ThresholdSafeGuardTestBase {
         // Check with a different executor to what we signed with
         vm.expectRevert("GS025");
         doCheck("", safeOwners[1], signature);
+    }
+
+    function test_checkTransaction_withOverrideTresholdSet_emptyData() public {
+        vm.startPrank(executor);
+        bytes4 fnSelector = bytes4(0);
+
+        guard.setFunctionThreshold(address(mock), fnSelector, 3);
+
+        // Add a couple more executors to the safe which we can sign on behalf of.
+        (uint256 pk2, uint256 pk3) = addSafeOwners();
+
+        // An empty function call (eg ETH transfer)
+        bytes memory fnCall = bytes("");
+        bytes32 dataHash = getTxHash(fnCall);
+        bytes memory signature = bytes.concat(
+            signexecutor(safeOwners[0]),
+            signEOA(dataHash, pk2)
+        );
+
+        // Fails with 2 signers
+        vm.expectRevert("!Dynamic Signature Threshold");
+        doCheck(fnCall, safeOwners[0], signature);
+
+        // OK with 3 signers
+        signature = bytes.concat(
+            signature,
+            signEOA(dataHash, pk3)
+        );
+        doCheck(fnCall, safeOwners[0], signature);
     }
 
     function test_checkTransaction_withOverrideTresholdSet() public {

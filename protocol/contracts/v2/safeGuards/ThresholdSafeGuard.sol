@@ -100,10 +100,11 @@ contract ThresholdSafeGuard is IThresholdSafeGuard, TempleElevatedAccess {
 
     /**
       * @notice Set the number of signatories required for a contract/function signature pair.
+      * @dev functionSignature=bytes(0) is ok as this represents an ETH transfer which may also have
+      * an explicit threshold.
      */
     function setFunctionThreshold(address contractAddr, bytes4 functionSignature, uint256 threshold) external onlyElevatedAccess {
         if (contractAddr == address(0)) revert CommonEventsAndErrors.InvalidAddress();
-        if (functionSignature == bytes4(0)) revert InvalidFunctionSignature();
 
         emit FunctionThresholdSet(contractAddr, functionSignature, threshold);
         functionThresholds[contractAddr][functionSignature] = threshold;
