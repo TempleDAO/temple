@@ -4,7 +4,7 @@ export interface V2DeployedContracts {
     CORE: {
         TEMPLE_TOKEN: string,
         CIRCUIT_BREAKER_PROXY: string,
-        GNOSIS_SAFE_GUARD: string,
+        // GNOSIS_SAFE_GUARD: string,
         EXECUTOR_MSIG: string,
         RESCUER_MSIG: string,
     },
@@ -24,15 +24,15 @@ export interface V2DeployedContracts {
             LINEAR_WITH_KINK: string,
         },
     },
-    RAMOS: {
-        TEMPLE_DAI: {
-            ADDRESS: string,
-            AURA_STAKING: string,
-            FEE_COLLECTOR: string,
-            BPT_TOKEN: string,
-            POOL_ID: string,
-        }
-    }
+    // RAMOS: {
+    //     TEMPLE_DAI: {
+    //         ADDRESS: string,
+    //         AURA_STAKING: string,
+    //         FEE_COLLECTOR: string,
+    //         BPT_TOKEN: string,
+    //         POOL_ID: string,
+    //     }
+    // }
     STRATEGIES: {
         DSR_BASE_STRATEGY: {
             ADDRESS: string,
@@ -46,25 +46,25 @@ export interface V2DeployedContracts {
             RESCUER_MSIG: string,
             // No circuit breakers for Temple base strategy
         },
-        TEST_GNOSIS_SAFE_STRATEGY1: {
-            ADDRESS: string,
-            EXECUTOR_MSIG: string,
-            RESCUER_MSIG: string,
-            UNDERLYING_GNOSIS_SAFE: string,
-            CIRCUIT_BREAKERS: {
-                DAI: string,
-                TEMPLE: string,
-            },
-        },
-        RAMOS_STRATEGY: {
-            ADDRESS: string,
-            EXECUTOR_MSIG: string,
-            RESCUER_MSIG: string,
-            CIRCUIT_BREAKERS: {
-                DAI: string,
-                TEMPLE: string,
-            },
-        },
+        // TEST_GNOSIS_SAFE_STRATEGY1: {
+        //     ADDRESS: string,
+        //     EXECUTOR_MSIG: string,
+        //     RESCUER_MSIG: string,
+        //     UNDERLYING_GNOSIS_SAFE: string,
+        //     CIRCUIT_BREAKERS: {
+        //         DAI: string,
+        //         TEMPLE: string,
+        //     },
+        // },
+        // RAMOS_STRATEGY: {
+        //     ADDRESS: string,
+        //     EXECUTOR_MSIG: string,
+        //     RESCUER_MSIG: string,
+        //     CIRCUIT_BREAKERS: {
+        //         DAI: string,
+        //         TEMPLE: string,
+        //     },
+        // },
         TLC_STRATEGY: {
             ADDRESS: string,
             EXECUTOR_MSIG: string,
@@ -81,9 +81,9 @@ export interface V2DeployedContracts {
             DAI_JOIN: string,
             POT: string,
         },
-        BALANCER: {
-            VAULT: string,
-        },
+        // BALANCER: {
+        //     VAULT: string,
+        // },
     }
 }
 
