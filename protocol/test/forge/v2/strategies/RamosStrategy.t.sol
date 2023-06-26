@@ -364,6 +364,12 @@ contract RamosStrategyTestAccess is RamosStrategyTestBase {
 }
 
 contract RamosStrategyTestVaultFunctions is RamosStrategyTestBase {
+    uint256 public constant AMOUNT_BORROW_REPAY = 100e18;
+    uint256 public constant TEMPLE_INITIAL_TOTAL_SUPPLY = 27.2400172562265383993664804e25;
+
+    event Borrow(address indexed strategy, address indexed token, address indexed recipient, uint256 amount);
+    event Repay(address indexed strategy, address indexed token, address indexed from, uint256 amount);
+
     function setUp() public {
         _setUp();
         _setupTrv();
@@ -378,8 +384,28 @@ contract RamosStrategyTestVaultFunctions is RamosStrategyTestBase {
         strategy.borrowProtocolToken(amount, alice);
     }
 
-    function test_borrowProtocolToken() public {
-        // @todo
+    function test_borrowProtocolToken() public {       
+        vm.startPrank(executor);
+        // check balance before borrowing temple
+        assertEq(temple.balanceOf(address(trv)), 0);
+        assertEq(temple.balanceOf(address(ramos)), 0);
+        assertEq(temple.totalSupply(), TEMPLE_INITIAL_TOTAL_SUPPLY - TRV_STARTING_BALANCE);
+        assertEq(dTEMPLE.balanceOf(address(trv)), 0);
+        assertEq(dTEMPLE.balanceOf(address(ramos)), 0);
+        assertEq(dTEMPLE.totalSupply(), 0);
+        
+        vm.expectEmit(address(trv));
+        emit Borrow(address(strategy), address(temple), address(ramos), AMOUNT_BORROW_REPAY);
+
+        strategy.borrowProtocolToken(AMOUNT_BORROW_REPAY, address(ramos));
+        
+        // check balance after borrowing temple
+        assertEq(temple.balanceOf(address(ramos)), AMOUNT_BORROW_REPAY);
+        assertEq(temple.balanceOf(address(trv)), 0);
+        assertEq(temple.totalSupply(), TEMPLE_INITIAL_TOTAL_SUPPLY - TRV_STARTING_BALANCE + AMOUNT_BORROW_REPAY);
+        assertEq(dTEMPLE.balanceOf(address(trv)), 0);
+        assertEq(dTEMPLE.balanceOf(address(ramos)), 0);
+        assertEq(dTEMPLE.totalSupply(), AMOUNT_BORROW_REPAY);
     }
 
     function test_borrowQuoteToken_failCircuitBreaker() public {
@@ -392,15 +418,64 @@ contract RamosStrategyTestVaultFunctions is RamosStrategyTestBase {
     }
 
     function test_borrowQuoteToken() public {
-        // @todo
+        vm.startPrank(executor);
+        // check balance before borrowing dai
+        assertEq(dai.balanceOf(address(trv)), TRV_STARTING_BALANCE);
+        assertEq(dai.balanceOf(address(ramos)), 0);
+        assertEq(dUSD.balanceOf(address(trv)), 0);
+        assertEq(dUSD.balanceOf(address(ramos)), 0);
+        assertEq(dUSD.totalSupply(), 0);
+
+        vm.expectEmit(address(trv));
+        emit Borrow(address(strategy), address(dai), address(ramos), AMOUNT_BORROW_REPAY);
+
+        strategy.borrowQuoteToken(AMOUNT_BORROW_REPAY, address(ramos));      
+
+        // check balance after borrowing dai
+        assertEq(dai.balanceOf(address(trv)), TRV_STARTING_BALANCE - AMOUNT_BORROW_REPAY);
+        assertEq(dai.balanceOf(address(ramos)), AMOUNT_BORROW_REPAY);
+        assertEq(dUSD.balanceOf(address(trv)), 0);
+        assertEq(dUSD.balanceOf(address(ramos)), 0);
+        assertEq(dUSD.totalSupply(), AMOUNT_BORROW_REPAY);
     }
 
     function test_repayProtocolToken() public {
-        // @todo
+        // borrow protocol(temple) trv -> ramos
+        test_borrowProtocolToken();
+        
+        // repay protocol(temple) ramos -> trv
+        changePrank(address(ramos));
+
+        vm.expectEmit(address(trv));
+        emit Repay(address(strategy), address(temple), address(strategy), AMOUNT_BORROW_REPAY);
+
+        strategy.repayProtocolToken(AMOUNT_BORROW_REPAY);
+
+        assertEq(temple.balanceOf(address(trv)), 0);
+        assertEq(temple.balanceOf(address(ramos)), 0);
+        assertEq(temple.totalSupply(), TEMPLE_INITIAL_TOTAL_SUPPLY - TRV_STARTING_BALANCE);
+        assertEq(dTEMPLE.balanceOf(address(trv)), 0);
+        assertEq(dTEMPLE.balanceOf(address(ramos)), 0);
+        assertEq(dTEMPLE.totalSupply(), 0);
     }
 
     function test_repayQuoteToken() public {
-        // @todo
+        // borrow quote(dai/dUSD) trv -> ramos
+        test_borrowQuoteToken();
+        
+        // repay quote(dai/dUSD) ramos -> trv
+        changePrank(address(ramos));
+
+        vm.expectEmit(address(trv));
+        emit Repay(address(strategy), address(dai), address(strategy), AMOUNT_BORROW_REPAY);
+
+        strategy.repayQuoteToken(AMOUNT_BORROW_REPAY);
+        
+        assertEq(dai.balanceOf(address(trv)), TRV_STARTING_BALANCE);
+        assertEq(dai.balanceOf(address(ramos)), 0);
+        assertEq(dUSD.balanceOf(address(trv)), 0);
+        assertEq(dUSD.balanceOf(address(ramos)), 0);
+        assertEq(dUSD.totalSupply(), 0);
     }
 }
 
