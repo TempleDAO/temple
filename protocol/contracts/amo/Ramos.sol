@@ -516,9 +516,11 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
         uint256 protocolTokenAmount
     ) {
         // validate request
-        if (request.assets.length != request.minAmountsOut.length || 
+        if (
+            request.assets.length != request.minAmountsOut.length || 
             request.assets.length != 2 || 
-            request.toInternalBalance == true) {
+            request.toInternalBalance == true
+        ) {
                 revert AMOCommon.InvalidBalancerVaultRequest();
         }
 
@@ -528,7 +530,8 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
         amoStaking.withdrawAndUnwrap(bptIn, false, address(this));
         balancerVault.exitPool(balancerPoolId, address(this), address(this), request);
 
-        for (uint i=0; i<request.assets.length; ++i) {
+        uint256 length = request.assets.length;
+        for (uint i; i < length; ++i) {
             if (request.assets[i] == address(protocolToken)) {
                 unchecked {
                     protocolTokenAmount = protocolToken.balanceOf(address(this)) - protocolTokenAmountBefore;
