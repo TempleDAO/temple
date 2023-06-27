@@ -172,6 +172,7 @@ abstract contract AbstractStrategy is ITempleStrategy, TempleElevatedAccess {
 
         // NB: solc warns that this is unreachable - but that's a bug and not true
         // It's a a virtual function where not all implementations revert (eg DsrBaseStrategy)
+        // See: https://github.com/ethereum/solidity/issues/14359
         emit Shutdown();
 
         // Now mark as shutdown in the TRV.

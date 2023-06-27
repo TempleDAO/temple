@@ -18,6 +18,7 @@ import { TempleCircuitBreakerProxy } from "contracts/v2/circuitBreaker/TempleCir
 
 import { IMakerDaoDaiJoinLike } from "contracts/interfaces/external/makerDao/IMakerDaoDaiJoinLike.sol";
 import { IMakerDaoPotLike } from "contracts/interfaces/external/makerDao/IMakerDaoPotLike.sol";
+import { ud } from "@prb/math/src/UD60x18.sol";
 
 /* solhint-disable func-name-mixedcase, not-rely-on-time */
 contract DsrBaseStrategyTestBase is TempleTest {
@@ -31,9 +32,10 @@ contract DsrBaseStrategyTestBase is TempleTest {
     FakeERC20 public frax = new FakeERC20("FRAX", "FRAX", address(0), 0);
     FakeERC20 public immutable usdc = new FakeERC20("USDC", "USDC", address(0), 0);
 
-    // 1% APR, which is how DSR is calculated. 
-    // Nb this is ln(1.01)
-    uint256 public constant DEFAULT_BASE_INTEREST = 9950330853168083;
+    // 1% APR, which is how DSR is calculated as of block #16675385
+    // dUSD is represented in APY (continuously compounded), so need to convert in order to match
+    // Nb this is ln(1.01). See `test_dsr_interest_equivalence()` below
+    uint256 public constant DEFAULT_BASE_INTEREST = 0.009950330853168072e18;
     TempleDebtToken public dUSD;
     TreasuryPriceIndexOracle public tpiOracle;
     TreasuryReservesVault public trv;
@@ -66,6 +68,16 @@ contract DsrBaseStrategyTestAdmin is DsrBaseStrategyTestBase {
 
     function setUp() public {
         _setUp();
+    }
+
+    function test_dsr_interest_equivalence() public {
+        uint256 dsrRate = 1.01e18;
+        uint256 equivalentDusdRate = ud(dsrRate).ln().unwrap();
+        assertEq(equivalentDusdRate, 0.009950330853168072e18);
+
+        dsrRate = 1.0349e18;
+        equivalentDusdRate = ud(dsrRate).ln().unwrap();
+        assertEq(equivalentDusdRate, 0.034304803691990293e18);
     }
 
     function test_initalization() public {
@@ -269,7 +281,7 @@ contract DsrBaseStrategyTestBorrowAndRepay is DsrBaseStrategyTestBase {
 
         // 0 equity (some rounding due to exp() diff), as the DSR balance equals the dUSD debt.
         // They are both accruing at 1% APR
-        assertApproxEqAbs(assetBalances2[0].balance, dTokenBalances[0].balance, 100);
+        assertApproxEqAbs(assetBalances2[0].balance, dTokenBalances[0].balance, 1200);
     }
 
     function test_checkpointBalances() public 
