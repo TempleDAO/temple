@@ -87,18 +87,100 @@ export interface V2DeployedContracts {
     }
 }
 
-// @todo
-// const V2_DEPLOYED_CONTRACTS: {[key: string]: V2DeployedContracts} = {
-//     sepolia: {
-//         // ...
-//     },
-// }
+const V2_DEPLOYED_CONTRACTS: {[key: string]: V2DeployedContracts} = {
+    sepolia: {
+        CORE: {
+            TEMPLE_TOKEN: "",
+            CIRCUIT_BREAKER_PROXY: "",
+            // GNOSIS_SAFE_GUARD: "",
+            EXECUTOR_MSIG: "0x...",
+            RESCUER_MSIG: "0x...",
+        },
+        TREASURY_RESERVES_VAULT: {
+            ADDRESS: "",
+            D_USD_TOKEN: "",
+            D_TEMPLE_TOKEN: "",
+            TPI_ORACLE: "",
+        },
+        TEMPLE_LINE_OF_CREDIT: {
+            ADDRESS: "",
+            CIRCUIT_BREAKERS: {
+                DAI: "",
+                TEMPLE: "",
+            },
+            INTEREST_RATE_MODELS: {
+                LINEAR_WITH_KINK: "",
+            },
+        },
+        // RAMOS: {
+        //     TEMPLE_DAI: {
+        //         ADDRESS: "",
+        //         AURA_STAKING: "",
+        //         FEE_COLLECTOR: "",
+        //         BPT_TOKEN: "",
+        //         POOL_ID: "",
+        //     }
+        // }
+        STRATEGIES: {
+            DSR_BASE_STRATEGY: {
+                ADDRESS: "",
+                EXECUTOR_MSIG: "0x...",
+                RESCUER_MSIG: "0x...",
+                // No circuit breakers for DSR base strategy
+            },
+            TEMPLE_BASE_STRATEGY: {
+                ADDRESS: "",
+                EXECUTOR_MSIG: "0x...",
+                RESCUER_MSIG: "0x...",
+                // No circuit breakers for Temple base strategy
+            },
+            // TEST_GNOSIS_SAFE_STRATEGY1: {
+            //     ADDRESS: "",
+            //     EXECUTOR_MSIG: "",
+            //     RESCUER_MSIG: "",
+            //     UNDERLYING_GNOSIS_SAFE: "",
+            //     CIRCUIT_BREAKERS: {
+            //         DAI: "",
+            //         TEMPLE: "",
+            //     },
+            // },
+            // RAMOS_STRATEGY: {
+            //     ADDRESS: "",
+            //     EXECUTOR_MSIG: "",
+            //     RESCUER_MSIG: "",
+            //     CIRCUIT_BREAKERS: {
+            //         DAI: "",
+            //         TEMPLE: "",
+            //     },
+            // },
+            TLC_STRATEGY: {
+                ADDRESS: "",
+                EXECUTOR_MSIG: "0x...",
+                RESCUER_MSIG: "0x...",
+                CIRCUIT_BREAKERS: {
+                    DAI: "",
+                    TEMPLE: "",
+                },
+            },
+        },
+        EXTERNAL: {
+            MAKER_DAO: {
+                DAI_TOKEN: "",
+                DAI_JOIN: "",
+                POT: "",
+            },
+            // BALANCER: {
+            //     VAULT: "",
+            // },
+        }
+    }
+}
 
-// export function getDeployedContracts(): V2DeployedContracts {
-//     if (V2_DEPLOYED_CONTRACTS[network.name] === undefined) {
-//       console.log(`No contracts configured for ${network.name}`);
-//       throw new Error(`No contracts configured for ${network.name}`);
-//     } else {
-//       return V2_DEPLOYED_CONTRACTS[network.name];
-//     }
-// }
+export function getDeployedContracts(): V2DeployedContracts {
+    if (V2_DEPLOYED_CONTRACTS[network.name] === undefined) {
+      console.log(`No contracts configured for ${network.name}`);
+      throw new Error(`No contracts configured for ${network.name}`);
+    } else {
+      return V2_DEPLOYED_CONTRACTS[network.name];
+    }
+}
