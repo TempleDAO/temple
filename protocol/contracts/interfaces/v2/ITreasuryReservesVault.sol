@@ -276,7 +276,7 @@ interface ITreasuryReservesVault is ITempleElevatedAccess {
     function setStrategyPaused(address strategy, bool borrow, bool repays) external;
 
     /**
-     * Add a new strategy
+     * @notice Register a new strategy which can borrow tokens from Treasury Reserves
      */
     function addStrategy(
         address strategy, 

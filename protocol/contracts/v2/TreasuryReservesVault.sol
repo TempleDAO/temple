@@ -157,14 +157,14 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
     }
 
     /**
-     * Add a new strategy
+     * @notice Register a new strategy which can borrow tokens from Treasury Reserves
      */
     function addStrategy(
         address strategy, 
         int256 underperformingEquityThreshold,
         ITempleStrategy.AssetBalance[] calldata debtCeiling
     ) external override onlyElevatedAccess {
-        if (_strategySet.contains(strategy)) revert AlreadyEnabled();
+        if (!_strategySet.add(strategy)) revert AlreadyEnabled();
         emit StrategyAdded(strategy, underperformingEquityThreshold);
 
         StrategyConfig storage strategyConfig = strategies[strategy];
@@ -176,8 +176,6 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
             _token = debtCeiling[i].asset;
             strategyConfig.debtCeiling[IERC20(_token)] = debtCeiling[i].balance;
         }
-
-        _strategySet.add(strategy);
     }
 
     /**
