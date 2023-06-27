@@ -365,7 +365,7 @@ contract RamosStrategyTestAccess is RamosStrategyTestBase {
 
 contract RamosStrategyTestVaultFunctions is RamosStrategyTestBase {
     uint256 public constant AMOUNT_BORROW_REPAY = 100e18;
-    uint256 public constant TEMPLE_INITIAL_TOTAL_SUPPLY = 27.2400172562265383993664804e25;
+    uint256 public constant TEMPLE_INITIAL_TOTAL_SUPPLY = 17.2400172562265383993664804e25;
 
     event Borrow(address indexed strategy, address indexed token, address indexed recipient, uint256 amount);
     event Repay(address indexed strategy, address indexed token, address indexed from, uint256 amount);
@@ -389,7 +389,7 @@ contract RamosStrategyTestVaultFunctions is RamosStrategyTestBase {
         // check balance before borrowing temple
         assertEq(temple.balanceOf(address(trv)), 0);
         assertEq(temple.balanceOf(address(ramos)), 0);
-        assertEq(temple.totalSupply(), TEMPLE_INITIAL_TOTAL_SUPPLY - TRV_STARTING_BALANCE);
+        assertEq(temple.totalSupply(), TEMPLE_INITIAL_TOTAL_SUPPLY);
         assertEq(dTEMPLE.balanceOf(address(trv)), 0);
         assertEq(dTEMPLE.balanceOf(address(ramos)), 0);
         assertEq(dTEMPLE.totalSupply(), 0);
@@ -402,7 +402,7 @@ contract RamosStrategyTestVaultFunctions is RamosStrategyTestBase {
         // check balance after borrowing temple
         assertEq(temple.balanceOf(address(ramos)), AMOUNT_BORROW_REPAY);
         assertEq(temple.balanceOf(address(trv)), 0);
-        assertEq(temple.totalSupply(), TEMPLE_INITIAL_TOTAL_SUPPLY - TRV_STARTING_BALANCE + AMOUNT_BORROW_REPAY);
+        assertEq(temple.totalSupply(), TEMPLE_INITIAL_TOTAL_SUPPLY + AMOUNT_BORROW_REPAY);
         assertEq(dTEMPLE.balanceOf(address(trv)), 0);
         assertEq(dTEMPLE.balanceOf(address(ramos)), 0);
         assertEq(dTEMPLE.totalSupply(), AMOUNT_BORROW_REPAY);
@@ -453,7 +453,7 @@ contract RamosStrategyTestVaultFunctions is RamosStrategyTestBase {
 
         assertEq(temple.balanceOf(address(trv)), 0);
         assertEq(temple.balanceOf(address(ramos)), 0);
-        assertEq(temple.totalSupply(), TEMPLE_INITIAL_TOTAL_SUPPLY - TRV_STARTING_BALANCE);
+        assertEq(temple.totalSupply(), TEMPLE_INITIAL_TOTAL_SUPPLY);
         assertEq(dTEMPLE.balanceOf(address(trv)), 0);
         assertEq(dTEMPLE.balanceOf(address(ramos)), 0);
         assertEq(dTEMPLE.totalSupply(), 0);
