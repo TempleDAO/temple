@@ -14,7 +14,7 @@ async function main() {
 
   const circuitBreakerFactory = new TempleCircuitBreakerAllUsersPerPeriod__factory(owner);
   await deployAndMine(
-    'TLC_CIRCUIT_BREAKERS_TEMPLE',
+    'TLC_CIRCUIT_BREAKER_TEMPLE',
     circuitBreakerFactory,
     circuitBreakerFactory.deploy,
     await owner.getAddress(),

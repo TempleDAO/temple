@@ -17,11 +17,11 @@ async function main() {
     'TRV_DUSD',
     dUsdDebtTokenFactory,
     dUsdDebtTokenFactory.deploy,
-    "dUSD", // TODO: update value
-    "dUSD", // TODO: update value
+    "Temple Debt USD",
+    "dUSD",
     await owner.getAddress(),
     await owner.getAddress(),
-    -1, // TODO: update value 
+    ethers.utils.parseEther("0.034304803691990293"),
   )
 
 }

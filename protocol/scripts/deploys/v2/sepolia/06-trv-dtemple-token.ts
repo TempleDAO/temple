@@ -17,11 +17,11 @@ async function main() {
     'TRV_DTEMPLE',
     dTempleDebtTokenFactory,
     dTempleDebtTokenFactory.deploy,
-    "dTEMPLE", // TODO: update value
-    "dTEMPLE", // TODO: update value
+    "Temple Debt TEMPLE",
+    "dTEMPLE",
     await owner.getAddress(),
     await owner.getAddress(),
-    -1, // TODO: update value 
+    ethers.utils.parseEther("0"), 
   )
 
 }

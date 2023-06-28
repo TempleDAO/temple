@@ -90,17 +90,17 @@ export interface V2DeployedContracts {
 const V2_DEPLOYED_CONTRACTS: {[key: string]: V2DeployedContracts} = {
     sepolia: {
         CORE: {
-            TEMPLE_TOKEN: "",
-            CIRCUIT_BREAKER_PROXY: "",
+            TEMPLE_TOKEN: "0x64a925B0fA211c44337148C0807f959Bd44b0B67",
+            CIRCUIT_BREAKER_PROXY: "0xD112Fb2e38305829136971732c4805A782bcb459",
             // GNOSIS_SAFE_GUARD: "",
             EXECUTOR_MSIG: "0x...",
             RESCUER_MSIG: "0x...",
         },
         TREASURY_RESERVES_VAULT: {
-            ADDRESS: "",
-            D_USD_TOKEN: "",
-            D_TEMPLE_TOKEN: "",
-            TPI_ORACLE: "",
+            ADDRESS: "0x770E440064B1AC1f5A245655C5e4211439baB295",
+            D_USD_TOKEN: "0xB089694e2930FFda2066c00Bd2A8e512a3B4fA43",
+            D_TEMPLE_TOKEN: "0xAE53dcfE0E357DF2b5Ef1FF935dF29F57f76c751",
+            TPI_ORACLE: "0x65946d23f3AF782c62ebd584Df58B3dd4CBd6Cbf",
         },
         TEMPLE_LINE_OF_CREDIT: {
             ADDRESS: "",

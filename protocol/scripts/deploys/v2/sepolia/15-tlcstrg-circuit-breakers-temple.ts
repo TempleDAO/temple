@@ -14,11 +14,11 @@ async function main() {
 
   const circuitBreakerFactory = new TempleCircuitBreakerAllUsersPerPeriod__factory(owner);
   await deployAndMine(
-    'TLCSTRG_CIRCUIT_BREAKERS_TEMPLE',
+    'TLCSTRG_CIRCUIT_BREAKER_TEMPLE',
     circuitBreakerFactory,
     circuitBreakerFactory.deploy,
-    TEMPLE_V2_DEPLOYED.STRATEGIES.TLC_STRATEGY.RESCUER_MSIG,
-    TEMPLE_V2_DEPLOYED.STRATEGIES.TLC_STRATEGY.EXECUTOR_MSIG,
+    await owner.getAddress(),
+    await owner.getAddress(),
     60*60, // TODO: update value
     24, // TODO: update value
     100e18, // TODO: update value
