@@ -1,0 +1,9 @@
+// sepolia: TLC_CIRCUIT_BREAKER_DAI=0x4431116580Af83b49279e9b6D088DcBa006c4Ff5
+// yarn hardhat verify --network sepolia 0x4431116580Af83b49279e9b6D088DcBa006c4Ff5 --constructor-args scripts/deploys/sepolia/deploymentArgs/0x4431116580Af83b49279e9b6D088DcBa006c4Ff5.js
+module.exports = [
+  "0x81960c465605cddD9772a8653111D4aBE580Ce1e",
+  "0x81960c465605cddD9772a8653111D4aBE580Ce1e",
+  93600,
+  13,
+  "100000000000000000000000"
+];

@@ -19,10 +19,10 @@ async function main() {
     linearKinkIRMFactory.deploy,
     await owner.getAddress(),
     await owner.getAddress(),
-    -1, // TODO: update value
-    -1, // TODO: update value
-    -1, // TODO: update value
-    -1 // TODO: update value
+    ethers.utils.parseEther("0.05"), // 5% IR
+    ethers.utils.parseEther("0.2"), // 20% Max IR
+    ethers.utils.parseEther("0.9"), // 90% kink UR
+    ethers.utils.parseEther("0.1") // 10% kink IR
   )
 
 }

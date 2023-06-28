@@ -21,7 +21,7 @@ async function main() {
     "dTEMPLE",
     await owner.getAddress(),
     await owner.getAddress(),
-    ethers.utils.parseEther("0"), 
+    ethers.utils.parseEther("0"), // 0% IR
   )
 
 }
