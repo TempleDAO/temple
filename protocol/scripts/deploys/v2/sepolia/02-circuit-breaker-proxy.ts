@@ -12,13 +12,13 @@ async function main() {
   const [owner] = await ethers.getSigners();
   const TEMPLE_V2_DEPLOYED = getDeployedContracts();
 
-  const templeCircuitBreakerFactory = new TempleCircuitBreakerProxy__factory(owner);
+  const templeCircuitBreakerProxyFactory = new TempleCircuitBreakerProxy__factory(owner);
   await deployAndMine(
     'TEMPLE_CIRCUIT_BREAKER',
-    templeCircuitBreakerFactory,
-    templeCircuitBreakerFactory.deploy,
-    TEMPLE_V2_DEPLOYED.CORE.RESCUER_MSIG,
-    TEMPLE_V2_DEPLOYED.CORE.EXECUTOR_MSIG,
+    templeCircuitBreakerProxyFactory,
+    templeCircuitBreakerProxyFactory.deploy,
+    await owner.getAddress(),
+    await owner.getAddress(),
   )
 
 }
