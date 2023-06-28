@@ -19,8 +19,8 @@ async function main() {
     dTempleDebtTokenFactory.deploy,
     "dTEMPLE", // TODO: update value
     "dTEMPLE", // TODO: update value
-    TEMPLE_V2_DEPLOYED.CORE.RESCUER_MSIG,
-    TEMPLE_V2_DEPLOYED.CORE.EXECUTOR_MSIG,
+    await owner.getAddress(),
+    await owner.getAddress(),
     -1, // TODO: update value 
   )
 

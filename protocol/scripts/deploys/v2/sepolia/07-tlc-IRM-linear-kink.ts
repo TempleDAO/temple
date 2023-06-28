@@ -17,8 +17,8 @@ async function main() {
     'TLC_LINEAR_KINK_IRM',
     linearKinkIRMFactory,
     linearKinkIRMFactory.deploy,
-    TEMPLE_V2_DEPLOYED.CORE.RESCUER_MSIG,
-    TEMPLE_V2_DEPLOYED.CORE.EXECUTOR_MSIG,
+    await owner.getAddress(),
+    await owner.getAddress(),
     -1, // TODO: update value
     -1, // TODO: update value
     -1, // TODO: update value

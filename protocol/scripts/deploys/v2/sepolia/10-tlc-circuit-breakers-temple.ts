@@ -17,8 +17,8 @@ async function main() {
     'TLC_CIRCUIT_BREAKERS_TEMPLE',
     circuitBreakerFactory,
     circuitBreakerFactory.deploy,
-    TEMPLE_V2_DEPLOYED.CORE.RESCUER_MSIG,
-    TEMPLE_V2_DEPLOYED.CORE.EXECUTOR_MSIG,
+    await owner.getAddress(),
+    await owner.getAddress(),
     60*60, // TODO: update value
     24, // TODO: update value
     100e18, // TODO: update value
