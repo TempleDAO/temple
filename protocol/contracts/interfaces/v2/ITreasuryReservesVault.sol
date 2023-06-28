@@ -5,7 +5,8 @@ pragma solidity ^0.8.17;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import { ITempleDebtToken } from "contracts/interfaces/v2/ITempleDebtToken.sol";
-import { ITempleStrategy, ITempleBaseStrategy } from "contracts/interfaces/v2/strategies/ITempleBaseStrategy.sol";
+import { ITempleStrategy } from "contracts/interfaces/v2/strategies/ITempleStrategy.sol";
+import { ITempleBaseStrategy } from "contracts/interfaces/v2/strategies/ITempleBaseStrategy.sol";
 import { ITempleElevatedAccess } from "contracts/interfaces/v2/access/ITempleElevatedAccess.sol";
 import { ITreasuryPriceIndexOracle } from "contracts/interfaces/v2/ITreasuryPriceIndexOracle.sol";
 

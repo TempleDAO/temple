@@ -4,8 +4,6 @@ pragma solidity ^0.8.17;
 
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-// solhint-disable-next-line no-unused-import
-import { ITempleStrategy } from "contracts/interfaces/v2/strategies/ITempleStrategy.sol";
 import { ITempleBaseStrategy } from "contracts/interfaces/v2/strategies/ITempleBaseStrategy.sol";
 import { AbstractStrategy } from "contracts/v2/strategies/AbstractStrategy.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
@@ -74,7 +72,7 @@ contract TempleTokenBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
      * @dev The asset value may be stale at any point in time, depending onthe strategy. 
      * It may optionally implement `checkpointAssetBalances()` in order to update those balances.
      */
-    function latestAssetBalances() public override(AbstractStrategy, ITempleStrategy) view returns (
+    function latestAssetBalances() public override(AbstractStrategy, ITempleBaseStrategy) view returns (
         AssetBalance[] memory assetBalances
     ) {
         // Since we always mint/burn on demand, the balance is always zero.
