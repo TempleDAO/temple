@@ -19,9 +19,9 @@ async function main() {
     circuitBreakerFactory.deploy,
     await owner.getAddress(),
     await owner.getAddress(),
-    60*60, // TODO: update value
-    24, // TODO: update value
-    100e18, // TODO: update value
+    60*60*26, // 26 hours
+    13, // no of buckets
+    ethers.utils.parseEther("100000"), // cap per bucket
   )
 
 }

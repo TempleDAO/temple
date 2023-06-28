@@ -14,7 +14,7 @@ async function main() {
 
   const tlcStrategyFactory = new TlcStrategy__factory(owner);
   await deployAndMine(
-    'TLC_STRATEGY_TEMPLE',
+    'TLC_STRATEGY',
     tlcStrategyFactory,
     tlcStrategyFactory.deploy,
     await owner.getAddress(),

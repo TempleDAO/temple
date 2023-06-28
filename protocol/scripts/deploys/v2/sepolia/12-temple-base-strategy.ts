@@ -19,7 +19,7 @@ async function main() {
     templeTokenBaseFactory.deploy,
     await owner.getAddress(),
     await owner.getAddress(),
-    "TempleBaseStrategy", // TODO: update value
+    "TempleBaseStrategy",
     TEMPLE_V2_DEPLOYED.TREASURY_RESERVES_VAULT.ADDRESS,
     TEMPLE_V2_DEPLOYED.CORE.TEMPLE_TOKEN
   )
