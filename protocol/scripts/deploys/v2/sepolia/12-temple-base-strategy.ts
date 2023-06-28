@@ -17,8 +17,8 @@ async function main() {
     'TEMPLE_BASE_STRATEGY',
     templeTokenBaseFactory,
     templeTokenBaseFactory.deploy,
-    TEMPLE_V2_DEPLOYED.STRATEGIES.TEMPLE_BASE_STRATEGY.RESCUER_MSIG,
-    TEMPLE_V2_DEPLOYED.STRATEGIES.TEMPLE_BASE_STRATEGY.EXECUTOR_MSIG,
+    await owner.getAddress(),
+    await owner.getAddress(),
     "TempleBaseStrategy", // TODO: update value
     TEMPLE_V2_DEPLOYED.TREASURY_RESERVES_VAULT.ADDRESS,
     TEMPLE_V2_DEPLOYED.CORE.TEMPLE_TOKEN

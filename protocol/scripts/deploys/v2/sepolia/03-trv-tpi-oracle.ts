@@ -19,9 +19,9 @@ async function main() {
     treasuryPriceIndexOracle.deploy,
     await owner.getAddress(),
     await owner.getAddress(),
-    -1, // TODO: update value 
-    -1, // TODO: update value
-    -1 // TODO: update value
+    ethers.utils.parseEther("1.025"),
+    ethers.utils.parseEther("0.05"),
+    300
   )
 
 }
