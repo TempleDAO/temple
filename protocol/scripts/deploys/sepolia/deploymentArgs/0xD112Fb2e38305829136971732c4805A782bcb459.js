@@ -1,0 +1,6 @@
+// sepolia: TEMPLE_CIRCUIT_BREAKER=0xD112Fb2e38305829136971732c4805A782bcb459
+// yarn hardhat verify --network sepolia 0xD112Fb2e38305829136971732c4805A782bcb459 --constructor-args scripts/deploys/sepolia/deploymentArgs/0xD112Fb2e38305829136971732c4805A782bcb459.js
+module.exports = [
+  "0x81960c465605cddD9772a8653111D4aBE580Ce1e",
+  "0x81960c465605cddD9772a8653111D4aBE580Ce1e"
+];

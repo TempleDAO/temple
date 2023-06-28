@@ -1,20 +1,27 @@
 import '@nomiclabs/hardhat-ethers';
 import { ethers } from 'hardhat';
-import { FakeERC20__factory } from '../../../../typechain';
+import { TempleDebtToken__factory } from '../../../../typechain';
 import {
   deployAndMine,
   ensureExpectedEnvvars,
 } from '../../helpers';
-import { zeroAddress } from 'ethereumjs-util';
+import { getDeployedContracts } from '../sepolia/contract-addresses';
 
 async function main() {
   ensureExpectedEnvvars();
   const [owner] = await ethers.getSigners();
+  const TEMPLE_V2_DEPLOYED = getDeployedContracts();
 
-  const dusdFactory = new FakeERC20__factory(owner);
-
+  const dUsdDebtTokenFactory = new TempleDebtToken__factory(owner);
   await deployAndMine(
-    'TRV_DUSD', dusdFactory, dusdFactory.deploy, 'DUSD','DUSD', zeroAddress(), 0
+    'TRV_DUSD',
+    dUsdDebtTokenFactory,
+    dUsdDebtTokenFactory.deploy,
+    "Temple Debt USD",
+    "dUSD",
+    await owner.getAddress(),
+    await owner.getAddress(),
+    ethers.utils.parseEther("0.034304803691990293"), // 34.9% APR or ~34.304%APY
   )
 
 }

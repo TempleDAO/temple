@@ -17,12 +17,12 @@ async function main() {
     'TLC_LINEAR_KINK_IRM',
     linearKinkIRMFactory,
     linearKinkIRMFactory.deploy,
-    TEMPLE_V2_DEPLOYED.CORE.RESCUER_MSIG,
-    TEMPLE_V2_DEPLOYED.CORE.EXECUTOR_MSIG,
-    -1, // TODO: update value
-    -1, // TODO: update value
-    -1, // TODO: update value
-    -1 // TODO: update value
+    await owner.getAddress(),
+    await owner.getAddress(),
+    ethers.utils.parseEther("0.05"), // 5% IR
+    ethers.utils.parseEther("0.2"), // 20% Max IR
+    ethers.utils.parseEther("0.9"), // 90% kink UR
+    ethers.utils.parseEther("0.1") // 10% kink IR
   )
 
 }

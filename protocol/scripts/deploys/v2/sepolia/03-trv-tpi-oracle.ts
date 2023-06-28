@@ -17,11 +17,11 @@ async function main() {
     'TRV_TREASURY_PRICE_INDEX_ORACLE',
     treasuryPriceIndexOracle,
     treasuryPriceIndexOracle.deploy,
-    TEMPLE_V2_DEPLOYED.CORE.RESCUER_MSIG,
-    TEMPLE_V2_DEPLOYED.CORE.EXECUTOR_MSIG,
-    -1, // TODO: update value 
-    -1, // TODO: update value
-    -1 // TODO: update value
+    await owner.getAddress(),
+    await owner.getAddress(),
+    ethers.utils.parseEther("1.025"), // ~1.025 TPI at deployment date
+    ethers.utils.parseEther("0.05"), // max treasury price index delta
+    300 // cooldown
   )
 
 }

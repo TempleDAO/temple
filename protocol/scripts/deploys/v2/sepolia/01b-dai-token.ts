@@ -1,24 +1,25 @@
 import '@nomiclabs/hardhat-ethers';
 import { ethers } from 'hardhat';
-import { TempleCircuitBreakerProxy__factory } from '../../../../typechain';
+import { FakeERC20__factory } from '../../../../typechain';
 import {
   deployAndMine,
   ensureExpectedEnvvars,
 } from '../../helpers';
-import { getDeployedContracts } from '../sepolia/contract-addresses';
+import { zeroAddress } from 'ethereumjs-util';
 
 async function main() {
   ensureExpectedEnvvars();
   const [owner] = await ethers.getSigners();
-  const TEMPLE_V2_DEPLOYED = getDeployedContracts();
 
-  const templeCircuitBreakerProxyFactory = new TempleCircuitBreakerProxy__factory(owner);
+  const daiTokenFactory = new FakeERC20__factory(owner);
   await deployAndMine(
-    'TEMPLE_CIRCUIT_BREAKER',
-    templeCircuitBreakerProxyFactory,
-    templeCircuitBreakerProxyFactory.deploy,
-    await owner.getAddress(),
-    await owner.getAddress(),
+    'DAI',
+    daiTokenFactory,
+    daiTokenFactory.deploy,
+    "Dai stablecoin",
+    "DAI",
+    zeroAddress(), // initial account
+    0, // initial balance
   )
 
 }

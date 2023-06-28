@@ -1,18 +1,27 @@
 import '@nomiclabs/hardhat-ethers';
 import { ethers } from 'hardhat';
-import { TempleERC20Token__factory } from '../../../../typechain';
+import { TempleDebtToken__factory } from '../../../../typechain';
 import {
   deployAndMine,
   ensureExpectedEnvvars,
 } from '../../helpers';
+import { getDeployedContracts } from '../sepolia/contract-addresses';
 
 async function main() {
   ensureExpectedEnvvars();
   const [owner] = await ethers.getSigners();
+  const TEMPLE_V2_DEPLOYED = getDeployedContracts();
 
-  const dTempleFactory = new TempleERC20Token__factory(owner);
+  const dTempleDebtTokenFactory = new TempleDebtToken__factory(owner);
   await deployAndMine(
-    'TRV_DTEMPLE', dTempleFactory, dTempleFactory.deploy,
+    'TRV_DTEMPLE',
+    dTempleDebtTokenFactory,
+    dTempleDebtTokenFactory.deploy,
+    "Temple Debt TEMPLE",
+    "dTEMPLE",
+    await owner.getAddress(),
+    await owner.getAddress(),
+    ethers.utils.parseEther("0"), // 0% IR
   )
 
 }

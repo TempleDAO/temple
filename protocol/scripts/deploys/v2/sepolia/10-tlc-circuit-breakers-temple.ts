@@ -14,14 +14,14 @@ async function main() {
 
   const circuitBreakerFactory = new TempleCircuitBreakerAllUsersPerPeriod__factory(owner);
   await deployAndMine(
-    'TLC_CIRCUIT_BREAKERS_TEMPLE',
+    'TLC_CIRCUIT_BREAKER_TEMPLE',
     circuitBreakerFactory,
     circuitBreakerFactory.deploy,
-    TEMPLE_V2_DEPLOYED.CORE.RESCUER_MSIG,
-    TEMPLE_V2_DEPLOYED.CORE.EXECUTOR_MSIG,
-    60*60, // TODO: update value
-    24, // TODO: update value
-    100e18, // TODO: update value
+    await owner.getAddress(),
+    await owner.getAddress(),
+    60*60*26, // 26 hours
+    13, // no of buckets
+    ethers.utils.parseEther("100000"), // cap per bucket
   )
 
 }

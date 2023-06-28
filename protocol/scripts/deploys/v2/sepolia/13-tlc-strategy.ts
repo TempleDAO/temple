@@ -14,11 +14,11 @@ async function main() {
 
   const tlcStrategyFactory = new TlcStrategy__factory(owner);
   await deployAndMine(
-    'TLC_STRATEGY_TEMPLE',
+    'TLC_STRATEGY',
     tlcStrategyFactory,
     tlcStrategyFactory.deploy,
-    TEMPLE_V2_DEPLOYED.STRATEGIES.TEMPLE_BASE_STRATEGY.RESCUER_MSIG,
-    TEMPLE_V2_DEPLOYED.STRATEGIES.TEMPLE_BASE_STRATEGY.EXECUTOR_MSIG,
+    await owner.getAddress(),
+    await owner.getAddress(),
     "TlcStrategy",
     TEMPLE_V2_DEPLOYED.TREASURY_RESERVES_VAULT.ADDRESS,
     TEMPLE_V2_DEPLOYED.TEMPLE_LINE_OF_CREDIT.ADDRESS,

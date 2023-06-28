@@ -17,12 +17,12 @@ async function main() {
     'TEMPLE_LINE_OF_CREDIT',
     tlcFactory,
     tlcFactory.deploy,
-    TEMPLE_V2_DEPLOYED.CORE.RESCUER_MSIG,
-    TEMPLE_V2_DEPLOYED.CORE.EXECUTOR_MSIG,
+    await owner.getAddress(),
+    await owner.getAddress(),
     TEMPLE_V2_DEPLOYED.CORE.CIRCUIT_BREAKER_PROXY,
     TEMPLE_V2_DEPLOYED.CORE.TEMPLE_TOKEN,
     TEMPLE_V2_DEPLOYED.EXTERNAL.MAKER_DAO.DAI_TOKEN,
-    -1, // TODO: update value
+    ethers.utils.parseEther('0.85'), // 85% max LTV ratio
     TEMPLE_V2_DEPLOYED.TEMPLE_LINE_OF_CREDIT.INTEREST_RATE_MODELS.LINEAR_WITH_KINK
   )
 

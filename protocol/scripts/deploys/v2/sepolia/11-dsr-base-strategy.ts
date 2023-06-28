@@ -17,8 +17,8 @@ async function main() {
     'DSR_BASE_STRATEGY',
     dsrBaseStrategyFactory,
     dsrBaseStrategyFactory.deploy,
-    TEMPLE_V2_DEPLOYED.STRATEGIES.DSR_BASE_STRATEGY.RESCUER_MSIG,
-    TEMPLE_V2_DEPLOYED.STRATEGIES.DSR_BASE_STRATEGY.EXECUTOR_MSIG,
+    await owner.getAddress(),
+    await owner.getAddress(),
     "DsrBaseStrategy", // TODO: update value
     TEMPLE_V2_DEPLOYED.TREASURY_RESERVES_VAULT.ADDRESS,
     TEMPLE_V2_DEPLOYED.EXTERNAL.MAKER_DAO.DAI_TOKEN,
