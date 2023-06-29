@@ -1,4 +1,6 @@
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { network } from "hardhat";
+import { DsrBaseStrategyTestnet__factory, LinearWithKinkInterestRateModel__factory, TempleCircuitBreakerAllUsersPerPeriod__factory, TempleCircuitBreakerProxy__factory, TempleDebtToken__factory, TempleERC20Token__factory, TempleLineOfCredit__factory, TempleTokenBaseStrategy__factory, TlcStrategy__factory, TreasuryPriceIndexOracle__factory, TreasuryReservesVault__factory } from '../../../../typechain';
 
 export interface V2DeployedContracts {
     CORE: {
@@ -174,5 +176,25 @@ export function getDeployedContracts(): V2DeployedContracts {
       throw new Error(`No contracts configured for ${network.name}`);
     } else {
       return V2_DEPLOYED_CONTRACTS[network.name];
+    }
+}
+
+export function connectToContracts(owner: SignerWithAddress) {
+    const TEMPLE_V2_DEPLOYED = getDeployedContracts();
+
+    return {
+        templeToken: TempleERC20Token__factory.connect(TEMPLE_V2_DEPLOYED.CORE.TEMPLE_TOKEN, owner),
+        circuitBreakerProxy: TempleCircuitBreakerProxy__factory.connect(TEMPLE_V2_DEPLOYED.CORE.CIRCUIT_BREAKER_PROXY, owner),
+        trv: TreasuryReservesVault__factory.connect(TEMPLE_V2_DEPLOYED.TREASURY_RESERVES_VAULT.ADDRESS, owner),
+        dusd: TempleDebtToken__factory.connect(TEMPLE_V2_DEPLOYED.TREASURY_RESERVES_VAULT.D_USD_TOKEN, owner),
+        dtemple: TempleDebtToken__factory.connect(TEMPLE_V2_DEPLOYED.TREASURY_RESERVES_VAULT.D_TEMPLE_TOKEN, owner),
+        tpiOracle: TreasuryPriceIndexOracle__factory.connect(TEMPLE_V2_DEPLOYED.TREASURY_RESERVES_VAULT.TPI_ORACLE, owner),
+        tlc: TempleLineOfCredit__factory.connect(TEMPLE_V2_DEPLOYED.TEMPLE_LINE_OF_CREDIT.ADDRESS, owner),
+        tlcCircuitBreakerDai: TempleCircuitBreakerAllUsersPerPeriod__factory.connect(TEMPLE_V2_DEPLOYED.TEMPLE_LINE_OF_CREDIT.CIRCUIT_BREAKERS.DAI, owner),
+        tlcCircuitBreakerTemple: TempleCircuitBreakerAllUsersPerPeriod__factory.connect(TEMPLE_V2_DEPLOYED.TEMPLE_LINE_OF_CREDIT.CIRCUIT_BREAKERS.TEMPLE, owner),
+        tlcLinearKink: LinearWithKinkInterestRateModel__factory.connect(TEMPLE_V2_DEPLOYED.TEMPLE_LINE_OF_CREDIT.INTEREST_RATE_MODELS.LINEAR_WITH_KINK, owner),
+        dsrBaseStrategy: DsrBaseStrategyTestnet__factory.connect(TEMPLE_V2_DEPLOYED.STRATEGIES.DSR_BASE_STRATEGY.ADDRESS, owner),
+        templeBaseStrategy: TempleTokenBaseStrategy__factory.connect(TEMPLE_V2_DEPLOYED.STRATEGIES.TEMPLE_BASE_STRATEGY.ADDRESS, owner),
+        tlcStrategy: TlcStrategy__factory.connect(TEMPLE_V2_DEPLOYED.STRATEGIES.TLC_STRATEGY.ADDRESS, owner)
     }
 }
