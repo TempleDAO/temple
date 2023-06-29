@@ -622,7 +622,7 @@ export async function setExplicitAccess(contract: Contract, allowedCaller: strin
             allowed: value
         }
     });
-    await contract.setExplicitAccess(allowedCaller, access);
+    return await contract.setExplicitAccess(allowedCaller, access);
 }
 
 const { AddressZero } = ethers.constants;

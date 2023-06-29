@@ -1,6 +1,18 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { network } from "hardhat";
-import { DsrBaseStrategyTestnet__factory, LinearWithKinkInterestRateModel__factory, TempleCircuitBreakerAllUsersPerPeriod__factory, TempleCircuitBreakerProxy__factory, TempleDebtToken__factory, TempleERC20Token__factory, TempleLineOfCredit__factory, TempleTokenBaseStrategy__factory, TlcStrategy__factory, TreasuryPriceIndexOracle__factory, TreasuryReservesVault__factory } from '../../../../typechain';
+import { 
+    DsrBaseStrategyTestnet__factory,
+    LinearWithKinkInterestRateModel__factory,
+    TempleCircuitBreakerAllUsersPerPeriod__factory,
+    TempleCircuitBreakerProxy__factory,
+    TempleDebtToken__factory,
+    TempleERC20Token__factory,
+    TempleLineOfCredit__factory,
+    TempleTokenBaseStrategy__factory,
+    TlcStrategy__factory,
+    TreasuryPriceIndexOracle__factory,
+    TreasuryReservesVault__factory 
+} from '../../../../typechain';
 
 export interface V2DeployedContracts {
     CORE: {
