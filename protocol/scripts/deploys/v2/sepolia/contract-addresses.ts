@@ -119,7 +119,7 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: V2DeployedContracts} = {
         // }
         STRATEGIES: {
             DSR_BASE_STRATEGY: {
-                ADDRESS: "",
+                ADDRESS: "0x490fe5619dC690C0B8021c9dd024fbe23e4754DF",
                 EXECUTOR_MSIG: "0x...",
                 RESCUER_MSIG: "0x...",
                 // No circuit breakers for DSR base strategy
