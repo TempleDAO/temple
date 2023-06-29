@@ -62,8 +62,11 @@ async function main() {
         await mine(templeV2contracts.dtemple.addMinter(TEMPLE_V2_DEPLOYED.TREASURY_RESERVES_VAULT.ADDRESS));
         // Temple base strategy & multisig can mint/burn temple
         await mine(templeV2contracts.templeToken.addMinter(TEMPLE_V2_DEPLOYED.STRATEGIES.TEMPLE_BASE_STRATEGY.ADDRESS));
-        await mine(templeV2contracts.templeToken.addMinter(TEMPLE_V2_DEPLOYED.CORE.EXECUTOR_MSIG)); // TODO: review this
-        await mine(templeV2contracts.templeToken.addMinter(TEMPLE_V2_DEPLOYED.CORE.RESCUER_MSIG)); // TODO: review this
+        await mine(templeV2contracts.templeToken.addMinter(TEMPLE_V2_DEPLOYED.CORE.EXECUTOR_MSIG));
+        await mine(templeV2contracts.templeToken.addMinter(TEMPLE_V2_DEPLOYED.CORE.EXECUTOR_MSIG));
+        // TODO: remove the following once deploying to mainnet, added just for testnet
+        await mine(templeV2contracts.templeToken.addMinter(await owner.getAddress()));
+        await mine(templeV2contracts.templeToken.addMinter(await owner.getAddress()));
     }
 
     // Set borrow tokens for TRV
