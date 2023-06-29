@@ -452,14 +452,14 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
     }
 
     /// @dev Calculate the amount remaining that a strategy can borrow for a given token
-    /// taking the allowed ceiling, current dToken debt, and any credits
+    /// taking the allowed ceiling, current dToken debt, and any credits into consideration
     function _availableForStrategyToBorrow(
         address strategy,
         StrategyConfig storage strategyConfig,
         IERC20 token,
         uint256 dTokenBalance
     ) internal view returns (uint256) {
-        // available == min(ceiling + credit - debt, 0)
+        // available == max(ceiling + credit - debt, 0)
         uint256 _ceiling = strategyConfig.debtCeiling[token];
         uint256 _credit = strategyTokenCredits[strategy][token];
 

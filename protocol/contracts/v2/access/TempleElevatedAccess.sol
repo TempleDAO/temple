@@ -114,7 +114,7 @@ abstract contract TempleElevatedAccess is ITempleElevatedAccess {
             // If we're in rescue mode, then only the rescuers can call
             return caller == rescuer;
         } else if (caller == executor || explicitFunctionAccess[caller][fnSelector]) {
-            // If we're not in rescue mode, the executors can call all functions
+            // If we're not in rescue mode, the executor can call all functions
             // or the caller has been given explicit access on this function
             return true;
         }
