@@ -71,7 +71,7 @@ const Header = styled.h4`
 
 const Wrapper = styled.div<{ isOpen: boolean }>`
   display: ${({ isOpen }) => (isOpen ? 'flex' : 'none')};
-  background: #1d1a1a;
+  background: #0b0a0a;
   position: fixed;
   top: 50%;
   left: 50%;

@@ -24,6 +24,7 @@ import { fetchGenericSubgraph } from 'utils/subgraph';
 import ClaimModal from './ClaimModal';
 import UnstakeOgtModal from './UnstakeModal';
 import { useWallet } from 'providers/WalletProvider';
+import TLCModal from './TLCModal';
 
 interface Metrics {
   price: number;
@@ -106,6 +107,10 @@ const Home = () => {
   const [tradeFormVisible, setTradeFormVisible] = useState(false);
   const [showConnect, setShowConnect] = useState(false);
 
+  const [isTlcModalOpen, setIsTlcModalOpen] = useState(false);
+  const [isClaimModalOpen, setIsClaimModalOpen] = useState(false);
+  const [isUnstakeModalOpen, setIsUnstakeModalOpen] = useState(false);
+
   useEffect(() => {
     setShowConnect(false);
   }, [isConnected]);
@@ -117,30 +122,13 @@ const Home = () => {
     onMount();
   }, [wallet, signer]);
 
-  const tradeButtonClickHandler = () => {
-    if (address) setTradeFormVisible((tradeFormVisible) => !tradeFormVisible);
-    else setShowConnect(true);
-  };
-
-  const [isClaimFromVaultsLegacyModalOpen, setIsClaimFromVaultsLegacyModalOpen] = useState(false);
-  const [isUnstakeOgtLegacyModalOpen, setIsUnstakeOgtLegacyModalOpen] = useState(false);
-
-  const legacyClaimClickHandler = () => {
+  const clickHandler = (openModal: (open: boolean) => void) => {
     if (!address) {
       window.scrollTo(0, 0);
       setShowConnect(true);
       return;
     }
-    setIsClaimFromVaultsLegacyModalOpen(true);
-  };
-
-  const legacyUnstakeOgtClickHandler = () => {
-    if (!address) {
-      window.scrollTo(0, 0);
-      setShowConnect(true);
-      return;
-    }
-    setIsUnstakeOgtLegacyModalOpen(true);
+    openModal(true);
   };
 
   useEffect(() => {
@@ -184,9 +172,9 @@ const Home = () => {
   return (
     <>
       <LegacyLinkHeader>
-        <LegacyText>Legacy features</LegacyText>
-        <LegacyLink onClick={legacyClaimClickHandler}>Claim from vaults</LegacyLink>
-        <LegacyLink onClick={legacyUnstakeOgtClickHandler}>Unstake OGT</LegacyLink>
+        <LegacyLink onClick={() => clickHandler(setIsTlcModalOpen)}>Temple Lending</LegacyLink>
+        <LegacyLink onClick={() => clickHandler(setIsClaimModalOpen)}>Claim from vaults</LegacyLink>
+        <LegacyLink onClick={() => clickHandler(setIsUnstakeModalOpen)}>Unstake OGT</LegacyLink>
       </LegacyLinkHeader>
       {/* Top Container */}
       <TopContainer>
@@ -206,8 +194,11 @@ const Home = () => {
               <>
                 <NewTempleText>The New Temple</NewTempleText>
                 <TradeDetailText>A wrapped treasury token with steady price growth in all conditions</TradeDetailText>
-                <TradeButton onClick={tradeButtonClickHandler}>Trade</TradeButton>
-                <LearnMoreLink onClick={legacyClaimClickHandler}>Claim from Vaults</LearnMoreLink>
+                <ButtonContainer>
+                  <TradeButton onClick={() => clickHandler(setTradeFormVisible)}>Trade</TradeButton>
+                  <TradeButton onClick={() => clickHandler(setIsTlcModalOpen)}>Borrow</TradeButton>
+                </ButtonContainer>
+                <LearnMoreLink onClick={() => clickHandler(setIsClaimModalOpen)}>Claim from Vaults</LearnMoreLink>
               </>
             )}
           </ContentContainer>
@@ -276,10 +267,14 @@ const Home = () => {
             <h4>Links</h4>
             <ul>
               <li>
-                <LegacyFooterLink onClick={legacyClaimClickHandler}>Claim from vaults (Legacy)</LegacyFooterLink>
+                <LegacyFooterLink onClick={() => clickHandler(setIsClaimModalOpen)}>
+                  Claim from vaults (Legacy)
+                </LegacyFooterLink>
               </li>
               <li>
-                <LegacyFooterLink onClick={legacyUnstakeOgtClickHandler}>Unstake OGT (Legacy)</LegacyFooterLink>
+                <LegacyFooterLink onClick={() => clickHandler(setIsUnstakeModalOpen)}>
+                  Unstake OGT (Legacy)
+                </LegacyFooterLink>
               </li>
               <li>
                 <Link to="/disclaimer">Disclaimer</Link>
@@ -289,20 +284,12 @@ const Home = () => {
         </LinkRow>
         <CopyrightRow>© {new Date().getFullYear()} TempleDAO. All rights reserved.</CopyrightRow>
       </FooterContainer>
-      <ClaimModal
-        isOpen={!!address && isClaimFromVaultsLegacyModalOpen}
-        onClose={() => setIsClaimFromVaultsLegacyModalOpen(false)}
-      />
-      <UnstakeOgtModal isOpen={isUnstakeOgtLegacyModalOpen} onClose={() => setIsUnstakeOgtLegacyModalOpen(false)} />
+      <TLCModal isOpen={!!address && isTlcModalOpen} onClose={() => setIsTlcModalOpen(false)} />
+      <ClaimModal isOpen={!!address && isClaimModalOpen} onClose={() => setIsClaimModalOpen(false)} />
+      <UnstakeOgtModal isOpen={isUnstakeModalOpen} onClose={() => setIsUnstakeModalOpen(false)} />
     </>
   );
 };
-
-const LegacyText = styled.span`
-  padding: 5px;
-  margin-right: 10px;
-  color: ${({ theme }) => theme.palette.brand};
-`;
 
 const LegacyLink = styled.div`
   text-decoration: underline;
@@ -434,7 +421,14 @@ const ConnectWalletContainer = styled.div`
   flex-direction: column;
 `;
 
-const TradeButton = styled(Button)`
+const ButtonContainer = styled.div`
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 1.5rem;
+`;
+
+export const TradeButton = styled(Button)`
   padding: 0.75rem 1.5rem;
   margin-top: 1.5rem;
   width: min-content;
