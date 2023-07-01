@@ -437,7 +437,7 @@ contract AbstractStrategyTestMultiAsset is AbstractStrategyTestBase {
             assertEq(temple.balanceOf(address(strategy)), 50e18);
             assertEq(dTEMPLE.balanceOf(address(strategy)), 50e18);
 
-            // 4% interest for dUSD
+            // 4% interest for dETH
             assertEq(weth.balanceOf(address(strategy)), 2e18);
             assertApproxEqRel(
                 dETH.balanceOf(address(strategy)),
@@ -466,7 +466,7 @@ contract AbstractStrategyTestMultiAsset is AbstractStrategyTestBase {
             assertEq(temple.balanceOf(address(strategy)), 0);
             assertEq(dTEMPLE.balanceOf(address(strategy)), 0);
 
-            // 4% interest for dUSD
+            // 4% interest for dETH
             assertEq(weth.balanceOf(address(strategy)), 0);
             assertApproxEqRel(
                 dETH.balanceOf(address(strategy)),

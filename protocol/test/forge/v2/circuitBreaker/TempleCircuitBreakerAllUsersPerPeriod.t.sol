@@ -30,8 +30,11 @@ contract TempleCircuitBreakerTestBase is TempleTest {
     event ConfigSet(uint256 periodDuration, uint256 nBuckets, uint256 cap);
     event CapSet(uint256 cap);
 
-    function test_initialization() public {
+    function setUp() public {
         breaker = new TempleCircuitBreakerAllUsersPerPeriod(rescuer, executor, 1 days, 24, 100e18);
+    }
+
+    function test_initialization() public {
         assertEq(breaker.nBuckets(), 24);
         assertEq(breaker.periodDuration(), 1 days); 
         assertEq(breaker.secondsPerBucket(), 60*60);
@@ -40,19 +43,16 @@ contract TempleCircuitBreakerTestBase is TempleTest {
     }
 
     function test_access_setConfig() public {
-        breaker = new TempleCircuitBreakerAllUsersPerPeriod(rescuer, executor, 1 days, 24, 100e18);
         expectElevatedAccess();
         breaker.setConfig(0, 0, 0);
     }
 
     function test_access_updateCap() public {
-        breaker = new TempleCircuitBreakerAllUsersPerPeriod(rescuer, executor, 1 days, 24, 100e18);
         expectElevatedAccess();
         breaker.updateCap(0);
     }
 
     function test_setConfig() public {
-        breaker = new TempleCircuitBreakerAllUsersPerPeriod(rescuer, executor, 1 days, 24, 100e18);
         vm.startPrank(executor);
 
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
@@ -60,6 +60,9 @@ contract TempleCircuitBreakerTestBase is TempleTest {
 
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
         breaker.setConfig(24, 23, 0);
+
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
+        breaker.setConfig(65536, 65536, 0);
 
         vm.expectEmit(address(breaker));
         emit ConfigSet(10, 2, 0);
@@ -75,7 +78,6 @@ contract TempleCircuitBreakerTestBase is TempleTest {
     }
 
     function test_updateCap() public {
-        breaker = new TempleCircuitBreakerAllUsersPerPeriod(rescuer, executor, 1 days, 24, 100e18);
         vm.startPrank(executor);
 
         vm.expectEmit(address(breaker));
@@ -88,7 +90,6 @@ contract TempleCircuitBreakerTestBase is TempleTest {
 contract TempleCircuitBreakerTestPreCheck is TempleCircuitBreakerTestBase {
 
     function test_preCheck_addSameBucket() public {
-        breaker = new TempleCircuitBreakerAllUsersPerPeriod(rescuer, executor, 1 days, 24, 100e18);
         vm.startPrank(executor);
 
         // Add works
@@ -149,7 +150,6 @@ contract TempleCircuitBreakerTestPreCheck is TempleCircuitBreakerTestBase {
     }
 
     function test_preCheck_1day_24buckets() public {
-        breaker = new TempleCircuitBreakerAllUsersPerPeriod(rescuer, executor, 1 days, 24, 100e18);
         vm.startPrank(executor);
 
         // day 0, 0:00:01
@@ -467,7 +467,6 @@ contract TempleCircuitBreakerTestPreCheck is TempleCircuitBreakerTestBase {
 
 
     function test_preCheck_1day_24buckets_wait() public {
-        breaker = new TempleCircuitBreakerAllUsersPerPeriod(rescuer, executor, 1 days, 24, 100e18);
         vm.startPrank(executor);
 
         {

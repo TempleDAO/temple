@@ -85,12 +85,12 @@ contract GnosisStrategy is AbstractStrategy {
      * These stables are sent to the Gnosis wallet
      */
     function borrow(IERC20 token, uint256 amount) external onlyElevatedAccess {
-        emit Borrow(address(token), amount);
         circuitBreakerProxy.preCheck(
             address(token), 
             msg.sender, 
             amount
         );
+        emit Borrow(address(token), amount);
         treasuryReservesVault.borrow(token, amount, gnosisSafeWallet);
     }
 
@@ -99,13 +99,14 @@ contract GnosisStrategy is AbstractStrategy {
      * These stables are sent to the Gnosis wallet
      */
     function borrowMax(IERC20 token) external onlyElevatedAccess returns (uint256 borrowedAmount) {
-        borrowedAmount = treasuryReservesVault.borrowMax(token, gnosisSafeWallet);
+        borrowedAmount = treasuryReservesVault.availableForStrategyToBorrow(address(this), token);
         circuitBreakerProxy.preCheck(
             address(token), 
             msg.sender, 
             borrowedAmount
         );
         emit Borrow(address(token), borrowedAmount);
+        treasuryReservesVault.borrow(token, borrowedAmount, gnosisSafeWallet);
     }
 
     /**

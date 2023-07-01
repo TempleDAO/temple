@@ -45,6 +45,7 @@ contract TempleCircuitBreakerAllUsersPerPeriod is ITempleCircuitBreaker, TempleE
      *   for the cap at the 13:45:00, and again the next day 24 hours later at 13:05:00
      *   and this would be allowed.
      * A higher number of buckets means this wait time is less, however this will use more gas.
+     * `nBuckets` must not be greater than 65535, and must be a divisor of `periodDuration`
      */
     uint32 public nBuckets;
 
@@ -148,6 +149,7 @@ contract TempleCircuitBreakerAllUsersPerPeriod is ITempleCircuitBreaker, TempleE
     function _setConfig(uint256 _periodDuration, uint256 _nBuckets, uint256 _cap) internal {
         if (_periodDuration == 0) revert CommonEventsAndErrors.ExpectedNonZero();
         if (_periodDuration % _nBuckets != 0) revert CommonEventsAndErrors.InvalidParam();
+        if (_nBuckets > 65535) revert CommonEventsAndErrors.InvalidParam();
 
         nBuckets = _nBuckets.encodeUInt32();
         periodDuration = _periodDuration.encodeUInt32();
