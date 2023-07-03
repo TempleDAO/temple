@@ -47,7 +47,7 @@
     "use-debounce": "^9.0.2",
     "use-interval": "^1.4.0",
     "util": "^0.12.4",
-    "wagmi": "^0.11.6"
+    "wagmi": "^0.12.0"
   },
   "devDependencies": {
     "@babel/core": "^7.16.0",

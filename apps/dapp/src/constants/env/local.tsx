@@ -27,6 +27,7 @@ const env: Environment = {
     templeStaking: '0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6',
     templeV2FraxPair: '',
     templeV2Router: '',
+    tlc: '',
     swap1InchRouter: '',
     treasuryIv: '',
     vaultOps: '0xE6E340D132b5f46d1e472DebcD681B2aBc16e57E',

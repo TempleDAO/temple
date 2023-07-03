@@ -1,6 +1,6 @@
 import { FC } from 'react';
 import { WagmiConfig, createClient, configureChains } from 'wagmi';
-import { mainnet, goerli, hardhat, arbitrum, arbitrumGoerli } from 'wagmi/chains';
+import { mainnet, goerli, hardhat, arbitrum, arbitrumGoerli, sepolia } from 'wagmi/chains';
 import { Buffer } from 'buffer';
 
 import { alchemyProvider } from 'wagmi/providers/alchemy';
@@ -10,7 +10,7 @@ import { CoinbaseWalletConnector } from 'wagmi/connectors/coinbaseWallet';
 import { WalletConnectConnector } from 'wagmi/connectors/walletConnect';
 import { MetaMaskConnector } from 'wagmi/connectors/metaMask';
 import { InjectedConnector } from 'wagmi/connectors/injected';
-import { SafeConnector } from '@wagmi/connectors/safe';
+import { SafeConnector } from 'wagmi/connectors/safe';
 import env from 'constants/env';
 
 // polyfill Buffer for client
@@ -25,7 +25,7 @@ export const LOCAL_CHAIN = {
   id: 31337,
 };
 
-const APP_CHAINS = [mainnet, goerli, LOCAL_CHAIN, arbitrum, arbitrumGoerli];
+const APP_CHAINS = [mainnet, sepolia, LOCAL_CHAIN, arbitrum, arbitrumGoerli];
 
 const { chains, provider } = configureChains(APP_CHAINS, [
   alchemyProvider({ apiKey: env.alchemyId }),
@@ -43,7 +43,8 @@ const connectors = [
   new WalletConnectConnector({
     chains,
     options: {
-      qrcode: true,
+      showQrModal: true,
+      projectId: 'b7ff3533ae86dc9fd727429a32572d08',
     },
   }),
   new CoinbaseWalletConnector({
