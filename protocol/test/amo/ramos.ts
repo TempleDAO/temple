@@ -435,6 +435,8 @@ describe("RAMOS", async () => {
         });
     
         it("sets fee collector", async () => {
+            await expect(amo.connect(feeCollector).setFeeCollector(ZERO_ADDRESS))
+                .to.be.revertedWithCustomError(amo, "InvalidAddress");
             await expect(amo.connect(feeCollector).setFeeCollector(alanAddress))
                 .to.emit(amo, "FeeCollectorSet")
                 .withArgs(alanAddress);

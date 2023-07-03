@@ -7,6 +7,8 @@ import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.s
 import { SafeCast } from "contracts/common/SafeCast.sol";
 import { ITempleCircuitBreaker } from "contracts/interfaces/v2/circuitBreaker/ITempleCircuitBreaker.sol";
 
+/* solhint-disable not-rely-on-time */
+
 /**
  * @title Temple Circuit Breaker -- total volumes (across all users) in a rolling period window
  * 
@@ -104,6 +106,7 @@ contract TempleCircuitBreakerAllUsersPerPeriod is ITempleCircuitBreaker, TempleE
         }
 
         unchecked {
+            // slither-disable-next-line weak-prng
             buckets[_nextBucketIndex % _nBuckets] += amount;
         }
         

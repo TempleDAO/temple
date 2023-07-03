@@ -28,7 +28,7 @@ contract RamosStrategy  is AbstractStrategy, IRamosTokenVault {
     /**
      * @notice The RAMOS contract used to manage the TPI
      */
-    IRamos public ramos;
+    IRamos public immutable ramos;
 
     /**
      * @notice The Temple token, one side of the Balancer LP used by Ramos

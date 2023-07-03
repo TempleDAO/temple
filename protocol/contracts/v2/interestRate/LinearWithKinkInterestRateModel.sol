@@ -113,6 +113,7 @@ contract LinearWithKinkInterestRateModel is BaseInterestRateModel, TempleElevate
         RateParams memory _rateParams = rateParams;
 
         uint256 interestRate;
+        // slither-disable-start divide-before-multiply
         if (utilizationRatio > _rateParams.kinkUtilizationRatio) {
             // Slope between kink% -> max%
             uint256 slope = (
@@ -136,7 +137,7 @@ contract LinearWithKinkInterestRateModel is BaseInterestRateModel, TempleElevate
                 + _rateParams.baseInterestRate
             );
         }
-
+        // slither-disable-end divide-before-multiply
         return uint96(interestRate);
     }
 }

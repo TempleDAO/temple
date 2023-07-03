@@ -16,6 +16,7 @@ library SafeForked {
 
     // Cloned from SignatureDecoder
     function signatureSplit(bytes memory signatures, uint256 pos) internal pure returns (uint8 v, bytes32 r, bytes32 s) {
+        // slither-disable-start assembly
         // solhint-disable-next-line no-inline-assembly
         assembly {
             let signaturePos := mul(0x41, pos)
@@ -29,6 +30,7 @@ library SafeForked {
              */
             v := and(mload(add(signatures, add(signaturePos, 0x41))), 0xff)
         }
+        // slither-disable-end assembly
     }
 
     // Forked from Safe
@@ -63,6 +65,7 @@ library SafeForked {
 
                 // Check if the contract signature is in bounds: start of data is s + 32 and end is start + signature length
                 uint256 contractSignatureLen;
+                // slither-disable-start assembly
                 // solhint-disable-next-line no-inline-assembly
                 assembly {
                     contractSignatureLen := mload(add(add(signatures, s), 0x20))
@@ -76,6 +79,7 @@ library SafeForked {
                     // The signature data for contract signatures is appended to the concatenated signatures and the offset is stored in s
                     contractSignature := add(add(signatures, s), 0x20)
                 }
+                // slither-disable-end assembly
                 require(ISignatureValidator(currentOwner).isValidSignature(data, contractSignature) == EIP1271_MAGIC_VALUE, "GS024");
             } else if (v == 1) {
                 // If v is 1 then it is an approved hash
