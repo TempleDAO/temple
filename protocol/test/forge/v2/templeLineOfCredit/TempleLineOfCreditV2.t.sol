@@ -78,9 +78,24 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
         );
     }
 
-    function test_invalidDebtToken() public {
+    function test_getDebtTokenCache() public {
         TempleLineOfCredit.DebtTokenCache memory cache = tlc.getDebtTokenCache();
-        assertEq(address(cache.config.interestRateModel), address(daiInterestRateModel));
+        checkDebtTokenConfig(cache.config, defaultDaiConfig());
+        assertEq(cache.totalDebt, 0);
+        assertEq(cache.interestRate, MIN_BORROW_RATE);
+        assertEq(cache.interestAccumulator, INITIAL_INTEREST_ACCUMULATOR);
+        assertEq(cache.price, templePrice);
+        assertEq(cache.trvDebtCeiling, BORROW_CEILING);
+
+        borrow(alice, 20_000e18, 15_000e18, BORROW_REQUEST_MIN_SECS);
+
+        cache = tlc.getDebtTokenCache();
+        checkDebtTokenConfig(cache.config, defaultDaiConfig());
+        assertEq(cache.totalDebt, 15_000e18);
+        assertEq(cache.interestRate, 0.058333333333333333e18);
+        assertEq(cache.interestAccumulator, 1.000000095129380475e27);
+        assertEq(cache.price, templePrice);
+        assertEq(cache.trvDebtCeiling, BORROW_CEILING);
     }
 
     function test_setTlcStrategy() public {
