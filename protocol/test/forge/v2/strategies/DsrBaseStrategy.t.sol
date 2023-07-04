@@ -1,4 +1,4 @@
-pragma solidity ^0.8.17;
+pragma solidity 0.8.18;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { TempleTest } from "../../TempleTest.sol";
@@ -65,6 +65,7 @@ contract DsrBaseStrategyTestBase is TempleTest {
 }
 
 contract DsrBaseStrategyTestAdmin is DsrBaseStrategyTestBase {
+    event TreasuryReservesVaultSet(address indexed trv);
 
     function setUp() public {
         _setUp();
@@ -99,6 +100,8 @@ contract DsrBaseStrategyTestAdmin is DsrBaseStrategyTestBase {
     function test_setTreasuryReservesVault() public {
         vm.startPrank(executor);
         TreasuryReservesVault trv2 = new TreasuryReservesVault(rescuer, executor, address(tpiOracle));
+        vm.expectEmit(address(strategy));
+        emit TreasuryReservesVaultSet(address(trv2));
         strategy.setTreasuryReservesVault(address(trv2));
         assertEq(address(strategy.treasuryReservesVault()), address(trv2));
 

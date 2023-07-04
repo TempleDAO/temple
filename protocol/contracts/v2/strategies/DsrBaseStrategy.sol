@@ -1,4 +1,4 @@
-pragma solidity ^0.8.17;
+pragma solidity 0.8.18;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (v2/strategies/DSRStrategy.sol)
 
@@ -96,6 +96,7 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
     }
     
     function _rpow(uint256 x, uint256 n) internal pure returns (uint256 z) {
+        // slither-disable-start weak-prng,divide-before-multiply,incorrect-equality,assembly,timestamp
         // solhint-disable-next-line no-inline-assembly
         assembly {
             switch x case 0 {switch n case 0 {z := RAY} default {z := 0}}
@@ -118,6 +119,7 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
                 }
             }
         }
+        // slither-disable-end weak-prng,divide-before-multiply,incorrect-equality,assembly,timestamp
     }
 
     /**

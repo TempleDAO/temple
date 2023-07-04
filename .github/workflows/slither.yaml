@@ -38,4 +38,4 @@ jobs:
         run: cd protocol && yarn
       
       - name: run slither
-        run: cd protocol && yarn slither-check .
+        run: cd protocol && yarn slither-check
