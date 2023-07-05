@@ -179,7 +179,89 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: V2DeployedContracts} = {
             //     VAULT: "",
             // },
         }
-    }
+    },
+    localhost: {
+      CORE: {
+          TEMPLE_TOKEN: "0xE2b5bDE7e80f89975f7229d78aD9259b2723d11F",
+          CIRCUIT_BREAKER_PROXY: "0x4ea0Be853219be8C9cE27200Bdeee36881612FF2",
+          // GNOSIS_SAFE_GUARD: "",
+          EXECUTOR_MSIG: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+          RESCUER_MSIG: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      },
+      TREASURY_RESERVES_VAULT: {
+          ADDRESS: "0x9155497EAE31D432C0b13dBCc0615a37f55a2c87",
+          D_USD_TOKEN: "0xfB12F7170FF298CDed84C793dAb9aBBEcc01E798",
+          D_TEMPLE_TOKEN: "0xc1EeD9232A0A44c2463ACB83698c162966FBc78d",
+          TPI_ORACLE: "0x46d4674578a2daBbD0CEAB0500c6c7867999db34",
+      },
+      TEMPLE_LINE_OF_CREDIT: {
+          ADDRESS: "0xfaE849108F2A63Abe3BaB17E21Be077d07e7a9A2",
+          CIRCUIT_BREAKERS: {
+              DAI: "0x12456Fa31e57F91B70629c1196337074c966492a",
+              TEMPLE: "0xce830DA8667097BB491A70da268b76a081211814",
+          },
+          INTEREST_RATE_MODELS: {
+              LINEAR_WITH_KINK: "0xC220Ed128102d888af857d137a54b9B7573A41b2",
+          },
+      },
+      // RAMOS: {
+      //     TEMPLE_DAI: {
+      //         ADDRESS: "",
+      //         AURA_STAKING: "",
+      //         FEE_COLLECTOR: "",
+      //         BPT_TOKEN: "",
+      //         POOL_ID: "",
+      //     }
+      // }
+      STRATEGIES: {
+          DSR_BASE_STRATEGY: {
+              ADDRESS: "0xD5bFeBDce5c91413E41cc7B24C8402c59A344f7c",
+              EXECUTOR_MSIG: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+              RESCUER_MSIG: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+              // No circuit breakers for DSR base strategy
+          },
+          TEMPLE_BASE_STRATEGY: {
+              ADDRESS: "0x77AD263Cd578045105FBFC88A477CAd808d39Cf6",
+              EXECUTOR_MSIG: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+              RESCUER_MSIG: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+              // No circuit breakers for Temple base strategy
+          },
+          // TEST_GNOSIS_SAFE_STRATEGY1: {
+          //     ADDRESS: "",
+          //     EXECUTOR_MSIG: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+          //     RESCUER_MSIG: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+          //     UNDERLYING_GNOSIS_SAFE: "",
+          //     CIRCUIT_BREAKERS: {
+          //         DAI: "",
+          //         TEMPLE: "",
+          //     },
+          // },
+          // RAMOS_STRATEGY: {
+          //     ADDRESS: "",
+          //     EXECUTOR_MSIG: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+          //     RESCUER_MSIG: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+          //     CIRCUIT_BREAKERS: {
+          //         DAI: "",
+          //         TEMPLE: "",
+          //     },
+          // },
+          TLC_STRATEGY: {
+              ADDRESS: "0x38628490c3043E5D0bbB26d5a0a62fC77342e9d5",
+              EXECUTOR_MSIG: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+              RESCUER_MSIG: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+          },
+      },
+      EXTERNAL: {
+          MAKER_DAO: {
+              DAI_TOKEN: "0xC6c5Ab5039373b0CBa7d0116d9ba7fb9831C3f42",
+              DAI_JOIN: "",
+              POT: "",
+          },
+          // BALANCER: {
+          //     VAULT: "",
+          // },
+      }
+  }
 }
 
 export function getDeployedContracts(): V2DeployedContracts {

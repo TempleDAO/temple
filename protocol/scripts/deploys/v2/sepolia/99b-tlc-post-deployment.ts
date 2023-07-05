@@ -54,8 +54,6 @@ async function main() {
 
     // Set TLC strategy
     {   
-        await mine(templeV2contracts.tlc.setTlcStrategy(TEMPLE_V2_DEPLOYED.STRATEGIES.TLC_STRATEGY.ADDRESS));
-
         const debtCeiling: ITempleStrategy.AssetBalanceStruct[] = [{
             asset: TEMPLE_V2_DEPLOYED.EXTERNAL.MAKER_DAO.DAI_TOKEN,
             balance: ethers.utils.parseEther("100000")
@@ -66,6 +64,8 @@ async function main() {
             0, // underperformingEquityThreeshold
             debtCeiling
         ));
+
+        await mine(templeV2contracts.tlc.setTlcStrategy(TEMPLE_V2_DEPLOYED.STRATEGIES.TLC_STRATEGY.ADDRESS));
     }
 
   }
