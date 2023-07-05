@@ -1,4 +1,4 @@
-pragma solidity ^0.8.17;
+pragma solidity 0.8.18;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { GnosisSafe } from "@gnosis.pm/safe-contracts/contracts/GnosisSafe.sol";
@@ -29,6 +29,8 @@ contract MockContract {
         someState = true;
         return true;
     }
+
+    receive() external payable {}
 }
 
 contract ThresholdSafeGuardTestBase is TempleTest {
@@ -273,49 +275,49 @@ contract ThresholdSafeGuardTest is ThresholdSafeGuardTestBase {
         }
     }
 
-    function doCheck(bytes memory data, address _executor, bytes memory _signatures) public view {
-        guard.checkTransaction(
-            address(mock),
-            0,
-            data,
-            Enum.Operation.Call,
-            0,
-            0,
-            0,
-            address(0),
-            payable(0),
-            _signatures,
-            _executor
-        );
+    function doCheck(bytes memory data, uint256 value, address _executor, bytes memory _signatures) public view {
+        guard.checkTransaction({
+            to: address(mock),
+            value: value,
+            data: data,
+            operation: Enum.Operation.Call,
+            safeTxGas: 0,
+            baseGas: 0,
+            gasPrice: 0,
+            gasToken: address(0),
+            refundReceiver: payable(0),
+            signatures: _signatures,
+            safeTxExecutor: _executor
+        });
     }
 
-    function getTxHash(bytes memory data) public view returns (bytes32) {
-        bytes memory txData = safe.encodeTransactionData(
-            address(mock), 
-            0, 
-            data,
-            Enum.Operation.Call,
-            0,
-            0,
-            0,
-            address(0),
-            payable(0),
-            safe.nonce() - 1 // Remove one from the nonce, as the Safe.execTransaction increased it prior to calling the guard.
-        );
+    function getTxHash(bytes memory data, uint256 value) public view returns (bytes32) {
+        bytes memory txData = safe.encodeTransactionData({
+            to: address(mock), 
+            value: value,  
+            data: data,
+            operation: Enum.Operation.Call,
+            safeTxGas: 0,
+            baseGas: 0,
+            gasPrice: 0,
+            gasToken: address(0),
+            refundReceiver: payable(0),
+            _nonce: safe.nonce() - 1 // Remove one from the nonce, as the Safe.execTransaction increased it prior to calling the guard.
+        });
         return keccak256(txData);
     }
 
     function test_checkTransaction_notexecutorOrExecutor() public {
         vm.startPrank(address(safe));
         vm.expectRevert(abi.encodeWithSelector(IThresholdSafeGuard.InvalidExecutor.selector));
-        doCheck("", alice, "");
+        doCheck("", 0, alice, "");
     }
 
     function test_checkTransaction_safeOwner() public {
         vm.startPrank(address(safe));
 
         // The default threshold == the safe's threshold - so this doesn't revert.
-        doCheck("", safeOwners[0], "");
+        doCheck("", 0, safeOwners[0], "");
     }
 
     function test_checkTransaction_executor() public {
@@ -324,7 +326,7 @@ contract ThresholdSafeGuardTest is ThresholdSafeGuardTestBase {
 
         // The default threshold == the safe's threshold - so this doesn't revert.
         changePrank(address(safe));
-        doCheck("", alice, "");
+        doCheck("", 0, alice, "");
     }
 
     function test_checkTransaction_safeThresholdOfOne() public {
@@ -332,7 +334,7 @@ contract ThresholdSafeGuardTest is ThresholdSafeGuardTestBase {
         safe.changeThreshold(1);
         
         // If the safe's threshold == 1, then no further checks are done.
-        doCheck("", safeOwners[0], "");
+        doCheck("", 0, safeOwners[0], "");
     }
 
     function test_checkTransaction_3Required_0Found() public {
@@ -342,7 +344,7 @@ contract ThresholdSafeGuardTest is ThresholdSafeGuardTestBase {
         changePrank(address(safe));
         
         vm.expectRevert("!Dynamic Signature Threshold");
-        doCheck("", safeOwners[0], "");
+        doCheck("", 0, safeOwners[0], "");
     }
 
     function test_checkTransaction_3Required_1Found() public {
@@ -351,7 +353,7 @@ contract ThresholdSafeGuardTest is ThresholdSafeGuardTestBase {
         changePrank(address(safe));
 
         vm.expectRevert("!Dynamic Signature Threshold");
-        doCheck("", safeOwners[0], signexecutor(safeOwners[0]));
+        doCheck("", 0, safeOwners[0], signexecutor(safeOwners[0]));
     }
 
     function test_checkTransaction_3Required_2Found() public {
@@ -359,14 +361,14 @@ contract ThresholdSafeGuardTest is ThresholdSafeGuardTestBase {
         guard.setDefaultSignaturesThreshold(3);
         (uint256 pk2,) = addSafeOwners();
 
-        bytes32 dataHash = getTxHash("");        
+        bytes32 dataHash = getTxHash("", 0);
         bytes memory signature = bytes.concat(
             signexecutor(safeOwners[0]), 
             signEOA(dataHash, pk2)
         );
 
         vm.expectRevert("!Dynamic Signature Threshold");
-        doCheck("", safeOwners[0], signature);
+        doCheck("", 0, safeOwners[0], signature);
     }
 
     function test_checkTransaction_3Required_3Found() public {
@@ -374,14 +376,14 @@ contract ThresholdSafeGuardTest is ThresholdSafeGuardTestBase {
         guard.setDefaultSignaturesThreshold(3);
         (uint256 pk2, uint256 pk3) = addSafeOwners();
 
-        bytes32 dataHash = getTxHash("");        
+        bytes32 dataHash = getTxHash("", 0);        
         bytes memory signature = bytes.concat(
             signexecutor(safeOwners[0]), 
             signEOA(dataHash, pk2), 
             signEOA(dataHash, pk3)
         );
 
-        doCheck("", safeOwners[0], signature);
+        doCheck("", 0, safeOwners[0], signature);
     }
 
     function test_checkTransaction_badPreApproval() public {
@@ -389,7 +391,7 @@ contract ThresholdSafeGuardTest is ThresholdSafeGuardTestBase {
         guard.setDefaultSignaturesThreshold(3);
         (uint256 pk2, uint256 pk3) = addSafeOwners();
 
-        bytes32 dataHash = getTxHash("");        
+        bytes32 dataHash = getTxHash("", 0);        
         bytes memory signature = bytes.concat(
             signexecutor(safeOwners[0]), 
             signEOA(dataHash, pk2), 
@@ -398,7 +400,7 @@ contract ThresholdSafeGuardTest is ThresholdSafeGuardTestBase {
 
         // Check with a different executor to what we signed with
         vm.expectRevert("GS025");
-        doCheck("", safeOwners[1], signature);
+        doCheck("", 0, safeOwners[1], signature);
     }
 
     function test_checkTransaction_withOverrideTresholdSet_emptyData() public {
@@ -412,7 +414,7 @@ contract ThresholdSafeGuardTest is ThresholdSafeGuardTestBase {
 
         // An empty function call (eg ETH transfer)
         bytes memory fnCall = bytes("");
-        bytes32 dataHash = getTxHash(fnCall);
+        bytes32 dataHash = getTxHash(fnCall, 100e18);
         bytes memory signature = bytes.concat(
             signexecutor(safeOwners[0]),
             signEOA(dataHash, pk2)
@@ -420,14 +422,14 @@ contract ThresholdSafeGuardTest is ThresholdSafeGuardTestBase {
 
         // Fails with 2 signers
         vm.expectRevert("!Dynamic Signature Threshold");
-        doCheck(fnCall, safeOwners[0], signature);
+        doCheck(fnCall, 100e18, safeOwners[0], signature);
 
         // OK with 3 signers
         signature = bytes.concat(
             signature,
             signEOA(dataHash, pk3)
         );
-        doCheck(fnCall, safeOwners[0], signature);
+        doCheck(fnCall, 100e18, safeOwners[0], signature);
     }
 
     function test_checkTransaction_withOverrideTresholdSet() public {
@@ -445,25 +447,25 @@ contract ThresholdSafeGuardTest is ThresholdSafeGuardTestBase {
         (uint256 pk2, uint256 pk3) = addSafeOwners();
 
         bytes memory fnCall = abi.encodeWithSelector(fnSelector, "abc", 1);
-        bytes32 dataHash = getTxHash(fnCall);
+        bytes32 dataHash = getTxHash(fnCall, 0);
         bytes memory signature = bytes.concat(
             signexecutor(safeOwners[0]),
             signEOA(dataHash, pk2),
             signEOA(dataHash, pk3)
         );
-        doCheck(fnCall, safeOwners[0], signature);
+        doCheck(fnCall, 0, safeOwners[0], signature);
 
         // Try once more with the other selector - it will need 4 signatures so will fail.
         {
             fnCall = abi.encodeWithSelector(fnSelector2);
-            dataHash = getTxHash(fnCall);
+            dataHash = getTxHash(fnCall, 0);
             signature = bytes.concat(
                 signexecutor(safeOwners[0]),
                 signEOA(dataHash, pk2),
                 signEOA(dataHash, pk3)
             );
             vm.expectRevert("!Dynamic Signature Threshold");
-            doCheck(fnCall, safeOwners[0], signature);
+            doCheck(fnCall, 0, safeOwners[0], signature);
         }
     }
 
@@ -478,7 +480,7 @@ contract ThresholdSafeGuardTest is ThresholdSafeGuardTestBase {
         {
             changePrank(address(safe));
             vm.expectRevert("!Dynamic Signature Threshold");
-            doCheck(fnCall, safeOwners[0], signature);
+            doCheck(fnCall, 0, safeOwners[0], signature);
         }
 
         // Not enough signers - disabled, so passes
@@ -487,7 +489,7 @@ contract ThresholdSafeGuardTest is ThresholdSafeGuardTestBase {
             guard.setRescueMode(true);
             guard.setDisableGuardChecks(true);
             changePrank(bob);
-            doCheck(fnCall, safeOwners[0], signature);
+            doCheck(fnCall, 0, safeOwners[0], signature);
         }
 
         // Re-enabled -- Not enough signers again
@@ -498,8 +500,178 @@ contract ThresholdSafeGuardTest is ThresholdSafeGuardTestBase {
 
             changePrank(address(safe));
             vm.expectRevert("!Dynamic Signature Threshold");
-            doCheck(fnCall, safeOwners[0], signature);
+            doCheck(fnCall, 0, safeOwners[0], signature);
         }
     }
 
+}
+
+contract ThresholdSafeGuardExecuteTest is ThresholdSafeGuardTestBase {
+
+    function _setup() internal returns (uint256 pk2, uint256 pk3) {
+        // Set the guard
+        vm.startPrank(address(safe));
+        safe.setGuard(address(guard));
+
+        // Fund the safe some ETH
+        vm.deal(address(safe), 200e18);
+
+        // Add a couple more executors to the safe which we can sign on behalf of.
+        (pk2, pk3) = addSafeOwners();
+    }
+
+    function test_checkSafeExecute_withOverrideTresholdSet_ethTransfer() public {
+        (uint256 pk2, uint256 pk3) = _setup();
+
+        changePrank(executor);
+        bytes4 fnSelector = bytes4(0);
+        guard.setFunctionThreshold(address(mock), fnSelector, 3);
+
+        // An empty function call (eg ETH transfer)
+        bytes memory fnCall = bytes("");
+
+        bytes memory txData = safe.encodeTransactionData({
+            to: address(mock), 
+            value: 100e18,  
+            data: fnCall,
+            operation: Enum.Operation.Call,
+            safeTxGas: 0,
+            baseGas: 0,
+            gasPrice: 0,
+            gasToken: address(0),
+            refundReceiver: payable(0),
+            _nonce: safe.nonce()
+        });
+        bytes32 txDataHash = keccak256(txData);
+
+        vm.startPrank(safeOwners[0]);
+
+        // 2 signatures fails
+        {
+            bytes memory signature = bytes.concat(
+                signexecutor(safeOwners[0]),
+                signEOA(txDataHash, pk2)
+            );
+            vm.expectRevert("!Dynamic Signature Threshold");
+            safe.execTransaction({
+                to: address(mock),
+                value: 100e18,
+                data: fnCall,
+                operation: Enum.Operation.Call,
+                safeTxGas: 0,
+                baseGas: 0,
+                gasPrice: 0,
+                gasToken: address(0),
+                refundReceiver: payable(0),
+                signatures: signature
+            });
+
+            assertEq(address(mock).balance, 0);
+            assertEq(address(safe).balance, 200e18);
+        }
+
+        // 3 signatures succeeds
+        {
+            bytes memory signature = bytes.concat(
+                signexecutor(safeOwners[0]),
+                signEOA(txDataHash, pk2),
+                signEOA(txDataHash, pk3)
+            );
+
+            vm.startPrank(safeOwners[0]);
+            safe.execTransaction({
+                to: address(mock),
+                value: 100e18,
+                data: fnCall,
+                operation: Enum.Operation.Call,
+                safeTxGas: 0,
+                baseGas: 0,
+                gasPrice: 0,
+                gasToken: address(0),
+                refundReceiver: payable(0),
+                signatures: signature
+            });
+
+            assertEq(address(mock).balance, 100e18);
+            assertEq(address(safe).balance, 100e18);
+        }
+    }
+
+    function test_checkSafeExecute_withOverrideTresholdSet_function() public {
+        (uint256 pk2, uint256 pk3) = _setup();
+
+        changePrank(executor);
+        bytes4 fnSelector = bytes4(keccak256("doThing(string,uint256)"));
+        guard.setFunctionThreshold(address(mock), fnSelector, 3);
+
+        bytes memory fnCall = abi.encodeWithSelector(fnSelector, "abc", 1);
+
+        bytes memory txData = safe.encodeTransactionData({
+            to: address(mock), 
+            value: 0,  
+            data: fnCall,
+            operation: Enum.Operation.Call,
+            safeTxGas: 0,
+            baseGas: 0,
+            gasPrice: 0,
+            gasToken: address(0),
+            refundReceiver: payable(0),
+            _nonce: safe.nonce()
+        });
+        bytes32 txDataHash = keccak256(txData);
+
+        vm.startPrank(safeOwners[0]);
+
+        // 2 signatures fails
+        {
+            bytes memory signature = bytes.concat(
+                signexecutor(safeOwners[0]),
+                signEOA(txDataHash, pk2)
+            );
+            vm.expectRevert("!Dynamic Signature Threshold");
+            safe.execTransaction({
+                to: address(mock),
+                value: 0,
+                data: fnCall,
+                operation: Enum.Operation.Call,
+                safeTxGas: 0,
+                baseGas: 0,
+                gasPrice: 0,
+                gasToken: address(0),
+                refundReceiver: payable(0),
+                signatures: signature
+            });
+
+            assertEq(address(mock).balance, 0);
+            assertEq(address(safe).balance, 200e18);
+            assertEq(mock.someState(), false);
+        }
+
+        // 3 signatures succeeds
+        {
+            bytes memory signature = bytes.concat(
+                signexecutor(safeOwners[0]),
+                signEOA(txDataHash, pk2),
+                signEOA(txDataHash, pk3)
+            );
+
+            vm.startPrank(safeOwners[0]);
+            safe.execTransaction({
+                to: address(mock),
+                value: 0,
+                data: fnCall,
+                operation: Enum.Operation.Call,
+                safeTxGas: 0,
+                baseGas: 0,
+                gasPrice: 0,
+                gasToken: address(0),
+                refundReceiver: payable(0),
+                signatures: signature
+            });
+
+            assertEq(address(mock).balance, 0);
+            assertEq(address(safe).balance, 200e18);
+            assertEq(mock.someState(), true);
+        }
+    }
 }

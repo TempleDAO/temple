@@ -1,4 +1,4 @@
-pragma solidity ^0.8.17;
+pragma solidity 0.8.18;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (v2/TreasuryReservesVault.sol)
 
@@ -245,10 +245,18 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
                 outstandingCredit: credits[IERC20(_token)], 
                 outstandingDebt: _outstandingDebt
             });
+
+            // Clean up the debtCeiling approvals for this borrow token.
+            // Old borrow ceilings may not be removed, but not an issue
+            delete _strategyConfig.debtCeiling[IERC20(_token)];
         }
 
         // Remove the strategy
         emit StrategyRemoved(strategy);
+
+        // Required since the debt ceiling above is a nested mapping. 
+        // It's been cleaned up as much as possible.
+        // slither-disable-next-line mapping-deletion
         delete strategies[strategy];
         _strategySet.remove(strategy);
     }
@@ -452,14 +460,14 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
     }
 
     /// @dev Calculate the amount remaining that a strategy can borrow for a given token
-    /// taking the allowed ceiling, current dToken debt, and any credits
+    /// taking the allowed ceiling, current dToken debt, and any credits into consideration
     function _availableForStrategyToBorrow(
         address strategy,
         StrategyConfig storage strategyConfig,
         IERC20 token,
         uint256 dTokenBalance
     ) internal view returns (uint256) {
-        // available == min(ceiling + credit - debt, 0)
+        // available == max(ceiling + credit - debt, 0)
         uint256 _ceiling = strategyConfig.debtCeiling[token];
         uint256 _credit = strategyTokenCredits[strategy][token];
 
@@ -476,6 +484,7 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
         uint256 borrowAmount,
         uint256 dTokenBalance
     ) internal {
+        // slither-disable-next-line incorrect-equality
         if (borrowAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
         if (globalBorrowPaused) revert BorrowPaused();
         if (strategyConfig.borrowPaused) revert BorrowPaused();
@@ -653,6 +662,7 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
         uint256 repayAmount,
         uint256 dTokenBalance
     ) internal {
+        // slither-disable-next-line incorrect-equality
         if (repayAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
         if (globalRepaysPaused) revert RepaysPaused();
         StrategyConfig storage _strategyConfig = _getStrategyConfig(strategy);

@@ -1,4 +1,4 @@
-pragma solidity ^0.8.17;
+pragma solidity 0.8.18;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (amo/Ramos.sol)
 
@@ -209,6 +209,7 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
      */
     function setFeeCollector(address _feeCollector) external {
         if (msg.sender != feeCollector) revert CommonEventsAndErrors.InvalidAccess();
+        if (_feeCollector == address(0)) revert CommonEventsAndErrors.InvalidAddress();
         feeCollector = _feeCollector;
         emit FeeCollectorSet(_feeCollector);
     }
@@ -462,7 +463,7 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
         // validate request
         if (request.assets.length != request.maxAmountsIn.length || 
             request.assets.length != 2 || 
-            request.fromInternalBalance == true) {
+            request.fromInternalBalance) {
                 revert AMOCommon.InvalidBalancerVaultRequest();
         }
 
@@ -519,7 +520,7 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
         if (
             request.assets.length != request.minAmountsOut.length || 
             request.assets.length != 2 || 
-            request.toInternalBalance == true
+            request.toInternalBalance
         ) {
                 revert AMOCommon.InvalidBalancerVaultRequest();
         }

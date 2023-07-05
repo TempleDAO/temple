@@ -1,4 +1,4 @@
-pragma solidity ^0.8.17;
+pragma solidity 0.8.18;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (v2/strategies/RamosStrategy.sol)
 
@@ -28,7 +28,7 @@ contract RamosStrategy  is AbstractStrategy, IRamosTokenVault {
     /**
      * @notice The RAMOS contract used to manage the TPI
      */
-    IRamos public ramos;
+    IRamos public immutable ramos;
 
     /**
      * @notice The Temple token, one side of the Balancer LP used by Ramos
