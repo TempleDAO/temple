@@ -1,4 +1,4 @@
-pragma solidity ^0.8.17;
+pragma solidity 0.8.18;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (v2/strategies/DSRStrategy.sol)
 
@@ -24,6 +24,8 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
 
     string public constant VERSION = "1.0.0";
 
+    IERC20 public immutable daiToken;
+
     /**
      * @notice The MakerDAO contract used to enter/exit DSR
      */
@@ -47,6 +49,7 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
         address _initialExecutor,
         string memory _strategyName,
         address _treasuryReservesVault,
+        address _daiToken,
         address _daiJoin, 
         address _pot
     ) AbstractStrategy(_initialRescuer, _initialExecutor, _strategyName, _treasuryReservesVault) {
@@ -55,7 +58,16 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
         pot = IMakerDaoPotLike(_pot);
         vat.hope(address(daiJoin));
         vat.hope(address(pot));
-        stableToken.safeApprove(address(daiJoin), type(uint256).max);
+        daiToken = IERC20(_daiToken);
+        daiToken.safeApprove(address(daiJoin), type(uint256).max);
+        _updateTrvApprovals(address(0), _treasuryReservesVault);
+    }
+
+    /**
+     * @notice A hook where strategies can optionally update approvals when the trv is updated
+     */
+    function _updateTrvApprovals(address oldTrv, address newTrv) internal override {
+        _setMaxAllowance(daiToken, oldTrv, newTrv);
     }
 
     /**
@@ -86,6 +98,7 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
     }
     
     function _rpow(uint256 x, uint256 n) internal pure returns (uint256 z) {
+        // slither-disable-start weak-prng,divide-before-multiply,incorrect-equality,assembly,timestamp
         // solhint-disable-next-line no-inline-assembly
         assembly {
             switch x case 0 {switch n case 0 {z := RAY} default {z := 0}}
@@ -108,6 +121,7 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
                 }
             }
         }
+        // slither-disable-end weak-prng,divide-before-multiply,incorrect-equality,assembly,timestamp
     }
 
     /**
@@ -149,7 +163,7 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
     ) {
         assetBalances = new AssetBalance[](1);
         assetBalances[0] = AssetBalance({
-            asset: address(stableToken), 
+            asset: address(daiToken), 
             balance: latestDsrBalance()
         });
     }
@@ -164,7 +178,7 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
         (uint256 daiBalance,,) = _checkpointDaiBalance();
         assetBalances = new AssetBalance[](1);
         assetBalances[0] = AssetBalance({
-            asset: address(stableToken), 
+            asset: address(daiToken), 
             balance: daiBalance
         });
         emit AssetBalancesCheckpoint(assetBalances);
@@ -182,24 +196,8 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
      */
     function borrowAndDeposit(uint256 amount) external override onlyElevatedAccess {
         // Borrow the DAI. This will also mint `dUSD` debt.
-        treasuryReservesVault.borrow(amount, address(this));
+        treasuryReservesVault.borrow(daiToken, amount, address(this));
         _dsrDeposit(amount);
-    }
-
-    /**
-     * @notice Periodically, the Base Strategy will pull all DAI reserves
-     * from the TRV contract and apply into DSR in order to generate base yield 
-     * (the basis of the dUSD base in interest rate.)
-     *
-     * These idle DAI will only be drawn from a balance of tokens in the TRV itself.
-     * 
-     * This will be likely be called from a bot. It should only do this if there's a 
-     * minimum threshold to pull and deposit given gas costs to deposit into DSR.
-     */
-    function borrowAndDepositMax() external override onlyElevatedAccess returns (uint256 borrowedAmount) {
-        // Borrow the DAI. This will also mint `dUSD` debt.
-        borrowedAmount = treasuryReservesVault.borrowMax(address(this));
-        _dsrDeposit(borrowedAmount);
     }
 
     function _dsrDeposit(uint256 amount) internal {
@@ -219,12 +217,15 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
         if (withdrawalAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();       
 
         (uint256 daiAvailable, uint256 chi, ) = _checkpointDaiBalance();
-        if (withdrawalAmount > daiAvailable) revert CommonEventsAndErrors.InsufficientBalance(address(stableToken), withdrawalAmount, daiAvailable);
+        if (withdrawalAmount > daiAvailable) revert CommonEventsAndErrors.InsufficientBalance(address(daiToken), withdrawalAmount, daiAvailable);
         
         //  Use `_rdivup()` on withdrawals.
         uint256 sharesAmount = _rdivup(withdrawalAmount, chi);
         _dsrWithdrawal(sharesAmount, withdrawalAmount);
-        treasuryReservesVault.repay(withdrawalAmount, address(this));
+
+        // Repay to TRV ensuring that funds stop in the TRV, they don't get pushed 
+        // back to the base strategy (ie back here)
+        treasuryReservesVault.repay(daiToken, withdrawalAmount, address(this));
     }
 
     /**
@@ -234,8 +235,20 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
         (uint256 daiAvailable,, uint256 sharesAvailable) = _checkpointDaiBalance();
         _dsrWithdrawal(sharesAvailable, daiAvailable);
 
-        treasuryReservesVault.repay(daiAvailable, address(this));
+        // Repay to TRV ensuring that funds stop in the TRV, they don't get pushed 
+        // back to the base strategy (ie back here)
+        treasuryReservesVault.repay(daiToken, daiAvailable, address(this));
         return daiAvailable;
+    }
+
+    /**
+     * @notice The TRV sends the tokens to deposit (and also mints equivalent dTokens)
+     * The strategy is then expected to put those tokens to work.
+     */
+    function trvDeposit(uint256 amount) external override {
+        if (msg.sender != address(treasuryReservesVault)) revert OnlyTreasuryReserveVault(msg.sender);
+        if (amount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
+        _dsrDeposit(amount);
     }
 
     /**
@@ -252,14 +265,14 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
         (uint256 daiAvailable, uint256 chi, uint256 sharesAvailable) = _checkpointDaiBalance();
         uint256 sharesAmount = _rdivup(requestedAmount, chi);
 
-        // Cap at the max balance in DSR
+        // Cap at the max balance available in DSR
         if (sharesAmount > sharesAvailable) {
             requestedAmount = daiAvailable;
             sharesAmount = sharesAvailable;
         }
 
         _dsrWithdrawal(sharesAmount, requestedAmount);
-        stableToken.safeTransfer(address(treasuryReservesVault), requestedAmount);
+        daiToken.safeTransfer(address(treasuryReservesVault), requestedAmount);
         return requestedAmount;
     }
 
@@ -278,10 +291,16 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
      * that data off chain, or by first calling populateShutdownData()
      * Shutdown data isn't required for a DSR automated shutdown.
      */
-    function doShutdown(bytes memory /*data*/) internal override {
-        // Withdraw all from DSR and repay back to the Treasury Reserves Vault.
+    function _doShutdown(bytes calldata /*data*/) internal override {
+        // Withdraw all from DSR
         (uint256 daiAvailable,, uint256 sharesAvailable) = _checkpointDaiBalance();
         _dsrWithdrawal(sharesAvailable, daiAvailable);
+
+        // Repay to TRV ensuring that funds stop in the TRV, they don't get pushed 
+        // back to the base strategy (ie back here)
+        if (daiAvailable != 0) {
+            treasuryReservesVault.repay(daiToken, daiAvailable, address(this));
+        }
     }
 
 }

@@ -1,4 +1,4 @@
-pragma solidity ^0.8.17;
+pragma solidity 0.8.18;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (v2/SafeGuards/ThresholdSafeGuard.sol)
 
@@ -73,20 +73,20 @@ contract ThresholdSafeGuard is IThresholdSafeGuard, TempleElevatedAccess {
       * @notice Add an address to the allowed list who can execute the transaction
       * once the minimum threshold of signers have approved
      */
-    function addSafeTxExecutor(address executor) external onlyElevatedAccess {
-        if (executor == address(0)) revert InvalidAddress();
-        emit SafeTxExecutorAdded(executor);
-        if (!_safeTxExecutors.add(executor)) revert InvalidExecutor();
+    function addSafeTxExecutor(address account) external onlyElevatedAccess {
+        if (account == address(0)) revert CommonEventsAndErrors.InvalidAddress();
+        emit SafeTxExecutorAdded(account);
+        if (!_safeTxExecutors.add(account)) revert InvalidExecutor();
     }
 
     /**
       * @notice Remove an address from the allowed list who can execute the transaction
       * once the minimum threshold of signers have approved
      */
-    function removeSafeTxExecutor(address executor) external onlyElevatedAccess {
-        if (executor == address(0)) revert InvalidAddress();
-        emit SafeTxExecutorRemoved(executor);
-        if (!_safeTxExecutors.remove(executor)) revert InvalidExecutor();
+    function removeSafeTxExecutor(address account) external onlyElevatedAccess {
+        if (account == address(0)) revert CommonEventsAndErrors.InvalidAddress();
+        emit SafeTxExecutorRemoved(account);
+        if (!_safeTxExecutors.remove(account)) revert InvalidExecutor();
     }
 
     /**
@@ -100,10 +100,11 @@ contract ThresholdSafeGuard is IThresholdSafeGuard, TempleElevatedAccess {
 
     /**
       * @notice Set the number of signatories required for a contract/function signature pair.
+      * @dev functionSignature=bytes(0) is ok as this represents an ETH transfer which may also have
+      * an explicit threshold.
      */
     function setFunctionThreshold(address contractAddr, bytes4 functionSignature, uint256 threshold) external onlyElevatedAccess {
-        if (contractAddr == address(0)) revert InvalidAddress();
-        if (functionSignature == bytes4(0)) revert InvalidFunctionSignature();
+        if (contractAddr == address(0)) revert CommonEventsAndErrors.InvalidAddress();
 
         emit FunctionThresholdSet(contractAddr, functionSignature, threshold);
         functionThresholds[contractAddr][functionSignature] = threshold;
@@ -113,7 +114,7 @@ contract ThresholdSafeGuard is IThresholdSafeGuard, TempleElevatedAccess {
       * @notice Set the number of signatories required for a number of function signatures at a time.
      */
     function setFunctionThresholdBatch(address contractAddr, bytes4[] memory functionSignatures, uint256 threshold) external onlyElevatedAccess {
-        if (contractAddr == address(0)) revert InvalidAddress();
+        if (contractAddr == address(0)) revert CommonEventsAndErrors.InvalidAddress();
 
         uint256 length = functionSignatures.length;
         bytes4 sig;

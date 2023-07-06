@@ -1,8 +1,8 @@
-pragma solidity ^0.8.17;
+pragma solidity 0.8.18;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { TempleTest } from "../../TempleTest.sol";
-import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
+import { TempleElevatedAccess, ITempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 
 /* solhint-disable func-name-mixedcase */
@@ -37,10 +37,8 @@ contract TempleElevatedAccessTestBase is TempleTest {
     }
 
     function test_initialization() public {
-        assertEq(mock.rescuers(rescuer), true);
-        assertEq(mock.rescuers(executor), false);
-        assertEq(mock.executors(rescuer), false);
-        assertEq(mock.executors(executor), true);
+        assertEq(mock.rescuer(), rescuer);
+        assertEq(mock.executor(), executor);
         assertEq(mock.inRescueMode(), false);
     }
 }
@@ -59,103 +57,173 @@ contract TempleElevatedAccessTest is TempleElevatedAccessTestBase {
         mock.setRescueMode(true);
     }
 
-    function test_access_setRescuer() public {
+    function test_access_proposeNewRescuer() public {
         expectElevatedAccess();
-        mock.setRescuer(alice, false);
+        mock.proposeNewRescuer(alice);
+
+        // Still not for the executor
+        vm.prank(executor);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
+        mock.proposeNewRescuer(alice);
+
+        vm.prank(rescuer);
+        mock.proposeNewRescuer(alice);
     }
 
-    function test_access_setExecutor() public {
+    function test_access_proposeNewExecutor() public {
         expectElevatedAccess();
-        mock.setExecutor(alice, false);
+        mock.proposeNewExecutor(alice);
+
+        // ok for executor and rescuer (when in rescue mode)
+        vm.prank(executor);
+        mock.proposeNewExecutor(alice);
+
+        vm.startPrank(rescuer);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
+        mock.proposeNewExecutor(alice);
+
+        mock.setRescueMode(true);
+        mock.proposeNewExecutor(alice);
+    }
+
+    function test_access_acceptRescuer() public {
+        expectElevatedAccess();
+        mock.acceptRescuer();
+
+        // Not for executor or rescuer
+        vm.prank(executor);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
+        mock.acceptRescuer();
+
+        vm.prank(rescuer);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
+        mock.acceptRescuer();
+    }
+
+    function test_access_acceptExecutor() public {
+        expectElevatedAccess();
+        mock.acceptExecutor();
+
+        // Not for executor or rescuer
+        vm.prank(executor);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
+        mock.acceptExecutor();
+
+        vm.prank(rescuer);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
+        mock.acceptExecutor();
     }
     
     function test_access_setExplicitAccess() public {
         expectElevatedAccess();
-        mock.setExplicitAccess(alice, msg.sig, false);
+        setExplicitAccess(mock, alice, msg.sig, true);
     }
 }
 
 contract TempleElevatedAccessTestSetters is TempleElevatedAccessTestBase {
-
-    event ExecutorSet(address indexed account, bool indexed value);
-    event RescuerSet(address indexed account, bool indexed value);
     event ExplicitAccessSet(address indexed account, bytes4 indexed fnSelector, bool indexed value);
     event RescueModeSet(bool indexed value);
+
+    event NewRescuerProposed(address indexed oldRescuer, address indexed oldProposedRescuer, address indexed newProposedRescuer);
+    event NewRescuerAccepted(address indexed oldRescuer, address indexed newRescuer);
+
+    event NewExecutorProposed(address indexed oldExecutor, address indexed oldProposedExecutor, address indexed newProposedExecutor);
+    event NewExecutorAccepted(address indexed oldExecutor, address indexed newExecutor);
 
     function test_setRescueMode() public {
         assertEq(mock.inRescueMode(), false);
         vm.startPrank(rescuer);
 
-        vm.expectEmit();
+        vm.expectEmit(address(mock));
         emit RescueModeSet(true);
         mock.setRescueMode(true);
         assertEq(mock.inRescueMode(), true);
 
-        vm.expectEmit();
+        vm.expectEmit(address(mock));
         emit RescueModeSet(false);
         mock.setRescueMode(false);
         assertEq(mock.inRescueMode(), false);
     }
 
-    function test_setRescuer() public {
-        assertEq(mock.rescuers(alice), false);
-        vm.startPrank(executor);
+    function test_newRescuer() public {
+        vm.startPrank(rescuer);
 
-        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector, address(0)));
-        mock.setRescuer(address(0), true);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
+        mock.proposeNewRescuer(address(0));
 
-        vm.expectEmit();
-        emit RescuerSet(alice, true);
-        mock.setRescuer(alice, true);
-        assertEq(mock.rescuers(alice), true);
+        vm.expectEmit(address(mock));
+        emit NewRescuerProposed(rescuer, address(0), alice);
+        mock.proposeNewRescuer(alice);
 
-        vm.expectEmit();
-        emit RescuerSet(alice, false);
-        mock.setRescuer(alice, false);
-        assertEq(mock.rescuers(alice), false);
+        changePrank(alice);
+        vm.expectEmit(address(mock));
+        emit NewRescuerAccepted(rescuer, alice);
+        mock.acceptRescuer();
+        assertEq(mock.rescuer(), alice);
     }
 
-    function test_setExecutor() public {
-        assertEq(mock.executors(alice), false);
+    function test_newExecutor() public {
         vm.startPrank(executor);
 
-        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector, address(0)));
-        mock.setExecutor(address(0), true);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
+        mock.proposeNewExecutor(address(0));
 
-        vm.expectEmit();
-        emit ExecutorSet(alice, true);
-        mock.setExecutor(alice, true);
-        assertEq(mock.executors(alice), true);
+        vm.expectEmit(address(mock));
+        emit NewExecutorProposed(executor, address(0), alice);
+        mock.proposeNewExecutor(alice);
 
-        vm.expectEmit();
-        emit ExecutorSet(alice, false);
-        mock.setExecutor(alice, false);
-        assertEq(mock.executors(alice), false);
+        changePrank(alice);
+        vm.expectEmit(address(mock));
+        emit NewExecutorAccepted(executor, alice);
+        mock.acceptExecutor();
+        assertEq(mock.executor(), alice);
     }
 
-    function test_setExplicitAccess() public {
+    function test_setExplicitAccess_single() public {
         bytes4 fnSig = bytes4(keccak256("someFunctionSignature(uint256)"));
         bytes4 fnSig2 = bytes4(keccak256("someFunctionSignature(uint256,string)"));
         assertEq(mock.explicitFunctionAccess(alice, fnSig), false);
         vm.startPrank(executor);
 
-        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector, address(0)));
-        mock.setExplicitAccess(address(0), msg.sig, true);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
+        setExplicitAccess(mock, address(0), msg.sig, true);
 
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
-        mock.setExplicitAccess(alice, bytes4(0), true);
+        setExplicitAccess(mock, alice, bytes4(0), true);
 
-        vm.expectEmit();
+        vm.expectEmit(address(mock));
         emit ExplicitAccessSet(alice, fnSig, true);
-        mock.setExplicitAccess(alice, fnSig, true);
+        setExplicitAccess(mock, alice, fnSig, true);
         assertEq(mock.explicitFunctionAccess(alice, fnSig), true);
         assertEq(mock.explicitFunctionAccess(alice, fnSig2), false);
 
-        vm.expectEmit();
+        vm.expectEmit(address(mock));
         emit ExplicitAccessSet(alice, fnSig, false);
-        mock.setExplicitAccess(alice, fnSig, false);
+        setExplicitAccess(mock, alice, fnSig, false);
         assertEq(mock.explicitFunctionAccess(alice, fnSig), false);
         assertEq(mock.explicitFunctionAccess(alice, fnSig2), false);
+    }
+
+    function test_setExplicitAccess_multiple() public {
+        bytes4 fnSig = bytes4(keccak256("someFunctionSignature(uint256)"));
+        bytes4 fnSig2 = bytes4(keccak256("someFunctionSignature(uint256,string)"));
+        assertEq(mock.explicitFunctionAccess(alice, fnSig), false);
+        vm.startPrank(executor);
+
+        // Single
+        setExplicitAccess(mock, alice, fnSig, true);
+
+        // Now update to switch
+        ITempleElevatedAccess.ExplicitAccess[] memory access = new ITempleElevatedAccess.ExplicitAccess[](2);
+        access[0] = ITempleElevatedAccess.ExplicitAccess(fnSig, false);
+        access[1] = ITempleElevatedAccess.ExplicitAccess(fnSig2, true);
+
+        vm.expectEmit(address(mock));
+        emit ExplicitAccessSet(alice, fnSig, false);
+        emit ExplicitAccessSet(alice, fnSig2, true);
+        mock.setExplicitAccess(alice, access);
+        assertEq(mock.explicitFunctionAccess(alice, fnSig), false);
+        assertEq(mock.explicitFunctionAccess(alice, fnSig2), true);
     }
 }
 
@@ -211,7 +279,7 @@ contract TempleElevatedAccessTestModifiers is TempleElevatedAccessTestBase {
         mock.validateOnlyElevatedAccess();
 
         // Set alice to now have explicit access too
-        mock.setExplicitAccess(alice, Mock.validateOnlyElevatedAccess.selector, true);
+        setExplicitAccess(mock, alice, Mock.validateOnlyElevatedAccess.selector, true);
         changePrank(alice);
         mock.validateOnlyElevatedAccess();
     }
@@ -235,7 +303,7 @@ contract TempleElevatedAccessTestModifiers is TempleElevatedAccessTestBase {
         mock.validateOnlyElevatedAccess();
 
         // Set alice to now have explicit access too -- but still no access
-        mock.setExplicitAccess(alice, Mock.validateOnlyElevatedAccess.selector, true);
+        setExplicitAccess(mock, alice, Mock.validateOnlyElevatedAccess.selector, true);
         changePrank(alice);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         mock.validateOnlyElevatedAccess();
@@ -253,7 +321,7 @@ contract TempleElevatedAccessTestModifiers is TempleElevatedAccessTestBase {
             mock.checkSig();
 
             changePrank(executor);
-            mock.setExplicitAccess(alice, Mock.checkSig.selector, true);
+            setExplicitAccess(mock, alice, Mock.checkSig.selector, true);
 
             changePrank(alice);
             mock.checkSig();
@@ -267,7 +335,7 @@ contract TempleElevatedAccessTestModifiers is TempleElevatedAccessTestBase {
             mock.checkSigThis();
 
             changePrank(executor);
-            mock.setExplicitAccess(address(mock), Mock.validateOnlyElevatedAccess.selector, true);
+            setExplicitAccess(mock, address(mock), Mock.validateOnlyElevatedAccess.selector, true);
 
             changePrank(alice);
             mock.checkSigThis();

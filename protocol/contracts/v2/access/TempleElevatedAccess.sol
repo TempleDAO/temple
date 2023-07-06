@@ -1,4 +1,4 @@
-pragma solidity ^0.8.17;
+pragma solidity 0.8.18;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (v2/access/TempleElevatedAccess.sol)
 
@@ -10,14 +10,14 @@ import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.so
  */ 
 abstract contract TempleElevatedAccess is ITempleElevatedAccess {
     /**
-     * @notice A set of addresses which are approved to execute emergency operations.
+     * @notice The address which is approved to execute emergency operations.
      */ 
-    mapping(address => bool) public override rescuers;
+    address public override rescuer;
 
     /**
-     * @notice A set of addresses which are approved to execute normal operations on behalf of the DAO.
+     * @notice The address which is approved to execute normal operations on behalf of the DAO.
      */ 
-    mapping(address => bool) public override executors;
+    address public override executor;
 
     /**
      * @notice Explicit approval for an address to execute a function.
@@ -31,9 +31,13 @@ abstract contract TempleElevatedAccess is ITempleElevatedAccess {
      */
     bool public override inRescueMode;
 
+    /// @dev Track proposed rescuer/executor
+    address private _proposedNewRescuer;
+    address private _proposedNewExecutor;
+
     constructor(address initialRescuer, address initialExecutor) {
-        rescuers[initialRescuer] = true;
-        executors[initialExecutor] = true;
+        rescuer = initialRescuer;
+        executor = initialExecutor;
     }
 
     /**
@@ -41,46 +45,76 @@ abstract contract TempleElevatedAccess is ITempleElevatedAccess {
      * Only the rescuers are allowed to set.
      */
     function setRescueMode(bool value) external override {
-        if (!rescuers[msg.sender]) revert CommonEventsAndErrors.InvalidAccess();
+        if (msg.sender != rescuer) revert CommonEventsAndErrors.InvalidAccess();
         emit RescueModeSet(value);
         inRescueMode = value;
     }
 
     /**
-     * @notice Grant `account` the emergency operations role
+     * @notice Proposes a new Rescuer.
+     * Can only be called by the current rescuer.
      */
-    function setRescuer(address account, bool value) external override onlyElevatedAccess {
-        if (account == address(0)) revert CommonEventsAndErrors.InvalidAddress(account);
-        emit RescuerSet(account, value);
-        rescuers[account] = value;
+    function proposeNewRescuer(address account) external override {
+        if (msg.sender != rescuer) revert CommonEventsAndErrors.InvalidAccess();
+        if (account == address(0)) revert CommonEventsAndErrors.InvalidAddress();
+        emit NewRescuerProposed(rescuer, _proposedNewRescuer, account);
+        _proposedNewRescuer = account;
     }
 
     /**
-     * @notice Grant `account` the executor role
+     * @notice Caller accepts the role as new Rescuer.
+     * Can only be called by the proposed rescuer
      */
-    function setExecutor(address account, bool value) external override onlyElevatedAccess {
-        if (account == address(0)) revert CommonEventsAndErrors.InvalidAddress(account);
-        emit ExecutorSet(account, value);
-        executors[account] = value;
+    function acceptRescuer() external override {
+        if (msg.sender != _proposedNewRescuer) revert CommonEventsAndErrors.InvalidAccess();
+        emit NewRescuerAccepted(rescuer, msg.sender);
+        rescuer = msg.sender;
+        delete _proposedNewRescuer;
     }
 
     /**
-     * @notice Grant `allowedCaller` the rights to call the function determined by the selector `fnSelector`
+     * @notice Proposes a new Executor.
+     * Can only be called by the current executor or rescuer (if in resuce mode)
+     */
+    function proposeNewExecutor(address account) external override onlyElevatedAccess {
+        if (account == address(0)) revert CommonEventsAndErrors.InvalidAddress();
+        emit NewExecutorProposed(executor, _proposedNewExecutor, account);
+        _proposedNewExecutor = account;
+    }
+
+    /**
+     * @notice Caller accepts the role as new Executor.
+     * Can only be called by the proposed executor
+     */
+    function acceptExecutor() external override {
+        if (msg.sender != _proposedNewExecutor) revert CommonEventsAndErrors.InvalidAccess();
+        emit NewExecutorAccepted(executor, msg.sender);
+        executor = msg.sender;
+        delete _proposedNewExecutor;
+    }
+
+    /**
+     * @notice Grant `allowedCaller` the rights to call the function selectors in the access list.
      * @dev fnSelector == bytes4(keccak256("fn(argType1,argType2,...)"))
      */
-    function setExplicitAccess(address allowedCaller, bytes4 fnSelector, bool value) external override onlyElevatedAccess {
-        if (allowedCaller == address(0)) revert CommonEventsAndErrors.InvalidAddress(allowedCaller);
-        if (fnSelector == bytes4(0)) revert CommonEventsAndErrors.InvalidParam();
-        emit ExplicitAccessSet(allowedCaller, fnSelector, value);
-        explicitFunctionAccess[allowedCaller][fnSelector] = value;
+    function setExplicitAccess(address allowedCaller, ExplicitAccess[] calldata access) external override onlyElevatedAccess {
+        if (allowedCaller == address(0)) revert CommonEventsAndErrors.InvalidAddress();
+        uint256 _length = access.length;
+        ExplicitAccess memory _access;
+        for (uint256 i; i < _length; ++i) {
+            _access = access[i];
+            if (_access.fnSelector == bytes4(0)) revert CommonEventsAndErrors.InvalidParam();
+            emit ExplicitAccessSet(allowedCaller, _access.fnSelector, _access.allowed);
+            explicitFunctionAccess[allowedCaller][_access.fnSelector] = _access.allowed;
+        }
     }
 
     function isElevatedAccess(address caller, bytes4 fnSelector) internal view returns (bool) {
         if (inRescueMode) {
             // If we're in rescue mode, then only the rescuers can call
-            return rescuers[caller];
-        } else if (executors[caller] || explicitFunctionAccess[caller][fnSelector]) {
-            // If we're not in rescue mode, the executors can call all functions
+            return caller == rescuer;
+        } else if (caller == executor || explicitFunctionAccess[caller][fnSelector]) {
+            // If we're not in rescue mode, the executor can call all functions
             // or the caller has been given explicit access on this function
             return true;
         }
@@ -101,7 +135,12 @@ abstract contract TempleElevatedAccess is ITempleElevatedAccess {
      * @notice Only the executors or rescuers can call.
      */
     modifier onlyInRescueMode() {
-        if (!(inRescueMode && rescuers[msg.sender])) revert CommonEventsAndErrors.InvalidAccess();
+        if (!(inRescueMode && msg.sender == rescuer)) revert CommonEventsAndErrors.InvalidAccess();
+        _;
+    }
+
+    modifier notInRescueMode() {
+        if (inRescueMode) revert CommonEventsAndErrors.InvalidAccess();
         _;
     }
 }

@@ -1,4 +1,4 @@
-pragma solidity ^0.8.17;
+pragma solidity 0.8.18;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (common/CommonEventsAndErrors.sol)
 
@@ -6,7 +6,7 @@ pragma solidity ^0.8.17;
 library CommonEventsAndErrors {
     error InsufficientBalance(address token, uint256 required, uint256 balance);
     error InvalidParam();
-    error InvalidAddress(address addr);
+    error InvalidAddress();
     error InvalidAccess();
     error InvalidAmount(address token, uint256 amount);
     error ExpectedNonZero();

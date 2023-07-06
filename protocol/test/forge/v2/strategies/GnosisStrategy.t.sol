@@ -1,4 +1,4 @@
-pragma solidity ^0.8.17;
+pragma solidity 0.8.18;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { TempleTest } from "../../TempleTest.sol";
@@ -10,6 +10,8 @@ import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.so
 import { FakeERC20 } from "contracts/fakes/FakeERC20.sol";
 import { ITempleStrategy } from "contracts/interfaces/v2/strategies/ITempleStrategy.sol";
 import { TreasuryPriceIndexOracle } from "contracts/v2/TreasuryPriceIndexOracle.sol";
+import { TempleCircuitBreakerAllUsersPerPeriod } from "contracts/v2/circuitBreaker/TempleCircuitBreakerAllUsersPerPeriod.sol";
+import { TempleCircuitBreakerProxy } from "contracts/v2/circuitBreaker/TempleCircuitBreakerProxy.sol";
 
 /* solhint-disable func-name-mixedcase */
 contract GnosisStrategyTestBase is TempleTest {
@@ -18,7 +20,7 @@ contract GnosisStrategyTestBase is TempleTest {
     address public gnosisSafeWallet = makeAddr("gnosis");
     FakeERC20 public temple = new FakeERC20("TEMPLE", "TEMPLE", address(0), 0);
     FakeERC20 public dai = new FakeERC20("DAI", "DAI", address(0), 0);
-    FakeERC20 public frax = new FakeERC20("FRAX", "FRAX", address(0), 0);
+    FakeERC20 public weth = new FakeERC20("WETH", "WETH", address(0), 0);
     FakeERC20 public usdc = new FakeERC20("USDC", "USDC", address(0), 0);
 
     uint256 public constant DEFAULT_BASE_INTEREST = 0.01e18;
@@ -26,16 +28,30 @@ contract GnosisStrategyTestBase is TempleTest {
     TreasuryPriceIndexOracle public tpiOracle;
     TreasuryReservesVault public trv;
 
-    address[] public reportedAssets = [address(dai), address(frax), address(0)];
+    address[] public reportedAssets = [address(dai), address(weth), address(0)];
 
-    function _setUp() public {
+    TempleCircuitBreakerAllUsersPerPeriod public daiCircuitBreaker;
+    TempleCircuitBreakerProxy public circuitBreakerProxy;
+    bytes32 public constant INTERNAL_STRATEGY = keccak256("INTERNAL_STRATEGY");
+
+    function _setUp() internal {
         dUSD = new TempleDebtToken("Temple Debt", "dUSD", rescuer, executor, DEFAULT_BASE_INTEREST);
         tpiOracle = new TreasuryPriceIndexOracle(rescuer, executor, 0.97e18, 0.1e18, 0);
-        trv = new TreasuryReservesVault(rescuer, executor, address(temple), address(dai), address(dUSD), address(tpiOracle));
-        strategy = new GnosisStrategy(rescuer, executor, "GnosisStrategy", address(trv), gnosisSafeWallet);
+        trv = new TreasuryReservesVault(rescuer, executor, address(tpiOracle));
+        circuitBreakerProxy = new TempleCircuitBreakerProxy(rescuer, executor);
+        strategy = new GnosisStrategy(rescuer, executor, "GnosisStrategy", address(trv), gnosisSafeWallet, address(circuitBreakerProxy));
 
         vm.startPrank(executor);
         dUSD.addMinter(executor);
+
+        // Circuit Breaker
+        {
+            daiCircuitBreaker = new TempleCircuitBreakerAllUsersPerPeriod(rescuer, executor, 26 hours, 13, 1_000_000e18);
+            circuitBreakerProxy.setIdentifierForCaller(address(strategy), "INTERNAL_STRATEGY");
+            circuitBreakerProxy.setCircuitBreaker(INTERNAL_STRATEGY, address(dai), address(daiCircuitBreaker));
+            setExplicitAccess(daiCircuitBreaker, address(circuitBreakerProxy), daiCircuitBreaker.preCheck.selector, true);
+        }
+
         vm.stopPrank();
     }
 }
@@ -47,14 +63,12 @@ contract GnosisStrategyTestAdmin is GnosisStrategyTestBase {
     }
 
     function test_initalization() public {
-        assertEq(strategy.executors(executor), true);
-        assertEq(strategy.rescuers(rescuer), true);
+        assertEq(strategy.executor(), executor);
+        assertEq(strategy.rescuer(), rescuer);
         assertEq(strategy.apiVersion(), "1.0.0");
         assertEq(strategy.strategyName(), "GnosisStrategy");
         assertEq(strategy.strategyVersion(), "1.0.0");
         assertEq(address(strategy.treasuryReservesVault()), address(trv));
-        assertEq(address(strategy.stableToken()), address(dai));
-        assertEq(address(strategy.internalDebtToken()), address(dUSD));
         ITempleStrategy.AssetBalanceDelta[] memory adjs = strategy.manualAdjustments();
         assertEq(adjs.length, 0);
 
@@ -96,22 +110,22 @@ contract GnosisStrategyTestAccess is GnosisStrategyTestBase {
 
     function test_access_borrow() public {
         expectElevatedAccess();
-        strategy.borrow(0);
+        strategy.borrow(dai, 0);
     }
 
     function test_access_borrowMax() public {
         expectElevatedAccess();
-        strategy.borrowMax();
+        strategy.borrowMax(dai);
     }
 
     function test_access_repay() public {
         expectElevatedAccess();
-        strategy.repay(0);
+        strategy.repay(dai, 0);
     }
 
     function test_access_repayAll() public {
         expectElevatedAccess();
-        strategy.repayAll();
+        strategy.repayAll(dai);
     }
 
     function test_access_recoverToGnosis() public {
@@ -156,7 +170,7 @@ contract GnosisStrategyTestBalances is GnosisStrategyTestBase {
 
         // Deal some assets
         deal(address(dai), address(strategy), 50, true);
-        deal(address(frax), address(strategy), 100, true);
+        deal(address(weth), address(strategy), 100, true);
         deal(address(usdc), address(strategy), 200, true);
 
         assetBalances = strategy.latestAssetBalances();
@@ -181,7 +195,7 @@ contract GnosisStrategyTestBalances is GnosisStrategyTestBase {
         // Deal some assets to the strategy
         {
             deal(address(dai), address(strategy), 50, true);
-            deal(address(frax), address(strategy), 100, true);
+            deal(address(weth), address(strategy), 100, true);
             deal(address(usdc), address(strategy), 200, true);
             deal(address(strategy), 0.1e18);
             vm.prank(executor);
@@ -200,7 +214,7 @@ contract GnosisStrategyTestBalances is GnosisStrategyTestBase {
         // Deal some assets to the gnosis
         {
             deal(address(dai), address(gnosisSafeWallet), 50, true);
-            deal(address(frax), address(gnosisSafeWallet), 100, true);
+            deal(address(weth), address(gnosisSafeWallet), 100, true);
             deal(address(usdc), address(gnosisSafeWallet), 200, true);
             deal(address(gnosisSafeWallet), 0.1e18);
 
@@ -222,7 +236,7 @@ contract GnosisStrategyTestBalances is GnosisStrategyTestBase {
         // Deal some assets
         {
             deal(address(dai), address(strategy), 50, true);
-            deal(address(frax), address(strategy), 100, true);
+            deal(address(weth), address(strategy), 100, true);
         }
 
         ITempleStrategy.AssetBalance[] memory assetBalances = strategy.latestAssetBalances();
@@ -255,8 +269,8 @@ contract GnosisStrategyTestBorrowAndRepay is GnosisStrategyTestBase {
     uint256 public constant TRV_STARTING_BALANCE = 10e18;
     uint256 public constant BORROW_CEILING = 1.01e18;
 
-    event Borrow(uint256 amount);
-    event Repay(uint256 amount);
+    event Borrow(address indexed token, uint256 amount);
+    event Repay(address indexed token, uint256 amount);
 
     function setUp() public {
         _setUp();
@@ -264,26 +278,38 @@ contract GnosisStrategyTestBorrowAndRepay is GnosisStrategyTestBase {
         // Add the new strategy, and setup TRV such that it has stables 
         // to lend and issue dUSD.
         vm.startPrank(executor);
-        trv.addNewStrategy(address(strategy), BORROW_CEILING, 0);
+
+        trv.setBorrowToken(dai, address(0), 0, 0, address(dUSD));
+
+        ITempleStrategy.AssetBalance[] memory debtCeiling = new ITempleStrategy.AssetBalance[](1);
+        debtCeiling[0] = ITempleStrategy.AssetBalance(address(dai), BORROW_CEILING);
+        trv.addStrategy(address(strategy), -123, debtCeiling);
+
         deal(address(dai), address(trv), TRV_STARTING_BALANCE, true);
         dUSD.addMinter(address(trv));
         vm.stopPrank();
+    }
+
+    function test_borrow_failCircuitBreaker() public {
+        uint256 amount = 1e18;
+        vm.startPrank(executor);
+        daiCircuitBreaker.updateCap(amount-1);
+        vm.expectRevert(abi.encodeWithSelector(TempleCircuitBreakerAllUsersPerPeriod.CapBreached.selector, amount, amount-1));
+        strategy.borrow(dai, amount);
     }
 
     function test_borrow() public {       
         uint256 amount = 1e18;
         assertEq(dai.balanceOf(address(trv)), TRV_STARTING_BALANCE);
 
-        (uint256 debt, uint256 available, uint256 ceiling) = strategy.trvBorrowPosition();
-        assertEq(debt, 0);
+        uint256 available = trv.availableForStrategyToBorrow(address(strategy), dai);
         assertEq(available, BORROW_CEILING);
-        assertEq(ceiling, BORROW_CEILING);
 
         vm.expectEmit();
-        emit Borrow(amount);
+        emit Borrow(address(dai), amount);
 
         vm.startPrank(executor);
-        strategy.borrow(amount);
+        strategy.borrow(dai, amount);
 
         assertEq(dai.balanceOf(gnosisSafeWallet), amount);
         assertEq(dai.balanceOf(address(strategy)), 0);
@@ -293,27 +319,32 @@ contract GnosisStrategyTestBorrowAndRepay is GnosisStrategyTestBase {
         assertEq(dUSD.balanceOf(address(strategy)), amount);
         assertEq(dUSD.balanceOf(address(trv)), 0);
 
-        (debt, available, ceiling) = strategy.trvBorrowPosition();
-        assertEq(debt, amount);
-        assertEq(available, 0.01e18);   
-        assertEq(ceiling, BORROW_CEILING);     
+        available = trv.availableForStrategyToBorrow(address(strategy), dai);
+        assertEq(available, 0.01e18);
 
         vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.DebtCeilingBreached.selector, 0.01e18, 0.02e18));
-        strategy.borrow(0.02e18);
+        strategy.borrow(dai, 0.02e18);
     }  
+
+    function test_borrowMax_failCircuitBreaker() public {
+        vm.startPrank(executor);
+        daiCircuitBreaker.updateCap(BORROW_CEILING - 1);
+        vm.expectRevert(abi.encodeWithSelector(TempleCircuitBreakerAllUsersPerPeriod.CapBreached.selector, BORROW_CEILING, BORROW_CEILING-1));
+        strategy.borrowMax(dai);
+    }
 
     function test_borrowMax() public {       
         assertEq(dai.balanceOf(address(trv)), TRV_STARTING_BALANCE);
-        (uint256 debt, uint256 available, uint256 ceiling) = strategy.trvBorrowPosition();
-        assertEq(debt, 0);
-        assertEq(available, BORROW_CEILING);
-        assertEq(ceiling, BORROW_CEILING);
 
-        vm.expectEmit();
-        emit Borrow(BORROW_CEILING);
+        uint256 available = trv.availableForStrategyToBorrow(address(strategy), dai);
+        assertEq(available, BORROW_CEILING);
 
         vm.startPrank(executor);
-        uint256 borrowed = strategy.borrowMax();
+
+        vm.expectEmit();
+        emit Borrow(address(dai), BORROW_CEILING);
+
+        uint256 borrowed = strategy.borrowMax(dai);
         assertEq(borrowed, BORROW_CEILING);
 
         assertEq(dai.balanceOf(gnosisSafeWallet), BORROW_CEILING);
@@ -324,23 +355,21 @@ contract GnosisStrategyTestBorrowAndRepay is GnosisStrategyTestBase {
         assertEq(dUSD.balanceOf(address(strategy)), BORROW_CEILING);
         assertEq(dUSD.balanceOf(address(trv)), 0);
 
-        (debt, available, ceiling) = strategy.trvBorrowPosition();
-        assertEq(debt, BORROW_CEILING);
+        available = trv.availableForStrategyToBorrow(address(strategy), dai);
         assertEq(available, 0);
-        assertEq(ceiling, BORROW_CEILING);
-
+        
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
-        strategy.borrowMax();
+        strategy.borrowMax(dai);
     }  
 
     function test_repay() public {
         uint256 borrowAmount = 1e18;
         uint256 repayAmount = 0.25e18;
         vm.startPrank(executor);
-        strategy.borrow(borrowAmount);
+        strategy.borrow(dai, borrowAmount);
 
         vm.expectRevert("ERC20: transfer amount exceeds balance");
-        strategy.repay(repayAmount);
+        strategy.repay(dai, repayAmount);
 
         // The safe needs to send dai to the strategy before repaying.
         changePrank(gnosisSafeWallet);
@@ -348,8 +377,8 @@ contract GnosisStrategyTestBorrowAndRepay is GnosisStrategyTestBase {
         changePrank(executor);
 
         vm.expectEmit();
-        emit Repay(repayAmount);
-        strategy.repay(repayAmount);
+        emit Repay(address(dai), repayAmount);
+        strategy.repay(dai, repayAmount);
 
         assertEq(dai.balanceOf(gnosisSafeWallet), borrowAmount-repayAmount);
         assertEq(dai.balanceOf(address(strategy)), 0);
@@ -359,22 +388,20 @@ contract GnosisStrategyTestBorrowAndRepay is GnosisStrategyTestBase {
         assertEq(dUSD.balanceOf(address(strategy)), borrowAmount-repayAmount);
         assertEq(dUSD.balanceOf(address(trv)), 0);
 
-        (uint256 debt, uint256 available, uint256 ceiling) = strategy.trvBorrowPosition();
-        assertEq(debt, borrowAmount-repayAmount);
+        uint256 available = trv.availableForStrategyToBorrow(address(strategy), dai);
         assertEq(available, BORROW_CEILING-borrowAmount+repayAmount);
-        assertEq(ceiling, BORROW_CEILING);
 
         // Only has 0.75 dUSD left, but we can still repay more DAI.
         // This generates a positive
         deal(address(dai), address(strategy), 1e18, true);
-        strategy.repay(0.76e18);
+        strategy.repay(dai, 0.76e18);
         assertEq(dUSD.balanceOf(address(strategy)), 0);
     }
 
     function test_repayAll() public {       
         uint256 borrowAmount = 1e18;
         vm.startPrank(executor);
-        strategy.borrow(borrowAmount);
+        strategy.borrow(dai, borrowAmount);
 
         // The safe needs to send dai to the strategy before repaying.
         changePrank(gnosisSafeWallet);
@@ -382,8 +409,8 @@ contract GnosisStrategyTestBorrowAndRepay is GnosisStrategyTestBase {
         changePrank(executor);
 
         vm.expectEmit();
-        emit Repay(borrowAmount);
-        uint256 repaid = strategy.repayAll();
+        emit Repay(address(dai), borrowAmount);
+        uint256 repaid = strategy.repayAll(dai);
         assertEq(repaid, borrowAmount);
 
         assertEq(dai.balanceOf(gnosisSafeWallet), 0);
@@ -394,12 +421,10 @@ contract GnosisStrategyTestBorrowAndRepay is GnosisStrategyTestBase {
         assertEq(dUSD.balanceOf(address(strategy)), 0);
         assertEq(dUSD.balanceOf(address(trv)), 0);
 
-        (uint256 debt, uint256 available, uint256 ceiling) = strategy.trvBorrowPosition();
-        assertEq(debt, 0);
+        uint256 available = trv.availableForStrategyToBorrow(address(strategy), dai);
         assertEq(available, BORROW_CEILING);
-        assertEq(ceiling, BORROW_CEILING);
 
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
-        strategy.repayAll();
+        strategy.repayAll(dai);
     }  
 }

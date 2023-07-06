@@ -1,4 +1,4 @@
-pragma solidity ^0.8.17;
+pragma solidity 0.8.18;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { ud } from "@prb/math/src/UD60x18.sol";
@@ -9,14 +9,17 @@ import { ITlcDataTypes } from "contracts/interfaces/v2/templeLineOfCredit/ITlcDa
 import { FakeERC20 } from "contracts/fakes/FakeERC20.sol";
 import { SafeCast } from "contracts/common/SafeCast.sol";
 import { TempleLineOfCredit, ITempleLineOfCredit } from "contracts/v2/templeLineOfCredit/TempleLineOfCredit.sol";
-import { TlcStrategy } from "contracts/v2/templeLineOfCredit/TlcStrategy.sol";
+import { TlcStrategy } from "contracts/v2/strategies/TlcStrategy.sol";
 import { TreasuryReservesVault } from "contracts/v2/TreasuryReservesVault.sol";
 import { TempleDebtToken } from "contracts/v2/TempleDebtToken.sol";
 import { LinearWithKinkInterestRateModel } from "contracts/v2/interestRate/LinearWithKinkInterestRateModel.sol";
 import { TempleERC20Token } from "contracts/core/TempleERC20Token.sol";
 import { TreasuryPriceIndexOracle } from "contracts/v2/TreasuryPriceIndexOracle.sol";
+import { ITempleStrategy } from "contracts/interfaces/v2/strategies/ITempleStrategy.sol";
+import { TempleCircuitBreakerAllUsersPerPeriod } from "contracts/v2/circuitBreaker/TempleCircuitBreakerAllUsersPerPeriod.sol";
+import { TempleCircuitBreakerProxy } from "contracts/v2/circuitBreaker/TempleCircuitBreakerProxy.sol";
 
-/* solhint-disable func-name-mixedcase, contract-name-camelcase, not-rely-on-time */
+/* solhint-disable private-vars-leading-underscore, func-name-mixedcase, contract-name-camelcase, not-rely-on-time */
 contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
     TempleLineOfCredit public tlc;
     TlcStrategy public tlcStrategy;
@@ -33,6 +36,7 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
     TreasuryPriceIndexOracle public tpiOracle;
     TreasuryReservesVault public trv;
     TempleDebtToken public dUSD;
+    TempleDebtToken public dTEMPLE;
     uint96 public constant DEFAULT_BASE_INTEREST = 0.01e18; // 1%
     uint96 public constant MIN_BORROW_RATE = 0.05e18;  // 5% interest rate (rate% at 0% UR)
 
@@ -40,11 +44,12 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
     uint256 public constant BORROW_CEILING = 100_000e18;
 
     uint256 internal constant INITIAL_INTEREST_ACCUMULATOR = 1e27;
-    
-    uint32 public constant COLLATERAL_REQUEST_MIN_SECS = 30;
-    uint32 public constant COLLATERAL_REQUEST_MAX_SECS = 45;
     uint32 public constant BORROW_REQUEST_MIN_SECS = 60;
-    uint32 public constant BORROW_REQUEST_MAX_SECS = 120;
+
+    TempleCircuitBreakerAllUsersPerPeriod public templeCircuitBreaker;
+    TempleCircuitBreakerAllUsersPerPeriod public daiCircuitBreaker;
+    TempleCircuitBreakerProxy public circuitBreakerProxy;
+    bytes32 public constant EXTERNAL_ALL_USERS = keccak256("EXTERNAL_USER");
 
     function setUp() public {
         // Default starts at 0 which can hide some issues
@@ -56,12 +61,14 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
             vm.label(address(daiToken), "DAI");
             templeToken = new TempleERC20Token();
             vm.label(address(templeToken), "TEMPLE");
-            dUSD = new TempleDebtToken("Temple Debt", "dUSD", rescuer, executor, DEFAULT_BASE_INTEREST);
+            dUSD = new TempleDebtToken("Temple Debt USD", "dUSD", rescuer, executor, DEFAULT_BASE_INTEREST);
+            dTEMPLE = new TempleDebtToken("Temple Debt TEMPLE", "dTEMPLE", rescuer, executor, DEFAULT_BASE_INTEREST);
             vm.label(address(dUSD), "dUSD");
+            vm.label(address(dTEMPLE), "dTEMPLE");
         }
 
         tpiOracle = new TreasuryPriceIndexOracle(rescuer, executor, templePrice, 0.1e18, 0);
-        trv = new TreasuryReservesVault(rescuer, executor, address(templeToken), address(daiToken), address(dUSD), address(tpiOracle));
+        trv = new TreasuryReservesVault(rescuer, executor, address(tpiOracle));
         
         daiInterestRateModel = new LinearWithKinkInterestRateModel(
             rescuer,
@@ -72,12 +79,16 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
             10e18 / 100  // 10% percent interest rate (rate% at kink% UR)
         );
 
+        circuitBreakerProxy = new TempleCircuitBreakerProxy(rescuer, executor);
+
         tlc = new TempleLineOfCredit(
             rescuer, 
-            executor, 
+            executor,
+            address(circuitBreakerProxy),
             address(templeToken),
             address(daiToken),
-            defaultDaiConfig()
+            daiMaxLtvRatio,
+            address(daiInterestRateModel)
         );
 
         tlcStrategy = new TlcStrategy(
@@ -86,31 +97,47 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
             "TempleLineOfCredit",
             address(trv), 
             address(tlc), 
-            address(templeToken)
+            address(daiToken)
         );
 
-        // Post create steps
-        {
-            vm.startPrank(executor);
-            tlc.setTlcStrategy(address(tlcStrategy));
-            tlc.setWithdrawCollateralRequestConfig(COLLATERAL_REQUEST_MIN_SECS, COLLATERAL_REQUEST_MAX_SECS);
-            tlc.setBorrowRequestConfig(BORROW_REQUEST_MIN_SECS, BORROW_REQUEST_MAX_SECS);
-        }
+        vm.startPrank(executor);
 
         // Add the TLC Strategy into TRV so it can borrow DAI
         {
             dUSD.addMinter(address(trv));
-            trv.addNewStrategy(address(tlcStrategy), BORROW_CEILING, 0);
-            vm.stopPrank();
+            dTEMPLE.addMinter(address(trv));
+
+            ITempleStrategy.AssetBalance[] memory debtCeiling = new ITempleStrategy.AssetBalance[](1);
+            debtCeiling[0] = ITempleStrategy.AssetBalance(address(daiToken), BORROW_CEILING);
+            trv.addStrategy(address(tlcStrategy), 0, debtCeiling);
+            trv.setBorrowToken(daiToken, address(0), 0, 0, address(dUSD));
+            trv.setBorrowToken(templeToken, address(0), 0, 0, address(dTEMPLE));
+
             deal(address(daiToken), address(trv), TRV_STARTING_BALANCE, true);
         }
+
+        // Post create steps
+        {
+            tlc.setTlcStrategy(address(tlcStrategy));
+            templeCircuitBreaker = new TempleCircuitBreakerAllUsersPerPeriod(rescuer, executor, 26 hours, 13, 1_000_000e18);
+            daiCircuitBreaker = new TempleCircuitBreakerAllUsersPerPeriod(rescuer, executor, 26 hours, 13, 1_000_000e18);
+
+            circuitBreakerProxy.setIdentifierForCaller(address(tlc), "EXTERNAL_USER");
+            circuitBreakerProxy.setCircuitBreaker(EXTERNAL_ALL_USERS, address(templeToken), address(templeCircuitBreaker));
+            circuitBreakerProxy.setCircuitBreaker(EXTERNAL_ALL_USERS, address(daiToken), address(daiCircuitBreaker));
+
+            setExplicitAccess(templeCircuitBreaker, address(circuitBreakerProxy), templeCircuitBreaker.preCheck.selector, true);
+            setExplicitAccess(daiCircuitBreaker, address(circuitBreakerProxy), daiCircuitBreaker.preCheck.selector, true);
+        }
+
+        vm.stopPrank();
     }
 
     function defaultDaiConfig() internal view returns (ITempleLineOfCredit.DebtTokenConfig memory) {
         return DebtTokenConfig({
             interestRateModel: daiInterestRateModel,
             maxLtvRatio: daiMaxLtvRatio,
-            borrowRequestConfig: FundsRequestConfig(BORROW_REQUEST_MIN_SECS, BORROW_REQUEST_MAX_SECS)
+            borrowsPaused: false
         });
     }
 
@@ -136,8 +163,7 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
     ) internal {
         assertEq(address(actual.interestRateModel), address(expected.interestRateModel), "DebtTokenConfig__interestRateModel");
         assertEq(actual.maxLtvRatio, expected.maxLtvRatio, "DebtTokenConfig__maxLtvRatio");
-        assertEq(actual.borrowRequestConfig.minSecs, expected.borrowRequestConfig.minSecs, "DebtTokenConfig__borrowRequestConfig.minSecs");
-        assertEq(actual.borrowRequestConfig.maxSecs, expected.borrowRequestConfig.maxSecs, "DebtTokenConfig__borrowRequestConfig.maxSecs");
+        assertEq(actual.borrowsPaused, expected.borrowsPaused, "DebtTokenConfig__borrowsPaused");
     }
 
     function checkDebtTokenData(
@@ -186,18 +212,14 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
         AccountPosition expectedAccountPosition;
         uint256 expectedDaiDebtCheckpoint;
         uint256 expectedDaiAccumulatorCheckpoint;
-        uint256 expectedRemoveCollateralRequest;
-        uint256 expectedRemoveCollateralRequestAt;
     }
 
-    function checkAccountPosition(CheckAccountPositionParams memory params, bool includePendingRequests) internal {
-        AccountPosition memory actualAccountPosition = tlc.accountPosition(params.account, includePendingRequests);        
+    function checkAccountPosition(CheckAccountPositionParams memory params) internal {
+        AccountPosition memory actualAccountPosition = tlc.accountPosition(params.account);        
         AccountData memory accountData = tlc.accountData(params.account);
 
         assertEq(actualAccountPosition.collateral, params.expectedAccountPosition.collateral, "collateral");
-        assertEq(accountData.collateral, actualAccountPosition.collateral + params.expectedRemoveCollateralRequest, "collateral with request");
-        assertEq(accountData.removeCollateralRequestAmount, params.expectedRemoveCollateralRequest, "removeCollateralRequest.amount");
-        assertEq(accountData.removeCollateralRequestAt, uint32(params.expectedRemoveCollateralRequestAt), "removeCollateralRequest.requestedAt");
+        assertEq(accountData.collateral, actualAccountPosition.collateral, "collateral2");
 
         // The 'as of now' data
         assertEq(daiToken.balanceOf(params.account), params.expectedDaiBalance, "expectedDaiBalance");
@@ -242,14 +264,10 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
         }
         vm.startPrank(_account);
         
-        if (daiBorrowAmount != 0) {
-            tlc.requestBorrow(daiBorrowAmount);
-        }
-        
-        // Sleep it off...
+        // Optionally sleep for some time in order to accrue interest from prior calls...
         vm.warp(block.timestamp + cooldownSecs);
 
-        if (daiBorrowAmount != 0) tlc.borrow(_account);
+        if (daiBorrowAmount != 0) tlc.borrow(daiBorrowAmount, _account);
 
         vm.stopPrank();
     }
@@ -298,14 +316,13 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
 
     function checkLiquidationStatus(
         address account,
-        bool includePendingRequests,
         bool expectedHasExceededMaxLtv,
         uint256 expectedCollateral,
         uint256 expectedCurrentDaiDebt
     ) internal {
         address[] memory accounts = new address[](1);
         accounts[0] = account;
-        LiquidationStatus[] memory status = tlc.computeLiquidity(accounts, includePendingRequests);
+        LiquidationStatus[] memory status = tlc.computeLiquidity(accounts);
 
         assertEq(status[0].hasExceededMaxLtv, expectedHasExceededMaxLtv, "hasExceededMaxLtv");
         assertEq(status[0].collateral, expectedCollateral, "collateral");

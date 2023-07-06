@@ -1,4 +1,4 @@
-pragma solidity ^0.8.17;
+pragma solidity 0.8.18;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (amo/AuraStaking.sol)
 
@@ -103,7 +103,8 @@ contract AuraStaking is IAuraStaking, TempleElevatedAccess {
     function getReward(bool claimExtras) external override {
         IAuraBaseRewardPool(auraPoolInfo.rewards).getReward(address(this), claimExtras);
         if (rewardsRecipient != address(0)) {
-            for (uint i=0; i<rewardTokens.length; i++) {
+            uint256 length = rewardTokens.length;
+            for (uint i; i < length; ++i) {
                 uint256 balance = IERC20(rewardTokens[i]).balanceOf(address(this));
                 IERC20(rewardTokens[i]).safeTransfer(rewardsRecipient, balance);
             }

@@ -1,4 +1,4 @@
-pragma solidity ^0.8.17;
+pragma solidity 0.8.18;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (interfaces/v2/ITempleDebtToken.sol)
 
@@ -162,7 +162,7 @@ interface ITempleDebtToken is IERC20, IERC20Metadata, ITempleElevatedAccess {
      * @notice Checkpoint multiple accounts (risk premium) interest (no principal) owed up to this block.
      * @dev Provided in case there needs to be block synchronisation on the total debt.
      */
-    function checkpointDebtorsInterest(address[] memory _debtors) external;
+    function checkpointDebtorsInterest(address[] calldata _debtors) external;
 
     /**
      * @notice The current debt for a given user split out by

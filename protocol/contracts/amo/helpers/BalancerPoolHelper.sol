@@ -1,4 +1,4 @@
-pragma solidity ^0.8.17;
+pragma solidity 0.8.18;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (amo/helpers/BalancerPoolHelper.sol)
 
@@ -386,9 +386,9 @@ contract BalancerPoolHelper is IBalancerPoolHelper {
         uint256 slippageBps
     ) external override returns (
         uint256 expectedProtocolTokenAmount,
-        uint256 expectedQuoteTokensAmount,
+        uint256 expectedQuoteTokenAmount,
         uint256 minProtocolTokenAmount,
-        uint256 minQuoteTokensAmount,
+        uint256 minQuoteTokenAmount,
         IBalancerVault.ExitPoolRequest memory requestData
     ) {
         requestData.assets = new address[](2);
@@ -403,16 +403,16 @@ contract BalancerPoolHelper is IBalancerPoolHelper {
         requestData.toInternalBalance = false;
 
         (, requestData.minAmountsOut) = balancerHelpers.queryExit(balancerPoolId, amo, amo, requestData);
-        (expectedProtocolTokenAmount, expectedQuoteTokensAmount) = protocolTokenIndexInBalancerPool == 0
+        (expectedProtocolTokenAmount, expectedQuoteTokenAmount) = protocolTokenIndexInBalancerPool == 0
             ? (requestData.minAmountsOut[0], requestData.minAmountsOut[1])
             : (requestData.minAmountsOut[1], requestData.minAmountsOut[0]);
         minProtocolTokenAmount = applySlippage(expectedProtocolTokenAmount, slippageBps);
-        minQuoteTokensAmount = applySlippage(expectedQuoteTokensAmount, slippageBps);
+        minQuoteTokenAmount = applySlippage(expectedQuoteTokenAmount, slippageBps);
 
         // update `requestData` with the `minAmountsOut` to which the slippage was applied
         (requestData.minAmountsOut[0], requestData.minAmountsOut[1]) = protocolTokenIndexInBalancerPool == 0
-            ? (minProtocolTokenAmount, minQuoteTokensAmount)
-            : (minQuoteTokensAmount, minProtocolTokenAmount);
+            ? (minProtocolTokenAmount, minQuoteTokenAmount)
+            : (minQuoteTokenAmount, minProtocolTokenAmount);
     }
 
     function applySlippage(uint256 amountIn, uint256 slippageBps) public override pure returns (uint256 amountOut) {
