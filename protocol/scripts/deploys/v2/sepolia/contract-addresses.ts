@@ -1,7 +1,8 @@
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { Signer } from "ethers";
 import { network } from "hardhat";
 import { 
     DsrBaseStrategyTestnet__factory,
+    FakeERC20__factory,
     LinearWithKinkInterestRateModel__factory,
     TempleCircuitBreakerAllUsersPerPeriod__factory,
     TempleCircuitBreakerProxy__factory,
@@ -181,12 +182,15 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: V2DeployedContracts} = {
         }
     },
     localhost: {
+//    owner addr: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+//    temple v2 msig addr: 0xF8Ab0fF572e48059c45eF3fa804e5A369d2b9b2B
+//    alice addr: 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
       CORE: {
           TEMPLE_TOKEN: "0xE2b5bDE7e80f89975f7229d78aD9259b2723d11F",
           CIRCUIT_BREAKER_PROXY: "0x4ea0Be853219be8C9cE27200Bdeee36881612FF2",
           // GNOSIS_SAFE_GUARD: "",
-          EXECUTOR_MSIG: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-          RESCUER_MSIG: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+          EXECUTOR_MSIG: "0xF8Ab0fF572e48059c45eF3fa804e5A369d2b9b2B",
+          RESCUER_MSIG: "0x8dbe2E7Cab43F00fce7fFe90769b87456692CE46",
       },
       TREASURY_RESERVES_VAULT: {
           ADDRESS: "0x9155497EAE31D432C0b13dBCc0615a37f55a2c87",
@@ -216,20 +220,20 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: V2DeployedContracts} = {
       STRATEGIES: {
           DSR_BASE_STRATEGY: {
               ADDRESS: "0xD5bFeBDce5c91413E41cc7B24C8402c59A344f7c",
-              EXECUTOR_MSIG: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-              RESCUER_MSIG: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+              EXECUTOR_MSIG: "0xF8Ab0fF572e48059c45eF3fa804e5A369d2b9b2B",
+              RESCUER_MSIG: "0x8dbe2E7Cab43F00fce7fFe90769b87456692CE46",
               // No circuit breakers for DSR base strategy
           },
           TEMPLE_BASE_STRATEGY: {
               ADDRESS: "0x77AD263Cd578045105FBFC88A477CAd808d39Cf6",
-              EXECUTOR_MSIG: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-              RESCUER_MSIG: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+              EXECUTOR_MSIG: "0xF8Ab0fF572e48059c45eF3fa804e5A369d2b9b2B",
+              RESCUER_MSIG: "0x8dbe2E7Cab43F00fce7fFe90769b87456692CE46",
               // No circuit breakers for Temple base strategy
           },
           // TEST_GNOSIS_SAFE_STRATEGY1: {
           //     ADDRESS: "",
-          //     EXECUTOR_MSIG: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-          //     RESCUER_MSIG: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+          //     EXECUTOR_MSIG: "0xF8Ab0fF572e48059c45eF3fa804e5A369d2b9b2B",
+          //     RESCUER_MSIG: "0x8dbe2E7Cab43F00fce7fFe90769b87456692CE46",
           //     UNDERLYING_GNOSIS_SAFE: "",
           //     CIRCUIT_BREAKERS: {
           //         DAI: "",
@@ -238,8 +242,8 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: V2DeployedContracts} = {
           // },
           // RAMOS_STRATEGY: {
           //     ADDRESS: "",
-          //     EXECUTOR_MSIG: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-          //     RESCUER_MSIG: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+          //     EXECUTOR_MSIG: "0xF8Ab0fF572e48059c45eF3fa804e5A369d2b9b2B",
+          //     RESCUER_MSIG: "0x8dbe2E7Cab43F00fce7fFe90769b87456692CE46",
           //     CIRCUIT_BREAKERS: {
           //         DAI: "",
           //         TEMPLE: "",
@@ -247,8 +251,8 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: V2DeployedContracts} = {
           // },
           TLC_STRATEGY: {
               ADDRESS: "0x38628490c3043E5D0bbB26d5a0a62fC77342e9d5",
-              EXECUTOR_MSIG: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-              RESCUER_MSIG: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+              EXECUTOR_MSIG: "0xF8Ab0fF572e48059c45eF3fa804e5A369d2b9b2B",
+              RESCUER_MSIG: "0x8dbe2E7Cab43F00fce7fFe90769b87456692CE46",
           },
       },
       EXTERNAL: {
@@ -273,11 +277,11 @@ export function getDeployedContracts(): V2DeployedContracts {
     }
 }
 
-export function connectToContracts(owner: SignerWithAddress) {
+export function connectToContracts(owner: Signer) {
     const TEMPLE_V2_DEPLOYED = getDeployedContracts();
 
     return {
-        templeToken: TempleERC20Token__factory.connect(TEMPLE_V2_DEPLOYED.CORE.TEMPLE_TOKEN, owner),
+        temple: TempleERC20Token__factory.connect(TEMPLE_V2_DEPLOYED.CORE.TEMPLE_TOKEN, owner),
         circuitBreakerProxy: TempleCircuitBreakerProxy__factory.connect(TEMPLE_V2_DEPLOYED.CORE.CIRCUIT_BREAKER_PROXY, owner),
         trv: TreasuryReservesVault__factory.connect(TEMPLE_V2_DEPLOYED.TREASURY_RESERVES_VAULT.ADDRESS, owner),
         dusd: TempleDebtToken__factory.connect(TEMPLE_V2_DEPLOYED.TREASURY_RESERVES_VAULT.D_USD_TOKEN, owner),
@@ -289,6 +293,7 @@ export function connectToContracts(owner: SignerWithAddress) {
         tlcLinearKink: LinearWithKinkInterestRateModel__factory.connect(TEMPLE_V2_DEPLOYED.TEMPLE_LINE_OF_CREDIT.INTEREST_RATE_MODELS.LINEAR_WITH_KINK, owner),
         dsrBaseStrategy: DsrBaseStrategyTestnet__factory.connect(TEMPLE_V2_DEPLOYED.STRATEGIES.DSR_BASE_STRATEGY.ADDRESS, owner),
         templeBaseStrategy: TempleTokenBaseStrategy__factory.connect(TEMPLE_V2_DEPLOYED.STRATEGIES.TEMPLE_BASE_STRATEGY.ADDRESS, owner),
-        tlcStrategy: TlcStrategy__factory.connect(TEMPLE_V2_DEPLOYED.STRATEGIES.TLC_STRATEGY.ADDRESS, owner)
+        tlcStrategy: TlcStrategy__factory.connect(TEMPLE_V2_DEPLOYED.STRATEGIES.TLC_STRATEGY.ADDRESS, owner),
+        dai: FakeERC20__factory.connect(TEMPLE_V2_DEPLOYED.EXTERNAL.MAKER_DAO.DAI_TOKEN, owner)
     }
 }
