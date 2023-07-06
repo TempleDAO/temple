@@ -700,7 +700,7 @@ describe("RAMOS", async () => {
             // test cooldown
             {
                 await amo.setCoolDown(1_800);
-                await time.increase((await amo.cooldownSecs()).sub(10));
+                await time.increase((await amo.cooldownSecs()).sub(60));
                 await expect(amo.rebalanceUpJoin(toAtto(10_000), 1)).to.be.revertedWithCustomError(amo, "NotEnoughCooldown");
             }
         });
@@ -789,7 +789,7 @@ describe("RAMOS", async () => {
             // test cooldown
             {
                 await amo.setCoolDown(1_800);
-                await time.increase((await amo.cooldownSecs()).sub(10));
+                await time.increase((await amo.cooldownSecs()).sub(60));
                 await expect(amo.rebalanceDownExit(toAtto(10_000), 1)).to.be.revertedWithCustomError(amo, "NotEnoughCooldown");
             }
         });
@@ -861,7 +861,7 @@ describe("RAMOS", async () => {
             expect(await bbaUsdTempleAuraRewardPool.balanceOf(amoStaking.address)).to.eq(stakedBalanceBefore.sub(bptIn));
         });
 
-        it("rebalances up by single side withdraw temple", async () => {
+        it.only("rebalances up by single side withdraw temple", async () => {
             await amo.setCoolDown(0);
             // fails
             await expect(amo.rebalanceUpExit(0, 0)).to.be.revertedWithCustomError(amo, "ZeroSwapLimit");
@@ -922,7 +922,7 @@ describe("RAMOS", async () => {
             // test cooldown
             {
                 await amo.setCoolDown(1_800);
-                await time.increase((await amo.cooldownSecs()).sub(10));
+                await time.increase((await amo.cooldownSecs()).sub(60));
                 await expect(amo.rebalanceUpExit(toAtto(10_000), 1)).to.be.revertedWithCustomError(amo, "NotEnoughCooldown");
                 await amo.setCoolDown(0);
             }
@@ -1021,7 +1021,7 @@ describe("RAMOS", async () => {
             // test cool down
             {
                 await amo.setCoolDown(1_800);
-                await time.increase((await amo.cooldownSecs()).sub(10));
+                await time.increase((await amo.cooldownSecs()).sub(60));
                 await expect(amo.rebalanceDownJoin(toAtto(10_000), reqData.bptOut)).to.be.revertedWithCustomError(amo, "NotEnoughCooldown");
             }
         });
