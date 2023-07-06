@@ -30,6 +30,40 @@ You can also run and test locally by replacing `yarn hardhat:testnet` with `yarn
 in order to setup the right local state
 
 
+
+#### Local Deployment
+
+The protocol app uses hardhat for development. The following steps will compile the contracts and deploy to a local hardhat node
+
+```bash
+# Compile the contracts
+yarn compile
+
+# Generate the typechain.
+yarn typechain
+
+The protocol test suite can be run without deploying to a local-node by running
+
+```bash
+# Run tests, no deployment neccessary
+yarn test
+```
+
+#### Local Forks
+
+##### 1. Temple V2 - TLC
+
+```bash
+# In one terminal window, run a local node forked off mainnet
+yarn local-fork:mainnet
+
+# In another window, run the deploy script
+yarn local-fork:deploy:tlc
+
+# Then finally some forked mainnet tests for TLC
+yarn local-fork:test:tlc
+```
+
 ## VSCode Testing
 
 https://hardhat.org/guides/vscode-tests.html
