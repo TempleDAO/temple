@@ -143,8 +143,12 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
      */
     function setTpiOracle(address newTpiOracle) external override onlyElevatedAccess {
         if (address(newTpiOracle) == address(0)) revert CommonEventsAndErrors.InvalidAddress();
+
+        ITreasuryPriceIndexOracle _tpiOracle = ITreasuryPriceIndexOracle(newTpiOracle);
+        if (_tpiOracle.treasuryPriceIndex() == 0) revert CommonEventsAndErrors.InvalidParam();
+
         emit TpiOracleSet(newTpiOracle);
-        tpiOracle = ITreasuryPriceIndexOracle(newTpiOracle);
+        tpiOracle = _tpiOracle;
     }
 
     /**
