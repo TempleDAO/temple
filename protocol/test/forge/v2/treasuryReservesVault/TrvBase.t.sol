@@ -205,11 +205,14 @@ contract TreasuryReservesVaultTestAdmin is TreasuryReservesVaultTestBase {
 
         trv.setBorrowToken(dai, address(0), 100, 101, address(dUSD));
 
+        address[] memory tokensList = trv.borrowTokensList();
+        assertEq(tokensList.length, 1);
+
         vm.expectEmit(address(trv));
         emit BorrowTokenRemoved(address(dai));
         trv.removeBorrowToken(dai);
 
-        address[] memory tokensList = trv.borrowTokensList();
+        tokensList = trv.borrowTokensList();
         assertEq(tokensList.length, 0);
         
         (
@@ -229,8 +232,17 @@ contract TreasuryReservesVaultTestAdmin is TreasuryReservesVaultTestBase {
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
         trv.setTpiOracle(address(0));
         
-        TreasuryPriceIndexOracle newTpiOracle = new TreasuryPriceIndexOracle(rescuer, executor, 1.23e18, 0.1e18, 0);
+        // An oracle with a TPI=0 fails
+        TreasuryPriceIndexOracle newTpiOracle = new TreasuryPriceIndexOracle(rescuer, executor, 0, 0.1e18, 0);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
+        trv.setTpiOracle(address(newTpiOracle));
 
+        // Not an oracle fails
+        vm.expectRevert();
+        trv.setTpiOracle(address(bob));
+
+        // Success
+        newTpiOracle = new TreasuryPriceIndexOracle(rescuer, executor, 1.23e18, 0.1e18, 0);
         vm.expectEmit(address(trv));
         emit TpiOracleSet(address(newTpiOracle));
         trv.setTpiOracle(address(newTpiOracle));
