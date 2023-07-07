@@ -14,6 +14,7 @@ import {
   InstantExitQueue__factory,
   LockedOGTemple__factory,
 } from '../../typechain';
+import { zeroAddress } from 'ethereumjs-util';
 
 function toAtto(n: number) {
   return BigNumber.from(10)
@@ -46,7 +47,7 @@ async function main() {
 
   // ERC20 Tokens
   const templeToken = await new TempleERC20Token__factory(owner).deploy();
-  const dai = await new FakeERC20__factory(owner).deploy('DAI', 'DAI');
+  const dai = await new FakeERC20__factory(owner).deploy('DAI', 'DAI', zeroAddress(), 0);
   const accounts = await ethers.getSigners();
   for (const account of accounts.slice(0, 5)) {
     const address = await account.getAddress();

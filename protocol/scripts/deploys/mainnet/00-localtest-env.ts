@@ -2,6 +2,7 @@ import '@nomiclabs/hardhat-ethers';
 import { ethers } from 'hardhat';
 import { FakeERC20, FakeERC20__factory } from '../../../typechain';
 import { deployAndMine } from '../helpers';
+import { zeroAddress } from 'ethereumjs-util';
 
 async function main() {
   const [owner] = await ethers.getSigners();
@@ -11,6 +12,7 @@ async function main() {
     'FRAX', fraxFactory , fraxFactory .deploy,
     'FRAX',
     'FRAX', 
+    zeroAddress(), 0
   )
 }
 

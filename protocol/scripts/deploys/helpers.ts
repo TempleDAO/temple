@@ -510,6 +510,10 @@ export function expectAddressWithPrivateKey() {
       'Missing environment variable RINKEBY_ADDRESS_PRIVATE_KEY. A mainnet address private key with eth is required to deploy/manage contracts'
     );
   }
+
+  if (network.name == 'polygonMumbai' && !process.env.MUMBAI_ADDRESS_PRIVATE_KEY) {
+    throw new Error("Missing environment variable MUMBAI_ADDRESS_PRIVATE_KEY. A mumbai address private key with eth is required to deploy/manage contracts");
+  }
 }
 
 const expectedEnvvars: { [key: string]: string[] } = {
@@ -523,6 +527,7 @@ const expectedEnvvars: { [key: string]: string[] } = {
   matic: ['MATIC_ADDRESS_PRIVATE_KEY', 'MATIC_RPC_URL'],
   gnosis: ['GNOSIS_ADDRESS_PRIVATE_KEY', 'GNOSIS_RPC_URL'],
   gnosisChiado: ['GNOSIS_CHIADO_ADDRESS_PRIVATE_KEY', 'GNOSIS_CHIADO_RPC_URL'],
+  polygonMumbai: ['MUMBAI_ADDRESS_PRIVATE_KEY', 'MUMBAI_RPC_URL'],
   localhost: [],
 };
 
@@ -575,3 +580,6 @@ export async function waitForMaxGas(
   }
   return currentGasPrice;
 }
+
+const { AddressZero } = ethers.constants;
+export { AddressZero as ZERO_ADDRESS };

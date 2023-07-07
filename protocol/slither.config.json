@@ -1,3 +1,4 @@
 {
-    "filter_paths": "node_modules/@openzeppelin,node_modules/@uniswap,contracts/fakes,contracts/util/ABDKMath64x64.sol,contracts/util/ABDKMathQuad.sol,contracts/zaps"
+    "detectors_to_exclude": "naming-convention,similar-names",
+    "filter_paths": "(node_modules/|contracts/fakes/|contracts/util/ABDKMath64x64.sol|contracts/util/ABDKMathQuad.sol|contracts/zaps|test/|lib/)"
 }
