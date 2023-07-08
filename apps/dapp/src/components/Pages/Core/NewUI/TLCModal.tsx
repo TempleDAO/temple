@@ -11,6 +11,8 @@ import { formatToken } from 'utils/formatter';
 import { ZERO } from 'utils/bigNumber';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { useWallet } from 'providers/WalletProvider';
+import { TempleLineOfCredit__factory } from 'types/typechain';
+import env from 'constants/env';
 
 interface IProps {
   isOpen: boolean;
@@ -31,7 +33,7 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
   });
   const [checkbox, setCheckbox] = useState(false);
   const [progress, setProgress] = useState(0);
-  const { balance, wallet, updateBalance } = useWallet();
+  const { balance, wallet, updateBalance, signer } = useWallet();
 
   // Update token balances on mount
   useEffect(() => {
@@ -42,6 +44,14 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
         inputTokenBalance: balance.TEMPLE,
         outputTokenBalance: balance.DAI,
       });
+      console.log(env.contracts.tlc);
+
+      if (!signer || !wallet) return;
+      const tlcContract = new TempleLineOfCredit__factory(signer).attach(env.contracts.tlc);
+      const accountData = await tlcContract.accountData(wallet);
+      console.log(accountData);
+      const accountPosition = await tlcContract.accountPosition(wallet);
+      console.log(accountPosition);
     };
     onMount();
   }, [wallet]);

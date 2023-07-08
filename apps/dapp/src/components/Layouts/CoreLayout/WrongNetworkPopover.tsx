@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { useNetwork, AddChainError, useSwitchNetwork, Chain } from 'wagmi';
-import { mainnet, goerli } from 'wagmi/chains';
+import { mainnet, sepolia } from 'wagmi/chains';
 
 import { UnstyledList } from 'styles/common';
 import { Button } from 'components/Button/Button';
@@ -105,7 +105,7 @@ export const WrongNetworkPopover = () => {
 // TODO: Wat
 const ENV_CHAIN_MAPPING = new Map<string, Chain>();
 ENV_CHAIN_MAPPING.set('production', mainnet);
-ENV_CHAIN_MAPPING.set('preview', goerli);
+ENV_CHAIN_MAPPING.set('preview', sepolia);
 ENV_CHAIN_MAPPING.set('local', LOCAL_CHAIN);
 
 const isSupportedChain = (chainId: number) => {

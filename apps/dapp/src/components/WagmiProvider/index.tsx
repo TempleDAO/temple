@@ -1,11 +1,11 @@
 import { FC } from 'react';
 import { WagmiConfig, createClient, configureChains } from 'wagmi';
-import { mainnet, goerli, hardhat, arbitrum, arbitrumGoerli, sepolia } from 'wagmi/chains';
+import { mainnet, hardhat, arbitrum, arbitrumGoerli, sepolia } from 'wagmi/chains';
 import { Buffer } from 'buffer';
-
 import { alchemyProvider } from 'wagmi/providers/alchemy';
 import { infuraProvider } from 'wagmi/providers/infura';
 import { publicProvider } from 'wagmi/providers/public';
+import { jsonRpcProvider } from 'wagmi/providers/jsonRpc';
 import { CoinbaseWalletConnector } from 'wagmi/connectors/coinbaseWallet';
 import { WalletConnectConnector } from 'wagmi/connectors/walletConnect';
 import { MetaMaskConnector } from 'wagmi/connectors/metaMask';
@@ -25,12 +25,19 @@ export const LOCAL_CHAIN = {
   id: 31337,
 };
 
-const APP_CHAINS = [mainnet, sepolia, LOCAL_CHAIN, arbitrum, arbitrumGoerli];
+const APP_CHAINS = [mainnet, sepolia, arbitrum, arbitrumGoerli];
 
+// Wagmi v0.12.x has an issue with sepolia, so we use custom jsonRpcProvider
+// fix: upgrade to wagmi v1.x and migrate from ethers to viem
 const { chains, provider } = configureChains(APP_CHAINS, [
-  alchemyProvider({ apiKey: env.alchemyId }),
-  infuraProvider({ apiKey: env.infuraId }),
-  publicProvider(),
+  // alchemyProvider({ apiKey: env.alchemyId }),
+  // infuraProvider({ apiKey: env.infuraId }),
+  // publicProvider(),
+  jsonRpcProvider({
+    rpc: () => ({
+      http: `https://eth-mainnet.g.alchemy.com/v2/${env.alchemyId}`,
+    }),
+  }),
 ]);
 
 const connectors = [
@@ -40,13 +47,14 @@ const connectors = [
       shimDisconnect: true,
     },
   }),
-  new WalletConnectConnector({
-    chains,
-    options: {
-      showQrModal: true,
-      projectId: 'b7ff3533ae86dc9fd727429a32572d08',
-    },
-  }),
+  // NOTE: wagmi wallet connect also broken
+  // new WalletConnectConnector({
+  //   chains,
+  //   options: {
+  //     showQrModal: true,
+  //     projectId: 'b7ff3533ae86dc9fd727429a32572d08',
+  //   },
+  // }),
   new CoinbaseWalletConnector({
     chains,
     options: {
