@@ -1,20 +1,15 @@
 import { Popover } from 'components/Popover';
 import styled from 'styled-components';
-import leftCaret from 'assets/images/newui-images/leftCaret.svg';
-import { TradeButton } from '../Home';
 import { useEffect, useState } from 'react';
-import { Input } from '../HomeInput';
-import { formatToken } from 'utils/formatter';
-import { ZERO, fromAtto } from 'utils/bigNumber';
+import { ZERO } from 'utils/bigNumber';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { useWallet } from 'providers/WalletProvider';
-import { TempleLineOfCredit__factory } from 'types/typechain';
+import { TempleLineOfCredit__factory, ERC20__factory } from 'types/typechain';
 import env from 'constants/env';
 import { getBigNumberFromString, getTokenInfo } from 'components/Vault/utils';
 import { ITlcDataTypes } from 'types/typechain/contracts/interfaces/v2/templeLineOfCredit/ITempleLineOfCredit';
 import { BigNumber } from 'ethers';
 import { useNotification } from 'providers/NotificationProvider';
-import { ERC20__factory } from 'types/typechain/typechain';
 import Supply from './Supply';
 import Withdraw from './Withdraw';
 import Borrow from './Borrow';
@@ -55,7 +50,6 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
     inputTokenBalance: ZERO,
     outputTokenBalance: ZERO,
   });
-  const [progress, setProgress] = useState(0);
   const [accountPosition, setAccountPosition] = useState<ITlcDataTypes.AccountPositionStructOutput>();
   const [minBorrow, setMinBorrow] = useState<BigNumber>();
   const [borrowRate, setBorrowRate] = useState<BigNumber>();
@@ -261,10 +255,6 @@ export const FlexBetween = styled.div`
     font-size: 1rem;
     margin: 0.5rem 0;
   }
-`;
-
-const BrandParagraph = styled.p`
-  color: ${({ theme }) => theme.palette.brand};
 `;
 
 // Supply styles
