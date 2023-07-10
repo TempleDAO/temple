@@ -13,10 +13,11 @@ import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { useWallet } from 'providers/WalletProvider';
 import { TempleLineOfCredit__factory } from 'types/typechain';
 import env from 'constants/env';
-import { formatTemple, getBigNumberFromString, getTokenInfo } from 'components/Vault/utils';
+import { getBigNumberFromString, getTokenInfo } from 'components/Vault/utils';
 import { ITlcDataTypes } from 'types/typechain/contracts/interfaces/v2/templeLineOfCredit/ITempleLineOfCredit';
 import { BigNumber } from 'ethers';
 import { useNotification } from 'providers/NotificationProvider';
+import { ERC20__factory } from 'types/typechain/typechain';
 
 interface IProps {
   isOpen: boolean;
@@ -26,13 +27,13 @@ interface IProps {
 type Screen = 'overview' | 'supply' | 'withdraw' | 'borrow' | 'repay';
 
 export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
-  const { balance, wallet, updateBalance, signer } = useWallet();
+  const { balance, wallet, updateBalance, signer, ensureAllowance } = useWallet();
   const { openNotification } = useNotification();
   const [screen, setScreen] = useState<Screen>('overview');
   const [state, setState] = useState({
     supplyValue: '',
     withdrawValue: '',
-    borrowValue: '',
+    borrowValue: '1000',
     repayValue: '',
     inputToken: TICKER_SYMBOL.TEMPLE_TOKEN,
     outputToken: TICKER_SYMBOL.DAI,
@@ -42,7 +43,6 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
   const [checkbox, setCheckbox] = useState(false);
   const [progress, setProgress] = useState(0);
   const [accountPosition, setAccountPosition] = useState<ITlcDataTypes.AccountPositionStructOutput>();
-  const [accountData, setAccountData] = useState<ITlcDataTypes.AccountDataStructOutput>();
   const [minBorrow, setMinBorrow] = useState<BigNumber>();
   const [borrowRate, setBorrowRate] = useState<BigNumber>();
 
@@ -51,12 +51,10 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
       await updateBalance();
       if (!signer || !wallet) return;
       const tlcContract = new TempleLineOfCredit__factory(signer).attach(env.contracts.tlc);
-      const data = await tlcContract.accountData(wallet);
       const position = await tlcContract.accountPosition(wallet);
       const min = await tlcContract.MIN_BORROW_AMOUNT();
       const debtInfo = await tlcContract.totalDebtPosition();
       const rate = debtInfo.borrowRate;
-      setAccountData(data);
       setAccountPosition(position);
       setMinBorrow(min);
       setBorrowRate(rate);
@@ -77,12 +75,18 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
     if (!signer || !wallet) return;
     const tlcContract = new TempleLineOfCredit__factory(signer).attach(env.contracts.tlc);
     const amount = getBigNumberFromString(state.supplyValue, getTokenInfo(state.inputToken).decimals);
+
+    // Ensure allowance for TLC to spend TEMPLE
+    const templeContract = new ERC20__factory(signer).attach(env.contracts.temple);
+    await ensureAllowance(TICKER_SYMBOL.TEMPLE_TOKEN, templeContract, env.contracts.tlc, amount);
+
     const tx = await tlcContract.addCollateral(amount, wallet);
     const receipt = await tx.wait();
     openNotification({
       title: `Supplied ${state.supplyValue} TEMPLE`,
       hash: receipt.transactionHash,
     });
+    updateBalance();
   };
 
   const withdraw = async () => {
@@ -95,30 +99,55 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
       title: `Withdrew ${state.withdrawValue} TEMPLE`,
       hash: receipt.transactionHash,
     });
+    updateBalance();
   };
 
   const borrow = async () => {
     if (!signer || !wallet) return;
     const tlcContract = new TempleLineOfCredit__factory(signer).attach(env.contracts.tlc);
     const amount = getBigNumberFromString(state.borrowValue, getTokenInfo(state.outputToken).decimals);
-    const tx = await tlcContract.borrow(amount, wallet);
-    const receipt = await tx.wait();
-    openNotification({
-      title: `Borrowed ${state.borrowValue} DAI`,
-      hash: receipt.transactionHash,
-    });
+    try {
+      console.log(fromAtto(amount));
+
+      const tx = await tlcContract.borrow(amount, wallet);
+      const receipt = await tx.wait();
+      openNotification({
+        title: `Borrowed ${state.borrowValue} DAI`,
+        hash: receipt.transactionHash,
+      });
+      updateBalance();
+    } catch (e) {
+      console.log(e);
+    }
   };
 
   const repay = async () => {
     if (!signer || !wallet) return;
     const tlcContract = new TempleLineOfCredit__factory(signer).attach(env.contracts.tlc);
     const amount = getBigNumberFromString(state.repayValue, getTokenInfo(state.outputToken).decimals);
+
+    // Ensure allowance for TLC to spend DAI
+    const daiContract = new ERC20__factory(signer).attach(env.contracts.dai);
+    await ensureAllowance(TICKER_SYMBOL.DAI, daiContract, env.contracts.tlc, amount);
+
     const tx = await tlcContract.repay(amount, wallet);
     const receipt = await tx.wait();
     openNotification({
       title: `Repaid ${state.repayValue} DAI`,
       hash: receipt.transactionHash,
     });
+    updateBalance();
+  };
+
+  const MAX_LTV = 75;
+  const getEstimatedLTV = (): string => {
+    return accountPosition
+      ? (
+          ((fromAtto(accountPosition.currentDebt) + Number(state.borrowValue)) /
+            fromAtto(accountPosition?.collateral)) *
+          100
+        ).toFixed(2)
+      : '0.00';
   };
 
   return (
@@ -147,7 +176,7 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
                 hint={`Balance: ${formatToken(state.inputTokenBalance, state.inputToken)}`}
               />
               {/* Only display range slider if the user has borrows */}
-              {accountData?.collateral.gt(0) && (
+              {accountPosition?.currentDebt.gt(0) && (
                 <>
                   <MarginTop />
                   <RangeLabel>Estimated DAI LTV</RangeLabel>
@@ -196,34 +225,44 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
                 value={state.withdrawValue}
                 placeholder="0"
                 onHintClick={() => {
-                  setState({ ...state, withdrawValue: formatToken(state.inputTokenBalance, state.inputToken) });
+                  setState({ ...state, withdrawValue: formatToken(accountPosition?.collateral, state.inputToken) });
                 }}
                 min={0}
-                hint={`Balance: ${formatToken(state.inputTokenBalance, state.inputToken)}`}
+                hint={`Supplies: ${formatToken(accountPosition?.collateral, state.inputToken)}`}
               />
-              <Warning>
-                <InfoCircle>
-                  <p>i</p>
-                </InfoCircle>
-                <p>
-                  Since you have borrow positions, the max amount represents the amount of supplied TEMPLE that you can
-                  withdraw without liquidation.
-                </p>
-              </Warning>
-              <MarginTop />
-              <RangeLabel>Estimated DAI LTV</RangeLabel>
-              {/* TODO: Change progress to progress / TokenBalance * 100 */}
-              <RangeSlider onChange={(e) => setProgress(Number(e.target.value))} value={progress} progress={progress} />
-              <FlexBetween>
-                <RangeLabel>0%</RangeLabel>
-                <RangeLabel>80%</RangeLabel>
-              </FlexBetween>
-              <GradientContainer>
-                <Copy style={{ textAlign: 'left' }}>
-                  Given the current TPI price of <strong>$1.06</strong>, your TEMPLE collateral will be liquidated on
-                  <strong>10/02/2024</strong>.
-                </Copy>
-              </GradientContainer>
+              {/* Only display if user has borrows */}
+              {accountPosition?.currentDebt.gt(0) && (
+                <>
+                  <Warning>
+                    <InfoCircle>
+                      <p>i</p>
+                    </InfoCircle>
+                    <p>
+                      Since you have borrow positions, the max amount represents the amount of supplied TEMPLE that you
+                      can withdraw without liquidation.
+                    </p>
+                  </Warning>
+                  <MarginTop />
+                  <RangeLabel>Estimated DAI LTV</RangeLabel>
+                  {/* TODO: Change progress to progress / TokenBalance * 100 */}
+                  <RangeSlider
+                    onChange={(e) => setProgress(Number(e.target.value))}
+                    value={progress}
+                    progress={progress}
+                  />
+                  <FlexBetween>
+                    <RangeLabel>0%</RangeLabel>
+                    <RangeLabel>80%</RangeLabel>
+                  </FlexBetween>
+                  <GradientContainer>
+                    <Copy style={{ textAlign: 'left' }}>
+                      Given the current TPI price of <strong>$1.06</strong>, your TEMPLE collateral will be liquidated
+                      on
+                      <strong>10/02/2024</strong>.
+                    </Copy>
+                  </GradientContainer>
+                </>
+              )}
               <TradeButton onClick={() => withdraw()}>Withdraw</TradeButton>
             </>
           ) : screen === 'borrow' ? (
@@ -239,30 +278,51 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
                 handleChange={(value: string) => setState({ ...state, borrowValue: value })}
                 isNumber
                 value={state.borrowValue}
-                placeholder="0"
+                placeholder="1000"
                 onHintClick={() => {
-                  setState({ ...state, borrowValue: formatToken(state.outputTokenBalance, state.outputToken) });
+                  setState({
+                    ...state,
+                    borrowValue: accountPosition
+                      ? ((fromAtto(accountPosition.collateral) * MAX_LTV) / 100).toFixed(2)
+                      : '0',
+                  });
                 }}
-                min={0}
-                hint={`Max: ${formatToken(state.outputTokenBalance, state.outputToken)}`}
+                min={1000}
+                hint={`Max: ${
+                  accountPosition ? ((fromAtto(accountPosition.collateral) * MAX_LTV) / 100).toFixed(2) : 0
+                }`}
               />
               <Warning>
                 <InfoCircle>
                   <p>i</p>
                 </InfoCircle>
-                <p>This max amount prevents liquidation.</p>
+                <p>You must borrow at least {formatToken(minBorrow, TICKER_SYMBOL.DAI)} DAI</p>
               </Warning>
               <MarginTop />
-              <RangeLabel>Estimated DAI LTV</RangeLabel>
-              {/* TODO: Change progress to progress / TokenBalance * 100 */}
-              <RangeSlider onChange={(e) => setProgress(Number(e.target.value))} value={progress} progress={progress} />
+              <RangeLabel>Estimated DAI LTV: {getEstimatedLTV()}%</RangeLabel>
+              <RangeSlider
+                onChange={(e) => {
+                  if (!accountPosition) return;
+                  let ltvPercent = ((Number(e.target.value) / 100) * MAX_LTV) / 100;
+                  // Min LTV allowed is the current LTV
+                  const minLtv = fromAtto(accountPosition.loanToValueRatio) * 100;
+                  if (ltvPercent < minLtv) ltvPercent = minLtv;
+                  // Compute the DAI value for the input element based on the LTV change
+                  const daiValue = (fromAtto(accountPosition.collateral) * ltvPercent).toFixed(2);
+                  setState({ ...state, borrowValue: `${daiValue}` });
+                }}
+                min={0}
+                max={100}
+                value={(Number(getEstimatedLTV()) / MAX_LTV) * 100}
+                progress={(Number(getEstimatedLTV()) / MAX_LTV) * 100}
+              />
               <FlexBetween>
                 <RangeLabel>0%</RangeLabel>
-                <RangeLabel>80%</RangeLabel>
+                <RangeLabel>{MAX_LTV}%</RangeLabel>
               </FlexBetween>
               <GradientContainer>
                 <Apy>
-                  5.2% <span>APY</span>
+                  {borrowRate ? (fromAtto(borrowRate) * 100).toFixed(2) : 0}% <span>APR</span>
                 </Apy>
                 <Rule />
                 <Copy style={{ textAlign: 'left' }}>
@@ -274,10 +334,17 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
                 <Checkbox onClick={() => setCheckbox(!checkbox)} isChecked={checkbox} src={checkmark} />
                 <div>
                   <p>I acknowledge the risks of borrowing including increased risk of liquidation.</p>
-                  <a href="#">Find out more.</a>
+                  <a href="#">Find out more</a>
                 </div>
               </RiskAcknowledgement>
-              <TradeButton onClick={() => borrow()}>Borrow</TradeButton>
+              <TradeButton
+                onClick={() => borrow()}
+                disabled={
+                  !checkbox || (accountPosition && fromAtto(accountPosition.maxBorrow) < Number(state.borrowValue))
+                }
+              >
+                Borrow
+              </TradeButton>
             </>
           ) : screen === 'repay' ? (
             <>
@@ -317,7 +384,12 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
               <ValueContainer>
                 <TokenImg src={templeImg} />
                 <NumContainer>
-                  <LeadMetric>{accountPosition?.collateral.toString()} TEMPLE</LeadMetric>
+                  <LeadMetric>
+                    {accountPosition?.collateral
+                      ? formatToken(accountPosition?.collateral, TICKER_SYMBOL.TEMPLE_TOKEN)
+                      : 0}{' '}
+                    TEMPLE
+                  </LeadMetric>
                   <USDMetric>$0 USD</USDMetric>
                 </NumContainer>
               </ValueContainer>
@@ -334,7 +406,10 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
               <ValueContainer>
                 <TokenImg src={daiImg} />
                 <NumContainer>
-                  <LeadMetric>{accountPosition?.currentDebt.toString()} DAI</LeadMetric>
+                  <LeadMetric>
+                    {accountPosition?.currentDebt ? formatToken(accountPosition?.currentDebt, TICKER_SYMBOL.DAI) : 0}{' '}
+                    DAI
+                  </LeadMetric>
                   <USDMetric>$0 USD</USDMetric>
                 </NumContainer>
               </ValueContainer>
@@ -354,7 +429,7 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
                     <br />
                     threshold
                   </p>
-                  <BrandParagraph>75%</BrandParagraph>
+                  <BrandParagraph>{MAX_LTV}%</BrandParagraph>
                 </FlexBetween>
                 <FlexBetween>
                   <p>Borrow Rate</p>
