@@ -24,7 +24,7 @@ import { fetchGenericSubgraph } from 'utils/subgraph';
 import ClaimModal from './ClaimModal';
 import UnstakeOgtModal from './UnstakeModal';
 import { useWallet } from 'providers/WalletProvider';
-import TLCModal from './TLCModal';
+import TLCModal from './TLC/TLCModal';
 
 interface Metrics {
   price: number;
