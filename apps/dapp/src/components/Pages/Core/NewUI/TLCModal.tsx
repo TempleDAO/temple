@@ -33,7 +33,7 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
   const [state, setState] = useState({
     supplyValue: '',
     withdrawValue: '',
-    borrowValue: '1000',
+    borrowValue: '',
     repayValue: '',
     inputToken: TICKER_SYMBOL.TEMPLE_TOKEN,
     outputToken: TICKER_SYMBOL.DAI,
@@ -49,15 +49,7 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
   useEffect(() => {
     const onMount = async () => {
       await updateBalance();
-      if (!signer || !wallet) return;
-      const tlcContract = new TempleLineOfCredit__factory(signer).attach(env.contracts.tlc);
-      const position = await tlcContract.accountPosition(wallet);
-      const min = await tlcContract.MIN_BORROW_AMOUNT();
-      const debtInfo = await tlcContract.totalDebtPosition();
-      const rate = debtInfo.borrowRate;
-      setAccountPosition(position);
-      setMinBorrow(min);
-      setBorrowRate(rate);
+      await updateAccountPosition();
     };
     onMount();
   }, [signer]);
@@ -70,6 +62,18 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
       outputTokenBalance: balance.DAI,
     });
   }, [balance]);
+
+  const updateAccountPosition = async () => {
+    if (!signer || !wallet) return;
+    const tlcContract = new TempleLineOfCredit__factory(signer).attach(env.contracts.tlc);
+    const position = await tlcContract.accountPosition(wallet);
+    const min = await tlcContract.MIN_BORROW_AMOUNT();
+    const debtInfo = await tlcContract.totalDebtPosition();
+    const rate = debtInfo.borrowRate;
+    setAccountPosition(position);
+    setMinBorrow(min);
+    setBorrowRate(rate);
+  };
 
   const supply = async () => {
     if (!signer || !wallet) return;
@@ -87,6 +91,7 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
       hash: receipt.transactionHash,
     });
     updateBalance();
+    updateAccountPosition();
   };
 
   const withdraw = async () => {
@@ -100,6 +105,7 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
       hash: receipt.transactionHash,
     });
     updateBalance();
+    updateAccountPosition();
   };
 
   const borrow = async () => {
@@ -116,6 +122,7 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
         hash: receipt.transactionHash,
       });
       updateBalance();
+      updateAccountPosition();
     } catch (e) {
       console.log(e);
     }
@@ -137,6 +144,7 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
       hash: receipt.transactionHash,
     });
     updateBalance();
+    updateAccountPosition();
   };
 
   const MAX_LTV = 75;
@@ -283,21 +291,31 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
                   setState({
                     ...state,
                     borrowValue: accountPosition
-                      ? ((fromAtto(accountPosition.collateral) * MAX_LTV) / 100).toFixed(2)
+                      ? (
+                          fromAtto(accountPosition.collateral) * (MAX_LTV / 100) -
+                          fromAtto(accountPosition.currentDebt)
+                        ).toFixed(2)
                       : '0',
                   });
                 }}
                 min={1000}
                 hint={`Max: ${
-                  accountPosition ? ((fromAtto(accountPosition.collateral) * MAX_LTV) / 100).toFixed(2) : 0
+                  accountPosition
+                    ? (
+                        fromAtto(accountPosition.collateral) * (MAX_LTV / 100) -
+                        fromAtto(accountPosition.currentDebt)
+                      ).toFixed(2)
+                    : 0
                 }`}
               />
-              <Warning>
-                <InfoCircle>
-                  <p>i</p>
-                </InfoCircle>
-                <p>You must borrow at least {formatToken(minBorrow, TICKER_SYMBOL.DAI)} DAI</p>
-              </Warning>
+              {minBorrow && fromAtto(minBorrow) > Number(state.borrowValue) && (
+                <Warning>
+                  <InfoCircle>
+                    <p>i</p>
+                  </InfoCircle>
+                  <p>You must borrow at least {formatToken(minBorrow, TICKER_SYMBOL.DAI)} DAI</p>
+                </Warning>
+              )}
               <MarginTop />
               <RangeLabel>Estimated DAI LTV: {getEstimatedLTV()}%</RangeLabel>
               <RangeSlider
@@ -305,11 +323,14 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
                   if (!accountPosition) return;
                   let ltvPercent = ((Number(e.target.value) / 100) * MAX_LTV) / 100;
                   // Min LTV allowed is the current LTV
-                  const minLtv = fromAtto(accountPosition.loanToValueRatio) * 100;
+                  const minLtv = fromAtto(accountPosition.loanToValueRatio);
                   if (ltvPercent < minLtv) ltvPercent = minLtv;
                   // Compute the DAI value for the input element based on the LTV change
-                  const daiValue = (fromAtto(accountPosition.collateral) * ltvPercent).toFixed(2);
-                  setState({ ...state, borrowValue: `${daiValue}` });
+                  const daiValue = (
+                    fromAtto(accountPosition.collateral) * ltvPercent -
+                    fromAtto(accountPosition.currentDebt)
+                  ).toFixed(2);
+                  setState({ ...state, borrowValue: `${Number(daiValue) > 0 ? daiValue : '0'}` });
                 }}
                 min={0}
                 max={100}
@@ -324,11 +345,11 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
                 <Apy>
                   {borrowRate ? (fromAtto(borrowRate) * 100).toFixed(2) : 0}% <span>APR</span>
                 </Apy>
-                <Rule />
+                {/* <Rule />
                 <Copy style={{ textAlign: 'left' }}>
                   Given the current TPI price of <strong>$1.06</strong>, your TEMPLE collateral will be liquidated on
                   <strong>10/02/2024</strong>.
-                </Copy>
+                </Copy> */}
               </GradientContainer>
               <RiskAcknowledgement>
                 <Checkbox onClick={() => setCheckbox(!checkbox)} isChecked={checkbox} src={checkmark} />
@@ -340,7 +361,9 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
               <TradeButton
                 onClick={() => borrow()}
                 disabled={
-                  !checkbox || (accountPosition && fromAtto(accountPosition.maxBorrow) < Number(state.borrowValue))
+                  !checkbox ||
+                  (accountPosition && fromAtto(accountPosition.maxBorrow) < Number(state.borrowValue)) ||
+                  (minBorrow && fromAtto(minBorrow) > Number(state.borrowValue))
                 }
               >
                 Borrow
@@ -390,7 +413,7 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
                       : 0}{' '}
                     TEMPLE
                   </LeadMetric>
-                  <USDMetric>$0 USD</USDMetric>
+                  <USDMetric>$? USD</USDMetric>
                 </NumContainer>
               </ValueContainer>
               <Copy>Supply TEMPLE as collateral to borrow DAI</Copy>
@@ -410,12 +433,12 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
                     {accountPosition?.currentDebt ? formatToken(accountPosition?.currentDebt, TICKER_SYMBOL.DAI) : 0}{' '}
                     DAI
                   </LeadMetric>
-                  <USDMetric>$0 USD</USDMetric>
+                  <USDMetric>$? USD</USDMetric>
                 </NumContainer>
               </ValueContainer>
               <FlexCol>
                 <FlexBetween>
-                  <p>LTV</p>
+                  <p>Your LTV</p>
                   <BrandParagraph>
                     {accountPosition?.collateral.gt(0)
                       ? (fromAtto(accountPosition?.loanToValueRatio) * 100).toFixed(2)
@@ -424,15 +447,11 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
                   </BrandParagraph>
                 </FlexBetween>
                 <FlexBetween>
-                  <p>
-                    Liquidation
-                    <br />
-                    threshold
-                  </p>
+                  <p>Liquidation LTV</p>
                   <BrandParagraph>{MAX_LTV}%</BrandParagraph>
                 </FlexBetween>
                 <FlexBetween>
-                  <p>Borrow Rate</p>
+                  <p>Interest Rate</p>
                   <BrandParagraph>{borrowRate ? (fromAtto(borrowRate) * 100).toFixed(2) : 0}%</BrandParagraph>
                 </FlexBetween>
               </FlexCol>
