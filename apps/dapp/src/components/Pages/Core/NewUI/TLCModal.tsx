@@ -113,9 +113,7 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
     const tlcContract = new TempleLineOfCredit__factory(signer).attach(env.contracts.tlc);
     const amount = getBigNumberFromString(state.borrowValue, getTokenInfo(state.outputToken).decimals);
     try {
-      console.log(fromAtto(amount));
-
-      const tx = await tlcContract.borrow(amount, wallet);
+      const tx = await tlcContract.borrow(amount, wallet, { gasLimit: 300000 });
       const receipt = await tx.wait();
       openNotification({
         title: `Borrowed ${state.borrowValue} DAI`,
@@ -137,7 +135,7 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
     const daiContract = new ERC20__factory(signer).attach(env.contracts.dai);
     await ensureAllowance(TICKER_SYMBOL.DAI, daiContract, env.contracts.tlc, amount);
 
-    const tx = await tlcContract.repay(amount, wallet);
+    const tx = await tlcContract.repay(amount, wallet, { gasLimit: 200000 });
     const receipt = await tx.wait();
     openNotification({
       title: `Repaid ${state.repayValue} DAI`,
@@ -196,7 +194,7 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
                   />
                   <FlexBetween>
                     <RangeLabel>0%</RangeLabel>
-                    <RangeLabel>80%</RangeLabel>
+                    <RangeLabel>{MAX_LTV}%</RangeLabel>
                   </FlexBetween>
                   <GradientContainer>
                     <Warning>
@@ -260,7 +258,7 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
                   />
                   <FlexBetween>
                     <RangeLabel>0%</RangeLabel>
-                    <RangeLabel>80%</RangeLabel>
+                    <RangeLabel>{MAX_LTV}%</RangeLabel>
                   </FlexBetween>
                   <GradientContainer>
                     <Copy style={{ textAlign: 'left' }}>
@@ -384,21 +382,37 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
                 value={state.repayValue}
                 placeholder="0"
                 onHintClick={() => {
-                  setState({ ...state, repayValue: formatToken(state.outputTokenBalance, state.outputToken) });
+                  setState({
+                    ...state,
+                    repayValue: accountPosition ? formatToken(accountPosition.currentDebt, state.outputToken) : '0',
+                  });
                 }}
                 min={0}
-                // TODO: Max should be either max DAI in wallet or the total DAI loans
-                hint={`Max: ${formatToken(state.outputTokenBalance, state.outputToken)}`}
+                // Max is total debt
+                hint={`Max: ${formatToken(accountPosition ? accountPosition.currentDebt : ZERO, state.outputToken)}`}
               />
+              {fromAtto(state.outputTokenBalance) < Number(state.repayValue) && (
+                <Warning>
+                  <InfoCircle>
+                    <p>i</p>
+                  </InfoCircle>
+                  <p>Exceeds your balance of {formatToken(state.outputTokenBalance, TICKER_SYMBOL.DAI)} DAI</p>
+                </Warning>
+              )}
               <MarginTop />
               <RangeLabel>Estimated DAI LTV</RangeLabel>
-              {/* TODO: Change progress to progress / TokenBalance * 100 */}
               <RangeSlider onChange={(e) => setProgress(Number(e.target.value))} value={progress} progress={progress} />
               <FlexBetween>
                 <RangeLabel>0%</RangeLabel>
-                <RangeLabel>80%</RangeLabel>
+                <RangeLabel>{MAX_LTV}%</RangeLabel>
               </FlexBetween>
-              <TradeButton onClick={() => repay()}>Repay</TradeButton>
+              <TradeButton
+                onClick={() => repay()}
+                disabled={fromAtto(state.outputTokenBalance) < Number(state.repayValue)}
+              >
+                Repay
+              </TradeButton>
+              {/* <TradeButton onClick={() => repay()}>Repay All</TradeButton> */}
             </>
           ) : (
             <>
