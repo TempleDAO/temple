@@ -175,6 +175,13 @@ module.exports = {
             : [],
         gasPrice: 2000000000,
     },
+    sepolia: {
+        url: process.env.SEPOLIA_RPC_URL || '',
+        accounts: process.env.SEPOLIA_ADDRESS_PRIVATE_KEY
+            ? [process.env.SEPOLIA_ADDRESS_PRIVATE_KEY]
+            : [],
+        gasPrice: 2000000000,
+    },
   },
   etherscan: {
 
@@ -184,6 +191,7 @@ module.exports = {
       polygonMumbai: process.env.POLYGONSCAN_API_KEY,
       polygon: process.env.POLYGONSCAN_API_KEY,
       goerli: process.env.ETHERSCAN_API_KEY,
+      sepolia: process.env.ETHERSCAN_API_KEY,
     }
   },
   mocha: {

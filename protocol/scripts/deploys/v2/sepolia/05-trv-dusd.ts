@@ -5,20 +5,27 @@ import {
   deployAndMine,
   ensureExpectedEnvvars,
 } from '../../helpers';
+import { getDeployedContracts } from '../sepolia/contract-addresses';
 
 async function main() {
   ensureExpectedEnvvars();
   const [owner] = await ethers.getSigners();
+  const TEMPLE_V2_DEPLOYED = getDeployedContracts();
 
-  const factory = new TempleDebtToken__factory(owner);
+  const dUsdDebtTokenFactory = new TempleDebtToken__factory(owner);
   await deployAndMine(
-    'templeDebtToken', factory, factory.deploy,
-    'Temple Debt Token', 'dUSD', 
+    'TRV_DUSD',
+    dUsdDebtTokenFactory,
+    dUsdDebtTokenFactory.deploy,
+    "Temple Debt USD",
+    "dUSD",
     await owner.getAddress(),
-    ethers.utils.parseEther("0.01"), 
-  );
+    await owner.getAddress(),
+    ethers.utils.parseEther("0.034304803691990293"), // 34.9% APR or ~34.304%APY
+  )
+
 }
-        
+
 // We recommend this pattern to be able to use async/await everywhere
 // and properly handle errors.
 main()

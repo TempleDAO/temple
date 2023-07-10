@@ -861,7 +861,7 @@ describe("RAMOS", async () => {
             expect(await bbaUsdTempleAuraRewardPool.balanceOf(amoStaking.address)).to.eq(stakedBalanceBefore.sub(bptIn));
         });
 
-        it.only("rebalances up by single side withdraw temple", async () => {
+        it("rebalances up by single side withdraw temple", async () => {
             await amo.setCoolDown(0);
             // fails
             await expect(amo.rebalanceUpExit(0, 0)).to.be.revertedWithCustomError(amo, "ZeroSwapLimit");

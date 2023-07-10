@@ -2,10 +2,14 @@ import { ethers, network } from 'hardhat';
 import {
   BaseContract,
   BigNumber,
+  Contract,
   ContractFactory,
   ContractTransaction,
   Signer,
 } from 'ethers';
+import { ITempleElevatedAccess } from '../../typechain';
+import * as fs from 'fs';
+import * as path from 'path';
 
 interface TeamPayments {
   TEMPLE_TEAM_FIXED_PAYMENTS: string;
@@ -455,6 +459,24 @@ export async function mine(tx: Promise<ContractTransaction>) {
   await (await tx).wait();
 }
 
+// BigNumber json serialization override, dump as string
+Object.defineProperties(BigNumber.prototype, {
+  toJSON: {
+    value: function (this: BigNumber) {
+      return this.toString();
+    },
+  },
+});
+
+function ensureDirectoryExistence(filePath: string) {
+  const dirname = path.dirname(filePath);
+  if (fs.existsSync(dirname)) {
+    return true;
+  }
+  ensureDirectoryExistence(dirname);
+  fs.mkdirSync(dirname);
+}
+
 /**
  * Typesafe helper that works on contract factories to create, deploy, wait till deploy completes
  * and output useful commands to setup etherscan with contract code
@@ -472,24 +494,33 @@ export async function deployAndMine<
   if (factory.deploy !== deploy) {
     throw new Error("Contract factory and deploy method don't match");
   }
-
-  const renderedArgs: string = args.map((a) => a.toString()).join(' ');
-
-  console.log(
-    `*******Deploying ${name} on ${network.name} with args ${renderedArgs}`
-  );
-  const contract = (await factory.deploy(...args)) as T;
-  console.log(
-    `Deployed... waiting for transaction to mine: ${contract.deployTransaction.hash}`
-  );
+  
+  // Ensure none of the args are empty
+  args.forEach((a,i) => {
+  if (!(a.toString()))
+    throw new Error(`Empty arg in position ${i}`);
+  });
+  
+  const renderedArgs = JSON.stringify(args, null, 2);
+  
+  console.log(`*******Deploying ${name} on ${network.name} with args ${renderedArgs}`);
+  const contract = await factory.deploy(...args) as T;
+  console.log(`Deployed... waiting for transaction to mine: ${contract.deployTransaction.hash}`);
   console.log();
   await contract.deployed();
   console.log('Contract deployed');
   console.log(`${name}=${contract.address}`);
   console.log(`export ${name}=${contract.address}`);
-  console.log(
-    `yarn hardhat verify --network ${network.name} ${contract.address} ${renderedArgs}`
-  );
+  
+  const argsPath = `scripts/deploys/${network.name}/deploymentArgs/${contract.address}.js`;
+  const verifyCommand = `yarn hardhat verify --network ${network.name} ${contract.address} --constructor-args ${argsPath}`;
+  ensureDirectoryExistence(argsPath);
+  let contents = `// ${network.name}: ${name}=${contract.address}`;
+  contents += `\n// ${verifyCommand}`;
+  contents += `\nmodule.exports = ${renderedArgs};`;
+  fs.writeFileSync(argsPath, contents);
+  
+  console.log(verifyCommand);
   console.log('********************\n');
 
   return contract;
@@ -514,6 +545,10 @@ export function expectAddressWithPrivateKey() {
   if (network.name == 'polygonMumbai' && !process.env.MUMBAI_ADDRESS_PRIVATE_KEY) {
     throw new Error("Missing environment variable MUMBAI_ADDRESS_PRIVATE_KEY. A mumbai address private key with eth is required to deploy/manage contracts");
   }
+
+  if (network.name == 'sepolia' && !process.env.SEPOLIA_ADDRESS_PRIVATE_KEY) {
+    throw new Error("Missing environment variable SEPOLIA_ADDRESS_PRIVATE_KEY. A mumbai address private key with eth is required to deploy/manage contracts");
+  }
 }
 
 const expectedEnvvars: { [key: string]: string[] } = {
@@ -528,6 +563,7 @@ const expectedEnvvars: { [key: string]: string[] } = {
   gnosis: ['GNOSIS_ADDRESS_PRIVATE_KEY', 'GNOSIS_RPC_URL'],
   gnosisChiado: ['GNOSIS_CHIADO_ADDRESS_PRIVATE_KEY', 'GNOSIS_CHIADO_RPC_URL'],
   polygonMumbai: ['MUMBAI_ADDRESS_PRIVATE_KEY', 'MUMBAI_RPC_URL'],
+  sepolia: ['SEPOLIA_ADDRESS_PRIVATE_KEY', 'SEPOLIA_RPC_URL'],
   localhost: [],
 };
 
@@ -579,6 +615,16 @@ export async function waitForMaxGas(
     if (!currentGasPrice) throw new Error('No current gas price');
   }
   return currentGasPrice;
+}
+
+export async function setExplicitAccess(contract: Contract, allowedCaller: string, fnNames: string[], value: boolean) {
+    const access: ITempleElevatedAccess.ExplicitAccessStruct[] = fnNames.map(fn => {
+        return {
+            fnSelector: contract.interface.getSighash(contract.interface.getFunction(fn)),
+            allowed: value
+        }
+    });
+    return await contract.setExplicitAccess(allowedCaller, access);
 }
 
 const { AddressZero } = ethers.constants;

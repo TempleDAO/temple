@@ -12,7 +12,15 @@ import { ITempleStrategy } from "contracts/interfaces/v2/strategies/ITempleStrat
  * The Treasury Reserves Vault will have permission to pull back funds from this strategy
  * at any time, for example when another strategy wants to borrow funds.
  */
-interface ITempleBaseStrategy is ITempleStrategy {
+interface ITempleBaseStrategy {
+    /**
+     * @notice The latest checkpoint of each asset balance this stratgy holds.
+     *
+     * @dev The asset value may be stale at any point in time, depending onthe strategy. 
+     * It may optionally implement `checkpointAssetBalances()` in order to update those balances.
+     */
+    function latestAssetBalances() external view returns (ITempleStrategy.AssetBalance[] memory assetBalances);
+
     /**
      * @notice The same as `borrowMax()` but for a pre-determined amount to borrow,
      * such that something upstream/off-chain can determine the amount.
