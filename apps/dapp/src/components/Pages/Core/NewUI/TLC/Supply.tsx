@@ -1,6 +1,5 @@
 import leftCaret from 'assets/images/newui-images/leftCaret.svg';
 import { TradeButton } from '../Home';
-import { useState } from 'react';
 import { Input } from '../HomeInput';
 import { formatToken } from 'utils/formatter';
 import { ITlcDataTypes } from 'types/typechain/contracts/interfaces/v2/templeLineOfCredit/ITempleLineOfCredit';
@@ -9,7 +8,6 @@ import {
   Copy,
   FlexBetween,
   GradientContainer,
-  InfoCircle,
   MAX_LTV,
   MarginTop,
   RangeLabel,
@@ -17,8 +15,8 @@ import {
   RemoveMargin,
   State,
   Title,
-  Warning,
 } from './TLCModal';
+import { fromAtto } from 'utils/bigNumber';
 
 interface IProps {
   accountPosition: ITlcDataTypes.AccountPositionStructOutput | undefined;
@@ -29,7 +27,21 @@ interface IProps {
 }
 
 export const Supply: React.FC<IProps> = ({ accountPosition, state, setState, supply, back }) => {
-  const [progress, setProgress] = useState(0);
+  const getEstimatedCollateral = (): number => {
+    return accountPosition
+      ? fromAtto(accountPosition.collateral) + Number(state.supplyValue)
+      : Number(state.supplyValue);
+  };
+
+  const getEstimatedLTV = (): string => {
+    return accountPosition
+      ? ((fromAtto(accountPosition.currentDebt) / getEstimatedCollateral()) * 100).toFixed(2)
+      : '0.00';
+  };
+
+  const getEstimatedMaxBorrow = (): number => {
+    return getEstimatedCollateral() * (MAX_LTV / 100);
+  };
 
   return (
     <>
@@ -56,27 +68,35 @@ export const Supply: React.FC<IProps> = ({ accountPosition, state, setState, sup
       {accountPosition?.currentDebt.gt(0) && (
         <>
           <MarginTop />
-          <RangeLabel>Estimated DAI LTV</RangeLabel>
-          {/* TODO: Change progress to progress / TokenBalance * 100 */}
-          <RangeSlider onChange={(e) => setProgress(Number(e.target.value))} value={progress} progress={progress} />
+          <RangeLabel>Estimated DAI LTV: {getEstimatedLTV()}%</RangeLabel>
+          <RangeSlider
+            onChange={(e) => {
+              if (!accountPosition) return;
+              let ltvPercent = ((Number(e.target.value) / 100) * MAX_LTV) / 100;
+              // Max LTV is the current LTV
+              const maxLtv = fromAtto(accountPosition.currentDebt) / fromAtto(accountPosition.collateral);
+              if (ltvPercent > maxLtv) ltvPercent = maxLtv;
+              const newSupply = (
+                fromAtto(accountPosition.currentDebt) / ltvPercent -
+                fromAtto(accountPosition.collateral)
+              ).toFixed(2);
+              setState({ ...state, supplyValue: `${Number(newSupply) > 0 ? newSupply : '0'}` });
+            }}
+            value={(Number(getEstimatedLTV()) / MAX_LTV) * 100}
+            progress={(Number(getEstimatedLTV()) / MAX_LTV) * 100}
+          />
           <FlexBetween>
             <RangeLabel>0%</RangeLabel>
             <RangeLabel>{MAX_LTV}%</RangeLabel>
           </FlexBetween>
-          <GradientContainer>
-            <Warning>
-              <InfoCircle>
-                <p>i</p>
-              </InfoCircle>
-              <p>If your DAI LTV reaches the liquidation threshold, your TEMPLE collateral will be liquidated.</p>
-            </Warning>
-            <Copy style={{ textAlign: 'left' }}>
-              Given the current TPI price of <strong>$1.06</strong>, your TEMPLE collateral will be liquidated on
-              <strong>10/02/2024</strong>.
-            </Copy>
-          </GradientContainer>
         </>
       )}
+      <GradientContainer>
+        <Copy style={{ textAlign: 'left' }}>
+          You could borrow up to {getEstimatedMaxBorrow().toFixed(2)} DAI with {getEstimatedCollateral().toFixed(2)}{' '}
+          total TEMPLE collateral.
+        </Copy>
+      </GradientContainer>
       <TradeButton onClick={() => supply()}>Supply</TradeButton>
     </>
   );

@@ -1,8 +1,6 @@
 import leftCaret from 'assets/images/newui-images/leftCaret.svg';
 import { TradeButton } from '../Home';
-import { useState } from 'react';
 import { Input } from '../HomeInput';
-import { formatToken } from 'utils/formatter';
 import { ITlcDataTypes } from 'types/typechain/contracts/interfaces/v2/templeLineOfCredit/ITempleLineOfCredit';
 import {
   BackButton,
@@ -19,6 +17,7 @@ import {
   Title,
   Warning,
 } from './TLCModal';
+import { fromAtto } from 'utils/bigNumber';
 
 interface IProps {
   accountPosition: ITlcDataTypes.AccountPositionStructOutput | undefined;
@@ -29,7 +28,27 @@ interface IProps {
 }
 
 export const Withdraw: React.FC<IProps> = ({ accountPosition, state, setState, withdraw, back }) => {
-  const [progress, setProgress] = useState(0);
+  const getEstimatedCollateral = (): number => {
+    return accountPosition
+      ? fromAtto(accountPosition.collateral) - Number(state.withdrawValue)
+      : Number(state.withdrawValue);
+  };
+
+  const getEstimatedLTV = (): string => {
+    return accountPosition
+      ? ((fromAtto(accountPosition.currentDebt) / getEstimatedCollateral()) * 100).toFixed(2)
+      : '0.00';
+  };
+
+  const getEstimatedMaxBorrow = (): number => {
+    return getEstimatedCollateral() * (MAX_LTV / 100);
+  };
+
+  const getMaxWithdraw = (): number => {
+    return accountPosition
+      ? (-1 * fromAtto(accountPosition.currentDebt)) / (MAX_LTV / 100) + fromAtto(accountPosition.collateral)
+      : 0;
+  };
 
   return (
     <>
@@ -47,10 +66,10 @@ export const Withdraw: React.FC<IProps> = ({ accountPosition, state, setState, w
         value={state.withdrawValue}
         placeholder="0"
         onHintClick={() => {
-          setState({ ...state, withdrawValue: formatToken(accountPosition?.collateral, state.inputToken) });
+          setState({ ...state, withdrawValue: getMaxWithdraw().toFixed(2) });
         }}
         min={0}
-        hint={`Supplies: ${formatToken(accountPosition?.collateral, state.inputToken)}`}
+        hint={`Max: ${getMaxWithdraw().toFixed(2)}`}
       />
       {/* Only display if user has borrows */}
       {accountPosition?.currentDebt.gt(0) && (
@@ -59,27 +78,38 @@ export const Withdraw: React.FC<IProps> = ({ accountPosition, state, setState, w
             <InfoCircle>
               <p>i</p>
             </InfoCircle>
-            <p>
-              Since you have borrow positions, the max amount represents the amount of supplied TEMPLE that you can
-              withdraw without liquidation.
-            </p>
+            <p>MAX represents the amount of supplied TEMPLE that you can withdraw without liquidation.</p>
           </Warning>
           <MarginTop />
-          <RangeLabel>Estimated DAI LTV</RangeLabel>
-          {/* TODO: Change progress to progress / TokenBalance * 100 */}
-          <RangeSlider onChange={(e) => setProgress(Number(e.target.value))} value={progress} progress={progress} />
+          <RangeLabel>Estimated DAI LTV: {getEstimatedLTV()}%</RangeLabel>
+          <RangeSlider
+            onChange={(e) => {
+              if (!accountPosition) return;
+              let ltvPercent = ((Number(e.target.value) / 100) * MAX_LTV) / 100;
+              // Min LTV is the current LTV
+              const minLtv = fromAtto(accountPosition.currentDebt) / fromAtto(accountPosition.collateral);
+              if (ltvPercent < minLtv) ltvPercent = minLtv;
+              const withdrawAmount = (
+                (-1 * fromAtto(accountPosition.currentDebt)) / ltvPercent +
+                fromAtto(accountPosition.collateral)
+              ).toFixed(2);
+              setState({ ...state, withdrawValue: `${Number(withdrawAmount) > 0 ? withdrawAmount : '0'}` });
+            }}
+            value={(Number(getEstimatedLTV()) / MAX_LTV) * 100}
+            progress={(Number(getEstimatedLTV()) / MAX_LTV) * 100}
+          />
           <FlexBetween>
             <RangeLabel>0%</RangeLabel>
             <RangeLabel>{MAX_LTV}%</RangeLabel>
           </FlexBetween>
-          <GradientContainer>
-            <Copy style={{ textAlign: 'left' }}>
-              Given the current TPI price of <strong>$1.06</strong>, your TEMPLE collateral will be liquidated on
-              <strong>10/02/2024</strong>.
-            </Copy>
-          </GradientContainer>
         </>
       )}
+      <GradientContainer>
+        <Copy style={{ textAlign: 'left' }}>
+          You could borrow up to {getEstimatedMaxBorrow().toFixed(2)} DAI with {getEstimatedCollateral().toFixed(2)}{' '}
+          total TEMPLE collateral.
+        </Copy>
+      </GradientContainer>
       <TradeButton onClick={() => withdraw()}>Withdraw</TradeButton>
     </>
   );

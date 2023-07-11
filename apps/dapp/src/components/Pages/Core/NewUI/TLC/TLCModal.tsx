@@ -153,6 +153,25 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
     updateAccountPosition();
   };
 
+  const repayAll = async () => {
+    if (!signer || !wallet) return;
+    const tlcContract = new TempleLineOfCredit__factory(signer).attach(env.contracts.tlc);
+    const amount = getBigNumberFromString(state.repayValue, getTokenInfo(state.outputToken).decimals);
+
+    // Ensure allowance for TLC to spend DAI
+    const daiContract = new ERC20__factory(signer).attach(env.contracts.dai);
+    await ensureAllowance(TICKER_SYMBOL.DAI, daiContract, env.contracts.tlc, amount);
+
+    const tx = await tlcContract.repayAll(wallet);
+    const receipt = await tx.wait();
+    openNotification({
+      title: `Repaid ${accountPosition?.currentDebt} DAI`,
+      hash: receipt.transactionHash,
+    });
+    updateBalance();
+    updateAccountPosition();
+  };
+
   return (
     <>
       <Popover isOpen={isOpen} onClose={onClose} closeOnClickOutside showCloseButton>
@@ -189,6 +208,7 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
               state={state}
               setState={setState}
               repay={repay}
+              repayAll={repayAll}
               back={() => setScreen('overview')}
             />
           ) : (
@@ -249,6 +269,7 @@ export const MarginTop = styled.div`
 export const FlexBetween = styled.div`
   display: flex;
   justify-content: space-between;
+  align-items: center;
   color: ${({ theme }) => theme.palette.brandLight};
 
   p {
