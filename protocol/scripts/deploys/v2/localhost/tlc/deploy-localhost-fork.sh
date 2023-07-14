@@ -1,13 +1,7 @@
 #!/bin/bash
 
-# When deploying locally as a fork off arbitrum
-# First start local node with:
-#    npx hardhat node --fork https://arb-mainnet.g.alchemy.com/v2/XXX --fork-block-number 47930000
-
 set -x
 set -e
-npx hardhat run --network localhost scripts/deploys/v2/sepolia/01a-temple-token.ts
-npx hardhat run --network localhost scripts/deploys/v2/sepolia/01b-dai-token.ts
 npx hardhat run --network localhost scripts/deploys/v2/sepolia/02-circuit-breaker-proxy.ts
 npx hardhat run --network localhost scripts/deploys/v2/sepolia/03-trv-tpi-oracle.ts
 npx hardhat run --network localhost scripts/deploys/v2/sepolia/04-trv.ts
@@ -17,9 +11,9 @@ npx hardhat run --network localhost scripts/deploys/v2/sepolia/07-tlc-IRM-linear
 npx hardhat run --network localhost scripts/deploys/v2/sepolia/08-tlc.ts
 npx hardhat run --network localhost scripts/deploys/v2/sepolia/09-tlc-circuit-breakers-dai.ts
 npx hardhat run --network localhost scripts/deploys/v2/sepolia/10-tlc-circuit-breakers-temple.ts
-npx hardhat run --network localhost scripts/deploys/v2/sepolia/11-dsr-base-strategy.ts
+npx hardhat run --network localhost scripts/deploys/v2/sepolia/11-dsr-base-strategy-mainnet.ts
 npx hardhat run --network localhost scripts/deploys/v2/sepolia/12-temple-base-strategy.ts
 npx hardhat run --network localhost scripts/deploys/v2/sepolia/13-tlc-strategy.ts
-npx hardhat run --network localhost scripts/deploys/v2/sepolia/99a-v2-core-post-deployment.ts
+npx hardhat run --network localhost scripts/deploys/v2/sepolia/99a-v2-core-post-deployment-mainnet.ts
 npx hardhat run --network localhost scripts/deploys/v2/sepolia/99b-tlc-post-deployment.ts
 

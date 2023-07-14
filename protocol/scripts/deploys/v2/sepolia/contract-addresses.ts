@@ -182,30 +182,27 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: V2DeployedContracts} = {
         }
     },
     localhost: {
-//    owner addr: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
-//    temple v2 msig addr: 0xF8Ab0fF572e48059c45eF3fa804e5A369d2b9b2B
-//    alice addr: 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
       CORE: {
-          TEMPLE_TOKEN: "0xE2b5bDE7e80f89975f7229d78aD9259b2723d11F",
-          CIRCUIT_BREAKER_PROXY: "0x4ea0Be853219be8C9cE27200Bdeee36881612FF2",
+          TEMPLE_TOKEN: "0x470ebf5f030ed85fc1ed4c2d36b9dd02e77cf1b7",
+          CIRCUIT_BREAKER_PROXY: "0xE2b5bDE7e80f89975f7229d78aD9259b2723d11F",
           // GNOSIS_SAFE_GUARD: "",
-          EXECUTOR_MSIG: "0xF8Ab0fF572e48059c45eF3fa804e5A369d2b9b2B",
-          RESCUER_MSIG: "0x8dbe2E7Cab43F00fce7fFe90769b87456692CE46",
+          EXECUTOR_MSIG: "0x4D6175d58C5AceEf30F546C0d5A557efFa53A950",
+          RESCUER_MSIG: "",
       },
       TREASURY_RESERVES_VAULT: {
-          ADDRESS: "0x9155497EAE31D432C0b13dBCc0615a37f55a2c87",
-          D_USD_TOKEN: "0xfB12F7170FF298CDed84C793dAb9aBBEcc01E798",
-          D_TEMPLE_TOKEN: "0xc1EeD9232A0A44c2463ACB83698c162966FBc78d",
-          TPI_ORACLE: "0x46d4674578a2daBbD0CEAB0500c6c7867999db34",
+          ADDRESS: "0x4ea0Be853219be8C9cE27200Bdeee36881612FF2",
+          D_USD_TOKEN: "0x46d4674578a2daBbD0CEAB0500c6c7867999db34",
+          D_TEMPLE_TOKEN: "0x9155497EAE31D432C0b13dBCc0615a37f55a2c87",
+          TPI_ORACLE: "0xC6c5Ab5039373b0CBa7d0116d9ba7fb9831C3f42",
       },
       TEMPLE_LINE_OF_CREDIT: {
-          ADDRESS: "0xfaE849108F2A63Abe3BaB17E21Be077d07e7a9A2",
+          ADDRESS: "0xc1EeD9232A0A44c2463ACB83698c162966FBc78d",
           CIRCUIT_BREAKERS: {
-              DAI: "0x12456Fa31e57F91B70629c1196337074c966492a",
-              TEMPLE: "0xce830DA8667097BB491A70da268b76a081211814",
+              DAI: "0xC220Ed128102d888af857d137a54b9B7573A41b2",
+              TEMPLE: "0xfaE849108F2A63Abe3BaB17E21Be077d07e7a9A2",
           },
           INTEREST_RATE_MODELS: {
-              LINEAR_WITH_KINK: "0xC220Ed128102d888af857d137a54b9B7573A41b2",
+              LINEAR_WITH_KINK: "0xfB12F7170FF298CDed84C793dAb9aBBEcc01E798",
           },
       },
       // RAMOS: {
@@ -219,15 +216,15 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: V2DeployedContracts} = {
       // }
       STRATEGIES: {
           DSR_BASE_STRATEGY: {
-              ADDRESS: "0xD5bFeBDce5c91413E41cc7B24C8402c59A344f7c",
-              EXECUTOR_MSIG: "0xF8Ab0fF572e48059c45eF3fa804e5A369d2b9b2B",
-              RESCUER_MSIG: "0x8dbe2E7Cab43F00fce7fFe90769b87456692CE46",
+              ADDRESS: "0x12456Fa31e57F91B70629c1196337074c966492a",
+              EXECUTOR_MSIG: "0x4D6175d58C5AceEf30F546C0d5A557efFa53A950",
+              RESCUER_MSIG: "",
               // No circuit breakers for DSR base strategy
           },
           TEMPLE_BASE_STRATEGY: {
-              ADDRESS: "0x77AD263Cd578045105FBFC88A477CAd808d39Cf6",
-              EXECUTOR_MSIG: "0xF8Ab0fF572e48059c45eF3fa804e5A369d2b9b2B",
-              RESCUER_MSIG: "0x8dbe2E7Cab43F00fce7fFe90769b87456692CE46",
+              ADDRESS: "0xce830DA8667097BB491A70da268b76a081211814",
+              EXECUTOR_MSIG: "0x4D6175d58C5AceEf30F546C0d5A557efFa53A950",
+              RESCUER_MSIG: "",
               // No circuit breakers for Temple base strategy
           },
           // TEST_GNOSIS_SAFE_STRATEGY1: {
@@ -250,16 +247,16 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: V2DeployedContracts} = {
           //     },
           // },
           TLC_STRATEGY: {
-              ADDRESS: "0x38628490c3043E5D0bbB26d5a0a62fC77342e9d5",
-              EXECUTOR_MSIG: "0xF8Ab0fF572e48059c45eF3fa804e5A369d2b9b2B",
-              RESCUER_MSIG: "0x8dbe2E7Cab43F00fce7fFe90769b87456692CE46",
+              ADDRESS: "0xD5bFeBDce5c91413E41cc7B24C8402c59A344f7c",
+              EXECUTOR_MSIG: "0x4D6175d58C5AceEf30F546C0d5A557efFa53A950",
+              RESCUER_MSIG: "",
           },
       },
       EXTERNAL: {
           MAKER_DAO: {
-              DAI_TOKEN: "0xC6c5Ab5039373b0CBa7d0116d9ba7fb9831C3f42",
-              DAI_JOIN: "",
-              POT: "",
+              DAI_TOKEN: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+              DAI_JOIN: "0x9759A6Ac90977b93B58547b4A71c78317f391A28",
+              POT: "0x197E90f9FAD81970bA7976f33CbD77088E5D7cf7",
           },
           // BALANCER: {
           //     VAULT: "",

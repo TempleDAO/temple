@@ -2,7 +2,7 @@ import { ethers, network } from "hardhat";
 import { BaseContract, BigNumber, BigNumberish, Contract, Signer } from "ethers";
 import { assert, expect } from "chai";
 import { ITempleElevatedAccess, TempleERC20Token, TempleERC20Token__factory } from "../typechain";
-import { impersonateAccount, time as timeHelpers } from "@nomicfoundation/hardhat-network-helpers";
+import { impersonateAccount, mine, time as timeHelpers } from "@nomicfoundation/hardhat-network-helpers";
 
 export const NULL_ADDR = "0x0000000000000000000000000000000000000000"
 
@@ -120,6 +120,14 @@ export const mineToTimestamp = async (timestamp: number) => {
  */
 export const mineForwardSeconds = async (seconds: number) => {
   await timeHelpers.increase(seconds);
+}
+
+/**
+ * Mine x block(s) that include as many transactions as possible
+ * By default it mines one block
+ */
+export const mineBlocks = async (noBlock = 1) => {
+  await mine(noBlock);
 }
 
 /**
