@@ -48,7 +48,7 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
      * - When users repay, the DAI is repaid to the TRV 
      *      (reducing the dUSD debt of the TlcStrategy)
      * - When there is a liquidation, the seized Temple collateral is paid to the TRV
-     *      (reducing the dUSD debt of the TlcStrategy)
+     *      (reducing the dTEMPLE debt of the TlcStrategy)
      */
     ITreasuryReservesVault public override treasuryReservesVault;
 
@@ -313,7 +313,7 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
             }
         }
 
-        // burn the temple collateral by repaying to TRV. This will burn the equivalent dUSD debt too.
+        // burn the temple collateral by repaying to TRV. This will burn the equivalent dTemple debt too.
         if (totalCollateralClaimed != 0) {
             templeToken.safeIncreaseAllowance(address(treasuryReservesVault), totalCollateralClaimed);
             treasuryReservesVault.repay(templeToken, totalCollateralClaimed, address(tlcStrategy));
