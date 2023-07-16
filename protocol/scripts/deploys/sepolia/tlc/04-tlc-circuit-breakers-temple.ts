@@ -1,29 +1,28 @@
 import '@nomiclabs/hardhat-ethers';
 import { ethers } from 'hardhat';
-import { TlcStrategy__factory } from '../../../../typechain';
+import { TempleCircuitBreakerAllUsersPerPeriod__factory } from '../../../../typechain';
 import {
   deployAndMine,
   ensureExpectedEnvvars,
 } from '../../helpers';
-import { getDeployedContracts } from './contract-addresses';
+import { getDeployedContracts } from '../contract-addresses';
 
 async function main() {
   ensureExpectedEnvvars();
   const [owner] = await ethers.getSigners();
-  const TEMPLE_V2_DEPLOYED = getDeployedContracts();
 
-  const tlcStrategyFactory = new TlcStrategy__factory(owner);
+  const circuitBreakerFactory = new TempleCircuitBreakerAllUsersPerPeriod__factory(owner);
   await deployAndMine(
-    'TLC_STRATEGY',
-    tlcStrategyFactory,
-    tlcStrategyFactory.deploy,
+    'TEMPLE_LINE_OF_CREDIT.CIRCUIT_BREAKERS.TEMPLE',
+    circuitBreakerFactory,
+    circuitBreakerFactory.deploy,
     await owner.getAddress(),
     await owner.getAddress(),
-    "TlcStrategy",
-    TEMPLE_V2_DEPLOYED.TREASURY_RESERVES_VAULT.ADDRESS,
-    TEMPLE_V2_DEPLOYED.TEMPLE_LINE_OF_CREDIT.ADDRESS,
-    TEMPLE_V2_DEPLOYED.EXTERNAL.MAKER_DAO.DAI_TOKEN
+    60*60*26, // 26 hours
+    13, // no of buckets
+    ethers.utils.parseEther("100000"), // cap per bucket
   )
+
 }
 
 // We recommend this pattern to be able to use async/await everywhere

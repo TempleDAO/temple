@@ -1,0 +1,9 @@
+// sepolia: RAMOS_CIRCUIT_BREAKER_DAI=0x3934dc8b1984904e6940348352Df2D1443B0Fda2
+// yarn hardhat verify --network sepolia 0x3934dc8b1984904e6940348352Df2D1443B0Fda2 --constructor-args scripts/deploys/sepolia/deploymentArgs/0x3934dc8b1984904e6940348352Df2D1443B0Fda2.js
+module.exports = [
+  "0x81960c465605cddD9772a8653111D4aBE580Ce1e",
+  "0x81960c465605cddD9772a8653111D4aBE580Ce1e",
+  93600,
+  13,
+  "50000000000000000000000000"
+];

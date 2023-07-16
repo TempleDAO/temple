@@ -1,28 +1,26 @@
 import '@nomiclabs/hardhat-ethers';
 import { ethers } from 'hardhat';
-import { DsrBaseStrategyTestnet__factory } from '../../../../typechain';
+import { TempleDebtToken__factory } from '../../../../typechain';
 import {
   deployAndMine,
   ensureExpectedEnvvars,
 } from '../../helpers';
-import { getDeployedContracts } from './contract-addresses';
+import { getDeployedContracts } from '../contract-addresses';
 
 async function main() {
   ensureExpectedEnvvars();
   const [owner] = await ethers.getSigners();
-  const TEMPLE_V2_DEPLOYED = getDeployedContracts();
 
-  const dsrBaseStrategyFactory = new DsrBaseStrategyTestnet__factory(owner);
+  const dUsdDebtTokenFactory = new TempleDebtToken__factory(owner);
   await deployAndMine(
-    'DSR_BASE_STRATEGY',
-    dsrBaseStrategyFactory,
-    dsrBaseStrategyFactory.deploy,
+    'CORE.TREASURY_RESERVES_VAULT.D_USD_TOKEN',
+    dUsdDebtTokenFactory,
+    dUsdDebtTokenFactory.deploy,
+    "Temple Debt USD",
+    "dUSD",
     await owner.getAddress(),
     await owner.getAddress(),
-    "DsrBaseStrategy",
-    TEMPLE_V2_DEPLOYED.TREASURY_RESERVES_VAULT.ADDRESS,
-    TEMPLE_V2_DEPLOYED.EXTERNAL.MAKER_DAO.DAI_TOKEN,
-    ethers.utils.parseEther('0.0349')
+    ethers.utils.parseEther("0.034304803691990293"), // 34.9% APR or ~34.304%APY
   )
 
 }

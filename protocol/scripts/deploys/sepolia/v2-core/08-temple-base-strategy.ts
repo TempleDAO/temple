@@ -1,27 +1,27 @@
 import '@nomiclabs/hardhat-ethers';
 import { ethers } from 'hardhat';
-import { TempleCircuitBreakerAllUsersPerPeriod__factory } from '../../../../typechain';
+import { TempleTokenBaseStrategy__factory } from '../../../../typechain';
 import {
   deployAndMine,
   ensureExpectedEnvvars,
 } from '../../helpers';
-import { getDeployedContracts } from './contract-addresses';
+import { getDeployedContracts } from '../contract-addresses';
 
 async function main() {
   ensureExpectedEnvvars();
   const [owner] = await ethers.getSigners();
-  const TEMPLE_V2_DEPLOYED = getDeployedContracts();
+  const TEMPLE_V2_ADDRESSES = getDeployedContracts();
 
-  const circuitBreakerFactory = new TempleCircuitBreakerAllUsersPerPeriod__factory(owner);
+  const templeTokenBaseFactory = new TempleTokenBaseStrategy__factory(owner);
   await deployAndMine(
-    'TLC_CIRCUIT_BREAKER_TEMPLE',
-    circuitBreakerFactory,
-    circuitBreakerFactory.deploy,
+    'STRATEGIES.TEMPLE_BASE_STRATEGY.ADDRESS',
+    templeTokenBaseFactory,
+    templeTokenBaseFactory.deploy,
     await owner.getAddress(),
     await owner.getAddress(),
-    60*60*26, // 26 hours
-    13, // no of buckets
-    ethers.utils.parseEther("100000"), // cap per bucket
+    "TempleBaseStrategy",
+    TEMPLE_V2_ADDRESSES.TREASURY_RESERVES_VAULT.ADDRESS,
+    TEMPLE_V2_ADDRESSES.CORE.TEMPLE_TOKEN
   )
 
 }

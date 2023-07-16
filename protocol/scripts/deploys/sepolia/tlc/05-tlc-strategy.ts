@@ -1,29 +1,29 @@
 import '@nomiclabs/hardhat-ethers';
 import { ethers } from 'hardhat';
-import { TempleTokenBaseStrategy__factory } from '../../../../typechain';
+import { TlcStrategy__factory } from '../../../../typechain';
 import {
   deployAndMine,
   ensureExpectedEnvvars,
 } from '../../helpers';
-import { getDeployedContracts } from './contract-addresses';
+import { getDeployedContracts } from '../contract-addresses';
 
 async function main() {
   ensureExpectedEnvvars();
   const [owner] = await ethers.getSigners();
-  const TEMPLE_V2_DEPLOYED = getDeployedContracts();
+  const TEMPLE_V2_ADDRESSES = getDeployedContracts();
 
-  const templeTokenBaseFactory = new TempleTokenBaseStrategy__factory(owner);
+  const tlcStrategyFactory = new TlcStrategy__factory(owner);
   await deployAndMine(
-    'TEMPLE_BASE_STRATEGY',
-    templeTokenBaseFactory,
-    templeTokenBaseFactory.deploy,
+    'STRATEGIES.TLC_STRATEGY.ADDRESS',
+    tlcStrategyFactory,
+    tlcStrategyFactory.deploy,
     await owner.getAddress(),
     await owner.getAddress(),
-    "TempleBaseStrategy",
-    TEMPLE_V2_DEPLOYED.TREASURY_RESERVES_VAULT.ADDRESS,
-    TEMPLE_V2_DEPLOYED.CORE.TEMPLE_TOKEN
+    "TlcStrategy",
+    TEMPLE_V2_ADDRESSES.TREASURY_RESERVES_VAULT.ADDRESS,
+    TEMPLE_V2_ADDRESSES.TEMPLE_LINE_OF_CREDIT.ADDRESS,
+    TEMPLE_V2_ADDRESSES.EXTERNAL.MAKER_DAO.DAI_TOKEN
   )
-
 }
 
 // We recommend this pattern to be able to use async/await everywhere

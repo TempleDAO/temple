@@ -1,27 +1,26 @@
 import '@nomiclabs/hardhat-ethers';
 import { ethers } from 'hardhat';
-import { TempleDebtToken__factory } from '../../../../typechain';
+import { TempleCircuitBreakerAllUsersPerPeriod__factory } from '../../../../typechain';
 import {
   deployAndMine,
   ensureExpectedEnvvars,
 } from '../../helpers';
-import { getDeployedContracts } from '../sepolia/contract-addresses';
+import { getDeployedContracts } from '../contract-addresses';
 
 async function main() {
   ensureExpectedEnvvars();
   const [owner] = await ethers.getSigners();
-  const TEMPLE_V2_DEPLOYED = getDeployedContracts();
 
-  const dTempleDebtTokenFactory = new TempleDebtToken__factory(owner);
+  const circuitBreakerFactory = new TempleCircuitBreakerAllUsersPerPeriod__factory(owner);
   await deployAndMine(
-    'TRV_DTEMPLE',
-    dTempleDebtTokenFactory,
-    dTempleDebtTokenFactory.deploy,
-    "Temple Debt TEMPLE",
-    "dTEMPLE",
+    'TEMPLE_LINE_OF_CREDIT.CIRCUIT_BREAKERS.DAI',
+    circuitBreakerFactory,
+    circuitBreakerFactory.deploy,
     await owner.getAddress(),
     await owner.getAddress(),
-    ethers.utils.parseEther("0"), // 0% IR
+    60*60*26, // 26 hours
+    13, // no of buckets
+    ethers.utils.parseEther("100000"), // cap per bucket
   )
 
 }

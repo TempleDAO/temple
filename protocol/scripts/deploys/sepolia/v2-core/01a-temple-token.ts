@@ -1,25 +1,18 @@
 import '@nomiclabs/hardhat-ethers';
 import { ethers } from 'hardhat';
-import { FakeERC20__factory } from '../../../../typechain';
+import { TempleERC20Token__factory } from '../../../../typechain';
 import {
   deployAndMine,
   ensureExpectedEnvvars,
 } from '../../helpers';
-import { zeroAddress } from 'ethereumjs-util';
 
 async function main() {
   ensureExpectedEnvvars();
   const [owner] = await ethers.getSigners();
 
-  const daiTokenFactory = new FakeERC20__factory(owner);
+  const templeFactory = new TempleERC20Token__factory(owner);
   await deployAndMine(
-    'DAI',
-    daiTokenFactory,
-    daiTokenFactory.deploy,
-    "Dai stablecoin",
-    "DAI",
-    zeroAddress(), // initial account
-    0, // initial balance
+    'CORE.TEMPLE_TOKEN', templeFactory, templeFactory.deploy,
   )
 
 }

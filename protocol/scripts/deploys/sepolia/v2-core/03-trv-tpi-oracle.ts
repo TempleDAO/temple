@@ -1,25 +1,26 @@
 import '@nomiclabs/hardhat-ethers';
 import { ethers } from 'hardhat';
-import { TreasuryReservesVault__factory } from '../../../../typechain';
+import { TreasuryPriceIndexOracle__factory } from '../../../../typechain';
 import {
   deployAndMine,
   ensureExpectedEnvvars,
 } from '../../helpers';
-import { getDeployedContracts } from './contract-addresses';
+import { getDeployedContracts } from '../contract-addresses';
 
 async function main() {
   ensureExpectedEnvvars();
   const [owner] = await ethers.getSigners();
-  const TEMPLE_V2_DEPLOYED = getDeployedContracts();
 
-  const treasuryReservesVaultFactory = new TreasuryReservesVault__factory(owner);
+  const treasuryPriceIndexOracle = new TreasuryPriceIndexOracle__factory(owner);
   await deployAndMine(
-    'TREASURY_RESERVES_VAULT',
-    treasuryReservesVaultFactory,
-    treasuryReservesVaultFactory.deploy,
+    'CORE.TREASURY_RESERVES_VAULT.TPI_ORACLE',
+    treasuryPriceIndexOracle,
+    treasuryPriceIndexOracle.deploy,
     await owner.getAddress(),
     await owner.getAddress(),
-    TEMPLE_V2_DEPLOYED.TREASURY_RESERVES_VAULT.TPI_ORACLE
+    ethers.utils.parseEther("1.025"), // ~1.025 TPI at deployment date
+    ethers.utils.parseEther("0.05"), // max treasury price index delta
+    300 // cooldown
   )
 
 }

@@ -1,29 +1,26 @@
 import '@nomiclabs/hardhat-ethers';
 import { ethers } from 'hardhat';
-import { TempleDebtToken__factory } from '../../../../typechain';
+import { TempleCircuitBreakerAllUsersPerPeriod__factory } from '../../../../typechain';
 import {
   deployAndMine,
   ensureExpectedEnvvars,
 } from '../../helpers';
-import { getDeployedContracts } from '../sepolia/contract-addresses';
 
 async function main() {
   ensureExpectedEnvvars();
   const [owner] = await ethers.getSigners();
-  const TEMPLE_V2_DEPLOYED = getDeployedContracts();
 
-  const dUsdDebtTokenFactory = new TempleDebtToken__factory(owner);
+  const circuitBreakerFactory = new TempleCircuitBreakerAllUsersPerPeriod__factory(owner);
   await deployAndMine(
-    'TRV_DUSD',
-    dUsdDebtTokenFactory,
-    dUsdDebtTokenFactory.deploy,
-    "Temple Debt USD",
-    "dUSD",
+    'STRATEGIES.RAMOS_STRATEGY.CIRCUIT_BREAKERS.TEMPLE',
+    circuitBreakerFactory,
+    circuitBreakerFactory.deploy,
     await owner.getAddress(),
     await owner.getAddress(),
-    ethers.utils.parseEther("0.034304803691990293"), // 34.9% APR or ~34.304%APY
-  )
-
+    60*60*26, // 26 hours
+    13, // no of buckets
+    ethers.utils.parseEther("50000000"), // cap per bucket
+  );
 }
 
 // We recommend this pattern to be able to use async/await everywhere

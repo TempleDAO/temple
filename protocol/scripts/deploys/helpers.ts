@@ -562,6 +562,7 @@ const expectedEnvvars: { [key: string]: string[] } = {
   gnosisChiado: ['GNOSIS_CHIADO_ADDRESS_PRIVATE_KEY', 'GNOSIS_CHIADO_RPC_URL'],
   polygonMumbai: ['MUMBAI_ADDRESS_PRIVATE_KEY', 'MUMBAI_RPC_URL'],
   sepolia: ['SEPOLIA_ADDRESS_PRIVATE_KEY', 'SEPOLIA_RPC_URL'],
+  anvil: [],
   localhost: [],
 };
 
@@ -622,7 +623,7 @@ export async function setExplicitAccess(contract: Contract, allowedCaller: strin
             allowed: value
         }
     });
-    return await contract.setExplicitAccess(allowedCaller, access);
+    return await mine(contract.setExplicitAccess(allowedCaller, access));
 }
 
 const { AddressZero } = ethers.constants;

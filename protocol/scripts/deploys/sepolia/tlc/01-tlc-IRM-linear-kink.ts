@@ -5,16 +5,15 @@ import {
   deployAndMine,
   ensureExpectedEnvvars,
 } from '../../helpers';
-import { getDeployedContracts } from './contract-addresses';
+import { getDeployedContracts } from '../contract-addresses';
 
 async function main() {
   ensureExpectedEnvvars();
   const [owner] = await ethers.getSigners();
-  const TEMPLE_V2_DEPLOYED = getDeployedContracts();
 
   const linearKinkIRMFactory = new LinearWithKinkInterestRateModel__factory(owner);
   await deployAndMine(
-    'TLC_LINEAR_KINK_IRM',
+    'TEMPLE_LINE_OF_CREDIT.INTEREST_RATE_MODELS.LINEAR_WITH_KINK',
     linearKinkIRMFactory,
     linearKinkIRMFactory.deploy,
     await owner.getAddress(),

@@ -1,6 +1,6 @@
 import '@nomiclabs/hardhat-ethers';
 import { ethers } from 'hardhat';
-import { TempleERC20Token__factory } from '../../../../typechain';
+import { TempleCircuitBreakerAllUsersPerPeriod__factory } from '../../../../typechain';
 import {
   deployAndMine,
   ensureExpectedEnvvars,
@@ -10,11 +10,17 @@ async function main() {
   ensureExpectedEnvvars();
   const [owner] = await ethers.getSigners();
 
-  const templeFactory = new TempleERC20Token__factory(owner);
+  const circuitBreakerFactory = new TempleCircuitBreakerAllUsersPerPeriod__factory(owner);
   await deployAndMine(
-    'TEMPLE', templeFactory, templeFactory.deploy,
-  )
-
+    'STRATEGIES.RAMOS_STRATEGY.CIRCUIT_BREAKERS.DAI',
+    circuitBreakerFactory,
+    circuitBreakerFactory.deploy,
+    await owner.getAddress(),
+    await owner.getAddress(),
+    60*60*26, // 26 hours
+    13, // no of buckets
+    ethers.utils.parseEther("50000000"), // cap per bucket
+  );
 }
 
 // We recommend this pattern to be able to use async/await everywhere
