@@ -120,7 +120,7 @@ interface ITempleLineOfCredit is ITlcDataTypes, ITlcEventsAndErrors {
      * - When users repay, the DAI is repaid to the TRV 
      *      (reducing the dUSD debt of the TlcStrategy)
      * - When there is a liquidation, the seized Temple collateral is paid to the TRV
-     *      (reducing the dTEMPLE debt of the TlcStrategy)
+     *      (reducing the dUSD debt of the TlcStrategy)
      */
     function treasuryReservesVault() external view returns (ITreasuryReservesVault);
 

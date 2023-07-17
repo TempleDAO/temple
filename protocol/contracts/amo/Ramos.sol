@@ -74,7 +74,7 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
     /// @notice The Treasury Price Index (TPI) Oracle
     ITreasuryPriceIndexOracle public override tpiOracle;
 
-    /// @notice The vault from where to borrow and repay the Protocol Token
+    /// @notice The vault from where to borrow and repay the Protocol & Quote Token
     IRamosTokenVault public override tokenVault;
 
     /// @notice The percentage bounds (in bps) beyond which to rebalance up or down
@@ -180,7 +180,7 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
     }
 
     /**
-     * @notice Set the Treasury Price Index (TPI) Oracle
+     * @notice Set the token vault - where to borrow and repay the Protocol & Quote Tokens
      */
     function setTokenVault(address vault) external override onlyElevatedAccess {
         emit TokenVaultSet(vault);

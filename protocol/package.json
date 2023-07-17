@@ -6,6 +6,7 @@
   "author": "templeDOA",
   "license": "AGPL-3.0-or-later",
   "devDependencies": {
+    "@balancer-labs/sdk": "^1.1.2",
     "@ethersproject/bytes": "^5.7.0",
     "@gnosis.pm/safe-contracts": "^1.3.0",
     "@nomicfoundation/hardhat-chai-matchers": "^1.0.4",
