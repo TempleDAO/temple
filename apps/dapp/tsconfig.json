@@ -21,8 +21,7 @@
       "types/*": ["./types/*"],
       "constants/*": ["./constants/*"],
     },
-    "allowJs": false
   },
-  "include": ["**/*.ts", "**/*.tsx","**/*.json"],
+  "include": ["**/*.ts", "**/*.tsx","**/*.json", "api/ping.js", "api/geoblock.js"],
   "exclude": ["node_modules", "./dist/"]
 }
