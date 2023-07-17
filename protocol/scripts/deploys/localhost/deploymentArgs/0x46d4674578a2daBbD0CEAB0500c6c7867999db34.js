@@ -1,4 +1,4 @@
-// localhost: TRV_DUSD=0x46d4674578a2daBbD0CEAB0500c6c7867999db34
+// localhost: CORE.TREASURY_RESERVES_VAULT.D_USD_TOKEN=0x46d4674578a2daBbD0CEAB0500c6c7867999db34
 // yarn hardhat verify --network localhost 0x46d4674578a2daBbD0CEAB0500c6c7867999db34 --constructor-args scripts/deploys/localhost/deploymentArgs/0x46d4674578a2daBbD0CEAB0500c6c7867999db34.js
 module.exports = [
   "Temple Debt USD",

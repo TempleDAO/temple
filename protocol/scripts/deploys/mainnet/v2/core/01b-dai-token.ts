@@ -1,10 +1,10 @@
 import '@nomiclabs/hardhat-ethers';
 import { ethers } from 'hardhat';
-import { FakeERC20__factory } from '../../../../typechain';
+import { FakeERC20__factory } from '../../../../../typechain';
 import {
   deployAndMine,
   ensureExpectedEnvvars,
-} from '../../helpers';
+} from '../../../helpers';
 import { zeroAddress } from 'ethereumjs-util';
 
 async function main() {
@@ -13,7 +13,7 @@ async function main() {
 
   const daiTokenFactory = new FakeERC20__factory(owner);
   await deployAndMine(
-    'DAI',
+    'EXTERNAL.MAKER_DAO.DAI_TOKEN',
     daiTokenFactory,
     daiTokenFactory.deploy,
     "Dai stablecoin",

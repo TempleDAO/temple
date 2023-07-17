@@ -1,28 +1,28 @@
 import '@nomiclabs/hardhat-ethers';
 import { ethers } from 'hardhat';
-import { TlcStrategy__factory } from '../../../../typechain';
+import { TlcStrategy__factory } from '../../../../../typechain';
 import {
   deployAndMine,
   ensureExpectedEnvvars,
-} from '../../helpers';
-import { getDeployedContracts } from './contract-addresses';
+} from '../../../helpers';
+import { getDeployedContracts } from '../contract-addresses';
 
 async function main() {
   ensureExpectedEnvvars();
   const [owner] = await ethers.getSigners();
-  const TEMPLE_V2_DEPLOYED = getDeployedContracts();
+  const TEMPLE_V2_ADDRESSES = getDeployedContracts();
 
   const tlcStrategyFactory = new TlcStrategy__factory(owner);
   await deployAndMine(
-    'TLC_STRATEGY',
+    'STRATEGIES.TLC_STRATEGY.ADDRESS',
     tlcStrategyFactory,
     tlcStrategyFactory.deploy,
     await owner.getAddress(),
     await owner.getAddress(),
     "TlcStrategy",
-    TEMPLE_V2_DEPLOYED.TREASURY_RESERVES_VAULT.ADDRESS,
-    TEMPLE_V2_DEPLOYED.TEMPLE_LINE_OF_CREDIT.ADDRESS,
-    TEMPLE_V2_DEPLOYED.EXTERNAL.MAKER_DAO.DAI_TOKEN
+    TEMPLE_V2_ADDRESSES.TREASURY_RESERVES_VAULT.ADDRESS,
+    TEMPLE_V2_ADDRESSES.TEMPLE_LINE_OF_CREDIT.ADDRESS,
+    TEMPLE_V2_ADDRESSES.EXTERNAL.MAKER_DAO.DAI_TOKEN
   )
 }
 

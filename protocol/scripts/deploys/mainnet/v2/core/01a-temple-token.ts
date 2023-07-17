@@ -1,10 +1,10 @@
 import '@nomiclabs/hardhat-ethers';
 import { ethers } from 'hardhat';
-import { TempleERC20Token__factory } from '../../../../typechain';
+import { TempleERC20Token__factory } from '../../../../../typechain';
 import {
   deployAndMine,
   ensureExpectedEnvvars,
-} from '../../helpers';
+} from '../../../helpers';
 
 async function main() {
   ensureExpectedEnvvars();
@@ -12,7 +12,7 @@ async function main() {
 
   const templeFactory = new TempleERC20Token__factory(owner);
   await deployAndMine(
-    'TEMPLE', templeFactory, templeFactory.deploy,
+    'CORE.TEMPLE_TOKEN', templeFactory, templeFactory.deploy,
   )
 
 }

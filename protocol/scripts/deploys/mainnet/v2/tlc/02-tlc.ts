@@ -1,29 +1,29 @@
 import '@nomiclabs/hardhat-ethers';
 import { ethers } from 'hardhat';
-import { TempleLineOfCredit__factory } from '../../../../typechain';
+import { TempleLineOfCredit__factory } from '../../../../../typechain';
 import {
   deployAndMine,
   ensureExpectedEnvvars,
-} from '../../helpers';
-import { getDeployedContracts } from './contract-addresses';
+} from '../../../helpers';
+import { getDeployedContracts } from '../contract-addresses';
 
 async function main() {
   ensureExpectedEnvvars();
   const [owner] = await ethers.getSigners();
-  const TEMPLE_V2_DEPLOYED = getDeployedContracts();
+  const TEMPLE_V2_ADDRESSES = getDeployedContracts();
 
   const tlcFactory = new TempleLineOfCredit__factory(owner);
   await deployAndMine(
-    'TEMPLE_LINE_OF_CREDIT',
+    'TEMPLE_LINE_OF_CREDIT.ADDRESS',
     tlcFactory,
     tlcFactory.deploy,
     await owner.getAddress(),
     await owner.getAddress(),
-    TEMPLE_V2_DEPLOYED.CORE.CIRCUIT_BREAKER_PROXY,
-    TEMPLE_V2_DEPLOYED.CORE.TEMPLE_TOKEN,
-    TEMPLE_V2_DEPLOYED.EXTERNAL.MAKER_DAO.DAI_TOKEN,
+    TEMPLE_V2_ADDRESSES.CORE.CIRCUIT_BREAKER_PROXY,
+    TEMPLE_V2_ADDRESSES.CORE.TEMPLE_TOKEN,
+    TEMPLE_V2_ADDRESSES.EXTERNAL.MAKER_DAO.DAI_TOKEN,
     ethers.utils.parseEther('0.85'), // 85% max LTV ratio
-    TEMPLE_V2_DEPLOYED.TEMPLE_LINE_OF_CREDIT.INTEREST_RATE_MODELS.LINEAR_WITH_KINK
+    TEMPLE_V2_ADDRESSES.TEMPLE_LINE_OF_CREDIT.INTEREST_RATE_MODELS.LINEAR_WITH_KINK
   )
 
 }

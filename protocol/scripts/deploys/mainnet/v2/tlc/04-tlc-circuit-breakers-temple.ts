@@ -1,20 +1,19 @@
 import '@nomiclabs/hardhat-ethers';
 import { ethers } from 'hardhat';
-import { TempleCircuitBreakerAllUsersPerPeriod__factory } from '../../../../typechain';
+import { TempleCircuitBreakerAllUsersPerPeriod__factory } from '../../../../../typechain';
 import {
   deployAndMine,
   ensureExpectedEnvvars,
-} from '../../helpers';
-import { getDeployedContracts } from './contract-addresses';
+} from '../../../helpers';
+import { getDeployedContracts } from '../contract-addresses';
 
 async function main() {
   ensureExpectedEnvvars();
   const [owner] = await ethers.getSigners();
-  const TEMPLE_V2_DEPLOYED = getDeployedContracts();
 
   const circuitBreakerFactory = new TempleCircuitBreakerAllUsersPerPeriod__factory(owner);
   await deployAndMine(
-    'TLC_CIRCUIT_BREAKER_TEMPLE',
+    'TEMPLE_LINE_OF_CREDIT.CIRCUIT_BREAKERS.TEMPLE',
     circuitBreakerFactory,
     circuitBreakerFactory.deploy,
     await owner.getAddress(),

@@ -1,24 +1,25 @@
 import '@nomiclabs/hardhat-ethers';
 import { ethers } from 'hardhat';
-import { TempleCircuitBreakerProxy__factory } from '../../../../typechain';
+import { TreasuryReservesVault__factory } from '../../../../../typechain';
 import {
   deployAndMine,
   ensureExpectedEnvvars,
-} from '../../helpers';
-import { getDeployedContracts } from '../sepolia/contract-addresses';
+} from '../../../helpers';
+import { getDeployedContracts } from '../contract-addresses';
 
 async function main() {
   ensureExpectedEnvvars();
   const [owner] = await ethers.getSigners();
-  const TEMPLE_V2_DEPLOYED = getDeployedContracts();
+  const TEMPLE_V2_ADDRESSES = getDeployedContracts();
 
-  const templeCircuitBreakerProxyFactory = new TempleCircuitBreakerProxy__factory(owner);
+  const treasuryReservesVaultFactory = new TreasuryReservesVault__factory(owner);
   await deployAndMine(
-    'TEMPLE_CIRCUIT_BREAKER',
-    templeCircuitBreakerProxyFactory,
-    templeCircuitBreakerProxyFactory.deploy,
+    'CORE.TREASURY_RESERVES_VAULT.ADDRESS',
+    treasuryReservesVaultFactory,
+    treasuryReservesVaultFactory.deploy,
     await owner.getAddress(),
     await owner.getAddress(),
+    TEMPLE_V2_ADDRESSES.TREASURY_RESERVES_VAULT.TPI_ORACLE
   )
 
 }

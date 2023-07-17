@@ -1,18 +1,18 @@
 import '@nomiclabs/hardhat-ethers';
 import { ethers } from 'hardhat';
-import { DsrBaseStrategyTestnet__factory } from '../../../../typechain';
+import { DsrBaseStrategy__factory } from '../../../../../typechain';
 import {
   deployAndMine,
   ensureExpectedEnvvars,
-} from '../../helpers';
-import { getDeployedContracts } from './contract-addresses';
+} from '../../../helpers';
+import { getDeployedContracts } from '../../../v2/sepolia/contract-addresses';
 
 async function main() {
   ensureExpectedEnvvars();
   const [owner] = await ethers.getSigners();
-  const TEMPLE_V2_DEPLOYED = getDeployedContracts();
+  const TEMPLE_V2_ADDRESSES = getDeployedContracts();
 
-  const dsrBaseStrategyFactory = new DsrBaseStrategyTestnet__factory(owner);
+  const dsrBaseStrategyFactory = new DsrBaseStrategy__factory(owner);
   await deployAndMine(
     'DSR_BASE_STRATEGY',
     dsrBaseStrategyFactory,
@@ -20,9 +20,10 @@ async function main() {
     await owner.getAddress(),
     await owner.getAddress(),
     "DsrBaseStrategy",
-    TEMPLE_V2_DEPLOYED.TREASURY_RESERVES_VAULT.ADDRESS,
-    TEMPLE_V2_DEPLOYED.EXTERNAL.MAKER_DAO.DAI_TOKEN,
-    ethers.utils.parseEther('0.0349')
+    TEMPLE_V2_ADDRESSES.TREASURY_RESERVES_VAULT.ADDRESS,
+    TEMPLE_V2_ADDRESSES.EXTERNAL.MAKER_DAO.DAI_TOKEN,
+    TEMPLE_V2_ADDRESSES.EXTERNAL.MAKER_DAO.DAI_JOIN,
+    TEMPLE_V2_ADDRESSES.EXTERNAL.MAKER_DAO.POT
   )
 
 }

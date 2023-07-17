@@ -1,20 +1,19 @@
 import '@nomiclabs/hardhat-ethers';
 import { ethers } from 'hardhat';
-import { TreasuryPriceIndexOracle__factory } from '../../../../typechain';
+import { TreasuryPriceIndexOracle__factory } from '../../../../../typechain';
 import {
   deployAndMine,
   ensureExpectedEnvvars,
-} from '../../helpers';
-import { getDeployedContracts } from './contract-addresses';
+} from '../../../helpers';
+import { getDeployedContracts } from '../contract-addresses';
 
 async function main() {
   ensureExpectedEnvvars();
   const [owner] = await ethers.getSigners();
-  const TEMPLE_V2_DEPLOYED = getDeployedContracts();
 
   const treasuryPriceIndexOracle = new TreasuryPriceIndexOracle__factory(owner);
   await deployAndMine(
-    'TRV_TREASURY_PRICE_INDEX_ORACLE',
+    'CORE.TREASURY_RESERVES_VAULT.TPI_ORACLE',
     treasuryPriceIndexOracle,
     treasuryPriceIndexOracle.deploy,
     await owner.getAddress(),
