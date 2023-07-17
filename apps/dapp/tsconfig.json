@@ -20,8 +20,9 @@
       "data/*": ["./data/*"],
       "types/*": ["./types/*"],
       "constants/*": ["./constants/*"],
-    }
+    },
+    "allowJs": false
   },
   "include": ["**/*.ts", "**/*.tsx","**/*.json"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "./dist/"]
 }
