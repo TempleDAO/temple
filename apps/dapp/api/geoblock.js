@@ -1,3 +1,5 @@
+const BLOCKED_ISO_COUNTRIES = ['US', 'CN', 'RU', 'KP', 'IR'];
+
 export default function handler(request, response) {
   console.log(request.headers);
   console.log(request.headers['x-vercel-ip-country']);
