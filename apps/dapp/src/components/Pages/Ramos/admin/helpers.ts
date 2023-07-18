@@ -1,6 +1,6 @@
 import environmentConfig from 'constants/env';
 import { BigNumber, ethers } from 'ethers';
-import type { AMO__IBalancerVault, RAMOS } from 'types/typechain';
+import type { IBalancerVault, Ramos } from 'types/typechain';
 import { DBN_ONE_HUNDRED, DBN_TEN_THOUSAND, DecimalBigNumber } from 'utils/DecimalBigNumber';
 
 export enum WeightedPoolExitKind {
@@ -21,7 +21,7 @@ export const handleBlur = (value: number | '', minValue: number, maxValue: numbe
   return value;
 };
 
-export const formatJoinRequestTuple = (request?: AMO__IBalancerVault.JoinPoolRequestStruct): string => {
+export const formatJoinRequestTuple = (request?: IBalancerVault.JoinPoolRequestStruct): string => {
   if (request) {
     return `[[${request.assets.map((asset) => `"${asset}"`).join(',')}],[${request.maxAmountsIn
       .map((amount) => `"${amount}"`)
@@ -30,7 +30,7 @@ export const formatJoinRequestTuple = (request?: AMO__IBalancerVault.JoinPoolReq
   return '';
 };
 
-export const formatExitRequestTuple = (request?: AMO__IBalancerVault.ExitPoolRequestStruct): string => {
+export const formatExitRequestTuple = (request?: IBalancerVault.ExitPoolRequestStruct): string => {
   if (request) {
     return `[[${request?.assets.map((asset) => `"${asset}"`).join(',')}],[${request?.minAmountsOut
       .map((amount) => `"${amount}"`)
@@ -51,7 +51,7 @@ export const getBpsPercentageFromTpf = (tpf: DecimalBigNumber, templePrice: Deci
   return percentageDiff.mul(DBN_ONE_HUNDRED);
 };
 
-const limitBasisPoints = async (basisPoints: DecimalBigNumber, ramos: RAMOS, percentageOfGapToClose: number) => {
+const limitBasisPoints = async (basisPoints: DecimalBigNumber, ramos: Ramos, percentageOfGapToClose: number) => {
   const postRebalancePriceImpactBasisPoints = DecimalBigNumber.fromBN(await ramos.postRebalanceSlippage(), 0);
   // adjust bps for user-selected % of gap to close
   basisPoints = basisPoints.mul(DecimalBigNumber.parseUnits(`${percentageOfGapToClose / 100}`, 18));
@@ -63,7 +63,7 @@ const limitBasisPoints = async (basisPoints: DecimalBigNumber, ramos: RAMOS, per
 export const calculateTargetPriceDown = async (
   currentPrice: DecimalBigNumber,
   basisPoints: DecimalBigNumber,
-  ramos: RAMOS,
+  ramos: Ramos,
   percentageOfGapToClose: number
 ): Promise<DecimalBigNumber> => {
   const limitedBasisPoints = await limitBasisPoints(basisPoints, ramos, percentageOfGapToClose);
@@ -75,7 +75,7 @@ export const calculateTargetPriceDown = async (
 export const calculateTargetPriceUp = async (
   currentPrice: DecimalBigNumber,
   basisPoints: DecimalBigNumber,
-  ramos: RAMOS,
+  ramos: Ramos,
   percentageOfGapToClose: number
 ): Promise<DecimalBigNumber> => {
   const limitedBasisPoints = await limitBasisPoints(basisPoints, ramos, percentageOfGapToClose);
@@ -84,10 +84,7 @@ export const calculateTargetPriceUp = async (
   return currentPrice.add(currentPrice.mul(adjustedBps));
 };
 
-export const makeJoinRequest = (
-  tokens: string[],
-  amountsIn: BigNumber[]
-): AMO__IBalancerVault.JoinPoolRequestStruct => {
+export const makeJoinRequest = (tokens: string[], amountsIn: BigNumber[]): IBalancerVault.JoinPoolRequestStruct => {
   // 1 === WeightedJoinPoolKind.EXACT_TOKENS_IN_FOR_BPT_OUT
   // https://dev.balancer.fi/resources/joins-and-exits/pool-joins
 
@@ -106,7 +103,7 @@ export const makeExitRequest = (
   amountsOut: BigNumber[],
   bptAmount: BigNumber,
   exitType: WeightedPoolExitKind
-): AMO__IBalancerVault.ExitPoolRequestStruct => {
+): IBalancerVault.ExitPoolRequestStruct => {
   let userData = '';
 
   switch (exitType) {

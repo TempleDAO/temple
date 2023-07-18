@@ -20,8 +20,8 @@
       "data/*": ["./data/*"],
       "types/*": ["./types/*"],
       "constants/*": ["./constants/*"],
-    }
+    },
   },
-  "include": ["**/*.ts", "**/*.tsx","**/*.json"],
-  "exclude": ["node_modules"]
+  "include": ["**/*.ts", "**/*.tsx","**/*.json", "api/ping.js", "api/geoblock.js"],
+  "exclude": ["node_modules", "./dist/"]
 }
