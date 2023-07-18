@@ -42,7 +42,7 @@ export const Account = () => {
   }
 
   if (isBlocked) {
-    return <ConnectButton disabled={true} label="Restricted Jurisdiction" isSmall isActive isUppercase role="button" />;
+    return <ConnectButton disabled label="Restricted Jurisdiction" isSmall isActive isUppercase role="button" />;
   }
 
   if (address) {
