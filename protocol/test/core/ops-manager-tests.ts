@@ -20,6 +20,7 @@ import {
 } from "../../typechain";
 import { expect } from "chai";
 import { fail } from "assert";
+import { zeroAddress } from "ethereumjs-util";
 
 describe("Temple Core Ops Manager", async () => {
   let opsManager: OpsManager;
@@ -68,8 +69,8 @@ describe("Temple Core Ops Manager", async () => {
       joiningFee.address
     );
 
-    fxsToken = await new FakeERC20__factory(owner).deploy("FXS", "FXS");
-    crvToken = await new FakeERC20__factory(owner).deploy("CRV", "CRV");
+    fxsToken = await new FakeERC20__factory(owner).deploy("FXS", "FXS", zeroAddress(), 0);
+    crvToken = await new FakeERC20__factory(owner).deploy("CRV", "CRV", zeroAddress(), 0);
   });
 
   it("Create a new exposure", async () => {

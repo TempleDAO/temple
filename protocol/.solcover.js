@@ -3,4 +3,4 @@ module.exports = {
         'util/ABDKMath',  // ABDKMath has issues compiling in solcover
         'fakes',          // Ignore fakes
     ]
-  };
+};

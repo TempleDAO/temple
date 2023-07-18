@@ -1,9 +1,11 @@
-pragma solidity 0.8.17;
+pragma solidity 0.8.18;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
-import {Test, StdChains} from "forge-std/Test.sol";
-import {Operators} from "contracts/admin/Operators.sol";
+import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { Test, StdChains } from "forge-std/Test.sol";
+import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
+import { ITempleElevatedAccess } from "contracts/interfaces/v2/access/ITempleElevatedAccess.sol";
 
 /// @notice A forge test base class which can setup to use a fork, deploy UUPS proxies, etc
 abstract contract TempleTest is Test {
@@ -12,12 +14,21 @@ abstract contract TempleTest is Test {
     StdChains.Chain internal chain;
 
     address public unauthorizedUser = makeAddr("unauthorizedUser");
+    address public alice = makeAddr("alice");
+    address public bob = makeAddr("bob");
+    address public operator = makeAddr("operator");
+    address public executor = makeAddr("executor");
+    address public rescuer = makeAddr("rescuer");
 
     // Fork using .env $<CHAIN_ALIAS>_RPC_URL (or the default RPC URL), and a specified blockNumber.
     function fork(string memory chainAlias, uint256 _blockNumber) internal {
         blockNumber = _blockNumber;
         chain = getChain(chainAlias);
         forkId = vm.createSelectFork(chain.rpcUrl, _blockNumber);
+    }
+
+    function dealAdditional(IERC20 token, address to, uint256 additionalAmount) internal {
+        deal(address(token), to, token.balanceOf(to) + additionalAmount, true);
     }
 
     /// @dev Deploy a new UUPS Proxy, given an implementation.
@@ -28,13 +39,33 @@ abstract contract TempleTest is Test {
         return address(new ERC1967Proxy(_implementation, ""));
     }
 
-    function expectOnlyOperators() internal {
+    function expectElevatedAccess() internal {
         vm.prank(unauthorizedUser);
-        vm.expectRevert(abi.encodeWithSelector(Operators.OnlyOperators.selector, unauthorizedUser));
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
     }
 
-    function expectOnlyOwner() internal {
-        vm.prank(unauthorizedUser);
-        vm.expectRevert("Ownable: caller is not the owner");
+    function setExplicitAccess(
+        ITempleElevatedAccess theContract, 
+        address allowedCaller, 
+        bytes4 fnSelector, 
+        bool value
+    ) internal {
+        ITempleElevatedAccess.ExplicitAccess[] memory access = new ITempleElevatedAccess.ExplicitAccess[](1);
+        access[0] = ITempleElevatedAccess.ExplicitAccess(fnSelector, value);
+        theContract.setExplicitAccess(allowedCaller, access);
     }
+
+    function setExplicitAccess(
+        ITempleElevatedAccess theContract, 
+        address allowedCaller, 
+        bytes4 fnSelector1, 
+        bytes4 fnSelector2, 
+        bool value
+    ) internal {
+        ITempleElevatedAccess.ExplicitAccess[] memory access = new ITempleElevatedAccess.ExplicitAccess[](2);
+        access[0] = ITempleElevatedAccess.ExplicitAccess(fnSelector1, value);
+        access[1] = ITempleElevatedAccess.ExplicitAccess(fnSelector2, value);
+        theContract.setExplicitAccess(allowedCaller, access);
+    }
+
 }

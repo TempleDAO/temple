@@ -8,6 +8,7 @@ import {
   ensureExpectedEnvvars,
   mine,
 } from '../helpers';
+import { zeroAddress } from 'ethereumjs-util';
 
 async function main() {
   ensureExpectedEnvvars();
@@ -24,17 +25,17 @@ async function main() {
 
   const daiFactory = new FakeERC20__factory(owner);
   const DAI: FakeERC20 = await deployAndMine(
-    'DAI', daiFactory, daiFactory.deploy, 'DAI','DAI'
+    'DAI', daiFactory, daiFactory.deploy, 'DAI','DAI', zeroAddress(), 0
   )
 
   const fraxFactory = new FakeERC20__factory(owner);
   const FRAX: FakeERC20 = await deployAndMine(
-    'FRAX', daiFactory, daiFactory.deploy, 'FRAX','FRAX'
+    'FRAX', daiFactory, daiFactory.deploy, 'FRAX','FRAX', zeroAddress(), 0
   )
 
   const feiFactory = new FakeERC20__factory(owner);
   const FEI: FakeERC20 = await deployAndMine(
-    'FEI', daiFactory, daiFactory.deploy, 'FEI','FEI'
+    'FEI', daiFactory, daiFactory.deploy, 'FEI','FEI', zeroAddress(), 0
   )
 }
 

@@ -1,7 +1,7 @@
 import { ethers, network } from "hardhat";
-import { BaseContract, BigNumber, BigNumberish, Signer } from "ethers";
+import { BaseContract, BigNumber, BigNumberish, Contract, Signer } from "ethers";
 import { assert, expect } from "chai";
-import { TempleERC20Token, TempleERC20Token__factory } from "../typechain";
+import { ITempleElevatedAccess, TempleERC20Token, TempleERC20Token__factory } from "../typechain";
 import { impersonateAccount, time as timeHelpers } from "@nomicfoundation/hardhat-network-helpers";
 
 export const NULL_ADDR = "0x0000000000000000000000000000000000000000"
@@ -28,6 +28,16 @@ export async function resetFork(
 export async function impersonateSigner(address: string): Promise<Signer> {
   await impersonateAccount(address);
   return await ethers.getSigner(address);
+}
+
+export async function setExplicitAccess(contract: Contract, allowedCaller: string, fnNames: string[], value: boolean) {
+    const access: ITempleElevatedAccess.ExplicitAccessStruct[] = fnNames.map(fn => {
+        return {
+            fnSelector: contract.interface.getSighash(contract.interface.getFunction(fn)),
+            allowed: value
+        }
+    });
+    await contract.setExplicitAccess(allowedCaller, access);
 }
 
 /// deprecated, use pattern

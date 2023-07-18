@@ -1,10 +1,37 @@
 [profile.default]
-src = 'contracts'
-out = 'artifacts-foundry'
-libs = ['node_modules', 'lib']
-test = 'test/forge'
-cache_path = 'cache-foundry'
-gas_reports = ["*"]
+  optimizer = true
+  optimizer_runs = 10_000_000
+  verbosity = 3
+  src = 'contracts'
+  out = 'artifacts-foundry'
+  libs = ['node_modules', 'lib']
+  test = 'test/forge'
+  cache_path = 'cache-foundry'
+  gas_reports = ["*"]
+
+[profile.ci]
+  fuzz = { runs = 5000 }
+  invariant = { runs = 1000 }
+
+[profile.lite]
+  fuzz = { runs = 50 }
+  invariant = { runs = 10 }
+  # Speed up compilation and tests during development.
+  optimizer = false
 
 [etherscan]
-mainnet = { key = "${ETHERSCAN_MAINNET_KEY}" }
+  mainnet = { key = "${ETHERSCAN_MAINNET_KEY}" }
+
+[fuzz]
+  runs = 1000
+
+[fmt]
+  bracket_spacing = true
+  int_types = "long"
+  line_length = 120
+  multiline_func_header = "attributes_first"
+  number_underscore = "thousands"
+  quote_style = "double"
+  single_line_statement_blocks = "single"
+  tab_width = 4
+  wrap_comments = true

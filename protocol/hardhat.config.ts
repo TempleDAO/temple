@@ -70,7 +70,7 @@ module.exports = {
   solidity: {
     compilers: [
       {
-        version: '0.8.17',
+        version: '0.8.18',
         settings: {
         optimizer: {
             enabled: true,
@@ -168,12 +168,30 @@ module.exports = {
         : [],
       gasPrice: 40000000000,
     },
+    polygonMumbai: {
+        url: process.env.MUMBAI_RPC_URL || '',
+        accounts: process.env.MUMBAI_ADDRESS_PRIVATE_KEY
+            ? [process.env.MUMBAI_ADDRESS_PRIVATE_KEY]
+            : [],
+        gasPrice: 2000000000,
+    },
+    sepolia: {
+        url: process.env.SEPOLIA_RPC_URL || '',
+        accounts: process.env.SEPOLIA_ADDRESS_PRIVATE_KEY
+            ? [process.env.SEPOLIA_ADDRESS_PRIVATE_KEY]
+            : [],
+        gasPrice: 2000000000,
+    },
   },
   etherscan: {
 
     apiKey: {
       mainnet: process.env.ETHERSCAN_API_KEY,
       gnosis: process.env.GNOSISSCAN_API_KEY,
+      polygonMumbai: process.env.POLYGONSCAN_API_KEY,
+      polygon: process.env.POLYGONSCAN_API_KEY,
+      goerli: process.env.ETHERSCAN_API_KEY,
+      sepolia: process.env.ETHERSCAN_API_KEY,
     }
   },
   mocha: {

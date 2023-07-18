@@ -1,6 +1,6 @@
 import { ethers } from "hardhat";
 import { BigNumber, Signer } from "ethers";
-import { AMO__IBalancerVault, IBalancerHelpers, IERC20, IWeightPool2Tokens, TempleERC20Token } from "../../typechain";
+import { IBalancerVault, IBalancerHelpers, IERC20, IWeightPool2Tokens, TempleERC20Token } from "../../typechain";
 import amoAddresses from "./amo-constants";
 import { toAtto } from "../helpers";
 
@@ -8,7 +8,7 @@ const { TEMPLE_BB_A_USD_BALANCER_POOL_ID } = amoAddresses.mainnet.others;
 
 export async function seedTempleBbaUsdPool(
     templeToken: TempleERC20Token,
-    balancerVault: AMO__IBalancerVault,
+    balancerVault: IBalancerVault,
     balancerHelpers: IBalancerHelpers,
     signer: Signer,
     amount: BigNumber,
@@ -25,7 +25,7 @@ export async function seedTempleBbaUsdPool(
 }
 
 export async function swapDaiForBbaUsd(
-    balancerVault: AMO__IBalancerVault,
+    balancerVault: IBalancerVault,
     daiToken: IERC20,
     daiWhale: Signer,
     amount: BigNumber,
@@ -110,7 +110,7 @@ export async function swapDaiForBbaUsd(
 }
 
 export async function ownerAddLiquidity(
-    balancerVault: AMO__IBalancerVault,
+    balancerVault: IBalancerVault,
     balancerHelpers: IBalancerHelpers,
     templeToken: TempleERC20Token,
     signer: Signer,
@@ -127,7 +127,7 @@ export async function ownerAddLiquidity(
 }
 
 export async function getTempleIndexInBalancerPool(
-    balancerVault: AMO__IBalancerVault,
+    balancerVault: IBalancerVault,
     templeAddress: string
 ) {
     const [tokens, ,] = await balancerVault.getPoolTokens(TEMPLE_BB_A_USD_BALANCER_POOL_ID);
@@ -173,40 +173,41 @@ export async function getJoinPoolRequest(
 }
 
 export async function getSpotPriceScaled(
-    balancerVault: AMO__IBalancerVault,
+    balancerVault: IBalancerVault,
     weightedPool2Tokens: IWeightPool2Tokens
 ) {
-    const precision = BigNumber.from(10_000);
+    const precision = toAtto(1);
     const [, balances,] = await balancerVault.getPoolTokens(TEMPLE_BB_A_USD_BALANCER_POOL_ID);
     const normWeights = await weightedPool2Tokens.getNormalizedWeights();
     // multiply by precision to avoid rounding down
-    const currentSpotPrice = precision.mul(balances[1]).div(normWeights[1]).div(balances[0].div(normWeights[0]));
+    // 1e18 * templeWeight * stableAmount / (stableWeight * templeAmount)
+    const currentSpotPrice = precision.mul(normWeights[0]).mul(balances[1]).div(normWeights[1].mul(balances[0]));
     return currentSpotPrice;
 }
 
 export function stableLotSizeForPriceTarget(
     balances: BigNumber[],
     templeIndexInPool: number,
-    priceTarget: number // scaled
+    priceTarget: BigNumber
 ): BigNumber {
     const stableIndexInPool = templeIndexInPool == 0 ? 1 : 0;
-    const bdQuote = balances[templeIndexInPool].mul(priceTarget).div(10_000);
+    const bdQuote = balances[templeIndexInPool].mul(priceTarget).div(toAtto(1));
     return balances[stableIndexInPool].sub(bdQuote).abs();
 }
 
 export async function templeLotSizeForPriceTarget(
-    balancerVault: AMO__IBalancerVault,
+    balancerVault: IBalancerVault,
     templeIndexInPool: number,
-    priceTarget: number
+    priceTarget: BigNumber
 ): Promise<BigNumber> {
     const [, balances,] = await balancerVault.getPoolTokens(TEMPLE_BB_A_USD_BALANCER_POOL_ID);
     const stableIndexInPool = templeIndexInPool == 0 ? 1 : 0;
-    const bdDivQuoteWithFee = balances[stableIndexInPool].mul(10_000).div(BigNumber.from(priceTarget));
+    const bdDivQuoteWithFee = balances[stableIndexInPool].mul(toAtto(1)).div(BigNumber.from(priceTarget));
     return balances[templeIndexInPool].sub(bdDivQuoteWithFee).abs();
 }
 
 export async function singleSideDeposit(
-    balancerVault: AMO__IBalancerVault,
+    balancerVault: IBalancerVault,
     balancerHelpers: IBalancerHelpers,
     whale: Signer,
     amountsIn: BigNumber[],

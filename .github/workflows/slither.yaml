@@ -10,11 +10,15 @@ on:
       - ".github/workflows/slither.yaml"
 jobs:
   analyze:
-    if: ${{ false }} # Slither has an issue with ternary operators (used in RAMOS). Quite unmaintained...
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        with:
+          submodules: recursive
       
+      - name: install foundry
+        uses: foundry-rs/foundry-toolchain@v1.0.9
+
       - uses: actions/setup-python@v4
         with:
           python-version: 3.9
@@ -34,4 +38,4 @@ jobs:
         run: cd protocol && yarn
       
       - name: run slither
-        run: cd protocol && slither .
+        run: cd protocol && yarn slither-check

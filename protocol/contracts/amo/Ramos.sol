@@ -1,116 +1,142 @@
-pragma solidity ^0.8.4;
+pragma solidity 0.8.18;
 // SPDX-License-Identifier: AGPL-3.0-or-later
+// Temple (amo/Ramos.sol)
 
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { Pausable } from "@openzeppelin/contracts/security/Pausable.sol";
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
-import "./interfaces/AMO__IPoolHelper.sol";
-import "./interfaces/AMO__ITempleERC20Token.sol";
-import "./helpers/AMOCommon.sol";
-import "./interfaces/AMO__IAuraStaking.sol";
+import { IRamos } from "contracts/interfaces/amo/IRamos.sol";
+import { IRamosTokenVault } from "contracts/interfaces/amo/helpers/IRamosTokenVault.sol";
+import { ITreasuryPriceIndexOracle } from "contracts/interfaces/v2/ITreasuryPriceIndexOracle.sol";
+import { IBalancerPoolHelper } from "contracts/interfaces/amo/helpers/IBalancerPoolHelper.sol";
+import { IBalancerVault } from "contracts/interfaces/external/balancer/IBalancerVault.sol";
+import { IAuraStaking } from "contracts/interfaces/amo/IAuraStaking.sol";
+import { IBalancerBptToken } from "contracts/interfaces/external/balancer/IBalancerBptToken.sol";
+import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
+
+import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
+import { AMOCommon } from "contracts/amo/helpers/AMOCommon.sol";
+
+/* solhint-disable not-rely-on-time */
 
 /**
- * @title AMO built for 50TEMPLE-50BB-A-USD balancer pool
+ * @title AMO built for a 50/50 balancer pool
  *
- * @dev It has a  convergent price to which it trends called the TPF (Treasury Price Floor).
- * In order to accomplish this when the price is below the TPF it will single side withdraw 
- * BPTs into TEMPLE and burn them and if the price is above the TPF it will 
- * single side deposit TEMPLE into the pool to drop the spot price.
+ * @notice RAMOS rebalances the pool to trend towards the Treasury Price Index (TPI).
+ * In order to accomplish this:
+ *   1. When the price is BELOW the TPI it will either:
+ *      - Single side withdraw `protocolToken`
+ *      - Single side add `quoteToken`
+ *   2. When the price is ABOVE the TPI it will either:
+ *      - Single side add `protocolToken`
+ *      - Single side withdraw `quoteToken`
+ * Any idle BPTs (Balancer LP tokens) are deposited into Aura to earn yield.
+ * `protocolToken` can be sourced/disposed of by either having direct mint & burn rights or by
+ * pulling and sending tokens to an address.
  */
-contract RAMOS is Ownable, Pausable {
+contract Ramos is IRamos, TempleElevatedAccess, Pausable {
     using SafeERC20 for IERC20;
+    using SafeERC20 for IBalancerBptToken;
 
-    AMO__IBalancerVault public immutable balancerVault;
-    // @notice BPT token address
-    IERC20 public immutable bptToken;
-    // @notice pool helper contract
-    AMO__IPoolHelper public poolHelper;
+    /// @notice The Balancer vault singleton
+    IBalancerVault public immutable override balancerVault;
+
+    /// @notice BPT token address for this LP
+    IBalancerBptToken public immutable override bptToken;
+
+    /// @notice Balancer pool helper contract
+    IBalancerPoolHelper public override poolHelper;
     
-    // @notice AMO contract for staking into aura 
-    AMO__IAuraStaking public amoStaking;
+    /// @notice AMO contract for staking into aura 
+    IAuraStaking public immutable override amoStaking;
 
-    address public operator;
-    IERC20 public immutable temple;
-    IERC20 public immutable stable;
+    /// @notice The Protocol token
+    IERC20 public immutable override protocolToken;
 
-    // @notice lastRebalanceTimeSecs and cooldown used to control call rate 
-    // for operator
-    uint64 public lastRebalanceTimeSecs;
-    uint64 public cooldownSecs;
+    /// @notice The Quoted token this is paired with in the LP. It may be a stable, 
+    /// or another Balancer linear token like BB-A-USD
+    IERC20 public immutable override quoteToken;
 
-    // @notice balancer 50/50 pool ID.
-    bytes32 public immutable balancerPoolId;
+    /// @notice The time when the last rebalance occured
+    uint64 public override lastRebalanceTimeSecs;
 
-    // @notice Precision for BPS calculations
-    uint256 public constant BPS_PRECISION = 10_000;
-    uint256 public templePriceFloorNumerator;
+    /// @notice The minimum amount of time which must pass since `lastRebalanceTimeSecs` before another rebalance
+    /// can occur
+    uint64 public override cooldownSecs;
 
-    // @notice percentage bounds (in bps) beyond which to rebalance up or down
-    uint64 public rebalancePercentageBoundLow;
-    uint64 public rebalancePercentageBoundUp;
+    /// @notice The balancer 50/50 pool ID.
+    bytes32 public immutable override balancerPoolId;
 
-    // @notice Maximum amount of tokens that can be rebalanced
-    MaxRebalanceAmounts public maxRebalanceAmounts;
+    /// @notice Precision for BPS calculations. 1% == 100
+    uint256 public constant override BPS_PRECISION = 10_000;
 
-    // @notice by how much TPF slips up or down after rebalancing. In basis points
-    uint64 public postRebalanceSlippage;
+    /// @notice The Treasury Price Index (TPI) Oracle
+    ITreasuryPriceIndexOracle public override tpiOracle;
 
-    // @notice temple index in balancer pool. to avoid recalculation or external calls
-    uint64 public immutable templeBalancerPoolIndex;
+    /// @notice The vault from where to borrow and repay the Protocol Token
+    IRamosTokenVault public override tokenVault;
 
-    struct MaxRebalanceAmounts {
-        uint256 bpt;
-        uint256 stable;
-        uint256 temple;
-    }
+    /// @notice The percentage bounds (in bps) beyond which to rebalance up or down
+    uint64 public override rebalancePercentageBoundLow;
+    uint64 public override rebalancePercentageBoundUp;
 
-    event RecoveredToken(address token, address to, uint256 amount);
-    event SetOperator(address operator);
-    event SetPostRebalanceSlippage(uint64 slippageBps);
-    event SetCooldown(uint64 cooldownSecs);
-    event SetPauseState(bool paused);
-    event StableDeposited(uint256 amountIn, uint256 bptOut);
-    event RebalanceUp(uint256 bptAmountIn, uint256 templeAmountOut);
-    event RebalanceDown(uint256 templeAmountIn, uint256 bptIn);
-    event SetPoolHelper(address poolHelper);
-    event SetMaxRebalanceAmounts(uint256 bptMaxAmount, uint256 stableMaxAmount, uint256 templeMaxAmount);
-    event WithdrawStable(uint256 bptAmountIn, uint256 amountOut);
-    event SetRebalancePercentageBounds(uint64 belowTpf, uint64 aboveTpf);
-    event SetTemplePriceFloorNumerator(uint128 numerator);
-    event SetAmoStaking(address indexed amoStaking);
+    /// @notice Maximum amount of tokens that can be rebalanced on each run
+    MaxRebalanceAmounts public override maxRebalanceAmounts;
+
+    /// @notice A limit on how much the price can be impacted by a rebalance. 
+    /// A price change over this limit will revert. Specified in bps
+    uint64 public override postRebalanceSlippage;
+
+    /// @notice `protocolToken` index in balancer pool. to avoid recalculation or external calls
+    uint64 public immutable override protocolTokenBalancerPoolIndex;
+
+    /// @notice The address to send proportion of rebalance as fees to
+    address public override feeCollector;
+
+    // @notice The maximum rebalance fee which can be set
+    uint256 public override immutable maxRebalanceFee;
+
+    /// @notice The fees (in basis points) taken on a rebalance
+    RebalanceFees public override rebalanceFees;
 
     constructor(
+        address _initialRescuer,
+        address _initialExecutor,
         address _balancerVault,
-        address _temple,
-        address _stable,
+        address _protocolToken,
+        address _quoteToken,
         address _bptToken,
         address _amoStaking,
-        uint64 _templeIndexInPool,
-        bytes32 _balancerPoolId
-    ) {
-        balancerVault = AMO__IBalancerVault(_balancerVault);
-        temple = IERC20(_temple);
-        stable = IERC20(_stable);
-        bptToken = IERC20(_bptToken);
-        amoStaking = AMO__IAuraStaking(_amoStaking);
-        templeBalancerPoolIndex = _templeIndexInPool;
+        uint64 _protocolTokenIndexInPool,
+        bytes32 _balancerPoolId,
+        address _feeCollector,
+        uint256 _maxRebalanceFee
+    ) TempleElevatedAccess(_initialRescuer, _initialExecutor) {
+        balancerVault = IBalancerVault(_balancerVault);
+        protocolToken = IERC20(_protocolToken);
+        quoteToken = IERC20(_quoteToken);
+        bptToken = IBalancerBptToken(_bptToken);
+        amoStaking = IAuraStaking(_amoStaking);
+        protocolTokenBalancerPoolIndex = _protocolTokenIndexInPool;
         balancerPoolId = _balancerPoolId;
+        feeCollector = _feeCollector;
+        maxRebalanceFee = _maxRebalanceFee;
     }
 
-    function setPoolHelper(address _poolHelper) external onlyOwner {
-        poolHelper = AMO__IPoolHelper(_poolHelper);
+    /**
+     * @notice Set the pool helper contract
+     */
+    function setPoolHelper(address _poolHelper) external onlyElevatedAccess {
+        poolHelper = IBalancerPoolHelper(_poolHelper);
 
         emit SetPoolHelper(_poolHelper);
     }
 
-    function setAmoStaking(address _amoStaking) external onlyOwner {
-        amoStaking = AMO__IAuraStaking(_amoStaking);
-
-        emit SetAmoStaking(_amoStaking);
-    }
-
-    function setPostRebalanceSlippage(uint64 slippage) external onlyOwner {
+    /**
+     * @notice Set the acceptable amount of price impact allowed due to a rebalance
+     */
+    function setPostRebalanceSlippage(uint64 slippage) external onlyElevatedAccess {
         if (slippage > BPS_PRECISION || slippage == 0) {
             revert AMOCommon.InvalidBPSValue(slippage);
         }
@@ -119,53 +145,103 @@ contract RAMOS is Ownable, Pausable {
     }
 
     /**
-     * @notice Set maximum amount used by operator to rebalance
+     * @notice Set maximum amount used by bot to rebalance
      * @param bptMaxAmount Maximum bpt amount per rebalance
-     * @param stableMaxAmount Maximum stable amount per rebalance
-     * @param templeMaxAmount Maximum temple amount per rebalance
+     * @param quoteTokenMaxAmount Maximum `quoteToken` amount per rebalance
+     * @param protocolTokenMaxAmount Maximum protocolToken amount per rebalance
      */
-    function setMaxRebalanceAmounts(uint256 bptMaxAmount, uint256 stableMaxAmount, uint256 templeMaxAmount) external onlyOwner {
-        if (bptMaxAmount == 0 || stableMaxAmount == 0 || templeMaxAmount == 0) {
-            revert AMOCommon.InvalidMaxAmounts(bptMaxAmount, stableMaxAmount, templeMaxAmount);
+    function setMaxRebalanceAmounts(uint256 bptMaxAmount, uint256 quoteTokenMaxAmount, uint256 protocolTokenMaxAmount) external onlyElevatedAccess {
+        if (bptMaxAmount == 0 || quoteTokenMaxAmount == 0 || protocolTokenMaxAmount == 0) {
+            revert AMOCommon.InvalidMaxAmounts(bptMaxAmount, quoteTokenMaxAmount, protocolTokenMaxAmount);
         }
         maxRebalanceAmounts.bpt = bptMaxAmount;
-        maxRebalanceAmounts.stable = stableMaxAmount;
-        maxRebalanceAmounts.temple = templeMaxAmount;
-        emit SetMaxRebalanceAmounts(bptMaxAmount, stableMaxAmount, templeMaxAmount);
+        maxRebalanceAmounts.quoteToken = quoteTokenMaxAmount;
+        maxRebalanceAmounts.protocolToken = protocolTokenMaxAmount;
+        emit SetMaxRebalanceAmounts(bptMaxAmount, quoteTokenMaxAmount, protocolTokenMaxAmount);
     }
 
-    // @notice percentage bounds (in bps) beyond which to rebalance up or down
-    function setRebalancePercentageBounds(uint64 belowTPF, uint64 aboveTPF) external onlyOwner {
-        if (belowTPF > BPS_PRECISION || aboveTPF > BPS_PRECISION) {
-            revert AMOCommon.InvalidBPSValue(belowTPF);
+    /// @notice Set maximum percentage bounds (in bps) beyond which to rebalance up or down
+    function setRebalancePercentageBounds(uint64 belowTpi, uint64 aboveTpi) external onlyElevatedAccess {
+        if (belowTpi > BPS_PRECISION || aboveTpi > BPS_PRECISION) {
+            revert AMOCommon.InvalidBPSValue(belowTpi);
         }
-        rebalancePercentageBoundLow = belowTPF;
-        rebalancePercentageBoundUp = aboveTPF;
+        rebalancePercentageBoundLow = belowTpi;
+        rebalancePercentageBoundUp = aboveTpi;
 
-        emit SetRebalancePercentageBounds(belowTPF, aboveTPF);
-    }
-
-    function setTemplePriceFloorNumerator(uint128 _numerator) external onlyOwner {
-        templePriceFloorNumerator = _numerator;
-
-        emit SetTemplePriceFloorNumerator(_numerator);
+        emit SetRebalancePercentageBounds(belowTpi, aboveTpi);
     }
 
     /**
-     * @notice Set operator
-     * @param _operator New operator
+     * @notice Set the Treasury Price Index (TPI) Oracle
      */
-    function setOperator(address _operator) external onlyOwner {
-        operator = _operator;
-
-        emit SetOperator(_operator);
+    function setTpiOracle(address newTpiOracle) external override onlyElevatedAccess {
+        emit TpiOracleSet(newTpiOracle);
+        tpiOracle = ITreasuryPriceIndexOracle(newTpiOracle);
     }
 
     /**
-     * @notice Set cooldown time to throttle operator bot
-     * @param _seconds Time in seconds between operator calls
-     * */
-    function setCoolDown(uint64 _seconds) external onlyOwner {
+     * @notice Set the Treasury Price Index (TPI) Oracle
+     */
+    function setTokenVault(address vault) external override onlyElevatedAccess {
+        emit TokenVaultSet(vault);
+
+        // Remove allowance from the old vault
+        address previousVault = address(tokenVault);
+        if (previousVault != address(0)) {
+            protocolToken.safeApprove(previousVault, 0);
+            quoteToken.safeApprove(previousVault, 0);
+        }
+
+        tokenVault = IRamosTokenVault(vault);
+
+        // Set max allowance on the new TRV
+        {
+            protocolToken.safeApprove(vault, 0);
+            protocolToken.safeIncreaseAllowance(vault, type(uint256).max);
+            
+            quoteToken.safeApprove(vault, 0);
+            quoteToken.safeIncreaseAllowance(vault, type(uint256).max);
+        }
+    }
+
+    /**
+     * @notice Update the fee collector address - only callable by the existing feeCollector
+     */
+    function setFeeCollector(address _feeCollector) external {
+        if (msg.sender != feeCollector) revert CommonEventsAndErrors.InvalidAccess();
+        if (_feeCollector == address(0)) revert CommonEventsAndErrors.InvalidAddress();
+        feeCollector = _feeCollector;
+        emit FeeCollectorSet(_feeCollector);
+    }
+
+    /**
+     * @notice Set the rebalance fees, in basis points
+     * @param rebalanceJoinFeeBps The fee for when a `rebalanceUpJoin` or `rebalanceDownJoin` is performed
+     * @param rebalanceExitFeeBps The fee for when a `rebalanceUpExit` or `rebalanceDownExit` is performed
+     */
+    function setRebalanceFees(uint256 rebalanceJoinFeeBps, uint256 rebalanceExitFeeBps) external override {
+        if (msg.sender != feeCollector) revert CommonEventsAndErrors.InvalidAccess();
+        if (rebalanceJoinFeeBps > maxRebalanceFee) revert CommonEventsAndErrors.InvalidParam();
+        if (rebalanceExitFeeBps > maxRebalanceFee) revert CommonEventsAndErrors.InvalidParam();
+
+        emit RebalanceFeesSet(rebalanceJoinFeeBps, rebalanceExitFeeBps);
+
+        // Downcast is safe since it can't be set greater than the max.
+        rebalanceFees = RebalanceFees(uint128(rebalanceJoinFeeBps), uint128(rebalanceExitFeeBps));
+    }
+
+    /**
+     * @notice The Treasury Price Index - the target price of the Treasury, in `quoteToken` terms.
+     */
+    function treasuryPriceIndex() public view override returns (uint256) {
+        return tpiOracle.treasuryPriceIndex();
+    }
+
+    /**
+     * @notice Set cooldown time to throttle rebalances
+     * @param _seconds Time in seconds between calls
+     */
+    function setCoolDown(uint64 _seconds) external onlyElevatedAccess {
         cooldownSecs = _seconds;
 
         emit SetCooldown(_seconds);
@@ -174,14 +250,14 @@ contract RAMOS is Ownable, Pausable {
     /**
      * @notice Pause AMO
      * */
-    function pause() external onlyOwner {
+    function pause() external onlyElevatedAccess {
         _pause();
     }
 
     /**
      * @notice Unpause AMO
      * */
-    function unpause() external onlyOwner {
+    function unpause() external onlyElevatedAccess {
         _unpause();
     }
 
@@ -191,207 +267,290 @@ contract RAMOS is Ownable, Pausable {
      * @param to Recipient address
      * @param amount Amount to recover
      */
-    function recoverToken(address token, address to, uint256 amount) external onlyOwner {
+    function recoverToken(address token, address to, uint256 amount) external onlyElevatedAccess {
         IERC20(token).safeTransfer(to, amount);
 
         emit RecoveredToken(token, to, amount);
     }
 
     /**
-     * @notice Rebalance when $TEMPLE spot price is below Treasury Price Floor.
-     * Single-side withdraw $TEMPLE tokens from balancer liquidity pool to raise price.
+     * @notice Rebalance up when `protocolToken` spot price is below TPI.
+     * Single-side WITHDRAW `protocolToken` from balancer liquidity pool to raise price.
      * BPT tokens are withdrawn from Aura rewards staking contract and used for balancer
-     * pool exit. TEMPLE tokens returned from balancer pool are burned
+     * pool exit. 
+     * Ramos rebalance fees are deducted from the amount of `protocolToken` returned from the balancer pool
+     * The remainder `protocolToken` are repaid to the `tokenVault`
      * @param bptAmountIn amount of BPT tokens going in balancer pool for exit
-     * @param minAmountOut amount of TEMPLE tokens expected out of balancer pool
+     * @param minProtocolTokenOut amount of `protocolToken` expected out of balancer pool
      */
-    function rebalanceUp(
+    function rebalanceUpExit(
         uint256 bptAmountIn,
-        uint256 minAmountOut
-    ) external onlyOperatorOrOwner whenNotPaused enoughCooldown {
-        _validateParams(minAmountOut, bptAmountIn, maxRebalanceAmounts.bpt);
+        uint256 minProtocolTokenOut
+    ) external override onlyElevatedAccess whenNotPaused enoughCooldown {
+        _validateParams(minProtocolTokenOut, bptAmountIn, maxRebalanceAmounts.bpt);
+        lastRebalanceTimeSecs = uint64(block.timestamp);
 
+        // Unstake and send the BPT to the poolHelper
         amoStaking.withdrawAndUnwrap(bptAmountIn, false, address(poolHelper));
     
-        // exitTokenIndex = templeBalancerPoolIndex;
-        uint256 burnAmount = poolHelper.exitPool(
-            bptAmountIn, minAmountOut, rebalancePercentageBoundLow,
+        // protocolToken single side exit
+        uint256 protocolTokenAmountOut = poolHelper.exitPool(
+            bptAmountIn, minProtocolTokenOut, rebalancePercentageBoundLow,
             rebalancePercentageBoundUp, postRebalanceSlippage,
-            templeBalancerPoolIndex, templePriceFloorNumerator, temple
+            protocolTokenBalancerPoolIndex, treasuryPriceIndex(), protocolToken
         );
 
-        AMO__ITempleERC20Token(address(temple)).burn(burnAmount);
+        // Collect the fees on the output protocol token
+        uint256 feeAmt = protocolTokenAmountOut * rebalanceFees.rebalanceExitFeeBps / BPS_PRECISION;
+        if (feeAmt != 0) {
+            protocolToken.safeTransfer(feeCollector, feeAmt);
+        }
 
-        lastRebalanceTimeSecs = uint64(block.timestamp);
-        emit RebalanceUp(bptAmountIn, burnAmount);
-    }
-
-     /**
-     * @notice Rebalance when $TEMPLE spot price is above Treasury Price Floor
-     * Mints TEMPLE tokens and single-side deposits into balancer pool
-     * Returned BPT tokens are deposited and staked into Aura for rewards using the staking contract.
-     * @param templeAmountIn Amount of TEMPLE tokens to deposit into balancer pool
-     * @param minBptOut Minimum amount of BPT tokens expected to receive
-     * 
-     */
-    function rebalanceDown(
-        uint256 templeAmountIn,
-        uint256 minBptOut
-    ) external onlyOperatorOrOwner whenNotPaused enoughCooldown {
-        _validateParams(minBptOut, templeAmountIn, maxRebalanceAmounts.temple);
-
-        AMO__ITempleERC20Token(address(temple)).mint(address(this), templeAmountIn);
-        temple.safeTransfer(address(poolHelper), templeAmountIn);
-
-        // joinTokenIndex = templeBalancerPoolIndex;
-        uint256 bptIn = poolHelper.joinPool(
-            templeAmountIn, minBptOut, rebalancePercentageBoundUp,
-            rebalancePercentageBoundLow, templePriceFloorNumerator, 
-            postRebalanceSlippage, templeBalancerPoolIndex, temple
-        );
-
-        lastRebalanceTimeSecs = uint64(block.timestamp);
-        emit RebalanceDown(templeAmountIn, bptIn);
-
-        // deposit and stake BPT
-        bptToken.safeTransfer(address(amoStaking), bptIn);
-        amoStaking.depositAndStake(bptIn);
+        // Repay the remaining protocol tokens withdrawn from the pool
+        unchecked {
+            protocolTokenAmountOut -= feeAmt;
+        }
+        emit RebalanceUpExit(bptAmountIn, protocolTokenAmountOut, feeAmt);
+        if (protocolTokenAmountOut != 0) {
+            tokenVault.repayProtocolToken(protocolTokenAmountOut);
+        }
     }
 
     /**
-     * @notice Single-side deposit stable tokens into balancer pool when TEMPLE price 
-     * is below Treasury Price Floor.
-     * @param amountIn Amount of stable tokens to deposit into balancer pool
-     * @param minBptOut Minimum amount of BPT tokens expected to receive
+     * @notice Rebalance down when `protocolToken` spot price is above TPI.
+     * Single-side WITHDRAW `quoteToken` from balancer liquidity pool to lower price.
+     * BPT tokens are withdrawn from Aura rewards staking contract and used for balancer
+     * pool exit. 
+     * Ramos rebalance fees are deducted from the amount of `quoteToken` returned from the exit
+     * The remainder `quoteToken` are repaid via the token vault
+     * @param bptAmountIn Amount of BPT tokens to deposit into balancer pool
+     * @param minQuoteTokenAmountOut Minimum amount of `quoteToken` expected to receive
      */
-    function depositStable(
-        uint256 amountIn,
-        uint256 minBptOut
-    ) external onlyOwner whenNotPaused {
-        _validateParams(minBptOut, amountIn, maxRebalanceAmounts.stable);
-
-        stable.safeTransfer(address(poolHelper), amountIn);
-        // stable join
-        uint256 joinTokenIndex = templeBalancerPoolIndex == 0 ? 1 : 0;
-        uint256 bptOut = poolHelper.joinPool(
-            amountIn, minBptOut, rebalancePercentageBoundUp, rebalancePercentageBoundLow,
-            templePriceFloorNumerator, postRebalanceSlippage, joinTokenIndex, stable
-        );
-
+    function rebalanceDownExit(
+        uint256 bptAmountIn,
+        uint256 minQuoteTokenAmountOut
+    ) external override onlyElevatedAccess whenNotPaused enoughCooldown {
+        _validateParams(minQuoteTokenAmountOut, bptAmountIn, maxRebalanceAmounts.bpt);
         lastRebalanceTimeSecs = uint64(block.timestamp);
 
-        emit StableDeposited(amountIn, bptOut);
-
-        bptToken.safeTransfer(address(amoStaking), bptOut);
-        amoStaking.depositAndStake(bptOut);
-    }
-
-     /**
-     * @notice Single-side withdraw stable tokens from balancer pool when TEMPLE price 
-     * is above Treasury Price Floor. Withdraw and unwrap BPT tokens from Aura staking.
-     * BPT tokens are then sent into balancer pool for stable tokens in return.
-     * @param bptAmountIn Amount of BPT tokens to deposit into balancer pool
-     * @param minAmountOut Minimum amount of stable tokens expected to receive
-     */
-    function withdrawStable(
-        uint256 bptAmountIn,
-        uint256 minAmountOut
-    ) external onlyOwner whenNotPaused {
-        _validateParams(minAmountOut, bptAmountIn, maxRebalanceAmounts.bpt);
-
+        // Unstake and send the BPT to the poolHelper
         amoStaking.withdrawAndUnwrap(bptAmountIn, false, address(poolHelper));
 
-        uint256 stableTokenIndex = templeBalancerPoolIndex == 0 ? 1 : 0;
-        uint256 amountOut = poolHelper.exitPool(
-            bptAmountIn, minAmountOut, rebalancePercentageBoundLow, rebalancePercentageBoundUp,
-            postRebalanceSlippage, stableTokenIndex, templePriceFloorNumerator, stable
+        // QuoteToken single side exit
+        uint256 quoteTokenAmountOut = poolHelper.exitPool(
+            bptAmountIn, minQuoteTokenAmountOut, rebalancePercentageBoundLow, rebalancePercentageBoundUp,
+            postRebalanceSlippage, 1-protocolTokenBalancerPoolIndex, treasuryPriceIndex(), quoteToken
         );
 
-        lastRebalanceTimeSecs = uint64(block.timestamp);
-        emit WithdrawStable(bptAmountIn, amountOut);
+        // Collect the fees on the output quote token
+        uint256 feeAmt = quoteTokenAmountOut * rebalanceFees.rebalanceExitFeeBps / BPS_PRECISION;
+        if (feeAmt != 0) {
+            quoteToken.safeTransfer(feeCollector, feeAmt);
+        }
+
+        unchecked {
+            quoteTokenAmountOut -= feeAmt;
+        }
+        emit RebalanceDownExit(bptAmountIn, quoteTokenAmountOut, feeAmt);
+        if (quoteTokenAmountOut != 0) {
+            tokenVault.repayQuoteToken(quoteTokenAmountOut);
+        }
     }
 
     /**
-     * @notice Add liquidity with both TEMPLE and stable tokens into balancer pool. 
-     * Treasury Price Floor is expected to be within bounds of multisig set range.
+     * @notice Rebalance up when `protocolToken` spot price is below TPI.
+     * Single-side ADD `quoteToken` into the balancer liquidity pool to raise price.
+     * Returned BPT tokens are deposited and staked into Aura for rewards using the staking contract.
+     * Ramos rebalance fees are deducted from the amount of `quoteToken` input
+     * The remainder `quoteToken` are added into the balancer pool
+     * @dev The `quoteToken` amount must be deposited into this contract first
+     * @param quoteTokenAmountIn Amount of `quoteToken` to deposit into balancer pool
+     * @param minBptOut Minimum amount of BPT tokens expected to receive
+     */
+    function rebalanceUpJoin(
+        uint256 quoteTokenAmountIn,
+        uint256 minBptOut
+    ) external override onlyElevatedAccess whenNotPaused enoughCooldown {
+        _validateParams(minBptOut, quoteTokenAmountIn, maxRebalanceAmounts.quoteToken);
+        lastRebalanceTimeSecs = uint64(block.timestamp);
+
+        // Borrow the quote token
+        tokenVault.borrowQuoteToken(quoteTokenAmountIn, address(this));
+
+        // Collect the fees from the input quote token
+        uint256 feeAmt = quoteTokenAmountIn * rebalanceFees.rebalanceJoinFeeBps / BPS_PRECISION;
+        if (feeAmt != 0) {
+            quoteToken.safeTransfer(feeCollector, feeAmt);
+        }
+
+        // Send the remaining quote tokens to the poolHelper
+        uint256 joinAmountIn = quoteTokenAmountIn - feeAmt;
+        quoteToken.safeTransfer(address(poolHelper), joinAmountIn);
+
+        // quoteToken single side join
+        uint256 bptTokensStaked = poolHelper.joinPool(
+            joinAmountIn, minBptOut, rebalancePercentageBoundUp, rebalancePercentageBoundLow,
+            treasuryPriceIndex(), postRebalanceSlippage, 1-protocolTokenBalancerPoolIndex, quoteToken
+        );
+        emit RebalanceUpJoin(quoteTokenAmountIn, bptTokensStaked, feeAmt);
+
+        // deposit and stake BPT
+        if (bptTokensStaked != 0) {
+            bptToken.safeTransfer(address(amoStaking), bptTokensStaked);
+            amoStaking.depositAndStake(bptTokensStaked);
+        }
+    }
+
+    /**
+     * @notice Rebalance down when `protocolToken` spot price is above TPI.
+     * Single-side ADD `protocolToken` into the balancer liquidity pool to lower price.
+     * Returned BPT tokens are deposited and staked into Aura for rewards using the staking contract.
+     * Ramos rebalance fees are deducted from the amount of `protocolToken` input
+     * The remainder `protocolToken` are added into the balancer pool
+     * @dev The `protocolToken` are borrowed from the `tokenVault`
+     * @param protocolTokenAmountIn Amount of `protocolToken` tokens to deposit into balancer pool
+     * @param minBptOut Minimum amount of BPT tokens expected to receive
+     */
+    function rebalanceDownJoin(
+        uint256 protocolTokenAmountIn,
+        uint256 minBptOut
+    ) external override onlyElevatedAccess whenNotPaused enoughCooldown {
+        _validateParams(minBptOut, protocolTokenAmountIn, maxRebalanceAmounts.protocolToken);
+        lastRebalanceTimeSecs = uint64(block.timestamp);
+
+        // Borrow the protocol token
+        tokenVault.borrowProtocolToken(protocolTokenAmountIn, address(this));
+
+        // Collect the fees from the input protocol token amount
+        uint256 feeAmt = protocolTokenAmountIn * rebalanceFees.rebalanceJoinFeeBps / BPS_PRECISION;
+        if (feeAmt != 0) {
+            protocolToken.safeTransfer(feeCollector, feeAmt);
+        }
+
+        // Send the balance to the poolHelper
+        uint256 joinAmountIn = protocolTokenAmountIn - feeAmt;
+        protocolToken.safeTransfer(address(poolHelper), joinAmountIn);
+
+        // protocolToken single side join
+        uint256 bptTokensStaked = poolHelper.joinPool(
+            joinAmountIn, minBptOut, rebalancePercentageBoundUp,
+            rebalancePercentageBoundLow, treasuryPriceIndex(), 
+            postRebalanceSlippage, protocolTokenBalancerPoolIndex, protocolToken
+        );
+        emit RebalanceDownJoin(protocolTokenAmountIn, bptTokensStaked, feeAmt);
+
+        // deposit and stake BPT
+        if (bptTokensStaked != 0) {
+            bptToken.safeTransfer(address(amoStaking), bptTokensStaked);
+            amoStaking.depositAndStake(bptTokensStaked);
+        }
+    }
+
+    /**
+     * @notice Add liquidity with both `protocolToken` and `quoteToken` into balancer pool. 
+     * TPI is expected to be within bounds of multisig set range.
      * BPT tokens are then deposited and staked in Aura.
      * @param request Request data for joining balancer pool. Assumes userdata of request is
      * encoded with EXACT_TOKENS_IN_FOR_BPT_OUT type
-     * @param minBptOut Minimum amount of BPT tokens expected to receive
      */
     function addLiquidity(
-        AMO__IBalancerVault.JoinPoolRequest memory request,
-        uint256 minBptOut
-    ) external onlyOwner {
+        IBalancerVault.JoinPoolRequest memory request
+    ) external override onlyElevatedAccess returns (
+        uint256 quoteTokenAmount,
+        uint256 protocolTokenAmount,
+        uint256 bptTokensStaked
+    ) {
         // validate request
         if (request.assets.length != request.maxAmountsIn.length || 
             request.assets.length != 2 || 
-            request.fromInternalBalance == true) {
+            request.fromInternalBalance) {
                 revert AMOCommon.InvalidBalancerVaultRequest();
         }
 
-        uint256 templeAmount = request.maxAmountsIn[templeBalancerPoolIndex];
-        AMO__ITempleERC20Token(address(temple)).mint(address(this), templeAmount);
-        // safe allowance stable and TEMPLE
-        temple.safeIncreaseAllowance(address(balancerVault), templeAmount);
+        (protocolTokenAmount, quoteTokenAmount) = protocolTokenBalancerPoolIndex == 0
+            ? (request.maxAmountsIn[0], request.maxAmountsIn[1])
+            : (request.maxAmountsIn[1], request.maxAmountsIn[0]);
+        tokenVault.borrowProtocolToken(protocolTokenAmount, address(this));
+        tokenVault.borrowQuoteToken(quoteTokenAmount, address(this));
+
+        // safe allowance quoteToken and protocolToken
+        {
+            protocolToken.safeIncreaseAllowance(address(balancerVault), protocolTokenAmount);
+            uint256 quoteTokenAllowance = quoteToken.allowance(address(this), address(balancerVault));
+            if (quoteTokenAllowance < quoteTokenAmount) {
+                quoteToken.safeApprove(address(balancerVault), 0);
+                quoteToken.safeIncreaseAllowance(address(balancerVault), quoteTokenAmount);
+            }
+        }
 
         // join pool
-        uint256 bptAmountBefore = bptToken.balanceOf(address(this));
-        balancerVault.joinPool(balancerPoolId, address(this), address(this), request);
-        uint256 bptAmountAfter = bptToken.balanceOf(address(this));
-        uint256 bptIn;
-        unchecked {
-            bptIn = bptAmountAfter - bptAmountBefore;
-        }
-        if (bptIn < minBptOut) {
-            revert AMOCommon.InsufficientAmountOutPostcall(minBptOut, bptIn);
+        {
+            uint256 bptAmountBefore = bptToken.balanceOf(address(this));
+            balancerVault.joinPool(balancerPoolId, address(this), address(this), request);
+            uint256 bptAmountAfter = bptToken.balanceOf(address(this));
+            unchecked {
+                bptTokensStaked = bptAmountAfter - bptAmountBefore;
+            }
         }
 
+        emit LiquidityAdded(quoteTokenAmount, protocolTokenAmount, bptTokensStaked);
+
         // stake BPT
-        bptToken.safeTransfer(address(amoStaking), bptIn);
-        amoStaking.depositAndStake(bptIn);
+        if (bptTokensStaked != 0) {
+            bptToken.safeTransfer(address(amoStaking), bptTokensStaked);
+            amoStaking.depositAndStake(bptTokensStaked);
+        }
     }
 
     /**
-     * @notice Remove liquidity from balancer pool receiving both TEMPLE and stable tokens from balancer pool. 
-     * Treasury Price Floor is expected to be within bounds of multisig set range.
+     * @notice Remove liquidity from balancer pool receiving both `protocolToken` and `quoteToken` from balancer pool. 
+     * TPI is expected to be within bounds of multisig set range.
      * Withdraw and unwrap BPT tokens from Aura staking and send to balancer pool to receive both tokens.
      * @param request Request for use in balancer pool exit
      * @param bptIn Amount of BPT tokens to send into balancer pool
      */
     function removeLiquidity(
-        AMO__IBalancerVault.ExitPoolRequest memory request,
+        IBalancerVault.ExitPoolRequest memory request,
         uint256 bptIn
-    ) external onlyOwner {
+    ) external override onlyElevatedAccess returns (
+        uint256 quoteTokenAmount, 
+        uint256 protocolTokenAmount
+    ) {
         // validate request
-        if (request.assets.length != request.minAmountsOut.length || 
+        if (
+            request.assets.length != request.minAmountsOut.length || 
             request.assets.length != 2 || 
-            request.toInternalBalance == true) {
+            request.toInternalBalance
+        ) {
                 revert AMOCommon.InvalidBalancerVaultRequest();
         }
 
-        uint256 templeAmountBefore = temple.balanceOf(address(this));
-        uint256 stableAmountBefore = stable.balanceOf(address(this));
+        uint256 protocolTokenAmountBefore = protocolToken.balanceOf(address(this));
+        uint256 quoteTokenAmountBefore = quoteToken.balanceOf(address(this));
 
         amoStaking.withdrawAndUnwrap(bptIn, false, address(this));
-
         balancerVault.exitPool(balancerPoolId, address(this), address(this), request);
-        // validate amounts received
-        uint256 receivedAmount;
-        for (uint i=0; i<request.assets.length; ++i) {
-            if (request.assets[i] == address(temple)) {
+
+        uint256 length = request.assets.length;
+        for (uint i; i < length; ++i) {
+            if (request.assets[i] == address(protocolToken)) {
                 unchecked {
-                    receivedAmount = temple.balanceOf(address(this)) - templeAmountBefore;
+                    protocolTokenAmount = protocolToken.balanceOf(address(this)) - protocolTokenAmountBefore;
                 }
-                if (receivedAmount > 0) {
-                    AMO__ITempleERC20Token(address(temple)).burn(receivedAmount);
+                if (protocolTokenAmount != 0) {
+                    tokenVault.repayProtocolToken(protocolTokenAmount);
                 }
-            } else if (request.assets[i] == address(stable)) {
+            } else if (request.assets[i] == address(quoteToken)) {
                 unchecked {
-                    receivedAmount = stable.balanceOf(address(this)) - stableAmountBefore;
+                    quoteTokenAmount = quoteToken.balanceOf(address(this)) - quoteTokenAmountBefore;
+                }
+                if (quoteTokenAmount != 0) {
+                    tokenVault.repayQuoteToken(quoteTokenAmount);
                 }
             }
         }
+
+        emit LiquidityRemoved(quoteTokenAmount, protocolTokenAmount, bptIn);
     }
 
     /**
@@ -402,12 +561,36 @@ contract RAMOS is Ownable, Pausable {
     function depositAndStakeBptTokens(
         uint256 amount,
         bool useContractBalance
-    ) external onlyOwner {
+    ) external override onlyElevatedAccess {
         if (!useContractBalance) {
             bptToken.safeTransferFrom(msg.sender, address(this), amount);
         }
         bptToken.safeTransfer(address(amoStaking), amount);
         amoStaking.depositAndStake(amount);
+        emit DepositAndStakeBptTokens(amount);
+    }
+
+    /**
+     * @notice The total amount of `protocolToken` and `quoteToken` that Ramos holds via it's 
+     * staked and unstaked BPT.
+     * @dev Calculated by pulling the total balances of each token in the pool
+     * and getting RAMOS proportion of the owned BPT's
+     */
+    function positions() external override view returns (
+        uint256 bptBalance, 
+        uint256 protocolTokenBalance, 
+        uint256 quoteTokenBalance
+    ) {
+        // Use `bpt.getActualSupply()` instead of `bpt.totalSupply()`
+        // https://docs.balancer.fi/reference/lp-tokens/underlying.html#overview
+        // https://docs.balancer.fi/concepts/advanced/valuing-bpt.html#on-chain
+        uint256 bptTotalSupply = bptToken.getActualSupply();
+        if (bptTotalSupply != 0) {
+            bptBalance = amoStaking.totalBalance();
+            (uint256 totalProtocolTokenInLp, uint256 totalQuoteTokenInLp) = poolHelper.getPairBalances();
+            protocolTokenBalance = totalProtocolTokenInLp * bptBalance /bptTotalSupply;
+            quoteTokenBalance = totalQuoteTokenInLp * bptBalance /bptTotalSupply;
+        }
     }
 
     function _validateParams(
@@ -426,13 +609,6 @@ contract RAMOS is Ownable, Pausable {
     modifier enoughCooldown() {
         if (lastRebalanceTimeSecs != 0 && lastRebalanceTimeSecs + cooldownSecs > block.timestamp) {
             revert AMOCommon.NotEnoughCooldown();
-        }
-        _;
-    }
-
-    modifier onlyOperatorOrOwner() {
-        if (msg.sender != operator && msg.sender != owner()) {
-            revert AMOCommon.NotOperatorOrOwner();
         }
         _;
     }

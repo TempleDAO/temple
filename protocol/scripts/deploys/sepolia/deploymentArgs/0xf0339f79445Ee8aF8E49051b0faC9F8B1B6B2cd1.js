@@ -1,0 +1,9 @@
+// sepolia: TEMPLE_BASE_STRATEGY=0xf0339f79445Ee8aF8E49051b0faC9F8B1B6B2cd1
+// yarn hardhat verify --network sepolia 0xf0339f79445Ee8aF8E49051b0faC9F8B1B6B2cd1 --constructor-args scripts/deploys/sepolia/deploymentArgs/0xf0339f79445Ee8aF8E49051b0faC9F8B1B6B2cd1.js
+module.exports = [
+  "0x81960c465605cddD9772a8653111D4aBE580Ce1e",
+  "0x81960c465605cddD9772a8653111D4aBE580Ce1e",
+  "TempleBaseStrategy",
+  "0x770E440064B1AC1f5A245655C5e4211439baB295",
+  "0x64a925B0fA211c44337148C0807f959Bd44b0B67"
+];
