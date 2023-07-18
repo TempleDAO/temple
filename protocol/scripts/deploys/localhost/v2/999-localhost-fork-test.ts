@@ -34,8 +34,8 @@ async function main() {
   
   const templeV2CoreMsig = await impersonateAndFund(owner, TEMPLE_V2_ADDRESSES.CORE.EXECUTOR_MSIG, 10);
 
-  const templeV2contracts = connectToContracts(templeV2CoreMsig);
-  const aliceV2contracts = connectToContracts(alice);
+  const TEMPLE_V2_INSTANCES = connectToContracts(templeV2CoreMsig);
+  const ALICE_V2_INSTANCES = connectToContracts(alice);
   
   const trvDaiPool = ethers.utils.parseEther("100000");
   const collateralAmount = ethers.utils.parseEther("10000");
@@ -50,12 +50,12 @@ async function main() {
     desc: string,
   ) => {
     console.log(`\n\n*** ${desc} ***`);
-    console.log('temple balance of alice', await templeV2contracts.temple.balanceOf(await alice.getAddress()));
-    console.log('temple balance of tlc', await templeV2contracts.temple.balanceOf(TEMPLE_V2_ADDRESSES.TEMPLE_LINE_OF_CREDIT.ADDRESS));
-    console.log('dai balance of alice', await templeV2contracts.dai.balanceOf(await alice.getAddress()));
-    console.log('dai balance of trv', await templeV2contracts.dai.balanceOf(templeV2contracts.trv.address));
-    console.log('dusd balance of tlc', await templeV2contracts.dusd.balanceOf(TEMPLE_V2_ADDRESSES.STRATEGIES.TLC_STRATEGY.ADDRESS));
-    console.log('dTemple totalSupply', await templeV2contracts.dtemple.totalSupply());
+    console.log('temple balance of alice', await TEMPLE_V2_INSTANCES.CORE.TEMPLE_TOKEN.balanceOf(await alice.getAddress()));
+    console.log('temple balance of tlc', await TEMPLE_V2_INSTANCES.CORE.TEMPLE_TOKEN.balanceOf(TEMPLE_V2_ADDRESSES.TEMPLE_LINE_OF_CREDIT.ADDRESS));
+    console.log('dai balance of alice', await TEMPLE_V2_INSTANCES.EXTERNAL.MAKER_DAO.DAI_TOKEN.balanceOf(await alice.getAddress()));
+    console.log('dai balance of trv', await TEMPLE_V2_INSTANCES.EXTERNAL.MAKER_DAO.DAI_TOKEN.balanceOf(TEMPLE_V2_ADDRESSES.TREASURY_RESERVES_VAULT.ADDRESS));
+    console.log('dusd balance of tlc', await TEMPLE_V2_INSTANCES.TREASURY_RESERVES_VAULT.D_USD_TOKEN.balanceOf(TEMPLE_V2_ADDRESSES.STRATEGIES.TLC_STRATEGY.ADDRESS));
+    console.log('dTemple totalSupply', await TEMPLE_V2_INSTANCES.TREASURY_RESERVES_VAULT.D_TEMPLE_TOKEN.totalSupply());
   }
 
   /* Seed Alice & TRV wallets */
@@ -80,63 +80,63 @@ async function main() {
   /* Alice adds collateral & borrows dai */
   {    
     // add alice collateral amount to TLC
-    await mine(aliceV2contracts.temple.approve(TEMPLE_V2_ADDRESSES.TEMPLE_LINE_OF_CREDIT.ADDRESS, collateralAmount));
-    await mine(aliceV2contracts.tlc.addCollateral(collateralAmount, await alice.getAddress()));
+    await mine(ALICE_V2_INSTANCES.CORE.TEMPLE_TOKEN.approve(TEMPLE_V2_ADDRESSES.TEMPLE_LINE_OF_CREDIT.ADDRESS, collateralAmount));
+    await mine(ALICE_V2_INSTANCES.TEMPLE_LINE_OF_CREDIT.INSTANCE.addCollateral(collateralAmount, await alice.getAddress()));
     await checkBalances("Alice added temple collateral");
-    await expect(await templeV2contracts.temple.balanceOf(await alice.getAddress())).to.eq(0);
-    await expect(await templeV2contracts.dai.balanceOf(await alice.getAddress())).to.eq(aliceInitialDaiBalance);
+    await expect(await TEMPLE_V2_INSTANCES.CORE.TEMPLE_TOKEN.balanceOf(await alice.getAddress())).to.eq(0);
+    await expect(await TEMPLE_V2_INSTANCES.EXTERNAL.MAKER_DAO.DAI_TOKEN.balanceOf(await alice.getAddress())).to.eq(aliceInitialDaiBalance);
 
     // borrow dai for alice
-    await mine(aliceV2contracts.tlc.borrow(borrowDaiAmount, await alice.getAddress()));
+    await mine(ALICE_V2_INSTANCES.TEMPLE_LINE_OF_CREDIT.INSTANCE.borrow(borrowDaiAmount, await alice.getAddress()));
     await checkBalances("Alice borrowed dai");
-    await expect(await templeV2contracts.dai.balanceOf(await alice.getAddress()))
+    await expect(await TEMPLE_V2_INSTANCES.EXTERNAL.MAKER_DAO.DAI_TOKEN.balanceOf(await alice.getAddress()))
     .to.eq(aliceInitialDaiBalance.add(borrowDaiAmount));
   }
 
   /* Alice repays half debt */
   {
-    await mine(aliceV2contracts.dai.approve(TEMPLE_V2_ADDRESSES.TEMPLE_LINE_OF_CREDIT.ADDRESS, borrowDaiAmount.div(2)));
-    await mine (aliceV2contracts.tlc.repay(borrowDaiAmount.div(2), await alice.getAddress()));
+    await mine(ALICE_V2_INSTANCES.EXTERNAL.MAKER_DAO.DAI_TOKEN.approve(TEMPLE_V2_ADDRESSES.TEMPLE_LINE_OF_CREDIT.ADDRESS, borrowDaiAmount.div(2)));
+    await mine (ALICE_V2_INSTANCES.TEMPLE_LINE_OF_CREDIT.INSTANCE.repay(borrowDaiAmount.div(2), await alice.getAddress()));
     await checkBalances("Alice repayed ~half debt");
   }
 
   /* Alice repays total debt & removes collateral */
   {
-    await mine(aliceV2contracts.dai.approve(TEMPLE_V2_ADDRESSES.TEMPLE_LINE_OF_CREDIT.ADDRESS, borrowDaiAmount));
-    await mine (aliceV2contracts.tlc.repayAll(await alice.getAddress()));
+    await mine(ALICE_V2_INSTANCES.EXTERNAL.MAKER_DAO.DAI_TOKEN.approve(TEMPLE_V2_ADDRESSES.TEMPLE_LINE_OF_CREDIT.ADDRESS, borrowDaiAmount));
+    await mine (ALICE_V2_INSTANCES.TEMPLE_LINE_OF_CREDIT.INSTANCE.repayAll(await alice.getAddress()));
     await checkBalances("Alice repayed all deb");
 
-    await mine (aliceV2contracts.tlc.removeCollateral(collateralAmount, await alice.getAddress()));
+    await mine (ALICE_V2_INSTANCES.TEMPLE_LINE_OF_CREDIT.INSTANCE.removeCollateral(collateralAmount, await alice.getAddress()));
     await checkBalances("Alice removed collateral");
   }
 
   /* Alice add collateral, borrows dai & gets liquidated */
   { 
-    await mine(aliceV2contracts.temple.approve(TEMPLE_V2_ADDRESSES.TEMPLE_LINE_OF_CREDIT.ADDRESS, collateralAmount));
-    await mine(aliceV2contracts.tlc.addCollateral(collateralAmount, await alice.getAddress()));
-    await mine(aliceV2contracts.tlc.borrow(maxLtvAliceBorrowDaiAmount, await alice.getAddress()));
+    await mine(ALICE_V2_INSTANCES.CORE.TEMPLE_TOKEN.approve(TEMPLE_V2_ADDRESSES.TEMPLE_LINE_OF_CREDIT.ADDRESS, collateralAmount));
+    await mine(ALICE_V2_INSTANCES.TEMPLE_LINE_OF_CREDIT.INSTANCE.addCollateral(collateralAmount, await alice.getAddress()));
+    await mine(ALICE_V2_INSTANCES.TEMPLE_LINE_OF_CREDIT.INSTANCE.borrow(maxLtvAliceBorrowDaiAmount, await alice.getAddress()));
     await checkBalances("Alice borrowed");
     
     const accounts: PromiseOrValue<string>[] = [await alice.getAddress()];
-    let status = await aliceV2contracts.tlc.computeLiquidity(accounts);
+    let status = await ALICE_V2_INSTANCES.TEMPLE_LINE_OF_CREDIT.INSTANCE.computeLiquidity(accounts);
     await expect(status[0].hasExceededMaxLtv).to.false;
 
     await mineBlocks();
-    status = await aliceV2contracts.tlc.computeLiquidity(accounts);
+    status = await ALICE_V2_INSTANCES.TEMPLE_LINE_OF_CREDIT.INSTANCE.computeLiquidity(accounts);
     await expect(status[0].hasExceededMaxLtv).to.true;
     await expect(status[0].currentDebt).to.eq(ethers.utils.parseEther('8712.500015150809241213'));
-    await mine(aliceV2contracts.tlc.batchLiquidate(accounts));
+    await mine(ALICE_V2_INSTANCES.TEMPLE_LINE_OF_CREDIT.INSTANCE.batchLiquidate(accounts));
     
-    status = await aliceV2contracts.tlc.computeLiquidity(accounts);
+    status = await ALICE_V2_INSTANCES.TEMPLE_LINE_OF_CREDIT.INSTANCE.computeLiquidity(accounts);
     await expect(status[0].hasExceededMaxLtv).to.false;
     await expect(status[0].currentDebt).to.eq(0);
 
     // Alice shouldn't be able to repay her debt any longer
-    await mine(aliceV2contracts.dai.approve(TEMPLE_V2_ADDRESSES.TEMPLE_LINE_OF_CREDIT.ADDRESS, ethers.utils.parseEther('8712.500015150809241213')));
-    await expect(aliceV2contracts.tlc.repayAll(await alice.getAddress())
-      ).to.be.revertedWithCustomError(aliceV2contracts.tlc, "ExpectedNonZero");
-    await expect(await templeV2contracts.temple.balanceOf(await alice.getAddress())).to.eq(0);
-    await expect(await templeV2contracts.dtemple.totalSupply()).to.eq(collateralAmount);
+    await mine(ALICE_V2_INSTANCES.EXTERNAL.MAKER_DAO.DAI_TOKEN.approve(TEMPLE_V2_ADDRESSES.TEMPLE_LINE_OF_CREDIT.ADDRESS, ethers.utils.parseEther('8712.500015150809241213')));
+    await expect(ALICE_V2_INSTANCES.TEMPLE_LINE_OF_CREDIT.INSTANCE.repayAll(await alice.getAddress())
+      ).to.be.revertedWithCustomError(ALICE_V2_INSTANCES.TEMPLE_LINE_OF_CREDIT.INSTANCE, "ExpectedNonZero");
+    await expect(await TEMPLE_V2_INSTANCES.CORE.TEMPLE_TOKEN.balanceOf(await alice.getAddress())).to.eq(0);
+    await expect(await TEMPLE_V2_INSTANCES.TREASURY_RESERVES_VAULT.D_TEMPLE_TOKEN.totalSupply()).to.eq(collateralAmount);
     
     await checkBalances("Final balances");
   }

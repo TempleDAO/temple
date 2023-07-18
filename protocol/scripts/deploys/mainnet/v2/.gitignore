@@ -1,0 +1,10 @@
+
+# ignore duplicate sepolia deployment scripts
+/core/02-circuit-breaker-proxy.ts
+/core/03-trv-tpi-oracle.ts
+/core/04-trv.ts
+/core/05-trv-dusd.ts
+/core/06-trv-dtemple-token.ts
+/core/08-temple-base-strategy.ts
+/tlc
+contract-addresses.ts

@@ -5,7 +5,7 @@ import {
   deployAndMine,
   ensureExpectedEnvvars,
 } from '../../../helpers';
-import { getDeployedContracts } from '../../../v2/sepolia/contract-addresses';
+import { getDeployedContracts } from '../contract-addresses';
 
 async function main() {
   ensureExpectedEnvvars();
