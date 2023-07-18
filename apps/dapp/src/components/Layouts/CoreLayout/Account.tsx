@@ -29,13 +29,9 @@ export const Account = () => {
 
   useEffect(() => {
     const checkBlocked = async () => {
-      console.log(window.location);
-      const blocked = await fetch(`${window.location.href}api/geoblocker`)
+      const blocked = await fetch(`${window.location.href}api/geoblock`)
         .then((res) => res.json())
-        .then((res) => {
-          console.log(res);
-          return res.blocked;
-        });
+        .then((res) => res.blocked);
       setIsBlocked(blocked);
     };
     checkBlocked();
