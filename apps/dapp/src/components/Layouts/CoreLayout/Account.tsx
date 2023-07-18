@@ -37,12 +37,12 @@ export const Account = () => {
     checkBlocked();
   }, []);
 
-  if (isBlocked) {
-    return <ConnectButton disabled={true} label="Restricted Jurisdiction" isSmall isActive isUppercase role="button" />;
-  }
-
   if (accountLoading || connectLoading || networkLoading) {
     return <Loader />;
+  }
+
+  if (isBlocked) {
+    return <ConnectButton disabled={true} label="Restricted Jurisdiction" isSmall isActive isUppercase role="button" />;
   }
 
   if (address) {
