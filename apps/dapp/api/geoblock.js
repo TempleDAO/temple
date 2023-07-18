@@ -1,12 +1,7 @@
-const BLOCKED_ISO_COUNTRIES = ['US', 'CN', 'RU', 'KP', 'IR'];
-
-export default function handler(request, response) {
-  console.log(request.headers);
-  console.log(request.headers['x-vercel-ip-country']);
-  console.log(BLOCKED_ISO_COUNTRIES.includes(request.headers['x-vercel-ip-country']));
-  // Send response to the user
+const handler = (request, response) => {
   response.status(200).json({
-    blocked: BLOCKED_ISO_COUNTRIES.includes(request.headers['x-vercel-ip-country']),
-    headers: request.headers,
+    country: request.headers['x-vercel-ip-country'],
+    blocked: ['US', 'CN', 'RU', 'KP', 'IR'].includes(request.headers['x-vercel-ip-country']),
   });
-}
+};
+export default handler;
