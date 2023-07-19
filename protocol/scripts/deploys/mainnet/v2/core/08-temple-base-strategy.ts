@@ -1,0 +1,1 @@
+../../../sepolia/v2/core/08-temple-base-strategy.ts

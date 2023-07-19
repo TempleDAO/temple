@@ -2,7 +2,7 @@ import { Signer } from 'ethers';
 import { expect } from "chai";
 import { ethers } from 'hardhat';
 
-import { impersonateSigner, mineBlocks } from '../../../../test/helpers';
+import { impersonateSigner, mineForwardSeconds } from '../../../../test/helpers';
 import { ensureExpectedEnvvars, mine } from '../../helpers';
 import { getDeployedContracts, connectToContracts } from '../../mainnet/v2/contract-addresses';
 import { ERC20__factory, TempleERC20Token__factory } from '../../../../typechain';
@@ -26,29 +26,22 @@ async function impersonateAndFund(owner: Signer, address: string, amount: number
 async function main() {
   ensureExpectedEnvvars();
   const [owner, alice] = await ethers.getSigners();
+  console.log("owner addr:", await owner.getAddress());
+  console.log("alice addr:", await alice.getAddress());
 
   const TEMPLE_V2_ADDRESSES = getDeployedContracts();
-  console.log("owner addr:", await owner.getAddress());
   console.log("temple v2 msig addr:", TEMPLE_V2_ADDRESSES.CORE.EXECUTOR_MSIG);
-  console.log("alice addr:", await alice.getAddress());
   
   const templeV2CoreMsig = await impersonateAndFund(owner, TEMPLE_V2_ADDRESSES.CORE.EXECUTOR_MSIG, 10);
-
   const TEMPLE_V2_INSTANCES = connectToContracts(templeV2CoreMsig);
   const ALICE_V2_INSTANCES = connectToContracts(alice);
   
-  const trvDaiPool = ethers.utils.parseEther("100000");
   const collateralAmount = ethers.utils.parseEther("10000");
   const aliceInitialDaiBalance = ethers.utils.parseEther("20000");
   const borrowDaiAmount = ethers.utils.parseEther("1000");
   const maxLtvAliceBorrowDaiAmount = ethers.utils.parseEther("8712.5"); // 85% of collateral amount
 
-  const templeWhale = await impersonateSigner(TEMPLE_WHALE);
-  const daiWhale = await impersonateSigner(DAI_WHALE);
-
-  const checkBalances = async(
-    desc: string,
-  ) => {
+  async function checkBalances (desc: string) {
     console.log(`\n\n*** ${desc} ***`);
     console.log('temple balance of alice', await TEMPLE_V2_INSTANCES.CORE.TEMPLE_TOKEN.balanceOf(await alice.getAddress()));
     console.log('temple balance of tlc', await TEMPLE_V2_INSTANCES.CORE.TEMPLE_TOKEN.balanceOf(TEMPLE_V2_ADDRESSES.TEMPLE_LINE_OF_CREDIT.ADDRESS));
@@ -58,8 +51,12 @@ async function main() {
     console.log('dTemple totalSupply', await TEMPLE_V2_INSTANCES.TREASURY_RESERVES_VAULT.D_TEMPLE_TOKEN.totalSupply());
   }
 
-  /* Seed Alice & TRV wallets */
+  /* Initial Setup */
   {
+    const trvDaiPool = ethers.utils.parseEther("100000");
+    const daiWhale = await impersonateSigner(DAI_WHALE);
+    const templeWhale = await impersonateSigner(TEMPLE_WHALE);
+    
     const daiToken = ERC20__factory.connect(TEMPLE_V2_ADDRESSES.EXTERNAL.MAKER_DAO.DAI_TOKEN, daiWhale);
     const templeToken = TempleERC20Token__factory.connect(TEMPLE_V2_ADDRESSES.CORE.TEMPLE_TOKEN, templeWhale);
 
@@ -75,6 +72,9 @@ async function main() {
     // Seeding alice with dai
     await mine(daiToken.transfer(await alice.getAddress(), aliceInitialDaiBalance));
     await checkBalances("Seeding finished");
+
+    // Temple base strategy & multisig can mint/burn $TEMPLE
+    await mine(TEMPLE_V2_INSTANCES.CORE.TEMPLE_TOKEN.addMinter(TEMPLE_V2_ADDRESSES.STRATEGIES.TEMPLE_BASE_STRATEGY.ADDRESS));
   }
 
   /* Alice adds collateral & borrows dai */
@@ -121,7 +121,7 @@ async function main() {
     let status = await ALICE_V2_INSTANCES.TEMPLE_LINE_OF_CREDIT.INSTANCE.computeLiquidity(accounts);
     await expect(status[0].hasExceededMaxLtv).to.false;
 
-    await mineBlocks();
+    await mineForwardSeconds(1);
     status = await ALICE_V2_INSTANCES.TEMPLE_LINE_OF_CREDIT.INSTANCE.computeLiquidity(accounts);
     await expect(status[0].hasExceededMaxLtv).to.true;
     await expect(status[0].currentDebt).to.eq(ethers.utils.parseEther('8712.500015150809241213'));
