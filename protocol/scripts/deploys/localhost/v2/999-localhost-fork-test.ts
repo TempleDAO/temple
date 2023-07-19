@@ -73,7 +73,7 @@ async function main() {
     await mine(daiToken.transfer(await alice.getAddress(), aliceInitialDaiBalance));
     await checkBalances("Seeding finished");
 
-    // Temple base strategy & multisig can mint/burn $TEMPLE
+    // Temple base strategy can mint/burn $TEMPLE
     await mine(TEMPLE_V2_INSTANCES.CORE.TEMPLE_TOKEN.addMinter(TEMPLE_V2_ADDRESSES.STRATEGIES.TEMPLE_BASE_STRATEGY.ADDRESS));
   }
 

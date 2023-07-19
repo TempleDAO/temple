@@ -80,3 +80,99 @@ tl;dr;
 3. For each category + finding, analyse and either:
    1. Fix the issue or
    2. If it's a false positive then ignore the finding by typing the list index number in the triage.
+
+
+## Temple V2 deployment
+
+The following are the steps to deploy temple v2 & tlc latest contracts to mainnet. Copy & paste each `npx hardhat run ...` command from `v2 core` & `tlc` in order to deploy to mainnet, after each successful deployment, please do the following:
+
+- (**mandatory**) Copy newest generated contract address in its respective place under `scripts/deploys/mainnet/v2/core/contract-addressses.ts`
+- (**recommended**) Verify & publish contract src to etherscan:
+  ```
+  npx hardhat verify --network mainnet XXXX --constructor-args scripts/deploys/mainnet/deploymentArgs/XXXX.js
+  ```
+
+
+### 1. Deploy v2 core contracts via hardhat scripts
+
+- 1.1 Deploy circuit breaker proxy
+  ```
+  npx hardhat run --network mainnet scripts/deploys/mainnet/v2/core/02-circuit-breaker-proxy.ts
+  ```
+
+- 1.2 Deploy trv tpi oracle
+  ```
+  npx hardhat run --network mainnet scripts/deploys/mainnet/v2/core/03-trv-tpi-oracle.ts
+  ```
+ 
+- 1.3 Deploy treasury reserve vault (trv)
+  ```
+  npx hardhat run --network mainnet scripts/deploys/mainnet/v2/core/04-trv.ts
+  ```
+ 
+- 1.4 Deploy trv debt usd token
+  ```
+  npx hardhat run --network mainnet scripts/deploys/mainnet/v2/core/05-trv-dusd.ts
+  ```
+
+- 1.5 Deploy trv debt temple token
+  ```
+  npx hardhat run --network mainnet scripts/deploys/mainnet/v2/core/06-trv-dtemple-token.ts
+  ```
+
+- 1.6 Deploy dsr base strategy
+  ```
+  npx hardhat run --network mainnet scripts/deploys/mainnet/v2/core/07-dsr-base-strategy.ts
+  ```
+
+- 1.7 Deploy temple base strategy
+  ```
+  npx hardhat run --network mainnet scripts/deploys/mainnet/v2/core/08-temple-base-strategy.ts
+  ```
+
+- 1.8 Apply post deploy core functions
+  ```
+  npx hardhat run --network mainnet scripts/deploys/mainnet/v2/core/99-core-post-deployment.ts
+  ```
+
+### 2. Deploy tlc contracts via hardhat scripts
+
+- 2.1 Deploy tlc interest rate model (IRM) linear kink
+  ```
+  npx hardhat run --network mainnet scripts/deploys/mainnet/v2/tlc/01-tlc-IRM-linear-kink.ts
+  ```
+
+- 2.2 Deploy temple line credit (tlc)
+  ```
+  npx hardhat run --network mainnet scripts/deploys/mainnet/v2/tlc/02-tlc.ts
+  ```
+
+- 2.3 Deploy tlc circuit breaker dai
+  ```
+  npx hardhat run --network mainnet scripts/deploys/mainnet/v2/tlc/03-tlc-circuit-breaker-dai.ts
+  ```
+
+- 2.4 Deploy tlc circuit breaker temple
+  ```
+  npx hardhat run --network mainnet scripts/deploys/mainnet/v2/tlc/04-tlc-circuit-breaker-temple.ts
+  ```
+
+- 2.5 Deploy tlc strategy
+  ```
+  npx hardhat run --network mainnet scripts/deploys/mainnet/v2/tlc/05-tlc-strategy.ts
+  ```
+
+- 2.6 Apply post deploy tlc functions 
+  ```
+  npx hardhat run --network mainnet scripts/deploys/mainnet/v2/tlc/99-tlc-post-deployment.ts
+  ```
+
+### 3. Commit & merge to main
+
+- 3.1 Create a new PR and commit the latest changes from above steps for another member(s) of the team to confirm
+
+### 4. Deploy tlc contracts via hardhat scripts
+
+- 4.1 Update the transaction builder batch file `temple-v2-transactions-batch.json`, change the `account: XXXXX` on line 26 for the TLC base strategy contract address generated on point `1.7` above. You should also be able to find it under `mainnet.STRATEGIES.TEMPLE_BASE_STRATEGY.ADDRESS` in `scripts/deploys/mainnet/v2/contract-addresses.ts`.
+
+- 4.2 Share the updated transaction builder batch file `temple-v2-transactions-batch.json` with any of the MC team members, that way they can import it in their safe app `https://app.safe.global/` > `transaction builder` and approve it accordingly.

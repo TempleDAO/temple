@@ -16,8 +16,8 @@ npx hardhat run --network localhost scripts/deploys/mainnet/v2/core/99-core-post
 # tlc
 npx hardhat run --network localhost scripts/deploys/mainnet/v2/tlc/01-tlc-IRM-linear-kink.ts
 npx hardhat run --network localhost scripts/deploys/mainnet/v2/tlc/02-tlc.ts
-npx hardhat run --network localhost scripts/deploys/mainnet/v2/tlc/03-tlc-circuit-breakers-dai.ts
-npx hardhat run --network localhost scripts/deploys/mainnet/v2/tlc/04-tlc-circuit-breakers-temple.ts
+npx hardhat run --network localhost scripts/deploys/mainnet/v2/tlc/03-tlc-circuit-breaker-dai.ts
+npx hardhat run --network localhost scripts/deploys/mainnet/v2/tlc/04-tlc-circuit-breaker-temple.ts
 npx hardhat run --network localhost scripts/deploys/mainnet/v2/tlc/05-tlc-strategy.ts
 npx hardhat run --network localhost scripts/deploys/mainnet/v2/tlc/99-tlc-post-deployment.ts
 
