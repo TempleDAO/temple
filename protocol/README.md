@@ -82,7 +82,7 @@ tl;dr;
    2. If it's a false positive then ignore the finding by typing the list index number in the triage.
 
 
-## Temple V2 deployment
+## Temple V2 & TLC deployment
 
 The following are the steps to deploy temple v2 & tlc latest contracts to mainnet. Copy & paste each `npx hardhat run ...` command from `v2 core` & `tlc` in order to deploy to mainnet, after each successful deployment, please do the following:
 
@@ -171,8 +171,20 @@ The following are the steps to deploy temple v2 & tlc latest contracts to mainne
 
 - 3.1 Create a new PR and commit the latest changes from above steps for another member(s) of the team to confirm
 
-### 4. Deploy tlc contracts via hardhat scripts
+### 4. Renounce ownership from deployer to multisigs
 
-- 4.1 Update the transaction builder batch file `temple-v2-transactions-batch.json`, change the `account: XXXXX` on line 26 for the TLC base strategy contract address generated on point `1.7` above. You should also be able to find it under `mainnet.STRATEGIES.TEMPLE_BASE_STRATEGY.ADDRESS` in `scripts/deploys/mainnet/v2/contract-addresses.ts`.
+- 4.1 Once msig addresses have been approved by temple core team, please update both EXECUTOR & RESCUER multisig addresses (`mainnet.**.**.**_MSIG`) in `scripts/deploys/mainnet/v2/contract-addresses.ts` file. Be aware that strategies may have different executor/rescuer msig.
 
-- 4.2 Share the updated transaction builder batch file `temple-v2-transactions-batch.json` with any of the MC team members, that way they can import it in their safe app `https://app.safe.global/` > `transaction builder` and approve it accordingly.
+- 4.2 Renounce deployer ownership to predefined msig addresses on the step above with
+  ```
+  npx hardhat run --network mainnet scripts/deploys/mainnet/v2/post-deploy/999-transfer-ownership.ts
+  ```
+
+### 5. Initial rescuer & executor msig transactions
+
+The new rescuer & executor msig contract addresses would need to perfomr a set of initial transactions to be able to operate as expected, please find below the steps required for this to happen:
+
+- 5.1 Update the transaction builder batch file `scripts/deploys/mainnet/v2/post-deploy/temple-v2-transactions-batch.json`, change all the placeholders `0xXXXX` for the relevant address in `scripts/deploys/mainnet/v2/contract-addresses.ts` under the mainnet network.
+
+- 5.2 Share the updated transaction builder batch file `temple-v2-transactions-batch.json` with any of the MC team members, that way they can import it in their safe app `https://app.safe.global/` > `transaction builder` and approve it accordingly.
+
