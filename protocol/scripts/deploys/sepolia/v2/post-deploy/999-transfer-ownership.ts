@@ -3,9 +3,9 @@ import { ethers } from 'hardhat';
 import {
     ensureExpectedEnvvars,
     mine,
-} from '../../helpers';
-import { TempleElevatedAccess } from '../../../../typechain';
-import { ContractAddresses, connectToContracts, getDeployedContracts } from './contract-addresses';
+} from '../../../helpers';
+import { TempleElevatedAccess } from '../../../../../typechain';
+import { ContractAddresses, connectToContracts, getDeployedContracts } from '../contract-addresses';
 
 async function proposeExecutorAndRescuer(contract: TempleElevatedAccess, executor: string, rescuer: string) {
     await mine(contract.proposeNewExecutor(executor));
@@ -25,7 +25,7 @@ async function main() {
     // Transfer ownership to the multisig
     await mine(TEMPLE_V2_INSTANCES.CORE.TEMPLE_TOKEN.transferOwnership(TEMPLE_V2_ADDRESSES.CORE.EXECUTOR_MSIG));
 
-    // Propose new executor
+    // Propose new executor & rescuer
     {
         await proposeCore(TEMPLE_V2_ADDRESSES, TEMPLE_V2_INSTANCES.CORE.CIRCUIT_BREAKER_PROXY);
         await proposeCore(TEMPLE_V2_ADDRESSES, TEMPLE_V2_INSTANCES.TREASURY_RESERVES_VAULT.INSTANCE);
@@ -40,7 +40,6 @@ async function main() {
 
         await proposeCore(TEMPLE_V2_ADDRESSES, TEMPLE_V2_INSTANCES.RAMOS.TEMPLE_DAI.INSTANCE);
         await proposeCore(TEMPLE_V2_ADDRESSES, TEMPLE_V2_INSTANCES.RAMOS.TEMPLE_DAI.AURA_STAKING);
-        await proposeCore(TEMPLE_V2_ADDRESSES, TEMPLE_V2_INSTANCES.RAMOS.TEMPLE_DAI.INSTANCE);
 
         await proposeExecutorAndRescuer(
             TEMPLE_V2_INSTANCES.STRATEGIES.DSR_BASE_STRATEGY.INSTANCE,
@@ -52,6 +51,14 @@ async function main() {
             TEMPLE_V2_ADDRESSES.STRATEGIES.TEMPLE_BASE_STRATEGY.EXECUTOR_MSIG,
             TEMPLE_V2_ADDRESSES.STRATEGIES.TEMPLE_BASE_STRATEGY.RESCUER_MSIG,
         );
+
+        await proposeExecutorAndRescuer(
+          TEMPLE_V2_INSTANCES.STRATEGIES.GNOSIS_SAFE_STRATEGY1.INSTANCE,
+          TEMPLE_V2_ADDRESSES.STRATEGIES.GNOSIS_SAFE_STRATEGY1.EXECUTOR_MSIG,
+          TEMPLE_V2_ADDRESSES.STRATEGIES.GNOSIS_SAFE_STRATEGY1.RESCUER_MSIG,
+        );
+        await proposeCore(TEMPLE_V2_ADDRESSES, TEMPLE_V2_INSTANCES.STRATEGIES.GNOSIS_SAFE_STRATEGY1.CIRCUIT_BREAKERS.DAI);
+        await proposeCore(TEMPLE_V2_ADDRESSES, TEMPLE_V2_INSTANCES.STRATEGIES.GNOSIS_SAFE_STRATEGY1.CIRCUIT_BREAKERS.TEMPLE);
         await proposeExecutorAndRescuer(
             TEMPLE_V2_INSTANCES.STRATEGIES.RAMOS_STRATEGY.INSTANCE,
             TEMPLE_V2_ADDRESSES.STRATEGIES.RAMOS_STRATEGY.EXECUTOR_MSIG,
@@ -59,7 +66,6 @@ async function main() {
         );
         await proposeCore(TEMPLE_V2_ADDRESSES, TEMPLE_V2_INSTANCES.STRATEGIES.RAMOS_STRATEGY.CIRCUIT_BREAKERS.DAI);
         await proposeCore(TEMPLE_V2_ADDRESSES, TEMPLE_V2_INSTANCES.STRATEGIES.RAMOS_STRATEGY.CIRCUIT_BREAKERS.TEMPLE);
-
         await proposeExecutorAndRescuer(
             TEMPLE_V2_INSTANCES.STRATEGIES.TLC_STRATEGY.INSTANCE,
             TEMPLE_V2_ADDRESSES.STRATEGIES.TLC_STRATEGY.EXECUTOR_MSIG,

@@ -75,6 +75,26 @@ async function main() {
 
     // Temple base strategy can mint/burn $TEMPLE
     await mine(TEMPLE_V2_INSTANCES.CORE.TEMPLE_TOKEN.addMinter(TEMPLE_V2_ADDRESSES.STRATEGIES.TEMPLE_BASE_STRATEGY.ADDRESS));
+
+    // Check executor & rescuer addresses for trv
+    await expect(await TEMPLE_V2_INSTANCES.TREASURY_RESERVES_VAULT.INSTANCE.executor()).to.be.eq(await owner.getAddress());
+    await expect(await TEMPLE_V2_INSTANCES.TREASURY_RESERVES_VAULT.INSTANCE.rescuer()).to.be.eq(await owner.getAddress());
+    
+    // Check executor & rescuer addresses for tlc
+    await expect(await TEMPLE_V2_INSTANCES.TEMPLE_LINE_OF_CREDIT.INSTANCE.executor()).to.be.eq(await owner.getAddress());
+    await expect(await TEMPLE_V2_INSTANCES.TEMPLE_LINE_OF_CREDIT.INSTANCE.rescuer()).to.be.eq(await owner.getAddress());
+
+    // Check executor & rescuer addresses for dsr base strategy
+    await expect(await TEMPLE_V2_INSTANCES.STRATEGIES.DSR_BASE_STRATEGY.INSTANCE.executor()).to.be.eq(await owner.getAddress());
+    await expect(await TEMPLE_V2_INSTANCES.STRATEGIES.DSR_BASE_STRATEGY.INSTANCE.rescuer()).to.be.eq(await owner.getAddress());
+
+    // Check executor & rescuer addresses for temple base strategy
+    await expect(await TEMPLE_V2_INSTANCES.STRATEGIES.TEMPLE_BASE_STRATEGY.INSTANCE.executor()).to.be.eq(await owner.getAddress());
+    await expect(await TEMPLE_V2_INSTANCES.STRATEGIES.TEMPLE_BASE_STRATEGY.INSTANCE.rescuer()).to.be.eq(await owner.getAddress());
+
+    // Check executor & rescuer addresses for tlc strategy
+    await expect(await TEMPLE_V2_INSTANCES.STRATEGIES.TLC_STRATEGY.INSTANCE.executor()).to.be.eq(await owner.getAddress());
+    await expect(await TEMPLE_V2_INSTANCES.STRATEGIES.TLC_STRATEGY.INSTANCE.rescuer()).to.be.eq(await owner.getAddress());
   }
 
   /* Alice adds collateral & borrows dai */
@@ -139,6 +159,61 @@ async function main() {
     await expect(await TEMPLE_V2_INSTANCES.TREASURY_RESERVES_VAULT.D_TEMPLE_TOKEN.totalSupply()).to.eq(collateralAmount);
     
     await checkBalances("Final balances");
+  }
+
+  /* Validate alice can't borrow when rescue mode is true */
+  {
+    const OWNER_V2_INSTANCES = connectToContracts(owner);
+    await mine (OWNER_V2_INSTANCES.TEMPLE_LINE_OF_CREDIT.INSTANCE.setRescueMode(true));
+    await expect(await OWNER_V2_INSTANCES.TEMPLE_LINE_OF_CREDIT.INSTANCE.inRescueMode()).to.be.true;
+    await expect(
+      ALICE_V2_INSTANCES.TEMPLE_LINE_OF_CREDIT.INSTANCE.borrow(ethers.utils.parseEther('1'), await alice.getAddress()))
+      .to.be.revertedWithCustomError(ALICE_V2_INSTANCES.TEMPLE_LINE_OF_CREDIT.INSTANCE, "InvalidAccess"
+    );
+    await mine (OWNER_V2_INSTANCES.TEMPLE_LINE_OF_CREDIT.INSTANCE.setRescueMode(false));
+  }
+
+  /* Transfer ownership to multisig.
+   * The ownership assestemnts below only work after
+   * $workspace/protocol/scripts/deploys/mainnet/v2/post-deploy/999-transfer-ownership.ts
+   * has been executed.
+   */
+  {
+    // Both executor & rescuer need to accept their new roles on trv
+    await mine(TEMPLE_V2_INSTANCES.TREASURY_RESERVES_VAULT.INSTANCE.acceptExecutor());
+    await mine(TEMPLE_V2_INSTANCES.TREASURY_RESERVES_VAULT.INSTANCE.acceptRescuer());
+    
+    // Check executor & rescuer addresses for trv
+    await expect(await TEMPLE_V2_INSTANCES.TREASURY_RESERVES_VAULT.INSTANCE.executor()).to.be.eq(TEMPLE_V2_ADDRESSES.CORE.EXECUTOR_MSIG);
+    await expect(await TEMPLE_V2_INSTANCES.TREASURY_RESERVES_VAULT.INSTANCE.rescuer()).to.be.eq(TEMPLE_V2_ADDRESSES.CORE.RESCUER_MSIG);
+    
+    // Both executor & rescuer need to accept their new roles on tlc
+    await mine(TEMPLE_V2_INSTANCES.TEMPLE_LINE_OF_CREDIT.INSTANCE.acceptExecutor());
+    await mine(TEMPLE_V2_INSTANCES.TEMPLE_LINE_OF_CREDIT.INSTANCE.acceptRescuer());
+    // Check executor & rescuer addresses for tlc
+    await expect(await TEMPLE_V2_INSTANCES.TEMPLE_LINE_OF_CREDIT.INSTANCE.executor()).to.be.eq(TEMPLE_V2_ADDRESSES.CORE.EXECUTOR_MSIG);
+    await expect(await TEMPLE_V2_INSTANCES.TEMPLE_LINE_OF_CREDIT.INSTANCE.rescuer()).to.be.eq(TEMPLE_V2_ADDRESSES.CORE.RESCUER_MSIG);
+
+    // Both executor & rescuer need to accept their new roles on dsr strategy
+    await mine(TEMPLE_V2_INSTANCES.STRATEGIES.DSR_BASE_STRATEGY.INSTANCE.acceptExecutor());
+    await mine(TEMPLE_V2_INSTANCES.STRATEGIES.DSR_BASE_STRATEGY.INSTANCE.acceptRescuer());
+    // Check executor & rescuer addresses for dsr base strategy
+    await expect(await TEMPLE_V2_INSTANCES.STRATEGIES.DSR_BASE_STRATEGY.INSTANCE.executor()).to.be.eq(TEMPLE_V2_ADDRESSES.STRATEGIES.DSR_BASE_STRATEGY.EXECUTOR_MSIG);
+    await expect(await TEMPLE_V2_INSTANCES.STRATEGIES.DSR_BASE_STRATEGY.INSTANCE.rescuer()).to.be.eq(TEMPLE_V2_ADDRESSES.STRATEGIES.DSR_BASE_STRATEGY.RESCUER_MSIG);
+
+    // Both executor & rescuer need to accept their new roles on temple strategy
+    await mine(TEMPLE_V2_INSTANCES.STRATEGIES.TEMPLE_BASE_STRATEGY.INSTANCE.acceptExecutor());
+    await mine(TEMPLE_V2_INSTANCES.STRATEGIES.TEMPLE_BASE_STRATEGY.INSTANCE.acceptRescuer());
+    // Check executor & rescuer addresses for temple base strategy
+    await expect(await TEMPLE_V2_INSTANCES.STRATEGIES.TEMPLE_BASE_STRATEGY.INSTANCE.executor()).to.be.eq(TEMPLE_V2_ADDRESSES.STRATEGIES.TEMPLE_BASE_STRATEGY.EXECUTOR_MSIG);
+    await expect(await TEMPLE_V2_INSTANCES.STRATEGIES.TEMPLE_BASE_STRATEGY.INSTANCE.rescuer()).to.be.eq(TEMPLE_V2_ADDRESSES.STRATEGIES.TEMPLE_BASE_STRATEGY.RESCUER_MSIG);
+
+    // Both executor & rescuer need to accept their new roles on tlc strategy
+    await mine(TEMPLE_V2_INSTANCES.STRATEGIES.TLC_STRATEGY.INSTANCE.acceptExecutor());
+    await mine(TEMPLE_V2_INSTANCES.STRATEGIES.TLC_STRATEGY.INSTANCE.acceptRescuer());
+    // Check executor & rescuer addresses for tlc strategy
+    await expect(await TEMPLE_V2_INSTANCES.STRATEGIES.TLC_STRATEGY.INSTANCE.executor()).to.be.eq(TEMPLE_V2_ADDRESSES.STRATEGIES.TLC_STRATEGY.EXECUTOR_MSIG);
+    await expect(await TEMPLE_V2_INSTANCES.STRATEGIES.TLC_STRATEGY.INSTANCE.rescuer()).to.be.eq(TEMPLE_V2_ADDRESSES.STRATEGIES.TLC_STRATEGY.RESCUER_MSIG);
   }
 }
 

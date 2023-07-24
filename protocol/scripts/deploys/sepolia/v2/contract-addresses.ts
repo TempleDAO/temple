@@ -199,7 +199,7 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
             CIRCUIT_BREAKER_PROXY: '0xE2b5bDE7e80f89975f7229d78aD9259b2723d11F',
             // GNOSIS_SAFE_GUARD: '',
             EXECUTOR_MSIG: '0x4D6175d58C5AceEf30F546C0d5A557efFa53A950',
-            RESCUER_MSIG: '',
+            RESCUER_MSIG: '0x4D6175d58C5AceEf30F546C0d5A557efFa53A950',
         },
         TREASURY_RESERVES_VAULT: {
             ADDRESS: '0x4ea0Be853219be8C9cE27200Bdeee36881612FF2',
@@ -232,19 +232,19 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
             DSR_BASE_STRATEGY: {
                 ADDRESS: '0xfB12F7170FF298CDed84C793dAb9aBBEcc01E798',
                 EXECUTOR_MSIG: '0x4D6175d58C5AceEf30F546C0d5A557efFa53A950',
-                RESCUER_MSIG: '',
+                RESCUER_MSIG: '0x4D6175d58C5AceEf30F546C0d5A557efFa53A950',
                 // No circuit breakers for DSR base strategy
             },
             TEMPLE_BASE_STRATEGY: {
                 ADDRESS: '0xc1EeD9232A0A44c2463ACB83698c162966FBc78d',
                 EXECUTOR_MSIG: '0x4D6175d58C5AceEf30F546C0d5A557efFa53A950',
-                RESCUER_MSIG: '',
+                RESCUER_MSIG: '0x4D6175d58C5AceEf30F546C0d5A557efFa53A950',
                 // No circuit breakers for Temple base strategy
             },
             GNOSIS_SAFE_STRATEGY1: {
                 ADDRESS: '',
-                EXECUTOR_MSIG: '',
-                RESCUER_MSIG: '',
+                EXECUTOR_MSIG: '0x4D6175d58C5AceEf30F546C0d5A557efFa53A950',
+                RESCUER_MSIG: '0x4D6175d58C5AceEf30F546C0d5A557efFa53A950',
                 UNDERLYING_GNOSIS_SAFE: '',
                 CIRCUIT_BREAKERS: {
                     DAI: '',
@@ -253,8 +253,8 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
             },
             RAMOS_STRATEGY: {
                 ADDRESS: '',
-                EXECUTOR_MSIG: '',
-                RESCUER_MSIG: '',
+                EXECUTOR_MSIG: '0x4D6175d58C5AceEf30F546C0d5A557efFa53A950',
+                RESCUER_MSIG: '0x4D6175d58C5AceEf30F546C0d5A557efFa53A950',
                 CIRCUIT_BREAKERS: {
                     DAI: '',
                     TEMPLE: '',
@@ -263,7 +263,7 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
             TLC_STRATEGY: {
                 ADDRESS: '0x64f5219563e28EeBAAd91Ca8D31fa3b36621FD4f',
                 EXECUTOR_MSIG: '0x4D6175d58C5AceEf30F546C0d5A557efFa53A950',
-                RESCUER_MSIG: '',
+                RESCUER_MSIG: '0x4D6175d58C5AceEf30F546C0d5A557efFa53A950',
             },
         },
         EXTERNAL: {

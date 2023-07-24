@@ -64,7 +64,8 @@
     "local-fork": "hardhat node --fork https://eth-mainnet.alchemyapi.io/v2/5uWfALq4t1xR49V3EW5bBZEE4xh97l-A --fork-block-number 13205117",
     "local-fork:mainnet": "hardhat node --fork https://eth-mainnet.g.alchemy.com/v2/LjzU7NEw1jfJZSDBP10rGeg53cSlzscP --fork-block-number 17625800",
     "local-fork:deploy:tlc": "$PWD/scripts/deploys/localhost/v2/deploy-localhost-fork.sh",
-    "local-fork:test:tlc": "hardhat run --network localhost scripts/deploys/localhost/v2/999-localhost-fork-test.ts",
+    "local-fork:test:transfer-ownership": "hardhat run --network localhost scripts/deploys/mainnet/v2/post-deploy/999-transfer-ownership.ts",
+    "local-fork:test:tlc": "yarn local-fork:test:transfer-ownership && hardhat run --network localhost scripts/deploys/localhost/v2/999-localhost-fork-test.ts",
     "forge-test": "forge test",
     "forge-coverage": "forge coverage",
     "forge-coverage-html": "forge coverage --report lcov && genhtml lcov.info -o report --branch-coverage --legend"
