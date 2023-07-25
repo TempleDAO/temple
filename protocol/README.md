@@ -95,77 +95,19 @@ The following are the steps to deploy temple v2 & tlc latest contracts to mainne
 
 ### 1. Deploy v2 core contracts via hardhat scripts
 
-- 1.1 Deploy circuit breaker proxy
-  ```
-  npx hardhat run --network mainnet scripts/deploys/mainnet/v2/core/02-circuit-breaker-proxy.ts
-  ```
+Deploy all the temple v2 core contracts under `$workspace/protocol/scripts/deploys/mainnet/v2/core/**.ts` following the script template bellow (replace as required):
 
-- 1.2 Deploy trv tpi oracle
-  ```
-  npx hardhat run --network mainnet scripts/deploys/mainnet/v2/core/03-trv-tpi-oracle.ts
-  ```
- 
-- 1.3 Deploy treasury reserve vault (trv)
-  ```
-  npx hardhat run --network mainnet scripts/deploys/mainnet/v2/core/04-trv.ts
-  ```
- 
-- 1.4 Deploy trv debt usd token
-  ```
-  npx hardhat run --network mainnet scripts/deploys/mainnet/v2/core/05-trv-dusd.ts
-  ```
-
-- 1.5 Deploy trv debt temple token
-  ```
-  npx hardhat run --network mainnet scripts/deploys/mainnet/v2/core/06-trv-dtemple-token.ts
-  ```
-
-- 1.6 Deploy dsr base strategy
-  ```
-  npx hardhat run --network mainnet scripts/deploys/mainnet/v2/core/07-dsr-base-strategy.ts
-  ```
-
-- 1.7 Deploy temple base strategy
-  ```
-  npx hardhat run --network mainnet scripts/deploys/mainnet/v2/core/08-temple-base-strategy.ts
-  ```
-
-- 1.8 Apply post deploy core functions
-  ```
-  npx hardhat run --network mainnet scripts/deploys/mainnet/v2/core/99-core-post-deployment.ts
-  ```
+```
+npx hardhat run --network mainnet scripts/deploys/mainnet/v2/core/XXXX.ts
+```
 
 ### 2. Deploy tlc contracts via hardhat scripts
 
-- 2.1 Deploy tlc interest rate model (IRM) linear kink
-  ```
-  npx hardhat run --network mainnet scripts/deploys/mainnet/v2/tlc/01-tlc-IRM-linear-kink.ts
-  ```
+Deploy all the new tlc contracts under `$workspace/protocol/scripts/deploys/mainnet/v2/tlc/**.ts` following the script template bellow (replace as required):
 
-- 2.2 Deploy temple line credit (tlc)
-  ```
-  npx hardhat run --network mainnet scripts/deploys/mainnet/v2/tlc/02-tlc.ts
-  ```
-
-- 2.3 Deploy tlc circuit breaker dai
-  ```
-  npx hardhat run --network mainnet scripts/deploys/mainnet/v2/tlc/03-tlc-circuit-breaker-dai.ts
-  ```
-
-- 2.4 Deploy tlc circuit breaker temple
-  ```
-  npx hardhat run --network mainnet scripts/deploys/mainnet/v2/tlc/04-tlc-circuit-breaker-temple.ts
-  ```
-
-- 2.5 Deploy tlc strategy
-  ```
-  npx hardhat run --network mainnet scripts/deploys/mainnet/v2/tlc/05-tlc-strategy.ts
-  ```
-
-- 2.6 Apply post deploy tlc functions 
-  ```
-  npx hardhat run --network mainnet scripts/deploys/mainnet/v2/tlc/99-tlc-post-deployment.ts
-  ```
+```
+npx hardhat run --network mainnet scripts/deploys/mainnet/v2/tlc/XXXX.ts
+```
 
 ### 3. Commit & merge to main
 
@@ -182,9 +124,9 @@ The following are the steps to deploy temple v2 & tlc latest contracts to mainne
 
 ### 5. Initial rescuer & executor msig transactions
 
-The new rescuer & executor msig contract addresses would need to perfomr a set of initial transactions to be able to operate as expected, please find below the steps required for this to happen:
+The new rescuer & executor msig contract addresses would need to perform a set of initial transactions to be able to operate as expected, please find below the steps required:
 
-- 5.1 Update the transaction builder batch file `scripts/deploys/mainnet/v2/post-deploy/temple-v2-transactions-batch.json`, change all the placeholders `0xXXXX` for the relevant address in `scripts/deploys/mainnet/v2/contract-addresses.ts` under the mainnet network.
+- 5.1 Update the transaction builder batch files `scripts/deploys/mainnet/v2/post-deploy/temple-v2-XXX-transactions-batch.json`, change all the placeholders `0xXXXX` for the relevant address in `scripts/deploys/mainnet/v2/contract-addresses.ts` under the mainnet network.
 
-- 5.2 Share the updated transaction builder batch file `temple-v2-transactions-batch.json` with any of the MC team members, that way they can import it in their safe app `https://app.safe.global/` > `transaction builder` and approve it accordingly.
+- 5.2 Share the updated transaction builder batch file `temple-v2-XXX-transactions-batch.json` with any of the MC team members, that way they can import it in their safe app `https://app.safe.global/` > `transaction builder` and approve it accordingly. Please be sure to share each file accordingly to the msig address.
 
