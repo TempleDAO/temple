@@ -9,6 +9,7 @@ import {
   Ramos__factory,
   IBalancerHelpers,
   IBalancerHelpers__factory,
+  IBalancerVault__factory,
   ERC20__factory,
   ERC20,
 } from 'types/typechain';
@@ -77,21 +78,21 @@ export function useRamosAdmin() {
         const RAMOS_CONTRACT = new Ramos__factory(signer).attach(RAMOS_ADDRESS);
         const POOL_ID = await RAMOS_CONTRACT.balancerPoolId();
         const BALANCER_VAULT_ADDRESS = await RAMOS_CONTRACT.balancerVault();
-        // const BALANCER_VAULT_CONTRACT = AMO__IBalancerVault__factory.connect(BALANCER_VAULT_ADDRESS, signer);
+        const BALANCER_VAULT_CONTRACT = IBalancerVault__factory.connect(BALANCER_VAULT_ADDRESS, signer);
         const BALANCER_HELPERS_CONTRACT = IBalancerHelpers__factory.connect(BALANCER_HELPERS_ADDRESS, signer);
         // const [tokenAddresses, balances] = await BALANCER_VAULT_CONTRACT.getPoolTokens(POOL_ID);
         const BPT_TOKEN_ADDRESS = await RAMOS_CONTRACT.bptToken();
         const BPT_TOKEN_CONTRACT = new ERC20__factory(signer).attach(BPT_TOKEN_ADDRESS);
-        const TPF = await RAMOS_CONTRACT.treasuryPriceIndex();
+        const TPF = await RAMOS_CONTRACT.treasuryPriceIndex(); // should be TPF, not TPI
         const MAX_REBALANCE_AMOUNTS = await RAMOS_CONTRACT.maxRebalanceAmounts();
         const PERCENTAGE_BOUND_LOW = await RAMOS_CONTRACT.rebalancePercentageBoundLow();
         const PERCENTAGE_BOUND_UP = await RAMOS_CONTRACT.rebalancePercentageBoundUp();
 
-        // setMaxRebalanceAmounts({
-        //   temple: DecimalBigNumber.fromBN(MAX_REBALANCE_AMOUNTS.temple, 18),
-        //   stable: DecimalBigNumber.fromBN(MAX_REBALANCE_AMOUNTS.stable, 18),
-        //   bpt: DecimalBigNumber.fromBN(MAX_REBALANCE_AMOUNTS.bpt, 18),
-        // });
+        setMaxRebalanceAmounts({
+          temple: DecimalBigNumber.fromBN(MAX_REBALANCE_AMOUNTS.protocolToken, 18),
+          stable: DecimalBigNumber.fromBN(MAX_REBALANCE_AMOUNTS.quoteToken, 18),
+          bpt: DecimalBigNumber.fromBN(MAX_REBALANCE_AMOUNTS.bpt, 18),
+        });
         setPercentageBounds({
           down: DecimalBigNumber.fromBN(PERCENTAGE_BOUND_LOW, 0),
           up: DecimalBigNumber.fromBN(PERCENTAGE_BOUND_UP, 0),
