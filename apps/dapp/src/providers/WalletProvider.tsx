@@ -1,4 +1,4 @@
-import { createContext, PropsWithChildren, useContext, useState } from 'react';
+import { createContext, PropsWithChildren, useContext, useEffect, useState } from 'react';
 import { BigNumber, Signer } from 'ethers';
 import { useAccount, useSigner, useNetwork, useConnect } from 'wagmi';
 
@@ -50,14 +50,23 @@ const WalletContext = createContext<WalletState>(INITIAL_STATE);
 
 export const WalletProvider = (props: PropsWithChildren<{}>) => {
   const { children } = props;
-
   const { data: signer, isLoading: signerLoading } = useSigner();
   const { chain } = useNetwork();
   const { address, isConnecting: accountLoading } = useAccount();
   const { isLoading: connectLoading } = useConnect();
-
   const { openNotification } = useNotification();
   const [balanceState, setBalanceState] = useState<Balance>(INITIAL_STATE.balance);
+  const [isBlocked, setIsBlocked] = useState(false);
+
+  useEffect(() => {
+    const checkBlocked = async () => {
+      const blocked = await fetch(`${window.location.href}api/geoblock`)
+        .then((res) => res.json())
+        .then((res) => res.blocked);
+      setIsBlocked(blocked);
+    };
+    checkBlocked();
+  }, []);
 
   const walletAddress = address;
   const isConnected = !!walletAddress && !!signer;
@@ -205,7 +214,7 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
         isConnecting: signerLoading || connectLoading || accountLoading,
         wallet: walletAddress,
         ensureAllowance,
-        signer: signer || null,
+        signer: isBlocked ? null : signer || null,
         network: !chain
           ? null
           : {
