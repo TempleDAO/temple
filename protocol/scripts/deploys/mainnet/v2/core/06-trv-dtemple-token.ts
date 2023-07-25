@@ -1,1 +1,0 @@
-../../../sepolia/v2/core/06-trv-dtemple-token.ts
