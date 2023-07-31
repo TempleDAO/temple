@@ -291,6 +291,45 @@ contract TempleDebtTokenTestDebtorInterestOnly is TempleDebtTokenTestBase {
         checkDebtor(bob, bobInterestRate, amount, amount, 0, startBlockTs + 1 days, bobBal);
     }
     
+    function test_setRiskPremiumInterestRateToZero() public {
+        vm.startPrank(executor);
+        uint256 amount = 100e18;
+        uint256 startBlockTs = block.timestamp;
+        dUSD.mint(alice, amount);
+        vm.warp(block.timestamp + 1 days);
+        dUSD.mint(bob, amount);
+
+        vm.warp(block.timestamp + 364 days);
+
+        uint256 aliceBal = TWO_PCT_365DAY;
+        uint256 bobBal = FIVE_PCT_364DAY;
+
+        checkBaseInterest(0, 2*amount, 2*amount, startBlockTs + 1 days, 2*amount, 2*amount, 0);
+        checkDebtor(alice, aliceInterestRate, amount, amount, 0, startBlockTs, aliceBal);
+        checkDebtor(bob, bobInterestRate, amount, amount, 0, startBlockTs + 1 days, bobBal);
+
+        changePrank(executor);
+        uint256 updatedRate = 0;
+        dUSD.setRiskPremiumInterestRate(alice, updatedRate);
+
+        // The rate was updated and a checkpoint was made.
+        // bob's extra interest isn't added to the estimatedDebtorInterest because he didn't checkpoint
+        checkBaseInterest(0, 2*amount, 2*amount, startBlockTs + 1 days, 2*amount, 2*amount, aliceBal-amount);
+        checkDebtor(alice, updatedRate, amount, amount, aliceBal-amount, block.timestamp, aliceBal);
+        checkDebtor(bob, bobInterestRate, amount, amount, 0, startBlockTs + 1 days, bobBal);
+
+        uint256 ts = block.timestamp;
+        vm.warp(block.timestamp + 365 days);
+
+        // 365 days of 0% interest. So Alice's balance remains the same.
+        uint256 aliceBal2 = aliceBal;
+        
+        bobBal = FIVE_PCT_729DAY;
+        checkBaseInterest(0, 2*amount, 2*amount, startBlockTs + 1 days, 2*amount, 2*amount, aliceBal-amount);
+        checkDebtor(alice, updatedRate, amount, amount, aliceBal-amount, ts, aliceBal2);
+        checkDebtor(bob, bobInterestRate, amount, amount, 0, startBlockTs + 1 days, bobBal);
+    }
+
     function test_burnAll() public {
         vm.startPrank(executor);
 

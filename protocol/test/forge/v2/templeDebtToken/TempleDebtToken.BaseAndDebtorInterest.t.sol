@@ -422,6 +422,81 @@ contract TempleDebtTokenTestBaseAndDebtorInterest is TempleDebtTokenTestBase {
         );
     }
     
+    function test_setRiskPremiumInterestRateToZero() public {
+        vm.startPrank(executor);
+        uint256 amount = 100e18;
+        uint256 startBlockTs = block.timestamp;
+        dUSD.mint(alice, amount);
+        vm.warp(block.timestamp + 1 days);
+        dUSD.mint(bob, amount);
+
+        vm.warp(block.timestamp + 364 days);
+
+        Expected memory aliceExpected = makeExpected(
+            /*shares*/          amount,
+            /*base total*/      ONE_PCT_365DAY_ROUNDING,
+            /*debtor int only*/ TWO_PCT_365DAY - amount
+        );
+        Expected memory bobExpected = makeExpected(
+            /*shares*/          SECOND_DAY_SHARES,
+            /*base total*/      ONE_PCT_364DAY,
+            /*debtor int only*/ FIVE_PCT_364DAY - amount
+        );
+        
+        checkBaseInterest(DEFAULT_BASE_INTEREST, aliceExpected.baseShares+bobExpected.baseShares, ONE_PCT_1DAY + amount, startBlockTs + 1 days, aliceExpected.baseTotal+bobExpected.baseTotal, 2*amount, 0);
+        checkDebtor(alice, aliceInterestRate, amount, aliceExpected.baseShares, 0, startBlockTs, aliceExpected.balanceOf);
+        checkDebtor(bob, bobInterestRate, amount, bobExpected.baseShares, 0, startBlockTs + 1 days, bobExpected.balanceOf-1); // balanceOf rounded down
+
+        changePrank(executor);
+        uint256 updatedRate = 0;
+        dUSD.setRiskPremiumInterestRate(alice, updatedRate);
+
+        // The rate was updated and a checkpoint was made.
+        // bob's extra interest isn't added to the estimatedDebtorInterest because he didn't checkpoint
+        checkBaseInterest(DEFAULT_BASE_INTEREST, amount+bobExpected.baseShares, ONE_PCT_1DAY + amount, startBlockTs + 1 days, aliceExpected.baseTotal+bobExpected.baseTotal, 2*amount, aliceExpected.debtorInterestOnly);
+        checkDebtor(alice, updatedRate, amount, amount, aliceExpected.debtorInterestOnly, block.timestamp, aliceExpected.balanceOf);
+        checkDebtor(bob, bobInterestRate, amount, bobExpected.baseShares, 0, startBlockTs + 1 days, bobExpected.balanceOf-1);
+
+        uint256 ts = block.timestamp;
+        vm.warp(block.timestamp + 365 days);
+
+        // The net amount of base interest for Alice is the first day's interest, compounded for another 729 days
+        // There are very insignificant rounding diffs if we were to compound in steps
+        //  - eg: 1 day => 364 days => 365 days (net 730 days)
+        uint256 compoundedAliceBase = CompoundedInterest.continuouslyCompounded(ONE_PCT_1DAY, 729 days, uint96(DEFAULT_BASE_INTEREST));
+        // Since alice was checkpoint setRiskPremiumInterestRate, we need to then compound at the new rate for another yr.
+        uint256 compoundedAliceDebtorInterest = (
+            CompoundedInterest.continuouslyCompounded(aliceExpected.debtorInterestOnly + amount, 365 days, uint96(updatedRate)) -
+            amount
+        );
+
+        // Similarly for precision, we need to compound Bob in one hit.
+        uint256 compoundedBobBase = CompoundedInterest.continuouslyCompounded(amount, 729 days, uint96(DEFAULT_BASE_INTEREST));
+        uint256 compoundedBobDebtorInterest = (
+            CompoundedInterest.continuouslyCompounded(amount, 729 days, uint96(bobInterestRate)) -
+            amount
+        );
+
+        checkBaseInterest(
+            DEFAULT_BASE_INTEREST, 
+            aliceExpected.baseShares + bobExpected.baseShares, 
+            ONE_PCT_1DAY + amount, 
+            startBlockTs + 1 days, 
+            compoundedAliceBase + compoundedBobBase, 
+            2*amount, aliceExpected.debtorInterestOnly
+        );
+        checkDebtor(
+            alice, updatedRate, amount, aliceExpected.baseShares, 
+            aliceExpected.debtorInterestOnly, ts, 
+            compoundedAliceBase + compoundedAliceDebtorInterest
+        );
+        checkDebtor(
+            bob, bobInterestRate, amount, 
+            bobExpected.baseShares, 0, startBlockTs + 1 days,
+            compoundedBobBase - 1 + compoundedBobDebtorInterest
+        );
+    }
+    
     function test_burnAll() public {
         vm.startPrank(executor);
 

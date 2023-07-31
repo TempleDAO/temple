@@ -444,11 +444,12 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
      */
     function _compoundedDebtorInterest(Debtor storage debtor) internal view returns (uint256) {
         uint256 _rate = debtor.rate;
-        if (_rate == 0) return 0;
+        uint256 _checkpoint =  debtor.checkpoint;
+        if (_rate == 0) return _checkpoint;
 
         uint256 _timeElapsed = block.timestamp - debtor.checkpointTime;
         uint256 _principal = debtor.principal;
-        uint256 _principalAndInterest = _principal + debtor.checkpoint;
+        uint256 _principalAndInterest = _principal + _checkpoint;
         return _principalAndInterest.continuouslyCompounded(_timeElapsed, uint96(_rate)) - _principal;
     }
 
