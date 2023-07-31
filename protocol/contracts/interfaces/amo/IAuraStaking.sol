@@ -20,6 +20,7 @@ interface IAuraStaking {
     event SetAuraPoolInfo(uint32 indexed pId, address token, address rewards);
     event RecoveredToken(address token, address to, uint256 amount);
     event SetRewardsRecipient(address recipient);
+    event RewardTokensSet(address[] rewardTokens);
 
     function bptToken() external view returns (IERC20);
     function auraPoolInfo() external view returns (
@@ -35,6 +36,8 @@ interface IAuraStaking {
     function setAuraPoolInfo(uint32 _pId, address _token, address _rewards) external;
 
     function setRewardsRecipient(address _recipeint) external;
+
+    function setRewardTokens(address[] memory _rewardTokens) external;
 
     function recoverToken(address token, address to, uint256 amount) external;
     function isAuraShutdown() external view returns (bool);

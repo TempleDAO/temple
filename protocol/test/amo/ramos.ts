@@ -1097,6 +1097,7 @@ describe("RAMOS", async () => {
             await expect(stakingConnect.recoverToken(bptToken.address, alanAddress, 100)).to.be.revertedWithCustomError(amo, "InvalidAccess");
             await expect(stakingConnect.withdrawAllAndUnwrap(true, alanAddress)).to.be.revertedWithCustomError(amo, "InvalidAccess");
             await expect(stakingConnect.setRewardsRecipient(alanAddress)).to.be.revertedWithCustomError(amo, "InvalidAccess");
+            await expect(stakingConnect.setRewardTokens([])).to.be.revertedWithCustomError(amo, "InvalidAccess");
             await expect(stakingConnect.depositAndStake(100)).to.be.revertedWithCustomError(amo, "InvalidAccess");
             await expect(stakingConnect.withdrawAndUnwrap(100, true, executorAddress)).to.be.revertedWithCustomError(amo, "InvalidAccess");
 
@@ -1104,7 +1105,7 @@ describe("RAMOS", async () => {
             await expect(amoStaking.recoverToken(bptToken.address, alanAddress, 100)).to.be.revertedWith("BAL#416");
             await expect(amoStaking.withdrawAndUnwrap(100, true, executorAddress)).to.be.revertedWith("SafeMath: subtraction overflow");
             await amoStaking.withdrawAllAndUnwrap(false, ZERO_ADDRESS);
-            await amoStaking.setRewardsRecipient(executorAddress);
+            await amoStaking.setRewardTokens([]);
             await expect(amoStaking.depositAndStake(100)).to.be.revertedWith("BAL#416");
             await amoStaking.setAuraPoolInfo(10, bptToken.address, bptToken.address);
         });
@@ -1128,6 +1129,14 @@ describe("RAMOS", async () => {
             await expect(amoStaking.setRewardsRecipient(executorAddress))
                 .to.emit(amoStaking, "SetRewardsRecipient")
                 .withArgs(executorAddress);
+            expect(await amoStaking.rewardsRecipient()).to.eq(executorAddress);
+        });
+
+        it("sets reward tokens", async () => {
+            await expect(amoStaking.setRewardTokens([FRAX]))
+                .to.emit(amoStaking, "RewardTokensSet")
+                .withArgs([FRAX]);
+            expect(await amoStaking.rewardTokens(0)).to.eq(FRAX);
         });
 
         it("sets aura pool info", async () => {

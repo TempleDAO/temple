@@ -53,6 +53,10 @@ contract RamosTestnetAuraStaking is IAuraStaking, TempleElevatedAccess {
         revert("unimplemented");
     }
 
+    function setRewardTokens(address[] memory /*_rewardTokens*/) external override pure {
+        revert("unimplemented");
+    }
+
     function recoverToken(address token, address to, uint256 amount) external override onlyElevatedAccess {
         IERC20(token).safeTransfer(to, amount);
         emit RecoveredToken(token, to, amount);
