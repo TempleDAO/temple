@@ -342,6 +342,39 @@ describe("RAMOS", async () => {
     });
 
     describe("Admin", async () => {
+        it("Invalid max rebalance fee", async () => {
+            await expect(
+                new Ramos__factory(executor).deploy(
+                  rescuerAddress,
+                  executorAddress,
+                  BALANCER_VAULT,
+                  TEMPLE,
+                  BBA_USD_TOKEN,
+                  TEMPLE_BBAUSD_LP_TOKEN,
+                  amoStaking.address,
+                  0,
+                  TEMPLE_BB_A_USD_BALANCER_POOL_ID,
+                  await feeCollector.getAddress(),
+                  10_001
+                )
+            )
+            .to.be.revertedWithCustomError(amo, "InvalidBPSValue").withArgs(10_001);
+
+            await new Ramos__factory(executor).deploy(
+                rescuerAddress,
+                executorAddress,
+                BALANCER_VAULT,
+                TEMPLE,
+                BBA_USD_TOKEN,
+                TEMPLE_BBAUSD_LP_TOKEN,
+                amoStaking.address,
+                0,
+                TEMPLE_BB_A_USD_BALANCER_POOL_ID,
+                await feeCollector.getAddress(),
+                10_000
+            );
+        });
+
         it("admin setter methods", async () => {
             const joinPoolRequest = {
                 assets: [],

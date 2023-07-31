@@ -121,6 +121,10 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
         protocolTokenBalancerPoolIndex = _protocolTokenIndexInPool;
         balancerPoolId = _balancerPoolId;
         feeCollector = _feeCollector;
+
+        if (_maxRebalanceFee > BPS_PRECISION) {
+            revert AMOCommon.InvalidBPSValue(_maxRebalanceFee);
+        }
         maxRebalanceFee = _maxRebalanceFee;
     }
 
