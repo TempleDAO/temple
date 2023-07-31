@@ -123,9 +123,11 @@ abstract contract TempleElevatedAccess is ITempleElevatedAccess {
     /**
      * @notice Under normal operations, only the executors are allowed to call.
      * If 'rescue mode' has been enabled, then only the rescuers are allowed to call.
+     * @dev Important: Only for use when called from an *external* contract. 
+     * If a function with this modifier is called internally then the `msg.sig` 
+     * will still refer to the top level externally called function.
      */
     modifier onlyElevatedAccess() {
-        // @todo AUDITORS -- are there any security concerns with using `msg.sig` in this way?
         if (!isElevatedAccess(msg.sender, msg.sig)) revert CommonEventsAndErrors.InvalidAccess();
         _;
     }
