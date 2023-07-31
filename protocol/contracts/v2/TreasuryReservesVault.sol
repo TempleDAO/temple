@@ -587,7 +587,10 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
 
         if (toMintAmount > _creditBalance) {
             // Mint new dToken for the amount not covered by prior credit balance credit
-            uint256 _newDebt = toMintAmount - _creditBalance;
+            uint256 _newDebt;
+            unchecked {
+                _newDebt = toMintAmount - _creditBalance;
+            }
             dTokenBalance += _newDebt;
             tokenConfig.dToken.mint(strategy, _newDebt);
 
@@ -595,7 +598,9 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
             _tokenCredits[token] = _creditBalance = 0;
         } else {
             // Use up remaining credits
-            _creditBalance -= toMintAmount;
+            unchecked {
+              _creditBalance -= toMintAmount;
+            }
             _tokenCredits[token] = _creditBalance;
         }
 
@@ -619,13 +624,14 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
         uint256 _creditBalance = _tokenCredits[token];
 
         uint256 _burnedAmount = tokenConfig.dToken.burn(strategy, toBurnAmount);
+        uint256 _remaining;
         unchecked {
             dTokenBalance -= _burnedAmount;
+            _remaining = toBurnAmount - _burnedAmount;
         }
 
         // If there is any remaining which is not burned, then the debt is now 0
         // Add the remainder as a credit.
-        uint256 _remaining = toBurnAmount - _burnedAmount;
         if (_remaining != 0) {
             unchecked {
                 _creditBalance += _remaining;

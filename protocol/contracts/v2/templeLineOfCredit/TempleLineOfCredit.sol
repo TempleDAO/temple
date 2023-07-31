@@ -741,11 +741,13 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
     ) internal {
         if (_repayAmount == 0) return;
 
-        uint128 _newDebt = (_repayAmount > _cache.totalDebt)
-            ? 0
-            : _cache.totalDebt - _repayAmount;
+        unchecked {
+            uint128 _newDebt = (_repayAmount > _cache.totalDebt)
+                ? 0
+                : _cache.totalDebt - _repayAmount;
 
-        debtTokenData.totalDebt = _cache.totalDebt = _newDebt;
+            debtTokenData.totalDebt = _cache.totalDebt = _newDebt;
+        }
 
         // Update interest rates now the total debt has been updated.
         _updateInterestRates(_cache);
