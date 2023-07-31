@@ -103,7 +103,6 @@ abstract contract TempleElevatedAccess is ITempleElevatedAccess {
         ExplicitAccess memory _access;
         for (uint256 i; i < _length; ++i) {
             _access = access[i];
-            if (_access.fnSelector == bytes4(0)) revert CommonEventsAndErrors.InvalidParam();
             emit ExplicitAccessSet(allowedCaller, _access.fnSelector, _access.allowed);
             explicitFunctionAccess[allowedCaller][_access.fnSelector] = _access.allowed;
         }

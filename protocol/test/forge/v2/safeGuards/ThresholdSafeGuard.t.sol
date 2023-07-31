@@ -252,9 +252,6 @@ contract ThresholdSafeGuardTest is ThresholdSafeGuardTestBase {
         if (contractAddr == address(0)) {
             vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
             guard.setFunctionThresholdBatch(contractAddr, fnSels, threshold);
-        } else if (functionSignature1 == bytes4(0) || functionSignature2 == bytes4(0)) {
-            vm.expectRevert(abi.encodeWithSelector(IThresholdSafeGuard.InvalidFunctionSignature.selector));
-            guard.setFunctionThresholdBatch(contractAddr, fnSels, threshold);
         } else {
             vm.expectEmit();
             emit FunctionThresholdSet(contractAddr, functionSignature1, threshold);

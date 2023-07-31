@@ -188,9 +188,6 @@ contract TempleElevatedAccessTestSetters is TempleElevatedAccessTestBase {
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
         setExplicitAccess(mock, address(0), msg.sig, true);
 
-        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
-        setExplicitAccess(mock, alice, bytes4(0), true);
-
         vm.expectEmit(address(mock));
         emit ExplicitAccessSet(alice, fnSig, true);
         setExplicitAccess(mock, alice, fnSig, true);

@@ -120,8 +120,6 @@ contract ThresholdSafeGuard is IThresholdSafeGuard, TempleElevatedAccess {
         bytes4 sig;
         for (uint256 i; i < length; ++i) {
             sig = functionSignatures[i];
-            if (sig == bytes4(0)) revert InvalidFunctionSignature();
-
             emit FunctionThresholdSet(contractAddr, sig, threshold);
             functionThresholds[contractAddr][sig] = threshold;
         }
