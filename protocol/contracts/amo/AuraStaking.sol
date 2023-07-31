@@ -45,10 +45,10 @@ contract AuraStaking is IAuraStaking, TempleElevatedAccess {
         emit SetAuraPoolInfo(_pId, _token, _rewards);
     }
 
-    function setRewardsRecipient(address _recipeint) external override onlyElevatedAccess {
-        rewardsRecipient = _recipeint;
+    function setRewardsRecipient(address _recipient) external override onlyElevatedAccess {
+        rewardsRecipient = _recipient;
 
-        emit SetRewardsRecipient(_recipeint);
+        emit SetRewardsRecipient(_recipient);
     }
 
     /**

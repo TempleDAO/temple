@@ -84,9 +84,9 @@ interface ITempleStrategy is ITempleElevatedAccess {
     function manualAdjustments() external view returns (AssetBalanceDelta[] memory adjustments);
 
     /**
-     * @notice The latest checkpoint of each asset balance this stratgy holds.
+     * @notice The latest checkpoint of each asset balance this strategy holds.
      *
-     * @dev The asset value may be stale at any point in time, depending onthe strategy. 
+     * @dev The asset value may be stale at any point in time, depending on the strategy. 
      * It may optionally implement `checkpointAssetBalances()` in order to update those balances.
      */
     function latestAssetBalances() external view returns (AssetBalance[] memory assetBalances);

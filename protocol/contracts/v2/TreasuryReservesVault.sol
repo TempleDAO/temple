@@ -70,7 +70,7 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
     EnumerableSet.AddressSet internal _borrowTokenSet;
 
     /**
-     * @notice A strategy may pay off mroe than it's entire debt token balance, 
+     * @notice A strategy may pay off more than it's entire debt token balance, 
      * in which case the TRV maintains a 'credit' balance which will contribute
      * towards realised gain/loss at full liquidation.
      * These credits are also a contributing factor to the strategy equity calculations.
@@ -266,7 +266,7 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
     }
 
     /**
-     * @notice Recover any token from the debt token
+     * @notice Recover any token from the TRV
      * @param token Token to recover
      * @param to Recipient address
      * @param amount Amount to recover
@@ -647,7 +647,7 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
                     _balance -= tokenConfig.baseStrategyWithdrawalBuffer;
                 }
 
-                // Mint new dToken's for this base strategy.
+                // Mint new dTokens for this base strategy.
                 uint256 _dTokenBalance = tokenConfig.dToken.balanceOf(address(_baseStrategy));
                 _mintDToken(address(_baseStrategy), token, tokenConfig, _balance, _dTokenBalance);
 
