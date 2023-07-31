@@ -607,7 +607,7 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
     }
 
     modifier enoughCooldown() {
-        if (lastRebalanceTimeSecs != 0 && lastRebalanceTimeSecs + cooldownSecs > block.timestamp) {
+        if (lastRebalanceTimeSecs + cooldownSecs > block.timestamp) {
             revert AMOCommon.NotEnoughCooldown();
         }
         _;
