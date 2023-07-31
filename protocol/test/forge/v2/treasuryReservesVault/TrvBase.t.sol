@@ -338,15 +338,16 @@ contract TreasuryReservesVaultTestAdmin is TreasuryReservesVaultTestBase {
         // Repay so there's a credit
         deal(address(dai), address(strategy), 5, true);
         strategy.repay(dai, 5);
+        assertEq(trv.availableForStrategyToBorrow(address(strategy), dai), type(uint256).max - 10e18 + 5);
 
         // Shutdown the strategy (the credits don't get cleared)
         trv.setStrategyIsShuttingDown(address(strategy), true);
         trv.shutdown(address(strategy));
 
-        // Add the strategy again - it will now overflow.
+        // Add the strategy again - still doesn't overflow
         debtCeiling[0] = ITempleStrategy.AssetBalance(address(dai), type(uint256).max - 1);
-        vm.expectRevert(stdError.arithmeticError);
         trv.addStrategy(address(strategy), 0, debtCeiling);
+        assertEq(trv.availableForStrategyToBorrow(address(strategy), dai), type(uint256).max - 1);
     }
 
     function test_setStrategyPaused() public {

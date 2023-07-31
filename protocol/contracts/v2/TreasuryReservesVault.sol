@@ -181,20 +181,11 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
         StrategyConfig storage strategyConfig = strategies[strategy];
         strategyConfig.underperformingEquityThreshold = underperformingEquityThreshold;
 
-        mapping(IERC20 => uint256) storage _tokenCredits = strategyTokenCredits[strategy];
-
-        uint256 _ceiling;
-        IERC20 _token;
+        ITempleStrategy.AssetBalance memory _assetBalance;
         uint256 _length = debtCeiling.length;
         for (uint256 i; i < _length; ++i) {
-            _token = IERC20(debtCeiling[i].asset);
-            _ceiling = debtCeiling[i].balance;
-
-            // Note: This will be redundant when https://github.com/yAudit/temple-lending-report/issues/11 is addressed.
-            // Revert if the debt ceiling + credit overflows
-            _checkAddOverflow(_ceiling, _tokenCredits[_token]);
-
-            strategyConfig.debtCeiling[_token] = _ceiling;
+            _assetBalance = debtCeiling[i];
+            strategyConfig.debtCeiling[IERC20(_assetBalance.asset)] = _assetBalance.balance;
         }
     }
 
@@ -256,23 +247,24 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
         if (!_strategyConfig.isShuttingDown) revert NotShuttingDown();
 
         // Burn any remaining dToken debt.
-        address _token;
+        IERC20 _token;
         mapping(IERC20 => uint256) storage credits = strategyTokenCredits[strategy];
         uint256 _length = _borrowTokenSet.length();
         uint256 _outstandingDebt;
         for (uint256 i; i < _length; ++i) {
-            _token = _borrowTokenSet.at(i);
-            _outstandingDebt = borrowTokens[IERC20(_token)].dToken.burnAll(strategy);
+            _token = IERC20(_borrowTokenSet.at(i));
+            _outstandingDebt = borrowTokens[_token].dToken.burnAll(strategy);
             emit StrategyShutdownCreditAndDebt({
                 strategy: strategy,
-                token: _token, 
-                outstandingCredit: credits[IERC20(_token)], 
+                token: address(_token), 
+                outstandingCredit: credits[_token], 
                 outstandingDebt: _outstandingDebt
             });
 
             // Clean up the debtCeiling approvals for this borrow token.
             // Old borrow ceilings may not be removed, but not an issue
-            delete _strategyConfig.debtCeiling[IERC20(_token)];
+            delete _strategyConfig.debtCeiling[_token];
+            delete credits[_token];
         }
 
         // Remove the strategy
