@@ -267,7 +267,7 @@ interface ITreasuryReservesVault is ITempleElevatedAccess {
     ) external view returns (uint256);
 
     /**
-     * Pause all strategy borrow and repays
+     * @notice Pause all strategy borrow and repays
      */
     function setGlobalPaused(bool borrow, bool repays) external;
 

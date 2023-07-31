@@ -12,6 +12,7 @@ import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.so
 import { FakeERC20 } from "contracts/fakes/FakeERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { ud } from "@prb/math/src/UD60x18.sol";
+import { stdError } from "forge-std/StdError.sol";
 
 /* solhint-disable func-name-mixedcase, not-rely-on-time */
 contract AbstractStrategyTestBase is TempleTest {
@@ -273,6 +274,54 @@ contract AbstractStrategyTestBalances is AbstractStrategyTestBase {
         // Can't go over
         vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.DebtCeilingBreached.selector, 0.01e18, 0.02e18));
         strategy.borrow(dai, 0.02e18);
+    }
+
+    function test_availableToBorrow_overflow() public {
+        vm.startPrank(executor);
+
+        // Setup dai to be borrowed
+        {
+            trv.setBorrowToken(dai, address(0), 100, 101, address(dUSD));
+            deal(address(dai), address(trv), 100e18, true);
+        }
+
+        uint256 debtCeiling = type(uint256).max - 10e18;
+
+        // Setup the strategy
+        {
+            ITempleStrategy.AssetBalance[] memory debtCeilingArr = new ITempleStrategy.AssetBalance[](1);
+            debtCeilingArr[0] = ITempleStrategy.AssetBalance(address(dai), debtCeiling);
+            trv.addStrategy(address(strategy), 0, debtCeilingArr);
+        }
+
+        uint256 available = trv.availableForStrategyToBorrow(address(strategy), dai);
+        assertEq(available, debtCeiling);
+
+        deal(address(dai), address(trv), 1000e18, true);
+        available = trv.availableForStrategyToBorrow(address(strategy), dai);
+        assertEq(available, debtCeiling);
+
+        // Borrow 25e18
+        strategy.borrow(dai, 25e18);
+        available = trv.availableForStrategyToBorrow(address(strategy), dai);
+        assertEq(available, debtCeiling-25e18);
+
+        // Repay 30e18 --> 5e18 in credit
+        deal(address(dai), address(strategy), 30e18, true);
+        strategy.repay(dai, 30e18);
+        available = trv.availableForStrategyToBorrow(address(strategy), dai);
+        assertEq(available, debtCeiling + 5e18);
+
+        // Repay another 5e18 -> right at the max available now.
+        deal(address(dai), address(strategy), 5e18, true);
+        strategy.repay(dai, 5e18);
+        available = trv.availableForStrategyToBorrow(address(strategy), dai);
+        assertEq(available, type(uint256).max);
+
+        // Repaying any more will overflow.
+        deal(address(dai), address(strategy), 1, true);
+        vm.expectRevert(stdError.arithmeticError);
+        strategy.repay(dai, 1);
     }
 
     function test_latestAssetBalances() public {

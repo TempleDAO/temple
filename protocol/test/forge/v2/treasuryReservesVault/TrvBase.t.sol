@@ -12,6 +12,7 @@ import { MockStrategy } from "../strategies/MockStrategy.t.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { ITempleBaseStrategy } from "contracts/interfaces/v2/strategies/ITempleBaseStrategy.sol";
 import { ITempleStrategy } from "contracts/interfaces/v2/strategies/ITempleStrategy.sol";
+import { stdError } from "forge-std/StdError.sol";
 
 /* solhint-disable func-name-mixedcase, contract-name-camelcase, not-rely-on-time */
 contract TreasuryReservesVaultTestBase is TempleTest {
@@ -326,6 +327,28 @@ contract TreasuryReservesVaultTestAdmin is TreasuryReservesVaultTestBase {
         }
     }
 
+    function test_addStrategy_overflow() public {
+        vm.startPrank(executor);
+
+        ITempleStrategy.AssetBalance[] memory debtCeiling = new ITempleStrategy.AssetBalance[](1);
+        debtCeiling[0] = ITempleStrategy.AssetBalance(address(dai), type(uint256).max - 10e18);
+        trv.addStrategy(address(strategy), 0, debtCeiling);
+        trv.setBorrowToken(dai, address(0), 0, 0, address(dUSD));
+
+        // Repay so there's a credit
+        deal(address(dai), address(strategy), 5, true);
+        strategy.repay(dai, 5);
+
+        // Shutdown the strategy (the credits don't get cleared)
+        trv.setStrategyIsShuttingDown(address(strategy), true);
+        trv.shutdown(address(strategy));
+
+        // Add the strategy again - it will now overflow.
+        debtCeiling[0] = ITempleStrategy.AssetBalance(address(dai), type(uint256).max - 1);
+        vm.expectRevert(stdError.arithmeticError);
+        trv.addStrategy(address(strategy), 0, debtCeiling);
+    }
+
     function test_setStrategyPaused() public {
         vm.startPrank(executor);
 
@@ -388,6 +411,21 @@ contract TreasuryReservesVaultTestAdmin is TreasuryReservesVaultTestBase {
             vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.BorrowTokenNotEnabled.selector));
             trv.strategyDebtCeiling(address(strategy), weth);
         }
+    }
+
+    function test_setStrategyDebtCeiling_overflow() public {
+        vm.startPrank(executor);
+        ITempleStrategy.AssetBalance[] memory debtCeiling = new ITempleStrategy.AssetBalance[](1);
+        debtCeiling[0] = ITempleStrategy.AssetBalance(address(dai), type(uint256).max - 10e18);
+        trv.addStrategy(address(strategy), 0, debtCeiling);
+        trv.setBorrowToken(dai, address(0), 0, 0, address(dUSD));
+
+        // Repay so there's a credit
+        deal(address(dai), address(strategy), 5, true);
+        strategy.repay(dai, 5);
+
+        vm.expectRevert(stdError.arithmeticError);
+        trv.setStrategyDebtCeiling(address(strategy), dai, type(uint256).max - 1);
     }
 
     function test_setStrategyUnderperformingThreshold() public {
