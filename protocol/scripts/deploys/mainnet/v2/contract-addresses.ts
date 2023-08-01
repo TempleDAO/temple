@@ -1,5 +1,6 @@
 import { network } from "hardhat";
 import { 
+    AuraStaking,AuraStaking__factory,
     BalancerPoolHelper, BalancerPoolHelper__factory,
     DsrBaseStrategyTestnet, DsrBaseStrategyTestnet__factory,
     FakeERC20, FakeERC20__factory,
@@ -8,7 +9,6 @@ import {
     LinearWithKinkInterestRateModel, LinearWithKinkInterestRateModel__factory,
     Ramos, Ramos__factory,
     RamosStrategy, RamosStrategy__factory,
-    RamosTestnetAuraStaking, RamosTestnetAuraStaking__factory,
     TempleCircuitBreakerAllUsersPerPeriod, TempleCircuitBreakerAllUsersPerPeriod__factory,
     TempleCircuitBreakerProxy, TempleCircuitBreakerProxy__factory,
     TempleDebtToken, TempleDebtToken__factory,
@@ -51,9 +51,13 @@ export interface ContractAddresses {
             ADDRESS: string,
             POOL_HELPER: string,
             AURA_STAKING: string,
+            AURA_TOKEN: string,
+            AURA_BOOSTER: string,
             FEE_COLLECTOR: string,
             BPT_TOKEN: string,
+            POOL: string,
             POOL_ID: string,
+            REWARDS: string,
         },
     }
     STRATEGIES: {
@@ -103,6 +107,7 @@ export interface ContractAddresses {
         BALANCER: {
             VAULT: string,
             HELPERS: string,
+            TOKEN: string,
         },
     }
 }
@@ -133,16 +138,20 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
             },
         },
         RAMOS: {
-            AUTOMATION_EOA: '',
+            AUTOMATION_EOA: '0x67ae2161449cf3c5528fea969beba3e4f3288c61',
             TEMPLE_DAI: {
-                ADDRESS: '',
-                POOL_HELPER: '',
-                AURA_STAKING: '',
-                FEE_COLLECTOR: '',
-                BPT_TOKEN: '',
-                POOL_ID: '',
+                ADDRESS: '0x88D1aF96098a928eE278f162c1a84f339652f95b',
+                POOL_HELPER: '0x7Ce73F8f636C6bD3357A0A8a59e0ab6462C955B0',
+                AURA_STAKING: '0x6345e50859b0Ce82D8A495ba9894C6C81de385F3',
+                AURA_TOKEN: '0xC0c293ce456fF0ED870ADd98a0828Dd4d2903DBF',
+                AURA_BOOSTER: '0xA57b8d98dAE62B26Ec3bcC4a365338157060B234',
+                FEE_COLLECTOR: '0x4D6175d58C5AceEf30F546C0d5A557efFa53A950',
+                BPT_TOKEN: '0x173063a30e095313eee39411f07e95a8a806014e',
+                POOL: '0x8bd4a1e74a27182d23b98c10fd21d4fbb0ed4ba00002000000000000000004ed',
+                POOL_ID: '79',
+                REWARDS: '0x987c70086239e1a1e9f242ca19fb5a270d4e72b2'
             },
-        },
+      },
         STRATEGIES: {
             DSR_BASE_STRATEGY: {
                 ADDRESS: '0xfB12F7170FF298CDed84C793dAb9aBBEcc01E798',
@@ -157,22 +166,22 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
                 // No circuit breakers for Temple base strategy
             },
             GNOSIS_SAFE_STRATEGY1: {
-                ADDRESS: '',
+                ADDRESS: '0xbFD3c8A956AFB7a9754C951D03C9aDdA7EC5d638',
                 EXECUTOR_MSIG: '0x4D6175d58C5AceEf30F546C0d5A557efFa53A950',
                 RESCUER_MSIG: '0x4D6175d58C5AceEf30F546C0d5A557efFa53A950',
-                UNDERLYING_GNOSIS_SAFE: '',
+                UNDERLYING_GNOSIS_SAFE: '0x67ae2161449cf3c5528fea969beba3e4f3288c61',
                 CIRCUIT_BREAKERS: {
-                    DAI: '',
-                    TEMPLE: '',
+                    DAI: '0x04f1A5b9BD82a5020C49975ceAd160E98d8B77Af',
+                    TEMPLE: '0xde79380FBd39e08150adAA5C6c9dE3146f53029e',
                 },
             },
             RAMOS_STRATEGY: {
-                ADDRESS: '',
+                ADDRESS: '0x96E303b6D807c0824E83f954784e2d6f3614f167',
                 EXECUTOR_MSIG: '0x4D6175d58C5AceEf30F546C0d5A557efFa53A950',
                 RESCUER_MSIG: '0x4D6175d58C5AceEf30F546C0d5A557efFa53A950',
                 CIRCUIT_BREAKERS: {
-                    DAI: '',
-                    TEMPLE: '',
+                    DAI: '0x87c470437282174b3f8368c7CF1Ac03bcAe57954',
+                    TEMPLE: '0x746a48E39dC57Ff14B872B8979E20efE5E5100B1',
                 },
             },
             TLC_STRATEGY: {
@@ -188,8 +197,9 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
                 POT: '0x197E90f9FAD81970bA7976f33CbD77088E5D7cf7',
             },
             BALANCER: {
-                VAULT: '',
-                HELPERS: '',
+                VAULT: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
+                HELPERS: '0x5aDDCCa35b7A0D07C74063c48700C8590E87864E',
+                TOKEN: '0xba100000625a3754423978a60c9317c58a424e3D',
             },
         },
     },
@@ -218,14 +228,18 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
             },
         },
         RAMOS: {
-            AUTOMATION_EOA: '',
+            AUTOMATION_EOA: '0x67ae2161449cf3c5528fea969beba3e4f3288c61',
             TEMPLE_DAI: {
-                ADDRESS: '',
-                POOL_HELPER: '',
-                AURA_STAKING: '',
+                ADDRESS: '0xC3133cB9e685ccc82C73FbE580eCeDC667B41917',
+                POOL_HELPER: '0x4A02CbdBcd97BC639a13b864710550A7c39A3416',
+                AURA_STAKING: '0x058141Ca1097b8D76Ac87aAf012FCB0C088fcBd3',
+                AURA_TOKEN: '0xC0c293ce456fF0ED870ADd98a0828Dd4d2903DBF',
+                AURA_BOOSTER: '0x7818A1DA7BD1E64c199029E86Ba244a9798eEE10',
                 FEE_COLLECTOR: '',
-                BPT_TOKEN: '',
-                POOL_ID: '',
+                BPT_TOKEN: '0x173063a30e095313eee39411f07e95a8a806014e',
+                POOL: '0x8bd4a1e74a27182d23b98c10fd21d4fbb0ed4ba00002000000000000000004ed',
+                POOL_ID: '79',
+                REWARDS: '0x987c70086239e1a1e9f242ca19fb5a270d4e72b2',
             },
         },
         STRATEGIES: {
@@ -273,8 +287,9 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
                 POT: '0x197E90f9FAD81970bA7976f33CbD77088E5D7cf7',
             },
             BALANCER: {
-                VAULT: '',
-                HELPERS: '',
+                VAULT: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
+                HELPERS: '0x5aDDCCa35b7A0D07C74063c48700C8590E87864E',
+                TOKEN: '0xba100000625a3754423978a60c9317c58a424e3D',
             },
         },
     },
@@ -314,7 +329,7 @@ export interface ContractInstances {
         TEMPLE_DAI: {
             INSTANCE: Ramos,
             POOL_HELPER: BalancerPoolHelper,
-            AURA_STAKING: RamosTestnetAuraStaking,
+            AURA_STAKING: AuraStaking,
         }
     },
     STRATEGIES: {
@@ -377,7 +392,7 @@ export function connectToContracts(owner: Signer): ContractInstances {
             TEMPLE_DAI: {
                 INSTANCE: Ramos__factory.connect(TEMPLE_V2_ADDRESSES.RAMOS.TEMPLE_DAI.ADDRESS, owner),
                 POOL_HELPER: BalancerPoolHelper__factory.connect(TEMPLE_V2_ADDRESSES.RAMOS.TEMPLE_DAI.POOL_HELPER, owner),
-                AURA_STAKING: RamosTestnetAuraStaking__factory.connect(TEMPLE_V2_ADDRESSES.RAMOS.TEMPLE_DAI.AURA_STAKING, owner),
+                AURA_STAKING: AuraStaking__factory.connect(TEMPLE_V2_ADDRESSES.RAMOS.TEMPLE_DAI.AURA_STAKING, owner),
             }
         },
         STRATEGIES: {

@@ -53,15 +53,22 @@ yarn test
 
 ##### 1. Temple V2 - TLC
 
+In one terminal window:
 ```bash
-# In one terminal window, run a local node forked off mainnet
+# Run a local node forked off mainnet
 yarn local-fork:mainnet
+```
 
-# In another window, run the deploy script
-yarn local-fork:deploy:tlc
+In another window run the following scripts:
+```bash
+# Deploy temple v2 & tlc contracts
+yarn local-fork:deploy:templev2-tlc
 
-# Then finally some forked mainnet tests for TLC
-yarn local-fork:test:tlc
+# Transfer ownership from recently deployed contracts to proper executor & rescuer
+yarn local-fork:transfer-ownership:templev2-tlc
+
+# Then finally some forked mainnet tests for Temple v2 & TLC
+yarn local-fork:test:templev2-tlc
 ```
 
 ## VSCode Testing

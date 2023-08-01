@@ -1,11 +1,11 @@
-import { Signer } from 'ethers';
+import { BigNumber, Signer } from 'ethers';
 import { expect } from "chai";
 import { ethers } from 'hardhat';
 
 import { impersonateSigner, mineForwardSeconds } from '../../../../test/helpers';
 import { ensureExpectedEnvvars, mine } from '../../helpers';
-import { getDeployedContracts, connectToContracts } from '../../mainnet/v2/contract-addresses';
-import { ERC20__factory, TempleERC20Token__factory } from '../../../../typechain';
+import { getDeployedContracts, connectToContracts, ContractInstances, ContractAddresses } from '../../mainnet/v2/contract-addresses';
+import { ERC20__factory, TempleERC20Token__factory, TempleElevatedAccess } from '../../../../typechain';
 import { PromiseOrValue } from '../../../../typechain/common';
 
 const TEMPLE_WHALE = "0xFa4FC4ec2F81A4897743C5b4f45907c02ce06199";
@@ -63,6 +63,12 @@ async function main() {
     // Seeding TRV with dai
     await mine(daiToken.transfer( 
       TEMPLE_V2_ADDRESSES.TREASURY_RESERVES_VAULT.ADDRESS,
+      trvDaiPool
+    ));
+    
+    // Seeding Gnosis with dai
+    await mine(daiToken.transfer( 
+      TEMPLE_V2_ADDRESSES.STRATEGIES.GNOSIS_SAFE_STRATEGY1.ADDRESS,
       trvDaiPool
     ));
 
@@ -179,42 +185,64 @@ async function main() {
    * has been executed.
    */
   {
-    // Both executor & rescuer need to accept their new roles on trv
-    await mine(TEMPLE_V2_INSTANCES.TREASURY_RESERVES_VAULT.INSTANCE.acceptExecutor());
-    await mine(TEMPLE_V2_INSTANCES.TREASURY_RESERVES_VAULT.INSTANCE.acceptRescuer());
+    // Core executor & rescuer accept their new roles on trv
+    await acceptOwnershipCore(TEMPLE_V2_ADDRESSES, TEMPLE_V2_INSTANCES.TREASURY_RESERVES_VAULT.INSTANCE);
     
-    // Check executor & rescuer addresses for trv
-    await expect(await TEMPLE_V2_INSTANCES.TREASURY_RESERVES_VAULT.INSTANCE.executor()).to.be.eq(TEMPLE_V2_ADDRESSES.CORE.EXECUTOR_MSIG);
-    await expect(await TEMPLE_V2_INSTANCES.TREASURY_RESERVES_VAULT.INSTANCE.rescuer()).to.be.eq(TEMPLE_V2_ADDRESSES.CORE.RESCUER_MSIG);
+    // Core executor & rescuer accept their new roles on tlc
+    await acceptOwnershipCore(TEMPLE_V2_ADDRESSES, TEMPLE_V2_INSTANCES.TEMPLE_LINE_OF_CREDIT.INSTANCE);
     
-    // Both executor & rescuer need to accept their new roles on tlc
-    await mine(TEMPLE_V2_INSTANCES.TEMPLE_LINE_OF_CREDIT.INSTANCE.acceptExecutor());
-    await mine(TEMPLE_V2_INSTANCES.TEMPLE_LINE_OF_CREDIT.INSTANCE.acceptRescuer());
-    // Check executor & rescuer addresses for tlc
-    await expect(await TEMPLE_V2_INSTANCES.TEMPLE_LINE_OF_CREDIT.INSTANCE.executor()).to.be.eq(TEMPLE_V2_ADDRESSES.CORE.EXECUTOR_MSIG);
-    await expect(await TEMPLE_V2_INSTANCES.TEMPLE_LINE_OF_CREDIT.INSTANCE.rescuer()).to.be.eq(TEMPLE_V2_ADDRESSES.CORE.RESCUER_MSIG);
-
-    // Both executor & rescuer need to accept their new roles on dsr strategy
-    await mine(TEMPLE_V2_INSTANCES.STRATEGIES.DSR_BASE_STRATEGY.INSTANCE.acceptExecutor());
-    await mine(TEMPLE_V2_INSTANCES.STRATEGIES.DSR_BASE_STRATEGY.INSTANCE.acceptRescuer());
-    // Check executor & rescuer addresses for dsr base strategy
-    await expect(await TEMPLE_V2_INSTANCES.STRATEGIES.DSR_BASE_STRATEGY.INSTANCE.executor()).to.be.eq(TEMPLE_V2_ADDRESSES.STRATEGIES.DSR_BASE_STRATEGY.EXECUTOR_MSIG);
-    await expect(await TEMPLE_V2_INSTANCES.STRATEGIES.DSR_BASE_STRATEGY.INSTANCE.rescuer()).to.be.eq(TEMPLE_V2_ADDRESSES.STRATEGIES.DSR_BASE_STRATEGY.RESCUER_MSIG);
-
-    // Both executor & rescuer need to accept their new roles on temple strategy
-    await mine(TEMPLE_V2_INSTANCES.STRATEGIES.TEMPLE_BASE_STRATEGY.INSTANCE.acceptExecutor());
-    await mine(TEMPLE_V2_INSTANCES.STRATEGIES.TEMPLE_BASE_STRATEGY.INSTANCE.acceptRescuer());
-    // Check executor & rescuer addresses for temple base strategy
-    await expect(await TEMPLE_V2_INSTANCES.STRATEGIES.TEMPLE_BASE_STRATEGY.INSTANCE.executor()).to.be.eq(TEMPLE_V2_ADDRESSES.STRATEGIES.TEMPLE_BASE_STRATEGY.EXECUTOR_MSIG);
-    await expect(await TEMPLE_V2_INSTANCES.STRATEGIES.TEMPLE_BASE_STRATEGY.INSTANCE.rescuer()).to.be.eq(TEMPLE_V2_ADDRESSES.STRATEGIES.TEMPLE_BASE_STRATEGY.RESCUER_MSIG);
-
-    // Both executor & rescuer need to accept their new roles on tlc strategy
-    await mine(TEMPLE_V2_INSTANCES.STRATEGIES.TLC_STRATEGY.INSTANCE.acceptExecutor());
-    await mine(TEMPLE_V2_INSTANCES.STRATEGIES.TLC_STRATEGY.INSTANCE.acceptRescuer());
-    // Check executor & rescuer addresses for tlc strategy
-    await expect(await TEMPLE_V2_INSTANCES.STRATEGIES.TLC_STRATEGY.INSTANCE.executor()).to.be.eq(TEMPLE_V2_ADDRESSES.STRATEGIES.TLC_STRATEGY.EXECUTOR_MSIG);
-    await expect(await TEMPLE_V2_INSTANCES.STRATEGIES.TLC_STRATEGY.INSTANCE.rescuer()).to.be.eq(TEMPLE_V2_ADDRESSES.STRATEGIES.TLC_STRATEGY.RESCUER_MSIG);
+    // DSR strategy executor & rescuer accept their new roles
+    await acceptExecutorAndRescuer(TEMPLE_V2_INSTANCES.STRATEGIES.DSR_BASE_STRATEGY.INSTANCE, TEMPLE_V2_ADDRESSES.STRATEGIES.DSR_BASE_STRATEGY.EXECUTOR_MSIG, TEMPLE_V2_ADDRESSES.STRATEGIES.DSR_BASE_STRATEGY.RESCUER_MSIG);
+        
+    // Temple base strategy executor & rescuer accept their new roles
+    await acceptExecutorAndRescuer(TEMPLE_V2_INSTANCES.STRATEGIES.TEMPLE_BASE_STRATEGY.INSTANCE, TEMPLE_V2_ADDRESSES.STRATEGIES.TEMPLE_BASE_STRATEGY.EXECUTOR_MSIG, TEMPLE_V2_ADDRESSES.STRATEGIES.TEMPLE_BASE_STRATEGY.RESCUER_MSIG);
+    
+    // TLC strategy executor & rescuer accept their new roles
+    await acceptExecutorAndRescuer(TEMPLE_V2_INSTANCES.STRATEGIES.TLC_STRATEGY.INSTANCE, TEMPLE_V2_ADDRESSES.STRATEGIES.TLC_STRATEGY.EXECUTOR_MSIG, TEMPLE_V2_ADDRESSES.STRATEGIES.TLC_STRATEGY.RESCUER_MSIG);
+    
+    // Gnosis1 strategy executor & rescuer accept their new roles
+    await acceptExecutorAndRescuer(TEMPLE_V2_INSTANCES.STRATEGIES.GNOSIS_SAFE_STRATEGY1.INSTANCE, TEMPLE_V2_ADDRESSES.STRATEGIES.GNOSIS_SAFE_STRATEGY1.EXECUTOR_MSIG, TEMPLE_V2_ADDRESSES.STRATEGIES.GNOSIS_SAFE_STRATEGY1.RESCUER_MSIG);
+    
+    // Ramos strategy executor & rescuer accept their new roles
+    await acceptExecutorAndRescuer(TEMPLE_V2_INSTANCES.STRATEGIES.RAMOS_STRATEGY.INSTANCE, TEMPLE_V2_ADDRESSES.STRATEGIES.RAMOS_STRATEGY.EXECUTOR_MSIG, TEMPLE_V2_ADDRESSES.STRATEGIES.RAMOS_STRATEGY.RESCUER_MSIG);
   }
+
+  /* Recovery gnosys1 strategy */
+  {
+    await mine(TEMPLE_V2_INSTANCES.STRATEGIES.GNOSIS_SAFE_STRATEGY1.INSTANCE.recoverToGnosis(
+      TEMPLE_V2_ADDRESSES.EXTERNAL.MAKER_DAO.DAI_TOKEN,
+      ethers.utils.parseEther("100")
+    ));
+
+  }
+
+  /* Add & Remove ramos liquidity */
+  { 
+    await addLiquidity(TEMPLE_V2_INSTANCES, ethers.utils.parseEther("10000"));
+    // await removeLiquidity(TEMPLE_V2_INSTANCES, ethers.utils.parseEther("2000"));
+  }
+}
+
+async function acceptOwnershipCore(TEMPLE_V2_ADDRESSES: ContractAddresses, contract: TempleElevatedAccess){
+  await acceptExecutorAndRescuer(contract, TEMPLE_V2_ADDRESSES.CORE.EXECUTOR_MSIG, TEMPLE_V2_ADDRESSES.CORE.RESCUER_MSIG)
+}
+async function acceptExecutorAndRescuer(contract: TempleElevatedAccess, executor: string, rescuer: string){
+  // Both executor & rescuer need to accept their new roles on trv
+  await mine(contract.acceptExecutor());
+  await mine(contract.acceptRescuer());
+  // Check executor & rescuer addresses for trv
+  await expect(await contract.executor()).to.be.eq(executor);
+  await expect(await contract.rescuer()).to.be.eq(rescuer);
+}
+
+async function addLiquidity(TEMPLE_V2_INSTANCES: ContractInstances, amount: BigNumber) {
+  const quote = await TEMPLE_V2_INSTANCES.STRATEGIES.RAMOS_STRATEGY.INSTANCE.callStatic.proportionalAddLiquidityQuote(amount, "100");
+  await mine(TEMPLE_V2_INSTANCES.STRATEGIES.RAMOS_STRATEGY.INSTANCE.addLiquidity(quote.requestData, {gasLimit:5000000}));
+}
+
+async function removeLiquidity(TEMPLE_V2_INSTANCES: ContractInstances, amount: BigNumber) {
+  const quote = await TEMPLE_V2_INSTANCES.STRATEGIES.RAMOS_STRATEGY.INSTANCE.callStatic.proportionalRemoveLiquidityQuote(amount, "100");
+  await mine(TEMPLE_V2_INSTANCES.STRATEGIES.RAMOS_STRATEGY.INSTANCE.removeLiquidity(quote.requestData, amount, {gasLimit:5000000}));
 }
 
 // We recommend this pattern to be able to use async/await everywhere

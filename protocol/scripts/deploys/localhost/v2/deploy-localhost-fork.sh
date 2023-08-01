@@ -21,4 +21,18 @@ npx hardhat run --network localhost scripts/deploys/mainnet/v2/tlc/04-tlc-circui
 npx hardhat run --network localhost scripts/deploys/mainnet/v2/tlc/05-tlc-strategy.ts
 npx hardhat run --network localhost scripts/deploys/mainnet/v2/tlc/99-tlc-post-deployment.ts
 
+# gnosis
+npx hardhat run --network localhost scripts/deploys/mainnet/v2/gnosis-strategy-1/01-gnosis-safe-circuit-breakers-dai.ts
+npx hardhat run --network localhost scripts/deploys/mainnet/v2/gnosis-strategy-1/02-gnosis-safe-circuit-breakers-temple.ts
+npx hardhat run --network localhost scripts/deploys/mainnet/v2/gnosis-strategy-1/03-gnosis-strategy.ts
+npx hardhat run --network localhost scripts/deploys/mainnet/v2/gnosis-strategy-1/99-post-deploy.ts
 
+# ramos
+# npx hardhat run --network localhost scripts/deploys/mainnet/v2/ramos/01-temple-dai-balancer-pool.ts
+npx hardhat run --network localhost scripts/deploys/mainnet/v2/ramos/02-ramos-aura-staking.ts
+npx hardhat run --network localhost scripts/deploys/mainnet/v2/ramos/03-ramos-amo.ts
+npx hardhat run --network localhost scripts/deploys/mainnet/v2/ramos/04-ramos-pool-helper.ts
+npx hardhat run --network localhost scripts/deploys/mainnet/v2/ramos/05-ramos-circuit-breakers-dai.ts
+npx hardhat run --network localhost scripts/deploys/mainnet/v2/ramos/06-ramos-circuit-breakers-temple.ts
+npx hardhat run --network localhost scripts/deploys/mainnet/v2/ramos/07-ramos-strategy.ts
+npx hardhat run --network localhost scripts/deploys/mainnet/v2/ramos/99-ramos-post-deploy.ts
