@@ -111,7 +111,10 @@ contract AuraStaking is IAuraStaking, TempleElevatedAccess {
             uint256 length = rewardTokens.length;
             for (uint i; i < length; ++i) {
                 uint256 balance = IERC20(rewardTokens[i]).balanceOf(address(this));
-                IERC20(rewardTokens[i]).safeTransfer(rewardsRecipient, balance);
+
+                if (balance != 0) {
+                    IERC20(rewardTokens[i]).safeTransfer(rewardsRecipient, balance);
+                }
             }
         }
     }
