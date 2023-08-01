@@ -428,7 +428,7 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
      * @notice The total available balance available to be borrowed, both as a balance in this contract and
      * any available to withdraw from the baseStrategy
      */
-    function totalAvailable(IERC20 token) public override view returns (uint256) {
+    function totalAvailable(IERC20 token) external override view returns (uint256) {
         BorrowTokenConfig storage _tokenConfig = _getBorrowTokenConfig(token);
 
         uint256 baseStrategyAvailable;
