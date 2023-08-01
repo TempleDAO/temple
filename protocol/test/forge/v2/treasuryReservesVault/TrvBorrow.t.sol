@@ -99,7 +99,8 @@ contract TreasuryReservesVaultTestBorrow is TreasuryReservesVaultTestBase {
         // TRV not funded with DAI
         {
             changePrank(address(strategy));
-            vm.expectRevert("ERC20: transfer amount exceeds balance");
+            vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InsufficientBalance.selector, address(dai), 5.0e18, 0));
+
             trv.borrow(dai, 5.0e18, alice);
 
             deal(address(dai), address(trv), 1_000e18, true);
@@ -479,8 +480,8 @@ contract TreasuryReservesVaultTestBorrow is TreasuryReservesVaultTestBase {
             trv.addStrategy(address(strategy), 0, debtCeilingArr);
         }
 
-        // The base strategy abd TRV has no DAI, so it reverts.
-        vm.expectRevert("ERC20: transfer amount exceeds balance");
+        // The base strategy and TRV has no DAI, so it reverts.
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InsufficientBalance.selector, address(dai), 50e18, 0));
         strategy.borrow(dai, 50e18);
     }
 

@@ -224,8 +224,7 @@ contract TempleTokenBaseStrategyTrvWithdraw is TempleTokenBaseStrategyTestBase {
 
         vm.expectEmit(address(strategy));
         emit TempleMinted(withdrawAmount);
-        uint256 withdrawn = strategy.trvWithdraw(withdrawAmount);
-        assertEq(withdrawn, withdrawAmount);
+        strategy.trvWithdraw(withdrawAmount);
 
         assertEq(temple.balanceOf(address(strategy)), 0);
         assertEq(temple.balanceOf(address(trv)), TRV_STARTING_BALANCE-borrowAmount+withdrawAmount);
@@ -249,9 +248,8 @@ contract TempleTokenBaseStrategyTrvWithdraw is TempleTokenBaseStrategyTestBase {
         changePrank(address(trv));
         vm.expectEmit(address(strategy));
         emit TempleMinted(withdrawAmount); // Not limited by how much was deposited
-        uint256 withdrawn = strategy.trvWithdraw(withdrawAmount);
+        strategy.trvWithdraw(withdrawAmount);
 
-        assertEq(withdrawn, withdrawAmount);
         assertEq(temple.balanceOf(address(strategy)), 0);
         assertEq(temple.balanceOf(address(trv)), TRV_STARTING_BALANCE-borrowAmount+withdrawAmount);
         assertEq(temple.totalSupply(), TRV_STARTING_BALANCE-borrowAmount+withdrawAmount);
@@ -271,7 +269,7 @@ contract TempleTokenBaseStrategyTrvWithdraw is TempleTokenBaseStrategyTestBase {
             vm.startPrank(executor);
 
             // Trying to borrow the max ceiling (100e18), but the TRV only has 10e18
-            vm.expectRevert("ERC20: transfer amount exceeds balance");
+            vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InsufficientBalance.selector, address(temple), TEMPLE_BASE_BORROW_CEILING, 10e18));
             strategy.borrowAndDeposit(TEMPLE_BASE_BORROW_CEILING);
 
             deal(address(temple), address(trv), TEMPLE_BASE_BORROW_CEILING, true);

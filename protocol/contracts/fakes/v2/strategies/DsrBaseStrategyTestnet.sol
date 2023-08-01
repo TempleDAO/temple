@@ -184,9 +184,9 @@ contract DsrBaseStrategyTestnet is AbstractStrategy, ITempleBaseStrategy {
     /**
      * @notice The TRV is able to withdraw on demand in order to fund other strategies which 
      * wish to borrow from the TRV.
-     * @dev It may withdraw less than requested if there isn't enough balance in the DSR.
+     * @dev This will revert if the requestedAmount is more than the balance in the DSR.
      */
-    function trvWithdraw(uint256 requestedAmount) external override returns (uint256) {
+    function trvWithdraw(uint256 requestedAmount) external override {
         if (msg.sender != address(treasuryReservesVault)) revert OnlyTreasuryReserveVault(msg.sender);
         if (requestedAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();       
 
@@ -194,12 +194,11 @@ contract DsrBaseStrategyTestnet is AbstractStrategy, ITempleBaseStrategy {
         uint256 daiAvailable = _checkpointDaiBalance(daiToken.balanceOf(address(this)));
 
         if (requestedAmount > daiAvailable) {
-            requestedAmount = daiAvailable;
+            revert CommonEventsAndErrors.InsufficientBalance(address(daiToken), requestedAmount, daiAvailable);
         }
 
         emit DaiWithdrawn(requestedAmount);
         daiToken.safeTransfer(address(treasuryReservesVault), requestedAmount);
-        return requestedAmount;
     }
 
     /**

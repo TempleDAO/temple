@@ -37,8 +37,8 @@ interface ITempleBaseStrategy {
     /**
      * @notice The TRV is able to withdraw on demand in order to fund other strategies which 
      * wish to borrow from the TRV.
-     * @dev It may withdraw less than requested if there isn't enough balance in the DSR.
+     * @dev This will revert if the requestedAmount is more than the balance in the DSR.
      */
-    function trvWithdraw(uint256 requestedAmount) external returns (uint256 amountWithdrawn);
+    function trvWithdraw(uint256 requestedAmount) external;
 
 }

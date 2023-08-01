@@ -85,18 +85,16 @@ contract MockBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
      * wish to borrow from the TRV.
      * @dev For Temple, we just mint the tokens.
      */
-    function trvWithdraw(uint256 requestedAmount) external override returns (uint256) {
+    function trvWithdraw(uint256 requestedAmount) external override {
         if (msg.sender != address(treasuryReservesVault)) revert OnlyTreasuryReserveVault(msg.sender);
         if (requestedAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();       
 
-        // Cap to the available balance
         uint256 _balance = token.balanceOf(address(this));
         if (requestedAmount > _balance) {
-            requestedAmount = _balance;
+            revert CommonEventsAndErrors.InsufficientBalance(address(token), requestedAmount, _balance);
         }
 
         token.safeTransfer(msg.sender, requestedAmount);
-        return requestedAmount;
     }
 
     /**

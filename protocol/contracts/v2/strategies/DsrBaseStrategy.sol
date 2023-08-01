@@ -252,26 +252,23 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
     /**
      * @notice The TRV is able to withdraw on demand in order to fund other strategies which 
      * wish to borrow from the TRV.
-     * @dev It may withdraw less than requested if there isn't enough balance in the DSR.
+     * @dev This will revert if the requestedAmount is more than the balance in the DSR.
      */
-    function trvWithdraw(uint256 requestedAmount) external override returns (uint256) {
+    function trvWithdraw(uint256 requestedAmount) external override {
         if (msg.sender != address(treasuryReservesVault)) revert OnlyTreasuryReserveVault(msg.sender);
         if (requestedAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();       
 
         // Checkpoint DSR and calculate how many DSR shares the request equates to.
         //  Use `_rdivup()` on withdrawals.
-        (uint256 daiAvailable, uint256 chi, uint256 sharesAvailable) = _checkpointDaiBalance();
-        uint256 sharesAmount = _rdivup(requestedAmount, chi);
+        (uint256 daiAvailable, uint256 chi,) = _checkpointDaiBalance();
 
-        // Cap at the max balance available in DSR
-        if (sharesAmount > sharesAvailable) {
-            requestedAmount = daiAvailable;
-            sharesAmount = sharesAvailable;
+        if (requestedAmount > daiAvailable) {
+            revert CommonEventsAndErrors.InsufficientBalance(address(daiToken), requestedAmount, daiAvailable);
         }
+        uint256 sharesAmount = _rdivup(requestedAmount, chi);
 
         _dsrWithdrawal(sharesAmount, requestedAmount);
         daiToken.safeTransfer(address(treasuryReservesVault), requestedAmount);
-        return requestedAmount;
     }
 
     function _dsrWithdrawal(uint256 sharesAmount, uint256 daiAmount) internal {
