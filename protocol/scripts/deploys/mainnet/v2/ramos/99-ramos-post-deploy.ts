@@ -7,7 +7,7 @@ import {
   toAtto
 } from "../../../helpers";
 import { ContractInstances, ContractAddresses, connectToContracts, getDeployedContracts } from "../contract-addresses";
-import { AuraStaking, ITempleStrategy, Ramos, RamosTestnetAuraStaking } from "../../../../../typechain";
+import { AuraStaking, ITempleStrategy, Ramos } from "../../../../../typechain";
 
 async function setupCircuitBreakers(TEMPLE_V2_ADDRESSES: ContractAddresses, TEMPLE_V2_INSTANCES: ContractInstances) {
     const RAMOS = "RAMOS";
@@ -84,9 +84,9 @@ async function stakingPostDeploy(auraStaking: AuraStaking, TEMPLE_V2_ADDRESSES: 
         );
 
         await auraStaking.setAuraPoolInfo(
-            parseInt(TEMPLE_V2_ADDRESSES.RAMOS.TEMPLE_DAI.POOL_ID), 
-            TEMPLE_V2_ADDRESSES.RAMOS.TEMPLE_DAI.BPT_TOKEN, 
-            TEMPLE_V2_ADDRESSES.RAMOS.TEMPLE_DAI.REWARDS,
+            parseInt(TEMPLE_V2_ADDRESSES.RAMOS.TEMPLE_DAI.EXTERNAL.AURA_POOL_ID), 
+            TEMPLE_V2_ADDRESSES.RAMOS.TEMPLE_DAI.EXTERNAL.BALANCER_LP_TOKEN, 
+            TEMPLE_V2_ADDRESSES.RAMOS.TEMPLE_DAI.EXTERNAL.AURA_REWARDS,
         );
     }
 }

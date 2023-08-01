@@ -61,14 +61,12 @@ yarn local-fork:mainnet
 
 In another window run the following scripts:
 ```bash
-# Deploy temple v2 & tlc contracts
-yarn local-fork:deploy:templev2-tlc
+# Deploy temple v2 contracts
+# This also include the transfer ownership script
+yarn local-fork:deploy:templev2
 
-# Transfer ownership from recently deployed contracts to proper executor & rescuer
-yarn local-fork:transfer-ownership:templev2-tlc
-
-# Then finally some forked mainnet tests for Temple v2 & TLC
-yarn local-fork:test:templev2-tlc
+# Then finally some forked mainnet tests for Temple v2
+yarn local-fork:test:templev2
 ```
 
 ## VSCode Testing
@@ -89,42 +87,26 @@ tl;dr;
    2. If it's a false positive then ignore the finding by typing the list index number in the triage.
 
 
-## Temple V2 & TLC deployment
+## Temple V2 deployment
 
-The following are the steps to deploy temple v2 & tlc latest contracts to mainnet. Copy & paste each `npx hardhat run ...` command from `v2 core` & `tlc` in order to deploy to mainnet, after each successful deployment, please do the following:
+The following are the steps to deploy temple v2 latest contracts to mainnet. Copy & paste each `npx hardhat run ...` command from `core`, `tlc`, `gnosis-strategy-1` & `ramos` in order to deploy to mainnet, after each successful deployment, please do the following:
 
+- (**mandatory**) Deploy each contract under `scripts/deploy/mainnet/v2/**/**.ts`, you can find various examples in `scripts/deploys/localhost/v2/deploy-localhost-forsk.sh`, please remember to use the mainnet network, e.g `npx hardhat run --network mainnet scripts/deploys/mainnet/v2/core/02-circuit-breaker-proxy.ts`. *NB you'll need to deploy first the core contracts. Remember to run the post-deployment scripts for each folder to setup the contract*
 - (**mandatory**) Copy newest generated contract address in its respective place under `scripts/deploys/mainnet/v2/core/contract-addressses.ts`
 - (**recommended**) Verify & publish contract src to etherscan:
   ```
   npx hardhat verify --network mainnet XXXX --constructor-args scripts/deploys/mainnet/deploymentArgs/XXXX.js
   ```
 
-
-### 1. Deploy v2 core contracts via hardhat scripts
-
-Deploy all the temple v2 core contracts under `$workspace/protocol/scripts/deploys/mainnet/v2/core/**.ts` following the script template bellow (replace as required):
-
-```
-npx hardhat run --network mainnet scripts/deploys/mainnet/v2/core/XXXX.ts
-```
-
-### 2. Deploy tlc contracts via hardhat scripts
-
-Deploy all the new tlc contracts under `$workspace/protocol/scripts/deploys/mainnet/v2/tlc/**.ts` following the script template bellow (replace as required):
-
-```
-npx hardhat run --network mainnet scripts/deploys/mainnet/v2/tlc/XXXX.ts
-```
-
 ### 3. Commit & merge to main
 
 - 3.1 Create a new PR and commit the latest changes from above steps for another member(s) of the team to confirm
 
-### 4. Renounce ownership from deployer to multisigs
+### 4. Transfer ownership from deployer to multisigs
 
 - 4.1 Once msig addresses have been approved by temple core team, please update both EXECUTOR & RESCUER multisig addresses (`mainnet.**.**.**_MSIG`) in `scripts/deploys/mainnet/v2/contract-addresses.ts` file. Be aware that strategies may have different executor/rescuer msig.
 
-- 4.2 Renounce deployer ownership to predefined msig addresses on the step above with
+- 4.2 Transfer deployer ownership to predefined msig addresses on the step above with
   ```
   npx hardhat run --network mainnet scripts/deploys/mainnet/v2/post-deploy/999-transfer-ownership.ts
   ```

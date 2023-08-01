@@ -24,7 +24,7 @@ async function main() {
 
     const debtCeiling: ITempleStrategy.AssetBalanceStruct[] = [{
         asset: TEMPLE_V2_ADDRESSES.CORE.TEMPLE_TOKEN,
-        balance: ethers.utils.parseEther("100000"),
+        balance: ethers.utils.parseEther("100000"), // TODO: Debt ceiling TBC
     }];
 
     await mine(TEMPLE_V2_INSTANCES.TREASURY_RESERVES_VAULT.INSTANCE.addStrategy(
@@ -50,7 +50,7 @@ async function main() {
 
     const debtCeiling: ITempleStrategy.AssetBalanceStruct[] = [{
         asset: TEMPLE_V2_ADDRESSES.EXTERNAL.MAKER_DAO.DAI_TOKEN,
-        balance: ethers.utils.parseEther("100000"),
+        balance: ethers.utils.parseEther("100000"), // TODO: Debt ceiling TBC
       }];
 
     await mine(TEMPLE_V2_INSTANCES.TREASURY_RESERVES_VAULT.INSTANCE.addStrategy(

@@ -51,13 +51,9 @@ export interface ContractAddresses {
           ADDRESS: string,
           POOL_HELPER: string,
           AURA_STAKING: string,
-          AURA_TOKEN: string,
-          AURA_BOOSTER: string,
           FEE_COLLECTOR: string,
           BPT_TOKEN: string,
-          POOL: string,
           POOL_ID: string,
-          REWARDS: string,
       },
   }
   STRATEGIES: {
@@ -107,7 +103,6 @@ export interface ContractAddresses {
       BALANCER: {
           VAULT: string,
           HELPERS: string,
-          TOKEN: string,
       },
   }
 }
@@ -143,14 +138,9 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
                 ADDRESS: '0x8A475A537309Ec054B08A509835860fE023fC6e6',
                 POOL_HELPER: '0xe06dE436DC1cb94b6b33Bb8f3a769f925477FcbF',
                 AURA_STAKING: '0x1F4A1c08CC0D9b75E5559dCBba97d3Bf5c90a855',
-                AURA_TOKEN: '',
-                AURA_BOOSTER: '',
                 FEE_COLLECTOR: '0xF8Ab0fF572e48059c45eF3fa804e5A369d2b9b2B',
                 BPT_TOKEN: '0x825250921A357eE1e5411D33B88C83bfc0f34A2A',
-                POOL: '0x825250921a357ee1e5411d33b88c83bfc0f34a2a000200000000000000000011',
-                POOL_ID: '',
-                REWARDS: '',
-
+                POOL_ID: '0x825250921a357ee1e5411d33b88c83bfc0f34a2a000200000000000000000011',
             },
         },
         STRATEGIES: {
@@ -200,7 +190,6 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
             BALANCER: {
                 VAULT: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
                 HELPERS: '0xdAE7e32ADc5d490a43cCba1f0c736033F2b4eFca',
-                TOKEN: '',
             },
         }
     },

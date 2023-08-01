@@ -19,7 +19,7 @@ async function main() {
     "dUSD",
     await owner.getAddress(),
     await owner.getAddress(),
-    ethers.utils.parseEther("0.034304803691990293"), // 34.9% APR or ~34.304%APY
+    ethers.utils.parseEther("0.034304803691990293"), // 3.49% APR or ~3.4304%APY
   )
 
 }

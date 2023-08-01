@@ -16,7 +16,7 @@ async function main() {
   const poolHelperFactory = new BalancerPoolHelper__factory(owner);
 
   const vault = IBalancerVault__factory.connect(TEMPLE_V2_ADDRESSES.EXTERNAL.BALANCER.VAULT, owner);
-  const balPoolTokens = await vault.getPoolTokens(TEMPLE_V2_ADDRESSES.RAMOS.TEMPLE_DAI.POOL); 
+  const balPoolTokens = await vault.getPoolTokens(TEMPLE_V2_ADDRESSES.RAMOS.TEMPLE_DAI.EXTERNAL.BALANCER_POOL_ID); 
   const protocolTokenBalancerPoolIndex = balPoolTokens.tokens[0].toUpperCase() == TEMPLE_V2_ADDRESSES.CORE.TEMPLE_TOKEN.toUpperCase() ? 0 : 1;
 
   await deployAndMine(
@@ -25,10 +25,10 @@ async function main() {
     TEMPLE_V2_ADDRESSES.EXTERNAL.BALANCER.HELPERS,
     TEMPLE_V2_ADDRESSES.CORE.TEMPLE_TOKEN,
     TEMPLE_V2_ADDRESSES.EXTERNAL.MAKER_DAO.DAI_TOKEN,
-    TEMPLE_V2_ADDRESSES.RAMOS.TEMPLE_DAI.BPT_TOKEN,
+    TEMPLE_V2_ADDRESSES.RAMOS.TEMPLE_DAI.EXTERNAL.BALANCER_LP_TOKEN,
     TEMPLE_V2_ADDRESSES.RAMOS.TEMPLE_DAI.ADDRESS,
     protocolTokenBalancerPoolIndex,
-    TEMPLE_V2_ADDRESSES.RAMOS.TEMPLE_DAI.POOL
+    TEMPLE_V2_ADDRESSES.RAMOS.TEMPLE_DAI.EXTERNAL.BALANCER_POOL_ID
   );
 }
 

@@ -16,7 +16,7 @@ async function main() {
     const TEMPLE_V2_ADDRESSES = getDeployedContracts();
 
     const vault = IBalancerVault__factory.connect(TEMPLE_V2_ADDRESSES.EXTERNAL.BALANCER.VAULT, owner);
-    const balPoolTokens = await vault.getPoolTokens(TEMPLE_V2_ADDRESSES.RAMOS.TEMPLE_DAI.POOL); 
+    const balPoolTokens = await vault.getPoolTokens(TEMPLE_V2_ADDRESSES.RAMOS.TEMPLE_DAI.POOL_ID); 
     const protocolTokenBalancerPoolIndex = balPoolTokens.tokens[0].toUpperCase() == TEMPLE_V2_ADDRESSES.CORE.TEMPLE_TOKEN.toUpperCase() ? 0 : 1;
 
     const amoFactory: Ramos__factory = new Ramos__factory(owner);
@@ -30,7 +30,7 @@ async function main() {
         TEMPLE_V2_ADDRESSES.RAMOS.TEMPLE_DAI.BPT_TOKEN,
         TEMPLE_V2_ADDRESSES.RAMOS.TEMPLE_DAI.AURA_STAKING,
         protocolTokenBalancerPoolIndex,
-        TEMPLE_V2_ADDRESSES.RAMOS.TEMPLE_DAI.POOL,
+        TEMPLE_V2_ADDRESSES.RAMOS.TEMPLE_DAI.POOL_ID,
         TEMPLE_V2_ADDRESSES.RAMOS.TEMPLE_DAI.FEE_COLLECTOR,
         200, // 2%
     );
