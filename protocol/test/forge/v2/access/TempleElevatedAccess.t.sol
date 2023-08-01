@@ -41,6 +41,15 @@ contract TempleElevatedAccessTestBase is TempleTest {
         assertEq(mock.executor(), executor);
         assertEq(mock.inRescueMode(), false);
     }
+
+    function test_construction_fail() public {
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
+        mock = new Mock(address(0), executor);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
+        mock = new Mock(rescuer, address(0));
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
+        mock = new Mock(rescuer, rescuer);
+    }
 }
 
 contract TempleElevatedAccessTest is TempleElevatedAccessTestBase {
@@ -162,6 +171,18 @@ contract TempleElevatedAccessTestSetters is TempleElevatedAccessTestBase {
         assertEq(mock.rescuer(), alice);
     }
 
+    function test_newRescuer_failNotTheSame() public {
+        vm.startPrank(rescuer);
+
+        vm.expectEmit(address(mock));
+        emit NewRescuerProposed(rescuer, address(0), executor);
+        mock.proposeNewRescuer(executor);
+
+        changePrank(executor);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
+        mock.acceptRescuer();
+    }
+
     function test_newExecutor() public {
         vm.startPrank(executor);
 
@@ -177,6 +198,18 @@ contract TempleElevatedAccessTestSetters is TempleElevatedAccessTestBase {
         emit NewExecutorAccepted(executor, alice);
         mock.acceptExecutor();
         assertEq(mock.executor(), alice);
+    }
+
+    function test_newExecutor_failNotTheSame() public {
+        vm.startPrank(executor);
+
+        vm.expectEmit(address(mock));
+        emit NewExecutorProposed(executor, address(0), rescuer);
+        mock.proposeNewExecutor(rescuer);
+
+        changePrank(rescuer);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
+        mock.acceptExecutor();
     }
 
     function test_setExplicitAccess_single() public {

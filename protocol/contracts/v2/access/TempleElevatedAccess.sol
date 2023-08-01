@@ -36,6 +36,10 @@ abstract contract TempleElevatedAccess is ITempleElevatedAccess {
     address private _proposedNewExecutor;
 
     constructor(address initialRescuer, address initialExecutor) {
+        if (initialRescuer == address(0)) revert CommonEventsAndErrors.InvalidAddress();
+        if (initialExecutor == address(0)) revert CommonEventsAndErrors.InvalidAddress();
+        if (initialExecutor == initialRescuer) revert CommonEventsAndErrors.InvalidAddress();
+
         rescuer = initialRescuer;
         executor = initialExecutor;
     }
@@ -67,6 +71,8 @@ abstract contract TempleElevatedAccess is ITempleElevatedAccess {
      */
     function acceptRescuer() external override {
         if (msg.sender != _proposedNewRescuer) revert CommonEventsAndErrors.InvalidAccess();
+        if (msg.sender == executor) revert CommonEventsAndErrors.InvalidAddress();
+
         emit NewRescuerAccepted(rescuer, msg.sender);
         rescuer = msg.sender;
         delete _proposedNewRescuer;
@@ -88,6 +94,8 @@ abstract contract TempleElevatedAccess is ITempleElevatedAccess {
      */
     function acceptExecutor() external override {
         if (msg.sender != _proposedNewExecutor) revert CommonEventsAndErrors.InvalidAccess();
+        if (msg.sender == rescuer) revert CommonEventsAndErrors.InvalidAddress();
+
         emit NewExecutorAccepted(executor, msg.sender);
         executor = msg.sender;
         delete _proposedNewExecutor;
