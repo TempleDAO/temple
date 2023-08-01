@@ -23,6 +23,7 @@ contract TreasuryReservesVaultTestShutdown is TreasuryReservesVaultTestBase {
             vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.StrategyNotEnabled.selector));
             trv.setStrategyIsShuttingDown(address(strategy), true);
 
+            trv.setBorrowToken(dai, address(0), 0, 0, address(dUSD));
             ITempleStrategy.AssetBalance[] memory debtCeiling = new ITempleStrategy.AssetBalance[](1);
             debtCeiling[0] = ITempleStrategy.AssetBalance(address(dai), 500);
             trv.addStrategy(address(strategy), 100, debtCeiling);
@@ -52,6 +53,7 @@ contract TreasuryReservesVaultTestShutdown is TreasuryReservesVaultTestBase {
             vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.StrategyNotEnabled.selector));
             trv.shutdown(address(strategy));
 
+            trv.setBorrowToken(dai, address(0), 0, 0, address(dUSD));
             ITempleStrategy.AssetBalance[] memory debtCeiling = new ITempleStrategy.AssetBalance[](1);
             debtCeiling[0] = ITempleStrategy.AssetBalance(address(dai), 500);
             trv.addStrategy(address(strategy), 100, debtCeiling);

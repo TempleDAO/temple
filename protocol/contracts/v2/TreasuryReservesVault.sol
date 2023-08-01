@@ -185,6 +185,7 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
         uint256 _length = debtCeiling.length;
         for (uint256 i; i < _length; ++i) {
             _assetBalance = debtCeiling[i];
+            if (!_borrowTokenSet.contains(address(_assetBalance.asset))) revert BorrowTokenNotEnabled();
             strategyConfig.debtCeiling[IERC20(_assetBalance.asset)] = _assetBalance.balance;
         }
     }
@@ -203,8 +204,8 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
      * @notice Update the debt ceiling for a given strategy
      */
     function setStrategyDebtCeiling(address strategy, IERC20 token, uint256 newDebtCeiling) external override onlyElevatedAccess {
-        StrategyConfig storage _strategyConfig = _getStrategyConfig(strategy);
         if (!_borrowTokenSet.contains(address(token))) revert BorrowTokenNotEnabled();
+        StrategyConfig storage _strategyConfig = _getStrategyConfig(strategy);
 
         emit DebtCeilingUpdated(strategy, address(token), _strategyConfig.debtCeiling[token], newDebtCeiling);
 
@@ -294,8 +295,8 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
      * `dToken` will be minted 1:1 for the amount of stables borrowed
      */
     function borrow(IERC20 token, uint256 borrowAmount, address recipient) external override {
-        StrategyConfig storage _strategyConfig = _getStrategyConfig(msg.sender);
         BorrowTokenConfig storage _tokenConfig = _getBorrowTokenConfig(token);
+        StrategyConfig storage _strategyConfig = _getStrategyConfig(msg.sender);
         uint256 _dTokenBalance = _tokenConfig.dToken.balanceOf(msg.sender);
 
         // This is not allowed to take the borrower over the debt ceiling
@@ -311,8 +312,8 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
      * `dToken` will be minted 1:1 for the amount of stables borrowed
      */
     function borrowMax(IERC20 token, address recipient) external override returns (uint256 borrowedAmount) {
-        StrategyConfig storage _strategyConfig = _getStrategyConfig(msg.sender);
         BorrowTokenConfig storage _tokenConfig = _getBorrowTokenConfig(token);
+        StrategyConfig storage _strategyConfig = _getStrategyConfig(msg.sender);
         uint256 _dTokenBalance = _tokenConfig.dToken.balanceOf(msg.sender);
         borrowedAmount = _availableForStrategyToBorrow(msg.sender, _strategyConfig, token, _dTokenBalance);
         _borrow(msg.sender, token, recipient, _tokenConfig, _strategyConfig, borrowedAmount, _dTokenBalance);

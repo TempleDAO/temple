@@ -118,10 +118,10 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
         // Add the new strategy with the ceiling at 100%
         // so the interest rate needs updating.
         {
+            newTrv.setBorrowToken(daiToken, address(0), 0, 0, address(dUSD));
             ITempleStrategy.AssetBalance[] memory debtCeiling = new ITempleStrategy.AssetBalance[](1);
             debtCeiling[0] = ITempleStrategy.AssetBalance(address(daiToken), 15_000e18);
             newTrv.addStrategy(address(newTlcStrategy), 0, debtCeiling);
-            newTrv.setBorrowToken(daiToken, address(0), 0, 0, address(dUSD));
         }
 
         {

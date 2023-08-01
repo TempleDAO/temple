@@ -165,8 +165,8 @@ contract DsrBaseStrategyTestBorrowAndRepay is DsrBaseStrategyTestBase {
 
         ITempleStrategy.AssetBalance[] memory debtCeiling = new ITempleStrategy.AssetBalance[](1);
         debtCeiling[0] = ITempleStrategy.AssetBalance(address(dai), BORROW_CEILING);
-        trv.addStrategy(address(strategy), -123, debtCeiling);
         trv.setBorrowToken(dai, address(strategy), 0, 0, address(dUSD));
+        trv.addStrategy(address(strategy), -123, debtCeiling);
 
         deal(address(dai), address(trv), TRV_STARTING_BALANCE, true);
         dUSD.addMinter(address(trv));
@@ -390,8 +390,8 @@ contract DsrBaseStrategyTestTrvWithdraw is DsrBaseStrategyTestBase {
 
         ITempleStrategy.AssetBalance[] memory debtCeiling = new ITempleStrategy.AssetBalance[](1);
         debtCeiling[0] = ITempleStrategy.AssetBalance(address(dai), DSR_BORROW_CEILING);
-        trv.addStrategy(address(strategy), -123, debtCeiling);
         trv.setBorrowToken(dai, address(strategy), 0, 0, address(dUSD));
+        trv.addStrategy(address(strategy), -123, debtCeiling);
 
         deal(address(dai), address(trv), TRV_STARTING_BALANCE, true);
         dUSD.addMinter(address(trv));

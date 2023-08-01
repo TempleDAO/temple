@@ -97,10 +97,11 @@ contract TempleTokenBaseStrategyTestBorrow is TempleTokenBaseStrategyTestBase {
         // Add the new strategy
         vm.startPrank(executor);
 
+        trv.setBorrowToken(temple, address(strategy), 0, 0, address(dTEMPLE));
+
         ITempleStrategy.AssetBalance[] memory debtCeiling = new ITempleStrategy.AssetBalance[](1);
         debtCeiling[0] = ITempleStrategy.AssetBalance(address(temple), BORROW_CEILING);
         trv.addStrategy(address(strategy), -123, debtCeiling);
-        trv.setBorrowToken(temple, address(strategy), 0, 0, address(dTEMPLE));
 
         deal(address(temple), address(trv), TRV_STARTING_BALANCE, true);
         dTEMPLE.addMinter(address(trv));
@@ -168,10 +169,11 @@ contract TempleTokenBaseStrategyTrvWithdraw is TempleTokenBaseStrategyTestBase {
 
         vm.startPrank(executor);
 
+        trv.setBorrowToken(temple, address(strategy), 0, 0, address(dTEMPLE));
+        
         ITempleStrategy.AssetBalance[] memory debtCeiling = new ITempleStrategy.AssetBalance[](1);
         debtCeiling[0] = ITempleStrategy.AssetBalance(address(temple), TEMPLE_BASE_BORROW_CEILING);
         trv.addStrategy(address(strategy), -123, debtCeiling);
-        trv.setBorrowToken(temple, address(strategy), 0, 0, address(dTEMPLE));
 
         deal(address(temple), address(trv), TRV_STARTING_BALANCE, true);
         dTEMPLE.addMinter(address(trv));

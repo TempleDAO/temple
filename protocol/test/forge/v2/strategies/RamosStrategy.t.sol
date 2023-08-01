@@ -158,14 +158,14 @@ contract RamosStrategyTestBase is TempleTest {
     function _setupTrv() internal {
         vm.startPrank(executor);
 
+        trv.setBorrowToken(dai, address(0), 0, 0, address(dUSD));
+        trv.setBorrowToken(temple, address(templeBaseStrategy), 0, 0, address(dTEMPLE));
+
         // Add the new strategy, and setup TRV such that it has stables to lend and issue dUSD.
         ITempleStrategy.AssetBalance[] memory debtCeiling = new ITempleStrategy.AssetBalance[](2);
         debtCeiling[0] = ITempleStrategy.AssetBalance(address(dai), BORROW_CEILING);
         debtCeiling[1] = ITempleStrategy.AssetBalance(address(temple), BORROW_CEILING);
         trv.addStrategy(address(strategy), -123, debtCeiling);
-
-        trv.setBorrowToken(dai, address(0), 0, 0, address(dUSD));
-        trv.setBorrowToken(temple, address(templeBaseStrategy), 0, 0, address(dTEMPLE));
 
         deal(address(dai), address(trv), TRV_STARTING_BALANCE, true);
         dUSD.addMinter(address(trv));
@@ -231,11 +231,12 @@ contract RamosStrategyTestAdmin is RamosStrategyTestBase {
         {
             setExplicitAccess(ramos, address(strategy), ramos.removeLiquidity.selector, true);
 
+            trv.setBorrowToken(dai, address(0), 0, 0, address(dUSD));
+            trv.setBorrowToken(temple, address(0), 0, 0, address(dTEMPLE));
+            
             ITempleStrategy.AssetBalance[] memory debtCeiling = new ITempleStrategy.AssetBalance[](1);
             debtCeiling[0] = ITempleStrategy.AssetBalance(address(dai), BORROW_CEILING);
             trv.addStrategy(address(strategy), -123, debtCeiling);
-            trv.setBorrowToken(dai, address(0), 0, 0, address(dUSD));
-            trv.setBorrowToken(temple, address(0), 0, 0, address(dTEMPLE));
 
             dUSD.mint(address(strategy), 1_000_000e18);
             trv.setStrategyIsShuttingDown(address(strategy), true);

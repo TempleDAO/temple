@@ -107,11 +107,12 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
             dUSD.addMinter(address(trv));
             dTEMPLE.addMinter(address(trv));
 
+            trv.setBorrowToken(daiToken, address(0), 0, 0, address(dUSD));
+            trv.setBorrowToken(templeToken, address(0), 0, 0, address(dTEMPLE));
+            
             ITempleStrategy.AssetBalance[] memory debtCeiling = new ITempleStrategy.AssetBalance[](1);
             debtCeiling[0] = ITempleStrategy.AssetBalance(address(daiToken), BORROW_CEILING);
             trv.addStrategy(address(tlcStrategy), 0, debtCeiling);
-            trv.setBorrowToken(daiToken, address(0), 0, 0, address(dUSD));
-            trv.setBorrowToken(templeToken, address(0), 0, 0, address(dTEMPLE));
 
             deal(address(daiToken), address(trv), TRV_STARTING_BALANCE, true);
         }

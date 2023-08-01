@@ -269,6 +269,17 @@ contract TreasuryReservesVaultTestAdmin is TreasuryReservesVaultTestBase {
             debtCeiling[0] = ITempleStrategy.AssetBalance(address(dai), 500);
             debtCeiling[1] = ITempleStrategy.AssetBalance(address(weth), 123);
 
+            vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.BorrowTokenNotEnabled.selector));
+            trv.addStrategy(address(strategy), -100, debtCeiling);
+            trv.setBorrowToken(dai, address(0), 100, 101, address(dUSD));
+            trv.setBorrowToken(weth, address(0), 999, 1000, address(dETH));
+        }
+
+        {
+            ITempleStrategy.AssetBalance[] memory debtCeiling = new ITempleStrategy.AssetBalance[](2);
+            debtCeiling[0] = ITempleStrategy.AssetBalance(address(dai), 500);
+            debtCeiling[1] = ITempleStrategy.AssetBalance(address(weth), 123);
+
             vm.expectEmit(address(trv));
             emit StrategyAdded(address(strategy), -100);
 
@@ -312,12 +323,6 @@ contract TreasuryReservesVaultTestAdmin is TreasuryReservesVaultTestBase {
             assertEq(isShuttingDown, false);
             assertEq(underperformingEquityThreshold, -100);
 
-            // debtCeiling returns 0 here as the borrow token configs haven't been added yet
-            assertEq(debtCeiling.length, 0);
-            
-            trv.setBorrowToken(dai, address(0), 100, 101, address(dUSD));
-            trv.setBorrowToken(weth, address(0), 999, 1000, address(dETH));
-
             (,,,,,, debtCeiling) = trv.strategyDetails(address(strategy));
             assertEq(debtCeiling.length, 2);
             assertEq(debtCeiling[0].asset, address(dai));
@@ -330,10 +335,11 @@ contract TreasuryReservesVaultTestAdmin is TreasuryReservesVaultTestBase {
     function test_addStrategy_overflow() public {
         vm.startPrank(executor);
 
+        trv.setBorrowToken(dai, address(0), 0, 0, address(dUSD));
+
         ITempleStrategy.AssetBalance[] memory debtCeiling = new ITempleStrategy.AssetBalance[](1);
         debtCeiling[0] = ITempleStrategy.AssetBalance(address(dai), type(uint256).max - 10e18);
         trv.addStrategy(address(strategy), 0, debtCeiling);
-        trv.setBorrowToken(dai, address(0), 0, 0, address(dUSD));
 
         // Repay so there's a credit
         deal(address(dai), address(strategy), 5, true);
@@ -360,6 +366,7 @@ contract TreasuryReservesVaultTestAdmin is TreasuryReservesVaultTestBase {
             
             ITempleStrategy.AssetBalance[] memory debtCeiling = new ITempleStrategy.AssetBalance[](1);
             debtCeiling[0] = ITempleStrategy.AssetBalance(address(dai), 500);
+            trv.setBorrowToken(dai, address(0), 0, 0, address(dUSD));
             trv.addStrategy(address(strategy), 100, debtCeiling);
         }
 
@@ -381,6 +388,14 @@ contract TreasuryReservesVaultTestAdmin is TreasuryReservesVaultTestBase {
 
     function test_setStrategyDebtCeiling() public {
         vm.startPrank(executor);
+        // Borrow token needs to exist
+        {
+            vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.BorrowTokenNotEnabled.selector));
+            trv.setStrategyDebtCeiling(address(strategy), dai, 123);
+            
+            trv.setBorrowToken(dai, address(0), 100, 101, address(dUSD));
+        }
+
         // Strategy needs to exist
         {
             vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.StrategyNotEnabled.selector));
@@ -389,14 +404,6 @@ contract TreasuryReservesVaultTestAdmin is TreasuryReservesVaultTestBase {
             ITempleStrategy.AssetBalance[] memory debtCeiling = new ITempleStrategy.AssetBalance[](1);
             debtCeiling[0] = ITempleStrategy.AssetBalance(address(dai), 500);
             trv.addStrategy(address(strategy), 100, debtCeiling);
-        }
-
-        // Borrow token needs to exist
-        {
-            vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.BorrowTokenNotEnabled.selector));
-            trv.setStrategyDebtCeiling(address(strategy), dai, 123);
-            
-            trv.setBorrowToken(dai, address(0), 100, 101, address(dUSD));
         }
 
         vm.expectEmit(address(trv));
@@ -416,10 +423,12 @@ contract TreasuryReservesVaultTestAdmin is TreasuryReservesVaultTestBase {
 
     function test_setStrategyDebtCeiling_overflow() public {
         vm.startPrank(executor);
+
+        trv.setBorrowToken(dai, address(0), 0, 0, address(dUSD));
+
         ITempleStrategy.AssetBalance[] memory debtCeiling = new ITempleStrategy.AssetBalance[](1);
         debtCeiling[0] = ITempleStrategy.AssetBalance(address(dai), type(uint256).max - 10e18);
         trv.addStrategy(address(strategy), 0, debtCeiling);
-        trv.setBorrowToken(dai, address(0), 0, 0, address(dUSD));
 
         // Repay so there's a credit
         deal(address(dai), address(strategy), 5, true);
@@ -438,6 +447,7 @@ contract TreasuryReservesVaultTestAdmin is TreasuryReservesVaultTestBase {
 
             ITempleStrategy.AssetBalance[] memory debtCeiling = new ITempleStrategy.AssetBalance[](1);
             debtCeiling[0] = ITempleStrategy.AssetBalance(address(dai), 500);
+            trv.setBorrowToken(dai, address(0), 0, 0, address(dUSD));
             trv.addStrategy(address(strategy), 100, debtCeiling);
         }
 

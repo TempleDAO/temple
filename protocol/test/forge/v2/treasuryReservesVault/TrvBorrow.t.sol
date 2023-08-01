@@ -22,9 +22,19 @@ contract TreasuryReservesVaultTestBorrow is TreasuryReservesVaultTestBase {
     }
 
     function test_borrow_reverts() public {
-        // Strategy needs to exist
+        // Borrow token needs to exist
         {
             vm.startPrank(address(strategy));
+            vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.BorrowTokenNotEnabled.selector));
+            trv.borrow(dai, 123, alice);
+            
+            changePrank(executor);
+            trv.setBorrowToken(dai, address(0), 100, 101, address(dUSD));
+        }
+
+        // Strategy needs to exist
+        {
+            changePrank(address(strategy));
             vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.StrategyNotEnabled.selector));
             trv.borrow(dai, 123, alice);
 
@@ -32,16 +42,6 @@ contract TreasuryReservesVaultTestBorrow is TreasuryReservesVaultTestBase {
             ITempleStrategy.AssetBalance[] memory debtCeiling = new ITempleStrategy.AssetBalance[](1);
             debtCeiling[0] = ITempleStrategy.AssetBalance(address(dai), 5e18);
             trv.addStrategy(address(strategy), 100, debtCeiling);
-        }
-
-        // Borrow token needs to exist
-        {
-            changePrank(address(strategy));
-            vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.BorrowTokenNotEnabled.selector));
-            trv.borrow(dai, 123, alice);
-            
-            changePrank(executor);
-            trv.setBorrowToken(dai, address(0), 100, 101, address(dUSD));
         }
 
         assertEq(trv.availableForStrategyToBorrow(address(strategy), dai), 5e18);
@@ -420,6 +420,16 @@ contract TreasuryReservesVaultTestBorrow is TreasuryReservesVaultTestBase {
     function test_borrowMax() public {
         {
             vm.startPrank(address(strategy));
+            vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.BorrowTokenNotEnabled.selector));
+            trv.borrowMax(dai, alice);
+
+            changePrank(executor);
+            trv.setBorrowToken(dai, address(0), 0, 0, address(dUSD));
+            deal(address(dai), address(trv), 120e18, true);
+        }
+
+        {
+            changePrank(address(strategy));
             vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.StrategyNotEnabled.selector));
             trv.borrowMax(dai, alice);
 
@@ -427,16 +437,6 @@ contract TreasuryReservesVaultTestBorrow is TreasuryReservesVaultTestBase {
             ITempleStrategy.AssetBalance[] memory debtCeiling = new ITempleStrategy.AssetBalance[](1);
             debtCeiling[0] = ITempleStrategy.AssetBalance(address(dai), 50e18);
             trv.addStrategy(address(strategy), -123, debtCeiling);
-        }
-
-        {
-            changePrank(address(strategy));
-            vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.BorrowTokenNotEnabled.selector));
-            trv.borrowMax(dai, alice);
-
-            changePrank(executor);
-            trv.setBorrowToken(dai, address(0), 0, 0, address(dUSD));
-            deal(address(dai), address(trv), 120e18, true);
         }
 
         {
