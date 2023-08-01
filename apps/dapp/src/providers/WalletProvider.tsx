@@ -72,7 +72,7 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
   const isConnected = !!walletAddress && !!signer;
 
   const getBalance = async (walletAddress: string, signer: Signer) => {
-    if (!walletAddress) {
+    if (!walletAddress || !signer) {
       throw new NoWalletAddressError();
     }
 

@@ -3,7 +3,7 @@ import templeImg from 'assets/images/newui-images/tokens/temple.png';
 import { TradeButton } from '../Home';
 import { formatToken } from 'utils/formatter';
 import { ITlcDataTypes } from 'types/typechain/contracts/interfaces/v2/templeLineOfCredit/ITempleLineOfCredit';
-import { FlexBetween, Screen, MAX_LTV, State, RemoveMargin, Title, Copy, MarginTop } from './TLCModal';
+import { FlexBetween, Screen, MAX_LTV, State, RemoveMargin, Title, Copy, MarginTop, Prices, Rule } from './TLCModal';
 import { fromAtto } from 'utils/bigNumber';
 import styled from 'styled-components';
 import { BigNumber } from 'ethers';
@@ -13,9 +13,20 @@ interface IProps {
   state: State;
   borrowRate: BigNumber | undefined;
   setScreen: React.Dispatch<React.SetStateAction<Screen>>;
+  prices: Prices;
+  liquidationDate: string;
 }
 
-export const Overview: React.FC<IProps> = ({ accountPosition, state, borrowRate, setScreen }) => {
+export const Overview: React.FC<IProps> = ({
+  accountPosition,
+  state,
+  borrowRate,
+  setScreen,
+  prices,
+  liquidationDate,
+}) => {
+  const getBorrowRate = () => (borrowRate ? (fromAtto(borrowRate) * 100).toFixed(2) : 0);
+
   return (
     <>
       <RemoveMargin />
@@ -26,7 +37,13 @@ export const Overview: React.FC<IProps> = ({ accountPosition, state, borrowRate,
           <LeadMetric>
             {accountPosition?.collateral ? formatToken(accountPosition?.collateral, state.inputToken) : 0} TEMPLE
           </LeadMetric>
-          <USDMetric>$? USD</USDMetric>
+          <USDMetric>
+            $
+            {accountPosition?.collateral
+              ? (fromAtto(accountPosition.collateral) * prices.templePrice).toLocaleString('en')
+              : 0}{' '}
+            USD
+          </USDMetric>
         </NumContainer>
       </ValueContainer>
       <Copy>Supply TEMPLE as collateral to borrow DAI</Copy>
@@ -45,7 +62,13 @@ export const Overview: React.FC<IProps> = ({ accountPosition, state, borrowRate,
           <LeadMetric>
             {accountPosition?.currentDebt ? formatToken(accountPosition?.currentDebt, state.outputToken) : 0} DAI
           </LeadMetric>
-          <USDMetric>$? USD</USDMetric>
+          <USDMetric>
+            $
+            {accountPosition?.currentDebt
+              ? (fromAtto(accountPosition.currentDebt) * prices.daiPrice).toLocaleString('en')
+              : 0}{' '}
+            USD
+          </USDMetric>
         </NumContainer>
       </ValueContainer>
       <FlexCol>
@@ -61,13 +84,14 @@ export const Overview: React.FC<IProps> = ({ accountPosition, state, borrowRate,
         </FlexBetween>
         <FlexBetween>
           <p>Interest Rate</p>
-          <BrandParagraph>{borrowRate ? (fromAtto(borrowRate) * 100).toFixed(2) : 0}%</BrandParagraph>
+          <BrandParagraph>{getBorrowRate()}%</BrandParagraph>
         </FlexBetween>
       </FlexCol>
       <MarginTop />
       <Copy>
-        Given the current TPI price of <strong>$1.06</strong>, your TEMPLE collateral will be liquidated on
-        <strong>10/02/2024</strong>.
+        If the current TPI (<strong>${prices.tpi.toFixed(2)}</strong>) and interest rate (
+        <strong>{getBorrowRate()}%</strong>) were fixed, your collateral would be liquidated on{' '}
+        <strong>{liquidationDate}</strong>.
       </Copy>
       <Rule />
       <FlexRow>
@@ -81,13 +105,6 @@ export const Overview: React.FC<IProps> = ({ accountPosition, state, borrowRate,
     </>
   );
 };
-
-// Overview Styles
-const Rule = styled.hr`
-  border: 0;
-  border-top: 1px solid ${({ theme }) => theme.palette.brand};
-  margin: 0.5rem 0 0 0;
-`;
 
 const ValueContainer = styled.div`
   display: flex;

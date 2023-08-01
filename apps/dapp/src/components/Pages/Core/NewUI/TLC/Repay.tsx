@@ -7,6 +7,7 @@ import {
   BackButton,
   Copy,
   FlexBetween,
+  FlexCol,
   InfoCircle,
   MAX_LTV,
   MarginTop,
@@ -62,6 +63,7 @@ export const Repay: React.FC<IProps> = ({ accountPosition, state, setState, repa
         min={0}
         // Max is total debt
         hint={`Max: ${formatToken(accountPosition ? accountPosition.currentDebt : ZERO, state.outputToken)}`}
+        width="100%"
       />
       {fromAtto(state.outputTokenBalance) < Number(state.repayValue) && (
         <Warning>
@@ -97,8 +99,9 @@ export const Repay: React.FC<IProps> = ({ accountPosition, state, setState, repa
       <FlexCol>
         <TradeButton
           onClick={() => repay()}
-          // Disable if the amount is greater than the wallet balance, or if the amount is greater than the current debt
+          // Disable if repay amount is lte zero, gt wallet balance, or gt current debt
           disabled={
+            Number(state.repayValue) <= 0 ||
             fromAtto(state.outputTokenBalance) < Number(state.repayValue) ||
             (accountPosition && Number(state.repayValue) >= fromAtto(accountPosition.currentDebt))
           }
@@ -119,11 +122,5 @@ export const Repay: React.FC<IProps> = ({ accountPosition, state, setState, repa
     </>
   );
 };
-
-const FlexCol = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-`;
 
 export default Repay;

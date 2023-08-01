@@ -1,7 +1,7 @@
 import { Popover } from 'components/Popover';
 import styled from 'styled-components';
 import { useEffect, useState } from 'react';
-import { ZERO } from 'utils/bigNumber';
+import { ZERO, fromAtto } from 'utils/bigNumber';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { useWallet } from 'providers/WalletProvider';
 import { TempleLineOfCredit__factory, ERC20__factory } from 'types/typechain';
@@ -15,6 +15,7 @@ import Withdraw from './Withdraw';
 import Borrow from './Borrow';
 import Repay from './Repay';
 import Overview from './Overview';
+import { fetchGenericSubgraph } from 'utils/subgraph';
 
 interface IProps {
   isOpen: boolean;
@@ -36,6 +37,8 @@ export type State = {
 
 export const MAX_LTV = 75;
 
+export type Prices = { templePrice: number; daiPrice: number; tpi: number };
+
 export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
   const { balance, wallet, updateBalance, signer, ensureAllowance } = useWallet();
   const { openNotification } = useNotification();
@@ -53,11 +56,39 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
   const [accountPosition, setAccountPosition] = useState<ITlcDataTypes.AccountPositionStructOutput>();
   const [minBorrow, setMinBorrow] = useState<BigNumber>();
   const [borrowRate, setBorrowRate] = useState<BigNumber>();
+  const [prices, setPrices] = useState<Prices>({ templePrice: 0, daiPrice: 0, tpi: 0 });
+
+  const getPrices = async () => {
+    const { data } = await fetchGenericSubgraph(
+      'https://api.thegraph.com/subgraphs/name/templedao/templedao-ramos',
+      `{
+        metrics {
+          treasuryPriceIndexUSD
+          templePriceUSD
+        }
+      }`
+    );
+    setPrices({
+      templePrice: parseFloat(data.metrics[0].templePriceUSD),
+      daiPrice: 1,
+      tpi: parseFloat(data.metrics[0].treasuryPriceIndexUSD),
+    });
+  };
+
+  const getLiquidationDate = (ltv?: number) => {
+    if (!accountPosition || !borrowRate) return '';
+    const LTV = ltv || fromAtto(accountPosition.loanToValueRatio);
+    const growthUntilLiq = MAX_LTV / 100 / LTV - 1;
+    const daysUntilLiq = (growthUntilLiq / fromAtto(borrowRate)) * 365;
+    const today = new Date();
+    return new Date(today.setDate(today.getDate() + daysUntilLiq)).toLocaleDateString();
+  };
 
   useEffect(() => {
     const onMount = async () => {
       await updateBalance();
       await updateAccountPosition();
+      await getPrices();
     };
     onMount();
   }, [signer]);
@@ -73,47 +104,68 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
 
   const updateAccountPosition = async () => {
     if (!signer || !wallet) return;
-    const tlcContract = new TempleLineOfCredit__factory(signer).attach(env.contracts.tlc);
-    const position = await tlcContract.accountPosition(wallet);
-    const min = await tlcContract.MIN_BORROW_AMOUNT();
-    const debtInfo = await tlcContract.totalDebtPosition();
-    const rate = debtInfo.borrowRate;
-    setAccountPosition(position);
-    setMinBorrow(min);
-    setBorrowRate(rate);
+    try {
+      const tlcContract = new TempleLineOfCredit__factory(signer).attach(env.contracts.tlc);
+      const position = await tlcContract.accountPosition(wallet);
+      const min = await tlcContract.MIN_BORROW_AMOUNT();
+      const debtInfo = await tlcContract.totalDebtPosition();
+      const d = await tlcContract.debtTokenDetails();
+
+      const rate = debtInfo.borrowRate;
+      setAccountPosition(position);
+      setMinBorrow(min);
+      setBorrowRate(rate);
+    } catch (e) {
+      console.log(e);
+    }
   };
 
   const supply = async () => {
     if (!signer || !wallet) return;
     const tlcContract = new TempleLineOfCredit__factory(signer).attach(env.contracts.tlc);
     const amount = getBigNumberFromString(state.supplyValue, getTokenInfo(state.inputToken).decimals);
-
-    // Ensure allowance for TLC to spend TEMPLE
-    const templeContract = new ERC20__factory(signer).attach(env.contracts.temple);
-    await ensureAllowance(TICKER_SYMBOL.TEMPLE_TOKEN, templeContract, env.contracts.tlc, amount);
-
-    const tx = await tlcContract.addCollateral(amount, wallet);
-    const receipt = await tx.wait();
-    openNotification({
-      title: `Supplied ${state.supplyValue} TEMPLE`,
-      hash: receipt.transactionHash,
-    });
-    updateBalance();
-    updateAccountPosition();
+    try {
+      // Ensure allowance for TLC to spend TEMPLE
+      const templeContract = new ERC20__factory(signer).attach(env.contracts.temple);
+      await ensureAllowance(TICKER_SYMBOL.TEMPLE_TOKEN, templeContract, env.contracts.tlc, amount);
+      // Add collateral
+      const tx = await tlcContract.addCollateral(amount, wallet);
+      const receipt = await tx.wait();
+      openNotification({
+        title: `Supplied ${state.supplyValue} TEMPLE`,
+        hash: receipt.transactionHash,
+      });
+      updateBalance();
+      updateAccountPosition();
+    } catch (e) {
+      console.log(e);
+      openNotification({
+        title: `Error supplying TEMPLE`,
+        hash: '',
+      });
+    }
   };
 
   const withdraw = async () => {
     if (!signer || !wallet) return;
     const tlcContract = new TempleLineOfCredit__factory(signer).attach(env.contracts.tlc);
     const amount = getBigNumberFromString(state.withdrawValue, getTokenInfo(state.inputToken).decimals);
-    const tx = await tlcContract.removeCollateral(amount, wallet);
-    const receipt = await tx.wait();
-    openNotification({
-      title: `Withdrew ${state.withdrawValue} TEMPLE`,
-      hash: receipt.transactionHash,
-    });
-    updateBalance();
-    updateAccountPosition();
+    try {
+      const tx = await tlcContract.removeCollateral(amount, wallet, { gasLimit: 160000 });
+      const receipt = await tx.wait();
+      openNotification({
+        title: `Withdrew ${state.withdrawValue} TEMPLE`,
+        hash: receipt.transactionHash,
+      });
+      updateBalance();
+      updateAccountPosition();
+    } catch (e) {
+      console.log(e);
+      openNotification({
+        title: `Error withdrawing TEMPLE`,
+        hash: '',
+      });
+    }
   };
 
   const borrow = async () => {
@@ -121,7 +173,7 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
     const tlcContract = new TempleLineOfCredit__factory(signer).attach(env.contracts.tlc);
     const amount = getBigNumberFromString(state.borrowValue, getTokenInfo(state.outputToken).decimals);
     try {
-      const tx = await tlcContract.borrow(amount, wallet, { gasLimit: 300000 });
+      const tx = await tlcContract.borrow(amount, wallet, { gasLimit: 350000 });
       const receipt = await tx.wait();
       openNotification({
         title: `Borrowed ${state.borrowValue} DAI`,
@@ -131,6 +183,10 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
       updateAccountPosition();
     } catch (e) {
       console.log(e);
+      openNotification({
+        title: `Error borrowing DAI`,
+        hash: '',
+      });
     }
   };
 
@@ -138,48 +194,71 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
     if (!signer || !wallet) return;
     const tlcContract = new TempleLineOfCredit__factory(signer).attach(env.contracts.tlc);
     const amount = getBigNumberFromString(state.repayValue, getTokenInfo(state.outputToken).decimals);
-
-    // Ensure allowance for TLC to spend DAI
-    const daiContract = new ERC20__factory(signer).attach(env.contracts.dai);
-    await ensureAllowance(TICKER_SYMBOL.DAI, daiContract, env.contracts.tlc, amount);
-
-    const tx = await tlcContract.repay(amount, wallet, { gasLimit: 200000 });
-    const receipt = await tx.wait();
-    openNotification({
-      title: `Repaid ${state.repayValue} DAI`,
-      hash: receipt.transactionHash,
-    });
-    updateBalance();
-    updateAccountPosition();
+    try {
+      // Ensure allowance for TLC to spend DAI
+      const daiContract = new ERC20__factory(signer).attach(env.contracts.dai);
+      await ensureAllowance(TICKER_SYMBOL.DAI, daiContract, env.contracts.tlc, amount);
+      // Repay DAI
+      const tx = await tlcContract.repay(amount, wallet, { gasLimit: 210000 });
+      const receipt = await tx.wait();
+      openNotification({
+        title: `Repaid ${state.repayValue} DAI`,
+        hash: receipt.transactionHash,
+      });
+      updateBalance();
+      updateAccountPosition();
+    } catch (e) {
+      console.log(e);
+      openNotification({
+        title: `Error repaying DAI`,
+        hash: '',
+      });
+    }
   };
 
   const repayAll = async () => {
     if (!signer || !wallet) return;
     const tlcContract = new TempleLineOfCredit__factory(signer).attach(env.contracts.tlc);
     const amount = getBigNumberFromString(state.repayValue, getTokenInfo(state.outputToken).decimals);
-
-    // Ensure allowance for TLC to spend DAI
-    const daiContract = new ERC20__factory(signer).attach(env.contracts.dai);
-    await ensureAllowance(TICKER_SYMBOL.DAI, daiContract, env.contracts.tlc, amount);
-
-    const tx = await tlcContract.repayAll(wallet);
-    const receipt = await tx.wait();
-    openNotification({
-      title: `Repaid ${accountPosition?.currentDebt} DAI`,
-      hash: receipt.transactionHash,
-    });
-    updateBalance();
-    updateAccountPosition();
+    try {
+      // Ensure allowance for TLC to spend DAI
+      const daiContract = new ERC20__factory(signer).attach(env.contracts.dai);
+      await ensureAllowance(TICKER_SYMBOL.DAI, daiContract, env.contracts.tlc, amount);
+      // Repay DAI
+      const tx = await tlcContract.repayAll(wallet, { gasLimit: 210000 });
+      const receipt = await tx.wait();
+      openNotification({
+        title: `Repaid ${accountPosition?.currentDebt} DAI`,
+        hash: receipt.transactionHash,
+      });
+      updateBalance();
+      updateAccountPosition();
+    } catch (e) {
+      console.log(e);
+      openNotification({
+        title: `Error repaying DAI`,
+        hash: '',
+      });
+    }
   };
 
   return (
     <>
-      <Popover isOpen={isOpen} onClose={onClose} closeOnClickOutside showCloseButton>
+      <Popover
+        isOpen={isOpen}
+        onClose={() => {
+          setScreen('overview');
+          onClose();
+        }}
+        closeOnClickOutside
+        showCloseButton
+      >
         <ModalContainer>
           {screen === 'supply' ? (
             <Supply
               accountPosition={accountPosition}
               state={state}
+              minBorrow={minBorrow}
               setState={setState}
               supply={supply}
               back={() => setScreen('overview')}
@@ -198,6 +277,8 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
               state={state}
               borrowRate={borrowRate}
               minBorrow={minBorrow}
+              prices={prices}
+              getLiquidationDate={getLiquidationDate}
               setState={setState}
               borrow={borrow}
               back={() => setScreen('overview')}
@@ -212,7 +293,14 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
               back={() => setScreen('overview')}
             />
           ) : (
-            <Overview accountPosition={accountPosition} state={state} borrowRate={borrowRate} setScreen={setScreen} />
+            <Overview
+              accountPosition={accountPosition}
+              state={state}
+              borrowRate={borrowRate}
+              setScreen={setScreen}
+              prices={prices}
+              liquidationDate={getLiquidationDate()}
+            />
           )}
         </ModalContainer>
       </Popover>
@@ -220,7 +308,6 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
   );
 };
 
-// Overview Styles
 const ModalContainer = styled.div`
   display: flex;
   flex-direction: column;
@@ -278,7 +365,12 @@ export const FlexBetween = styled.div`
   }
 `;
 
-// Supply styles
+export const Rule = styled.hr`
+  border: 0;
+  border-top: 1px solid ${({ theme }) => theme.palette.brand};
+  margin: 0.5rem 0 0 0;
+`;
+
 export const RangeLabel = styled.div`
   margin-bottom: 0.6rem;
   text-align: left;
@@ -340,13 +432,13 @@ export const Warning = styled.div`
   display: flex;
   flex-direction: row;
   align-items: center;
-  justify-content: center;
+  justify-content: left;
   text-align: left;
   gap: 0.5rem;
   p {
     font-size: 0.8rem;
   }
-  margin-bottom: -1rem;
+  margin-bottom: -0.5rem;
 `;
 
 export const InfoCircle = styled.div`
@@ -361,6 +453,12 @@ export const InfoCircle = styled.div`
   font-weight: 600;
   border-radius: 50%;
   border: 1px solid ${({ theme }) => theme.palette.brand};
+`;
+
+export const FlexCol = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 `;
 
 export default TLCModal;

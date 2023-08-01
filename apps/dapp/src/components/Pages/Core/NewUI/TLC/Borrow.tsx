@@ -6,14 +6,18 @@ import { formatToken } from 'utils/formatter';
 import { ITlcDataTypes } from 'types/typechain/contracts/interfaces/v2/templeLineOfCredit/ITempleLineOfCredit';
 import {
   BackButton,
+  Copy,
   FlexBetween,
+  FlexCol,
   GradientContainer,
   InfoCircle,
   MAX_LTV,
   MarginTop,
+  Prices,
   RangeLabel,
   RangeSlider,
   RemoveMargin,
+  Rule,
   State,
   Title,
   Warning,
@@ -28,13 +32,27 @@ interface IProps {
   state: State;
   minBorrow: BigNumber | undefined;
   borrowRate: BigNumber | undefined;
+  prices: Prices;
+  getLiquidationDate: (ltv: number) => string;
   setState: React.Dispatch<React.SetStateAction<State>>;
   borrow: () => void;
   back: () => void;
 }
 
-export const Borrow: React.FC<IProps> = ({ accountPosition, state, minBorrow, borrowRate, setState, borrow, back }) => {
+export const Borrow: React.FC<IProps> = ({
+  accountPosition,
+  state,
+  minBorrow,
+  borrowRate,
+  prices,
+  getLiquidationDate,
+  setState,
+  borrow,
+  back,
+}) => {
   const [checkbox, setCheckbox] = useState(false);
+
+  const getBorrowRate = () => (borrowRate ? (fromAtto(borrowRate) * 100).toFixed(2) : 0);
 
   const getEstimatedLTV = (): string => {
     return accountPosition
@@ -79,6 +97,7 @@ export const Borrow: React.FC<IProps> = ({ accountPosition, state, minBorrow, bo
               )
             : 0
         }`}
+        width="100%"
       />
       {minBorrow && fromAtto(minBorrow) > Number(state.borrowValue) && (
         <Warning>
@@ -117,13 +136,14 @@ export const Borrow: React.FC<IProps> = ({ accountPosition, state, minBorrow, bo
       </FlexBetween>
       <GradientContainer>
         <Apy>
-          {borrowRate ? (fromAtto(borrowRate) * 100).toFixed(2) : 0}% <span>APR</span>
+          {borrowRate ? (fromAtto(borrowRate) * 100).toFixed(2) : 0}% <span>interest rate</span>
         </Apy>
-        {/* <Rule />
-        <Copy style={{ textAlign: 'left' }}>
-          Given the current TPI price of <strong>$1.06</strong>, your TEMPLE collateral will be liquidated on
-          <strong>10/02/2024</strong>.
-        </Copy> */}
+        <Rule />
+        <Copy>
+          If the current TPI (<strong>${prices.tpi.toFixed(2)}</strong>) and interest rate (
+          <strong>{getBorrowRate()}%</strong>) were fixed, your collateral would be liquidated on{' '}
+          <strong>{getLiquidationDate(Number(getEstimatedLTV()) / 100)}</strong>.
+        </Copy>
       </GradientContainer>
       <RiskAcknowledgement>
         <Checkbox onClick={() => setCheckbox(!checkbox)} isChecked={checkbox} src={checkmark} />
@@ -132,16 +152,18 @@ export const Borrow: React.FC<IProps> = ({ accountPosition, state, minBorrow, bo
           <a href="#">Find out more</a>
         </div>
       </RiskAcknowledgement>
-      <TradeButton
-        onClick={() => borrow()}
-        disabled={
-          !checkbox ||
-          (accountPosition && fromAtto(accountPosition.maxBorrow) < Number(state.borrowValue)) ||
-          (minBorrow && fromAtto(minBorrow) > Number(state.borrowValue))
-        }
-      >
-        Borrow
-      </TradeButton>
+      <FlexCol>
+        <TradeButton
+          onClick={() => borrow()}
+          disabled={
+            !checkbox ||
+            (accountPosition && fromAtto(accountPosition.maxBorrow) < Number(state.borrowValue)) ||
+            (minBorrow && fromAtto(minBorrow) > Number(state.borrowValue))
+          }
+        >
+          Borrow
+        </TradeButton>
+      </FlexCol>
     </>
   );
 };

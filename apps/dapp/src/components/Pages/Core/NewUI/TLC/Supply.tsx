@@ -7,7 +7,9 @@ import {
   BackButton,
   Copy,
   FlexBetween,
+  FlexCol,
   GradientContainer,
+  InfoCircle,
   MAX_LTV,
   MarginTop,
   RangeLabel,
@@ -15,18 +17,21 @@ import {
   RemoveMargin,
   State,
   Title,
+  Warning,
 } from './TLCModal';
 import { fromAtto } from 'utils/bigNumber';
+import { BigNumber } from 'ethers';
 
 interface IProps {
   accountPosition: ITlcDataTypes.AccountPositionStructOutput | undefined;
   state: State;
+  minBorrow: BigNumber | undefined;
   setState: React.Dispatch<React.SetStateAction<State>>;
   supply: () => void;
   back: () => void;
 }
 
-export const Supply: React.FC<IProps> = ({ accountPosition, state, setState, supply, back }) => {
+export const Supply: React.FC<IProps> = ({ accountPosition, state, minBorrow, setState, supply, back }) => {
   const getEstimatedCollateral = (): number => {
     return accountPosition
       ? fromAtto(accountPosition.collateral) + Number(state.supplyValue)
@@ -43,12 +48,17 @@ export const Supply: React.FC<IProps> = ({ accountPosition, state, setState, sup
     return getEstimatedCollateral() * (MAX_LTV / 100);
   };
 
+  const minSupply = minBorrow ? (1 / (MAX_LTV / 100)) * fromAtto(minBorrow) : 0;
+  const unusedSupply = accountPosition
+    ? fromAtto(accountPosition.collateral) - fromAtto(accountPosition.currentDebt)
+    : 0;
+  const estimatedUnusedSupply = Number(state.supplyValue) + unusedSupply;
+
   return (
     <>
       <RemoveMargin />
       <BackButton src={leftCaret} onClick={() => back()} />
       <Title>Supply TEMPLE</Title>
-      {/* TODO: Make width 100% */}
       <Input
         crypto={{
           kind: 'value',
@@ -63,7 +73,19 @@ export const Supply: React.FC<IProps> = ({ accountPosition, state, setState, sup
         }}
         min={0}
         hint={`Balance: ${formatToken(state.inputTokenBalance, state.inputToken)}`}
+        width="100%"
       />
+      {estimatedUnusedSupply < minSupply && (
+        <Warning>
+          <InfoCircle>
+            <p>i</p>
+          </InfoCircle>
+          <p>
+            You should supply at least {(minSupply - unusedSupply).toFixed(2)} TEMPLE in order to meet the minimum
+            borrow requirement.
+          </p>
+        </Warning>
+      )}
       {/* Only display range slider if the user has borrows */}
       {accountPosition?.currentDebt.gt(0) && (
         <>
@@ -97,7 +119,11 @@ export const Supply: React.FC<IProps> = ({ accountPosition, state, setState, sup
           total TEMPLE collateral.
         </Copy>
       </GradientContainer>
-      <TradeButton onClick={() => supply()}>Supply</TradeButton>
+      <FlexCol>
+        <TradeButton onClick={() => supply()} disabled={Number(state.supplyValue) <= 0}>
+          Supply
+        </TradeButton>
+      </FlexCol>
     </>
   );
 };

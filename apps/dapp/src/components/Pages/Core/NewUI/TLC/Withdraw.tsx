@@ -6,6 +6,7 @@ import {
   BackButton,
   Copy,
   FlexBetween,
+  FlexCol,
   GradientContainer,
   InfoCircle,
   MAX_LTV,
@@ -55,7 +56,6 @@ export const Withdraw: React.FC<IProps> = ({ accountPosition, state, setState, w
       <RemoveMargin />
       <BackButton src={leftCaret} onClick={() => back()} />
       <Title>Withdraw TEMPLE</Title>
-      {/* TODO: Make width 100% */}
       <Input
         crypto={{
           kind: 'value',
@@ -70,6 +70,7 @@ export const Withdraw: React.FC<IProps> = ({ accountPosition, state, setState, w
         }}
         min={0}
         hint={`Max: ${getMaxWithdraw().toFixed(2)}`}
+        width="100%"
       />
       {/* Only display if user has borrows */}
       {accountPosition?.currentDebt.gt(0) && (
@@ -110,7 +111,15 @@ export const Withdraw: React.FC<IProps> = ({ accountPosition, state, setState, w
           total TEMPLE collateral.
         </Copy>
       </GradientContainer>
-      <TradeButton onClick={() => withdraw()}>Withdraw</TradeButton>
+      <FlexCol>
+        <TradeButton
+          onClick={() => withdraw()}
+          // Disable if amount is 0 or greater than max withdraw
+          disabled={Number(state.withdrawValue) <= 0 || Number(state.withdrawValue) > getMaxWithdraw()}
+        >
+          Withdraw
+        </TradeButton>
+      </FlexCol>
     </>
   );
 };
