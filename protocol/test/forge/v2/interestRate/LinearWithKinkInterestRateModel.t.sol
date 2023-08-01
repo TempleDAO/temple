@@ -140,6 +140,17 @@ contract LinearWithKinkInterestRateModelTestModifiers is
         );
     }
 
+    function test_expectInvalidParams_failWrongOrder() public {
+        vm.startPrank(executor);
+        // Base rate is bigger thank Kink rate
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
+        interestRateModelKinkNinety.setRateParams(100, 100, 100, 99);
+
+        // Kink rate is bigger thank Max rate
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
+        interestRateModelKinkNinety.setRateParams(100, 99, 100, 100);
+    }
+
     function test_accessRescuerSetRateParams() public {
         vm.startPrank(rescuer);
         vm.expectRevert(

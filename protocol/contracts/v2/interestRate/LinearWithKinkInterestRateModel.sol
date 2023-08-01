@@ -87,6 +87,8 @@ contract LinearWithKinkInterestRateModel is BaseInterestRateModel, TempleElevate
     ) internal {
         if (_kinkUtilizationRatio == 0) revert CommonEventsAndErrors.InvalidParam();
         if (_kinkUtilizationRatio >= PRECISION) revert CommonEventsAndErrors.InvalidParam();
+        if (_baseInterestRate > _kinkInterestRate) revert CommonEventsAndErrors.InvalidParam();
+        if (_kinkInterestRate > _maxInterestRate) revert CommonEventsAndErrors.InvalidParam();
 
         rateParams = RateParams({
             baseInterestRate: _baseInterestRate,
