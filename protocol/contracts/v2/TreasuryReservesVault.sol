@@ -550,9 +550,7 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
             if (_withdrawFromBaseStrategyAmount != 0) {
                 // So there aren't lots of small withdrawals, pull the amount required for this transaction
                 // plus the threshold amount. Then future borrows don't need to withdraw from base every time.
-                unchecked {
-                    _withdrawFromBaseStrategyAmount += tokenConfig.baseStrategyWithdrawalBuffer;
-                }
+                _withdrawFromBaseStrategyAmount += tokenConfig.baseStrategyWithdrawalBuffer;
 
                 // This will revert if the amount requested is less than what's available
                 _baseStrategy.trvWithdraw(_withdrawFromBaseStrategyAmount);
