@@ -52,18 +52,6 @@ interface ITlcDataTypes {
 
         /// @notice The account's last interest accumulator checkpoint
         uint128 interestAccumulator;
-
-        /// @notice A remove collateral requested amount
-        uint128 removeCollateralRequestAmount;
-
-        /// @notice A new borrow requested amount
-        uint128 borrowRequestAmount;
-
-        /// @notice The block time when a remove collateral was requested
-        uint64 removeCollateralRequestAt;
-
-        /// @notice The block time when a borrow was requested
-        uint64 borrowRequestAt;
     }
 
     /// @notice The status for whether an account can be liquidated or not
