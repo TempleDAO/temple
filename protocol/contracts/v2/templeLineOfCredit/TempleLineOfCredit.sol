@@ -136,15 +136,11 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
      * @param collateralAmount The amount to deposit
      * @param onBehalfOf An account can add collateral on behalf of another address.
      */
-    function addCollateral(uint256 collateralAmount, address onBehalfOf) external override notInRescueMode {
+    function addCollateral(uint128 collateralAmount, address onBehalfOf) external override notInRescueMode {
         if (collateralAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
         emit CollateralAdded(msg.sender, onBehalfOf, collateralAmount);
 
-        allAccountsData[onBehalfOf].collateral = (
-            allAccountsData[onBehalfOf].collateral + 
-            collateralAmount
-        ).encodeUInt128();
-
+        allAccountsData[onBehalfOf].collateral += collateralAmount;
         totalCollateral += collateralAmount;
 
         // No need to check liquidity when adding collateral as it 
@@ -161,7 +157,7 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
      * @param amount The amount of collateral to remove
      * @param recipient Send the Temple collateral to a specified recipient address.
      */
-    function removeCollateral(uint256 amount, address recipient) external override notInRescueMode {
+    function removeCollateral(uint128 amount, address recipient) external override notInRescueMode {
         if (amount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
         AccountData storage _accountData = allAccountsData[msg.sender];
         if (amount > _accountData.collateral) revert CommonEventsAndErrors.InvalidAmount(address(templeToken), amount);
@@ -174,9 +170,7 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
         );
 
         // Update the collateral, and then verify that it doesn't make the debt unsafe.
-        // A subtraction in collateral (where the removeAmount is always <= existing collateral
-        // - so the downcast here is safe
-        _accountData.collateral = uint128(_accountData.collateral - amount);
+        _accountData.collateral -= amount;
         totalCollateral -= amount;
         emit CollateralRemoved(msg.sender, recipient, amount);
 
@@ -197,7 +191,7 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
      * @param amount The amount to borrow
      * @param recipient Send the borrowed token to a specified recipient address.
      */
-    function borrow(uint256 amount, address recipient) external override notInRescueMode {
+    function borrow(uint128 amount, address recipient) external override notInRescueMode {
         if (amount < MIN_BORROW_AMOUNT) revert InsufficientAmount(MIN_BORROW_AMOUNT, amount);
 
         AccountData storage _accountData = allAccountsData[msg.sender];
@@ -213,7 +207,7 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
 
         // Apply the new borrow
         {
-            uint256 _totalDebt = _currentAccountDebt(
+            uint128 _totalDebt = _currentAccountDebt(
                 _cache, 
                 _accountData.debtCheckpoint, 
                 _accountData.interestAccumulator,
@@ -221,11 +215,9 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
             ) + amount;
 
             // Update the state
-            _accountData.debtCheckpoint = _totalDebt.encodeUInt128();
+            _accountData.debtCheckpoint = _totalDebt;
             _accountData.interestAccumulator = _cache.interestAccumulator;
-            debtTokenData.totalDebt = _cache.totalDebt = (
-                _cache.totalDebt + amount
-            ).encodeUInt128();
+            debtTokenData.totalDebt = _cache.totalDebt = _cache.totalDebt + amount;
 
             // Update the borrow interest rates based on the now increased utilization ratio
             _updateInterestRates(_cache);
@@ -247,11 +239,11 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
      * @param repayAmount The amount to repay. Cannot be more than the current debt.
      * @param onBehalfOf Another address can repay the debt on behalf of someone else
      */
-    function repay(uint256 repayAmount, address onBehalfOf) external override notInRescueMode {
+    function repay(uint128 repayAmount, address onBehalfOf) external override notInRescueMode {
         if (repayAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
 
         AccountData storage _accountData = allAccountsData[onBehalfOf];
-        _repayToken(_debtTokenCache(), repayAmount.encodeUInt128(), _accountData, msg.sender, onBehalfOf);
+        _repayToken(_debtTokenCache(), repayAmount, _accountData, msg.sender, onBehalfOf);
     }
 
     /**
@@ -288,8 +280,8 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
     function batchLiquidate(
         address[] calldata accounts
     ) external override notInRescueMode returns (
-        uint256 totalCollateralClaimed,
-        uint256 totalDebtWiped
+        uint128 totalCollateralClaimed,
+        uint128 totalDebtWiped
     ) {
         LiquidationStatus memory _status;
         DebtTokenCache memory _cache = _debtTokenCache();
@@ -322,7 +314,7 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
 
         // Remove debt from the totals
         if (totalDebtWiped != 0) {
-            _repayTotalDebt(_cache, totalDebtWiped.encodeUInt128());
+            _repayTotalDebt(_cache, totalDebtWiped);
         }
     }
     
@@ -804,13 +796,13 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
      */
     function _maxBorrowLimit(
         DebtTokenCache memory _cache,
-        uint256 _collateral
-    ) internal pure returns (uint256) {
+        uint128 _collateral
+    ) internal pure returns (uint128) {
         return mulDiv(
             _collateral * _cache.price,
             _cache.config.maxLtvRatio,
             DOUBLE_PRECISION
-        );
+        ).encodeUInt128();
     }
 
     /**

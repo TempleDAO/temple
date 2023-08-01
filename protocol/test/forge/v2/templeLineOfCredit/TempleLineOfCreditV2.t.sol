@@ -181,8 +181,8 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
     }
 
     function test_setInterestRateModel_withDebt() public {
-        uint256 collateralAmount = 10_000 ether;
-        uint256 borrowDaiAmount = 1_000 ether;
+        uint128 collateralAmount = 10_000 ether;
+        uint128 borrowDaiAmount = 1_000 ether;
         borrow(alice, collateralAmount, borrowDaiAmount, BORROW_REQUEST_MIN_SECS);
         uint256 expectedDaiAccumulator = approxInterest(INITIAL_INTEREST_ACCUMULATOR, MIN_BORROW_RATE, BORROW_REQUEST_MIN_SECS);
 
@@ -219,8 +219,8 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
     }
 
     function test_refreshInterestRates() public {
-        uint256 collateralAmount = 10_000 ether;
-        uint256 borrowDaiAmount = 1_000 ether;
+        uint128 collateralAmount = 10_000 ether;
+        uint128 borrowDaiAmount = 1_000 ether;
         borrow(alice, collateralAmount, borrowDaiAmount, BORROW_REQUEST_MIN_SECS);
         uint256 expectedDaiAccumulator = approxInterest(INITIAL_INTEREST_ACCUMULATOR, MIN_BORROW_RATE, BORROW_REQUEST_MIN_SECS);
 
@@ -350,7 +350,7 @@ contract TempleLineOfCreditTest_Access is TlcBaseTest {
 
 contract TempleLineOfCreditTest_Positions is TlcBaseTest {
     function test_accountPosition_afterAddCollateral() external {
-        uint256 collateralAmount = 100_000e18;
+        uint128 collateralAmount = 100_000e18;
         addCollateral(alice, collateralAmount);
 
         MaxBorrowInfo memory maxBorrowInfo = expectedMaxBorrows(collateralAmount);
@@ -369,8 +369,8 @@ contract TempleLineOfCreditTest_Positions is TlcBaseTest {
 contract TempleLineOfCreditTestInterestAccrual is TlcBaseTest {
 
     struct Params {
-        uint256 borrowDaiAmount;
-        uint256 collateralAmount;
+        uint128 borrowDaiAmount;
+        uint128 collateralAmount;
     }
 
     function test_trvCapChange() external {

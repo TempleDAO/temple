@@ -335,7 +335,7 @@ contract TempleDebtTokenTestBaseInterestOnly is TempleDebtTokenTestBase {
         checkDebtor(bob, 0, amount, bobExpectedShares, 0, startBlockTs + 1 days, bobBal-1);
 
         changePrank(executor);
-        uint256 updatedBaseRate = 0.05e18;
+        uint96 updatedBaseRate = 0.05e18;
         dUSD.setBaseInterestRate(updatedBaseRate);
 
         // The rate was updated and a checkpoint was made

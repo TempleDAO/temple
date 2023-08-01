@@ -10,32 +10,32 @@ contract TempleLineOfCreditTestCheckLiquidity is TlcBaseTest {
     }
 
     function test_computeLiquidity_noBorrowsWithCollateral() external {
-        uint256 collateralAmount = 100_000;
+        uint128 collateralAmount = 100_000;
         addCollateral(alice, collateralAmount);
         checkLiquidationStatus(alice, false, collateralAmount, 0);
     }
 
     function test_computeLiquidity_withBorrowUnderMaxLTV() external {
-        uint256 collateralAmount = 10_000e18;
-        uint256 daiBorrowAmount = 1_000e18;
+        uint128 collateralAmount = 10_000e18;
+        uint128 daiBorrowAmount = 1_000e18;
         borrow(alice, collateralAmount, daiBorrowAmount, BORROW_REQUEST_MIN_SECS);
 
         checkLiquidationStatus(alice, false, collateralAmount, daiBorrowAmount);
     }
 
     function test_computeLiquidity_withBorrowAtMaxLTV() external {
-        uint256 collateralAmount = 10_000e18;
+        uint128 collateralAmount = 10_000e18;
         MaxBorrowInfo memory maxBorrowInfo = expectedMaxBorrows(collateralAmount);
-        uint256 daiBorrowAmount = maxBorrowInfo.daiMaxBorrow;
+        uint128 daiBorrowAmount = maxBorrowInfo.daiMaxBorrow;
         borrow(alice, collateralAmount, daiBorrowAmount, BORROW_REQUEST_MIN_SECS);
 
         checkLiquidationStatus(alice, false, collateralAmount, daiBorrowAmount);
     }
 
     function test_computeLiquidity_withBorrowOverMaxLTV() external {
-        uint256 collateralAmount = 10_000e18;
+        uint128 collateralAmount = 10_000e18;
         MaxBorrowInfo memory maxBorrowInfo = expectedMaxBorrows(collateralAmount);
-        uint256 daiBorrowAmount = maxBorrowInfo.daiMaxBorrow;
+        uint128 daiBorrowAmount = maxBorrowInfo.daiMaxBorrow;
         borrow(alice, collateralAmount, daiBorrowAmount, BORROW_REQUEST_MIN_SECS);
 
         vm.prank(executor);
@@ -45,8 +45,8 @@ contract TempleLineOfCreditTestCheckLiquidity is TlcBaseTest {
     }
 
     function test_computeLiquidity_afterRepayAll() external {
-        uint256 collateralAmount = 50_000e18;
-        uint256 daiBorrowAmount = 8_000e18;
+        uint128 collateralAmount = 50_000e18;
+        uint128 daiBorrowAmount = 8_000e18;
         borrow(alice, collateralAmount, daiBorrowAmount, BORROW_REQUEST_MIN_SECS);
 
         vm.prank(executor);
@@ -67,7 +67,7 @@ contract TempleLineOfCreditTestBatchLiquidate is TlcBaseTest {
     event StrategyCreditAndDebtBalance(address indexed strategy, address indexed token, uint256 credit, uint256 debt);
 
     function test_batchLiquidate_noAccounts() external {
-        uint256 collateralAmount = 10_000e18;
+        uint128 collateralAmount = 10_000e18;
         borrow(alice, collateralAmount, 1_000e18, BORROW_REQUEST_MIN_SECS);
         uint256 expectedDaiAccumulator = approxInterest(INITIAL_INTEREST_ACCUMULATOR, MIN_BORROW_RATE, BORROW_REQUEST_MIN_SECS);
 
@@ -84,7 +84,7 @@ contract TempleLineOfCreditTestBatchLiquidate is TlcBaseTest {
     }
 
     function test_batchLiquidate_oneAccount_noLiquidate() external {
-        uint256 collateralAmount = 10_000e18;
+        uint128 collateralAmount = 10_000e18;
         borrow(alice, collateralAmount, 1_000e18, BORROW_REQUEST_MIN_SECS);
         uint256 expectedDaiAccumulator = approxInterest(INITIAL_INTEREST_ACCUMULATOR, MIN_BORROW_RATE, BORROW_REQUEST_MIN_SECS);
 
@@ -102,7 +102,7 @@ contract TempleLineOfCreditTestBatchLiquidate is TlcBaseTest {
     }
 
     function test_batchLiquidate_oneAccount_noLiquidateAtMax() external {
-        uint256 collateralAmount = 10_000e18;
+        uint128 collateralAmount = 10_000e18;
         MaxBorrowInfo memory maxBorrowInfo = expectedMaxBorrows(collateralAmount);
         borrow(alice, collateralAmount, maxBorrowInfo.daiMaxBorrow, BORROW_REQUEST_MIN_SECS);
         uint256 expectedDaiAccumulator = approxInterest(INITIAL_INTEREST_ACCUMULATOR, MIN_BORROW_RATE, BORROW_REQUEST_MIN_SECS);
@@ -139,9 +139,9 @@ contract TempleLineOfCreditTestBatchLiquidate is TlcBaseTest {
     }
 
     function test_batchLiquidate_oneAccount_liquidate() external {
-        uint256 collateralAmount = 10_000e18;
+        uint128 collateralAmount = 10_000e18;
         MaxBorrowInfo memory maxBorrowInfo = expectedMaxBorrows(collateralAmount);
-        uint256 daiBorrowAmount = maxBorrowInfo.daiMaxBorrow;
+        uint128 daiBorrowAmount = maxBorrowInfo.daiMaxBorrow;
         borrow(alice, collateralAmount, daiBorrowAmount, BORROW_REQUEST_MIN_SECS);
         uint256 expectedDaiAccumulator = approxInterest(INITIAL_INTEREST_ACCUMULATOR, MIN_BORROW_RATE, BORROW_REQUEST_MIN_SECS);
 
@@ -187,9 +187,9 @@ contract TempleLineOfCreditTestBatchLiquidate is TlcBaseTest {
     }
 
     function test_batchLiquidate_twoAccounts_oneLiquidate() external {
-        uint256 collateralAmount = 10_000e18;
+        uint128 collateralAmount = 10_000e18;
         MaxBorrowInfo memory maxBorrowInfo = expectedMaxBorrows(collateralAmount);
-        uint256 daiBorrowAmount = maxBorrowInfo.daiMaxBorrow;
+        uint128 daiBorrowAmount = maxBorrowInfo.daiMaxBorrow;
         borrow(alice, collateralAmount, daiBorrowAmount, BORROW_REQUEST_MIN_SECS);
         uint256 expectedInitialAccumulator = approxInterest(INITIAL_INTEREST_ACCUMULATOR, MIN_BORROW_RATE, BORROW_REQUEST_MIN_SECS);
 
@@ -273,9 +273,9 @@ contract TempleLineOfCreditTestBatchLiquidate is TlcBaseTest {
     }
 
     function test_batchLiquidate_twoAccounts_twoLiquidate() external {
-        uint256 collateralAmount = 10_000e18;
+        uint128 collateralAmount = 10_000e18;
         MaxBorrowInfo memory maxBorrowInfo = expectedMaxBorrows(collateralAmount);
-        uint256 daiBorrowAmount = maxBorrowInfo.daiMaxBorrow;
+        uint128 daiBorrowAmount = maxBorrowInfo.daiMaxBorrow;
         borrow(alice, collateralAmount, daiBorrowAmount, BORROW_REQUEST_MIN_SECS);
         uint256 expectedInitialAccumulator = approxInterest(INITIAL_INTEREST_ACCUMULATOR, MIN_BORROW_RATE, BORROW_REQUEST_MIN_SECS);
         borrow(bob, collateralAmount, daiBorrowAmount, BORROW_REQUEST_MIN_SECS);
@@ -362,8 +362,8 @@ contract TempleLineOfCreditTestBatchLiquidate is TlcBaseTest {
     }
 
     function test_batchLiquidate_requestDoesntLiquidate() external {
-        uint256 collateralAmount = 10_000e18;
-        uint256 daiBorrowAmount = 1_000e18;
+        uint128 collateralAmount = 10_000e18;
+        uint128 daiBorrowAmount = 1_000e18;
         borrow(alice, collateralAmount, daiBorrowAmount, BORROW_REQUEST_MIN_SECS);
 
         vm.prank(executor);

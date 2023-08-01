@@ -73,27 +73,27 @@ interface ITlcDataTypes {
         bool hasExceededMaxLtv;
 
         /// @notice The amount of collateral which has been provided by the user
-        uint256 collateral;
+        uint128 collateral;
 
         /// @notice The value of collateral (amount * TPI) which has been provided by the user
         uint256 collateralValue;
 
         /// @notice The amount of DAI debt as of this block
-        uint256 currentDebt;
+        uint128 currentDebt;
     }
     
     /// @notice An account's collateral and DAI debt position
     struct AccountPosition {
         /// @notice The amount (not the value) of collateral which has been provided by the user
-        uint256 collateral;
+        uint128 collateral;
 
         /// @notice The amount of DAI debt as of this block
-        uint256 currentDebt;
+        uint128 currentDebt;
 
         /// @notice The maximum amount this account can borrow given the collateral posted.
         /// @dev Note if this max is actually borrowed then it will immediately be liquidated as 1 block
         /// of interest will tip it over the max allowed LTV
-        uint256 maxBorrow;
+        uint128 maxBorrow;
 
         /// @notice The health factor of this accounts position. Anything less than 1 can be liquidated.
         uint256 healthFactor;

@@ -12,7 +12,7 @@ contract TempleDebtTokenTestBase is TempleTest {
     bool public constant LOG = false;
 
     TempleDebtToken public dUSD;
-    uint256 public constant DEFAULT_BASE_INTEREST = 0.01e18;
+    uint64 public constant DEFAULT_BASE_INTEREST = 0.01e18;
 
     // Continuously compounding rates based on 100e18;
     uint256 public constant ONE_PCT_1DAY = 100002739763558233400;
@@ -58,7 +58,7 @@ contract TempleDebtTokenTestBase is TempleTest {
         dUSD.addMinter(executor);
     }
 
-    function setBaseInterest(uint256 r) internal {
+    function setBaseInterest(uint96 r) internal {
         vm.prank(executor);
         dUSD.setBaseInterestRate(r);
     }
@@ -257,7 +257,7 @@ contract TempleDebtTokenTestAdmin is TempleDebtTokenTestBase {
 }
 
 contract TempleDebtTokenTestZeroInterest is TempleDebtTokenTestBase {
-    uint256 internal constant ZERO_INTEREST = 0;
+    uint96 internal constant ZERO_INTEREST = 0;
 
     function setUp() public {
         dUSD = new TempleDebtToken("Temple Debt", "dUSD", rescuer, executor, ZERO_INTEREST);

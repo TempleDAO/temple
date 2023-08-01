@@ -23,7 +23,7 @@ contract GnosisStrategyTestBase is TempleTest {
     FakeERC20 public weth = new FakeERC20("WETH", "WETH", address(0), 0);
     FakeERC20 public usdc = new FakeERC20("USDC", "USDC", address(0), 0);
 
-    uint256 public constant DEFAULT_BASE_INTEREST = 0.01e18;
+    uint96 public constant DEFAULT_BASE_INTEREST = 0.01e18;
     TempleDebtToken public dUSD;
     TreasuryPriceIndexOracle public tpiOracle;
     TreasuryReservesVault public trv;
@@ -291,7 +291,7 @@ contract GnosisStrategyTestBorrowAndRepay is GnosisStrategyTestBase {
     }
 
     function test_borrow_failCircuitBreaker() public {
-        uint256 amount = 1e18;
+        uint128 amount = 1e18;
         vm.startPrank(executor);
         daiCircuitBreaker.updateCap(amount-1);
         vm.expectRevert(abi.encodeWithSelector(TempleCircuitBreakerAllUsersPerPeriod.CapBreached.selector, amount, amount-1));
@@ -328,7 +328,7 @@ contract GnosisStrategyTestBorrowAndRepay is GnosisStrategyTestBase {
 
     function test_borrowMax_failCircuitBreaker() public {
         vm.startPrank(executor);
-        daiCircuitBreaker.updateCap(BORROW_CEILING - 1);
+        daiCircuitBreaker.updateCap(uint128(BORROW_CEILING) - 1);
         vm.expectRevert(abi.encodeWithSelector(TempleCircuitBreakerAllUsersPerPeriod.CapBreached.selector, BORROW_CEILING, BORROW_CEILING-1));
         strategy.borrowMax(dai);
     }

@@ -35,7 +35,7 @@ contract DsrBaseStrategyTestBase is TempleTest {
     // 1% APR, which is how DSR is calculated as of block #16675385
     // dUSD is represented in APY (continuously compounded), so need to convert in order to match
     // Nb this is ln(1.01). See `test_dsr_interest_equivalence()` below
-    uint256 public constant DEFAULT_BASE_INTEREST = 0.009950330853168072e18;
+    uint96 public constant DEFAULT_BASE_INTEREST = 0.009950330853168072e18;
     TempleDebtToken public dUSD;
     TreasuryPriceIndexOracle public tpiOracle;
     TreasuryReservesVault public trv;

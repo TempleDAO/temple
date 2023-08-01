@@ -11,11 +11,11 @@ interface ITlcEventsAndErrors {
     event TlcStrategySet(address indexed strategy, address indexed treasuryReservesVault);
     event InterestRateModelSet(address indexed interestRateModel);
     event MaxLtvRatioSet(uint256 maxLtvRatio);
-    event CollateralAdded(address indexed fundedBy, address indexed onBehalfOf, uint256 collateralAmount);
-    event CollateralRemoved(address indexed account, address indexed recipient, uint256 collateralAmount);
-    event Borrow(address indexed account, address indexed recipient, uint256 amount);
-    event Repay(address indexed fundedBy, address indexed onBehalfOf, uint256 repayAmount);
-    event Liquidated(address indexed account, uint256 collateralSeized, uint256 collateralValue, uint256 daiDebtWiped);
+    event CollateralAdded(address indexed fundedBy, address indexed onBehalfOf, uint128 collateralAmount);
+    event CollateralRemoved(address indexed account, address indexed recipient, uint128 collateralAmount);
+    event Borrow(address indexed account, address indexed recipient, uint128 amount);
+    event Repay(address indexed fundedBy, address indexed onBehalfOf, uint128 repayAmount);
+    event Liquidated(address indexed account, uint128 collateralSeized, uint256 collateralValue, uint128 daiDebtWiped);
     event InterestRateUpdate(uint96 newInterestRate);
     event BorrowPausedSet(bool isPaused);
 }

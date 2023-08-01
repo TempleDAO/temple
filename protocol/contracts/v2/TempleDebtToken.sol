@@ -107,12 +107,12 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
         string memory _symbol,
         address _initialRescuer,
         address _initialExecutor,
-        uint256 _baseInterestRate
+        uint96 _baseInterestRate
     ) TempleElevatedAccess(_initialRescuer, _initialExecutor)
     {
         name = _name;
         symbol = _symbol;
-        baseRate = _baseInterestRate.encodeUInt96();
+        baseRate = _baseInterestRate;
         baseCheckpointTime = block.timestamp;
     }
 
@@ -144,19 +144,19 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
     /**
      * @notice Update the continuously compounding (base) interest rate of all debtors, from this block onwards.
      */
-    function setBaseInterestRate(uint256 _rate) external override onlyElevatedAccess {
+    function setBaseInterestRate(uint96 _rate) external override onlyElevatedAccess {
         _checkpointBase(_compoundedBaseInterest());
-        baseRate = _rate.encodeUInt96();
+        baseRate = _rate;
         emit BaseInterestRateSet(_rate);
     }
 
     /**
      * @notice Update the continuously compounding (risk premium) interest rate for a given debtor, from this block onwards
      */
-    function setRiskPremiumInterestRate(address _debtor, uint256 _rate) external override onlyElevatedAccess {
+    function setRiskPremiumInterestRate(address _debtor, uint64 _rate) external override onlyElevatedAccess {
         Debtor storage debtor = debtors[_debtor];
         _checkpointDebtor(debtor);
-        debtor.rate = _rate.encodeUInt64();
+        debtor.rate = _rate;
         emit RiskPremiumInterestRateSet(_debtor, _rate);
     }
 

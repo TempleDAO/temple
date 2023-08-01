@@ -28,8 +28,8 @@ contract TreasuryReservesVaultTestBase is TempleTest {
     TreasuryPriceIndexOracle public tpiOracle;
     TreasuryReservesVault public trv;
 
-    uint256 public constant DSR_INTEREST = 0.01e18;
-    uint256 public constant ETH_INTEREST = 0.04e18;
+    uint96 public constant DSR_INTEREST = 0.01e18;
+    uint96 public constant ETH_INTEREST = 0.04e18;
 
     address[] public reportedAssets = [address(dai), address(weth)];
 

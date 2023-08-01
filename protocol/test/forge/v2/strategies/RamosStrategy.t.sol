@@ -48,7 +48,7 @@ contract RamosStrategyTestBase is TempleTest {
     address public auraStakingDepositToken = 0x0B7C71d61D960F70d89ecaC55DC2B4c1A7b508ee;
     address public auraRewardsToken = 0x13544617b10E1923363c89D902b749bea331AC4E;
 
-    uint256 public constant DEFAULT_BASE_INTEREST = 0.01e18;
+    uint96 public constant DEFAULT_BASE_INTEREST = 0.01e18;
     uint256 public constant BORROW_CEILING = 1.01e25;
     TempleDebtToken public dUSD;
     TempleDebtToken public dTEMPLE;
@@ -378,7 +378,7 @@ contract RamosStrategyTestVaultFunctions is RamosStrategyTestBase {
 
     function test_borrowProtocolToken_failCircuitBreaker() public {
         vm.startPrank(executor);
-        uint256 amount = 1e18;
+        uint128 amount = 1e18;
         templeCircuitBreaker.updateCap(amount-1);
 
         vm.expectRevert(abi.encodeWithSelector(TempleCircuitBreakerAllUsersPerPeriod.CapBreached.selector, amount, amount-1));
@@ -411,7 +411,7 @@ contract RamosStrategyTestVaultFunctions is RamosStrategyTestBase {
 
     function test_borrowQuoteToken_failCircuitBreaker() public {
         vm.startPrank(executor);
-        uint256 amount = 1e18;
+        uint128 amount = 1e18;
         daiCircuitBreaker.updateCap(amount-1);
 
         vm.expectRevert(abi.encodeWithSelector(TempleCircuitBreakerAllUsersPerPeriod.CapBreached.selector, amount, amount-1));

@@ -28,11 +28,11 @@ contract TempleDebtTokenTestnetAdmin {
         dUSD.burn(from, amount);
     }
 
-    function setBaseInterestRate(uint256 _rate) external {
+    function setBaseInterestRate(uint96 _rate) external {
         dUSD.setBaseInterestRate(_rate);
     }
 
-    function setRiskPremiumInterestRate(address _debtor, uint256 _rate) external {
+    function setRiskPremiumInterestRate(address _debtor, uint64 _rate) external {
         dUSD.setRiskPremiumInterestRate(_debtor, _rate);
     }
 

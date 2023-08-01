@@ -25,7 +25,7 @@ contract AbstractStrategyTestBase is TempleTest {
     TempleDebtToken public dUSD;
     TreasuryPriceIndexOracle public tpiOracle;
     TreasuryReservesVault public trv;
-    uint256 public constant DEFAULT_BASE_INTEREST = 0.01e18;
+    uint96 public constant DEFAULT_BASE_INTEREST = 0.01e18;
 
     address[] public reportedAssets = [address(dai), address(weth)];
 
@@ -408,7 +408,7 @@ contract AbstractStrategyTestMultiAsset is AbstractStrategyTestBase {
     TempleDebtToken public dETH;
 
     uint256 public constant TEMPLE_BASE_INTEREST = 0;
-    uint256 public constant ETH_BASE_INTEREST = 0.04e18;
+    uint96 public constant ETH_BASE_INTEREST = 0.04e18;
 
     function setUp() public {
         _setUp();

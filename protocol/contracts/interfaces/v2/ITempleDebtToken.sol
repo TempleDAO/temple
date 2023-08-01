@@ -9,8 +9,8 @@ interface ITempleDebtToken is IERC20, IERC20Metadata, ITempleElevatedAccess {
     error NonTransferrable();
     error CannotMintOrBurn(address caller);
 
-    event BaseInterestRateSet(uint256 rate);
-    event RiskPremiumInterestRateSet(address indexed debtor, uint256 rate);
+    event BaseInterestRateSet(uint96 rate);
+    event RiskPremiumInterestRateSet(address indexed debtor, uint64 rate);
     event AddedMinter(address indexed account);
     event RemovedMinter(address indexed account);
 
@@ -114,12 +114,12 @@ interface ITempleDebtToken is IERC20, IERC20Metadata, ITempleElevatedAccess {
     /**
      * @notice Governance can update the continuously compounding (base) interest rate of all debtors, from this block onwards.
      */
-    function setBaseInterestRate(uint256 _rate) external;
+    function setBaseInterestRate(uint96 _rate) external;
 
     /**
      * @notice Governance can update the continuously compounding (risk premium) interest rate for a given debtor, from this block onwards
      */
-    function setRiskPremiumInterestRate(address _debtor, uint256 _rate) external;
+    function setRiskPremiumInterestRate(address _debtor, uint64 _rate) external;
 
     /**
      * @notice Approved Minters can add a new debt position on behalf of a user.

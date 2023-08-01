@@ -24,28 +24,28 @@ interface ITempleLineOfCredit is ITlcDataTypes, ITlcEventsAndErrors {
      * @param collateralAmount The amount to deposit
      * @param onBehalfOf An account can add collateral on behalf of another address.
      */
-    function addCollateral(uint256 collateralAmount, address onBehalfOf) external;
+    function addCollateral(uint128 collateralAmount, address onBehalfOf) external;
 
     /**
      * @notice Remove Temple collateral. (active borrow positions are not allowed to go above the max LTV)
      * @param amount The amount of collateral to remove
      * @param recipient Send the Temple collateral to a specified recipient address.
      */
-    function removeCollateral(uint256 amount, address recipient) external;
+    function removeCollateral(uint128 amount, address recipient) external;
 
     /**
      * @notice Borrow DAI (not allowed to borrow over the max LTV)
      * @param amount The amount to borrow
      * @param recipient Send the borrowed token to a specified recipient address.
      */
-    function borrow(uint256 amount, address recipient) external;
+    function borrow(uint128 amount, address recipient) external;
 
     /**
      * @notice An account repays some of its DAI debt
      * @param repayAmount The amount to repay. Cannot be more than the current debt.
      * @param onBehalfOf Another address can repay the debt on behalf of someone else
      */
-    function repay(uint256 repayAmount, address onBehalfOf) external;
+    function repay(uint128 repayAmount, address onBehalfOf) external;
     
     /**
      * @notice An account repays all of its DAI debt
@@ -64,8 +64,8 @@ interface ITempleLineOfCredit is ITlcDataTypes, ITlcEventsAndErrors {
     function batchLiquidate(
         address[] calldata accounts
     ) external returns (
-        uint256 totalCollateralClaimed,
-        uint256 totalDaiDebtWiped
+        uint128 totalCollateralClaimed,
+        uint128 totalDaiDebtWiped
     );
 
     /**

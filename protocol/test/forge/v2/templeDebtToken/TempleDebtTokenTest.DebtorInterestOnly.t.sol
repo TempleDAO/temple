@@ -5,8 +5,8 @@ import { TempleDebtTokenTestBase } from "./TempleDebtToken.Base.t.sol";
 
 /* solhint-disable func-name-mixedcase, contract-name-camelcase, not-rely-on-time */
 contract TempleDebtTokenTestDebtorInterestOnly is TempleDebtTokenTestBase {
-    uint256 public aliceInterestRate = 0.02e18;
-    uint256 public bobInterestRate = 0.05e18;
+    uint64 public aliceInterestRate = 0.02e18;
+    uint64 public bobInterestRate = 0.05e18;
 
     function setUp() public {
         _setUp();
@@ -270,7 +270,7 @@ contract TempleDebtTokenTestDebtorInterestOnly is TempleDebtTokenTestBase {
         checkDebtor(bob, bobInterestRate, amount, amount, 0, startBlockTs + 1 days, bobBal);
 
         changePrank(executor);
-        uint256 updatedRate = 0.1e18;
+        uint64 updatedRate = 0.1e18;
         dUSD.setRiskPremiumInterestRate(alice, updatedRate);
 
         // The rate was updated and a checkpoint was made.
@@ -309,7 +309,7 @@ contract TempleDebtTokenTestDebtorInterestOnly is TempleDebtTokenTestBase {
         checkDebtor(bob, bobInterestRate, amount, amount, 0, startBlockTs + 1 days, bobBal);
 
         changePrank(executor);
-        uint256 updatedRate = 0;
+        uint64 updatedRate = 0;
         dUSD.setRiskPremiumInterestRate(alice, updatedRate);
 
         // The rate was updated and a checkpoint was made.

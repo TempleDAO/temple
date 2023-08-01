@@ -13,8 +13,8 @@ contract TreasuryPriceIndexOracleTest is TempleTest {
     uint96 public defaultMaxDelta = 0.1e18; // 10 cents
     uint32 public defaultCooldownSecs = 30;
 
-    event TreasuryPriceIndexSet(uint256 oldTpi, uint256 newTpi);
-    event TpiCooldownSet(uint256 cooldownSecs);
+    event TreasuryPriceIndexSet(uint96 oldTpi, uint96 newTpi);
+    event TpiCooldownSet(uint32 cooldownSecs);
     event MaxTreasuryPriceIndexDeltaSet(uint256 maxDelta);
 
     function setUp() public {
@@ -60,7 +60,7 @@ contract TreasuryPriceIndexOracleTest is TempleTest {
         vm.startPrank(executor);
 
         vm.expectEmit(address(tpiOracle));
-        emit TpiCooldownSet(99);
+        emit TpiCooldownSet(uint32(99));
 
         tpiOracle.setTpiCooldown(99);
          (,,, uint32 cooldownSecs) = tpiOracle.tpiData();

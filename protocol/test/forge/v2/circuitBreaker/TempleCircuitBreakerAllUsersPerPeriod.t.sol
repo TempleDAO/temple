@@ -27,8 +27,8 @@ contract TempleCircuitBreakerTestBase is TempleTest {
     // Expected buckets - cleared after every check
     uint256[100] internal ebkts;
 
-    event ConfigSet(uint256 periodDuration, uint256 nBuckets, uint256 cap);
-    event CapSet(uint256 cap);
+    event ConfigSet(uint32 periodDuration, uint32 nBuckets, uint128 cap);
+    event CapSet(uint128 cap);
 
     function setUp() public {
         breaker = new TempleCircuitBreakerAllUsersPerPeriod(rescuer, executor, 1 days, 24, 100e18);
