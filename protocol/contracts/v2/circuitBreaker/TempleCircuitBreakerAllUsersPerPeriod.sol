@@ -44,7 +44,7 @@ contract TempleCircuitBreakerAllUsersPerPeriod is ITempleCircuitBreaker, TempleE
      *   for the cap at the 13:45:00, and again the next day 24 hours later at 13:05:00
      *   and this would be allowed.
      * A higher number of buckets means this wait time is less, however this will use more gas.
-     * `nBuckets` must not be greater than 65535, and must be a divisor of `periodDuration`
+     * `nBuckets` must not be greater than `MAX_BUCKETS`, and must be a divisor of `periodDuration`
      */
     uint32 public nBuckets;
 
@@ -60,9 +60,14 @@ contract TempleCircuitBreakerAllUsersPerPeriod is ITempleCircuitBreaker, TempleE
     uint32 public bucketIndex;
 
     /**
+     * @notice The maxiumum number of buckets that can be used
+     */
+    uint32 public constant MAX_BUCKETS = 4000;
+
+    /**
      * @notice The total amount of volume tracked within each bucket
      */
-    uint256[65535] public buckets;
+    uint256[MAX_BUCKETS] public buckets;
 
     event ConfigSet(uint32 periodDuration, uint32 nBuckets, uint128 cap);
     event CapSet(uint128 cap);
@@ -150,7 +155,7 @@ contract TempleCircuitBreakerAllUsersPerPeriod is ITempleCircuitBreaker, TempleE
     function _setConfig(uint32 _periodDuration, uint32 _nBuckets, uint128 _cap) internal {
         if (_periodDuration == 0) revert CommonEventsAndErrors.ExpectedNonZero();
         if (_periodDuration % _nBuckets != 0) revert CommonEventsAndErrors.InvalidParam();
-        if (_nBuckets > 65535) revert CommonEventsAndErrors.InvalidParam();
+        if (_nBuckets > MAX_BUCKETS) revert CommonEventsAndErrors.InvalidParam();
 
         nBuckets = _nBuckets;
         periodDuration = _periodDuration;
@@ -158,7 +163,7 @@ contract TempleCircuitBreakerAllUsersPerPeriod is ITempleCircuitBreaker, TempleE
         cap = _cap;
         bucketIndex = 0;
 
-        // No need to clear all 65k elements - they won't be used until they're required
+        // No need to clear all buckets - they won't be used until they're required
         // at which point they'll too be cleared.
         unchecked {
             for (uint256 i = 0; i < _nBuckets; ++i) {

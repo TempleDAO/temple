@@ -222,7 +222,7 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
         (first, second, third) = _borrowIteration(makeAddr("acct2"));
         assertLt(first, 120_000, "acct2 1");
         assertLt(second, 77_000, "acct2 2");
-        assertLt(third, 95_000, "acct2 3");
+        assertLt(third, 94_000, "acct2 3");
         
         (first, second, third) = _borrowIteration(makeAddr("acct3"));
         assertLt(first, 120_000, "acct3 1");

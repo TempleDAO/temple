@@ -75,6 +75,8 @@ contract TempleCircuitBreakerTestBase is TempleTest {
         for (uint256 i = 0; i < 5; ++i) {
             assertEq(breaker.buckets(i), 1);
         }
+
+        breaker.setConfig(uint32(breaker.MAX_BUCKETS()), uint32(breaker.MAX_BUCKETS()), 0);
     }
 
     function test_updateCap() public {
