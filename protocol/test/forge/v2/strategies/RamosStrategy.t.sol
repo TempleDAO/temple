@@ -370,6 +370,8 @@ contract RamosStrategyTestVaultFunctions is RamosStrategyTestBase {
 
     event Borrow(address indexed strategy, address indexed token, address indexed recipient, uint256 amount);
     event Repay(address indexed strategy, address indexed token, address indexed from, uint256 amount);
+    event BorrowToken(address indexed token, uint256 amount);
+    event RepayToken(address indexed token, uint256 amount);
 
     function setUp() public {
         _setUp();
@@ -395,6 +397,8 @@ contract RamosStrategyTestVaultFunctions is RamosStrategyTestBase {
         assertEq(dTEMPLE.balanceOf(address(ramos)), 0);
         assertEq(dTEMPLE.totalSupply(), 0);
         
+        vm.expectEmit(address(strategy));
+        emit BorrowToken(address(temple), AMOUNT_BORROW_REPAY);
         vm.expectEmit(address(trv));
         emit Borrow(address(strategy), address(temple), address(ramos), AMOUNT_BORROW_REPAY);
 
@@ -427,6 +431,8 @@ contract RamosStrategyTestVaultFunctions is RamosStrategyTestBase {
         assertEq(dUSD.balanceOf(address(ramos)), 0);
         assertEq(dUSD.totalSupply(), 0);
 
+        vm.expectEmit(address(strategy));
+        emit BorrowToken(address(dai), AMOUNT_BORROW_REPAY);
         vm.expectEmit(address(trv));
         emit Borrow(address(strategy), address(dai), address(ramos), AMOUNT_BORROW_REPAY);
 
@@ -447,6 +453,8 @@ contract RamosStrategyTestVaultFunctions is RamosStrategyTestBase {
         // repay protocol(temple) ramos -> trv
         changePrank(address(ramos));
 
+        vm.expectEmit(address(strategy));
+        emit RepayToken(address(temple), AMOUNT_BORROW_REPAY);
         vm.expectEmit(address(trv));
         emit Repay(address(strategy), address(temple), address(strategy), AMOUNT_BORROW_REPAY);
 
@@ -467,6 +475,8 @@ contract RamosStrategyTestVaultFunctions is RamosStrategyTestBase {
         // repay quote(dai/dUSD) ramos -> trv
         changePrank(address(ramos));
 
+        vm.expectEmit(address(strategy));
+        emit RepayToken(address(dai), AMOUNT_BORROW_REPAY);
         vm.expectEmit(address(trv));
         emit Repay(address(strategy), address(dai), address(strategy), AMOUNT_BORROW_REPAY);
 

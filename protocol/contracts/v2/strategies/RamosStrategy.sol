@@ -48,6 +48,8 @@ contract RamosStrategy  is AbstractStrategy, IRamosTokenVault {
 
     event AddLiquidity(uint256 quoteTokenAmount, uint256 protocolTokenAmount, uint256 bptTokensStaked);
     event RemoveLiquidity(uint256 quoteTokenAmount, uint256 protocolTokenAmount, uint256 bptIn);
+    event BorrowToken(address indexed token, uint256 amount);
+    event RepayToken(address indexed token, uint256 amount);
 
     constructor(
         address _initialRescuer,
@@ -92,6 +94,7 @@ contract RamosStrategy  is AbstractStrategy, IRamosTokenVault {
             msg.sender, 
             amount
         );
+        emit BorrowToken(address(templeToken), amount);
         treasuryReservesVault.borrow(templeToken, amount, recipient);
     }
 
@@ -106,6 +109,7 @@ contract RamosStrategy  is AbstractStrategy, IRamosTokenVault {
             msg.sender, 
             amount
         );
+        emit BorrowToken(address(quoteToken), amount);
         treasuryReservesVault.borrow(quoteToken, amount, recipient);
     }
 
@@ -114,6 +118,7 @@ contract RamosStrategy  is AbstractStrategy, IRamosTokenVault {
      * @param amount The requested amount to repay
      */
     function repayProtocolToken(uint256 amount) external onlyElevatedAccess {
+        emit RepayToken(address(templeToken), amount);
         templeToken.safeTransferFrom(msg.sender, address(this), amount);
         treasuryReservesVault.repay(templeToken, amount, address(this));
     }
@@ -123,6 +128,7 @@ contract RamosStrategy  is AbstractStrategy, IRamosTokenVault {
      * @param amount The requested amount to repay
      */
     function repayQuoteToken(uint256 amount) external onlyElevatedAccess {
+        emit RepayToken(address(quoteToken), amount);
         quoteToken.safeTransferFrom(msg.sender, address(this), amount);
         treasuryReservesVault.repay(quoteToken, amount, address(this));
     }
