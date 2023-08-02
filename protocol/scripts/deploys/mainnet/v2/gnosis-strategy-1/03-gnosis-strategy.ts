@@ -16,7 +16,9 @@ async function main() {
 
     const factory = new GnosisStrategy__factory(owner);
     await deployAndMine(
-        "STRATEGIES.GNOSIS_SAFE_STRATEGY1.ADDRESS", factory, factory.deploy,
+        "STRATEGIES.GNOSIS_SAFE_STRATEGY1.ADDRESS",
+        factory,
+        factory.deploy,
         await owner.getAddress(),
         await owner.getAddress(),
         "GnosisSafeStrategy1",

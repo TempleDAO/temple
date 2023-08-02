@@ -14,7 +14,9 @@ async function main() {
 
   const factory = new RamosStrategy__factory(owner);
   await deployAndMine(
-    "STRATEGIES.RAMOS_STRATEGY.ADDRESS", factory, factory.deploy,
+    "STRATEGIES.RAMOS_STRATEGY.ADDRESS",
+    factory,
+    factory.deploy,
     await owner.getAddress(),
     await owner.getAddress(),
     "RamosStrategy",

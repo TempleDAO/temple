@@ -14,7 +14,9 @@ async function main() {
 
   const auraStakingFactory = new AuraStaking__factory(owner);
   await deployAndMine(
-      "RAMOS.TEMPLE_DAI.AURA_STAKING", auraStakingFactory, auraStakingFactory.deploy,
+      "RAMOS.TEMPLE_DAI.AURA_STAKING",
+      auraStakingFactory,
+      auraStakingFactory.deploy,
       await owner.getAddress(),
       await owner.getAddress(),
       TEMPLE_V2_ADDRESSES.RAMOS.TEMPLE_DAI.EXTERNAL.BALANCER_LP_TOKEN,

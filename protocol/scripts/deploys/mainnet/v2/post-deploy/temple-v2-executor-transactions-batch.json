@@ -3,12 +3,12 @@
   "chainId": "1",
   "createdAt": 1690182680732,
   "meta": {
-    "name": "Temple Executor V2 & TLC",
+    "name": "Temple Executor V2",
     "description": "Executor initial transactions",
     "txBuilderVersion": "1.16.1",
-    "createdFromSafeADDRESS": "0xXXXX",
+    "createdFromSafeADDRESS": "0xXXXX", // new msig executor address
     "createdFromOwnerADDRESS": "",
-    "checksum": "0x34fd3c2dab040576a17db549ea9b158fd9836d0ecec4245c24082e50ef27e70e"
+    "checksum": "0x34fd3c2dab040576a17db549ea9b158fd9836d0ecec4245c24082e50ef27e70e" // checksum would probably need to be updated once we have the final version of this file
   },
   "transactions": [
     {

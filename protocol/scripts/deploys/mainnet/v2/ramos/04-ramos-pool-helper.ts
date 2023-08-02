@@ -20,7 +20,9 @@ async function main() {
   const protocolTokenBalancerPoolIndex = balPoolTokens.tokens[0].toUpperCase() == TEMPLE_V2_ADDRESSES.CORE.TEMPLE_TOKEN.toUpperCase() ? 0 : 1;
 
   await deployAndMine(
-    "RAMOS.TEMPLE_DAI.POOL_HELPER", poolHelperFactory, poolHelperFactory.deploy,
+    "RAMOS.TEMPLE_DAI.POOL_HELPER",
+    poolHelperFactory,
+    poolHelperFactory.deploy,
     TEMPLE_V2_ADDRESSES.EXTERNAL.BALANCER.VAULT,
     TEMPLE_V2_ADDRESSES.EXTERNAL.BALANCER.HELPERS,
     TEMPLE_V2_ADDRESSES.CORE.TEMPLE_TOKEN,

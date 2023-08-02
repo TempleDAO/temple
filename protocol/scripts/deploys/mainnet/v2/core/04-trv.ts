@@ -14,7 +14,7 @@ async function main() {
 
   const treasuryReservesVaultFactory = new TreasuryReservesVault__factory(owner);
   await deployAndMine(
-    'CORE.TREASURY_RESERVES_VAULT.ADDRESS',
+    'TREASURY_RESERVES_VAULT.ADDRESS',
     treasuryReservesVaultFactory,
     treasuryReservesVaultFactory.deploy,
     await owner.getAddress(),

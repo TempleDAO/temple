@@ -21,7 +21,9 @@ async function main() {
 
     const amoFactory: Ramos__factory = new Ramos__factory(owner);
     await deployAndMine(
-        "RAMOS.TEMPLE_DAI.ADDRESS", amoFactory, amoFactory.deploy,
+        "RAMOS.TEMPLE_DAI.ADDRESS",
+        amoFactory,
+        amoFactory.deploy,
         await owner.getAddress(),
         await owner.getAddress(),
         TEMPLE_V2_ADDRESSES.EXTERNAL.BALANCER.VAULT,

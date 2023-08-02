@@ -12,7 +12,7 @@ async function main() {
 
   const dTempleDebtTokenFactory = new TempleDebtToken__factory(owner);
   await deployAndMine(
-    'CORE.TREASURY_RESERVES_VAULT.D_TEMPLE_TOKEN',
+    'TREASURY_RESERVES_VAULT.D_TEMPLE_TOKEN',
     dTempleDebtTokenFactory,
     dTempleDebtTokenFactory.deploy,
     "Temple Debt TEMPLE",

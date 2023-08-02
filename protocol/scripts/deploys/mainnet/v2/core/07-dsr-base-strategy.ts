@@ -14,7 +14,7 @@ async function main() {
 
   const dsrBaseStrategyFactory = new DsrBaseStrategy__factory(owner);
   await deployAndMine(
-    'DSR_BASE_STRATEGY',
+    'STRATEGIES.DSR_BASE_STRATEGY.ADDRESS',
     dsrBaseStrategyFactory,
     dsrBaseStrategyFactory.deploy,
     await owner.getAddress(),
