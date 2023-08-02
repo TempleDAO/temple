@@ -74,6 +74,12 @@ interface ITempleLineOfCredit is ITlcDataTypes, ITlcEventsAndErrors {
     function setBorrowPaused(bool isPaused) external;
 
     /**
+     * @notice Liquidations may be paused in order for users to recover/repay debt after emergency
+     * actions
+     */
+    function setLiquidationsPaused(bool isPaused) external;
+
+    /**
      * @notice Update the TLC Strategy contract, and Treasury Reserves Vault (TRV)
      * @dev The TRV is granted access to spend DAI, in order to repay debt.
      */
@@ -133,6 +139,12 @@ interface ITempleLineOfCredit is ITlcDataTypes, ITlcEventsAndErrors {
      * @notice A record of the total amount of collateral deposited by users/accounts.
      */
     function totalCollateral() external view returns (uint256);
+
+    /**
+     * @notice Liquidations may be paused in order for users to recover/repay debt after emergency
+     * actions
+     */
+    function liquidationsPaused() external view returns (bool);
 
     /**
      * @notice An view of an accounts current and up to date position as of this block

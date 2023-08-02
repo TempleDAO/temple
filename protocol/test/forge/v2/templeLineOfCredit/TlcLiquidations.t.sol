@@ -49,10 +49,10 @@ contract TempleLineOfCreditTestCheckLiquidity is TlcBaseTest {
         uint128 daiBorrowAmount = 8_000e18;
         borrow(alice, collateralAmount, daiBorrowAmount, BORROW_REQUEST_MIN_SECS);
 
-        vm.prank(executor);
+        vm.startPrank(executor);
         tlc.setMaxLtvRatio(0.8e18);
 
-        vm.startPrank(alice);
+        changePrank(alice);
         daiToken.approve(address(tlc), daiBorrowAmount);
         tlc.repayAll(alice);
 
@@ -65,6 +65,27 @@ contract TempleLineOfCreditTestCheckLiquidity is TlcBaseTest {
 
 contract TempleLineOfCreditTestBatchLiquidate is TlcBaseTest {
     event StrategyCreditAndDebtBalance(address indexed strategy, address indexed token, uint256 credit, uint256 debt);
+
+    function test_batchLiquidate_paused() external {
+        uint128 collateralAmount = 10_000e18;
+        borrow(alice, collateralAmount, 1_000e18, BORROW_REQUEST_MIN_SECS);
+        uint256 expectedDaiAccumulator = approxInterest(INITIAL_INTEREST_ACCUMULATOR, MIN_BORROW_RATE, BORROW_REQUEST_MIN_SECS);
+
+        // After borrow
+        assertEq(tlc.totalCollateral(), collateralAmount);
+        checkDebtTokenDetails(1_000e18, 50555555555555555, expectedDaiAccumulator, block.timestamp);
+
+        address[] memory accounts = new address[](1);
+        accounts[0] = alice;
+
+        vm.startPrank(executor);
+        tlc.setLiquidationsPaused(true);
+        vm.expectRevert(abi.encodeWithSelector(Paused.selector));
+        tlc.batchLiquidate(accounts);
+
+        tlc.setLiquidationsPaused(false);
+        checkBatchLiquidate(accounts, 0, 0);
+    }
 
     function test_batchLiquidate_noAccounts() external {
         uint128 collateralAmount = 10_000e18;

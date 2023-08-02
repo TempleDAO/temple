@@ -74,6 +74,12 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
     DebtTokenData internal debtTokenData;
 
     /**
+     * @notice Liquidations may be paused in order for users to recover/repay debt after emergency
+     * actions
+     */
+    bool public override liquidationsPaused;
+
+    /**
      * @notice New borrows and collateral withdrawals are checked against a circuit breaker
      * to ensure no more than a cap is withdrawn in a given period
      */
@@ -283,6 +289,8 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
         uint128 totalCollateralClaimed,
         uint128 totalDebtWiped
     ) {
+        if (liquidationsPaused) revert Paused();
+
         LiquidationStatus memory _status;
         DebtTokenCache memory _cache = _debtTokenCache();
         address _account;
@@ -321,6 +329,15 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
     /*                            ADMIN                           */
     /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
+
+    /**
+     * @notice Liquidation may be paused in order for users to recover/repay debt after emergency
+     * actions
+     */
+    function setLiquidationsPaused(bool isPaused) external override onlyElevatedAccess {
+        liquidationsPaused = isPaused;
+        emit LiquidationsPausedSet(isPaused);
+    }
 
     /**
      * @notice Update the TLC Strategy contract, and Treasury Reserves Vault (TRV)

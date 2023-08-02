@@ -18,4 +18,5 @@ interface ITlcEventsAndErrors {
     event Liquidated(address indexed account, uint128 collateralSeized, uint256 collateralValue, uint128 daiDebtWiped);
     event InterestRateUpdate(uint96 newInterestRate);
     event BorrowPausedSet(bool isPaused);
+    event LiquidationsPausedSet(bool isPaused);
 }

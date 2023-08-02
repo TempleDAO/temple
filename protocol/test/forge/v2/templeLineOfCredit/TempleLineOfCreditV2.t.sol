@@ -40,6 +40,8 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
             interestAccumulator: INITIAL_INTEREST_ACCUMULATOR,
             interestAccumulatorUpdatedAt: uint32(block.timestamp)
         }));
+
+        assertEq(newTlc.liquidationsPaused(), false);
     }
 
     // @dev After the trv/etc has been set
@@ -319,6 +321,20 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
         (config,) = tlc.debtTokenDetails();
         assertEq(config.borrowsPaused, false);
     }
+
+    function test_setLiquidationsPaused() public {
+        vm.startPrank(executor);
+        vm.expectEmit();
+        emit LiquidationsPausedSet(true);
+        tlc.setLiquidationsPaused(true);
+
+        assertEq(tlc.liquidationsPaused(), true);
+
+        vm.expectEmit();
+        emit LiquidationsPausedSet(false);
+        tlc.setLiquidationsPaused(false);
+        assertEq(tlc.liquidationsPaused(), false);
+    }
 }
 
 contract TempleLineOfCreditTest_Access is TlcBaseTest {
@@ -345,6 +361,11 @@ contract TempleLineOfCreditTest_Access is TlcBaseTest {
     function test_access_setBorrowPaused() public {
         expectElevatedAccess();
         tlc.setBorrowPaused(true);
+    }
+
+    function test_access_setLiquidationsPaused() public {
+        expectElevatedAccess();
+        tlc.setLiquidationsPaused(true);
     }
 }
 
