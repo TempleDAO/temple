@@ -434,25 +434,7 @@ contract TempleLineOfCreditTestInterestAccrual is TlcBaseTest {
         vm.prank(executor);
         trv.setStrategyDebtCeiling(address(tlcStrategy), daiToken, 50_000e18);
 
-        // Still the same after the TRV cap was halved
-        {
-            checkDebtTokenDetails(params.borrowDaiAmount, expectedDaiRate, expectedDaiAccumulator, tsBefore);
-
-            checkAccountPosition(
-                CheckAccountPositionParams({
-                    account: alice,
-                    expectedDaiBalance: params.borrowDaiAmount,
-                    expectedAccountPosition: createAccountPosition(
-                        params.collateralAmount, expectedDaiDebt, maxBorrowInfo
-                    ),
-                    expectedDaiDebtCheckpoint: params.borrowDaiAmount,
-                    expectedDaiAccumulatorCheckpoint: expectedDaiAccumulator
-                })
-            );
-        }
-
-        // It is checkpoint and rates updated only after a forced refresh (or a new user borrow)
-        tlc.refreshInterestRates();
+        // It is checkpoint and the interest rates are updated via the debtCeilingUpdated() hook
         {
             uint256 expectedDaiAccumulator2 = approxInterest(expectedDaiAccumulator, expectedDaiRate, 365 days);
             expectedDaiDebt = approxInterest(params.borrowDaiAmount, expectedDaiRate, 365 days);

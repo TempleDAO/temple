@@ -189,6 +189,14 @@ contract AbstractStrategyTestAdmin is AbstractStrategyTestBase {
         assertEq(dai.balanceOf(address(trv)), 25);
     }
 
+    function test_debtCeilingUpdated() public {
+        vm.startPrank(address(trv));
+
+        assertEq(strategy.debtCeilingUpdatedCalled(), false);
+        strategy.debtCeilingUpdated(dai, 100);
+        assertEq(strategy.debtCeilingUpdatedCalled(), true);
+    }
+
 }
 
 contract AbstractStrategyTestAccess is AbstractStrategyTestBase {
@@ -215,6 +223,11 @@ contract AbstractStrategyTestAccess is AbstractStrategyTestBase {
         expectElevatedAccess();
         ITempleStrategy.AssetBalanceDelta[] memory deltas = new ITempleStrategy.AssetBalanceDelta[](0);
         strategy.setManualAdjustments(deltas);
+    }
+
+    function test_access_debtCeilingUpdated() public {
+        expectElevatedAccess();
+        strategy.debtCeilingUpdated(dai, 100);
     }
 }
 

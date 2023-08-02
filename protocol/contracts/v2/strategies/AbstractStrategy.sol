@@ -211,4 +211,22 @@ abstract contract AbstractStrategy is ITempleStrategy, TempleElevatedAccess {
         _setTokenAllowance(token, spender, amount);
         emit TokenAllowanceSet(address(token), spender, amount);
     }
+
+    /**
+     * @notice A hook which is called by the Treasury Reserves Vault when the debt ceiling
+     * for this strategy is updated
+     * @dev by default it's a no-op unless the strategy implements `_debtCeilingUpdated()`
+     */
+    function debtCeilingUpdated(IERC20 token, uint256 newDebtCeiling) external override {
+        if (msg.sender != address(treasuryReservesVault)) revert CommonEventsAndErrors.InvalidAccess();
+        _debtCeilingUpdated(token, newDebtCeiling);
+    }
+
+    /**
+     * @notice A hook which is called by the Treasury Reserves Vault when the debt ceiling
+     * for this strategy is updated
+     * @dev by default it's a no-op unless the strategy implements it
+     */
+    // solhint-disable-next-line no-empty-blocks
+    function _debtCeilingUpdated(IERC20 /*token*/, uint256 /*newDebtCeiling*/) internal virtual {}
 }

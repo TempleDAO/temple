@@ -129,4 +129,11 @@ interface ITempleStrategy is ITempleElevatedAccess {
      * @notice Executors can set the allowance of any token spend from the strategy
      */
     function setTokenAllowance(IERC20 token, address spender, uint256 amount) external;
+
+    /**
+     * @notice A hook which is called by the Treasury Reserves Vault when the debt ceiling
+     * for this strategy is updated
+     * @dev by default it's a no-op unless the strategy implements `_debtCeilingUpdated()`
+     */
+    function debtCeilingUpdated(IERC20 token, uint256 newDebtCeiling) external;
 }

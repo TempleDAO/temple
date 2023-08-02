@@ -23,6 +23,8 @@ contract MockStrategy is AbstractStrategy {
 
     IERC20 public immutable temple;
 
+    bool public debtCeilingUpdatedCalled;
+
     constructor(
         address _initialRescuer,
         address _initialExecutor,
@@ -128,4 +130,9 @@ contract MockStrategy is AbstractStrategy {
         dai.safeTransferFrom(inputData.pullTokenFrom, address(this), amount);
         treasuryReservesVault.repay(dai, amount, address(this));
     }
+
+    function _debtCeilingUpdated(IERC20 /*token*/, uint256 /*newDebtCeiling*/) internal override {
+        debtCeilingUpdatedCalled = true;
+    }
+
 }

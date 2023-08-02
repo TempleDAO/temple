@@ -213,6 +213,8 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
         _checkAddOverflow(newDebtCeiling, strategyTokenCredits[strategy][token]);
 
         _strategyConfig.debtCeiling[token] = newDebtCeiling;
+
+        ITempleStrategy(strategy).debtCeilingUpdated(token, newDebtCeiling);
     }
 
     /**

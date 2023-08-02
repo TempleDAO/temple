@@ -99,4 +99,13 @@ contract TlcStrategy is ITlcStrategy, AbstractStrategy {
         emit Borrow(amount, recipient);
         treasuryReservesVault.borrow(daiToken, amount, recipient);
     }
+
+    /**
+     * @notice A hook which is called by the Treasury Reserves Vault when the debt ceiling
+     * for this strategy is updated
+     * @dev by default it's a no-op unless the strategy implements it
+     */
+    function _debtCeilingUpdated(IERC20 /*token*/, uint256 /*newDebtCeiling*/) internal override {
+        tlc.refreshInterestRates();
+    }
 }
