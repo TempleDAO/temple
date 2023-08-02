@@ -67,7 +67,7 @@ contract TreasuryPriceIndexOracle is ITreasuryPriceIndexOracle, TempleElevatedAc
      * @notice The current Treasury Price Index (TPI) value
      * @dev If the TPI has just been updated, the old TPI will be used until `cooldownSecs` has elapsed
      */
-    function treasuryPriceIndex() external override view returns (uint256) {
+    function treasuryPriceIndex() public override view returns (uint96) {
         return (block.timestamp < (tpiData.lastUpdatedAt + tpiData.cooldownSecs))
             ? tpiData.previousTpi  // use the previous TPI if we haven't passed the cooldown yet.
             : tpiData.currentTpi;  // use the new TPI
@@ -95,7 +95,9 @@ contract TreasuryPriceIndexOracle is ITreasuryPriceIndexOracle, TempleElevatedAc
      * @dev 18 decimal places, 1.05e18 == $1.05
      */
     function setTreasuryPriceIndex(uint96 value) external override onlyElevatedAccess {
-        uint96 _oldTpi = tpiData.currentTpi;
+        // If the cooldownSecs hasn't yet passed since the last update, then this will still
+        // refer to the `previousTpi` value
+        uint96 _oldTpi = treasuryPriceIndex();
         uint96 _newTpi = value;
 
         unchecked {

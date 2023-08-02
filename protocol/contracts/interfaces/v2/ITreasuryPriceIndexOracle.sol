@@ -21,7 +21,7 @@ interface ITreasuryPriceIndexOracle is ITempleElevatedAccess {
      * @notice The current Treasury Price Index (TPI) value
      * @dev If the TPI has just been updated, the old TPI will be used until `cooldownSecs` has elapsed
      */
-    function treasuryPriceIndex() external view returns (uint256);
+    function treasuryPriceIndex() external view returns (uint96);
 
     /**
      * @notice The maximum allowed TPI change on any single `setTreasuryPriceIndex()`, in absolute terms.

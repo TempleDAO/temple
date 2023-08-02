@@ -23,7 +23,7 @@ abstract contract BaseInterestRateModel is IInterestRateModel {
      * @dev The rates are bound to sensible min/max amounts, but it does not fail.
      * @return interestRate The interest rate (scaled by PRECISION). 0.05e18 == 5%
      */
-    function calculateInterestRate(uint256 utilizationRatio) public view returns (uint96 interestRate) {
+    function calculateInterestRate(uint256 utilizationRatio) external view returns (uint96 interestRate) {
         // Cap the UR at 100%
         if (utilizationRatio > PRECISION) {
             utilizationRatio = PRECISION;

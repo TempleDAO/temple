@@ -189,7 +189,7 @@ interface ITreasuryReservesVault is ITempleElevatedAccess {
     /**
      * @notice The Treasury Price Index - the target price of the Treasury, in `stableToken` terms.
      */
-    function treasuryPriceIndex() external view returns (uint256);
+    function treasuryPriceIndex() external view returns (uint96);
 
     /**
      * @notice API version to help with future integrations/migrations

@@ -360,7 +360,7 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
     /**
      * @notice The Treasury Price Index - the target price of the Treasury, in `stableToken` terms.
      */
-    function treasuryPriceIndex() public view override returns (uint256) {
+    function treasuryPriceIndex() external view override returns (uint96) {
         return tpiOracle.treasuryPriceIndex();
     }
 

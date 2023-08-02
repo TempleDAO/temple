@@ -159,7 +159,7 @@ interface IRamos {
     /**
      * @notice The Treasury Price Index - the target price of the Treasury, in `quoteTokenToken` terms.
      */
-    function treasuryPriceIndex() external view returns (uint256);
+    function treasuryPriceIndex() external view returns (uint96);
 
     /**
      * @notice Rebalance up when `protocolToken` spot price is below TPI.
