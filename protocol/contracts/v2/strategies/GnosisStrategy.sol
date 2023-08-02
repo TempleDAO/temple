@@ -53,7 +53,7 @@ contract GnosisStrategy is AbstractStrategy {
     ) internal override
     // solhint-disable-next-line no-empty-blocks
     {
-        // Tokens for Gnosis strategy are approved 'just in time'
+        // Tokens for Gnosis strategy are approved when they're required, rather than upfront.
     }
 
     /**
@@ -115,7 +115,7 @@ contract GnosisStrategy is AbstractStrategy {
      */
     function repay(IERC20 token, uint256 amount) external onlyElevatedAccess {
         emit Repay(address(token), amount);
-        _setMaxAllowance(token, address(0), address(treasuryReservesVault));
+        _setTokenAllowance(token, address(treasuryReservesVault), amount);
         treasuryReservesVault.repay(token, amount, address(this));
     }
 
@@ -124,8 +124,11 @@ contract GnosisStrategy is AbstractStrategy {
      * First send the stable tokens to this strategy prior to calling.
      */
     function repayAll(IERC20 token) external onlyElevatedAccess returns (uint256 repaidAmount) {
-        _setMaxAllowance(token, address(0), address(treasuryReservesVault));
+        // Set max allowance, repay all, then set the allowance to zero
+        _setTokenAllowance(token, address(treasuryReservesVault), type(uint256).max);
         repaidAmount = treasuryReservesVault.repayAll(token, address(this));
+        _setTokenAllowance(token, address(treasuryReservesVault), 0);
+        
         emit Repay(address(token), repaidAmount);
     }
 

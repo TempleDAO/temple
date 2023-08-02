@@ -391,6 +391,9 @@ contract GnosisStrategyTestBorrowAndRepay is GnosisStrategyTestBase {
         uint256 available = trv.availableForStrategyToBorrow(address(strategy), dai);
         assertEq(available, BORROW_CEILING-borrowAmount+repayAmount);
 
+        // There shouldn't be any allowance left
+        assertEq(dai.allowance(address(strategy), address(trv)), 0);
+
         // Only has 0.75 dUSD left, but we can still repay more DAI.
         // This generates a positive
         deal(address(dai), address(strategy), 1e18, true);
@@ -423,6 +426,9 @@ contract GnosisStrategyTestBorrowAndRepay is GnosisStrategyTestBase {
 
         uint256 available = trv.availableForStrategyToBorrow(address(strategy), dai);
         assertEq(available, BORROW_CEILING);
+
+        // There shouldn't be any allowance left
+        assertEq(dai.allowance(address(strategy), address(trv)), 0);
 
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
         strategy.repayAll(dai);

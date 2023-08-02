@@ -75,14 +75,10 @@ abstract contract AbstractStrategy is ITempleStrategy, TempleElevatedAccess {
      */
     function _setMaxAllowance(IERC20 token, address oldSpender, address newSpender) internal {
         if (oldSpender != address(0)) {
-            token.safeApprove(oldSpender, 0);
+            _setTokenAllowance(token, oldSpender, 0);
         }
 
-        uint256 _allowance = token.allowance(address(this), newSpender);
-        if (_allowance < type(uint256).max) {
-            token.safeApprove(newSpender, 0);
-            token.safeIncreaseAllowance(newSpender, type(uint256).max);
-        }
+        _setTokenAllowance(token, newSpender, type(uint256).max);
     }
 
     /**
@@ -197,16 +193,22 @@ abstract contract AbstractStrategy is ITempleStrategy, TempleElevatedAccess {
     }
 
     /**
-     * @notice Executors can set the allowance of any token spend from the strategy
+     * @dev Set the allowance of any token spend from the strategy
      */
-    function setTokenAllowance(IERC20 token, address spender, uint256 amount) external override onlyElevatedAccess {
+    function _setTokenAllowance(IERC20 token, address spender, uint256 amount) internal {
         if (amount == token.allowance(address(this), spender)) return;
 
-        emit TokenAllowanceSet(address(token), spender, amount);
         token.safeApprove(spender, 0);
-
         if (amount != 0) {
             token.safeIncreaseAllowance(spender, amount);
         }
+    }
+
+    /**
+     * @notice Executors can set the allowance of any token spend from the strategy
+     */
+    function setTokenAllowance(IERC20 token, address spender, uint256 amount) external override onlyElevatedAccess {
+        _setTokenAllowance(token, spender, amount);
+        emit TokenAllowanceSet(address(token), spender, amount);
     }
 }
