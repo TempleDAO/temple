@@ -194,6 +194,10 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
 
     /**
      * @notice Borrow DAI (not allowed to borrow over the max LTV)
+     * @dev NOTICE: There is no buffer between the maximum the user is able to borrow 
+     * (based on their collateral and the maxLTV), and the point where the user can get liquidated.
+     * Therefore do not borrow the max amount possible or the position will instantly be eligable to be
+     * liquidated in the next block.
      * @param amount The amount to borrow
      * @param recipient Send the borrowed token to a specified recipient address.
      */
