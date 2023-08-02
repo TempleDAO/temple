@@ -48,9 +48,10 @@ jobs:
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1.0.9
-
-      # weird bug with forge needing to be built twice
-      - run: forge install
+        with:
+          version: nightly-d93312bfe5d419d63a9836fce31f9f60a4523519
+      
+      - run: forge --version
         working-directory: protocol
 
       - name: Run tests
