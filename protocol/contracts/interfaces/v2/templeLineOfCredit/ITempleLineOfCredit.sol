@@ -80,6 +80,11 @@ interface ITempleLineOfCredit is ITlcDataTypes, ITlcEventsAndErrors {
     function setLiquidationsPaused(bool isPaused) external;
 
     /**
+     * @notice Set the minimum amount of Temple which must be borrowed on each call.
+     */
+    function setMinBorrowAmount(uint128 amount) external;
+
+    /**
      * @notice Update the TLC Strategy contract, and Treasury Reserves Vault (TRV)
      * @dev The TRV is granted access to spend DAI, in order to repay debt.
      */

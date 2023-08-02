@@ -80,6 +80,12 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
     bool public override liquidationsPaused;
 
     /**
+     * @notice The minimum borrow amount per transaction
+     * @dev It costs gas to liquidate users, so we don't want dust amounts.
+     */
+    uint128 public minBorrowAmount = 1000e18;
+
+    /**
      * @notice New borrows and collateral withdrawals are checked against a circuit breaker
      * to ensure no more than a cap is withdrawn in a given period
      */
@@ -89,12 +95,6 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
      * @notice An internal state tracking how interest has accumulated.
      */
     uint256 internal constant INITIAL_INTEREST_ACCUMULATOR = 1e27;
-
-    /**
-     * @notice The minimum borrow amount per transaction
-     * @dev It costs gas to liquidate users, so we don't want dust amounts.
-     */
-    uint256 public constant MIN_BORROW_AMOUNT = 1000e18;
 
     /**
      * @notice The precision used for Price, LTV, notional
@@ -202,7 +202,7 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
      * @param recipient Send the borrowed token to a specified recipient address.
      */
     function borrow(uint128 amount, address recipient) external override notInRescueMode {
-        if (amount < MIN_BORROW_AMOUNT) revert InsufficientAmount(MIN_BORROW_AMOUNT, amount);
+        if (amount < minBorrowAmount) revert InsufficientAmount(minBorrowAmount, amount);
 
         AccountData storage _accountData = allAccountsData[msg.sender];
         DebtTokenCache memory _cache = _debtTokenCache();
@@ -341,6 +341,14 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
     function setLiquidationsPaused(bool isPaused) external override onlyElevatedAccess {
         liquidationsPaused = isPaused;
         emit LiquidationsPausedSet(isPaused);
+    }
+
+    /**
+     * @notice Set the minimum amount of Temple which must be borrowed on each call.
+     */
+    function setMinBorrowAmount(uint128 amount) external override onlyElevatedAccess {
+        minBorrowAmount = amount;
+        emit MinBorrowAmountSet(amount);
     }
 
     /**

@@ -42,6 +42,7 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
         }));
 
         assertEq(newTlc.liquidationsPaused(), false);
+        assertEq(newTlc.minBorrowAmount(), 1000e18);
     }
 
     // @dev After the trv/etc has been set
@@ -242,8 +243,17 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
         checkDebtTokenDetails(expectedDaiDebt, expectedDaiRate, expectedDaiAccumulator, uint32(block.timestamp));
     }
 
+    function test_setMinBorrowAmount() public {
+        vm.startPrank(executor);
+        vm.expectEmit(address(tlc));
+        emit MinBorrowAmountSet(2000e18);
+        tlc.setMinBorrowAmount(2000e18);
+        assertEq(tlc.minBorrowAmount(), 2000e18);
+    }
+
     function test_setMaxLtvRatio() public {
         uint96 maxLtvRatio = 0.75e18;
+        vm.expectEmit(address(tlc));
         emit MaxLtvRatioSet(maxLtvRatio);
 
         vm.startPrank(executor);
@@ -366,6 +376,11 @@ contract TempleLineOfCreditTest_Access is TlcBaseTest {
     function test_access_setLiquidationsPaused() public {
         expectElevatedAccess();
         tlc.setLiquidationsPaused(true);
+    }
+
+    function test_access_setMinBorrowAmount() public {
+        expectElevatedAccess();
+        tlc.setMinBorrowAmount(2000e18);
     }
 }
 

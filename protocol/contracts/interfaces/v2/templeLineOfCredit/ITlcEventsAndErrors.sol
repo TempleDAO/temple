@@ -19,4 +19,5 @@ interface ITlcEventsAndErrors {
     event InterestRateUpdate(uint96 newInterestRate);
     event BorrowPausedSet(bool isPaused);
     event LiquidationsPausedSet(bool isPaused);
+    event MinBorrowAmountSet(uint128 amount);
 }
