@@ -120,6 +120,8 @@ contract TempleCircuitBreakerAllUsersPerPeriod is ITempleCircuitBreaker, TempleE
     /**
      * @notice Set the duration, buckets and cap. This will reset the clock for any totals
      * added since in the new periodDuration.
+     * @dev Since this resets the buckets, it should be executed via flashbots protect
+     * such that it can't be frontrun (where the caps could be filled twice)
      */
     function setConfig(uint32 _periodDuration, uint32 _nBuckets, uint128 _cap) external onlyElevatedAccess {
         _setConfig(_periodDuration, _nBuckets, _cap);
