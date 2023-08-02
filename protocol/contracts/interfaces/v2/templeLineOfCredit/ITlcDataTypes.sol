@@ -51,7 +51,7 @@ interface ITlcDataTypes {
         uint128 debtCheckpoint;
 
         /// @notice The account's last interest accumulator checkpoint
-        uint128 interestAccumulator;
+        uint256 interestAccumulator;
     }
 
     /// @notice The status for whether an account can be liquidated or not

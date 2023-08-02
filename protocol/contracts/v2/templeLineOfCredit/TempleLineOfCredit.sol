@@ -555,7 +555,7 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
          * When this accumulator is compunded by the interest rate, the total debt can be calculated as
          * `updatedTotalDebt = prevTotalDebt * latestInterestAccumulator / prevInterestAccumulator
          */
-        uint128 interestAccumulator;
+        uint256 interestAccumulator;
 
         /**
          * @dev The price of this token as of this block. 
@@ -580,8 +580,7 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
         // Copies from storage (once)
         _cache.config = debtTokenConfig;
 
-        // No need to use `encodeUInt128()` here - straight from storage of the same dimension
-        _cache.interestAccumulator = uint128(debtTokenData.interestAccumulator);
+        _cache.interestAccumulator = debtTokenData.interestAccumulator;
         _cache.totalDebt = debtTokenData.totalDebt;
         _cache.interestRate = debtTokenData.interestRate;
 
@@ -599,7 +598,7 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
             dirty = true;
 
             // Compound the accumulator
-            uint256 newInterestAccumulator = uint256(_cache.interestAccumulator).continuouslyCompounded(
+            uint256 newInterestAccumulator = _cache.interestAccumulator.continuouslyCompounded(
                 blockTs - interestAccumulatorUpdatedAt,
                 _cache.interestRate
             );
@@ -610,7 +609,7 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
                 _cache.totalDebt,
                 _cache.interestAccumulator
             ).encodeUInt128();
-            _cache.interestAccumulator = newInterestAccumulator.encodeUInt128();
+            _cache.interestAccumulator = newInterestAccumulator;
         }
     }
 
