@@ -135,10 +135,11 @@ contract TempleCircuitBreakerTestPreCheck is TempleCircuitBreakerTestBase {
         logTime();
     }
 
-    function doCheck(uint256 amt, uint256 bucketIndex, uint256 utilisation) internal {
+    function doCheck(uint256 amt, uint256 bucketIndex, uint256 utilisationAfter) internal {
+        assertEq(breaker.currentUtilisation(), utilisationAfter-amt, "utilisationBefore");
         breaker.preCheck(address(this), amt);
         assertEq(breaker.bucketIndex() % breaker.nBuckets(), bucketIndex, "bucketIndex");
-        assertEq(breaker.currentUtilisation(), utilisation, "utilisation");
+        assertEq(breaker.currentUtilisation(), utilisationAfter, "utilisationAfter");
 
         for (uint256 i; i<breaker.nBuckets(); ++i) {
             assertEq(breaker.buckets(i), ebkts[i]+1);

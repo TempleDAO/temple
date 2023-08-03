@@ -88,19 +88,18 @@ contract TempleCircuitBreakerAllUsersPerPeriod is ITempleCircuitBreaker, TempleE
      */
     function preCheck(address /*onBehalfOf*/, uint256 amount) external override onlyElevatedAccess {
         uint32 _nextBucketIndex = uint32(block.timestamp / secondsPerBucket);
-        uint32 _bucketIndex = bucketIndex;
+        uint32 _currentBucketIndex = bucketIndex;
         uint32 _nBuckets = nBuckets;
         
         // If this time bucket is different to the last one
-        // then delete any buckets in between first - that is old data
-        if (_nextBucketIndex != _bucketIndex) {
+        // then delete any buckets in between first - since that is old data
+        if (_nextBucketIndex != _currentBucketIndex) {
+            uint256 _minBucketResetIndex = _getMinBucketResetIndex(_nBuckets, _currentBucketIndex, _nextBucketIndex);
+
             unchecked {
-                // If it was more than a full periodDuration ago, then all buckets are deleted.
-                uint32 _oneperiodDurationAgoIndex = _nextBucketIndex - _nBuckets;
-                uint32 i = _bucketIndex < _oneperiodDurationAgoIndex ? _oneperiodDurationAgoIndex : _bucketIndex;
-                for (; i < _nextBucketIndex; ++i) {
+                for (; _minBucketResetIndex < _nextBucketIndex; ++_minBucketResetIndex) {
                     // Set to dust
-                    buckets[(i+1) % _nBuckets] = 1;
+                    buckets[(_minBucketResetIndex+1) % _nBuckets] = 1;
                 }
             }
 
@@ -134,18 +133,45 @@ contract TempleCircuitBreakerAllUsersPerPeriod is ITempleCircuitBreaker, TempleE
         cap = newCap;
         emit CapSet(newCap);
     }
-    
+
+    /**
+     * @dev Find the earliest time bucket which needs to be reset, based on the number of buckets per duration.
+     */
+    function _getMinBucketResetIndex(uint32 _nBuckets, uint32 _currentBucketIndex, uint32 _nextBucketIndex) internal pure returns (uint256 minBucketResetIndex) {
+        unchecked {
+            uint32 _oneperiodDurationAgoIndex = _nextBucketIndex - _nBuckets;
+            minBucketResetIndex = _currentBucketIndex < _oneperiodDurationAgoIndex ? _oneperiodDurationAgoIndex : _currentBucketIndex;
+        }
+    }
+
     /**
      * @notice What is the total utilisation so far in this `periodDuration`
      */
     function currentUtilisation() external view returns (uint256 amount) {
-        return _currentUtilisation(nBuckets);
+        uint32 _nextBucketIndex = uint32(block.timestamp / secondsPerBucket);
+        uint32 _currentBucketIndex = bucketIndex;
+        uint32 _nBuckets = nBuckets;
+        
+        uint256 utilisation = _currentUtilisation(_nBuckets);
+
+        // If the bucket index has moved forward since the last `preCheck()`, 
+        // remove any amounts from buckets which would be otherwise reset
+        if (_nextBucketIndex != _currentBucketIndex) {
+            uint256 _minBucketResetIndex = _getMinBucketResetIndex(_nBuckets, _currentBucketIndex, _nextBucketIndex);
+            unchecked {
+                for (; _minBucketResetIndex < _nextBucketIndex; ++_minBucketResetIndex) {
+                    utilisation -= buckets[(_minBucketResetIndex+1) % _nBuckets] - 1;
+                }
+            }
+        }
+
+        return utilisation;
     }
 
     function _currentUtilisation(uint32 _nBuckets) internal view returns (uint256 amount) {
         // Unchecked is safe here because we know previous entries are under the cap.
         unchecked {
-            for (uint256 i = 0; i < _nBuckets; ++i) {
+            for (uint256 i; i < _nBuckets; ++i) {
                 amount += buckets[i];
             }
 
