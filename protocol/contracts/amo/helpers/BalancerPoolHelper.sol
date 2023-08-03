@@ -192,10 +192,10 @@ contract BalancerPoolHelper is IBalancerPoolHelper {
         uint256 tokenIndex,
         uint256 minTokenOut
     ) internal view returns (IBalancerVault.JoinPoolRequest memory request) {
-        IERC20[] memory assets = new IERC20[](2);
+        address[] memory assets = new address[](2);
         uint256[] memory maxAmountsIn = new uint256[](2);
     
-        (assets[0], assets[1]) = protocolTokenIndexInBalancerPool == 0 ? (protocolToken, quoteToken) : (quoteToken, protocolToken);
+        (assets[0], assets[1]) = protocolTokenIndexInBalancerPool == 0 ? (address(protocolToken), address(quoteToken)) : (address(quoteToken), address(protocolToken));
         (maxAmountsIn[0], maxAmountsIn[1]) = tokenIndex == uint256(0) ? (amountIn, uint256(0)) : (uint256(0), amountIn);
         //uint256 joinKind = 1; //EXACT_TOKENS_IN_FOR_BPT_OUT
         bytes memory encodedUserdata = abi.encode(uint256(1), maxAmountsIn, minTokenOut);
@@ -361,10 +361,10 @@ contract BalancerPoolHelper is IBalancerPoolHelper {
             ? quoteTokenAmount
             : (protocolTokenBalanceInLP * quoteTokenAmount / quoteTokenBalanceInLP);
 
-        requestData.assets = new IERC20[](2);
+        requestData.assets = new address[](2);
         requestData.maxAmountsIn = new uint256[](2);
         
-        (requestData.assets[0], requestData.assets[1]) = protocolTokenIndexInBalancerPool == 0 ? (protocolToken, quoteToken) : (quoteToken, protocolToken);
+        (requestData.assets[0], requestData.assets[1]) = protocolTokenIndexInBalancerPool == 0 ? (address(protocolToken), address(quoteToken)) : (address(quoteToken), address(protocolToken));
         (requestData.maxAmountsIn[0], requestData.maxAmountsIn[1]) = protocolTokenIndexInBalancerPool == 0 ? (protocolTokenAmount, quoteTokenAmount) : (quoteTokenAmount, protocolTokenAmount);
         //uint256 joinKind = 1; //EXACT_TOKENS_IN_FOR_BPT_OUT
         bytes memory encodedUserdata = abi.encode(uint256(1), requestData.maxAmountsIn, 0);
