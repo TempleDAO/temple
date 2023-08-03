@@ -52,6 +52,12 @@ contract ThresholdSafeGuard is IThresholdSafeGuard, TempleElevatedAccess {
      */
     EnumerableSet.AddressSet internal _safeTxExecutors;
 
+    /**
+     * @notice Setting a signature threshold for ETH transfers is also possible by calling 
+     * `setFunctionThreshold(addr, `ETH_TRANSFER_SELECTOR`, signers)`
+     */
+    bytes4 public constant ETH_TRANSFER_SELECTOR = bytes4(keccak256("__ETH_TRANSFER__"));
+    
     constructor(address _initialRescuer, address _initialExecutor, uint256 _defaultSignaturesThreshold) 
         TempleElevatedAccess(_initialRescuer, _initialExecutor)
     {
@@ -189,8 +195,9 @@ contract ThresholdSafeGuard is IThresholdSafeGuard, TempleElevatedAccess {
             //        number of signers == 1 < x < dynamicThresholdRequirement
             if (safeThreshold == 1) return;
 
+            // If the data length is 0, this means it's a native ETH transfer. In this case use the `ETH_TRANSFER_SELECTOR` selector
             // Perhaps in future there could be some custom decoding/approvals based on the arguments too
-            threshold = getThreshold(to, bytes4(data));
+            threshold = getThreshold(to, data.length == 0 ? ETH_TRANSFER_SELECTOR : bytes4(data));
 
             // No need for extra threshold checks - it already has the required signers, because we know Safe
             // has checked these already prior to calling the guard.

@@ -30,6 +30,11 @@ contract MockContract {
         return true;
     }
 
+    // A magic function with a signature of 0x00000000
+    function wycpnbqcyf() external {
+        someState = true;
+    }
+
     receive() external payable {}
 }
 
@@ -400,17 +405,18 @@ contract ThresholdSafeGuardTest is ThresholdSafeGuardTestBase {
         doCheck("", 0, safeOwners[1], signature);
     }
 
-    function test_checkTransaction_withOverrideTresholdSet_emptyData() public {
+    function test_checkTransaction_withOverrideTresholdSet_zeroSelector() public {
         vm.startPrank(executor);
-        bytes4 fnSelector = bytes4(0);
+        bytes4 fnSelector = bytes4(keccak256("wycpnbqcyf()"));
+        assertEq(fnSelector, bytes4(0));
 
         guard.setFunctionThreshold(address(mock), fnSelector, 3);
 
         // Add a couple more executors to the safe which we can sign on behalf of.
         (uint256 pk2, uint256 pk3) = addSafeOwners();
 
-        // An empty function call (eg ETH transfer)
-        bytes memory fnCall = bytes("");
+        // An zero selector
+        bytes memory fnCall = abi.encodeWithSelector(fnSelector);
         bytes32 dataHash = getTxHash(fnCall, 100e18);
         bytes memory signature = bytes.concat(
             signexecutor(safeOwners[0]),
@@ -521,8 +527,8 @@ contract ThresholdSafeGuardExecuteTest is ThresholdSafeGuardTestBase {
         (uint256 pk2, uint256 pk3) = _setup();
 
         changePrank(executor);
-        bytes4 fnSelector = bytes4(0);
-        guard.setFunctionThreshold(address(mock), fnSelector, 3);
+        assertEq(guard.ETH_TRANSFER_SELECTOR(), bytes4(keccak256("__ETH_TRANSFER__")));
+        guard.setFunctionThreshold(address(mock), guard.ETH_TRANSFER_SELECTOR(), 3);
 
         // An empty function call (eg ETH transfer)
         bytes memory fnCall = bytes("");
