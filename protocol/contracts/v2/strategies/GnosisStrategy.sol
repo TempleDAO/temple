@@ -6,6 +6,7 @@ import { SafeERC20, IERC20 } from "@openzeppelin/contracts/token/ERC20/utils/Saf
 import { AbstractStrategy } from "contracts/v2/strategies/AbstractStrategy.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { ITempleCircuitBreakerProxy } from "contracts/interfaces/v2/circuitBreaker/ITempleCircuitBreakerProxy.sol";
+import { ITreasuryReservesVault } from "contracts/interfaces/v2/ITreasuryReservesVault.sol";
 
 contract GnosisStrategy is AbstractStrategy {
     using SafeERC20 for IERC20;
@@ -99,14 +100,15 @@ contract GnosisStrategy is AbstractStrategy {
      * These stables are sent to the Gnosis wallet
      */
     function borrowMax(IERC20 token) external onlyElevatedAccess returns (uint256 borrowedAmount) {
-        borrowedAmount = treasuryReservesVault.availableForStrategyToBorrow(address(this), token);
+        ITreasuryReservesVault _trv = treasuryReservesVault;
+        borrowedAmount = _trv.availableForStrategyToBorrow(address(this), token);
         circuitBreakerProxy.preCheck(
             address(token), 
             msg.sender, 
             borrowedAmount
         );
         emit Borrow(address(token), borrowedAmount);
-        treasuryReservesVault.borrow(token, borrowedAmount, gnosisSafeWallet);
+        _trv.borrow(token, borrowedAmount, gnosisSafeWallet);
     }
 
     /**
@@ -114,9 +116,10 @@ contract GnosisStrategy is AbstractStrategy {
      * First send the stable tokens to this strategy prior to calling.
      */
     function repay(IERC20 token, uint256 amount) external onlyElevatedAccess {
+        ITreasuryReservesVault _trv = treasuryReservesVault;
         emit Repay(address(token), amount);
-        _setTokenAllowance(token, address(treasuryReservesVault), amount);
-        treasuryReservesVault.repay(token, amount, address(this));
+        _setTokenAllowance(token, address(_trv), amount);
+        _trv.repay(token, amount, address(this));
     }
 
     /**
@@ -125,9 +128,10 @@ contract GnosisStrategy is AbstractStrategy {
      */
     function repayAll(IERC20 token) external onlyElevatedAccess returns (uint256 repaidAmount) {
         // Set max allowance, repay all, then set the allowance to zero
-        _setTokenAllowance(token, address(treasuryReservesVault), type(uint256).max);
-        repaidAmount = treasuryReservesVault.repayAll(token, address(this));
-        _setTokenAllowance(token, address(treasuryReservesVault), 0);
+        ITreasuryReservesVault _trv = treasuryReservesVault;
+        _setTokenAllowance(token, address(_trv), type(uint256).max);
+        repaidAmount = _trv.repayAll(token, address(this));
+        _setTokenAllowance(token, address(_trv), 0);
         
         emit Repay(address(token), repaidAmount);
     }

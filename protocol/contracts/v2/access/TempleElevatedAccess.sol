@@ -61,7 +61,7 @@ abstract contract TempleElevatedAccess is ITempleElevatedAccess {
     function proposeNewRescuer(address account) external override {
         if (msg.sender != rescuer) revert CommonEventsAndErrors.InvalidAccess();
         if (account == address(0)) revert CommonEventsAndErrors.InvalidAddress();
-        emit NewRescuerProposed(rescuer, _proposedNewRescuer, account);
+        emit NewRescuerProposed(msg.sender, _proposedNewRescuer, account);
         _proposedNewRescuer = account;
     }
 

@@ -106,7 +106,7 @@ contract TempleTokenBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
         if (requestedAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();       
 
         emit TempleMinted(requestedAmount);
-        templeToken.mint(address(treasuryReservesVault), requestedAmount);
+        templeToken.mint(msg.sender, requestedAmount);
     }
 
     /**

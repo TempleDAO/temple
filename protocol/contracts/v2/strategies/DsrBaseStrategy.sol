@@ -268,7 +268,7 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
         uint256 sharesAmount = _rdivup(requestedAmount, chi);
 
         _dsrWithdrawal(sharesAmount, requestedAmount);
-        daiToken.safeTransfer(address(treasuryReservesVault), requestedAmount);
+        daiToken.safeTransfer(msg.sender, requestedAmount);
     }
 
     function _dsrWithdrawal(uint256 sharesAmount, uint256 daiAmount) internal {

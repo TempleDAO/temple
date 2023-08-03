@@ -500,9 +500,10 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
         uint256 estimatedRiskPremiumInterest
     ) {
         uint256 _basePrincipalAndInterest = _compoundedBaseInterest();
+        uint256 _totalPrincipal = totalPrincipal;
         return (
-            totalPrincipal,
-            _basePrincipalAndInterest - totalPrincipal,
+            _totalPrincipal,
+            _basePrincipalAndInterest - _totalPrincipal,
             estimatedTotalRiskPremiumInterest
         );
     }

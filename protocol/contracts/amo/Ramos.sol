@@ -295,10 +295,11 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
         lastRebalanceTimeSecs = uint64(block.timestamp);
 
         // Unstake and send the BPT to the poolHelper
-        amoStaking.withdrawAndUnwrap(bptAmountIn, false, address(poolHelper));
+        IBalancerPoolHelper _poolHelper = poolHelper;
+        amoStaking.withdrawAndUnwrap(bptAmountIn, false, address(_poolHelper));
     
         // protocolToken single side exit
-        uint256 protocolTokenAmountOut = poolHelper.exitPool(
+        uint256 protocolTokenAmountOut = _poolHelper.exitPool(
             bptAmountIn, minProtocolTokenOut, rebalancePercentageBoundLow,
             rebalancePercentageBoundUp, postRebalanceSlippage,
             protocolTokenBalancerPoolIndex, treasuryPriceIndex(), protocolToken
@@ -338,10 +339,11 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
         lastRebalanceTimeSecs = uint64(block.timestamp);
 
         // Unstake and send the BPT to the poolHelper
-        amoStaking.withdrawAndUnwrap(bptAmountIn, false, address(poolHelper));
+        IBalancerPoolHelper _poolHelper = poolHelper;
+        amoStaking.withdrawAndUnwrap(bptAmountIn, false, address(_poolHelper));
 
         // QuoteToken single side exit
-        uint256 quoteTokenAmountOut = poolHelper.exitPool(
+        uint256 quoteTokenAmountOut = _poolHelper.exitPool(
             bptAmountIn, minQuoteTokenAmountOut, rebalancePercentageBoundLow, rebalancePercentageBoundUp,
             postRebalanceSlippage, 1-protocolTokenBalancerPoolIndex, treasuryPriceIndex(), quoteToken
         );
@@ -389,10 +391,11 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
 
         // Send the remaining quote tokens to the poolHelper
         uint256 joinAmountIn = quoteTokenAmountIn - feeAmt;
-        quoteToken.safeTransfer(address(poolHelper), joinAmountIn);
+        IBalancerPoolHelper _poolHelper = poolHelper;
+        quoteToken.safeTransfer(address(_poolHelper), joinAmountIn);
 
         // quoteToken single side join
-        uint256 bptTokensStaked = poolHelper.joinPool(
+        uint256 bptTokensStaked = _poolHelper.joinPool(
             joinAmountIn, minBptOut, rebalancePercentageBoundUp, rebalancePercentageBoundLow,
             treasuryPriceIndex(), postRebalanceSlippage, 1-protocolTokenBalancerPoolIndex, quoteToken
         );
@@ -433,10 +436,11 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
 
         // Send the balance to the poolHelper
         uint256 joinAmountIn = protocolTokenAmountIn - feeAmt;
-        protocolToken.safeTransfer(address(poolHelper), joinAmountIn);
+        IBalancerPoolHelper _poolHelper = poolHelper;
+        protocolToken.safeTransfer(address(_poolHelper), joinAmountIn);
 
         // protocolToken single side join
-        uint256 bptTokensStaked = poolHelper.joinPool(
+        uint256 bptTokensStaked = _poolHelper.joinPool(
             joinAmountIn, minBptOut, rebalancePercentageBoundUp,
             rebalancePercentageBoundLow, treasuryPriceIndex(), 
             postRebalanceSlippage, protocolTokenBalancerPoolIndex, protocolToken
@@ -474,8 +478,10 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
         (protocolTokenAmount, quoteTokenAmount) = protocolTokenBalancerPoolIndex == 0
             ? (request.maxAmountsIn[0], request.maxAmountsIn[1])
             : (request.maxAmountsIn[1], request.maxAmountsIn[0]);
-        tokenVault.borrowProtocolToken(protocolTokenAmount, address(this));
-        tokenVault.borrowQuoteToken(quoteTokenAmount, address(this));
+
+        IRamosTokenVault _tokenVault = tokenVault;
+        _tokenVault.borrowProtocolToken(protocolTokenAmount, address(this));
+        _tokenVault.borrowQuoteToken(quoteTokenAmount, address(this));
 
         // safe allowance quoteToken and protocolToken
         {
@@ -535,6 +541,7 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
         amoStaking.withdrawAndUnwrap(bptIn, false, address(this));
         balancerVault.exitPool(balancerPoolId, address(this), address(this), request);
 
+        IRamosTokenVault _tokenVault = tokenVault;
         uint256 length = request.assets.length;
         for (uint i; i < length; ++i) {
             if (request.assets[i] == address(protocolToken)) {
@@ -542,14 +549,14 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
                     protocolTokenAmount = protocolToken.balanceOf(address(this)) - protocolTokenAmountBefore;
                 }
                 if (protocolTokenAmount != 0) {
-                    tokenVault.repayProtocolToken(protocolTokenAmount);
+                    _tokenVault.repayProtocolToken(protocolTokenAmount);
                 }
             } else if (request.assets[i] == address(quoteToken)) {
                 unchecked {
                     quoteTokenAmount = quoteToken.balanceOf(address(this)) - quoteTokenAmountBefore;
                 }
                 if (quoteTokenAmount != 0) {
-                    tokenVault.repayQuoteToken(quoteTokenAmount);
+                    _tokenVault.repayQuoteToken(quoteTokenAmount);
                 }
             }
         }

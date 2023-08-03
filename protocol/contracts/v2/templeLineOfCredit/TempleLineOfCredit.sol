@@ -166,7 +166,8 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
     function removeCollateral(uint128 amount, address recipient) external override notInRescueMode {
         if (amount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
         AccountData storage _accountData = allAccountsData[msg.sender];
-        if (amount > _accountData.collateral) revert CommonEventsAndErrors.InvalidAmount(address(templeToken), amount);
+        uint128 _collateral =  _accountData.collateral;
+        if (amount > _collateral) revert CommonEventsAndErrors.InvalidAmount(address(templeToken), amount);
 
         // Ensure that this withdrawal doesn't break the circuit breaker limits (across all users)
         circuitBreakerProxy.preCheck(
@@ -176,7 +177,7 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
         );
 
         // Update the collateral, and then verify that it doesn't make the debt unsafe.
-        _accountData.collateral -= amount;
+        _accountData.collateral = _collateral - amount;
         totalCollateral -= amount;
         emit CollateralRemoved(msg.sender, recipient, amount);
 
