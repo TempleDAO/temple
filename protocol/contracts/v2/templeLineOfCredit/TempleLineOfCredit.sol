@@ -254,7 +254,29 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
         if (repayAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
 
         AccountData storage _accountData = allAccountsData[onBehalfOf];
-        _repayToken(_debtTokenCache(), repayAmount, _accountData, msg.sender, onBehalfOf);
+        DebtTokenCache memory _cache = _debtTokenCache();
+
+        // Update the account's latest debt
+        uint128 _newDebt = _currentAccountDebt(
+            _cache, 
+            _accountData.debtCheckpoint,
+            _accountData.interestAccumulator,
+            true // round up for repay balance
+        );
+
+        // They cannot repay more than this debt
+        if (repayAmount > _newDebt) {
+            revert ExceededBorrowedAmount(_newDebt, repayAmount);
+        }
+        unchecked {
+            _newDebt -= repayAmount;
+        }
+
+        // Update storage
+        _accountData.debtCheckpoint = _newDebt;
+        _accountData.interestAccumulator = _cache.interestAccumulator;
+
+        _repayToken(_cache, repayAmount, msg.sender, onBehalfOf);
     }
 
     /**
@@ -274,7 +296,12 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
             true // use the rounded up amount
         );
         if (repayAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
-        _repayToken(_cache, repayAmount, _accountData, msg.sender, onBehalfOf);
+
+        // Update storage
+        _accountData.debtCheckpoint = 0;
+        _accountData.interestAccumulator = _cache.interestAccumulator;
+
+        _repayToken(_cache, repayAmount, msg.sender, onBehalfOf);
     }
 
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
@@ -675,29 +702,9 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
     function _repayToken(
         DebtTokenCache memory _cache,
         uint128 _repayAmount,
-        AccountData storage _accountData,
         address _fromAccount,
         address _onBehalfOf
     ) internal {
-        // Update the account's latest debt
-        uint128 _newDebt = _currentAccountDebt(
-            _cache, 
-            _accountData.debtCheckpoint,
-            _accountData.interestAccumulator,
-            true // round up for repay balance
-        );
-
-        // They cannot repay more than this debt
-        if (_repayAmount > _newDebt) {
-            revert ExceededBorrowedAmount(_newDebt, _repayAmount);
-        }
-        unchecked {
-            _newDebt -= _repayAmount;
-        }
-
-        // Update storage
-        _accountData.debtCheckpoint = _newDebt;
-        _accountData.interestAccumulator = _cache.interestAccumulator;
         _repayTotalDebt(_cache, _repayAmount);
 
         emit Repay(_fromAccount, _onBehalfOf, _repayAmount);
