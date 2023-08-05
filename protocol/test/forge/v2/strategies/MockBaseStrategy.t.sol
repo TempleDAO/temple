@@ -16,7 +16,7 @@ import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.so
 contract MockBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
     using SafeERC20 for IERC20;
 
-    string public constant VERSION = "1.0.0";
+    string private constant VERSION = "1.0.0";
 
     IERC20 public immutable token;
 

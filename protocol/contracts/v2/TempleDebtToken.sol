@@ -41,7 +41,7 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
     using SafeERC20 for IERC20;
     using SafeCast for uint256;
 
-    string public constant VERSION = "1.0.0";
+    string private constant VERSION = "1.0.0";
 
     /**
      * @dev Returns the name of the token.

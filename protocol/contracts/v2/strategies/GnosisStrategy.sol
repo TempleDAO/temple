@@ -10,7 +10,7 @@ import { ITreasuryReservesVault } from "contracts/interfaces/v2/ITreasuryReserve
 
 contract GnosisStrategy is AbstractStrategy {
     using SafeERC20 for IERC20;
-    string public constant VERSION = "1.0.0";
+    string private constant VERSION = "1.0.0";
 
     /**
      * @notice The underlying gnosis safe wallet which is reported on.

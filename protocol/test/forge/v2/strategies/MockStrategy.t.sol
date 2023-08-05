@@ -10,7 +10,7 @@ import { FakeERC20 } from "contracts/fakes/FakeERC20.sol";
 contract MockStrategy is AbstractStrategy {
     using SafeERC20 for IERC20;
 
-    string public constant VERSION = "X.0.0";
+    string private constant VERSION = "X.0.0";
 
     // solhint-disable-next-line
     string public API_VERSION_X;

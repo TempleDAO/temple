@@ -17,7 +17,7 @@ import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.so
  * the assets is the current total user debt.
  */
 contract TlcStrategy is ITlcStrategy, AbstractStrategy {
-    string public constant VERSION = "1.0.0";
+    string private constant VERSION = "1.0.0";
 
     ITempleLineOfCredit public immutable tlc;
 

@@ -16,7 +16,7 @@ import { ITempleERC20Token } from "contracts/interfaces/core/ITempleERC20Token.s
 contract TempleTokenBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
     using SafeERC20 for ITempleERC20Token;
 
-    string public constant VERSION = "1.0.0";
+    string private constant VERSION = "1.0.0";
 
     /**
      * @notice The Temple token which is directly minted/burned.
