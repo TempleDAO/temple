@@ -181,7 +181,7 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
         totalCollateral -= amount;
         emit CollateralRemoved(msg.sender, recipient, amount);
 
-        _checkLiquidity(_accountData);
+        _checkLiquidity(_accountData, _debtTokenCacheRO());
 
         templeToken.safeTransfer(
             recipient,
@@ -235,7 +235,7 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
         }
 
         emit Borrow(msg.sender, recipient, amount);
-        _checkLiquidity(_accountData);
+        _checkLiquidity(_accountData, _cache);
 
         // Finally, borrow the funds from the TRV and send the tokens to the recipient.
         tlcStrategy.fundFromTrv(amount, recipient);
@@ -739,8 +739,7 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
      * account, debt token and market conditions.
      * Revert if the account has exceeded the maximum LTV
      */
-    function _checkLiquidity(AccountData storage _accountData) internal view {
-        DebtTokenCache memory _cache = _debtTokenCacheRO();
+    function _checkLiquidity(AccountData storage _accountData, DebtTokenCache memory _cache) internal view {
         LiquidationStatus memory _status = _computeLiquidity(
             _accountData,
             _cache
