@@ -498,10 +498,11 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
     ) external override view returns (LiquidationStatus[] memory status) {
         uint256 _numAccounts = accounts.length;
         status = new LiquidationStatus[](_numAccounts);
+        DebtTokenCache memory _cache = _debtTokenCacheRO();
         for (uint256 i; i < _numAccounts; ++i) {
             status[i] = _computeLiquidity(
                 allAccountsData[accounts[i]], 
-                _debtTokenCacheRO()
+                _cache
             );
         }
     }
