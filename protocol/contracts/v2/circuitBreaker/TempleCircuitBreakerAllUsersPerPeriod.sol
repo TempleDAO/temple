@@ -182,7 +182,7 @@ contract TempleCircuitBreakerAllUsersPerPeriod is ITempleCircuitBreaker, TempleE
 
     function _setConfig(uint32 _periodDuration, uint32 _nBuckets, uint128 _cap) internal {
         if (_periodDuration == 0) revert CommonEventsAndErrors.ExpectedNonZero();
-        if (_periodDuration % _nBuckets != 0) revert CommonEventsAndErrors.InvalidParam();
+        if (_periodDuration % _nBuckets > 0) revert CommonEventsAndErrors.InvalidParam();
         if (_nBuckets > MAX_BUCKETS) revert CommonEventsAndErrors.InvalidParam();
 
         nBuckets = _nBuckets;

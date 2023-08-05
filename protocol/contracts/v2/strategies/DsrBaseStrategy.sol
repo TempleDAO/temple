@@ -293,7 +293,7 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
 
         // Repay to TRV ensuring that funds stop in the TRV, they don't get pushed 
         // back to the base strategy (ie back here)
-        if (daiAvailable != 0) {
+        if (daiAvailable > 0) {
             treasuryReservesVault.repay(daiToken, daiAvailable, address(this));
         }
     }

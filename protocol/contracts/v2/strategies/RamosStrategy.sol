@@ -248,12 +248,12 @@ contract RamosStrategy  is AbstractStrategy, IRamosTokenVault {
         ramos.removeLiquidity(params.requestData, params.bptAmount);
 
         uint256 stableBalance = quoteToken.balanceOf(address(this));
-        if (stableBalance != 0) {
+        if (stableBalance > 0) {
             treasuryReservesVault.repay(quoteToken, stableBalance, address(this));
         }
 
         uint256 templeBalance = templeToken.balanceOf(address(this));
-        if (templeBalance != 0) {
+        if (templeBalance > 0) {
             treasuryReservesVault.repay(templeToken, templeBalance, address(this));
         }
     }

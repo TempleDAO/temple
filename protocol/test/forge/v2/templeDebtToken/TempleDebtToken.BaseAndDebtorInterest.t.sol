@@ -606,7 +606,7 @@ contract TempleDebtTokenTestBaseAndDebtorInterest is TempleDebtTokenTestBase {
 
     function test_mint_and_burn_fuzz(address account, uint256 amount, uint256 timeGap) public {
         vm.assume(account != address(0));
-        vm.assume(amount != 0);
+        vm.assume(amount > 0);
         vm.assume(amount < 100_000_000e18);
         vm.assume(timeGap < 5 * 365 days);
 

@@ -260,7 +260,7 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
         uint128 daiBorrowAmount,
         uint256 cooldownSecs
     ) internal {
-        if (collateralAmount != 0) {
+        if (collateralAmount > 0) {
             addCollateral(_account, collateralAmount);
         }
         vm.startPrank(_account);
@@ -268,7 +268,7 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
         // Optionally sleep for some time in order to accrue interest from prior calls...
         vm.warp(block.timestamp + cooldownSecs);
 
-        if (daiBorrowAmount != 0) tlc.borrow(daiBorrowAmount, _account);
+        if (daiBorrowAmount > 0) tlc.borrow(daiBorrowAmount, _account);
 
         vm.stopPrank();
     }

@@ -229,7 +229,7 @@ contract ThresholdSafeGuardTestBase is TempleTest {
         signatures = createSignature(txParams.signers, txData);
 
         // Append any nested contract signatures (if there are any)
-        if (txParams.nestedSigners.length != 0) {
+        if (txParams.nestedSigners.length > 0) {
             bytes memory nestedSigners = createSignature(txParams.nestedSigners, txData);
             nestedSigners = bytes.concat(bytes32(nestedSigners.length), nestedSigners);
 

@@ -549,7 +549,7 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
             }
 
             // Pull any remainder required from the base strategy.
-            if (_withdrawFromBaseStrategyAmount != 0) {
+            if (_withdrawFromBaseStrategyAmount > 0) {
                 // So there aren't lots of small withdrawals, pull the amount required for this transaction
                 // plus the threshold amount. Then future borrows don't need to withdraw from base every time.
                 _withdrawFromBaseStrategyAmount += tokenConfig.baseStrategyWithdrawalBuffer;
@@ -633,7 +633,7 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
 
         // If there is any remaining which is not burned, then the debt is now 0
         // Add the remainder as a credit.
-        if (_remaining != 0) {
+        if (_remaining > 0) {
             unchecked {
                 _creditBalance += _remaining;
             }

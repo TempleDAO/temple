@@ -307,7 +307,7 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
 
         // Collect the fees on the output protocol token
         uint256 feeAmt = protocolTokenAmountOut * rebalanceFees.rebalanceExitFeeBps / BPS_PRECISION;
-        if (feeAmt != 0) {
+        if (feeAmt > 0) {
             protocolToken.safeTransfer(feeCollector, feeAmt);
         }
 
@@ -316,7 +316,7 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
             protocolTokenAmountOut -= feeAmt;
         }
         emit RebalanceUpExit(bptAmountIn, protocolTokenAmountOut, feeAmt);
-        if (protocolTokenAmountOut != 0) {
+        if (protocolTokenAmountOut > 0) {
             tokenVault.repayProtocolToken(protocolTokenAmountOut);
         }
     }
@@ -350,7 +350,7 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
 
         // Collect the fees on the output quote token
         uint256 feeAmt = quoteTokenAmountOut * rebalanceFees.rebalanceExitFeeBps / BPS_PRECISION;
-        if (feeAmt != 0) {
+        if (feeAmt > 0) {
             quoteToken.safeTransfer(feeCollector, feeAmt);
         }
 
@@ -358,7 +358,7 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
             quoteTokenAmountOut -= feeAmt;
         }
         emit RebalanceDownExit(bptAmountIn, quoteTokenAmountOut, feeAmt);
-        if (quoteTokenAmountOut != 0) {
+        if (quoteTokenAmountOut > 0) {
             tokenVault.repayQuoteToken(quoteTokenAmountOut);
         }
     }
@@ -385,7 +385,7 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
 
         // Collect the fees from the input quote token
         uint256 feeAmt = quoteTokenAmountIn * rebalanceFees.rebalanceJoinFeeBps / BPS_PRECISION;
-        if (feeAmt != 0) {
+        if (feeAmt > 0) {
             quoteToken.safeTransfer(feeCollector, feeAmt);
         }
 
@@ -402,7 +402,7 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
         emit RebalanceUpJoin(quoteTokenAmountIn, bptTokensStaked, feeAmt);
 
         // deposit and stake BPT
-        if (bptTokensStaked != 0) {
+        if (bptTokensStaked > 0) {
             bptToken.safeTransfer(address(amoStaking), bptTokensStaked);
             amoStaking.depositAndStake(bptTokensStaked);
         }
@@ -430,7 +430,7 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
 
         // Collect the fees from the input protocol token amount
         uint256 feeAmt = protocolTokenAmountIn * rebalanceFees.rebalanceJoinFeeBps / BPS_PRECISION;
-        if (feeAmt != 0) {
+        if (feeAmt > 0) {
             protocolToken.safeTransfer(feeCollector, feeAmt);
         }
 
@@ -448,7 +448,7 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
         emit RebalanceDownJoin(protocolTokenAmountIn, bptTokensStaked, feeAmt);
 
         // deposit and stake BPT
-        if (bptTokensStaked != 0) {
+        if (bptTokensStaked > 0) {
             bptToken.safeTransfer(address(amoStaking), bptTokensStaked);
             amoStaking.depositAndStake(bptTokensStaked);
         }
@@ -506,7 +506,7 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
         emit LiquidityAdded(quoteTokenAmount, protocolTokenAmount, bptTokensStaked);
 
         // stake BPT
-        if (bptTokensStaked != 0) {
+        if (bptTokensStaked > 0) {
             bptToken.safeTransfer(address(amoStaking), bptTokensStaked);
             amoStaking.depositAndStake(bptTokensStaked);
         }
@@ -548,14 +548,14 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
                 unchecked {
                     protocolTokenAmount = protocolToken.balanceOf(address(this)) - protocolTokenAmountBefore;
                 }
-                if (protocolTokenAmount != 0) {
+                if (protocolTokenAmount > 0) {
                     _tokenVault.repayProtocolToken(protocolTokenAmount);
                 }
             } else if (request.assets[i] == address(quoteToken)) {
                 unchecked {
                     quoteTokenAmount = quoteToken.balanceOf(address(this)) - quoteTokenAmountBefore;
                 }
-                if (quoteTokenAmount != 0) {
+                if (quoteTokenAmount > 0) {
                     _tokenVault.repayQuoteToken(quoteTokenAmount);
                 }
             }
@@ -596,7 +596,7 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
         // https://docs.balancer.fi/reference/lp-tokens/underlying.html#overview
         // https://docs.balancer.fi/concepts/advanced/valuing-bpt.html#on-chain
         uint256 bptTotalSupply = bptToken.getActualSupply();
-        if (bptTotalSupply != 0) {
+        if (bptTotalSupply > 0) {
             bptBalance = amoStaking.totalBalance();
             (uint256 totalProtocolTokenInLp, uint256 totalQuoteTokenInLp) = poolHelper.getPairBalances();
             protocolTokenBalance = totalProtocolTokenInLp * bptBalance /bptTotalSupply;

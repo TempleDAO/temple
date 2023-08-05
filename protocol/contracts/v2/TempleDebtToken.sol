@@ -231,8 +231,10 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
             }
         }
 
-        emit Transfer(_debtor, address(0), _burnAmount);
-        _burn(debtor, _burnAmount, _totalPrincipalAndBase);
+        if (_burnAmount > 0) {
+            emit Transfer(_debtor, address(0), _burnAmount);
+            _burn(debtor, _burnAmount, _totalPrincipalAndBase);
+        }
         return _burnAmount;
     }
 
@@ -248,7 +250,7 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
         uint256 _totalPrincipalAndBase = _compoundedBaseInterest();
         burnedAmount = _balanceOf(debtor, _totalPrincipalAndBase);
 
-        if (burnedAmount != 0) {
+        if (burnedAmount > 0) {
             emit Transfer(_debtor, address(0), burnedAmount);
             _burn(debtor, burnedAmount, _totalPrincipalAndBase);
         }
