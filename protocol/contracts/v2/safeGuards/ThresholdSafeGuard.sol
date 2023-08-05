@@ -218,7 +218,7 @@ contract ThresholdSafeGuard is IThresholdSafeGuard, TempleElevatedAccess {
                 refundReceiver, 
                 safe.nonce() - 1 // Remove one from the nonce, as the Safe.execTransaction increased it prior to calling the guard.
             );
-            SafeForked.checkNSignatures(safeTxExecutor, safe, keccak256(txHashData), data, signatures, threshold);
+            SafeForked.checkNSignatures(safeTxExecutor, safe, keccak256(txHashData), txHashData, signatures, threshold);
         }
     }
 
