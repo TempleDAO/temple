@@ -532,7 +532,7 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
             request.assets.length != 2 || 
             request.toInternalBalance
         ) {
-                revert AMOCommon.InvalidBalancerVaultRequest();
+            revert AMOCommon.InvalidBalancerVaultRequest();
         }
 
         uint256 protocolTokenAmountBefore = protocolToken.balanceOf(address(this));
@@ -541,24 +541,18 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
         amoStaking.withdrawAndUnwrap(bptIn, false, address(this));
         balancerVault.exitPool(balancerPoolId, address(this), address(this), request);
 
+        unchecked {
+            protocolTokenAmount = protocolToken.balanceOf(address(this)) - protocolTokenAmountBefore;
+            quoteTokenAmount = quoteToken.balanceOf(address(this)) - quoteTokenAmountBefore;
+        }
+
         IRamosTokenVault _tokenVault = tokenVault;
-        uint256 length = request.assets.length;
-        for (uint i; i < length; ++i) {
-            if (request.assets[i] == address(protocolToken)) {
-                unchecked {
-                    protocolTokenAmount = protocolToken.balanceOf(address(this)) - protocolTokenAmountBefore;
-                }
-                if (protocolTokenAmount > 0) {
-                    _tokenVault.repayProtocolToken(protocolTokenAmount);
-                }
-            } else if (request.assets[i] == address(quoteToken)) {
-                unchecked {
-                    quoteTokenAmount = quoteToken.balanceOf(address(this)) - quoteTokenAmountBefore;
-                }
-                if (quoteTokenAmount > 0) {
-                    _tokenVault.repayQuoteToken(quoteTokenAmount);
-                }
-            }
+        if (protocolTokenAmount > 0) {
+            _tokenVault.repayProtocolToken(protocolTokenAmount);
+        }
+
+        if (quoteTokenAmount > 0) {
+            _tokenVault.repayQuoteToken(quoteTokenAmount);
         }
 
         emit LiquidityRemoved(quoteTokenAmount, protocolTokenAmount, bptIn);

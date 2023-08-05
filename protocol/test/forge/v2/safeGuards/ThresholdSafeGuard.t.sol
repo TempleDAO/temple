@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 import { GnosisSafe } from "@gnosis.pm/safe-contracts/contracts/GnosisSafe.sol";
 import { GnosisSafeProxyFactory } from "@gnosis.pm/safe-contracts/contracts/proxies/GnosisSafeProxyFactory.sol";
-import { CompatibilityFallbackHandler } from "@gnosis.pm/safe-contracts/contracts/handler/CompatibilityFallbackHandler.sol";
+import { CompatibilityFallbackHandler } from "./CompatibilityFallbackHandler.forked.sol";
 import { Enum } from "@gnosis.pm/safe-contracts/contracts/common/Enum.sol";
 
 import { TempleTest } from "../../TempleTest.sol";
