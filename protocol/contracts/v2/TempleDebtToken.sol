@@ -261,7 +261,7 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
         _checkpointBase(_totalPrincipalAndBase);
         _checkpointDebtor(debtor);
 
-        // Local vars to save multiple stoarge lookups
+        // Local vars to save multiple storage lookups
         uint256 _totalBaseShares = baseShares;
         uint256 _debtorShares = debtor.baseShares;
         uint256 _debtorPrincipal = debtor.principal;

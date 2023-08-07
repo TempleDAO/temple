@@ -588,7 +588,7 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
     ) {
         // Use `bpt.getActualSupply()` instead of `bpt.totalSupply()`
         // https://docs.balancer.fi/reference/lp-tokens/underlying.html#overview
-        // https://docs.balancer.fi/concepts/advanced/valuing-bpt.html#on-chain
+        // https://docs.balancer.fi/concepts/advanced/valuing-bpt/valuing-bpt.html#on-chain
         uint256 bptTotalSupply = bptToken.getActualSupply();
         if (bptTotalSupply > 0) {
             bptBalance = amoStaking.totalBalance();
