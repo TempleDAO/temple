@@ -274,7 +274,10 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
         if (debtor.rate > baseRate) {
             // The minimum of what debt is still outstanding, and the requested amount to be burned
             _debtorDebtRepaid = _debtorCheckpoint < _burnAmount ? _debtorCheckpoint : _burnAmount;
-            _burnAmount -= _debtorDebtRepaid;
+
+            unchecked {
+                _burnAmount -= _debtorDebtRepaid;
+            }
 
             _baseDebtRepaid = _burnBaseInterest(
                 _burnAmount,
@@ -283,7 +286,10 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
                 _totalBaseShares,
                 _debtorPrincipal
             );
-            _burnAmount -= _baseDebtRepaid;
+
+            unchecked {
+                _burnAmount -= _baseDebtRepaid;
+            }
         } else {
             _baseDebtRepaid = _burnBaseInterest(
                 _burnAmount,
@@ -292,11 +298,18 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
                 _totalBaseShares,
                 _debtorPrincipal
             );
-            _burnAmount -= _baseDebtRepaid;
+            
+            unchecked {
+                _burnAmount -= _baseDebtRepaid;
+            }
 
             // The minimum of what debt is still outstanding, and the requested amount to be burned
             _debtorDebtRepaid = _debtorCheckpoint < _burnAmount ? _debtorCheckpoint : _burnAmount;
             _burnAmount -= _debtorDebtRepaid;
+
+            unchecked {
+                _burnAmount -= _debtorDebtRepaid;
+            }
         }
 
         // Update the contract state.

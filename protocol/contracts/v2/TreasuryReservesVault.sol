@@ -591,8 +591,10 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
             uint256 _newDebt;
             unchecked {
                 _newDebt = toMintAmount - _creditBalance;
+
+                // Safe to be unchecked as it's also overflow checked within the dToken.mint() below
+                dTokenBalance += _newDebt;
             }
-            dTokenBalance += _newDebt;
             tokenConfig.dToken.mint(strategy, _newDebt);
 
             // The credit is now 0
