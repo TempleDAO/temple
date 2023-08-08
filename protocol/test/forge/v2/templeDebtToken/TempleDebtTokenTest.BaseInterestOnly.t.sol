@@ -3,6 +3,7 @@ pragma solidity 0.8.19;
 
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { TempleDebtTokenTestBase } from "./TempleDebtToken.Base.t.sol";
+import { ITempleDebtToken } from "contracts/interfaces/v2/ITempleDebtToken.sol";
 
 /* solhint-disable func-name-mixedcase, contract-name-camelcase, not-rely-on-time */
 contract TempleDebtTokenTestBaseInterestOnly is TempleDebtTokenTestBase {
@@ -414,11 +415,11 @@ contract TempleDebtTokenTestBaseInterestOnly is TempleDebtTokenTestBase {
         uint256 bobInterest = 12364400207699397755;
 
         // Test converting one way and back again.
-        (uint256 totalPrincipal, uint256 baseInterest,) = dUSD.currentTotalDebt();
-        assertEq(totalPrincipal, 2*amount);
-        assertEq(baseInterest, bobInterest);
-        assertEq(dUSD.baseDebtToShares(totalPrincipal+baseInterest), amount+bobExpectedShares);
-        assertEq(dUSD.baseSharesToDebt(dUSD.baseDebtToShares(totalPrincipal+baseInterest)), totalPrincipal+baseInterest);
+        ITempleDebtToken.DebtOwed memory debtOwed = dUSD.currentTotalDebt();
+        assertEq(debtOwed.principal, 2*amount);
+        assertEq(debtOwed.baseInterest, bobInterest);
+        assertEq(dUSD.baseDebtToShares(debtOwed.principal+debtOwed.baseInterest), amount+bobExpectedShares);
+        assertEq(dUSD.baseSharesToDebt(dUSD.baseDebtToShares(debtOwed.principal+debtOwed.baseInterest)), debtOwed.principal+debtOwed.baseInterest);
     }
 
     function test_currentDebtOf() public {
@@ -435,17 +436,17 @@ contract TempleDebtTokenTestBaseInterestOnly is TempleDebtTokenTestBase {
         vm.warp(block.timestamp + 365 days);
 
         uint256 aliceBal = 6183654654535961929;
-        (uint256 principal, uint256 baseInterest, uint256 riskPremiumInterest) = dUSD.currentDebtOf(alice);
-        assertEq(principal, amount);
-        assertEq(baseInterest, aliceBal);
-        assertEq(riskPremiumInterest, 0);
-        assertEq(dUSD.balanceOf(alice), principal+baseInterest+riskPremiumInterest);
+        ITempleDebtToken.DebtOwed memory userDebt = dUSD.currentDebtOf(alice);
+        assertEq(userDebt.principal, amount);
+        assertEq(userDebt.baseInterest, aliceBal);
+        assertEq(userDebt.riskPremiumInterest, 0);
+        assertEq(dUSD.balanceOf(alice), userDebt.principal+userDebt.baseInterest+userDebt.riskPremiumInterest);
 
         uint256 bobBal = 6180745553163435825;
-        (principal, baseInterest, riskPremiumInterest) = dUSD.currentDebtOf(bob);
-        assertEq(principal, amount);
-        assertEq(baseInterest, bobBal);
-        assertEq(riskPremiumInterest, 0);
-        assertEq(dUSD.balanceOf(bob), principal+baseInterest+riskPremiumInterest);
+        userDebt = dUSD.currentDebtOf(bob);
+        assertEq(userDebt.principal, amount);
+        assertEq(userDebt.baseInterest, bobBal);
+        assertEq(userDebt.riskPremiumInterest, 0);
+        assertEq(dUSD.balanceOf(bob), userDebt.principal+userDebt.baseInterest+userDebt.riskPremiumInterest);
     }
 }

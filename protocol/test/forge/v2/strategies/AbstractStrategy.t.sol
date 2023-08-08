@@ -491,7 +491,7 @@ contract AbstractStrategyTestMultiAsset is AbstractStrategyTestBase {
             assertEq(dai.balanceOf(address(strategy)), 100e18);
             assertApproxEqRel(
                 dUSD.balanceOf(address(strategy)),
-                approxInterest(100e18, uint96(DEFAULT_BASE_INTEREST), 365 days),
+                approxInterest(100e18, DEFAULT_BASE_INTEREST, 365 days),
                 1e8
             );
 
@@ -503,7 +503,7 @@ contract AbstractStrategyTestMultiAsset is AbstractStrategyTestBase {
             assertEq(weth.balanceOf(address(strategy)), 2e18);
             assertApproxEqRel(
                 dETH.balanceOf(address(strategy)),
-                approxInterest(2e18, uint96(ETH_BASE_INTEREST), 365 days), 
+                approxInterest(2e18, ETH_BASE_INTEREST, 365 days), 
                 1e8
             );
         }
@@ -520,7 +520,7 @@ contract AbstractStrategyTestMultiAsset is AbstractStrategyTestBase {
             assertEq(dai.balanceOf(address(strategy)), 0);
             assertApproxEqRel(
                 dUSD.balanceOf(address(strategy)),
-                approxInterest(100e18, uint96(DEFAULT_BASE_INTEREST), 365 days) - 100e18,
+                approxInterest(100e18, DEFAULT_BASE_INTEREST, 365 days) - 100e18,
                 1e10
             );
 
@@ -532,7 +532,7 @@ contract AbstractStrategyTestMultiAsset is AbstractStrategyTestBase {
             assertEq(weth.balanceOf(address(strategy)), 0);
             assertApproxEqRel(
                 dETH.balanceOf(address(strategy)),
-                approxInterest(2e18, uint96(ETH_BASE_INTEREST), 365 days) - 2e18, 
+                approxInterest(2e18, ETH_BASE_INTEREST, 365 days) - 2e18, 
                 1e10
             );
         }

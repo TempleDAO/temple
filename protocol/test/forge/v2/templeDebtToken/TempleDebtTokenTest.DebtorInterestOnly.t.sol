@@ -2,11 +2,12 @@ pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { TempleDebtTokenTestBase } from "./TempleDebtToken.Base.t.sol";
+import { ITempleDebtToken } from "contracts/interfaces/v2/ITempleDebtToken.sol";
 
 /* solhint-disable func-name-mixedcase, contract-name-camelcase, not-rely-on-time */
 contract TempleDebtTokenTestDebtorInterestOnly is TempleDebtTokenTestBase {
-    uint64 public aliceInterestRate = 0.02e18;
-    uint64 public bobInterestRate = 0.05e18;
+    uint96 public aliceInterestRate = 0.02e18;
+    uint96 public bobInterestRate = 0.05e18;
 
     function setUp() public {
         _setUp();
@@ -270,12 +271,12 @@ contract TempleDebtTokenTestDebtorInterestOnly is TempleDebtTokenTestBase {
         checkDebtor(bob, bobInterestRate, amount, amount, 0, startBlockTs + 1 days, bobBal);
 
         changePrank(executor);
-        uint64 updatedRate = 0.1e18;
+        uint96 updatedRate = 0.1e18;
         dUSD.setRiskPremiumInterestRate(alice, updatedRate);
 
         // The rate was updated and a checkpoint was made.
         // bob's extra interest isn't added to the estimatedDebtorInterest because he didn't checkpoint
-        checkBaseInterest(0, 2*amount, 2*amount, startBlockTs + 1 days, 2*amount, 2*amount, aliceBal-amount);
+        checkBaseInterest(0, 2*amount, 2*amount, block.timestamp, 2*amount, 2*amount, aliceBal-amount);
         checkDebtor(alice, updatedRate, amount, amount, aliceBal-amount, block.timestamp, aliceBal);
         checkDebtor(bob, bobInterestRate, amount, amount, 0, startBlockTs + 1 days, bobBal);
 
@@ -286,7 +287,7 @@ contract TempleDebtTokenTestDebtorInterestOnly is TempleDebtTokenTestBase {
         uint256 aliceBal2 = TEN_PCT_365DAY_1;
         
         bobBal = FIVE_PCT_729DAY;
-        checkBaseInterest(0, 2*amount, 2*amount, startBlockTs + 1 days, 2*amount, 2*amount, aliceBal-amount);
+        checkBaseInterest(0, 2*amount, 2*amount, ts, 2*amount, 2*amount, aliceBal-amount);
         checkDebtor(alice, updatedRate, amount, amount, aliceBal-amount, ts, aliceBal2);
         checkDebtor(bob, bobInterestRate, amount, amount, 0, startBlockTs + 1 days, bobBal);
     }
@@ -309,12 +310,12 @@ contract TempleDebtTokenTestDebtorInterestOnly is TempleDebtTokenTestBase {
         checkDebtor(bob, bobInterestRate, amount, amount, 0, startBlockTs + 1 days, bobBal);
 
         changePrank(executor);
-        uint64 updatedRate = 0;
+        uint96 updatedRate = 0;
         dUSD.setRiskPremiumInterestRate(alice, updatedRate);
 
         // The rate was updated and a checkpoint was made.
         // bob's extra interest isn't added to the estimatedDebtorInterest because he didn't checkpoint
-        checkBaseInterest(0, 2*amount, 2*amount, startBlockTs + 1 days, 2*amount, 2*amount, aliceBal-amount);
+        checkBaseInterest(0, 2*amount, 2*amount, block.timestamp, 2*amount, 2*amount, aliceBal-amount);
         checkDebtor(alice, updatedRate, amount, amount, aliceBal-amount, block.timestamp, aliceBal);
         checkDebtor(bob, bobInterestRate, amount, amount, 0, startBlockTs + 1 days, bobBal);
 
@@ -325,7 +326,7 @@ contract TempleDebtTokenTestDebtorInterestOnly is TempleDebtTokenTestBase {
         uint256 aliceBal2 = aliceBal;
         
         bobBal = FIVE_PCT_729DAY;
-        checkBaseInterest(0, 2*amount, 2*amount, startBlockTs + 1 days, 2*amount, 2*amount, aliceBal-amount);
+        checkBaseInterest(0, 2*amount, 2*amount, ts, 2*amount, 2*amount, aliceBal-amount);
         checkDebtor(alice, updatedRate, amount, amount, aliceBal-amount, ts, aliceBal2);
         checkDebtor(bob, bobInterestRate, amount, amount, 0, startBlockTs + 1 days, bobBal);
     }
@@ -378,7 +379,7 @@ contract TempleDebtTokenTestDebtorInterestOnly is TempleDebtTokenTestBase {
         ds[0] = alice;
         ds[1] = bob;
         dUSD.checkpointDebtorsInterest(ds);
-        checkBaseInterest(0, 2*amount, 2*amount, startBlockTs + 1 days, 2*amount, 2*amount, (aliceBal+bobBal)-2*amount);
+        checkBaseInterest(0, 2*amount, 2*amount, block.timestamp, 2*amount, 2*amount, (aliceBal+bobBal)-2*amount);
         checkDebtor(alice, aliceInterestRate, amount, amount, aliceBal-amount, block.timestamp, aliceBal);
         checkDebtor(bob, bobInterestRate, amount, amount, bobBal-amount, block.timestamp, bobBal);
     }
@@ -396,17 +397,17 @@ contract TempleDebtTokenTestDebtorInterestOnly is TempleDebtTokenTestBase {
         dUSD.setRiskPremiumInterestRate(alice, 0.1e18);
         vm.warp(block.timestamp + 365 days);
 
-        (uint256 principal, uint256 baseInterest, uint256 riskPremiumInterest) = dUSD.currentDebtOf(alice);
-        assertEq(principal, amount);
-        assertEq(baseInterest, 0);
-        assertEq(riskPremiumInterest, TEN_PCT_365DAY_1-amount);
-        assertEq(dUSD.balanceOf(alice), principal+baseInterest+riskPremiumInterest);
+        ITempleDebtToken.DebtOwed memory userDebt = dUSD.currentDebtOf(alice);
+        assertEq(userDebt.principal, amount);
+        assertEq(userDebt.baseInterest, 0);
+        assertEq(userDebt.riskPremiumInterest, TEN_PCT_365DAY_1-amount);
+        assertEq(dUSD.balanceOf(alice), userDebt.principal+userDebt.baseInterest+userDebt.riskPremiumInterest);
 
         uint256 bobBal = 10501953516812792800;
-        (principal, baseInterest, riskPremiumInterest) = dUSD.currentDebtOf(bob);
-        assertEq(principal, amount);
-        assertEq(baseInterest, 0);
-        assertEq(riskPremiumInterest, bobBal);
-        assertEq(dUSD.balanceOf(bob), principal+baseInterest+riskPremiumInterest);
+        userDebt = dUSD.currentDebtOf(bob);
+        assertEq(userDebt.principal, amount);
+        assertEq(userDebt.baseInterest, 0);
+        assertEq(userDebt.riskPremiumInterest, bobBal);
+        assertEq(dUSD.balanceOf(bob), userDebt.principal+userDebt.baseInterest+userDebt.riskPremiumInterest);
     }
 }

@@ -152,6 +152,12 @@ interface ITempleLineOfCredit is ITlcDataTypes, ITlcEventsAndErrors {
     function liquidationsPaused() external view returns (bool);
 
     /**
+     * @notice The minimum borrow amount per transaction
+     * @dev It costs gas to liquidate users, so we don't want dust amounts.
+     */
+    function minBorrowAmount() external view returns (uint128);
+
+    /**
      * @notice An view of an accounts current and up to date position as of this block
      * @param account The account to get a position for
      */

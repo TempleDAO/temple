@@ -12,7 +12,7 @@ contract TempleDebtTokenTestBase is TempleTest {
     bool public constant LOG = false;
 
     TempleDebtToken public dUSD;
-    uint64 public constant DEFAULT_BASE_INTEREST = 0.01e18;
+    uint96 public constant DEFAULT_BASE_INTEREST = 0.01e18;
 
     // Continuously compounding rates based on 100e18;
     uint256 public constant ONE_PCT_1DAY = 100002739763558233400;
@@ -43,6 +43,7 @@ contract TempleDebtTokenTestBase is TempleTest {
     event AddedMinter(address indexed account);
     event RemovedMinter(address indexed account);
     event Transfer(address indexed from, address indexed to, uint256 value);
+    event DebtorBalance(address indexed debtor, uint128 principal, uint128 baseInterest, uint128 riskPremiumInterest);
 
     // Used for testing to avoid stack too deep
     struct Expected {
@@ -71,11 +72,11 @@ contract TempleDebtTokenTestBase is TempleTest {
         console2.log("shares:", dUSD.baseShares());
         console2.log("checkpoint:", dUSD.baseCheckpoint());
         console2.log("checkpointTime:", dUSD.baseCheckpointTime());
-        (uint256 totalPrincipal, uint256 baseInterest, uint256 estimatedDebtorInterest) = dUSD.currentTotalDebt();
-        console2.log("totalPrincipal:", totalPrincipal);
-        console2.log("baseInterest:", baseInterest);
-        console2.log("principalAndBaseInterest:", totalPrincipal+baseInterest);
-        console2.log("estimatedDebtorInterest:", estimatedDebtorInterest);
+        ITempleDebtToken.DebtOwed memory debtOwed = dUSD.currentTotalDebt();
+        console2.log("totalPrincipal:", debtOwed.principal);
+        console2.log("baseInterest:", debtOwed.baseInterest);
+        console2.log("principalAndBaseInterest:", debtOwed.principal+debtOwed.baseInterest);
+        console2.log("estimatedDebtorInterest:", debtOwed.riskPremiumInterest);
         console2.log(".");
     }
 
@@ -110,11 +111,11 @@ contract TempleDebtTokenTestBase is TempleTest {
         assertEq(dUSD.baseCheckpoint(), expectedBaseCheckpoint, "baseCheckpoint");
         assertEq(dUSD.baseCheckpointTime(), expectedBaseCheckpointTime, "baseCheckpointTime");
 
-        (uint256 totalPrincipal, uint256 baseInterest, uint256 estimatedDebtorInterest) = dUSD.currentTotalDebt();
-        assertEq(totalPrincipal+baseInterest, expectedCurrentBasePrincipalAndInterest, "PrincipalAndInterest");
-        assertEq(estimatedDebtorInterest, expectedCurrentEstimatedDebtorInterest, "estimatedDebtorInterest");
-        assertEq(totalPrincipal, expectedTotalPrincipal, "totalPrincipal");
-        assertEq(dUSD.totalPrincipal(), totalPrincipal, "totalPrincipal 2");
+        ITempleDebtToken.DebtOwed memory debtOwed = dUSD.currentTotalDebt();
+        assertEq(debtOwed.principal+debtOwed.baseInterest, expectedCurrentBasePrincipalAndInterest, "PrincipalAndInterest");
+        assertEq(debtOwed.riskPremiumInterest, expectedCurrentEstimatedDebtorInterest, "estimatedDebtorInterest");
+        assertEq(debtOwed.principal, expectedTotalPrincipal, "totalPrincipal");
+        assertEq(dUSD.totalPrincipal(), debtOwed.principal, "totalPrincipal 2");
     }
 
     function checkDebtor(

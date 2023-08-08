@@ -10,9 +10,10 @@ interface ITempleDebtToken is IERC20, IERC20Metadata, ITempleElevatedAccess {
     error CannotMintOrBurn(address caller);
 
     event BaseInterestRateSet(uint96 rate);
-    event RiskPremiumInterestRateSet(address indexed debtor, uint64 rate);
+    event RiskPremiumInterestRateSet(address indexed debtor, uint96 rate);
     event AddedMinter(address indexed account);
     event RemovedMinter(address indexed account);
+    event DebtorBalance(address indexed debtor, uint128 principal, uint128 baseInterest, uint128 riskPremiumInterest);
 
     /**
      * @notice Track the deployed version of this contract. 
@@ -38,7 +39,7 @@ interface ITempleDebtToken is IERC20, IERC20Metadata, ITempleElevatedAccess {
     /**
      * @notice The last checkpoint time of the (base rate) principal and interest checkpoint
      */
-    function baseCheckpointTime() external view returns (uint256);
+    function baseCheckpointTime() external view returns (uint32);
 
     /// @dev byte packed into two slots.
     struct Debtor {
@@ -50,11 +51,10 @@ interface ITempleDebtToken is IERC20, IERC20Metadata, ITempleElevatedAccess {
 
         /// @notice The current (risk premium) interest rate specific to this debtor. This can be updated by governance
         /// @dev 1e18 format, where 0.01e18 = 1%
-        /// uint64 => max 18.45e18 => 1845%
-        uint64 rate;
+        uint96 rate;
 
-        /// @notice The debtor's (risk premium) interest (no principal) owed as of the last checkpoint
-        uint160 checkpoint;
+        /// @notice The debtor's (risk premium only) interest (no principal or base interest) owed as of the last checkpoint
+        uint128 checkpoint;
 
         /// @notice The last checkpoint time of this debtor's (risk premium) interest
         /// @dev uint32 => max time of Feb 7 2106
@@ -73,10 +73,10 @@ interface ITempleDebtToken is IERC20, IERC20Metadata, ITempleElevatedAccess {
 
         /// @notice The current (risk premium) interest rate specific to this debtor. This can be updated by governance
         /// @dev 1e18 format, where 0.01e18 = 1%
-        uint64 rate,
+        uint96 rate,
 
-        /// @notice The debtor's (risk premium) interest (no principal) owed as of the last checkpoint
-        uint160 checkpoint,
+        /// @notice The debtor's (risk premium only) interest (no principal or base interest) owed as of the last checkpoint
+        uint128 checkpoint,
 
         /// @notice The last checkpoint time of this debtor's (risk premium) interest
         uint32 checkpointTime
@@ -119,7 +119,7 @@ interface ITempleDebtToken is IERC20, IERC20Metadata, ITempleElevatedAccess {
     /**
      * @notice Governance can update the continuously compounding (risk premium) interest rate for a given debtor, from this block onwards
      */
-    function setRiskPremiumInterestRate(address _debtor, uint64 _rate) external;
+    function setRiskPremiumInterestRate(address _debtor, uint96 _rate) external;
 
     /**
      * @notice Approved Minters can add a new debt position on behalf of a user.
@@ -164,14 +164,26 @@ interface ITempleDebtToken is IERC20, IERC20Metadata, ITempleElevatedAccess {
      */
     function checkpointDebtorsInterest(address[] calldata _debtors) external;
 
+    struct DebtOwed {
+        uint256 principal;
+        uint256 baseInterest;
+        uint256 riskPremiumInterest;
+    }
+
     /**
      * @notice The current debt for a given user split out by
      * principal, base interest, risk premium (per debtor) interest
      */
     function currentDebtOf(address _debtor) external view returns (
-        uint256 principal, 
-        uint256 baseInterest, 
-        uint256 riskPremiumInterest
+        DebtOwed memory debtOwed
+    );
+
+    /**
+     * @notice The current debt for a given set of users split out by
+     * principal, base interest, risk premium (per debtor) interest
+     */
+    function currentDebtsOf(address[] calldata _debtors) external view returns (
+        DebtOwed[] memory debtsOwed
     );
 
     /**
@@ -182,9 +194,7 @@ interface ITempleDebtToken is IERC20, IERC20Metadata, ITempleElevatedAccess {
       * For more up to date current totals, off-chain aggregation of balanceOf() will be required - eg via subgraph.
       */
     function currentTotalDebt() external view returns (
-        uint256 principal,
-        uint256 baseInterest, 
-        uint256 estimatedRiskPremiumInterest
+        DebtOwed memory debtOwed
     );
 
     /**

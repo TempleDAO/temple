@@ -83,7 +83,7 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
      * @notice The minimum borrow amount per transaction
      * @dev It costs gas to liquidate users, so we don't want dust amounts.
      */
-    uint128 public minBorrowAmount = 1000e18;
+    uint128 public override minBorrowAmount = 1000e18;
 
     /**
      * @notice New borrows and collateral withdrawals are checked against a circuit breaker
