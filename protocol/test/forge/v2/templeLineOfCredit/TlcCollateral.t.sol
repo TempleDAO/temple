@@ -295,7 +295,7 @@ contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
     function test_removeCollateral_gas() public {
         // With unoptmised solc FOUNDRY_PROFILE=lite
         (uint256 first, uint256 second, uint256 third) = _removeCollateralIteration(makeAddr("acct1"));
-        assertLt(first, 132_000, "acct1 1");
+        assertLt(first, 134_000, "acct1 1");
         assertLt(second, 30_000, "acct1 2");
         assertLt(third, 41_000, "acct1 3");
 

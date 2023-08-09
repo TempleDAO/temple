@@ -7,6 +7,7 @@ import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.so
 import { ITempleStrategy } from "contracts/interfaces/v2/strategies/ITempleStrategy.sol";
 import { TreasuryReservesVaultTestBase } from "./TrvBase.t.sol";
 import { stdError } from "forge-std/StdError.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /* solhint-disable func-name-mixedcase, contract-name-camelcase, not-rely-on-time */
 contract TreasuryReservesVaultTestRepay is TreasuryReservesVaultTestBase {
@@ -114,6 +115,26 @@ contract TreasuryReservesVaultTestRepay is TreasuryReservesVaultTestBase {
         assertEq(dai.balanceOf(address(trv)), 7e18);
         assertEq(trv.strategyTokenCredits(address(strategy), dai), 7e18);
         assertEq(dUSD.balanceOf(address(strategy)), 0);
+
+        // disable the borrow token and it should now revert
+        {
+            deal(address(dai), address(trv), 10e18, true);
+            changePrank(address(strategy));
+            trv.borrow(dai, 10e18, alice);
+
+            changePrank(executor);
+            IERC20[] memory disableBorrowTokens = new IERC20[](1);
+            disableBorrowTokens[0] = dai;
+            trv.updateStrategyEnabledBorrowTokens(address(strategy), new IERC20[](0), disableBorrowTokens);
+
+            changePrank(address(strategy));
+            vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.BorrowTokenNotEnabled.selector));
+            trv.repay(dai, 2e18, address(strategy));
+
+            changePrank(address(strategy));
+            vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.BorrowTokenNotEnabled.selector));
+            trv.repayAll(dai, address(strategy));
+        }
     }
 
     function test_repay_withDTokenDebts_noCreditLeft() public {

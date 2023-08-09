@@ -80,6 +80,12 @@ contract TreasuryReservesVaultTestAccess is TreasuryReservesVaultTestBase {
         ITempleStrategy.AssetBalance[] memory debtCeiling = new ITempleStrategy.AssetBalance[](0);
         trv.addStrategy(address(strategy), 100, debtCeiling);
     }
+        
+    function test_access_updateStrategyEnabledBorrowTokens() public {
+        expectElevatedAccess();
+        IERC20[] memory tokens = new IERC20[](0);
+        trv.updateStrategyEnabledBorrowTokens(address(strategy), tokens, tokens);
+    }
     
     function test_access_setStrategyPaused() public {
         expectElevatedAccess();
@@ -330,6 +336,63 @@ contract TreasuryReservesVaultTestAdmin is TreasuryReservesVaultTestBase {
             assertEq(debtCeiling[1].asset, address(weth));
             assertEq(debtCeiling[1].balance, 123);
         }
+
+        {
+            assertEq(trv.strategyEnabledBorrowTokens(address(strategy), dai), true);
+            assertEq(trv.strategyEnabledBorrowTokens(address(strategy), weth), true);
+            assertEq(trv.strategyEnabledBorrowTokens(address(strategy), temple), false);
+        }
+    }
+
+    function test_updateStrategyEnabledBorrowTokens() public {
+        vm.startPrank(executor);
+
+        IERC20[] memory enableBorrowTokens = new IERC20[](1);
+        enableBorrowTokens[0] = temple;
+        IERC20[] memory disableBorrowTokens = new IERC20[](1);
+        disableBorrowTokens[0] = weth;
+
+        vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.StrategyNotEnabled.selector));
+        trv.updateStrategyEnabledBorrowTokens(address(strategy), enableBorrowTokens, disableBorrowTokens);
+
+        {
+            trv.setBorrowToken(dai, address(0), 100, 101, address(dUSD));
+            trv.setBorrowToken(weth, address(0), 999, 1000, address(dETH));
+
+            ITempleStrategy.AssetBalance[] memory debtCeiling = new ITempleStrategy.AssetBalance[](2);
+            debtCeiling[0] = ITempleStrategy.AssetBalance(address(dai), 500);
+            debtCeiling[1] = ITempleStrategy.AssetBalance(address(weth), 123);
+            trv.addStrategy(address(strategy), -100, debtCeiling);
+        }
+
+        // temple hasn't been added as a borrow token yet.
+        vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.BorrowTokenNotEnabled.selector));
+        trv.updateStrategyEnabledBorrowTokens(address(strategy), enableBorrowTokens, disableBorrowTokens);
+        trv.setBorrowToken(temple, address(0), 100, 101, address(dTEMPLE));
+
+        enableBorrowTokens = new IERC20[](2);
+        enableBorrowTokens[0] = temple;
+        enableBorrowTokens[1] = weth;
+        trv.updateStrategyEnabledBorrowTokens(address(strategy), enableBorrowTokens, disableBorrowTokens);
+
+        {
+            assertEq(trv.strategyEnabledBorrowTokens(address(strategy), dai), true);
+            assertEq(trv.strategyEnabledBorrowTokens(address(strategy), temple), true);
+            assertEq(trv.strategyEnabledBorrowTokens(address(strategy), weth), false);
+        }
+
+        enableBorrowTokens = new IERC20[](0);
+        disableBorrowTokens = new IERC20[](3);
+        disableBorrowTokens[0] = temple;
+        disableBorrowTokens[1] = weth;
+        disableBorrowTokens[2] = dai;
+        trv.updateStrategyEnabledBorrowTokens(address(strategy), enableBorrowTokens, disableBorrowTokens);
+
+        {
+            assertEq(trv.strategyEnabledBorrowTokens(address(strategy), dai), false);
+            assertEq(trv.strategyEnabledBorrowTokens(address(strategy), temple), false);
+            assertEq(trv.strategyEnabledBorrowTokens(address(strategy), weth), false);
+        }
     }
 
     function test_addStrategy_overflow() public {
@@ -418,6 +481,18 @@ contract TreasuryReservesVaultTestAdmin is TreasuryReservesVaultTestBase {
             trv.strategyDebtCeiling(address(alice), dai);
             vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.BorrowTokenNotEnabled.selector));
             trv.strategyDebtCeiling(address(strategy), weth);
+        }
+
+        // disable the borrow token and it should now revert
+        {
+            IERC20[] memory disableBorrowTokens = new IERC20[](1);
+            disableBorrowTokens[0] = dai;
+            trv.updateStrategyEnabledBorrowTokens(address(strategy), new IERC20[](0), disableBorrowTokens);
+            vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.BorrowTokenNotEnabled.selector));
+            trv.setStrategyDebtCeiling(address(strategy), dai, 123);
+
+            vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.BorrowTokenNotEnabled.selector));
+            trv.strategyDebtCeiling(address(strategy), dai);
         }
     }
 

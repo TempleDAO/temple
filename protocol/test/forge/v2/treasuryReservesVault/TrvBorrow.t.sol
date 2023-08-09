@@ -7,6 +7,7 @@ import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.so
 import { ITempleStrategy } from "contracts/interfaces/v2/strategies/ITempleStrategy.sol";
 import { TreasuryReservesVaultTestBase } from "./TrvBase.t.sol";
 import { stdError } from "forge-std/StdError.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /* solhint-disable func-name-mixedcase, contract-name-camelcase, not-rely-on-time */
 contract TreasuryReservesVaultTestBorrow is TreasuryReservesVaultTestBase {
@@ -114,6 +115,22 @@ contract TreasuryReservesVaultTestBorrow is TreasuryReservesVaultTestBase {
         // DAI transferred to alice, dUSD minted to strategy.
         assertEq(dai.balanceOf(alice), 5e18);
         assertEq(dUSD.balanceOf(address(strategy)), 5e18);
+
+        // disable the borrow token and it should now revert
+        {
+            changePrank(executor);
+            IERC20[] memory disableBorrowTokens = new IERC20[](1);
+            disableBorrowTokens[0] = dai;
+            trv.updateStrategyEnabledBorrowTokens(address(strategy), new IERC20[](0), disableBorrowTokens);
+
+            changePrank(address(strategy));
+            vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.BorrowTokenNotEnabled.selector));
+            trv.borrow(dai, 5e18, alice);
+
+            changePrank(address(strategy));
+            vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.BorrowTokenNotEnabled.selector));
+            trv.borrowMax(dai, alice);
+        }
     }
 
     function test_borrow_fromCredits() public {

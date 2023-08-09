@@ -127,6 +127,12 @@ interface ITreasuryReservesVault is ITempleElevatedAccess {
          * When a strategy repays, the `dToken` is burned 1:1
          */
         mapping(IERC20 => uint256) debtCeiling;
+
+        /**
+         * @notice The tokens that this strategy is allowed to borrow from TRV
+         * @dev This must be one of the configured Borrow Tokens
+         */
+        mapping(IERC20 => bool) enabledBorrowTokens;
     }
 
     /**
@@ -209,6 +215,15 @@ interface ITreasuryReservesVault is ITempleElevatedAccess {
     ) external;
 
     /**
+     * @notice Enable and/or disable tokens which a strategy can borrow from the (configured) TRV borrow tokens
+     */
+    function updateStrategyEnabledBorrowTokens(
+        address strategy, 
+        IERC20[] calldata enableBorrowTokens, 
+        IERC20[] calldata disableBorrowTokens
+    ) external;
+
+    /**
      * @notice Remove the borrow token configuration. 
      */
     function removeBorrowToken(
@@ -249,6 +264,11 @@ interface ITreasuryReservesVault is ITempleElevatedAccess {
      * @notice The current max debt ceiling that a strategy is allowed to borrow up to.
      */
     function strategyDebtCeiling(address strategy, IERC20 token) external view returns (uint256);
+    
+    /**
+     * @notice Whether a token is enabled to be borrowed for a given strategy
+     */
+    function strategyEnabledBorrowTokens(address strategy, IERC20 token) external view returns (bool);
 
     /**
      * @notice The total available stables, both as a balance in this contract and

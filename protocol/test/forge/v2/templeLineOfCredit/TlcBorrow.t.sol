@@ -216,18 +216,18 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
     function test_borrow_gas() public {
         // With unoptmised solc FOUNDRY_PROFILE=lite
         (uint256 first, uint256 second, uint256 third) = _borrowIteration(makeAddr("acct1"));
-        assertLt(first, 341_000, "acct1 1");
-        assertLt(second, 68_000, "acct1 2");
+        assertLt(first, 344_000, "acct1 1");
+        assertLt(second, 69_000, "acct1 2");
         assertLt(third, 96_000, "acct1 3");
 
         (first, second, third) = _borrowIteration(makeAddr("acct2"));
         assertLt(first, 112_000, "acct2 1");
-        assertLt(second, 68_000, "acct2 2");
-        assertLt(third, 90_000, "acct2 3");
+        assertLt(second, 69_000, "acct2 2");
+        assertLt(third, 91_000, "acct2 3");
         
         (first, second, third) = _borrowIteration(makeAddr("acct3"));
         assertLt(first, 112_000, "acct3 1");
-        assertLt(second, 68_000, "acct3 2");
-        assertLt(third, 90_000, "acct3 3");
+        assertLt(second, 69_000, "acct3 2");
+        assertLt(third, 91_000, "acct3 3");
     }
 }

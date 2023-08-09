@@ -183,10 +183,39 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
 
         ITempleStrategy.AssetBalance memory _assetBalance;
         uint256 _length = debtCeiling.length;
+        IERC20 _token;
         for (uint256 i; i < _length; ++i) {
             _assetBalance = debtCeiling[i];
-            if (!_borrowTokenSet.contains(address(_assetBalance.asset))) revert BorrowTokenNotEnabled();
-            strategyConfig.debtCeiling[IERC20(_assetBalance.asset)] = _assetBalance.balance;
+            _token = IERC20(_assetBalance.asset);
+            if (!_borrowTokenSet.contains(address(_token))) revert BorrowTokenNotEnabled();
+            strategyConfig.debtCeiling[_token] = _assetBalance.balance;
+            strategyConfig.enabledBorrowTokens[_token] = true;
+        }
+    }
+
+    /**
+     * @notice Enable and/or disable tokens which a strategy can borrow from the (configured) TRV borrow tokens
+     */
+    function updateStrategyEnabledBorrowTokens(
+        address strategy, 
+        IERC20[] calldata enableBorrowTokens, 
+        IERC20[] calldata disableBorrowTokens
+    ) external override onlyElevatedAccess {
+        StrategyConfig storage _strategyConfig = _getStrategyConfig(strategy);
+
+        uint256 i;
+        IERC20 token;
+        uint256 _length = enableBorrowTokens.length;
+        for (; i < _length; ++i) {
+            token = enableBorrowTokens[i];
+            if (!_borrowTokenSet.contains(address(token))) revert BorrowTokenNotEnabled();
+            _strategyConfig.enabledBorrowTokens[token] = true;
+        }
+
+        _length = disableBorrowTokens.length;
+        for (i = 0; i < _length; ++i) {
+            // Don't need to validate that the borrow token is configured when disabling.
+            _strategyConfig.enabledBorrowTokens[disableBorrowTokens[i]] = false;
         }
     }
 
@@ -206,6 +235,7 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
     function setStrategyDebtCeiling(address strategy, IERC20 token, uint256 newDebtCeiling) external override onlyElevatedAccess {
         if (!_borrowTokenSet.contains(address(token))) revert BorrowTokenNotEnabled();
         StrategyConfig storage _strategyConfig = _getStrategyConfig(strategy);
+        if (!_strategyConfig.enabledBorrowTokens[token]) revert BorrowTokenNotEnabled();
 
         emit DebtCeilingUpdated(strategy, address(token), _strategyConfig.debtCeiling[token], newDebtCeiling);
 
@@ -299,6 +329,7 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
     function borrow(IERC20 token, uint256 borrowAmount, address recipient) external override {
         BorrowTokenConfig storage _tokenConfig = _getBorrowTokenConfig(token);
         StrategyConfig storage _strategyConfig = _getStrategyConfig(msg.sender);
+        if (!_strategyConfig.enabledBorrowTokens[token]) revert BorrowTokenNotEnabled();
         uint256 _dTokenBalance = _tokenConfig.dToken.balanceOf(msg.sender);
 
         // This is not allowed to take the borrower over the debt ceiling
@@ -316,6 +347,7 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
     function borrowMax(IERC20 token, address recipient) external override returns (uint256 borrowedAmount) {
         BorrowTokenConfig storage _tokenConfig = _getBorrowTokenConfig(token);
         StrategyConfig storage _strategyConfig = _getStrategyConfig(msg.sender);
+        if (!_strategyConfig.enabledBorrowTokens[token]) revert BorrowTokenNotEnabled();
         uint256 _dTokenBalance = _tokenConfig.dToken.balanceOf(msg.sender);
         borrowedAmount = _availableForStrategyToBorrow(msg.sender, _strategyConfig, token, _dTokenBalance);
         _borrow(msg.sender, token, recipient, _tokenConfig, _strategyConfig, borrowedAmount, _dTokenBalance);
@@ -459,7 +491,9 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
     ) external override view returns (uint256) {
         BorrowTokenConfig storage _tokenConfig = _getBorrowTokenConfig(token);
         uint256 _dTokenBalance = _tokenConfig.dToken.balanceOf(strategy);
-        return _availableForStrategyToBorrow(strategy, _getStrategyConfig(strategy), token, _dTokenBalance);
+        StrategyConfig storage _strategyConfig = _getStrategyConfig(strategy);
+        if (!_strategyConfig.enabledBorrowTokens[token]) revert BorrowTokenNotEnabled();
+        return _availableForStrategyToBorrow(strategy, _strategyConfig, token, _dTokenBalance);
     }
 
     /**
@@ -473,9 +507,17 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
      * @notice The current max debt ceiling that a strategy is allowed to borrow up to.
      */
     function strategyDebtCeiling(address strategy, IERC20 token) external override view returns (uint256) {
-        StrategyConfig storage _strategyConfig = _getStrategyConfig(strategy);
         if (!_borrowTokenSet.contains(address(token))) revert BorrowTokenNotEnabled();
+        StrategyConfig storage _strategyConfig = _getStrategyConfig(strategy);
+        if (!_strategyConfig.enabledBorrowTokens[token]) revert BorrowTokenNotEnabled();
         return _strategyConfig.debtCeiling[token];
+    }
+
+    /**
+     * @notice Whether a token is enabled to be borrowed for a given strategy
+     */
+    function strategyEnabledBorrowTokens(address strategy, IERC20 token) external override view returns (bool) {
+        return _getStrategyConfig(strategy).enabledBorrowTokens[token];
     }
 
     /// @dev Calculate the amount remaining that a strategy can borrow for a given token
@@ -705,6 +747,7 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
         if (repayAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
         if (globalRepaysPaused) revert RepaysPaused();
         StrategyConfig storage _strategyConfig = _getStrategyConfig(strategy);
+        if (!_strategyConfig.enabledBorrowTokens[token]) revert BorrowTokenNotEnabled();
 
         if (_strategyConfig.repaysPaused) revert RepaysPaused();
         emit Repay(strategy, address(token), from, repayAmount);
