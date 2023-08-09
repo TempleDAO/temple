@@ -1,4 +1,4 @@
-pragma solidity 0.8.18;
+pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (v2/strategies/TlcStrategy.sol)
 
@@ -17,7 +17,7 @@ import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.so
  * the assets is the current total user debt.
  */
 contract TlcStrategy is ITlcStrategy, AbstractStrategy {
-    string public constant VERSION = "1.0.0";
+    string private constant VERSION = "1.0.0";
 
     ITempleLineOfCredit public immutable tlc;
 
@@ -57,11 +57,11 @@ contract TlcStrategy is ITlcStrategy, AbstractStrategy {
     }
 
     /**
-     * @notice The latest checkpoint of each asset balance this stratgy holds, and the current debt.
+     * @notice The latest checkpoint of each asset balance this strategy holds, and the current debt.
      * This will be used to report equity performance: `sum(asset value in STABLE) - debt`
      * The conversion of each asset price into the stable token (eg DAI) will be done off-chain
      *
-     * @dev The asset value may be stale at any point in time, depending onthe strategy. 
+     * @dev The asset value may be stale at any point in time, depending on the strategy. 
      * It may optionally implement `checkpointAssetBalances()` in order to update those balances.
      */
     function latestAssetBalances() public override(AbstractStrategy, ITempleStrategy) view returns (
@@ -98,5 +98,14 @@ contract TlcStrategy is ITlcStrategy, AbstractStrategy {
 
         emit Borrow(amount, recipient);
         treasuryReservesVault.borrow(daiToken, amount, recipient);
+    }
+
+    /**
+     * @notice A hook which is called by the Treasury Reserves Vault when the debt ceiling
+     * for this strategy is updated
+     * @dev by default it's a no-op unless the strategy implements it
+     */
+    function _debtCeilingUpdated(IERC20 /*token*/, uint256 /*newDebtCeiling*/) internal override {
+        tlc.refreshInterestRates();
     }
 }

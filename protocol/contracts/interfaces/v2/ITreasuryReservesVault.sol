@@ -1,4 +1,4 @@
-pragma solidity 0.8.18;
+pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (interfaces/v2/ITreasuryReservesVault.sol)
 
@@ -189,7 +189,7 @@ interface ITreasuryReservesVault is ITempleElevatedAccess {
     /**
      * @notice The Treasury Price Index - the target price of the Treasury, in `stableToken` terms.
      */
-    function treasuryPriceIndex() external view returns (uint256);
+    function treasuryPriceIndex() external view returns (uint96);
 
     /**
      * @notice API version to help with future integrations/migrations
@@ -267,7 +267,7 @@ interface ITreasuryReservesVault is ITempleElevatedAccess {
     ) external view returns (uint256);
 
     /**
-     * Pause all strategy borrow and repays
+     * @notice Pause all strategy borrow and repays
      */
     function setGlobalPaused(bool borrow, bool repays) external;
 

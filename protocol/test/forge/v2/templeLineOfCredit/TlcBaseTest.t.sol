@@ -1,4 +1,4 @@
-pragma solidity 0.8.18;
+pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { ud } from "@prb/math/src/UD60x18.sol";
@@ -31,14 +31,14 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
     IInterestRateModel public daiInterestRateModel;
     uint96 public daiMaxLtvRatio = 0.85e18; // 85%
 
-    uint256 public templePrice = 0.97e18; // $0.97
+    uint96 public templePrice = 0.97e18; // $0.97
 
     TreasuryPriceIndexOracle public tpiOracle;
     TreasuryReservesVault public trv;
     TempleDebtToken public dUSD;
     TempleDebtToken public dTEMPLE;
     uint96 public constant DEFAULT_BASE_INTEREST = 0.01e18; // 1%
-    uint96 public constant MIN_BORROW_RATE = 0.05e18;  // 5% interest rate (rate% at 0% UR)
+    uint80 public constant MIN_BORROW_RATE = 0.05e18;  // 5% interest rate (rate% at 0% UR)
 
     uint256 public constant TRV_STARTING_BALANCE = 1_000_000e18;
     uint256 public constant BORROW_CEILING = 100_000e18;
@@ -107,11 +107,12 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
             dUSD.addMinter(address(trv));
             dTEMPLE.addMinter(address(trv));
 
+            trv.setBorrowToken(daiToken, address(0), 0, 0, address(dUSD));
+            trv.setBorrowToken(templeToken, address(0), 0, 0, address(dTEMPLE));
+            
             ITempleStrategy.AssetBalance[] memory debtCeiling = new ITempleStrategy.AssetBalance[](1);
             debtCeiling[0] = ITempleStrategy.AssetBalance(address(daiToken), BORROW_CEILING);
             trv.addStrategy(address(tlcStrategy), 0, debtCeiling);
-            trv.setBorrowToken(daiToken, address(0), 0, 0, address(dUSD));
-            trv.setBorrowToken(templeToken, address(0), 0, 0, address(dTEMPLE));
 
             deal(address(daiToken), address(trv), TRV_STARTING_BALANCE, true);
         }
@@ -146,15 +147,15 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
     }
 
     struct MaxBorrowInfo {
-        uint256 daiCollateralValue;
-        uint256 daiMaxBorrow;
+        uint128 daiCollateralValue;
+        uint128 daiMaxBorrow;
     }
 
     function expectedMaxBorrows(uint256 collateralAmount) internal view returns (
         MaxBorrowInfo memory info
     ) {
-        info.daiCollateralValue = collateralAmount * templePrice / 1e18;
-        info.daiMaxBorrow = collateralAmount * templePrice * daiMaxLtvRatio / 1e36;
+        info.daiCollateralValue = uint128(collateralAmount * templePrice / 1e18);
+        info.daiMaxBorrow = uint128(collateralAmount * templePrice * daiMaxLtvRatio / 1e36);
     }
 
     function checkDebtTokenConfig(
@@ -245,7 +246,7 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
     return actualDaiPosition.totalDebt;
     }
 
-    function addCollateral(address account, uint256 collateralAmount) internal {
+    function addCollateral(address account, uint128 collateralAmount) internal {
         deal(address(templeToken), account, collateralAmount);
         vm.startPrank(account);
         templeToken.approve(address(tlc), collateralAmount);
@@ -255,11 +256,11 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
 
     function borrow(
         address _account, 
-        uint256 collateralAmount, 
-        uint256 daiBorrowAmount,
+        uint128 collateralAmount, 
+        uint128 daiBorrowAmount,
         uint256 cooldownSecs
     ) internal {
-        if (collateralAmount != 0) {
+        if (collateralAmount > 0) {
             addCollateral(_account, collateralAmount);
         }
         vm.startPrank(_account);
@@ -267,7 +268,7 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
         // Optionally sleep for some time in order to accrue interest from prior calls...
         vm.warp(block.timestamp + cooldownSecs);
 
-        if (daiBorrowAmount != 0) tlc.borrow(daiBorrowAmount, _account);
+        if (daiBorrowAmount > 0) tlc.borrow(daiBorrowAmount, _account);
 
         vm.stopPrank();
     }
@@ -306,9 +307,9 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
         MaxBorrowInfo memory maxBorrowInfo
     ) internal view returns (AccountPosition memory) {
         return AccountPosition({
-            collateral: collateral,
-            currentDebt: debt, 
-            maxBorrow: maxBorrowInfo.daiMaxBorrow, 
+            collateral: uint128(collateral),
+            currentDebt: uint128(debt), 
+            maxBorrow: uint128(maxBorrowInfo.daiMaxBorrow), 
             healthFactor: calcHealthFactor(maxBorrowInfo.daiCollateralValue, debt, daiMaxLtvRatio), 
             loanToValueRatio: calcLtv(maxBorrowInfo.daiCollateralValue, debt)
         });

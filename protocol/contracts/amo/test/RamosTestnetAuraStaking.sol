@@ -1,4 +1,4 @@
-pragma solidity 0.8.18;
+pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (amo/test/RamosTestnetAuraStaking.sol)
 
@@ -50,6 +50,10 @@ contract RamosTestnetAuraStaking is IAuraStaking, TempleElevatedAccess {
     }
 
     function setRewardsRecipient(address /*_recipeint*/) external override pure {
+        revert("unimplemented");
+    }
+
+    function setRewardTokens(address[] memory /*_rewardTokens*/) external override pure {
         revert("unimplemented");
     }
 

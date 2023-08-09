@@ -1,4 +1,4 @@
-pragma solidity 0.8.18;
+pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { TempleTest } from "../../TempleTest.sol";
@@ -23,7 +23,7 @@ contract GnosisStrategyTestBase is TempleTest {
     FakeERC20 public weth = new FakeERC20("WETH", "WETH", address(0), 0);
     FakeERC20 public usdc = new FakeERC20("USDC", "USDC", address(0), 0);
 
-    uint256 public constant DEFAULT_BASE_INTEREST = 0.01e18;
+    uint96 public constant DEFAULT_BASE_INTEREST = 0.01e18;
     TempleDebtToken public dUSD;
     TreasuryPriceIndexOracle public tpiOracle;
     TreasuryReservesVault public trv;
@@ -291,7 +291,7 @@ contract GnosisStrategyTestBorrowAndRepay is GnosisStrategyTestBase {
     }
 
     function test_borrow_failCircuitBreaker() public {
-        uint256 amount = 1e18;
+        uint128 amount = 1e18;
         vm.startPrank(executor);
         daiCircuitBreaker.updateCap(amount-1);
         vm.expectRevert(abi.encodeWithSelector(TempleCircuitBreakerAllUsersPerPeriod.CapBreached.selector, amount, amount-1));
@@ -328,7 +328,7 @@ contract GnosisStrategyTestBorrowAndRepay is GnosisStrategyTestBase {
 
     function test_borrowMax_failCircuitBreaker() public {
         vm.startPrank(executor);
-        daiCircuitBreaker.updateCap(BORROW_CEILING - 1);
+        daiCircuitBreaker.updateCap(uint128(BORROW_CEILING) - 1);
         vm.expectRevert(abi.encodeWithSelector(TempleCircuitBreakerAllUsersPerPeriod.CapBreached.selector, BORROW_CEILING, BORROW_CEILING-1));
         strategy.borrowMax(dai);
     }
@@ -391,6 +391,9 @@ contract GnosisStrategyTestBorrowAndRepay is GnosisStrategyTestBase {
         uint256 available = trv.availableForStrategyToBorrow(address(strategy), dai);
         assertEq(available, BORROW_CEILING-borrowAmount+repayAmount);
 
+        // There shouldn't be any allowance left
+        assertEq(dai.allowance(address(strategy), address(trv)), 0);
+
         // Only has 0.75 dUSD left, but we can still repay more DAI.
         // This generates a positive
         deal(address(dai), address(strategy), 1e18, true);
@@ -423,6 +426,9 @@ contract GnosisStrategyTestBorrowAndRepay is GnosisStrategyTestBase {
 
         uint256 available = trv.availableForStrategyToBorrow(address(strategy), dai);
         assertEq(available, BORROW_CEILING);
+
+        // There shouldn't be any allowance left
+        assertEq(dai.allowance(address(strategy), address(trv)), 0);
 
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
         strategy.repayAll(dai);

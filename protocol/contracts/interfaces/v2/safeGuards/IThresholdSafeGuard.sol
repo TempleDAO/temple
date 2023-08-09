@@ -1,4 +1,4 @@
-pragma solidity 0.8.18;
+pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (interfaces/v2/SafeGuards/IThresholdSafeGuard.sol)
 
@@ -12,7 +12,6 @@ interface IThresholdSafeGuard is Guard {
     event SafeTxExecutorRemoved(address indexed executor);
 
     error InvalidExecutor();
-    error InvalidFunctionSignature();
     error DynamicSignatureThresholdNotMet(uint256 required, uint256 found);
 
     /**

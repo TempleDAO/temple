@@ -1,4 +1,4 @@
-pragma solidity 0.8.18;
+pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (interfaces/v2/strategies/ITempleStrategy.sol)
 
@@ -84,9 +84,9 @@ interface ITempleStrategy is ITempleElevatedAccess {
     function manualAdjustments() external view returns (AssetBalanceDelta[] memory adjustments);
 
     /**
-     * @notice The latest checkpoint of each asset balance this stratgy holds.
+     * @notice The latest checkpoint of each asset balance this strategy holds.
      *
-     * @dev The asset value may be stale at any point in time, depending onthe strategy. 
+     * @dev The asset value may be stale at any point in time, depending on the strategy. 
      * It may optionally implement `checkpointAssetBalances()` in order to update those balances.
      */
     function latestAssetBalances() external view returns (AssetBalance[] memory assetBalances);
@@ -129,4 +129,11 @@ interface ITempleStrategy is ITempleElevatedAccess {
      * @notice Executors can set the allowance of any token spend from the strategy
      */
     function setTokenAllowance(IERC20 token, address spender, uint256 amount) external;
+
+    /**
+     * @notice A hook which is called by the Treasury Reserves Vault when the debt ceiling
+     * for this strategy is updated
+     * @dev by default it's a no-op unless the strategy implements `_debtCeilingUpdated()`
+     */
+    function debtCeilingUpdated(IERC20 token, uint256 newDebtCeiling) external;
 }

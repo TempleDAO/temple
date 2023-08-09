@@ -1,4 +1,4 @@
-pragma solidity 0.8.18;
+pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { TreasuryReservesVault, ITreasuryReservesVault } from "contracts/v2/TreasuryReservesVault.sol";
@@ -6,6 +6,7 @@ import { MockBaseStrategy } from "../strategies/MockBaseStrategy.t.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { ITempleStrategy } from "contracts/interfaces/v2/strategies/ITempleStrategy.sol";
 import { TreasuryReservesVaultTestBase } from "./TrvBase.t.sol";
+import { stdError } from "forge-std/StdError.sol";
 
 /* solhint-disable func-name-mixedcase, contract-name-camelcase, not-rely-on-time */
 contract TreasuryReservesVaultTestBorrow is TreasuryReservesVaultTestBase {
@@ -21,9 +22,19 @@ contract TreasuryReservesVaultTestBorrow is TreasuryReservesVaultTestBase {
     }
 
     function test_borrow_reverts() public {
-        // Strategy needs to exist
+        // Borrow token needs to exist
         {
             vm.startPrank(address(strategy));
+            vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.BorrowTokenNotEnabled.selector));
+            trv.borrow(dai, 123, alice);
+            
+            changePrank(executor);
+            trv.setBorrowToken(dai, address(0), 100, 101, address(dUSD));
+        }
+
+        // Strategy needs to exist
+        {
+            changePrank(address(strategy));
             vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.StrategyNotEnabled.selector));
             trv.borrow(dai, 123, alice);
 
@@ -31,16 +42,6 @@ contract TreasuryReservesVaultTestBorrow is TreasuryReservesVaultTestBase {
             ITempleStrategy.AssetBalance[] memory debtCeiling = new ITempleStrategy.AssetBalance[](1);
             debtCeiling[0] = ITempleStrategy.AssetBalance(address(dai), 5e18);
             trv.addStrategy(address(strategy), 100, debtCeiling);
-        }
-
-        // Borrow token needs to exist
-        {
-            changePrank(address(strategy));
-            vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.BorrowTokenNotEnabled.selector));
-            trv.borrow(dai, 123, alice);
-            
-            changePrank(executor);
-            trv.setBorrowToken(dai, address(0), 100, 101, address(dUSD));
         }
 
         assertEq(trv.availableForStrategyToBorrow(address(strategy), dai), 5e18);
@@ -98,7 +99,8 @@ contract TreasuryReservesVaultTestBorrow is TreasuryReservesVaultTestBase {
         // TRV not funded with DAI
         {
             changePrank(address(strategy));
-            vm.expectRevert("ERC20: transfer amount exceeds balance");
+            vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InsufficientBalance.selector, address(dai), 5.0e18, 0));
+
             trv.borrow(dai, 5.0e18, alice);
 
             deal(address(dai), address(trv), 1_000e18, true);
@@ -419,6 +421,16 @@ contract TreasuryReservesVaultTestBorrow is TreasuryReservesVaultTestBase {
     function test_borrowMax() public {
         {
             vm.startPrank(address(strategy));
+            vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.BorrowTokenNotEnabled.selector));
+            trv.borrowMax(dai, alice);
+
+            changePrank(executor);
+            trv.setBorrowToken(dai, address(0), 0, 0, address(dUSD));
+            deal(address(dai), address(trv), 120e18, true);
+        }
+
+        {
+            changePrank(address(strategy));
             vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.StrategyNotEnabled.selector));
             trv.borrowMax(dai, alice);
 
@@ -426,16 +438,6 @@ contract TreasuryReservesVaultTestBorrow is TreasuryReservesVaultTestBase {
             ITempleStrategy.AssetBalance[] memory debtCeiling = new ITempleStrategy.AssetBalance[](1);
             debtCeiling[0] = ITempleStrategy.AssetBalance(address(dai), 50e18);
             trv.addStrategy(address(strategy), -123, debtCeiling);
-        }
-
-        {
-            changePrank(address(strategy));
-            vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.BorrowTokenNotEnabled.selector));
-            trv.borrowMax(dai, alice);
-
-            changePrank(executor);
-            trv.setBorrowToken(dai, address(0), 0, 0, address(dUSD));
-            deal(address(dai), address(trv), 120e18, true);
         }
 
         {
@@ -462,4 +464,71 @@ contract TreasuryReservesVaultTestBorrow is TreasuryReservesVaultTestBase {
             assertEq(dUSD.balanceOf(address(strategy)), 50e18);
         }
     }
+
+    function test_borrow_baseStrategyWithdraw_NoDebtTokens() public {
+        MockBaseStrategy baseStrategy = new MockBaseStrategy(rescuer, executor, "MockBaseStrategy", address(trv), address(dai));
+        uint256 debtCeiling = 100e18;
+
+        // Setup the config
+        {
+            vm.startPrank(executor);
+            trv.setBorrowToken(dai, address(baseStrategy), 0, 0, address(dUSD));
+
+            ITempleStrategy.AssetBalance[] memory debtCeilingArr = new ITempleStrategy.AssetBalance[](1);
+            debtCeilingArr[0] = ITempleStrategy.AssetBalance(address(dai), debtCeiling);
+            trv.addStrategy(address(baseStrategy), 0, debtCeilingArr);
+            trv.addStrategy(address(strategy), 0, debtCeilingArr);
+        }
+
+        // The base strategy and TRV has no DAI, so it reverts.
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InsufficientBalance.selector, address(dai), 50e18, 0));
+        strategy.borrow(dai, 50e18);
+    }
+
+    function test_borrow_baseStrategyOverflow() public {
+        MockBaseStrategy baseStrategy = new MockBaseStrategy(rescuer, executor, "MockBaseStrategy", address(trv), address(dai));
+        uint256 debtCeiling = type(uint256).max - 10e18;
+
+        // Setup the config
+        {
+            vm.startPrank(executor);
+            trv.setBorrowToken(dai, address(baseStrategy), 0, 0, address(dUSD));
+
+            deal(address(dai), address(baseStrategy), 100e18, true);
+
+            ITempleStrategy.AssetBalance[] memory debtCeilingArr = new ITempleStrategy.AssetBalance[](1);
+            debtCeilingArr[0] = ITempleStrategy.AssetBalance(address(dai), debtCeiling);
+            trv.addStrategy(address(baseStrategy), 0, debtCeilingArr);
+            trv.addStrategy(address(strategy), 0, debtCeilingArr);
+        }
+
+        // Base strategy repays 100 DAI such that it now has a credit.
+        // The 10e18 is now in the TRV
+        deal(address(dai), executor, 10e18, true);
+        dai.approve(address(trv), 10e18);
+        trv.repay(dai, 10e18, address(baseStrategy));
+
+        uint256 available = trv.availableForStrategyToBorrow(address(strategy), dai);
+        assertEq(available, debtCeiling);
+
+        uint256 availableBase = trv.availableForStrategyToBorrow(address(baseStrategy), dai);
+        assertEq(availableBase, debtCeiling + 10e18);
+
+        // The strategy can borrow up to 10 DAI
+        strategy.borrow(dai, 10e18);
+
+        available = trv.availableForStrategyToBorrow(address(strategy), dai);
+        assertEq(available, debtCeiling - 10e18);
+        
+        // The available amount for the base strategy is still the same
+        // because no new DAI was borrowed/repaid - it was pulled straight from the TRV.
+        availableBase = trv.availableForStrategyToBorrow(address(baseStrategy), dai);
+        assertEq(availableBase, debtCeiling + 10e18);
+
+        // Any more borrowed, and the base strategy total ceiling+credit overflows.
+        // It can't have a total credit > uint256.max
+        vm.expectRevert(stdError.arithmeticError);
+        strategy.borrow(dai, 1);
+    }
+
 }

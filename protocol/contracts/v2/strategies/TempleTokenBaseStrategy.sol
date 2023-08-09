@@ -1,4 +1,4 @@
-pragma solidity 0.8.18;
+pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (v2/strategies/TempleTokenBaseStrategy.sol)
 
@@ -16,7 +16,7 @@ import { ITempleERC20Token } from "contracts/interfaces/core/ITempleERC20Token.s
 contract TempleTokenBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
     using SafeERC20 for ITempleERC20Token;
 
-    string public constant VERSION = "1.0.0";
+    string private constant VERSION = "1.0.0";
 
     /**
      * @notice The Temple token which is directly minted/burned.
@@ -65,11 +65,11 @@ contract TempleTokenBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
     }
 
     /**
-     * @notice The latest checkpoint of each asset balance this stratgy holds, and the current debt.
+     * @notice The latest checkpoint of each asset balance this strategy holds, and the current debt.
      * This will be used to report equity performance: `sum(asset value in STABLE) - debt`
      * The conversion of each asset price into the stable token (eg DAI) will be done off-chain
      *
-     * @dev The asset value may be stale at any point in time, depending onthe strategy. 
+     * @dev The asset value may be stale at any point in time, depending on the strategy. 
      * It may optionally implement `checkpointAssetBalances()` in order to update those balances.
      */
     function latestAssetBalances() public override(AbstractStrategy, ITempleBaseStrategy) view returns (
@@ -101,13 +101,12 @@ contract TempleTokenBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
      * wish to borrow from the TRV.
      * @dev For Temple, we just mint the tokens.
      */
-    function trvWithdraw(uint256 requestedAmount) external override returns (uint256) {
+    function trvWithdraw(uint256 requestedAmount) external override {
         if (msg.sender != address(treasuryReservesVault)) revert OnlyTreasuryReserveVault(msg.sender);
         if (requestedAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();       
 
         emit TempleMinted(requestedAmount);
-        templeToken.mint(address(treasuryReservesVault), requestedAmount);
-        return requestedAmount;
+        templeToken.mint(msg.sender, requestedAmount);
     }
 
     /**

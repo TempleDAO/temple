@@ -1,4 +1,4 @@
-pragma solidity 0.8.18;
+pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (v2/strategies/GnosisStrategy.sol)
 
@@ -6,10 +6,11 @@ import { SafeERC20, IERC20 } from "@openzeppelin/contracts/token/ERC20/utils/Saf
 import { AbstractStrategy } from "contracts/v2/strategies/AbstractStrategy.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { ITempleCircuitBreakerProxy } from "contracts/interfaces/v2/circuitBreaker/ITempleCircuitBreakerProxy.sol";
+import { ITreasuryReservesVault } from "contracts/interfaces/v2/ITreasuryReservesVault.sol";
 
 contract GnosisStrategy is AbstractStrategy {
     using SafeERC20 for IERC20;
-    string public constant VERSION = "1.0.0";
+    string private constant VERSION = "1.0.0";
 
     /**
      * @notice The underlying gnosis safe wallet which is reported on.
@@ -53,7 +54,7 @@ contract GnosisStrategy is AbstractStrategy {
     ) internal override
     // solhint-disable-next-line no-empty-blocks
     {
-        // Tokens for Gnosis strategy are approved 'just in time'
+        // Tokens for Gnosis strategy are approved when they're required, rather than upfront.
     }
 
     /**
@@ -99,14 +100,15 @@ contract GnosisStrategy is AbstractStrategy {
      * These stables are sent to the Gnosis wallet
      */
     function borrowMax(IERC20 token) external onlyElevatedAccess returns (uint256 borrowedAmount) {
-        borrowedAmount = treasuryReservesVault.availableForStrategyToBorrow(address(this), token);
+        ITreasuryReservesVault _trv = treasuryReservesVault;
+        borrowedAmount = _trv.availableForStrategyToBorrow(address(this), token);
         circuitBreakerProxy.preCheck(
             address(token), 
             msg.sender, 
             borrowedAmount
         );
         emit Borrow(address(token), borrowedAmount);
-        treasuryReservesVault.borrow(token, borrowedAmount, gnosisSafeWallet);
+        _trv.borrow(token, borrowedAmount, gnosisSafeWallet);
     }
 
     /**
@@ -114,9 +116,10 @@ contract GnosisStrategy is AbstractStrategy {
      * First send the stable tokens to this strategy prior to calling.
      */
     function repay(IERC20 token, uint256 amount) external onlyElevatedAccess {
+        ITreasuryReservesVault _trv = treasuryReservesVault;
         emit Repay(address(token), amount);
-        _setMaxAllowance(token, address(0), address(treasuryReservesVault));
-        treasuryReservesVault.repay(token, amount, address(this));
+        _setTokenAllowance(token, address(_trv), amount);
+        _trv.repay(token, amount, address(this));
     }
 
     /**
@@ -124,8 +127,12 @@ contract GnosisStrategy is AbstractStrategy {
      * First send the stable tokens to this strategy prior to calling.
      */
     function repayAll(IERC20 token) external onlyElevatedAccess returns (uint256 repaidAmount) {
-        _setMaxAllowance(token, address(0), address(treasuryReservesVault));
-        repaidAmount = treasuryReservesVault.repayAll(token, address(this));
+        // Set max allowance, repay all, then set the allowance to zero
+        ITreasuryReservesVault _trv = treasuryReservesVault;
+        _setTokenAllowance(token, address(_trv), type(uint256).max);
+        repaidAmount = _trv.repayAll(token, address(this));
+        _setTokenAllowance(token, address(_trv), 0);
+        
         emit Repay(address(token), repaidAmount);
     }
 
@@ -138,11 +145,11 @@ contract GnosisStrategy is AbstractStrategy {
     }
 
     /**
-     * @notice The latest checkpoint of each asset balance this stratgy holds, and the current debt.
+     * @notice The latest checkpoint of each asset balance this strategy holds, and the current debt.
      * This will be used to report equity performance: `sum(asset value in STABLE) - debt`
      * The conversion of each asset price into the stable token (eg DAI) will be done off-chain
      *
-     * @dev The asset value may be stale at any point in time, depending onthe strategy. 
+     * @dev The asset value may be stale at any point in time, depending on the strategy. 
      * It may optionally implement `checkpointAssetBalances()` in order to update those balances.
      */
     function latestAssetBalances() public override view returns (

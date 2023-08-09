@@ -1,4 +1,4 @@
-pragma solidity 0.8.18;
+pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { TempleTest } from "../../TempleTest.sol";
@@ -97,10 +97,11 @@ contract TempleTokenBaseStrategyTestBorrow is TempleTokenBaseStrategyTestBase {
         // Add the new strategy
         vm.startPrank(executor);
 
+        trv.setBorrowToken(temple, address(strategy), 0, 0, address(dTEMPLE));
+
         ITempleStrategy.AssetBalance[] memory debtCeiling = new ITempleStrategy.AssetBalance[](1);
         debtCeiling[0] = ITempleStrategy.AssetBalance(address(temple), BORROW_CEILING);
         trv.addStrategy(address(strategy), -123, debtCeiling);
-        trv.setBorrowToken(temple, address(strategy), 0, 0, address(dTEMPLE));
 
         deal(address(temple), address(trv), TRV_STARTING_BALANCE, true);
         dTEMPLE.addMinter(address(trv));
@@ -168,10 +169,11 @@ contract TempleTokenBaseStrategyTrvWithdraw is TempleTokenBaseStrategyTestBase {
 
         vm.startPrank(executor);
 
+        trv.setBorrowToken(temple, address(strategy), 0, 0, address(dTEMPLE));
+        
         ITempleStrategy.AssetBalance[] memory debtCeiling = new ITempleStrategy.AssetBalance[](1);
         debtCeiling[0] = ITempleStrategy.AssetBalance(address(temple), TEMPLE_BASE_BORROW_CEILING);
         trv.addStrategy(address(strategy), -123, debtCeiling);
-        trv.setBorrowToken(temple, address(strategy), 0, 0, address(dTEMPLE));
 
         deal(address(temple), address(trv), TRV_STARTING_BALANCE, true);
         dTEMPLE.addMinter(address(trv));
@@ -222,8 +224,7 @@ contract TempleTokenBaseStrategyTrvWithdraw is TempleTokenBaseStrategyTestBase {
 
         vm.expectEmit(address(strategy));
         emit TempleMinted(withdrawAmount);
-        uint256 withdrawn = strategy.trvWithdraw(withdrawAmount);
-        assertEq(withdrawn, withdrawAmount);
+        strategy.trvWithdraw(withdrawAmount);
 
         assertEq(temple.balanceOf(address(strategy)), 0);
         assertEq(temple.balanceOf(address(trv)), TRV_STARTING_BALANCE-borrowAmount+withdrawAmount);
@@ -247,9 +248,8 @@ contract TempleTokenBaseStrategyTrvWithdraw is TempleTokenBaseStrategyTestBase {
         changePrank(address(trv));
         vm.expectEmit(address(strategy));
         emit TempleMinted(withdrawAmount); // Not limited by how much was deposited
-        uint256 withdrawn = strategy.trvWithdraw(withdrawAmount);
+        strategy.trvWithdraw(withdrawAmount);
 
-        assertEq(withdrawn, withdrawAmount);
         assertEq(temple.balanceOf(address(strategy)), 0);
         assertEq(temple.balanceOf(address(trv)), TRV_STARTING_BALANCE-borrowAmount+withdrawAmount);
         assertEq(temple.totalSupply(), TRV_STARTING_BALANCE-borrowAmount+withdrawAmount);
@@ -269,7 +269,7 @@ contract TempleTokenBaseStrategyTrvWithdraw is TempleTokenBaseStrategyTestBase {
             vm.startPrank(executor);
 
             // Trying to borrow the max ceiling (100e18), but the TRV only has 10e18
-            vm.expectRevert("ERC20: transfer amount exceeds balance");
+            vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InsufficientBalance.selector, address(temple), TEMPLE_BASE_BORROW_CEILING, 10e18));
             strategy.borrowAndDeposit(TEMPLE_BASE_BORROW_CEILING);
 
             deal(address(temple), address(trv), TEMPLE_BASE_BORROW_CEILING, true);

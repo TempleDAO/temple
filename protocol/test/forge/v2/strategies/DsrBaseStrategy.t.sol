@@ -1,4 +1,4 @@
-pragma solidity 0.8.18;
+pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { TempleTest } from "../../TempleTest.sol";
@@ -35,7 +35,7 @@ contract DsrBaseStrategyTestBase is TempleTest {
     // 1% APR, which is how DSR is calculated as of block #16675385
     // dUSD is represented in APY (continuously compounded), so need to convert in order to match
     // Nb this is ln(1.01). See `test_dsr_interest_equivalence()` below
-    uint256 public constant DEFAULT_BASE_INTEREST = 0.009950330853168072e18;
+    uint96 public constant DEFAULT_BASE_INTEREST = 0.009950330853168072e18;
     TempleDebtToken public dUSD;
     TreasuryPriceIndexOracle public tpiOracle;
     TreasuryReservesVault public trv;
@@ -165,8 +165,8 @@ contract DsrBaseStrategyTestBorrowAndRepay is DsrBaseStrategyTestBase {
 
         ITempleStrategy.AssetBalance[] memory debtCeiling = new ITempleStrategy.AssetBalance[](1);
         debtCeiling[0] = ITempleStrategy.AssetBalance(address(dai), BORROW_CEILING);
-        trv.addStrategy(address(strategy), -123, debtCeiling);
         trv.setBorrowToken(dai, address(strategy), 0, 0, address(dUSD));
+        trv.addStrategy(address(strategy), -123, debtCeiling);
 
         deal(address(dai), address(trv), TRV_STARTING_BALANCE, true);
         dUSD.addMinter(address(trv));
@@ -390,8 +390,8 @@ contract DsrBaseStrategyTestTrvWithdraw is DsrBaseStrategyTestBase {
 
         ITempleStrategy.AssetBalance[] memory debtCeiling = new ITempleStrategy.AssetBalance[](1);
         debtCeiling[0] = ITempleStrategy.AssetBalance(address(dai), DSR_BORROW_CEILING);
-        trv.addStrategy(address(strategy), -123, debtCeiling);
         trv.setBorrowToken(dai, address(strategy), 0, 0, address(dUSD));
+        trv.addStrategy(address(strategy), -123, debtCeiling);
 
         deal(address(dai), address(trv), TRV_STARTING_BALANCE, true);
         dUSD.addMinter(address(trv));
@@ -441,8 +441,7 @@ contract DsrBaseStrategyTestTrvWithdraw is DsrBaseStrategyTestBase {
 
         vm.expectEmit(address(strategy));
         emit DaiWithdrawn(withdrawAmount);
-        uint256 withdrawn = strategy.trvWithdraw(withdrawAmount);
-        assertEq(withdrawn, withdrawAmount); // DSR Rounding
+        strategy.trvWithdraw(withdrawAmount);
 
         assertEq(dai.balanceOf(address(strategy)), 0);
         assertEq(dai.balanceOf(address(trv)), TRV_STARTING_BALANCE-borrowAmount+withdrawAmount);
@@ -457,7 +456,6 @@ contract DsrBaseStrategyTestTrvWithdraw is DsrBaseStrategyTestBase {
 
     function test_trvWithdraw_capped() public {   
         uint256 borrowAmount = 1e18;
-        uint256 withdrawAmount = 1.25e18;
         vm.startPrank(executor);
         strategy.borrowAndDeposit(borrowAmount);
 
@@ -466,9 +464,8 @@ contract DsrBaseStrategyTestTrvWithdraw is DsrBaseStrategyTestBase {
         changePrank(address(trv));
         vm.expectEmit(address(strategy));
         emit DaiWithdrawn(borrowAmount - 1); // DSR Rounding
-        uint256 withdrawn = strategy.trvWithdraw(withdrawAmount);
+        strategy.trvWithdraw(borrowAmount - 1);
 
-        assertEq(withdrawn, borrowAmount - 1); // DSR Rounding
         assertEq(dai.balanceOf(address(strategy)), 0);
         assertApproxEqAbs(dai.balanceOf(address(trv)), TRV_STARTING_BALANCE, 1); // DSR Rounding
         assertEq(strategy.latestDsrBalance(), 0);
@@ -488,7 +485,7 @@ contract DsrBaseStrategyTestTrvWithdraw is DsrBaseStrategyTestBase {
             vm.startPrank(executor);
 
             // Trying to borrow the max ceiling (100e18), but the TRV only has 10e18
-            vm.expectRevert("Dai/insufficient-balance");
+            vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InsufficientBalance.selector, address(dai), DSR_BORROW_CEILING, 10e18));
             strategy.borrowAndDeposit(DSR_BORROW_CEILING);
 
             deal(address(dai), address(trv), DSR_BORROW_CEILING, true);

@@ -1,4 +1,4 @@
-pragma solidity 0.8.18;
+pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (amo/AuraStaking.sol)
 
@@ -45,10 +45,15 @@ contract AuraStaking is IAuraStaking, TempleElevatedAccess {
         emit SetAuraPoolInfo(_pId, _token, _rewards);
     }
 
-    function setRewardsRecipient(address _recipeint) external override onlyElevatedAccess {
-        rewardsRecipient = _recipeint;
+    function setRewardsRecipient(address _recipient) external override onlyElevatedAccess {
+        rewardsRecipient = _recipient;
 
-        emit SetRewardsRecipient(_recipeint);
+        emit SetRewardsRecipient(_recipient);
+    }
+
+    function setRewardTokens(address[] memory _rewardTokens) external override onlyElevatedAccess {
+        rewardTokens = _rewardTokens;
+        emit RewardTokensSet(_rewardTokens);
     }
 
     /**
@@ -102,11 +107,17 @@ contract AuraStaking is IAuraStaking, TempleElevatedAccess {
 
     function getReward(bool claimExtras) external override {
         IAuraBaseRewardPool(auraPoolInfo.rewards).getReward(address(this), claimExtras);
-        if (rewardsRecipient != address(0)) {
+        address _rewardsRecipient = rewardsRecipient;
+        if (_rewardsRecipient != address(0)) {
             uint256 length = rewardTokens.length;
+            IERC20 rewardToken;
             for (uint i; i < length; ++i) {
-                uint256 balance = IERC20(rewardTokens[i]).balanceOf(address(this));
-                IERC20(rewardTokens[i]).safeTransfer(rewardsRecipient, balance);
+                rewardToken = IERC20(rewardTokens[i]);
+                uint256 balance = rewardToken.balanceOf(address(this));
+
+                if (balance > 0) {
+                    rewardToken.safeTransfer(_rewardsRecipient, balance);
+                }
             }
         }
     }

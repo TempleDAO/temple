@@ -1,4 +1,4 @@
-pragma solidity 0.8.18;
+pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { TlcBaseTest } from "./TlcBaseTest.t.sol";
@@ -40,6 +40,9 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
             interestAccumulator: INITIAL_INTEREST_ACCUMULATOR,
             interestAccumulatorUpdatedAt: uint32(block.timestamp)
         }));
+
+        assertEq(newTlc.liquidationsPaused(), false);
+        assertEq(newTlc.minBorrowAmount(), 1000e18);
     }
 
     // @dev After the trv/etc has been set
@@ -118,10 +121,10 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
         // Add the new strategy with the ceiling at 100%
         // so the interest rate needs updating.
         {
+            newTrv.setBorrowToken(daiToken, address(0), 0, 0, address(dUSD));
             ITempleStrategy.AssetBalance[] memory debtCeiling = new ITempleStrategy.AssetBalance[](1);
             debtCeiling[0] = ITempleStrategy.AssetBalance(address(daiToken), 15_000e18);
             newTrv.addStrategy(address(newTlcStrategy), 0, debtCeiling);
-            newTrv.setBorrowToken(daiToken, address(0), 0, 0, address(dUSD));
         }
 
         {
@@ -181,8 +184,8 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
     }
 
     function test_setInterestRateModel_withDebt() public {
-        uint256 collateralAmount = 10_000 ether;
-        uint256 borrowDaiAmount = 1_000 ether;
+        uint128 collateralAmount = 10_000 ether;
+        uint128 borrowDaiAmount = 1_000 ether;
         borrow(alice, collateralAmount, borrowDaiAmount, BORROW_REQUEST_MIN_SECS);
         uint256 expectedDaiAccumulator = approxInterest(INITIAL_INTEREST_ACCUMULATOR, MIN_BORROW_RATE, BORROW_REQUEST_MIN_SECS);
 
@@ -219,8 +222,8 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
     }
 
     function test_refreshInterestRates() public {
-        uint256 collateralAmount = 10_000 ether;
-        uint256 borrowDaiAmount = 1_000 ether;
+        uint128 collateralAmount = 10_000 ether;
+        uint128 borrowDaiAmount = 1_000 ether;
         borrow(alice, collateralAmount, borrowDaiAmount, BORROW_REQUEST_MIN_SECS);
         uint256 expectedDaiAccumulator = approxInterest(INITIAL_INTEREST_ACCUMULATOR, MIN_BORROW_RATE, BORROW_REQUEST_MIN_SECS);
 
@@ -240,8 +243,17 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
         checkDebtTokenDetails(expectedDaiDebt, expectedDaiRate, expectedDaiAccumulator, uint32(block.timestamp));
     }
 
+    function test_setMinBorrowAmount() public {
+        vm.startPrank(executor);
+        vm.expectEmit(address(tlc));
+        emit MinBorrowAmountSet(2000e18);
+        tlc.setMinBorrowAmount(2000e18);
+        assertEq(tlc.minBorrowAmount(), 2000e18);
+    }
+
     function test_setMaxLtvRatio() public {
         uint96 maxLtvRatio = 0.75e18;
+        vm.expectEmit(address(tlc));
         emit MaxLtvRatioSet(maxLtvRatio);
 
         vm.startPrank(executor);
@@ -319,6 +331,20 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
         (config,) = tlc.debtTokenDetails();
         assertEq(config.borrowsPaused, false);
     }
+
+    function test_setLiquidationsPaused() public {
+        vm.startPrank(executor);
+        vm.expectEmit();
+        emit LiquidationsPausedSet(true);
+        tlc.setLiquidationsPaused(true);
+
+        assertEq(tlc.liquidationsPaused(), true);
+
+        vm.expectEmit();
+        emit LiquidationsPausedSet(false);
+        tlc.setLiquidationsPaused(false);
+        assertEq(tlc.liquidationsPaused(), false);
+    }
 }
 
 contract TempleLineOfCreditTest_Access is TlcBaseTest {
@@ -346,11 +372,21 @@ contract TempleLineOfCreditTest_Access is TlcBaseTest {
         expectElevatedAccess();
         tlc.setBorrowPaused(true);
     }
+
+    function test_access_setLiquidationsPaused() public {
+        expectElevatedAccess();
+        tlc.setLiquidationsPaused(true);
+    }
+
+    function test_access_setMinBorrowAmount() public {
+        expectElevatedAccess();
+        tlc.setMinBorrowAmount(2000e18);
+    }
 }
 
 contract TempleLineOfCreditTest_Positions is TlcBaseTest {
     function test_accountPosition_afterAddCollateral() external {
-        uint256 collateralAmount = 100_000e18;
+        uint128 collateralAmount = 100_000e18;
         addCollateral(alice, collateralAmount);
 
         MaxBorrowInfo memory maxBorrowInfo = expectedMaxBorrows(collateralAmount);
@@ -369,8 +405,8 @@ contract TempleLineOfCreditTest_Positions is TlcBaseTest {
 contract TempleLineOfCreditTestInterestAccrual is TlcBaseTest {
 
     struct Params {
-        uint256 borrowDaiAmount;
-        uint256 collateralAmount;
+        uint128 borrowDaiAmount;
+        uint128 collateralAmount;
     }
 
     function test_trvCapChange() external {
@@ -413,25 +449,7 @@ contract TempleLineOfCreditTestInterestAccrual is TlcBaseTest {
         vm.prank(executor);
         trv.setStrategyDebtCeiling(address(tlcStrategy), daiToken, 50_000e18);
 
-        // Still the same after the TRV cap was halved
-        {
-            checkDebtTokenDetails(params.borrowDaiAmount, expectedDaiRate, expectedDaiAccumulator, tsBefore);
-
-            checkAccountPosition(
-                CheckAccountPositionParams({
-                    account: alice,
-                    expectedDaiBalance: params.borrowDaiAmount,
-                    expectedAccountPosition: createAccountPosition(
-                        params.collateralAmount, expectedDaiDebt, maxBorrowInfo
-                    ),
-                    expectedDaiDebtCheckpoint: params.borrowDaiAmount,
-                    expectedDaiAccumulatorCheckpoint: expectedDaiAccumulator
-                })
-            );
-        }
-
-        // It is checkpoint and rates updated only after a forced refresh (or a new user borrow)
-        tlc.refreshInterestRates();
+        // It is checkpoint and the interest rates are updated via the debtCeilingUpdated() hook
         {
             uint256 expectedDaiAccumulator2 = approxInterest(expectedDaiAccumulator, expectedDaiRate, 365 days);
             expectedDaiDebt = approxInterest(params.borrowDaiAmount, expectedDaiRate, 365 days);

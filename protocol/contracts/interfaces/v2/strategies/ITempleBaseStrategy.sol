@@ -1,4 +1,4 @@
-pragma solidity 0.8.18;
+pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (interfaces/v2/strategies/ITempleBaseStrategy.sol)
 
@@ -14,9 +14,9 @@ import { ITempleStrategy } from "contracts/interfaces/v2/strategies/ITempleStrat
  */
 interface ITempleBaseStrategy {
     /**
-     * @notice The latest checkpoint of each asset balance this stratgy holds.
+     * @notice The latest checkpoint of each asset balance this strategy holds.
      *
-     * @dev The asset value may be stale at any point in time, depending onthe strategy. 
+     * @dev The asset value may be stale at any point in time, depending on the strategy. 
      * It may optionally implement `checkpointAssetBalances()` in order to update those balances.
      */
     function latestAssetBalances() external view returns (ITempleStrategy.AssetBalance[] memory assetBalances);
@@ -37,8 +37,8 @@ interface ITempleBaseStrategy {
     /**
      * @notice The TRV is able to withdraw on demand in order to fund other strategies which 
      * wish to borrow from the TRV.
-     * @dev It may withdraw less than requested if there isn't enough balance in the DSR.
+     * @dev This will revert if the requestedAmount is more than the balance in the DSR.
      */
-    function trvWithdraw(uint256 requestedAmount) external returns (uint256 amountWithdrawn);
+    function trvWithdraw(uint256 requestedAmount) external;
 
 }

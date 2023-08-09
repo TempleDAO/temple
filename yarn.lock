@@ -3891,10 +3891,10 @@
     penpal "3.0.7"
     pocket-js-core "0.0.3"
 
-"@prb/math@^3.3.1":
-  version "3.3.1"
-  resolved "https://registry.yarnpkg.com/@prb/math/-/math-3.3.1.tgz#ace7bb7f2f6ae8dcdf20c5ddd858b0bb97ac94c9"
-  integrity sha512-k1nnpZwCvvztainqJfvkYpBQuZ3pHKnS6vovUAp+i1hSzlcSWluM+nRxxZbb6wsXqyCJAxrw8Vd7bAG/VeMIUA==
+"@prb/math@4.0.1":
+  version "4.0.1"
+  resolved "https://registry.yarnpkg.com/@prb/math/-/math-4.0.1.tgz#bc90277f4f1c085c973f502455bf12c2b3b67666"
+  integrity sha512-ANTz2KMV+dMdZ57mWgDTR6jZo5uQzUczQEHCxd7CvJZZ9yafnfPhUUILHvvigIOZ85fZbTPVkC8YoRG1z5Qf7g==
 
 "@rollup/plugin-commonjs@^23.0.3":
   version "23.0.7"

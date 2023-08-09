@@ -1,4 +1,4 @@
-pragma solidity 0.8.18;
+pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { TreasuryReservesVault, ITreasuryReservesVault } from "contracts/v2/TreasuryReservesVault.sol";
@@ -6,6 +6,7 @@ import { MockBaseStrategy } from "../strategies/MockBaseStrategy.t.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { ITempleStrategy } from "contracts/interfaces/v2/strategies/ITempleStrategy.sol";
 import { TreasuryReservesVaultTestBase } from "./TrvBase.t.sol";
+import { stdError } from "forge-std/StdError.sol";
 
 /* solhint-disable func-name-mixedcase, contract-name-camelcase, not-rely-on-time */
 contract TreasuryReservesVaultTestRepay is TreasuryReservesVaultTestBase {
@@ -395,6 +396,46 @@ contract TreasuryReservesVaultTestRepay is TreasuryReservesVaultTestBase {
             assertEq(trv.strategyTokenCredits(address(baseStrategy), dai), 0);
             assertEq(dUSD.balanceOf(address(baseStrategy)), expectedDepositedInBase);
         }
+    }
+
+    function test_repay_overflow() public {
+        vm.startPrank(executor);
+
+        uint256 debtCeiling = type(uint256).max - 10e18;
+
+        // Setup the strategy
+        {
+            trv.setBorrowToken(dai, address(0), 0, 0, address(dUSD));
+            deal(address(dai), address(trv), 100e18, true);
+
+            ITempleStrategy.AssetBalance[] memory debtCeilingArr = new ITempleStrategy.AssetBalance[](1);
+            debtCeilingArr[0] = ITempleStrategy.AssetBalance(address(dai), debtCeiling);
+            trv.addStrategy(address(strategy), 0, debtCeilingArr);
+        }
+
+        uint256 available = trv.availableForStrategyToBorrow(address(strategy), dai);
+        assertEq(available, debtCeiling);
+
+        deal(address(dai), address(trv), 1000e18, true);
+        available = trv.availableForStrategyToBorrow(address(strategy), dai);
+        assertEq(available, debtCeiling);
+
+        // Borrow 25e18
+        strategy.borrow(dai, 25e18);
+        available = trv.availableForStrategyToBorrow(address(strategy), dai);
+        assertEq(available, debtCeiling-25e18);
+
+        // Repay 35e18 --> 10e18 in credit
+        deal(address(dai), address(strategy), 35e18, true);
+        strategy.repay(dai, 35e18);
+        available = trv.availableForStrategyToBorrow(address(strategy), dai);
+        assertEq(available, debtCeiling + 10e18);
+        assertEq(available, type(uint256).max);
+
+        // Repaying any more will overflow.
+        deal(address(dai), address(strategy), 1, true);
+        vm.expectRevert(stdError.arithmeticError);
+        strategy.repay(dai, 1);
     }
 
     function test_repayAll() public {
