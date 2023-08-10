@@ -8,6 +8,7 @@ interface IThresholdSafeGuard is Guard {
     event DisableGuardChecksSet(bool value);
     event DefaultSignaturesThresholdSet(uint256 threshold);
     event FunctionThresholdSet(address indexed contractAddr, bytes4 indexed functionSignature, uint256 threshold);
+    event EthTransferThresholdSet(address indexed contractAddr, uint256 threshold);
     event SafeTxExecutorAdded(address indexed executor);
     event SafeTxExecutorRemoved(address indexed executor);
 
@@ -33,4 +34,9 @@ interface IThresholdSafeGuard is Guard {
       * in this guard -- the Safe has already verified the signers.
      */
     function functionThresholds(address contractAddr, bytes4 functionSignature) external view returns (uint256);
+
+    /**
+     * @notice The required signature thresholds for ETH transfers.
+     */
+    function ethTransferThresholds(address contractAddr) external view returns (uint256);
 }

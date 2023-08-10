@@ -47,17 +47,16 @@ contract ThresholdSafeGuard is IThresholdSafeGuard, TempleElevatedAccess {
     mapping(address => mapping(bytes4 => uint256)) public override functionThresholds;
 
     /**
+     * @notice The required signature thresholds for ETH transfers.
+     */
+    mapping(address => uint256) public override ethTransferThresholds;
+
+    /**
       * @notice Approved addresses which are allowed to execute approved transactions
       * Safe owners are also allowed to execute.
      */
     EnumerableSet.AddressSet internal _safeTxExecutors;
 
-    /**
-     * @notice Setting a signature threshold for ETH transfers is also possible by calling 
-     * `setFunctionThreshold(addr, `ETH_TRANSFER_SELECTOR`, signers)`
-     */
-    bytes4 public constant ETH_TRANSFER_SELECTOR = bytes4(keccak256("__ETH_TRANSFER__"));
-    
     constructor(address _initialRescuer, address _initialExecutor, uint256 _defaultSignaturesThreshold) 
         TempleElevatedAccess(_initialRescuer, _initialExecutor)
     {
@@ -132,6 +131,17 @@ contract ThresholdSafeGuard is IThresholdSafeGuard, TempleElevatedAccess {
     }
 
     /**
+      * @notice Set the number of signatories required for a contract/function signature pair.
+      * @dev functionSignature=bytes(0) is ok as this represents an ETH transfer which may also have
+      * an explicit threshold.
+     */
+    function setEthTransferThreshold(address contractAddr, uint256 threshold) external onlyElevatedAccess {
+        if (contractAddr == address(0)) revert CommonEventsAndErrors.InvalidAddress();
+        emit EthTransferThresholdSet(contractAddr, threshold);
+        ethTransferThresholds[contractAddr] = threshold;
+    }
+
+    /**
       * @notice The set of extra addresses (along with the Safe owners) allowed to execute
       * the transaction once the minimum threshold of signers have approved
      */
@@ -144,6 +154,14 @@ contract ThresholdSafeGuard is IThresholdSafeGuard, TempleElevatedAccess {
      */
     function getThreshold(address contractAddr, bytes4 fnSignature) public view returns (uint256) {
         uint256 threshold = functionThresholds[contractAddr][fnSignature];
+        return threshold > 0 ? threshold : defaultSignaturesThreshold;
+    }
+
+    /**
+      * @notice The required signatory threshold for a given contract and functionSignature
+     */
+    function getEthTransferThreshold(address contractAddr) public view returns (uint256) {
+        uint256 threshold = ethTransferThresholds[contractAddr];
         return threshold > 0 ? threshold : defaultSignaturesThreshold;
     }
 
@@ -197,7 +215,9 @@ contract ThresholdSafeGuard is IThresholdSafeGuard, TempleElevatedAccess {
 
             // If the data length is 0, this means it's a native ETH transfer. In this case use the `ETH_TRANSFER_SELECTOR` selector
             // Perhaps in future there could be some custom decoding/approvals based on the arguments too
-            threshold = getThreshold(to, data.length == 0 ? ETH_TRANSFER_SELECTOR : bytes4(data));
+            threshold = data.length == 0 
+                ? getEthTransferThreshold(to)
+                : getThreshold(to, bytes4(data));
 
             // No need for extra threshold checks - it already has the required signers, because we know Safe
             // has checked these already prior to calling the guard.

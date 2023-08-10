@@ -485,6 +485,11 @@ contract ThresholdSafeGuardTestAccess is ThresholdSafeGuardTestBase {
         guard.setFunctionThresholdBatch(address(mock), fnSels, 5);
     }
 
+    function test_access_setEthTransferThreshold() public {
+        expectElevatedAccess();
+        guard.setEthTransferThreshold(address(mock), 5);
+    }
+
     function test_access_recoverToken() public {
         expectElevatedAccess();
         guard.recoverToken(address(dai), alice, 100);
@@ -493,6 +498,7 @@ contract ThresholdSafeGuardTestAccess is ThresholdSafeGuardTestBase {
 
 contract ThresholdSafeGuardTest is ThresholdSafeGuardTestBase {
     event FunctionThresholdSet(address indexed contractAddr, bytes4 indexed functionSignature, uint256 threshold);
+    event EthTransferThresholdSet(address indexed contractAddr, uint256 threshold);
 
     function test_setFunctionThreshold(address contractAddr, bytes4 functionSignature, uint256 threshold) public {
         vm.startPrank(executor);
@@ -542,6 +548,28 @@ contract ThresholdSafeGuardTest is ThresholdSafeGuardTestBase {
             } else {
                 assertEq(guard.getThreshold(contractAddr, functionSignature1), threshold);
                 assertEq(guard.getThreshold(contractAddr, functionSignature2), threshold);
+            }
+        }
+    }
+
+    function test_setEthTransferThreshold(address contractAddr, uint256 threshold) public {
+        vm.startPrank(executor);
+
+        if (contractAddr == address(0)) {
+            vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
+            guard.setEthTransferThreshold(contractAddr, threshold);
+        } else {
+            vm.expectEmit();
+            emit EthTransferThresholdSet(contractAddr, threshold);
+
+            guard.setEthTransferThreshold(contractAddr, threshold);
+            assertEq(guard.ethTransferThresholds(contractAddr), threshold);
+
+            // Check the derived getThreshold
+            if (threshold == 0) {
+                assertEq(guard.getEthTransferThreshold(contractAddr), DEFAULT_SIGNATURES_THRESHOLD);
+            } else {
+                assertEq(guard.getEthTransferThreshold(contractAddr), threshold);
             }
         }
     }
@@ -863,8 +891,7 @@ contract ThresholdSafeGuardExecuteTest is ThresholdSafeGuardTestBase {
         _setup();
 
         changePrank(executor);
-        assertEq(guard.ETH_TRANSFER_SELECTOR(), bytes4(keccak256("__ETH_TRANSFER__")));
-        guard.setFunctionThreshold(address(mock), guard.ETH_TRANSFER_SELECTOR(), 3);
+        guard.setEthTransferThreshold(address(mock), 3);
 
         assertEq(address(mock).balance, 1e18);
         assertEq(address(safe).balance, 200e18);

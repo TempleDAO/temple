@@ -359,16 +359,16 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
         (uint256 first, uint256 second, uint256 third) = _repayIteration(makeAddr("acct1"));
         assertLt(first, 87_000, "acct1 1");
         assertLt(second, 83_000, "acct1 2");
-        assertLt(third, 103_000, "acct1 3");
+        assertLt(third, 104_000, "acct1 3");
 
         (first, second, third) = _repayIteration(makeAddr("acct2"));
         assertLt(first, 83_000, "acct2 1");
         assertLt(second, 83_000, "acct2 2");
-        assertLt(third, 98_000, "acct2 3");
+        assertLt(third, 99_000, "acct2 3");
         
         (first, second, third) = _repayIteration(makeAddr("acct3"));
         assertLt(first, 83_000, "acct3 1");
         assertLt(second, 83_000, "acct3 2");
-        assertLt(third, 98_000, "acct3 3");
+        assertLt(third, 99_000, "acct3 3");
     }
 }

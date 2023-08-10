@@ -234,8 +234,9 @@ contract RamosStrategyTestAdmin is RamosStrategyTestBase {
             trv.setBorrowToken(dai, address(0), 0, 0, address(dUSD));
             trv.setBorrowToken(temple, address(0), 0, 0, address(dTEMPLE));
             
-            ITempleStrategy.AssetBalance[] memory debtCeiling = new ITempleStrategy.AssetBalance[](1);
+            ITempleStrategy.AssetBalance[] memory debtCeiling = new ITempleStrategy.AssetBalance[](2);
             debtCeiling[0] = ITempleStrategy.AssetBalance(address(dai), BORROW_CEILING);
+            debtCeiling[1] = ITempleStrategy.AssetBalance(address(temple), 0);
             trv.addStrategy(address(strategy), -123, debtCeiling);
 
             dUSD.mint(address(strategy), 1_000_000e18);
@@ -503,7 +504,7 @@ contract RamosStrategyTestBalances is RamosStrategyTestBase {
     }
 
     function test_latestAssetBalances() public {
-        vm.prank(executor);
+        vm.startPrank(executor);
         Balances memory initialBalances = getRamosBalances();
 
         // Check the actual balances vs the forked mainnet as a point of reference
