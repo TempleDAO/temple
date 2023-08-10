@@ -67,7 +67,6 @@ interface ITreasuryReservesVault is ITempleElevatedAccess {
     error RepaysPaused();
     error StrategyIsShutdown();
     error DebtCeilingBreached(uint256 available, uint256 borrowAmount);
-    error DebtOverpayment(uint256 current, uint256 repayAmount);
     error NotShuttingDown();
 
     struct BorrowTokenConfig {

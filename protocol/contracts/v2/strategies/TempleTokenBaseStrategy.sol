@@ -101,12 +101,13 @@ contract TempleTokenBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
      * wish to borrow from the TRV.
      * @dev For Temple, we just mint the tokens.
      */
-    function trvWithdraw(uint256 requestedAmount) external override {
+    function trvWithdraw(uint256 requestedAmount) external override returns (uint256) {
         if (msg.sender != address(treasuryReservesVault)) revert OnlyTreasuryReserveVault(msg.sender);
         if (requestedAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();       
 
         emit TempleMinted(requestedAmount);
-        templeToken.mint(msg.sender, requestedAmount);
+        templeToken.mint(address(treasuryReservesVault), requestedAmount);
+        return requestedAmount;
     }
 
     /**

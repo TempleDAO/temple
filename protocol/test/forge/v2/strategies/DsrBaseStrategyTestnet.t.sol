@@ -426,7 +426,8 @@ contract DsrBaseStrategyTestnetTestTrvWithdraw is DsrBaseStrategyTestnetTestBase
 
         vm.expectEmit(address(strategy));
         emit DaiWithdrawn(withdrawAmount);
-        strategy.trvWithdraw(withdrawAmount);
+        uint256 withdrawn = strategy.trvWithdraw(withdrawAmount);
+        assertEq(withdrawn, withdrawAmount);
 
         assertEq(dai.balanceOf(address(strategy)), borrowAmount-withdrawAmount);
         assertEq(dai.balanceOf(address(trv)), TRV_STARTING_BALANCE-borrowAmount+withdrawAmount);
@@ -441,6 +442,7 @@ contract DsrBaseStrategyTestnetTestTrvWithdraw is DsrBaseStrategyTestnetTestBase
 
     function test_trvWithdraw_capped() public {   
         uint256 borrowAmount = 1e18;
+        uint256 withdrawAmount = 1.25e18;
         vm.startPrank(executor);
         strategy.borrowAndDeposit(borrowAmount);
 
@@ -449,8 +451,9 @@ contract DsrBaseStrategyTestnetTestTrvWithdraw is DsrBaseStrategyTestnetTestBase
         changePrank(address(trv));
         vm.expectEmit(address(strategy));
         emit DaiWithdrawn(borrowAmount);
-        strategy.trvWithdraw(borrowAmount);
+        uint256 withdrawn = strategy.trvWithdraw(withdrawAmount);
 
+        assertEq(withdrawn, borrowAmount);
         assertEq(dai.balanceOf(address(strategy)), 0);
         assertEq(dai.balanceOf(address(trv)), TRV_STARTING_BALANCE);
         assertEq(strategy.latestDsrBalance(), 0);

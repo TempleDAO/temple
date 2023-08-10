@@ -580,12 +580,11 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
     ) internal {
         ITempleBaseStrategy _baseStrategy = tokenConfig.baseStrategy;
         address _baseStrategyAddr = address(_baseStrategy);
-        uint256 _balance;
+        uint256 _balance = token.balanceOf(address(this));
         if (_baseStrategyAddr != address(0) && _baseStrategyAddr != strategy) {
             // There may be idle tokens sitting idle in the TRV (ie these are not yet deposited into the baseStrategy)
             // So use these first, and only then fallback to pulling the rest from base strategy.
             uint256 _withdrawFromBaseStrategyAmount;
-            _balance = token.balanceOf(address(this));
             unchecked {
                 _withdrawFromBaseStrategyAmount = _balance > amount ? 0 : amount - _balance;
             }
@@ -596,17 +595,25 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
                 // plus the threshold amount. Then future borrows don't need to withdraw from base every time.
                 _withdrawFromBaseStrategyAmount += tokenConfig.baseStrategyWithdrawalBuffer;
 
-                // This will revert if the amount requested is less than what's available
-                _baseStrategy.trvWithdraw(_withdrawFromBaseStrategyAmount);
+                // The amount actually withdrawn may be less than requested
+                // as it's capped to any actual remaining balance in the base strategy
+                uint256 _withdrawnAmount = _baseStrategy.trvWithdraw(_withdrawFromBaseStrategyAmount);
 
                 // Burn the dTokens from the base strategy.
-                uint256 _dTokenBalance = tokenConfig.dToken.balanceOf(_baseStrategyAddr);
-                _burnDToken(_baseStrategyAddr, strategies[_baseStrategyAddr], token, tokenConfig, _withdrawFromBaseStrategyAmount, _dTokenBalance);
+                if (_withdrawnAmount > 0) {
+                    _burnDToken(
+                        _baseStrategyAddr, 
+                        strategies[_baseStrategyAddr], 
+                        token, 
+                        tokenConfig, 
+                        _withdrawnAmount, 
+                        tokenConfig.dToken.balanceOf(_baseStrategyAddr)
+                    );
+                }
             }
         } else {
             // The tokens are transferred straight from TRV, no withdrawal from the base strategy
             // Do an extra check that it at least has the requested amount in case the token isn't a standard ERC20 which already does a check.
-            _balance = token.balanceOf(address(this));
             if (amount > _balance) revert CommonEventsAndErrors.InsufficientBalance(address(token), amount, _balance);
         }
 

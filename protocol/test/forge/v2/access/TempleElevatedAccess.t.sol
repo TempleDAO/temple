@@ -27,6 +27,9 @@ contract Mock is TempleElevatedAccess {
     function checkSigThis() public view {
         this.validateOnlyElevatedAccess();
     }
+
+    // A magic function with a signature of 0x00000000
+    function wycpnbqcyf() external view onlyElevatedAccess {}
 }
 
 contract TempleElevatedAccessTestBase is TempleTest {
@@ -232,6 +235,22 @@ contract TempleElevatedAccessTestSetters is TempleElevatedAccessTestBase {
         setExplicitAccess(mock, alice, fnSig, false);
         assertEq(mock.explicitFunctionAccess(alice, fnSig), false);
         assertEq(mock.explicitFunctionAccess(alice, fnSig2), false);
+    }
+
+    function test_setExplicitAccess_zeroSig() public {
+        vm.startPrank(alice);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
+        mock.wycpnbqcyf();
+
+        changePrank(executor);
+        bytes4 fnSig = bytes4(keccak256("wycpnbqcyf()"));
+        vm.expectEmit(address(mock));
+        emit ExplicitAccessSet(alice, fnSig, true);
+        setExplicitAccess(mock, alice, fnSig, true);
+
+        // Now succeeds
+        changePrank(alice);
+        mock.wycpnbqcyf();
     }
 
     function test_setExplicitAccess_multiple() public {
