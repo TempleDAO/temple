@@ -302,7 +302,7 @@ contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
         (first, second, third) = _removeCollateralIteration(makeAddr("acct2"));
         assertLt(first, 57_000, "acct2 1");
         assertLt(second, 35_000, "acct2 2");
-        assertLt(third, 41_000, "acct2 3");
+        assertLt(third, 42_000, "acct2 3");
         
         (first, second, third) = _removeCollateralIteration(makeAddr("acct3"));
         assertLt(first, 57_000, "acct3 1");

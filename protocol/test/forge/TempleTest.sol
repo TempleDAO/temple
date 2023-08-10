@@ -40,8 +40,9 @@ abstract contract TempleTest is Test {
     }
 
     function expectElevatedAccess() internal {
-        vm.prank(unauthorizedUser);
+        vm.startPrank(unauthorizedUser);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
+        vm.stopPrank();
     }
 
     function setExplicitAccess(

@@ -504,7 +504,7 @@ contract RamosStrategyTestBalances is RamosStrategyTestBase {
     }
 
     function test_latestAssetBalances() public {
-        vm.prank(executor);
+        vm.startPrank(executor);
         Balances memory initialBalances = getRamosBalances();
 
         // Check the actual balances vs the forked mainnet as a point of reference
