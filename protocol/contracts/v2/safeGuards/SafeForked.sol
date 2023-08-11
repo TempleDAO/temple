@@ -63,7 +63,7 @@ library SafeForked {
         bytes memory data,
         bytes memory signatures,
         uint256 requiredSignatures
-    ) public view {
+    ) internal view {
         // Check that the provided signature data is not too short
         // Left as a revert string so it shows in the Safe UI, and made more descriptive.
         require(signatures.length >= requiredSignatures * 65, "!Dynamic Signature Threshold");
