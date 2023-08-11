@@ -69,7 +69,7 @@ export interface ContractAddresses {
           RESCUER_MSIG: string,
           // No circuit breakers for Temple base strategy
       },
-      GNOSIS_SAFE_STRATEGY1: {
+      GNOSIS_SAFE_STRATEGY_TEMPLATE: {
           ADDRESS: string,
           EXECUTOR_MSIG: string,
           RESCUER_MSIG: string,
@@ -156,7 +156,7 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
                 RESCUER_MSIG: '0x8dbe2E7Cab43F00fce7fFe90769b87456692CE46',
                 // No circuit breakers for Temple base strategy
             },
-            GNOSIS_SAFE_STRATEGY1: {
+            GNOSIS_SAFE_STRATEGY_TEMPLATE: {
                 ADDRESS: '0x10Dc371F7d3c0c3C857134de2390aE869F067895',
                 EXECUTOR_MSIG: '0xF8Ab0fF572e48059c45eF3fa804e5A369d2b9b2B',
                 RESCUER_MSIG: '0x8dbe2E7Cab43F00fce7fFe90769b87456692CE46',
@@ -249,7 +249,7 @@ export interface ContractInstances {
         TLC_STRATEGY: {
             INSTANCE: TlcStrategy,
         },
-        GNOSIS_SAFE_STRATEGY1: {
+        GNOSIS_SAFE_STRATEGY_TEMPLATE: {
             INSTANCE: GnosisStrategy,
             CIRCUIT_BREAKERS: {
                 DAI: TempleCircuitBreakerAllUsersPerPeriod,
@@ -312,11 +312,11 @@ export function connectToContracts(owner: Signer): ContractInstances {
             TLC_STRATEGY: {
                 INSTANCE: TlcStrategy__factory.connect(TEMPLE_V2_ADDRESSES.STRATEGIES.TLC_STRATEGY.ADDRESS, owner),
             },
-            GNOSIS_SAFE_STRATEGY1: {
-                INSTANCE: GnosisStrategy__factory.connect(TEMPLE_V2_ADDRESSES.STRATEGIES.GNOSIS_SAFE_STRATEGY1.ADDRESS, owner),
+            GNOSIS_SAFE_STRATEGY_TEMPLATE: {
+                INSTANCE: GnosisStrategy__factory.connect(TEMPLE_V2_ADDRESSES.STRATEGIES.GNOSIS_SAFE_STRATEGY_TEMPLATE.ADDRESS, owner),
                 CIRCUIT_BREAKERS: {
-                    DAI: TempleCircuitBreakerAllUsersPerPeriod__factory.connect(TEMPLE_V2_ADDRESSES.STRATEGIES.GNOSIS_SAFE_STRATEGY1.CIRCUIT_BREAKERS.DAI, owner),
-                    TEMPLE: TempleCircuitBreakerAllUsersPerPeriod__factory.connect(TEMPLE_V2_ADDRESSES.STRATEGIES.GNOSIS_SAFE_STRATEGY1.CIRCUIT_BREAKERS.TEMPLE, owner),
+                    DAI: TempleCircuitBreakerAllUsersPerPeriod__factory.connect(TEMPLE_V2_ADDRESSES.STRATEGIES.GNOSIS_SAFE_STRATEGY_TEMPLATE.CIRCUIT_BREAKERS.DAI, owner),
+                    TEMPLE: TempleCircuitBreakerAllUsersPerPeriod__factory.connect(TEMPLE_V2_ADDRESSES.STRATEGIES.GNOSIS_SAFE_STRATEGY_TEMPLATE.CIRCUIT_BREAKERS.TEMPLE, owner),
                 },
             },
         },

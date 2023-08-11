@@ -22,24 +22,24 @@ async function main() {
     // TRV can mint/burn $dTEMPLE
     await mine(TEMPLE_V2_INSTANCES.TREASURY_RESERVES_VAULT.D_TEMPLE_TOKEN.addMinter(TEMPLE_V2_ADDRESSES.TREASURY_RESERVES_VAULT.ADDRESS));
 
+    // temple -> dTemple
+    await mine(TEMPLE_V2_INSTANCES.TREASURY_RESERVES_VAULT.INSTANCE.setBorrowToken(
+      TEMPLE_V2_ADDRESSES.CORE.TEMPLE_TOKEN,
+      TEMPLE_V2_ADDRESSES.STRATEGIES.TEMPLE_BASE_STRATEGY.ADDRESS,
+      0,
+      0,
+      TEMPLE_V2_ADDRESSES.TREASURY_RESERVES_VAULT.D_TEMPLE_TOKEN
+    ));
+
     const debtCeiling: ITempleStrategy.AssetBalanceStruct[] = [{
-        asset: TEMPLE_V2_ADDRESSES.CORE.TEMPLE_TOKEN,
-        balance: ethers.utils.parseEther("100000"), // TODO: Debt ceiling TBC
+      asset: TEMPLE_V2_ADDRESSES.CORE.TEMPLE_TOKEN,
+      balance: ethers.utils.parseEther("100000"), // TODO: Debt ceiling TBC
     }];
 
     await mine(TEMPLE_V2_INSTANCES.TREASURY_RESERVES_VAULT.INSTANCE.addStrategy(
         TEMPLE_V2_ADDRESSES.STRATEGIES.TEMPLE_BASE_STRATEGY.ADDRESS,
         0, // underperformingEquityThreeshold
         debtCeiling
-      ));
-
-    // temple -> dTemple
-    await mine(TEMPLE_V2_INSTANCES.TREASURY_RESERVES_VAULT.INSTANCE.setBorrowToken(
-        TEMPLE_V2_ADDRESSES.CORE.TEMPLE_TOKEN,
-        TEMPLE_V2_ADDRESSES.STRATEGIES.TEMPLE_BASE_STRATEGY.ADDRESS,
-        0,
-        0,
-        TEMPLE_V2_ADDRESSES.TREASURY_RESERVES_VAULT.D_TEMPLE_TOKEN
       ));
   }
 
@@ -48,17 +48,6 @@ async function main() {
     // TRV can mint/burn dUsd
     await mine(TEMPLE_V2_INSTANCES.TREASURY_RESERVES_VAULT.D_USD_TOKEN.addMinter(TEMPLE_V2_ADDRESSES.TREASURY_RESERVES_VAULT.ADDRESS));
 
-    const debtCeiling: ITempleStrategy.AssetBalanceStruct[] = [{
-        asset: TEMPLE_V2_ADDRESSES.EXTERNAL.MAKER_DAO.DAI_TOKEN,
-        balance: ethers.utils.parseEther("100000"), // TODO: Debt ceiling TBC
-      }];
-
-    await mine(TEMPLE_V2_INSTANCES.TREASURY_RESERVES_VAULT.INSTANCE.addStrategy(
-        TEMPLE_V2_ADDRESSES.STRATEGIES.DSR_BASE_STRATEGY.ADDRESS,
-        0, // underperformingEquityThreeshold
-        debtCeiling
-      ));
-
     // dai -> dUsd
     await mine(TEMPLE_V2_INSTANCES.TREASURY_RESERVES_VAULT.INSTANCE.setBorrowToken(
         TEMPLE_V2_ADDRESSES.EXTERNAL.MAKER_DAO.DAI_TOKEN,
@@ -66,7 +55,18 @@ async function main() {
         ethers.utils.parseEther("10000"),
         ethers.utils.parseEther("10000"),
         TEMPLE_V2_ADDRESSES.TREASURY_RESERVES_VAULT.D_USD_TOKEN
-      ));
+    ));
+
+    const debtCeiling: ITempleStrategy.AssetBalanceStruct[] = [{
+      asset: TEMPLE_V2_ADDRESSES.EXTERNAL.MAKER_DAO.DAI_TOKEN,
+      balance: ethers.utils.parseEther("100000"), // TODO: Debt ceiling TBC
+    }];
+
+   await mine(TEMPLE_V2_INSTANCES.TREASURY_RESERVES_VAULT.INSTANCE.addStrategy(
+      TEMPLE_V2_ADDRESSES.STRATEGIES.DSR_BASE_STRATEGY.ADDRESS,
+      0, // underperformingEquityThreeshold
+      debtCeiling
+    ));
   }
 
 }

@@ -7,18 +7,14 @@ import {
 import { TempleElevatedAccess } from '../../../../../typechain';
 import { ContractAddresses, connectToContracts, getDeployedContracts } from '../contract-addresses';
 
-async function proposeExecutorAndRescuer(contract: TempleElevatedAccess, executor: string, rescuer: string) {
+async function proposeExecutor(contract: TempleElevatedAccess, executor: string) {
     console.log(`contract: ${contract.address} & executor: ${executor}`);
-    console.log(`contract: ${contract.address} & rescuer: ${rescuer}`);
     await mine(contract.proposeNewExecutor(executor));
-    await mine(contract.proposeNewRescuer(rescuer));
-
     console.log(`contract executor: ${await contract.executor()}`);
-    console.log(`contract rescuer: ${await contract.rescuer()}`);
 }
 
 async function proposeCore(TEMPLE_V2_ADDRESSES: ContractAddresses, contract: TempleElevatedAccess) {
-    await proposeExecutorAndRescuer(contract, TEMPLE_V2_ADDRESSES.CORE.EXECUTOR_MSIG, TEMPLE_V2_ADDRESSES.CORE.RESCUER_MSIG)
+    await proposeExecutor(contract, TEMPLE_V2_ADDRESSES.CORE.EXECUTOR_MSIG);
 }
 
 async function main() {
@@ -53,39 +49,35 @@ async function main() {
         await proposeCore(TEMPLE_V2_ADDRESSES, TEMPLE_V2_INSTANCES.RAMOS.TEMPLE_DAI.AURA_STAKING);
 
         console.log('\n\nSTRATEGIES.DSR_BASE_STRATEGY');
-        await proposeExecutorAndRescuer(
+        await proposeExecutor(
             TEMPLE_V2_INSTANCES.STRATEGIES.DSR_BASE_STRATEGY.INSTANCE,
-            TEMPLE_V2_ADDRESSES.STRATEGIES.DSR_BASE_STRATEGY.EXECUTOR_MSIG,
-            TEMPLE_V2_ADDRESSES.STRATEGIES.DSR_BASE_STRATEGY.RESCUER_MSIG,
+            TEMPLE_V2_ADDRESSES.STRATEGIES.DSR_BASE_STRATEGY.EXECUTOR_MSIG
         );
         console.log('\n\nSTRATEGIES.TEMPLE_BASE_STRATEGY');
-        await proposeExecutorAndRescuer(
+        await proposeExecutor(
             TEMPLE_V2_INSTANCES.STRATEGIES.TEMPLE_BASE_STRATEGY.INSTANCE,
-            TEMPLE_V2_ADDRESSES.STRATEGIES.TEMPLE_BASE_STRATEGY.EXECUTOR_MSIG,
-            TEMPLE_V2_ADDRESSES.STRATEGIES.TEMPLE_BASE_STRATEGY.RESCUER_MSIG,
+            TEMPLE_V2_ADDRESSES.STRATEGIES.TEMPLE_BASE_STRATEGY.EXECUTOR_MSIG
         );
 
         // await proposeExecutorAndRescuer(
-        //   TEMPLE_V2_INSTANCES.STRATEGIES.GNOSIS_SAFE_STRATEGY1.INSTANCE,
-        //   TEMPLE_V2_ADDRESSES.STRATEGIES.GNOSIS_SAFE_STRATEGY1.EXECUTOR_MSIG,
-        //   TEMPLE_V2_ADDRESSES.STRATEGIES.GNOSIS_SAFE_STRATEGY1.RESCUER_MSIG,
+        //   TEMPLE_V2_INSTANCES.STRATEGIES.GNOSIS_SAFE_STRATEGY_TEMPLATE.INSTANCE,
+        //   TEMPLE_V2_ADDRESSES.STRATEGIES.GNOSIS_SAFE_STRATEGY_TEMPLATE.EXECUTOR_MSIG,
+        //   TEMPLE_V2_ADDRESSES.STRATEGIES.GNOSIS_SAFE_STRATEGY_TEMPLATE.RESCUER_MSIG,
         // );
 
-        // await proposeCore(TEMPLE_V2_ADDRESSES, TEMPLE_V2_INSTANCES.STRATEGIES.GNOSIS_SAFE_STRATEGY1.CIRCUIT_BREAKERS.DAI);
-        // await proposeCore(TEMPLE_V2_ADDRESSES, TEMPLE_V2_INSTANCES.STRATEGIES.GNOSIS_SAFE_STRATEGY1.CIRCUIT_BREAKERS.TEMPLE);
-        await proposeExecutorAndRescuer(
+        // await proposeCore(TEMPLE_V2_ADDRESSES, TEMPLE_V2_INSTANCES.STRATEGIES.GNOSIS_SAFE_STRATEGY_TEMPLATE.CIRCUIT_BREAKERS.DAI);
+        // await proposeCore(TEMPLE_V2_ADDRESSES, TEMPLE_V2_INSTANCES.STRATEGIES.GNOSIS_SAFE_STRATEGY_TEMPLATE.CIRCUIT_BREAKERS.TEMPLE);
+        await proposeExecutor(
             TEMPLE_V2_INSTANCES.STRATEGIES.RAMOS_STRATEGY.INSTANCE,
-            TEMPLE_V2_ADDRESSES.STRATEGIES.RAMOS_STRATEGY.EXECUTOR_MSIG,
-            TEMPLE_V2_ADDRESSES.STRATEGIES.RAMOS_STRATEGY.RESCUER_MSIG,
+            TEMPLE_V2_ADDRESSES.STRATEGIES.RAMOS_STRATEGY.EXECUTOR_MSIG
         );
 
         await proposeCore(TEMPLE_V2_ADDRESSES, TEMPLE_V2_INSTANCES.STRATEGIES.RAMOS_STRATEGY.CIRCUIT_BREAKERS.DAI);
         await proposeCore(TEMPLE_V2_ADDRESSES, TEMPLE_V2_INSTANCES.STRATEGIES.RAMOS_STRATEGY.CIRCUIT_BREAKERS.TEMPLE);
         console.log('\n\nSTRATEGIES.TLC_STRATEGY');
-        await proposeExecutorAndRescuer(
+        await proposeExecutor(
             TEMPLE_V2_INSTANCES.STRATEGIES.TLC_STRATEGY.INSTANCE,
-            TEMPLE_V2_ADDRESSES.STRATEGIES.TLC_STRATEGY.EXECUTOR_MSIG,
-            TEMPLE_V2_ADDRESSES.STRATEGIES.TLC_STRATEGY.RESCUER_MSIG,
+            TEMPLE_V2_ADDRESSES.STRATEGIES.TLC_STRATEGY.EXECUTOR_MSIG
         );
     }
 }

@@ -15,7 +15,7 @@ async function main() {
   const auraStakingFactory = new RamosTestnetAuraStaking__factory(owner);
   await deployAndMine(
       "RAMOS.TEMPLE_DAI.AURA_STAKING", auraStakingFactory, auraStakingFactory.deploy,
-      await owner.getAddress(),
+      TEMPLE_V2_ADDRESSES.CORE.RESCUER_MSIG,
       await owner.getAddress(),
       TEMPLE_V2_ADDRESSES.RAMOS.TEMPLE_DAI.BPT_TOKEN,
   );

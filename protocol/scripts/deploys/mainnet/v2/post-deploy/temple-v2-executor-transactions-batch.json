@@ -170,7 +170,7 @@
       "contractInputsValues": null
     },
     {
-      "to": "0xXXXX", // mainnet.STRATEGIES.GNOSIS_SAFE_STRATEGY1.ADDRESS
+      "to": "0xXXXX", // mainnet.STRATEGIES.GNOSIS_SAFE_STRATEGY_TEMPLATE.ADDRESS
       "value": "0",
       "data": null,
       "contractMethod": {
@@ -181,7 +181,7 @@
       "contractInputsValues": null
     },
     {
-      "to": "0xXXXX", // mainnet.STRATEGIES.GNOSIS_SAFE_STRATEGY1.CIRCUIT_BREAKERS.DAI
+      "to": "0xXXXX", // mainnet.STRATEGIES.GNOSIS_SAFE_STRATEGY_TEMPLATE.CIRCUIT_BREAKERS.DAI
       "value": "0",
       "data": null,
       "contractMethod": {
@@ -192,7 +192,7 @@
       "contractInputsValues": null
     },
     {
-      "to": "0xXXXX", // mainnet.STRATEGIES.GNOSIS_SAFE_STRATEGY1.CIRCUIT_BREAKERS.TEMPLE
+      "to": "0xXXXX", // mainnet.STRATEGIES.GNOSIS_SAFE_STRATEGY_TEMPLATE.CIRCUIT_BREAKERS.TEMPLE
       "value": "0",
       "data": null,
       "contractMethod": {

@@ -17,7 +17,7 @@ async function main() {
     'STRATEGIES.TLC_STRATEGY.ADDRESS',
     tlcStrategyFactory,
     tlcStrategyFactory.deploy,
-    await owner.getAddress(),
+    TEMPLE_V2_ADDRESSES.CORE.RESCUER_MSIG,
     await owner.getAddress(),
     "TlcStrategy",
     TEMPLE_V2_ADDRESSES.TREASURY_RESERVES_VAULT.ADDRESS,

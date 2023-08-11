@@ -53,10 +53,17 @@ async function main() {
 
     // Set TLC strategy
     {   
-        const debtCeiling: ITempleStrategy.AssetBalanceStruct[] = [{
-            asset: TEMPLE_V2_ADDRESSES.EXTERNAL.MAKER_DAO.DAI_TOKEN,
-            balance: ethers.utils.parseEther("100000")
-        }];
+        const debtCeiling: ITempleStrategy.AssetBalanceStruct[] = [
+            {
+                asset: TEMPLE_V2_ADDRESSES.EXTERNAL.MAKER_DAO.DAI_TOKEN,
+                balance: ethers.utils.parseEther("100000")
+            },
+            // TLC doesn't borrow Temple, but it does need to repay temple on liquidations
+            {
+                asset: TEMPLE_V2_ADDRESSES.CORE.TEMPLE_TOKEN,
+                balance: 0
+            }
+        ];
 
         await mine(TEMPLE_V2_INSTANCES.TREASURY_RESERVES_VAULT.INSTANCE.addStrategy(
             TEMPLE_V2_ADDRESSES.STRATEGIES.TLC_STRATEGY.ADDRESS,

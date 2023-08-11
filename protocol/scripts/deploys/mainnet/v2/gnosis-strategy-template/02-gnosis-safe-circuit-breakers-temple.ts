@@ -5,17 +5,19 @@ import {
   deployAndMine,
   ensureExpectedEnvvars,
 } from '../../../helpers';
+import { getDeployedContracts } from '../contract-addresses';
 
 async function main() {
   ensureExpectedEnvvars();
   const [owner] = await ethers.getSigners();
+  const TEMPLE_V2_ADDRESSES = getDeployedContracts();
 
   const circuitBreakerFactory = new TempleCircuitBreakerAllUsersPerPeriod__factory(owner);
   await deployAndMine(
-    'STRATEGIES.GNOSIS_SAFE_STRATEGY1.CIRCUIT_BREAKERS.TEMPLE',
+    'STRATEGIES.GNOSIS_SAFE_STRATEGY_TEMPLATE.CIRCUIT_BREAKERS.TEMPLE',
     circuitBreakerFactory,
     circuitBreakerFactory.deploy,
-    await owner.getAddress(),
+    TEMPLE_V2_ADDRESSES.CORE.RESCUER_MSIG,
     await owner.getAddress(),
     60*60*26, // 26 hours
     13, // no of buckets

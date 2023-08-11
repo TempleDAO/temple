@@ -16,12 +16,14 @@ async function main() {
 
     const factory = new GnosisStrategy__factory(owner);
     await deployAndMine(
-        "STRATEGIES.GNOSIS_SAFE_STRATEGY1.ADDRESS", factory, factory.deploy,
-        await owner.getAddress(),
+        "STRATEGIES.GNOSIS_SAFE_STRATEGY_TEMPLATE.ADDRESS",
+        factory,
+        factory.deploy,
+        TEMPLE_V2_ADDRESSES.CORE.RESCUER_MSIG,
         await owner.getAddress(),
         "GnosisSafeStrategy1",
         TEMPLE_V2_ADDRESSES.TREASURY_RESERVES_VAULT.ADDRESS,
-        TEMPLE_V2_ADDRESSES.STRATEGIES.GNOSIS_SAFE_STRATEGY1.UNDERLYING_GNOSIS_SAFE,
+        TEMPLE_V2_ADDRESSES.STRATEGIES.GNOSIS_SAFE_STRATEGY_TEMPLATE.UNDERLYING_GNOSIS_SAFE,
         TEMPLE_V2_ADDRESSES.CORE.CIRCUIT_BREAKER_PROXY,
     );
 }

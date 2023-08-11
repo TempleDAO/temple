@@ -89,7 +89,7 @@ tl;dr;
 
 ## Temple V2 deployment
 
-The following are the steps to deploy temple v2 latest contracts to mainnet. Copy & paste each `npx hardhat run ...` command from `core`, `tlc`, `gnosis-strategy-1` & `ramos` in order to deploy to mainnet, after each successful deployment, please do the following:
+The following are the steps to deploy temple v2 latest contracts to mainnet. Copy & paste each `npx hardhat run ...` command from `core`, `tlc` & `ramos` in order to deploy to mainnet, after each successful deployment, please do the following:
 
 - (**mandatory**) Deploy each contract under `scripts/deploy/mainnet/v2/**/**.ts`, you can find various examples in `scripts/deploys/localhost/v2/deploy-localhost-forsk.sh`, please remember to use the mainnet network, e.g `npx hardhat run --network mainnet scripts/deploys/mainnet/v2/core/02-circuit-breaker-proxy.ts`. *NB you'll need to deploy first the core contracts. Remember to run the post-deployment scripts for each folder to setup the contract*
 - (**mandatory**) Copy newest generated contract address in its respective place under `scripts/deploys/mainnet/v2/core/contract-addressses.ts`

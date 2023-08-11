@@ -11,6 +11,7 @@ npx hardhat run --network localhost scripts/deploys/mainnet/v2/core/05-trv-dusd.
 npx hardhat run --network localhost scripts/deploys/mainnet/v2/core/06-trv-dtemple-token.ts
 npx hardhat run --network localhost scripts/deploys/mainnet/v2/core/07-dsr-base-strategy.ts
 npx hardhat run --network localhost scripts/deploys/mainnet/v2/core/08-temple-base-strategy.ts
+npx hardhat run --network localhost scripts/deploys/mainnet/v2/core/09-threshold-safe-guard.ts
 npx hardhat run --network localhost scripts/deploys/mainnet/v2/core/99-core-post-deployment.ts
 
 # tlc
@@ -30,11 +31,11 @@ npx hardhat run --network localhost scripts/deploys/mainnet/v2/ramos/06-ramos-ci
 npx hardhat run --network localhost scripts/deploys/mainnet/v2/ramos/07-ramos-strategy.ts
 npx hardhat run --network localhost scripts/deploys/mainnet/v2/ramos/99-ramos-post-deploy.ts
 
-# gnosis
-# npx hardhat run --network localhost scripts/deploys/mainnet/v2/gnosis-strategy-1/01-gnosis-safe-circuit-breakers-dai.ts
-# npx hardhat run --network localhost scripts/deploys/mainnet/v2/gnosis-strategy-1/02-gnosis-safe-circuit-breakers-temple.ts
-# npx hardhat run --network localhost scripts/deploys/mainnet/v2/gnosis-strategy-1/03-gnosis-strategy.ts
-# npx hardhat run --network localhost scripts/deploys/mainnet/v2/gnosis-strategy-1/99-post-deploy.ts
+# gnosis - when we have a real use case, create an actual strategy (not a template) and test.
+# npx hardhat run --network localhost scripts/deploys/mainnet/v2/gnosis-strategy-template/01-gnosis-safe-circuit-breakers-dai.ts
+# npx hardhat run --network localhost scripts/deploys/mainnet/v2/gnosis-strategy-template/02-gnosis-safe-circuit-breakers-temple.ts
+# npx hardhat run --network localhost scripts/deploys/mainnet/v2/gnosis-strategy-template/03-gnosis-strategy.ts
+# npx hardhat run --network localhost scripts/deploys/mainnet/v2/gnosis-strategy-template/99-post-deploy.ts
 
 # post-deploy scripts
 npx hardhat run --network localhost scripts/deploys/mainnet/v2/post-deploy/999-transfer-ownership.ts

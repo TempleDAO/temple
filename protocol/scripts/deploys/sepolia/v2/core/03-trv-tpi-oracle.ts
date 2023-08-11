@@ -5,17 +5,19 @@ import {
   deployAndMine,
   ensureExpectedEnvvars,
 } from '../../../helpers';
+import { getDeployedContracts } from '../contract-addresses';
 
 async function main() {
   ensureExpectedEnvvars();
   const [owner] = await ethers.getSigners();
+  const TEMPLE_V2_ADDRESSES = getDeployedContracts();
 
   const treasuryPriceIndexOracle = new TreasuryPriceIndexOracle__factory(owner);
   await deployAndMine(
     'CORE.TREASURY_RESERVES_VAULT.TPI_ORACLE',
     treasuryPriceIndexOracle,
     treasuryPriceIndexOracle.deploy,
-    await owner.getAddress(),
+    TEMPLE_V2_ADDRESSES.CORE.RESCUER_MSIG,
     await owner.getAddress(),
     ethers.utils.parseEther("1.025"), // ~1.025 TPI at deployment date
     ethers.utils.parseEther("0.05"), // max treasury price index delta

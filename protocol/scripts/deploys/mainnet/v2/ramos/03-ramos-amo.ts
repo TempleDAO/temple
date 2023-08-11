@@ -24,7 +24,7 @@ async function main() {
         "RAMOS.TEMPLE_DAI.ADDRESS",
         amoFactory,
         amoFactory.deploy,
-        await owner.getAddress(),
+        TEMPLE_V2_ADDRESSES.CORE.RESCUER_MSIG,
         await owner.getAddress(),
         TEMPLE_V2_ADDRESSES.EXTERNAL.BALANCER.VAULT,
         TEMPLE_V2_ADDRESSES.CORE.TEMPLE_TOKEN,

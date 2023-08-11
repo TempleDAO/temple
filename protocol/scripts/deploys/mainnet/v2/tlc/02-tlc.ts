@@ -17,7 +17,7 @@ async function main() {
     'TEMPLE_LINE_OF_CREDIT.ADDRESS',
     tlcFactory,
     tlcFactory.deploy,
-    await owner.getAddress(),
+    TEMPLE_V2_ADDRESSES.CORE.RESCUER_MSIG,
     await owner.getAddress(),
     TEMPLE_V2_ADDRESSES.CORE.CIRCUIT_BREAKER_PROXY,
     TEMPLE_V2_ADDRESSES.CORE.TEMPLE_TOKEN,

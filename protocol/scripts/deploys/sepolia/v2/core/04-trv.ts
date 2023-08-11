@@ -17,7 +17,7 @@ async function main() {
     'CORE.TREASURY_RESERVES_VAULT.ADDRESS',
     treasuryReservesVaultFactory,
     treasuryReservesVaultFactory.deploy,
-    await owner.getAddress(),
+    TEMPLE_V2_ADDRESSES.CORE.RESCUER_MSIG,
     await owner.getAddress(),
     TEMPLE_V2_ADDRESSES.TREASURY_RESERVES_VAULT.TPI_ORACLE
   )

@@ -5,17 +5,19 @@ import {
   deployAndMine,
   ensureExpectedEnvvars,
 } from '../../../helpers';
+import { getDeployedContracts } from '../contract-addresses';
 
 async function main() {
   ensureExpectedEnvvars();
   const [owner] = await ethers.getSigners();
+  const TEMPLE_V2_ADDRESSES = getDeployedContracts();
 
   const templeCircuitBreakerProxyFactory = new TempleCircuitBreakerProxy__factory(owner);
   await deployAndMine(
     'CORE.CIRCUIT_BREAKER_PROXY',
     templeCircuitBreakerProxyFactory,
     templeCircuitBreakerProxyFactory.deploy,
-    await owner.getAddress(),
+    TEMPLE_V2_ADDRESSES.CORE.RESCUER_MSIG,
     await owner.getAddress(),
   )
 

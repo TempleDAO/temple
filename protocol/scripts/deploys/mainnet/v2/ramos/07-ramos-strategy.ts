@@ -17,7 +17,7 @@ async function main() {
     "STRATEGIES.RAMOS_STRATEGY.ADDRESS",
     factory,
     factory.deploy,
-    await owner.getAddress(),
+    TEMPLE_V2_ADDRESSES.CORE.RESCUER_MSIG,
     await owner.getAddress(),
     "RamosStrategy",
     TEMPLE_V2_ADDRESSES.TREASURY_RESERVES_VAULT.ADDRESS,

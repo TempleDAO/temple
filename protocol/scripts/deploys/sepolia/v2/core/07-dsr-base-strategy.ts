@@ -17,7 +17,7 @@ async function main() {
     'STRATEGIES.DSR_BASE_STRATEGY.ADDRESS',
     dsrBaseStrategyFactory,
     dsrBaseStrategyFactory.deploy,
-    await owner.getAddress(),
+    TEMPLE_V2_ADDRESSES.CORE.RESCUER_MSIG,
     await owner.getAddress(),
     "DsrBaseStrategy",
     TEMPLE_V2_ADDRESSES.TREASURY_RESERVES_VAULT.ADDRESS,

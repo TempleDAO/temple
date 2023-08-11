@@ -17,7 +17,7 @@ async function main() {
     'STRATEGIES.TEMPLE_BASE_STRATEGY.ADDRESS',
     templeTokenBaseFactory,
     templeTokenBaseFactory.deploy,
-    await owner.getAddress(),
+    TEMPLE_V2_ADDRESSES.CORE.RESCUER_MSIG,
     await owner.getAddress(),
     "TempleBaseStrategy",
     TEMPLE_V2_ADDRESSES.TREASURY_RESERVES_VAULT.ADDRESS,
