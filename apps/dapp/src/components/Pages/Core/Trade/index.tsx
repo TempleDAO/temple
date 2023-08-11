@@ -3,7 +3,7 @@ import { Route, Routes, Link as BaseLink, useResolvedPath, useMatch, Navigate } 
 import styled from 'styled-components';
 
 import BaseImage from 'components/Image/Image';
-import { useWatchAsset, TEMPLE_ASSET } from 'hooks/use-watch-asset';
+// import { useWatchAsset, TEMPLE_ASSET } from 'hooks/use-watch-asset';
 import { Unstake } from './views/Unstake';
 import { PageWrapper } from '../utils';
 import { Container } from './styles';
@@ -12,7 +12,9 @@ import { buttonResets } from 'styles/mixins';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 
 const TradeRoutes = () => {
-  const [watchAsset] = useWatchAsset(TEMPLE_ASSET);
+  // TODO: This is commented out because of the wagmi replacement
+  // We can probably remove the file entirely if we don't need it anymore
+  // const [watchAsset] = useWatchAsset(TEMPLE_ASSET);
 
   return (
     <>
@@ -31,7 +33,7 @@ const TradeRoutes = () => {
                 <Route path="/*" element={<Navigate to=".." replace />} />
               </Routes>
             </Wrapper>
-            {watchAsset && (
+            {/* {watchAsset && (
               <AddTokenButton type="button" onClick={watchAsset}>
                 <Image
                   src={TEMPLE_ASSET.image}
@@ -42,7 +44,7 @@ const TradeRoutes = () => {
                 />
                 Add {TICKER_SYMBOL.TEMPLE_TOKEN} To Wallet
               </AddTokenButton>
-            )}
+            )} */}
           </div>
         </Container>
       </PageWrapper>

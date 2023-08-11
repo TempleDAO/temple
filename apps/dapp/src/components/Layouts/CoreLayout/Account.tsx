@@ -1,43 +1,40 @@
 import styled from 'styled-components';
-import { useAccount, useConnect, useNetwork, useDisconnect, useEnsName } from 'wagmi';
+
 import { useMediaQuery } from 'react-responsive';
 import TruncatedAddress from 'components/TruncatedAddress';
 import Loader from 'components/Loader/Loader';
 import { Button as BaseButton } from 'components/Button/Button';
-import { LOCAL_CHAIN } from 'components/WagmiProvider';
-import { useAppContext } from 'providers/AppProvider';
 import { queryVerySmallDesktop, verySmallDesktop } from 'styles/breakpoints';
 
-import Tooltip from 'components/Tooltip/Tooltip';
-import { useEffect, useState } from 'react';
+import { useConnectWallet, useSetChain } from '@web3-onboard/react';
+
+import { useEffect, useMemo, useState } from 'react';
+import { useWallet } from 'providers/WalletProvider';
 
 export const Account = () => {
-  const { showConnectPopover } = useAppContext();
-  const { chain: activeChain } = useNetwork();
-  const { isLoading: connectLoading } = useConnect();
-  const { address, isConnecting: accountLoading, connector } = useAccount();
-  const { disconnect } = useDisconnect();
+  const [{ wallet, connecting }, connect, disconnect] = useConnectWallet();
+  const { walletAddress } = useWallet();
+  const [{ connectedChain }] = useSetChain();
+  const currentChainId = useMemo(() => parseInt(connectedChain?.id || '', 16), [connectedChain]);
+
   const isSmallDesktop = useMediaQuery({
     query: queryVerySmallDesktop,
   });
-  const networkLoading = false;
-  const isLocalChain = activeChain?.id === LOCAL_CHAIN.id;
-  const { data: ensName } = useEnsName({
-    address: (!isLocalChain && address) || undefined,
-  });
+
   const [isBlocked, setIsBlocked] = useState(false);
 
   useEffect(() => {
     const checkBlocked = async () => {
       const blocked = await fetch(`${window.location.href}api/geoblock`)
         .then((res) => res.json())
-        .then((res) => res.blocked);
+        .then((res) => res.blocked)
+        .catch(() => false);
       setIsBlocked(blocked);
     };
     checkBlocked();
   }, []);
 
-  if (accountLoading || connectLoading || networkLoading) {
+  if (connecting) {
     return <Loader />;
   }
 
@@ -45,24 +42,21 @@ export const Account = () => {
     return <ConnectButton disabled label="Restricted Jurisdiction" isSmall isActive isUppercase role="button" />;
   }
 
-  if (address) {
-    const isMetaMask = connector?.name === 'MetaMask';
+  if (wallet) {
     const disconnectButton = (
       <ConnectButton
         isSmall
         isActive
         isUppercase
-        disabled={isMetaMask}
         role="button"
         label="Disconnect"
         onClick={() => {
-          disconnect();
+          disconnect(wallet);
         }}
       />
     );
 
-    const ensOrAddress = ensName || address;
-    const explorerUrl = getChainExplorerURL(ensOrAddress, activeChain?.id);
+    const explorerUrl = getChainExplorerURL(walletAddress || '', currentChainId);
 
     return (
       <>
@@ -77,22 +71,11 @@ export const Account = () => {
               }
             }}
           >
-            Connected: {ensName || <TruncatedAddress address={address} />}
+            Connected: {<TruncatedAddress address={walletAddress || ''} />}
           </UserAddress>
         )}
         <Spacer />
-        {!isMetaMask ? (
-          disconnectButton
-        ) : (
-          <Tooltip
-            content={
-              'To disconnect an account managed through Metamask, ' +
-              'use the “Disconnect this account” button on Metamask itself'
-            }
-          >
-            {disconnectButton}
-          </Tooltip>
-        )}
+        {disconnectButton}
       </>
     );
   }
@@ -104,7 +87,10 @@ export const Account = () => {
       isUppercase
       label={'Connect Wallet'}
       role="button"
-      onClick={() => showConnectPopover()}
+      disabled={connecting}
+      onClick={() => {
+        wallet ? disconnect(wallet) : connect();
+      }}
     />
   );
 };
@@ -113,10 +99,8 @@ const getChainExplorerURL = (ensOrAddress: string, chainId?: number) => {
   switch (chainId) {
     case 1:
       return `https://etherscan.io/address/${ensOrAddress}`;
-    case 4:
-      return `https://rinkeby.etherscan.io/address/${ensOrAddress}`;
-    case 5:
-      return `https://goerli.etherscan.io/address/${ensOrAddress}`;
+    case 11155111:
+      return `https://sepolia.etherscan.io/address/${ensOrAddress}`;
     default:
       return '#';
   }

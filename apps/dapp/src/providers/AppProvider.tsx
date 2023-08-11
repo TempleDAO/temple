@@ -6,44 +6,28 @@ import { WalletProvider } from 'providers/WalletProvider';
 import { SwapProvider } from 'providers/SwapProvider';
 import { StakingProvider } from 'providers/StakingProvider';
 import { FaithProvider } from 'providers/FaithProvider';
-import { WagmiProvider } from 'components/WagmiProvider';
 import { VaultContextProvider } from 'components/Pages/Core/VaultContext';
 
-import { noop } from 'utils/helpers';
-import { ConnectorPopover } from 'components/Layouts/CoreLayout/ConnectorPopover';
+import { Web3OnboardInitProvider } from 'components/Web3OnboardInitProvider';
 import { WrongNetworkPopover } from 'components/Layouts/CoreLayout/WrongNetworkPopover';
 
-interface AppProviderState {
-  showConnectPopover: () => void;
-}
+interface AppProviderState {}
 
-export const INITIAL_STATE: AppProviderState = {
-  showConnectPopover: noop,
-};
+export const INITIAL_STATE: AppProviderState = {};
 
 export const AppContext = createContext<AppProviderState>(INITIAL_STATE);
 
 export const AppProvider = (props: PropsWithChildren<{}>) => {
-  const [connectPopoverVisible, setConnectPopoverVisibile] = useState(false);
-
-  const showConnectPopover = useCallback(() => {
-    setConnectPopoverVisibile(true);
-  }, [setConnectPopoverVisibile]);
-
   return (
     <NotificationProvider>
-      <WagmiProvider>
+      <Web3OnboardInitProvider>
         <WalletProvider>
           <SwapProvider>
             <StakingProvider>
               <FaithProvider>
                 <VaultContextProvider>
                   <ThemeProvider theme={theme}>
-                    <AppContext.Provider value={{ showConnectPopover }}>
-                      <ConnectorPopover
-                        isOpen={connectPopoverVisible}
-                        onClose={() => setConnectPopoverVisibile(false)}
-                      />
+                    <AppContext.Provider value={{}}>
                       <WrongNetworkPopover />
                       {props.children}
                     </AppContext.Provider>
@@ -53,7 +37,7 @@ export const AppProvider = (props: PropsWithChildren<{}>) => {
             </StakingProvider>
           </SwapProvider>
         </WalletProvider>
-      </WagmiProvider>
+      </Web3OnboardInitProvider>
     </NotificationProvider>
   );
 };
