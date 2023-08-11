@@ -794,8 +794,8 @@ contract ThresholdSafeGuardTest is ThresholdSafeGuardTestBase {
                 abi.encodeWithSelector(fnSelector, "abc", 1), 
                 makeSignSpecs(
                     SignSpec(SignType.AS_EXECUTOR, safeOwners[0]),
-                    SignSpec(SignType.AS_CONTRACT, safeOwners[3]), // This is a Safe itself
-                    SignSpec(SignType.AS_EOA_TX, safeOwners[1])
+                    SignSpec(SignType.AS_EOA_TX, safeOwners[1]),
+                    SignSpec(SignType.AS_CONTRACT, safeOwners[3]) // This is a Safe itself
                 ),
                 // Add the signer details Safe owner - only need 2/3 as this safe doesn't use the same guard
                 makeSignSpecs(
@@ -814,8 +814,8 @@ contract ThresholdSafeGuardTest is ThresholdSafeGuardTestBase {
                 abi.encodeWithSelector(fnSelector2), 
                 makeSignSpecs(
                     SignSpec(SignType.AS_EXECUTOR, safeOwners[0]),
-                    SignSpec(SignType.AS_CONTRACT, safeOwners[3]), // This is a Safe itself
-                    SignSpec(SignType.AS_EOA_TX, safeOwners[1])
+                    SignSpec(SignType.AS_EOA_TX, safeOwners[1]),
+                    SignSpec(SignType.AS_CONTRACT, safeOwners[3]) // This is a Safe itself
                 ),
                 // Add the signer details Safe owner - only need 2/3 as this safe doesn't use the same guard
                 makeSignSpecs(
@@ -1004,8 +1004,8 @@ contract ThresholdSafeGuardExecuteTest is ThresholdSafeGuardTestBase {
                     fnCall, 
                     makeSignSpecs(
                         SignSpec(SignType.AS_EXECUTOR, safeOwners[0]),
-                        SignSpec(SignType.AS_CONTRACT, safeOwners[3]), // This is a Safe itself
-                        SignSpec(SignType.AS_EOA_TX, safeOwners[1])
+                        SignSpec(SignType.AS_EOA_TX, safeOwners[1]),
+                        SignSpec(SignType.AS_CONTRACT, safeOwners[3]) // This is a Safe itself
                     ),
                     // Add the signer details Safe owner
                     makeSignSpecs(
@@ -1029,8 +1029,8 @@ contract ThresholdSafeGuardExecuteTest is ThresholdSafeGuardTestBase {
                     fnCall, 
                     makeSignSpecs(
                         SignSpec(SignType.AS_EXECUTOR, safeOwners[0]),
-                        SignSpec(SignType.AS_CONTRACT, safeOwners[3]), // This is a Safe itself
-                        SignSpec(SignType.AS_EOA_TX, safeOwners[1])
+                        SignSpec(SignType.AS_EOA_TX, safeOwners[1]),
+                        SignSpec(SignType.AS_CONTRACT, safeOwners[3]) // This is a Safe itself
                     ),
                     // Add the signer details Safe owner
                     makeSignSpecs(
