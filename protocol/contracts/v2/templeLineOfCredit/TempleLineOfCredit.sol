@@ -222,7 +222,7 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
                 _cache, 
                 _accountData.debtCheckpoint, 
                 _accountData.interestAccumulator,
-                false // don't round on the way in
+                false // don't round up on the way in
             ) + amount;
 
             // Update the state
@@ -633,7 +633,7 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
         }
         
         // Only compound if we're on a new block
-        uint256 interestAccumulatorUpdatedAt = debtTokenData.interestAccumulatorUpdatedAt;
+        uint32 interestAccumulatorUpdatedAt = debtTokenData.interestAccumulatorUpdatedAt;
         uint32 blockTs = uint32(block.timestamp);
         if (blockTs != interestAccumulatorUpdatedAt) {
             dirty = true;
