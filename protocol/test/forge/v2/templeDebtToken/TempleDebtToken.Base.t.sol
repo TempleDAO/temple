@@ -142,13 +142,14 @@ contract TempleDebtTokenTestBase is TempleTest {
     function makeExpected(
         uint256 baseShares, 
         uint256 baseTotal, 
-        uint256 debtorInterestOnly
+        uint256 debtorInterestOnly,
+        bool roundUp
     ) internal pure returns (Expected memory) {
         return Expected({
             baseShares: baseShares,
             baseTotal: baseTotal,
             debtorInterestOnly: debtorInterestOnly,
-            balanceOf: baseTotal + debtorInterestOnly
+            balanceOf: baseTotal + debtorInterestOnly + (roundUp ? 1 : 0)
         });
     }
 }
