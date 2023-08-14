@@ -77,8 +77,8 @@ contract TempleDebtTokenTestBaseInterestOnly is TempleDebtTokenTestBase {
         uint256 bobExpectedShares = SECOND_DAY_SHARES;
         uint256 aliceExpectedDebt = ONE_PCT_1DAY;
         checkBaseInterest(DEFAULT_BASE_INTEREST, amount+bobExpectedShares, amount+aliceExpectedDebt, block.timestamp, amount+aliceExpectedDebt, 2*amount, 0);
-        checkDebtor(alice, 0, amount, amount, 0, blockTs, aliceExpectedDebt);
-        checkDebtor(bob, 0, amount, bobExpectedShares, 0, block.timestamp, amount-1); // balanceOf rounded down.
+        checkDebtor(alice, 0, amount, amount, 0, blockTs, aliceExpectedDebt+1); // rounds up
+        checkDebtor(bob, 0, amount, bobExpectedShares, 0, block.timestamp, amount);
 
         vm.warp(block.timestamp + 364 days);
         dUSD.checkpointBaseInterest();
@@ -89,8 +89,8 @@ contract TempleDebtTokenTestBaseInterestOnly is TempleDebtTokenTestBase {
         uint256 expectedTotal = 202007266194009208842;
         checkBaseInterest(DEFAULT_BASE_INTEREST, amount+bobExpectedShares, expectedTotal, block.timestamp, expectedTotal, 2*amount, 0);
         aliceExpectedDebt = ONE_PCT_365DAY_ROUNDING;
-        checkDebtor(alice, 0, amount, amount, 0, block.timestamp, aliceExpectedDebt);
-        checkDebtor(bob, 0, amount, bobExpectedShares, 0, block.timestamp, expectedTotal-aliceExpectedDebt-1); // balanceOf rounded down.
+        checkDebtor(alice, 0, amount, amount, 0, block.timestamp, aliceExpectedDebt+1); // rounds up
+        checkDebtor(bob, 0, amount, bobExpectedShares, 0, block.timestamp, expectedTotal-aliceExpectedDebt);
     }
 
     function test_burn_invalidParams() public {
@@ -115,6 +115,23 @@ contract TempleDebtTokenTestBaseInterestOnly is TempleDebtTokenTestBase {
         checkBaseInterest(DEFAULT_BASE_INTEREST, 0, 0, block.timestamp, 0, 0, 0);
         checkDebtor(alice, 0, 0, 0, 0, block.timestamp, 0);
     }
+
+    // function test_burn_alice_rounding() public {
+    //     vm.startPrank(executor);
+    //     uint256 amount = 1;
+    //     dUSD.mint(bob, 100e18);
+
+    //     vm.warp(block.timestamp + 1 days);
+    //     dUSD.mint(alice, amount);
+
+    //     // vm.expectEmit();
+    //     // emit Transfer(alice, address(0), amount);
+    //     uint256 burnedAmount = dUSD.burn(alice, amount);
+
+    //     assertEq(burnedAmount, amount);
+    //     checkBaseInterest(DEFAULT_BASE_INTEREST, 0, 0, block.timestamp, 0, 0, 0);
+    //     checkDebtor(alice, 0, 0, 0, 0, block.timestamp, 0);
+    // }
 
     function test_burn_tooMuch_cap() public {
         vm.startPrank(executor);
@@ -196,18 +213,18 @@ contract TempleDebtTokenTestBaseInterestOnly is TempleDebtTokenTestBase {
         // Slightly less than the amount as Alice accrued some interest
         uint256 expectedBobShares = SECOND_DAY_SHARES;
         checkBaseInterest(DEFAULT_BASE_INTEREST, amount+expectedBobShares, amount+expectedBobBal, blockTs2, expectedAliceBal+expectedBobBal, 2*amount, 0);
-        checkDebtor(alice, 0, amount, amount, 0, blockTs1, expectedAliceBal);
-        checkDebtor(bob, 0, amount, expectedBobShares, 0, blockTs2, expectedBobBal-1);
+        checkDebtor(alice, 0, amount, amount, 0, blockTs1, expectedAliceBal+1); // rounds up
+        checkDebtor(bob, 0, amount, expectedBobShares, 0, blockTs2, expectedBobBal);
         
         // Alice pays it off fully
-        dUSD.burn(alice, expectedAliceBal);
+        dUSD.burn(alice, expectedAliceBal+1); // rounds up
 
-        checkBaseInterest(DEFAULT_BASE_INTEREST, expectedBobShares, expectedBobBal, block.timestamp, expectedBobBal, amount, 0);
+        checkBaseInterest(DEFAULT_BASE_INTEREST, expectedBobShares-1, expectedBobBal-1, block.timestamp, expectedBobBal-1, amount, 0);
         checkDebtor(alice, 0, 0, 0, 0, block.timestamp, 0);
-        checkDebtor(bob, 0, amount, expectedBobShares, 0, blockTs2, expectedBobBal);
+        checkDebtor(bob, 0, amount, expectedBobShares, 0, blockTs2, expectedBobBal+1); // rounds up
 
         // Bob pays it off fully
-        dUSD.burn(bob, expectedBobBal);
+        dUSD.burn(bob, expectedBobBal+1); // rounds up
 
         checkBaseInterest(DEFAULT_BASE_INTEREST, 0, 0, block.timestamp, 0, 0, 0);
         checkDebtor(alice, 0, 0, 0, 0, block.timestamp, 0);
@@ -226,7 +243,7 @@ contract TempleDebtTokenTestBaseInterestOnly is TempleDebtTokenTestBase {
         checkDebtor(alice, 0, amount, amount, 0, blockTs, expectedBal);
 
         uint256 repayAmount = 1e18;
-        uint256 repayShares = dUSD.baseDebtToShares(repayAmount) + 1; // Gets rounded up within repay.
+        uint256 repayShares = dUSD.baseDebtToShares(uint128(repayAmount)) + 1; // Gets rounded up within repay.
         dUSD.burn(alice, repayAmount);
 
         checkBaseInterest(DEFAULT_BASE_INTEREST, amount-repayShares, expectedBal-repayAmount, block.timestamp, expectedBal-repayAmount, amount, 0);
@@ -250,33 +267,35 @@ contract TempleDebtTokenTestBaseInterestOnly is TempleDebtTokenTestBase {
         // Slightly less than the amount as Alice accrued some interest
         uint256 expectedBobShares = SECOND_DAY_SHARES;
         checkBaseInterest(DEFAULT_BASE_INTEREST, amount+expectedBobShares, amount+expectedBobBal, blockTs2, expectedAliceBal+expectedBobBal, 2*amount, 0);
-        checkDebtor(alice, 0, amount, amount, 0, blockTs1, expectedAliceBal);
-        checkDebtor(bob, 0, amount, expectedBobShares, 0, blockTs2, expectedBobBal-1);
+        checkDebtor(alice, 0, amount, amount, 0, blockTs1, expectedAliceBal+1); // rounds up
+        checkDebtor(bob, 0, amount, expectedBobShares, 0, blockTs2, expectedBobBal);
         
         // Alice pays 10e18 off
         uint256 repayAmount = 10e18;
         dUSD.burn(alice, repayAmount);
-        uint256 repayShares = dUSD.baseDebtToShares(repayAmount);
+        uint256 repayShares = dUSD.baseDebtToShares(uint128(repayAmount));
 
+        uint256 expectedPrincipal = amount+expectedAliceBal-repayAmount+1;
         checkBaseInterest(
             DEFAULT_BASE_INTEREST, 
             amount+expectedBobShares-repayShares-1, 
             expectedBobBal+expectedAliceBal-repayAmount, 
             block.timestamp, 
             expectedBobBal+expectedAliceBal-repayAmount, 
-            amount+expectedAliceBal-repayAmount, 0
+            expectedPrincipal,
+            0
         );
 
         expectedAliceBal -= repayAmount;
-        checkDebtor(alice, 0, expectedAliceBal, amount-repayShares-1, 0, block.timestamp, expectedAliceBal);
-        checkDebtor(bob, 0, amount, expectedBobShares, 0, blockTs2, expectedBobBal-1);
+        checkDebtor(alice, 0, expectedAliceBal+1, amount-repayShares-1, 0, block.timestamp, expectedAliceBal+1);
+        checkDebtor(bob, 0, amount, expectedBobShares, 0, blockTs2, expectedBobBal);
 
         // Alice pays the remainder off
-        dUSD.burn(alice, expectedAliceBal);
+        dUSD.burn(alice, expectedAliceBal+1);
 
-        checkBaseInterest(DEFAULT_BASE_INTEREST, expectedBobShares, expectedBobBal, block.timestamp, expectedBobBal, amount, 0);
+        checkBaseInterest(DEFAULT_BASE_INTEREST, expectedBobShares-1, expectedBobBal-1, block.timestamp, expectedBobBal-1, amount, 0);
         checkDebtor(alice, 0, 0, 0, 0, block.timestamp, 0);
-        checkDebtor(bob, 0, amount, expectedBobShares, 0, blockTs2, expectedBobBal);
+        checkDebtor(bob, 0, amount, expectedBobShares, 0, blockTs2, expectedBobBal+1); // rounds up
     }
 
     function test_zeroInterest() public {
@@ -330,10 +349,10 @@ contract TempleDebtTokenTestBaseInterestOnly is TempleDebtTokenTestBase {
         checkBaseInterest(DEFAULT_BASE_INTEREST, amount+bobExpectedShares, amount+aliceBal, startBlockTs + 1 days, expectedTotal, 2*amount, 0);
 
         aliceBal = ONE_PCT_365DAY_ROUNDING;
-        checkDebtor(alice, 0, amount, amount, 0, startBlockTs, aliceBal);
+        checkDebtor(alice, 0, amount, amount, 0, startBlockTs, aliceBal+1); // rounds up
 
         uint256 bobBal = ONE_PCT_364DAY;
-        checkDebtor(bob, 0, amount, bobExpectedShares, 0, startBlockTs + 1 days, bobBal-1);
+        checkDebtor(bob, 0, amount, bobExpectedShares, 0, startBlockTs + 1 days, bobBal);
 
         changePrank(executor);
         uint96 updatedBaseRate = 0.05e18;
@@ -341,8 +360,8 @@ contract TempleDebtTokenTestBaseInterestOnly is TempleDebtTokenTestBase {
 
         // The rate was updated and a checkpoint was made
         checkBaseInterest(updatedBaseRate, amount+bobExpectedShares, expectedTotal, block.timestamp, expectedTotal, 2*amount, 0);
-        checkDebtor(alice, 0, amount, amount, 0, startBlockTs, aliceBal);
-        checkDebtor(bob, 0, amount, bobExpectedShares, 0, startBlockTs + 1 days, bobBal-1);
+        checkDebtor(alice, 0, amount, amount, 0, startBlockTs, aliceBal+1); // rounds up
+        checkDebtor(bob, 0, amount, bobExpectedShares, 0, startBlockTs + 1 days, bobBal);
 
         uint256 ts = block.timestamp;
         vm.warp(block.timestamp + 365 days);
@@ -352,11 +371,11 @@ contract TempleDebtTokenTestBaseInterestOnly is TempleDebtTokenTestBase {
         checkBaseInterest(updatedBaseRate, amount+bobExpectedShares, expectedTotal, ts, expectedBal, 2*amount, 0);
 
         // 365 days of 5% interest on ONE_PCT_365DAY_ROUNDING
-        aliceBal = 106183654654535961929;
+        aliceBal = 106183654654535961930;
         checkDebtor(alice, 0, amount, amount, 0, startBlockTs, aliceBal);
 
         // 365 days of 5% interest on ONE_PCT_364DAY
-        bobBal = 106180745553163435825;
+        bobBal = 106180745553163435826;
         checkDebtor(bob, 0, amount, bobExpectedShares, 0, startBlockTs + 1 days, bobBal);
     }
 
@@ -388,9 +407,9 @@ contract TempleDebtTokenTestBaseInterestOnly is TempleDebtTokenTestBase {
 
         changePrank(executor);
         dUSD.burnAll(alice);
-        checkBaseInterest(0.05e18, bobExpectedShares, bobBal, block.timestamp, bobBal, amount, 0);
+        checkBaseInterest(0.05e18, bobExpectedShares-1, bobBal-1, block.timestamp, bobBal-1, amount, 0);
         checkDebtor(alice, 0, 0, 0, 0, block.timestamp, 0);
-        checkDebtor(bob, 0, amount, bobExpectedShares, 0, startBlockTs + 1 days, bobBal);
+        checkDebtor(bob, 0, amount, bobExpectedShares, 0, startBlockTs + 1 days, bobBal+1); // rounds up
 
         dUSD.burnAll(bob);
         checkBaseInterest(0.05e18, 0, 0, block.timestamp, 0, 0, 0);
@@ -418,8 +437,8 @@ contract TempleDebtTokenTestBaseInterestOnly is TempleDebtTokenTestBase {
         ITempleDebtToken.DebtOwed memory debtOwed = dUSD.currentTotalDebt();
         assertEq(debtOwed.principal, 2*amount);
         assertEq(debtOwed.baseInterest, bobInterest);
-        assertEq(dUSD.baseDebtToShares(debtOwed.principal+debtOwed.baseInterest), amount+bobExpectedShares);
-        assertEq(dUSD.baseSharesToDebt(dUSD.baseDebtToShares(debtOwed.principal+debtOwed.baseInterest)), debtOwed.principal+debtOwed.baseInterest);
+        assertEq(dUSD.baseDebtToShares(uint128(debtOwed.principal+debtOwed.baseInterest)), amount+bobExpectedShares);
+        assertEq(dUSD.baseSharesToDebt(dUSD.baseDebtToShares(uint128(debtOwed.principal+debtOwed.baseInterest))), debtOwed.principal+debtOwed.baseInterest);
     }
 
     function test_currentDebtOf() public {
@@ -435,14 +454,14 @@ contract TempleDebtTokenTestBaseInterestOnly is TempleDebtTokenTestBase {
         dUSD.setBaseInterestRate(0.05e18);
         vm.warp(block.timestamp + 365 days);
 
-        uint256 aliceBal = 6183654654535961929;
+        uint256 aliceBal = 6183654654535961930;
         ITempleDebtToken.DebtOwed memory userDebt = dUSD.currentDebtOf(alice);
         assertEq(userDebt.principal, amount);
         assertEq(userDebt.baseInterest, aliceBal);
         assertEq(userDebt.riskPremiumInterest, 0);
         assertEq(dUSD.balanceOf(alice), userDebt.principal+userDebt.baseInterest+userDebt.riskPremiumInterest);
 
-        uint256 bobBal = 6180745553163435825;
+        uint256 bobBal = 6180745553163435826;
         userDebt = dUSD.currentDebtOf(bob);
         assertEq(userDebt.principal, amount);
         assertEq(userDebt.baseInterest, bobBal);
