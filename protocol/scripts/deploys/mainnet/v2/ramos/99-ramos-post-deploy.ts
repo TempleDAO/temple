@@ -54,7 +54,7 @@ async function ramosPostDeploy(ramos: Ramos, TEMPLE_V2_ADDRESSES: ContractAddres
     await mine(ramos.setCoolDown(1800));
     await mine(ramos.setRebalancePercentageBounds(100, 1_000));  // rebalance_up if 1% below, rebalance_down if 10% above
     await mine(ramos.setMaxRebalanceAmounts(toAtto(1_000_000), toAtto(1_000_000), toAtto(1_000_000))); // 1Mill max on each
-    await mine(ramos.setPostRebalanceSlippage(5_000)); // 50%
+    await mine(ramos.setPostRebalanceDelta(5_000)); // 50%
     await mine(ramos.setPoolHelper(TEMPLE_V2_ADDRESSES.RAMOS.TEMPLE_DAI.POOL_HELPER));
 
     // The Automation EOA is allowed to call ramos.
