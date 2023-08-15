@@ -18,10 +18,14 @@ contract VaultEarlyWithdraw is Pausable, Ownable {
     IERC20 immutable public templeToken;
     mapping(address => bool) public validVaults;
 
+    // @notice Enforce a minimum withdraw amount to circumvent very small rounding issues on exit
+    uint256 public minWithdrawAmount = 1_000;
+
     event TokenRecovered(address indexed token, address indexed to, uint256 amount);
     event EarlyWithdraw(address indexed addr, uint256 amount);
+    event MinWithdrawAmountSet(uint256 amount);
 
-    error ExpectedNonZero();
+    error MinAmountNotMet();
     error InvalidVault(address _vaultAddress);
     error InvalidAddress(address _addr);
     error SendFailed();
@@ -42,12 +46,17 @@ contract VaultEarlyWithdraw is Pausable, Ownable {
         _unpause();
     }
 
+    function setMinWithdrawAmount(uint256 amount) external onlyOwner {
+        minWithdrawAmount = amount;
+        emit MinWithdrawAmountSet(amount);
+    }
+
     /**
      * @notice User with vaulted token in one of the whitelisted vaults can withdraw early.
      */
     function withdraw(address _vault, uint256 _templeAmount) external whenNotPaused {
         if (!validVaults[_vault]) revert InvalidVault(_vault);
-        if (_templeAmount == 0) revert ExpectedNonZero();
+        if (_templeAmount < minWithdrawAmount) revert MinAmountNotMet();
 
         // Pull the user's vaulted temple, and send to the owner
         IERC20(_vault).safeTransferFrom(msg.sender, owner(), _templeAmount);
