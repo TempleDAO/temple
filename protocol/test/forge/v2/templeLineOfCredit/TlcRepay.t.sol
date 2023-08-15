@@ -357,9 +357,9 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
     function test_repay_gas() public {
         // With unoptmised solc FOUNDRY_PROFILE=lite
         (uint256 first, uint256 second, uint256 third) = _repayIteration(makeAddr("acct1"));
-        assertLt(first, 89_000, "acct1 1");
-        assertLt(second, 85_000, "acct1 2");
-        assertLt(third, 103_000, "acct1 3");
+        assertLt(first, 88_000, "acct1 1");
+        assertLt(second, 84_000, "acct1 2");
+        assertLt(third, 102_000, "acct1 3");
 
         (first, second, third) = _repayIteration(makeAddr("acct2"));
         assertLt(first, 85_000, "acct2 1");

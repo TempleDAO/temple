@@ -196,12 +196,12 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
             baseCheckpointTime = uint32(block.timestamp);
             baseCheckpoint = _baseCache.totalPrincipalAndBaseInterest + _mintAmountUInt128;
             baseShares = _baseCache.baseShares + newSharesAmount;
-            debtor.baseShares = _debtorCache.baseShares + newSharesAmount;
             totalPrincipal += _mintAmountUInt128;
 
             // The principal borrowed now increases (which affects the risk premium interest accrual)
             // and also the (base rate) checkpoint representing the principal+base interest
             debtor.principal = _debtorCache.principal = _debtorCache.principal + _mintAmountUInt128;
+            debtor.baseShares = _debtorCache.baseShares + newSharesAmount;
         }
 
         emit DebtorBalance(_debtor, _debtorCache.principal, _debtorCache.baseInterest, _debtorCache.riskPremiumInterest);
@@ -327,6 +327,8 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
 
             // Calculate the number of shares (base) total repayment represents. 
             // Round up to the nearest share (same as EIP-4626)
+            // Given it rounds up, there's a chance that it is slightly more than remaining on the caches, so
+            // remaining totals use `subFloorZero()` which is the difference floored at zero.
             uint128 _totalSharesRepaid = _debtToShares(
                 _totalBaseRepaid, 
                 _baseCache.totalPrincipalAndBaseInterest, 
@@ -336,28 +338,29 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
 
             // Update the base state in order of storage slots
             baseCheckpointTime = uint32(block.timestamp);
-            baseCheckpoint = _diffFloorZero(_baseCache.totalPrincipalAndBaseInterest, _totalBaseRepaid);
-            baseShares = _diffFloorZero(_baseCache.baseShares, _totalSharesRepaid);
-            totalPrincipal = _diffFloorZero(totalPrincipal, _burnAmount);
+            baseCheckpoint = _subFloorZero(_baseCache.totalPrincipalAndBaseInterest, _totalBaseRepaid);
+            baseShares = _subFloorZero(_baseCache.baseShares, _totalSharesRepaid);
+            totalPrincipal = _subFloorZero(totalPrincipal, _burnAmount);
 
             // Update the cumulative estimate of total debtor interest owing.
             unchecked {
-                estimatedTotalRiskPremiumInterest = _diffFloorZero(
+                estimatedTotalRiskPremiumInterest = _subFloorZero(
                     estimatedTotalRiskPremiumInterest + _debtorCache.riskPremiumInterestDelta,
                     _riskPremiumDebtRepaid
                 );
             }
 
-            // Update debtor base interest in the cache (log emits this updated base interest)
-            _debtorCache.baseInterest = _diffFloorZero(_debtorCache.baseInterest, _baseDebtRepaid);
-
             // Update the debtor state in order of storage slots
-            _debtor.principal = _debtorCache.principal = _diffFloorZero(_debtorCache.principal, _burnAmount);
-            _debtor.baseShares = _diffFloorZero(_debtorCache.baseShares, _totalSharesRepaid);
-
-            // Update the per debtor checkpoint of (risk premium) interest, and also update the 
-            _debtor.checkpoint = _debtorCache.riskPremiumInterest = _diffFloorZero(_debtorCache.riskPremiumInterest, _riskPremiumDebtRepaid);
+            _debtor.principal = _debtorCache.principal = _subFloorZero(_debtorCache.principal, _burnAmount);
+            _debtor.baseShares = _subFloorZero(_debtorCache.baseShares, _totalSharesRepaid);
+            _debtor.checkpoint = _debtorCache.riskPremiumInterest = _subFloorZero(_debtorCache.riskPremiumInterest, _riskPremiumDebtRepaid);
             _debtor.checkpointTime = uint32(block.timestamp);
+
+            // Update debtor base interest in the cache (log emits this updated base interest)
+            unchecked {
+                // Unchecked is safe since it's validated when _baseDebtRepaid is first calculated above
+                _debtorCache.baseInterest = _debtorCache.baseInterest - _baseDebtRepaid;
+            }
         }
     }
 
@@ -528,7 +531,7 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
         uint128 _principal = totalPrincipal;
         return DebtOwed(
             _principal,
-            _diffFloorZero(_baseCache.totalPrincipalAndBaseInterest, _principal),
+            _subFloorZero(_baseCache.totalPrincipalAndBaseInterest, _principal),
             estimatedTotalRiskPremiumInterest
         );
     }
@@ -764,7 +767,7 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
     }
 
     /// @dev The difference between `a - b`, floored at zero (will not revert) for two uint128 variables
-    function _diffFloorZero(uint128 a, uint128 b) internal pure returns (uint128) {
+    function _subFloorZero(uint128 a, uint128 b) internal pure returns (uint128) {
         unchecked {
             return a > b ? a - b : 0;
         }
