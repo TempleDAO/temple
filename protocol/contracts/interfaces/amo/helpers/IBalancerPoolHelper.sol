@@ -74,7 +74,7 @@ interface IBalancerPoolHelper {
         uint256 minAmountOut,
         uint256 rebalancePercentageBoundLow,
         uint256 rebalancePercentageBoundUp,
-        uint256 postRebalanceSlippage,
+        uint256 postRebalanceDelta,
         uint256 exitTokenIndex,
         uint256 treasuryPriceIndex,
         IERC20 exitPoolToken
@@ -86,7 +86,7 @@ interface IBalancerPoolHelper {
         uint256 rebalancePercentageBoundUp,
         uint256 rebalancePercentageBoundLow,
         uint256 treasuryPriceIndex,
-        uint256 postRebalanceSlippage,
+        uint256 postRebalanceDelta,
         uint256 joinTokenIndex,
         IERC20 joinPoolToken
     ) external returns (uint256 bptIn);

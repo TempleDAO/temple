@@ -86,7 +86,7 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
 
     /// @notice A limit on how much the price can be impacted by a rebalance. 
     /// A price change over this limit will revert. Specified in bps
-    uint64 public override postRebalanceSlippage;
+    uint64 public override postRebalanceDelta;
 
     /// @notice `protocolToken` index in balancer pool. to avoid recalculation or external calls
     uint64 public immutable override protocolTokenBalancerPoolIndex;
@@ -140,12 +140,12 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
     /**
      * @notice Set the acceptable amount of price impact allowed due to a rebalance
      */
-    function setPostRebalanceSlippage(uint64 slippage) external onlyElevatedAccess {
-        if (slippage > BPS_PRECISION || slippage == 0) {
-            revert AMOCommon.InvalidBPSValue(slippage);
+    function setPostRebalanceDelta(uint64 deltaBps) external onlyElevatedAccess {
+        if (deltaBps > BPS_PRECISION || deltaBps == 0) {
+            revert AMOCommon.InvalidBPSValue(deltaBps);
         }
-        postRebalanceSlippage = slippage;
-        emit SetPostRebalanceSlippage(slippage);
+        postRebalanceDelta = deltaBps;
+        emit SetPostRebalanceDelta(deltaBps);
     }
 
     /**
@@ -301,7 +301,7 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
         // protocolToken single side exit
         uint256 protocolTokenAmountOut = _poolHelper.exitPool(
             bptAmountIn, minProtocolTokenOut, rebalancePercentageBoundLow,
-            rebalancePercentageBoundUp, postRebalanceSlippage,
+            rebalancePercentageBoundUp, postRebalanceDelta,
             protocolTokenBalancerPoolIndex, treasuryPriceIndex(), protocolToken
         );
 
@@ -345,7 +345,7 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
         // QuoteToken single side exit
         uint256 quoteTokenAmountOut = _poolHelper.exitPool(
             bptAmountIn, minQuoteTokenAmountOut, rebalancePercentageBoundLow, rebalancePercentageBoundUp,
-            postRebalanceSlippage, 1-protocolTokenBalancerPoolIndex, treasuryPriceIndex(), quoteToken
+            postRebalanceDelta, 1-protocolTokenBalancerPoolIndex, treasuryPriceIndex(), quoteToken
         );
 
         // Collect the fees on the output quote token
@@ -397,7 +397,7 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
         // quoteToken single side join
         uint256 bptTokensStaked = _poolHelper.joinPool(
             joinAmountIn, minBptOut, rebalancePercentageBoundUp, rebalancePercentageBoundLow,
-            treasuryPriceIndex(), postRebalanceSlippage, 1-protocolTokenBalancerPoolIndex, quoteToken
+            treasuryPriceIndex(), postRebalanceDelta, 1-protocolTokenBalancerPoolIndex, quoteToken
         );
         emit RebalanceUpJoin(quoteTokenAmountIn, bptTokensStaked, feeAmt);
 
@@ -443,7 +443,7 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
         uint256 bptTokensStaked = _poolHelper.joinPool(
             joinAmountIn, minBptOut, rebalancePercentageBoundUp,
             rebalancePercentageBoundLow, treasuryPriceIndex(), 
-            postRebalanceSlippage, protocolTokenBalancerPoolIndex, protocolToken
+            postRebalanceDelta, protocolTokenBalancerPoolIndex, protocolToken
         );
         emit RebalanceDownJoin(protocolTokenAmountIn, bptTokensStaked, feeAmt);
 
