@@ -155,7 +155,7 @@ contract BalancerPoolHelper is IBalancerPoolHelper {
         return spot < minNewTpi;
     }
 
-    // get slippage between spot price before and spot price now
+    // get the change between spot price before and spot price now
     function getSlippage(uint256 spotPriceBefore) public override view returns (uint256) {
         uint256 spotPriceNow = getSpotPrice();
 
@@ -210,7 +210,7 @@ contract BalancerPoolHelper is IBalancerPoolHelper {
         uint256 minAmountOut,
         uint256 rebalancePercentageBoundLow,
         uint256 rebalancePercentageBoundUp,
-        uint256 postRebalanceSlippage,
+        uint256 postRebalanceDelta,
         uint256 exitTokenIndex,
         uint256 treasuryPriceIndex,
         IERC20 exitPoolToken
@@ -233,7 +233,7 @@ contract BalancerPoolHelper is IBalancerPoolHelper {
             amountOut = exitTokenBalanceAfter - exitTokenBalanceBefore;
         }
 
-        if (uint64(getSlippage(spotPriceBefore)) > postRebalanceSlippage) {
+        if (getSlippage(spotPriceBefore) > postRebalanceDelta) {
             revert AMOCommon.HighSlippage();
         }
     }
@@ -244,7 +244,7 @@ contract BalancerPoolHelper is IBalancerPoolHelper {
         uint256 rebalancePercentageBoundUp,
         uint256 rebalancePercentageBoundLow,
         uint256 treasuryPriceIndex,
-        uint256 postRebalanceSlippage,
+        uint256 postRebalanceDelta,
         uint256 joinTokenIndex,
         IERC20 joinPoolToken
     ) external override onlyAmo returns (uint256 bptOut) {
@@ -275,7 +275,7 @@ contract BalancerPoolHelper is IBalancerPoolHelper {
         }
 
         // revert if high slippage after pool join
-        if (uint64(getSlippage(spotPriceBefore)) > postRebalanceSlippage) {
+        if (getSlippage(spotPriceBefore) > postRebalanceDelta) {
             revert AMOCommon.HighSlippage();
         }
     }

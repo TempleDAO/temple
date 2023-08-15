@@ -39,7 +39,7 @@ interface IRamos {
 
     // Admin events
     event RecoveredToken(address token, address to, uint256 amount);
-    event SetPostRebalanceSlippage(uint64 slippageBps);
+    event SetPostRebalanceDelta(uint64 deltaBps);
     event SetCooldown(uint64 cooldownSecs);
     event SetRebalancePercentageBounds(uint64 belowTpi, uint64 aboveTpi);
     event TpiOracleSet(address indexed tpiOracle);
@@ -106,7 +106,7 @@ interface IRamos {
 
     /// @notice A limit on how much the price can be impacted by a rebalance. 
     /// A price change over this limit will revert. Specified in bps
-    function postRebalanceSlippage() external view returns (uint64);
+    function postRebalanceDelta() external view returns (uint64);
 
     /// @notice protocolToken index in balancer pool. to avoid recalculation or external calls
     function protocolTokenBalancerPoolIndex() external view returns (uint64);

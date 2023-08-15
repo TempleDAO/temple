@@ -243,7 +243,7 @@ describe("RAMOS", async () => {
             quoteToken: BigNumber.from(ONE_ETH).mul(10)
         }
         await amo.setMaxRebalanceAmounts(maxAmounts.bpt, maxAmounts.quoteToken, maxAmounts.temple);
-        await amo.setPostRebalanceSlippage(200); // 2% max price movement
+        await amo.setPostRebalanceDelta(200); // 2% max price movement
         await templeToken.transfer(MULTISIG, ethers.utils.parseEther("100"));
 
         return {
@@ -400,7 +400,7 @@ describe("RAMOS", async () => {
             await expect(amo.setFeeCollector(alanAddress)).to.be.revertedWithCustomError(amo, "InvalidAccess");
             await expect(connectAMO.setRebalancePercentageBounds(100,100)).to.be.revertedWithCustomError(amo, "InvalidAccess");
             await expect(connectAMO.setMaxRebalanceAmounts(100, 100, 100)).to.be.revertedWithCustomError(amo, "InvalidAccess");
-            await expect(connectAMO.setPostRebalanceSlippage(100)).to.be.revertedWithCustomError(amo, "InvalidAccess");
+            await expect(connectAMO.setPostRebalanceDelta(100)).to.be.revertedWithCustomError(amo, "InvalidAccess");
             await expect(connectAMO.pause()).to.be.revertedWithCustomError(amo, "InvalidAccess");
             await expect(connectAMO.unpause()).to.be.revertedWithCustomError(amo, "InvalidAccess");
             await expect(connectAMO.recoverToken(TEMPLE , alanAddress, 100)).to.be.revertedWithCustomError(amo, "InvalidAccess");
@@ -414,7 +414,7 @@ describe("RAMOS", async () => {
 
             // passes
             await amo.setMaxRebalanceAmounts(100, 100, 100);
-            await amo.setPostRebalanceSlippage(100);
+            await amo.setPostRebalanceDelta(100);
             await amo.pause();
             await amo.unpause();
             await amo.setCoolDown(1800);
@@ -524,9 +524,9 @@ describe("RAMOS", async () => {
         });
 
         it("sets post rebalance slippage", async () => {
-            await expect(amo.setPostRebalanceSlippage(0)).to.be.revertedWithCustomError(amo, "InvalidBPSValue");
-            await expect(amo.setPostRebalanceSlippage(10_001)).to.be.revertedWithCustomError(amo, "InvalidBPSValue");
-            await expect(amo.setPostRebalanceSlippage(100)).to.emit(amo, "SetPostRebalanceSlippage").withArgs(100);
+            await expect(amo.setPostRebalanceDelta(0)).to.be.revertedWithCustomError(amo, "InvalidBPSValue");
+            await expect(amo.setPostRebalanceDelta(10_001)).to.be.revertedWithCustomError(amo, "InvalidBPSValue");
+            await expect(amo.setPostRebalanceDelta(100)).to.emit(amo, "SetPostRebalanceDelta").withArgs(100);
         });
 
         it("recovers tokens", async () => {
@@ -914,7 +914,7 @@ describe("RAMOS", async () => {
 
             await expect(amo.rebalanceUpExit(bptOut, 1)).to.be.revertedWithCustomError(poolHelper, "NoRebalanceUp");
 
-            await amo.setPostRebalanceSlippage(400); // 4%
+            await amo.setPostRebalanceDelta(400); // 4%
             
             // now single side deposit TEMPLE to bring spot price down if up
             const spotPriceNow = await getSpotPriceScaled(balancerVault, weightedPool2Tokens);
@@ -1032,7 +1032,7 @@ describe("RAMOS", async () => {
             // make sure to meet the capped amount
             const positions = await amo.positions();
             await amo.setMaxRebalanceAmounts(positions.bptBalance, positions.quoteTokenBalance, positions.protocolTokenBalance);
-            await amo.setPostRebalanceSlippage(2_000); // 20% max price movement
+            await amo.setPostRebalanceDelta(2_000); // 20% max price movement
 
             // rebalance down - target 4% above TPI
             const reqData = await calculateBptTokensToBringTemplePriceDown(poolHelper.address, 400);
@@ -1069,7 +1069,7 @@ describe("RAMOS", async () => {
             // make sure to meet the capped amount
             const positions = await amo.positions();
             await amo.setMaxRebalanceAmounts(positions.bptBalance, positions.quoteTokenBalance, positions.protocolTokenBalance);
-            await amo.setPostRebalanceSlippage(2_000); // 20% max price movement
+            await amo.setPostRebalanceDelta(2_000); // 20% max price movement
 
             // rebalance down - target 4% above TPI
             const templeAmountIn = toAtto(10_000);
