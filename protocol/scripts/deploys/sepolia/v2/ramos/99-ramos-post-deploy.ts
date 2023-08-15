@@ -96,11 +96,11 @@ async function addRamosStrategy(TEMPLE_V2_ADDRESSES: ContractAddresses, TEMPLE_V
     const debtCeiling: ITempleStrategy.AssetBalanceStruct[] = [
         {
             asset: TEMPLE_V2_ADDRESSES.EXTERNAL.MAKER_DAO.DAI_TOKEN,
-            balance: ethers.utils.parseEther("100000"),
+            balance: ethers.utils.parseEther("5000000"), // 5mm
         },
         {
             asset: TEMPLE_V2_ADDRESSES.CORE.TEMPLE_TOKEN,
-            balance: ethers.utils.parseEther("100000")
+            balance: ethers.utils.parseEther("5000000"), // 5mm
         }
     ];
 

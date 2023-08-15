@@ -56,7 +56,7 @@ async function main() {
         const debtCeiling: ITempleStrategy.AssetBalanceStruct[] = [
             {
                 asset: TEMPLE_V2_ADDRESSES.EXTERNAL.MAKER_DAO.DAI_TOKEN,
-                balance: ethers.utils.parseEther("100000")
+                balance: ethers.utils.parseEther("2500000")
             },
             // TLC doesn't borrow Temple, but it does need to repay temple on liquidations
             {

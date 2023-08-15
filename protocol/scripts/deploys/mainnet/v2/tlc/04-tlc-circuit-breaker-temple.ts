@@ -21,7 +21,7 @@ async function main() {
     await owner.getAddress(),
     60*60*26, // 26 hours
     13, // no of buckets
-    ethers.utils.parseEther("100000"), // cap per bucket
+    ethers.utils.parseEther("1500000"), // 1.5mm cap per bucket
   )
 
 }

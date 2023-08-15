@@ -34,14 +34,14 @@ async function main() {
         await mine(TEMPLE_V2_INSTANCES.TREASURY_RESERVES_VAULT.INSTANCE.setBorrowToken(
             TEMPLE_V2_ADDRESSES.CORE.TEMPLE_TOKEN,
             TEMPLE_V2_ADDRESSES.STRATEGIES.TEMPLE_BASE_STRATEGY.ADDRESS,
-            0,
-            0,
+            ethers.utils.parseEther("200000"), // 0.2mm
+            ethers.utils.parseEther("200000"), // 0.2mm
             TEMPLE_V2_ADDRESSES.TREASURY_RESERVES_VAULT.D_TEMPLE_TOKEN
         ));
 
         const debtCeiling: ITempleStrategy.AssetBalanceStruct[] = [{
             asset: TEMPLE_V2_ADDRESSES.CORE.TEMPLE_TOKEN,
-            balance: ethers.utils.parseEther("100000")
+            balance: ethers.utils.parseEther("5000000") // 5mm
         }];
 
         await mine(TEMPLE_V2_INSTANCES.TREASURY_RESERVES_VAULT.INSTANCE.addStrategy(
@@ -60,14 +60,14 @@ async function main() {
         await mine(TEMPLE_V2_INSTANCES.TREASURY_RESERVES_VAULT.INSTANCE.setBorrowToken(
             TEMPLE_V2_ADDRESSES.EXTERNAL.MAKER_DAO.DAI_TOKEN,
             TEMPLE_V2_ADDRESSES.STRATEGIES.DSR_BASE_STRATEGY.ADDRESS,
-            ethers.utils.parseEther('10000'),
-            ethers.utils.parseEther('10000'),
+            ethers.utils.parseEther("200000"), // 0.2mm
+            ethers.utils.parseEther("200000"), // 0.2mm
             TEMPLE_V2_ADDRESSES.TREASURY_RESERVES_VAULT.D_USD_TOKEN
         ));
 
         const debtCeiling: ITempleStrategy.AssetBalanceStruct[] = [{
             asset: TEMPLE_V2_ADDRESSES.EXTERNAL.MAKER_DAO.DAI_TOKEN,
-            balance: ethers.utils.parseEther("100000")
+            balance: ethers.utils.parseEther("30000000") // 30mm
         }];
 
         await mine(TEMPLE_V2_INSTANCES.TREASURY_RESERVES_VAULT.INSTANCE.addStrategy(

@@ -21,9 +21,9 @@ async function main() {
     "dUSD",
     TEMPLE_V2_ADDRESSES.CORE.RESCUER_MSIG,
     await owner.getAddress(),
-    ethers.utils.parseEther("0.034304803691990293"), // 3.49% APR or ~3.4304%APY
+    // 5% APR == ln(1.05) == 4.87...% APY continuous compounding
+    ethers.utils.parseEther("0.048790164169431991"),
   )
-
 }
 
 // We recommend this pattern to be able to use async/await everywhere

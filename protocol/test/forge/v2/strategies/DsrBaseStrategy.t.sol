@@ -20,6 +20,8 @@ import { IMakerDaoDaiJoinLike } from "contracts/interfaces/external/makerDao/IMa
 import { IMakerDaoPotLike } from "contracts/interfaces/external/makerDao/IMakerDaoPotLike.sol";
 import { ud } from "@prb/math/src/UD60x18.sol";
 
+import "forge-std/console.sol";
+
 /* solhint-disable func-name-mixedcase, not-rely-on-time */
 contract DsrBaseStrategyTestBase is TempleTest {
     DsrBaseStrategy public strategy;
@@ -76,9 +78,9 @@ contract DsrBaseStrategyTestAdmin is DsrBaseStrategyTestBase {
         uint256 equivalentDusdRate = ud(dsrRate).ln().unwrap();
         assertEq(equivalentDusdRate, 0.009950330853168072e18);
 
-        dsrRate = 1.0349e18;
+        dsrRate = 1.05e18;
         equivalentDusdRate = ud(dsrRate).ln().unwrap();
-        assertEq(equivalentDusdRate, 0.034304803691990293e18);
+        assertEq(equivalentDusdRate, 0.048790164169431991e18);
     }
 
     function test_initalization() public {

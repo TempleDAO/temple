@@ -34,7 +34,7 @@ async function main() {
         protocolTokenBalancerPoolIndex,
         TEMPLE_V2_ADDRESSES.RAMOS.TEMPLE_DAI.EXTERNAL.BALANCER_POOL_ID,
         TEMPLE_V2_ADDRESSES.RAMOS.TEMPLE_DAI.FEE_COLLECTOR,
-        200, // 2%
+        0, // 0% max fees for protocol version of ramos
     );
 }
 

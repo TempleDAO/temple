@@ -19,9 +19,9 @@ async function main() {
     treasuryPriceIndexOracle.deploy,
     TEMPLE_V2_ADDRESSES.CORE.RESCUER_MSIG,
     await owner.getAddress(),
-    ethers.utils.parseEther("1.025"), // ~1.025 TPI at deployment date
+    ethers.utils.parseEther("1.06"), // ~1.06 TPI at deployment date
     ethers.utils.parseEther("0.05"), // max treasury price index delta
-    300 // cooldown
+    1_800 // cooldown
   )
 
 }
