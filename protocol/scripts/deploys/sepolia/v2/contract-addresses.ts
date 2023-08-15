@@ -25,7 +25,7 @@ export interface ContractAddresses {
   CORE: {
       TEMPLE_TOKEN: string,
       CIRCUIT_BREAKER_PROXY: string,
-      // GNOSIS_SAFE_GUARD: string,
+      GNOSIS_SAFE_GUARD: string,
       EXECUTOR_MSIG: string,
       RESCUER_MSIG: string,
   },
@@ -112,7 +112,7 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
         CORE: {
             TEMPLE_TOKEN: '0x64a925B0fA211c44337148C0807f959Bd44b0B67',
             CIRCUIT_BREAKER_PROXY: '0xD112Fb2e38305829136971732c4805A782bcb459',
-            // GNOSIS_SAFE_GUARD: '',
+            GNOSIS_SAFE_GUARD: '',
             EXECUTOR_MSIG: '0xF8Ab0fF572e48059c45eF3fa804e5A369d2b9b2B',
             RESCUER_MSIG: '0x8dbe2E7Cab43F00fce7fFe90769b87456692CE46',
         },
@@ -208,6 +208,7 @@ export interface ContractInstances {
     CORE: {
         TEMPLE_TOKEN: TempleERC20Token,
         CIRCUIT_BREAKER_PROXY: TempleCircuitBreakerProxy,
+        GNOSIS_SAFE_GUARD: GnosisStrategy,
     },
     TREASURY_RESERVES_VAULT: {
         INSTANCE: TreasuryReservesVault,
@@ -271,6 +272,7 @@ export function connectToContracts(owner: Signer): ContractInstances {
         CORE: {
             TEMPLE_TOKEN: TempleERC20Token__factory.connect(TEMPLE_V2_ADDRESSES.CORE.TEMPLE_TOKEN, owner),
             CIRCUIT_BREAKER_PROXY: TempleCircuitBreakerProxy__factory.connect(TEMPLE_V2_ADDRESSES.CORE.CIRCUIT_BREAKER_PROXY, owner),
+            GNOSIS_SAFE_GUARD: GnosisStrategy__factory.connect(TEMPLE_V2_ADDRESSES.CORE.GNOSIS_SAFE_GUARD, owner),
         },
         TREASURY_RESERVES_VAULT: {
             INSTANCE: TreasuryReservesVault__factory.connect(TEMPLE_V2_ADDRESSES.TREASURY_RESERVES_VAULT.ADDRESS, owner),

@@ -320,6 +320,7 @@ export interface ContractInstances {
     CORE: {
         TEMPLE_TOKEN: TempleERC20Token,
         CIRCUIT_BREAKER_PROXY: TempleCircuitBreakerProxy,
+        GNOSIS_SAFE_GUARD: GnosisStrategy,
     },
     TREASURY_RESERVES_VAULT: {
         INSTANCE: TreasuryReservesVault,
@@ -385,6 +386,7 @@ export function connectToContracts(owner: Signer): ContractInstances {
         CORE: {
             TEMPLE_TOKEN: TempleERC20Token__factory.connect(TEMPLE_V2_ADDRESSES.CORE.TEMPLE_TOKEN, owner),
             CIRCUIT_BREAKER_PROXY: TempleCircuitBreakerProxy__factory.connect(TEMPLE_V2_ADDRESSES.CORE.CIRCUIT_BREAKER_PROXY, owner),
+            GNOSIS_SAFE_GUARD: GnosisStrategy__factory.connect(TEMPLE_V2_ADDRESSES.CORE.GNOSIS_SAFE_GUARD, owner),
         },
         TREASURY_RESERVES_VAULT: {
             INSTANCE: TreasuryReservesVault__factory.connect(TEMPLE_V2_ADDRESSES.TREASURY_RESERVES_VAULT.ADDRESS, owner),
