@@ -187,6 +187,13 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
         for (uint256 i; i < _length; ++i) {
             _assetBalance = debtCeiling[i];
             _token = IERC20(_assetBalance.asset);
+            emit DebtCeilingUpdated(
+                strategy, 
+                address(_token), 
+                strategyConfig.debtCeiling[_token], 
+                _assetBalance.balance
+            );
+
             if (!_borrowTokenSet.contains(address(_token))) revert BorrowTokenNotEnabled();
             strategyConfig.debtCeiling[_token] = _assetBalance.balance;
             strategyConfig.enabledBorrowTokens[_token] = true;

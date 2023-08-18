@@ -289,6 +289,12 @@ contract TreasuryReservesVaultTestAdmin is TreasuryReservesVaultTestBase {
             vm.expectEmit(address(trv));
             emit StrategyAdded(address(strategy), -100);
 
+            vm.expectEmit(address(trv));
+            emit DebtCeilingUpdated(address(strategy), address(dai), 0, 500);
+
+            vm.expectEmit(address(trv));
+            emit DebtCeilingUpdated(address(strategy), address(weth), 0, 123);
+
             trv.addStrategy(address(strategy), -100, debtCeiling);
 
             vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.AlreadyEnabled.selector));
