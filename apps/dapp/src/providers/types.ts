@@ -7,10 +7,22 @@ import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { Sor, SwapInfo } from '@balancer-labs/sdk';
 
 // The ordering of this enum must match the definition in Relic.sol
-export enum RelicEnclave{ Logic, Structure, Order, Mystery, Chaos }
+export enum RelicEnclave {
+  Chaos,
+  Mystery,
+  Logic,
+  Order,
+  Structure,
+}
 
 // The ordering of this enum must match the definition in Relic.sol
-export enum RelicRarity{ Common, Uncommon, Rare, Epic, Legendary }
+export enum RelicRarity {
+  Common,
+  Uncommon,
+  Rare,
+  Epic,
+  Legendary,
+}
 
 export enum RitualKind {
   OFFERING_STAKING = 'OFFERING_STAKING',
@@ -37,11 +49,11 @@ export type FaithBalance = {
 
 export type RelicItemData = { id: number; count: number };
 export type RelicData = {
-  id: BigNumber
-  enclave: RelicEnclave
-  rarity: RelicRarity
-  xp: BigNumber
-  items: RelicItemData[]
+  id: BigNumber;
+  enclave: RelicEnclave;
+  rarity: RelicRarity;
+  xp: BigNumber;
+  items: RelicItemData[];
 };
 
 export type ItemInventory = {
@@ -138,7 +150,8 @@ export interface WalletState {
     // Should be ERC20, need to update Typechain (fix is in 8.0.x)
     erc20Token: any,
     spender: string,
-    minAllowance: BigNumber
+    minAllowance: BigNumber,
+    explicitAllowance?: BigNumber
   ): Promise<void>;
 }
 
@@ -147,9 +160,34 @@ export interface RelicService {
   inventoryLoading: boolean;
   updateInventory(): Promise<void>;
   mintRelic(enclave: RelicEnclave): Promise<Nullable<RelicData>>;
-  renounceRelic(relicId: BigNumber): Promise<Nullable<RelicData>>;
-  mintShard(itemId: number): Promise<void>;
   equipShards(relicId: BigNumber, items: RelicItemData[]): Promise<void>;
   unequipShards(relicId: BigNumber, items: RelicItemData[]): Promise<void>;
   transmute(recipeId: number): Promise<void>;
+  checkWhiteList: {
+    handler(): Promise<void>;
+    isWhitelisted: boolean;
+    isLoading: boolean;
+    error: Nullable<Error>;
+  };
+  sacrificeTemple: {
+    handler(amount: BigNumber): Promise<void>;
+    isLoading: boolean;
+    error: Nullable<Error>;
+  };
+  fetchSacrificePrice: {
+    handler(): Promise<void>;
+    isLoading: boolean;
+    error: Nullable<Error>;
+    sacrificePrice: BigNumber;
+  };
+  mintShard: {
+    handler(): Promise<void>;
+    isLoading: boolean;
+    error: Nullable<Error>;
+  };
+  mintPathOfTemplarShard: {
+    handler(shardIndex: number): Promise<void>;
+    isLoading: boolean;
+    error: Nullable<Error>;
+  };
 }

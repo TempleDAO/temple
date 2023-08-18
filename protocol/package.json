@@ -43,6 +43,7 @@
   "scripts": {
     "compile": "hardhat compile",
     "typechain": "hardhat typechain",
+    "copytodapp": "cp -r ./typechain ../apps/dapp/src/types",
     "clean": "hardhat clean",
     "size": "hardhat size-contracts",
     "test": "NODE_ENV=test hardhat test",
