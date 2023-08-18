@@ -10,5 +10,5 @@ export const noop = () => {};
 export const asyncNoop = async () => {};
 
 export const isDevelopmentEnv = () => {
-  return ENV.VITE_ENV === 'preview' || ENV.VITE_ENV === 'local';
+  return ENV.VITE_ENV === 'preview-nexus' || ENV.VITE_ENV === 'preview' || ENV.VITE_ENV === 'local';
 };

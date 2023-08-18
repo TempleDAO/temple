@@ -1,5 +1,5 @@
 import bgActive from 'assets/images/nexus/background_on.jpg';
-import bgInactive from 'assets/images/nexus/background_off.jpg';
+import bgInactive from 'assets/images/nexus/background_off.png';
 import { useRelic } from 'providers/RelicProvider';
 import { ItemInventory } from 'providers/types';
 import { useWallet } from 'providers/WalletProvider';
@@ -43,7 +43,7 @@ const NexusPage = () => {
   );
 };
 
-const NexusLoading = () => {
+export const NexusLoading = () => {
   return (
     <NexusPanelRow>
       <span>Loading...</span>
@@ -56,7 +56,7 @@ const NexusRoutes: FC<{ inventory: ItemInventory }> = (props) => {
     <Routes>
       <Route path="no-relic" element={<NoRelicPanel inventory={props.inventory} />} />
       <Route path=":id" element={<RelicPage inventory={props.inventory} />} />
-      {isDevelopmentEnv() && <Route path="dev-mint" element={<DevMintPage />} />}
+      {/* {isDevelopmentEnv() && <Route path="dev-mint" element={<DevMintPage />} />} */}
       <Route path="*" element={<Navigate to="no-relic" />} />
     </Routes>
   );

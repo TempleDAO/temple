@@ -1,4 +1,4 @@
-import { cloneElement, useMemo, useState } from 'react';
+import { cloneElement, useCallback, useMemo, useState } from 'react';
 import {
   Placement,
   offset,
@@ -48,14 +48,17 @@ export const NexusTooltip = ({ children, shard, placement = 'top-start' }: Props
   // Preserve the consumer's ref
   const ref = useMemo(() => mergeRefs([reference, (children as any).ref]), [reference, children]);
 
-  const getRarityColor = (rarity: RARITY_TYPE) => {
-    switch (rarity) {
-      case RARITY_TYPE.EPIC:
-        return '#7e3289';
-      default:
-        return '#7e3289';
-    }
-  };
+  const getRarityColor = useCallback(
+    (rarity: RARITY_TYPE) => {
+      switch (rarity) {
+        case RARITY_TYPE.EPIC:
+          return '#7e3289';
+        default:
+          return '#7e3289';
+      }
+    },
+    [RARITY_TYPE]
+  );
 
   return (
     <>
@@ -85,7 +88,7 @@ export const NexusTooltip = ({ children, shard, placement = 'top-start' }: Props
           </CellRow>
           <CellRow>
             <RowText>
-              Origin: <OriginLink href={`https://www.foo.com/xyz`}>https://www.foo.com/xyz</OriginLink>
+              Origin: <OriginLink href={shard.originUrl}>{shard.originUrl}</OriginLink>
             </RowText>
           </CellRow>
           <CellRow>

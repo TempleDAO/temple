@@ -1,16 +1,17 @@
 import { HTMLProps, useState } from 'react';
 import Image from 'components/Image/Image';
 import styled, { css } from 'styled-components';
+import { Howl } from 'howler';
 
 import Loader from '../Loader/Loader';
 import useIsMounted from 'hooks/use-is-mounted';
+import { clickSound } from 'utils/sound';
 
-export interface ButtonProps
-  extends ButtonStyledProps,
-    HTMLProps<HTMLButtonElement> {
+export interface ButtonProps extends ButtonStyledProps, HTMLProps<HTMLButtonElement> {
   type?: 'submit' | 'reset' | 'button' | undefined;
   label?: string;
-  loading?: boolean; 
+  loading?: boolean;
+  playClickSound?: boolean;
 
   onClick?(): Promise<void> | void;
 }
@@ -28,6 +29,7 @@ export const Button = ({
   showArrow,
   children,
   loading: externalLoading,
+  playClickSound = false,
   ...props
 }: ButtonProps) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -41,8 +43,13 @@ export const Button = ({
     if (isLoading) {
       return;
     }
+
     if (!onClick) {
       return;
+    }
+
+    if (playClickSound) {
+      clickSound.play();
     }
 
     setIsLoading(true);
@@ -107,7 +114,7 @@ interface ButtonStyledProps {
 
 const ButtonLeadingIcon = styled(Image)`
   margin: 0 0.3rem 0;
-`
+`;
 
 export const ButtonStyled = styled.button<ButtonStyledProps>`
   // common

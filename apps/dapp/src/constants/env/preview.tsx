@@ -137,83 +137,56 @@ const env: Environment = {
   },
   templeMultisig: '0x3a320fF715dCBbF097e15257B7051dd08fdfb7A2',
   nexus: {
-    templeRelicAddress: '0xbb8bB20DA64D4C595eb4Ac8A7cC2cBDcFBfB4306',
-    templeRelicItemsAddress: '0xaBf139511C381f7804EdD6E4c78383b775d8CeeF',
+    templeRelicAddress: '0xCf21B717fd34dA92006aAefc041fFdb86b708529',
+    templeShardsAddress: '0xaBf139511C381f7804EdD6E4c78383b775d8CeeF',
+    templeSacrificeAddress: '0xD0A07fc8Bfe7e2846A67B8C34C6b573Aff5e2511',
+    templeToken: '0xB8FeDaCB1780b3936251b1b0169b4E11A5bA8277',
+    templePartnerMinterAddress: '0x6C1b2C8073344B7686a54Fcf2CFA28E5b13379d5',
+    pathOfTemplarShardAddress: '',
     recipes: [
       { id: 0, required_ids: [0, 1], required_amounts: [1, 1], reward_ids: [2], reward_amounts: [1] },
       { id: 2, required_ids: [0, 1], required_amounts: [2, 3], reward_ids: [2], reward_amounts: [1] },
       { id: 3, required_ids: [0, 1, 2], required_amounts: [1, 2, 1], reward_ids: [3], reward_amounts: [1] },
     ],
     shardMetadata: {
-      0: {
-        id: 1,
-        name: 'One',
-        description:
-          'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam hendrerit velit ac dolor rhoncus, quis lobortis asdf tincidunt. Aliquam risus ex.',
-        originUrl: 'https://yyz.com',
-        rarity: RARITY_TYPE.EPIC,
-      },
       1: {
-        id: 2,
-        name: 'Two',
-        description:
-          'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam hendrerit velit ac dolor rhoncus, quis lobortis asdf tincidunt. Aliquam risus ex.',
-        originUrl: 'https://yyz.com',
+        id: 1,
+        name: 'Tome of Knowledge',
+        description: "Obtained for completing the Temple's Apocrypha.",
+        originUrl: 'https://www.voxels.com/spaces/ecd16631-9db3-49d7-b8d6-08e28556a734/play?coords=W@30W,1S,32F',
+        logoUrl: 'https://myst.mypinata.cloud/ipfs/QmZxyeEakU7nzExo4t7LEyZwpR8QX6ZdBV72fgrGdGNPvT',
         rarity: RARITY_TYPE.EPIC,
       },
-      2: {
-        id: 3,
-        name: 'Three',
-        description:
-          'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam hendrerit velit ac dolor rhoncus, quis lobortis asdf tincidunt. Aliquam risus ex.',
-        originUrl: 'https://yyz.com',
-        rarity: RARITY_TYPE.EPIC,
-      },
+      // 2: {
+      //   id: 3,
+      //   name: 'Three',
+      //   description:
+      //     'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam hendrerit velit ac dolor rhoncus, quis lobortis asdf tincidunt. Aliquam risus ex.',
+      //   originUrl: 'https://yyz.com',
+      //   rarity: RARITY_TYPE.EPIC,
+      // },
     },
     quests: [
       {
         id: '1',
-        title: 'Spirit of the Sands',
+        title: 'Path Of The Templar',
         origin: 'TempleDAO',
-        linkUrl: 'https://templedao.link',
+        linkUrl: 'https://nexus.echoingwhispers.link/nexus/relic/no-relic',
         description:
-          'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi accumsan libero sed placerat viverra. Praesent ac vehicula mauris, non ullamcorper metus. Vestibulum ultricies odio at libero pulvinar dapibus sed vel leo.',
-        logoUrl: 'https://myst.mypinata.cloud/ipfs/QmaTErwf7sV9WzfP86GjDfnRBwKL74y2j9H4vUwNr7jMhE/0.png',
-        rewardLogoUrls: [
-          'https://myst.mypinata.cloud/ipfs/QmaTErwf7sV9WzfP86GjDfnRBwKL74y2j9H4vUwNr7jMhE/0.png',
-          'https://myst.mypinata.cloud/ipfs/QmaTErwf7sV9WzfP86GjDfnRBwKL74y2j9H4vUwNr7jMhE/0.png',
-          'https://myst.mypinata.cloud/ipfs/QmaTErwf7sV9WzfP86GjDfnRBwKL74y2j9H4vUwNr7jMhE/0.png',
-        ],
+          'The weary Templar seeking safe harbor from the bitter storms of DeFi volatility begins to have fever dreams about a mythical Hall of Scriptures where they may gain knowledge and enlightenment. The intrepid Templar may explore 1 of 5 paths available to them which will grant access to an Enclave of their choosing based on their natural alignments. The paths to the Enclaves of Chaos, Mystery, Logic, Structure and Order stretch out into the distance. Which path will bring you to prosperity?',
+        logoUrl: 'https://nexus.echoingwhispers.link/temple.png',
+        rewardIds: [1],
         rarity: RARITY_TYPE.EPIC,
       },
       {
         id: '2',
-        title: 'Spirit in the Sky',
+        title: 'Temple Scholar',
         origin: 'TempleDAO',
-        linkUrl: 'https://templedao.link',
+        linkUrl: 'https://www.voxels.com/spaces/ecd16631-9db3-49d7-b8d6-08e28556a734/play?coords=W@30W,1S,32F',
         description:
-          'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi accumsan libero sed placerat viverra. Praesent ac vehicula mauris, non ullamcorper metus. Vestibulum ultricies odio at libero pulvinar dapibus sed vel leo.',
-        logoUrl: 'https://myst.mypinata.cloud/ipfs/QmaTErwf7sV9WzfP86GjDfnRBwKL74y2j9H4vUwNr7jMhE/0.png',
-        rewardLogoUrls: [
-          'https://myst.mypinata.cloud/ipfs/QmaTErwf7sV9WzfP86GjDfnRBwKL74y2j9H4vUwNr7jMhE/0.png',
-          'https://myst.mypinata.cloud/ipfs/QmaTErwf7sV9WzfP86GjDfnRBwKL74y2j9H4vUwNr7jMhE/0.png',
-          'https://myst.mypinata.cloud/ipfs/QmaTErwf7sV9WzfP86GjDfnRBwKL74y2j9H4vUwNr7jMhE/0.png',
-        ],
-        rarity: RARITY_TYPE.EPIC,
-      },
-      {
-        id: '3',
-        title: 'Lightning in the Bottle',
-        origin: 'TempleDAO',
-        linkUrl: 'https://templedao.link',
-        description:
-          'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi accumsan libero sed placerat viverra. Praesent ac vehicula mauris, non ullamcorper metus. Vestibulum ultricies odio at libero pulvinar dapibus sed vel leo.',
-        logoUrl: 'https://myst.mypinata.cloud/ipfs/QmaTErwf7sV9WzfP86GjDfnRBwKL74y2j9H4vUwNr7jMhE/0.png',
-        rewardLogoUrls: [
-          'https://myst.mypinata.cloud/ipfs/QmaTErwf7sV9WzfP86GjDfnRBwKL74y2j9H4vUwNr7jMhE/0.png',
-          'https://myst.mypinata.cloud/ipfs/QmaTErwf7sV9WzfP86GjDfnRBwKL74y2j9H4vUwNr7jMhE/0.png',
-          'https://myst.mypinata.cloud/ipfs/QmaTErwf7sV9WzfP86GjDfnRBwKL74y2j9H4vUwNr7jMhE/0.png',
-        ],
+          'A mysterious and sultry figure in the Hall of Scriptures will point you in the right direction to locate the ancient Temple Library. There you will embark on a quest for knowledge through ancient tomes hidden within the library walls. The path of the Scholar is long but rewarding.',
+        logoUrl: 'https://nexus.echoingwhispers.link/temple.png',
+        rewardIds: [1],
         rarity: RARITY_TYPE.EPIC,
       },
     ],

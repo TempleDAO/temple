@@ -167,7 +167,8 @@ export const WalletProvider = (props: PropsWithChildren<object>) => {
     // Should be ERC20, need to update Typechain (fix is in 8.0.x)
     erc20Token: any,
     spender: string,
-    minAllowance: BigNumber
+    minAllowance: BigNumber,
+    explicitAllowance?: BigNumber
   ) => {
     // pre-condition
     if (!walletAddress) {
@@ -176,6 +177,7 @@ export const WalletProvider = (props: PropsWithChildren<object>) => {
 
     const token = erc20Token as ERC20;
     const allowance = await token.allowance(walletAddress, spender);
+    const allowanceToApprove = explicitAllowance || DEFAULT_ALLOWANCE;
 
     if (allowance.lt(minAllowance)) {
       // increase allowance

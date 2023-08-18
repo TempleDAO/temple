@@ -1,13 +1,7 @@
-import bgActive from 'assets/images/nexus-room-active.jpg';
-import bgInactive from 'assets/images/nexus-room-inactive.jpg';
-import { useRelic } from 'providers/RelicProvider';
 import { RelicItemData } from 'providers/types';
-import { useWallet } from 'providers/WalletProvider';
-import { useEffect, useMemo } from 'react';
 import styled from 'styled-components';
-import { PageWrapper } from '../../Core/utils';
 import ItemGrid from '../Relic/ItemGrid';
-import { NexusBackground, NexusBodyContainer, NexusContainer, NexusPanel } from '../Relic/styles';
+import { NexusBodyContainer, NexusContainer, NexusPanel } from '../Relic/styles';
 
 const UsedShardsPanel = (props: { items: RelicItemData[]; usedShardsClickHandler: (item: number) => void }) => {
   return (
@@ -22,9 +16,9 @@ const UsedShardsPanel = (props: { items: RelicItemData[]; usedShardsClickHandler
   );
 };
 
-export const PanelText = styled.h5`
+const PanelText = styled.h5`
   width: 100%;
-  margin: 0.5rem;
+  margin: 2px;
   padding: 0 5px;
   text-align: left;
   flex-direction: row;

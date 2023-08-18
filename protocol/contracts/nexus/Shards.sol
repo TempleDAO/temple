@@ -1,4 +1,23 @@
-//SPDX-License-Identifier: Unlicensed
+//                                                .@@@@@@@@@@@@@@@                
+//                                                .@@           @@                
+//                                                .@@           @@                
+//                       @@@&&&&&&&&&&&&&&&&&&&&&&&@@&&&&@@(    @@                
+//                       @@& @@@@@@               .@@    @@(    @@                
+//                       @@& @@@@@@               .@@@@@@@@@@@@@@@                
+//                       @@&                             @@(                      
+//                       @@&                             @@(                      
+//                       @@&                             @@(                      
+//                       @@&                             @@(                      
+//                       @@&                             @@(                      
+//                       @@&                             @@(                      
+//                       @@&                         @@@ @@(                      
+//                 @@@@@@@@@@@@@@@                   @@@ @@(                      
+//                 @@    @@&    @@                @@@@@@ @@(                      
+//                 @@    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@(                      
+//                 @@           @@                                                
+//                 @@           @@                                                
+//                 @@@@@@@@@@@@@@@   
+
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
@@ -16,6 +35,7 @@ interface IRelic {
     function balanceOf(address _owner) external view returns(uint256);
 }
 
+
 contract Shards is
     ERC1155,
     Ownable,
@@ -26,13 +46,10 @@ contract Shards is
 {
     constructor() ERC1155("") {}
 
-    // @dev Partner Minting directly on this contract 
-    // @dev whitelisted partners
+    // whitelisted partners
     mapping (address => bool) public partnerMinters;
-    // @dev itemId for each partner
+    // itemId for each partner
     mapping (address => mapping (uint256=>bool)) public partnerAllowedIds;
-    // whitelisted users so they can mint themselves
-    mapping (address => mapping (uint256 => bool)) public whiteListedUsers;
     // URIs
     mapping (uint256 => string) public tokenURIs;
     // Recipes
@@ -55,19 +72,11 @@ contract Shards is
     }
 
     event Transmutation(address Templar, uint256 recipeId);
-
+    event MintedShard(address to, uint256 shardId, uint256 amount);
 
     //------- External -------//
 
-    // users mint authorized item front Nexus
-    function mintFromUser(uint256 _itemId) external nonReentrant {
-        // DEACTIVATED FOR TESTING
-        // require(whiteListedUsers[msg.sender][_itemId], "You cannot retrieve this item");
-        _mint(msg.sender, _itemId, 1,"");
-        whiteListedUsers[msg.sender][_itemId] = false;
-    }
-
-    // @dev called from Relic when transfering items from Templar wallet into Relic
+    // called from Relic when transfering items from Templar wallet into Relic
     function equipShard(address _ownerAddress, uint256[] memory _shardIds, uint256[] memory _amounts) external isRelic {
         
         _beforeTokenTransfer(msg.sender, _ownerAddress, address(RELIC), _shardIds, _amounts, "");
@@ -75,7 +84,7 @@ contract Shards is
         _safeBatchTransferFrom(_ownerAddress, address(RELIC), _shardIds, _amounts, "");
     }
 
-     // @dev called from Relic when transfering items from Relic into Templar wallet
+     // called from Relic when transfering items from Relic into Templar wallet
     function unEquipShard(address _target, uint256[] memory _shardIds, uint256[] memory _amounts) external isRelic {
         
         _beforeTokenTransfer(address(RELIC), address(RELIC), _target, _shardIds, _amounts, "");
@@ -84,12 +93,12 @@ contract Shards is
         _safeBatchTransferFrom( address(RELIC), _target, _shardIds, _amounts, "");
     }
 
-    // @dev called from Relic during Transmutations
+    // called from Relic during Transmutations
     function mintFromRelic(uint256 _shardId, uint256 _amount) external isRelic{
         _mint(address(RELIC), _shardId, _amount,"");
     }
 
-    // @dev called from Relic during Transmutations
+    // called from Relic during Transmutations
     function burnFromRelic(uint256 _shardId, uint256 _amount) external isRelic{
         _burn(address(RELIC), _shardId, _amount);
     }
@@ -126,7 +135,7 @@ contract Shards is
         emit Transmutation(msg.sender, _recipeId);
     }
 
-     // @dev How partners mint their items, logic implemented on their side
+     // How partners mint their items, logic implemented on their side
     function partnerMint(
         address _to,
         uint256 _id,
@@ -136,22 +145,16 @@ contract Shards is
         require(partnerMinters[msg.sender], "You're not authorised to mint");
         require(partnerAllowedIds[msg.sender][_id], "This isn't your reserved itemId");
         _mint(_to, _id, _amount, data);
+        emit MintedShard(_to, _id, _amount);
     }
 
     function uri(uint256 _id) override public view returns(string memory){
         return tokenURIs[_id];
     }
 
-    // TODO : check that this whitelister is authorised for this index !
-    function whitelistUser(address _userAddress, uint256 _itemId) external {
-        require(partnerMinters[msg.sender], "Not authorised");
-        require(partnerAllowedIds[msg.sender][_itemId], "This isn't your reserved itemId");
-        whiteListedUsers[_userAddress][_itemId]= true;
-    }
-
     //------- Owner -------//
 
-    // @dev authorise a partner to mint an item
+    // authorise a partner to mint an item
     function addPartner(address _partnerMinter, bool _flag) external onlyOwner {
         partnerMinters[_partnerMinter]=_flag;
     }

@@ -6,7 +6,7 @@ export interface QuestHeaderProps {
   isOpen: boolean;
 }
 
-const QuestCell = ({ id, title }: QuestHeaderProps) => {
+const QuestHeader = ({ id, title }: QuestHeaderProps) => {
   return (
     <CellContainer>
       <CellRow>
@@ -45,4 +45,4 @@ const CellContainer = styled.div<{ color?: string }>`
   background-color: ${(props) => props.color ?? props.theme.palette.brand75};
 `;
 
-export default QuestCell;
+export default QuestHeader;
