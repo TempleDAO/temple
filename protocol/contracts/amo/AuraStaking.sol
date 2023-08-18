@@ -51,7 +51,9 @@ contract AuraStaking is IAuraStaking, TempleElevatedAccess {
         emit SetRewardsRecipient(_recipient);
     }
 
-    function setRewardTokens(address[] memory _rewardTokens) external override onlyElevatedAccess {
+    /// @notice Set the expected reward tokens which are checked/transferred to the rewardsRecipient
+    /// when getReward is called
+    function setRewardTokens(address[] calldata _rewardTokens) external override onlyElevatedAccess {
         rewardTokens = _rewardTokens;
         emit RewardTokensSet(_rewardTokens);
     }

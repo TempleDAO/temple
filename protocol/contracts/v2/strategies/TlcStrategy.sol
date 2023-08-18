@@ -87,7 +87,7 @@ contract TlcStrategy is ITlcStrategy, AbstractStrategy {
      * by calling TRV.shutdown(strategy, stables recovered)
      */
     function _doShutdown(bytes calldata /*data*/) internal virtual override {
-        revert Unimplemented();
+        revert CommonEventsAndErrors.Unimplemented();
     }
 
     /**

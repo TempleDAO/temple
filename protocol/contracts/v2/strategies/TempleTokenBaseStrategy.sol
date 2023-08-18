@@ -120,7 +120,7 @@ contract TempleTokenBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
      * Shutdown data isn't required for a DSR automated shutdown.
      */
     function _doShutdown(bytes calldata /*data*/) internal pure override {
-        revert Unimplemented();
+        revert CommonEventsAndErrors.Unimplemented();
     }
 
 }

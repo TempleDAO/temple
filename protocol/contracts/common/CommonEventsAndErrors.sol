@@ -10,5 +10,6 @@ library CommonEventsAndErrors {
     error InvalidAccess();
     error InvalidAmount(address token, uint256 amount);
     error ExpectedNonZero();
+    error Unimplemented();
     event TokenRecovered(address indexed to, address indexed token, uint256 amount);
 }

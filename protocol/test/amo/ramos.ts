@@ -1138,6 +1138,7 @@ describe("RAMOS", async () => {
             await expect(amoStaking.recoverToken(bptToken.address, alanAddress, 100)).to.be.revertedWith("BAL#416");
             await expect(amoStaking.withdrawAndUnwrap(100, true, executorAddress)).to.be.revertedWith("SafeMath: subtraction overflow");
             await amoStaking.withdrawAllAndUnwrap(false, ZERO_ADDRESS);
+            await amoStaking.setRewardsRecipient(executorAddress);
             await amoStaking.setRewardTokens([]);
             await expect(amoStaking.depositAndStake(100)).to.be.revertedWith("BAL#416");
             await amoStaking.setAuraPoolInfo(10, bptToken.address, bptToken.address);
