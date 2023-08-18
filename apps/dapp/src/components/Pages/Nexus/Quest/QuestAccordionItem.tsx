@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import React from 'react';
 import styled from 'styled-components';
 
 interface ListItemProps {
@@ -7,6 +7,7 @@ interface ListItemProps {
   id: string | number;
   isOpen: boolean;
 }
+
 const QuestAccordionItem = ({ id, isOpen, SummaryComponent, DetailComponent, ...rest }: ListItemProps) => {
   return (
     <AccItem
@@ -43,9 +44,17 @@ const AccItem = styled.li`
     pointer-events: none;
   }
 
+  a {
+    pointer-events: auto;
+  }
+
+  img {
+    pointer-events: auto;
+  }
+
   > div:first-of-type {
     cursor: pointer;
   }
 `;
 
-export default memo(QuestAccordionItem);
+export default QuestAccordionItem;

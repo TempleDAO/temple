@@ -17,7 +17,7 @@ const ForgeResult = (props: { forgeResult: RelicItemData | null; onClickHandler:
 
 export default ForgeResult;
 
-export const ForgeResultWrapper = styled.div`
+const ForgeResultWrapper = styled.div`
   position: relative;
   margin: auto;
   width: 15%;

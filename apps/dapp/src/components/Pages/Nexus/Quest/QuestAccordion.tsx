@@ -1,5 +1,6 @@
 import React, { KeyboardEvent, MouseEvent, useEffect, useRef, useState } from 'react';
 import QuestAccordionItem from './QuestAccordionItem';
+import { clickSound } from 'utils/sound';
 
 interface AccordionItem {
   [name: string | number | symbol]: any;
@@ -66,6 +67,7 @@ const Accordion = ({ items, multiExpand = true, ...rest }: AccorionProps) => {
   };
 
   const clickHandler = (e: MouseEvent | KeyboardEvent): void => {
+    clickSound.play();
     let element = e.target as HTMLElement;
 
     if (element.parentElement?.tagName === 'LI') {

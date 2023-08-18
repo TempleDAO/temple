@@ -33,6 +33,12 @@ import { Unstake } from 'components/Pages/Core/Trade/views/Unstake';
 import NexusPage from 'components/Pages/Nexus/Relic';
 import QuestPage from 'components/Pages/Nexus/Quest';
 import ForgePage from 'components/Pages/Nexus/Forge';
+import NexusUserManual from 'components/Pages/Nexus/Manual/UserManual';
+import NexusPartnerManual from 'components/Pages/Nexus/Manual/PartnerManual';
+import { NexusGates } from 'components/Pages/Nexus/NexusGates';
+import NexusLibrary from 'components/Pages/Nexus/Quests/FirstQuest/Library';
+import Quiz from 'components/Pages/Nexus/Quests/FirstQuest/Quiz';
+import PotMint from 'components/Pages/Nexus/Quests/PathOfTemplar';
 
 // Separate Chunks
 const TeamPayments = React.lazy(() => import('components/Pages/TeamPayments'));
@@ -74,56 +80,60 @@ ReactDOM.render(
       <BrowserRouter>
         <Routes>
           {nexusOnly && (
-          <>
-            <Route path="/" element={<Home />} />
-            <Route path="/tlc" element={<Home tlc={true} />} />
-            <Route path="/" element={<PageLayout />}>
-              {/* Redirect everything else to the home page */}
-              <Route path="*" element={<Navigate replace to="/" />} />
-              <Route path="disclaimer" element={<Disclaimer />} />
-              <Route path="team-payments" element={<LazyPage component={TeamPayments} />} />
-              <Route path="ramos" element={<LazyPage component={RamosAdmin} />} />
-            </Route>
-            <Route path="/dapp/*" element={<CoreLayout mode={'dapp'} />}>
-              <Route path="" element={<VaultListPage />} />
-              <Route path="vaults" element={<VaultListPage />} />
-              <Route path="unstake" element={<Unstake />} />
-              <Route path="vaults/:vaultId/*" element={<VaultPage />}>
-                <Route path="claim" element={<VaultClaim />} />
-                <Route path="stake" element={<Stake />} />
-                <Route path="summary" element={<Summary />} />
-                <Route path="strategy" element={<Strategy />} />
-                <Route path="timing" element={<Timing />} />
-              </Route>
-              <Route path="profile" element={<ProfilePage />} />
-
-              {env.featureFlags.enableAscend && (
-                <>
-                  <Route path="ascend/*" element={<AscendLayout />}>
-                    <Route path="" element={<AscendListPage />} />
-                    <Route path="admin" element={<PoolListPage />} />
-                    <Route path="admin/new" element={<CreateLBPPage />} />
-                    <Route path="admin/:poolAddress/*" element={<EditLBPPage />} />
-                    <Route path=":poolAddress" element={<AscendPage />} />
-                  </Route>
-                </>
-              )}
-            </Route>
-          </>
-          )}
-           {nexusOnly && (
             <>
+              <Route path="/" element={<Home />} />
+              <Route path="/tlc" element={<Home tlc={true} />} />
+              <Route path="/" element={<PageLayout />}>
+                {/* Redirect everything else to the home page */}
+                <Route path="*" element={<Navigate replace to="/" />} />
+                <Route path="disclaimer" element={<Disclaimer />} />
+                <Route path="team-payments" element={<LazyPage component={TeamPayments} />} />
+                <Route path="ramos" element={<LazyPage component={RamosAdmin} />} />
+              </Route>
+              <Route path="/dapp/*" element={<CoreLayout mode={'dapp'} />}>
+                <Route path="" element={<VaultListPage />} />
+                <Route path="vaults" element={<VaultListPage />} />
+                <Route path="unstake" element={<Unstake />} />
+                <Route path="vaults/:vaultId/*" element={<VaultPage />}>
+                  <Route path="claim" element={<VaultClaim />} />
+                  <Route path="stake" element={<Stake />} />
+                  <Route path="summary" element={<Summary />} />
+                  <Route path="strategy" element={<Strategy />} />
+                  <Route path="timing" element={<Timing />} />
+                </Route>
+                <Route path="profile" element={<ProfilePage />} />
+
+                {env.featureFlags.enableAscend && (
+                  <>
+                    <Route path="ascend/*" element={<AscendLayout />}>
+                      <Route path="" element={<AscendListPage />} />
+                      <Route path="admin" element={<PoolListPage />} />
+                      <Route path="admin/new" element={<CreateLBPPage />} />
+                      <Route path="admin/:poolAddress/*" element={<EditLBPPage />} />
+                      <Route path=":poolAddress" element={<AscendPage />} />
+                    </Route>
+                  </>
+                )}
+              </Route>
+            </>
+          )}
+          {nexusOnly && (
+            <>
+              <Route path="" element={<NexusGates />} />
               <Route path="/nexus/*" element={<CoreLayout mode="nexus" />}>
                 <Route path="" element={<Navigate to="relic" />} />
                 <Route path="relic/*" element={<NexusPage />} />
                 <Route path="quests/*" element={<QuestPage />} />
                 <Route path="forge/*" element={<ForgePage />} />
+                <Route path="help" element={<NexusUserManual />} />
+                <Route path="partner" element={<NexusPartnerManual />} />
               </Route>
               <Route
                 path="/nexus/quests/library"
                 element={
                   <>
-                    <CoreLayout mode="nexus" />
+                    <CoreLayout headless mode="nexus" />
+                    <NexusLibrary />
                   </>
                 }
               />
@@ -131,7 +141,8 @@ ReactDOM.render(
                 path="/nexus/quests/quiz"
                 element={
                   <>
-                    <CoreLayout mode="nexus" />
+                    <CoreLayout headless mode="nexus" />
+                    <Quiz />
                   </>
                 }
               />
@@ -139,18 +150,20 @@ ReactDOM.render(
                 path="/nexus/quests/pathoftemplar/:enclave"
                 element={
                   <>
-                    <CoreLayout mode="nexus" />
+                    <CoreLayout headless mode="nexus" />
+                    <PotMint />
                   </>
                 }
               />
-              <Route
+              {/* <Route
                 path="/origami"
                 element={
                   <>
-                    <CoreLayout mode="nexus" />
+                    <CoreLayout headless mode="nexus" />
+                    <OrigamiPage />
                   </>
                 }
-              />
+              /> */}
             </>
           )}
         </Routes>

@@ -14,8 +14,14 @@ import mysteryImg from 'assets/images/enclave/mystery.jpg';
 import orderImg from 'assets/images/enclave/order.jpg';
 import structureImg from 'assets/images/enclave/structure.jpg';
 import { darken, lighten } from 'polished';
+import { NexusVideo, VideoPlaybackConfig } from '../NexusVideo';
+import mintSuccessvideo from 'assets/videos/m17.mp4';
+import { ZERO } from 'utils/bigNumber';
+import { BigNumber } from 'ethers';
+import { Popover } from 'components/Popover';
 
 const MintRelicPanel = () => {
+  const navigate = useNavigate();
   const [selectedEnclave, setSelectedEnclave] = useState<RelicEnclave>();
   const enclaves = [
     RelicEnclave.Logic,
@@ -24,7 +30,37 @@ const MintRelicPanel = () => {
     RelicEnclave.Mystery,
     RelicEnclave.Chaos,
   ];
-  return (
+
+  const [newRelicId, setNewRelicId] = useState(ZERO);
+
+  const videoConfig: VideoPlaybackConfig = {
+    videoSrc: mintSuccessvideo,
+    onPlaybackCompleteHandler: () => {
+      navigate(`/nexus/relic/${newRelicId.toString()}`);
+    },
+  };
+
+  const onMintHandler = (relicId: BigNumber) => {
+    setNewRelicId(relicId);
+    setVideoIsOpen(true);
+  };
+
+  const [videoIsOpen, setVideoIsOpen] = useState(true);
+
+  return videoIsOpen ? (
+    <Popover
+      onClose={() => {
+        navigate(`/nexus/relic/${newRelicId.toString()}`);
+      }}
+      isOpen={videoIsOpen}
+      showCloseButton={false}
+    >
+      <PopoverChildContainer>
+        <NexusVideo config={videoConfig} />
+        <CloseVideoButton label="Close" onClick={() => setVideoIsOpen(false)} />
+      </PopoverChildContainer>
+    </Popover>
+  ) : (
     <NexusPanel>
       <NexusPanelRow>Mint Relic</NexusPanelRow>
       <EnclaveCardContainer>
@@ -39,28 +75,43 @@ const MintRelicPanel = () => {
       </EnclaveCardContainer>
       <br />
       <br />
-      <MintRelicButtonStyled selectedEnclave={selectedEnclave} />
+      <MintRelicButtonStyled selectedEnclave={selectedEnclave} onMintHandler={onMintHandler} />
     </NexusPanel>
   );
 };
 
-const MintRelicButton: FC<{ selectedEnclave?: RelicEnclave }> = (props) => {
-  const { selectedEnclave } = props;
+const PopoverChildContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+`;
+
+const CloseVideoButton = styled(Button)`
+  width: 200px;
+  margin-top: 20px;
+  border-radius: 4px;
+`;
+
+const MintRelicButton: FC<{ selectedEnclave?: RelicEnclave; onMintHandler: (relicId: BigNumber) => void }> = (
+  props
+) => {
+  const { selectedEnclave, onMintHandler } = props;
   const enclaveSelected = selectedEnclave != undefined;
   const label = enclaveSelected
     ? `Mint *${capitalize(getEnclavePalette(selectedEnclave))}* Relic`
     : 'You must choose an enclave first.';
   const { mintRelic } = useRelic();
-  const navigate = useNavigate();
+
   return (
     <Button
       label={label}
+      playClickSound
       disabled={!enclaveSelected}
       onClick={async () => {
         if (enclaveSelected) {
           const added = await mintRelic(selectedEnclave);
           if (added) {
-            navigate(`/nexus/relic/${added.id.toString()}`);
+            onMintHandler(added.id);
           }
         }
       }}

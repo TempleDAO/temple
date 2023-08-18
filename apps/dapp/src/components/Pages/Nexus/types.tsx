@@ -12,6 +12,15 @@ export enum RARITY_TYPE {
   EPIC,
 }
 
+export type Shard = {
+  id: number;
+  name: string;
+  description: string;
+  originUrl: string;
+  logoUrl: string;
+  rarity: RARITY_TYPE;
+};
+
 export type QuestData = {
   id: string;
   title: string;
@@ -19,14 +28,6 @@ export type QuestData = {
   linkUrl: string;
   description: string;
   logoUrl: string;
-  rewardLogoUrls: string[];
-  rarity: RARITY_TYPE;
-};
-
-export type Shard = {
-  id: number;
-  name: string;
-  description: string;
-  originUrl: string;
+  rewardIds: number[];
   rarity: RARITY_TYPE;
 };

@@ -1,5 +1,5 @@
 import bgActive from 'assets/images/nexus/background_on.jpg';
-import bgInactive from 'assets/images/nexus/background_off.jpg';
+import bgInactive from 'assets/images/nexus/background_off.png';
 import { useRelic } from 'providers/RelicProvider';
 import { useWallet } from 'providers/WalletProvider';
 import { useEffect } from 'react';
@@ -19,14 +19,11 @@ const QuestPage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    updateInventory();
-  }, [wallet, isConnected]);
-
-  useEffect(() => {
-    if (inventory?.relics.length === 0) {
+    if (!isConnected || !wallet) {
       navigate('/nexus/relic');
     }
-  }, [inventory]);
+    updateInventory();
+  }, [wallet, isConnected]);
 
   const bgImage = inventory?.relics.length ? bgActive : bgInactive;
 
@@ -46,7 +43,7 @@ const QuestPage = () => {
       linkUrl: props.linkUrl,
       description: props.description,
       logoUrl: props.logoUrl,
-      rewardLogoUrls: props.rewardLogoUrls,
+      rewardIds: props.rewardIds,
       rarity: props.rarity,
     };
 

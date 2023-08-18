@@ -4,8 +4,7 @@ import { BigNumber } from 'ethers';
 import { parseUnits, formatUnits } from 'ethers/lib/utils';
 
 import { GraphVault, GraphVaultGroup } from 'hooks/core/types';
-import { formatNumber } from 'utils/formatter';
-import { fromAtto, ZERO } from 'utils/bigNumber';
+import { fromAtto } from 'utils/bigNumber';
 import { Vault, VaultGroup, MarkerType, Marker } from './types';
 import { VaultGroupBalances } from 'hooks/core/use-vault-group-token-balance';
 

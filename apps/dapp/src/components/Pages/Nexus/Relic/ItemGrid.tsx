@@ -1,14 +1,11 @@
 import { Button } from 'components/Button/Button';
 import { useWindowResize } from 'components/Vault/useWindowResize';
 import { RelicItemData } from 'providers/types';
-import { FC, useEffect, useRef, useState } from 'react';
+import { FC, useEffect, useMemo, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { NexusTooltip } from './NexusTooltip';
 import env from '../../../../constants/env';
-
-// TODO: Move to env
-const ITEM_IMAGE_BASE_URL = 'https://myst.mypinata.cloud/ipfs/QmaTErwf7sV9WzfP86GjDfnRBwKL74y2j9H4vUwNr7jMhE';
-const MAX_IMAGE_ITEM_ID = 2;
+import { Shard } from '../types';
 
 const ItemGrid: FC<{
   disabled?: boolean;
@@ -30,48 +27,54 @@ const ItemGrid: FC<{
   const rowCount = Math.max(1, Math.ceil(items.length / columnCount));
   const itemIndexes = [...Array(rowCount * columnCount).keys()];
 
+  const itemsWithShards = useMemo(
+    () =>
+      itemIndexes
+        .map((_, idx) => {
+          const item = items[idx];
+          let shard;
+          if (item) {
+            shard = env.nexus.shardMetadata[item.id as keyof typeof env.nexus.shardMetadata];
+          }
+          if (shard) {
+            return {
+              item,
+              shard,
+            };
+          }
+
+          return null;
+        })
+        // put empty shards at the end
+        .sort((a, b) => (b?.shard?.id ?? 0) - (a?.shard?.id ?? 0)),
+    [items]
+  );
+
   return (
     <ItemsContainer ref={containerRef}>
-      {itemIndexes.map((_, idx) => {
-        const item = items[idx];
-
-        let shard;
-
-        if (item) {
-          shard = env.nexus.shardMetadata[item.id as keyof typeof env.nexus.shardMetadata];
+      {itemsWithShards.map((itemWithShard, idx) => {
+        if (!itemWithShard) {
+          return (
+            <ItemWrapper key={idx} columnCount={columnCount}>
+              <EmptyCell />
+            </ItemWrapper>
+          );
         }
+
+        const { item, shard } = itemWithShard;
 
         return (
           <>
-            {item == undefined ? (
+            <NexusTooltip shard={shard}>
               <ItemWrapper key={idx} columnCount={columnCount}>
-                <EmptyCell />
+                <ItemButton
+                  key={item.id}
+                  item={item}
+                  disabled={props.disabled || item.count === 0}
+                  onClick={props.onClick}
+                />
               </ItemWrapper>
-            ) : (
-              <>
-                {shard !== undefined ? (
-                  <NexusTooltip shard={shard}>
-                    <ItemWrapper key={idx} columnCount={columnCount}>
-                      <ItemButton
-                        key={item.id}
-                        item={item}
-                        disabled={props.disabled || item.count === 0}
-                        onClick={props.onClick}
-                      />
-                    </ItemWrapper>
-                  </NexusTooltip>
-                ) : (
-                  <ItemWrapper key={idx} columnCount={columnCount}>
-                    <ItemButton
-                      key={item.id}
-                      item={item}
-                      disabled={props.disabled || item.count === 0}
-                      onClick={props.onClick}
-                    />
-                  </ItemWrapper>
-                )}
-              </>
-            )}
+            </NexusTooltip>
           </>
         );
       })}
@@ -87,7 +90,9 @@ export const ItemButton: FC<{
   const { item } = props;
 
   const [processing, setProcessing] = useState(false);
-  const imgUrl = item.id <= MAX_IMAGE_ITEM_ID ? `${ITEM_IMAGE_BASE_URL}/${item.id}.png` : undefined;
+
+  const shard: Shard = env.nexus.shardMetadata[item.id as keyof typeof env.nexus.shardMetadata];
+  const imgUrl = shard.logoUrl;
 
   let cellOpacity = processing ? 0.3 : 1;
 
@@ -107,6 +112,7 @@ export const ItemButton: FC<{
         label={imgUrl ? '' : `${item.id}`}
         style={{ border: 'none' }}
         disabled={props.disabled}
+        playClickSound
         onClick={() => {
           setProcessing(true);
           return props.onClick(item.id).finally(() => setProcessing(false));
@@ -174,20 +180,24 @@ const ItemCountBadge = styled.div<{ disabled?: boolean }>`
   background-color: ${(props) => (props.disabled ? props.theme.palette.brand50 : props.theme.palette.brand)};
 `;
 
-const ItemImage = styled.img`
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  opacity: 0.7;
-  pointer-events: none;
-`;
+// const ItemImage = styled.img`
+//   position: absolute;
+//   top: 0;
+//   left: 0;
+//   right: 0;
+//   bottom: 0;
+//   opacity: 0.7;
+//   pointer-events: none;
+// `;
 
 export const EmptyCell = styled.div`
   background: darkgray;
   border: solid 1px darkgray;
   opacity: 0.1;
+  // width: 100%;
+  // height: 100%;
+  position: relative;
+  // border-radius: 15%;
 `;
 
 export default ItemGrid;

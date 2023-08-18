@@ -16,6 +16,7 @@ import animationData from 'assets/animations/logo-animation.json';
 import mobileBackgoundImage from 'assets/images/mobile-background-geometry.svg';
 import { Account } from './Account';
 import { isDevelopmentEnv } from 'utils/helpers';
+import { clickSound } from 'utils/sound';
 
 export type HeaderMode = 'dapp' | 'nexus';
 
@@ -57,7 +58,13 @@ interface NavigationProps {
   mode: HeaderMode;
 }
 
-function getMenuItems(mode: HeaderMode) {
+type NavItem = {
+  title: string;
+  path: string;
+  clickSound?: boolean;
+};
+
+function getMenuItems(mode: HeaderMode): NavItem[] {
   switch (mode) {
     case 'dapp':
       return [
@@ -67,11 +74,13 @@ function getMenuItems(mode: HeaderMode) {
         { title: 'Analytics', path: '/dapp/analytics' },
       ];
     case 'nexus':
-      const devMode = isDevelopmentEnv();
-      return (devMode ? [{ title: 'Dev Mint', path: '/nexus/relic/dev-mint' }] : []).concat([
-        { title: 'Relic', path: '/nexus/relic' },
-        { title: 'Quests', path: '/nexus/quests' },
-        { title: 'Forge', path: '/nexus/forge' },
+      // const devMode = isDevelopmentEnv();
+      const devMode = false;
+      return (devMode ? [{ title: 'Dev Mint', path: '/nexus/relic/dev-mint', clickSound: true }] : []).concat([
+        { title: 'Relic', path: '/nexus/relic', clickSound: true },
+        { title: 'Quests', path: '/nexus/quests', clickSound: true },
+        { title: 'Forge', path: '/nexus/forge', clickSound: true },
+        { title: 'Help', path: '/nexus/help', clickSound: true },
       ]);
   }
 }
@@ -87,12 +96,27 @@ const Navigation = ({ isNavOpenMobile, onClickMenuItem, mode }: NavigationProps)
     [setSelectorPosition]
   );
 
+  const onClickWrapper = useCallback(
+    (item: NavItem, handler: ((event: SyntheticEvent) => void) | undefined) => {
+      if (item.clickSound) {
+        clickSound.play();
+      }
+      return handler;
+    },
+    [clickSound]
+  );
+
   return (
     <NavWrapper $isOpen={isNavOpenMobile}>
       <MenuWrapper>
         <Menu id="menu">
           {getMenuItems(mode).map((item) => (
-            <MenuItem key={item.path} to={item.path} onMenuItemActive={onMenuItemActive} onClick={onClickMenuItem}>
+            <MenuItem
+              key={item.path}
+              to={item.path}
+              onMenuItemActive={onMenuItemActive}
+              onClick={() => onClickWrapper(item, onClickMenuItem)}
+            >
               {item.title}
             </MenuItem>
           ))}

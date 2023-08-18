@@ -78,7 +78,11 @@ interface Posthog {
 
 interface Nexus {
   templeRelicAddress: string;
-  templeRelicItemsAddress: string;
+  templeShardsAddress: string;
+  templeSacrificeAddress: string;
+  templeToken: string;
+  templePartnerMinterAddress: string;
+  pathOfTemplarShardAddress: string;
   recipes: Recipe[];
   shardMetadata: {
     [key: number]: Shard;

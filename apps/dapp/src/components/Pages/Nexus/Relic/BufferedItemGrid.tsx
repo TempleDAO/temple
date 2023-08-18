@@ -98,14 +98,14 @@ const BufferPanel: FC<{
   return (
     <NexusPanel
       style={{
-        width: '80%',
+        width: '100%',
         borderWidth: 1,
       }}
     >
       <ItemGrid disabled={disabled} items={items} onClick={async (itemId) => props.onItemClicked(itemId)} />
       <NexusPanelRow>
-        <Button isSmall disabled={disabled} label="Cancel" onClick={props.onCancel} />
-        <Button isSmall disabled={disabled} label={props.actionLabel} onClick={props.onAction} />
+        <Button isSmall playClickSound disabled={disabled} label="Cancel" onClick={props.onCancel} />
+        <Button isSmall playClickSound disabled={disabled} label={props.actionLabel} onClick={props.onAction} />
       </NexusPanelRow>
     </NexusPanel>
   );

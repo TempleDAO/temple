@@ -29,6 +29,8 @@ export const Popover: FC<Props> = ({
     onClose();
   });
 
+  // document.getElementById('root').style.filter = 'blur(5px)'
+
   // Close modal on escape
   useEffect(() => {
     if (!closeOnEscape || !isOpen) return;
@@ -86,7 +88,7 @@ const Wrapper = styled.div<{ isOpen: boolean }>`
 
 const Dimmer = styled.div`
   background: rgba(0, 0, 0, 0.4);
-  position: fixed;
+  position: absolute;
   top: 0;
   left: 0;
   height: 100%;
