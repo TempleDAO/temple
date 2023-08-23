@@ -102,11 +102,12 @@ contract TempleTokenBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
      * @dev For Temple, we just mint the tokens.
      */
     function trvWithdraw(uint256 requestedAmount) external override returns (uint256) {
-        if (msg.sender != address(treasuryReservesVault)) revert OnlyTreasuryReserveVault(msg.sender);
+        address _trvAddr = address(treasuryReservesVault);
+        if (msg.sender != _trvAddr) revert OnlyTreasuryReserveVault(msg.sender);
         if (requestedAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();       
 
         emit TempleMinted(requestedAmount);
-        templeToken.mint(address(treasuryReservesVault), requestedAmount);
+        templeToken.mint(_trvAddr, requestedAmount);
         return requestedAmount;
     }
 
@@ -120,7 +121,7 @@ contract TempleTokenBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
      * Shutdown data isn't required for a DSR automated shutdown.
      */
     function _doShutdown(bytes calldata /*data*/) internal pure override {
-        revert Unimplemented();
+        revert CommonEventsAndErrors.Unimplemented();
     }
 
 }

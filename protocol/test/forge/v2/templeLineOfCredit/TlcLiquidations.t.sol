@@ -2,6 +2,7 @@ pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { TlcBaseTest } from "./TlcBaseTest.t.sol";
+import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 
 /* solhint-disable func-name-mixedcase, contract-name-camelcase, not-rely-on-time */
 contract TempleLineOfCreditTestCheckLiquidity is TlcBaseTest {
@@ -66,7 +67,7 @@ contract TempleLineOfCreditTestCheckLiquidity is TlcBaseTest {
 contract TempleLineOfCreditTestBatchLiquidate is TlcBaseTest {
     event StrategyCreditAndDebtBalance(address indexed strategy, address indexed token, uint256 credit, uint256 debt);
 
-    function test_batchLiquidate_paused() external {
+    function test_batchLiquidate_paused_simple() external {
         uint128 collateralAmount = 10_000e18;
         borrow(alice, collateralAmount, 1_000e18, BORROW_REQUEST_MIN_SECS);
         uint256 expectedDaiAccumulator = approxInterest(INITIAL_INTEREST_ACCUMULATOR, MIN_BORROW_RATE, BORROW_REQUEST_MIN_SECS);
@@ -85,6 +86,71 @@ contract TempleLineOfCreditTestBatchLiquidate is TlcBaseTest {
 
         tlc.setLiquidationsPaused(false);
         checkBatchLiquidate(accounts, 0, 0);
+    }
+
+    function test_batchLiquidate_paused_complex() external {
+        // Alice borrows almost up to her max ltv
+        uint128 collateralAmount = 10_000e18;
+        borrow(alice, collateralAmount, 8_000e18, BORROW_REQUEST_MIN_SECS);
+        uint256 expectedDaiAccumulator = approxInterest(INITIAL_INTEREST_ACCUMULATOR, MIN_BORROW_RATE, BORROW_REQUEST_MIN_SECS);
+
+        // After borrow
+        assertEq(tlc.totalCollateral(), collateralAmount);
+        checkDebtTokenDetails(8_000e18, 54444444444444444, expectedDaiAccumulator, block.timestamp);
+
+        address[] memory accounts = new address[](1);
+        accounts[0] = alice;
+
+        // Set rescue mode on
+        vm.startPrank(rescuer);
+        tlc.setRescueMode(true);
+
+        // Can't liquidate in resuce mode
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
+        tlc.batchLiquidate(accounts);
+
+        // Rescuer pauses liquidations
+        tlc.setLiquidationsPaused(true);
+
+        // Alice's position is still healthy (just)
+        LiquidationStatus[] memory status = tlc.computeLiquidity(accounts);
+        assertEq(status[0].hasExceededMaxLtv, false);
+
+        // TLC drops (exploit) and a day passes
+        tpiOracle.setRescueMode(true);
+        tpiOracle.setTreasuryPriceIndex(0.9e18);
+        vm.warp(block.timestamp + 1 days);
+
+        // Alice is now under water
+        status = tlc.computeLiquidity(accounts);
+        assertEq(status[0].hasExceededMaxLtv, true);
+
+        // Rescue mode is turned off
+        tlc.setRescueMode(false);
+        changePrank(executor);
+
+        // Still can't liquidate Alice since liquidations are still paused
+        vm.expectRevert(abi.encodeWithSelector(Paused.selector));
+        tlc.batchLiquidate(accounts);
+
+        // Time is given to alice to unwind - she does
+        changePrank(alice);
+        daiToken.approve(address(tlc), 1_000e18);
+        tlc.repay(1_000e18, alice);
+
+        // Alice is no longer underwater
+        status = tlc.computeLiquidity(accounts);
+        assertEq(status[0].hasExceededMaxLtv, false);
+
+        // Liquidations are now unpaused
+        changePrank(executor);
+        tlc.setLiquidationsPaused(false);
+
+        // Liquidations now run - but nothing was liquidated
+        checkBatchLiquidate(accounts, 0, 0);
+        assertEq(daiToken.balanceOf(alice), 7_000e18);
+        AccountPosition memory position = tlc.accountPosition(alice);
+        assertEq(position.collateral, collateralAmount);
     }
 
     function test_batchLiquidate_noAccounts() external {

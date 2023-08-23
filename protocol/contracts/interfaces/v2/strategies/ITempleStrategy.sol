@@ -45,7 +45,6 @@ interface ITempleStrategy is ITempleElevatedAccess {
     
     error InvalidVersion(string expected, string actual);
     error OnlyTreasuryReserveVault(address caller);
-    error Unimplemented();
 
     /**
      * @notice API version to help with future integrations/migrations

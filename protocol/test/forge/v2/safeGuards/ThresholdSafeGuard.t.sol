@@ -15,11 +15,20 @@ import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.so
 contract MockContract {
     bool public someState;
 
-    function doThing() external returns (bool) {
-        someState = true;
-        return true;
+    bytes4 public immutable doThing0Args_Selector;
+    bytes4 public immutable doThing2Args_Selector;
+    bytes4 public immutable doOther_Selector;
+    bytes4 public immutable wycpnbqcyf_Selector;
+
+    constructor() {
+        // Need to hash doThing() because it's overloaded
+        doThing0Args_Selector = bytes4(keccak256("doThing()"));
+        doThing2Args_Selector = bytes4(keccak256("doThing(string,uint256)"));
+        doOther_Selector = MockContract.doOther.selector;
+        wycpnbqcyf_Selector = MockContract.wycpnbqcyf.selector;
     }
-    function doThing(string memory) external returns (bool) {
+
+    function doThing() external returns (bool) {
         someState = true;
         return true;
     }
@@ -86,7 +95,8 @@ contract ThresholdSafeGuardTestBase is TempleTest {
         FAILURE_THRESHOLD_NESTED,
         FAILURE_THRESHOLD_UPSTREAM,
         FAILURE_INVALID_EXECUTOR,
-        FAILURE_INCORRECT_EXECUTOR
+        FAILURE_INCORRECT_EXECUTOR,
+        FAILURE_ACCOUNTS_NOT_IN_ORDER
     }
 
     struct TransactionParams {
@@ -259,6 +269,8 @@ contract ThresholdSafeGuardTestBase is TempleTest {
             vm.expectRevert(abi.encodeWithSelector(IThresholdSafeGuard.InvalidExecutor.selector));
         } else if (successOrFailure == ExpectSuccessOrFailure.FAILURE_INCORRECT_EXECUTOR) {
             vm.expectRevert("GS025");
+        } else if (successOrFailure == ExpectSuccessOrFailure.FAILURE_ACCOUNTS_NOT_IN_ORDER) {
+            vm.expectRevert("GS026");
         }
     }
 
@@ -472,16 +484,17 @@ contract ThresholdSafeGuardTestAccess is ThresholdSafeGuardTestBase {
     }
 
     function test_access_setFunctionThreshold() public {
+        bytes4 fnSelector = mock.doThing2Args_Selector();
         expectElevatedAccess();
-        bytes4 fnSelector = bytes4(keccak256("doThing(string,uint256)"));
         guard.setFunctionThreshold(address(mock), fnSelector, 5);
     }
 
     function test_access_setFunctionThresholdBatch() public {
-        expectElevatedAccess();
         bytes4[] memory fnSels = new bytes4[](2);
-        fnSels[0] = bytes4(keccak256("doThing(string,uint256)"));
-        fnSels[1] = bytes4(keccak256("doThing()"));
+        fnSels[0] = mock.doThing2Args_Selector();
+        fnSels[1] = mock.doThing0Args_Selector();
+
+        expectElevatedAccess();
         guard.setFunctionThresholdBatch(address(mock), fnSels, 5);
     }
 
@@ -676,6 +689,25 @@ contract ThresholdSafeGuardTest is ThresholdSafeGuardTestBase {
         );
     }
 
+    function test_checkTransaction_3Required_DuplicateSigner() public {
+        vm.startPrank(executor);
+        guard.setDefaultSignaturesThreshold(3);
+
+        checkTransaction(
+            ExpectSuccessOrFailure.FAILURE_ACCOUNTS_NOT_IN_ORDER,
+            safeOwners[0], 
+            makeTransactionParams(
+                0, 
+                "", 
+                makeSignSpecs(
+                    SignSpec(SignType.AS_EXECUTOR, safeOwners[0]),
+                    SignSpec(SignType.AS_EOA_TX, safeOwners[1]),
+                    SignSpec(SignType.AS_EOA_TX, safeOwners[1])
+                )
+            )
+        );
+    }
+
     function test_checkTransaction_badPreApproval() public {
         vm.startPrank(executor);
         guard.setDefaultSignaturesThreshold(3);
@@ -699,7 +731,7 @@ contract ThresholdSafeGuardTest is ThresholdSafeGuardTestBase {
     function test_checkTransaction_withOverrideTresholdSet_zeroSelector() public {
         vm.startPrank(executor);
         // Magically this function is hashed to `0x00000000`
-        bytes4 fnSelector = bytes4(keccak256("wycpnbqcyf()"));
+        bytes4 fnSelector = mock.wycpnbqcyf_Selector();
         assertEq(fnSelector, bytes4(0));
 
         guard.setFunctionThreshold(address(mock), fnSelector, 3);
@@ -736,12 +768,12 @@ contract ThresholdSafeGuardTest is ThresholdSafeGuardTestBase {
 
     function test_checkTransaction_withOverrideThresholdSet() public {
         vm.startPrank(executor);
-        bytes4 fnSelector = bytes4(keccak256("doThing(string,uint256)"));
-        bytes4 fnSelector2 = bytes4(keccak256("doThing()"));
+        bytes4 fnSelector = mock.doThing2Args_Selector();
+        bytes4 fnSelector2 = mock.doThing0Args_Selector();
 
         guard.setFunctionThreshold(address(mock), fnSelector, 3);
         guard.setFunctionThreshold(address(mock), fnSelector2, 4);
-        guard.setFunctionThreshold(address(mock), bytes4(keccak256("doOther(string,uint256)")), 5);
+        guard.setFunctionThreshold(address(mock), mock.doOther_Selector(), 5);
 
         // Success for fnSelector (threshold = 3)
         checkTransaction(
@@ -776,14 +808,14 @@ contract ThresholdSafeGuardTest is ThresholdSafeGuardTestBase {
 
     function test_checkTransaction_withContractSig() public {
         vm.startPrank(executor);
-        bytes4 fnSelector = bytes4(keccak256("doThing(string,uint256)"));
-        bytes4 fnSelector2 = bytes4(keccak256("doThing()"));
+        bytes4 fnSelector = mock.doThing2Args_Selector();
+        bytes4 fnSelector2 = mock.doThing0Args_Selector();
 
         guard.setFunctionThreshold(address(mock), fnSelector, 3);
 
         // Also add some extra fns to make sure it picks the right one.
         guard.setFunctionThreshold(address(mock), fnSelector2, 4);
-        guard.setFunctionThreshold(address(mock), bytes4(keccak256("doOther(string,uint256)")), 5);
+        guard.setFunctionThreshold(address(mock), mock.doOther_Selector(), 5);
 
         // Succeed for fnSelector (threshold = 3)
         checkTransaction(
@@ -828,7 +860,7 @@ contract ThresholdSafeGuardTest is ThresholdSafeGuardTestBase {
 
     function test_checkTransaction_disabled() public {
         vm.startPrank(executor);
-        bytes4 fnSelector = bytes4(keccak256("doThing(string,uint256)"));
+        bytes4 fnSelector = mock.doThing2Args_Selector();
         guard.setFunctionThreshold(address(mock), fnSelector, 3);
         bytes memory fnCall = abi.encodeWithSelector(fnSelector, "abc", 1);
 
@@ -939,7 +971,7 @@ contract ThresholdSafeGuardExecuteTest is ThresholdSafeGuardTestBase {
         _setup();
 
         changePrank(executor);
-        bytes4 fnSelector = bytes4(keccak256("doThing(string,uint256)"));
+        bytes4 fnSelector = mock.doThing2Args_Selector();
         guard.setFunctionThreshold(address(mock), fnSelector, 3);
 
         bytes memory fnCall = abi.encodeWithSelector(fnSelector, "abc", 1);
@@ -989,7 +1021,7 @@ contract ThresholdSafeGuardExecuteTest is ThresholdSafeGuardTestBase {
         _setup();
 
         changePrank(executor);
-        bytes4 fnSelector = bytes4(keccak256("doThing(string,uint256)"));
+        bytes4 fnSelector = mock.doThing2Args_Selector();
         guard.setFunctionThreshold(address(mock), fnSelector, 3);
 
         bytes memory fnCall = abi.encodeWithSelector(fnSelector, "abc", 1);

@@ -145,7 +145,7 @@ contract TempleTokenBaseStrategyTestBorrow is TempleTokenBaseStrategyTestBase {
 
     function test_automatedShutdown() public {
         vm.startPrank(executor);
-        vm.expectRevert(abi.encodeWithSelector(ITempleStrategy.Unimplemented.selector));
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.Unimplemented.selector));
         strategy.automatedShutdown("");
     }
 }

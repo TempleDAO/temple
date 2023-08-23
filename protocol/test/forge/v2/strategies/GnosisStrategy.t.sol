@@ -92,7 +92,7 @@ contract GnosisStrategyTestAdmin is GnosisStrategyTestBase {
 
     function test_automatedShutdown() public {
         vm.startPrank(executor);
-        vm.expectRevert(abi.encodeWithSelector(ITempleStrategy.Unimplemented.selector));
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.Unimplemented.selector));
         strategy.automatedShutdown("");
     }
 }
