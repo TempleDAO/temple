@@ -1,4 +1,4 @@
-pragma solidity 0.8.18;
+pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (interfaces/v2/ITreasuryReservesVault.sol)
 
@@ -67,7 +67,6 @@ interface ITreasuryReservesVault is ITempleElevatedAccess {
     error RepaysPaused();
     error StrategyIsShutdown();
     error DebtCeilingBreached(uint256 available, uint256 borrowAmount);
-    error DebtOverpayment(uint256 current, uint256 repayAmount);
     error NotShuttingDown();
 
     struct BorrowTokenConfig {
@@ -127,6 +126,12 @@ interface ITreasuryReservesVault is ITempleElevatedAccess {
          * When a strategy repays, the `dToken` is burned 1:1
          */
         mapping(IERC20 => uint256) debtCeiling;
+
+        /**
+         * @notice The tokens that this strategy is allowed to borrow from TRV
+         * @dev This must be one of the configured Borrow Tokens
+         */
+        mapping(IERC20 => bool) enabledBorrowTokens;
     }
 
     /**
@@ -189,7 +194,7 @@ interface ITreasuryReservesVault is ITempleElevatedAccess {
     /**
      * @notice The Treasury Price Index - the target price of the Treasury, in `stableToken` terms.
      */
-    function treasuryPriceIndex() external view returns (uint256);
+    function treasuryPriceIndex() external view returns (uint96);
 
     /**
      * @notice API version to help with future integrations/migrations
@@ -206,6 +211,15 @@ interface ITreasuryReservesVault is ITempleElevatedAccess {
         uint256 baseStrategyWithdrawalBuffer,
         uint256 baseStrategyDepositThreshold,
         address dToken
+    ) external;
+
+    /**
+     * @notice Enable and/or disable tokens which a strategy can borrow from the (configured) TRV borrow tokens
+     */
+    function updateStrategyEnabledBorrowTokens(
+        address strategy, 
+        IERC20[] calldata enableBorrowTokens, 
+        IERC20[] calldata disableBorrowTokens
     ) external;
 
     /**
@@ -249,6 +263,11 @@ interface ITreasuryReservesVault is ITempleElevatedAccess {
      * @notice The current max debt ceiling that a strategy is allowed to borrow up to.
      */
     function strategyDebtCeiling(address strategy, IERC20 token) external view returns (uint256);
+    
+    /**
+     * @notice Whether a token is enabled to be borrowed for a given strategy
+     */
+    function strategyEnabledBorrowTokens(address strategy, IERC20 token) external view returns (bool);
 
     /**
      * @notice The total available stables, both as a balance in this contract and
@@ -267,7 +286,7 @@ interface ITreasuryReservesVault is ITempleElevatedAccess {
     ) external view returns (uint256);
 
     /**
-     * Pause all strategy borrow and repays
+     * @notice Pause all strategy borrow and repays
      */
     function setGlobalPaused(bool borrow, bool repays) external;
 

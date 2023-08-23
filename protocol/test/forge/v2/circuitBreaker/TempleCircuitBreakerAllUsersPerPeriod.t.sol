@@ -1,4 +1,4 @@
-pragma solidity 0.8.18;
+pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { TempleTest } from "../../TempleTest.sol";
@@ -27,8 +27,8 @@ contract TempleCircuitBreakerTestBase is TempleTest {
     // Expected buckets - cleared after every check
     uint256[100] internal ebkts;
 
-    event ConfigSet(uint256 periodDuration, uint256 nBuckets, uint256 cap);
-    event CapSet(uint256 cap);
+    event ConfigSet(uint32 periodDuration, uint32 nBuckets, uint128 cap);
+    event CapSet(uint128 cap);
 
     function setUp() public {
         breaker = new TempleCircuitBreakerAllUsersPerPeriod(rescuer, executor, 1 days, 24, 100e18);
@@ -75,6 +75,8 @@ contract TempleCircuitBreakerTestBase is TempleTest {
         for (uint256 i = 0; i < 5; ++i) {
             assertEq(breaker.buckets(i), 1);
         }
+
+        breaker.setConfig(uint32(breaker.MAX_BUCKETS()), uint32(breaker.MAX_BUCKETS()), 0);
     }
 
     function test_updateCap() public {
@@ -133,10 +135,11 @@ contract TempleCircuitBreakerTestPreCheck is TempleCircuitBreakerTestBase {
         logTime();
     }
 
-    function doCheck(uint256 amt, uint256 bucketIndex, uint256 utilisation) internal {
+    function doCheck(uint256 amt, uint256 bucketIndex, uint256 utilisationAfter) internal {
+        assertEq(breaker.currentUtilisation(), utilisationAfter-amt, "utilisationBefore");
         breaker.preCheck(address(this), amt);
         assertEq(breaker.bucketIndex() % breaker.nBuckets(), bucketIndex, "bucketIndex");
-        assertEq(breaker.currentUtilisation(), utilisation, "utilisation");
+        assertEq(breaker.currentUtilisation(), utilisationAfter, "utilisationAfter");
 
         for (uint256 i; i<breaker.nBuckets(); ++i) {
             assertEq(breaker.buckets(i), ebkts[i]+1);

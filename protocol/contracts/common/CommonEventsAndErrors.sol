@@ -1,4 +1,4 @@
-pragma solidity 0.8.18;
+pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (common/CommonEventsAndErrors.sol)
 
@@ -10,5 +10,6 @@ library CommonEventsAndErrors {
     error InvalidAccess();
     error InvalidAmount(address token, uint256 amount);
     error ExpectedNonZero();
+    error Unimplemented();
     event TokenRecovered(address indexed to, address indexed token, uint256 amount);
 }

@@ -1,4 +1,4 @@
-pragma solidity 0.8.18;
+pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (v2/TreasuryReservesVault.sol)
 
@@ -47,7 +47,7 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.AddressSet;
 
-    string public constant API_VERSION = "1.0.0";
+    string private constant API_VERSION = "1.0.0";
 
     /**
      * @notice The configuration for a given strategy
@@ -70,7 +70,7 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
     EnumerableSet.AddressSet internal _borrowTokenSet;
 
     /**
-     * @notice A strategy may pay off mroe than it's entire debt token balance, 
+     * @notice A strategy may pay off more than it's entire debt token balance, 
      * in which case the TRV maintains a 'credit' balance which will contribute
      * towards realised gain/loss at full liquidation.
      * These credits are also a contributing factor to the strategy equity calculations.
@@ -152,12 +152,19 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
     }
 
     /**
-     * Pause all strategy borrow and repays
+     * @notice Pause all strategy borrow and repays
      */
     function setGlobalPaused(bool _pauseBorrow, bool _pauseRepays) external override onlyElevatedAccess {
         emit GlobalPausedSet(_pauseBorrow, _pauseRepays);
         globalBorrowPaused = _pauseBorrow;
         globalRepaysPaused = _pauseRepays;
+    }
+
+    /**
+     * @dev sum(debt ceiling, credits) need to be checked that they don't overflow, on write.
+     */
+    function _checkAddOverflow(uint256 a, uint256 b) internal pure {
+        a + b;
     }
 
     /**
@@ -174,11 +181,48 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
         StrategyConfig storage strategyConfig = strategies[strategy];
         strategyConfig.underperformingEquityThreshold = underperformingEquityThreshold;
 
-        address _token;
+        ITempleStrategy.AssetBalance memory _assetBalance;
         uint256 _length = debtCeiling.length;
+        IERC20 _token;
         for (uint256 i; i < _length; ++i) {
-            _token = debtCeiling[i].asset;
-            strategyConfig.debtCeiling[IERC20(_token)] = debtCeiling[i].balance;
+            _assetBalance = debtCeiling[i];
+            _token = IERC20(_assetBalance.asset);
+            emit DebtCeilingUpdated(
+                strategy, 
+                address(_token), 
+                strategyConfig.debtCeiling[_token], 
+                _assetBalance.balance
+            );
+
+            if (!_borrowTokenSet.contains(address(_token))) revert BorrowTokenNotEnabled();
+            strategyConfig.debtCeiling[_token] = _assetBalance.balance;
+            strategyConfig.enabledBorrowTokens[_token] = true;
+        }
+    }
+
+    /**
+     * @notice Enable and/or disable tokens which a strategy can borrow from the (configured) TRV borrow tokens
+     */
+    function updateStrategyEnabledBorrowTokens(
+        address strategy, 
+        IERC20[] calldata enableBorrowTokens, 
+        IERC20[] calldata disableBorrowTokens
+    ) external override onlyElevatedAccess {
+        StrategyConfig storage _strategyConfig = _getStrategyConfig(strategy);
+
+        uint256 i;
+        IERC20 token;
+        uint256 _length = enableBorrowTokens.length;
+        for (; i < _length; ++i) {
+            token = enableBorrowTokens[i];
+            if (!_borrowTokenSet.contains(address(token))) revert BorrowTokenNotEnabled();
+            _strategyConfig.enabledBorrowTokens[token] = true;
+        }
+
+        _length = disableBorrowTokens.length;
+        for (i = 0; i < _length; ++i) {
+            // Don't need to validate that the borrow token is configured when disabling.
+            _strategyConfig.enabledBorrowTokens[disableBorrowTokens[i]] = false;
         }
     }
 
@@ -196,11 +240,18 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
      * @notice Update the debt ceiling for a given strategy
      */
     function setStrategyDebtCeiling(address strategy, IERC20 token, uint256 newDebtCeiling) external override onlyElevatedAccess {
-        StrategyConfig storage _strategyConfig = _getStrategyConfig(strategy);
         if (!_borrowTokenSet.contains(address(token))) revert BorrowTokenNotEnabled();
+        StrategyConfig storage _strategyConfig = _getStrategyConfig(strategy);
+        if (!_strategyConfig.enabledBorrowTokens[token]) revert BorrowTokenNotEnabled();
 
         emit DebtCeilingUpdated(strategy, address(token), _strategyConfig.debtCeiling[token], newDebtCeiling);
+
+        // Revert if the debt ceiling + credit overflows
+        _checkAddOverflow(newDebtCeiling, strategyTokenCredits[strategy][token]);
+
         _strategyConfig.debtCeiling[token] = newDebtCeiling;
+
+        ITempleStrategy(strategy).debtCeilingUpdated(token, newDebtCeiling);
     }
 
     /**
@@ -236,23 +287,24 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
         if (!_strategyConfig.isShuttingDown) revert NotShuttingDown();
 
         // Burn any remaining dToken debt.
-        address _token;
+        IERC20 _token;
         mapping(IERC20 => uint256) storage credits = strategyTokenCredits[strategy];
         uint256 _length = _borrowTokenSet.length();
         uint256 _outstandingDebt;
         for (uint256 i; i < _length; ++i) {
-            _token = _borrowTokenSet.at(i);
-            _outstandingDebt = borrowTokens[IERC20(_token)].dToken.burnAll(strategy);
+            _token = IERC20(_borrowTokenSet.at(i));
+            _outstandingDebt = borrowTokens[_token].dToken.burnAll(strategy);
             emit StrategyShutdownCreditAndDebt({
                 strategy: strategy,
-                token: _token, 
-                outstandingCredit: credits[IERC20(_token)], 
+                token: address(_token), 
+                outstandingCredit: credits[_token], 
                 outstandingDebt: _outstandingDebt
             });
 
             // Clean up the debtCeiling approvals for this borrow token.
             // Old borrow ceilings may not be removed, but not an issue
-            delete _strategyConfig.debtCeiling[IERC20(_token)];
+            delete _strategyConfig.debtCeiling[_token];
+            delete credits[_token];
         }
 
         // Remove the strategy
@@ -266,7 +318,7 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
     }
 
     /**
-     * @notice Recover any token from the debt token
+     * @notice Recover any token from the TRV
      * @param token Token to recover
      * @param to Recipient address
      * @param amount Amount to recover
@@ -282,8 +334,9 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
      * `dToken` will be minted 1:1 for the amount of stables borrowed
      */
     function borrow(IERC20 token, uint256 borrowAmount, address recipient) external override {
-        StrategyConfig storage _strategyConfig = _getStrategyConfig(msg.sender);
         BorrowTokenConfig storage _tokenConfig = _getBorrowTokenConfig(token);
+        StrategyConfig storage _strategyConfig = _getStrategyConfig(msg.sender);
+        if (!_strategyConfig.enabledBorrowTokens[token]) revert BorrowTokenNotEnabled();
         uint256 _dTokenBalance = _tokenConfig.dToken.balanceOf(msg.sender);
 
         // This is not allowed to take the borrower over the debt ceiling
@@ -299,8 +352,9 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
      * `dToken` will be minted 1:1 for the amount of stables borrowed
      */
     function borrowMax(IERC20 token, address recipient) external override returns (uint256 borrowedAmount) {
-        StrategyConfig storage _strategyConfig = _getStrategyConfig(msg.sender);
         BorrowTokenConfig storage _tokenConfig = _getBorrowTokenConfig(token);
+        StrategyConfig storage _strategyConfig = _getStrategyConfig(msg.sender);
+        if (!_strategyConfig.enabledBorrowTokens[token]) revert BorrowTokenNotEnabled();
         uint256 _dTokenBalance = _tokenConfig.dToken.balanceOf(msg.sender);
         borrowedAmount = _availableForStrategyToBorrow(msg.sender, _strategyConfig, token, _dTokenBalance);
         _borrow(msg.sender, token, recipient, _tokenConfig, _strategyConfig, borrowedAmount, _dTokenBalance);
@@ -345,7 +399,7 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
     /**
      * @notice The Treasury Price Index - the target price of the Treasury, in `stableToken` terms.
      */
-    function treasuryPriceIndex() public view override returns (uint256) {
+    function treasuryPriceIndex() external view override returns (uint96) {
         return tpiOracle.treasuryPriceIndex();
     }
 
@@ -415,7 +469,7 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
      * @notice The total available balance available to be borrowed, both as a balance in this contract and
      * any available to withdraw from the baseStrategy
      */
-    function totalAvailable(IERC20 token) public override view returns (uint256) {
+    function totalAvailable(IERC20 token) external override view returns (uint256) {
         BorrowTokenConfig storage _tokenConfig = _getBorrowTokenConfig(token);
 
         uint256 baseStrategyAvailable;
@@ -444,7 +498,9 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
     ) external override view returns (uint256) {
         BorrowTokenConfig storage _tokenConfig = _getBorrowTokenConfig(token);
         uint256 _dTokenBalance = _tokenConfig.dToken.balanceOf(strategy);
-        return _availableForStrategyToBorrow(strategy, _getStrategyConfig(strategy), token, _dTokenBalance);
+        StrategyConfig storage _strategyConfig = _getStrategyConfig(strategy);
+        if (!_strategyConfig.enabledBorrowTokens[token]) revert BorrowTokenNotEnabled();
+        return _availableForStrategyToBorrow(strategy, _strategyConfig, token, _dTokenBalance);
     }
 
     /**
@@ -458,9 +514,17 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
      * @notice The current max debt ceiling that a strategy is allowed to borrow up to.
      */
     function strategyDebtCeiling(address strategy, IERC20 token) external override view returns (uint256) {
-        StrategyConfig storage _strategyConfig = _getStrategyConfig(strategy);
         if (!_borrowTokenSet.contains(address(token))) revert BorrowTokenNotEnabled();
+        StrategyConfig storage _strategyConfig = _getStrategyConfig(strategy);
+        if (!_strategyConfig.enabledBorrowTokens[token]) revert BorrowTokenNotEnabled();
         return _strategyConfig.debtCeiling[token];
+    }
+
+    /**
+     * @notice Whether a token is enabled to be borrowed for a given strategy
+     */
+    function strategyEnabledBorrowTokens(address strategy, IERC20 token) external override view returns (bool) {
+        return _getStrategyConfig(strategy).enabledBorrowTokens[token];
     }
 
     /// @dev Calculate the amount remaining that a strategy can borrow for a given token
@@ -475,8 +539,14 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
         uint256 _ceiling = strategyConfig.debtCeiling[token];
         uint256 _credit = strategyTokenCredits[strategy][token];
 
-        int256 _net  = int256(_ceiling + _credit) - int256(dTokenBalance);
-        return _net > 0 ? uint256(_net) : 0;
+        unchecked {
+            // The sum of debtCeiling and credits cannot overflow as they're verified upon write.
+            uint256 _totalAvailable = _ceiling + _credit;
+
+            return _totalAvailable > dTokenBalance
+                ? _totalAvailable - dTokenBalance
+                : 0;
+        } 
     }
 
     function _borrow(
@@ -516,34 +586,42 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
         uint256 amount
     ) internal {
         ITempleBaseStrategy _baseStrategy = tokenConfig.baseStrategy;
-        if (address(_baseStrategy) != address(0) && address(_baseStrategy) != strategy) {
+        address _baseStrategyAddr = address(_baseStrategy);
+        uint256 _balance = token.balanceOf(address(this));
+        if (_baseStrategyAddr != address(0) && _baseStrategyAddr != strategy) {
             // There may be idle tokens sitting idle in the TRV (ie these are not yet deposited into the baseStrategy)
             // So use these first, and only then fallback to pulling the rest from base strategy.
             uint256 _withdrawFromBaseStrategyAmount;
-            {
-                uint256 _balance = token.balanceOf(address(this));
-                uint256 _directTransferAmount = _balance > amount ? amount : _balance;
-                unchecked {
-                    _withdrawFromBaseStrategyAmount = amount - _directTransferAmount;
-                }
+            unchecked {
+                _withdrawFromBaseStrategyAmount = _balance > amount ? 0 : amount - _balance;
             }
 
             // Pull any remainder required from the base strategy.
-            if (_withdrawFromBaseStrategyAmount != 0) {
+            if (_withdrawFromBaseStrategyAmount > 0) {
                 // So there aren't lots of small withdrawals, pull the amount required for this transaction
                 // plus the threshold amount. Then future borrows don't need to withdraw from base every time.
-                unchecked {
-                    _withdrawFromBaseStrategyAmount += tokenConfig.baseStrategyWithdrawalBuffer;
-                }
+                _withdrawFromBaseStrategyAmount += tokenConfig.baseStrategyWithdrawalBuffer;
 
                 // The amount actually withdrawn may be less than requested
                 // as it's capped to any actual remaining balance in the base strategy
                 uint256 _withdrawnAmount = _baseStrategy.trvWithdraw(_withdrawFromBaseStrategyAmount);
 
                 // Burn the dTokens from the base strategy.
-                uint256 _dTokenBalance = tokenConfig.dToken.balanceOf(address(_baseStrategy));
-                _burnDToken(address(_baseStrategy), token, tokenConfig, _withdrawnAmount, _dTokenBalance);
+                if (_withdrawnAmount > 0) {
+                    _burnDToken(
+                        _baseStrategyAddr, 
+                        strategies[_baseStrategyAddr], 
+                        token, 
+                        tokenConfig, 
+                        _withdrawnAmount, 
+                        tokenConfig.dToken.balanceOf(_baseStrategyAddr)
+                    );
+                }
             }
+        } else {
+            // The tokens are transferred straight from TRV, no withdrawal from the base strategy
+            // Do an extra check that it at least has the requested amount in case the token isn't a standard ERC20 which already does a check.
+            if (amount > _balance) revert CommonEventsAndErrors.InsufficientBalance(address(token), amount, _balance);
         }
 
         // Finally send the stables.
@@ -566,15 +644,22 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
 
         if (toMintAmount > _creditBalance) {
             // Mint new dToken for the amount not covered by prior credit balance credit
-            uint256 _newDebt = toMintAmount - _creditBalance;
-            dTokenBalance += _newDebt;
+            uint256 _newDebt;
+            unchecked {
+                _newDebt = toMintAmount - _creditBalance;
+
+                // Safe to be unchecked as it's also overflow checked within the dToken.mint() below
+                dTokenBalance += _newDebt;
+            }
             tokenConfig.dToken.mint(strategy, _newDebt);
 
             // The credit is now 0
             _tokenCredits[token] = _creditBalance = 0;
         } else {
             // Use up remaining credits
-            _creditBalance -= toMintAmount;
+            unchecked {
+              _creditBalance -= toMintAmount;
+            }
             _tokenCredits[token] = _creditBalance;
         }
 
@@ -588,6 +673,7 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
      */
     function _burnDToken(
         address strategy, 
+        StrategyConfig storage strategyConfig,
         IERC20 token, 
         BorrowTokenConfig storage tokenConfig, 
         uint256 toBurnAmount,
@@ -597,17 +683,22 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
         uint256 _creditBalance = _tokenCredits[token];
 
         uint256 _burnedAmount = tokenConfig.dToken.burn(strategy, toBurnAmount);
+        uint256 _remaining;
         unchecked {
             dTokenBalance -= _burnedAmount;
+            _remaining = toBurnAmount - _burnedAmount;
         }
 
         // If there is any remaining which is not burned, then the debt is now 0
         // Add the remainder as a credit.
-        uint256 _remaining = toBurnAmount - _burnedAmount;
-        if (_remaining != 0) {
+        if (_remaining > 0) {
             unchecked {
                 _creditBalance += _remaining;
             }
+
+            // Revert if the debt ceiling + credit overflows
+            _checkAddOverflow(strategyConfig.debtCeiling[token], _creditBalance);
+
             _tokenCredits[token] = _creditBalance;
         }
 
@@ -647,7 +738,7 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
                     _balance -= tokenConfig.baseStrategyWithdrawalBuffer;
                 }
 
-                // Mint new dToken's for this base strategy.
+                // Mint new dTokens for this base strategy.
                 uint256 _dTokenBalance = tokenConfig.dToken.balanceOf(address(_baseStrategy));
                 _mintDToken(address(_baseStrategy), token, tokenConfig, _balance, _dTokenBalance);
 
@@ -670,12 +761,13 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
         if (repayAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
         if (globalRepaysPaused) revert RepaysPaused();
         StrategyConfig storage _strategyConfig = _getStrategyConfig(strategy);
+        if (!_strategyConfig.enabledBorrowTokens[token]) revert BorrowTokenNotEnabled();
 
         if (_strategyConfig.repaysPaused) revert RepaysPaused();
         emit Repay(strategy, address(token), from, repayAmount);
 
         // Burn the dToken tokens / add credits
-        _burnDToken(strategy, token, tokenConfig, repayAmount, dTokenBalance);
+        _burnDToken(strategy, _strategyConfig, token, tokenConfig, repayAmount, dTokenBalance);
 
         // Pull the stables from the strategy.
         token.safeTransferFrom(from, address(this), repayAmount);

@@ -1,4 +1,4 @@
-pragma solidity 0.8.18;
+pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { TempleTest } from "../../TempleTest.sol";
@@ -12,6 +12,7 @@ import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.so
 import { FakeERC20 } from "contracts/fakes/FakeERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { ud } from "@prb/math/src/UD60x18.sol";
+import { stdError } from "forge-std/StdError.sol";
 
 /* solhint-disable func-name-mixedcase, not-rely-on-time */
 contract AbstractStrategyTestBase is TempleTest {
@@ -24,7 +25,7 @@ contract AbstractStrategyTestBase is TempleTest {
     TempleDebtToken public dUSD;
     TreasuryPriceIndexOracle public tpiOracle;
     TreasuryReservesVault public trv;
-    uint256 public constant DEFAULT_BASE_INTEREST = 0.01e18;
+    uint96 public constant DEFAULT_BASE_INTEREST = 0.01e18;
 
     address[] public reportedAssets = [address(dai), address(weth)];
 
@@ -188,6 +189,14 @@ contract AbstractStrategyTestAdmin is AbstractStrategyTestBase {
         assertEq(dai.balanceOf(address(trv)), 25);
     }
 
+    function test_debtCeilingUpdated() public {
+        vm.startPrank(address(trv));
+
+        assertEq(strategy.debtCeilingUpdatedCalled(), false);
+        strategy.debtCeilingUpdated(dai, 100);
+        assertEq(strategy.debtCeilingUpdatedCalled(), true);
+    }
+
 }
 
 contract AbstractStrategyTestAccess is AbstractStrategyTestBase {
@@ -214,6 +223,11 @@ contract AbstractStrategyTestAccess is AbstractStrategyTestBase {
         expectElevatedAccess();
         ITempleStrategy.AssetBalanceDelta[] memory deltas = new ITempleStrategy.AssetBalanceDelta[](0);
         strategy.setManualAdjustments(deltas);
+    }
+
+    function test_access_debtCeilingUpdated() public {
+        expectElevatedAccess();
+        strategy.debtCeilingUpdated(dai, 100);
     }
 }
 
@@ -273,6 +287,54 @@ contract AbstractStrategyTestBalances is AbstractStrategyTestBase {
         // Can't go over
         vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.DebtCeilingBreached.selector, 0.01e18, 0.02e18));
         strategy.borrow(dai, 0.02e18);
+    }
+
+    function test_availableToBorrow_overflow() public {
+        vm.startPrank(executor);
+
+        // Setup dai to be borrowed
+        {
+            trv.setBorrowToken(dai, address(0), 100, 101, address(dUSD));
+            deal(address(dai), address(trv), 100e18, true);
+        }
+
+        uint256 debtCeiling = type(uint256).max - 10e18;
+
+        // Setup the strategy
+        {
+            ITempleStrategy.AssetBalance[] memory debtCeilingArr = new ITempleStrategy.AssetBalance[](1);
+            debtCeilingArr[0] = ITempleStrategy.AssetBalance(address(dai), debtCeiling);
+            trv.addStrategy(address(strategy), 0, debtCeilingArr);
+        }
+
+        uint256 available = trv.availableForStrategyToBorrow(address(strategy), dai);
+        assertEq(available, debtCeiling);
+
+        deal(address(dai), address(trv), 1000e18, true);
+        available = trv.availableForStrategyToBorrow(address(strategy), dai);
+        assertEq(available, debtCeiling);
+
+        // Borrow 25e18
+        strategy.borrow(dai, 25e18);
+        available = trv.availableForStrategyToBorrow(address(strategy), dai);
+        assertEq(available, debtCeiling-25e18);
+
+        // Repay 30e18 --> 5e18 in credit
+        deal(address(dai), address(strategy), 30e18, true);
+        strategy.repay(dai, 30e18);
+        available = trv.availableForStrategyToBorrow(address(strategy), dai);
+        assertEq(available, debtCeiling + 5e18);
+
+        // Repay another 5e18 -> right at the max available now.
+        deal(address(dai), address(strategy), 5e18, true);
+        strategy.repay(dai, 5e18);
+        available = trv.availableForStrategyToBorrow(address(strategy), dai);
+        assertEq(available, type(uint256).max);
+
+        // Repaying any more will overflow.
+        deal(address(dai), address(strategy), 1, true);
+        vm.expectRevert(stdError.arithmeticError);
+        strategy.repay(dai, 1);
     }
 
     function test_latestAssetBalances() public {
@@ -359,7 +421,7 @@ contract AbstractStrategyTestMultiAsset is AbstractStrategyTestBase {
     TempleDebtToken public dETH;
 
     uint256 public constant TEMPLE_BASE_INTEREST = 0;
-    uint256 public constant ETH_BASE_INTEREST = 0.04e18;
+    uint96 public constant ETH_BASE_INTEREST = 0.04e18;
 
     function setUp() public {
         _setUp();
@@ -429,7 +491,7 @@ contract AbstractStrategyTestMultiAsset is AbstractStrategyTestBase {
             assertEq(dai.balanceOf(address(strategy)), 100e18);
             assertApproxEqRel(
                 dUSD.balanceOf(address(strategy)),
-                approxInterest(100e18, uint96(DEFAULT_BASE_INTEREST), 365 days),
+                approxInterest(100e18, DEFAULT_BASE_INTEREST, 365 days),
                 1e8
             );
 
@@ -441,7 +503,7 @@ contract AbstractStrategyTestMultiAsset is AbstractStrategyTestBase {
             assertEq(weth.balanceOf(address(strategy)), 2e18);
             assertApproxEqRel(
                 dETH.balanceOf(address(strategy)),
-                approxInterest(2e18, uint96(ETH_BASE_INTEREST), 365 days), 
+                approxInterest(2e18, ETH_BASE_INTEREST, 365 days), 
                 1e8
             );
         }
@@ -458,7 +520,7 @@ contract AbstractStrategyTestMultiAsset is AbstractStrategyTestBase {
             assertEq(dai.balanceOf(address(strategy)), 0);
             assertApproxEqRel(
                 dUSD.balanceOf(address(strategy)),
-                approxInterest(100e18, uint96(DEFAULT_BASE_INTEREST), 365 days) - 100e18,
+                approxInterest(100e18, DEFAULT_BASE_INTEREST, 365 days) - 100e18,
                 1e10
             );
 
@@ -470,7 +532,7 @@ contract AbstractStrategyTestMultiAsset is AbstractStrategyTestBase {
             assertEq(weth.balanceOf(address(strategy)), 0);
             assertApproxEqRel(
                 dETH.balanceOf(address(strategy)),
-                approxInterest(2e18, uint96(ETH_BASE_INTEREST), 365 days) - 2e18, 
+                approxInterest(2e18, ETH_BASE_INTEREST, 365 days) - 2e18, 
                 1e10
             );
         }

@@ -1,9 +1,8 @@
-pragma solidity 0.8.18;
+pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (v2/TreasuryPriceIndexOracle.sol)
 
 import { ITreasuryPriceIndexOracle } from "contracts/interfaces/v2/ITreasuryPriceIndexOracle.sol";
-import { SafeCast } from "contracts/common/SafeCast.sol";
 import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
 
 /* solhint-disable not-rely-on-time */
@@ -15,8 +14,6 @@ import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.s
  * This rate is updated manually with elevated permissions. The new TPI doesn't take effect until after a cooldown.
  */
 contract TreasuryPriceIndexOracle is ITreasuryPriceIndexOracle, TempleElevatedAccess {
-    using SafeCast for uint256;
-
     /**
      * @notice The decimal precision of Temple Price Index (TPI)
      * @dev 18 decimals, so 1.02e18 == $1.02
@@ -52,16 +49,16 @@ contract TreasuryPriceIndexOracle is ITreasuryPriceIndexOracle, TempleElevatedAc
     constructor(
         address _initialRescuer,
         address _initialExecutor,
-        uint256 _initialTreasuryPriceIndex,
+        uint96 _initialTreasuryPriceIndex,
         uint256 _maxTreasuryPriceIndexDelta,
-        uint256 _cooldownSecs
+        uint32 _cooldownSecs
     ) TempleElevatedAccess(_initialRescuer, _initialExecutor)
     {
         tpiData = TpiData({
-            currentTpi: _initialTreasuryPriceIndex.encodeUInt96(),
-            previousTpi: _initialTreasuryPriceIndex.encodeUInt96(),
+            currentTpi: _initialTreasuryPriceIndex,
+            previousTpi: _initialTreasuryPriceIndex,
             lastUpdatedAt: uint32(block.timestamp),
-            cooldownSecs: _cooldownSecs.encodeUInt32()
+            cooldownSecs: _cooldownSecs
         });
         maxTreasuryPriceIndexDelta = _maxTreasuryPriceIndexDelta;
     }
@@ -70,7 +67,7 @@ contract TreasuryPriceIndexOracle is ITreasuryPriceIndexOracle, TempleElevatedAc
      * @notice The current Treasury Price Index (TPI) value
      * @dev If the TPI has just been updated, the old TPI will be used until `cooldownSecs` has elapsed
      */
-    function treasuryPriceIndex() external override view returns (uint256) {
+    function treasuryPriceIndex() public override view returns (uint96) {
         return (block.timestamp < (tpiData.lastUpdatedAt + tpiData.cooldownSecs))
             ? tpiData.previousTpi  // use the previous TPI if we haven't passed the cooldown yet.
             : tpiData.currentTpi;  // use the new TPI
@@ -79,9 +76,9 @@ contract TreasuryPriceIndexOracle is ITreasuryPriceIndexOracle, TempleElevatedAc
     /**
      * @notice Set the number of seconds to elapse before a new TPI will take effect.
      */
-    function setTpiCooldown(uint256 cooldownSecs) external override onlyElevatedAccess {
+    function setTpiCooldown(uint32 cooldownSecs) external override onlyElevatedAccess {
         emit TpiCooldownSet(cooldownSecs);
-        tpiData.cooldownSecs = cooldownSecs.encodeUInt32();
+        tpiData.cooldownSecs = cooldownSecs;
     }
 
     /**
@@ -97,12 +94,16 @@ contract TreasuryPriceIndexOracle is ITreasuryPriceIndexOracle, TempleElevatedAc
      * @notice Set the Treasury Price Index (TPI)
      * @dev 18 decimal places, 1.05e18 == $1.05
      */
-    function setTreasuryPriceIndex(uint256 value) external override onlyElevatedAccess {
-        uint96 _oldTpi = tpiData.currentTpi;
-        uint96 _newTpi = value.encodeUInt96();
+    function setTreasuryPriceIndex(uint96 value) external override onlyElevatedAccess {
+        // If the cooldownSecs hasn't yet passed since the last update, then this will still
+        // refer to the `previousTpi` value
+        uint96 _oldTpi = treasuryPriceIndex();
+        uint96 _newTpi = value;
 
-        uint256 _delta = (_newTpi > _oldTpi) ? _newTpi - _oldTpi : _oldTpi - _newTpi;
-        if (_delta > maxTreasuryPriceIndexDelta) revert BreachedMaxTpiDelta(_oldTpi, _newTpi, maxTreasuryPriceIndexDelta);
+        unchecked {
+            uint256 _delta = (_newTpi > _oldTpi) ? _newTpi - _oldTpi : _oldTpi - _newTpi;
+            if (_delta > maxTreasuryPriceIndexDelta) revert BreachedMaxTpiDelta(_oldTpi, _newTpi, maxTreasuryPriceIndexDelta);
+        }
 
         emit TreasuryPriceIndexSet(_oldTpi, _newTpi);
 

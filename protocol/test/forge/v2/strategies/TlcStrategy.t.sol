@@ -1,9 +1,10 @@
-pragma solidity 0.8.18;
+pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { TlcBaseTest } from "../templeLineOfCredit/TlcBaseTest.t.sol";
 import { TlcStrategy } from "contracts/v2/strategies/TlcStrategy.sol";
 import { ITempleStrategy } from "contracts/interfaces/v2/strategies/ITempleStrategy.sol";
+import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 
 /* solhint-disable func-name-mixedcase, not-rely-on-time */
 contract TlcStrategyTest is TlcBaseTest {
@@ -38,7 +39,7 @@ contract TlcStrategyTest is TlcBaseTest {
     function test_automatedShutdown() public {
         extraSetup();
         vm.startPrank(executor);
-        vm.expectRevert(abi.encodeWithSelector(ITempleStrategy.Unimplemented.selector));
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.Unimplemented.selector));
         strategy.automatedShutdown("");
     }
 
