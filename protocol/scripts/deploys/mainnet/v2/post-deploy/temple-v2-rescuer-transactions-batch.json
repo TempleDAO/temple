@@ -1,0 +1,235 @@
+{
+  "version": "1.0",
+  "chainId": "1",
+  "createdAt": 1690182680732,
+  "meta": {
+    "name": "Temple Rescuer V2",
+    "description": "Rescuer initial transactions",
+    "txBuilderVersion": "1.16.1",
+    "createdFromSafeADDRESS": "0xXXXX", // new msig rescuer address
+    "createdFromOwnerADDRESS": "",
+    "checksum": "0x34fd3c2dab040576a17db549ea9b158fd9836d0ecec4245c24082e50ef27e70e" // checksum would probably need to be updated once we have the final version of this file
+  },
+  "transactions": [
+    {
+      "to": "0xXXXX", // mainnet.CORE.CIRCUIT_BREAKER_PROXY
+      "value": "0",
+      "data": null,
+      "contractMethod": {
+        "inputs": [],
+        "name": "acceptRescuer",
+        "payable": false
+      },
+      "contractInputsValues": null
+    },
+    {
+      "to": "0xXXXX", // mainnet.TREASURY_RESERVES_VAULT.ADDRESS
+      "value": "0",
+      "data": null,
+      "contractMethod": {
+        "inputs": [],
+        "name": "acceptRescuer",
+        "payable": false
+      },
+      "contractInputsValues": null
+    },
+    {
+      "to": "0xXXXX", // mainnet.TREASURY_RESERVES_VAULT.D_USD_TOKEN
+      "value": "0",
+      "data": null,
+      "contractMethod": {
+        "inputs": [],
+        "name": "acceptRescuer",
+        "payable": false
+      },
+      "contractInputsValues": null
+    },
+    {
+      "to": "0xXXXX", // mainnet.TREASURY_RESERVES_VAULT.D_TEMPLE_TOKEN
+      "value": "0",
+      "data": null,
+      "contractMethod": {
+        "inputs": [],
+        "name": "acceptRescuer",
+        "payable": false
+      },
+      "contractInputsValues": null
+    },
+    {
+      "to": "0xXXXX", // mainnet.TREASURY_RESERVES_VAULT.TPI_ORACLE
+      "value": "0",
+      "data": null,
+      "contractMethod": {
+        "inputs": [],
+        "name": "acceptRescuer",
+        "payable": false
+      },
+      "contractInputsValues": null
+    },
+    {
+      "to": "0xXXXX", // mainnet.TEMPLE_LINE_OF_CREDIT.ADDRESS
+      "value": "0",
+      "data": null,
+      "contractMethod": {
+        "inputs": [],
+        "name": "acceptRescuer",
+        "payable": false
+      },
+      "contractInputsValues": null
+    },
+    {
+      "to": "0xXXXX", // mainnet.TEMPLE_LINE_OF_CREDIT.CIRCUIT_BREAKERS.DAI
+      "value": "0",
+      "data": null,
+      "contractMethod": {
+        "inputs": [],
+        "name": "acceptRescuer",
+        "payable": false
+      },
+      "contractInputsValues": null
+    },
+    {
+      "to": "0xXXXX", // mainnet.TEMPLE_LINE_OF_CREDIT.CIRCUIT_BREAKERS.TEMPLE
+      "value": "0",
+      "data": null,
+      "contractMethod": {
+        "inputs": [],
+        "name": "acceptRescuer",
+        "payable": false
+      },
+      "contractInputsValues": null
+    },
+    {
+      "to": "0xXXXX", // mainnet.TEMPLE_LINE_OF_CREDIT.INTEREST_RATE_MODELS.LINEAR_WITH_KINK
+      "value": "0",
+      "data": null,
+      "contractMethod": {
+        "inputs": [],
+        "name": "acceptRescuer",
+        "payable": false
+      },
+      "contractInputsValues": null
+    },
+    {
+      "to": "0xXXXX", // mainnet.RAMOS.TEMPLE_DAI.ADDRESS
+      "value": "0",
+      "data": null,
+      "contractMethod": {
+        "inputs": [],
+        "name": "acceptRescuer",
+        "payable": false
+      },
+      "contractInputsValues": null
+    },
+    {
+      "to": "0xXXXX", // mainnet.RAMOS.TEMPLE_DAI.AURA_STAKING
+      "value": "0",
+      "data": null,
+      "contractMethod": {
+        "inputs": [],
+        "name": "acceptRescuer",
+        "payable": false
+      },
+      "contractInputsValues": null
+    },
+    {
+      "to": "0xXXXX", // mainnet.STRATEGIES.DSR_BASE_STRATEGY.ADDRESS
+      "value": "0",
+      "data": null,
+      "contractMethod": {
+        "inputs": [],
+        "name": "acceptRescuer",
+        "payable": false
+      },
+      "contractInputsValues": null
+    },
+    {
+      "to": "0xXXXX", // mainnet.STRATEGIES.TEMPLE_BASE_STRATEGY.ADDRESS
+      "value": "0",
+      "data": null,
+      "contractMethod": {
+        "inputs": [],
+        "name": "acceptRescuer",
+        "payable": false
+      },
+      "contractInputsValues": null
+    },
+    {
+      "to": "0xXXXX", // mainnet.STRATEGIES.GNOSIS_SAFE_STRATEGY_TEMPLATE.ADDRESS
+      "value": "0",
+      "data": null,
+      "contractMethod": {
+        "inputs": [],
+        "name": "acceptRescuer",
+        "payable": false
+      },
+      "contractInputsValues": null
+    },
+    {
+      "to": "0xXXXX", // mainnet.STRATEGIES.GNOSIS_SAFE_STRATEGY_TEMPLATE.CIRCUIT_BREAKERS.DAI
+      "value": "0",
+      "data": null,
+      "contractMethod": {
+        "inputs": [],
+        "name": "acceptRescuer",
+        "payable": false
+      },
+      "contractInputsValues": null
+    },
+    {
+      "to": "0xXXXX", // mainnet.STRATEGIES.GNOSIS_SAFE_STRATEGY_TEMPLATE.CIRCUIT_BREAKERS.TEMPLE
+      "value": "0",
+      "data": null,
+      "contractMethod": {
+        "inputs": [],
+        "name": "acceptRescuer",
+        "payable": false
+      },
+      "contractInputsValues": null
+    },
+    {
+      "to": "0xXXXX", // mainnet.STRATEGIES.RAMOS_STRATEGY.ADDRESS
+      "value": "0",
+      "data": null,
+      "contractMethod": {
+        "inputs": [],
+        "name": "acceptRescuer",
+        "payable": false
+      },
+      "contractInputsValues": null
+    },
+    {
+      "to": "0xXXXX", // mainnet.STRATEGIES.RAMOS_STRATEGY.CIRCUIT_BREAKERS.DAI
+      "value": "0",
+      "data": null,
+      "contractMethod": {
+        "inputs": [],
+        "name": "acceptRescuer",
+        "payable": false
+      },
+      "contractInputsValues": null
+    },
+    {
+      "to": "0xXXXX", // mainnet.STRATEGIES.RAMOS_STRATEGY.CIRCUIT_BREAKERS.TEMPLE
+      "value": "0",
+      "data": null,
+      "contractMethod": {
+        "inputs": [],
+        "name": "acceptRescuer",
+        "payable": false
+      },
+      "contractInputsValues": null
+    },
+    {
+      "to": "0xXXXX", // mainnet.STRATEGIES.TLC_STRATEGY.ADDRESS
+      "value": "0",
+      "data": null,
+      "contractMethod": {
+        "inputs": [],
+        "name": "acceptRescuer",
+        "payable": false
+      },
+      "contractInputsValues": null
+    }
+  ]
+}

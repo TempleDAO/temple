@@ -182,6 +182,10 @@ module.exports = {
             : [],
         gasPrice: 2000000000,
     },
+    anvil: {
+        url: "http://127.0.0.1:8545/",
+        accounts: "remote",
+    },
   },
   etherscan: {
 
