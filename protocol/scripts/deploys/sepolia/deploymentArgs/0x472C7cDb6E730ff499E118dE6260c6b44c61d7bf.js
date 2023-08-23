@@ -1,0 +1,10 @@
+// sepolia: STRATEGIES.DSR_BASE_STRATEGY.ADDRESS=0x472C7cDb6E730ff499E118dE6260c6b44c61d7bf
+// yarn hardhat verify --network sepolia 0x472C7cDb6E730ff499E118dE6260c6b44c61d7bf --constructor-args scripts/deploys/sepolia/deploymentArgs/0x472C7cDb6E730ff499E118dE6260c6b44c61d7bf.js
+module.exports = [
+  "0x8dbe2E7Cab43F00fce7fFe90769b87456692CE46",
+  "0x81960c465605cddD9772a8653111D4aBE580Ce1e",
+  "DsrBaseStrategy",
+  "0x7f19419488274bcC363d93F70809cDd53C788aF7",
+  "0x33FA9618365F67c5345066d5Cfd7f3A2f183599A",
+  "34900000000000000"
+];

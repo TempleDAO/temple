@@ -670,6 +670,7 @@ const expectedEnvvars: { [key: string]: string[] } = {
   polygonMumbai: ['MUMBAI_ADDRESS_PRIVATE_KEY', 'MUMBAI_RPC_URL'],
   sepolia: ['SEPOLIA_ADDRESS_PRIVATE_KEY', 'SEPOLIA_RPC_URL'],
   arbitrumGoerli: ['ARBITRUM_GOERLI_ADDRESS_PRIVATE_KEY', 'ARBITRUM_GOERLI_RPC_URL'],
+  anvil: [],
   localhost: [],
 };
 
