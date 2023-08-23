@@ -1,13 +1,14 @@
-pragma solidity 0.8.18;
+pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { CompoundedInterest } from "contracts/v2/interestRate/CompoundedInterest.sol";
 import { TempleDebtTokenTestBase } from "./TempleDebtToken.Base.t.sol";
+import { ITempleDebtToken } from "contracts/interfaces/v2/ITempleDebtToken.sol";
 
 /* solhint-disable func-name-mixedcase, contract-name-camelcase, not-rely-on-time */
 contract TempleDebtTokenTestBaseAndDebtorInterest is TempleDebtTokenTestBase {
-    uint256 public aliceInterestRate = 0.02e18;
-    uint256 public bobInterestRate = 0.05e18;
+    uint96 public aliceInterestRate = 0.02e18;
+    uint96 public bobInterestRate = 0.05e18;
 
     function setUp() public {
         _setUp();
@@ -83,39 +84,52 @@ contract TempleDebtTokenTestBaseAndDebtorInterest is TempleDebtTokenTestBase {
         vm.warp(blockTs + 1 days);
         dUSD.mint(bob, amount);
 
-        uint256 aliceExpectedBaseTotal = ONE_PCT_1DAY;
-        uint256 aliceExpectedDebtorInterestOnly = TWO_PCT_1DAY - amount;
-        uint256 aliceExpectedBalanceOf = aliceExpectedBaseTotal + aliceExpectedDebtorInterestOnly;
-
-        // Bob gets slightly less shares since Alice has accrued a bit extra from the 1 day of solo borrowing
-        uint256 bobExpectedShares = SECOND_DAY_SHARES;
-
-        checkBaseInterest(DEFAULT_BASE_INTEREST, amount+bobExpectedShares, amount+aliceExpectedBaseTotal, block.timestamp, amount+aliceExpectedBaseTotal, 2*amount, 0);
-        checkDebtor(alice, aliceInterestRate, amount, amount, 0, blockTs, aliceExpectedBalanceOf);
-        checkDebtor(bob, bobInterestRate, amount, bobExpectedShares, 0, block.timestamp, amount-1); // balanceOf rounded down.
+        Expected memory aliceExpected = makeExpected(
+            amount,
+            ONE_PCT_1DAY,
+            TWO_PCT_1DAY - amount,
+            true
+        );
+        Expected memory bobExpected = makeExpected(
+            // Bob gets slightly less shares since Alice has accrued a bit extra from the 1 day of solo borrowing
+            SECOND_DAY_SHARES,
+            ONE_PCT_364DAY,
+            TWO_PCT_365DAY - amount,
+            true
+        );
+        
+        checkBaseInterest(DEFAULT_BASE_INTEREST, aliceExpected.baseShares+bobExpected.baseShares, amount+aliceExpected.baseTotal, block.timestamp, amount+aliceExpected.baseTotal, 2*amount, 0);
+        checkDebtor(alice, aliceInterestRate, amount, amount, 0, blockTs, aliceExpected.balanceOf);
+        checkDebtor(bob, bobInterestRate, amount, bobExpected.baseShares, 0, block.timestamp, amount);
 
         vm.warp(block.timestamp + 364 days);
         dUSD.checkpointBaseInterest();
         dUSD.checkpointDebtorInterest(alice);
         dUSD.checkpointDebtorInterest(bob);
 
-        aliceExpectedBaseTotal = ONE_PCT_365DAY_ROUNDING;
-        aliceExpectedDebtorInterestOnly = TWO_PCT_365DAY - amount;
-        aliceExpectedBalanceOf = aliceExpectedBaseTotal + aliceExpectedDebtorInterestOnly;
+        aliceExpected = makeExpected(
+            amount,
+            ONE_PCT_365DAY_ROUNDING,
+            TWO_PCT_365DAY - amount,
+            true
+        );
 
-        uint256 bobExpectedBaseTotal = ONE_PCT_364DAY;
-        uint256 bobExpectedDebtorInterestOnly = FIVE_PCT_364DAY - amount;
-        uint256 bobExpectedBalanceOf = bobExpectedBaseTotal + bobExpectedDebtorInterestOnly;
+        bobExpected = makeExpected(
+            SECOND_DAY_SHARES,
+            ONE_PCT_364DAY,
+            FIVE_PCT_364DAY - amount,
+            true
+        );
 
         checkBaseInterest(
-            DEFAULT_BASE_INTEREST, amount+bobExpectedShares, 
-            aliceExpectedBaseTotal+bobExpectedBaseTotal, 
+            DEFAULT_BASE_INTEREST, aliceExpected.baseShares+bobExpected.baseShares, 
+            aliceExpected.baseTotal+bobExpected.baseTotal, 
             block.timestamp, 
-            aliceExpectedBaseTotal+bobExpectedBaseTotal, 
-            2*amount, aliceExpectedDebtorInterestOnly+bobExpectedDebtorInterestOnly
+            aliceExpected.baseTotal+bobExpected.baseTotal, 
+            2*amount, aliceExpected.debtorInterestOnly+bobExpected.debtorInterestOnly
         );
-        checkDebtor(alice, aliceInterestRate, amount, amount, aliceExpectedDebtorInterestOnly, block.timestamp, aliceExpectedBalanceOf);
-        checkDebtor(bob, bobInterestRate, amount, bobExpectedShares, bobExpectedDebtorInterestOnly, block.timestamp, bobExpectedBalanceOf-1);
+        checkDebtor(alice, aliceInterestRate, amount, aliceExpected.baseShares, aliceExpected.debtorInterestOnly, block.timestamp, aliceExpected.balanceOf);
+        checkDebtor(bob, bobInterestRate, amount, bobExpected.baseShares, bobExpected.debtorInterestOnly, block.timestamp, bobExpected.balanceOf-1);
     }
 
     function test_burn_alice_inSameBlock() public {
@@ -200,30 +214,33 @@ contract TempleDebtTokenTestBaseAndDebtorInterest is TempleDebtTokenTestBase {
 
         vm.warp(block.timestamp + 1 days);
 
-        uint256 aliceExpectedBaseTotal = ONE_PCT_2DAY;
-        uint256 aliceExpectedDebtorInterestOnly = TWO_PCT_2DAY - amount;
-        uint256 aliceExpectedBalanceOf = aliceExpectedBaseTotal + aliceExpectedDebtorInterestOnly;
+        Expected memory aliceExpected = makeExpected(
+            amount, 
+            ONE_PCT_2DAY, 
+            TWO_PCT_2DAY - amount, 
+            true
+        );
+        Expected memory bobExpected = makeExpected(
+            // Bob gets slightly less shares since Alice has accrued a bit extra from the 1 day of solo borrowing
+            SECOND_DAY_SHARES, 
+            ONE_PCT_1DAY, 
+            FIVE_PCT_1DAY - amount, 
+            true
+        );
 
-        uint256 bobExpectedBaseTotal = ONE_PCT_1DAY;
-        uint256 bobExpectedDebtorInterestOnly = FIVE_PCT_1DAY - amount;
-        uint256 bobExpectedBalanceOf = bobExpectedBaseTotal + bobExpectedDebtorInterestOnly;
-
-        // Bob gets slightly less shares since Alice has accrued a bit extra from the 1 day of solo borrowing
-        uint256 bobExpectedShares = SECOND_DAY_SHARES;
-
-        checkBaseInterest(DEFAULT_BASE_INTEREST, amount+bobExpectedShares, amount+bobExpectedBaseTotal, blockTs2, aliceExpectedBaseTotal+bobExpectedBaseTotal, 2*amount, 0);
-        checkDebtor(alice, aliceInterestRate, amount, amount, 0, blockTs1, aliceExpectedBalanceOf);
-        checkDebtor(bob, bobInterestRate, amount, bobExpectedShares, 0, blockTs2, bobExpectedBalanceOf-1);
+        checkBaseInterest(DEFAULT_BASE_INTEREST, aliceExpected.baseShares+bobExpected.baseShares, amount + bobExpected.baseTotal, blockTs2, aliceExpected.baseTotal + bobExpected.baseTotal, 2*amount, 0);
+        checkDebtor(alice, aliceInterestRate, amount, amount, 0, blockTs1, aliceExpected.balanceOf);
+        checkDebtor(bob, bobInterestRate, amount, bobExpected.baseShares, 0, blockTs2, bobExpected.balanceOf-1);
 
         // Alice pays it off fully
-        dUSD.burn(alice, aliceExpectedBalanceOf);
+        dUSD.burn(alice, aliceExpected.balanceOf);
 
-        checkBaseInterest(DEFAULT_BASE_INTEREST, bobExpectedShares, bobExpectedBaseTotal, block.timestamp, bobExpectedBaseTotal, amount, 0);
+        checkBaseInterest(DEFAULT_BASE_INTEREST, bobExpected.baseShares-1, bobExpected.baseTotal-1, block.timestamp, bobExpected.baseTotal-1, amount, 0);
         checkDebtor(alice, aliceInterestRate, 0, 0, 0, block.timestamp, 0);
-        checkDebtor(bob, bobInterestRate, amount, bobExpectedShares, 0, blockTs2, bobExpectedBalanceOf);
+        checkDebtor(bob, bobInterestRate, amount, bobExpected.baseShares, 0, blockTs2, bobExpected.balanceOf);
 
         // Bob pays it off fully
-        dUSD.burn(bob, bobExpectedBalanceOf);
+        dUSD.burn(bob, bobExpected.balanceOf);
 
         checkBaseInterest(DEFAULT_BASE_INTEREST, 0, 0, block.timestamp, 0, 0, 0);
         checkDebtor(alice, aliceInterestRate, 0, 0, 0, block.timestamp, 0);
@@ -277,7 +294,7 @@ contract TempleDebtTokenTestBaseAndDebtorInterest is TempleDebtTokenTestBase {
         checkDebtor(alice, DEFAULT_BASE_INTEREST, amount, amount, 0, blockTs, aliceExpectedBalanceOf);
 
         uint256 repayAmount = 0.5e18;
-        uint256 repayShares = dUSD.baseDebtToShares(repayAmount) + 1;  // Gets rounded up within repay.
+        uint256 repayShares = dUSD.baseDebtToShares(uint128(repayAmount)) + 1;  // Gets rounded up within repay.
         dUSD.burn(alice, repayAmount);
 
         // Expected remaining debtor interest = prior balance minus the repayment amount
@@ -300,12 +317,14 @@ contract TempleDebtTokenTestBaseAndDebtorInterest is TempleDebtTokenTestBase {
         Expected memory aliceExpected = makeExpected(
             /*shares*/          amount,
             /*base total*/      ONE_PCT_2DAY,
-            /*debtor int only*/ TWO_PCT_2DAY - amount
+            /*debtor int only*/ TWO_PCT_2DAY - amount,
+            true
         );
         Expected memory bobExpected = makeExpected(
             /*shares*/          SECOND_DAY_SHARES,
             /*base total*/      ONE_PCT_1DAY,
-            /*debtor int only*/ FIVE_PCT_1DAY - amount
+            /*debtor int only*/ FIVE_PCT_1DAY - amount,
+            true
         );
 
         checkBaseInterest(DEFAULT_BASE_INTEREST, amount+bobExpected.baseShares, amount+bobExpected.baseTotal, block.timestamp-1 days, aliceExpected.baseTotal+bobExpected.baseTotal, 2*amount, 0);
@@ -321,18 +340,19 @@ contract TempleDebtTokenTestBaseAndDebtorInterest is TempleDebtTokenTestBase {
 
         checkBaseInterest(
             DEFAULT_BASE_INTEREST,
-            amount+bobExpected.baseShares - (dUSD.baseDebtToShares(baseRepayAmount)+1), // round up when repaid
+            amount+bobExpected.baseShares - (dUSD.baseDebtToShares(uint128(baseRepayAmount))+1), // round up when repaid
             aliceExpected.baseTotal + bobExpected.baseTotal - baseRepayAmount,
             block.timestamp, 
             aliceExpected.baseTotal + bobExpected.baseTotal - baseRepayAmount,
-            amount + aliceExpected.baseTotal - baseRepayAmount, 0 // bob hasn't had a checkpoint so the estimate debtor interest is zero
+            amount + aliceExpected.baseTotal - baseRepayAmount + 1, 
+            0 // bob hasn't had a checkpoint so the estimate debtor interest is zero
         );
 
         checkDebtor(
             alice, 
             aliceInterestRate, 
             aliceExpected.balanceOf-repayAmount, 
-            amount-(dUSD.baseDebtToShares(baseRepayAmount)+1),  // round up when repaid
+            amount-(dUSD.baseDebtToShares(uint128(baseRepayAmount))+1),  // round up when repaid
             0, 
             block.timestamp, 
             aliceExpected.balanceOf-repayAmount
@@ -342,7 +362,7 @@ contract TempleDebtTokenTestBaseAndDebtorInterest is TempleDebtTokenTestBase {
         // Alice pays the remainder off
         dUSD.burn(alice, aliceExpected.balanceOf-repayAmount);
 
-        checkBaseInterest(DEFAULT_BASE_INTEREST, bobExpected.baseShares, bobExpected.baseTotal, block.timestamp, bobExpected.baseTotal, amount, 0);
+        checkBaseInterest(DEFAULT_BASE_INTEREST, bobExpected.baseShares-1, bobExpected.baseTotal-1, block.timestamp, bobExpected.baseTotal-1, amount, 0);
         checkDebtor(alice, aliceInterestRate, 0, 0, 0, block.timestamp, 0);
         checkDebtor(bob, bobInterestRate, amount, bobExpected.baseShares, 0, block.timestamp-1 days, bobExpected.balanceOf);
     }
@@ -360,12 +380,14 @@ contract TempleDebtTokenTestBaseAndDebtorInterest is TempleDebtTokenTestBase {
         Expected memory aliceExpected = makeExpected(
             /*shares*/          amount,
             /*base total*/      ONE_PCT_365DAY_ROUNDING,
-            /*debtor int only*/ TWO_PCT_365DAY - amount
+            /*debtor int only*/ TWO_PCT_365DAY - amount,
+            true
         );
         Expected memory bobExpected = makeExpected(
             /*shares*/          SECOND_DAY_SHARES,
             /*base total*/      ONE_PCT_364DAY,
-            /*debtor int only*/ FIVE_PCT_364DAY - amount
+            /*debtor int only*/ FIVE_PCT_364DAY - amount,
+            true
         );
         
         checkBaseInterest(DEFAULT_BASE_INTEREST, aliceExpected.baseShares+bobExpected.baseShares, ONE_PCT_1DAY + amount, startBlockTs + 1 days, aliceExpected.baseTotal+bobExpected.baseTotal, 2*amount, 0);
@@ -373,52 +395,141 @@ contract TempleDebtTokenTestBaseAndDebtorInterest is TempleDebtTokenTestBase {
         checkDebtor(bob, bobInterestRate, amount, bobExpected.baseShares, 0, startBlockTs + 1 days, bobExpected.balanceOf-1); // balanceOf rounded down
 
         changePrank(executor);
-        uint256 updatedRate = 0.1e18;
+        uint96 updatedRate = 0.1e18;
         dUSD.setRiskPremiumInterestRate(alice, updatedRate);
 
         // The rate was updated and a checkpoint was made.
         // bob's extra interest isn't added to the estimatedDebtorInterest because he didn't checkpoint
-        checkBaseInterest(DEFAULT_BASE_INTEREST, amount+bobExpected.baseShares, ONE_PCT_1DAY + amount, startBlockTs + 1 days, aliceExpected.baseTotal+bobExpected.baseTotal, 2*amount, aliceExpected.debtorInterestOnly);
+        checkBaseInterest(
+            DEFAULT_BASE_INTEREST, 
+            amount+bobExpected.baseShares, 
+            aliceExpected.baseTotal+bobExpected.baseTotal, 
+            block.timestamp, 
+            aliceExpected.baseTotal+bobExpected.baseTotal, 
+            2*amount, 
+            aliceExpected.debtorInterestOnly
+        );
         checkDebtor(alice, updatedRate, amount, amount, aliceExpected.debtorInterestOnly, block.timestamp, aliceExpected.balanceOf);
         checkDebtor(bob, bobInterestRate, amount, bobExpected.baseShares, 0, startBlockTs + 1 days, bobExpected.balanceOf-1);
 
         uint256 ts = block.timestamp;
         vm.warp(block.timestamp + 365 days);
 
-        // The net amount of base interest for Alice is the first day's interest, compounded for another 729 days
-        // There are very insignificant rounding diffs if we were to compound in steps
-        //  - eg: 1 day => 364 days => 365 days (net 730 days)
-        uint256 compoundedAliceBase = CompoundedInterest.continuouslyCompounded(ONE_PCT_1DAY, 729 days, uint96(DEFAULT_BASE_INTEREST));
+        // The net amount of base interest for Alice is the first day's interest, then compounded at 365, 730 days
+        uint256 compoundedAliceBase = CompoundedInterest.continuouslyCompounded(ONE_PCT_1DAY, 364 days, DEFAULT_BASE_INTEREST);
+        compoundedAliceBase = CompoundedInterest.continuouslyCompounded(compoundedAliceBase, 365 days, DEFAULT_BASE_INTEREST);
+
         // Since alice was checkpoint setRiskPremiumInterestRate, we need to then compound at the new rate for another yr.
         uint256 compoundedAliceDebtorInterest = (
-            CompoundedInterest.continuouslyCompounded(aliceExpected.debtorInterestOnly + amount, 365 days, uint96(updatedRate)) -
+            CompoundedInterest.continuouslyCompounded(aliceExpected.debtorInterestOnly + amount, 365 days, updatedRate) -
             amount
         );
 
-        // Similarly for precision, we need to compound Bob in one hit.
-        uint256 compoundedBobBase = CompoundedInterest.continuouslyCompounded(amount, 729 days, uint96(DEFAULT_BASE_INTEREST));
+        // Similarly for Bob
+        uint256 compoundedBobBase = CompoundedInterest.continuouslyCompounded(amount, 364 days, DEFAULT_BASE_INTEREST);
+        compoundedBobBase = CompoundedInterest.continuouslyCompounded(compoundedBobBase, 365 days, DEFAULT_BASE_INTEREST);
+
         uint256 compoundedBobDebtorInterest = (
-            CompoundedInterest.continuouslyCompounded(amount, 729 days, uint96(bobInterestRate)) -
+            CompoundedInterest.continuouslyCompounded(amount, 729 days, bobInterestRate) -
             amount
         );
 
         checkBaseInterest(
             DEFAULT_BASE_INTEREST, 
             aliceExpected.baseShares + bobExpected.baseShares, 
-            ONE_PCT_1DAY + amount, 
-            startBlockTs + 1 days, 
-            compoundedAliceBase + compoundedBobBase, 
+            aliceExpected.baseTotal+bobExpected.baseTotal,
+            ts, 
+            compoundedAliceBase + compoundedBobBase + 1, 
             2*amount, aliceExpected.debtorInterestOnly
         );
         checkDebtor(
             alice, updatedRate, amount, aliceExpected.baseShares, 
             aliceExpected.debtorInterestOnly, ts, 
-            compoundedAliceBase + compoundedAliceDebtorInterest
+            compoundedAliceBase + 1 + compoundedAliceDebtorInterest + 1
         );
         checkDebtor(
             bob, bobInterestRate, amount, 
             bobExpected.baseShares, 0, startBlockTs + 1 days,
-            compoundedBobBase - 1 + compoundedBobDebtorInterest
+            compoundedBobBase + compoundedBobDebtorInterest
+        );
+    }
+    
+    function test_setRiskPremiumInterestRateToZero() public {
+        vm.startPrank(executor);
+        uint256 amount = 100e18;
+        uint256 startBlockTs = block.timestamp;
+        dUSD.mint(alice, amount);
+        vm.warp(block.timestamp + 1 days);
+        dUSD.mint(bob, amount);
+
+        vm.warp(block.timestamp + 364 days);
+
+        Expected memory aliceExpected = makeExpected(
+            /*shares*/          amount,
+            /*base total*/      ONE_PCT_365DAY_ROUNDING,
+            /*debtor int only*/ TWO_PCT_365DAY - amount,
+            true
+        );
+        Expected memory bobExpected = makeExpected(
+            /*shares*/          SECOND_DAY_SHARES,
+            /*base total*/      ONE_PCT_364DAY,
+            /*debtor int only*/ FIVE_PCT_364DAY - amount,
+            true
+        );
+        
+        checkBaseInterest(DEFAULT_BASE_INTEREST, aliceExpected.baseShares+bobExpected.baseShares, ONE_PCT_1DAY + amount, startBlockTs + 1 days, aliceExpected.baseTotal+bobExpected.baseTotal, 2*amount, 0);
+        checkDebtor(alice, aliceInterestRate, amount, aliceExpected.baseShares, 0, startBlockTs, aliceExpected.balanceOf);
+        checkDebtor(bob, bobInterestRate, amount, bobExpected.baseShares, 0, startBlockTs + 1 days, bobExpected.balanceOf-1); // balanceOf rounded down
+
+        changePrank(executor);
+        uint96 updatedRate = 0;
+        dUSD.setRiskPremiumInterestRate(alice, updatedRate);
+
+        // The rate was updated and a checkpoint was made.
+        // bob's extra interest isn't added to the estimatedDebtorInterest because he didn't checkpoint
+        checkBaseInterest(DEFAULT_BASE_INTEREST, amount+bobExpected.baseShares, aliceExpected.baseTotal+bobExpected.baseTotal, block.timestamp, aliceExpected.baseTotal+bobExpected.baseTotal, 2*amount, aliceExpected.debtorInterestOnly);
+        checkDebtor(alice, updatedRate, amount, amount, aliceExpected.debtorInterestOnly, block.timestamp, aliceExpected.balanceOf);
+        checkDebtor(bob, bobInterestRate, amount, bobExpected.baseShares, 0, startBlockTs + 1 days, bobExpected.balanceOf-1);
+
+        uint256 ts = block.timestamp;
+        vm.warp(block.timestamp + 365 days);
+
+        // The net amount of base interest for Alice is the first day's interest, then compounded at 365, 730 days
+        uint256 compoundedAliceBase = CompoundedInterest.continuouslyCompounded(ONE_PCT_1DAY, 364 days, DEFAULT_BASE_INTEREST);
+        compoundedAliceBase = CompoundedInterest.continuouslyCompounded(compoundedAliceBase, 365 days, DEFAULT_BASE_INTEREST);
+
+        // Since alice was checkpoint setRiskPremiumInterestRate, we need to then compound at the new rate for another yr.
+        uint256 compoundedAliceDebtorInterest = (
+            CompoundedInterest.continuouslyCompounded(aliceExpected.debtorInterestOnly + amount, 365 days, updatedRate) -
+            amount
+        );
+
+        // Similarly for Bob
+        uint256 compoundedBobBase = CompoundedInterest.continuouslyCompounded(amount, 364 days, DEFAULT_BASE_INTEREST);
+        compoundedBobBase = CompoundedInterest.continuouslyCompounded(compoundedBobBase, 365 days, DEFAULT_BASE_INTEREST);
+
+        uint256 compoundedBobDebtorInterest = (
+            CompoundedInterest.continuouslyCompounded(amount, 729 days, bobInterestRate) -
+            amount
+        );
+
+        checkBaseInterest(
+            DEFAULT_BASE_INTEREST, 
+            aliceExpected.baseShares + bobExpected.baseShares, 
+            aliceExpected.baseTotal+bobExpected.baseTotal,
+            ts, 
+            compoundedAliceBase + compoundedBobBase + 1, 
+            2*amount, aliceExpected.debtorInterestOnly
+        );
+        checkDebtor(
+            alice, updatedRate, amount, aliceExpected.baseShares, 
+            aliceExpected.debtorInterestOnly, ts, 
+            compoundedAliceBase + 1 + compoundedAliceDebtorInterest + 1
+        );
+        checkDebtor(
+            bob, bobInterestRate, amount, 
+            bobExpected.baseShares, 0, startBlockTs + 1 days,
+            compoundedBobBase + compoundedBobDebtorInterest
         );
     }
     
@@ -438,18 +549,20 @@ contract TempleDebtTokenTestBaseAndDebtorInterest is TempleDebtTokenTestBase {
 
         uint256 bobExpectedShares = SECOND_DAY_SHARES;
 
-        // Bob's interest compounds in one hit as there was no checkpoint.
-        uint256 compoundedBobBase = CompoundedInterest.continuouslyCompounded(amount, 729 days, uint96(DEFAULT_BASE_INTEREST));
+        // The base interest was compounded when the risk premium interest rate was set
+        uint256 compoundedBobBase = CompoundedInterest.continuouslyCompounded(amount, 364 days, DEFAULT_BASE_INTEREST);
+        compoundedBobBase = CompoundedInterest.continuouslyCompounded(compoundedBobBase, 365 days, DEFAULT_BASE_INTEREST);
+
         uint256 compoundedBobDebtorInterest = (
-            CompoundedInterest.continuouslyCompounded(amount, 729 days, uint96(bobInterestRate)) -
+            CompoundedInterest.continuouslyCompounded(amount, 729 days, bobInterestRate) -
             amount
         );
 
         changePrank(executor);
         dUSD.burnAll(alice);
-        checkBaseInterest(DEFAULT_BASE_INTEREST, bobExpectedShares, compoundedBobBase, block.timestamp, compoundedBobBase, amount, 0);
+        checkBaseInterest(DEFAULT_BASE_INTEREST, bobExpectedShares-1, compoundedBobBase-1, block.timestamp, compoundedBobBase-1, amount, 0);
         checkDebtor(alice, 0.1e18, 0, 0, 0, block.timestamp, 0);
-        checkDebtor(bob, bobInterestRate, amount, bobExpectedShares, 0, startBlockTs + 1 days, compoundedBobBase + compoundedBobDebtorInterest);
+        checkDebtor(bob, bobInterestRate, amount, bobExpectedShares, 0, startBlockTs + 1 days, compoundedBobBase + compoundedBobDebtorInterest + 1);
 
         dUSD.burnAll(bob);
         checkBaseInterest(DEFAULT_BASE_INTEREST, 0, 0, block.timestamp, 0, 0, 0);
@@ -469,12 +582,14 @@ contract TempleDebtTokenTestBaseAndDebtorInterest is TempleDebtTokenTestBase {
         Expected memory aliceExpected = makeExpected(
             /*shares*/          amount,
             /*base total*/      ONE_PCT_365DAY_ROUNDING,
-            /*debtor int only*/ TWO_PCT_365DAY - amount
+            /*debtor int only*/ TWO_PCT_365DAY - amount,
+            true
         );
         Expected memory bobExpected = makeExpected(
             /*shares*/          SECOND_DAY_SHARES,
             /*base total*/      ONE_PCT_364DAY,
-            /*debtor int only*/ FIVE_PCT_364DAY - amount
+            /*debtor int only*/ FIVE_PCT_364DAY - amount,
+            true
         );
 
         checkBaseInterest(DEFAULT_BASE_INTEREST, aliceExpected.baseShares+bobExpected.baseShares, ONE_PCT_1DAY + amount, startBlockTs + 1 days, aliceExpected.baseTotal+bobExpected.baseTotal, 2*amount, 0);
@@ -488,12 +603,35 @@ contract TempleDebtTokenTestBaseAndDebtorInterest is TempleDebtTokenTestBase {
 
         checkBaseInterest(
             DEFAULT_BASE_INTEREST, aliceExpected.baseShares + bobExpected.baseShares, 
-            ONE_PCT_1DAY + amount, startBlockTs + 1 days, 
+            aliceExpected.baseTotal + bobExpected.baseTotal, 
+            block.timestamp, 
             aliceExpected.baseTotal + bobExpected.baseTotal, 
             2*amount, aliceExpected.debtorInterestOnly + bobExpected.debtorInterestOnly
         );
         checkDebtor(alice, aliceInterestRate, amount, aliceExpected.baseShares, aliceExpected.debtorInterestOnly, block.timestamp, aliceExpected.balanceOf);
         checkDebtor(bob, bobInterestRate, amount, bobExpected.baseShares, bobExpected.debtorInterestOnly, block.timestamp, bobExpected.balanceOf-1);
+    }
+
+    function test_balanceEvents() public {
+        vm.startPrank(executor);
+
+        uint256 amount = 100e18;
+        vm.expectEmit(address(dUSD));
+        emit DebtorBalance(alice, uint128(amount), 0, 0);
+        dUSD.mint(alice, amount);
+
+        vm.warp(block.timestamp + 365 days);
+
+        vm.expectEmit(address(dUSD));
+        uint128 expectedBaseBalance = uint128(ONE_PCT_365DAY-amount);
+        uint128 expectedRiskPremiumBalance = uint128(TWO_PCT_365DAY-amount);
+        emit DebtorBalance(alice, uint128(2*amount), expectedBaseBalance, expectedRiskPremiumBalance);
+        dUSD.mint(alice, amount);
+
+        uint128 burnAmount = 2.5e18;
+        vm.expectEmit(address(dUSD));
+        emit DebtorBalance(alice, uint128(2*amount), expectedBaseBalance-(burnAmount-expectedRiskPremiumBalance), 0);
+        dUSD.burn(alice, burnAmount);
     }
 
     function test_currentDebtOf() public {
@@ -509,29 +647,69 @@ contract TempleDebtTokenTestBaseAndDebtorInterest is TempleDebtTokenTestBase {
         dUSD.setRiskPremiumInterestRate(alice, 0.1e18);
         vm.warp(block.timestamp + 365 days);
 
-        uint256 compoundedAliceBase = CompoundedInterest.continuouslyCompounded(ONE_PCT_1DAY, 729 days, uint96(DEFAULT_BASE_INTEREST));
+        uint256 compoundedAliceBase = CompoundedInterest.continuouslyCompounded(ONE_PCT_1DAY, 364 days, DEFAULT_BASE_INTEREST);
+        compoundedAliceBase = CompoundedInterest.continuouslyCompounded(compoundedAliceBase, 365 days, DEFAULT_BASE_INTEREST);
 
-        (uint256 principal, uint256 baseInterest, uint256 riskPremiumInterest) = dUSD.currentDebtOf(alice);
-        assertEq(principal, amount);
-        assertEq(baseInterest, compoundedAliceBase-amount);
-        assertEq(riskPremiumInterest, TEN_PCT_365DAY_1-amount);
-        assertEq(dUSD.balanceOf(alice), principal+baseInterest+riskPremiumInterest);
+        ITempleDebtToken.DebtOwed memory userDebt = dUSD.currentDebtOf(alice);
+        assertEq(userDebt.principal, amount);
+        assertEq(userDebt.baseInterest, compoundedAliceBase-amount+2);
+        assertEq(userDebt.riskPremiumInterest, TEN_PCT_365DAY_1-amount);
+        assertEq(dUSD.balanceOf(alice), userDebt.principal+userDebt.baseInterest+userDebt.riskPremiumInterest);
 
-        uint256 compoundedBobBase = CompoundedInterest.continuouslyCompounded(amount, 729 days, uint96(DEFAULT_BASE_INTEREST));
+        uint256 compoundedBobBase = CompoundedInterest.continuouslyCompounded(amount, 364 days, DEFAULT_BASE_INTEREST);
+        compoundedBobBase = CompoundedInterest.continuouslyCompounded(compoundedBobBase, 365 days, DEFAULT_BASE_INTEREST);
         uint256 compoundedBobDebtorInterest = (
-            CompoundedInterest.continuouslyCompounded(amount, 729 days, uint96(bobInterestRate)) -
+            CompoundedInterest.continuouslyCompounded(amount, 729 days, bobInterestRate) -
             amount
         );
-        (principal, baseInterest, riskPremiumInterest) = dUSD.currentDebtOf(bob);
-        assertEq(principal, amount);
-        assertEq(baseInterest, compoundedBobBase-amount-1);
-        assertEq(riskPremiumInterest, compoundedBobDebtorInterest);
-        assertEq(dUSD.balanceOf(bob), principal+baseInterest+riskPremiumInterest);
+        userDebt = dUSD.currentDebtOf(bob);
+        assertEq(userDebt.principal, amount);
+        assertEq(userDebt.baseInterest, compoundedBobBase-amount);
+        assertEq(userDebt.riskPremiumInterest, compoundedBobDebtorInterest);
+        assertEq(dUSD.balanceOf(bob), userDebt.principal+userDebt.baseInterest+userDebt.riskPremiumInterest);
+    }
+
+    function test_currentDebtsOf() public {
+        vm.startPrank(executor);
+
+        uint256 amount = 100e18;
+        dUSD.mint(alice, amount);
+        vm.warp(block.timestamp + 1 days);
+        dUSD.mint(bob, amount);
+
+        vm.warp(block.timestamp + 364 days);
+        changePrank(executor);
+        dUSD.setRiskPremiumInterestRate(alice, 0.1e18);
+        vm.warp(block.timestamp + 365 days);
+
+        uint256 compoundedAliceBase = CompoundedInterest.continuouslyCompounded(ONE_PCT_1DAY, 364 days, DEFAULT_BASE_INTEREST);
+        compoundedAliceBase = CompoundedInterest.continuouslyCompounded(compoundedAliceBase, 365 days, DEFAULT_BASE_INTEREST);
+
+        address[] memory accounts = new address[](2);
+        accounts[0] = alice;
+        accounts[1] = bob;
+
+        ITempleDebtToken.DebtOwed[] memory userDebts = dUSD.currentDebtsOf(accounts);
+        assertEq(userDebts[0].principal, amount);
+        assertEq(userDebts[0].baseInterest, compoundedAliceBase-amount+2);
+        assertEq(userDebts[0].riskPremiumInterest, TEN_PCT_365DAY_1-amount);
+        assertEq(dUSD.balanceOf(alice), userDebts[0].principal+userDebts[0].baseInterest+userDebts[0].riskPremiumInterest);
+
+        uint256 compoundedBobBase = CompoundedInterest.continuouslyCompounded(amount, 364 days, DEFAULT_BASE_INTEREST);
+        compoundedBobBase = CompoundedInterest.continuouslyCompounded(compoundedBobBase, 365 days, DEFAULT_BASE_INTEREST);
+        uint256 compoundedBobDebtorInterest = (
+            CompoundedInterest.continuouslyCompounded(amount, 729 days, bobInterestRate) -
+            amount
+        );
+        assertEq(userDebts[1].principal, amount);
+        assertEq(userDebts[1].baseInterest, compoundedBobBase-amount);
+        assertEq(userDebts[1].riskPremiumInterest, compoundedBobDebtorInterest);
+        assertEq(dUSD.balanceOf(bob), userDebts[1].principal+userDebts[1].baseInterest+userDebts[1].riskPremiumInterest);
     }
 
     function test_mint_and_burn_fuzz(address account, uint256 amount, uint256 timeGap) public {
         vm.assume(account != address(0));
-        vm.assume(amount != 0);
+        vm.assume(amount > 0);
         vm.assume(amount < 100_000_000e18);
         vm.assume(timeGap < 5 * 365 days);
 
@@ -548,8 +726,8 @@ contract TempleDebtTokenTestBaseAndDebtorInterest is TempleDebtTokenTestBase {
         vm.warp(block.timestamp + timeGap);
 
         uint256 expectedTotalBalance = (
-            CompoundedInterest.continuouslyCompounded(amount, timeGap, uint96(DEFAULT_BASE_INTEREST)) +
-            CompoundedInterest.continuouslyCompounded(amount, timeGap, uint96(aliceInterestRate)) - amount
+            CompoundedInterest.continuouslyCompounded(amount, timeGap, DEFAULT_BASE_INTEREST) +
+            CompoundedInterest.continuouslyCompounded(amount, timeGap, aliceInterestRate) - amount
         );
 
         uint256 balance = dUSD.balanceOf(account);

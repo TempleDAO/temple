@@ -1,20 +1,19 @@
-pragma solidity 0.8.18;
+pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import {TempleTest} from '../../TempleTest.sol';
 import {LinearWithKinkInterestRateModel} from 'contracts/v2/interestRate/LinearWithKinkInterestRateModel.sol';
 import {CommonEventsAndErrors} from 'contracts/common/CommonEventsAndErrors.sol';
-import {SafeCast} from 'contracts/common/SafeCast.sol';
 
 contract LinearWithKinkInterestRateModelTestBase is TempleTest {
     LinearWithKinkInterestRateModel public interestRateModelKinkNinety;
     LinearWithKinkInterestRateModel public interestRateModelFlat;
     uint256 public UTILIZATION_RATIO_90 = 0.9e18; // 90%
 
-    uint256 public IR_AT_0_UR = 0.05e18; // 5%
-    uint256 public IR_AT_100_UR = 0.2e18; // 20%
-    uint256 public IR_AT_KINK_90 = 0.1e18; // 10%
+    uint80 public IR_AT_0_UR = 0.05e18; // 5%
+    uint80 public IR_AT_100_UR = 0.2e18; // 20%
+    uint80 public IR_AT_KINK_90 = 0.1e18; // 10%
 
-    uint256 public FLAT_IR_12 = 0.12e18; // 12%
+    uint80 public FLAT_IR_12 = 0.12e18; // 12%
 
     uint96 internal constant MAX_ALLOWED_INTEREST_RATE = 5e18; // 500% APR
 
@@ -73,13 +72,11 @@ contract LinearWithKinkInterestRateModelTestModifiers is
     LinearWithKinkInterestRateModelTestBase
 {
     event InterestRateParamsSet(
-        uint256 _baseInterestRate,
-        uint256 _maxInterestRate,
-        uint256 _kinkUtilizationRatio,
-        uint256 _kinkInterestRate
+        uint80 _baseInterestRate, 
+        uint80 _maxInterestRate, 
+        uint256 _kinkUtilizationRatio, 
+        uint80 _kinkInterestRate
     );
-
-    using SafeCast for uint256;
 
     function test_accessAliceSetRateParams() public {
         vm.startPrank(alice);
@@ -136,11 +133,22 @@ contract LinearWithKinkInterestRateModelTestModifiers is
             abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector)
         );
         interestRateModelKinkNinety.setRateParams(
+            type(uint80).max,
+            type(uint80).max,
             type(uint256).max,
-            type(uint256).max,
-            type(uint256).max,
-            type(uint256).max
+            type(uint80).max
         );
+    }
+
+    function test_expectInvalidParams_failWrongOrder() public {
+        vm.startPrank(executor);
+        // Base rate is bigger thank Kink rate
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
+        interestRateModelKinkNinety.setRateParams(100, 100, 100, 99);
+
+        // Kink rate is bigger thank Max rate
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
+        interestRateModelKinkNinety.setRateParams(100, 99, 100, 100);
     }
 
     function test_accessRescuerSetRateParams() public {

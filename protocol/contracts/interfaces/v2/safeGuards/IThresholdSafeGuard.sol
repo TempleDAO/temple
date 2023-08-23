@@ -1,4 +1,4 @@
-pragma solidity 0.8.18;
+pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (interfaces/v2/SafeGuards/IThresholdSafeGuard.sol)
 
@@ -8,11 +8,11 @@ interface IThresholdSafeGuard is Guard {
     event DisableGuardChecksSet(bool value);
     event DefaultSignaturesThresholdSet(uint256 threshold);
     event FunctionThresholdSet(address indexed contractAddr, bytes4 indexed functionSignature, uint256 threshold);
+    event EthTransferThresholdSet(address indexed contractAddr, uint256 threshold);
     event SafeTxExecutorAdded(address indexed executor);
     event SafeTxExecutorRemoved(address indexed executor);
 
     error InvalidExecutor();
-    error InvalidFunctionSignature();
     error DynamicSignatureThresholdNotMet(uint256 required, uint256 found);
 
     /**
@@ -34,4 +34,9 @@ interface IThresholdSafeGuard is Guard {
       * in this guard -- the Safe has already verified the signers.
      */
     function functionThresholds(address contractAddr, bytes4 functionSignature) external view returns (uint256);
+
+    /**
+     * @notice The required signature thresholds for ETH transfers.
+     */
+    function ethTransferThresholds(address contractAddr) external view returns (uint256);
 }

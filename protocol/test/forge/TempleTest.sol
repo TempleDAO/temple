@@ -1,4 +1,4 @@
-pragma solidity 0.8.18;
+pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
@@ -40,8 +40,9 @@ abstract contract TempleTest is Test {
     }
 
     function expectElevatedAccess() internal {
-        vm.prank(unauthorizedUser);
+        vm.startPrank(unauthorizedUser);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
+        vm.stopPrank();
     }
 
     function setExplicitAccess(

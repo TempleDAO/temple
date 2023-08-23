@@ -1,4 +1,4 @@
-pragma solidity 0.8.18;
+pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (interfaces/v2/templeLineOfCredit/ITlcDataTypes.sol)
 
@@ -51,19 +51,7 @@ interface ITlcDataTypes {
         uint128 debtCheckpoint;
 
         /// @notice The account's last interest accumulator checkpoint
-        uint128 interestAccumulator;
-
-        /// @notice A remove collateral requested amount
-        uint128 removeCollateralRequestAmount;
-
-        /// @notice A new borrow requested amount
-        uint128 borrowRequestAmount;
-
-        /// @notice The block time when a remove collateral was requested
-        uint64 removeCollateralRequestAt;
-
-        /// @notice The block time when a borrow was requested
-        uint64 borrowRequestAt;
+        uint256 interestAccumulator;
     }
 
     /// @notice The status for whether an account can be liquidated or not
@@ -73,27 +61,27 @@ interface ITlcDataTypes {
         bool hasExceededMaxLtv;
 
         /// @notice The amount of collateral which has been provided by the user
-        uint256 collateral;
+        uint128 collateral;
 
         /// @notice The value of collateral (amount * TPI) which has been provided by the user
         uint256 collateralValue;
 
         /// @notice The amount of DAI debt as of this block
-        uint256 currentDebt;
+        uint128 currentDebt;
     }
     
     /// @notice An account's collateral and DAI debt position
     struct AccountPosition {
         /// @notice The amount (not the value) of collateral which has been provided by the user
-        uint256 collateral;
+        uint128 collateral;
 
         /// @notice The amount of DAI debt as of this block
-        uint256 currentDebt;
+        uint128 currentDebt;
 
         /// @notice The maximum amount this account can borrow given the collateral posted.
         /// @dev Note if this max is actually borrowed then it will immediately be liquidated as 1 block
         /// of interest will tip it over the max allowed LTV
-        uint256 maxBorrow;
+        uint128 maxBorrow;
 
         /// @notice The health factor of this accounts position. Anything less than 1 can be liquidated.
         uint256 healthFactor;
