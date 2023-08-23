@@ -41,7 +41,6 @@ async function main() {
   const collateralAmount = ethers.utils.parseEther("10000");
   const aliceInitialDaiBalance = ethers.utils.parseEther("20000");
   const borrowDaiAmount = ethers.utils.parseEther("1000");
-  const maxLtvAliceBorrowDaiAmount = ethers.utils.parseEther("8712.5"); // 85% of collateral amount
 
   async function checkBalances (desc: string) {
     console.log(`\n\n*** ${desc} ***`);
@@ -50,7 +49,11 @@ async function main() {
     console.log('dai balance of alice', await TEMPLE_V2_INSTANCES.EXTERNAL.MAKER_DAO.DAI_TOKEN.balanceOf(await alice.getAddress()));
     console.log('dai balance of trv', await TEMPLE_V2_INSTANCES.EXTERNAL.MAKER_DAO.DAI_TOKEN.balanceOf(TEMPLE_V2_ADDRESSES.TREASURY_RESERVES_VAULT.ADDRESS));
     console.log('dusd balance of tlc', await TEMPLE_V2_INSTANCES.TREASURY_RESERVES_VAULT.D_USD_TOKEN.balanceOf(TEMPLE_V2_ADDRESSES.STRATEGIES.TLC_STRATEGY.ADDRESS));
+    console.log('dUSD totalSupply', await TEMPLE_V2_INSTANCES.TREASURY_RESERVES_VAULT.D_USD_TOKEN.totalSupply());
     console.log('dTemple totalSupply', await TEMPLE_V2_INSTANCES.TREASURY_RESERVES_VAULT.D_TEMPLE_TOKEN.totalSupply());
+    console.log('TLC dTemple token credits', await TEMPLE_V2_INSTANCES.TREASURY_RESERVES_VAULT.INSTANCE.strategyTokenCredits(
+      TEMPLE_V2_ADDRESSES.STRATEGIES.TLC_STRATEGY.ADDRESS, TEMPLE_V2_ADDRESSES.CORE.TEMPLE_TOKEN
+    ));
   }
 
   /* Initial Setup */
@@ -119,7 +122,7 @@ async function main() {
     expect(await TEMPLE_V2_INSTANCES.EXTERNAL.MAKER_DAO.DAI_TOKEN.balanceOf(await alice.getAddress())).to.eq(aliceInitialDaiBalance);
 
     // borrow dai for alice
-    await mine(ALICE_V2_INSTANCES.TEMPLE_LINE_OF_CREDIT.INSTANCE.borrow(borrowDaiAmount, await alice.getAddress()));
+    await mine(ALICE_V2_INSTANCES.TEMPLE_LINE_OF_CREDIT.INSTANCE.borrow(borrowDaiAmount, await alice.getAddress(), {gasLimit:5000000}));
     await checkBalances("Alice borrowed dai");
     expect(await TEMPLE_V2_INSTANCES.EXTERNAL.MAKER_DAO.DAI_TOKEN.balanceOf(await alice.getAddress()))
     .to.eq(aliceInitialDaiBalance.add(borrowDaiAmount));
@@ -146,9 +149,12 @@ async function main() {
   { 
     await mine(ALICE_V2_INSTANCES.CORE.TEMPLE_TOKEN.approve(TEMPLE_V2_ADDRESSES.TEMPLE_LINE_OF_CREDIT.ADDRESS, collateralAmount));
     await mine(ALICE_V2_INSTANCES.TEMPLE_LINE_OF_CREDIT.INSTANCE.addCollateral(collateralAmount, await alice.getAddress()));
-    await mine(ALICE_V2_INSTANCES.TEMPLE_LINE_OF_CREDIT.INSTANCE.borrow(maxLtvAliceBorrowDaiAmount, await alice.getAddress()));
+    let alicePosition = await ALICE_V2_INSTANCES.TEMPLE_LINE_OF_CREDIT.INSTANCE.accountPosition(await alice.getAddress());
+    await mine(ALICE_V2_INSTANCES.TEMPLE_LINE_OF_CREDIT.INSTANCE.borrow(alicePosition.maxBorrow, await alice.getAddress()));
     await checkBalances("Alice borrowed");
-    
+    alicePosition = await ALICE_V2_INSTANCES.TEMPLE_LINE_OF_CREDIT.INSTANCE.accountPosition(await alice.getAddress());
+    console.log("Alice TLC Position:", alicePosition);
+
     const accounts: PromiseOrValue<string>[] = [await alice.getAddress()];
     let status = await ALICE_V2_INSTANCES.TEMPLE_LINE_OF_CREDIT.INSTANCE.computeLiquidity(accounts);
     expect(status[0].hasExceededMaxLtv).to.false;
@@ -156,7 +162,7 @@ async function main() {
     await mineForwardSeconds(1);
     status = await ALICE_V2_INSTANCES.TEMPLE_LINE_OF_CREDIT.INSTANCE.computeLiquidity(accounts);
     expect(status[0].hasExceededMaxLtv).to.true;
-    expect(status[0].currentDebt).to.eq(ethers.utils.parseEther('8712.500015150809241213'));
+    expect(status[0].currentDebt).to.eq(ethers.utils.parseEther('8480.000013495624336320'));
     await mine(ALICE_V2_INSTANCES.TEMPLE_LINE_OF_CREDIT.INSTANCE.batchLiquidate(accounts));
     
     status = await ALICE_V2_INSTANCES.TEMPLE_LINE_OF_CREDIT.INSTANCE.computeLiquidity(accounts);
@@ -165,10 +171,14 @@ async function main() {
 
     // Alice shouldn't be able to repay her debt any longer
     await mine(ALICE_V2_INSTANCES.EXTERNAL.MAKER_DAO.DAI_TOKEN.approve(TEMPLE_V2_ADDRESSES.TEMPLE_LINE_OF_CREDIT.ADDRESS, ethers.utils.parseEther('8712.500015150809241213')));
-    expect(ALICE_V2_INSTANCES.TEMPLE_LINE_OF_CREDIT.INSTANCE.repayAll(await alice.getAddress())
+    await expect(ALICE_V2_INSTANCES.TEMPLE_LINE_OF_CREDIT.INSTANCE.repayAll(await alice.getAddress())
       ).to.be.revertedWithCustomError(ALICE_V2_INSTANCES.TEMPLE_LINE_OF_CREDIT.INSTANCE, "ExpectedNonZero");
     expect(await TEMPLE_V2_INSTANCES.CORE.TEMPLE_TOKEN.balanceOf(await alice.getAddress())).to.eq(0);
-    expect(await TEMPLE_V2_INSTANCES.TREASURY_RESERVES_VAULT.D_TEMPLE_TOKEN.totalSupply()).to.eq(collateralAmount);
+    expect(await TEMPLE_V2_INSTANCES.TREASURY_RESERVES_VAULT.D_TEMPLE_TOKEN.totalSupply()).to.eq(0);
+    // The Temple collateral that was liquidated are now credits in TRV, for TLC.
+    expect(await TEMPLE_V2_INSTANCES.TREASURY_RESERVES_VAULT.INSTANCE.strategyTokenCredits(
+      TEMPLE_V2_ADDRESSES.STRATEGIES.TLC_STRATEGY.ADDRESS, TEMPLE_V2_ADDRESSES.CORE.TEMPLE_TOKEN
+    )).to.eq(collateralAmount);
     
     await checkBalances("Final balances");
   }
@@ -177,7 +187,7 @@ async function main() {
   {
     await mine(TEMPLE_V2_INSTANCES.TEMPLE_LINE_OF_CREDIT.INSTANCE.connect(rescuerMsig).setRescueMode(true));
     expect(await TEMPLE_V2_INSTANCES.TEMPLE_LINE_OF_CREDIT.INSTANCE.inRescueMode()).to.be.true;
-    expect(
+    await expect(
       ALICE_V2_INSTANCES.TEMPLE_LINE_OF_CREDIT.INSTANCE.borrow(ethers.utils.parseEther('1'), await alice.getAddress()))
       .to.be.revertedWithCustomError(ALICE_V2_INSTANCES.TEMPLE_LINE_OF_CREDIT.INSTANCE, "InvalidAccess"
     );
