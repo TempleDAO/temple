@@ -184,7 +184,6 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
         return shardUris[shardId];
     }
 
-    // question add flag to also equip in same transaction?
     function transmute(uint256 recipeId) external {
         address caller = msg.sender;
         Recipe memory recipe = recipes[recipeId];

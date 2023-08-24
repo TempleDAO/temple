@@ -84,6 +84,7 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
     event ShardsEquipped(address caller, uint256 relicId, uint256[] shardIds, uint256[] amounts);
     event ShardUnequipped(address caller, uint256 relicId, uint256 shardId, uint256 amount);
     event ShardsUnequipped(address recipient, uint256 relicId, uint256[] shardIds, uint256[] amounts);
+    event AccountBlacklistSet(address account, bool blacklist, uint256[] shardIds, uint256[] amounts);
 
     error InvalidParamLength();
     error CallerCannotMint(address msgSender);
@@ -177,6 +178,8 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
         blacklistedAccounts[account] = blacklist;
         uint256 shardId;
         uint256 amount;
+        /// pending to unset blacklist. if true, account will be removed from blacklist
+        bool pending = false;
         for(uint i; i < _length;) {
             shardId = shardIds[i];
             amount = amounts[i];
@@ -188,12 +191,17 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
                     blacklistedAccountShards[account][shardId] = 0;
                 } else {
                     blacklistedAccountShards[account][shardId] -= amount;
+                    pending = true;
                 }
             }
             unchecked {
                 ++i;
             }
         }
+        if (pending) {
+            blacklistedAccounts[account] = true;
+        }
+        emit AccountBlacklistSet(account, blacklist, shardIds, amounts);
     }
 
     function setRelicXP(uint256 relicId, uint256 xp) external onlyXPController {
@@ -406,6 +414,10 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
             return false;
         }
         return true;
+    }
+
+    function getRarityBaseUri(Rarity rarity) external view returns(string memory uri) {
+        uri = baseUris[rarity];
     }
 
     // function supportsInterface(bytes4 interfaceId) public view override(ERC1155Holder) returns (bool) {
