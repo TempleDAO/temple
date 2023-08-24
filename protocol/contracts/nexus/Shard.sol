@@ -7,6 +7,7 @@ import { ERC1155 } from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import { ERC1155Burnable } from "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Burnable.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { TempleElevatedAccess } from "../v2/access/TempleElevatedAccess.sol";
+import { CommonEventsAndErrors } from "../common/CommonEventsAndErrors.sol";
 
 contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
     using EnumerableSet for EnumerableSet.UintSet;
@@ -14,8 +15,10 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
     IRelic public relic;
     address private constant ZERO_ADDRESS = 0x0000000000000000000000000000000000000000;
 
-    /// @notice all 3 mappings below not combined into a struct for reasons allowedPartnerShardIds read often than rest. also for easy public reads(read functions). avoids cycle error
-    /// @notice choosing mapping of address to EnumerableSet to help supporting view functions like getPartnerMintInfo
+    /// @notice all 3 mappings below not combined into a struct for reasons allowedPartnerShardIds read often than rest. 
+    /* also for easy public reads(read functions). avoids cycle error
+     * choosing mapping of address to EnumerableSet to help supporting view functions like getPartnerMintInfo
+     */
     mapping(address => EnumerableSet.UintSet) private allowedPartnerShardIds;
     mapping(address => mapping(uint256 => uint256)) public allowedPartnersShardCaps;
     mapping(address => mapping(uint256 => uint256)) public partnerMintBalances;
@@ -45,7 +48,7 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
         uint256[] outputShardAmounts;
     }
 
-    event Transmuted();
+    event Transmuted(address caller, uint256 recipeId);
     event ShardMinted();
     event ShardUriSet(uint256 shardId, string uri);
     event RecipeSet(uint256 recipeId, Recipe recipe);
@@ -61,7 +64,6 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
     error InvalidRecipe(uint256 recipeId);
     error ZeroAddress();
     error PartnerAllowShardFailed(address partner, uint256 shardId, bool allowed);
-    error InvalidParam();
     error InvalidParamLength();
     error InvalidAccess(address caller);
     error InvalidCaller(address caller);
@@ -138,6 +140,7 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
          emit PartnerAllowedShardIdsSet(partner, shardIds, flags);
     }
 
+    /// @notice set the caps for shards partners can mint
     function setPartnerAllowedShardCaps(
         address partner,
         uint256[] memory shardIds,
@@ -156,11 +159,12 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
         emit PartnerAllowedShardCapsSet(partner, shardIds, caps);
     }
 
+    /// @notice Set a recipe for transmutation
     function setRecipe(uint256 recipeId, Recipe calldata recipe) external onlyElevatedAccess {
         uint256 _inputLength = recipe.inputShardIds.length;
-        if (_inputLength != recipe.inputShardAmounts.length) { revert InvalidParam(); }
+        if (_inputLength != recipe.inputShardAmounts.length) { revert CommonEventsAndErrors.InvalidParam(); }
         uint256 _outputLength = recipe.outputShardAmounts.length;
-        if (_outputLength != recipe.outputShardIds.length) { revert InvalidParam(); }
+        if (_outputLength != recipe.outputShardIds.length) { revert CommonEventsAndErrors.InvalidParam(); }
 
         Recipe memory newRecipe;
         assembly {
@@ -171,7 +175,7 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
     }
 
     function setShardUri(uint256 shardId, string memory uri) external onlyElevatedAccess {
-        if (bytes(uri).length == 0 ) { revert InvalidParam(); }
+        if (bytes(uri).length == 0 ) { revert CommonEventsAndErrors.InvalidParam(); }
         shardUris[shardId] = uri;
         emit ShardUriSet(shardId, uri);
     }
@@ -181,15 +185,15 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
     }
 
     // question add flag to also equip in same transaction?
-    function transmute(uint256 relicId, uint256 recipeId) external {
+    function transmute(uint256 recipeId) external {
         address caller = msg.sender;
-        if (relic.ownerOf(relicId) != caller) { revert InvalidAccess(caller); }
-        if (relic.balanceOf(caller) == 0) { revert CannotTransmute(caller); }
         Recipe memory recipe = recipes[recipeId];
         if (recipe.inputShardIds.length == 0) { revert InvalidRecipe(recipeId); }
         /// @dev function checks caller has enough balances
         _burnBatch(caller, recipe.inputShardIds, recipe.inputShardAmounts);
         _mintBatch(caller, recipe.outputShardIds, recipe.outputShardAmounts, "");
+
+        emit Transmuted(caller, recipeId);
     }
 
     function partnerMint(address to, uint256 shardId, uint256 amount) external {
@@ -204,18 +208,24 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
         _mint(to, shardId, amount, "");
     }
 
+    /// @notice Lets an approved partner mint shards in batch
     function partnerBatchMint(address to, uint256[] memory shardIds, uint256[] memory amounts) external {
         uint256 _length = shardIds.length;
         if (_length != amounts.length) { revert InvalidParamLength(); }
         uint256 cap;
         uint256 shardId;
         uint256 amount;
+        EnumerableSet.UintSet storage allowedPartnerShards = allowedPartnerShardIds[msg.sender];
+        mapping(uint256 => uint256) storage _allowedPartnerShardCaps = allowedPartnersShardCaps[msg.sender];
+        uint256 newBalance;
         for (uint i; i < _length;) {
             shardId = shardIds[i];
-            if (!allowedPartnerShardIds[msg.sender].contains(shardId)) { revert ShardMintNotAllowed(msg.sender, shardId); }
+            if (!allowedPartnerShards.contains(shardId)) { revert ShardMintNotAllowed(msg.sender, shardId); }
             amount = amounts[i];
-            cap = allowedPartnersShardCaps[msg.sender][shardId];
-            if (cap > 0 && cap < amount) {
+            cap = _allowedPartnerShardCaps[shardId];
+            newBalance =  partnerMintBalances[msg.sender][shardId] + amount;
+            /// @dev checking only if cap set. 0 (default value) is uncapped
+            if (cap > 0 && cap < newBalance) {
                 revert MintCapExceeded(cap, amount);
             }
             partnerMintBalances[msg.sender][shardId] += amount;
@@ -229,7 +239,7 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
     function mint(address to, uint256 shardId, uint256 amount) external onlyTemplarMinters {
         if(partnerShards.contains(shardId))  { revert ReservedPartnerShard(shardId); }
         /// @dev fail early
-        if (amount == 0) { revert InvalidParam(); }
+        if (amount == 0) { revert CommonEventsAndErrors.InvalidParam(); }
         _mint(to, shardId, amount, "");
     }
 

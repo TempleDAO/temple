@@ -298,7 +298,7 @@ abstract contract ERC721ACustom is IERC721A {
      * token will be the concatenation of the `baseURI` and the `tokenId`. Empty
      * by default, it can be overridden in child contracts.
      */
-    function _baseURI(uint256 tokenId) internal view virtual returns (string memory) {
+    function _baseURI(uint256 /*tokenId*/) internal view virtual returns (string memory) {
         return '';
     }
 
