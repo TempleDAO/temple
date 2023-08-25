@@ -77,7 +77,7 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
     event RarityBaseUriSet(Rarity rarity, string uri);
     event RelicMinterSet(address minter, bool allow);
     event ShardSet(address shard);
-    event RelicMinted(address msgSender, uint256 nextTokenId, uint256 quantity);
+    event RelicMinted(address to, uint256 nextTokenId, uint256 quantity);
     event XPControllerSet(address controller, bool flag);
     event RelicXPSet(uint256 relicId, uint256 oldXp, uint256 xp);
     event ShardEquipped(address caller, uint256 relicId, uint256 shardId, uint256 amount);
@@ -249,6 +249,7 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
     }
 
     function mintRelic(address to, Enclave enclave) external isRelicMinter notBlacklisted(to) {
+        if (to == ZERO_ADDRESS) { revert ZeroAddress(); }
         if (!isAllowedEnclave(enclave)) { revert CommonEventsAndErrors.InvalidParam(); }
 
         uint256 nextTokenId = _nextTokenId();
@@ -259,8 +260,8 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
         
         ownerRelics[to].add(nextTokenId);
         /// user can mint relic anytime after sacrificing temple and getting whitelisted. one at a time
-        _safeMint(msg.sender, PER_MINT_QUANTITY, ZERO_BYTES);
-        emit RelicMinted(msg.sender, nextTokenId, PER_MINT_QUANTITY);
+        _safeMint(to, PER_MINT_QUANTITY, ZERO_BYTES);
+        emit RelicMinted(to, nextTokenId, PER_MINT_QUANTITY);
     }
 
     function equipShard(
@@ -342,6 +343,10 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
         }
         shard.safeBatchTransferFrom(address(this), msg.sender, shardIds, amounts, ZERO_BYTES);
         emit ShardsUnequipped(msg.sender, relicId, shardIds, amounts);
+    }
+
+    function totalMinted() external view returns (uint256) {
+        return _totalMinted();
     }
 
     function recoverToken(address token, address to, uint256 amount) external onlyElevatedAccess {

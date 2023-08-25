@@ -71,10 +71,12 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
 
 
     constructor(
-        IRelic _relic,
+        address _relic,
+        address _initialRescuer,
+        address _initialExecutor,
         string memory _uri
-    ) ERC1155(_uri) TempleElevatedAccess(msg.sender, msg.sender) {
-        relic = _relic;
+    ) ERC1155(_uri) TempleElevatedAccess(_initialRescuer, _initialExecutor) {
+        relic = IRelic(_relic);
     }
 
     /// @notice shardId should not have been minted, nextId =< shardId 
