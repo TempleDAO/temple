@@ -1,7 +1,7 @@
 import { EventEmitterBase, PointerEventEmitter } from './InputEventEmitter';
 import { Component, useEffect, useRef } from 'react';
 import { FoldingAnimation } from './FoldingAnimation';
-import { FoldingEngine, RenderInfo } from './FoldingEngine';
+import { FoldingEngine, FoldingState, RenderInfo } from './FoldingEngine';
 import { InputProcessor } from './InputCapture';
 import { Line2 } from './origami-types';
 
@@ -10,7 +10,7 @@ export class FoldingEventEmitter extends EventEmitterBase<'unfold' | 'refold', v
 export const FoldingSheetWithContext: React.FC<{
   pointerEventEmitter: PointerEventEmitter
   foldingEventEmitter: FoldingEventEmitter
-  onUndoStackChange: (state: { canUndo: boolean, canRedo: boolean }) => void
+  onFoldingStateChange: (state: FoldingState) => void
 }> = props => {
   const { pointerEventEmitter, foldingEventEmitter } = props;
   const foldingSheetRef = useRef<FoldingSheet>(null);
@@ -27,7 +27,7 @@ export const FoldingSheetWithContext: React.FC<{
 
   return <>
     <FoldingSheet ref={foldingSheetRef}
-      onUndoStackChange={props.onUndoStackChange}
+      onFoldingStateChange={props.onFoldingStateChange}
     />
     <InputProcessor pointerEventEmitter={pointerEventEmitter}
       onFold={line => foldingSheetRef.current?.fold(line)}
@@ -36,12 +36,12 @@ export const FoldingSheetWithContext: React.FC<{
 }
 
 export class FoldingSheet extends Component<{
-  onUndoStackChange: (state: { canUndo: boolean, canRedo: boolean }) => void
+  onFoldingStateChange: (state: FoldingState) => void
 }, { renderInfo: RenderInfo }> {
   private readonly engine: FoldingEngine;
 
   constructor(props: {
-    onUndoStackChange: (state: { canUndo: boolean, canRedo: boolean }) => void
+    onFoldingStateChange: (state: FoldingState) => void
   }) {
     super(props);
     this.engine = new FoldingEngine(10);
@@ -64,7 +64,7 @@ export class FoldingSheet extends Component<{
     if (renderInfo) {
       this.setState({ renderInfo });
     }
-    this.props.onUndoStackChange(this.engine.getUndoState());
+    this.props.onFoldingStateChange(this.engine.getFoldingState());
   }
 
   render() {

@@ -1,5 +1,6 @@
 import { multiply } from 'mathjs';
 import { Vector3 } from 'three';
+import { notNullGuard } from 'utils/helpers';
 import { reflectShapeAcrossLine, splitShapes } from './geometry-helpers';
 import { matrixScale, matrixTranslate } from './matrix-helpers';
 import { GeometryInfo, Layer, Line2 } from './origami-types';
@@ -11,6 +12,12 @@ export interface RenderInfo {
     rotation: { axis: Vector3, center: Vector3 },
     geoms: GeometryInfo[],
   }
+}
+
+export interface FoldingState {
+  foldLines: Line2[]
+  canUndo: boolean
+  canRedo: boolean
 }
 
 export class FoldingEngine {
@@ -78,8 +85,10 @@ export class FoldingEngine {
     }
   }
 
-  getUndoState() {
+  getFoldingState(): FoldingState {
     return {
+      foldLines: this.stateStack.slice(0, this.stateIdx)
+        .map((_, idx) => this.stateStack[idx].foldLine).filter(notNullGuard),
       canUndo: this.stateIdx >= 0,
       canRedo: this.stateIdx < this.stateStack.length - 1,
     }
