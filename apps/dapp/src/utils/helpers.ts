@@ -12,3 +12,7 @@ export const asyncNoop = async () => {};
 export const isDevelopmentEnv = () => {
   return ENV.VITE_ENV === 'preview-nexus' || ENV.VITE_ENV === 'preview' || ENV.VITE_ENV === 'local';
 };
+
+export function notNullGuard<T>(e: T | null | undefined): e is T {
+  return e !== null && e !== undefined
+}

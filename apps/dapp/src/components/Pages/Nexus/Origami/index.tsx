@@ -1,5 +1,7 @@
+import FoldingPuzzle from "./FoldingPuzzle";
+
 const OrigamiPage = () => {
-    return (<div>origami placeholder</div>)
+    return <FoldingPuzzle />
 };
 
 export default OrigamiPage;
