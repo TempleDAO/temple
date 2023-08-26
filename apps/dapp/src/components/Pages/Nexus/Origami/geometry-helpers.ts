@@ -5,14 +5,14 @@ import { notNullGuard } from 'utils/helpers';
 import { genReflectionMatrix, invertMatrix, transformPoint, transformPoints } from './matrix-helpers';
 import { Line2, Shape2 } from './origami-types';
 
+const EPSILON = 1e-8;
+
 function getLineIntersection(l1: Line2, l2: Line2): Vec2 | null {
-  const scale = 1e8;
-  const pts: number[] = [l1, l2].map(l => l.map(p => [p.x, p.y]).flat())
-    .flat()
-    .map(n => Math.round(n * scale) / scale);
+  const [p0, p1, p2, p3]: Vec2[] = [l1, l2].map(l => l.flat()).flat()
+    .map(v => vec2.round(v, EPSILON));
   // points need to be rounded before passing to checkIntersection()
   const result = checkIntersection(
-    pts[0], pts[1], pts[2], pts[3], pts[4], pts[5], pts[6], pts[7],
+    p0.x, p0.y, p1.x, p1.y, p2.x, p2.y, p3.x, p3.y,
   );
   return result.type == 'intersecting' ? result.point : null;
 }
@@ -101,7 +101,7 @@ function sideOfLineForShape(line: Line2, vertices: Vec2[]): 'left' | 'right' | n
 function sideOfLineForPoint(line: Line2, pt: Vec2): 'left' | 'right' | null {
   const [p1, p2] = line;
   const signedArea = (p1.x * (p2.y - pt.y) + p2.x * (pt.y - p1.y) + pt.x * (p1.y - p2.y)) / 2;
-  const rounded = Math.round(signedArea * 1e8) / 1e8;
+  const rounded = Math.round(signedArea / EPSILON) * EPSILON;
   if (rounded === 0) {
     return null;
   } else {
@@ -119,7 +119,8 @@ export function reflectShapeAcrossLine(shape: Shape2, line: Line2): Shape2 {
 }
 
 function reflectPointAcrossLine(line: Line2, point: Vec2): Vec2 {
-  return transformPoint(point, genReflectionMatrix(line));
+  const reflectedPt = transformPoint(point, genReflectionMatrix(line));
+  return vec2.round(reflectedPt, EPSILON);
 }
 
 export function getBisectingLine(line: Line2): Line2 {

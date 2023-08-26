@@ -8,6 +8,7 @@ import { RenderInfo } from './FoldingEngine';
 import { GeometryInfo, Pair, Shape2 } from './origami-types';
 
 const TARGET_FOLD_ANGLE = Math.PI - 0.01;
+const OUTLINE_WIDTH = 3;
 
 export const FoldingAnimation: React.FC<{
   renderInfo: RenderInfo
@@ -58,7 +59,7 @@ export const FoldingAnimation: React.FC<{
         geom={geom}
         materialParams={materialParams}
         color={0x29b8ed}
-        lineWidth={3}
+        lineWidth={OUTLINE_WIDTH}
       />)
     }
     </group>
@@ -67,7 +68,7 @@ export const FoldingAnimation: React.FC<{
         geom={geom}
         materialParams={materialParams}
         color={0x29b8ed}
-        lineWidth={3}
+        lineWidth={OUTLINE_WIDTH}
       />)
     }
     </group>

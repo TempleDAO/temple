@@ -23,3 +23,12 @@ export interface GeometryInfo {
   z: number
   side: boolean
 }
+
+export function isLine2(v: any): v is Line2 {
+  return Array.isArray(v) && v.length == 2 && v.every(isVec2);
+}
+
+export function isVec2(v: any): v is Vec2 {
+  const v2 = v as Vec2;
+  return typeof v2.x == 'number' && typeof v2.y == 'number';
+}

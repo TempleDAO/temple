@@ -21,7 +21,7 @@ export namespace vec2 {
   }
 
   export function formatList(list: Vec2[], separator = ", ") {
-    return list.map(toStr).join(separator)
+    return list.map(v => `(${toStr(v)})`).join(separator)
   }
 
   export function lengthSq(v: Vec2) {

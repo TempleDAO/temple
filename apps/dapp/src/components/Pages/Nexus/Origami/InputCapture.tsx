@@ -62,8 +62,6 @@ export function InputProcessor(props: {
   useEffect(() => {
     const pointerListenerKey = props.pointerEventEmitter.addListeners({
       pointerdown: e => {
-        e.preventDefault();
-        e.stopPropagation();
         if (e.button === 0) {
           if (position.current && lineStart && isControlPoint(lineStart)) {
             if (!lockLineStart) {
