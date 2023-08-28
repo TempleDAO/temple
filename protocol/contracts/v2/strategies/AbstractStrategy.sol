@@ -18,7 +18,7 @@ abstract contract AbstractStrategy is ITempleStrategy, TempleElevatedAccess {
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.AddressSet;
 
-    string public constant API_VERSION = "1.0.0";
+    string private constant API_VERSION = "1.0.0";
 
     /**
      * @notice A human readable name of the strategy
