@@ -694,17 +694,9 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
                 roundUp
             );
 
-            // Because the shares => debt conversion is rounded down in some scenarios,
-            // there is a chance the `_debtor.principal` outstanding may be 
-            // less than this rounded down number. So use the minimum of the two.
-            _debtorCache.principal =  _debtorPrincipalAndBaseInterest < _debtorCache.principal
-                ? _debtorPrincipalAndBaseInterest
-                : _debtorCache.principal;
-                
-            // The baseInterest outstanding for this debtor is now the difference.
-            unchecked {
-                _debtorCache.baseInterest = _debtorPrincipalAndBaseInterest - _debtorCache.principal;
-            }
+            // Calculate the base interest by subtracting the stored principal.
+            // Floor at zero to handle an edge case due to rounding.
+            _debtorCache.baseInterest = _subFloorZero(_debtorPrincipalAndBaseInterest,  _debtorCache.principal);
         }
 
         if (_timeElapsed > 0) {
