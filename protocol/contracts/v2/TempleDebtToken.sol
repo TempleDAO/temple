@@ -196,12 +196,27 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
             baseCheckpointTime = uint32(block.timestamp);
             baseCheckpoint = _baseCache.totalPrincipalAndBaseInterest + _mintAmountUInt128;
             baseShares = _baseCache.baseShares + newSharesAmount;
-            totalPrincipal += _mintAmountUInt128;
+
+            unchecked {
+                // The baseCheckpoint (principal + interest) is checked for overflow already above
+                // So the total principal can be left unchecked
+                totalPrincipal += _mintAmountUInt128;
+            }
+
+            // Increment the debtors total balance (principal + base interest + risk premium interest)
+            _debtorCache.totalBalance += _mintAmountUInt128;
 
             // The principal borrowed now increases (which affects the risk premium interest accrual)
             // and also the (base rate) checkpoint representing the principal+base interest
-            debtor.principal = _debtorCache.principal = _debtorCache.principal + _mintAmountUInt128;
-            debtor.baseShares = _debtorCache.baseShares + newSharesAmount;
+            unchecked {
+                // Since the debtor.totalBalance is overflow checked above, just checking the principal can
+                // be unchecked
+                debtor.principal = _debtorCache.principal = _debtorCache.principal + _mintAmountUInt128;
+
+                // The debtor base shares can be unchecked since this will be <= the total baseShares across
+                // all debtors which has already been overflow checked.
+                debtor.baseShares = _debtorCache.baseShares + newSharesAmount;
+            }
         }
 
         emit DebtorBalance(_debtor, _debtorCache.principal, _debtorCache.baseInterest, _debtorCache.riskPremiumInterest);
@@ -239,11 +254,8 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
 
         // The user can't pay off more debt than they have.
         // It is capped, and the actual amount burned returned as a value
-        {
-            uint128 _debtorBalance = _balanceOf(_debtorCache);
-            if (_burnAmount > _debtorBalance) {
-                _burnAmount = _debtorBalance;
-            }
+        if (_burnAmount > _debtorCache.totalBalance) {
+            _burnAmount = _debtorCache.totalBalance;
         }
 
         if (_burnAmount > 0) {
@@ -270,7 +282,7 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
         Debtor storage debtor = debtors[_debtor];
         DebtorCache memory _debtorCache = _getDebtorCacheRO(_baseCache, debtor, true);
 
-        burnedAmount = _balanceOf(_debtorCache);
+        burnedAmount = _debtorCache.totalBalance;
         if (burnedAmount > 0) {
             emit Transfer(_debtor, address(0), burnedAmount);
             _burn(_baseCache, debtor, _debtorCache, burnedAmount.encodeUInt128());
@@ -454,26 +466,11 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
      * It includes the principal + the base interest + specific debtor risk premium interest
      */
     function balanceOf(address _debtor) public override view returns (uint256) {
-        return _balanceOf(
-            _getDebtorCacheRO(
-                _getBaseCacheRO(),
-                debtors[_debtor],
-                true
-            )
-        );
-    }
-
-    /**
-     * @notice Returns the amount of tokens owed by the debtor as of this block.
-     * It includes the principal + the base interest + specific debtor risk premium interest
-     */
-    function _balanceOf(DebtorCache memory _debtorCache) internal pure returns (uint128) {
-        unchecked {
-            // Safe to be unchecked since:
-            //  principal & baseInterest are both derived from each other and checked in _initDebtorCache
-            //  Then it's a uint256 + riskPremiumInterest which is a uint128
-            return _debtorCache.principal + _debtorCache.baseInterest + _debtorCache.riskPremiumInterest;
-        }
+        return _getDebtorCacheRO(
+            _getBaseCacheRO(),
+            debtors[_debtor],
+            true
+        ).totalBalance;
     }
 
     /**
@@ -664,6 +661,9 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
 
         /// @dev The risk premium interest rate for this debtor
         uint96 riskPremiumRate;
+
+        /// @dev The total balance this debtor owes: principal + baseInterest + riskPremiumInterest
+        uint128 totalBalance;
     }
 
     /**
@@ -686,8 +686,9 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
             _timeElapsed = uint32(block.timestamp) - _debtor.checkpointTime;
         }
 
+        uint128 _debtorPrincipalAndBaseInterest;
         {
-            uint128 _debtorPrincipalAndBaseInterest = _sharesToDebt(
+            _debtorPrincipalAndBaseInterest = _sharesToDebt(
                 _debtorCache.baseShares, 
                 _baseCache.totalPrincipalAndBaseInterest,
                 _baseCache.baseShares, 
@@ -721,6 +722,8 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
                 }
             }
         }
+
+        _debtorCache.totalBalance = _debtorPrincipalAndBaseInterest + _debtorCache.riskPremiumInterest;
     }
 
     /**
