@@ -304,6 +304,7 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
             // Clean up the debtCeiling approvals for this borrow token.
             // Old borrow ceilings may not be removed, but not an issue
             delete _strategyConfig.debtCeiling[_token];
+            delete _strategyConfig.enabledBorrowTokens[_token];
             delete credits[_token];
         }
 
