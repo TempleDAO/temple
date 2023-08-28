@@ -521,7 +521,7 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
       * The `estimatedTotalRiskPremiumInterest` is only updated when each debtor checkpoints, so it's going to be out of date.
       * For more up to date current totals, off-chain aggregation of balanceOf() will be required - eg via subgraph.
       */
-    function currentTotalDebt() public override view returns (
+    function currentTotalDebt() external override view returns (
         DebtOwed memory debtOwed
     ) {
         BaseCache memory _baseCache = _getBaseCacheRO();
