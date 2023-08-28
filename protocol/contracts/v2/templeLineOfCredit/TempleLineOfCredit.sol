@@ -633,14 +633,17 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
         }
         
         // Only compound if we're on a new block
-        uint32 interestAccumulatorUpdatedAt = debtTokenData.interestAccumulatorUpdatedAt;
-        uint32 blockTs = uint32(block.timestamp);
-        if (blockTs != interestAccumulatorUpdatedAt) {
+        uint32 _timeElapsed;
+        unchecked {
+            _timeElapsed = uint32(block.timestamp) - debtTokenData.interestAccumulatorUpdatedAt;
+        }
+
+        if (_timeElapsed > 0) {
             dirty = true;
 
             // Compound the accumulator
             uint256 newInterestAccumulator = _cache.interestAccumulator.continuouslyCompounded(
-                blockTs - interestAccumulatorUpdatedAt,
+                _timeElapsed,
                 _cache.interestRate
             );
 
@@ -656,7 +659,7 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
 
     /**
      * @dev Setup the DebtTokenCache for a given token
-     * Update storage if and only if the state has changed.
+     * Update storage if and only if the timestamp has changed since last time.
      */
     function _debtTokenCache() internal returns (
         DebtTokenCache memory cache
