@@ -705,17 +705,17 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
             if (_debtorCache.riskPremiumRate > 0) {
                 // Calculate the new amount of risk premium interest by compounding the total debt
                 // and then subtracting just the principal.
-                uint128 _debtorTotalDue;
+                uint256 _debtorTotalDue;
                 unchecked {
-                    _debtorTotalDue = _debtorCache.principal + _debtorCache.riskPremiumInterest;
+                    _debtorTotalDue = uint256(_debtorCache.principal) + _debtorCache.riskPremiumInterest;
                 }
-                _debtorTotalDue = uint256(_debtorTotalDue).continuouslyCompounded(
+                _debtorTotalDue = _debtorTotalDue.continuouslyCompounded(
                     _timeElapsed, 
                     _debtorCache.riskPremiumRate
-                ).encodeUInt128();
+                );
 
                 unchecked {
-                    uint128 _newRiskPremiumInterest = _debtorTotalDue - _debtorCache.principal;
+                    uint128 _newRiskPremiumInterest = _debtorTotalDue.encodeUInt128() - _debtorCache.principal;
                     _debtorCache.riskPremiumInterestDelta = _newRiskPremiumInterest - _debtorCache.riskPremiumInterest;
                     _debtorCache.riskPremiumInterest = _newRiskPremiumInterest;
                 }
