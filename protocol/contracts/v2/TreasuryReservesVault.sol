@@ -608,6 +608,8 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
 
                 // Burn the dTokens from the base strategy.
                 if (_withdrawnAmount > 0) {
+                    _balance += _withdrawnAmount;
+
                     _burnDToken(
                         _baseStrategyAddr, 
                         strategies[_baseStrategyAddr], 
@@ -618,11 +620,11 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
                     );
                 }
             }
-        } else {
-            // The tokens are transferred straight from TRV, no withdrawal from the base strategy
-            // Do an extra check that it at least has the requested amount in case the token isn't a standard ERC20 which already does a check.
-            if (amount > _balance) revert CommonEventsAndErrors.InsufficientBalance(address(token), amount, _balance);
         }
+
+        // The tokens are transferred straight from TRV, no withdrawal from the base strategy
+        // Do an extra check that it at least has the requested amount in case the token isn't a standard ERC20 which already does a check.
+        if (amount > _balance) revert CommonEventsAndErrors.InsufficientBalance(address(token), amount, _balance);
 
         // Finally send the stables.
         token.safeTransfer(recipient, amount);
