@@ -5,6 +5,7 @@ pragma solidity 0.8.18;
 import { TempleTest } from "../TempleTest.sol";
 import { Relic } from "../../../contracts/nexus/Relic.sol";
 import { Shard } from "../../../contracts/nexus/Shard.sol";
+import { FakeERC20 } from "contracts/fakes/FakeERC20.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import "forge-std/console.sol";
 
@@ -12,6 +13,9 @@ import "forge-std/console.sol";
 contract RelicTestBase is TempleTest {
     Relic public relic;
     Shard public shard;
+
+    FakeERC20 public temple = new FakeERC20("TEMPLE", "TEMPLE", address(0), 0);
+    FakeERC20 public dai = new FakeERC20("DAI", "DAI", address(0), 0);
 
     string private constant name = "RELIC";
     string private constant symbol = "REL";
@@ -462,19 +466,88 @@ contract RelicTest is RelicSettersTest {
     }
 
     function test_batchEquipShards() public {
+        uint256[] memory relicIds = relic.relicsOfOwner(bob);
+        uint256 relicId = relicIds[relicIds.length-1];
+        uint256[] memory shardIds = new uint256[](2);
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = amounts[1] = 5;
 
+        vm.startPrank(alice);
+        vm.expectRevert(abi.encodeWithSelector(Relic.InvalidAccess.selector, alice));
+        relic.batchEquipShards(relicId, shardIds, amounts);
+
+        // test blacklist
+        shardIds[0] = shardId1;
+        shardIds[1] = shardId2;
+        // amounts[0] = 5;
+        // amounts[1] = 5;
+        changePrank(executor);
+        relic.setBlacklistAccount(bob, true, shardIds, amounts);
+        changePrank(bob);
+        vm.expectRevert(abi.encodeWithSelector(Relic.AccountBlacklisted.selector, bob));
+        relic.batchEquipShards(relicId, shardIds, amounts);
+        // reset blacklist
+        changePrank(executor);
+        relic.setBlacklistAccount(bob, false, shardIds, amounts);
+        assertEq(relic.blacklistedAccounts(bob), false);
+
+        // invalid param length
+        changePrank(bob);
+        amounts = new uint256[](3);
+        amounts[0] = amounts[1] = amounts[2] = 5;
+        vm.expectRevert(abi.encodeWithSelector(Relic.InvalidParamLength.selector));
+        relic.batchEquipShards(relicId, shardIds, amounts);
+
+        amounts = new uint256[](2);
+        amounts[0] = amounts[1] = 5;
+        shard.setApprovalForAll(address(relic), true);
+        // relic.batchEquipShards(relicId, shardIds, amounts);
     }
 
     function test_unequipShard() public {
+        uint256[] memory relicIds = relic.relicsOfOwner(bob);
+        uint256 relicId = relicIds[relicIds.length-1];
+        vm.startPrank(alice);
+        vm.expectRevert(abi.encodeWithSelector(Relic.InvalidAccess.selector, alice));
+        relic.unequipShard(relicId, shardId1, 2);
 
+        // test blacklist
+        uint256[] memory shardIds = new uint256[](2);
+        uint256[] memory amounts = new uint256[](2);
+        shardIds[0] = shardId1;
+        shardIds[1] = shardId2;
+        amounts[0] = 5;
+        amounts[1] = 5;
+        changePrank(executor);
+        relic.setBlacklistAccount(bob, true, shardIds, amounts);
+        changePrank(bob);
+        vm.expectRevert(abi.encodeWithSelector(Relic.AccountBlacklisted.selector, bob));
+        relic.equipShard(relicId, shardId1, 2);
+        // reset blacklist
+        changePrank(executor);
+        relic.setBlacklistAccount(bob, false, shardIds, amounts);
+        assertEq(relic.blacklistedAccounts(bob), false);
+        //
+        changePrank(bob);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
+        relic.unequipShard(relicId, shardId1, 0);
     }
 
     function test_batchUnequipShards() public {
-
+        
     }
 
     function test_recoverToken() public {
+        uint256 amount = 100 ether;
+        deal(address(dai), address(relic), amount, true);
 
+        vm.expectEmit();
+        emit CommonEventsAndErrors.TokenRecovered(alice, address(dai), amount);
+
+        vm.startPrank(executor);
+        relic.recoverToken(address(dai), alice, amount);
+        assertEq(dai.balanceOf(alice), amount);
+        assertEq(dai.balanceOf(address(relic)), 0);
     }
 
     function test_recoverNFT() public {
