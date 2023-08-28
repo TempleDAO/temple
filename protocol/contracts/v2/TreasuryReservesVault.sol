@@ -181,7 +181,7 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
         StrategyConfig storage strategyConfig = strategies[strategy];
         strategyConfig.underperformingEquityThreshold = underperformingEquityThreshold;
 
-        ITempleStrategy.AssetBalance memory _assetBalance;
+        ITempleStrategy.AssetBalance calldata _assetBalance;
         uint256 _length = debtCeiling.length;
         IERC20 _token;
         for (uint256 i; i < _length; ++i) {
