@@ -29,7 +29,7 @@ const plugins = [
 ];
 
 const VITE_ENV = process.env.VITE_ENV;
-const shouldBuildSourceMap = VITE_ENV === 'local' || VITE_ENV === 'preview';
+const shouldBuildSourceMap = VITE_ENV === 'local';
 
 // https://vitejs.dev/config/
 export default defineConfig({

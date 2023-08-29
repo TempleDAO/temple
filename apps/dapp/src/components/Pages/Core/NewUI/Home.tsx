@@ -18,7 +18,6 @@ import { RAMOSMetrics } from './RAMOSMetrics';
 import { Button } from 'components/Button/Button';
 import { useEffect, useState } from 'react';
 import { Trade } from './TradeNew';
-import { useAccount } from 'wagmi';
 import { Account } from 'components/Layouts/CoreLayout/Account';
 import { fetchGenericSubgraph } from 'utils/subgraph';
 import ClaimModal from './ClaimModal';
@@ -101,8 +100,7 @@ const FooterContent = [
 ];
 
 const Home = () => {
-  const { address, isConnected } = useAccount();
-  const { wallet, signer, updateBalance } = useWallet();
+  const { signer, updateBalance, walletAddress, isConnected, isConnecting } = useWallet();
   const [metrics, setMetrics] = useState<Metrics>({ price: 0, tpi: 0, treasury: 0 });
   const [tradeFormVisible, setTradeFormVisible] = useState(false);
   const [showConnect, setShowConnect] = useState(false);
@@ -112,18 +110,28 @@ const Home = () => {
   const [isUnstakeModalOpen, setIsUnstakeModalOpen] = useState(false);
 
   useEffect(() => {
-    setShowConnect(false);
-  }, [isConnected]);
+    if (isConnecting) {
+      setShowConnect(false);
+    }
+
+    if (isConnected) {
+      setShowConnect(false);
+    }
+
+    if (walletAddress) {
+      setShowConnect(false);
+    }
+  }, [isConnected, isConnecting, walletAddress]);
 
   useEffect(() => {
     const onMount = async () => {
       await updateBalance();
     };
     onMount();
-  }, [wallet, signer]);
+  }, [walletAddress, signer]);
 
   const clickHandler = (openModal: (open: boolean) => void) => {
-    if (!address) {
+    if (!walletAddress) {
       window.scrollTo(0, 0);
       setShowConnect(true);
       return;
@@ -284,8 +292,8 @@ const Home = () => {
         </LinkRow>
         <CopyrightRow>© {new Date().getFullYear()} TempleDAO. All rights reserved.</CopyrightRow>
       </FooterContainer>
-      <TLCModal isOpen={!!address && isTlcModalOpen} onClose={() => setIsTlcModalOpen(false)} />
-      <ClaimModal isOpen={!!address && isClaimModalOpen} onClose={() => setIsClaimModalOpen(false)} />
+      <TLCModal isOpen={!!walletAddress && isTlcModalOpen} onClose={() => setIsTlcModalOpen(false)} />
+      <ClaimModal isOpen={true && isClaimModalOpen} onClose={() => setIsClaimModalOpen(false)} />
       <UnstakeOgtModal isOpen={isUnstakeModalOpen} onClose={() => setIsUnstakeModalOpen(false)} />
     </>
   );

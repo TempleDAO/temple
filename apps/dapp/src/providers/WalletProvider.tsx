@@ -1,6 +1,6 @@
 import { createContext, PropsWithChildren, useContext, useEffect, useState } from 'react';
-import { BigNumber, Signer } from 'ethers';
-import { useAccount, useSigner, useNetwork, useConnect } from 'wagmi';
+import { BigNumber, ethers, Signer } from 'ethers';
+import { useConnectWallet } from '@web3-onboard/react';
 
 import { useNotification } from 'providers/NotificationProvider';
 import { NoWalletAddressError } from 'providers/errors';
@@ -18,6 +18,7 @@ import {
 } from 'types/typechain';
 import env from 'constants/env';
 import { ZERO } from 'utils/bigNumber';
+import { Nullable } from 'types/util';
 
 // We want to save gas burn $ for the Templars,
 // so we approving 1M up front, so only 1 approve TXN is required for approve
@@ -36,10 +37,10 @@ const INITIAL_STATE: WalletState = {
     OHM: ZERO,
   },
   wallet: undefined,
+  walletAddress: undefined,
   isConnected: false,
   isConnecting: false,
   signer: null,
-  network: null,
   getBalance: asyncNoop,
   updateBalance: asyncNoop,
   collectTempleTeamPayment: asyncNoop,
@@ -50,11 +51,25 @@ const WalletContext = createContext<WalletState>(INITIAL_STATE);
 
 export const WalletProvider = (props: PropsWithChildren<{}>) => {
   const { children } = props;
-  const { data: signer, isLoading: signerLoading } = useSigner();
-  const { chain } = useNetwork();
-  const { address, isConnecting: accountLoading } = useAccount();
-  const { isLoading: connectLoading } = useConnect();
+
+  const [{ wallet, connecting }] = useConnectWallet();
+  const [signer, setSigner] = useState<Nullable<Signer>>(null);
+  const [walletAddress, setWalletAddress] = useState<string | undefined>();
+  
+  useEffect(() => {
+    if (wallet) {
+      const ethersProvider = new ethers.providers.Web3Provider(wallet.provider);
+      setSigner(ethersProvider.getSigner());
+      if (wallet.accounts.length > 0) {
+        setWalletAddress(wallet.accounts[0].address);
+      } else {
+        setWalletAddress(undefined);
+      }
+    }
+  }, [wallet, connecting]);
+
   const { openNotification } = useNotification();
+
   const [balanceState, setBalanceState] = useState<Balance>(INITIAL_STATE.balance);
   const [isBlocked, setIsBlocked] = useState(false);
 
@@ -62,14 +77,12 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
     const checkBlocked = async () => {
       const blocked = await fetch(`${window.location.href}api/geoblock`)
         .then((res) => res.json())
-        .then((res) => res.blocked);
+        .then((res) => res.blocked)
+        .catch(() => false);
       setIsBlocked(blocked);
     };
     checkBlocked();
   }, []);
-
-  const walletAddress = address;
-  const isConnected = !!walletAddress && !!signer;
 
   const getBalance = async (walletAddress: string, signer: Signer) => {
     if (!walletAddress || !signer) {
@@ -210,17 +223,12 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
     <WalletContext.Provider
       value={{
         balance: balanceState,
-        isConnected: isConnected,
-        isConnecting: signerLoading || connectLoading || accountLoading,
-        wallet: walletAddress,
+        isConnected: !!walletAddress && !connecting,
+        isConnecting: connecting,
+        wallet: walletAddress, // to be deprecated, keeping now for backwards compatibility
+        walletAddress,
         ensureAllowance,
         signer: isBlocked ? null : signer || null,
-        network: !chain
-          ? null
-          : {
-              chainId: chain.id,
-              name: chain.name || '',
-            },
         getBalance: updateBalance,
         updateBalance,
         collectTempleTeamPayment,
