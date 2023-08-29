@@ -108,6 +108,11 @@ export interface DeployedContracts {
   TEMPLE_DAI_AURA_POOL_ID: string;
   TEMPLE_DAI_REWARDS: string;
   TEMPLE_DAI_AURA_STAKING_DEPOSIT_TOKEN: string;
+
+  // NEXUS
+  RELIC: string,
+  SHARD: string,
+  TEMPLE_SACRIFICE: string
 }
 
 export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
@@ -182,6 +187,11 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     TEMPLE_DAI_AURA_POOL_ID: '',
     TEMPLE_DAI_REWARDS: '',
     TEMPLE_DAI_AURA_STAKING_DEPOSIT_TOKEN: '',
+
+    // NEXUS
+    RELIC: '',
+    SHARD: '',
+    TEMPLE_SACRIFICE: ''
   },
   goerli: {
     // No longer active/unused
@@ -261,6 +271,11 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     TEMPLE_DAI_AURA_POOL_ID: '',
     TEMPLE_DAI_REWARDS: '',
     TEMPLE_DAI_AURA_STAKING_DEPOSIT_TOKEN: '',
+
+    // NEXUS
+    RELIC: '',
+    SHARD: '',
+    TEMPLE_SACRIFICE: ''
   },
   mainnet: {
     // From network/environment
@@ -359,6 +374,11 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     TEMPLE_DAI_REWARDS: '0x13544617b10e1923363c89d902b749bea331ac4e',
     TEMPLE_DAI_AURA_STAKING_DEPOSIT_TOKEN:
       '0x0B7C71d61D960F70d89ecaC55DC2B4c1A7b508ee',
+
+    // NEXUS
+    RELIC: '',
+    SHARD: '',
+    TEMPLE_SACRIFICE: ''
   },
   localhost: {
     // From network/environment (setup when 00-localhost-env.ts script is run)
@@ -434,6 +454,11 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
 
     MULTISIG: '0x8626f6940e2eb28930efb4cef49b2d1f2c9c1199', // Account #19
     FARM_MULTISIG: '0x8626f6940e2eb28930efb4cef49b2d1f2c9c1199',
+
+    // NEXUS
+    RELIC: '',
+    SHARD: '',
+    TEMPLE_SACRIFICE: ''
   },
 };
 

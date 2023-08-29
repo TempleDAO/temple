@@ -5,7 +5,6 @@ pragma solidity 0.8.18;
 import { IRelic } from "../interfaces/nexus/IRelic.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ITempleERC20Token } from "contracts/interfaces/core/ITempleERC20Token.sol";
 import { CommonEventsAndErrors } from "../common/CommonEventsAndErrors.sol";
 
@@ -29,7 +28,7 @@ contract TempleSacrifice is Ownable {
     event WhitelistContractSet(address whitelistContract);
     event TempleSacrificed(address account, uint256 amount);
 
-    constructor(address _relic, address _templeToken) {
+    constructor(address _relic, address _templeToken) Ownable() {
         relic = IRelic(_relic);
         templeToken = ITempleERC20Token(_templeToken);
     }

@@ -130,10 +130,10 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
         emit RelicMinterSet(minter, allow);
     }
 
-    function setXPController(address controller, bool flag) external onlyElevatedAccess {
+    function setXPController(address controller, bool allow) external onlyElevatedAccess {
         if (controller == ZERO_ADDRESS) { revert ZeroAddress(); }
-        xpControllers[controller] = flag;
-        emit XPControllerSet(controller, flag);
+        xpControllers[controller] = allow;
+        emit XPControllerSet(controller, allow);
     }
 
     function setXPRarityThresholds(
@@ -421,6 +421,11 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
         return true;
     }
 
+    function getEquippedShardAmount(uint256 relicId, uint256 shardId) external view returns (uint256) {
+        RelicInfo storage relicInfo = relicInfos[relicId];
+        return relicInfo.equippedShards[shardId];
+    }
+    
     function getRarityBaseUri(Rarity rarity) external view returns(string memory uri) {
         uri = baseUris[rarity];
     }

@@ -55,6 +55,7 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
     event PartnerAllowedShardIdsSet(address partner, uint256[] shardIds, bool[] allowances);
     event PartnerAllowedShardCapsSet(address partner, uint256[] shardIds, uint256[] caps);
     event TemplarMinterSet(address minter, bool allowed);
+    event RecipeDeleted(uint256 recipeId);
 
     error ReservedPartnerShard(uint256 shardId);
     error ShardMintNotAllowed(address caller, uint256 shardId);
@@ -174,6 +175,13 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
         }
         recipes[recipeId] = newRecipe;
         emit RecipeSet(recipeId, recipe);
+    }
+
+    function deleteRecipe(uint256 recipeId) external onlyElevatedAccess {
+        Recipe storage recipe = recipes[recipeId];
+        if (recipe.inputShardIds.length == 0) { revert CommonEventsAndErrors.InvalidParam(); }
+        delete recipes[recipeId];
+        emit RecipeDeleted(recipeId);
     }
 
     function setShardUri(uint256 shardId, string memory uri) external onlyElevatedAccess {

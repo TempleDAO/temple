@@ -1,4 +1,4 @@
-import { ethers } from 'hardhat';
+import { ethers, network } from 'hardhat';
 import {
     ensureExpectedEnvvars,
     mine
@@ -18,8 +18,8 @@ async function main() {
     const [owner] = await ethers.getSigners();
     const TEMPLE_V2_DEPLOYED = getDeployedContracts();
     const templeV2contracts = connectToContracts(owner);
-    const templeToken = TempleERC20Token__factory.connect(TEMPLE_V2_DEPLOYED.CORE.TEMPLE_TOKEN, owner);
-    // const relic = Relic__factory.connect(DEPLOYED_CONTRACTS.RELIC, owner);
+    const deployedContracts = DEPLOYED_CONTRACTS[network.name];
+    const relic = Relic__factory.connect(deployedContracts.RELIC, owner);
     
         
     const ownerAddress = await owner.getAddress();
@@ -32,16 +32,26 @@ async function main() {
 
     // Setup relic minters
     {   
-        // await mine(relic.setRelicMinter(...))
+        await mine(relic.setRelicMinter(ownerAddress, true));
+        await mine(relic.setRelicMinter(TEMPLE_V2_DEPLOYED.CORE.EXECUTOR_MSIG, true));
+    }
+    // XP controllers
+    {
+        await mine(relic.setXPController(ownerAddress, true));
+        await mine(relic.setXPController(TEMPLE_V2_DEPLOYED.CORE.EXECUTOR_MSIG, true));
+    }
+    // shard
+    {
+        await mine(relic.setShard(deployedContracts.SHARD));
     }
 
 }
   
-  // We recommend this pattern to be able to use async/await everywhere
-  // and properly handle errors.
-  main()
+// We recommend this pattern to be able to use async/await everywhere
+// and properly handle errors.
+main()
     .then(() => process.exit(0))
     .catch(error => {
-      console.error(error);
-      process.exit(1);
+        console.error(error);
+        process.exit(1);
     });

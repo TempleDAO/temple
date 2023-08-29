@@ -10,7 +10,6 @@ import { getDeployedContracts } from '../../v2/sepolia/contract-addresses';
 async function main() {
   ensureExpectedEnvvars();
   const [owner] = await ethers.getSigners();
-  const TEMPLE_V2_DEPLOYED = getDeployedContracts();
 
   const ownerAddress = await owner.getAddress();
   const relicFactory= new Relic__factory(owner);
