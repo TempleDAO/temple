@@ -52,7 +52,7 @@ export const getBpsPercentageFromTpf = (tpf: DecimalBigNumber, templePrice: Deci
 };
 
 const limitBasisPoints = async (basisPoints: DecimalBigNumber, ramos: Ramos, percentageOfGapToClose: number) => {
-  const postRebalancePriceImpactBasisPoints = DecimalBigNumber.fromBN(await ramos.postRebalanceSlippage(), 0);
+  const postRebalancePriceImpactBasisPoints = DecimalBigNumber.fromBN(await ramos.postRebalanceDelta(), 0);
   // adjust bps for user-selected % of gap to close
   basisPoints = basisPoints.mul(DecimalBigNumber.parseUnits(`${percentageOfGapToClose / 100}`, 18));
   // account for RAMOS price impact limits
