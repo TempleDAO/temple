@@ -3,29 +3,21 @@ import templeImg from 'assets/images/newui-images/tokens/temple.png';
 import { TradeButton } from '../Home';
 import { formatToken } from 'utils/formatter';
 import { ITlcDataTypes } from 'types/typechain/contracts/interfaces/v2/templeLineOfCredit/ITempleLineOfCredit';
-import { FlexBetween, Screen, MAX_LTV, State, RemoveMargin, Title, Copy, MarginTop, Prices, Rule } from './TLCModal';
+import { FlexBetween, Screen, State, RemoveMargin, Title, Copy, MarginTop, Prices, Rule, TlcInfo } from './TLCModal';
 import { fromAtto } from 'utils/bigNumber';
 import styled from 'styled-components';
-import { BigNumber } from 'ethers';
 
 interface IProps {
   accountPosition: ITlcDataTypes.AccountPositionStructOutput | undefined;
   state: State;
-  borrowRate: BigNumber | undefined;
+  tlcInfo: TlcInfo | undefined;
   setScreen: React.Dispatch<React.SetStateAction<Screen>>;
   prices: Prices;
   liquidationDate: string;
 }
 
-export const Overview: React.FC<IProps> = ({
-  accountPosition,
-  state,
-  borrowRate,
-  setScreen,
-  prices,
-  liquidationDate,
-}) => {
-  const getBorrowRate = () => (borrowRate ? (fromAtto(borrowRate) * 100).toFixed(2) : 0);
+export const Overview: React.FC<IProps> = ({ accountPosition, state, tlcInfo, setScreen, prices, liquidationDate }) => {
+  const getBorrowRate = () => (tlcInfo ? (fromAtto(tlcInfo.borrowRate) * 100).toFixed(2) : 0);
 
   return (
     <>
@@ -80,7 +72,7 @@ export const Overview: React.FC<IProps> = ({
         </FlexBetween>
         <FlexBetween>
           <p>Liquidation LTV</p>
-          <BrandParagraph>{MAX_LTV}%</BrandParagraph>
+          <BrandParagraph>{tlcInfo ? tlcInfo.liquidationLtv : 0}%</BrandParagraph>
         </FlexBetween>
         <FlexBetween>
           <p>Interest Rate</p>

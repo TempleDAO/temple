@@ -20,6 +20,7 @@ import {
   Rule,
   State,
   Title,
+  TlcInfo,
   Warning,
 } from './TLCModal';
 import { fromAtto } from 'utils/bigNumber';
@@ -30,8 +31,7 @@ import { useState } from 'react';
 interface IProps {
   accountPosition: ITlcDataTypes.AccountPositionStructOutput | undefined;
   state: State;
-  minBorrow: BigNumber | undefined;
-  borrowRate: BigNumber | undefined;
+  tlcInfo: TlcInfo | undefined;
   prices: Prices;
   getLiquidationDate: (ltv: number) => string;
   setState: React.Dispatch<React.SetStateAction<State>>;
@@ -42,8 +42,7 @@ interface IProps {
 export const Borrow: React.FC<IProps> = ({
   accountPosition,
   state,
-  minBorrow,
-  borrowRate,
+  tlcInfo,
   prices,
   getLiquidationDate,
   setState,
@@ -52,7 +51,7 @@ export const Borrow: React.FC<IProps> = ({
 }) => {
   const [checkbox, setCheckbox] = useState(false);
 
-  const getBorrowRate = () => (borrowRate ? (fromAtto(borrowRate) * 100).toFixed(2) : 0);
+  const getBorrowRate = () => (tlcInfo ? (fromAtto(tlcInfo.borrowRate) * 100).toFixed(2) : 0);
 
   const getEstimatedLTV = (): string => {
     return accountPosition
@@ -99,13 +98,13 @@ export const Borrow: React.FC<IProps> = ({
         }`}
         width="100%"
       />
-      {minBorrow && fromAtto(minBorrow) > Number(state.borrowValue) && (
+      {tlcInfo && fromAtto(tlcInfo.minBorrow) > Number(state.borrowValue) && (
         <Warning>
           <InfoCircle>
             <p>i</p>
           </InfoCircle>
           <p>
-            You must borrow at least {formatToken(minBorrow, state.outputToken)} {state.outputToken}
+            You must borrow at least {formatToken(tlcInfo.minBorrow, state.outputToken)} {state.outputToken}
           </p>
         </Warning>
       )}
@@ -136,7 +135,7 @@ export const Borrow: React.FC<IProps> = ({
       </FlexBetween>
       <GradientContainer>
         <Apy>
-          {borrowRate ? (fromAtto(borrowRate) * 100).toFixed(2) : 0}% <span>interest rate</span>
+          {tlcInfo ? (fromAtto(tlcInfo.borrowRate) * 100).toFixed(2) : 0}% <span>interest rate</span>
         </Apy>
         <Rule />
         <Copy>
@@ -158,7 +157,7 @@ export const Borrow: React.FC<IProps> = ({
           disabled={
             !checkbox ||
             (accountPosition && fromAtto(accountPosition.maxBorrow) < Number(state.borrowValue)) ||
-            (minBorrow && fromAtto(minBorrow) > Number(state.borrowValue))
+            (tlcInfo && fromAtto(tlcInfo.minBorrow) > Number(state.borrowValue))
           }
         >
           Borrow

@@ -114,7 +114,7 @@ const env: Environment = {
     },
   },
   network: 11155111,
-  etherscan: 'https://goerli.etherscan.io',
+  etherscan: 'https://sepolia.etherscan.io',
   featureFlags: {
     enableAscend: true,
   },

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { ZERO, fromAtto } from 'utils/bigNumber';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { useWallet } from 'providers/WalletProvider';
-import { TempleLineOfCredit__factory, ERC20__factory } from 'types/typechain';
+import { TempleLineOfCredit__factory, ERC20__factory, TlcStrategy__factory } from 'types/typechain';
 import env from 'constants/env';
 import { getBigNumberFromString, getTokenInfo } from 'components/Vault/utils';
 import { ITlcDataTypes } from 'types/typechain/contracts/interfaces/v2/templeLineOfCredit/ITempleLineOfCredit';
@@ -35,6 +35,12 @@ export type State = {
   outputTokenBalance: BigNumber;
 };
 
+export type TlcInfo = {
+  minBorrow: BigNumber;
+  borrowRate: BigNumber;
+  liquidationLtv: number;
+};
+
 export const MAX_LTV = 75;
 
 export type Prices = { templePrice: number; daiPrice: number; tpi: number };
@@ -54,8 +60,7 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
     outputTokenBalance: ZERO,
   });
   const [accountPosition, setAccountPosition] = useState<ITlcDataTypes.AccountPositionStructOutput>();
-  const [minBorrow, setMinBorrow] = useState<BigNumber>();
-  const [borrowRate, setBorrowRate] = useState<BigNumber>();
+  const [tlcInfo, setTlcInfo] = useState<TlcInfo>();
   const [prices, setPrices] = useState<Prices>({ templePrice: 0, daiPrice: 0, tpi: 0 });
 
   const getPrices = async () => {
@@ -76,10 +81,10 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
   };
 
   const getLiquidationDate = (ltv?: number) => {
-    if (!accountPosition || !borrowRate) return '';
+    if (!accountPosition || !tlcInfo) return '';
     const LTV = ltv || fromAtto(accountPosition.loanToValueRatio);
     const growthUntilLiq = MAX_LTV / 100 / LTV - 1;
-    const daysUntilLiq = (growthUntilLiq / fromAtto(borrowRate)) * 365;
+    const daysUntilLiq = (growthUntilLiq / fromAtto(tlcInfo.borrowRate)) * 365;
     const today = new Date();
     return new Date(today.setDate(today.getDate() + daysUntilLiq)).toLocaleDateString();
   };
@@ -108,13 +113,20 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
       const tlcContract = new TempleLineOfCredit__factory(signer).attach(env.contracts.tlc);
       const position = await tlcContract.accountPosition(wallet);
       const min = await tlcContract.MIN_BORROW_AMOUNT();
-      const debtInfo = await tlcContract.totalDebtPosition();
-      const d = await tlcContract.debtTokenDetails();
-
-      const rate = debtInfo.borrowRate;
+      const debtInfo = await tlcContract.debtTokenDetails();
       setAccountPosition(position);
-      setMinBorrow(min);
-      setBorrowRate(rate);
+      setTlcInfo({
+        minBorrow: min,
+        borrowRate: debtInfo[1].interestRate,
+        liquidationLtv: fromAtto(debtInfo[0].maxLtvRatio),
+      });
+
+      // Get DAI balance in TlcStrategy
+      const tlcStrategyAddress = await tlcContract.tlcStrategy();
+      const tlcStrategy = new TlcStrategy__factory(signer).attach(tlcStrategyAddress);
+      const assets = await tlcStrategy.latestAssetBalances();
+      const dai = assets.find((a) => a.asset === env.contracts.dai);
+      if (dai) console.log(fromAtto(dai.balance));
     } catch (e) {
       console.log(e);
     }
@@ -258,7 +270,7 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
             <Supply
               accountPosition={accountPosition}
               state={state}
-              minBorrow={minBorrow}
+              minBorrow={tlcInfo?.minBorrow}
               setState={setState}
               supply={supply}
               back={() => setScreen('overview')}
@@ -275,8 +287,7 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
             <Borrow
               accountPosition={accountPosition}
               state={state}
-              borrowRate={borrowRate}
-              minBorrow={minBorrow}
+              tlcInfo={tlcInfo}
               prices={prices}
               getLiquidationDate={getLiquidationDate}
               setState={setState}
@@ -296,7 +307,7 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
             <Overview
               accountPosition={accountPosition}
               state={state}
-              borrowRate={borrowRate}
+              tlcInfo={tlcInfo}
               setScreen={setScreen}
               prices={prices}
               liquidationDate={getLiquidationDate()}
@@ -332,7 +343,7 @@ export const BackButton = styled.img`
 export const Title = styled.div`
   font-size: 1.5rem;
   padding-bottom: 1rem;
-  padding-top: 1rem;
+  padding-top: 1.25rem;
   margin-bottom: 1rem;
   color: ${({ theme }) => theme.palette.brandLight};
   background: linear-gradient(
