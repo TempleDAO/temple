@@ -1,82 +1,34 @@
 import * as R3F from '@react-three/fiber';
-import { PointerEventEmitter } from './InputEventEmitter';
-import { FoldingEventEmitter, FoldingSheetWithContext } from './FoldingSheet';
-import { AbsoluteFillSpace } from './styled';
-import { Suspense, useMemo, useState } from 'react';
+import { Suspense, useMemo, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { FoldingState } from './FoldingEngine';
-import { vec2 } from './vec2';
-import { Line2, isLine2 } from './origami-types';
+import { FoldingSheet, FoldingSheetWithContext } from './FoldingSheet';
+import { FoldingEventEmitter, PointerEventEmitter, PuzzleSolvedEventEmitter } from './InputEventEmitter';
+import { PuzzleImageCarousel } from './PuzzleImageCarousel';
+import { PuzzleSpec, checkPuzzleSolution } from './puzzle-solution';
+import { AbsoluteFillSpace } from './styled';
 
-type LineEntry = Line2 | [Line2, LineEntry[]]
-
-const PUZZLE_1: LineEntry[][] = [[
-  [{ x: 0, y: 5}, { x: -5, y: 0 }],
-  [{ x: -5, y: 0}, { x: 0, y: -5 }],
-  [{ x: 0, y: -5}, { x: 5, y: 0 }],
-  [{ x: 5, y: 0}, { x: 0, y: 5 }],
-]]
-
-const PUZZLE_2: LineEntry[][] = [[
-  [[{ x: 0, y: 5}, { x: -5, y: 2.5 }], [[{ x: 0, y: 5}, { x: -5, y: 0 }]]],
-  [[{ x: -5, y: 0}, { x: -2.5, y: -5 }], [[{ x: -5, y: 0}, { x: 0, y: -5 }]]],
-  [[{ x: 0, y: -5}, { x: 5, y: -2.5 }], [[{ x: 0, y: -5}, { x: 5, y: 0 }]]],
-  [[{ x: 5, y: 0}, { x: 2.5, y: 5 }], [[{ x: 5, y: 0}, { x: 0, y: 5 }]]],
-]]
-
-const PUZZLE_3: LineEntry[][] = [[
-  [[{ x: 0, y: 5}, { x: -5, y: 0 }], [[{ x: 0, y: 5 }, { x: -5, y: -5 }]]],
-  [[{ x: 5, y: 0}, { x: 0, y: 5 }], [[{ x: 5, y: -5 }, { x: 0, y: 5 }]]],
-], [
-  [{ x: -5, y: -2.5 }, { x: 5, y: -2.5 }]
-]]
-
-// traverse the solution tree and check if the lines match
-function checkSolution(
-  lines: Line2[],
-  entriesList: Readonly<LineEntry[][]>,
-  lineLookup: Record<string, LineEntry[] | undefined> = {}
-): boolean {
-  const entries = entriesList[0];
-  if (entries && entries.length > 0) {
-    entries.forEach(entry => {
-      if (isLine2(entry)) {
-        lineLookup[vec2.formatList(entry)] = [];
-      } else {
-        const [line, children] = entry;
-        lineLookup[vec2.formatList(line)] = children
-      }
-    });
-  } else if (entriesList.length > 0 && Object.keys(lineLookup).length == 0) {
-    return checkSolution(lines, entriesList.slice(1), lineLookup);
-  }
-
-  console.log("lineLookup:", lineLookup);
-  console.log("entriesList:", entriesList);
-
-  const line = lines[0];
-  const lineStr = line && vec2.formatList(line);
-  if (lineStr) {
-    const subEntries = lineLookup[lineStr];
-    delete lineLookup[lineStr];
-    if (subEntries) { // line matched
-      lines.shift();
-      return checkSolution(lines, [subEntries, ...entriesList.slice(1)], lineLookup);
-    }
-  }
-  // solved when all lines are matched and all entries are used
-  return lines.length == 0 && Object.keys(lineLookup).length == 0;
-}
-
-export default function FoldingPuzzle() {
+export default function FoldingPuzzle(props: {
+  puzzles: PuzzleSpec[]
+}) {
+  const { puzzles } = props;
   const pointerEventEmitter = useMemo(() => new PointerEventEmitter(), []);
   const foldingEventEmitter = useMemo(() => new FoldingEventEmitter(), []);
- 
+  const puzzleSolvedEventEmitter = useMemo(() => new PuzzleSolvedEventEmitter(), []);
+
+  const [puzzleIdx, setPuzzleIdx] = useState(0);
   const [buttonState, setButtonState] =
-    useState<FoldingState>({ canUndo: false, canRedo: false, foldLines: [] });
+    useState<FoldingState>({ canUndo: false, canRedo: false });
+  const [dialogState, setDialogState] = useState<{ heading: string, subheading: string } | undefined>(undefined);
+
+  const foldingSheetRef = useRef<FoldingSheet>(null);
 
   return (
     <PuzzleContainer>
+      <PuzzleImageCarousel
+        imgUrls={puzzles.map(p => p.imgUrl)}
+        puzzleSolvedEventEmitter={puzzleSolvedEventEmitter}
+      />
       <CanvasContainer
         onPointerDown={e => pointerEventEmitter.emit('pointerdown', e)}
         onPointerMove={e => pointerEventEmitter.emit('pointermove', e)}
@@ -85,19 +37,26 @@ export default function FoldingPuzzle() {
         <WidthEqualHeight/>
         <AbsoluteFillSpace>
           <R3F.Canvas flat linear
-            camera={{ fov: 8, near: 90, far: 150, position: [0, 0, 110]}}
-            style={{ backgroundColor: '#111' }}
+            camera={{ fov: 6.5, near: 90, far: 150, position: [0, 0, 110]}}
+            style={{ backgroundColor: 'rgba(0, 0, 0, 0)' }}
           >
             <ambientLight args={[0xffffff, 1]} />
             <Suspense fallback={null}>
               <FoldingSheetWithContext
+                foldingSheetRef={foldingSheetRef}
                 pointerEventEmitter={pointerEventEmitter}
                 foldingEventEmitter={foldingEventEmitter}
-                onFoldingStateChange={foldingState => {
-                  setButtonState(foldingState)
-                  console.log(foldingState.foldLines.map(line => vec2.formatList(line, '-')))
-                  const solved = checkSolution(foldingState.foldLines, PUZZLE_3);
-                  console.log(solved ? 'Solved!' : 'Not solved')
+                onFoldingStateChange={setButtonState}
+                onFoldingLinesChange={foldingLines => {
+                  const { solution } = puzzles[puzzleIdx];
+                  const isSolved = checkPuzzleSolution(foldingLines, solution);
+                  console.log({ foldingLines, solution, isSolved })
+                  if (isSolved) {
+                    setDialogState({
+                      heading: "Solved",
+                      subheading: `${puzzleIdx + 1}/${puzzles.length}`,
+                    });
+                  }
                 }}
               />
             </Suspense>
@@ -120,17 +79,73 @@ export default function FoldingPuzzle() {
           Refold
         </PuzzleButton>
       </ButtonContainer>
+      <PuzzleDialog
+        content={dialogState}
+        onClose={() => {
+          setDialogState(undefined);
+          foldingSheetRef.current?.unfoldAll(() => {
+            puzzleSolvedEventEmitter.emit('solved', puzzleIdx);
+            setPuzzleIdx(puzzleIdx + 1);
+          });
+        }}
+      />
     </PuzzleContainer>
   )
 }
 
-function formatLine(line: Line2) {
-  return vec2.formatList(line, '-')
+function PuzzleDialog(props: {
+  content?: { heading: string, subheading: string }
+  onClose: () => void
+}) {
+  return (
+    <Overlay visible={!!props.content}>
+      { props.content && (
+        <DisplayBlock>
+          <h1>{ props.content.heading }</h1>
+          <h1>{ props.content.subheading }</h1>
+          <br/>
+          <PuzzleButton onClick={props.onClose}>
+            Continue
+          </PuzzleButton>
+        </DisplayBlock>
+      )}
+    </Overlay>
+  )
 }
 
+const Overlay = styled.div<{ visible?: boolean }>`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: ${({ visible }) => visible ? 100 : -1};;
+  opacity: ${({ visible }) => visible ? 1 : 0};
+  transition: opacity .5s ease-in-out;
+  background: rgba(0, 0, 0, .5);
+`
+
+const DisplayBlock = styled.div`
+  text-align: center;
+  align-items: center;
+  padding: 50px 0;
+  width: 60%;
+  height: 500px;
+
+  & > h1 {
+    flex: 1;
+    color: white;
+  }
+`
+
 const PuzzleContainer = styled.div`
-  max-width: 800px;
+  position: relative;
+  max-width: 700px;
   margin: auto;
+  padding: 20px;
 `
 
 const CanvasContainer = styled.div`
@@ -147,7 +162,8 @@ const WidthEqualHeight = styled.div`
 const ButtonContainer = styled.div`
   display: flex;
   flex-direction: row;
-  width: 100%;
+  width: 80%;
+  margin: auto;
 `
 
 const PuzzleButton = styled.button`

@@ -32,3 +32,5 @@ export class EventEmitterBase<EventName extends string, Event> {
 
 export class KeyEventEmitter extends EventEmitterBase<KeyEvents, KeyboardEvent> {}
 export class PointerEventEmitter extends EventEmitterBase<PointerEvents, React.PointerEvent<HTMLElement>> {}
+export class FoldingEventEmitter extends EventEmitterBase<'unfold' | 'refold', void> {}
+export class PuzzleSolvedEventEmitter extends EventEmitterBase<'solved', number> {}

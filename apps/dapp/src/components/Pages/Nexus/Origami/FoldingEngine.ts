@@ -15,7 +15,6 @@ export interface RenderInfo {
 }
 
 export interface FoldingState {
-  foldLines: Line2[]
   canUndo: boolean
   canRedo: boolean
 }
@@ -85,13 +84,21 @@ export class FoldingEngine {
     }
   }
 
+  resetStateStack() {
+    this.stateStack.splice(1);
+    return this.getFixedRenderInfo();
+  }
+
   getFoldingState(): FoldingState {
     return {
-      foldLines: this.stateStack.slice(0, this.stateIdx)
-        .map((_, idx) => this.stateStack[idx].foldLine).filter(notNullGuard),
-      canUndo: this.stateIdx >= 0,
+      canUndo: this.stateIdx > 0,
       canRedo: this.stateIdx < this.stateStack.length - 1,
     }
+  }
+
+  getFoldingLines(): Line2[] {
+    return this.stateStack.slice(0, this.stateIdx)
+      .map((_, idx) => this.stateStack[idx].foldLine).filter(notNullGuard);
   }
 
   private setState(
