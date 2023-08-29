@@ -1,4 +1,4 @@
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (v2/strategies/DSRStrategy.sol)
 
@@ -16,7 +16,7 @@ import { FakeERC20 } from "contracts/fakes/FakeERC20.sol";
 contract DsrBaseStrategyTestnet is AbstractStrategy, ITempleBaseStrategy {
     using SafeERC20 for FakeERC20;
 
-    string public constant VERSION = "1.0.0";
+    string private constant VERSION = "1.0.0";
 
     FakeERC20 public immutable daiToken;
 
@@ -83,11 +83,11 @@ contract DsrBaseStrategyTestnet is AbstractStrategy, ITempleBaseStrategy {
     }
 
     /**
-     * @notice The latest checkpoint of each asset balance this stratgy holds, and the current debt.
+     * @notice The latest checkpoint of each asset balance this strategy holds, and the current debt.
      * This will be used to report equity performance: `sum(asset value in STABLE) - debt`
      * The conversion of each asset price into the stable token (eg DAI) will be done off-chain
      *
-     * @dev The asset value may be stale at any point in time, depending onthe strategy. 
+     * @dev The asset value may be stale at any point in time, depending on the strategy. 
      * It may optionally implement `checkpointAssetBalances()` in order to update those balances.
      */
     function latestAssetBalances() public override(AbstractStrategy, ITempleBaseStrategy) view returns (
@@ -218,7 +218,7 @@ contract DsrBaseStrategyTestnet is AbstractStrategy, ITempleBaseStrategy {
 
         // Repay to TRV ensuring that funds stop in the TRV, they don't get pushed 
         // back to the base strategy (ie back here)
-        if (daiAvailable != 0) {
+        if (daiAvailable > 0) {
             treasuryReservesVault.repay(daiToken, daiAvailable, address(this));
         }
     }

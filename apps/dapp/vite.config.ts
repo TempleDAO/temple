@@ -33,8 +33,14 @@ const shouldBuildSourceMap = VITE_ENV === 'local';
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  optimizeDeps: {
+    esbuildOptions: {
+      target: 'es2020',
+    }
+  },
   plugins,
   build: {
+    target: 'es2020',
     sourcemap: shouldBuildSourceMap,
     rollupOptions: {
       output: {

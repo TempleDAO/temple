@@ -47,13 +47,13 @@ jobs:
         working-directory: protocol
 
       - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1.0.9
+        uses: foundry-rs/foundry-toolchain@v1.0.10
         with:
-          version: nightly-d93312bfe5d419d63a9836fce31f9f60a4523519
+          version: nightly-ca67d15f4abd46394b324c50e21e66f306a1162d
       
       - run: forge --version
         working-directory: protocol
 
       - name: Run tests
-        run: forge test -vvvv --gas-report
+        run: FOUNDRY_PROFILE=ci forge test --gas-report
         working-directory: protocol

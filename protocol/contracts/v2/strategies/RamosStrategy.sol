@@ -1,4 +1,4 @@
-pragma solidity 0.8.18;
+pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (v2/strategies/RamosStrategy.sol)
 
@@ -23,7 +23,7 @@ contract RamosStrategy  is AbstractStrategy, IRamosTokenVault {
     using SafeERC20 for IERC20;
     using SafeERC20 for ITempleERC20Token;
     
-    string public constant VERSION = "1.0.0";
+    string private constant VERSION = "1.0.0";
 
     /**
      * @notice The RAMOS contract used to manage the TPI
@@ -48,6 +48,8 @@ contract RamosStrategy  is AbstractStrategy, IRamosTokenVault {
 
     event AddLiquidity(uint256 quoteTokenAmount, uint256 protocolTokenAmount, uint256 bptTokensStaked);
     event RemoveLiquidity(uint256 quoteTokenAmount, uint256 protocolTokenAmount, uint256 bptIn);
+    event BorrowToken(address indexed token, uint256 amount);
+    event RepayToken(address indexed token, uint256 amount);
 
     constructor(
         address _initialRescuer,
@@ -92,6 +94,7 @@ contract RamosStrategy  is AbstractStrategy, IRamosTokenVault {
             msg.sender, 
             amount
         );
+        emit BorrowToken(address(templeToken), amount);
         treasuryReservesVault.borrow(templeToken, amount, recipient);
     }
 
@@ -106,6 +109,7 @@ contract RamosStrategy  is AbstractStrategy, IRamosTokenVault {
             msg.sender, 
             amount
         );
+        emit BorrowToken(address(quoteToken), amount);
         treasuryReservesVault.borrow(quoteToken, amount, recipient);
     }
 
@@ -114,6 +118,7 @@ contract RamosStrategy  is AbstractStrategy, IRamosTokenVault {
      * @param amount The requested amount to repay
      */
     function repayProtocolToken(uint256 amount) external onlyElevatedAccess {
+        emit RepayToken(address(templeToken), amount);
         templeToken.safeTransferFrom(msg.sender, address(this), amount);
         treasuryReservesVault.repay(templeToken, amount, address(this));
     }
@@ -123,16 +128,17 @@ contract RamosStrategy  is AbstractStrategy, IRamosTokenVault {
      * @param amount The requested amount to repay
      */
     function repayQuoteToken(uint256 amount) external onlyElevatedAccess {
+        emit RepayToken(address(quoteToken), amount);
         quoteToken.safeTransferFrom(msg.sender, address(this), amount);
         treasuryReservesVault.repay(quoteToken, amount, address(this));
     }
 
     /**
-     * @notice The latest checkpoint of each asset balance this stratgy holds, and the current debt.
+     * @notice The latest checkpoint of each asset balance this strategy holds, and the current debt.
      * This will be used to report equity performance: `sum(asset value in STABLE) - debt`
      * The conversion of each asset price into the stable token (eg DAI) will be done off-chain
      *
-     * @dev The asset value may be stale at any point in time, depending onthe strategy. 
+     * @dev The asset value may be stale at any point in time, depending on the strategy. 
      * It may optionally implement `checkpointAssetBalances()` in order to update those balances.
      */
     function latestAssetBalances() public override view returns (
@@ -242,12 +248,12 @@ contract RamosStrategy  is AbstractStrategy, IRamosTokenVault {
         ramos.removeLiquidity(params.requestData, params.bptAmount);
 
         uint256 stableBalance = quoteToken.balanceOf(address(this));
-        if (stableBalance != 0) {
+        if (stableBalance > 0) {
             treasuryReservesVault.repay(quoteToken, stableBalance, address(this));
         }
 
         uint256 templeBalance = templeToken.balanceOf(address(this));
-        if (templeBalance != 0) {
+        if (templeBalance > 0) {
             treasuryReservesVault.repay(templeToken, templeBalance, address(this));
         }
     }

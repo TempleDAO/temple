@@ -1,4 +1,4 @@
-pragma solidity 0.8.18;
+pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (v2/access/TempleElevatedAccess.sol)
 
@@ -36,6 +36,10 @@ abstract contract TempleElevatedAccess is ITempleElevatedAccess {
     address private _proposedNewExecutor;
 
     constructor(address initialRescuer, address initialExecutor) {
+        if (initialRescuer == address(0)) revert CommonEventsAndErrors.InvalidAddress();
+        if (initialExecutor == address(0)) revert CommonEventsAndErrors.InvalidAddress();
+        if (initialExecutor == initialRescuer) revert CommonEventsAndErrors.InvalidAddress();
+
         rescuer = initialRescuer;
         executor = initialExecutor;
     }
@@ -57,7 +61,7 @@ abstract contract TempleElevatedAccess is ITempleElevatedAccess {
     function proposeNewRescuer(address account) external override {
         if (msg.sender != rescuer) revert CommonEventsAndErrors.InvalidAccess();
         if (account == address(0)) revert CommonEventsAndErrors.InvalidAddress();
-        emit NewRescuerProposed(rescuer, _proposedNewRescuer, account);
+        emit NewRescuerProposed(msg.sender, _proposedNewRescuer, account);
         _proposedNewRescuer = account;
     }
 
@@ -67,6 +71,8 @@ abstract contract TempleElevatedAccess is ITempleElevatedAccess {
      */
     function acceptRescuer() external override {
         if (msg.sender != _proposedNewRescuer) revert CommonEventsAndErrors.InvalidAccess();
+        if (msg.sender == executor) revert CommonEventsAndErrors.InvalidAddress();
+
         emit NewRescuerAccepted(rescuer, msg.sender);
         rescuer = msg.sender;
         delete _proposedNewRescuer;
@@ -88,6 +94,8 @@ abstract contract TempleElevatedAccess is ITempleElevatedAccess {
      */
     function acceptExecutor() external override {
         if (msg.sender != _proposedNewExecutor) revert CommonEventsAndErrors.InvalidAccess();
+        if (msg.sender == rescuer) revert CommonEventsAndErrors.InvalidAddress();
+
         emit NewExecutorAccepted(executor, msg.sender);
         executor = msg.sender;
         delete _proposedNewExecutor;
@@ -103,7 +111,6 @@ abstract contract TempleElevatedAccess is ITempleElevatedAccess {
         ExplicitAccess memory _access;
         for (uint256 i; i < _length; ++i) {
             _access = access[i];
-            if (_access.fnSelector == bytes4(0)) revert CommonEventsAndErrors.InvalidParam();
             emit ExplicitAccessSet(allowedCaller, _access.fnSelector, _access.allowed);
             explicitFunctionAccess[allowedCaller][_access.fnSelector] = _access.allowed;
         }
@@ -124,9 +131,11 @@ abstract contract TempleElevatedAccess is ITempleElevatedAccess {
     /**
      * @notice Under normal operations, only the executors are allowed to call.
      * If 'rescue mode' has been enabled, then only the rescuers are allowed to call.
+     * @dev Important: Only for use when called from an *external* contract. 
+     * If a function with this modifier is called internally then the `msg.sig` 
+     * will still refer to the top level externally called function.
      */
     modifier onlyElevatedAccess() {
-        // @todo AUDITORS -- are there any security concerns with using `msg.sig` in this way?
         if (!isElevatedAccess(msg.sender, msg.sig)) revert CommonEventsAndErrors.InvalidAccess();
         _;
     }

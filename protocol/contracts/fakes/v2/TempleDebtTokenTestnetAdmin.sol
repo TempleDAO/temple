@@ -1,4 +1,4 @@
-pragma solidity 0.8.18;
+pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { ITempleDebtToken } from "contracts/interfaces/v2/ITempleDebtToken.sol";
@@ -28,11 +28,11 @@ contract TempleDebtTokenTestnetAdmin {
         dUSD.burn(from, amount);
     }
 
-    function setBaseInterestRate(uint256 _rate) external {
+    function setBaseInterestRate(uint96 _rate) external {
         dUSD.setBaseInterestRate(_rate);
     }
 
-    function setRiskPremiumInterestRate(address _debtor, uint256 _rate) external {
+    function setRiskPremiumInterestRate(address _debtor, uint96 _rate) external {
         dUSD.setRiskPremiumInterestRate(_debtor, _rate);
     }
 
