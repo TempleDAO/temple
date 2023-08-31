@@ -31,6 +31,7 @@ interface TeamPayments {
   TEMPLE_TEAM_EPOCH_17: string;
   TEMPLE_TEAM_EPOCH_18: string;
   TEMPLE_TEAM_EPOCH_19: string;
+  TEMPLE_TEAM_EPOCH_20: string;
 }
 
 export interface DeployedContracts {
@@ -304,6 +305,7 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
       TEMPLE_TEAM_EPOCH_17: '0xbA81DDf3152234d8BB47Fba24b371B70B629C276',
       TEMPLE_TEAM_EPOCH_18: '0x71cA8E6da254582cDF1fA105c26bfa806913CE70',
       TEMPLE_TEAM_EPOCH_19: '0x1931c748E8824205FacEB2AC069badacEd0AF4fc',
+      TEMPLE_TEAM_EPOCH_20: '0x215B8c5225fb43864ECfc15B7ac97fc78AE8f621',
     },
 
     TEMPLE_TEAM_PAYMENTS_IMPLEMENTATION: '',
