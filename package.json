@@ -3,7 +3,7 @@
   "private": true,
   "workspaces": {
     "packages": [
-      "apps/*",
+      "apps/dapp",
       "shared/*",
       "tools/*",
       "protocol"
@@ -29,5 +29,8 @@
   },
   "dependencies": {
     "@openzeppelin/contracts": "^4.7.3"
+  },
+  "resolutions": {
+    "@types/react": "17.0.40"
   }
 }

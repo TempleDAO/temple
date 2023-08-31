@@ -70,7 +70,7 @@ module.exports = {
   solidity: {
     compilers: [
       {
-        version: '0.8.18',
+        version: '0.8.19',
         settings: {
         optimizer: {
             enabled: true,
@@ -181,6 +181,10 @@ module.exports = {
             ? [process.env.SEPOLIA_ADDRESS_PRIVATE_KEY]
             : [],
         gasPrice: 2000000000,
+    },
+    anvil: {
+        url: "http://127.0.0.1:8545/",
+        accounts: "remote",
     },
   },
   etherscan: {

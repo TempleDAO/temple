@@ -1,4 +1,4 @@
-pragma solidity 0.8.18;
+pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { TlcBaseTest } from "./TlcBaseTest.t.sol";
@@ -28,12 +28,12 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
     }
 
     function test_borrow_failCheckLiquidity() external {
-        uint256 collateralAmount = 100_000e18;
+        uint128 collateralAmount = 100_000e18;
         addCollateral(alice, collateralAmount);
         MaxBorrowInfo memory maxBorrowInfo = expectedMaxBorrows(collateralAmount);
 
         // Borrow 80% of max
-        uint256 borrowAmount = maxBorrowInfo.daiMaxBorrow * 8/10;
+        uint128 borrowAmount = maxBorrowInfo.daiMaxBorrow * 8/10;
 
         // Lower the maxLTV       
         vm.startPrank(executor);
@@ -53,9 +53,9 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
 
     function test_borrowDai_success() external {
         // For DAI, borrowing 90k / 100k available, so it's right at the kink - 10% interest rate
-        uint256 borrowAmount = 90_000e18;
+        uint128 borrowAmount = 90_000e18;
 
-        uint256 collateralAmount = 200_000e18;
+        uint128 collateralAmount = 200_000e18;
         addCollateral(alice, collateralAmount);
         MaxBorrowInfo memory maxBorrowInfo = expectedMaxBorrows(collateralAmount);
 
@@ -120,10 +120,10 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
     }
 
     function test_borrow_differentRecipient() public {
-        uint256 collateralAmount = 100_000e18;
+        uint128 collateralAmount = 100_000e18;
         addCollateral(alice, collateralAmount);
 
-        uint256 borrowAmount = 50_000e18;
+        uint128 borrowAmount = 50_000e18;
         vm.startPrank(alice);
 
         vm.expectEmit(address(tlc));
@@ -135,13 +135,13 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
     }
 
     function test_pause_borrow() public {
-        uint256 collateralAmount = 100_000e18;
+        uint128 collateralAmount = 100_000e18;
         addCollateral(alice, collateralAmount);
 
         vm.startPrank(executor);
         tlc.setBorrowPaused(true);
 
-        uint256 borrowAmount = 50_000e18;
+        uint128 borrowAmount = 50_000e18;
         changePrank(alice);
 
         vm.expectRevert(abi.encodeWithSelector(Paused.selector));
@@ -156,8 +156,8 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
     }
 
     function test_borrow_rescueMode() public {
-        uint256 collateralAmount = 100_000e18;
-        uint256 borrowAmount = 50_000e18;
+        uint128 collateralAmount = 100_000e18;
+        uint128 borrowAmount = 50_000e18;
         addCollateral(alice, collateralAmount);
 
         {
@@ -177,7 +177,7 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
     }
 
     function test_borrow_circuitBreaker() public {
-        uint256 collateralAmount = 1_000_000e18;
+        uint128 collateralAmount = 1_000_000e18;
         addCollateral(alice, collateralAmount);
         
         vm.startPrank(executor);
@@ -196,8 +196,8 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
     }
 
     function _borrowIteration(address account) internal returns (uint256 first, uint256 second, uint256 third) {
-        uint256 collateralAmount = 100_000e18;
-        uint256 borrowAmount = 1_000e18;
+        uint128 collateralAmount = 100_000e18;
+        uint128 borrowAmount = 1_000e18;
 
         addCollateral(account, collateralAmount);
         vm.startPrank(account);
@@ -214,19 +214,20 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
     }
 
     function test_borrow_gas() public {
+        // With unoptmised solc FOUNDRY_PROFILE=lite
         (uint256 first, uint256 second, uint256 third) = _borrowIteration(makeAddr("acct1"));
-        assertLt(first, 353_000, "acct1 1");
-        assertLt(second, 76_000, "acct1 2");
-        assertLt(third, 99_000, "acct1 3");
+        assertLt(first, 304_000, "acct1 1");
+        assertLt(second, 70_000, "acct1 2");
+        assertLt(third, 95_000, "acct1 3");
 
         (first, second, third) = _borrowIteration(makeAddr("acct2"));
-        assertLt(first, 120_000, "acct2 1");
-        assertLt(second, 76_000, "acct2 2");
-        assertLt(third, 94_000, "acct2 3");
+        assertLt(first, 113_000, "acct2 1");
+        assertLt(second, 70_000, "acct2 2");
+        assertLt(third, 92_000, "acct2 3");
         
         (first, second, third) = _borrowIteration(makeAddr("acct3"));
-        assertLt(first, 120_000, "acct3 1");
-        assertLt(second, 76_000, "acct3 2");
-        assertLt(third, 93_000, "acct3 3");
+        assertLt(first, 113_000, "acct3 1");
+        assertLt(second, 70_000, "acct3 2");
+        assertLt(third, 92_000, "acct3 3");
     }
 }

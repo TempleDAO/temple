@@ -1,4 +1,4 @@
-pragma solidity 0.8.18;
+pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (v2/templeLineOfCredit/TempleLineOfCredit.sol)
 
@@ -74,6 +74,18 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
     DebtTokenData internal debtTokenData;
 
     /**
+     * @notice Liquidations may be paused in order for users to recover/repay debt after emergency
+     * actions
+     */
+    bool public override liquidationsPaused;
+
+    /**
+     * @notice The minimum borrow amount per transaction
+     * @dev It costs gas to liquidate users, so we don't want dust amounts.
+     */
+    uint128 public override minBorrowAmount = 1000e18;
+
+    /**
      * @notice New borrows and collateral withdrawals are checked against a circuit breaker
      * to ensure no more than a cap is withdrawn in a given period
      */
@@ -83,12 +95,6 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
      * @notice An internal state tracking how interest has accumulated.
      */
     uint256 internal constant INITIAL_INTEREST_ACCUMULATOR = 1e27;
-
-    /**
-     * @notice The minimum borrow amount per transaction
-     * @dev It costs gas to liquidate users, so we don't want dust amounts.
-     */
-    uint256 public constant MIN_BORROW_AMOUNT = 1000e18;
 
     /**
      * @notice The precision used for Price, LTV, notional
@@ -136,15 +142,11 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
      * @param collateralAmount The amount to deposit
      * @param onBehalfOf An account can add collateral on behalf of another address.
      */
-    function addCollateral(uint256 collateralAmount, address onBehalfOf) external override notInRescueMode {
+    function addCollateral(uint128 collateralAmount, address onBehalfOf) external override notInRescueMode {
         if (collateralAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
         emit CollateralAdded(msg.sender, onBehalfOf, collateralAmount);
 
-        allAccountsData[onBehalfOf].collateral = (
-            allAccountsData[onBehalfOf].collateral + 
-            collateralAmount
-        ).encodeUInt128();
-
+        allAccountsData[onBehalfOf].collateral += collateralAmount;
         totalCollateral += collateralAmount;
 
         // No need to check liquidity when adding collateral as it 
@@ -161,10 +163,11 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
      * @param amount The amount of collateral to remove
      * @param recipient Send the Temple collateral to a specified recipient address.
      */
-    function removeCollateral(uint256 amount, address recipient) external override notInRescueMode {
+    function removeCollateral(uint128 amount, address recipient) external override notInRescueMode {
         if (amount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
         AccountData storage _accountData = allAccountsData[msg.sender];
-        if (amount > _accountData.collateral) revert CommonEventsAndErrors.InvalidAmount(address(templeToken), amount);
+        uint128 _collateral =  _accountData.collateral;
+        if (amount > _collateral) revert CommonEventsAndErrors.InvalidAmount(address(templeToken), amount);
 
         // Ensure that this withdrawal doesn't break the circuit breaker limits (across all users)
         circuitBreakerProxy.preCheck(
@@ -174,13 +177,11 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
         );
 
         // Update the collateral, and then verify that it doesn't make the debt unsafe.
-        // A subtraction in collateral (where the removeAmount is always <= existing collateral
-        // - so the downcast here is safe
-        _accountData.collateral = uint128(_accountData.collateral - amount);
+        _accountData.collateral = _collateral - amount;
         totalCollateral -= amount;
         emit CollateralRemoved(msg.sender, recipient, amount);
 
-        _checkLiquidity(_accountData);
+        _checkLiquidity(_accountData, _debtTokenCacheRO());
 
         templeToken.safeTransfer(
             recipient,
@@ -194,11 +195,15 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
 
     /**
      * @notice Borrow DAI (not allowed to borrow over the max LTV)
+     * @dev NOTICE: There is no buffer between the maximum the user is able to borrow 
+     * (based on their collateral and the maxLTV), and the point where the user can get liquidated.
+     * Therefore do not borrow the max amount possible or the position will instantly be eligable to be
+     * liquidated in the next block.
      * @param amount The amount to borrow
      * @param recipient Send the borrowed token to a specified recipient address.
      */
-    function borrow(uint256 amount, address recipient) external override notInRescueMode {
-        if (amount < MIN_BORROW_AMOUNT) revert InsufficientAmount(MIN_BORROW_AMOUNT, amount);
+    function borrow(uint128 amount, address recipient) external override notInRescueMode {
+        if (amount < minBorrowAmount) revert InsufficientAmount(minBorrowAmount, amount);
 
         AccountData storage _accountData = allAccountsData[msg.sender];
         DebtTokenCache memory _cache = _debtTokenCache();
@@ -213,26 +218,24 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
 
         // Apply the new borrow
         {
-            uint256 _totalDebt = _currentAccountDebt(
+            uint128 _totalDebt = _currentAccountDebt(
                 _cache, 
                 _accountData.debtCheckpoint, 
                 _accountData.interestAccumulator,
-                false // don't round on the way in
+                false // don't round up on the way in
             ) + amount;
 
             // Update the state
-            _accountData.debtCheckpoint = _totalDebt.encodeUInt128();
+            _accountData.debtCheckpoint = _totalDebt;
             _accountData.interestAccumulator = _cache.interestAccumulator;
-            debtTokenData.totalDebt = _cache.totalDebt = (
-                _cache.totalDebt + amount
-            ).encodeUInt128();
+            debtTokenData.totalDebt = _cache.totalDebt = _cache.totalDebt + amount;
 
             // Update the borrow interest rates based on the now increased utilization ratio
             _updateInterestRates(_cache);
         }
 
         emit Borrow(msg.sender, recipient, amount);
-        _checkLiquidity(_accountData);
+        _checkLiquidity(_accountData, _cache);
 
         // Finally, borrow the funds from the TRV and send the tokens to the recipient.
         tlcStrategy.fundFromTrv(amount, recipient);
@@ -247,11 +250,33 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
      * @param repayAmount The amount to repay. Cannot be more than the current debt.
      * @param onBehalfOf Another address can repay the debt on behalf of someone else
      */
-    function repay(uint256 repayAmount, address onBehalfOf) external override notInRescueMode {
+    function repay(uint128 repayAmount, address onBehalfOf) external override notInRescueMode {
         if (repayAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
 
         AccountData storage _accountData = allAccountsData[onBehalfOf];
-        _repayToken(_debtTokenCache(), repayAmount.encodeUInt128(), _accountData, msg.sender, onBehalfOf);
+        DebtTokenCache memory _cache = _debtTokenCache();
+
+        // Update the account's latest debt
+        uint128 _newDebt = _currentAccountDebt(
+            _cache, 
+            _accountData.debtCheckpoint,
+            _accountData.interestAccumulator,
+            true // round up for repay balance
+        );
+
+        // They cannot repay more than this debt
+        if (repayAmount > _newDebt) {
+            revert ExceededBorrowedAmount(_newDebt, repayAmount);
+        }
+        unchecked {
+            _newDebt -= repayAmount;
+        }
+
+        // Update storage
+        _accountData.debtCheckpoint = _newDebt;
+        _accountData.interestAccumulator = _cache.interestAccumulator;
+
+        _repayToken(_cache, repayAmount, msg.sender, onBehalfOf);
     }
 
     /**
@@ -271,7 +296,12 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
             true // use the rounded up amount
         );
         if (repayAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
-        _repayToken(_cache, repayAmount, _accountData, msg.sender, onBehalfOf);
+
+        // Update storage
+        _accountData.debtCheckpoint = 0;
+        _accountData.interestAccumulator = _cache.interestAccumulator;
+
+        _repayToken(_cache, repayAmount, msg.sender, onBehalfOf);
     }
 
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
@@ -288,9 +318,11 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
     function batchLiquidate(
         address[] calldata accounts
     ) external override notInRescueMode returns (
-        uint256 totalCollateralClaimed,
-        uint256 totalDebtWiped
+        uint128 totalCollateralClaimed,
+        uint128 totalDebtWiped
     ) {
+        if (liquidationsPaused) revert Paused();
+
         LiquidationStatus memory _status;
         DebtTokenCache memory _cache = _debtTokenCache();
         address _account;
@@ -314,21 +346,38 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
         }
 
         // burn the temple collateral by repaying to TRV. This will burn the equivalent dTemple debt too.
-        if (totalCollateralClaimed != 0) {
+        if (totalCollateralClaimed > 0) {
             templeToken.safeIncreaseAllowance(address(treasuryReservesVault), totalCollateralClaimed);
             treasuryReservesVault.repay(templeToken, totalCollateralClaimed, address(tlcStrategy));
             totalCollateral -= totalCollateralClaimed;
         }
 
         // Remove debt from the totals
-        if (totalDebtWiped != 0) {
-            _repayTotalDebt(_cache, totalDebtWiped.encodeUInt128());
+        if (totalDebtWiped > 0) {
+            _repayTotalDebt(_cache, totalDebtWiped);
         }
     }
     
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
     /*                            ADMIN                           */
     /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
+
+    /**
+     * @notice Liquidation may be paused in order for users to recover/repay debt after emergency
+     * actions
+     */
+    function setLiquidationsPaused(bool isPaused) external override onlyElevatedAccess {
+        liquidationsPaused = isPaused;
+        emit LiquidationsPausedSet(isPaused);
+    }
+
+    /**
+     * @notice Set the minimum amount of Temple which must be borrowed on each call.
+     */
+    function setMinBorrowAmount(uint128 amount) external override onlyElevatedAccess {
+        minBorrowAmount = amount;
+        emit MinBorrowAmountSet(amount);
+    }
 
     /**
      * @notice Update the TLC Strategy contract, and Treasury Reserves Vault (TRV)
@@ -476,10 +525,11 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
     ) external override view returns (LiquidationStatus[] memory status) {
         uint256 _numAccounts = accounts.length;
         status = new LiquidationStatus[](_numAccounts);
+        DebtTokenCache memory _cache = _debtTokenCacheRO();
         for (uint256 i; i < _numAccounts; ++i) {
             status[i] = _computeLiquidity(
                 allAccountsData[accounts[i]], 
-                _debtTokenCacheRO()
+                _cache
             );
         }
     }
@@ -546,7 +596,7 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
          * When this accumulator is compunded by the interest rate, the total debt can be calculated as
          * `updatedTotalDebt = prevTotalDebt * latestInterestAccumulator / prevInterestAccumulator
          */
-        uint128 interestAccumulator;
+        uint256 interestAccumulator;
 
         /**
          * @dev The price of this token as of this block. 
@@ -571,8 +621,7 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
         // Copies from storage (once)
         _cache.config = debtTokenConfig;
 
-        // No need to use `encodeUInt128()` here - straight from storage of the same dimension
-        _cache.interestAccumulator = uint128(debtTokenData.interestAccumulator);
+        _cache.interestAccumulator = debtTokenData.interestAccumulator;
         _cache.totalDebt = debtTokenData.totalDebt;
         _cache.interestRate = debtTokenData.interestRate;
 
@@ -584,14 +633,17 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
         }
         
         // Only compound if we're on a new block
-        uint256 interestAccumulatorUpdatedAt = debtTokenData.interestAccumulatorUpdatedAt;
-        uint32 blockTs = uint32(block.timestamp);
-        if (blockTs != interestAccumulatorUpdatedAt) {
+        uint32 _timeElapsed;
+        unchecked {
+            _timeElapsed = uint32(block.timestamp) - debtTokenData.interestAccumulatorUpdatedAt;
+        }
+
+        if (_timeElapsed > 0) {
             dirty = true;
 
             // Compound the accumulator
-            uint256 newInterestAccumulator = uint256(_cache.interestAccumulator).continuouslyCompounded(
-                blockTs - interestAccumulatorUpdatedAt,
+            uint256 newInterestAccumulator = _cache.interestAccumulator.continuouslyCompounded(
+                _timeElapsed,
                 _cache.interestRate
             );
 
@@ -601,13 +653,13 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
                 _cache.totalDebt,
                 _cache.interestAccumulator
             ).encodeUInt128();
-            _cache.interestAccumulator = newInterestAccumulator.encodeUInt128();
+            _cache.interestAccumulator = newInterestAccumulator;
         }
     }
 
     /**
      * @dev Setup the DebtTokenCache for a given token
-     * Update storage if and only if the state has changed.
+     * Update storage if and only if the timestamp has changed since last time.
      */
     function _debtTokenCache() internal returns (
         DebtTokenCache memory cache
@@ -653,29 +705,9 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
     function _repayToken(
         DebtTokenCache memory _cache,
         uint128 _repayAmount,
-        AccountData storage _accountData,
         address _fromAccount,
         address _onBehalfOf
     ) internal {
-        // Update the account's latest debt
-        uint128 _newDebt = _currentAccountDebt(
-            _cache, 
-            _accountData.debtCheckpoint,
-            _accountData.interestAccumulator,
-            true // round up for repay balance
-        );
-
-        // They cannot repay more than this debt
-        if (_repayAmount > _newDebt) {
-            revert ExceededBorrowedAmount(_newDebt, _repayAmount);
-        }
-        unchecked {
-            _newDebt -= _repayAmount;
-        }
-
-        // Update storage
-        _accountData.debtCheckpoint = _newDebt;
-        _accountData.interestAccumulator = _cache.interestAccumulator;
         _repayTotalDebt(_cache, _repayAmount);
 
         emit Repay(_fromAccount, _onBehalfOf, _repayAmount);
@@ -718,8 +750,7 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
      * account, debt token and market conditions.
      * Revert if the account has exceeded the maximum LTV
      */
-    function _checkLiquidity(AccountData storage _accountData) internal view {
-        DebtTokenCache memory _cache = _debtTokenCacheRO();
+    function _checkLiquidity(AccountData storage _accountData, DebtTokenCache memory _cache) internal view {
         LiquidationStatus memory _status = _computeLiquidity(
             _accountData,
             _cache
@@ -741,11 +772,13 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
     ) internal {
         if (_repayAmount == 0) return;
 
-        uint128 _newDebt = (_repayAmount > _cache.totalDebt)
-            ? 0
-            : _cache.totalDebt - _repayAmount;
+        unchecked {
+            uint128 _newDebt = (_repayAmount > _cache.totalDebt)
+                ? 0
+                : _cache.totalDebt - _repayAmount;
 
-        debtTokenData.totalDebt = _cache.totalDebt = _newDebt;
+            debtTokenData.totalDebt = _cache.totalDebt = _newDebt;
+        }
 
         // Update interest rates now the total debt has been updated.
         _updateInterestRates(_cache);
@@ -802,13 +835,13 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
      */
     function _maxBorrowLimit(
         DebtTokenCache memory _cache,
-        uint256 _collateral
-    ) internal pure returns (uint256) {
+        uint128 _collateral
+    ) internal pure returns (uint128) {
         return mulDiv(
             _collateral * _cache.price,
             _cache.config.maxLtvRatio,
             DOUBLE_PRECISION
-        );
+        ).encodeUInt128();
     }
 
     /**

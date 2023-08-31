@@ -1,4 +1,4 @@
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { TempleTest } from "../../TempleTest.sol";
@@ -31,7 +31,7 @@ contract DsrBaseStrategyTestnetTestBase is TempleTest {
     // 1% APR, which is how DSR is calculated as of block #16675385
     // dUSD is represented in APY (continuously compounded), so need to convert in order to match
     // Nb this is ln(1.01). See `test_dsr_interest_equivalence()` below
-    uint256 public constant DEFAULT_BASE_INTEREST = 0.009950330853168072e18;
+    uint96 public constant DEFAULT_BASE_INTEREST = 0.009950330853168072e18;
     TempleDebtToken public dUSD;
     TreasuryPriceIndexOracle public tpiOracle;
     TreasuryReservesVault public trv;
@@ -153,8 +153,8 @@ contract DsrBaseStrategyTestnetTestBorrowAndRepay is DsrBaseStrategyTestnetTestB
 
         ITempleStrategy.AssetBalance[] memory debtCeiling = new ITempleStrategy.AssetBalance[](1);
         debtCeiling[0] = ITempleStrategy.AssetBalance(address(dai), BORROW_CEILING);
-        trv.addStrategy(address(strategy), -123, debtCeiling);
         trv.setBorrowToken(dai, address(strategy), 0, 0, address(dUSD));
+        trv.addStrategy(address(strategy), -123, debtCeiling);
 
         deal(address(dai), address(trv), TRV_STARTING_BALANCE, true);
         dUSD.addMinter(address(trv));
@@ -375,8 +375,8 @@ contract DsrBaseStrategyTestnetTestTrvWithdraw is DsrBaseStrategyTestnetTestBase
 
         ITempleStrategy.AssetBalance[] memory debtCeiling = new ITempleStrategy.AssetBalance[](1);
         debtCeiling[0] = ITempleStrategy.AssetBalance(address(dai), DSR_BORROW_CEILING);
-        trv.addStrategy(address(strategy), -123, debtCeiling);
         trv.setBorrowToken(dai, address(strategy), 0, 0, address(dUSD));
+        trv.addStrategy(address(strategy), -123, debtCeiling);
 
         deal(address(dai), address(trv), TRV_STARTING_BALANCE, true);
         dUSD.addMinter(address(trv));
@@ -473,7 +473,7 @@ contract DsrBaseStrategyTestnetTestTrvWithdraw is DsrBaseStrategyTestnetTestBase
             vm.startPrank(executor);
 
             // Trying to borrow the max ceiling (100e18), but the TRV only has 10e18
-            vm.expectRevert("ERC20: transfer amount exceeds balance");
+            vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InsufficientBalance.selector, address(dai), DSR_BORROW_CEILING, 10e18));
             strategy.borrowAndDeposit(DSR_BORROW_CEILING);
 
             deal(address(dai), address(trv), DSR_BORROW_CEILING, true);

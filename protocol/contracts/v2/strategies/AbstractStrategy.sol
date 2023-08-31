@@ -1,4 +1,4 @@
-pragma solidity 0.8.18;
+pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (v2/strategies/AbstractStrategy.sol)
 
@@ -18,7 +18,7 @@ abstract contract AbstractStrategy is ITempleStrategy, TempleElevatedAccess {
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.AddressSet;
 
-    string public constant API_VERSION = "1.0.0";
+    string private constant API_VERSION = "1.0.0";
 
     /**
      * @notice A human readable name of the strategy
@@ -75,14 +75,10 @@ abstract contract AbstractStrategy is ITempleStrategy, TempleElevatedAccess {
      */
     function _setMaxAllowance(IERC20 token, address oldSpender, address newSpender) internal {
         if (oldSpender != address(0)) {
-            token.safeApprove(oldSpender, 0);
+            _setTokenAllowance(token, oldSpender, 0);
         }
 
-        uint256 _allowance = token.allowance(address(this), newSpender);
-        if (_allowance < type(uint256).max) {
-            token.safeApprove(newSpender, 0);
-            token.safeIncreaseAllowance(newSpender, type(uint256).max);
-        }
+        _setTokenAllowance(token, newSpender, type(uint256).max);
     }
 
     /**
@@ -117,9 +113,9 @@ abstract contract AbstractStrategy is ITempleStrategy, TempleElevatedAccess {
     }
 
     /**
-     * @notice The latest checkpoint of each asset balance this stratgy holds.
+     * @notice The latest checkpoint of each asset balance this strategy holds.
      *
-     * @dev The asset value may be stale at any point in time, depending onthe strategy. 
+     * @dev The asset value may be stale at any point in time, depending on the strategy. 
      * It may optionally implement `checkpointAssetBalances()` in order to update those balances.
      */
     function latestAssetBalances() public virtual override view returns (
@@ -197,16 +193,40 @@ abstract contract AbstractStrategy is ITempleStrategy, TempleElevatedAccess {
     }
 
     /**
-     * @notice Executors can set the allowance of any token spend from the strategy
+     * @dev Set the allowance of any token spend from the strategy
      */
-    function setTokenAllowance(IERC20 token, address spender, uint256 amount) external override onlyElevatedAccess {
+    function _setTokenAllowance(IERC20 token, address spender, uint256 amount) internal {
         if (amount == token.allowance(address(this), spender)) return;
 
-        emit TokenAllowanceSet(address(token), spender, amount);
         token.safeApprove(spender, 0);
-
-        if (amount != 0) {
+        if (amount > 0) {
             token.safeIncreaseAllowance(spender, amount);
         }
     }
+
+    /**
+     * @notice Executors can set the allowance of any token spend from the strategy
+     */
+    function setTokenAllowance(IERC20 token, address spender, uint256 amount) external override onlyElevatedAccess {
+        _setTokenAllowance(token, spender, amount);
+        emit TokenAllowanceSet(address(token), spender, amount);
+    }
+
+    /**
+     * @notice A hook which is called by the Treasury Reserves Vault when the debt ceiling
+     * for this strategy is updated
+     * @dev by default it's a no-op unless the strategy implements `_debtCeilingUpdated()`
+     */
+    function debtCeilingUpdated(IERC20 token, uint256 newDebtCeiling) external override {
+        if (msg.sender != address(treasuryReservesVault)) revert CommonEventsAndErrors.InvalidAccess();
+        _debtCeilingUpdated(token, newDebtCeiling);
+    }
+
+    /**
+     * @notice A hook which is called by the Treasury Reserves Vault when the debt ceiling
+     * for this strategy is updated
+     * @dev by default it's a no-op unless the strategy implements it
+     */
+    // solhint-disable-next-line no-empty-blocks
+    function _debtCeilingUpdated(IERC20 /*token*/, uint256 /*newDebtCeiling*/) internal virtual {}
 }

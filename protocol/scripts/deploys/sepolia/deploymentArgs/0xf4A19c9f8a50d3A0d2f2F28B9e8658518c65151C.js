@@ -1,0 +1,9 @@
+// sepolia: RAMOS_CIRCUIT_BREAKER_TEMPLE=0xf4A19c9f8a50d3A0d2f2F28B9e8658518c65151C
+// yarn hardhat verify --network sepolia 0xf4A19c9f8a50d3A0d2f2F28B9e8658518c65151C --constructor-args scripts/deploys/sepolia/deploymentArgs/0xf4A19c9f8a50d3A0d2f2F28B9e8658518c65151C.js
+module.exports = [
+  "0x81960c465605cddD9772a8653111D4aBE580Ce1e",
+  "0x81960c465605cddD9772a8653111D4aBE580Ce1e",
+  93600,
+  13,
+  "50000000000000000000000000"
+];

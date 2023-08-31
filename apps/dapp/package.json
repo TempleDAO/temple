@@ -2,7 +2,7 @@
   "name": "@temple/dapp",
   "version": "0.1.1",
   "engines": {
-    "node": ">=16.0.0"
+    "node": ">=18.0.0"
   },
   "scripts": {
     "prepare": "yarn typechain:compile && yarn typechain:copy",

@@ -1,4 +1,4 @@
-pragma solidity 0.8.18;
+pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (interfaces/v2/ITempleDebtToken.sol)
 
@@ -9,10 +9,11 @@ interface ITempleDebtToken is IERC20, IERC20Metadata, ITempleElevatedAccess {
     error NonTransferrable();
     error CannotMintOrBurn(address caller);
 
-    event BaseInterestRateSet(uint256 rate);
-    event RiskPremiumInterestRateSet(address indexed debtor, uint256 rate);
+    event BaseInterestRateSet(uint96 rate);
+    event RiskPremiumInterestRateSet(address indexed debtor, uint96 rate);
     event AddedMinter(address indexed account);
     event RemovedMinter(address indexed account);
+    event DebtorBalance(address indexed debtor, uint128 principal, uint128 baseInterest, uint128 riskPremiumInterest);
 
     /**
      * @notice Track the deployed version of this contract. 
@@ -26,19 +27,33 @@ interface ITempleDebtToken is IERC20, IERC20Metadata, ITempleElevatedAccess {
     function baseRate() external view returns (uint96);
 
     /**
-     * @notice The (base rate) total number of shares allocated out to users for internal book keeping
+     * @notice The last checkpoint time of the (base rate) principal and interest checkpoint
      */
-    function baseShares() external view returns (uint256);
+    function baseCheckpointTime() external view returns (uint32);
 
     /**
      * @notice The (base rate) total principal and interest owed across all debtors as of the latest checkpoint
      */
-    function baseCheckpoint() external view returns (uint256);
+    function baseCheckpoint() external view returns (uint128);
 
     /**
-     * @notice The last checkpoint time of the (base rate) principal and interest checkpoint
+     * @notice The (base rate) total number of shares allocated out to users for internal book keeping
      */
-    function baseCheckpointTime() external view returns (uint256);
+    function baseShares() external view returns (uint128);
+
+    /**
+     * @notice The net amount of principal amount of debt minted across all users.
+     */
+    function totalPrincipal() external view returns (uint128);
+
+    /**
+     * @notice The latest estimate of the (risk premium) interest (no principal) owed.
+     * @dev Indicative only. This total is only updated on a per strategy basis when that strategy gets 
+     * checkpointed (on borrow/repay rate change).
+     * So it is generally always going to be out of date as each strategy will accrue interest independently 
+     * on different rates.
+     */
+    function estimatedTotalRiskPremiumInterest() external view returns (uint128);
 
     /// @dev byte packed into two slots.
     struct Debtor {
@@ -50,11 +65,10 @@ interface ITempleDebtToken is IERC20, IERC20Metadata, ITempleElevatedAccess {
 
         /// @notice The current (risk premium) interest rate specific to this debtor. This can be updated by governance
         /// @dev 1e18 format, where 0.01e18 = 1%
-        /// uint64 => max 18.45e18 => 1845%
-        uint64 rate;
+        uint96 rate;
 
-        /// @notice The debtor's (risk premium) interest (no principal) owed as of the last checkpoint
-        uint160 checkpoint;
+        /// @notice The debtor's (risk premium only) interest (no principal or base interest) owed as of the last checkpoint
+        uint128 checkpoint;
 
         /// @notice The last checkpoint time of this debtor's (risk premium) interest
         /// @dev uint32 => max time of Feb 7 2106
@@ -73,28 +87,14 @@ interface ITempleDebtToken is IERC20, IERC20Metadata, ITempleElevatedAccess {
 
         /// @notice The current (risk premium) interest rate specific to this debtor. This can be updated by governance
         /// @dev 1e18 format, where 0.01e18 = 1%
-        uint64 rate,
+        uint96 rate,
 
-        /// @notice The debtor's (risk premium) interest (no principal) owed as of the last checkpoint
-        uint160 checkpoint,
+        /// @notice The debtor's (risk premium only) interest (no principal or base interest) owed as of the last checkpoint
+        uint128 checkpoint,
 
         /// @notice The last checkpoint time of this debtor's (risk premium) interest
         uint32 checkpointTime
     );
-
-    /**
-     * @notice The net amount of principal amount of debt minted across all users.
-     */
-    function totalPrincipal() external view returns (uint256);
-
-    /**
-     * @notice The latest estimate of the (risk premium) interest (no principal) owed.
-     * @dev Indicative only. This total is only updated on a per strategy basis when that strategy gets 
-     * checkpointed (on borrow/repay rate change).
-     * So it is generally always going to be out of date as each strategy will accrue interest independently 
-     * on different rates.
-     */
-    function estimatedTotalRiskPremiumInterest() external view returns (uint256);
 
     /// @notice A set of addresses which are approved to mint/burn
     function minters(address account) external view returns (bool);
@@ -114,12 +114,12 @@ interface ITempleDebtToken is IERC20, IERC20Metadata, ITempleElevatedAccess {
     /**
      * @notice Governance can update the continuously compounding (base) interest rate of all debtors, from this block onwards.
      */
-    function setBaseInterestRate(uint256 _rate) external;
+    function setBaseInterestRate(uint96 _rate) external;
 
     /**
      * @notice Governance can update the continuously compounding (risk premium) interest rate for a given debtor, from this block onwards
      */
-    function setRiskPremiumInterestRate(address _debtor, uint256 _rate) external;
+    function setRiskPremiumInterestRate(address _debtor, uint96 _rate) external;
 
     /**
      * @notice Approved Minters can add a new debt position on behalf of a user.
@@ -164,14 +164,26 @@ interface ITempleDebtToken is IERC20, IERC20Metadata, ITempleElevatedAccess {
      */
     function checkpointDebtorsInterest(address[] calldata _debtors) external;
 
+    struct DebtOwed {
+        uint256 principal;
+        uint256 baseInterest;
+        uint256 riskPremiumInterest;
+    }
+
     /**
      * @notice The current debt for a given user split out by
      * principal, base interest, risk premium (per debtor) interest
      */
     function currentDebtOf(address _debtor) external view returns (
-        uint256 principal, 
-        uint256 baseInterest, 
-        uint256 riskPremiumInterest
+        DebtOwed memory debtOwed
+    );
+
+    /**
+     * @notice The current debt for a given set of users split out by
+     * principal, base interest, risk premium (per debtor) interest
+     */
+    function currentDebtsOf(address[] calldata _debtors) external view returns (
+        DebtOwed[] memory debtsOwed
     );
 
     /**
@@ -182,18 +194,16 @@ interface ITempleDebtToken is IERC20, IERC20Metadata, ITempleElevatedAccess {
       * For more up to date current totals, off-chain aggregation of balanceOf() will be required - eg via subgraph.
       */
     function currentTotalDebt() external view returns (
-        uint256 principal,
-        uint256 baseInterest, 
-        uint256 estimatedRiskPremiumInterest
+        DebtOwed memory debtOwed
     );
 
     /**
      * @notice Convert a (base interest) debt amount into proportional amount of shares
      */
-    function baseDebtToShares(uint256 debt) external view returns (uint256);
+    function baseDebtToShares(uint128 debt) external view returns (uint128);
 
     /**
      * @notice Convert a number of (base interest) shares into proportional amount of debt
      */
-    function baseSharesToDebt(uint256 shares) external view returns (uint256);
+    function baseSharesToDebt(uint128 shares) external view returns (uint128);
 }

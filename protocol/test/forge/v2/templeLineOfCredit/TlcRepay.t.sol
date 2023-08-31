@@ -1,4 +1,4 @@
-pragma solidity 0.8.18;
+pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { TlcBaseTest } from "./TlcBaseTest.t.sol";
@@ -45,8 +45,8 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
     }
 
     function test_repay_success() external {
-        uint256 borrowDaiAmount = 50_000e18; // 50% UR, ... At kink approximately 10% interest rate
-        uint256 collateralAmount = 200_000e18;
+        uint128 borrowDaiAmount = 50_000e18; // 50% UR, ... At kink approximately 10% interest rate
+        uint128 collateralAmount = 200_000e18;
 
         Balances memory balancesBefore = getBalances();
         borrow(alice, collateralAmount, borrowDaiAmount, BORROW_REQUEST_MIN_SECS);
@@ -138,8 +138,8 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
     }
 
     function test_repayOnBehalfOf_success() external {
-        uint256 borrowDaiAmount = 50_000e18; // At kink approximately 10% interest rate
-        uint256 collateralAmount = 200_000e18;
+        uint128 borrowDaiAmount = 50_000e18; // At kink approximately 10% interest rate
+        uint128 collateralAmount = 200_000e18;
         borrow(alice, collateralAmount, borrowDaiAmount, BORROW_REQUEST_MIN_SECS);
         vm.warp(block.timestamp + 365 days); // 1 year continuously compunding
         AccountPosition memory position = tlc.accountPosition(alice);
@@ -164,9 +164,9 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
     }
 
     function test_repayEverything_success() external {
-        uint256 borrowDaiAmount = 50_000e18; // At kink approximately 10% interest rate
+        uint128 borrowDaiAmount = 50_000e18; // At kink approximately 10% interest rate
 
-        uint256 collateralAmount = 200_000e18;
+        uint128 collateralAmount = 200_000e18;
         borrow(alice, collateralAmount, borrowDaiAmount, BORROW_REQUEST_MIN_SECS);
         uint256 expectedDaiAccumulator = approxInterest(INITIAL_INTEREST_ACCUMULATOR, MIN_BORROW_RATE, BORROW_REQUEST_MIN_SECS);
 
@@ -226,9 +226,9 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
     }
 
     function test_repayAll_success() external {
-        uint256 borrowDaiAmount = 50_000e18; // At kink approximately 10% interest rate
+        uint128 borrowDaiAmount = 50_000e18; // At kink approximately 10% interest rate
         
-        uint256 collateralAmount = 200_000e18;
+        uint128 collateralAmount = 200_000e18;
         borrow(alice, collateralAmount, borrowDaiAmount, BORROW_REQUEST_MIN_SECS);
         uint256 expectedDaiAccumulator = approxInterest(INITIAL_INTEREST_ACCUMULATOR, MIN_BORROW_RATE, BORROW_REQUEST_MIN_SECS);
 
@@ -282,8 +282,8 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
     }
 
     function test_repayAllOnBehalfOf_success() external {
-        uint256 borrowDaiAmount = 50_000e18; // At kink approximately 10% interest rate
-        uint256 collateralAmount = 200_000e18;
+        uint128 borrowDaiAmount = 50_000e18; // At kink approximately 10% interest rate
+        uint128 collateralAmount = 200_000e18;
         borrow(alice, collateralAmount, borrowDaiAmount, BORROW_REQUEST_MIN_SECS);
         vm.warp(block.timestamp + 365 days); // 1 year continuously compunding
         AccountPosition memory position = tlc.accountPosition(alice);
@@ -308,8 +308,8 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
     }
 
     function test_repay_rescueMode() public {
-        uint256 borrowDaiAmount = 50_000e18;
-        uint256 collateralAmount = 200_000e18;
+        uint128 borrowDaiAmount = 50_000e18;
+        uint128 collateralAmount = 200_000e18;
         borrow(alice, collateralAmount, borrowDaiAmount, BORROW_REQUEST_MIN_SECS);
         
         vm.startPrank(rescuer);
@@ -336,8 +336,8 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
     }
 
     function _repayIteration(address account) internal returns (uint256 first, uint256 second, uint256 third) {
-        uint256 collateralAmount = 100_000e18;
-        uint256 borrowAmount = 1_000e18;
+        uint128 collateralAmount = 100_000e18;
+        uint128 borrowAmount = 1_000e18;
 
         borrow(account, collateralAmount, borrowAmount*3, 0);
         vm.startPrank(account);
@@ -355,19 +355,20 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
     }
 
     function test_repay_gas() public {
+        // With unoptmised solc FOUNDRY_PROFILE=lite
         (uint256 first, uint256 second, uint256 third) = _repayIteration(makeAddr("acct1"));
         assertLt(first, 89_000, "acct1 1");
         assertLt(second, 85_000, "acct1 2");
-        assertLt(third, 102_000, "acct1 3");
+        assertLt(third, 103_000, "acct1 3");
 
         (first, second, third) = _repayIteration(makeAddr("acct2"));
         assertLt(first, 85_000, "acct2 1");
         assertLt(second, 85_000, "acct2 2");
-        assertLt(third, 96_000, "acct2 3");
+        assertLt(third, 100_000, "acct2 3");
         
         (first, second, third) = _repayIteration(makeAddr("acct3"));
         assertLt(first, 85_000, "acct3 1");
         assertLt(second, 85_000, "acct3 2");
-        assertLt(third, 96_000, "acct3 3");
+        assertLt(third, 100_000, "acct3 3");
     }
 }

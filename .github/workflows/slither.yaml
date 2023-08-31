@@ -10,6 +10,7 @@ on:
       - ".github/workflows/slither.yaml"
 jobs:
   analyze:
+    if: ${{ false }} # Slither has an issue with prb math, and is super slow...
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -27,7 +28,7 @@ jobs:
 
       - uses: actions/setup-node@v3
         with:
-          node-version: 16
+          node-version: 18
           cache: 'yarn'
           cache-dependency-path: protocol/yarn.lock
     

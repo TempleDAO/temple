@@ -1,9 +1,8 @@
-pragma solidity 0.8.18;
+pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { TlcBaseTest } from "./TlcBaseTest.t.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
-import { SafeCast } from "contracts/common/SafeCast.sol";
 import { TempleLineOfCredit } from "contracts/v2/templeLineOfCredit/TempleLineOfCredit.sol";
 import { TempleCircuitBreakerAllUsersPerPeriod } from "contracts/v2/circuitBreaker/TempleCircuitBreakerAllUsersPerPeriod.sol";
 
@@ -15,14 +14,8 @@ contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
         tlc.addCollateral(0, alice);
     }
 
-    function test_addCollateral_failsOverflow() external {
-        vm.expectRevert(abi.encodeWithSelector(SafeCast.Overflow.selector, 2**200));
-        vm.prank(alice);
-        tlc.addCollateral(2**200, alice);
-    }
-    
     function test_addCollateral_success() external {
-        uint256 collateralAmount = 200_000e18;
+        uint128 collateralAmount = 200_000e18;
 
         // Alice posts collateral
         {
@@ -54,7 +47,7 @@ contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
         }
 
         // Alice posts collateral, but on behalf of Bob
-        uint256 newCollateralAmount = 100_000e18;
+        uint128 newCollateralAmount = 100_000e18;
         {
             deal(address(templeToken), alice, newCollateralAmount);
             templeToken.approve(address(tlc), newCollateralAmount);
@@ -99,11 +92,11 @@ contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
 
     function test_removeCollateral_failCheckLiquidity() public {
         // Lower the max LTV between doing the request and actually removing collateral.
-        uint256 collateralAmount = 10_000 ether;
+        uint128 collateralAmount = 10_000 ether;
         MaxBorrowInfo memory maxBorrowInfo = expectedMaxBorrows(collateralAmount);
 
         // Borrow 70% of the max
-        uint256 borrowAmount = maxBorrowInfo.daiMaxBorrow * 70 / 100;
+        uint128 borrowAmount = maxBorrowInfo.daiMaxBorrow * 70 / 100;
         borrow(alice, collateralAmount, borrowAmount, BORROW_REQUEST_MIN_SECS);
 
         AccountPosition memory position = tlc.accountPosition(alice);
@@ -136,7 +129,7 @@ contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
     }
     
     function test_removeCollateral_successWithChecks() public {
-        uint256 collateralAmount = 1000;
+        uint128 collateralAmount = 1000;
         addCollateral(alice, collateralAmount);
 
         vm.startPrank(alice);
@@ -175,7 +168,7 @@ contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
     }
 
     function test_removeCollateral_differentRecipient() public {
-        uint256 collateralAmount = 1000;
+        uint128 collateralAmount = 1000;
         addCollateral(alice, collateralAmount);
 
         vm.startPrank(alice);
@@ -191,7 +184,7 @@ contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
     }
 
     function test_removeCollateral_rescueMode() public {
-        uint256 collateralAmount = 100_000e18;
+        uint128 collateralAmount = 100_000e18;
         deal(address(templeToken), alice, 2*collateralAmount);
         vm.startPrank(alice);
         templeToken.approve(address(tlc), 2*collateralAmount);
@@ -228,7 +221,7 @@ contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
     }
 
     function test_removeCollateral_circuitBreaker() public {
-        uint256 collateralAmount = 1_000_000e18;
+        uint128 collateralAmount = 1_000_000e18;
         addCollateral(alice, collateralAmount);
         
         vm.startPrank(executor);
@@ -247,7 +240,7 @@ contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
     }
 
     function _addCollateralIteration(address account) internal returns (uint256 first, uint256 second, uint256 third) {
-        uint256 collateralAmount = 100_000e18;
+        uint128 collateralAmount = 100_000e18;
 
         deal(address(templeToken), account, collateralAmount*3);
         vm.startPrank(account);
@@ -265,24 +258,25 @@ contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
     }
 
     function test_addCollateral_gas() public {
+        // With unoptmised solc FOUNDRY_PROFILE=lite
         (uint256 first, uint256 second, uint256 third) = _addCollateralIteration(makeAddr("acct1"));
         assertLt(first, 85_000, "acct1 1");
-        assertLt(second, 15_000, "acct1 2");
-        assertLt(third, 15_000, "acct1 3");
+        assertLt(second, 14_000, "acct1 2");
+        assertLt(third, 14_000, "acct1 3");
 
         (first, second, third) = _addCollateralIteration(makeAddr("acct2"));
         assertLt(first, 36_000, "acct2 1");
-        assertLt(second, 15_000, "acct2 2");
-        assertLt(third, 15_000, "acct2 3");
+        assertLt(second, 14_000, "acct2 2");
+        assertLt(third, 14_000, "acct2 3");
         
         (first, second, third) = _addCollateralIteration(makeAddr("acct3"));
         assertLt(first, 36_000, "acct3 1");
-        assertLt(second, 15_000, "acct3 2");
-        assertLt(third, 15_000, "acct3 3");
+        assertLt(second, 14_000, "acct3 2");
+        assertLt(third, 14_000, "acct3 3");
     }
 
     function _removeCollateralIteration(address account) internal returns (uint256 first, uint256 second, uint256 third) {
-        uint256 collateralAmount = 100_000e18;
+        uint128 collateralAmount = 100_000e18;
 
         addCollateral(account, collateralAmount*3);
         vm.startPrank(account);
@@ -299,19 +293,20 @@ contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
     }
 
     function test_removeCollateral_gas() public {
+        // With unoptmised solc FOUNDRY_PROFILE=lite
         (uint256 first, uint256 second, uint256 third) = _removeCollateralIteration(makeAddr("acct1"));
-        assertLt(first, 137_000, "acct1 1");
-        assertLt(second, 31_000, "acct1 2");
-        assertLt(third, 42_000, "acct1 3");
+        assertLt(first, 134_000, "acct1 1");
+        assertLt(second, 30_000, "acct1 2");
+        assertLt(third, 41_000, "acct1 3");
 
         (first, second, third) = _removeCollateralIteration(makeAddr("acct2"));
-        assertLt(first, 58_000, "acct2 1");
-        assertLt(second, 36_000, "acct2 2");
-        assertLt(third, 42_000, "acct2 3");
+        assertLt(first, 57_000, "acct2 1");
+        assertLt(second, 35_000, "acct2 2");
+        assertLt(third, 41_000, "acct2 3");
         
         (first, second, third) = _removeCollateralIteration(makeAddr("acct3"));
-        assertLt(first, 58_000, "acct3 1");
-        assertLt(second, 36_000, "acct3 2");
-        assertLt(third, 42_000, "acct3 3");
+        assertLt(first, 57_000, "acct3 1");
+        assertLt(second, 35_000, "acct3 2");
+        assertLt(third, 41_000, "acct3 3");
     }
 }

@@ -1,4 +1,4 @@
-pragma solidity 0.8.18;
+pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { TempleTest } from "../../TempleTest.sol";
@@ -27,6 +27,9 @@ contract Mock is TempleElevatedAccess {
     function checkSigThis() public view {
         this.validateOnlyElevatedAccess();
     }
+
+    // A magic function with a signature of 0x00000000
+    function wycpnbqcyf() external view onlyElevatedAccess {}
 }
 
 contract TempleElevatedAccessTestBase is TempleTest {
@@ -40,6 +43,15 @@ contract TempleElevatedAccessTestBase is TempleTest {
         assertEq(mock.rescuer(), rescuer);
         assertEq(mock.executor(), executor);
         assertEq(mock.inRescueMode(), false);
+    }
+
+    function test_construction_fail() public {
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
+        mock = new Mock(address(0), executor);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
+        mock = new Mock(rescuer, address(0));
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
+        mock = new Mock(rescuer, rescuer);
     }
 }
 
@@ -162,6 +174,18 @@ contract TempleElevatedAccessTestSetters is TempleElevatedAccessTestBase {
         assertEq(mock.rescuer(), alice);
     }
 
+    function test_newRescuer_failNotTheSame() public {
+        vm.startPrank(rescuer);
+
+        vm.expectEmit(address(mock));
+        emit NewRescuerProposed(rescuer, address(0), executor);
+        mock.proposeNewRescuer(executor);
+
+        changePrank(executor);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
+        mock.acceptRescuer();
+    }
+
     function test_newExecutor() public {
         vm.startPrank(executor);
 
@@ -179,6 +203,18 @@ contract TempleElevatedAccessTestSetters is TempleElevatedAccessTestBase {
         assertEq(mock.executor(), alice);
     }
 
+    function test_newExecutor_failNotTheSame() public {
+        vm.startPrank(executor);
+
+        vm.expectEmit(address(mock));
+        emit NewExecutorProposed(executor, address(0), rescuer);
+        mock.proposeNewExecutor(rescuer);
+
+        changePrank(rescuer);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
+        mock.acceptExecutor();
+    }
+
     function test_setExplicitAccess_single() public {
         bytes4 fnSig = bytes4(keccak256("someFunctionSignature(uint256)"));
         bytes4 fnSig2 = bytes4(keccak256("someFunctionSignature(uint256,string)"));
@@ -187,9 +223,6 @@ contract TempleElevatedAccessTestSetters is TempleElevatedAccessTestBase {
 
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
         setExplicitAccess(mock, address(0), msg.sig, true);
-
-        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
-        setExplicitAccess(mock, alice, bytes4(0), true);
 
         vm.expectEmit(address(mock));
         emit ExplicitAccessSet(alice, fnSig, true);
@@ -202,6 +235,22 @@ contract TempleElevatedAccessTestSetters is TempleElevatedAccessTestBase {
         setExplicitAccess(mock, alice, fnSig, false);
         assertEq(mock.explicitFunctionAccess(alice, fnSig), false);
         assertEq(mock.explicitFunctionAccess(alice, fnSig2), false);
+    }
+
+    function test_setExplicitAccess_zeroSig() public {
+        vm.startPrank(alice);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
+        mock.wycpnbqcyf();
+
+        changePrank(executor);
+        bytes4 fnSig = bytes4(keccak256("wycpnbqcyf()"));
+        vm.expectEmit(address(mock));
+        emit ExplicitAccessSet(alice, fnSig, true);
+        setExplicitAccess(mock, alice, fnSig, true);
+
+        // Now succeeds
+        changePrank(alice);
+        mock.wycpnbqcyf();
     }
 
     function test_setExplicitAccess_multiple() public {

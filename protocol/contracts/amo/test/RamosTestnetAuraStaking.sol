@@ -1,4 +1,4 @@
-pragma solidity 0.8.18;
+pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (amo/test/RamosTestnetAuraStaking.sol)
 
@@ -8,6 +8,7 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
 import { IAuraStaking } from "contracts/interfaces/amo/IAuraStaking.sol";
 import { IAuraBooster } from "contracts/interfaces/external/aura/IAuraBooster.sol";
+import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 
 /// @notice A version of the Aura Staking which only just holds the BPT in this contract.
 /// So there's no dependency on a testnet Aura dependency.
@@ -30,27 +31,31 @@ contract RamosTestnetAuraStaking is IAuraStaking, TempleElevatedAccess {
         address /*rewards*/,
         uint32 /*pId*/
     ) {
-        revert("unimplemented");
+        revert CommonEventsAndErrors.Unimplemented();
     }
 
     function booster() external override pure returns (IAuraBooster) {
-        revert("unimplemented");
+        revert CommonEventsAndErrors.Unimplemented();
     }
 
     function rewardsRecipient() external override pure returns (address) {
-        revert("unimplemented");
+        revert CommonEventsAndErrors.Unimplemented();
     }
 
     function rewardTokens(uint256 /*index*/) external override pure returns (address) {
-        revert("unimplemented");
+        revert CommonEventsAndErrors.Unimplemented();
     }
     
     function setAuraPoolInfo(uint32 /*_pId*/, address /*_token*/, address /*_rewards*/) external override pure {
-        revert("unimplemented");
+        revert CommonEventsAndErrors.Unimplemented();
     }
 
     function setRewardsRecipient(address /*_recipeint*/) external override pure {
-        revert("unimplemented");
+        revert CommonEventsAndErrors.Unimplemented();
+    }
+
+    function setRewardTokens(address[] memory /*_rewardTokens*/) external override pure {
+        revert CommonEventsAndErrors.Unimplemented();
     }
 
     function recoverToken(address token, address to, uint256 amount) external override onlyElevatedAccess {
@@ -80,7 +85,7 @@ contract RamosTestnetAuraStaking is IAuraStaking, TempleElevatedAccess {
     }
 
     function getReward(bool /*claimExtras*/) external override pure {
-        revert("unimplemented");
+        revert CommonEventsAndErrors.Unimplemented();
     }
 
     function stakedBalance() external override pure returns (uint256) {

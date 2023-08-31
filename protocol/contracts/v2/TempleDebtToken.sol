@@ -1,4 +1,4 @@
-pragma solidity 0.8.18;
+pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (v2/TempleBaseDebtToken.sol)
 
@@ -41,7 +41,7 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
     using SafeERC20 for IERC20;
     using SafeCast for uint256;
 
-    string public constant VERSION = "1.0.0";
+    string private constant VERSION = "1.0.0";
 
     /**
      * @dev Returns the name of the token.
@@ -54,41 +54,30 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
     string public override symbol;
 
     /**
-     * @dev Returns the decimals places of the token.
-     */
-    // solhint-disable-next-line const-name-snakecase
-    uint8 public constant override decimals = 18;
-
-    /**
      * @notice The current (base rate) interest common for all strategies. This can be updated by the DAO
      * @dev 1e18 format, where 0.01e18 = 1%
      */
     uint96 public override baseRate;
 
     /**
-     * @notice The (base rate) total number of shares allocated out to strategies for internal book keeping
+     * @notice The last checkpoint time of the (base rate) principal and interest checkpoint
      */
-    uint256 public override baseShares;
+    uint32 public override baseCheckpointTime;
 
     /**
      * @notice The (base rate) total principal and interest owed across all debtors as of the latest checkpoint
      */
-    uint256 public override baseCheckpoint;
+    uint128 public override baseCheckpoint;
 
     /**
-     * @notice The last checkpoint time of the (base rate) principal and interest checkpoint
+     * @notice The (base rate) total number of shares allocated out to strategies for internal book keeping
      */
-    uint256 public override baseCheckpointTime;
-
-    /**
-     * @notice Per address status of debt
-     */
-    mapping(address => Debtor) public override debtors;
+    uint128 public override baseShares;
 
     /**
      * @notice The net amount of principal amount of debt minted across all strategies.
      */
-    uint256 public override totalPrincipal;
+    uint128 public override totalPrincipal;
 
     /**
      * @notice The latest estimate of the (risk premium) interest (no principal) owed.
@@ -97,7 +86,18 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
      * So it is generally always going to be out of date as each strategy will accrue interest independently 
      * on different rates.
      */
-    uint256 public override estimatedTotalRiskPremiumInterest;
+    uint128 public override estimatedTotalRiskPremiumInterest;
+
+    /**
+     * @dev Returns the decimals places of the token.
+     */
+    // solhint-disable-next-line const-name-snakecase
+    uint8 public constant override decimals = 18;
+
+    /**
+     * @notice Per address status of debt
+     */
+    mapping(address => Debtor) public override debtors;
 
     /// @notice A set of addresses which are approved to mint/burn
     mapping(address => bool) public override minters;
@@ -107,13 +107,13 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
         string memory _symbol,
         address _initialRescuer,
         address _initialExecutor,
-        uint256 _baseInterestRate
+        uint96 _baseInterestRate
     ) TempleElevatedAccess(_initialRescuer, _initialExecutor)
     {
         name = _name;
         symbol = _symbol;
-        baseRate = _baseInterestRate.encodeUInt96();
-        baseCheckpointTime = block.timestamp;
+        baseRate = _baseInterestRate;
+        baseCheckpointTime = uint32(block.timestamp);
     }
 
     /**
@@ -144,19 +144,21 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
     /**
      * @notice Update the continuously compounding (base) interest rate of all debtors, from this block onwards.
      */
-    function setBaseInterestRate(uint256 _rate) external override onlyElevatedAccess {
-        _checkpointBase(_compoundedBaseInterest());
-        baseRate = _rate.encodeUInt96();
+    function setBaseInterestRate(uint96 _rate) external override onlyElevatedAccess {
+        // First checkpoint the base interest
+        _getBaseCache();
+        baseRate = _rate;
         emit BaseInterestRateSet(_rate);
     }
 
     /**
      * @notice Update the continuously compounding (risk premium) interest rate for a given debtor, from this block onwards
      */
-    function setRiskPremiumInterestRate(address _debtor, uint256 _rate) external override onlyElevatedAccess {
+    function setRiskPremiumInterestRate(address _debtor, uint96 _rate) external override onlyElevatedAccess {
+        // First checkpoint the base interest & debtor risk premium interest
         Debtor storage debtor = debtors[_debtor];
-        _checkpointDebtor(debtor);
-        debtor.rate = _rate.encodeUInt64();
+        _getDebtorCache(_getBaseCache(), debtor, true);
+        debtor.rate = _rate;
         emit RiskPremiumInterestRateSet(_debtor, _rate);
     }
 
@@ -170,30 +172,54 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
         if (_debtor == address(0)) revert CommonEventsAndErrors.InvalidAddress();
         if (_mintAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
 
-        // Checkpoint the (base) debt and the (risk premium) debt for this borrower
-        uint256 _totalPrincipalAndBase = _compoundedBaseInterest();
-        _checkpointBase(_totalPrincipalAndBase);
-        uint256 _totalBaseShares = baseShares;
-
+        // First checkpoint both the base interest and (risk premium) interest of the debtor.
+        // Use RO (read only) to delay the updating of the baseCache storage to the end since it needs updating later anyway.
+        BaseCache memory _baseCache = _getBaseCacheRO();
         Debtor storage debtor = debtors[_debtor];
-        _checkpointDebtor(debtor);              
-        
+
+        // Get the debtor cache and update it's storage upfront since the debtor interest doesn't change later
+        // don't round up on the way in
+        DebtorCache memory _debtorCache = _getDebtorCache(_baseCache, debtor, false);
+
         // Calculate the number of (base) debt shares for this borrow amount. Ensure this is rounded down (same as EIP-4626)
-        uint256 sharesAmount = _debtToShares(_mintAmount, _totalPrincipalAndBase, _totalBaseShares, false);
+        uint128 _mintAmountUInt128 = _mintAmount.encodeUInt128();
+        uint128 newSharesAmount = _debtToShares(
+            _mintAmountUInt128, 
+            _baseCache.totalPrincipalAndBaseInterest, 
+            _baseCache.baseShares, 
+            false
+        );
 
         // Update the contract state
         {
             // Add the shares to the debtor and total
-            debtor.baseShares += sharesAmount.encodeUInt128();
-            baseShares = _totalBaseShares + sharesAmount;
+            baseCheckpointTime = uint32(block.timestamp);
+            baseCheckpoint = _baseCache.totalPrincipalAndBaseInterest + _mintAmountUInt128;
+            baseShares = _baseCache.baseShares + newSharesAmount;
+
+            unchecked {
+                // The baseCheckpoint (principal + interest) is checked for overflow already above
+                // So the total principal can be left unchecked
+                totalPrincipal += _mintAmountUInt128;
+            }
+
+            // Increment the debtors total balance (principal + base interest + risk premium interest)
+            _debtorCache.totalBalance += _mintAmountUInt128;
 
             // The principal borrowed now increases (which affects the risk premium interest accrual)
             // and also the (base rate) checkpoint representing the principal+base interest
-            debtor.principal += _mintAmount.encodeUInt128();
-            totalPrincipal += _mintAmount;
-            baseCheckpoint += _mintAmount;
+            unchecked {
+                // Since the debtor.totalBalance is overflow checked above, just checking the principal can
+                // be unchecked
+                debtor.principal = _debtorCache.principal = _debtorCache.principal + _mintAmountUInt128;
+
+                // The debtor base shares can be unchecked since this will be <= the total baseShares across
+                // all debtors which has already been overflow checked.
+                debtor.baseShares = _debtorCache.baseShares + newSharesAmount;
+            }
         }
 
+        emit DebtorBalance(_debtor, _debtorCache.principal, _debtorCache.baseInterest, _debtorCache.riskPremiumInterest);
         emit Transfer(address(0), _debtor, _mintAmount);
     }
 
@@ -219,20 +245,25 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
         if (_debtor == address(0)) revert CommonEventsAndErrors.InvalidAddress();
         if (_burnAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
 
+        // First checkpoint both the base interest and (risk premium) interest of the debtor.
+        // Use RO (read only) for both the base cache and debtor cache to delay the updating of 
+        // storage to the end since it needs updating anyway.
+        BaseCache memory _baseCache = _getBaseCacheRO();
         Debtor storage debtor = debtors[_debtor];
-        uint256 _totalPrincipalAndBase = _compoundedBaseInterest();
-        
-        {
-            // The user can't pay off more debt than they have.
-            // It is capped, and the actual amount burned returned as a value
-            uint256 _debtorBalance = _balanceOf(debtor, _totalPrincipalAndBase);
-            if (_burnAmount > _debtorBalance) {
-                _burnAmount = _debtorBalance;
-            }
+        DebtorCache memory _debtorCache = _getDebtorCacheRO(_baseCache, debtor, true);
+
+        // The user can't pay off more debt than they have.
+        // It is capped, and the actual amount burned returned as a value
+        if (_burnAmount > _debtorCache.totalBalance) {
+            _burnAmount = _debtorCache.totalBalance;
         }
 
-        emit Transfer(_debtor, address(0), _burnAmount);
-        _burn(debtor, _burnAmount, _totalPrincipalAndBase);
+        if (_burnAmount > 0) {
+            emit Transfer(_debtor, address(0), _burnAmount);
+            _burn(_baseCache, debtor, _debtorCache, _burnAmount.encodeUInt128());
+        }
+
+        emit DebtorBalance(_debtor, _debtorCache.principal, _debtorCache.baseInterest, _debtorCache.riskPremiumInterest);
         return _burnAmount;
     }
 
@@ -244,105 +275,105 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
         if (!minters[msg.sender]) revert CannotMintOrBurn(msg.sender);
         if (_debtor == address(0)) revert CommonEventsAndErrors.InvalidAddress();
 
+        // First checkpoint both the base interest and (risk premium) interest of the debtor.
+        // Use RO (read only) for both the base cache and debtor cache to delay the updating of 
+        // storage to the end since it needs updating anyway.
+        BaseCache memory _baseCache = _getBaseCacheRO();
         Debtor storage debtor = debtors[_debtor];
-        uint256 _totalPrincipalAndBase = _compoundedBaseInterest();
-        burnedAmount = _balanceOf(debtor, _totalPrincipalAndBase);
+        DebtorCache memory _debtorCache = _getDebtorCacheRO(_baseCache, debtor, true);
 
-        if (burnedAmount != 0) {
+        burnedAmount = _debtorCache.totalBalance;
+        if (burnedAmount > 0) {
             emit Transfer(_debtor, address(0), burnedAmount);
-            _burn(debtor, burnedAmount, _totalPrincipalAndBase);
+            _burn(_baseCache, debtor, _debtorCache, burnedAmount.encodeUInt128());
         }
+        emit DebtorBalance(_debtor, _debtorCache.principal, _debtorCache.baseInterest, _debtorCache.riskPremiumInterest);
     }
 
-    function _burn(Debtor storage debtor, uint256 _burnAmount, uint256 _totalPrincipalAndBase) internal {
-        // First checkpoint both the base interest and (risk premium) interest of the debtor.
-        _checkpointBase(_totalPrincipalAndBase);
-        _checkpointDebtor(debtor);
-
-        // Local vars to save multiple stoarge lookups
-        uint256 _totalBaseShares = baseShares;
-        uint256 _debtorShares = debtor.baseShares;
-        uint256 _debtorPrincipal = debtor.principal;
-        uint256 _debtorCheckpoint = debtor.checkpoint;
-        uint256 _debtorDebtRepaid;
-        uint256 _baseDebtRepaid;
+    function _burn(
+        BaseCache memory _baseCache, 
+        Debtor storage _debtor, 
+        DebtorCache memory _debtorCache, 
+        uint128 _burnAmount
+    ) internal {
+        uint128 _riskPremiumDebtRepaid;
+        uint128 _baseDebtRepaid;
 
         // Calculate what can be repaid out of the (base interest) and (risk premium interest).
         // Pay off the the item with the higher interest rate first.
-        if (debtor.rate > baseRate) {
-            // The minimum of what debt is still outstanding, and the requested amount to be burned
-            _debtorDebtRepaid = _debtorCheckpoint < _burnAmount ? _debtorCheckpoint : _burnAmount;
-            _burnAmount -= _debtorDebtRepaid;
+        if (_debtorCache.riskPremiumRate > _baseCache.baseRate) {
+            unchecked {
+                // The minimum of what risk premium interest is still outstanding, and the requested amount to be burned
+                _riskPremiumDebtRepaid = _debtorCache.riskPremiumInterest < _burnAmount ? _debtorCache.riskPremiumInterest : _burnAmount;
+                _burnAmount -= _riskPremiumDebtRepaid;
+            }
 
-            _baseDebtRepaid = _burnBaseInterest(
-                _burnAmount,
-                _debtorShares,
-                _totalPrincipalAndBase,
-                _totalBaseShares,
-                _debtorPrincipal
-            );
-            _burnAmount -= _baseDebtRepaid;
+            unchecked {
+                // The minimum of what base interest is still outstanding, and the requested amount to be burned
+                _baseDebtRepaid = _debtorCache.baseInterest < _burnAmount ? _debtorCache.baseInterest : _burnAmount;
+                _burnAmount -= _baseDebtRepaid;
+            }
         } else {
-            _baseDebtRepaid = _burnBaseInterest(
-                _burnAmount,
-                _debtorShares,
-                _totalPrincipalAndBase,
-                _totalBaseShares,
-                _debtorPrincipal
-            );
-            _burnAmount -= _baseDebtRepaid;
+            unchecked {
+                // The minimum of what base interest is still outstanding, and the requested amount to be burned
+                _baseDebtRepaid = _debtorCache.baseInterest < _burnAmount ? _debtorCache.baseInterest : _burnAmount;
+                _burnAmount -= _baseDebtRepaid;
+            }
 
-            // The minimum of what debt is still outstanding, and the requested amount to be burned
-            _debtorDebtRepaid = _debtorCheckpoint < _burnAmount ? _debtorCheckpoint : _burnAmount;
-            _burnAmount -= _debtorDebtRepaid;
+            unchecked {
+                // The minimum of what risk premium interest is still outstanding, and the requested amount to be burned
+                _riskPremiumDebtRepaid = _debtorCache.riskPremiumInterest < _burnAmount ? _debtorCache.riskPremiumInterest : _burnAmount;
+                _burnAmount -= _riskPremiumDebtRepaid;
+            }
         }
 
         // Update the contract state.
         // Any remaining out of `_burnAmount` is principal which is repaid.
         {
+            // Calculate the total base checkpoint (principal + base interest across all debtors) which has been repaid
+            // This is the principal payment that's been repaid (remaining in the `_burnAmount` variable) + the `_baseDebtRepaid`
+            uint128 _totalBaseRepaid;
             unchecked {
-                debtor.principal = uint128(_debtorPrincipal - _burnAmount);
-                totalPrincipal -= _burnAmount;
+                _totalBaseRepaid = _baseDebtRepaid + _burnAmount;
             }
 
-            // The base principal and interest checkpoint is updated, the sum of the base debt repaid plus any remaining
-            // repayment which represents a principal paydown.
-            uint256 _totalBaseRepaid = _baseDebtRepaid + _burnAmount;
+            // Calculate the number of shares (base) total repayment represents. 
+            // Round up to the nearest share (same as EIP-4626)
+            // Given it rounds up, there's a chance that it is slightly more than remaining on the caches, so
+            // remaining totals use `subFloorZero()` which is the difference floored at zero.
+            uint128 _totalSharesRepaid = _debtToShares(
+                _totalBaseRepaid, 
+                _baseCache.totalPrincipalAndBaseInterest, 
+                _baseCache.baseShares, 
+                true
+            );
+
+            // Update the base state in order of storage slots
+            baseCheckpointTime = uint32(block.timestamp);
+            baseCheckpoint = _subFloorZero(_baseCache.totalPrincipalAndBaseInterest, _totalBaseRepaid);
+            baseShares = _subFloorZero(_baseCache.baseShares, _totalSharesRepaid);
+            totalPrincipal = _subFloorZero(totalPrincipal, _burnAmount);
+
+            // Update the cumulative estimate of total debtor interest owing.
             unchecked {
-                baseCheckpoint -= _totalBaseRepaid;
+                estimatedTotalRiskPremiumInterest = _subFloorZero(
+                    estimatedTotalRiskPremiumInterest + _debtorCache.riskPremiumInterestDelta,
+                    _riskPremiumDebtRepaid
+                );
             }
 
-            // Calculate the number of shares (base) total repayment represents. Round up to the nearest share (same as EIP-4626)
-            uint256 _totalSharesRepaid = _debtToShares(_totalBaseRepaid, _totalPrincipalAndBase, _totalBaseShares, true);
-            unchecked {
-                debtor.baseShares = uint128(_debtorShares - _totalSharesRepaid);
-                baseShares = _totalBaseShares - _totalSharesRepaid;
-            }
+            // Update the debtor state in order of storage slots
+            _debtor.principal = _debtorCache.principal = _subFloorZero(_debtorCache.principal, _burnAmount);
+            _debtor.baseShares = _subFloorZero(_debtorCache.baseShares, _totalSharesRepaid);
+            _debtor.checkpoint = _debtorCache.riskPremiumInterest = _subFloorZero(_debtorCache.riskPremiumInterest, _riskPremiumDebtRepaid);
+            _debtor.checkpointTime = uint32(block.timestamp);
 
-            // Update the per debtor checkpoint of (risk premium) interest, and also update the 
-            // cumulative estimate of total debtor interest owing.
+            // Update debtor base interest in the cache (log emits this updated base interest)
             unchecked {
-                debtor.checkpoint = uint160(_debtorCheckpoint - _debtorDebtRepaid);
-                estimatedTotalRiskPremiumInterest -= _debtorDebtRepaid;
+                // Unchecked is safe since it's validated when _baseDebtRepaid is first calculated above
+                _debtorCache.baseInterest = _debtorCache.baseInterest - _baseDebtRepaid;
             }
         }
-    }
-
-    function _burnBaseInterest(
-        uint256 _burnAmount,
-        uint256 _baseInterestShares,
-        uint256 _totalPrincipalAndBase,
-        uint256 _totalBaseShares,
-        uint256 _debtorPrincipal
-    ) internal pure returns (
-        uint256 _debtRepaid
-    ) {
-        // Get the interest-only portion remaining of the base debt given the amount of shares.
-        // Round down for the base interest which is repaid. Any difference will be covered later by the principal repayment (which rounds up)
-        _debtRepaid = _sharesToDebt(_baseInterestShares, _totalPrincipalAndBase, _totalBaseShares, false) - _debtorPrincipal;
-
-        // Use the minimum of what's debt is still outstanding, and what of the repayment amount is still unallocated.
-        _debtRepaid = _debtRepaid < _burnAmount ? _debtRepaid : _burnAmount;
     }
 
     /**
@@ -390,21 +421,21 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
      * @notice Checkpoint the total principal and (base) interest owed by all debtors up to this block.
      */
     function checkpointBaseInterest() external override returns (uint256) {
-        uint256 _totalPrincipalAndBase = _compoundedBaseInterest();
-        _checkpointBase(_totalPrincipalAndBase);
-        return _totalPrincipalAndBase;
+        BaseCache memory _baseCache = _getBaseCache();
+        return _baseCache.totalPrincipalAndBaseInterest;
     }
 
-    function _checkpointBase(uint256 _totalDebt) internal {
-        baseCheckpoint = _totalDebt;
-        baseCheckpointTime = block.timestamp;
-    }
-    
     /**
      * @notice Checkpoint a debtor's (risk premium) interest (no principal) owed up to this block.
      */
     function checkpointDebtorInterest(address debtor) external override returns (uint256) {
-        return _checkpointDebtor(debtors[debtor]);
+        // This checkpoints both the base interest and debtor risk premium interest
+        DebtorCache memory _debtorCache = _getDebtorCache(
+            _getBaseCache(),
+            debtors[debtor],
+            true
+        );
+        return _debtorCache.riskPremiumInterest;
     }
 
     /**
@@ -412,44 +443,22 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
      * @dev Provided in case there needs to be block synchronisation on the total debt.
      */
     function checkpointDebtorsInterest(address[] calldata _debtors) external override {
+        BaseCache memory _baseCache = _getBaseCache();
+        DebtorCache memory _debtorCache;
+        Debtor storage debtor;
+        uint128 riskPremiumInterestDelta;
+
+        // Use the RO version in order to tally the total riskPremiumInterestDelta
+        // to save multiple sload/sstore of estimatedTotalRiskPremiumInterest
         uint256 _length = _debtors.length;
         for (uint256 i; i < _length; ++i) {
-            _checkpointDebtor(debtors[_debtors[i]]);
+            debtor = debtors[_debtors[i]];
+            _debtorCache = _getDebtorCacheRO(_baseCache, debtor, true);
+            riskPremiumInterestDelta += _debtorCache.riskPremiumInterestDelta;
+            debtor.checkpoint = _debtorCache.riskPremiumInterest;
+            debtor.checkpointTime = uint32(block.timestamp);
         }
-    }
-
-    /**
-     * @notice Checkpoint a debtor's (risk premium) interest (no principal) owed up to this block.
-     */
-    function _checkpointDebtor(Debtor storage debtor) internal returns (uint256) {
-        uint256 interest = _compoundedDebtorInterest(debtor);
-        unchecked {
-            estimatedTotalRiskPremiumInterest += (interest - debtor.checkpoint);
-        }
-        debtor.checkpoint = uint160(interest);
-        debtor.checkpointTime = uint32(block.timestamp);
-        return interest;
-    }
-
-    /**
-     * @notice The total principal and base interest owed by all debtors as of now.
-     */
-    function _compoundedBaseInterest() internal view returns (uint256) {
-        uint256 _timeElapsed = block.timestamp - baseCheckpointTime;
-        return baseCheckpoint.continuouslyCompounded(_timeElapsed, baseRate);
-    }
-
-    /**
-     * @notice The current (risk premium) interest owed by a debtor (doesn't include principal or base interest)
-     */
-    function _compoundedDebtorInterest(Debtor storage debtor) internal view returns (uint256) {
-        uint256 _rate = debtor.rate;
-        if (_rate == 0) return 0;
-
-        uint256 _timeElapsed = block.timestamp - debtor.checkpointTime;
-        uint256 _principal = debtor.principal;
-        uint256 _principalAndInterest = _principal + debtor.checkpoint;
-        return _principalAndInterest.continuouslyCompounded(_timeElapsed, uint96(_rate)) - _principal;
+        estimatedTotalRiskPremiumInterest += riskPremiumInterestDelta;
     }
 
     /**
@@ -457,18 +466,11 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
      * It includes the principal + the base interest + specific debtor risk premium interest
      */
     function balanceOf(address _debtor) public override view returns (uint256) {
-        return _balanceOf(debtors[_debtor], _compoundedBaseInterest());
-    }
-
-    /**
-     * @notice Returns the amount of tokens owed by the debtor as of this block.
-     * It includes the principal + the base interest + specific debtor risk premium interest
-     */
-    function _balanceOf(Debtor storage debtor, uint256 _totalPrincipalAndBase) internal view returns (uint256) {
-        return (
-            _sharesToDebt(debtor.baseShares, _totalPrincipalAndBase, baseShares, false) + 
-            _compoundedDebtorInterest(debtor)
-        );
+        return _getDebtorCacheRO(
+            _getBaseCacheRO(),
+            debtors[_debtor],
+            true
+        ).totalBalance;
     }
 
     /**
@@ -476,14 +478,40 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
      * principal, base interest, risk premium (per debtor) interest
      */
     function currentDebtOf(address _debtor) external override view returns (
-        uint256 principal, 
-        uint256 baseInterest, 
-        uint256 riskPremiumInterest
+        DebtOwed memory debtOwed
     ) {
-        Debtor storage debtor = debtors[_debtor];
-        principal = debtor.principal;
-        baseInterest = _sharesToDebt(debtor.baseShares, _compoundedBaseInterest(), baseShares, false) - principal;
-        riskPremiumInterest = _compoundedDebtorInterest(debtor);
+        DebtorCache memory _debtorCache = _getDebtorCacheRO(
+            _getBaseCacheRO(), 
+            debtors[_debtor],
+            true
+        );
+        return DebtOwed(
+            _debtorCache.principal, 
+            _debtorCache.baseInterest, 
+            _debtorCache.riskPremiumInterest
+        );
+    }
+
+    /**
+     * @notice The current debt for a given set of users split out by
+     * principal, base interest, risk premium (per debtor) interest
+     */
+    function currentDebtsOf(address[] calldata _debtors) external override view returns (
+        DebtOwed[] memory debtsOwed
+    ) {
+        BaseCache memory _baseCache = _getBaseCacheRO();
+        uint256 _length = _debtors.length;
+        debtsOwed = new DebtOwed[](_length);
+        DebtorCache memory _debtorCache;
+        
+        for (uint256 i; i < _length; ++i) {
+            _debtorCache = _getDebtorCacheRO(_baseCache, debtors[_debtors[i]], true);
+            debtsOwed[i] = DebtOwed(
+                _debtorCache.principal, 
+                _debtorCache.baseInterest, 
+                _debtorCache.riskPremiumInterest
+            );
+        }
     }
 
     /**
@@ -493,15 +521,14 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
       * The `estimatedTotalRiskPremiumInterest` is only updated when each debtor checkpoints, so it's going to be out of date.
       * For more up to date current totals, off-chain aggregation of balanceOf() will be required - eg via subgraph.
       */
-    function currentTotalDebt() public override view returns (
-        uint256 principal,
-        uint256 baseInterest, 
-        uint256 estimatedRiskPremiumInterest
+    function currentTotalDebt() external override view returns (
+        DebtOwed memory debtOwed
     ) {
-        uint256 _basePrincipalAndInterest = _compoundedBaseInterest();
-        return (
-            totalPrincipal,
-            _basePrincipalAndInterest - totalPrincipal,
+        BaseCache memory _baseCache = _getBaseCacheRO();
+        uint128 _principal = totalPrincipal;
+        return DebtOwed(
+            _principal,
+            _subFloorZero(_baseCache.totalPrincipalAndBaseInterest, _principal),
             estimatedTotalRiskPremiumInterest
         );
     }
@@ -514,42 +541,230 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
       * For more up to date current totals, off-chain aggregation of balanceOf() will be required - eg via subgraph.
       */
     function totalSupply() public override view returns (uint256) {
-        (uint256 principal, uint256 baseInterest, uint256 estimatedRiskPremiumInterest) = currentTotalDebt();
-        return principal + baseInterest + estimatedRiskPremiumInterest;
+        BaseCache memory _baseCache = _getBaseCacheRO();
+        return _baseCache.totalPrincipalAndBaseInterest + estimatedTotalRiskPremiumInterest;
     }
 
     /**
      * @notice Convert a (base interest) debt amount into proportional amount of shares
      */
-    function baseDebtToShares(uint256 debt) external override view returns (uint256) {
-        return _debtToShares(debt, _compoundedBaseInterest(), baseShares, false);
+    function baseDebtToShares(uint128 debt) external override view returns (uint128) {
+        BaseCache memory _baseCache = _getBaseCacheRO();
+        // Ensure this is rounded down (same as EIP-4626)
+        return _debtToShares(debt, _baseCache.totalPrincipalAndBaseInterest, _baseCache.baseShares, false);
     }
 
-    function _debtToShares(uint256 _debt, uint256 _totalDebt, uint256 _totalShares, bool roundUp) internal pure returns (uint256) {
+    function _debtToShares(uint128 _debt, uint128 _totalDebt, uint128 _totalShares, bool roundUp) internal pure returns (uint128) {
         return _totalDebt > 0 
-            ? mulDivRound(_debt, _totalShares, _totalDebt, roundUp)
+            ? _mulDivRound(_debt, _totalShares, _totalDebt, roundUp).encodeUInt128()
             : _debt;
     }
 
     /**
      * @notice Convert a number of (base interest) shares into proportional amount of debt
      */
-    function baseSharesToDebt(uint256 shares) external override view returns (uint256) {
-        return _sharesToDebt(shares, _compoundedBaseInterest(), baseShares, false);
+    function baseSharesToDebt(uint128 shares) external override view returns (uint128) {
+        BaseCache memory _baseCache = _getBaseCacheRO();
+        // Ensure this is rounded down (same as EIP-4626)
+        return _sharesToDebt(shares, _baseCache.totalPrincipalAndBaseInterest, _baseCache.baseShares, false);
     }
 
-    function _sharesToDebt(uint256 _shares, uint256 _totalDebt, uint256 _totalShares, bool roundUp) internal pure returns (uint256) {
+    function _sharesToDebt(uint128 _shares, uint128 _totalDebt, uint128 _totalShares, bool roundUp) internal pure returns (uint128) {
         return _totalShares > 0 
-            ? mulDivRound(_shares, _totalDebt, _totalShares, roundUp)
+            ? _mulDivRound(_shares, _totalDebt, _totalShares, roundUp).encodeUInt128()
             : _shares;
     }
 
+    /**
+     * @dev An internal struct used to track the latest storage data (and new updates)
+     * for the common base interest
+     * This is setup once from storage, and then reads/writes are cheap.
+     */
+    struct BaseCache {
+        /// @dev The (base rate) total principal and interest owed across all debtors as of the latest checkpoint
+        uint128 totalPrincipalAndBaseInterest;
+
+        /// @dev The current (base rate) interest common for all users.
+        uint96 baseRate;
+
+        /// @dev The (base rate) total number of shares allocated out to users for internal book keeping
+        uint128 baseShares;
+    }
+
+    /**
+     * @dev Initialize the BaseCache from storage to this block.
+     */
+    function _initBaseCache(BaseCache memory _baseCache) private view returns (bool dirty) {
+        _baseCache.totalPrincipalAndBaseInterest = baseCheckpoint;
+        _baseCache.baseRate = baseRate;
+        _baseCache.baseShares = baseShares;
+
+        uint32 _timeElapsed;
+        unchecked {
+            _timeElapsed = uint32(block.timestamp) - baseCheckpointTime;
+        }
+
+        if (_timeElapsed > 0) {
+            dirty = true;
+
+            if (_baseCache.baseRate > 0) {
+                _baseCache.totalPrincipalAndBaseInterest = uint256(_baseCache.totalPrincipalAndBaseInterest).continuouslyCompounded(
+                    _timeElapsed, 
+                    _baseCache.baseRate
+                ).encodeUInt128();
+            }
+        }
+    }
+
+    /**
+     * @dev Setup the BaseCache
+     * Update storage if and only if the timestamp has changed since last time.
+     */
+    function _getBaseCache() internal returns (
+        BaseCache memory baseCache
+    ) {
+        if (_initBaseCache(baseCache)) {
+            baseCheckpoint = baseCache.totalPrincipalAndBaseInterest;
+            baseCheckpointTime = uint32(block.timestamp);
+        }
+    }
+
+    /**
+     * @dev Setup the BaseCache without writing state.
+     */
+    function _getBaseCacheRO() internal view returns (
+        BaseCache memory baseCache
+    ) {
+        _initBaseCache(baseCache);
+    }
+
+    /**
+     * @dev An internal struct used to track the latest storage data (and new updates)
+     * for a particular debtor
+     * This is setup once from storage, and then reads/writes are cheap.
+     */
+    struct DebtorCache {
+        /// @dev The debtor's principal
+        uint128 principal;
+
+        /// @dev The amount of base interest this debtor owes
+        uint128 baseInterest;
+
+        /// @dev The number of shares representing the debtor's principal and base interest
+        uint128 baseShares;
+
+        /// @dev The amount of risk premium interest this debtor owes
+        uint128 riskPremiumInterest;
+        
+        /// @dev The increase in risk premium interest this debtor owes since the last checkpoint
+        uint128 riskPremiumInterestDelta;
+
+        /// @dev The risk premium interest rate for this debtor
+        uint96 riskPremiumRate;
+
+        /// @dev The total balance this debtor owes: principal + baseInterest + riskPremiumInterest
+        uint128 totalBalance;
+    }
+
+    /**
+     * @dev Initialize the DebtorCache from storage to this block.
+     */
+    function _initDebtorCache(
+        BaseCache memory _baseCache, 
+        Debtor storage _debtor, 
+        DebtorCache memory _debtorCache,
+        bool roundUp
+    ) private view returns (
+        bool dirty
+    ) {
+        _debtorCache.principal = _debtor.principal;
+        _debtorCache.baseShares = _debtor.baseShares;
+        _debtorCache.riskPremiumRate = _debtor.rate;
+        _debtorCache.riskPremiumInterest = _debtor.checkpoint;
+        uint32 _timeElapsed;
+        unchecked {
+            _timeElapsed = uint32(block.timestamp) - _debtor.checkpointTime;
+        }
+
+        uint128 _debtorPrincipalAndBaseInterest;
+        {
+            _debtorPrincipalAndBaseInterest = _sharesToDebt(
+                _debtorCache.baseShares, 
+                _baseCache.totalPrincipalAndBaseInterest,
+                _baseCache.baseShares, 
+                roundUp
+            );
+
+            // Calculate the base interest by subtracting the stored principal.
+            // Floor at zero to handle an edge case due to rounding.
+            _debtorCache.baseInterest = _subFloorZero(_debtorPrincipalAndBaseInterest,  _debtorCache.principal);
+        }
+
+        if (_timeElapsed > 0) {
+            dirty = true;
+
+            if (_debtorCache.riskPremiumRate > 0) {
+                // Calculate the new amount of risk premium interest by compounding the total debt
+                // and then subtracting just the principal.
+                uint256 _debtorTotalDue;
+                unchecked {
+                    _debtorTotalDue = uint256(_debtorCache.principal) + _debtorCache.riskPremiumInterest;
+                }
+                _debtorTotalDue = _debtorTotalDue.continuouslyCompounded(
+                    _timeElapsed, 
+                    _debtorCache.riskPremiumRate
+                );
+
+                unchecked {
+                    uint128 _newRiskPremiumInterest = _debtorTotalDue.encodeUInt128() - _debtorCache.principal;
+                    _debtorCache.riskPremiumInterestDelta = _newRiskPremiumInterest - _debtorCache.riskPremiumInterest;
+                    _debtorCache.riskPremiumInterest = _newRiskPremiumInterest;
+                }
+            }
+        }
+
+        _debtorCache.totalBalance = _debtorPrincipalAndBaseInterest + _debtorCache.riskPremiumInterest;
+    }
+
+    /**
+     * @dev Setup the DebtorCache
+     * Update storage if and only if the timestamp has changed since last time.
+     */
+    function _getDebtorCache(BaseCache memory _baseCache, Debtor storage _debtor, bool _roundUp) internal returns (
+        DebtorCache memory debtorCache
+    ) {
+        if (_initDebtorCache(_baseCache, _debtor, debtorCache, _roundUp)) {
+            unchecked {
+               estimatedTotalRiskPremiumInterest += debtorCache.riskPremiumInterestDelta;
+            }
+
+            _debtor.checkpoint = debtorCache.riskPremiumInterest;
+            _debtor.checkpointTime = uint32(block.timestamp);
+        }
+    }
+
+    /**
+     * @dev Setup the BaseCache without writing state.
+     */
+    function _getDebtorCacheRO(BaseCache memory _baseCache, Debtor storage _debtor, bool _roundUp) internal view returns (
+        DebtorCache memory debtorCache
+    ) {
+        _initDebtorCache(_baseCache, _debtor, debtorCache, _roundUp);
+    }
+
     /// @notice mulDiv with an option to round the result up or down to the nearest wei
-    function mulDivRound(uint256 x, uint256 y, uint256 denominator, bool roundUp) internal pure returns (uint256 result) {
+    function _mulDivRound(uint256 x, uint256 y, uint256 denominator, bool roundUp) internal pure returns (uint256 result) {
         result = mulDiv(x, y, denominator);
         // See OZ Math.sol for the equivalent mulDiv() with rounding.
         if (roundUp && mulmod(x, y, denominator) > 0) {
             result += 1;
+        }
+    }
+
+    /// @dev The difference between `a - b`, floored at zero (will not revert) for two uint128 variables
+    function _subFloorZero(uint128 a, uint128 b) internal pure returns (uint128) {
+        unchecked {
+            return a > b ? a - b : 0;
         }
     }
 

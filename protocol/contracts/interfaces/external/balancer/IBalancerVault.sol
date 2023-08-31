@@ -1,13 +1,11 @@
-pragma solidity 0.8.18;
+pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (interfaces/external/balancer/IBalancerVault.sol)
-
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 interface IBalancerVault {
 
   struct JoinPoolRequest {
-    IERC20[] assets;
+    address[] assets;
     uint256[] maxAmountsIn;
     bytes userData;
     bool fromInternalBalance;
