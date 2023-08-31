@@ -4,7 +4,6 @@ pragma solidity 0.8.18;
 
 
 import { ERC721ACustom } from "./ERC721ACustom.sol";
-// import { ERC1155Holder } from "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import { ERC1155Receiver } from "./ERC1155Receiver.sol";
 import { IERC1155Receiver } from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -221,8 +220,8 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
         shard.burnBatch(address(this), shardIds, amounts);
     }
 
-    function relicsOfOwner(address _owner) external view returns (uint256[] memory _ownerRelics) {
-        return ownerRelics[_owner].values();
+    function relicsOfOwner(address owner) external view returns (uint256[] memory _ownerRelics) {
+        return ownerRelics[owner].values();
     }
 
     function getBalanceBatch(
@@ -271,7 +270,7 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
     ) external onlyRelicOwner(relicId) notBlacklisted(msg.sender) {
         if (amount == 0) { revert CommonEventsAndErrors.InvalidParam(); }
         shard.safeTransferFrom(msg.sender, address(this), shardId, amount, "");
- 
+
         RelicInfo storage relicInfo = relicInfos[relicId];
         relicInfo.equippedShards[shardId] += amount;
 
@@ -355,14 +354,14 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
         emit CommonEventsAndErrors.TokenRecovered(to, token, amount);
     }
 
-    function recoverNFT(IERC721A nft, address to, uint256 tokenId) external onlyElevatedAccess {
-        if (address(nft) == address(this)) { revert CommonEventsAndErrors.InvalidParam(); }
-        if (address(nft) == address(shard)) { revert CommonEventsAndErrors.InvalidParam(); }
-        address owner = ownerOf(tokenId);
-        if (owner != address(this)) { revert InvalidOwner(owner); }
-        if (to == ZERO_ADDRESS) { revert ZeroAddress(); }
-        nft.safeTransferFrom(address(this), to, tokenId);
-    }
+    // function recoverNFT(IERC721A nft, address to, uint256 tokenId) external onlyElevatedAccess {
+    //     if (address(nft) == address(this)) { revert CommonEventsAndErrors.InvalidParam(); }
+    //     if (address(nft) == address(shard)) { revert CommonEventsAndErrors.InvalidParam(); }
+    //     address owner = ownerOf(tokenId);
+    //     if (owner != address(this)) { revert InvalidOwner(owner); }
+    //     if (to == ZERO_ADDRESS) { revert ZeroAddress(); }
+    //     nft.safeTransferFrom(address(this), to, tokenId);
+    // }
 
     function burnBlacklistedAccountShards(
         address account,
