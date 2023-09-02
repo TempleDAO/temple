@@ -52,6 +52,7 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
     event ShardMinted();
     event ShardUriSet(uint256 shardId, string uri);
     event RecipeSet(uint256 recipeId, Recipe recipe);
+    event PartnerAllowedShardIdSet(address partner, uint256 shardId, bool allow);
     event PartnerAllowedShardIdsSet(address partner, uint256[] shardIds, bool[] allowances);
     event PartnerAllowedShardCapsSet(address partner, uint256[] shardIds, uint256[] caps);
     event TemplarMinterSet(address minter, bool allowed);
@@ -80,27 +81,27 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
         relic = IRelic(_relic);
     }
 
-    /// @notice shardId should not have been minted, nextId =< shardId 
-    function setPartnerAllowedShardId(address partner, uint256 shardId, bool allowed) external onlyElevatedAccess {
-        /// @notice admin should check shardId does not exist
-        if (partner == ZERO_ADDRESS) { revert ZeroAddress(); }
-        bool success;
-        // allowedPartnerShardIds[partner][shardId] = allowed;
-        if (allowed) {
-            success = allowedPartnerShardIds[partner].add(shardId);
-            if (!success) { revert PartnerAllowShardFailed(partner, shardId, allowed); }
-            partnerShards.add(shardId);
-        } else {
-            success = allowedPartnerShardIds[partner].remove(shardId);
-            if (!success) { revert PartnerAllowShardFailed(partner, shardId, allowed); }
-            partnerShards.remove(shardId);
-        }
-    }
-
     function setTemplarMinter(address minter, bool allowed) external onlyElevatedAccess {
         if (minter == ZERO_ADDRESS) { revert ZeroAddress(); }
         templarMinters[minter] = allowed;
         emit TemplarMinterSet(minter, allowed);
+    }
+
+    /// @notice shardId should not have been minted, nextId =< shardId 
+    function setPartnerAllowedShardId(address partner, uint256 shardId, bool allow) external onlyElevatedAccess {
+        /// @notice admin should check shardId does not exist
+        if (partner == ZERO_ADDRESS) { revert ZeroAddress(); }
+        bool success;
+        if (allow) {
+            success = allowedPartnerShardIds[partner].add(shardId);
+            if (!success) { revert PartnerAllowShardFailed(partner, shardId, allow); }
+            partnerShards.add(shardId);
+        } else {
+            success = allowedPartnerShardIds[partner].remove(shardId);
+            if (!success) { revert PartnerAllowShardFailed(partner, shardId, allow); }
+            partnerShards.remove(shardId);
+        }
+        emit PartnerAllowedShardIdSet(partner, shardId, allow);
     }
 
     function setPartnerAllowedShardIds(
@@ -117,23 +118,21 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
          for (uint i; i < _length;) {
             allowed = flags[i];
             shardId = shardIds[i];
-            // allowedPartnerShardIds[partner][shardId] = allowed;
+
             EnumerableSet.UintSet storage partnerShardIds = allowedPartnerShardIds[partner];
-            /// @dev will return false if value already exists in set
             if (allowed && !partnerShardIds.contains(shardId)) {
-                success = partnerShardIds.add(shardId);
-                if (!success) { revert PartnerAllowShardFailed(partner, shardId, allowed); }
+                /// @dev ignoring return values if add failed so that we don't revert in the iteration. to allow completion
+                /* success = */ partnerShardIds.add(shardId);
+                //if (!success) { revert PartnerAllowShardFailed(partner, shardId, allowed); }
                 // also keep track of all partner shards, for convenience guard checks when user mints
                 if (!partnerShards.contains(shardId)) {
-                    success = partnerShards.add(shardId);
-                    if (!success) { revert PartnerAllowShardFailed(partner, shardId, allowed); }
+                    partnerShards.add(shardId);
                 }
             } else if (!allowed && partnerShardIds.contains(shardId)){
-                success = partnerShardIds.remove(shardId);
-                if (!success) { revert PartnerAllowShardFailed(partner, shardId, allowed); }
+                /* success = */ partnerShardIds.remove(shardId);
+                // if (!success) { revert PartnerAllowShardFailed(partner, shardId, allowed); }
                 if (partnerShards.contains(shardId)) {
-                    success = partnerShards.remove(shardId);
-                    if (!success) { revert PartnerAllowShardFailed(partner, shardId, allowed); }
+                    partnerShards.remove(shardId);
                 }
             }
             unchecked {
@@ -169,11 +168,7 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
         uint256 _outputLength = recipe.outputShardAmounts.length;
         if (_outputLength != recipe.outputShardIds.length) { revert CommonEventsAndErrors.InvalidParam(); }
 
-        Recipe memory newRecipe;
-        assembly {
-            newRecipe := recipe
-        }
-        recipes[recipeId] = newRecipe;
+        recipes[recipeId] = recipe;
         emit RecipeSet(recipeId, recipe);
     }
 
@@ -271,6 +266,22 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
         _mintBatch(to, shardIds, amounts, "");
     }
 
+    function getPartnerAllowedShardIds(address partner) external view returns (uint256[] memory) {
+        return allowedPartnerShardIds[partner].values();
+    }
+
+    function getAllPartnerShardIds() external view returns (uint256[] memory) {
+        return partnerShards.values();
+    }
+
+    function getRecipeInfo(uint256 recipeId) external view returns (Recipe memory info) {
+        info = recipes[recipeId];
+    }
+
+    function isPartnerShard(uint256 shardId) external view returns (bool) {
+        return partnerShards.contains(shardId);
+    }
+
     /// @notice not validating partner and reverting. caller should check and handle zero values
     function getPartnerMintsInfo(address partner) external view returns (PartnerMintInfo memory info) {
         EnumerableSet.UintSet storage partnerShardIds = allowedPartnerShardIds[partner];
@@ -295,6 +306,7 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
     }
 
     function burnBatch(address account, uint256[] memory ids, uint256[] memory values) public override {
+        // allow relic to burn blacklisted relic shards
         if (_msgSender() == address(relic)) {
             _burnBatch(account, ids, values);
             return;

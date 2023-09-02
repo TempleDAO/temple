@@ -1,5 +1,4 @@
 pragma solidity 0.8.18;
-
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { TempleTest } from "../TempleTest.sol";
@@ -652,6 +651,7 @@ contract RelicTest is RelicSettersTest {
         assertEq(dai.balanceOf(address(relic)), 0);
     }
 
+    // Relic won't receive foreign ERC721/A tokens because it does not implement ERC721_Receiver interface
     // function test_recoverNFT() public {
     //     vm.startPrank(executor);
     //     Relic newRelic = new Relic("NEWRELIC", "NEWR", executor, executor);
@@ -667,6 +667,8 @@ contract RelicTest is RelicSettersTest {
     //     assertEq((newRelic.relicsOfOwner(address(relic))).length, relicIds.length-1);
     // }
 
+    // is blacklisting enough?
+    // burning adds no incentive per supply/demand
     function test_burnBlacklistedAccountShards() public {
         uint256[] memory shardIds = new uint256[](2);
         shardIds[0] = shardId1;
@@ -678,7 +680,35 @@ contract RelicTest is RelicSettersTest {
     }
 
     function test_beforeTokenTransfersBlacklisted() public {
+        // blacklist account 
+        uint256[] memory shardIds = new uint256[](2);
+        uint256[] memory amounts = new uint256[](2);
+        shardIds[0] = shardId1;
+        shardIds[1] = shardId2;
+        amounts[0] = 10;
+        amounts[1] = 20;
+        vm.startPrank(operator);
+        relic.mintRelic(alice, Relic.Enclave.Structure);
+        relic.mintRelic(alice, Relic.Enclave.Chaos);
+        uint256[] memory aliceRelics = relic.relicsOfOwner(alice);
+        uint256[] memory bobRelics = relic.relicsOfOwner(bob);
+        changePrank(executor);
+        relic.setBlacklistAccount(alice, true, shardIds, amounts);
+        // validate transfers for blacklisted accounts
+        // sending from and to alice should fail
+        changePrank(alice);
+        vm.expectRevert(abi.encodeWithSelector(Relic.AccountBlacklisted.selector, alice));
+        relic.safeTransferFrom(alice, bob, aliceRelics[1]);
+        changePrank(bob);
+        vm.expectRevert(abi.encodeWithSelector(Relic.AccountBlacklisted.selector, alice));
+        relic.safeTransferFrom(bob, alice, bobRelics[0]);
 
+        // check new owner
+        changePrank(executor);
+        relic.setBlacklistAccount(alice, false, shardIds, amounts);
+        changePrank(bob);
+        relic.safeTransferFrom(bob, alice, bobRelics[0]);
+        assertEq(relic.ownerOf(bobRelics[0]), alice);
     }
 }
 
