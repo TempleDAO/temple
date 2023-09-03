@@ -70,6 +70,7 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
     error InvalidAccess(address caller);
     error InvalidCaller(address caller);
     error ERC1155MissingApprovalForAll(address msgSender, address account);
+    error AccountBlacklisted(address account);
 
 
     constructor(
@@ -113,7 +114,6 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
          uint256 _length = shardIds.length;
          bool allowed;
          uint256 shardId;
-         bool success;
          if (_length != flags.length) { revert InvalidParamLength(); }
          for (uint i; i < _length;) {
             allowed = flags[i];
@@ -200,20 +200,27 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
         emit Transmuted(caller, recipeId);
     }
 
-    function partnerMint(address to, uint256 shardId, uint256 amount) external {
+    function partnerMint(address to, uint256 shardId, uint256 amount) external isNotBlacklisted(to) {
         if (!allowedPartnerShardIds[msg.sender].contains(shardId)) { revert ShardMintNotAllowed(msg.sender, shardId); }
         // default 0 value means uncapped
         uint256 cap = allowedPartnersShardCaps[msg.sender][shardId];
-        if (cap > 0 && cap < amount) {
-            revert MintCapExceeded(cap, amount);
+        // check partner balances
+        uint256 newBalance = partnerMintBalances[msg.sender][shardId] + amount;
+        if (cap > 0 && newBalance > cap) {
+            revert MintCapExceeded(cap, newBalance);
         }
-        partnerMintBalances[msg.sender][shardId] += amount;
+        partnerMintBalances[msg.sender][shardId] = newBalance;
         /// @notice not duplicating variable for tracking partner mint because only partner can mint to given addresses
         _mint(to, shardId, amount, "");
+        /// @dev track event with TransferSingle
     }
 
     /// @notice Lets an approved partner mint shards in batch
-    function partnerBatchMint(address to, uint256[] memory shardIds, uint256[] memory amounts) external {
+    function partnerBatchMint(
+        address to,
+        uint256[] memory shardIds,
+        uint256[] memory amounts
+    ) external isNotBlacklisted(to) {
         uint256 _length = shardIds.length;
         if (_length != amounts.length) { revert InvalidParamLength(); }
         uint256 cap;
@@ -232,7 +239,7 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
             if (cap > 0 && cap < newBalance) {
                 revert MintCapExceeded(cap, amount);
             }
-            partnerMintBalances[msg.sender][shardId] += amount;
+            partnerMintBalances[msg.sender][shardId] = newBalance;
             unchecked {
                 ++i;
             }
@@ -240,7 +247,11 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
         _mintBatch(to, shardIds, amounts, "");
     }
 
-    function mint(address to, uint256 shardId, uint256 amount) external onlyTemplarMinters {
+    function mint(
+        address to,
+        uint256 shardId,
+        uint256 amount
+    ) external onlyTemplarMinters isNotBlacklisted(to) {
         if(partnerShards.contains(shardId))  { revert ReservedPartnerShard(shardId); }
         /// @dev fail early
         if (amount == 0) { revert CommonEventsAndErrors.InvalidParam(); }
@@ -251,7 +262,7 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
         address to,
         uint256[] memory shardIds,
         uint256[] memory amounts
-    ) external onlyTemplarMinters {
+    ) external onlyTemplarMinters isNotBlacklisted(to) {
         uint256 _length = shardIds.length;
         if (_length != amounts.length) { revert InvalidParamLength(); }
         // validate shards
@@ -264,6 +275,17 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
             }
         }
         _mintBatch(to, shardIds, amounts, "");
+    }
+
+    function burnBatch(address account, uint256[] memory ids, uint256[] memory values) public override {
+        // allow relic to burn blacklisted relic shards
+        if (_msgSender() == address(relic)) {
+            _burnBatch(account, ids, values);
+            return;
+        } else if (account != _msgSender() && !isApprovedForAll(account, _msgSender())) {
+            revert ERC1155MissingApprovalForAll(_msgSender(), account);
+        }
+        _burnBatch(account, ids, values);
     }
 
     function getPartnerAllowedShardIds(address partner) external view returns (uint256[] memory) {
@@ -305,16 +327,9 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
         }
     }
 
-    function burnBatch(address account, uint256[] memory ids, uint256[] memory values) public override {
-        // allow relic to burn blacklisted relic shards
-        if (_msgSender() == address(relic)) {
-            _burnBatch(account, ids, values);
-            return;
-        } else if (account != _msgSender() && !isApprovedForAll(account, _msgSender())) {
-            revert ERC1155MissingApprovalForAll(_msgSender(), account);
-        }
-
-        _burnBatch(account, ids, values);
+    modifier isNotBlacklisted(address to) {
+        if (relic.blacklistedAccounts(to)) { revert AccountBlacklisted(to); }
+        _;
     }
 
     modifier onlyRelic() {

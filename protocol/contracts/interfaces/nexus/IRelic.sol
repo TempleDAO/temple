@@ -83,4 +83,5 @@ interface IRelic {
     ) external;
     function getRarityBaseUri(Rarity rarity) external view returns(string memory uri);
     function supportsInterface(bytes4 interfaceId) external view returns (bool);
+    function blacklistedAccounts(address account) external view returns (bool);
 }

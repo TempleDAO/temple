@@ -214,11 +214,12 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
     }
 
     /// @notice DAO may vote to burn shards from blacklisted accounts
-    function burnShards(uint256[] memory shardIds, uint256[] memory amounts) external onlyElevatedAccess {
-        /// @notice DAO may decide to burn shards from blacklisted accounts
-        /// @dev burnBatch will check if shard is owned by caller(this address)
-        shard.burnBatch(address(this), shardIds, amounts);
-    }
+    // function burnShards(uint256[] memory shardIds, uint256[] memory amounts) external onlyElevatedAccess {
+    //     //todo; blacklisting accounting
+    //     /// @notice DAO may decide to burn shards from blacklisted accounts
+    //     /// @dev burnBatch will check if shard is owned by caller(this address)
+    //     shard.burnBatch(address(this), shardIds, amounts);
+    // }
 
     function relicsOfOwner(address owner) external view returns (uint256[] memory _ownerRelics) {
         return ownerRelics[owner].values();
