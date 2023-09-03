@@ -288,6 +288,15 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
         _burnBatch(account, ids, values);
     }
 
+    /// @notice if we ever go back to the token type ID substitution mechanism
+    // function setURI(string memory uri) external onlyOperator {
+    //     _setURI(uri);
+    // }
+
+    // function uriLegacy() external view returns (string memory) {
+    //     return uri();
+    // }
+
     function getPartnerAllowedShardIds(address partner) external view returns (uint256[] memory) {
         return allowedPartnerShardIds[partner].values();
     }

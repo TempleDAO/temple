@@ -1,4 +1,6 @@
 pragma solidity 0.8.18;
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Temple (nexus/IRelic.sol)
 
 import { IERC721A } from "./IERC721A.sol";
 

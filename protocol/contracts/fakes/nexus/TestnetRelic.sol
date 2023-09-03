@@ -1,6 +1,6 @@
 pragma solidity 0.8.18;
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Temple (nexus/Relic.sol)
+// Temple (nexus/TestnetRelic.sol)
 
 
 import { ERC721ACustom } from "../../nexus/ERC721ACustom.sol";

@@ -1,6 +1,6 @@
 pragma solidity 0.8.18;
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Temple (nexus/Shard.sol)
+// Temple (nexus/TestnetShard.sol)
 
 import { IRelic } from "../../interfaces/nexus/IRelic.sol";
 import { ERC1155 } from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
@@ -185,6 +185,15 @@ contract TestnetShard is ERC1155, ERC1155Burnable {
         shardUris[shardId] = uri;
         emit ShardUriSet(shardId, uri);
     }
+
+    /// @notice if we ever go back to the token type ID substitution mechanism
+    // function setURI(string memory uri) external onlyOperator {
+    //     _setURI(uri);
+    // }
+
+    // function uriLegacy() external view returns (string memory) {
+    //     return uri();
+    // }
 
     function uri(uint256 shardId) public view override returns (string memory) {
         return shardUris[shardId];

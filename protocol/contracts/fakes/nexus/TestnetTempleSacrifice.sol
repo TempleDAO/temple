@@ -1,6 +1,6 @@
 pragma solidity 0.8.18;
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Temple (nexus/TempleSacrifice.sol)
+// Temple (nexus/TestnetTempleSacrifice.sol)
 
 import { IRelic } from "../../interfaces/nexus/IRelic.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
