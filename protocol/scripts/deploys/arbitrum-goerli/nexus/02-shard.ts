@@ -1,6 +1,6 @@
 import '@nomiclabs/hardhat-ethers';
 import { ethers } from 'hardhat';
-import { TempleSacrifice__factory } from '../../../../typechain';
+import { TestnetShard__factory } from '../../../../typechain';
 import {
   deployAndMine,
   ensureExpectedEnvvars,
@@ -10,16 +10,16 @@ import { getDeployedContracts } from '../../v2/sepolia/contract-addresses';
 async function main() {
     ensureExpectedEnvvars();
     const [owner] = await ethers.getSigners();
-    const TEMPLE_V2_DEPLOYED = getDeployedContracts();
     const relicAddress = ""
 
-    const templeSacrifice = new TempleSacrifice__factory(owner);
+    const shardFactory = new TestnetShard__factory(owner);
+    const uri = "";
     await deployAndMine(
-        'TEMPLE_SACRIFICE',
-        templeSacrifice,
-        templeSacrifice.deploy,
+        'SHARD',
+        shardFactory,
+        shardFactory.deploy,
         relicAddress,
-        TEMPLE_V2_DEPLOYED.CORE.TEMPLE_TOKEN
+        uri
     );
 }
 

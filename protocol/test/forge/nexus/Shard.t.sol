@@ -484,8 +484,6 @@ contract ShardTest is ShardTestAccess {
         vm.expectRevert(abi.encodeWithSelector(Shard.MintCapExceeded.selector, 1, 2));
         shard.partnerMint(alice, SHARD_3_ID, 2);
         
-        console.logString("OPERATOR");
-        console.logAddress(operator);
         // vm.expectEmit(address(shard));
         // emit TransferSingle(operator, address(0), alice, SHARD_3_ID, 1);
         shard.partnerMint(alice, SHARD_3_ID, 1);
@@ -620,6 +618,6 @@ contract ShardTest is ShardTestAccess {
         relic.batchEquipShards(RELIC_1_ID, shardIds, amounts);
         changePrank(executor);
         relic.setBlacklistAccount(bob, true, shardIds, amounts);
-        // relic.burnBlacklistedAccountShards(bob, false, shardIds);
+        relic.burnBlacklistedAccountShards(bob, false, shardIds);
     }
 }

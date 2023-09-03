@@ -5,8 +5,7 @@ import {
     mine,
     toAtto
 } from '../../helpers';
-import { TempleSacrifice__factory } from '../../../../typechain';
-import { MockTempleSacrifice__factory } from '../../../../typechain';
+import { TestnetTempleSacrifice__factory } from '../../../../typechain';
 import { DEPLOYED_CONTRACTS } from '../../helpers';
 
 
@@ -16,7 +15,7 @@ async function main() {
     const [owner] = await ethers.getSigners();
     const ownerAddress = await owner.getAddress();
     const deployedContracts = DEPLOYED_CONTRACTS[network.name];
-    const mockTempleSacrifice = TempleSacrifice__factory.connect(deployedContracts.TEMPLE_SACRIFICE, owner);
+    const mockTempleSacrifice = TestnetTempleSacrifice__factory.connect(deployedContracts.TEMPLE_SACRIFICE, owner);
 
     {
         // await mine(templeSacrifice.setCustomPrice(toAtto(30)));

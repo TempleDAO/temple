@@ -3,7 +3,7 @@ import {
     ensureExpectedEnvvars,
     mine
 } from '../../helpers';
-import { Shard__factory } from '../../../../typechain';
+import { TestnetShard__factory } from '../../../../typechain';
 import { DEPLOYED_CONTRACTS } from '../../helpers';
 
 async function main() {
@@ -15,18 +15,19 @@ async function main() {
     const shardId1 = 123;
     const shardId2 = 456;
     const shardId3 = 789;
-    const uri1 = "";
-    const uri2 = "";
-    const uri3 = "";
-    const shard = Shard__factory.connect(deployedContracts.SHARD, owner);
+    const shardId4 = 420;
+    const uri1 = "http://example1.com";
+    const uri2 = "http://example2.com";
+    const uri3 = "http://example3.com";
+    const uri4 = "http://example4.com";
+    const shard = TestnetShard__factory.connect(deployedContracts.SHARD, owner);
 
     // minters and partners
     {
-        await mine(shard.setTemplarMinter(ownerAddress, true));
-        const shardIds = [shardId1, shardId2];
-        const allowed = [true, true];
+        const shardIds = [shardId4];
+        const allowed = [true];
         await mine(shard.setPartnerAllowedShardIds(ownerAddress, shardIds, allowed));
-        await mine(shard.setPartnerAllowedShardCaps(ownerAddress, shardIds, [99999, 99999]));
+        await mine(shard.setPartnerAllowedShardCaps(ownerAddress, shardIds, [99999]));
     }
     // uri and recipe
     {   
@@ -41,6 +42,7 @@ async function main() {
         await mine(shard.setShardUri(shardId1, uri1));
         await mine(shard.setShardUri(shardId2, uri2));
         await mine(shard.setShardUri(shardId3, uri3));
+        await mine(shard.setShardUri(shardId4, uri4));
     }
 }
 

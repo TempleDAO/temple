@@ -3,20 +3,19 @@ pragma solidity 0.8.18;
 // Temple (nexus/Relic.sol)
 
 
-import { ERC721ACustom } from "./ERC721ACustom.sol";
-import { ERC1155Receiver } from "./ERC1155Receiver.sol";
+import { ERC721ACustom } from "../../nexus/ERC721ACustom.sol";
+import { ERC1155Receiver } from "../../nexus/ERC1155Receiver.sol";
 import { IERC1155Receiver } from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
-import { IERC721A } from "../interfaces/nexus/IERC721A.sol";
-import { CommonEventsAndErrors } from "../common/CommonEventsAndErrors.sol";
-import { TempleElevatedAccess } from "../v2/access/TempleElevatedAccess.sol";
-import { IShard } from "../interfaces/nexus/IShard.sol";
+import { IERC721A } from "../../interfaces/nexus/IERC721A.sol";
+import { CommonEventsAndErrors } from "../../common/CommonEventsAndErrors.sol";
+import { IShard } from "../../interfaces/nexus/IShard.sol";
 
-contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
+contract TestnetRelic is ERC721ACustom, ERC1155Receiver {
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.UintSet;
 
@@ -72,6 +71,9 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
     mapping(address => bool) public relicMinters;
     mapping(address => EnumerableSet.UintSet) private ownerRelics;
 
+    /// @notice operators for testnet
+    mapping(address => bool) public operators;
+
     event RarityXPThresholdSet(Rarity rarity, uint256 threshold);
     event RarityBaseUriSet(Rarity rarity, string uri);
     event RelicMinterSet(address minter, bool allow);
@@ -84,6 +86,7 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
     event ShardUnequipped(address caller, uint256 relicId, uint256 shardId, uint256 amount);
     event ShardsUnequipped(address recipient, uint256 relicId, uint256[] shardIds, uint256[] amounts);
     event AccountBlacklistSet(address account, bool blacklist, uint256[] shardIds, uint256[] amounts);
+    event OperatorSet(address operator, bool allow);
 
     error InvalidParamLength();
     error CallerCannotMint(address msgSender);
@@ -98,12 +101,17 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
 
     constructor(
         string memory _name,
-        string memory _symbol,
-        address initialRescuer,
-        address initialExecutor
-    ) ERC721ACustom(_name, _symbol) TempleElevatedAccess(initialRescuer, initialExecutor) {}
+        string memory _symbol
+    ) ERC721ACustom(_name, _symbol) {
+        operators[msg.sender] = true;
+    }
 
-    function setShard(address _shard) external onlyElevatedAccess {
+    function setOperator(address operator, bool allow) external onlyOperator {
+        operators[operator] = allow;
+        emit OperatorSet(operator, allow);
+    }
+
+    function setShard(address _shard) external onlyOperator {
         if (_shard == ZERO_ADDRESS) { revert InvalidAddress(ZERO_ADDRESS); }
         shard = IShard(_shard);
         emit ShardSet(address(shard));
@@ -115,7 +123,7 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
         uri = baseUris[relicInfo.rarity];
     }
 
-    function setXPRarityThreshold(Rarity rarity, uint256 threshold) external onlyElevatedAccess {
+    function setXPRarityThreshold(Rarity rarity, uint256 threshold) external onlyOperator {
         if (!isAllowedRarity(rarity)) { revert CommonEventsAndErrors.InvalidParam(); }
         if (threshold != rarityXPThresholds[rarity]) {
             rarityXPThresholds[rarity] = threshold;
@@ -123,13 +131,13 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
         }
     }
 
-    function setRelicMinter(address minter, bool allow) external onlyElevatedAccess {
+    function setRelicMinter(address minter, bool allow) external onlyOperator {
         if (minter == ZERO_ADDRESS) { revert ZeroAddress(); }
         relicMinters[minter] = allow;
         emit RelicMinterSet(minter, allow);
     }
 
-    function setXPController(address controller, bool allow) external onlyElevatedAccess {
+    function setXPController(address controller, bool allow) external onlyOperator {
         if (controller == ZERO_ADDRESS) { revert ZeroAddress(); }
         xpControllers[controller] = allow;
         emit XPControllerSet(controller, allow);
@@ -138,7 +146,7 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
     function setXPRarityThresholds(
         Rarity[] calldata rarities,
         uint256[] calldata thresholds
-    ) external onlyElevatedAccess {
+    ) external onlyOperator {
         uint256 _length = rarities.length;
         if (_length != thresholds.length) { revert InvalidParamLength(); }
         for(uint i; i < _length;) {
@@ -155,7 +163,7 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
         }
     }
 
-    function setBaseUriRarity(Rarity rarity, string memory uri) external onlyElevatedAccess {
+    function setBaseUriRarity(Rarity rarity, string memory uri) external onlyOperator {
         baseUris[rarity] = uri;
         emit RarityBaseUriSet(rarity, uri);
     }
@@ -170,7 +178,7 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
         bool blacklist,
         uint256[] memory shardIds,
         uint256[] memory amounts
-    ) external onlyElevatedAccess {
+    ) external onlyOperator {
         if (account == ZERO_ADDRESS) { revert ZeroAddress(); }
         uint256 _length = shardIds.length;
         if (_length != amounts.length) { revert InvalidParamLength(); }
@@ -212,14 +220,6 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
         relicInfo.xp = uint128(xp);
         emit RelicXPSet(relicId, oldXp, xp);
     }
-
-    /// @notice DAO may vote to burn shards from blacklisted accounts
-    // function burnShards(uint256[] memory shardIds, uint256[] memory amounts) external onlyElevatedAccess {
-    //     //todo; blacklisting accounting
-    //     /// @notice DAO may decide to burn shards from blacklisted accounts
-    //     /// @dev burnBatch will check if shard is owned by caller(this address)
-    //     shard.burnBatch(address(this), shardIds, amounts);
-    // }
 
     function relicsOfOwner(address owner) external view returns (uint256[] memory _ownerRelics) {
         return ownerRelics[owner].values();
@@ -349,26 +349,17 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
         return _totalMinted();
     }
 
-    function recoverToken(address token, address to, uint256 amount) external onlyElevatedAccess {
+    function recoverToken(address token, address to, uint256 amount) external onlyOperator {
         if (to == address(0)) revert InvalidAddress(to);
         IERC20(token).safeTransfer(to, amount);
         emit CommonEventsAndErrors.TokenRecovered(to, token, amount);
     }
 
-    // function recoverNFT(IERC721A nft, address to, uint256 tokenId) external onlyElevatedAccess {
-    //     if (address(nft) == address(this)) { revert CommonEventsAndErrors.InvalidParam(); }
-    //     if (address(nft) == address(shard)) { revert CommonEventsAndErrors.InvalidParam(); }
-    //     address owner = ownerOf(tokenId);
-    //     if (owner != address(this)) { revert InvalidOwner(owner); }
-    //     if (to == ZERO_ADDRESS) { revert ZeroAddress(); }
-    //     nft.safeTransferFrom(address(this), to, tokenId);
-    // }
-
     function burnBlacklistedAccountShards(
         address account,
         bool whitelistAfterBurn,
         uint256[] memory shardIds
-    ) external onlyElevatedAccess {
+    ) external onlyOperator {
         if (!blacklistedAccounts[account]) { revert CommonEventsAndErrors.InvalidParam(); }
         uint256 _length = shardIds.length;
         uint256[] memory amounts = new uint256[](_length);
@@ -430,10 +421,7 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
         uri = baseUris[rarity];
     }
 
-    // function supportsInterface(bytes4 interfaceId) public view override(ERC1155Holder) returns (bool) {
-    //     return interfaceId == type(IERC1155Receiver).interfaceId || super.supportsInterface(interfaceId);
-    // }
-     /**
+    /**
      * @dev Returns true if this contract implements the interface defined by
      * `interfaceId`. See the corresponding
      * [EIP section](https://eips.ethereum.org/EIPS/eip-165#how-interfaces-are-identified)
@@ -469,6 +457,11 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
 
     modifier isRelicMinter() {
         if (!relicMinters[msg.sender]) { revert CallerCannotMint(msg.sender); }
+        _;
+    }
+
+    modifier onlyOperator() {
+        if (!operators[msg.sender]) { revert InvalidAccess(msg.sender); }
         _;
     }
 }

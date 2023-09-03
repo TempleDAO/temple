@@ -7,9 +7,7 @@ import {
     connectToContracts,
     getDeployedContracts,
 } from '../../v2/sepolia/contract-addresses';
-import { ITempleStrategy } from '../../../../typechain';
-import { TempleERC20Token__factory } from '../../../../typechain';
-import { Relic__factory } from '../../../../typechain';
+import { TestnetRelic__factory } from '../../../../typechain';
 import { DEPLOYED_CONTRACTS } from '../../helpers';
 
 async function main() {
@@ -19,14 +17,14 @@ async function main() {
     const TEMPLE_V2_DEPLOYED = getDeployedContracts();
     const templeV2contracts = connectToContracts(owner);
     const deployedContracts = DEPLOYED_CONTRACTS[network.name];
-    const relic = Relic__factory.connect(deployedContracts.RELIC, owner);
+    const relic = TestnetRelic__factory.connect(deployedContracts.RELIC, owner);
     
         
     const ownerAddress = await owner.getAddress();
 
     // TESTNET ONLY -- Allow msig & owner to mint Testnet Temple
     {
-        await mine(templeV2contracts.templeToken.addMinter(TEMPLE_V2_DEPLOYED.CORE.EXECUTOR_MSIG));       
+        // await mine(templeV2contracts.templeToken.addMinter(TEMPLE_V2_DEPLOYED.CORE.EXECUTOR_MSIG));       
         await mine(templeV2contracts.templeToken.addMinter(ownerAddress));
     }
 

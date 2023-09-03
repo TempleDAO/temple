@@ -8,7 +8,7 @@ import { ITempleERC20Token } from "contracts/interfaces/core/ITempleERC20Token.s
 import { CommonEventsAndErrors } from "../../common/CommonEventsAndErrors.sol";
 
 /// @dev for testnet only
-contract MockTempleSacrifice {
+contract TestnetTempleSacrifice {
 
     ///@notice the Relic ERC721A token
     IRelic public immutable relic;

@@ -1,6 +1,6 @@
 import '@nomiclabs/hardhat-ethers';
 import { ethers } from 'hardhat';
-import { Relic__factory } from '../../../../typechain';
+import { TestnetRelic__factory } from '../../../../typechain';
 import {
   deployAndMine,
   ensureExpectedEnvvars,
@@ -12,15 +12,13 @@ async function main() {
   const [owner] = await ethers.getSigners();
 
   const ownerAddress = await owner.getAddress();
-  const relicFactory= new Relic__factory(owner);
+  const relicFactory= new TestnetRelic__factory(owner);
   await deployAndMine(
       'RELIC',
       relicFactory,
       relicFactory.deploy,
       "RELIC",
-      "REL",
-      ownerAddress,
-      ownerAddress
+      "REL"
   );
 
 }
