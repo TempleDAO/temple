@@ -8,6 +8,7 @@ import { ERC1155Burnable } from "@openzeppelin/contracts/token/ERC1155/extension
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { TempleElevatedAccess } from "../v2/access/TempleElevatedAccess.sol";
 import { CommonEventsAndErrors } from "../common/CommonEventsAndErrors.sol";
+import { console } from "forge-std/console.sol";
 
 contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
     using EnumerableSet for EnumerableSet.UintSet;
@@ -33,6 +34,19 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
 
     mapping(uint256 => Recipe) private recipes;
 
+    //todo each shard should belong to exactly 1 enclave. an enclave can have many shards
+    // mapping(Enclave => EnumerableSet.UintSet) private enclaveShards;
+    mapping(uint8 => EnumerableSet.UintSet) private enclaveShards;
+
+    /// @notice Enclave types
+    enum Enclave {
+        Chaos,
+        Mystery,
+        Logic,
+        Order,
+        Structure
+    }
+
     /// @notice for compact view functions
     struct PartnerMintInfo {
         uint256[] shardIds;
@@ -57,6 +71,7 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
     event PartnerAllowedShardCapsSet(address partner, uint256[] shardIds, uint256[] caps);
     event TemplarMinterSet(address minter, bool allowed);
     event RecipeDeleted(uint256 recipeId);
+    event ShardEnclaveSet(Enclave enclave, uint256 shardId);
 
     error ReservedPartnerShard(uint256 shardId);
     error ShardMintNotAllowed(address caller, uint256 shardId);
@@ -71,6 +86,7 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
     error InvalidCaller(address caller);
     error ERC1155MissingApprovalForAll(address msgSender, address account);
     error AccountBlacklisted(address account);
+    error SetShardEnclaveFailed();
 
 
     constructor(
@@ -80,6 +96,35 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
         string memory _uri
     ) ERC1155(_uri) TempleElevatedAccess(_initialRescuer, _initialExecutor) {
         relic = IRelic(_relic);
+    }
+
+    function setShardEnclave(Enclave enclave, uint256 shardId) external onlyElevatedAccess {
+        // remove if shard already belongs to an enclave
+        uint256 _length = uint256(uint8(Enclave.Structure)) + 1;
+        uint8 enclaveIndex = uint8(enclave);
+        bool success;
+        for (uint i; i < _length;) {
+            if (enclaveShards[uint8(i)].contains(shardId)) {
+                /*success =*/ enclaveShards[uint8(i)].remove(shardId);
+                // if (!success) { revert SetShardEnclaveFailed(); }
+                break;
+            }
+            unchecked {
+                ++i;
+            }
+        }
+        // add shardId to enclave
+        /*success =*/ enclaveShards[enclaveIndex].add(shardId);
+        // if (!success) { revert SetShardEnclaveFailed(); } 
+        emit ShardEnclaveSet(enclave, shardId);
+    }
+
+    function getEnclaveShards(Enclave enclave) external view returns (uint256[] memory) {
+        return enclaveShards[uint8(enclave)].values();
+    }
+
+    function isEnclaveShard(Enclave enclave, uint256 shardId) external view returns (bool) {
+        return enclaveShards[uint8(enclave)].contains(shardId);
     }
 
     function setTemplarMinter(address minter, bool allowed) external onlyElevatedAccess {

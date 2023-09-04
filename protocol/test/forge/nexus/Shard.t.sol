@@ -67,6 +67,8 @@ contract ShardTestBase is TempleTest {
     event RecipeDeleted(uint256 recipeId);
     event PartnerAllowedShardIdSet(address partner, uint256 shardId, bool allow);
     event TransferSingle(address operator, address from, address to, uint256 id, uint256 value);
+    event ShardEnclaveSet(Shard.Enclave enclave, uint256 shardId);
+    
     // todo test minting to blacklisted accounts
     function setUp() public {
         relic = new Relic(name, symbol, rescuer, executor);
@@ -141,6 +143,13 @@ contract ShardTestBase is TempleTest {
 
 contract ShardTestAccess is ShardTestBase {
 
+    function test_access_setShardEnclaveFail(address caller) public {
+        vm.assume(caller != executor && caller != rescuer);
+        vm.startPrank(caller);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
+        shard.setShardEnclave(Shard.Enclave.Mystery, SHARD_1_ID);
+    }
+
     function test_access_setPartnerAllowedShardIdFail(address caller) public {
         vm.assume(caller != executor && caller != rescuer);
         vm.startPrank(caller);
@@ -210,12 +219,14 @@ contract ShardTestAccess is ShardTestBase {
         // assertEq(shardIds[0], SHARD_1_ID);
     }
 
+    function test_access_setShardEnclaveSuccess() public {
+        vm.startPrank(executor);
+        shard.setShardEnclave(Shard.Enclave.Structure, SHARD_1_ID);
+    }
+
     function test_access_setTemplarMinterSuccess() public {
         vm.startPrank(executor);
-        // vm.expectEmit(address(shard));
-        // emit TemplarMinterSet(alice, true);
         shard.setTemplarMinter(alice, true);
-        // assertEq(shard.templarMinters(alice), true);
     }
 
     function test_access_setPartnerAllowedShardIdsSuccess() public {
@@ -261,6 +272,20 @@ contract ShardTestAccess is ShardTestBase {
 }
 
 contract ShardTest is ShardTestAccess {
+
+    function test_setShardEnclave() public {
+        vm.startPrank(executor);
+        vm.expectEmit(address(shard));
+        emit ShardEnclaveSet(Shard.Enclave.Chaos, SHARD_1_ID);
+        shard.setShardEnclave(Shard.Enclave.Chaos, SHARD_1_ID);
+        assertEq(shard.isEnclaveShard(Shard.Enclave.Chaos, SHARD_1_ID), true);
+        Shard.Enclave oldEnclave = Shard.Enclave.Chaos;
+        Shard.Enclave newEnclave = Shard.Enclave.Mystery;
+        shard.setShardEnclave(newEnclave, SHARD_1_ID);
+        uint256[] memory shards = shard.getEnclaveShards(oldEnclave);
+        assertEq(shard.isEnclaveShard(oldEnclave, SHARD_1_ID), false);
+        assertEq(shard.isEnclaveShard(newEnclave, SHARD_1_ID), true);
+    }
 
     function test_setTemplarMinter() public {
         vm.startPrank(executor);
@@ -472,6 +497,13 @@ contract ShardTest is ShardTestAccess {
         shardIds[0] = SHARD_3_ID;
         shard.setPartnerAllowedShardCaps(operator, shardIds, caps);
 
+        uint256[] memory amounts = new uint256[](1);
+        relic.setBlacklistAccount(alice, true, shardIds, amounts);
+        changePrank(operator);
+        vm.expectRevert(abi.encodeWithSelector(Shard.AccountBlacklisted.selector, alice));
+        shard.partnerMint(alice, SHARD_3_ID, 1);
+        changePrank(executor);
+        relic.setBlacklistAccount(alice, false, shardIds, amounts);
         changePrank(operator);
         vm.expectRevert(abi.encodeWithSelector(Shard.ShardMintNotAllowed.selector, operator, SHARD_3_ID));
         shard.partnerMint(alice, SHARD_3_ID, 1);
