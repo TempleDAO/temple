@@ -96,6 +96,8 @@ export const Withdraw: React.FC<IProps> = ({ accountPosition, state, setState, w
               ).toFixed(2);
               setState({ ...state, withdrawValue: `${Number(withdrawAmount) > 0 ? withdrawAmount : '0'}` });
             }}
+            min={0}
+            max={100}
             value={(Number(getEstimatedLTV()) / MAX_LTV) * 100}
             progress={(Number(getEstimatedLTV()) / MAX_LTV) * 100}
           />

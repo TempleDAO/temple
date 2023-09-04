@@ -69,6 +69,7 @@ ReactDOM.render(
         <Routes>
           <>
             <Route path="/" element={<Home />} />
+            <Route path="/tlc" element={<Home tlc={true} />} />
             <Route path="/" element={<PageLayout />}>
               {/* Redirect everything else to the home page */}
               <Route path="*" element={<Navigate replace to="/" />} />

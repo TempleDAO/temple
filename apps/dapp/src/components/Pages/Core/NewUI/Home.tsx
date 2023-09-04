@@ -99,7 +99,7 @@ const FooterContent = [
   },
 ];
 
-const Home = () => {
+const Home = ({ tlc }: { tlc?: boolean }) => {
   const { signer, updateBalance, walletAddress, isConnected, isConnecting } = useWallet();
   const [metrics, setMetrics] = useState<Metrics>({ price: 0, tpi: 0, treasury: 0 });
   const [tradeFormVisible, setTradeFormVisible] = useState(false);
@@ -180,7 +180,7 @@ const Home = () => {
   return (
     <>
       <LegacyLinkHeader>
-        <LegacyLink onClick={() => clickHandler(setIsTlcModalOpen)}>Temple Lending</LegacyLink>
+        {tlc && <LegacyLink onClick={() => clickHandler(setIsTlcModalOpen)}>Temple Lending</LegacyLink>}
         <LegacyLink onClick={() => clickHandler(setIsClaimModalOpen)}>Claim from vaults</LegacyLink>
         <LegacyLink onClick={() => clickHandler(setIsUnstakeModalOpen)}>Unstake OGT</LegacyLink>
       </LegacyLinkHeader>
@@ -204,7 +204,7 @@ const Home = () => {
                 <TradeDetailText>A wrapped treasury token with steady price growth in all conditions</TradeDetailText>
                 <ButtonContainer>
                   <TradeButton onClick={() => clickHandler(setTradeFormVisible)}>Trade</TradeButton>
-                  <TradeButton onClick={() => clickHandler(setIsTlcModalOpen)}>Borrow</TradeButton>
+                  {tlc && <TradeButton onClick={() => clickHandler(setIsTlcModalOpen)}>Borrow</TradeButton>}
                 </ButtonContainer>
                 <LearnMoreLink onClick={() => clickHandler(setIsClaimModalOpen)}>Claim from Vaults</LearnMoreLink>
               </>

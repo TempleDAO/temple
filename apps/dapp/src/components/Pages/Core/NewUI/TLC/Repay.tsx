@@ -89,6 +89,8 @@ export const Repay: React.FC<IProps> = ({ accountPosition, state, setState, repa
           console.log(repayAmount);
           setState({ ...state, repayValue: `${Number(repayAmount) > 0 ? repayAmount : '0'}` });
         }}
+        min={0}
+        max={100}
         value={(Number(getEstimatedLTV()) / MAX_LTV) * 100}
         progress={(Number(getEstimatedLTV()) / MAX_LTV) * 100}
       />

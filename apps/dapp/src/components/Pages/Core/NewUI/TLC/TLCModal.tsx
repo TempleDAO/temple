@@ -36,9 +36,10 @@ export type State = {
 };
 
 export type TlcInfo = {
-  minBorrow: BigNumber;
-  borrowRate: BigNumber;
+  minBorrow: number;
+  borrowRate: number;
   liquidationLtv: number;
+  strategyBalance: number;
 };
 
 export const MAX_LTV = 75;
@@ -80,15 +81,6 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
     });
   };
 
-  const getLiquidationDate = (ltv?: number) => {
-    if (!accountPosition || !tlcInfo) return '';
-    const LTV = ltv || fromAtto(accountPosition.loanToValueRatio);
-    const growthUntilLiq = MAX_LTV / 100 / LTV - 1;
-    const daysUntilLiq = (growthUntilLiq / fromAtto(tlcInfo.borrowRate)) * 365;
-    const today = new Date();
-    return new Date(today.setDate(today.getDate() + daysUntilLiq)).toLocaleDateString();
-  };
-
   useEffect(() => {
     const onMount = async () => {
       await updateBalance();
@@ -112,24 +104,41 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
     try {
       const tlcContract = new TempleLineOfCredit__factory(signer).attach(env.contracts.tlc);
       const position = await tlcContract.accountPosition(wallet);
-      const min = await tlcContract.MIN_BORROW_AMOUNT();
+      const min = await tlcContract.minBorrowAmount();
       const debtInfo = await tlcContract.debtTokenDetails();
       setAccountPosition(position);
-      setTlcInfo({
-        minBorrow: min,
-        borrowRate: debtInfo[1].interestRate,
-        liquidationLtv: fromAtto(debtInfo[0].maxLtvRatio),
-      });
 
       // Get DAI balance in TlcStrategy
       const tlcStrategyAddress = await tlcContract.tlcStrategy();
       const tlcStrategy = new TlcStrategy__factory(signer).attach(tlcStrategyAddress);
       const assets = await tlcStrategy.latestAssetBalances();
       const dai = assets.find((a) => a.asset === env.contracts.dai);
-      if (dai) console.log(fromAtto(dai.balance));
+
+      setTlcInfo({
+        minBorrow: fromAtto(min),
+        borrowRate: fromAtto(debtInfo[1].interestRate),
+        liquidationLtv: fromAtto(debtInfo[0].maxLtvRatio),
+        strategyBalance: dai ? fromAtto(dai.balance) : 0,
+      });
     } catch (e) {
       console.log(e);
     }
+  };
+
+  const getLiquidationInfo = (additionalDebt?: number) => {
+    if (!accountPosition || !tlcInfo) return <></>;
+    const liquidationLtv = tlcInfo.liquidationLtv;
+    const collateral = fromAtto(accountPosition.collateral);
+    const debt = fromAtto(accountPosition.currentDebt) + (additionalDebt || 0);
+    const liquidationTpi = debt / liquidationLtv / collateral;
+    const liquidationDebt = collateral * liquidationLtv;
+    return (
+      <>
+        Given a {((debt / collateral) * 100).toFixed(2)}% LTV ratio, your collateral will be liquidated if TPI falls to{' '}
+        <strong>${liquidationTpi.toFixed(3)}</strong> or if your debt rises to{' '}
+        <strong>${liquidationDebt.toFixed(2)}</strong>.
+      </>
+    );
   };
 
   const supply = async () => {
@@ -149,6 +158,7 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
       });
       updateBalance();
       updateAccountPosition();
+      setScreen('overview');
     } catch (e) {
       console.log(e);
       openNotification({
@@ -171,6 +181,7 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
       });
       updateBalance();
       updateAccountPosition();
+      setScreen('overview');
     } catch (e) {
       console.log(e);
       openNotification({
@@ -193,6 +204,7 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
       });
       updateBalance();
       updateAccountPosition();
+      setScreen('overview');
     } catch (e) {
       console.log(e);
       openNotification({
@@ -211,7 +223,7 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
       const daiContract = new ERC20__factory(signer).attach(env.contracts.dai);
       await ensureAllowance(TICKER_SYMBOL.DAI, daiContract, env.contracts.tlc, amount);
       // Repay DAI
-      const tx = await tlcContract.repay(amount, wallet, { gasLimit: 210000 });
+      const tx = await tlcContract.repay(amount, wallet, { gasLimit: 250000 });
       const receipt = await tx.wait();
       openNotification({
         title: `Repaid ${state.repayValue} DAI`,
@@ -219,6 +231,7 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
       });
       updateBalance();
       updateAccountPosition();
+      setScreen('overview');
     } catch (e) {
       console.log(e);
       openNotification({
@@ -237,19 +250,20 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
       const daiContract = new ERC20__factory(signer).attach(env.contracts.dai);
       await ensureAllowance(TICKER_SYMBOL.DAI, daiContract, env.contracts.tlc, amount);
       // Repay DAI
-      const tx = await tlcContract.repayAll(wallet, { gasLimit: 210000 });
+      const tx = await tlcContract.repayAll(wallet, { gasLimit: 350000 });
       const receipt = await tx.wait();
       openNotification({
-        title: `Repaid ${accountPosition?.currentDebt} DAI`,
+        title: `Repaid ${accountPosition ? fromAtto(accountPosition.currentDebt).toFixed(2) : amount} DAI`,
         hash: receipt.transactionHash,
       });
       updateBalance();
       updateAccountPosition();
-    } catch (e) {
+      setScreen('overview');
+    } catch (e: any) {
       console.log(e);
       openNotification({
         title: `Error repaying DAI`,
-        hash: '',
+        hash: e.hash || '',
       });
     }
   };
@@ -289,7 +303,7 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
               state={state}
               tlcInfo={tlcInfo}
               prices={prices}
-              getLiquidationDate={getLiquidationDate}
+              liquidationInfo={getLiquidationInfo}
               setState={setState}
               borrow={borrow}
               back={() => setScreen('overview')}
@@ -310,7 +324,7 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
               tlcInfo={tlcInfo}
               setScreen={setScreen}
               prices={prices}
-              liquidationDate={getLiquidationDate()}
+              liquidationInfo={getLiquidationInfo()}
             />
           )}
         </ModalContainer>

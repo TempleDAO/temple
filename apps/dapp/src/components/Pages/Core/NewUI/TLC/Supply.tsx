@@ -25,7 +25,7 @@ import { BigNumber } from 'ethers';
 interface IProps {
   accountPosition: ITlcDataTypes.AccountPositionStructOutput | undefined;
   state: State;
-  minBorrow: BigNumber | undefined;
+  minBorrow: number | undefined;
   setState: React.Dispatch<React.SetStateAction<State>>;
   supply: () => void;
   back: () => void;
@@ -48,7 +48,7 @@ export const Supply: React.FC<IProps> = ({ accountPosition, state, minBorrow, se
     return getEstimatedCollateral() * (MAX_LTV / 100);
   };
 
-  const minSupply = minBorrow ? (1 / (MAX_LTV / 100)) * fromAtto(minBorrow) : 0;
+  const minSupply = minBorrow ? (1 / (MAX_LTV / 100)) * minBorrow : 0;
   const unusedSupply = accountPosition
     ? fromAtto(accountPosition.collateral) - fromAtto(accountPosition.currentDebt)
     : 0;
@@ -104,6 +104,8 @@ export const Supply: React.FC<IProps> = ({ accountPosition, state, minBorrow, se
               ).toFixed(2);
               setState({ ...state, supplyValue: `${Number(newSupply) > 0 ? newSupply : '0'}` });
             }}
+            min={0}
+            max={100}
             value={(Number(getEstimatedLTV()) / MAX_LTV) * 100}
             progress={(Number(getEstimatedLTV()) / MAX_LTV) * 100}
           />
@@ -120,7 +122,10 @@ export const Supply: React.FC<IProps> = ({ accountPosition, state, minBorrow, se
         </Copy>
       </GradientContainer>
       <FlexCol>
-        <TradeButton onClick={() => supply()} disabled={Number(state.supplyValue) <= 0}>
+        <TradeButton
+          onClick={() => supply()}
+          disabled={Number(state.supplyValue) <= 0 || Number(state.supplyValue) > fromAtto(state.inputTokenBalance)}
+        >
           Supply
         </TradeButton>
       </FlexCol>

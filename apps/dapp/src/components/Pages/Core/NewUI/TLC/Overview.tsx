@@ -6,6 +6,7 @@ import { ITlcDataTypes } from 'types/typechain/contracts/interfaces/v2/templeLin
 import { FlexBetween, Screen, State, RemoveMargin, Title, Copy, MarginTop, Prices, Rule, TlcInfo } from './TLCModal';
 import { fromAtto } from 'utils/bigNumber';
 import styled from 'styled-components';
+import { ReactNode } from 'react';
 
 interface IProps {
   accountPosition: ITlcDataTypes.AccountPositionStructOutput | undefined;
@@ -13,11 +14,11 @@ interface IProps {
   tlcInfo: TlcInfo | undefined;
   setScreen: React.Dispatch<React.SetStateAction<Screen>>;
   prices: Prices;
-  liquidationDate: string;
+  liquidationInfo: ReactNode;
 }
 
-export const Overview: React.FC<IProps> = ({ accountPosition, state, tlcInfo, setScreen, prices, liquidationDate }) => {
-  const getBorrowRate = () => (tlcInfo ? (fromAtto(tlcInfo.borrowRate) * 100).toFixed(2) : 0);
+export const Overview: React.FC<IProps> = ({ accountPosition, state, tlcInfo, setScreen, prices, liquidationInfo }) => {
+  const getBorrowRate = () => (tlcInfo ? (tlcInfo.borrowRate * 100).toFixed(2) : 0);
 
   return (
     <>
@@ -67,12 +68,15 @@ export const Overview: React.FC<IProps> = ({ accountPosition, state, tlcInfo, se
         <FlexBetween>
           <p>Your LTV</p>
           <BrandParagraph>
-            {accountPosition?.collateral.gt(0) ? (fromAtto(accountPosition?.loanToValueRatio) * 100).toFixed(2) : 0}%
+            {accountPosition?.collateral.gt(0)
+              ? ((fromAtto(accountPosition.currentDebt) / fromAtto(accountPosition.collateral)) * 100).toFixed(2)
+              : 0}
+            %
           </BrandParagraph>
         </FlexBetween>
         <FlexBetween>
           <p>Liquidation LTV</p>
-          <BrandParagraph>{tlcInfo ? tlcInfo.liquidationLtv : 0}%</BrandParagraph>
+          <BrandParagraph>{tlcInfo ? tlcInfo.liquidationLtv * 100 : 0}%</BrandParagraph>
         </FlexBetween>
         <FlexBetween>
           <p>Interest Rate</p>
@@ -80,11 +84,7 @@ export const Overview: React.FC<IProps> = ({ accountPosition, state, tlcInfo, se
         </FlexBetween>
       </FlexCol>
       <MarginTop />
-      <Copy>
-        If the current TPI (<strong>${prices.tpi.toFixed(2)}</strong>) and interest rate (
-        <strong>{getBorrowRate()}%</strong>) were fixed, your collateral would be liquidated on{' '}
-        <strong>{liquidationDate}</strong>.
-      </Copy>
+      {accountPosition?.currentDebt.gt(0) && <Copy>{liquidationInfo}</Copy>}
       <Rule />
       <FlexRow>
         <TradeButton onClick={() => setScreen('borrow')} disabled={accountPosition?.collateral.lte(0)}>

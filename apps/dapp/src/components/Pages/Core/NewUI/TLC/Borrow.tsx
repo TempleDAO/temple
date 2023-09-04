@@ -24,16 +24,15 @@ import {
   Warning,
 } from './TLCModal';
 import { fromAtto } from 'utils/bigNumber';
-import { BigNumber } from 'ethers';
 import styled from 'styled-components';
-import { useState } from 'react';
+import { ReactNode, useState } from 'react';
 
 interface IProps {
   accountPosition: ITlcDataTypes.AccountPositionStructOutput | undefined;
   state: State;
   tlcInfo: TlcInfo | undefined;
   prices: Prices;
-  getLiquidationDate: (ltv: number) => string;
+  liquidationInfo: (debt?: number) => ReactNode;
   setState: React.Dispatch<React.SetStateAction<State>>;
   borrow: () => void;
   back: () => void;
@@ -43,15 +42,12 @@ export const Borrow: React.FC<IProps> = ({
   accountPosition,
   state,
   tlcInfo,
-  prices,
-  getLiquidationDate,
+  liquidationInfo,
   setState,
   borrow,
   back,
 }) => {
   const [checkbox, setCheckbox] = useState(false);
-
-  const getBorrowRate = () => (tlcInfo ? (fromAtto(tlcInfo.borrowRate) * 100).toFixed(2) : 0);
 
   const getEstimatedLTV = (): string => {
     return accountPosition
@@ -98,13 +94,26 @@ export const Borrow: React.FC<IProps> = ({
         }`}
         width="100%"
       />
-      {tlcInfo && fromAtto(tlcInfo.minBorrow) > Number(state.borrowValue) && (
+
+      {tlcInfo && tlcInfo.minBorrow > Number(state.borrowValue) && (
         <Warning>
           <InfoCircle>
             <p>i</p>
           </InfoCircle>
           <p>
-            You must borrow at least {formatToken(tlcInfo.minBorrow, state.outputToken)} {state.outputToken}
+            You must borrow at least {tlcInfo.minBorrow} {state.outputToken}
+          </p>
+        </Warning>
+      )}
+      {tlcInfo && tlcInfo.strategyBalance < Number(state.borrowValue) && (
+        <Warning>
+          <InfoCircle>
+            <p>i</p>
+          </InfoCircle>
+          <p>
+            Amount exceeds available DAI.
+            <br />
+            Current max borrow: {tlcInfo.strategyBalance.toFixed(4)} DAI
           </p>
         </Warning>
       )}
@@ -135,14 +144,10 @@ export const Borrow: React.FC<IProps> = ({
       </FlexBetween>
       <GradientContainer>
         <Apy>
-          {tlcInfo ? (fromAtto(tlcInfo.borrowRate) * 100).toFixed(2) : 0}% <span>interest rate</span>
+          {tlcInfo ? (tlcInfo.borrowRate * 100).toFixed(2) : 0}% <span>interest rate</span>
         </Apy>
         <Rule />
-        <Copy>
-          If the current TPI (<strong>${prices.tpi.toFixed(2)}</strong>) and interest rate (
-          <strong>{getBorrowRate()}%</strong>) were fixed, your collateral would be liquidated on{' '}
-          <strong>{getLiquidationDate(Number(getEstimatedLTV()) / 100)}</strong>.
-        </Copy>
+        <Copy>{liquidationInfo(Number(state.borrowValue))}</Copy>
       </GradientContainer>
       <RiskAcknowledgement>
         <Checkbox onClick={() => setCheckbox(!checkbox)} isChecked={checkbox} src={checkmark} />
@@ -157,7 +162,8 @@ export const Borrow: React.FC<IProps> = ({
           disabled={
             !checkbox ||
             (accountPosition && fromAtto(accountPosition.maxBorrow) < Number(state.borrowValue)) ||
-            (tlcInfo && fromAtto(tlcInfo.minBorrow) > Number(state.borrowValue))
+            (tlcInfo && tlcInfo.minBorrow > Number(state.borrowValue)) ||
+            (tlcInfo && tlcInfo.strategyBalance < Number(state.borrowValue))
           }
         >
           Borrow
