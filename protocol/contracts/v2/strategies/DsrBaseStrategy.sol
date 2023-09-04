@@ -255,7 +255,8 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
      * @dev It may withdraw less than requested if there isn't enough balance in the DSR.
      */
     function trvWithdraw(uint256 requestedAmount) external override returns (uint256) {
-        if (msg.sender != address(treasuryReservesVault)) revert OnlyTreasuryReserveVault(msg.sender);
+        address _trvAddr = address(treasuryReservesVault);
+        if (msg.sender != _trvAddr) revert OnlyTreasuryReserveVault(msg.sender);
         if (requestedAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();       
 
         // Checkpoint DSR and calculate how many DSR shares the request equates to.
@@ -270,7 +271,7 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
         }
 
         _dsrWithdrawal(sharesAmount, requestedAmount);
-        daiToken.safeTransfer(address(treasuryReservesVault), requestedAmount);
+        daiToken.safeTransfer(_trvAddr, requestedAmount);
         return requestedAmount;
     }
 

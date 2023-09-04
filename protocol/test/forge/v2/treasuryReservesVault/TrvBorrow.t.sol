@@ -498,7 +498,7 @@ contract TreasuryReservesVaultTestBorrow is TreasuryReservesVaultTestBase {
         }
 
         // The base strategy and TRV has no DAI, so it reverts.
-        vm.expectRevert("ERC20: transfer amount exceeds balance");
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InsufficientBalance.selector, address(dai), 50e18, 0));
         strategy.borrow(dai, 50e18);
     }
 

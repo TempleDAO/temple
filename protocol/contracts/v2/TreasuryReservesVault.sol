@@ -181,7 +181,7 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
         StrategyConfig storage strategyConfig = strategies[strategy];
         strategyConfig.underperformingEquityThreshold = underperformingEquityThreshold;
 
-        ITempleStrategy.AssetBalance memory _assetBalance;
+        ITempleStrategy.AssetBalance calldata _assetBalance;
         uint256 _length = debtCeiling.length;
         IERC20 _token;
         for (uint256 i; i < _length; ++i) {
@@ -304,6 +304,7 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
             // Clean up the debtCeiling approvals for this borrow token.
             // Old borrow ceilings may not be removed, but not an issue
             delete _strategyConfig.debtCeiling[_token];
+            delete _strategyConfig.enabledBorrowTokens[_token];
             delete credits[_token];
         }
 
@@ -608,6 +609,8 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
 
                 // Burn the dTokens from the base strategy.
                 if (_withdrawnAmount > 0) {
+                    _balance += _withdrawnAmount;
+
                     _burnDToken(
                         _baseStrategyAddr, 
                         strategies[_baseStrategyAddr], 
@@ -618,11 +621,11 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
                     );
                 }
             }
-        } else {
-            // The tokens are transferred straight from TRV, no withdrawal from the base strategy
-            // Do an extra check that it at least has the requested amount in case the token isn't a standard ERC20 which already does a check.
-            if (amount > _balance) revert CommonEventsAndErrors.InsufficientBalance(address(token), amount, _balance);
         }
+
+        // The tokens are transferred straight from TRV, no withdrawal from the base strategy
+        // Do an extra check that it at least has the requested amount in case the token isn't a standard ERC20 which already does a check.
+        if (amount > _balance) revert CommonEventsAndErrors.InsufficientBalance(address(token), amount, _balance);
 
         // Finally send the stables.
         token.safeTransfer(recipient, amount);
