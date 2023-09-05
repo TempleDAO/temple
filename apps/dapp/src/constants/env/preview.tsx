@@ -132,25 +132,27 @@ const env: Environment = {
   network: 11155111,
   etherscan: 'https://sepolia.etherscan.io',
   featureFlags: {
+    nexusOnlyMode: true, 
+    // TODO: Should be false once Nexus is ready, 
+    // so we don't get nexus only mode in stage/preview deploys for all branches
     enableAscend: false,
-    nexusOnlyMode: true,
   },
   templeMultisig: '0x3a320fF715dCBbF097e15257B7051dd08fdfb7A2',
   nexus: {
-    templeRelicAddress: '0xCf21B717fd34dA92006aAefc041fFdb86b708529',
-    templeShardsAddress: '0xaBf139511C381f7804EdD6E4c78383b775d8CeeF',
-    templeSacrificeAddress: '0xD0A07fc8Bfe7e2846A67B8C34C6b573Aff5e2511',
-    templeToken: '0xB8FeDaCB1780b3936251b1b0169b4E11A5bA8277',
+    templeRelicAddress: '0x0090F9655a0B0A32cEE0Da5ae45E93EAB4C6d149',
+    templeShardsAddress: '0x98c5E61b1B3731A1f379E8770861164d23118cdc',
+    templeSacrificeAddress: '0x192aA9BfDcA5540406E211950C226C8E0cd5047F',
+    templeToken: '0xcbc7cf85dd0AB91Aa2671400E86ebf3AaC6dc658',
     templePartnerMinterAddress: '0x6C1b2C8073344B7686a54Fcf2CFA28E5b13379d5',
     pathOfTemplarShardAddress: '',
     recipes: [
-      { id: 0, required_ids: [0, 1], required_amounts: [1, 1], reward_ids: [2], reward_amounts: [1] },
-      { id: 2, required_ids: [0, 1], required_amounts: [2, 3], reward_ids: [2], reward_amounts: [1] },
-      { id: 3, required_ids: [0, 1, 2], required_amounts: [1, 2, 1], reward_ids: [3], reward_amounts: [1] },
+      // { id: 0, required_ids: [0, 1], required_amounts: [1, 1], reward_ids: [2], reward_amounts: [1] },
+      // { id: 2, required_ids: [0, 1], required_amounts: [2, 3], reward_ids: [2], reward_amounts: [1] },
+      // { id: 3, required_ids: [0, 1, 2], required_amounts: [1, 2, 1], reward_ids: [3], reward_amounts: [1] },
     ],
     shardMetadata: {
       1: {
-        id: 1,
+        id: 1, //note: this has to align with the id on the contract side
         name: 'Tome of Knowledge',
         description: "Obtained for completing the Temple's Apocrypha.",
         originUrl: 'https://www.voxels.com/spaces/ecd16631-9db3-49d7-b8d6-08e28556a734/play?coords=W@30W,1S,32F',
@@ -158,34 +160,34 @@ const env: Environment = {
         rarity: RARITY_TYPE.EPIC,
       },
       // 2: {
-      //   id: 3,
-      //   name: 'Three',
-      //   description:
-      //     'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam hendrerit velit ac dolor rhoncus, quis lobortis asdf tincidunt. Aliquam risus ex.',
-      //   originUrl: 'https://yyz.com',
+      //   id: 2,
+      //   name: 'Sigil of Temple Enclave',
+      //   description: 'Obtained from completing a pilgrimage through the Temple Gates',
+      //   originUrl: 'https://echoingwhispers.link/',
+      //   logoUrl: 'https://devzodiactemple.mypinata.cloud/ipfs/QmSnRGU8CXtsX7pfnDaZ39JN9bNFZzGF6hwUbSAaW1zDg7',
       //   rarity: RARITY_TYPE.EPIC,
       // },
     },
     quests: [
+      // {
+      //   id: '1',
+      //   title: 'Path Of The Templar',
+      //   origin: 'TempleDAO',
+      //   linkUrl: 'https://nexus.echoingwhispers.link/nexus/relic/no-relic',
+      //   description:
+      //     'The weary Templar seeking safe harbor from the bitter storms of DeFi volatility begins to have fever dreams about a mythical Hall of Scriptures where they may gain knowledge and enlightenment. The intrepid Templar may explore 1 of 5 paths available to them which will grant access to an Enclave of their choosing based on their natural alignments. The paths to the Enclaves of Chaos, Mystery, Logic, Structure and Order stretch out into the distance. Which path will bring you to prosperity?',
+      //   logoUrl: 'https://myst.mypinata.cloud/ipfs/QmU3yaVLhaWi75AUwi4zxMFbu7uM53Pa4duar7jHD2m4Gs/StructureRelic.gif',
+      //   rewardIds: [2],
+      //   rarity: RARITY_TYPE.EPIC,
+      // },
       {
         id: '1',
-        title: 'Path Of The Templar',
-        origin: 'TempleDAO',
-        linkUrl: 'https://nexus.echoingwhispers.link/nexus/relic/no-relic',
-        description:
-          'The weary Templar seeking safe harbor from the bitter storms of DeFi volatility begins to have fever dreams about a mythical Hall of Scriptures where they may gain knowledge and enlightenment. The intrepid Templar may explore 1 of 5 paths available to them which will grant access to an Enclave of their choosing based on their natural alignments. The paths to the Enclaves of Chaos, Mystery, Logic, Structure and Order stretch out into the distance. Which path will bring you to prosperity?',
-        logoUrl: 'https://nexus.echoingwhispers.link/temple.png',
-        rewardIds: [1],
-        rarity: RARITY_TYPE.EPIC,
-      },
-      {
-        id: '2',
         title: 'Temple Scholar',
         origin: 'TempleDAO',
         linkUrl: 'https://www.voxels.com/spaces/ecd16631-9db3-49d7-b8d6-08e28556a734/play?coords=W@30W,1S,32F',
         description:
           'A mysterious and sultry figure in the Hall of Scriptures will point you in the right direction to locate the ancient Temple Library. There you will embark on a quest for knowledge through ancient tomes hidden within the library walls. The path of the Scholar is long but rewarding.',
-        logoUrl: 'https://nexus.echoingwhispers.link/temple.png',
+        logoUrl: 'https://myst.mypinata.cloud/ipfs/QmZxyeEakU7nzExo4t7LEyZwpR8QX6ZdBV72fgrGdGNPvT',
         rewardIds: [1],
         rarity: RARITY_TYPE.EPIC,
       },

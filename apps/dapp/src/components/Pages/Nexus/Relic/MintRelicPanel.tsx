@@ -19,8 +19,13 @@ import mintSuccessvideo from 'assets/videos/m17.mp4';
 import { ZERO } from 'utils/bigNumber';
 import { BigNumber } from 'ethers';
 import { Popover } from 'components/Popover';
+import { useWallet } from 'providers/WalletProvider';
 
-const MintRelicPanel = () => {
+type MintRelicPanelProps = {
+  onSelectEnclave: (enclave: RelicEnclave) => void;
+};
+
+const MintRelicPanel = ({ onSelectEnclave }: MintRelicPanelProps) => {
   const navigate = useNavigate();
   const [selectedEnclave, setSelectedEnclave] = useState<RelicEnclave>();
   const enclaves = [
@@ -45,7 +50,12 @@ const MintRelicPanel = () => {
     setVideoIsOpen(true);
   };
 
-  const [videoIsOpen, setVideoIsOpen] = useState(true);
+  const [videoIsOpen, setVideoIsOpen] = useState(false);
+
+  const selectEnclaveHandler = (enclave: RelicEnclave) => {
+    onSelectEnclave(enclave);
+    setSelectedEnclave(enclave != selectedEnclave ? enclave : undefined);
+  };
 
   return videoIsOpen ? (
     <Popover
@@ -61,22 +71,21 @@ const MintRelicPanel = () => {
       </PopoverChildContainer>
     </Popover>
   ) : (
-    <NexusPanel>
-      <NexusPanelRow>Mint Relic</NexusPanelRow>
+    <>
       <EnclaveCardContainer>
         {enclaves.map((enclave) => (
           <EnclaveCard
             key={enclave}
             enclave={enclave}
             selected={enclave == selectedEnclave}
-            onClick={() => setSelectedEnclave(enclave != selectedEnclave ? enclave : undefined)}
+            onClick={() => selectEnclaveHandler(enclave)}
           />
         ))}
       </EnclaveCardContainer>
-      <br />
-      <br />
-      <MintRelicButtonStyled selectedEnclave={selectedEnclave} onMintHandler={onMintHandler} />
-    </NexusPanel>
+      {/* <br /> */}
+      {/* <br /> */}
+      {/* <MintRelicButtonStyled selectedEnclave={selectedEnclave} onMintHandler={onMintHandler} /> */}
+    </>
   );
 };
 
@@ -96,27 +105,28 @@ const MintRelicButton: FC<{ selectedEnclave?: RelicEnclave; onMintHandler: (reli
   props
 ) => {
   const { selectedEnclave, onMintHandler } = props;
+  const { wallet } = useWallet();
   const enclaveSelected = selectedEnclave != undefined;
   const label = enclaveSelected
     ? `Mint *${capitalize(getEnclavePalette(selectedEnclave))}* Relic`
     : 'You must choose an enclave first.';
   const { mintRelic } = useRelic();
 
-  return (
+  return enclaveSelected ? (
     <Button
       label={label}
       playClickSound
       disabled={!enclaveSelected}
       onClick={async () => {
-        if (enclaveSelected) {
-          const added = await mintRelic(selectedEnclave);
+        if (enclaveSelected && wallet) {
+          const added = await mintRelic(wallet, selectedEnclave);
           if (added) {
             onMintHandler(added.id);
           }
         }
       }}
     />
-  );
+  ) : null;
 };
 
 const MintRelicButtonStyled = styled(MintRelicButton)`

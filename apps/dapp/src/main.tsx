@@ -31,6 +31,7 @@ import { NexusGates } from 'components/Pages/Nexus/NexusGates';
 import NexusLibrary from 'components/Pages/Nexus/Quests/FirstQuest/Library';
 import Quiz from 'components/Pages/Nexus/Quests/FirstQuest/Quiz';
 import PotMint from 'components/Pages/Nexus/Quests/PathOfTemplar';
+import OrigamiPage from 'components/Pages/Nexus/Origami';
 
 // Separate Chunks
 const TeamPayments = React.lazy(() => import('components/Pages/TeamPayments'));
@@ -129,7 +130,7 @@ ReactDOM.render(
                   </>
                 }
               />
-              {/* <Route
+              <Route
                 path="/origami"
                 element={
                   <>
@@ -137,7 +138,7 @@ ReactDOM.render(
                     <OrigamiPage />
                   </>
                 }
-              /> */}
+              />
             </>
           )}
         </Routes>

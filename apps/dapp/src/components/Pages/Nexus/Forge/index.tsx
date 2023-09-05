@@ -125,7 +125,6 @@ const ForgePage = () => {
     dispatch({ type: 'INIT', payload: inventory?.items });
   }, [inventory]);
 
-  // TODO: Should we move all this into its own hook?
   const [forgeResult, setForgeResult] = useState<RelicItemData | null>(null);
   const [recipeId, setRecipeId] = useState<number | null>(null);
 
@@ -146,7 +145,7 @@ const ForgePage = () => {
     };
   }, [transmuteState]);
 
-  const forgeHandler = async (_item: number): Promise<void> => {
+  const forgeHandler = async (): Promise<void> => {
     if (recipeId !== null) {
       await transmute(recipeId);
     }
