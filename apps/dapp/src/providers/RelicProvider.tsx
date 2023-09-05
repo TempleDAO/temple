@@ -5,8 +5,8 @@ import { BigNumber, ContractReceipt, ContractTransaction, Signer } from 'ethers'
 import env from '../constants/env';
 import {
   Relic,
-  Shards,
-  Shards__factory,
+  Shard,
+  Shard__factory,
   Relic__factory,
   TempleSacrifice__factory,
   ERC20__factory,
@@ -23,6 +23,7 @@ import { useWallet } from './WalletProvider';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { ZERO } from 'utils/bigNumber';
 import { equipSound } from 'utils/sound';
+import { formatBigNumber } from 'components/Vault/utils';
 
 const INITIAL_STATE: RelicService = {
   inventory: null,
@@ -81,7 +82,7 @@ export const RelicProvider = (props: PropsWithChildren<{}>) => {
     }
 
     const relicContract = new Relic__factory(signer).attach(env.nexus.templeRelicAddress);
-    const shardsContract = new Shards__factory(signer).attach(env.nexus.templeShardsAddress);
+    const shardsContract = new Shard__factory(signer).attach(env.nexus.templeShardsAddress);
 
     const itemIds = [...Array(200).keys()];
 
@@ -90,31 +91,41 @@ export const RelicProvider = (props: PropsWithChildren<{}>) => {
     };
 
     const fetchRelicIds = async () => {
-      const relicIds = [] as BigNumber[];
       try {
-        for (let i = 0; i < 20; i++) {
-          // load up to 20 relics, it's also a safe guard against infinite loop
-          relicIds.push(await relicContract.tokenOfOwnerByIndex(walletAddress, i));
+        const relicIds = await relicContract.relicsOfOwner(walletAddress);
+        if (!relicIds) {
+          return [];
         }
-      } catch {}
-      return relicIds.sort((a, b) => a.toNumber() - b.toNumber());
+        return relicIds.sort((a, b) => a.toNumber() - b.toNumber());
+      } catch {
+        console.error('Error fetching relic ids');
+        return [];
+      }
     };
 
     const fetchRelicData = async (relicIds: BigNumber[]) => {
       return Promise.all(
         relicIds.map(async (relicId) => {
-          const [itemBalances, [rarity, enclave], xp] = await Promise.all([
+          const [enclave, rarity, xp] = await relicContract.relicInfos(relicId);
+          const [itemBalances] = await Promise.all([
             relicContract.getBalanceBatch(relicId, itemIds),
-            relicContract.getRelicInfos(relicId) as Promise<[RelicRarity, RelicEnclave]>,
-            relicContract.getRelicXP(relicId),
+            // relicContract.getRelicInfos(relicId) as Promise<[RelicRarity, RelicEnclave]>,
+            // relicContract.relicInfos(relicId),
           ]);
+          // enclave: number;
+          // rarity: number;
+          // xp: BigNumber;
           const items = extractValidItems(itemBalances);
           return { id: relicId, enclave, rarity, xp, items } as RelicData;
         })
       );
     };
 
-    const relics = await fetchRelicIds().then(fetchRelicData);
+    const relicIds = await fetchRelicIds();
+    let relics = [] as RelicData[];
+    if (relicIds) {
+      relics = await fetchRelicData(relicIds);
+    }
     const addresses = itemIds.map((_) => walletAddress);
     const items = extractValidItems(await shardsContract.balanceOfBatch(addresses, itemIds));
     return { relics, items };
@@ -150,7 +161,7 @@ export const RelicProvider = (props: PropsWithChildren<{}>) => {
   const transmute = async (recipeId: number) => {
     if (signer) {
       // TODO: Add error handling
-      const shardsContract = new Shards__factory(signer).attach(env.nexus.templeShardsAddress);
+      const shardsContract = new Shard__factory(signer).attach(env.nexus.templeShardsAddress);
 
       let receipt: ContractReceipt;
       try {
@@ -171,10 +182,10 @@ export const RelicProvider = (props: PropsWithChildren<{}>) => {
     }
   };
 
-  const callShardsContractFunction = async (fn: (shardsContract: Shards) => Promise<ContractTransaction>) => {
+  const callShardsContractFunction = async (fn: (shardsContract: Shard) => Promise<ContractTransaction>) => {
     // TODO: Error handling?
     if (inventoryState && signer) {
-      const shardsContract = new Shards__factory(signer).attach(env.nexus.templeShardsAddress);
+      const shardsContract = new Shard__factory(signer).attach(env.nexus.templeShardsAddress);
       const receipt = await (await fn(shardsContract)).wait();
       const inventory = (await updateInventory())!;
       return { inventory, receipt };
@@ -201,9 +212,9 @@ export const RelicProvider = (props: PropsWithChildren<{}>) => {
     return relics.map((r) => `Relic #${r.id.toNumber()}`).join(', ');
   };
 
-  const mintRelic = async (enclave: RelicEnclave) => {
+  const mintRelic = async (address: `0x${string}`, enclave: RelicEnclave) => {
     // TODO: Add error handling
-    const result = await callRelicFunctionAndDiffRelics((relic) => relic.mintRelic(enclave));
+    const result = await callRelicFunctionAndDiffRelics((relic) => relic.mintRelic(address, enclave));
     if (result && result.added.length > 0) {
       openNotification({
         title: `Minted ${joinRelicLabels(result.added)}`,
@@ -220,7 +231,7 @@ export const RelicProvider = (props: PropsWithChildren<{}>) => {
     }
 
     if (wallet && signer) {
-      const shardsContract = new Shards__factory(signer).attach(env.nexus.templeShardsAddress);
+      const shardsContract = new Shard__factory(signer).attach(env.nexus.templeShardsAddress);
       const isApproved = await shardsContract.isApprovedForAll(wallet, env.nexus.templeShardsAddress);
 
       if (!isApproved) {
@@ -252,7 +263,7 @@ export const RelicProvider = (props: PropsWithChildren<{}>) => {
     console.debug(items.length);
 
     const result = await callRelicContractFunction((relicContract) =>
-      relicContract.batchEquipShard(relicId, itemIds, itemCounts)
+      relicContract.batchEquipShards(relicId, itemIds, itemCounts)
     );
 
     if (result) {
@@ -271,7 +282,7 @@ export const RelicProvider = (props: PropsWithChildren<{}>) => {
     }
     const itemIds = items.map((item) => item.id);
     const itemCounts = items.map((item) => item.count);
-    const result = await callRelicContractFunction((relic) => relic.batchUnequipShard(relicId, itemIds, itemCounts));
+    const result = await callRelicContractFunction((relic) => relic.batchUnequipShards(relicId, itemIds, itemCounts));
     if (result) {
       const idString = itemIds.map((id) => `#${id}`).join(', ');
       openNotification({
@@ -283,17 +294,18 @@ export const RelicProvider = (props: PropsWithChildren<{}>) => {
 
   const [isWhitelisted, setIsWhitelisted] = useState(false);
 
+  // TODO: This gets replaced effectively.
   const checkWhiteList = async () => {
     if (!wallet || !signer) {
       return;
     }
 
     const relicContract = new Relic__factory(signer).attach(env.nexus.templeRelicAddress);
-    const receipt = await relicContract.whitelisted(wallet);
-    setIsWhitelisted(receipt);
+    // const receipt = await relicContract.whitelisted(wallet);
+    setIsWhitelisted(false);
   };
 
-  const sacrificeTemple = async (amount: BigNumber) => {
+  const sacrificeTemple = async (amount: BigNumber, enclave: RelicEnclave) => {
     if (!wallet || !signer) {
       return;
     }
@@ -302,7 +314,7 @@ export const RelicProvider = (props: PropsWithChildren<{}>) => {
     await ensureAllowance(TICKER_SYMBOL.TEMPLE_TOKEN, TEMPLE, env.nexus.templeSacrificeAddress, amount, amount);
 
     const sacrificeContract = new TempleSacrifice__factory(signer).attach(env.nexus.templeSacrificeAddress);
-    const txn = await sacrificeContract.sacrifice();
+    const txn = await sacrificeContract.sacrifice(wallet, enclave);
     const receipt = await txn.wait();
 
     setIsWhitelisted(true);

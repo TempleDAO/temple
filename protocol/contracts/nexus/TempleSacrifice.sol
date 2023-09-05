@@ -1,49 +1,69 @@
-//                                       @@@
-//                                       @@@
-//                                       @@@
-//                                       @@@
-//                                       @@@
-//                                       @@@
-//                                       @@@
-//               @@@                    @@@@@                    @@@
-//               @@@                  @@@@@@@@@                  @@@
-//               @@@               .@@@@@@@@@@@@@.               @@@
-//               @@@             (@@@@@@@@@@@@@@@@@)             @@@
-//               @@@           @@@@@@@@@@@@@@@@@@@@@@@           @@@
-//               @@@         @@@@@@@@@@@@@@@@@@@@@@@@@@@         @@@
-//               @@@       @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@       @@@
-//               @@@    .@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@.    @@@
-//               @@@  /@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\  @@@
-//               @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-//               @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+pragma solidity 0.8.19;
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Temple (nexus/TempleSacrifice.sol)
 
-pragma solidity ^0.8.0;
+import { IRelic } from "../interfaces/nexus/IRelic.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { ITempleERC20Token } from "contracts/interfaces/core/ITempleERC20Token.sol";
+import { CommonEventsAndErrors } from "../common/CommonEventsAndErrors.sol";
 
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+contract TempleSacrifice is Ownable {
 
-interface IRelic {
-    function whitelistTemplar(address _toWhitelist) external;
-}
-
-contract TempleSacrifice is Ownable, ReentrancyGuard {
-    using SafeERC20 for IERC20;
-
-    IRelic public RELIC;
-    IERC20 public TEMPLE;
-    uint256 private originTime;
+    ///@notice the Relic ERC721A token
+    IRelic public immutable relic;
+    /// @notice the temple token used for payment in minting a relic
+    ITempleERC20Token public immutable templeToken;
+    /// @notice whitelisting contract for validation before sacrifice
+    address public whitelistContract;
+    /// @notice start time from which price increases
+    uint64 public originTime;
+    /// @notice custom price set by governance
     uint256 public customPrice;
 
-    function sacrifice() external nonReentrant {
-        uint256 allowance = TEMPLE.allowance(msg.sender, address(this));
-        require(allowance >= getPrice(), "Check $TEMPLE allowance");
-        TEMPLE.safeTransferFrom(msg.sender, 0x000000000000000000000000000000000000dEaD, getPrice());
-        RELIC.whitelistTemplar(msg.sender);
+    uint256 private MINIMUM_CUSTOM_PRICE = 20**18;
+
+    event OriginTimeSet(uint64 originTime);
+    event CustomPriceSet(uint256 price);
+    event WhitelistContractSet(address whitelistContract);
+    event TempleSacrificed(address account, uint256 amount);
+
+    constructor(address _relic, address _templeToken) Ownable() {
+        relic = IRelic(_relic);
+        templeToken = ITempleERC20Token(_templeToken);
     }
 
-    function getPrice() public view returns (uint256) {
-        uint256 price = customPrice != 0
+    function setWhitelistContract(address _whitelistContract) external onlyOwner {
+        if (_whitelistContract == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); } 
+        whitelistContract = _whitelistContract;
+        emit WhitelistContractSet(whitelistContract);
+    }
+
+    function setOriginTime(uint64 _originTime) external onlyOwner {
+        if (_originTime < block.timestamp) { revert CommonEventsAndErrors.InvalidParam(); }
+        originTime = _originTime;
+        emit OriginTimeSet(originTime);
+    }
+
+    function setCustomPrice(uint256 _price) external onlyOwner {
+        if (_price < MINIMUM_CUSTOM_PRICE) { revert CommonEventsAndErrors.InvalidParam(); }
+        customPrice = _price;
+        emit CustomPriceSet(customPrice);
+    }
+
+    function sacrifice(address account, IRelic.Enclave enclave) external onlyWhitelistContract {
+        uint256 amount = _getPrice();
+        templeToken.burnFrom(account, amount);
+        relic.mintRelic(account, enclave);
+        emit TempleSacrificed(account, amount);
+    }
+
+    function getPrice() external view returns (uint256) {
+        return _getPrice();
+    }
+
+    function _getPrice() private view returns (uint256) {
+         uint256 price = customPrice != 0
             ? customPrice
             : (10 *
                 10**18 +
@@ -52,20 +72,14 @@ contract TempleSacrifice is Ownable, ReentrancyGuard {
                     (((((block.timestamp - originTime) / 60 / 60 / 24) * 100) /
                         365) * 100)) /
                 10000);
-        if (price > 50 * 10**18) price = 50 * 10**18;
+        if (price > 50 * 10**18) {
+            price = 50 * 10**18;
+        }
         return price;
     }
 
-    function setAddresses(address _relic, address _temple) external onlyOwner {
-        RELIC = IRelic(_relic);
-        TEMPLE = IERC20(_temple);
-    }
-
-    function setOriginTime(uint256 _time) external onlyOwner {
-        originTime = _time;
-    }
-
-    function setCustomPrice(uint256 _price) external onlyOwner {
-        customPrice = _price;
+    modifier onlyWhitelistContract() {
+        if (msg.sender != whitelistContract) { revert CommonEventsAndErrors.InvalidAccess(); }
+        _;
     }
 }

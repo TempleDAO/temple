@@ -19,7 +19,7 @@ export const DevMintPage = () => {
 
   return (
     <>
-      <MintRelicPanel />
+      {/* <MintRelicPanel /> */}
       <NexusPanel>
         <NexusPanelRow>
           <span>Mint Item (dev testing only)</span>
