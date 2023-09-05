@@ -49,8 +49,8 @@ const env: Environment = {
     // balancerV2: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-goerli-v2',
   },
   intervals: {
-    ascendData: 30000,
-    ascendQuote: 10000,
+    ascendData: 30_000,
+    ascendQuote: 10_000,
   },
   etherscan: 'https://sepolia.etherscan.io',
   tokens: {
@@ -110,18 +110,21 @@ const env: Environment = {
   network: 30001,
   featureFlags: {
     enableAscend: true,
-    nexusOnlyMode: false
+    nexusOnlyMode: true,
   },
   templeMultisig: '0x3a320fF715dCBbF097e15257B7051dd08fdfb7A2',
   nexus: {
     templeRelicAddress: '',
     templeShardsAddress: '',
     templeSacrificeAddress: '',
+    templeToken: '',
     templePartnerMinterAddress: '',
     pathOfTemplarShardAddress: '',
-    templeToken: '',
-    recipes: [],
-    shardMetadata: {},
+    recipes: [
+    
+    ],
+    shardMetadata: {
+    },
     quests: [],
   },
 };

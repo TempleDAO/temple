@@ -1,4 +1,4 @@
-import { ItemInventory } from 'providers/types';
+import { ItemInventory, RelicEnclave } from 'providers/types';
 import { Navigate } from 'react-router-dom';
 import styled from 'styled-components';
 import MintRelicPanel from './MintRelicPanel';
@@ -23,13 +23,8 @@ export const NoRelicPanel = (props: { inventory: ItemInventory }) => {
   const { wallet, signer, isConnected } = useWallet();
   const { address } = useAccount();
 
-  const { checkWhiteList, fetchSacrificePrice } = useRelic();
-  const {
-    error: checkWhitelistError,
-    handler: checkWhitelistHandler,
-    isLoading: checkWhitelistLoading,
-    isWhitelisted,
-  } = checkWhiteList;
+  const { fetchSacrificePrice } = useRelic();
+
   const {
     error: fetchSacrificePriceError,
     handler: fetchSacrificePriceHandler,
@@ -39,7 +34,6 @@ export const NoRelicPanel = (props: { inventory: ItemInventory }) => {
 
   useEffect(() => {
     if (signer && address) {
-      checkWhitelistHandler();
       fetchSacrificePriceHandler();
     }
   }, [signer, address]);
@@ -58,7 +52,7 @@ export const NoRelicPanel = (props: { inventory: ItemInventory }) => {
     return <Navigate to={`../${relics[0].id.toString()}`} />;
   }
 
-  const isLoading = checkWhitelistLoading || sacrificePriceLoading;
+  const isLoading = sacrificePriceLoading;
 
   return (
     <>
@@ -72,14 +66,7 @@ export const NoRelicPanel = (props: { inventory: ItemInventory }) => {
       ) : (
         <>
           {isLoading && <NexusLoading />}
-          {isWhitelisted && (
-            <>
-              <h3>You do not yet possess a Relic</h3>
-              <MintRelicPanel />
-            </>
-          )}
-          {!isLoading && !isWhitelisted && <SacrificePanel amount={sacrificePrice} />}
-          {checkWhitelistError && <div>Error while checking whitelist!</div>}
+          {!isLoading && <SacrificePanel amount={sacrificePrice} />}
           {fetchSacrificePriceError && <div>Error while checking sacrifice price!</div>}
         </>
       )}
@@ -114,10 +101,13 @@ const tooltipContent = (
 const SacrificePanel = (props: SacrificeUIProps) => {
   const { sacrificeTemple } = useRelic();
 
+  const [enclaveSelected, setEnclaveSelected] = useState(false);
+  const [selectedEnclave, setSelectedEnclave] = useState<RelicEnclave>();
+
   return (
     <NexusPanel>
       <SacrificePanelRow>Are you worthy...?</SacrificePanelRow>
-      <Image width={300} src={centerCircle}></Image>
+      {/* <Image width={300} src={centerCircle}></Image> */}
       <h3>{'Welcome, Seekers.'}</h3>
       <PriceRow>
         {'To prove yourself worthy to enter the Nexus, you must sacrifice some TEMPLE'}
@@ -126,6 +116,17 @@ const SacrificePanel = (props: SacrificeUIProps) => {
         </Tooltip>
         <MintYourFirstRelicText>{'and mint your first Relic'}</MintYourFirstRelicText>
       </PriceRow>
+      <SectionHeading>{'1. Select your Enclave'}</SectionHeading>
+      <MintRelicContainer>
+        <MintRelicPanel
+          onSelectEnclave={(enclave) => {
+            setEnclaveSelected(true);
+            setSelectedEnclave(enclave);
+          }}
+        />
+      </MintRelicContainer>
+      <SectionHeading>{'2. Sacrifice Temple to Mint a Relic'}</SectionHeading>
+
       <a
         href="https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0x6d2caf65163ff290ec2a362d6e413fae4643f90e"
         target="_new"
@@ -133,21 +134,36 @@ const SacrificePanel = (props: SacrificeUIProps) => {
           clickSound.play();
         }}
       >
-        <GetTempleButton playClickSound>
+        {' '}
+        <GetTempleButton disabled={!enclaveSelected} playClickSound>
           <UniswapImage src={templeUniswap} width={30} /> Get Temple
         </GetTempleButton>
       </a>
+
       <SacrificeButton
+        disabled={!enclaveSelected}
         playClickSound
-        label={`Sacrifice ${formatBigNumber(props.amount)} TEMPLE`}
+        label={`Sacrifice ${formatBigNumber(props.amount, 0)} TEMPLE`}
         loading={sacrificeTemple.isLoading}
         onClick={async () => {
-          await sacrificeTemple.handler(props.amount);
+          await sacrificeTemple.handler(props.amount, selectedEnclave!);
         }}
       />
     </NexusPanel>
   );
 };
+
+const SectionHeading = styled.div`
+  font-size: 1.5rem;
+  font-family: Megant, serif;
+  color: ${({ theme }) => theme.palette.brandDark};
+`;
+
+const MintRelicContainer = styled.div`
+  // border: 2px none ${({ theme }) => theme.palette.brandDark};
+  // border-radius: 5px;
+  width: 100%;
+`;
 
 const MintYourFirstRelicText = styled.div`
   // font-size: 1.25rem;

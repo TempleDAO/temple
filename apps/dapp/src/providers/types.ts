@@ -159,7 +159,7 @@ export interface RelicService {
   inventory: Nullable<ItemInventory>;
   inventoryLoading: boolean;
   updateInventory(): Promise<void>;
-  mintRelic(enclave: RelicEnclave): Promise<Nullable<RelicData>>;
+  mintRelic(address: `0x${string}`, enclave: RelicEnclave): Promise<Nullable<RelicData>>;
   equipShards(relicId: BigNumber, items: RelicItemData[]): Promise<void>;
   unequipShards(relicId: BigNumber, items: RelicItemData[]): Promise<void>;
   transmute(recipeId: number): Promise<void>;
@@ -170,7 +170,7 @@ export interface RelicService {
     error: Nullable<Error>;
   };
   sacrificeTemple: {
-    handler(amount: BigNumber): Promise<void>;
+    handler(amount: BigNumber, enclave: RelicEnclave): Promise<void>;
     isLoading: boolean;
     error: Nullable<Error>;
   };
