@@ -20,7 +20,15 @@
   },
   "dependencies": {
     "@balancer-labs/sdk": "^1.0.4",
+    "@safe-global/safe-apps-provider": "^0.18.0",
+    "@safe-global/safe-apps-sdk": "^8.1.0",
     "@tippyjs/react": "^4.2.6",
+    "@web3-onboard/coinbase": "^2.2.5",
+    "@web3-onboard/core": "^2.20.5",
+    "@web3-onboard/gnosis": "^2.1.10",
+    "@web3-onboard/injected-wallets": "^2.10.4",
+    "@web3-onboard/react": "^2.8.10",
+    "@web3-onboard/walletconnect": "^2.4.4",
     "axios": "^0.24.0",
     "buffer": "^6.0.3",
     "d3-shape": "^3.0.1",
@@ -46,8 +54,7 @@
     "tippy.js": "^6.3.7",
     "use-debounce": "^9.0.2",
     "use-interval": "^1.4.0",
-    "util": "^0.12.4",
-    "wagmi": "^0.11.6"
+    "util": "^0.12.4"
   },
   "devDependencies": {
     "@babel/core": "^7.16.0",

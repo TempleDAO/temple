@@ -16,6 +16,7 @@ import ohmImg from 'assets/images/newui-images/tokens/ohm.png';
 
 interface SizeProps {
   small?: boolean;
+  width?: number | string | undefined;
 }
 
 export interface CryptoSelector {
@@ -151,7 +152,7 @@ export const Input = ({
   };
 
   return (
-    <InputWrapper isDisabled={disabled}>
+    <InputWrapper isDisabled={disabled} width={props.width}>
       <InputTokenWrapper>
         {renderCrypto()}
         {hint && (
@@ -189,8 +190,7 @@ export const InputWrapper = styled.div<InputWrapperProps>`
   height: ${({ small }) => (small ? '3rem' : '4.5rem')};
 
   border: 0.125rem /* 2/16 */ solid ${(props) => props.theme.palette.brand};
-  // width will be manage by layout case by case
-  width: 90%;
+  width: ${({ width }) => width || '90%'};
   border-radius: 10px;
   padding: 0.75rem;
 

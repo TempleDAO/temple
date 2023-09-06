@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { BigNumber, Contract, utils } from 'ethers';
-import { useBalance } from 'wagmi';
 
 import balancerVaultAbi from 'data/abis/balancerVault.json';
 import { Pool } from 'components/Layouts/Ascend/types';
@@ -26,13 +25,16 @@ export const useVaultContract = (pool: undefined | Pool, vaultAddress: string) =
     setVaultContract(new Contract(vaultAddress as string, balancerVaultAbi, signer));
   }, [vaultAddress, vaultContract, signer, setVaultContract]);
 
-  const _poolBalance = useBalance({
-    address: wallet,
-    token: pool?.address,
-    enabled: !!wallet && !!pool?.address,
-  });
+  // TODO: This is commented out because of the wagmi replacement
+  // We can probably remove the file entirely if we don't need it anymore
+  // const _poolBalance = useBalance({
+  //   address: wallet,
+  //   token: pool?.address,
+  //   enabled: !!wallet && !!pool?.address,
+  // });
 
-  const poolBalance = _poolBalance?.data?.value || ZERO;
+  // const poolBalance = _poolBalance?.data?.value || ZERO;
+  const poolBalance = ZERO;
 
   const joinPool = async (poolId: string, joinType: JoinType, assets: string[], _maxAmountsIn: DecimalBigNumber[]) => {
     const maxAmountsIn = _maxAmountsIn.map((dbn) => dbn.value);

@@ -99,11 +99,11 @@ export interface SwapService {
 
 export interface WalletState {
   // has the user connected a wallet to the dapp
-  wallet: `0x${string}` | undefined;
+  wallet: string | undefined;
+  walletAddress: string | undefined;
   // current
   balance: Balance;
   signer: Nullable<Signer>;
-  network: Nullable<Network>;
 
   isConnecting: boolean;
   isConnected: boolean;
