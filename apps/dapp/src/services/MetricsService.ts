@@ -15,9 +15,10 @@ import { fromAtto } from 'utils/bigNumber';
 import { formatNumber } from 'utils/formatter';
 import { fetchSubgraph } from 'utils/subgraph';
 import { Nullable } from 'types/util';
-import { useProvider } from 'wagmi';
 import axios from 'axios';
 import env from 'constants/env';
+import { useConnectWallet } from '@web3-onboard/react';
+import { useWallet } from 'providers/WalletProvider';
 
 export interface ProtocolMetrics {
   templeValue: number;
@@ -86,7 +87,7 @@ const MINT_MULTIPLE = 6.0;
  * Service to get the Temple Metrics
  */
 export class MetricsService {
-  private provider: ethers.providers.JsonRpcProvider;
+  private signer: ethers.Signer;
   private stableCoinContract: ERC20;
   private templeCoinContract: ERC20;
   private ogTempleCoinContract: OGTemple;
@@ -99,18 +100,25 @@ export class MetricsService {
   private farmingWalletAddress: string;
 
   constructor() {
-    this.provider = useProvider();
+    // TODO: This file was changed because of the wagmi replacement
+    // We can probably remove the file entirely if we don't need it anymore
+    const {signer} = useWallet();
+    if (!signer) {
+      throw new Error('No signer. Unable to initialize MetricsService');
+    }
 
-    this.stableCoinContract = ERC20__factory.connect(env.contracts.frax, this.provider);
+    this.signer = signer;
 
-    this.templeCoinContract = ERC20__factory.connect(env.contracts.temple, this.provider);
+    this.stableCoinContract = ERC20__factory.connect(env.contracts.frax, this.signer);
+
+    this.templeCoinContract = ERC20__factory.connect(env.contracts.temple, this.signer);
 
     this.frax3crv_fCoinContract =
-      env.contracts.frax3CrvFarming && new ethers.Contract(env.contracts.frax3CrvFarming, frax3crv_fABI, this.provider);
+      env.contracts.frax3CrvFarming && new ethers.Contract(env.contracts.frax3CrvFarming, frax3crv_fABI, this.signer);
 
     this.frax3crv_fRewardsContract =
       env.contracts.frax3CrvFarmingRewards &&
-      new ethers.Contract(env.contracts.frax3CrvFarmingRewards, frax3crv_fRewardsABI, this.provider);
+      new ethers.Contract(env.contracts.frax3CrvFarmingRewards, frax3crv_fRewardsABI, this.signer);
 
     this.treasuryAddress = env.contracts.treasuryIv;
     this.treasuryAddresses = [
@@ -122,11 +130,11 @@ export class MetricsService {
 
     this.farmingWalletAddress = env.contracts.farmingWallet;
 
-    this.treasuryContract = TreasuryIV__factory.connect(env.contracts.treasuryIv, this.provider);
+    this.treasuryContract = TreasuryIV__factory.connect(env.contracts.treasuryIv, this.signer);
 
-    this.templeStakingContract = TempleStaking__factory.connect(env.contracts.templeStaking, this.provider);
+    this.templeStakingContract = TempleStaking__factory.connect(env.contracts.templeStaking, this.signer);
 
-    this.ogTempleCoinContract = OGTemple__factory.connect(env.contracts.ogTemple, this.provider);
+    this.ogTempleCoinContract = OGTemple__factory.connect(env.contracts.ogTemple, this.signer);
   }
 
   /**

@@ -1,5 +1,4 @@
 import { useNotification } from 'providers/NotificationProvider';
-import { useAccount } from 'wagmi';
 import { Nullable } from 'types/util';
 import useRequestState from './use-request-state';
 import env from 'constants/env';
@@ -21,7 +20,10 @@ export const TEMPLE_ASSET: Asset = {
 type RequestStateType = ReturnType<typeof useRequestState>;
 
 export const useWatchAsset = (asset: Asset): [Nullable<RequestStateType[0]>, RequestStateType[1]] => {
-  const { connector } = useAccount();
+  // TODO: This is commented out because of the wagmi replacement
+  // We can probably remove the file entirely if we don't need it anymore
+  // const { connector } = useAccount();
+  const connector: any = {};
   const { openNotification } = useNotification();
   const canWatchAsset = !!connector && !!connector.watchAsset;
 
