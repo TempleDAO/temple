@@ -153,7 +153,7 @@ export const Borrow: React.FC<IProps> = ({
         <Checkbox onClick={() => setCheckbox(!checkbox)} isChecked={checkbox} src={checkmark} />
         <div>
           <p>I acknowledge the risks of borrowing including increased risk of liquidation.</p>
-          <a href="#">Find out more</a>
+          {/* <a href="#">Find out more</a> */}
         </div>
       </RiskAcknowledgement>
       <FlexCol>
