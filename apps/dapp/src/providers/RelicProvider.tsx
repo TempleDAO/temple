@@ -16,7 +16,6 @@ import {
 import { Nullable } from 'types/util';
 import { asyncNoop } from 'utils/helpers';
 import useRequestState from 'hooks/use-request-state';
-import { useSigner } from 'wagmi';
 import { NoWalletAddressError } from './errors';
 import { useNotification } from './NotificationProvider';
 import { useWallet } from './WalletProvider';
@@ -67,8 +66,7 @@ const TXN_SUCCESS_CODE = 1;
 const RelicContext = createContext(INITIAL_STATE);
 
 export const RelicProvider = (props: PropsWithChildren<{}>) => {
-  const { data: signer } = useSigner();
-  const { wallet, ensureAllowance } = useWallet();
+  const { wallet, ensureAllowance, signer } = useWallet();
   const { openNotification } = useNotification();
 
   const [inventoryState, setInventoryState] = useState<Nullable<ItemInventory>>(INITIAL_STATE.inventory);
@@ -212,7 +210,7 @@ export const RelicProvider = (props: PropsWithChildren<{}>) => {
     return relics.map((r) => `Relic #${r.id.toNumber()}`).join(', ');
   };
 
-  const mintRelic = async (address: `0x${string}`, enclave: RelicEnclave) => {
+  const mintRelic = async (address: string, enclave: RelicEnclave) => {
     // TODO: Add error handling
     const result = await callRelicFunctionAndDiffRelics((relic) => relic.mintRelic(address, enclave));
     if (result && result.added.length > 0) {
