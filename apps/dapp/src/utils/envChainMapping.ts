@@ -43,8 +43,8 @@ export const ARBITRUM_CHAIN: ChainDefinition = {
 };
 
 export const ARBITRUM_GOERLI_CHAIN: ChainDefinition = {
-  id: 421611,
-  token: 'ETH',
+  id: 421613,
+  token: 'AGOR',
   name: 'Arbitrum Goerli',
   label: 'Arbitrum Goerli',
   rpcUrl: env.rpcUrl,
