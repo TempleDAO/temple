@@ -5,7 +5,6 @@ import FirstSlide from './FirstSlide';
 import { QuizQuestion, pickQuestions, QuizAnswer } from './questions';
 import QuestionSlide from './QuestionSlide';
 import { useWallet } from 'providers/WalletProvider';
-import { useAccount } from 'wagmi';
 import ConnectWalletSlide from './ConnectWalletSlide';
 import SuccessSlide from './SuccessSlide';
 
@@ -23,8 +22,7 @@ type QuizAnswerState = {
 const EMPTY_QUIZ_ANSWER_STATE: QuizAnswerState = {};
 
 const Quiz = () => {
-  const { isConnected } = useWallet();
-  const { address } = useAccount();
+  const { isConnected, walletAddress } = useWallet();
 
   const [questionNumber, setQuestionNumber] = useState(0);
   const [questions, setQuestions] = useState([] as QuizQuestion[]);
@@ -35,12 +33,12 @@ const Quiz = () => {
   const [showConnect, setShowConnect] = useState(false);
 
   useEffect(() => {
-    if (address && isConnected) {
+    if (walletAddress && isConnected) {
       setShowConnect(false);
       return;
     }
     setShowConnect(true);
-  }, [address, isConnected]);
+  }, [walletAddress, isConnected]);
 
   useEffect(() => {
     setQuestions(pickQuestions(NUMBER_OF_QUESTIONS));

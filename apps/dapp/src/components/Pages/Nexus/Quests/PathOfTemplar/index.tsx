@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useWallet } from 'providers/WalletProvider';
-import { useAccount } from 'wagmi';
 import PotSuccessSlide from './PotSuccessSlide';
 import PotConnectWalletSlide from './PotConnectWalletSlide';
 import PotCollectSlide from './PotCollectSlide';
@@ -12,26 +11,25 @@ const PotMint = () => {
   const { enclave } = useParams();
 
   if (!enclave) {
-    return (<div>{'Missing enclave'}</div>);
+    return <div>{'Missing enclave'}</div>;
   }
 
   if (!ALLOWED_ENCLAVES.includes(enclave)) {
     return <div>{`Invalid enclave: ${enclave}`}</div>;
   }
 
-  const { isConnected } = useWallet();
-  const { address } = useAccount();
+  const { isConnected, walletAddress } = useWallet();
 
   const [mintSuccess, setMintSuccess] = useState(false);
   const [showConnect, setShowConnect] = useState(false);
 
   useEffect(() => {
-    if (address && isConnected) {
+    if (walletAddress && isConnected) {
       setShowConnect(false);
       return;
     }
     setShowConnect(true);
-  }, [address, isConnected]);
+  }, [walletAddress, isConnected]);
 
   const onMintSuccess = () => {
     setMintSuccess(true);
@@ -44,7 +42,7 @@ const PotMint = () => {
   if (mintSuccess) {
     return <PotSuccessSlide />;
   }
-  
+
   // TODO: Clean up/sanitize enclave
 
   return (

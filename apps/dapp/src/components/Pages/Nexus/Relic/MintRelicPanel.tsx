@@ -105,7 +105,7 @@ const MintRelicButton: FC<{ selectedEnclave?: RelicEnclave; onMintHandler: (reli
   props
 ) => {
   const { selectedEnclave, onMintHandler } = props;
-  const { wallet } = useWallet();
+  const { wallet, walletAddress } = useWallet();
   const enclaveSelected = selectedEnclave != undefined;
   const label = enclaveSelected
     ? `Mint *${capitalize(getEnclavePalette(selectedEnclave))}* Relic`
