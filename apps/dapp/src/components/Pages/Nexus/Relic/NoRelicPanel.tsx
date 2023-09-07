@@ -11,7 +11,6 @@ import { useRelic } from 'providers/RelicProvider';
 import { useEffect, useState } from 'react';
 import { NexusLoading } from '.';
 import { useWallet } from 'providers/WalletProvider';
-import { useAccount } from 'wagmi';
 import { formatBigNumber } from 'components/Vault/utils';
 import { BigNumber } from 'ethers';
 import { Account } from 'components/Layouts/CoreLayout/Account';
@@ -20,8 +19,7 @@ import { clickSound } from 'utils/sound';
 
 export const NoRelicPanel = (props: { inventory: ItemInventory }) => {
   const { relics } = props.inventory;
-  const { wallet, signer, isConnected } = useWallet();
-  const { address } = useAccount();
+  const { wallet, walletAddress, signer, isConnected } = useWallet();
 
   const { fetchSacrificePrice } = useRelic();
 
@@ -33,10 +31,10 @@ export const NoRelicPanel = (props: { inventory: ItemInventory }) => {
   } = fetchSacrificePrice;
 
   useEffect(() => {
-    if (signer && address) {
+    if (signer && walletAddress) {
       fetchSacrificePriceHandler();
     }
-  }, [signer, address]);
+  }, [signer, walletAddress]);
 
   const [showConnect, setShowConnect] = useState(true);
 

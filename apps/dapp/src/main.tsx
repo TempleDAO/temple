@@ -80,7 +80,7 @@ ReactDOM.render(
       <GlobalStyle />
       <BrowserRouter>
         <Routes>
-          {nexusOnly && (
+          {!nexusOnly && (
             <>
               <Route path="/" element={<Home />} />
               <Route path="/tlc" element={<Home tlc={true} />} />

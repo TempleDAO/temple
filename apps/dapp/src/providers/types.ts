@@ -159,7 +159,7 @@ export interface RelicService {
   inventory: Nullable<ItemInventory>;
   inventoryLoading: boolean;
   updateInventory(): Promise<void>;
-  mintRelic(address: `0x${string}`, enclave: RelicEnclave): Promise<Nullable<RelicData>>;
+  mintRelic(address: string, enclave: RelicEnclave): Promise<Nullable<RelicData>>;
   equipShards(relicId: BigNumber, items: RelicItemData[]): Promise<void>;
   unequipShards(relicId: BigNumber, items: RelicItemData[]): Promise<void>;
   transmute(recipeId: number): Promise<void>;
