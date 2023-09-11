@@ -25,7 +25,6 @@ contract TempleSacrificeTestBase is TempleTest {
 
     event OriginTimeSet(uint64 originTime);
     event CustomPriceSet(uint256 price);
-    event WhitelistContractSet(address whitelistContract);
     event TempleSacrificed(address account, uint256 amount);
 
 
@@ -55,18 +54,6 @@ contract TempleSacrificeTestBase is TempleTest {
 
 contract TempleSacrificeAccessTest is TempleSacrificeTestBase {
 
-    function test_access_setWhitelistContractFail(address caller) public {
-        vm.assume(caller != address(this));
-        vm.startPrank(caller);
-        vm.expectRevert("Ownable: caller is not the owner");
-        templeSacrifice.setWhitelistContract(alice);
-    }
-
-    function test_access_setWhitelistContractSuccess() public {
-        // this contract is owner
-        templeSacrifice.setWhitelistContract(alice);
-    }
-
     function test_access_setOriginTimetFail(address caller) public {
         vm.assume(caller != address(this));
         vm.startPrank(caller);
@@ -92,16 +79,6 @@ contract TempleSacrificeAccessTest is TempleSacrificeTestBase {
 
 contract TempleSacrificeTest is TempleSacrificeAccessTest {
     uint256 private constant MINIMUM_CUSTOM_PRICE = 30 ether;
-
-    function test_setWhitelistContract() public {
-        address whitelistContract = alice;
-        assertEq(templeSacrifice.whitelistContract(), address(0));
-        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
-        templeSacrifice.setWhitelistContract(address(0));
-        vm.expectEmit(address(templeSacrifice));
-        emit WhitelistContractSet(whitelistContract);
-        templeSacrifice.setWhitelistContract(whitelistContract);
-    }
 
     function test_setOriginTime() public {
         uint64 originTime = uint64(block.timestamp - 1);
@@ -139,8 +116,6 @@ contract TempleSacrificeTest is TempleSacrificeAccessTest {
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         templeSacrifice.sacrifice(alice, IRelic.Enclave.Chaos);
 
-        templeSacrifice.setWhitelistContract(bob);
-        vm.startPrank(bob);
         vm.expectRevert(abi.encodeWithSelector(TempleSacrifice.FutureOriginTime.selector, originTime));
         templeSacrifice.sacrifice(alice, IRelic.Enclave.Chaos);
 
