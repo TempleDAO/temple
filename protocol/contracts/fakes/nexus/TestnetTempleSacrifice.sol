@@ -31,6 +31,6 @@ contract TestnetTempleSacrifice {
     }
 
     function getPrice() public pure returns (uint256) {
-        return 1**18;
+        return 10**18;
     }
 }

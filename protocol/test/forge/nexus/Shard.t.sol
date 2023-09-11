@@ -498,12 +498,12 @@ contract ShardTest is ShardTestAccess {
         shard.setPartnerAllowedShardCaps(operator, shardIds, caps);
 
         uint256[] memory amounts = new uint256[](1);
-        relic.setBlacklistAccount(alice, true, shardIds, amounts);
+        relic.setBlacklistAccount(alice, true, RELIC_1_ID, shardIds, amounts);
         changePrank(operator);
         vm.expectRevert(abi.encodeWithSelector(Shard.AccountBlacklisted.selector, alice));
         shard.partnerMint(alice, SHARD_3_ID, 1);
         changePrank(executor);
-        relic.setBlacklistAccount(alice, false, shardIds, amounts);
+        relic.setBlacklistAccount(alice, false, RELIC_1_ID, shardIds, amounts);
         changePrank(operator);
         vm.expectRevert(abi.encodeWithSelector(Shard.ShardMintNotAllowed.selector, operator, SHARD_3_ID));
         shard.partnerMint(alice, SHARD_3_ID, 1);
@@ -548,7 +548,17 @@ contract ShardTest is ShardTestAccess {
         shard.setPartnerAllowedShardId(operator, SHARD_4_ID, true);
         shard.setPartnerAllowedShardCaps(operator, shardIds, caps);
 
+        amounts = new uint256[](2);
+        relic.setBlacklistAccount(alice, true, RELIC_1_ID, shardIds, amounts);
         changePrank(operator);
+        vm.expectRevert(abi.encodeWithSelector(Shard.AccountBlacklisted.selector, alice));
+        shard.partnerMint(alice, SHARD_3_ID, 1);
+        changePrank(executor);
+        relic.setBlacklistAccount(alice, false, RELIC_1_ID, shardIds, amounts);
+
+        changePrank(operator);
+        amounts = new uint256[](1);
+        amounts[0] = 2;
         vm.expectRevert(abi.encodeWithSelector(Shard.InvalidParamLength.selector));
         shard.partnerBatchMint(alice, shardIds, amounts);
 
@@ -585,6 +595,17 @@ contract ShardTest is ShardTestAccess {
         // reserve shard for partners
         shard.setPartnerAllowedShardId(operator, SHARD_3_ID, true);
 
+        {
+            uint256[] memory amounts = new uint256[](2);
+            uint256[] memory shardIds = new uint256[](2);
+            relic.setBlacklistAccount(alice, true, RELIC_1_ID, shardIds, amounts);
+            changePrank(operator);
+            vm.expectRevert(abi.encodeWithSelector(Shard.AccountBlacklisted.selector, alice));
+            shard.partnerMint(alice, SHARD_3_ID, 1);
+            changePrank(executor);
+            relic.setBlacklistAccount(alice, false, RELIC_1_ID, shardIds, amounts);
+        }
+
         changePrank(operator);
         vm.expectRevert(abi.encodeWithSelector(Shard.ReservedPartnerShard.selector, SHARD_3_ID));
         shard.mint(alice, SHARD_3_ID, 1);
@@ -601,26 +622,35 @@ contract ShardTest is ShardTestAccess {
     }
 
     function test_mintBatch() public {
-        uint256[] memory amounts = new uint256[](1);
+        uint256[] memory amounts = new uint256[](2);
         uint256[] memory shardIds = new uint256[](2);
-        amounts[0] = 2;
-        
-        shardIds[0] = SHARD_1_ID;
-        shardIds[1] = SHARD_2_ID;
 
-        vm.startPrank(operator);
+        {   
+            vm.startPrank(executor);
+            relic.setBlacklistAccount(alice, true, RELIC_1_ID, shardIds, amounts);
+            changePrank(operator);
+            vm.expectRevert(abi.encodeWithSelector(Shard.AccountBlacklisted.selector, alice));
+            shard.partnerMint(alice, SHARD_3_ID, 1);
+            changePrank(executor);
+            relic.setBlacklistAccount(alice, false, RELIC_1_ID, shardIds, amounts);
+        }
+        amounts = new uint256[](1);
+        changePrank(operator);
         vm.expectRevert(abi.encodeWithSelector(Shard.InvalidParamLength.selector));
         shard.mintBatch(alice, shardIds, amounts);
 
-        amounts = new uint256[](2);
-        amounts[0] = 2;
-        amounts[1] = 1;
-        shardIds[0] = SHARD_3_ID;
-        changePrank(executor);
-        shard.setPartnerAllowedShardId(operator, SHARD_3_ID, true);
-        changePrank(operator);
-        vm.expectRevert(abi.encodeWithSelector(Shard.ReservedPartnerShard.selector, SHARD_3_ID));
-        shard.mintBatch(alice, shardIds, amounts);
+        {
+            amounts = new uint256[](2);
+            amounts[0] = 2;
+            amounts[1] = 1;
+            shardIds[0] = SHARD_3_ID;
+            shardIds[1] = SHARD_2_ID;
+            changePrank(executor);
+            shard.setPartnerAllowedShardId(operator, SHARD_3_ID, true);
+            changePrank(operator);
+            vm.expectRevert(abi.encodeWithSelector(Shard.ReservedPartnerShard.selector, SHARD_3_ID));
+            shard.mintBatch(alice, shardIds, amounts);
+        }
 
         shardIds[0] = SHARD_1_ID;
         uint256 aliceShard1BalanceBefore = shard.balanceOf(alice, SHARD_1_ID);
@@ -649,7 +679,7 @@ contract ShardTest is ShardTestAccess {
         shard.setApprovalForAll(address(relic), true);
         relic.batchEquipShards(RELIC_1_ID, shardIds, amounts);
         changePrank(executor);
-        relic.setBlacklistAccount(bob, true, shardIds, amounts);
+        relic.setBlacklistAccount(bob, true, RELIC_1_ID, shardIds, amounts);
         relic.burnBlacklistedAccountShards(bob, false, shardIds);
     }
 }
