@@ -65,8 +65,8 @@ export const APP_CHAINS_FOR_WEB3_INIT = APP_CHAINS.map((chainDefinition) => ({
 }));
 
 if (env.featureFlags.nexusOnlyMode) {
-  ENV_CHAIN_MAPPING.set('production', ARBITRUM_CHAIN);
-  ENV_CHAIN_MAPPING.set('preview', ARBITRUM_GOERLI_CHAIN);
+  ENV_CHAIN_MAPPING.set('production-nexus', ARBITRUM_CHAIN);
+  ENV_CHAIN_MAPPING.set('preview-nexus', ARBITRUM_GOERLI_CHAIN);
   ENV_CHAIN_MAPPING.set('local', LOCAL_CHAIN);
 } else {
   ENV_CHAIN_MAPPING.set('production', MAINNET_CHAIN);

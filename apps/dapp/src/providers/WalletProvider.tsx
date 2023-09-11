@@ -1,3 +1,4 @@
+import React from 'react';
 import { createContext, PropsWithChildren, useContext, useEffect, useState } from 'react';
 import { BigNumber, ethers, Signer } from 'ethers';
 import { useConnectWallet } from '@web3-onboard/react';
@@ -181,7 +182,7 @@ export const WalletProvider = (props: PropsWithChildren<object>) => {
 
     if (allowance.lt(minAllowance)) {
       // increase allowance
-      const approveTXN = await token.approve(spender, DEFAULT_ALLOWANCE, { gasLimit: 50000 });
+      const approveTXN = await token.approve(spender, allowanceToApprove, { gasLimit: 50000 });
       await approveTXN.wait();
 
       // Show feedback to user
