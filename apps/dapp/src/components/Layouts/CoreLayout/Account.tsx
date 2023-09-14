@@ -10,12 +10,29 @@ import { useConnectWallet, useSetChain } from '@web3-onboard/react';
 
 import { useMemo } from 'react';
 import { useWallet } from 'providers/WalletProvider';
+import { isDevelopmentEnv } from 'utils/helpers';
+import Tooltip from 'components/Tooltip/Tooltip';
+import { ENV_CHAIN_MAPPING, isSupportedChain, MAINNET_CHAIN } from 'utils/envChainMapping';
 
 export const Account = () => {
   const [{ wallet, connecting }, connect, disconnect] = useConnectWallet();
   const { walletAddress } = useWallet();
   const [{ connectedChain }] = useSetChain();
   const currentChainId = useMemo(() => parseInt(connectedChain?.id || '', 16), [connectedChain]);
+
+  // current chain / wrong network
+  const ENV_VARS = import.meta.env;
+  const ENV = ENV_VARS.VITE_ENV;
+  const IS_PROD = ENV === 'production';
+
+  const currentNetworkId = useMemo(() => parseInt(connectedChain?.id || '', 16), [connectedChain]);
+  const defaultChainForEnv = ENV_CHAIN_MAPPING.get(ENV) || MAINNET_CHAIN;
+  const isSupported = isSupportedChain(currentNetworkId);
+
+  const isWrongNetwork = useMemo(
+    () => !isSupported || (!IS_PROD && defaultChainForEnv.id !== currentNetworkId),
+    [isSupported, IS_PROD, defaultChainForEnv, currentNetworkId]
+  );
 
   const isSmallDesktop = useMediaQuery({
     query: queryVerySmallDesktop,
@@ -43,6 +60,11 @@ export const Account = () => {
 
     return (
       <>
+        {!isSmallDesktop && isWrongNetwork && <Spacer /> && (
+          <Tooltip content={`The default chain for ${ENV} is ${defaultChainForEnv.name}`} inline>
+            <WrongNetworkWarning>⚠️</WrongNetworkWarning>&nbsp;
+          </Tooltip>
+        )}
         {!isSmallDesktop && (
           <UserAddress
             target="_blank"
@@ -122,4 +144,11 @@ const UserAddress = styled.a`
   color: ${({ theme }) => theme.palette.brandLight};
   font-size: 0.75rem;
   font-weight: 300;
+`;
+
+const WrongNetworkWarning = styled.div`
+  color: ${({ theme }) => theme.palette.brandLight};
+  font-size: 0.75rem;
+  font-weight: 300;
+  white-space: nowrap;
 `;

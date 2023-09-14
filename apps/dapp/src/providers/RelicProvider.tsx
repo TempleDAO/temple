@@ -22,7 +22,6 @@ import { useWallet } from './WalletProvider';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { ZERO } from 'utils/bigNumber';
 import { equipSound } from 'utils/sound';
-import { formatBigNumber } from 'components/Vault/utils';
 
 const INITIAL_STATE: RelicService = {
   inventory: null,
@@ -89,14 +88,19 @@ export const RelicProvider = (props: PropsWithChildren<{}>) => {
     };
 
     const fetchRelicIds = async () => {
+      if (!walletAddress) {
+        return[];
+      }
       try {
+        
         const relicIds = await relicContract.relicsOfOwner(walletAddress);
         if (!relicIds) {
           return [];
         }
         return relicIds.sort((a, b) => a.toNumber() - b.toNumber());
-      } catch {
+      } catch (error) {
         console.error('Error fetching relic ids');
+        console.error(error);
         return [];
       }
     };
@@ -124,6 +128,7 @@ export const RelicProvider = (props: PropsWithChildren<{}>) => {
     if (relicIds) {
       relics = await fetchRelicData(relicIds);
     }
+
     const addresses = itemIds.map((_) => walletAddress);
     const items = extractValidItems(await shardsContract.balanceOfBatch(addresses, itemIds));
     return { relics, items };
@@ -230,10 +235,10 @@ export const RelicProvider = (props: PropsWithChildren<{}>) => {
 
     if (wallet && signer) {
       const shardsContract = new Shard__factory(signer).attach(env.nexus.templeShardsAddress);
-      const isApproved = await shardsContract.isApprovedForAll(wallet, env.nexus.templeShardsAddress);
+      const isApproved = await shardsContract.isApprovedForAll(wallet, env.nexus.templeRelicAddress);
 
       if (!isApproved) {
-        const txn = await shardsContract.setApprovalForAll(env.nexus.templeShardsAddress, true);
+        const txn = await shardsContract.setApprovalForAll(env.nexus.templeRelicAddress, true);
         const txnResult = await txn.wait();
 
         if (txnResult.status === TXN_SUCCESS_CODE) {
@@ -336,9 +341,15 @@ export const RelicProvider = (props: PropsWithChildren<{}>) => {
       return;
     }
 
-    const sacrificeContract = new TempleSacrifice__factory(signer).attach(env.nexus.templeSacrificeAddress);
-    const price: BigNumber = await sacrificeContract.getPrice();
-    setSacrificePrice(price);
+    try {
+      const sacrificeContract = new TempleSacrifice__factory(signer).attach(env.nexus.templeSacrificeAddress);
+      const price: BigNumber = await sacrificeContract.getPrice();
+      setSacrificePrice(price); 
+    } catch (error) {
+      console.error('Error fetching sacrifice price');
+      console.error(error);
+      throw error;
+    }
   };
 
   const [sacrificePrice, setSacrificePrice] = useState(ZERO);
@@ -352,11 +363,9 @@ export const RelicProvider = (props: PropsWithChildren<{}>) => {
       return;
     }
 
-    // TODO: Add error handling
-    const partnerMinterContract = new Apocrypha__factory(signer).attach(env.nexus.templePartnerMinterAddress);
-
     let receipt: ContractReceipt;
     try {
+      const partnerMinterContract = new Apocrypha__factory(signer).attach(env.nexus.templePartnerMinterAddress);
       const txnReceipt = await partnerMinterContract.mintShard({ gasLimit: 400000 });
       receipt = await txnReceipt.wait();
     } catch (error: any) {

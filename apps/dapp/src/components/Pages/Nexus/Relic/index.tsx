@@ -16,12 +16,15 @@ export const EMPTY_INVENTORY: ItemInventory = {
 };
 
 const NexusPage = () => {
-  const { wallet, isConnected } = useWallet();
+  const { wallet, signer, isConnected } = useWallet();
   const { inventory, updateInventory, inventoryLoading } = useRelic();
 
   useEffect(() => {
+    if (!wallet || !signer || !isConnected) {
+      return;
+    }
     updateInventory();
-  }, [wallet, isConnected]);
+  }, [wallet, signer, isConnected]);
   const bgImage = inventory?.relics.length ? bgActive : bgInactive;
 
   return (
