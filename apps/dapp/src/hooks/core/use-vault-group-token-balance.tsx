@@ -194,13 +194,15 @@ export const useVaultGroupBalances = (vaultGroups: Nullable<VaultGroup[]>) => {
   const hasVaultGroups = (vaultGroups || []).length > 0;
 
   useEffect(() => {
-    if (!isConnected || !hasVaultGroups) {
+    if (!isConnected || !hasVaultGroups || !wallet || !signer) {
       return;
     }
 
     fetchVaultGroupBalances();
   }, [
     isConnected,
+    wallet,
+    signer,
     hasVaultGroups,
     fetchVaultGroupBalances,
   ]);

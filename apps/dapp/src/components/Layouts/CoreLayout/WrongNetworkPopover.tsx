@@ -59,7 +59,7 @@ export const WrongNetworkPopover = () => {
   const onDismiss = () => {
     // Only allow dismissing popover in staging and dev environments.
     setIsOpen(false);
-    setDismissedChainId(currentNetworkId!);
+    setDismissedChainId(currentNetworkId);
   };
 
   // Not all wallets allow switching network programatically.
