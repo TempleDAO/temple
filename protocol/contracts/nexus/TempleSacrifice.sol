@@ -76,7 +76,7 @@ contract TempleSacrifice is Ownable {
         unchecked {
             timeDifference = originTime - block.timestamp;
         }
-        uint256 price =  _muldivRoundUp(maxPrice, timeDifference, PRICE_MAX_PERIOD);
+        uint256 price = _muldivRoundUp(maxPrice, timeDifference, PRICE_MAX_PERIOD);
         return price;
         
         // uint256 price = customPrice != 0

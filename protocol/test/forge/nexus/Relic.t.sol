@@ -84,6 +84,8 @@ contract RelicTestBase is TempleTest {
         // mint some shards to bob
         changePrank(executor);
         shard.setTemplarMinter(operator, true);
+        shard.setShardId(SHARD_1_ID, true);
+        shard.setShardId(SHARD_2_ID, true);
         changePrank(operator);
         shard.mint(bob, SHARD_1_ID, 5);
         shard.mint(bob, SHARD_2_ID, 10);
@@ -139,7 +141,7 @@ contract RelicTestBase is TempleTest {
         return relicId;
     }
 
-    function _emptyUintArray(uint256 size) internal returns (uint256[] memory arr) {
+    function _emptyUintArray(uint256 size) internal pure returns (uint256[] memory arr) {
         arr = new uint256[](size);
     }
 }

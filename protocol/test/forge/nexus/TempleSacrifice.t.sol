@@ -138,16 +138,33 @@ contract TempleSacrificeTest is TempleSacrificeAccessTest {
     }
 
     function test_getPrice() public {
+        // origin time not set
+        uint256 price = templeSacrifice.getPrice();
+        assertEq(price, 0);
+        // set origin time
         uint256 timestamp = block.timestamp;
         templeSacrifice.setOriginTime(uint64(timestamp + 100 seconds));
-        templeSacrifice.setCustomPrice(25**18);
-        uint256 price = templeSacrifice.getPrice();
-        console.logString("PRICE, AT");
-        console.logUint(price);
-        console.logUint(timestamp);
-        assertEq(price, 50*10**18);
-        templeSacrifice.setCustomPrice(49 * 10**18);
-        assertEq(templeSacrifice.getPrice(), 49 * 10**18);
+        price = templeSacrifice.getPrice();
+        assertEq(price, type(uint256).max);
+        templeSacrifice.setCustomPrice(35 * 1 ether);
+        price = templeSacrifice.getPrice();
+        assertEq(price, 35 * 1 ether);
+        templeSacrifice.setCustomPrice(49 * 1 ether);
+        price = templeSacrifice.getPrice();
+        assertEq(price, 49 * 1 ether);
+        // can set very high custom price
+        templeSacrifice.setCustomPrice(120 * 1 ether);
+        price = templeSacrifice.getPrice();
+        assertEq(price, 120 * 1 ether);
         // reset custom price to 0
+        templeSacrifice.setCustomPrice(0);
+        price = templeSacrifice.getPrice();
+        assertEq(price, type(uint256).max);
+
+        // timestamp warps
+        templeSacrifice.setOriginTime(uint64(block.timestamp + 100));
+        vm.warp(block.timestamp + 99);
+        price = templeSacrifice.getPrice();
+        assertEq(price, type(uint256).max);
     }
 }

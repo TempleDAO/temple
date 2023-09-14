@@ -68,6 +68,7 @@ contract ShardTestBase is TempleTest {
     event PartnerAllowedShardIdSet(address partner, uint256 shardId, bool allow);
     event TransferSingle(address operator, address from, address to, uint256 id, uint256 value);
     event ShardEnclaveSet(Shard.Enclave enclave, uint256 shardId);
+    event RegularShardIdSet(uint256 shardId, bool allow);
     
     // todo test minting to blacklisted accounts
     function setUp() public {
@@ -92,6 +93,10 @@ contract ShardTestBase is TempleTest {
             shard.setShardUri(SHARD_2_ID, SHARD_2_URI);
             shard.setShardUri(SHARD_3_ID, SHARD_3_URI);
             shard.setShardUri(SHARD_4_ID, SHARD_4_URI);
+            shard.setShardId(SHARD_1_ID, true);
+            shard.setShardId(SHARD_2_ID, true);
+            shard.setShardId(SHARD_2_ID, true);
+            shard.setShardId(SHARD_4_ID, true);
 
             changePrank(operator);
             shard.mint(bob, SHARD_1_ID, 5);
@@ -116,7 +121,7 @@ contract ShardTestBase is TempleTest {
         shard.setRecipe(RECIPE_1_ID, recipe);
     }
 
-    function _getRecipe1() internal returns (Shard.Recipe memory recipe) {
+    function _getRecipe1() internal pure returns (Shard.Recipe memory recipe) {
         uint256[] memory inputShardIds = new uint256[](2);
         inputShardIds[0] = SHARD_1_ID;
         inputShardIds[1] = SHARD_2_ID;
@@ -138,10 +143,83 @@ contract ShardTestBase is TempleTest {
         uint256[] memory inputShardIds = new uint256[](1);
         recipe.inputShardIds = inputShardIds;
     }
+
+    function _unsetRegularShards() internal {
+        vm.startPrank(executor);
+        bool[] memory allows = new bool[](4);
+        uint256[] memory shardIds = new uint256[](4);
+        allows[0] = allows[1] = allows[2] = allows[3] = false;
+        shardIds[0] = SHARD_1_ID;
+        shardIds[1] = SHARD_2_ID;
+        shardIds[2] = SHARD_3_ID;
+        shardIds[3] = SHARD_4_ID;
+        shard.setShardIds(shardIds, allows);
+        // shard.setShardId(SHARD_1_ID, false);
+        // shard.setShardId(SHARD_2_ID, false);
+        // shard.setShardId(SHARD_3_ID, false);
+    }
+}
+
+contract ShardTestView is ShardTestBase {
+    function test_partnerAllowedShardIds() public {
+        uint256[] memory shardsBefore = shard.getAllPartnerShardIds();
+        vm.startPrank(executor);
+        shard.setPartnerAllowedShardId(operator, SHARD_1_ID, true);
+        uint256[] memory shardsAfter = shard.getAllPartnerShardIds();
+        assertEq(shardsAfter.length, shardsBefore.length + 1);
+        assertEq(shardsAfter[shardsAfter.length - 1], SHARD_1_ID);
+        shard.setPartnerAllowedShardId(bob, SHARD_2_ID, true);
+        shard.setPartnerAllowedShardId(alice, SHARD_3_ID, true);
+        shardsAfter = shard.getAllPartnerShardIds();
+        assertEq(shardsAfter.length, shardsBefore.length + 3);
+        assertEq(shardsAfter[2], SHARD_3_ID);
+        assertEq(shardsAfter[1], SHARD_2_ID);
+        uint256[] memory operatorShards = shard.getPartnerAllowedShardIds(operator);
+        assertEq(operatorShards.length, 1);
+    }
+
+    function test_enclaveShards() public {
+        vm.startPrank(executor);
+        shard.setShardEnclave(Shard.Enclave.Mystery, SHARD_2_ID);
+        uint256[] memory mysteryShards = shard.getEnclaveShards(Shard.Enclave.Mystery);
+        assertEq(mysteryShards.length, 1);
+        assertEq(mysteryShards[0], SHARD_2_ID);
+        shard.setShardEnclave(Shard.Enclave.Chaos, SHARD_3_ID);
+        mysteryShards = shard.getEnclaveShards(Shard.Enclave.Mystery);
+        assertEq(mysteryShards.length, 1);
+        assertEq(mysteryShards[0], SHARD_2_ID);
+        assertEq(shard.isEnclaveShard(Shard.Enclave.Mystery, SHARD_2_ID), true);
+        assertEq(shard.isEnclaveShard(Shard.Enclave.Mystery, SHARD_3_ID), false);
+        assertEq(shard.isEnclaveShard(Shard.Enclave.Chaos, SHARD_2_ID), false);
+        assertEq(shard.isEnclaveShard(Shard.Enclave.Chaos, SHARD_3_ID), true);
+    }
+
+    function test_getPartnerMintInfo() public {
+        vm.startPrank(executor);
+        shard.setPartnerAllowedShardId(alice, SHARD_4_ID, true);
+        shard.setPartnerAllowedShardId(alice, SHARD_2_ID, true);
+        changePrank(alice);
+        Shard.PartnerMintInfo memory partnerMintInfo = shard.getPartnerMintInfo(alice);
+        uint256[] memory shardIdsBefore = partnerMintInfo.shardIds;
+        uint256[] memory balancesBefore = partnerMintInfo.balances;
+        uint256[] memory capsBefore = partnerMintInfo.caps;
+        assertEq(capsBefore.length, 2);
+        assertEq(balancesBefore.length, 2);
+        assertEq(shardIdsBefore.length, 2);
+
+        shard.partnerMint(bob, SHARD_2_ID, 10);
+        shard.partnerMint(operator, SHARD_4_ID, 5);
+        shard.partnerMint(bob, SHARD_2_ID, 10);
+        partnerMintInfo = shard.getPartnerMintInfo(alice);
+        uint256[] memory shardIdsAfter = partnerMintInfo.shardIds;
+        uint256[] memory balancesAfter = partnerMintInfo.balances;
+        uint256[] memory capsAfter = partnerMintInfo.caps;
+
+    }
 }
 
 
-contract ShardTestAccess is ShardTestBase {
+contract ShardTestAccess is ShardTestView {
 
     function test_access_setShardEnclaveFail(address caller) public {
         vm.assume(caller != executor && caller != rescuer);
@@ -210,13 +288,49 @@ contract ShardTestAccess is ShardTestBase {
         shard.setShardUri(SHARD_1_ID, SHARD_1_URI);
     }
 
+    function test_access_setShardIdFail(address caller) public {
+        vm.assume(caller != executor && caller != rescuer);
+        vm.startPrank(caller);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
+        shard.setShardId(SHARD_1_ID, false);
+    }
+
+    function test_access_setShardIdsFail(address caller) public {
+        vm.assume(caller != executor && caller != rescuer);
+        vm.startPrank(caller);
+        bool[] memory allows = new bool[](4);
+        uint256[] memory shardIds = new uint256[](4);
+        allows[0] = allows[1] = allows[2] = allows[3] = false;
+        shardIds[0] = SHARD_1_ID;
+        shardIds[1] = SHARD_2_ID;
+        shardIds[2] = SHARD_3_ID;
+        shardIds[3] = SHARD_4_ID;
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
+        shard.setShardIds(shardIds, allows);
+    }
+
+    function test_access_setShardIdSuccess() public {
+        vm.startPrank(executor);
+        shard.setShardId(SHARD_1_ID, true);
+    }
+
+    function test_access_setShardIdsSuccess() public {
+        bool[] memory allows = new bool[](4);
+        uint256[] memory shardIds = new uint256[](4);
+        allows[0] = allows[1] = allows[2] = allows[3] = false;
+        shardIds[0] = SHARD_1_ID;
+        shardIds[1] = SHARD_2_ID;
+        shardIds[2] = SHARD_3_ID;
+        shardIds[3] = SHARD_4_ID;
+        vm.startPrank(executor);
+        shard.setShardIds(shardIds, allows);
+    }
+
     function test_access_setPartnerAllowedShardIdSuccess() public {
         vm.startPrank(executor);
         vm.expectEmit(address(shard));
         emit PartnerAllowedShardIdSet(alice, SHARD_1_ID, true);
         shard.setPartnerAllowedShardId(alice, SHARD_1_ID, true);
-        uint256[] memory shardIds = shard.getPartnerAllowedShardIds(alice);
-        // assertEq(shardIds[0], SHARD_1_ID);
     }
 
     function test_access_setShardEnclaveSuccess() public {
@@ -237,8 +351,6 @@ contract ShardTestAccess is ShardTestBase {
         shardIds[1] = SHARD_2_ID;
         
         vm.startPrank(executor);
-        // vm.expectEmit(address(shard));
-        // emit PartnerAllowedShardIdsSet(alice, shardIds, flags);
         shard.setPartnerAllowedShardIds(alice, shardIds, flags);
     }
 
@@ -282,7 +394,6 @@ contract ShardTest is ShardTestAccess {
         Shard.Enclave oldEnclave = Shard.Enclave.Chaos;
         Shard.Enclave newEnclave = Shard.Enclave.Mystery;
         shard.setShardEnclave(newEnclave, SHARD_1_ID);
-        uint256[] memory shards = shard.getEnclaveShards(oldEnclave);
         assertEq(shard.isEnclaveShard(oldEnclave, SHARD_1_ID), false);
         assertEq(shard.isEnclaveShard(newEnclave, SHARD_1_ID), true);
     }
@@ -306,16 +417,12 @@ contract ShardTest is ShardTestAccess {
         vm.startPrank(executor);
         vm.expectRevert(abi.encodeWithSelector(Shard.ZeroAddress.selector));
         shard.setPartnerAllowedShardId(address(0), SHARD_1_ID, true);
-        // try to remove id not existing
-        vm.expectRevert(abi.encodeWithSelector(Shard.PartnerAllowShardFailed.selector, alice, SHARD_1_ID, false));
-        shard.setPartnerAllowedShardId(alice, SHARD_1_ID, false);
+
         // add and test adding twice
         vm.expectEmit(address(shard));
         emit PartnerAllowedShardIdSet(alice, SHARD_1_ID, true);
         shard.setPartnerAllowedShardId(alice, SHARD_1_ID, true);
         assertEq(shard.isPartnerShard(SHARD_1_ID), true);
-        vm.expectRevert(abi.encodeWithSelector(Shard.PartnerAllowShardFailed.selector, alice, SHARD_1_ID, true));
-        shard.setPartnerAllowedShardId(alice, SHARD_1_ID, true);
 
         vm.expectEmit(address(shard));
         emit PartnerAllowedShardIdSet(alice, SHARD_1_ID, false);
@@ -464,6 +571,65 @@ contract ShardTest is ShardTestAccess {
         assertEq(shard.uri(SHARD_2_ID), SHARD_2_URI);
     }
 
+    function test_setShardId() public {
+        _unsetRegularShards();
+        uint256[] memory shardsBefore = shard.getAllRegularShardIds();
+        uint256 lengthBefore = shardsBefore.length;
+        assertEq(lengthBefore, 0);
+        changePrank(executor);
+        vm.expectEmit(address(shard));
+        emit RegularShardIdSet(SHARD_1_ID, true);
+        emit RegularShardIdSet(SHARD_2_ID, true);
+        shard.setShardId(SHARD_1_ID, true);
+        shard.setShardId(SHARD_2_ID, true);
+        uint256[] memory shardsAfter = shard.getAllRegularShardIds();
+        uint256 lengthAfter = shardsAfter.length;
+        assertEq(lengthAfter, lengthBefore + 2);
+        assertEq(shardsAfter[0], SHARD_1_ID);
+        assertEq(shardsAfter[1], SHARD_2_ID);
+        vm.expectEmit(address(shard));
+        emit RegularShardIdSet(SHARD_1_ID, false);
+        shard.setShardId(SHARD_1_ID, false);
+        shardsAfter = shard.getAllRegularShardIds();
+        lengthAfter = shardsAfter.length;
+        assertEq(lengthAfter, lengthBefore + 1);
+        assertEq(shardsAfter[0], SHARD_2_ID);
+    }
+
+    function test_setShardIds() public {
+        _unsetRegularShards();
+        uint256[] memory shardsBefore = shard.getAllRegularShardIds();
+        uint256 lengthBefore = shardsBefore.length;
+        assertEq(lengthBefore, 0);
+        changePrank(executor);
+        uint256[] memory shardIds = new uint256[](2);
+        bool[] memory allows = new bool[](1);
+        shardIds[0] = SHARD_3_ID;
+        shardIds[1] = SHARD_2_ID;
+        vm.expectRevert(abi.encodeWithSelector(Shard.InvalidParamLength.selector));
+        shard.setShardIds(shardIds, allows);
+        allows = new bool[](2);
+        allows[0] = allows[1] = true;
+        vm.expectEmit(address(shard));
+        emit RegularShardIdSet(shardIds[0], allows[0]);
+        emit RegularShardIdSet(shardIds[1], allows[1]);
+        shard.setShardIds(shardIds, allows);
+        uint256[] memory shardsAfter = shard.getAllRegularShardIds();
+        uint256 lengthAfter = shardsAfter.length;
+        assertEq(shardsAfter[0], SHARD_3_ID);
+        assertEq(shardsAfter[1], SHARD_2_ID);
+        assertEq(lengthAfter, lengthBefore + 2);
+        allows[1] = false;
+        vm.expectEmit(address(shard));
+        emit RegularShardIdSet(shardIds[0], true);
+        emit RegularShardIdSet(shardIds[1], false);
+        shard.setShardIds(shardIds, allows);
+        shardsAfter = shard.getAllRegularShardIds();
+        lengthAfter = shardsAfter.length;
+        assertEq(lengthAfter, lengthBefore + 1);
+        assertEq(shardsAfter[0], SHARD_3_ID);
+    }
+
     function test_transmute() public {
         _setRecipe1();
         changePrank(bob);
@@ -578,7 +744,6 @@ contract ShardTest is ShardTestAccess {
         uint256 partnerShard3MintBalanceBefore = shard.partnerMintBalances(operator, SHARD_3_ID);
         uint256 partnerShard4MintBalanceBefore = shard.partnerMintBalances(operator, SHARD_4_ID);
         uint256 aliceShard3BalanceBefore = shard.balanceOf(alice, SHARD_3_ID);
-        uint256 aliceShard4BalanceBefore = shard.balanceOf(alice, SHARD_4_ID);
         caps[0] = caps[1] = 0;
         changePrank(executor);
         shard.setPartnerAllowedShardCaps(operator, shardIds, caps);
@@ -591,7 +756,8 @@ contract ShardTest is ShardTestAccess {
     }
 
     function test_mint() public {
-        vm.startPrank(executor);
+        _unsetRegularShards();
+        changePrank(executor);
         // reserve shard for partners
         shard.setPartnerAllowedShardId(operator, SHARD_3_ID, true);
 
@@ -607,14 +773,24 @@ contract ShardTest is ShardTestAccess {
         }
 
         changePrank(operator);
-        vm.expectRevert(abi.encodeWithSelector(Shard.ReservedPartnerShard.selector, SHARD_3_ID));
-        shard.mint(alice, SHARD_3_ID, 1);
+        vm.expectRevert(abi.encodeWithSelector(Shard.InvalidShard.selector, SHARD_1_ID));
+        shard.mint(alice, SHARD_1_ID, 1);
+
+        changePrank(executor);
+        shard.setShardId(SHARD_1_ID, true);
+        shard.setShardId(SHARD_2_ID, true);
+        changePrank(operator);
 
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
         shard.mint(alice, SHARD_1_ID, 0);
 
         uint256 aliceShard1BalanceBefore = shard.balanceOf(alice, SHARD_1_ID);
         uint256 aliceShard2BalanceBefore = shard.balanceOf(alice, SHARD_2_ID);
+        
+        changePrank(executor);
+        shard.setShardId(SHARD_1_ID, true);
+        shard.setShardId(SHARD_2_ID, true);
+        changePrank(operator);
         shard.mint(alice, SHARD_1_ID, 2);
         shard.mint(alice, SHARD_2_ID, 1);
         assertEq(shard.balanceOf(alice, SHARD_1_ID), aliceShard1BalanceBefore+2);
@@ -622,11 +798,12 @@ contract ShardTest is ShardTestAccess {
     }
 
     function test_mintBatch() public {
+        _unsetRegularShards();
         uint256[] memory amounts = new uint256[](2);
         uint256[] memory shardIds = new uint256[](2);
 
         {   
-            vm.startPrank(executor);
+            changePrank(executor);
             relic.setBlacklistAccount(alice, true, RELIC_1_ID, shardIds, amounts);
             changePrank(operator);
             vm.expectRevert(abi.encodeWithSelector(Shard.AccountBlacklisted.selector, alice));
@@ -643,14 +820,19 @@ contract ShardTest is ShardTestAccess {
             amounts = new uint256[](2);
             amounts[0] = 2;
             amounts[1] = 1;
-            shardIds[0] = SHARD_3_ID;
+            shardIds[0] = SHARD_1_ID;
             shardIds[1] = SHARD_2_ID;
-            changePrank(executor);
-            shard.setPartnerAllowedShardId(operator, SHARD_3_ID, true);
-            changePrank(operator);
-            vm.expectRevert(abi.encodeWithSelector(Shard.ReservedPartnerShard.selector, SHARD_3_ID));
+            // changePrank(executor);
+            // shard.setPartnerAllowedShardId(operator, SHARD_3_ID, true);
+            // changePrank(operator);
+            // vm.expectRevert(abi.encodeWithSelector(Shard.ReservedPartnerShard.selector, SHARD_3_ID));
+            vm.expectRevert(abi.encodeWithSelector(Shard.InvalidShard.selector, SHARD_1_ID));
             shard.mintBatch(alice, shardIds, amounts);
         }
+        changePrank(executor);
+        shard.setShardId(SHARD_1_ID, true);
+        shard.setShardId(SHARD_2_ID, true);
+        changePrank(operator);
 
         shardIds[0] = SHARD_1_ID;
         uint256 aliceShard1BalanceBefore = shard.balanceOf(alice, SHARD_1_ID);
@@ -669,7 +851,10 @@ contract ShardTest is ShardTestAccess {
         shardIds[1] = SHARD_2_ID;
         uint256 bobShard1BalanceBefore = shard.balanceOf(bob, SHARD_1_ID);
         uint256 bobShard2BalanceBefore = shard.balanceOf(bob, SHARD_2_ID);
-        vm.startPrank(bob);
+        vm.startPrank(alice);
+        vm.expectRevert(abi.encodeWithSelector(Shard.ERC1155MissingApprovalForAll.selector, alice, bob));
+        shard.burnBatch(bob, shardIds, amounts);
+        changePrank(bob);
         shard.burn(bob, SHARD_1_ID, 1);
         shard.burnBatch(bob, shardIds, amounts);
         assertEq(shard.balanceOf(bob, SHARD_1_ID), bobShard1BalanceBefore-1-amounts[0]);
@@ -681,5 +866,6 @@ contract ShardTest is ShardTestAccess {
         changePrank(executor);
         relic.setBlacklistAccount(bob, true, RELIC_1_ID, shardIds, amounts);
         relic.burnBlacklistedAccountShards(bob, false, shardIds);
+
     }
 }

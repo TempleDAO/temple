@@ -23,6 +23,8 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
     mapping(address => mapping(uint256 => uint256)) public partnerMintBalances;
     /// @notice keep track of all shards reserved for partners. helps to guard general mints also
     EnumerableSet.UintSet private partnerShards;
+    /// @notice keep track of all other shards not reserved for partners
+    EnumerableSet.UintSet private regularShards;
 
     /// @notice shard ids to uris
     mapping(uint256 => string) public shardUris;
@@ -69,6 +71,7 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
     event TemplarMinterSet(address minter, bool allowed);
     event RecipeDeleted(uint256 recipeId);
     event ShardEnclaveSet(Enclave enclave, uint256 shardId);
+    event RegularShardIdSet(uint256 shardId, bool allow);
 
     error ReservedPartnerShard(uint256 shardId);
     error ShardMintNotAllowed(address caller, uint256 shardId);
@@ -77,13 +80,13 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
     error MintCapExceeded(uint256 cap, uint256 amount);
     error InvalidRecipe(uint256 recipeId);
     error ZeroAddress();
-    error PartnerAllowShardFailed(address partner, uint256 shardId, bool allowed);
     error InvalidParamLength();
     error InvalidAccess(address caller);
     error InvalidCaller(address caller);
     error ERC1155MissingApprovalForAll(address msgSender, address account);
     error AccountBlacklisted(address account);
     error SetShardEnclaveFailed();
+    error InvalidShard(uint256 shardId);
 
 
     constructor(
@@ -136,20 +139,57 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
      * @param shardId Shard ID
      * @param allow If partner can mint
      */
-    function setPartnerAllowedShardId(address partner, uint256 shardId, bool allow) external onlyElevatedAccess {
+    function setPartnerAllowedShardId(
+        address partner,
+        uint256 shardId,
+        bool allow
+    ) external onlyElevatedAccess {
         /// @notice admin should check shardId does not exist
         if (partner == ZERO_ADDRESS) { revert ZeroAddress(); }
-        bool success;
+        // bool success;
         if (allow) {
-            success = allowedPartnerShardIds[partner].add(shardId);
-            if (!success) { revert PartnerAllowShardFailed(partner, shardId, allow); }
+            /*success =*/ allowedPartnerShardIds[partner].add(shardId);
             partnerShards.add(shardId);
         } else {
-            success = allowedPartnerShardIds[partner].remove(shardId);
-            if (!success) { revert PartnerAllowShardFailed(partner, shardId, allow); }
+            /*success =*/ allowedPartnerShardIds[partner].remove(shardId);
             partnerShards.remove(shardId);
         }
         emit PartnerAllowedShardIdSet(partner, shardId, allow);
+    }
+
+    /*
+     * Set regular shard that templars can mint for themselves
+     * @param shardId Shard ID
+     * @param allow If shard should be added or removed
+     */
+    function setShardId(uint256 shardId, bool allow) external onlyElevatedAccess {
+        /// @notice possible that partners are allowed to mint regular shards too
+        if (allow) {
+            regularShards.add(shardId);
+        } else {
+            regularShards.remove(shardId);
+        }
+        emit RegularShardIdSet(shardId, allow);
+    }
+
+    function setShardIds(uint256[] memory shardIds, bool[] memory allows) external onlyElevatedAccess {
+        uint256 _length = shardIds.length;
+        if (_length != allows.length) {  revert InvalidParamLength(); }
+        bool allow;
+        uint256 shardId;
+        for (uint i; i < _length;) {
+            shardId = shardIds[i];
+            allow = allows[i];
+            if (allow) {
+                regularShards.add(shardId);
+            } else {
+                regularShards.remove(shardId);
+            }
+            emit RegularShardIdSet(shardId, allow);
+            unchecked {
+                ++i;
+            }
+        }
     }
 
     /*
@@ -357,7 +397,8 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
         uint256 shardId,
         uint256 amount
     ) external onlyTemplarMinters isNotBlacklisted(to) {
-        if(partnerShards.contains(shardId))  { revert ReservedPartnerShard(shardId); }
+        // if(partnerShards.contains(shardId))  { revert ReservedPartnerShard(shardId); }
+        if (!regularShards.contains(shardId)) { revert InvalidShard(shardId); }
         /// @dev fail early
         if (amount == 0) { revert CommonEventsAndErrors.InvalidParam(); }
         _mint(to, shardId, amount, "");
@@ -381,7 +422,8 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
         uint256 shardId;
         for (uint i; i < _length;) {
             shardId = shardIds[i];
-            if(partnerShards.contains(shardId))  { revert ReservedPartnerShard(shardId); }
+            // if(partnerShards.contains(shardId))  { revert ReservedPartnerShard(shardId); }
+            if(!regularShards.contains(shardId)) { revert InvalidShard(shardId); }
             unchecked {
                 ++i;
             }
@@ -407,15 +449,6 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
         _burnBatch(account, ids, values);
     }
 
-    /// @notice if we ever go back to the token type ID substitution mechanism
-    // function setURI(string memory uri) external onlyOperator {
-    //     _setURI(uri);
-    // }
-
-    // function uriLegacy() external view returns (string memory) {
-    //     return uri();
-    // }
-
     /*
      * Get shard IDs a partner is allowed to mint
      * @param partner The partner
@@ -427,10 +460,18 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
 
     /*
      * Get all exclusive shard IDs of partners
-     * @returns shard IDs
+     * @return shard IDs
      */
     function getAllPartnerShardIds() external view returns (uint256[] memory) {
         return partnerShards.values();
+    }
+
+    /*
+     * Get all regular shard IDs
+     * @return shard IDs
+     */
+    function getAllRegularShardIds() external view returns (uint256[] memory) {
+        return regularShards.values();
     }
 
     /*
@@ -476,7 +517,7 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
      * @param partner The partner
      * @return PartnerMintInfo struct information of partner
      */
-    function getPartnerMintsInfo(address partner) external view returns (PartnerMintInfo memory info) {
+    function getPartnerMintInfo(address partner) external view returns (PartnerMintInfo memory info) {
         EnumerableSet.UintSet storage partnerShardIds = allowedPartnerShardIds[partner];
         /// @dev workaround: storage pointer is not implicitly convertible to expected type uint256[] memory
         /// also have to cast enumerable set to uint256[] to be able to return. 
@@ -486,7 +527,7 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
         info.balances = new uint256[](_length);
         info.caps = new uint256[](_length);
         uint256 shardId;
-        /// @dev indices don't start at 0
+        /// @dev indices don't start at 0 // TODO recheck
         for (uint i = 1; i < _length;) {
             shardId = partnerShardIds.at(i);
             info.shardIds[i-1] = shardId;
