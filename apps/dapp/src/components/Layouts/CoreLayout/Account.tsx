@@ -48,6 +48,7 @@ export const Account = () => {
         .catch(() => false);
       setIsBlocked(blocked);
     };
+    // Do not block in development
     if (isDevelopmentEnv()) {
       setIsBlocked(false);
     } else {

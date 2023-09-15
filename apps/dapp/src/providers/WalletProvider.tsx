@@ -7,7 +7,7 @@ import { useNotification } from 'providers/NotificationProvider';
 import { NoWalletAddressError } from 'providers/errors';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { toAtto } from 'utils/bigNumber';
-import { asyncNoop } from 'utils/helpers';
+import { asyncNoop, isDevelopmentEnv } from 'utils/helpers';
 import { WalletState, Balance } from 'providers/types';
 import {
   ERC20__factory,
@@ -58,7 +58,7 @@ export const WalletProvider = (props: PropsWithChildren<NonNullable<unknown>>) =
   const [walletAddress, setWalletAddress] = useState<string | undefined>();
   
   useEffect(() => {
-    if (wallet) {
+    if (wallet && !connecting) {
       const ethersProvider = new ethers.providers.Web3Provider(wallet.provider);
       setSigner(ethersProvider.getSigner());
       if (wallet.accounts.length > 0) {
@@ -82,7 +82,12 @@ export const WalletProvider = (props: PropsWithChildren<NonNullable<unknown>>) =
         .catch(() => false);
       setIsBlocked(blocked);
     };
-    checkBlocked();
+    // Do not block in development
+    if (isDevelopmentEnv()) {
+      setIsBlocked(false);
+    } else {
+      checkBlocked();
+    }
   }, []);
 
   const getBalance = async (walletAddress: string, signer: Signer) => {
