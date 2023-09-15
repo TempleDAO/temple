@@ -16,15 +16,21 @@ export const EMPTY_INVENTORY: ItemInventory = {
 };
 
 const NexusPage = () => {
-  const { wallet, signer, isConnected } = useWallet();
+  const { wallet, signer, isConnected, isConnecting } = useWallet();
   const { inventory, updateInventory, inventoryLoading } = useRelic();
+
+  useEffect(() => {
+    updateInventory();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (!wallet || !signer || !isConnected) {
       return;
     }
     updateInventory();
-  }, [wallet, signer, isConnected]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wallet, signer, isConnected, isConnecting]);
   const bgImage = inventory?.relics.length ? bgActive : bgInactive;
 
   return (
