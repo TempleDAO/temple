@@ -133,10 +133,8 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
      */
     function setXPRarityThreshold(Rarity rarity, uint256 threshold) external onlyElevatedAccess {
         if (!isAllowedRarity(rarity)) { revert CommonEventsAndErrors.InvalidParam(); }
-        if (threshold != rarityXPThresholds[rarity]) {
-            rarityXPThresholds[rarity] = threshold;
-            emit RarityXPThresholdSet(rarity, threshold);
-        }
+        rarityXPThresholds[rarity] = threshold;
+        emit RarityXPThresholdSet(rarity, threshold);
     }
 
     /*
@@ -176,10 +174,8 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
             uint256 _threshold = thresholds[i];
             Rarity _rarity = rarities[i];
             if (!isAllowedRarity(_rarity)) { revert CommonEventsAndErrors.InvalidParam(); }
-            if (_threshold != rarityXPThresholds[_rarity]) {
-                rarityXPThresholds[_rarity] = _threshold;
-                emit RarityXPThresholdSet(_rarity, _threshold);
-            }
+            rarityXPThresholds[_rarity] = _threshold;
+            emit RarityXPThresholdSet(_rarity, _threshold);
             unchecked {
                 ++i;
             }
@@ -227,13 +223,14 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
         for(uint i; i < _length;) {
             shardId = shardIds[i];
             amount = amounts[i];
-            /// todo blacklist only equipped shards
+            /// blacklist only equipped shards
             equippedShardBalance = equippedShards[shardId];
             if (equippedShardBalance < amount) { revert NotEnoughShardBalance(equippedShardBalance, amount); }
             /// for blacklisting
             if (blacklist) {
                 blacklistedAccountShards[account][shardId] = amount;
-            } else { // removing from blacklist
+            } else { 
+                // removing from blacklist
                 if (amount >= blacklistedAccountShards[account][shardId]) {
                     blacklistedAccountShards[account][shardId] = 0;
                 } else {
@@ -444,6 +441,10 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
         return _totalMinted();
     }
 
+    function nextTokenId() external view returns (uint256) {
+        return _nextTokenId();
+    }
+
     /*
      * Recover tokem sent to contract by error
      * @param token Address of token
@@ -451,7 +452,7 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
      * @return amount Amount of token to recover
      */
     function recoverToken(address token, address to, uint256 amount) external onlyElevatedAccess {
-        if (to == address(0)) revert InvalidAddress(to);
+        if (to == address(0)) { revert ZeroAddress(); }
         IERC20(token).safeTransfer(to, amount);
         emit CommonEventsAndErrors.TokenRecovered(to, token, amount);
     }
@@ -465,24 +466,32 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
     function burnBlacklistedAccountShards(
         address account,
         bool whitelistAfterBurn,
+        uint256 relicId,
         uint256[] memory shardIds
     ) external onlyElevatedAccess {
         if (!blacklistedAccounts[account]) { revert CommonEventsAndErrors.InvalidParam(); }
+        // todo add test for this revert below
+        if (account != ownerOf(relicId)) { revert CommonEventsAndErrors.InvalidAccess(); }
         /// @notice shard IDs cannot be empty. Use setBlacklistAccount directly for setting account blacklist
         uint256 _length = shardIds.length;
-        if (_length == 0) { revert CommonEventsAndErrors.InvalidParam(); }
+        if (_length == 0) { revert InvalidParamLength(); }
+        mapping(uint256 => uint256) storage equippedShards = relicInfos[relicId].equippedShards;
         uint256[] memory amounts = new uint256[](_length);
         uint256 shardId;
+        uint256 equippedAmount;
         for(uint i; i < _length;) {
             shardId = shardIds[i];
             amounts[i] = blacklistedAccountShards[account][shardId];
-            // delete only for argument shards
+            /// delete only for argument shards
             delete blacklistedAccountShards[account][shardId];
+            /// update equipped shards for relic
+            equippedShards[shardId] -= amounts[i];
             unchecked {
                 ++i;
             }
         }
-        shard.burnBatch(account, shardIds, amounts);
+        /// @notice burn from this contract. equipped shards are in contract
+        shard.burnBatch(address(this), shardIds, amounts);
         if (whitelistAfterBurn) {
             delete blacklistedAccounts[account];
         }
@@ -534,10 +543,7 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
         return _nextTokenId();
     }
 
-    // function supportsInterface(bytes4 interfaceId) public view override(ERC1155Holder) returns (bool) {
-    //     return interfaceId == type(IERC1155Receiver).interfaceId || super.supportsInterface(interfaceId);
-    // }
-     /**
+    /**
      * @dev Returns true if this contract implements the interface defined by
      * `interfaceId`. See the corresponding
      * [EIP section](https://eips.ethereum.org/EIPS/eip-165#how-interfaces-are-identified)

@@ -7,6 +7,7 @@ import { Shard } from "../../../contracts/nexus/Shard.sol";
 import { FakeERC20 } from "contracts/fakes/FakeERC20.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { IERC1155Receiver } from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
+import {Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import "forge-std/console.sol";
 
 
@@ -17,8 +18,9 @@ contract RelicTestBase is TempleTest {
     FakeERC20 public temple = new FakeERC20("TEMPLE", "TEMPLE", address(0), 0);
     FakeERC20 public dai = new FakeERC20("DAI", "DAI", address(0), 0);
 
-    string private constant name = "RELIC";
-    string private constant symbol = "REL";
+    string private constant NAME = "RELIC";
+    string private constant SYMBOL = "REL";
+    string internal constant BASE_URI = "http://example.com/";
 
     uint256 internal constant RARITIES_COUNT = 0x05;
     uint256 internal constant ENCLAVES_COUNT = 0x05;
@@ -28,6 +30,7 @@ contract RelicTestBase is TempleTest {
 
     uint256 internal SHARD_1_ID = 0x7B;  // 123
     uint256 internal SHARD_2_ID = 0x1C8; // 456
+    uint256 internal SHARD_3_ID = 0x315; // 789
     uint256 internal RELIC_1_ID = 0x01;
 
     Relic.Rarity public commRarity = Relic.Rarity.Common;
@@ -72,8 +75,8 @@ contract RelicTestBase is TempleTest {
     event AccountBlacklistSet(address account, bool blacklist, uint256[] shardIds, uint256[] amounts);
 
     function setUp() public {
-        relic = new Relic(name, symbol, rescuer, executor);
-        shard = new Shard(address(relic), rescuer, executor, "http://example.com");
+        relic = new Relic(NAME, SYMBOL, rescuer, executor);
+        shard = new Shard(address(relic), rescuer, executor, BASE_URI);
         vm.startPrank(executor);
         relic.setRelicMinter(operator, true);
         relic.setXPController(operator, true);
@@ -94,8 +97,8 @@ contract RelicTestBase is TempleTest {
     }
 
     function test_initialization() public {
-        assertEq(relic.name(), name);
-        assertEq(relic.symbol(), symbol);
+        assertEq(relic.name(), NAME);
+        assertEq(relic.symbol(), SYMBOL);
         assertEq(relic.rescuer(), rescuer);
         assertEq(relic.executor(), executor);
     }
@@ -295,6 +298,9 @@ contract RelicSettersTest is RelicTestAccess {
         relic.setXPRarityThreshold(commRarity, threshold);
         uint256 _threshold = relic.rarityXPThresholds(commRarity);
         assertEq(_threshold, threshold);
+        // same threshold
+        relic.setXPRarityThreshold(commRarity, threshold);
+        assertEq(_threshold, threshold);
     }
 
     function test_setRelicMinter() public {
@@ -431,7 +437,71 @@ contract RelicSettersTest is RelicTestAccess {
     }
 }
 
-contract RelicTest is RelicSettersTest {
+contract RelicViewTest is RelicSettersTest {
+    function test_baseURI() public {
+        vm.startPrank(executor);
+        string memory commonBaseUri = string.concat(BASE_URI, "common/");
+        string memory uncommonBaseUri = string.concat(BASE_URI, "uncommon/");
+        relic.setBaseUriRarity(Relic.Rarity.Common, commonBaseUri);
+        relic.setBaseUriRarity(Relic.Rarity.Uncommon, uncommonBaseUri);
+        changePrank(operator);
+        relic.mintRelic(alice, Relic.Enclave.Chaos);
+        uint256 tokenId = relic.totalSupply() - 1;
+        string memory uri = relic.tokenURI(tokenId);
+        assertEq(uri, string.concat(BASE_URI, "common/", Strings.toString(tokenId)));
+        assertEq(relic.getBaseUriRarity(Relic.Rarity.Common), commonBaseUri);
+        assertEq(relic.getBaseUriRarity(Relic.Rarity.Uncommon), uncommonBaseUri);
+    }
+
+    function test_getBalanceBatch() public {
+        uint256 invalidRelic = 100;
+        uint256[] memory shardIds = new uint256[](2);
+        uint256[] memory amounts = new uint256[](2);
+        shardIds[0] = SHARD_1_ID;
+        shardIds[1] = SHARD_2_ID;
+        vm.expectRevert(abi.encodeWithSelector(Relic.InvalidRelic.selector, invalidRelic));
+        relic.getBalanceBatch(invalidRelic, shardIds);
+
+        uint256 totalMinted = relic.totalMinted();
+        uint256 relicId = relic.nextTokenId() - 1;
+        uint256[] memory balancesBefore = relic.getBalanceBatch(relicId, shardIds);
+        assertEq(balancesBefore[0], 0);
+        assertEq(balancesBefore[1], 0);
+
+        vm.startPrank(executor);
+        shard.setShardId(SHARD_3_ID, true);
+
+        // mint new relic
+        changePrank(operator);
+        relic.mintRelic(alice, Relic.Enclave.Chaos);
+        relicId += 1;
+        
+        shard.mint(alice, SHARD_1_ID, 10);
+        shard.mint(alice, SHARD_2_ID, 15);
+        shard.mint(alice, SHARD_3_ID, 20);
+        amounts[0] = amounts[1] = 5;
+        changePrank(alice);
+        shard.setApprovalForAll(address(relic), true);
+        relic.batchEquipShards(relicId, shardIds, amounts);
+
+        uint256[] memory balancesAfter = relic.getBalanceBatch(relicId, shardIds);
+        console.logString("BAlANCES AFTER");
+        console.logUint(balancesBefore[0]);
+        console.logUint(balancesBefore[1]);
+        console.logUint(balancesAfter[0]);
+        console.logUint(balancesAfter[1]);
+
+        assertEq(balancesAfter[0], 5);
+        assertEq(balancesAfter[1], 5);
+        // equip again same amounts
+        relic.batchEquipShards(relicId, shardIds, amounts);
+        balancesAfter = relic.getBalanceBatch(relicId, shardIds);
+        assertEq(balancesAfter[0], 10);
+        assertEq(balancesAfter[1], 10);
+    }
+}
+
+contract RelicTest is RelicViewTest {
 
     event ApprovalForAll(address caller, address operator, bool approved);
 
@@ -448,7 +518,6 @@ contract RelicTest is RelicSettersTest {
         amounts[0] = 10;
         amounts[1] = 20;
         changePrank(executor);
-        // relic.setBlacklistAccount(alice, true, RELIC_1_ID, shardIds, amounts);
         uint256 relicId = _blacklistAccount(true, true, 0, alice, shardIds, amounts);
 
         // zero address test
@@ -458,9 +527,9 @@ contract RelicTest is RelicSettersTest {
 
         vm.expectRevert(abi.encodeWithSelector(Relic.AccountBlacklisted.selector, alice));
         relic.mintRelic(alice, Relic.Enclave.Chaos);
+
         // reset blacklist
         changePrank(executor);
-        // relic.setBlacklistAccount(alice, false, RELIC_1_ID, shardIds, amounts);
         _blacklistAccount(false, false, relicId, alice, _emptyUintArray(0), _emptyUintArray(0));
 
         changePrank(operator);
@@ -724,10 +793,12 @@ contract RelicTest is RelicSettersTest {
         uint256 amount = 100 ether;
         deal(address(dai), address(relic), amount, true);
 
+        vm.startPrank(executor);
+        vm.expectRevert(abi.encodeWithSelector(Relic.ZeroAddress.selector));
+        relic.recoverToken(address(dai), address(0), amount);
+        
         vm.expectEmit();
         emit CommonEventsAndErrors.TokenRecovered(alice, address(dai), amount);
-
-        vm.startPrank(executor);
         relic.recoverToken(address(dai), alice, amount);
         assertEq(dai.balanceOf(alice), amount);
         assertEq(dai.balanceOf(address(relic)), 0);
@@ -742,7 +813,53 @@ contract RelicTest is RelicSettersTest {
 
         vm.startPrank(executor);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
-        relic.burnBlacklistedAccountShards(alice, true, shardIds);
+        relic.burnBlacklistedAccountShards(alice, true, 0, shardIds);
+
+        // equip shards and blacklist an account
+        changePrank(operator);
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = 2;
+        amounts[1] = 3;
+        uint256 relicId = _blacklistAccount(true, true, 0, alice, shardIds, amounts);
+        assertEq(relic.getEquippedShardAmount(relicId, shardIds[0]), amounts[0]);
+        assertEq(relic.getEquippedShardAmount(relicId, shardIds[1]), amounts[1]);
+        // invalid owner
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
+        // uint256 bobRelicId = (relic.relicsOfOwner(bob))[0];
+        // console.logUint(bobRelicId);
+        relic.burnBlacklistedAccountShards(alice, true, 0, shardIds);
+        
+        // invalid length
+        uint256[] memory invalidShardIds = new uint256[](0);
+        console.logUint(invalidShardIds.length);
+        vm.expectRevert(abi.encodeWithSelector(Relic.InvalidParamLength.selector));
+        relic.burnBlacklistedAccountShards(alice, true, relicId, invalidShardIds);
+
+        uint256 relicShard1AmountBefore = shard.balanceOf(address(relic), shardIds[0]);
+        uint256 relicShard2AmountBefore = shard.balanceOf(address(relic), shardIds[1]);
+        uint256 relicShard3AmountBefore = shard.balanceOf(address(relic), SHARD_3_ID);
+        assertEq(relic.blacklistedAccounts(alice), true);
+        assertEq(relic.blacklistedAccountShards(alice, shardIds[0]), amounts[0]);
+        assertEq(relic.blacklistedAccountShards(alice, shardIds[1]), amounts[1]);
+
+        changePrank(executor);
+        relic.burnBlacklistedAccountShards(alice, true, relicId, shardIds);
+        assertEq(relic.blacklistedAccounts(alice), false);
+        assertEq(relic.blacklistedAccountShards(alice, shardIds[0]), 0);
+        assertEq(relic.blacklistedAccountShards(alice, shardIds[1]), 0);
+        assertEq(relic.getEquippedShardAmount(relicId, shardIds[0]), 0);
+        assertEq(relic.getEquippedShardAmount(relicId, shardIds[1]), 0);
+        assertEq(shard.balanceOf(address(relic), shardIds[0]), relicShard1AmountBefore - amounts[0]);
+        assertEq(shard.balanceOf(address(relic), shardIds[1]), relicShard2AmountBefore - amounts[1]);
+        assertEq(shard.balanceOf(address(relic), SHARD_3_ID), relicShard3AmountBefore);
+
+        // do not whitelist after burn
+        {
+            relicId = _blacklistAccount(true, true, 0, alice, shardIds, amounts);
+            assertEq(relic.blacklistedAccounts(alice), true);
+            relic.burnBlacklistedAccountShards(alice, false, relicId, shardIds);
+            assertEq(relic.blacklistedAccounts(alice), true);
+        }   
     }
 
     function test_beforeTokenTransfersBlacklisted() public {
@@ -779,6 +896,12 @@ contract RelicTest is RelicSettersTest {
         changePrank(bob);
         relic.safeTransferFrom(bob, alice, bobRelics[0]);
         assertEq(relic.ownerOf(bobRelics[0]), alice);
+    }
+
+    function test_supportsInterface() public {
+        assertEq(relic.supportsInterface(0x01ffc9a7), true); // ERC165 interface ID for ERC165.
+        assertEq(relic.supportsInterface(0x80ac58cd), true); // ERC165 interface ID for ERC721.
+        assertEq(relic.supportsInterface(0x5b5e139f), true); // ERC165 interface ID for ERC721Metadata.
     }
 }
 

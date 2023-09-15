@@ -527,12 +527,11 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
         info.balances = new uint256[](_length);
         info.caps = new uint256[](_length);
         uint256 shardId;
-        /// @dev indices don't start at 0 // TODO recheck
-        for (uint i = 1; i < _length;) {
+        for (uint i = 0; i < _length;) {
             shardId = partnerShardIds.at(i);
-            info.shardIds[i-1] = shardId;
-            info.balances[i-1] = partnerMintBalances[partner][shardId];
-            info.caps[i-1] = allowedPartnersShardCaps[partner][i-1];
+            info.shardIds[i] = shardId;
+            info.balances[i] = partnerMintBalances[partner][shardId];
+            info.caps[i] = allowedPartnersShardCaps[partner][shardId];
             unchecked {
                 ++i;
             }

@@ -214,7 +214,36 @@ contract ShardTestView is ShardTestBase {
         uint256[] memory shardIdsAfter = partnerMintInfo.shardIds;
         uint256[] memory balancesAfter = partnerMintInfo.balances;
         uint256[] memory capsAfter = partnerMintInfo.caps;
-
+        assertEq(capsAfter.length, 2);
+        assertEq(balancesAfter.length, 2);
+        assertEq(shardIdsAfter.length, 2);
+        assertEq(balancesAfter[0], 5);
+        assertEq(balancesAfter[1], 20);
+        assertEq(shardIdsAfter[0], SHARD_4_ID);
+        assertEq(shardIdsAfter[1], SHARD_2_ID);
+        assertEq(capsAfter[0], 0);
+        assertEq(capsAfter[1], 0);
+        changePrank(executor);
+        uint256[] memory caps = new uint256[](2);
+        caps[0] = 1_000;
+        caps[1] = 10_000;
+        shard.setPartnerAllowedShardCaps(alice, shardIdsBefore, caps);
+        changePrank(alice);
+        shard.partnerMint(bob, SHARD_2_ID, 100);
+        shard.partnerMint(operator, SHARD_4_ID, 20);
+        partnerMintInfo = shard.getPartnerMintInfo(alice);
+        shardIdsAfter = partnerMintInfo.shardIds;
+        balancesAfter = partnerMintInfo.balances;
+        capsAfter = partnerMintInfo.caps;
+        assertEq(capsAfter.length, 2);
+        assertEq(balancesAfter.length, 2);
+        assertEq(shardIdsAfter.length, 2);
+        assertEq(balancesAfter[0], 25);
+        assertEq(balancesAfter[1], 120);
+        assertEq(shardIdsAfter[0], SHARD_4_ID);
+        assertEq(shardIdsAfter[1], SHARD_2_ID);
+        assertEq(capsAfter[0], 1_000);
+        assertEq(capsAfter[1], 10_000);
     }
 }
 
@@ -865,7 +894,7 @@ contract ShardTest is ShardTestAccess {
         relic.batchEquipShards(RELIC_1_ID, shardIds, amounts);
         changePrank(executor);
         relic.setBlacklistAccount(bob, true, RELIC_1_ID, shardIds, amounts);
-        relic.burnBlacklistedAccountShards(bob, false, shardIds);
+        relic.burnBlacklistedAccountShards(bob, false, RELIC_1_ID, shardIds);
 
     }
 }
