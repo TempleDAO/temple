@@ -6,7 +6,6 @@ import { TempleTest } from "../TempleTest.sol";
 import { Relic } from "../../../contracts/nexus/Relic.sol";
 import { Shard } from "../../../contracts/nexus/Shard.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
-import "forge-std/console.sol";
 
 
 contract ShardTestBase is TempleTest {

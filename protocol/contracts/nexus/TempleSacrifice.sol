@@ -11,7 +11,7 @@ import { mulDiv } from "@prb/math/src/Common.sol";
 
 contract TempleSacrifice is Ownable {
 
-    ///@notice the Relic ERC721A token
+    /// @notice the Relic ERC721A token
     IRelic public immutable relic;
     /// @notice the temple token used for payment in minting a relic
     ITempleERC20Token public immutable templeToken;
@@ -69,14 +69,24 @@ contract TempleSacrifice is Ownable {
         emit CustomPriceSet(customPrice);
     }
 
-    function sacrifice(address account, IRelic.Enclave enclave) external {
+    /*
+     * Sacrifice TEMPLE tokens to mint a Relic
+     * Caller must approve contract to spend TEMPLE tokens
+     * @param enclave Enclave relic will be part of 
+     */
+    function sacrifice(IRelic.Enclave enclave) external {
         if (block.timestamp < originTime) { revert FutureOriginTime(originTime); }
         uint256 amount = _getPrice();
-        templeToken.burnFrom(account, amount);
-        relic.mintRelic(account, enclave);
-        emit TempleSacrificed(account, amount);
+        templeToken.burnFrom(msg.sender, amount);
+        relic.mintRelic(msg.sender, enclave);
+        emit TempleSacrificed(msg.sender, amount);
     }
 
+   
+    /*
+     * Get amount of TEMPLE tokens to mint a Relic
+     * @return Relic price
+     */
     function getPrice() external view returns (uint256) {
         if (block.timestamp < originTime && customPrice == 0) {
             return type(uint256).max;

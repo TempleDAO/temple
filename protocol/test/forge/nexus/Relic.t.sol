@@ -8,7 +8,6 @@ import { FakeERC20 } from "contracts/fakes/FakeERC20.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { IERC1155Receiver } from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import {Strings } from "@openzeppelin/contracts/utils/Strings.sol";
-import "forge-std/console.sol";
 
 
 contract RelicTestBase is TempleTest {
@@ -485,12 +484,6 @@ contract RelicViewTest is RelicSettersTest {
         relic.batchEquipShards(relicId, shardIds, amounts);
 
         uint256[] memory balancesAfter = relic.getBalanceBatch(relicId, shardIds);
-        console.logString("BAlANCES AFTER");
-        console.logUint(balancesBefore[0]);
-        console.logUint(balancesBefore[1]);
-        console.logUint(balancesAfter[0]);
-        console.logUint(balancesAfter[1]);
-
         assertEq(balancesAfter[0], 5);
         assertEq(balancesAfter[1], 5);
         // equip again same amounts
@@ -825,13 +818,10 @@ contract RelicTest is RelicViewTest {
         assertEq(relic.getEquippedShardAmount(relicId, shardIds[1]), amounts[1]);
         // invalid owner
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
-        // uint256 bobRelicId = (relic.relicsOfOwner(bob))[0];
-        // console.logUint(bobRelicId);
         relic.burnBlacklistedAccountShards(alice, true, 0, shardIds);
         
         // invalid length
         uint256[] memory invalidShardIds = new uint256[](0);
-        console.logUint(invalidShardIds.length);
         vm.expectRevert(abi.encodeWithSelector(Relic.InvalidParamLength.selector));
         relic.burnBlacklistedAccountShards(alice, true, relicId, invalidShardIds);
 
