@@ -1,11 +1,11 @@
-pragma solidity 0.8.18;
+pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 
 import { TempleTest } from "../TempleTest.sol";
 import { Relic } from "../../../contracts/nexus/Relic.sol";
 import { Shard } from "../../../contracts/nexus/Shard.sol";
-import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
+import { CommonEventsAndErrors } from "../../../contracts/common/CommonEventsAndErrors.sol";
 
 
 contract ShardTestBase is TempleTest {

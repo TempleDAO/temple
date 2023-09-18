@@ -1,11 +1,11 @@
-pragma solidity 0.8.18;
+pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { TempleTest } from "../TempleTest.sol";
 import { Relic } from "../../../contracts/nexus/Relic.sol";
 import { Shard } from "../../../contracts/nexus/Shard.sol";
-import { FakeERC20 } from "contracts/fakes/FakeERC20.sol";
-import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
+import { FakeERC20 } from "../../../contracts/fakes/FakeERC20.sol";
+import { CommonEventsAndErrors } from "../../../contracts/common/CommonEventsAndErrors.sol";
 import { IERC1155Receiver } from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import {Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 

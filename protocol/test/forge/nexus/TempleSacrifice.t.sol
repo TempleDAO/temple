@@ -1,4 +1,4 @@
-pragma solidity 0.8.18;
+pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { TempleTest } from "../TempleTest.sol";
@@ -6,9 +6,9 @@ import { Relic } from "../../../contracts/nexus/Relic.sol";
 import { Shard } from "../../../contracts/nexus/Shard.sol";
 import { TempleSacrifice } from "../../../contracts/nexus/TempleSacrifice.sol";
 import { TempleERC20Token } from "../../../contracts/core/TempleERC20Token.sol";
-import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
+import { CommonEventsAndErrors } from "../../../contracts/common/CommonEventsAndErrors.sol";
 import { IERC1155Receiver } from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
-import { IRelic } from "contracts/interfaces/nexus/IRelic.sol";
+import { IRelic } from "../../../contracts/interfaces/nexus/IRelic.sol";
 
 
 contract TempleSacrificeTestBase is TempleTest {

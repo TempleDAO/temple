@@ -2,7 +2,7 @@
 // ERC721A Contracts v4.2.3
 // Creator: Chiru Labs
 
-pragma solidity 0.8.18;
+pragma solidity 0.8.19;
 // Temple (nexus/ERC721ACustom.sol)
 
 import "../interfaces/nexus/IERC721A.sol";
