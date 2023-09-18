@@ -673,6 +673,7 @@ const expectedEnvvars: { [key: string]: string[] } = {
   sepolia: ['SEPOLIA_ADDRESS_PRIVATE_KEY', 'SEPOLIA_RPC_URL'],
   arbitrumGoerli: ['ARBITRUM_GOERLI_ADDRESS_PRIVATE_KEY', 'ARBITRUM_GOERLI_RPC_URL'],
   anvil: [],
+  arbitrumGoerli: ['ARBITRUM_GOERLI_ADDRESS_PRIVATE_KEY', 'ARBITRUM_GOERLI_RPC_URL'],
   localhost: [],
 };
 
