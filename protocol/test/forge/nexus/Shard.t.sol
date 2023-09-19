@@ -138,7 +138,7 @@ contract ShardTestBase is TempleTest {
         recipe.outputShardAmounts = outputShardAmounts;
     }
 
-    function _getInvalidRecipe() internal returns (Shard.Recipe memory recipe) {
+    function _getInvalidRecipe() internal pure returns (Shard.Recipe memory recipe) {
         uint256[] memory inputShardIds = new uint256[](1);
         recipe.inputShardIds = inputShardIds;
     }

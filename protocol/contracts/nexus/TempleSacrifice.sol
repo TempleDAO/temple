@@ -22,7 +22,7 @@ contract TempleSacrifice is Ownable {
 
     uint256 private constant MINIMUM_CUSTOM_PRICE = 30 ether;
     uint256 private constant ONE_ETHER = 1 ether;
-
+    /// @notice Price parameters 
     PriceParam public priceParams;
 
     struct PriceParam {
@@ -45,6 +45,10 @@ contract TempleSacrifice is Ownable {
         originTime = uint64(block.timestamp);
     }
 
+    /*
+     * @notice Set price parameters.
+     * @param _priceParams Price parameters to set
+     */
     function setPriceParams(PriceParam calldata _priceParams) external onlyOwner {
         if (_priceParams.minimumPrice > _priceParams.maximumPrice) { revert CommonEventsAndErrors.InvalidParam(); }
         if (_priceParams.minimumPrice < MINIMUM_CUSTOM_PRICE) { revert CommonEventsAndErrors.InvalidParam(); }
@@ -56,13 +60,23 @@ contract TempleSacrifice is Ownable {
         emit PriceParamsSet(_priceParams);
     }
 
+    /*
+     * @notice Set origin time.
+     * Origin time is the start of the linear ascending price to params.priceMaxPeriod
+     * @param _originTime Origin time
+     */
     function setOriginTime(uint64 _originTime) external onlyOwner {
         if (_originTime < block.timestamp) { revert CommonEventsAndErrors.InvalidParam(); }
         originTime = _originTime;
         emit OriginTimeSet(originTime);
     }
 
-    /// @notice owner can reset price with 0 _price value
+    /*
+     * @notice Set custom price
+     * owner can reset price with 0 _price value. Custom price can be set anytime during or after params.priceMaxPeriod on
+     * a flash sale or at a discounted price.
+     * @param _price Custom price 
+     */
     function setCustomPrice(uint256 _price) external onlyOwner {
         if (_price != 0 && _price < MINIMUM_CUSTOM_PRICE) { revert CommonEventsAndErrors.InvalidParam(); }
         customPrice = _price;
@@ -70,7 +84,7 @@ contract TempleSacrifice is Ownable {
     }
 
     /*
-     * Sacrifice TEMPLE tokens to mint a Relic
+     * @notice Sacrifice TEMPLE tokens to mint a Relic
      * Caller must approve contract to spend TEMPLE tokens
      * @param enclave Enclave relic will be part of 
      */
@@ -84,7 +98,7 @@ contract TempleSacrifice is Ownable {
 
    
     /*
-     * Get amount of TEMPLE tokens to mint a Relic
+     * @notice Get amount of TEMPLE tokens to mint a Relic
      * @return Relic price
      */
     function getPrice() external view returns (uint256) {
@@ -98,7 +112,7 @@ contract TempleSacrifice is Ownable {
         if (customPrice > 0) {
             return customPrice;
         }
-        /// @notice starts from params.minimumPrice and tops at params.maximumPrice over params.priceMaxPeriod. 
+        /// @dev starts from params.minimumPrice and tops at params.maximumPrice over params.priceMaxPeriod. 
         /// Rounded up. price unit in TEMPLE
         uint256 timeDifference;
         unchecked {

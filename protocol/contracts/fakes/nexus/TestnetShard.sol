@@ -71,7 +71,6 @@ contract TestnetShard is ERC1155, ERC1155Burnable {
     error PartnerAllowShardFailed(address partner, uint256 shardId, bool allowed);
     error InvalidParamLength();
     error InvalidAccess(address caller);
-    error InvalidCaller(address caller);
     error ERC1155MissingApprovalForAll(address msgSender, address account);
     error AccountBlacklisted(address account);
 
@@ -180,20 +179,11 @@ contract TestnetShard is ERC1155, ERC1155Burnable {
         emit RecipeDeleted(recipeId);
     }
 
-    function setShardUri(uint256 shardId, string memory uri) external onlyOperator {
-        if (bytes(uri).length == 0 ) { revert CommonEventsAndErrors.InvalidParam(); }
-        shardUris[shardId] = uri;
-        emit ShardUriSet(shardId, uri);
+    function setShardUri(uint256 shardId, string memory _uri) external onlyOperator {
+        if (bytes(_uri).length == 0 ) { revert CommonEventsAndErrors.InvalidParam(); }
+        shardUris[shardId] = _uri;
+        emit ShardUriSet(shardId, _uri);
     }
-
-    /// @notice if we ever go back to the token type ID substitution mechanism
-    // function setURI(string memory uri) external onlyOperator {
-    //     _setURI(uri);
-    // }
-
-    // function uriLegacy() external view returns (string memory) {
-    //     return uri();
-    // }
 
     function uri(uint256 shardId) public view override returns (string memory) {
         return shardUris[shardId];
@@ -343,12 +333,12 @@ contract TestnetShard is ERC1155, ERC1155Burnable {
     }
 
     modifier onlyRelic() {
-        if (msg.sender != address(relic)) { revert InvalidCaller(msg.sender); }
+        if (msg.sender != address(relic)) { revert InvalidAccess(msg.sender); }
         _;
     }
 
     modifier onlyOperator() {
-        if (!operators[msg.sender]) { revert InvalidCaller(msg.sender); }
+        if (!operators[msg.sender]) { revert InvalidAccess(msg.sender); }
         _;
     }
 }

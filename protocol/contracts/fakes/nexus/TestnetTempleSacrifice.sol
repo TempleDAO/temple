@@ -3,9 +3,7 @@ pragma solidity 0.8.19;
 // Temple (nexus/TestnetTempleSacrifice.sol)
 
 import { IRelic } from "../../interfaces/nexus/IRelic.sol";
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { ITempleERC20Token } from "contracts/interfaces/core/ITempleERC20Token.sol";
-import { CommonEventsAndErrors } from "../../common/CommonEventsAndErrors.sol";
 
 /// @dev for testnet only
 contract TestnetTempleSacrifice {

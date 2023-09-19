@@ -11,7 +11,7 @@ import { CommonEventsAndErrors } from "../common/CommonEventsAndErrors.sol";
 
 contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
     using EnumerableSet for EnumerableSet.UintSet;
-
+    /// @notice Relic NFT contract
     IRelic public relic;
     address private constant ZERO_ADDRESS = 0x0000000000000000000000000000000000000000;
 
@@ -27,11 +27,11 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
     EnumerableSet.UintSet private regularShards;
 
     /// @notice shard ids to uris
-    mapping(uint256 => string) public shardUris;
+    mapping(uint256 => string) private shardUris;
 
     /// @notice minters who can mint for templars
     mapping(address => bool) public templarMinters;
-
+    /// @notice Recipe for transmutation of shards.
     mapping(uint256 => Recipe) private recipes;
 
     /// @notice each shard belongs to exactly 1 enclave. an enclave can have many shards
@@ -82,7 +82,6 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
     error ZeroAddress();
     error InvalidParamLength();
     error InvalidAccess(address caller);
-    error InvalidCaller(address caller);
     error ERC1155MissingApprovalForAll(address msgSender, address account);
     error AccountBlacklisted(address account);
     error SetShardEnclaveFailed();
@@ -99,7 +98,7 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
     }
 
     /*
-     * Set shard enclave
+     * @notice Set shard enclave
      * @param enclave Enclave
      * @param shardId Shard ID
      */
@@ -122,7 +121,7 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
     }
 
     /*
-     * Set minter for templars. That is not partner minter. Templar Minters can mint shards with IDs that
+     * @notice Set minter for templars. That is not partner minter. Templar Minters can mint shards with IDs that
      * are not reserved for partners
      * @param minter Address of the minter
      * @param allowed If minter is allowed to mint
@@ -134,7 +133,7 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
     }
 
     /*
-     * Set single shard that partner can mint
+     * @notice Set single shard that partner can mint
      * @param partner Address of the partner
      * @param shardId Shard ID
      * @param allow If partner can mint
@@ -158,12 +157,12 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
     }
 
     /*
-     * Set regular shard that templars can mint for themselves
+     * @notice Set regular shard that templars can mint for themselves
+     * possible that partners are allowed to mint regular shards too
      * @param shardId Shard ID
      * @param allow If shard should be added or removed
      */
     function setShardId(uint256 shardId, bool allow) external onlyElevatedAccess {
-        /// @notice possible that partners are allowed to mint regular shards too
         if (allow) {
             regularShards.add(shardId);
         } else {
@@ -172,7 +171,11 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
         emit RegularShardIdSet(shardId, allow);
     }
 
-    function setShardIds(uint256[] memory shardIds, bool[] memory allows) external onlyElevatedAccess {
+    /* @notice Set Shard Ids
+     * @param shardIds Shard Ids
+     * @param allows Boolean allowances
+     */
+    function setShardIds(uint256[] calldata shardIds, bool[] calldata allows) external onlyElevatedAccess {
         uint256 _length = shardIds.length;
         if (_length != allows.length) {  revert InvalidParamLength(); }
         bool allow;
@@ -193,15 +196,15 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
     }
 
     /*
-     * Set the shard IDs partners can mint
+     * @notice Set the shard IDs partners can mint
      * @param partner Address of the partner
      * @param shardIds Shard IDs
      * @param flags If the partner can mint shard
      */
     function setPartnerAllowedShardIds(
         address partner,
-        uint256[] memory shardIds,
-        bool[] memory flags
+        uint256[] calldata shardIds,
+        bool[] calldata flags
     ) external onlyElevatedAccess {
          if (partner == ZERO_ADDRESS) { revert ZeroAddress(); }
          uint256 _length = shardIds.length;
@@ -217,32 +220,30 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
                 /// @dev ignoring return values if add failed so that we don't revert in the iteration. to allow completion
                 /* success = */ partnerShardIds.add(shardId);
                 /// also keep track of all partner shards, for convenience guard checks when user mints
-                if (!partnerShards.contains(shardId)) {
-                    partnerShards.add(shardId);
-                }
+                // returns false if shardId is already in set
+                partnerShards.add(shardId);
             } else if (!allowed && partnerShardIds.contains(shardId)){
                 /* success = */ partnerShardIds.remove(shardId);
-                if (partnerShards.contains(shardId)) {
-                    partnerShards.remove(shardId);
-                }
+                // returns false if shardId is not in set
+                partnerShards.remove(shardId);
             }
             unchecked {
                  ++i;
-             }
+            }
          }
          emit PartnerAllowedShardIdsSet(partner, shardIds, flags);
     }
 
     /*
-     * Set the caps for shards partners can mint
+     * @notice Set the caps for shards partners can mint
      * @param partner Address of the partner
      * @param shardIds Shard IDs
      * @param caps The maximum amount partner can mint for each shard
      */
     function setPartnerAllowedShardCaps(
         address partner,
-        uint256[] memory shardIds,
-        uint256[] memory caps
+        uint256[] calldata shardIds,
+        uint256[] calldata caps
     ) external onlyElevatedAccess {
         /// @notice 0 by default which is unlimited
         if (partner == ZERO_ADDRESS) { revert ZeroAddress(); }
@@ -258,7 +259,7 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
     }
 
     /*
-     * Set a recipe for transmutation
+     * @notice Set a recipe for transmutation
      * @param recipeId The recipe ID
      * @param recipe The recipe
      */
@@ -273,30 +274,29 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
     }
 
     /*
-     * Delete recipe
+     * @notice Delete recipe
      * @param recipeId The recipe ID
      */
     function deleteRecipe(uint256 recipeId) external onlyElevatedAccess {
-        Recipe storage recipe = recipes[recipeId];
-        if (recipe.inputShardIds.length == 0) { revert CommonEventsAndErrors.InvalidParam(); }
+        if (recipes[recipeId].inputShardIds.length == 0) { revert CommonEventsAndErrors.InvalidParam(); }
         delete recipes[recipeId];
         emit RecipeDeleted(recipeId);
     }
 
     /*
-     * Set uri string of shard ID
+     * @notice Set uri string of shard ID
      * @param shardId The shard ID
      * @param uri The uri string
      * @return String uri of the shard ID
      */
-    function setShardUri(uint256 shardId, string memory uri) external onlyElevatedAccess {
-        if (bytes(uri).length == 0 ) { revert CommonEventsAndErrors.InvalidParam(); }
-        shardUris[shardId] = uri;
-        emit ShardUriSet(shardId, uri);
+    function setShardUri(uint256 shardId, string memory _uri) external onlyElevatedAccess {
+        if (bytes(_uri).length == 0 ) { revert CommonEventsAndErrors.InvalidParam(); }
+        shardUris[shardId] = _uri;
+        emit ShardUriSet(shardId, _uri);
     }
 
     /*
-     * Get uri string of shard ID
+     * @notice Get uri string of shard ID
      * @param shardId The shard ID
      * @return String uri of the shard ID
      */
@@ -305,7 +305,7 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
     }
 
     /*
-     * Transmute caller shards to create a new shard using a recipe
+     * @notice Transmute caller shards to create a new shard using a recipe
      * Caller shards are burned and new shard(s) are minted to caller.
      * @param recipeId The ID of the recipe
      */
@@ -321,7 +321,7 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
     }
 
     /*
-     * Mint shard by partner. This is a guarded function which only allows partner contracts/addresses to mint.
+     * @notice Mint shard by partner. This is a guarded function which only allows partner contracts/addresses to mint.
      * Function checks if receiving mint address is blacklisted by Relic contract.
      * @param to The address to mint to
      * @param shardId The shard ID
@@ -347,17 +347,16 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
     }
 
     /*
-     * Mint shard in batch for partners. This is a guarded function which only allowed partner contracts/addresses to mint.
+     * @notice Mint shard in batch for partners. This is a guarded function which only allowed partner contracts/addresses to mint.
      * Function checks if receiving mint address is blacklisted by Relic contract.
      * @param to The address to mint to
      * @param shardIds The shard IDs
      * @param amounts The amount of each shard ID to mint
      */
-    /// @notice Lets an approved partner mint shards in batch
     function partnerBatchMint(
         address to,
-        uint256[] memory shardIds,
-        uint256[] memory amounts
+        uint256[] calldata shardIds,
+        uint256[] calldata amounts
     ) external isNotBlacklisted(to) {
         uint256 _length = shardIds.length;
         if (_length != amounts.length) { revert InvalidParamLength(); }
@@ -386,7 +385,7 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
     }
 
     /*
-     * Mint shard. This is a guarded function which only allows minter contracts can mint.
+     * @notice Mint shard. This is a guarded function which only allows minter contracts can mint.
      * Function checks if receiving mint address is blacklisted by Relic contract.
      * @param to The address to mint to
      * @param shardId The shard ID
@@ -397,7 +396,6 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
         uint256 shardId,
         uint256 amount
     ) external onlyTemplarMinters isNotBlacklisted(to) {
-        // if(partnerShards.contains(shardId))  { revert ReservedPartnerShard(shardId); }
         if (!regularShards.contains(shardId)) { revert InvalidShard(shardId); }
         /// @dev fail early
         if (amount == 0) { revert CommonEventsAndErrors.InvalidParam(); }
@@ -405,7 +403,7 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
     }
 
     /*
-     * Mint shard in batch. This is a guarded function which only allows minter contracts can mint.
+     * @notice Mint shard in batch. This is a guarded function which only allows minter contracts can mint.
      * Function checks if receiving mint address is blacklisted by Relic contract.
      * @param to The address to mint to
      * @param shardIds The shard IDs
@@ -413,8 +411,8 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
      */
     function mintBatch(
         address to,
-        uint256[] memory shardIds,
-        uint256[] memory amounts
+        uint256[] calldata shardIds,
+        uint256[] calldata amounts
     ) external onlyTemplarMinters isNotBlacklisted(to) {
         uint256 _length = shardIds.length;
         if (_length != amounts.length) { revert InvalidParamLength(); }
@@ -422,7 +420,6 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
         uint256 shardId;
         for (uint i; i < _length;) {
             shardId = shardIds[i];
-            // if(partnerShards.contains(shardId))  { revert ReservedPartnerShard(shardId); }
             if(!regularShards.contains(shardId)) { revert InvalidShard(shardId); }
             unchecked {
                 ++i;
@@ -432,7 +429,7 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
     }
 
     /*
-     * Burn batch shards. Overriden from base contract. 
+     * @notice Burn batch shards. Overriden from base contract. 
      * Modified to allow Relic contract to burn blacklisted account shards.
      * @param account The account owning the shard
      * @param ids The shard IDs
@@ -450,7 +447,7 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
     }
 
     /*
-     * Get shard IDs a partner is allowed to mint
+     * @notice Get shard IDs a partner is allowed to mint
      * @param partner The partner
      * @return Shard IDs array
      */
@@ -459,7 +456,7 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
     }
 
     /*
-     * Get all exclusive shard IDs of partners
+     * @notice Get all exclusive shard IDs of partners
      * @return shard IDs
      */
     function getAllPartnerShardIds() external view returns (uint256[] memory) {
@@ -467,7 +464,7 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
     }
 
     /*
-     * Get all regular shard IDs
+     * @notice Get all regular shard IDs
      * @return shard IDs
      */
     function getAllRegularShardIds() external view returns (uint256[] memory) {
@@ -475,7 +472,7 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
     }
 
     /*
-     * Get information about a recipe
+     * @notice Get information about a recipe
      * @param recipeId The ID of the recipe
      * @return Recipe information struct. see above
      */
@@ -484,7 +481,7 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
     }
 
     /*
-     * Determines if a shard ID is reserved to a partner
+     * @notice Determines if a shard ID is reserved to a partner
      * @param shardId The shard ID
      * @return True if shardId is reserved to a partner, else false
      */
@@ -493,7 +490,7 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
     }
 
     /*
-     * Get shard IDs of an enclave
+     * @notice Get shard IDs of an enclave
      * @param enclave The enclave
      * @return Shard IDs of enclave
      */
@@ -502,7 +499,7 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
     }
 
     /*
-     * Determines if a shard ID belongs to an enclave
+     * @notice Determines if a shard ID belongs to an enclave
      * @param enclave The enclave
      * @param shardId The shard ID
      * @return True if shard ID belongs to enclave, else false.
@@ -511,9 +508,8 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
         return enclaveShards[uint8(enclave)].contains(shardId);
     }
 
-    /// @notice not validating partner and reverting. caller should check and handle zero values
     /*
-     * Get the information of a partner
+     * @notice Get the information of a partner. not validating partner and reverting. caller should check and handle zero values
      * @param partner The partner
      * @return PartnerMintInfo struct information of partner
      */
@@ -544,7 +540,7 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
     }
 
     modifier onlyRelic() {
-        if (msg.sender != address(relic)) { revert InvalidCaller(msg.sender); }
+        if (msg.sender != address(relic)) { revert InvalidAccess(msg.sender); }
         _;
     }
 

@@ -5,7 +5,6 @@ pragma solidity 0.8.19;
 
 import { ERC721ACustom } from "./ERC721ACustom.sol";
 import { ERC1155Receiver } from "./ERC1155Receiver.sol";
-import { IERC1155Receiver } from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -15,6 +14,8 @@ import { IERC721A } from "../interfaces/nexus/IERC721A.sol";
 import { CommonEventsAndErrors } from "../common/CommonEventsAndErrors.sol";
 import { TempleElevatedAccess } from "../v2/access/TempleElevatedAccess.sol";
 import { IShard } from "../interfaces/nexus/IShard.sol";
+
+// todo. add general Enclave for partner minters
 
 contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
     using SafeERC20 for IERC20;
@@ -106,7 +107,7 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
     ) ERC721ACustom(_name, _symbol) TempleElevatedAccess(initialRescuer, initialExecutor) {}
 
     /*
-     * Set shard contract
+     * @notice Set shard contract
      * @param _shard Shard contract
      */
     function setShard(address _shard) external onlyElevatedAccess {
@@ -116,7 +117,7 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
     }
 
     /*
-     * Overrid _baseURI. Modified to use relicId. URI of NFT depends on rarity of relic.
+     * @notice Override _baseURI. Modified to use relicId. URI of NFT depends on rarity of relic.
      * @param enclave Enclave
      * @param shardId Shard ID
      */
@@ -127,7 +128,7 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
     }
 
     /*
-     * Set threshold for XP rarity
+     * @notice Set threshold for XP rarity
      * @param rarity Rarity
      * @param threshold Threshold value for rarity
      */
@@ -138,7 +139,7 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
     }
 
     /*
-     * Set relic minter
+     * @notice Set relic minter
      * @param minter Address to mint relics
      * @param allow If minter is allowed to mint
      */
@@ -149,7 +150,7 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
     }
 
     /*
-     * Set controller of relic XP
+     * @notice Set controller of relic XP
      * @param controller Address of XP controller
      * @param allow If controller is allowed to set XP relic value
      */
@@ -160,7 +161,7 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
     }
 
     /*
-     * Set XP threshold for rarities
+     * @notice Set XP threshold for rarities
      * @param rarities Rarity array
      * @param thresholds Thresholds for XP
      */
@@ -183,7 +184,7 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
     }
 
     /*
-     * Set URI for relic rarity
+     * @notice Set URI for relic rarity
      * @param rarity Rarity
      * @param uri URI for relic rarity
      */
@@ -191,9 +192,9 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
         baseUris[rarity] = uri;
         emit RarityBaseUriSet(rarity, uri);
     }
-
-    /// @notice blacklist an account with or without shards. 
-    /* If no shards are given, the account will only be blacklisted from
+ 
+    /* @notice Set blacklist for an account with or without shards.
+     * If no shards are given, the account will only be blacklisted from
      * minting new relics
      * if flag is true, blacklist will set account and shards to true. Else, false.
      * @param account Account to blacklist
@@ -249,7 +250,7 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
     }
 
     /*
-     * Set XP for a relic
+     * @notice Set XP for a relic
      * @param relicId ID of relic
      * @param xp XP to set
      */
@@ -264,7 +265,7 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
     }
 
     /*
-     * Get relics owned by owner
+     * @notice Get relics owned by owner
      * @param owner Address to check for ownership
      * @return _ownerRelics Array of relics
      */
@@ -273,7 +274,7 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
     }
 
     /*
-     * Get balances of shards equipped by relic
+     * @notice Get balances of shards equipped by relic
      * @param relicId ID of relic
      * @param shardIds Shard IDs
      * @return balances Balances of shards equipped in relic
@@ -298,7 +299,7 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
     }
 
     /*
-     * Get URI of rarity
+     * @notice Get URI of rarity
      * @param rarity Rarity type
      * @return uri URI
      */
@@ -307,7 +308,7 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
     }
 
     /*
-     * Mint Relic. Function checks if recipient address is blacklisted
+     * @notice Mint Relic. Function checks if recipient address is blacklisted
      * @param to Address of recipient
      * @param enclave Enclave type
      */
@@ -315,21 +316,20 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
         if (to == ZERO_ADDRESS) { revert ZeroAddress(); }
         if (!isAllowedEnclave(enclave)) { revert CommonEventsAndErrors.InvalidParam(); }
 
-        uint256 nextTokenId = _nextTokenId();
-        RelicInfo storage relicInfo = relicInfos[nextTokenId];
+        uint256 _nextTokenId = _nextTokenId();
+        RelicInfo storage relicInfo = relicInfos[_nextTokenId];
         relicInfo.enclave = enclave;
         relicInfo.rarity = Rarity.Common;
         relicInfo.xp = uint128(0);
         
-        ownerRelics[to].add(nextTokenId);
+        ownerRelics[to].add(_nextTokenId);
         /// user can mint relic anytime after sacrificing temple and getting whitelisted. one at a time
         _safeMint(to, PER_MINT_QUANTITY, ZERO_BYTES);
-        emit RelicMinted(to, nextTokenId, PER_MINT_QUANTITY);
+        emit RelicMinted(to, _nextTokenId, PER_MINT_QUANTITY);
     }
 
-    // todo check that shard of enclave A can only be equipped to relic of enclave A
     /*
-     * Equip shard to a relic
+     * @notice Equip shard to a relic
      * @param relicId ID of relic
      * @param shardId Shard ID
      * @param amount Amount of shards to equip
@@ -349,15 +349,15 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
     }
 
     /*
-     * Batch equip shards to a relic
+     * @notice Batch equip shards to a relic
      * @param relicId ID of relic
      * @param shardIds Shard IDs
      * @return amounts Balances of shards to equip
      */
     function batchEquipShards(
         uint256 relicId,
-        uint256[] memory shardIds,
-        uint256[] memory amounts
+        uint256[] calldata shardIds,
+        uint256[] calldata amounts
     ) external onlyRelicOwner(relicId) notBlacklisted(msg.sender) {
         uint256 _length = shardIds.length;
         if (_length != amounts.length) { revert InvalidParamLength(); }
@@ -377,7 +377,7 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
     }
 
     /*
-     * Unequip shard from a relic
+     * @notice Unequip shard from a relic
      * @param relicId ID of relic
      * @param shardId Shard ID
      * @return amount Balance of shards to unequip
@@ -402,15 +402,15 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
     }
 
     /*
-     * Batch unequip shards from relic
+     * @notice Batch unequip shards from relic
      * @param relicId ID of relic
      * @param shardIds Shard IDs
      * @return amounts Balances of shards to unequip
      */
     function batchUnequipShards(
         uint256 relicId,
-        uint256[] memory shardIds,
-        uint256[] memory amounts
+        uint256[] calldata shardIds,
+        uint256[] calldata amounts
     ) external onlyRelicOwner(relicId) notBlacklisted(msg.sender) {
         uint256 _length = shardIds.length;
         if (_length != amounts.length) { revert InvalidParamLength(); }
@@ -434,19 +434,23 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
     }
 
     /*
-     * Get total relics minted
+     * @notice Get total relics minted
      * @return uint256 Amount of relics minted
      */
     function totalMinted() external view returns (uint256) {
         return _totalMinted();
     }
 
+    /*
+     * @notice Get next token Id
+     * @return uint256 Next token Id
+     */
     function nextTokenId() external view returns (uint256) {
         return _nextTokenId();
     }
 
     /*
-     * Recover tokem sent to contract by error
+     * @notice Recover tokem sent to contract by error
      * @param token Address of token
      * @param to Recipient of token amount
      * @return amount Amount of token to recover
@@ -457,7 +461,7 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
         emit CommonEventsAndErrors.TokenRecovered(to, token, amount);
     }
     /*
-     * Burn blacklisted account shards.
+     * @notice Burn blacklisted account shards.
      * Shard IDs may not be empty. In this case, use setBlacklistAccount
      * @param account Address of account
      * @param whitelistAfterBurn If to whitelist account after burning of shards
@@ -467,7 +471,7 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
         address account,
         bool whitelistAfterBurn,
         uint256 relicId,
-        uint256[] memory shardIds
+        uint256[] calldata shardIds
     ) external onlyElevatedAccess {
         if (!blacklistedAccounts[account]) { revert CommonEventsAndErrors.InvalidParam(); }
         // todo add test for this revert below
@@ -478,7 +482,6 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
         mapping(uint256 => uint256) storage equippedShards = relicInfos[relicId].equippedShards;
         uint256[] memory amounts = new uint256[](_length);
         uint256 shardId;
-        uint256 equippedAmount;
         for(uint i; i < _length;) {
             shardId = shardIds[i];
             amounts[i] = blacklistedAccountShards[account][shardId];
@@ -498,7 +501,6 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
     }
 
     /// @notice before token transfer to avoid transferring blacklisted shards
-    // question, what if shards are equipped in this relic bag already
     function _beforeTokenTransfers(
         address from,
         address to,
@@ -551,7 +553,7 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
      *
      * This function call must use less than 30000 gas.
      */
-    function supportsInterface(bytes4 interfaceId) public view override(ERC165, IERC165, IERC721A) returns (bool) {
+    function supportsInterface(bytes4 interfaceId) public pure override(ERC165, IERC165, IERC721A) returns (bool) {
         // The interface IDs are constants representing the first 4 bytes
         // of the XOR of all function selectors in the interface.
         // See: [ERC165](https://eips.ethereum.org/EIPS/eip-165)

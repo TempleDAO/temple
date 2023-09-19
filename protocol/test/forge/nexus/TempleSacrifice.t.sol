@@ -56,7 +56,7 @@ contract TempleSacrificeTestBase is TempleTest {
         templeToken.mint(to, amount);
     }
 
-    function _getPriceParams() internal view returns (TempleSacrifice.PriceParam memory params) {
+    function _getPriceParams() internal pure returns (TempleSacrifice.PriceParam memory params) {
         params.minimumPrice = uint128(MINIMUM_CUSTOM_PRICE);
         params.maximumPrice = uint128(200 * ONE_ETHER);
         params.priceMaxPeriod = 365 days;

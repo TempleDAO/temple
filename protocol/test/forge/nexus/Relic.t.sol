@@ -461,7 +461,6 @@ contract RelicViewTest is RelicSettersTest {
         vm.expectRevert(abi.encodeWithSelector(Relic.InvalidRelic.selector, invalidRelic));
         relic.getBalanceBatch(invalidRelic, shardIds);
 
-        uint256 totalMinted = relic.totalMinted();
         uint256 relicId = relic.nextTokenId() - 1;
         uint256[] memory balancesBefore = relic.getBalanceBatch(relicId, shardIds);
         assertEq(balancesBefore[0], 0);
