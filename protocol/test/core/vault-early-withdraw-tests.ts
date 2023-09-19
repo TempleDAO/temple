@@ -138,9 +138,25 @@ describe("Temple Core Vault - Early Withdraw", async () => {
       .withArgs(await ben.getAddress());
   });
 
-  it("cannot withdraw zero amounts", async () => {
-    await expect(vaultEarlyWithdraw.connect(alan).withdraw(vault.address, 0))
-      .to.be.revertedWithCustomError(vaultEarlyWithdraw, "ExpectedNonZero");
+  it("cannot withdraw below the min amount", async () => {
+    await vault.connect(alan).deposit(toAtto(100));
+
+    await expect(vaultEarlyWithdraw.connect(alan).withdraw(vault.address, 999))
+      .to.be.revertedWithCustomError(vaultEarlyWithdraw, "MinAmountNotMet");
+
+    // Succeeds for 1000 (the min amount)
+    await vaultEarlyWithdraw.connect(alan).withdraw(vault.address, 1000);
+  });
+
+  it("owner can update min withdraw amount", async () => {
+    await expect(vaultEarlyWithdraw.connect(alan).setMinWithdrawAmount(1))
+      .to.be.revertedWith("Ownable: caller is not the owner");
+
+    await expect(vaultEarlyWithdraw.connect(owner).setMinWithdrawAmount(1))
+      .to.emit(vaultEarlyWithdraw, "MinWithdrawAmountSet")
+      .withArgs(1);
+
+    expect(await vaultEarlyWithdraw.minWithdrawAmount()).to.eq(1);
   });
 
   it("cannot withdraw if not enough temple balance", async () => {

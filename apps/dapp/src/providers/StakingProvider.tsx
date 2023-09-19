@@ -13,6 +13,7 @@ import {
   TempleStaking__factory,
   LockedOGTemple__factory,
 } from 'types/typechain';
+import { ZERO } from 'utils/bigNumber';
 
 const INITIAL_STATE: StakingService = {
   apy: 0,
@@ -55,6 +56,7 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
     if (!walletAddress) {
       throw new NoWalletAddressError();
     }
+    if (!env.contracts.templeStaking) return ZERO;
     const STAKING = new TempleStaking__factory(signerState).attach(env.contracts.templeStaking);
     return await STAKING.balance(ogtAmount);
   };
@@ -63,6 +65,7 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
     if (!walletAddress) {
       throw new NoWalletAddressError();
     }
+    if (!env.contracts.lockedOgTemple) return [];
 
     const ogLockedTemple = new LockedOGTemple__factory(signerState).attach(env.contracts.lockedOgTemple);
 

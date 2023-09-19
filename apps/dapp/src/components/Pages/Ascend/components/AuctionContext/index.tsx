@@ -1,6 +1,5 @@
 import { createContext, useContext, useState, FC, useMemo, useRef, useEffect, useCallback } from 'react';
 import { BigNumber } from 'ethers';
-import { useContractReads, useBalance } from 'wagmi';
 
 import { DecimalBigNumber, DBN_ZERO } from 'utils/DecimalBigNumber';
 
@@ -99,40 +98,46 @@ export const AuctionContextProvider: FC<Props> = ({ pool, children }) => {
     buy: base,
   });
 
-  const { data: poolData, refetch: refetchPoolState } = useContractReads({
-    contracts: [
-      {
-        address: pool.address,
-        abi: balancerPoolAbi,
-        functionName: 'getVault',
-      },
-      {
-        address: pool.address,
-        abi: balancerPoolAbi,
-        functionName: 'getPausedState',
-      },
-      {
-        address: pool.address,
-        abi: balancerPoolAbi,
-        functionName: 'getNormalizedWeights',
-      },
-    ],
-    enabled: !!wallet,
-  });
+  const poolData: never[] = [];
+  const refetchPoolState = noop;
+
+  // TODO: This is commented out because of the wagmi replacement
+  // We can probably remove the file entirely if we don't need it anymore
+  // const { data: poolData, refetch: refetchPoolState } = useContractReads({
+  //   contracts: [
+  //     {
+  //       address: pool.address,
+  //       abi: balancerPoolAbi,
+  //       functionName: 'getVault',
+  //     },
+  //     {
+  //       address: pool.address,
+  //       abi: balancerPoolAbi,
+  //       functionName: 'getPausedState',
+  //     },
+  //     {
+  //       address: pool.address,
+  //       abi: balancerPoolAbi,
+  //       functionName: 'getNormalizedWeights',
+  //     },
+  //   ],
+  //   enabled: !!wallet,
+  // });
 
   const [vaultAddress, pausedState = [], tokenWeights = []]: any = poolData || [];
 
-  const { data: vaultData } = useContractReads({
-    contracts: [
-      {
-        address: vaultAddress as `0x${string}` | undefined,
-        abi: balancerVaultAbi,
-        functionName: 'getPoolTokens',
-        args: [pool.id],
-      },
-    ],
-    enabled: !!vaultAddress && !!wallet,
-  });
+  const vaultData: never[] = [];
+  // const { data: vaultData } = useContractReads({
+  //   contracts: [
+  //     {
+  //       address: vaultAddress as `0x${string}` | undefined,
+  //       abi: balancerVaultAbi,
+  //       functionName: 'getPoolTokens',
+  //       args: [pool.id],
+  //     },
+  //   ],
+  //   enabled: !!vaultAddress && !!wallet,
+  // });
 
   const [vaultTokens]: any = vaultData || [];
 
@@ -142,17 +147,21 @@ export const AuctionContextProvider: FC<Props> = ({ pool, children }) => {
       buy: sell,
     }));
 
-  const { data: sellTokenData, refetch: refetchSell } = useBalance({
-    address: wallet,
-    token: swapState.sell.address as `0x${string}`,
-    enabled: !!wallet,
-  });
+    const sellTokenData = {value: BigNumber.from(0), decimals: 0};
+    const refetchSell = noop;
+  // const { data: sellTokenData, refetch: refetchSell } = useBalance({
+  //   address: wallet,
+  //   token: swapState.sell.address as `0x${string}`,
+  //   enabled: !!wallet,
+  // });
 
-  const { data: buyTokenData, refetch: refetchBuy } = useBalance({
-    address: wallet,
-    token: swapState.buy.address as `0x${string}`,
-    enabled: !!wallet,
-  });
+  const buyTokenData = {value: BigNumber.from(0), decimals: 0};
+  const refetchBuy = noop;
+  // const { data: buyTokenData, refetch: refetchBuy } = useBalance({
+  //   address: wallet,
+  //   token: swapState.buy.address as `0x${string}`,
+  //   enabled: !!wallet,
+  // });
 
   const sellTokenBalance = sellTokenData
     ? DecimalBigNumber.fromBN(sellTokenData.value, sellTokenData.decimals)

@@ -1,4 +1,4 @@
-pragma solidity 0.8.18;
+pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (interfaces/v2/templeLineOfCredit/ITempleLineOfCredit.sol)
 
@@ -24,28 +24,28 @@ interface ITempleLineOfCredit is ITlcDataTypes, ITlcEventsAndErrors {
      * @param collateralAmount The amount to deposit
      * @param onBehalfOf An account can add collateral on behalf of another address.
      */
-    function addCollateral(uint256 collateralAmount, address onBehalfOf) external;
+    function addCollateral(uint128 collateralAmount, address onBehalfOf) external;
 
     /**
      * @notice Remove Temple collateral. (active borrow positions are not allowed to go above the max LTV)
      * @param amount The amount of collateral to remove
      * @param recipient Send the Temple collateral to a specified recipient address.
      */
-    function removeCollateral(uint256 amount, address recipient) external;
+    function removeCollateral(uint128 amount, address recipient) external;
 
     /**
      * @notice Borrow DAI (not allowed to borrow over the max LTV)
      * @param amount The amount to borrow
      * @param recipient Send the borrowed token to a specified recipient address.
      */
-    function borrow(uint256 amount, address recipient) external;
+    function borrow(uint128 amount, address recipient) external;
 
     /**
      * @notice An account repays some of its DAI debt
      * @param repayAmount The amount to repay. Cannot be more than the current debt.
      * @param onBehalfOf Another address can repay the debt on behalf of someone else
      */
-    function repay(uint256 repayAmount, address onBehalfOf) external;
+    function repay(uint128 repayAmount, address onBehalfOf) external;
     
     /**
      * @notice An account repays all of its DAI debt
@@ -64,14 +64,25 @@ interface ITempleLineOfCredit is ITlcDataTypes, ITlcEventsAndErrors {
     function batchLiquidate(
         address[] calldata accounts
     ) external returns (
-        uint256 totalCollateralClaimed,
-        uint256 totalDaiDebtWiped
+        uint128 totalCollateralClaimed,
+        uint128 totalDaiDebtWiped
     );
 
     /**
      * @notice New borrows of DAI may be paused in an emergency to protect user funds
      */
     function setBorrowPaused(bool isPaused) external;
+
+    /**
+     * @notice Liquidations may be paused in order for users to recover/repay debt after emergency
+     * actions
+     */
+    function setLiquidationsPaused(bool isPaused) external;
+
+    /**
+     * @notice Set the minimum amount of Temple which must be borrowed on each call.
+     */
+    function setMinBorrowAmount(uint128 amount) external;
 
     /**
      * @notice Update the TLC Strategy contract, and Treasury Reserves Vault (TRV)
@@ -133,6 +144,18 @@ interface ITempleLineOfCredit is ITlcDataTypes, ITlcEventsAndErrors {
      * @notice A record of the total amount of collateral deposited by users/accounts.
      */
     function totalCollateral() external view returns (uint256);
+
+    /**
+     * @notice Liquidations may be paused in order for users to recover/repay debt after emergency
+     * actions
+     */
+    function liquidationsPaused() external view returns (bool);
+
+    /**
+     * @notice The minimum borrow amount per transaction
+     * @dev It costs gas to liquidate users, so we don't want dust amounts.
+     */
+    function minBorrowAmount() external view returns (uint128);
 
     /**
      * @notice An view of an accounts current and up to date position as of this block

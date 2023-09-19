@@ -1,0 +1,9 @@
+// sepolia: STRATEGIES.RAMOS_STRATEGY.CIRCUIT_BREAKERS.DAI=0xcF4fdC6d455F33A6236df79aAA82c58E173f7fB5
+// yarn hardhat verify --network sepolia 0xcF4fdC6d455F33A6236df79aAA82c58E173f7fB5 --constructor-args scripts/deploys/sepolia/deploymentArgs/0xcF4fdC6d455F33A6236df79aAA82c58E173f7fB5.js
+module.exports = [
+  "0x8dbe2E7Cab43F00fce7fFe90769b87456692CE46",
+  "0x81960c465605cddD9772a8653111D4aBE580Ce1e",
+  93600,
+  13,
+  "5000000000000000000000000"
+];

@@ -3,6 +3,9 @@ interface Props {
 }
 
 const TruncatedAddress = ({ address }: Props) => {
+  if (!address) {
+    return null;
+  }
   const start = address.slice(0, 6);
   const end = address.slice(-4);
   return (

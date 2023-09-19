@@ -1,4 +1,4 @@
-pragma solidity 0.8.18;
+pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -10,7 +10,7 @@ import { FakeERC20 } from "contracts/fakes/FakeERC20.sol";
 contract MockStrategy is AbstractStrategy {
     using SafeERC20 for IERC20;
 
-    string public constant VERSION = "X.0.0";
+    string private constant VERSION = "X.0.0";
 
     // solhint-disable-next-line
     string public API_VERSION_X;
@@ -22,6 +22,8 @@ contract MockStrategy is AbstractStrategy {
     IERC20 public immutable weth;
 
     IERC20 public immutable temple;
+
+    bool public debtCeilingUpdatedCalled;
 
     constructor(
         address _initialRescuer,
@@ -128,4 +130,9 @@ contract MockStrategy is AbstractStrategy {
         dai.safeTransferFrom(inputData.pullTokenFrom, address(this), amount);
         treasuryReservesVault.repay(dai, amount, address(this));
     }
+
+    function _debtCeilingUpdated(IERC20 /*token*/, uint256 /*newDebtCeiling*/) internal override {
+        debtCeilingUpdatedCalled = true;
+    }
+
 }

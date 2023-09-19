@@ -1,4 +1,4 @@
-pragma solidity 0.8.18;
+pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (v2/strategies/DSRStrategy.sol)
 
@@ -16,7 +16,7 @@ import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.so
 contract MockBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
     using SafeERC20 for IERC20;
 
-    string public constant VERSION = "1.0.0";
+    string private constant VERSION = "1.0.0";
 
     IERC20 public immutable token;
 
@@ -53,11 +53,11 @@ contract MockBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
     }
 
     /**
-     * @notice The latest checkpoint of each asset balance this stratgy holds, and the current debt.
+     * @notice The latest checkpoint of each asset balance this strategy holds, and the current debt.
      * This will be used to report equity performance: `sum(asset value in STABLE) - debt`
      * The conversion of each asset price into the stable token (eg DAI) will be done off-chain
      *
-     * @dev The asset value may be stale at any point in time, depending onthe strategy. 
+     * @dev The asset value may be stale at any point in time, depending on the strategy. 
      * It may optionally implement `checkpointAssetBalances()` in order to update those balances.
      */
     function latestAssetBalances() public override(AbstractStrategy, ITempleBaseStrategy) view returns (
@@ -109,7 +109,7 @@ contract MockBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
      * Shutdown data isn't required for a DSR automated shutdown.
      */
     function _doShutdown(bytes calldata /*data*/) internal pure override {
-        revert Unimplemented();
+        revert CommonEventsAndErrors.Unimplemented();
     }
 
 }
