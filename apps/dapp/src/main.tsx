@@ -29,6 +29,11 @@ import { AscendListPage } from 'components/Pages/AscendList';
 import env from 'constants/env';
 import { AnalyticsService } from 'services/AnalyticsService';
 import { Unstake } from 'components/Pages/Core/Trade/views/Unstake';
+import { Dashboard } from 'components/Pages/Core/DappPages/Dashboard';
+import { Trade } from './components/Pages/Core/DappPages/Trade';
+import { Borrow } from 'components/Pages/Core/DappPages/Borrow';
+import { ClaimLegacy } from 'components/Pages/Core/DappPages/ClaimLegacy';
+import { UnstakeLegacy } from 'components/Pages/Core/DappPages/UnstakeLegacy';
 
 // Separate Chunks
 const TeamPayments = React.lazy(() => import('components/Pages/TeamPayments'));
@@ -78,7 +83,11 @@ ReactDOM.render(
               <Route path="ramos" element={<LazyPage component={RamosAdmin} />} />
             </Route>
             <Route path="/dapp/*" element={<CoreLayout />}>
-              <Route path="" element={<VaultListPage />} />
+              <Route path="dashboard" element={<Dashboard />} />
+              <Route path="trade" element={<Trade />} />
+              <Route path="borrow" element={<Borrow />} />
+              <Route path="claimlegacy" element={<ClaimLegacy />} />
+              <Route path="unstakelegacy" element={<UnstakeLegacy />} />
               <Route path="vaults" element={<VaultListPage />} />
               <Route path="unstake" element={<Unstake />} />
               <Route path="vaults/:vaultId/*" element={<VaultPage />}>
@@ -89,6 +98,7 @@ ReactDOM.render(
                 <Route path="timing" element={<Timing />} />
               </Route>
               <Route path="profile" element={<ProfilePage />} />
+              
 
               {env.featureFlags.enableAscend && (
                 <>

@@ -8,13 +8,12 @@ import { theme } from 'styles/theme';
 import { phoneAndAbove, verySmallDesktop } from 'styles/breakpoints';
 import { Lottie } from 'components/Layouts/CoreLayout/Lottie';
 
-import env from 'constants/env';
-import selectorIcon from 'assets/icons/nav-selector-icon.svg';
 import hamburger from 'assets/icons/core-hamburger.svg';
 import hamburgerX from 'assets/icons/core-x-hamburger.svg';
 import animationData from 'assets/animations/logo-animation.json';
 import mobileBackgoundImage from 'assets/images/mobile-background-geometry.svg';
 import { Account } from './Account';
+import footerTexture from 'assets/images/newui-images/footerTexture.svg';
 
 const Header = () => {
   const [isNavOpen, setIsNavOpen] = useState(false);
@@ -52,30 +51,26 @@ interface NavigationProps {
 }
 
 const Navigation = ({ isNavOpenMobile, onClickMenuItem }: NavigationProps) => {
-  const [selectorPosition, setSelectorPosition] = useState(0);
-
-  const onMenuItemActive = useCallback(
-    (offsetX: number) => {
-      const centerSelectorPostion = offsetX - SELECTOR_WIDTH / 2;
-      setSelectorPosition(centerSelectorPostion);
-    },
-    [setSelectorPosition]
-  );
-
   return (
     <NavWrapper $isOpen={isNavOpenMobile}>
       <MenuWrapper>
         <Menu id="menu">
-          <MenuItem to="/dapp/vaults" onMenuItemActive={onMenuItemActive} onClick={onClickMenuItem}>
-            Vaults
+          <MenuItem to="/dapp/dashboard" onClick={onClickMenuItem}>
+            Dashboard
           </MenuItem>
-          {env.featureFlags.enableAscend && (
-            <MenuItem to="/dapp/ascend" onMenuItemActive={onMenuItemActive} onClick={onClickMenuItem}>
-              Ascend
-            </MenuItem>
-          )}
+          <MenuItem to="/dapp/trade" onClick={onClickMenuItem}>
+            Trade
+          </MenuItem>
+          <MenuItem to="/dapp/borrow" onClick={onClickMenuItem}>
+            Borrow
+          </MenuItem>
+          <MenuItem to="/dapp/claimlegacy" onClick={onClickMenuItem}>
+            Claim from Vaults (Legacy)
+          </MenuItem>
+          <MenuItem to="/dapp/unstakelegacy" onClick={onClickMenuItem}>
+            Unstake OGT (Legacy)
+          </MenuItem>
         </Menu>
-        <Selector $position={selectorPosition} />
       </MenuWrapper>
     </NavWrapper>
   );
@@ -84,11 +79,10 @@ const Navigation = ({ isNavOpenMobile, onClickMenuItem }: NavigationProps) => {
 interface MenuItemProps {
   to: string;
   strictMatch?: boolean;
-  onMenuItemActive: (offsetX: number) => void;
   onClick?: (event: SyntheticEvent) => void;
 }
 
-const MenuItem: FC<MenuItemProps> = ({ to, children, onMenuItemActive, strictMatch = false, onClick }) => {
+const MenuItem: FC<MenuItemProps> = ({ to, children, strictMatch = false, onClick }) => {
   const resolved = useResolvedPath(to);
   const match = useMatch({ path: resolved.pathname, end: strictMatch });
   const menuItemRef = useRef<HTMLAnchorElement>(null);
@@ -97,13 +91,7 @@ const MenuItem: FC<MenuItemProps> = ({ to, children, onMenuItemActive, strictMat
     if (!match || !menuItemRef.current) {
       return;
     }
-
-    const domNode = menuItemRef.current;
-    const clientRect = domNode.getBoundingClientRect();
-    const centerOffsetLeft = domNode.offsetLeft + clientRect.width / 2;
-
-    onMenuItemActive(centerOffsetLeft);
-  }, [match, onMenuItemActive, menuItemRef]);
+  }, [match, menuItemRef]);
 
   return (
     <li>
@@ -114,7 +102,6 @@ const MenuItem: FC<MenuItemProps> = ({ to, children, onMenuItemActive, strictMat
   );
 };
 
-const SELECTOR_WIDTH = 23; // pixels
 export const NAV_MOBILE_HEIGHT_PIXELS = 52; // pixels
 export const NAV_DESKTOP_HEIGHT_PIXELS = 52; // pixels
 
@@ -122,7 +109,7 @@ export const NAV_DESKTOP_HEIGHT_PIXELS = 52; // pixels
 const COLOR_NAV_SHADOW_DESKTOP = '0px 0px 0.3125rem rgba(222, 92, 6, 0.5)';
 const COLOR_NAV_SHADOW_MOBILE = '0px 0px 0.6428rem rgba(222, 92, 6, 0.5)';
 const COLOR_NAV_BACKGROUND_GRADIENT_START = '#0B0A0A';
-const COLOR_NAV_BACKGROUND_GRADIENT_END = '#1D1A1A';
+// const COLOR_NAV_BACKGROUND_GRADIENT_END = '#1D1A1A';
 const COLOR_NAV_BORDER = '#BD7B4F61';
 
 const HamburgerBun = styled.button<{ $isOpen: boolean }>`
@@ -158,7 +145,7 @@ const Wrapper = styled.header`
   align-items: center;
   padding: 0 1.75rem;
   height: ${pixelsToRems(NAV_MOBILE_HEIGHT_PIXELS)}rem;
-  background: ${COLOR_NAV_BACKGROUND_GRADIENT_START};
+  background: black;
   position: fixed;
   top: 0;
   left: 0;
@@ -168,8 +155,9 @@ const Wrapper = styled.header`
   ${phoneAndAbove(`
     height: ${pixelsToRems(NAV_DESKTOP_HEIGHT_PIXELS)}rem;
     position: relative;
-    height: 3.25rem; // 52px
-    background: linear-gradient(180deg, ${COLOR_NAV_BACKGROUND_GRADIENT_START} 0%, ${COLOR_NAV_BACKGROUND_GRADIENT_END} 100%);
+    height: 70px;
+    background-image: url('${footerTexture}');
+    background-size: cover;
     border-bottom: 0.0625rem solid ${COLOR_NAV_BORDER};
   `)}
 `;
@@ -186,25 +174,6 @@ const Logo = styled(Link)`
   `)}
 `;
 
-const Selector = styled.span<{ $position: number }>`
-  ${backgroundImage(selectorIcon)}
-
-  display: none;
-  bottom: 0;
-  content: '';
-  width: ${pixelsToRems(SELECTOR_WIDTH)}rem;
-  height: 1.5rem;
-  position: absolute;
-
-  transition: transform 250ms ease-in-out;
-  transform: translate(${({ $position }) => pixelsToRems($position)}rem, 50%);
-
-  ${({ $position }) =>
-    phoneAndAbove(`
-    display: ${$position ? 'block' : 'none'};
-  `)}
-`;
-
 const NavWrapper = styled.nav<{ $isOpen: boolean }>`
   display: ${({ $isOpen }) => ($isOpen ? 'flex' : 'none')};
   position: fixed;
@@ -212,7 +181,6 @@ const NavWrapper = styled.nav<{ $isOpen: boolean }>`
   left: 0;
   right: 0;
   bottom: 0;
-  align-items: center;
   z-index: ${({ theme }) => theme.zIndexes.max};
 
   ${backgroundImage(mobileBackgoundImage, {
@@ -221,7 +189,7 @@ const NavWrapper = styled.nav<{ $isOpen: boolean }>`
   })}
 
   ${phoneAndAbove(`
-    top: 0;
+    top: 9px;
     padding-top: 0;
     justify-content: center;
     background: transparent;
@@ -244,7 +212,7 @@ const Menu = styled(UnstyledList)`
   flex-direction: column;
   align-items: flex-start;
   padding: 0 1.9375rem;
-  top: -${pixelsToRems(NAV_MOBILE_HEIGHT_PIXELS)}rem;
+  // top: -${pixelsToRems(NAV_MOBILE_HEIGHT_PIXELS)}rem;
 
   > li {
     margin-bottom: 2.5rem;
@@ -263,7 +231,7 @@ const Menu = styled(UnstyledList)`
 
     > li {
       margin: 0;
-      border-right: 0.0625rem solid ${COLOR_NAV_BORDER};
+      // border-right: 0.0625rem solid ${COLOR_NAV_BORDER};
 
       &:last-of-type {
         border-right: none;
@@ -281,9 +249,11 @@ const NavLink = styled(Link)<{ $active?: boolean }>`
   letter-spacing: 0.1em;
   font-weight: normal;
   transition: all 150ms ease-in;
+  white-space: nowrap;
 
   color: ${({ theme, $active }) => ($active ? theme.palette.brandLight : theme.palette.brand)};
   text-shadow: ${({ $active }) => ($active ? COLOR_NAV_SHADOW_MOBILE : 'none')};
+  text-decoration: ${({ $active }) => ($active ? 'underline' : 'none')};
 
   &:hover {
     color: ${theme.palette.brandLight};

@@ -24,6 +24,8 @@ import ClaimModal from './ClaimModal';
 import UnstakeOgtModal from './UnstakeModal';
 import { useWallet } from 'providers/WalletProvider';
 import TLCModal from './TLC/TLCModal';
+import { Button as BaseButton } from 'components/Button/Button';
+import { verySmallDesktop } from 'styles/breakpoints';
 
 interface Metrics {
   price: number;
@@ -34,30 +36,23 @@ interface Metrics {
 const MarketingContent = [
   {
     image: obtainTemple,
-    header: 'Elevate Your Portfolio',
-    text: 'Simply buy and hold $TEMPLE in your wallet, then relax as the Treasury farms on your behalf.',
+    header: 'Obtain $TEMPLE',
+    text: 'Provide your tokens, growing the Temple Treasury and recieving $TEMPLE in return.',
   },
   {
     image: intrValue,
-    header: 'Find Refuge in the Temple',
-    text: 'Each $TEMPLE token is backed by stable assets in the Treasury. The $TEMPLE price tracks the growth of Treasury assets through a metric called Treasury Price Index (TPI).',
+    header: 'Intrinsic value',
+    text: 'Each $TEMPLE token has intrinsic value equal to the treasury value, divided by the number of $TEMPLE tokens.',
   },
   {
     image: treasuryGrowth,
-    header: 'Growth that Transcends Volatility',
-    text: (
-      <>
-        Enjoy the top stable yields in DeFi without worrying about actively managing any positions.
-        <br />
-        <br />
-        TPI rises over time as the Temple Treasury generates revenue and grows in value.
-      </>
-    ),
+    header: 'Treasury Growth',
+    text: 'The Temple Treasury is put to work, generating revenue for the protocol. This will drive up the intrinsic value of each $TEMPLE token over time.',
   },
   {
     image: elasticFloor,
-    header: 'A Token for All Seasons',
-    text: 'If $TEMPLE price trades below the TPI, automated price protection is engaged through our AMO-styled liquidity manager (RAMOS).',
+    header: 'Elastic Floor ',
+    text: 'If the $TEMPLE token price drops below the intrinsic value, a contract will buy back tokens at randomised times and in randomised amounts, restoring the price and maintaining an elastic floor.',
   },
 ];
 
@@ -102,42 +97,10 @@ const FooterContent = [
 const Home = ({ tlc }: { tlc?: boolean }) => {
   const { signer, updateBalance, walletAddress, isConnected, isConnecting } = useWallet();
   const [metrics, setMetrics] = useState<Metrics>({ price: 0, tpi: 0, treasury: 0 });
-  const [tradeFormVisible, setTradeFormVisible] = useState(false);
-  const [showConnect, setShowConnect] = useState(false);
 
   const [isTlcModalOpen, setIsTlcModalOpen] = useState(false);
   const [isClaimModalOpen, setIsClaimModalOpen] = useState(false);
   const [isUnstakeModalOpen, setIsUnstakeModalOpen] = useState(false);
-
-  useEffect(() => {
-    if (isConnecting) {
-      setShowConnect(false);
-    }
-
-    if (isConnected) {
-      setShowConnect(false);
-    }
-
-    if (walletAddress) {
-      setShowConnect(false);
-    }
-  }, [isConnected, isConnecting, walletAddress]);
-
-  useEffect(() => {
-    const onMount = async () => {
-      await updateBalance();
-    };
-    onMount();
-  }, [walletAddress, signer]);
-
-  const clickHandler = (openModal: (open: boolean) => void) => {
-    if (!walletAddress) {
-      window.scrollTo(0, 0);
-      setShowConnect(true);
-      return;
-    }
-    openModal(true);
-  };
 
   useEffect(() => {
     const fetchMetrics = async () => {
@@ -180,35 +143,27 @@ const Home = ({ tlc }: { tlc?: boolean }) => {
   return (
     <>
       <LegacyLinkHeader>
-        {tlc && <LegacyLink onClick={() => clickHandler(setIsTlcModalOpen)}>Temple Lending</LegacyLink>}
-        <LegacyLink onClick={() => clickHandler(setIsClaimModalOpen)}>Claim from vaults</LegacyLink>
-        <LegacyLink onClick={() => clickHandler(setIsUnstakeModalOpen)}>Unstake OGT</LegacyLink>
+        <TempleLogoWrapper>Logo</TempleLogoWrapper>
+        <LaunchAppWrapper>
+          <Link to="/dapp/dashboard">
+            <LaunchAppButton isUppercase={false} label={'Launch App'} role="button" />
+          </Link>
+        </LaunchAppWrapper>
       </LegacyLinkHeader>
       {/* Top Container */}
       <TopContainer>
         <RaysImage src={hero} />
         <HeroRing>
           <ContentContainer>
-            {tradeFormVisible && <Trade />}
-            {showConnect && (
-              <ConnectWalletContainer>
-                <ConnectWalletText>Connect Wallet to Continue</ConnectWalletText>
-                <ConnectButtonWrapper>
-                  <Account />
-                </ConnectButtonWrapper>
-              </ConnectWalletContainer>
-            )}
-            {!tradeFormVisible && !showConnect && (
-              <>
-                <NewTempleText>The New Temple</NewTempleText>
-                <TradeDetailText>A wrapped treasury token with steady price growth in all conditions</TradeDetailText>
-                <ButtonContainer>
-                  <TradeButton onClick={() => clickHandler(setTradeFormVisible)}>Trade</TradeButton>
-                  {tlc && <TradeButton onClick={() => clickHandler(setIsTlcModalOpen)}>Borrow</TradeButton>}
-                </ButtonContainer>
-                <LearnMoreLink onClick={() => clickHandler(setIsClaimModalOpen)}>Claim from Vaults</LearnMoreLink>
-              </>
-            )}
+            <>
+              <NewTempleText>The New Temple</NewTempleText>
+              <TradeDetailText>A safe and stable token, appreciating over time.</TradeDetailText>
+              <ButtonContainer>
+                <LaunchAppButton label={'Launch App'} role="button" />
+              </ButtonContainer>
+              {/* // TODO: Link */}
+              <LearnMoreLink>Learn More</LearnMoreLink>
+            </>
           </ContentContainer>
         </HeroRing>
         <BuildingsImage src={buildings} />
@@ -275,16 +230,6 @@ const Home = ({ tlc }: { tlc?: boolean }) => {
             <h4>Links</h4>
             <ul>
               <li>
-                <LegacyFooterLink onClick={() => clickHandler(setIsClaimModalOpen)}>
-                  Claim from vaults (Legacy)
-                </LegacyFooterLink>
-              </li>
-              <li>
-                <LegacyFooterLink onClick={() => clickHandler(setIsUnstakeModalOpen)}>
-                  Unstake OGT (Legacy)
-                </LegacyFooterLink>
-              </li>
-              <li>
                 <Link to="/disclaimer">Disclaimer</Link>
               </li>
             </ul>
@@ -292,36 +237,17 @@ const Home = ({ tlc }: { tlc?: boolean }) => {
         </LinkRow>
         <CopyrightRow>© {new Date().getFullYear()} TempleDAO. All rights reserved.</CopyrightRow>
       </FooterContainer>
-      <TLCModal isOpen={!!walletAddress && isTlcModalOpen} onClose={() => setIsTlcModalOpen(false)} />
-      <ClaimModal isOpen={true && isClaimModalOpen} onClose={() => setIsClaimModalOpen(false)} />
-      <UnstakeOgtModal isOpen={isUnstakeModalOpen} onClose={() => setIsUnstakeModalOpen(false)} />
     </>
   );
 };
-
-const LegacyLink = styled.div`
-  text-decoration: underline;
-  padding: 5px;
-  cursor: pointer;
-  margin-right: 10px;
-  margin-left: 10px;
-  color: ${({ theme }) => theme.palette.brand};
-  font-weight: bold;
-`;
-
-const LegacyFooterLink = styled.div`
-  cursor: pointer;
-  color: ${({ theme }) => theme.palette.brand};
-  font-weight: bold;
-`;
 
 const LegacyLinkHeader = styled.div`
   position: absolute;
   width: 100%;
   display: flex;
   flex-direction: row;
-  justify-content: right;
   padding: 5px;
+  height: 70px;
   background-color: black;
   background-image: url('${footerTexture}');
   background-size: cover;
@@ -329,6 +255,18 @@ const LegacyLinkHeader = styled.div`
   border-top: 2px solid ${({ theme }) => theme.palette.brandDarker};
   font-size: 14px;
   z-index: 3;
+`;
+
+const TempleLogoWrapper = styled.div`
+  display: flex;
+  justify-content: left;
+  width: 100%;
+`;
+
+const LaunchAppWrapper = styled.div`
+  display: flex;
+  justify-content: right;
+  width: 100%;
 `;
 
 // Top Container
@@ -411,29 +349,27 @@ const LearnMoreLink = styled.span`
   }
 `;
 
-const ConnectWalletText = styled.div`
-  font-size: 1.75rem;
-  margin: auto;
-  color: ${({ theme }) => theme.palette.brandLight};
-  padding-bottom: 20px;
-`;
-
-const ConnectButtonWrapper = styled.div`
-  width: 200px;
-  margin: auto;
-`;
-
-const ConnectWalletContainer = styled.div`
-  margin: auto;
-  display: flex;
-  flex-direction: column;
-`;
-
 const ButtonContainer = styled.div`
   display: flex;
   flex-direction: row;
   justify-content: center;
   gap: 1.5rem;
+  margin-top: 20px;
+`;
+
+export const LaunchAppButton = styled(Button)`
+  padding: 0.75rem 1.5rem;
+  width: 175px;
+  height: 3.5rem;
+  background: ${({ theme }) => theme.palette.gradients.dark};
+  border: 1px solid ${({ theme }) => theme.palette.brandDark};
+  box-shadow: 0px 0px 20px rgba(222, 92, 6, 0.4);
+  border-radius: 0.75rem;
+  font-weight: bold;
+  font-size: 12pt;
+  letter-spacing: 0.1rem;
+  text-transform: uppercase;
+  color: ${({ theme }) => theme.palette.brandLight};
 `;
 
 export const TradeButton = styled(Button)`
@@ -514,7 +450,6 @@ const MetricTitle = styled.div`
   font-size: 1.25rem;
 `;
 
-// Main Container
 const MainContainer = styled.div`
   display: flex;
   flex-direction: column;
@@ -534,13 +469,11 @@ const Header = styled.h2`
   color: ${({ theme }) => theme.palette.brandLight};
 `;
 
-// Price Chart
 const ChartContainer = styled.div`
   width: 100%;
   min-height: 500px;
 `;
 
-// Marketing Container
 const MarketingRow = styled.div.attrs((props: { index: number }) => props)`
   display: flex;
   justify-content: center;
@@ -666,6 +599,31 @@ const CopyrightRow = styled.div`
   font-size: 14px;
   letter-spacing: 0.095em;
   color: ${({ theme }) => theme.palette.brand};
+`;
+
+const LaunchDappButton = styled(BaseButton)`
+  background-color: rgba(0, 0, 0, 0);
+  border-radius: 0.75rem;
+  font-weight: 400;
+  border: transparent;
+  color: ${({ theme }) => theme.palette.brand};
+  border: 1px solid ${({ theme }) => theme.palette.brand};
+
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  transition: background 0.2s ease-in-out;
+
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.25);
+  }
+
+  &:disabled {
+    border: 1px solid #bd7b4f80;
+  }
+
+  ${verySmallDesktop(`
+    padding: 0 0.5rem;
+  `)}
 `;
 
 export default Home;
