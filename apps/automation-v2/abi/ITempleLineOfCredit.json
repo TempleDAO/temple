@@ -1,0 +1,3989 @@
+{
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "totalDebtAmount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "repayAmount",
+          "type": "uint256"
+        }
+      ],
+      "name": "ExceededBorrowedAmount",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "collateralAmount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "collateralValue",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "currentDaiDebt",
+          "type": "uint256"
+        }
+      ],
+      "name": "ExceededMaxLtv",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "required",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "provided",
+          "type": "uint256"
+        }
+      ],
+      "name": "InsufficientAmount",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "Paused",
+      "type": "error"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "recipient",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "Borrow",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "bool",
+          "name": "isPaused",
+          "type": "bool"
+        }
+      ],
+      "name": "BorrowPausedSet",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "fundedBy",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "onBehalfOf",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "collateralAmount",
+          "type": "uint256"
+        }
+      ],
+      "name": "CollateralAdded",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "recipient",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "collateralAmount",
+          "type": "uint256"
+        }
+      ],
+      "name": "CollateralRemoved",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "interestRateModel",
+          "type": "address"
+        }
+      ],
+      "name": "InterestRateModelSet",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint96",
+          "name": "newInterestRate",
+          "type": "uint96"
+        }
+      ],
+      "name": "InterestRateUpdate",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "collateralSeized",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "collateralValue",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "daiDebtWiped",
+          "type": "uint256"
+        }
+      ],
+      "name": "Liquidated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "maxLtvRatio",
+          "type": "uint256"
+        }
+      ],
+      "name": "MaxLtvRatioSet",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "fundedBy",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "onBehalfOf",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "repayAmount",
+          "type": "uint256"
+        }
+      ],
+      "name": "Repay",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "strategy",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "treasuryReservesVault",
+          "type": "address"
+        }
+      ],
+      "name": "TlcStrategySet",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "accountData",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "uint128",
+              "name": "collateral",
+              "type": "uint128"
+            },
+            {
+              "internalType": "uint128",
+              "name": "debtCheckpoint",
+              "type": "uint128"
+            },
+            {
+              "internalType": "uint128",
+              "name": "interestAccumulator",
+              "type": "uint128"
+            },
+            {
+              "internalType": "uint128",
+              "name": "removeCollateralRequestAmount",
+              "type": "uint128"
+            },
+            {
+              "internalType": "uint128",
+              "name": "borrowRequestAmount",
+              "type": "uint128"
+            },
+            {
+              "internalType": "uint64",
+              "name": "removeCollateralRequestAt",
+              "type": "uint64"
+            },
+            {
+              "internalType": "uint64",
+              "name": "borrowRequestAt",
+              "type": "uint64"
+            }
+          ],
+          "internalType": "struct ITlcDataTypes.AccountData",
+          "name": "data",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "accountPosition",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "collateral",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "currentDebt",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "maxBorrow",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "healthFactor",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "loanToValueRatio",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct ITlcDataTypes.AccountPosition",
+          "name": "position",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "collateralAmount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "onBehalfOf",
+          "type": "address"
+        }
+      ],
+      "name": "addCollateral",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address[]",
+          "name": "accounts",
+          "type": "address[]"
+        }
+      ],
+      "name": "batchLiquidate",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "totalCollateralClaimed",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "totalDaiDebtWiped",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "recipient",
+          "type": "address"
+        }
+      ],
+      "name": "borrow",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "circuitBreakerProxy",
+      "outputs": [
+        {
+          "internalType": "contract ITempleCircuitBreakerProxy",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address[]",
+          "name": "accounts",
+          "type": "address[]"
+        }
+      ],
+      "name": "computeLiquidity",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "bool",
+              "name": "hasExceededMaxLtv",
+              "type": "bool"
+            },
+            {
+              "internalType": "uint256",
+              "name": "collateral",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "collateralValue",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "currentDebt",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct ITlcDataTypes.LiquidationStatus[]",
+          "name": "status",
+          "type": "tuple[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "daiToken",
+      "outputs": [
+        {
+          "internalType": "contract IERC20",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "debtTokenDetails",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "uint96",
+              "name": "maxLtvRatio",
+              "type": "uint96"
+            },
+            {
+              "internalType": "contract IInterestRateModel",
+              "name": "interestRateModel",
+              "type": "address"
+            },
+            {
+              "internalType": "bool",
+              "name": "borrowsPaused",
+              "type": "bool"
+            }
+          ],
+          "internalType": "struct ITlcDataTypes.DebtTokenConfig",
+          "name": "config",
+          "type": "tuple"
+        },
+        {
+          "components": [
+            {
+              "internalType": "uint32",
+              "name": "interestAccumulatorUpdatedAt",
+              "type": "uint32"
+            },
+            {
+              "internalType": "uint128",
+              "name": "totalDebt",
+              "type": "uint128"
+            },
+            {
+              "internalType": "uint96",
+              "name": "interestRate",
+              "type": "uint96"
+            },
+            {
+              "internalType": "uint256",
+              "name": "interestAccumulator",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct ITlcDataTypes.DebtTokenData",
+          "name": "data",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "token",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "recoverToken",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "refreshInterestRates",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "recipient",
+          "type": "address"
+        }
+      ],
+      "name": "removeCollateral",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "repayAmount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "onBehalfOf",
+          "type": "address"
+        }
+      ],
+      "name": "repay",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "onBehalfOf",
+          "type": "address"
+        }
+      ],
+      "name": "repayAll",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bool",
+          "name": "isPaused",
+          "type": "bool"
+        }
+      ],
+      "name": "setBorrowPaused",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "interestRateModel",
+          "type": "address"
+        }
+      ],
+      "name": "setInterestRateModel",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "maxLtvRatio",
+          "type": "uint256"
+        }
+      ],
+      "name": "setMaxLtvRatio",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_tlcStrategy",
+          "type": "address"
+        }
+      ],
+      "name": "setTlcStrategy",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "templeToken",
+      "outputs": [
+        {
+          "internalType": "contract IERC20",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "tlcStrategy",
+      "outputs": [
+        {
+          "internalType": "contract ITlcStrategy",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "totalCollateral",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "totalDebtPosition",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "utilizationRatio",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "borrowRate",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "totalDebt",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct ITlcDataTypes.TotalDebtPosition",
+          "name": "daiPosition",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "treasuryReservesVault",
+      "outputs": [
+        {
+          "internalType": "contract ITreasuryReservesVault",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "bytecode": {
+    "object": "0x",
+    "sourceMap": "",
+    "linkReferences": {}
+  },
+  "deployedBytecode": {
+    "object": "0x",
+    "sourceMap": "",
+    "linkReferences": {}
+  },
+  "methodIdentifiers": {
+    "accountData(address)": "deb906e7",
+    "accountPosition(address)": "f46cf7f0",
+    "addCollateral(uint256,address)": "cadac479",
+    "batchLiquidate(address[])": "81cf9071",
+    "borrow(uint256,address)": "4b3fd148",
+    "circuitBreakerProxy()": "4b2adf17",
+    "computeLiquidity(address[])": "c3e7a9de",
+    "daiToken()": "be22f546",
+    "debtTokenDetails()": "0230192d",
+    "recoverToken(address,address,uint256)": "a7229fd9",
+    "refreshInterestRates()": "089771b3",
+    "removeCollateral(uint256,address)": "d41ddc96",
+    "repay(uint256,address)": "acb70815",
+    "repayAll(address)": "7c27383b",
+    "setBorrowPaused(bool)": "939752bd",
+    "setInterestRateModel(address)": "8bcd4016",
+    "setMaxLtvRatio(uint256)": "8fb5053e",
+    "setTlcStrategy(address)": "be415927",
+    "templeToken()": "b1a9069c",
+    "tlcStrategy()": "d495f89f",
+    "totalCollateral()": "4ac8eb5f",
+    "totalDebtPosition()": "a356bad9",
+    "treasuryReservesVault()": "101d1684"
+  },
+  "rawMetadata": "{\"compiler\":{\"version\":\"0.8.18+commit.87f61d96\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"totalDebtAmount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"repayAmount\",\"type\":\"uint256\"}],\"name\":\"ExceededBorrowedAmount\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"collateralAmount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"collateralValue\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"currentDaiDebt\",\"type\":\"uint256\"}],\"name\":\"ExceededMaxLtv\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"required\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"provided\",\"type\":\"uint256\"}],\"name\":\"InsufficientAmount\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"Paused\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"Borrow\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"isPaused\",\"type\":\"bool\"}],\"name\":\"BorrowPausedSet\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"fundedBy\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"onBehalfOf\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"collateralAmount\",\"type\":\"uint256\"}],\"name\":\"CollateralAdded\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"collateralAmount\",\"type\":\"uint256\"}],\"name\":\"CollateralRemoved\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"interestRateModel\",\"type\":\"address\"}],\"name\":\"InterestRateModelSet\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint96\",\"name\":\"newInterestRate\",\"type\":\"uint96\"}],\"name\":\"InterestRateUpdate\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"collateralSeized\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"collateralValue\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"daiDebtWiped\",\"type\":\"uint256\"}],\"name\":\"Liquidated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"maxLtvRatio\",\"type\":\"uint256\"}],\"name\":\"MaxLtvRatioSet\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"fundedBy\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"onBehalfOf\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"repayAmount\",\"type\":\"uint256\"}],\"name\":\"Repay\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"strategy\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"treasuryReservesVault\",\"type\":\"address\"}],\"name\":\"TlcStrategySet\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"accountData\",\"outputs\":[{\"components\":[{\"internalType\":\"uint128\",\"name\":\"collateral\",\"type\":\"uint128\"},{\"internalType\":\"uint128\",\"name\":\"debtCheckpoint\",\"type\":\"uint128\"},{\"internalType\":\"uint128\",\"name\":\"interestAccumulator\",\"type\":\"uint128\"},{\"internalType\":\"uint128\",\"name\":\"removeCollateralRequestAmount\",\"type\":\"uint128\"},{\"internalType\":\"uint128\",\"name\":\"borrowRequestAmount\",\"type\":\"uint128\"},{\"internalType\":\"uint64\",\"name\":\"removeCollateralRequestAt\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"borrowRequestAt\",\"type\":\"uint64\"}],\"internalType\":\"struct ITlcDataTypes.AccountData\",\"name\":\"data\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"accountPosition\",\"outputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"collateral\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"currentDebt\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"maxBorrow\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"healthFactor\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"loanToValueRatio\",\"type\":\"uint256\"}],\"internalType\":\"struct ITlcDataTypes.AccountPosition\",\"name\":\"position\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"collateralAmount\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"onBehalfOf\",\"type\":\"address\"}],\"name\":\"addCollateral\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address[]\",\"name\":\"accounts\",\"type\":\"address[]\"}],\"name\":\"batchLiquidate\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"totalCollateralClaimed\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"totalDaiDebtWiped\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"}],\"name\":\"borrow\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"circuitBreakerProxy\",\"outputs\":[{\"internalType\":\"contract ITempleCircuitBreakerProxy\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address[]\",\"name\":\"accounts\",\"type\":\"address[]\"}],\"name\":\"computeLiquidity\",\"outputs\":[{\"components\":[{\"internalType\":\"bool\",\"name\":\"hasExceededMaxLtv\",\"type\":\"bool\"},{\"internalType\":\"uint256\",\"name\":\"collateral\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"collateralValue\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"currentDebt\",\"type\":\"uint256\"}],\"internalType\":\"struct ITlcDataTypes.LiquidationStatus[]\",\"name\":\"status\",\"type\":\"tuple[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"daiToken\",\"outputs\":[{\"internalType\":\"contract IERC20\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"debtTokenDetails\",\"outputs\":[{\"components\":[{\"internalType\":\"uint96\",\"name\":\"maxLtvRatio\",\"type\":\"uint96\"},{\"internalType\":\"contract IInterestRateModel\",\"name\":\"interestRateModel\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"borrowsPaused\",\"type\":\"bool\"}],\"internalType\":\"struct ITlcDataTypes.DebtTokenConfig\",\"name\":\"config\",\"type\":\"tuple\"},{\"components\":[{\"internalType\":\"uint32\",\"name\":\"interestAccumulatorUpdatedAt\",\"type\":\"uint32\"},{\"internalType\":\"uint128\",\"name\":\"totalDebt\",\"type\":\"uint128\"},{\"internalType\":\"uint96\",\"name\":\"interestRate\",\"type\":\"uint96\"},{\"internalType\":\"uint256\",\"name\":\"interestAccumulator\",\"type\":\"uint256\"}],\"internalType\":\"struct ITlcDataTypes.DebtTokenData\",\"name\":\"data\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"recoverToken\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"refreshInterestRates\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"}],\"name\":\"removeCollateral\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"repayAmount\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"onBehalfOf\",\"type\":\"address\"}],\"name\":\"repay\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"onBehalfOf\",\"type\":\"address\"}],\"name\":\"repayAll\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bool\",\"name\":\"isPaused\",\"type\":\"bool\"}],\"name\":\"setBorrowPaused\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"interestRateModel\",\"type\":\"address\"}],\"name\":\"setInterestRateModel\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"maxLtvRatio\",\"type\":\"uint256\"}],\"name\":\"setMaxLtvRatio\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_tlcStrategy\",\"type\":\"address\"}],\"name\":\"setTlcStrategy\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"templeToken\",\"outputs\":[{\"internalType\":\"contract IERC20\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"tlcStrategy\",\"outputs\":[{\"internalType\":\"contract ITlcStrategy\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"totalCollateral\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"totalDebtPosition\",\"outputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"utilizationRatio\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"borrowRate\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"totalDebt\",\"type\":\"uint256\"}],\"internalType\":\"struct ITlcDataTypes.TotalDebtPosition\",\"name\":\"daiPosition\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"treasuryReservesVault\",\"outputs\":[{\"internalType\":\"contract ITreasuryReservesVault\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{\"accountPosition(address)\":{\"params\":{\"account\":\"The account to get a position for\"}},\"addCollateral(uint256,address)\":{\"params\":{\"collateralAmount\":\"The amount to deposit\",\"onBehalfOf\":\"An account can add collateral on behalf of another address.\"}},\"batchLiquidate(address[])\":{\"details\":\"If one of the accounts in the batch hasn't exceeded the max LTV then no action is performed for that account.\"},\"borrow(uint256,address)\":{\"params\":{\"amount\":\"The amount to borrow\",\"recipient\":\"Send the borrowed token to a specified recipient address.\"}},\"computeLiquidity(address[])\":{\"details\":\"This can be used to verify if accounts can be liquidated or not.\",\"params\":{\"accounts\":\"The accounts to get the status for.\"}},\"removeCollateral(uint256,address)\":{\"params\":{\"amount\":\"The amount of collateral to remove\",\"recipient\":\"Send the Temple collateral to a specified recipient address.\"}},\"repay(uint256,address)\":{\"params\":{\"onBehalfOf\":\"Another address can repay the debt on behalf of someone else\",\"repayAmount\":\"The amount to repay. Cannot be more than the current debt.\"}},\"repayAll(address)\":{\"details\":\"The amount of debt is calculated as of this block.\",\"params\":{\"onBehalfOf\":\"Another address can repay the debt on behalf of someone else\"}},\"setInterestRateModel(address)\":{\"params\":{\"interestRateModel\":\"The contract address of the new model\"}},\"setMaxLtvRatio(uint256)\":{\"params\":{\"maxLtvRatio\":\"The max LTV ratio (18 decimal places)\"}},\"setTlcStrategy(address)\":{\"details\":\"The TRV is granted access to spend DAI, in order to repay debt.\"}},\"title\":\"Temple Line of Credit (TLC)\",\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{\"accountData(address)\":{\"notice\":\"A view of the last checkpoint of account data (not as of this block)\"},\"accountPosition(address)\":{\"notice\":\"An view of an accounts current and up to date position as of this block\"},\"addCollateral(uint256,address)\":{\"notice\":\"Deposit Temple as collateral\"},\"batchLiquidate(address[])\":{\"notice\":\"Liquidate one or more accounts which have exceeded the  maximum allowed LTV. The Temple collateral is seized, and the accounts debt wiped.\"},\"borrow(uint256,address)\":{\"notice\":\"Borrow DAI (not allowed to borrow over the max LTV)\"},\"circuitBreakerProxy()\":{\"notice\":\"New borrows and collateral withdrawals are checked against a circuit breaker to ensure no more than a cap is withdrawn in a given period\"},\"computeLiquidity(address[])\":{\"notice\":\"Compute the liquidity status for a set of accounts.\"},\"daiToken()\":{\"notice\":\"DAI token -- the debt token which can be borrowed\"},\"debtTokenDetails()\":{\"notice\":\"Configuration and latest data snapshot of the DAI debt token\"},\"recoverToken(address,address,uint256)\":{\"notice\":\"Elevated access can recover tokens accidentally sent to this contract No user Temple collateral can be taken.\"},\"refreshInterestRates()\":{\"notice\":\"Update and checkpoint the total debt up until now Then recalculate the interest rate based on the updated utilisation ratio.\"},\"removeCollateral(uint256,address)\":{\"notice\":\"Remove Temple collateral. (active borrow positions are not allowed to go above the max LTV)\"},\"repay(uint256,address)\":{\"notice\":\"An account repays some of its DAI debt\"},\"repayAll(address)\":{\"notice\":\"An account repays all of its DAI debt\"},\"setBorrowPaused(bool)\":{\"notice\":\"New borrows of DAI may be paused in an emergency to protect user funds\"},\"setInterestRateModel(address)\":{\"notice\":\"Update the interest rate model contract for DAI borrows\"},\"setMaxLtvRatio(uint256)\":{\"notice\":\"Set the maximum Loan To Value Ratio allowed for DAI borrows before the position is liquidated\"},\"setTlcStrategy(address)\":{\"notice\":\"Update the TLC Strategy contract, and Treasury Reserves Vault (TRV)\"},\"templeToken()\":{\"notice\":\"The collateral token supplied by users/accounts\"},\"tlcStrategy()\":{\"notice\":\"The Strategy contract managing the TRV borrows and equity positions of TLC.\"},\"totalCollateral()\":{\"notice\":\"A record of the total amount of collateral deposited by users/accounts.\"},\"totalDebtPosition()\":{\"notice\":\"Get the current total DAI debt position across all accounts as of this block.\"},\"treasuryReservesVault()\":{\"notice\":\"The Treasury Reserve Vault (TRV) which funds the DAI borrows to users/accounts. - When users borrow, the DAI is pulled from the TRV      (via the TlcStrategy, increasing the dUSD debt) - When users repay, the DAI is repaid to the TRV       (reducing the dUSD debt of the TlcStrategy) - When there is a liquidation, the seized Temple collateral is paid to the TRV      (reducing the dTEMPLE debt of the TlcStrategy)\"}},\"notice\":\"Users supply Temple as collateral, and can then borrow DAI.  Temple is valued at the Temple Treasury Price Index (TPI) User debt increases at a continuously compounding rate. Liquidations occur when users LTV exceeds the maximum allowed.\",\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/interfaces/v2/templeLineOfCredit/ITempleLineOfCredit.sol\":\"ITempleLineOfCredit\"},\"evmVersion\":\"paris\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":10000000},\"remappings\":[\":@gnosis.pm/=node_modules/@gnosis.pm/\",\":@openzeppelin/=node_modules/@openzeppelin/\",\":@prb/=node_modules/@prb/\",\":@uniswap/=node_modules/@uniswap/\",\":base64-sol/=node_modules/base64-sol/\",\":ds-test/=lib/forge-std/lib/ds-test/src/\",\":eth-gas-reporter/=node_modules/eth-gas-reporter/\",\":forge-std/=lib/forge-std/src/\",\":hardhat/=node_modules/hardhat/\",\":openzeppelin-contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/\",\":openzeppelin-contracts/=lib/openzeppelin-contracts/\",\":solidity-lib/=lib/solidity-lib/contracts/\",\":v2-core/=lib/v2-core/contracts/\",\":v2-periphery/=lib/v2-periphery/contracts/\",\":v3-core/=lib/v3-core/\",\":v3-periphery/=lib/v3-periphery/contracts/\"]},\"sources\":{\"contracts/interfaces/v2/ITempleDebtToken.sol\":{\"keccak256\":\"0x843c42de414230ca492fe8942ee66605e2b0132cdcd25162c8abdf8d5e651a5d\",\"license\":\"AGPL-3.0-or-later\",\"urls\":[\"bzz-raw://1f78bed76f841d4d9e7884f75e8c3af2b2a68289686cff2c39a06293a25e622f\",\"dweb:/ipfs/QmcJidP4PCWykrzaJK24fDcHj9mw5KqHWUbWCXCpfid1Bx\"]},\"contracts/interfaces/v2/ITreasuryPriceIndexOracle.sol\":{\"keccak256\":\"0x8e4aeab15fbf31b48b1161e52011585dd1a9de0bc6445d0702f5a7ace5ba9f98\",\"license\":\"AGPL-3.0-or-later\",\"urls\":[\"bzz-raw://57b264fae23a0226b58394f18b7f61025827ecf0aacb52c20a0bf8c84c879c5d\",\"dweb:/ipfs/QmVM79a4LdVEMrmuQWWezyQKS15H8m7ZswEWByDufikbaS\"]},\"contracts/interfaces/v2/ITreasuryReservesVault.sol\":{\"keccak256\":\"0x80a69ee02e948e3a951a3741bb75eba535f8f0bda5c7736bd6705c42fc7899b7\",\"license\":\"AGPL-3.0-or-later\",\"urls\":[\"bzz-raw://7d5afc832032ed78fa684ed72c9d362c56f3694167c38de7145921dbd800ba77\",\"dweb:/ipfs/QmYFsen7zMEdo6BbZQzVsyL6Rf1rmofFT91vwzmAzFsaqb\"]},\"contracts/interfaces/v2/access/ITempleElevatedAccess.sol\":{\"keccak256\":\"0xedcd8155f46651f192796a5f6ae14ed9e0f8d5160d79164b95fa8a4d96485af2\",\"license\":\"AGPL-3.0-or-later\",\"urls\":[\"bzz-raw://28c19da9ab5bd07c7cb3d1a6083ecc1306843cf69f05acfcca07fb2855d2ac7e\",\"dweb:/ipfs/QmPUkYzb6zKra4f2PgaQHL454m98s54Pyo3RiUYfgQdzKW\"]},\"contracts/interfaces/v2/circuitBreaker/ITempleCircuitBreaker.sol\":{\"keccak256\":\"0x6c89fa8a3d03939f75d2bfb3c1abca7211d5670b286c0d511427bfb7fd1cd890\",\"license\":\"AGPL-3.0-or-later\",\"urls\":[\"bzz-raw://adca58dcba0a0811005b02fa9790cb142bbd5f381dbad2e077180eee00014a6c\",\"dweb:/ipfs/QmcHeWRCKaVAHxN8p56P8TXxeY2XSnN6qrQ8ftf5KVqyz3\"]},\"contracts/interfaces/v2/circuitBreaker/ITempleCircuitBreakerProxy.sol\":{\"keccak256\":\"0x62bc9cf337ef1f935a2142204bfe93fc2eb98b7480f1d9a3a0c4ef4f89fcaf40\",\"license\":\"AGPL-3.0-or-later\",\"urls\":[\"bzz-raw://33aa834090629c1d7ae4e45558a69e93d5dff8c429ed75c6dadcf9c21de0a2ad\",\"dweb:/ipfs/Qme3yTGo8KxmCnRCig8cad3X5yL3G611LeRVDB6C3LX7mf\"]},\"contracts/interfaces/v2/interestRate/IInterestRateModel.sol\":{\"keccak256\":\"0x6c4010c6a0a5003b8f8b9e1e72582ce0ca69c52a3c8f1bbfe5cfb1a3a10ef100\",\"license\":\"AGPL-3.0-or-later\",\"urls\":[\"bzz-raw://000fc5bc46f1eacb26d5187962fe4b2b803939a2835149a1438eab0c23ed8440\",\"dweb:/ipfs/QmdKyxWyAwbNpGgSwq5JJbNNitAe8B9gj7TpZ7zwrsiCLu\"]},\"contracts/interfaces/v2/strategies/ITempleBaseStrategy.sol\":{\"keccak256\":\"0x0d31188a3e99a9a4d23a0e3d4f5e295371a52a48f34cb470f4c7c4f6f4c92419\",\"license\":\"AGPL-3.0-or-later\",\"urls\":[\"bzz-raw://19bdcf942a54722f4f4360cd8cc1ea33d5f5c479ab5f2ff6901c1df7965de372\",\"dweb:/ipfs/QmWU7tBtZjhGCsy5ce7BwZubUueYHBA5mEo6EjWK1azJyM\"]},\"contracts/interfaces/v2/strategies/ITempleStrategy.sol\":{\"keccak256\":\"0x71aefb49865f300df2b18b87778ecdbef4b54a07a436c5dad1153f1d0a120f0d\",\"license\":\"AGPL-3.0-or-later\",\"urls\":[\"bzz-raw://d5ed846074cf0d18e78d0c55856753675592ed80c976c837f07295cd4de1c725\",\"dweb:/ipfs/QmetA7HxV8Awd92Kv69B2zx5kVK7nN4PzowL4L2qaYhWMd\"]},\"contracts/interfaces/v2/strategies/ITlcStrategy.sol\":{\"keccak256\":\"0x3c28e0189ea7a95141ab8ecf78141182c80ccfdc65628d5f49fa41abd40c97cf\",\"license\":\"AGPL-3.0-or-later\",\"urls\":[\"bzz-raw://83f24ab55d773b45e46ebc11f3f01385d9ae22c73329c85e051ab2df77241d99\",\"dweb:/ipfs/QmTM1bNjuDdBFMw1V6bJk8ZaaCGHEQAhrAZQtoR46aVHpL\"]},\"contracts/interfaces/v2/templeLineOfCredit/ITempleLineOfCredit.sol\":{\"keccak256\":\"0x6001eb3a505efac64ccc2ed5a2efc6dcab10171a36425aef66f1214819ce516f\",\"license\":\"AGPL-3.0-or-later\",\"urls\":[\"bzz-raw://bac2eb594e0042326011aaa141c34032ff6b8ed822149f68e12e83eeb96adbaf\",\"dweb:/ipfs/QmUgjmdEnh99e8FgrFAmG9FKJ3kjVCVQoAPPPgneojzAw7\"]},\"contracts/interfaces/v2/templeLineOfCredit/ITlcDataTypes.sol\":{\"keccak256\":\"0xa808127296a55f8702bc72a2cd2369c8dc0efe393d121ab07868ff5ad1f9ccc6\",\"license\":\"AGPL-3.0-or-later\",\"urls\":[\"bzz-raw://3967240fbf29708768d2a0c951d9d14ec995efbe681c594d78da32b0b5608ede\",\"dweb:/ipfs/QmeGBkCwE7hCYqjGdoTMZfrcwskjQd7XS3uk3xZT68oZau\"]},\"contracts/interfaces/v2/templeLineOfCredit/ITlcEventsAndErrors.sol\":{\"keccak256\":\"0xecce6dae13536f03078576adbedc868f227dd1a3d53dda0731e82dcfe27d08d8\",\"license\":\"AGPL-3.0-or-later\",\"urls\":[\"bzz-raw://732dc5e0dff7fd88243400738bcfc16c5d9248af51f3da89784aef1762c39b1b\",\"dweb:/ipfs/Qmd3uCQenqwyqvuoy7r71T15hfvbVuVQ9ygEtmEyvZmgcd\"]},\"node_modules/@openzeppelin/contracts/token/ERC20/IERC20.sol\":{\"keccak256\":\"0x9750c6b834f7b43000631af5cc30001c5f547b3ceb3635488f140f60e897ea6b\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://5a7d5b1ef5d8d5889ad2ed89d8619c09383b80b72ab226e0fe7bde1636481e34\",\"dweb:/ipfs/QmebXWgtEfumQGBdVeM6c71McLixYXQP5Bk6kKXuoY4Bmr\"]},\"node_modules/@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol\":{\"keccak256\":\"0x8de418a5503946cabe331f35fe242d3201a73f67f77aaeb7110acb1f30423aca\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://5a376d3dda2cb70536c0a45c208b29b34ac560c4cb4f513a42079f96ba47d2dd\",\"dweb:/ipfs/QmZQg6gn1sUpM8wHzwNvSnihumUCAhxD119MpXeKp8B9s8\"]}},\"version\":1}",
+  "metadata": {
+    "compiler": {
+      "version": "0.8.18+commit.87f61d96"
+    },
+    "language": "Solidity",
+    "output": {
+      "abi": [
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "totalDebtAmount",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "repayAmount",
+              "type": "uint256"
+            }
+          ],
+          "type": "error",
+          "name": "ExceededBorrowedAmount"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "collateralAmount",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "collateralValue",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "currentDaiDebt",
+              "type": "uint256"
+            }
+          ],
+          "type": "error",
+          "name": "ExceededMaxLtv"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "required",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "provided",
+              "type": "uint256"
+            }
+          ],
+          "type": "error",
+          "name": "InsufficientAmount"
+        },
+        {
+          "inputs": [],
+          "type": "error",
+          "name": "Paused"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "account",
+              "type": "address",
+              "indexed": true
+            },
+            {
+              "internalType": "address",
+              "name": "recipient",
+              "type": "address",
+              "indexed": true
+            },
+            {
+              "internalType": "uint256",
+              "name": "amount",
+              "type": "uint256",
+              "indexed": false
+            }
+          ],
+          "type": "event",
+          "name": "Borrow",
+          "anonymous": false
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "bool",
+              "name": "isPaused",
+              "type": "bool",
+              "indexed": false
+            }
+          ],
+          "type": "event",
+          "name": "BorrowPausedSet",
+          "anonymous": false
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "fundedBy",
+              "type": "address",
+              "indexed": true
+            },
+            {
+              "internalType": "address",
+              "name": "onBehalfOf",
+              "type": "address",
+              "indexed": true
+            },
+            {
+              "internalType": "uint256",
+              "name": "collateralAmount",
+              "type": "uint256",
+              "indexed": false
+            }
+          ],
+          "type": "event",
+          "name": "CollateralAdded",
+          "anonymous": false
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "account",
+              "type": "address",
+              "indexed": true
+            },
+            {
+              "internalType": "address",
+              "name": "recipient",
+              "type": "address",
+              "indexed": true
+            },
+            {
+              "internalType": "uint256",
+              "name": "collateralAmount",
+              "type": "uint256",
+              "indexed": false
+            }
+          ],
+          "type": "event",
+          "name": "CollateralRemoved",
+          "anonymous": false
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "interestRateModel",
+              "type": "address",
+              "indexed": true
+            }
+          ],
+          "type": "event",
+          "name": "InterestRateModelSet",
+          "anonymous": false
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint96",
+              "name": "newInterestRate",
+              "type": "uint96",
+              "indexed": false
+            }
+          ],
+          "type": "event",
+          "name": "InterestRateUpdate",
+          "anonymous": false
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "account",
+              "type": "address",
+              "indexed": true
+            },
+            {
+              "internalType": "uint256",
+              "name": "collateralSeized",
+              "type": "uint256",
+              "indexed": false
+            },
+            {
+              "internalType": "uint256",
+              "name": "collateralValue",
+              "type": "uint256",
+              "indexed": false
+            },
+            {
+              "internalType": "uint256",
+              "name": "daiDebtWiped",
+              "type": "uint256",
+              "indexed": false
+            }
+          ],
+          "type": "event",
+          "name": "Liquidated",
+          "anonymous": false
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "maxLtvRatio",
+              "type": "uint256",
+              "indexed": false
+            }
+          ],
+          "type": "event",
+          "name": "MaxLtvRatioSet",
+          "anonymous": false
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "fundedBy",
+              "type": "address",
+              "indexed": true
+            },
+            {
+              "internalType": "address",
+              "name": "onBehalfOf",
+              "type": "address",
+              "indexed": true
+            },
+            {
+              "internalType": "uint256",
+              "name": "repayAmount",
+              "type": "uint256",
+              "indexed": false
+            }
+          ],
+          "type": "event",
+          "name": "Repay",
+          "anonymous": false
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "strategy",
+              "type": "address",
+              "indexed": true
+            },
+            {
+              "internalType": "address",
+              "name": "treasuryReservesVault",
+              "type": "address",
+              "indexed": true
+            }
+          ],
+          "type": "event",
+          "name": "TlcStrategySet",
+          "anonymous": false
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "account",
+              "type": "address"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function",
+          "name": "accountData",
+          "outputs": [
+            {
+              "internalType": "struct ITlcDataTypes.AccountData",
+              "name": "data",
+              "type": "tuple",
+              "components": [
+                {
+                  "internalType": "uint128",
+                  "name": "collateral",
+                  "type": "uint128"
+                },
+                {
+                  "internalType": "uint128",
+                  "name": "debtCheckpoint",
+                  "type": "uint128"
+                },
+                {
+                  "internalType": "uint128",
+                  "name": "interestAccumulator",
+                  "type": "uint128"
+                },
+                {
+                  "internalType": "uint128",
+                  "name": "removeCollateralRequestAmount",
+                  "type": "uint128"
+                },
+                {
+                  "internalType": "uint128",
+                  "name": "borrowRequestAmount",
+                  "type": "uint128"
+                },
+                {
+                  "internalType": "uint64",
+                  "name": "removeCollateralRequestAt",
+                  "type": "uint64"
+                },
+                {
+                  "internalType": "uint64",
+                  "name": "borrowRequestAt",
+                  "type": "uint64"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "account",
+              "type": "address"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function",
+          "name": "accountPosition",
+          "outputs": [
+            {
+              "internalType": "struct ITlcDataTypes.AccountPosition",
+              "name": "position",
+              "type": "tuple",
+              "components": [
+                {
+                  "internalType": "uint256",
+                  "name": "collateral",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "currentDebt",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "maxBorrow",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "healthFactor",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "loanToValueRatio",
+                  "type": "uint256"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "collateralAmount",
+              "type": "uint256"
+            },
+            {
+              "internalType": "address",
+              "name": "onBehalfOf",
+              "type": "address"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "addCollateral"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address[]",
+              "name": "accounts",
+              "type": "address[]"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "batchLiquidate",
+          "outputs": [
+            {
+              "internalType": "uint256",
+              "name": "totalCollateralClaimed",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "totalDaiDebtWiped",
+              "type": "uint256"
+            }
+          ]
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "amount",
+              "type": "uint256"
+            },
+            {
+              "internalType": "address",
+              "name": "recipient",
+              "type": "address"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "borrow"
+        },
+        {
+          "inputs": [],
+          "stateMutability": "view",
+          "type": "function",
+          "name": "circuitBreakerProxy",
+          "outputs": [
+            {
+              "internalType": "contract ITempleCircuitBreakerProxy",
+              "name": "",
+              "type": "address"
+            }
+          ]
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address[]",
+              "name": "accounts",
+              "type": "address[]"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function",
+          "name": "computeLiquidity",
+          "outputs": [
+            {
+              "internalType": "struct ITlcDataTypes.LiquidationStatus[]",
+              "name": "status",
+              "type": "tuple[]",
+              "components": [
+                {
+                  "internalType": "bool",
+                  "name": "hasExceededMaxLtv",
+                  "type": "bool"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "collateral",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "collateralValue",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "currentDebt",
+                  "type": "uint256"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "inputs": [],
+          "stateMutability": "view",
+          "type": "function",
+          "name": "daiToken",
+          "outputs": [
+            {
+              "internalType": "contract IERC20",
+              "name": "",
+              "type": "address"
+            }
+          ]
+        },
+        {
+          "inputs": [],
+          "stateMutability": "view",
+          "type": "function",
+          "name": "debtTokenDetails",
+          "outputs": [
+            {
+              "internalType": "struct ITlcDataTypes.DebtTokenConfig",
+              "name": "config",
+              "type": "tuple",
+              "components": [
+                {
+                  "internalType": "uint96",
+                  "name": "maxLtvRatio",
+                  "type": "uint96"
+                },
+                {
+                  "internalType": "contract IInterestRateModel",
+                  "name": "interestRateModel",
+                  "type": "address"
+                },
+                {
+                  "internalType": "bool",
+                  "name": "borrowsPaused",
+                  "type": "bool"
+                }
+              ]
+            },
+            {
+              "internalType": "struct ITlcDataTypes.DebtTokenData",
+              "name": "data",
+              "type": "tuple",
+              "components": [
+                {
+                  "internalType": "uint32",
+                  "name": "interestAccumulatorUpdatedAt",
+                  "type": "uint32"
+                },
+                {
+                  "internalType": "uint128",
+                  "name": "totalDebt",
+                  "type": "uint128"
+                },
+                {
+                  "internalType": "uint96",
+                  "name": "interestRate",
+                  "type": "uint96"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "interestAccumulator",
+                  "type": "uint256"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "token",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "to",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "amount",
+              "type": "uint256"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "recoverToken"
+        },
+        {
+          "inputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "refreshInterestRates"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "amount",
+              "type": "uint256"
+            },
+            {
+              "internalType": "address",
+              "name": "recipient",
+              "type": "address"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "removeCollateral"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "repayAmount",
+              "type": "uint256"
+            },
+            {
+              "internalType": "address",
+              "name": "onBehalfOf",
+              "type": "address"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "repay"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "onBehalfOf",
+              "type": "address"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "repayAll"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "bool",
+              "name": "isPaused",
+              "type": "bool"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "setBorrowPaused"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "interestRateModel",
+              "type": "address"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "setInterestRateModel"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "maxLtvRatio",
+              "type": "uint256"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "setMaxLtvRatio"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "_tlcStrategy",
+              "type": "address"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "setTlcStrategy"
+        },
+        {
+          "inputs": [],
+          "stateMutability": "view",
+          "type": "function",
+          "name": "templeToken",
+          "outputs": [
+            {
+              "internalType": "contract IERC20",
+              "name": "",
+              "type": "address"
+            }
+          ]
+        },
+        {
+          "inputs": [],
+          "stateMutability": "view",
+          "type": "function",
+          "name": "tlcStrategy",
+          "outputs": [
+            {
+              "internalType": "contract ITlcStrategy",
+              "name": "",
+              "type": "address"
+            }
+          ]
+        },
+        {
+          "inputs": [],
+          "stateMutability": "view",
+          "type": "function",
+          "name": "totalCollateral",
+          "outputs": [
+            {
+              "internalType": "uint256",
+              "name": "",
+              "type": "uint256"
+            }
+          ]
+        },
+        {
+          "inputs": [],
+          "stateMutability": "view",
+          "type": "function",
+          "name": "totalDebtPosition",
+          "outputs": [
+            {
+              "internalType": "struct ITlcDataTypes.TotalDebtPosition",
+              "name": "daiPosition",
+              "type": "tuple",
+              "components": [
+                {
+                  "internalType": "uint256",
+                  "name": "utilizationRatio",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "borrowRate",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "totalDebt",
+                  "type": "uint256"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "inputs": [],
+          "stateMutability": "view",
+          "type": "function",
+          "name": "treasuryReservesVault",
+          "outputs": [
+            {
+              "internalType": "contract ITreasuryReservesVault",
+              "name": "",
+              "type": "address"
+            }
+          ]
+        }
+      ],
+      "devdoc": {
+        "kind": "dev",
+        "methods": {
+          "accountPosition(address)": {
+            "params": {
+              "account": "The account to get a position for"
+            }
+          },
+          "addCollateral(uint256,address)": {
+            "params": {
+              "collateralAmount": "The amount to deposit",
+              "onBehalfOf": "An account can add collateral on behalf of another address."
+            }
+          },
+          "batchLiquidate(address[])": {
+            "details": "If one of the accounts in the batch hasn't exceeded the max LTV then no action is performed for that account."
+          },
+          "borrow(uint256,address)": {
+            "params": {
+              "amount": "The amount to borrow",
+              "recipient": "Send the borrowed token to a specified recipient address."
+            }
+          },
+          "computeLiquidity(address[])": {
+            "details": "This can be used to verify if accounts can be liquidated or not.",
+            "params": {
+              "accounts": "The accounts to get the status for."
+            }
+          },
+          "removeCollateral(uint256,address)": {
+            "params": {
+              "amount": "The amount of collateral to remove",
+              "recipient": "Send the Temple collateral to a specified recipient address."
+            }
+          },
+          "repay(uint256,address)": {
+            "params": {
+              "onBehalfOf": "Another address can repay the debt on behalf of someone else",
+              "repayAmount": "The amount to repay. Cannot be more than the current debt."
+            }
+          },
+          "repayAll(address)": {
+            "details": "The amount of debt is calculated as of this block.",
+            "params": {
+              "onBehalfOf": "Another address can repay the debt on behalf of someone else"
+            }
+          },
+          "setInterestRateModel(address)": {
+            "params": {
+              "interestRateModel": "The contract address of the new model"
+            }
+          },
+          "setMaxLtvRatio(uint256)": {
+            "params": {
+              "maxLtvRatio": "The max LTV ratio (18 decimal places)"
+            }
+          },
+          "setTlcStrategy(address)": {
+            "details": "The TRV is granted access to spend DAI, in order to repay debt."
+          }
+        },
+        "version": 1
+      },
+      "userdoc": {
+        "kind": "user",
+        "methods": {
+          "accountData(address)": {
+            "notice": "A view of the last checkpoint of account data (not as of this block)"
+          },
+          "accountPosition(address)": {
+            "notice": "An view of an accounts current and up to date position as of this block"
+          },
+          "addCollateral(uint256,address)": {
+            "notice": "Deposit Temple as collateral"
+          },
+          "batchLiquidate(address[])": {
+            "notice": "Liquidate one or more accounts which have exceeded the  maximum allowed LTV. The Temple collateral is seized, and the accounts debt wiped."
+          },
+          "borrow(uint256,address)": {
+            "notice": "Borrow DAI (not allowed to borrow over the max LTV)"
+          },
+          "circuitBreakerProxy()": {
+            "notice": "New borrows and collateral withdrawals are checked against a circuit breaker to ensure no more than a cap is withdrawn in a given period"
+          },
+          "computeLiquidity(address[])": {
+            "notice": "Compute the liquidity status for a set of accounts."
+          },
+          "daiToken()": {
+            "notice": "DAI token -- the debt token which can be borrowed"
+          },
+          "debtTokenDetails()": {
+            "notice": "Configuration and latest data snapshot of the DAI debt token"
+          },
+          "recoverToken(address,address,uint256)": {
+            "notice": "Elevated access can recover tokens accidentally sent to this contract No user Temple collateral can be taken."
+          },
+          "refreshInterestRates()": {
+            "notice": "Update and checkpoint the total debt up until now Then recalculate the interest rate based on the updated utilisation ratio."
+          },
+          "removeCollateral(uint256,address)": {
+            "notice": "Remove Temple collateral. (active borrow positions are not allowed to go above the max LTV)"
+          },
+          "repay(uint256,address)": {
+            "notice": "An account repays some of its DAI debt"
+          },
+          "repayAll(address)": {
+            "notice": "An account repays all of its DAI debt"
+          },
+          "setBorrowPaused(bool)": {
+            "notice": "New borrows of DAI may be paused in an emergency to protect user funds"
+          },
+          "setInterestRateModel(address)": {
+            "notice": "Update the interest rate model contract for DAI borrows"
+          },
+          "setMaxLtvRatio(uint256)": {
+            "notice": "Set the maximum Loan To Value Ratio allowed for DAI borrows before the position is liquidated"
+          },
+          "setTlcStrategy(address)": {
+            "notice": "Update the TLC Strategy contract, and Treasury Reserves Vault (TRV)"
+          },
+          "templeToken()": {
+            "notice": "The collateral token supplied by users/accounts"
+          },
+          "tlcStrategy()": {
+            "notice": "The Strategy contract managing the TRV borrows and equity positions of TLC."
+          },
+          "totalCollateral()": {
+            "notice": "A record of the total amount of collateral deposited by users/accounts."
+          },
+          "totalDebtPosition()": {
+            "notice": "Get the current total DAI debt position across all accounts as of this block."
+          },
+          "treasuryReservesVault()": {
+            "notice": "The Treasury Reserve Vault (TRV) which funds the DAI borrows to users/accounts. - When users borrow, the DAI is pulled from the TRV      (via the TlcStrategy, increasing the dUSD debt) - When users repay, the DAI is repaid to the TRV       (reducing the dUSD debt of the TlcStrategy) - When there is a liquidation, the seized Temple collateral is paid to the TRV      (reducing the dTEMPLE debt of the TlcStrategy)"
+          }
+        },
+        "version": 1
+      }
+    },
+    "settings": {
+      "remappings": [
+        "@gnosis.pm/=node_modules/@gnosis.pm/",
+        "@openzeppelin/=node_modules/@openzeppelin/",
+        "@prb/=node_modules/@prb/",
+        "@uniswap/=node_modules/@uniswap/",
+        "base64-sol/=node_modules/base64-sol/",
+        "ds-test/=lib/forge-std/lib/ds-test/src/",
+        "eth-gas-reporter/=node_modules/eth-gas-reporter/",
+        "forge-std/=lib/forge-std/src/",
+        "hardhat/=node_modules/hardhat/",
+        "openzeppelin-contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/",
+        "openzeppelin-contracts/=lib/openzeppelin-contracts/",
+        "solidity-lib/=lib/solidity-lib/contracts/",
+        "v2-core/=lib/v2-core/contracts/",
+        "v2-periphery/=lib/v2-periphery/contracts/",
+        "v3-core/=lib/v3-core/",
+        "v3-periphery/=lib/v3-periphery/contracts/"
+      ],
+      "optimizer": {
+        "enabled": true,
+        "runs": 10000000
+      },
+      "metadata": {
+        "bytecodeHash": "ipfs"
+      },
+      "compilationTarget": {
+        "contracts/interfaces/v2/templeLineOfCredit/ITempleLineOfCredit.sol": "ITempleLineOfCredit"
+      },
+      "libraries": {}
+    },
+    "sources": {
+      "contracts/interfaces/v2/ITempleDebtToken.sol": {
+        "keccak256": "0x843c42de414230ca492fe8942ee66605e2b0132cdcd25162c8abdf8d5e651a5d",
+        "urls": [
+          "bzz-raw://1f78bed76f841d4d9e7884f75e8c3af2b2a68289686cff2c39a06293a25e622f",
+          "dweb:/ipfs/QmcJidP4PCWykrzaJK24fDcHj9mw5KqHWUbWCXCpfid1Bx"
+        ],
+        "license": "AGPL-3.0-or-later"
+      },
+      "contracts/interfaces/v2/ITreasuryPriceIndexOracle.sol": {
+        "keccak256": "0x8e4aeab15fbf31b48b1161e52011585dd1a9de0bc6445d0702f5a7ace5ba9f98",
+        "urls": [
+          "bzz-raw://57b264fae23a0226b58394f18b7f61025827ecf0aacb52c20a0bf8c84c879c5d",
+          "dweb:/ipfs/QmVM79a4LdVEMrmuQWWezyQKS15H8m7ZswEWByDufikbaS"
+        ],
+        "license": "AGPL-3.0-or-later"
+      },
+      "contracts/interfaces/v2/ITreasuryReservesVault.sol": {
+        "keccak256": "0x80a69ee02e948e3a951a3741bb75eba535f8f0bda5c7736bd6705c42fc7899b7",
+        "urls": [
+          "bzz-raw://7d5afc832032ed78fa684ed72c9d362c56f3694167c38de7145921dbd800ba77",
+          "dweb:/ipfs/QmYFsen7zMEdo6BbZQzVsyL6Rf1rmofFT91vwzmAzFsaqb"
+        ],
+        "license": "AGPL-3.0-or-later"
+      },
+      "contracts/interfaces/v2/access/ITempleElevatedAccess.sol": {
+        "keccak256": "0xedcd8155f46651f192796a5f6ae14ed9e0f8d5160d79164b95fa8a4d96485af2",
+        "urls": [
+          "bzz-raw://28c19da9ab5bd07c7cb3d1a6083ecc1306843cf69f05acfcca07fb2855d2ac7e",
+          "dweb:/ipfs/QmPUkYzb6zKra4f2PgaQHL454m98s54Pyo3RiUYfgQdzKW"
+        ],
+        "license": "AGPL-3.0-or-later"
+      },
+      "contracts/interfaces/v2/circuitBreaker/ITempleCircuitBreaker.sol": {
+        "keccak256": "0x6c89fa8a3d03939f75d2bfb3c1abca7211d5670b286c0d511427bfb7fd1cd890",
+        "urls": [
+          "bzz-raw://adca58dcba0a0811005b02fa9790cb142bbd5f381dbad2e077180eee00014a6c",
+          "dweb:/ipfs/QmcHeWRCKaVAHxN8p56P8TXxeY2XSnN6qrQ8ftf5KVqyz3"
+        ],
+        "license": "AGPL-3.0-or-later"
+      },
+      "contracts/interfaces/v2/circuitBreaker/ITempleCircuitBreakerProxy.sol": {
+        "keccak256": "0x62bc9cf337ef1f935a2142204bfe93fc2eb98b7480f1d9a3a0c4ef4f89fcaf40",
+        "urls": [
+          "bzz-raw://33aa834090629c1d7ae4e45558a69e93d5dff8c429ed75c6dadcf9c21de0a2ad",
+          "dweb:/ipfs/Qme3yTGo8KxmCnRCig8cad3X5yL3G611LeRVDB6C3LX7mf"
+        ],
+        "license": "AGPL-3.0-or-later"
+      },
+      "contracts/interfaces/v2/interestRate/IInterestRateModel.sol": {
+        "keccak256": "0x6c4010c6a0a5003b8f8b9e1e72582ce0ca69c52a3c8f1bbfe5cfb1a3a10ef100",
+        "urls": [
+          "bzz-raw://000fc5bc46f1eacb26d5187962fe4b2b803939a2835149a1438eab0c23ed8440",
+          "dweb:/ipfs/QmdKyxWyAwbNpGgSwq5JJbNNitAe8B9gj7TpZ7zwrsiCLu"
+        ],
+        "license": "AGPL-3.0-or-later"
+      },
+      "contracts/interfaces/v2/strategies/ITempleBaseStrategy.sol": {
+        "keccak256": "0x0d31188a3e99a9a4d23a0e3d4f5e295371a52a48f34cb470f4c7c4f6f4c92419",
+        "urls": [
+          "bzz-raw://19bdcf942a54722f4f4360cd8cc1ea33d5f5c479ab5f2ff6901c1df7965de372",
+          "dweb:/ipfs/QmWU7tBtZjhGCsy5ce7BwZubUueYHBA5mEo6EjWK1azJyM"
+        ],
+        "license": "AGPL-3.0-or-later"
+      },
+      "contracts/interfaces/v2/strategies/ITempleStrategy.sol": {
+        "keccak256": "0x71aefb49865f300df2b18b87778ecdbef4b54a07a436c5dad1153f1d0a120f0d",
+        "urls": [
+          "bzz-raw://d5ed846074cf0d18e78d0c55856753675592ed80c976c837f07295cd4de1c725",
+          "dweb:/ipfs/QmetA7HxV8Awd92Kv69B2zx5kVK7nN4PzowL4L2qaYhWMd"
+        ],
+        "license": "AGPL-3.0-or-later"
+      },
+      "contracts/interfaces/v2/strategies/ITlcStrategy.sol": {
+        "keccak256": "0x3c28e0189ea7a95141ab8ecf78141182c80ccfdc65628d5f49fa41abd40c97cf",
+        "urls": [
+          "bzz-raw://83f24ab55d773b45e46ebc11f3f01385d9ae22c73329c85e051ab2df77241d99",
+          "dweb:/ipfs/QmTM1bNjuDdBFMw1V6bJk8ZaaCGHEQAhrAZQtoR46aVHpL"
+        ],
+        "license": "AGPL-3.0-or-later"
+      },
+      "contracts/interfaces/v2/templeLineOfCredit/ITempleLineOfCredit.sol": {
+        "keccak256": "0x6001eb3a505efac64ccc2ed5a2efc6dcab10171a36425aef66f1214819ce516f",
+        "urls": [
+          "bzz-raw://bac2eb594e0042326011aaa141c34032ff6b8ed822149f68e12e83eeb96adbaf",
+          "dweb:/ipfs/QmUgjmdEnh99e8FgrFAmG9FKJ3kjVCVQoAPPPgneojzAw7"
+        ],
+        "license": "AGPL-3.0-or-later"
+      },
+      "contracts/interfaces/v2/templeLineOfCredit/ITlcDataTypes.sol": {
+        "keccak256": "0xa808127296a55f8702bc72a2cd2369c8dc0efe393d121ab07868ff5ad1f9ccc6",
+        "urls": [
+          "bzz-raw://3967240fbf29708768d2a0c951d9d14ec995efbe681c594d78da32b0b5608ede",
+          "dweb:/ipfs/QmeGBkCwE7hCYqjGdoTMZfrcwskjQd7XS3uk3xZT68oZau"
+        ],
+        "license": "AGPL-3.0-or-later"
+      },
+      "contracts/interfaces/v2/templeLineOfCredit/ITlcEventsAndErrors.sol": {
+        "keccak256": "0xecce6dae13536f03078576adbedc868f227dd1a3d53dda0731e82dcfe27d08d8",
+        "urls": [
+          "bzz-raw://732dc5e0dff7fd88243400738bcfc16c5d9248af51f3da89784aef1762c39b1b",
+          "dweb:/ipfs/Qmd3uCQenqwyqvuoy7r71T15hfvbVuVQ9ygEtmEyvZmgcd"
+        ],
+        "license": "AGPL-3.0-or-later"
+      },
+      "node_modules/@openzeppelin/contracts/token/ERC20/IERC20.sol": {
+        "keccak256": "0x9750c6b834f7b43000631af5cc30001c5f547b3ceb3635488f140f60e897ea6b",
+        "urls": [
+          "bzz-raw://5a7d5b1ef5d8d5889ad2ed89d8619c09383b80b72ab226e0fe7bde1636481e34",
+          "dweb:/ipfs/QmebXWgtEfumQGBdVeM6c71McLixYXQP5Bk6kKXuoY4Bmr"
+        ],
+        "license": "MIT"
+      },
+      "node_modules/@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol": {
+        "keccak256": "0x8de418a5503946cabe331f35fe242d3201a73f67f77aaeb7110acb1f30423aca",
+        "urls": [
+          "bzz-raw://5a376d3dda2cb70536c0a45c208b29b34ac560c4cb4f513a42079f96ba47d2dd",
+          "dweb:/ipfs/QmZQg6gn1sUpM8wHzwNvSnihumUCAhxD119MpXeKp8B9s8"
+        ],
+        "license": "MIT"
+      }
+    },
+    "version": 1
+  },
+  "ast": {
+    "absolutePath": "contracts/interfaces/v2/templeLineOfCredit/ITempleLineOfCredit.sol",
+    "id": 8706,
+    "exportedSymbols": {
+      "IERC20": [
+        53557
+      ],
+      "ITempleCircuitBreakerProxy": [
+        8229
+      ],
+      "ITempleLineOfCredit": [
+        8705
+      ],
+      "ITlcDataTypes": [
+        8793
+      ],
+      "ITlcEventsAndErrors": [
+        8882
+      ],
+      "ITlcStrategy": [
+        8511
+      ],
+      "ITreasuryReservesVault": [
+        8020
+      ]
+    },
+    "nodeType": "SourceUnit",
+    "src": "0:7142:39",
+    "nodes": [
+      {
+        "id": 8513,
+        "nodeType": "PragmaDirective",
+        "src": "0:23:39",
+        "nodes": [],
+        "literals": [
+          "solidity",
+          "0.8",
+          ".18"
+        ]
+      },
+      {
+        "id": 8515,
+        "nodeType": "ImportDirective",
+        "src": "140:72:39",
+        "nodes": [],
+        "absolutePath": "node_modules/@openzeppelin/contracts/token/ERC20/IERC20.sol",
+        "file": "@openzeppelin/contracts/token/ERC20/IERC20.sol",
+        "nameLocation": "-1:-1:-1",
+        "scope": 8706,
+        "sourceUnit": 53558,
+        "symbolAliases": [
+          {
+            "foreign": {
+              "id": 8514,
+              "name": "IERC20",
+              "nodeType": "Identifier",
+              "overloadedDeclarations": [],
+              "referencedDeclaration": 53557,
+              "src": "149:6:39",
+              "typeDescriptions": {}
+            },
+            "nameLocation": "-1:-1:-1"
+          }
+        ],
+        "unitAlias": ""
+      },
+      {
+        "id": 8517,
+        "nodeType": "ImportDirective",
+        "src": "214:105:39",
+        "nodes": [],
+        "absolutePath": "contracts/interfaces/v2/templeLineOfCredit/ITlcEventsAndErrors.sol",
+        "file": "contracts/interfaces/v2/templeLineOfCredit/ITlcEventsAndErrors.sol",
+        "nameLocation": "-1:-1:-1",
+        "scope": 8706,
+        "sourceUnit": 8883,
+        "symbolAliases": [
+          {
+            "foreign": {
+              "id": 8516,
+              "name": "ITlcEventsAndErrors",
+              "nodeType": "Identifier",
+              "overloadedDeclarations": [],
+              "referencedDeclaration": 8882,
+              "src": "223:19:39",
+              "typeDescriptions": {}
+            },
+            "nameLocation": "-1:-1:-1"
+          }
+        ],
+        "unitAlias": ""
+      },
+      {
+        "id": 8519,
+        "nodeType": "ImportDirective",
+        "src": "320:93:39",
+        "nodes": [],
+        "absolutePath": "contracts/interfaces/v2/templeLineOfCredit/ITlcDataTypes.sol",
+        "file": "contracts/interfaces/v2/templeLineOfCredit/ITlcDataTypes.sol",
+        "nameLocation": "-1:-1:-1",
+        "scope": 8706,
+        "sourceUnit": 8794,
+        "symbolAliases": [
+          {
+            "foreign": {
+              "id": 8518,
+              "name": "ITlcDataTypes",
+              "nodeType": "Identifier",
+              "overloadedDeclarations": [],
+              "referencedDeclaration": 8793,
+              "src": "329:13:39",
+              "typeDescriptions": {}
+            },
+            "nameLocation": "-1:-1:-1"
+          }
+        ],
+        "unitAlias": ""
+      },
+      {
+        "id": 8521,
+        "nodeType": "ImportDirective",
+        "src": "414:92:39",
+        "nodes": [],
+        "absolutePath": "contracts/interfaces/v2/ITreasuryReservesVault.sol",
+        "file": "contracts/interfaces/v2/ITreasuryReservesVault.sol",
+        "nameLocation": "-1:-1:-1",
+        "scope": 8706,
+        "sourceUnit": 8021,
+        "symbolAliases": [
+          {
+            "foreign": {
+              "id": 8520,
+              "name": "ITreasuryReservesVault",
+              "nodeType": "Identifier",
+              "overloadedDeclarations": [],
+              "referencedDeclaration": 8020,
+              "src": "423:22:39",
+              "typeDescriptions": {}
+            },
+            "nameLocation": "-1:-1:-1"
+          }
+        ],
+        "unitAlias": ""
+      },
+      {
+        "id": 8523,
+        "nodeType": "ImportDirective",
+        "src": "507:83:39",
+        "nodes": [],
+        "absolutePath": "contracts/interfaces/v2/strategies/ITlcStrategy.sol",
+        "file": "contracts/interfaces/v2/strategies/ITlcStrategy.sol",
+        "nameLocation": "-1:-1:-1",
+        "scope": 8706,
+        "sourceUnit": 8512,
+        "symbolAliases": [
+          {
+            "foreign": {
+              "id": 8522,
+              "name": "ITlcStrategy",
+              "nodeType": "Identifier",
+              "overloadedDeclarations": [],
+              "referencedDeclaration": 8511,
+              "src": "516:12:39",
+              "typeDescriptions": {}
+            },
+            "nameLocation": "-1:-1:-1"
+          }
+        ],
+        "unitAlias": ""
+      },
+      {
+        "id": 8525,
+        "nodeType": "ImportDirective",
+        "src": "591:115:39",
+        "nodes": [],
+        "absolutePath": "contracts/interfaces/v2/circuitBreaker/ITempleCircuitBreakerProxy.sol",
+        "file": "contracts/interfaces/v2/circuitBreaker/ITempleCircuitBreakerProxy.sol",
+        "nameLocation": "-1:-1:-1",
+        "scope": 8706,
+        "sourceUnit": 8230,
+        "symbolAliases": [
+          {
+            "foreign": {
+              "id": 8524,
+              "name": "ITempleCircuitBreakerProxy",
+              "nodeType": "Identifier",
+              "overloadedDeclarations": [],
+              "referencedDeclaration": 8229,
+              "src": "600:26:39",
+              "typeDescriptions": {}
+            },
+            "nameLocation": "-1:-1:-1"
+          }
+        ],
+        "unitAlias": ""
+      },
+      {
+        "id": 8705,
+        "nodeType": "ContractDefinition",
+        "src": "1015:6126:39",
+        "nodes": [
+          {
+            "id": 8538,
+            "nodeType": "FunctionDefinition",
+            "src": "1287:78:39",
+            "nodes": [],
+            "documentation": {
+              "id": 8531,
+              "nodeType": "StructuredDocumentation",
+              "src": "1089:193:39",
+              "text": " @notice Deposit Temple as collateral\n @param collateralAmount The amount to deposit\n @param onBehalfOf An account can add collateral on behalf of another address."
+            },
+            "functionSelector": "cadac479",
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "addCollateral",
+            "nameLocation": "1296:13:39",
+            "parameters": {
+              "id": 8536,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 8533,
+                  "mutability": "mutable",
+                  "name": "collateralAmount",
+                  "nameLocation": "1318:16:39",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8538,
+                  "src": "1310:24:39",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 8532,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "1310:7:39",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 8535,
+                  "mutability": "mutable",
+                  "name": "onBehalfOf",
+                  "nameLocation": "1344:10:39",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8538,
+                  "src": "1336:18:39",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 8534,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "1336:7:39",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "1309:46:39"
+            },
+            "returnParameters": {
+              "id": 8537,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "1364:0:39"
+            },
+            "scope": 8705,
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "id": 8546,
+            "nodeType": "FunctionDefinition",
+            "src": "1635:70:39",
+            "nodes": [],
+            "documentation": {
+              "id": 8539,
+              "nodeType": "StructuredDocumentation",
+              "src": "1371:259:39",
+              "text": " @notice Remove Temple collateral. (active borrow positions are not allowed to go above the max LTV)\n @param amount The amount of collateral to remove\n @param recipient Send the Temple collateral to a specified recipient address."
+            },
+            "functionSelector": "d41ddc96",
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "removeCollateral",
+            "nameLocation": "1644:16:39",
+            "parameters": {
+              "id": 8544,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 8541,
+                  "mutability": "mutable",
+                  "name": "amount",
+                  "nameLocation": "1669:6:39",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8546,
+                  "src": "1661:14:39",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 8540,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "1661:7:39",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 8543,
+                  "mutability": "mutable",
+                  "name": "recipient",
+                  "nameLocation": "1685:9:39",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8546,
+                  "src": "1677:17:39",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 8542,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "1677:7:39",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "1660:35:39"
+            },
+            "returnParameters": {
+              "id": 8545,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "1704:0:39"
+            },
+            "scope": 8705,
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "id": 8554,
+            "nodeType": "FunctionDefinition",
+            "src": "1918:60:39",
+            "nodes": [],
+            "documentation": {
+              "id": 8547,
+              "nodeType": "StructuredDocumentation",
+              "src": "1711:202:39",
+              "text": " @notice Borrow DAI (not allowed to borrow over the max LTV)\n @param amount The amount to borrow\n @param recipient Send the borrowed token to a specified recipient address."
+            },
+            "functionSelector": "4b3fd148",
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "borrow",
+            "nameLocation": "1927:6:39",
+            "parameters": {
+              "id": 8552,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 8549,
+                  "mutability": "mutable",
+                  "name": "amount",
+                  "nameLocation": "1942:6:39",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8554,
+                  "src": "1934:14:39",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 8548,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "1934:7:39",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 8551,
+                  "mutability": "mutable",
+                  "name": "recipient",
+                  "nameLocation": "1958:9:39",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8554,
+                  "src": "1950:17:39",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 8550,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "1950:7:39",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "1933:35:39"
+            },
+            "returnParameters": {
+              "id": 8553,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "1977:0:39"
+            },
+            "scope": 8705,
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "id": 8562,
+            "nodeType": "FunctionDefinition",
+            "src": "2225:65:39",
+            "nodes": [],
+            "documentation": {
+              "id": 8555,
+              "nodeType": "StructuredDocumentation",
+              "src": "1984:236:39",
+              "text": " @notice An account repays some of its DAI debt\n @param repayAmount The amount to repay. Cannot be more than the current debt.\n @param onBehalfOf Another address can repay the debt on behalf of someone else"
+            },
+            "functionSelector": "acb70815",
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "repay",
+            "nameLocation": "2234:5:39",
+            "parameters": {
+              "id": 8560,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 8557,
+                  "mutability": "mutable",
+                  "name": "repayAmount",
+                  "nameLocation": "2248:11:39",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8562,
+                  "src": "2240:19:39",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 8556,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "2240:7:39",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 8559,
+                  "mutability": "mutable",
+                  "name": "onBehalfOf",
+                  "nameLocation": "2269:10:39",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8562,
+                  "src": "2261:18:39",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 8558,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "2261:7:39",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "2239:41:39"
+            },
+            "returnParameters": {
+              "id": 8561,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "2289:0:39"
+            },
+            "scope": 8705,
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "id": 8568,
+            "nodeType": "FunctionDefinition",
+            "src": "2518:47:39",
+            "nodes": [],
+            "documentation": {
+              "id": 8563,
+              "nodeType": "StructuredDocumentation",
+              "src": "2300:213:39",
+              "text": " @notice An account repays all of its DAI debt\n @dev The amount of debt is calculated as of this block.\n @param onBehalfOf Another address can repay the debt on behalf of someone else"
+            },
+            "functionSelector": "7c27383b",
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "repayAll",
+            "nameLocation": "2527:8:39",
+            "parameters": {
+              "id": 8566,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 8565,
+                  "mutability": "mutable",
+                  "name": "onBehalfOf",
+                  "nameLocation": "2544:10:39",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8568,
+                  "src": "2536:18:39",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 8564,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "2536:7:39",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "2535:20:39"
+            },
+            "returnParameters": {
+              "id": 8567,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "2564:0:39"
+            },
+            "scope": 8705,
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "id": 8579,
+            "nodeType": "FunctionDefinition",
+            "src": "2884:166:39",
+            "nodes": [],
+            "documentation": {
+              "id": 8569,
+              "nodeType": "StructuredDocumentation",
+              "src": "2571:308:39",
+              "text": " @notice Liquidate one or more accounts which have exceeded the \n maximum allowed LTV.\n The Temple collateral is seized, and the accounts debt wiped.\n @dev If one of the accounts in the batch hasn't exceeded the max LTV\n then no action is performed for that account."
+            },
+            "functionSelector": "81cf9071",
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "batchLiquidate",
+            "nameLocation": "2893:14:39",
+            "parameters": {
+              "id": 8573,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 8572,
+                  "mutability": "mutable",
+                  "name": "accounts",
+                  "nameLocation": "2936:8:39",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8579,
+                  "src": "2917:27:39",
+                  "stateVariable": false,
+                  "storageLocation": "calldata",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_array$_t_address_$dyn_calldata_ptr",
+                    "typeString": "address[]"
+                  },
+                  "typeName": {
+                    "baseType": {
+                      "id": 8570,
+                      "name": "address",
+                      "nodeType": "ElementaryTypeName",
+                      "src": "2917:7:39",
+                      "stateMutability": "nonpayable",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_address",
+                        "typeString": "address"
+                      }
+                    },
+                    "id": 8571,
+                    "nodeType": "ArrayTypeName",
+                    "src": "2917:9:39",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_array$_t_address_$dyn_storage_ptr",
+                      "typeString": "address[]"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "2907:43:39"
+            },
+            "returnParameters": {
+              "id": 8578,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 8575,
+                  "mutability": "mutable",
+                  "name": "totalCollateralClaimed",
+                  "nameLocation": "2986:22:39",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8579,
+                  "src": "2978:30:39",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 8574,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "2978:7:39",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 8577,
+                  "mutability": "mutable",
+                  "name": "totalDaiDebtWiped",
+                  "nameLocation": "3026:17:39",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8579,
+                  "src": "3018:25:39",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 8576,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3018:7:39",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "2968:81:39"
+            },
+            "scope": 8705,
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "id": 8585,
+            "nodeType": "FunctionDefinition",
+            "src": "3158:49:39",
+            "nodes": [],
+            "documentation": {
+              "id": 8580,
+              "nodeType": "StructuredDocumentation",
+              "src": "3056:97:39",
+              "text": " @notice New borrows of DAI may be paused in an emergency to protect user funds"
+            },
+            "functionSelector": "939752bd",
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "setBorrowPaused",
+            "nameLocation": "3167:15:39",
+            "parameters": {
+              "id": 8583,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 8582,
+                  "mutability": "mutable",
+                  "name": "isPaused",
+                  "nameLocation": "3188:8:39",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8585,
+                  "src": "3183:13:39",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bool",
+                    "typeString": "bool"
+                  },
+                  "typeName": {
+                    "id": 8581,
+                    "name": "bool",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3183:4:39",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bool",
+                      "typeString": "bool"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "3182:15:39"
+            },
+            "returnParameters": {
+              "id": 8584,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "3206:0:39"
+            },
+            "scope": 8705,
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "id": 8591,
+            "nodeType": "FunctionDefinition",
+            "src": "3388:55:39",
+            "nodes": [],
+            "documentation": {
+              "id": 8586,
+              "nodeType": "StructuredDocumentation",
+              "src": "3213:170:39",
+              "text": " @notice Update the TLC Strategy contract, and Treasury Reserves Vault (TRV)\n @dev The TRV is granted access to spend DAI, in order to repay debt."
+            },
+            "functionSelector": "be415927",
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "setTlcStrategy",
+            "nameLocation": "3397:14:39",
+            "parameters": {
+              "id": 8589,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 8588,
+                  "mutability": "mutable",
+                  "name": "_tlcStrategy",
+                  "nameLocation": "3420:12:39",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8591,
+                  "src": "3412:20:39",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 8587,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3412:7:39",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "3411:22:39"
+            },
+            "returnParameters": {
+              "id": 8590,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "3442:0:39"
+            },
+            "scope": 8705,
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "id": 8597,
+            "nodeType": "FunctionDefinition",
+            "src": "3610:66:39",
+            "nodes": [],
+            "documentation": {
+              "id": 8592,
+              "nodeType": "StructuredDocumentation",
+              "src": "3453:152:39",
+              "text": " @notice Update the interest rate model contract for DAI borrows\n @param interestRateModel The contract address of the new model"
+            },
+            "functionSelector": "8bcd4016",
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "setInterestRateModel",
+            "nameLocation": "3619:20:39",
+            "parameters": {
+              "id": 8595,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 8594,
+                  "mutability": "mutable",
+                  "name": "interestRateModel",
+                  "nameLocation": "3648:17:39",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8597,
+                  "src": "3640:25:39",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 8593,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3640:7:39",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "3639:27:39"
+            },
+            "returnParameters": {
+              "id": 8596,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "3675:0:39"
+            },
+            "scope": 8705,
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "id": 8603,
+            "nodeType": "FunctionDefinition",
+            "src": "3875:54:39",
+            "nodes": [],
+            "documentation": {
+              "id": 8598,
+              "nodeType": "StructuredDocumentation",
+              "src": "3686:184:39",
+              "text": " @notice Set the maximum Loan To Value Ratio allowed for DAI borrows before the position is liquidated\n @param maxLtvRatio The max LTV ratio (18 decimal places)"
+            },
+            "functionSelector": "8fb5053e",
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "setMaxLtvRatio",
+            "nameLocation": "3884:14:39",
+            "parameters": {
+              "id": 8601,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 8600,
+                  "mutability": "mutable",
+                  "name": "maxLtvRatio",
+                  "nameLocation": "3907:11:39",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8603,
+                  "src": "3899:19:39",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 8599,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3899:7:39",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "3898:21:39"
+            },
+            "returnParameters": {
+              "id": 8602,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "3928:0:39"
+            },
+            "scope": 8705,
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "id": 8613,
+            "nodeType": "FunctionDefinition",
+            "src": "4087:74:39",
+            "nodes": [],
+            "documentation": {
+              "id": 8604,
+              "nodeType": "StructuredDocumentation",
+              "src": "3939:143:39",
+              "text": " @notice Elevated access can recover tokens accidentally sent to this contract\n No user Temple collateral can be taken."
+            },
+            "functionSelector": "a7229fd9",
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "recoverToken",
+            "nameLocation": "4096:12:39",
+            "parameters": {
+              "id": 8611,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 8606,
+                  "mutability": "mutable",
+                  "name": "token",
+                  "nameLocation": "4117:5:39",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8613,
+                  "src": "4109:13:39",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 8605,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "4109:7:39",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 8608,
+                  "mutability": "mutable",
+                  "name": "to",
+                  "nameLocation": "4132:2:39",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8613,
+                  "src": "4124:10:39",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 8607,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "4124:7:39",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 8610,
+                  "mutability": "mutable",
+                  "name": "amount",
+                  "nameLocation": "4144:6:39",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8613,
+                  "src": "4136:14:39",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 8609,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "4136:7:39",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "4108:43:39"
+            },
+            "returnParameters": {
+              "id": 8612,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "4160:0:39"
+            },
+            "scope": 8705,
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "id": 8617,
+            "nodeType": "FunctionDefinition",
+            "src": "4330:41:39",
+            "nodes": [],
+            "documentation": {
+              "id": 8614,
+              "nodeType": "StructuredDocumentation",
+              "src": "4167:158:39",
+              "text": " @notice Update and checkpoint the total debt up until now\n Then recalculate the interest rate based on the updated utilisation ratio."
+            },
+            "functionSelector": "089771b3",
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "refreshInterestRates",
+            "nameLocation": "4339:20:39",
+            "parameters": {
+              "id": 8615,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "4359:2:39"
+            },
+            "returnParameters": {
+              "id": 8616,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "4370:0:39"
+            },
+            "scope": 8705,
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "id": 8624,
+            "nodeType": "FunctionDefinition",
+            "src": "4460:54:39",
+            "nodes": [],
+            "documentation": {
+              "id": 8618,
+              "nodeType": "StructuredDocumentation",
+              "src": "4381:74:39",
+              "text": " @notice The collateral token supplied by users/accounts"
+            },
+            "functionSelector": "b1a9069c",
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "templeToken",
+            "nameLocation": "4469:11:39",
+            "parameters": {
+              "id": 8619,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "4480:2:39"
+            },
+            "returnParameters": {
+              "id": 8623,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 8622,
+                  "mutability": "mutable",
+                  "name": "",
+                  "nameLocation": "-1:-1:-1",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8624,
+                  "src": "4506:6:39",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_contract$_IERC20_$53557",
+                    "typeString": "contract IERC20"
+                  },
+                  "typeName": {
+                    "id": 8621,
+                    "nodeType": "UserDefinedTypeName",
+                    "pathNode": {
+                      "id": 8620,
+                      "name": "IERC20",
+                      "nameLocations": [
+                        "4506:6:39"
+                      ],
+                      "nodeType": "IdentifierPath",
+                      "referencedDeclaration": 53557,
+                      "src": "4506:6:39"
+                    },
+                    "referencedDeclaration": 53557,
+                    "src": "4506:6:39",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_contract$_IERC20_$53557",
+                      "typeString": "contract IERC20"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "4505:8:39"
+            },
+            "scope": 8705,
+            "stateMutability": "view",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "id": 8631,
+            "nodeType": "FunctionDefinition",
+            "src": "4605:51:39",
+            "nodes": [],
+            "documentation": {
+              "id": 8625,
+              "nodeType": "StructuredDocumentation",
+              "src": "4524:76:39",
+              "text": " @notice DAI token -- the debt token which can be borrowed"
+            },
+            "functionSelector": "be22f546",
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "daiToken",
+            "nameLocation": "4614:8:39",
+            "parameters": {
+              "id": 8626,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "4622:2:39"
+            },
+            "returnParameters": {
+              "id": 8630,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 8629,
+                  "mutability": "mutable",
+                  "name": "",
+                  "nameLocation": "-1:-1:-1",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8631,
+                  "src": "4648:6:39",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_contract$_IERC20_$53557",
+                    "typeString": "contract IERC20"
+                  },
+                  "typeName": {
+                    "id": 8628,
+                    "nodeType": "UserDefinedTypeName",
+                    "pathNode": {
+                      "id": 8627,
+                      "name": "IERC20",
+                      "nameLocations": [
+                        "4648:6:39"
+                      ],
+                      "nodeType": "IdentifierPath",
+                      "referencedDeclaration": 53557,
+                      "src": "4648:6:39"
+                    },
+                    "referencedDeclaration": 53557,
+                    "src": "4648:6:39",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_contract$_IERC20_$53557",
+                      "typeString": "contract IERC20"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "4647:8:39"
+            },
+            "scope": 8705,
+            "stateMutability": "view",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "id": 8638,
+            "nodeType": "FunctionDefinition",
+            "src": "5150:80:39",
+            "nodes": [],
+            "documentation": {
+              "id": 8632,
+              "nodeType": "StructuredDocumentation",
+              "src": "4662:483:39",
+              "text": " @notice The Treasury Reserve Vault (TRV) which funds the DAI borrows to users/accounts.\n - When users borrow, the DAI is pulled from the TRV\n      (via the TlcStrategy, increasing the dUSD debt)\n - When users repay, the DAI is repaid to the TRV \n      (reducing the dUSD debt of the TlcStrategy)\n - When there is a liquidation, the seized Temple collateral is paid to the TRV\n      (reducing the dTEMPLE debt of the TlcStrategy)"
+            },
+            "functionSelector": "101d1684",
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "treasuryReservesVault",
+            "nameLocation": "5159:21:39",
+            "parameters": {
+              "id": 8633,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "5180:2:39"
+            },
+            "returnParameters": {
+              "id": 8637,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 8636,
+                  "mutability": "mutable",
+                  "name": "",
+                  "nameLocation": "-1:-1:-1",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8638,
+                  "src": "5206:22:39",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_contract$_ITreasuryReservesVault_$8020",
+                    "typeString": "contract ITreasuryReservesVault"
+                  },
+                  "typeName": {
+                    "id": 8635,
+                    "nodeType": "UserDefinedTypeName",
+                    "pathNode": {
+                      "id": 8634,
+                      "name": "ITreasuryReservesVault",
+                      "nameLocations": [
+                        "5206:22:39"
+                      ],
+                      "nodeType": "IdentifierPath",
+                      "referencedDeclaration": 8020,
+                      "src": "5206:22:39"
+                    },
+                    "referencedDeclaration": 8020,
+                    "src": "5206:22:39",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_contract$_ITreasuryReservesVault_$8020",
+                      "typeString": "contract ITreasuryReservesVault"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "5205:24:39"
+            },
+            "scope": 8705,
+            "stateMutability": "view",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "id": 8645,
+            "nodeType": "FunctionDefinition",
+            "src": "5343:60:39",
+            "nodes": [],
+            "documentation": {
+              "id": 8639,
+              "nodeType": "StructuredDocumentation",
+              "src": "5236:102:39",
+              "text": " @notice The Strategy contract managing the TRV borrows and equity positions of TLC."
+            },
+            "functionSelector": "d495f89f",
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "tlcStrategy",
+            "nameLocation": "5352:11:39",
+            "parameters": {
+              "id": 8640,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "5363:2:39"
+            },
+            "returnParameters": {
+              "id": 8644,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 8643,
+                  "mutability": "mutable",
+                  "name": "",
+                  "nameLocation": "-1:-1:-1",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8645,
+                  "src": "5389:12:39",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_contract$_ITlcStrategy_$8511",
+                    "typeString": "contract ITlcStrategy"
+                  },
+                  "typeName": {
+                    "id": 8642,
+                    "nodeType": "UserDefinedTypeName",
+                    "pathNode": {
+                      "id": 8641,
+                      "name": "ITlcStrategy",
+                      "nameLocations": [
+                        "5389:12:39"
+                      ],
+                      "nodeType": "IdentifierPath",
+                      "referencedDeclaration": 8511,
+                      "src": "5389:12:39"
+                    },
+                    "referencedDeclaration": 8511,
+                    "src": "5389:12:39",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_contract$_ITlcStrategy_$8511",
+                      "typeString": "contract ITlcStrategy"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "5388:14:39"
+            },
+            "scope": 8705,
+            "stateMutability": "view",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "id": 8651,
+            "nodeType": "FunctionDefinition",
+            "src": "5512:59:39",
+            "nodes": [],
+            "documentation": {
+              "id": 8646,
+              "nodeType": "StructuredDocumentation",
+              "src": "5409:98:39",
+              "text": " @notice A record of the total amount of collateral deposited by users/accounts."
+            },
+            "functionSelector": "4ac8eb5f",
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "totalCollateral",
+            "nameLocation": "5521:15:39",
+            "parameters": {
+              "id": 8647,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "5536:2:39"
+            },
+            "returnParameters": {
+              "id": 8650,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 8649,
+                  "mutability": "mutable",
+                  "name": "",
+                  "nameLocation": "-1:-1:-1",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8651,
+                  "src": "5562:7:39",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 8648,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "5562:7:39",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "5561:9:39"
+            },
+            "scope": 8705,
+            "stateMutability": "view",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "id": 8660,
+            "nodeType": "FunctionDefinition",
+            "src": "5736:126:39",
+            "nodes": [],
+            "documentation": {
+              "id": 8652,
+              "nodeType": "StructuredDocumentation",
+              "src": "5577:154:39",
+              "text": " @notice An view of an accounts current and up to date position as of this block\n @param account The account to get a position for"
+            },
+            "functionSelector": "f46cf7f0",
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "accountPosition",
+            "nameLocation": "5745:15:39",
+            "parameters": {
+              "id": 8655,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 8654,
+                  "mutability": "mutable",
+                  "name": "account",
+                  "nameLocation": "5778:7:39",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8660,
+                  "src": "5770:15:39",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 8653,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "5770:7:39",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "5760:31:39"
+            },
+            "returnParameters": {
+              "id": 8659,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 8658,
+                  "mutability": "mutable",
+                  "name": "position",
+                  "nameLocation": "5847:8:39",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8660,
+                  "src": "5824:31:39",
+                  "stateVariable": false,
+                  "storageLocation": "memory",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_struct$_AccountPosition_$8784_memory_ptr",
+                    "typeString": "struct ITlcDataTypes.AccountPosition"
+                  },
+                  "typeName": {
+                    "id": 8657,
+                    "nodeType": "UserDefinedTypeName",
+                    "pathNode": {
+                      "id": 8656,
+                      "name": "AccountPosition",
+                      "nameLocations": [
+                        "5824:15:39"
+                      ],
+                      "nodeType": "IdentifierPath",
+                      "referencedDeclaration": 8784,
+                      "src": "5824:15:39"
+                    },
+                    "referencedDeclaration": 8784,
+                    "src": "5824:15:39",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_struct$_AccountPosition_$8784_storage_ptr",
+                      "typeString": "struct ITlcDataTypes.AccountPosition"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "5814:47:39"
+            },
+            "scope": 8705,
+            "stateMutability": "view",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "id": 8667,
+            "nodeType": "FunctionDefinition",
+            "src": "5984:104:39",
+            "nodes": [],
+            "documentation": {
+              "id": 8661,
+              "nodeType": "StructuredDocumentation",
+              "src": "5868:111:39",
+              "text": " @notice Get the current total DAI debt position across all accounts\n as of this block."
+            },
+            "functionSelector": "a356bad9",
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "totalDebtPosition",
+            "nameLocation": "5993:17:39",
+            "parameters": {
+              "id": 8662,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "6010:2:39"
+            },
+            "returnParameters": {
+              "id": 8666,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 8665,
+                  "mutability": "mutable",
+                  "name": "daiPosition",
+                  "nameLocation": "6070:11:39",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8667,
+                  "src": "6045:36:39",
+                  "stateVariable": false,
+                  "storageLocation": "memory",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_struct$_TotalDebtPosition_$8792_memory_ptr",
+                    "typeString": "struct ITlcDataTypes.TotalDebtPosition"
+                  },
+                  "typeName": {
+                    "id": 8664,
+                    "nodeType": "UserDefinedTypeName",
+                    "pathNode": {
+                      "id": 8663,
+                      "name": "TotalDebtPosition",
+                      "nameLocations": [
+                        "6045:17:39"
+                      ],
+                      "nodeType": "IdentifierPath",
+                      "referencedDeclaration": 8792,
+                      "src": "6045:17:39"
+                    },
+                    "referencedDeclaration": 8792,
+                    "src": "6045:17:39",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_struct$_TotalDebtPosition_$8792_storage_ptr",
+                      "typeString": "struct ITlcDataTypes.TotalDebtPosition"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "6035:52:39"
+            },
+            "scope": 8705,
+            "stateMutability": "view",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "id": 8678,
+            "nodeType": "FunctionDefinition",
+            "src": "6313:127:39",
+            "nodes": [],
+            "documentation": {
+              "id": 8668,
+              "nodeType": "StructuredDocumentation",
+              "src": "6094:214:39",
+              "text": " @notice Compute the liquidity status for a set of accounts.\n @dev This can be used to verify if accounts can be liquidated or not.\n @param accounts The accounts to get the status for."
+            },
+            "functionSelector": "c3e7a9de",
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "computeLiquidity",
+            "nameLocation": "6322:16:39",
+            "parameters": {
+              "id": 8672,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 8671,
+                  "mutability": "mutable",
+                  "name": "accounts",
+                  "nameLocation": "6367:8:39",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8678,
+                  "src": "6348:27:39",
+                  "stateVariable": false,
+                  "storageLocation": "calldata",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_array$_t_address_$dyn_calldata_ptr",
+                    "typeString": "address[]"
+                  },
+                  "typeName": {
+                    "baseType": {
+                      "id": 8669,
+                      "name": "address",
+                      "nodeType": "ElementaryTypeName",
+                      "src": "6348:7:39",
+                      "stateMutability": "nonpayable",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_address",
+                        "typeString": "address"
+                      }
+                    },
+                    "id": 8670,
+                    "nodeType": "ArrayTypeName",
+                    "src": "6348:9:39",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_array$_t_address_$dyn_storage_ptr",
+                      "typeString": "address[]"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "6338:43:39"
+            },
+            "returnParameters": {
+              "id": 8677,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 8676,
+                  "mutability": "mutable",
+                  "name": "status",
+                  "nameLocation": "6432:6:39",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8678,
+                  "src": "6405:33:39",
+                  "stateVariable": false,
+                  "storageLocation": "memory",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_array$_t_struct$_LiquidationStatus_$8768_memory_ptr_$dyn_memory_ptr",
+                    "typeString": "struct ITlcDataTypes.LiquidationStatus[]"
+                  },
+                  "typeName": {
+                    "baseType": {
+                      "id": 8674,
+                      "nodeType": "UserDefinedTypeName",
+                      "pathNode": {
+                        "id": 8673,
+                        "name": "LiquidationStatus",
+                        "nameLocations": [
+                          "6405:17:39"
+                        ],
+                        "nodeType": "IdentifierPath",
+                        "referencedDeclaration": 8768,
+                        "src": "6405:17:39"
+                      },
+                      "referencedDeclaration": 8768,
+                      "src": "6405:17:39",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_struct$_LiquidationStatus_$8768_storage_ptr",
+                        "typeString": "struct ITlcDataTypes.LiquidationStatus"
+                      }
+                    },
+                    "id": 8675,
+                    "nodeType": "ArrayTypeName",
+                    "src": "6405:19:39",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_array$_t_struct$_LiquidationStatus_$8768_storage_$dyn_storage_ptr",
+                      "typeString": "struct ITlcDataTypes.LiquidationStatus[]"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "6404:35:39"
+            },
+            "scope": 8705,
+            "stateMutability": "view",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "id": 8687,
+            "nodeType": "FunctionDefinition",
+            "src": "6546:100:39",
+            "nodes": [],
+            "documentation": {
+              "id": 8679,
+              "nodeType": "StructuredDocumentation",
+              "src": "6446:95:39",
+              "text": " @notice A view of the last checkpoint of account data (not as of this block)"
+            },
+            "functionSelector": "deb906e7",
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "accountData",
+            "nameLocation": "6555:11:39",
+            "parameters": {
+              "id": 8682,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 8681,
+                  "mutability": "mutable",
+                  "name": "account",
+                  "nameLocation": "6584:7:39",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8687,
+                  "src": "6576:15:39",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 8680,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "6576:7:39",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "6566:31:39"
+            },
+            "returnParameters": {
+              "id": 8686,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 8685,
+                  "mutability": "mutable",
+                  "name": "data",
+                  "nameLocation": "6640:4:39",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8687,
+                  "src": "6621:23:39",
+                  "stateVariable": false,
+                  "storageLocation": "memory",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_struct$_AccountData_$8755_memory_ptr",
+                    "typeString": "struct ITlcDataTypes.AccountData"
+                  },
+                  "typeName": {
+                    "id": 8684,
+                    "nodeType": "UserDefinedTypeName",
+                    "pathNode": {
+                      "id": 8683,
+                      "name": "AccountData",
+                      "nameLocations": [
+                        "6621:11:39"
+                      ],
+                      "nodeType": "IdentifierPath",
+                      "referencedDeclaration": 8755,
+                      "src": "6621:11:39"
+                    },
+                    "referencedDeclaration": 8755,
+                    "src": "6621:11:39",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_struct$_AccountData_$8755_storage_ptr",
+                      "typeString": "struct ITlcDataTypes.AccountData"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "6620:25:39"
+            },
+            "scope": 8705,
+            "stateMutability": "view",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "id": 8697,
+            "nodeType": "FunctionDefinition",
+            "src": "6744:132:39",
+            "nodes": [],
+            "documentation": {
+              "id": 8688,
+              "nodeType": "StructuredDocumentation",
+              "src": "6652:87:39",
+              "text": " @notice Configuration and latest data snapshot of the DAI debt token"
+            },
+            "functionSelector": "0230192d",
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "debtTokenDetails",
+            "nameLocation": "6753:16:39",
+            "parameters": {
+              "id": 8689,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "6769:2:39"
+            },
+            "returnParameters": {
+              "id": 8696,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 8692,
+                  "mutability": "mutable",
+                  "name": "config",
+                  "nameLocation": "6827:6:39",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8697,
+                  "src": "6804:29:39",
+                  "stateVariable": false,
+                  "storageLocation": "memory",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_struct$_DebtTokenConfig_$8720_memory_ptr",
+                    "typeString": "struct ITlcDataTypes.DebtTokenConfig"
+                  },
+                  "typeName": {
+                    "id": 8691,
+                    "nodeType": "UserDefinedTypeName",
+                    "pathNode": {
+                      "id": 8690,
+                      "name": "DebtTokenConfig",
+                      "nameLocations": [
+                        "6804:15:39"
+                      ],
+                      "nodeType": "IdentifierPath",
+                      "referencedDeclaration": 8720,
+                      "src": "6804:15:39"
+                    },
+                    "referencedDeclaration": 8720,
+                    "src": "6804:15:39",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_struct$_DebtTokenConfig_$8720_storage_ptr",
+                      "typeString": "struct ITlcDataTypes.DebtTokenConfig"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 8695,
+                  "mutability": "mutable",
+                  "name": "data",
+                  "nameLocation": "6865:4:39",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8697,
+                  "src": "6844:25:39",
+                  "stateVariable": false,
+                  "storageLocation": "memory",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_struct$_DebtTokenData_$8733_memory_ptr",
+                    "typeString": "struct ITlcDataTypes.DebtTokenData"
+                  },
+                  "typeName": {
+                    "id": 8694,
+                    "nodeType": "UserDefinedTypeName",
+                    "pathNode": {
+                      "id": 8693,
+                      "name": "DebtTokenData",
+                      "nameLocations": [
+                        "6844:13:39"
+                      ],
+                      "nodeType": "IdentifierPath",
+                      "referencedDeclaration": 8733,
+                      "src": "6844:13:39"
+                    },
+                    "referencedDeclaration": 8733,
+                    "src": "6844:13:39",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_struct$_DebtTokenData_$8733_storage_ptr",
+                      "typeString": "struct ITlcDataTypes.DebtTokenData"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "6794:81:39"
+            },
+            "scope": 8705,
+            "stateMutability": "view",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "id": 8704,
+            "nodeType": "FunctionDefinition",
+            "src": "7057:82:39",
+            "nodes": [],
+            "documentation": {
+              "id": 8698,
+              "nodeType": "StructuredDocumentation",
+              "src": "6882:170:39",
+              "text": " @notice New borrows and collateral withdrawals are checked against a circuit breaker\n to ensure no more than a cap is withdrawn in a given period"
+            },
+            "functionSelector": "4b2adf17",
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "circuitBreakerProxy",
+            "nameLocation": "7066:19:39",
+            "parameters": {
+              "id": 8699,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "7085:2:39"
+            },
+            "returnParameters": {
+              "id": 8703,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 8702,
+                  "mutability": "mutable",
+                  "name": "",
+                  "nameLocation": "-1:-1:-1",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8704,
+                  "src": "7111:26:39",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_contract$_ITempleCircuitBreakerProxy_$8229",
+                    "typeString": "contract ITempleCircuitBreakerProxy"
+                  },
+                  "typeName": {
+                    "id": 8701,
+                    "nodeType": "UserDefinedTypeName",
+                    "pathNode": {
+                      "id": 8700,
+                      "name": "ITempleCircuitBreakerProxy",
+                      "nameLocations": [
+                        "7111:26:39"
+                      ],
+                      "nodeType": "IdentifierPath",
+                      "referencedDeclaration": 8229,
+                      "src": "7111:26:39"
+                    },
+                    "referencedDeclaration": 8229,
+                    "src": "7111:26:39",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_contract$_ITempleCircuitBreakerProxy_$8229",
+                      "typeString": "contract ITempleCircuitBreakerProxy"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "7110:28:39"
+            },
+            "scope": 8705,
+            "stateMutability": "view",
+            "virtual": false,
+            "visibility": "external"
+          }
+        ],
+        "abstract": false,
+        "baseContracts": [
+          {
+            "baseName": {
+              "id": 8527,
+              "name": "ITlcDataTypes",
+              "nameLocations": [
+                "1048:13:39"
+              ],
+              "nodeType": "IdentifierPath",
+              "referencedDeclaration": 8793,
+              "src": "1048:13:39"
+            },
+            "id": 8528,
+            "nodeType": "InheritanceSpecifier",
+            "src": "1048:13:39"
+          },
+          {
+            "baseName": {
+              "id": 8529,
+              "name": "ITlcEventsAndErrors",
+              "nameLocations": [
+                "1063:19:39"
+              ],
+              "nodeType": "IdentifierPath",
+              "referencedDeclaration": 8882,
+              "src": "1063:19:39"
+            },
+            "id": 8530,
+            "nodeType": "InheritanceSpecifier",
+            "src": "1063:19:39"
+          }
+        ],
+        "canonicalName": "ITempleLineOfCredit",
+        "contractDependencies": [],
+        "contractKind": "interface",
+        "documentation": {
+          "id": 8526,
+          "nodeType": "StructuredDocumentation",
+          "src": "708:306:39",
+          "text": " @title Temple Line of Credit (TLC)\n @notice Users supply Temple as collateral, and can then borrow DAI.\n \n Temple is valued at the Temple Treasury Price Index (TPI)\n User debt increases at a continuously compounding rate.\n Liquidations occur when users LTV exceeds the maximum allowed."
+        },
+        "fullyImplemented": false,
+        "linearizedBaseContracts": [
+          8705,
+          8882,
+          8793
+        ],
+        "name": "ITempleLineOfCredit",
+        "nameLocation": "1025:19:39",
+        "scope": 8706,
+        "usedErrors": [
+          8803,
+          8809,
+          8815,
+          8817
+        ]
+      }
+    ],
+    "license": "AGPL-3.0-or-later"
+  },
+  "id": 39
+}
