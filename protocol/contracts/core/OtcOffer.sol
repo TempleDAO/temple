@@ -22,15 +22,15 @@ contract OtcOffer is Pausable, Ownable {
     /// @dev The funds owner must grant approval for this contract to pull the `userBuyToken`
     address public fundsOwner;
     
-    // @notice How to scale when calculating the `buyTokenAmount == sellTokenAmount * offerPrice / scalar`
-    uint256 public immutable scalar;
+    /// @notice The number of decimal places represented by `offerPrice`
+    uint8 public constant OFFER_PRICE_DECIMALS = 18;
 
     /// @notice The offer price, in terms of `userBuyToken/userSellToken` - eg 11 DAI/OHM when user selling OHM => DAI
     /// @dev offerPrice is always specified in 1e18 precision
     uint256 public offerPrice;
 
-    /// @notice The number of decimal places represented by `offerPrice`
-    uint8 public constant offerPriceDecimals = 18;
+    // @notice How to scale when calculating the `buyTokenAmount == sellTokenAmount * offerPrice / scalar`
+    uint256 public immutable scalar;
 
     /// @notice Any update to the `offerPrice` must be within this percentage (as basis points. 20% = 2_000) 
     /// of the existing `offerPrice`.
@@ -41,10 +41,10 @@ contract OtcOffer is Pausable, Ownable {
 
     event OfferPriceSet(uint256 _offerPrice);
     event OfferPriceUpdateThresholdBpsSet(uint256 offerPriceUpdateThresholdBps);
-    event Swap(address indexed account, uint256 userSellTokenAmount, uint256 userBuyTokenAmount);
+    event Swap(address indexed account, address indexed fundsOwner, uint256 userSellTokenAmount, uint256 userBuyTokenAmount);
     event FundsOwnerSet(address indexed fundsOwner);
 
-    error OfferPriceDeltaTooBig(uint256 delta, uint256 maxDeltaAllowed);
+    error OfferPriceDeltaTooBig(uint256 newOfferPrice, uint256 maxPriceAllowed);
 
     constructor(
         address _userSellToken,
@@ -61,57 +61,69 @@ contract OtcOffer is Pausable, Ownable {
         offerPriceUpdateThresholdBps = _offerPriceUpdateThresholdBps;
 
         // The price is always specified in 18dp
-        // Eg If selling OHM (18dp) for USDC (6dp):
-        // 1000 OHM (18dp) * 11 DAI/OHM (18dp) = 11_000 USDC (6dp)
-        // So this needs to get scaled down by 30dp
-        uint256 scaleDownDecimals;
-        unchecked {
-            scaleDownDecimals = 18 + userSellToken.decimals() - userBuyToken.decimals();
-        }
+        // Eg If selling OHM (9dp) for USDC (6dp):
+        // 1000 OHM (9dp) * 11 USDC/OHM (18dp) = 11_000 USDC (6dp)
+        // So this would need to get scaled down by 30dp
+        uint256 scaleDownDecimals = OFFER_PRICE_DECIMALS + userSellToken.decimals() - userBuyToken.decimals();
         scalar = 10 ** scaleDownDecimals;
     }
 
+    /// @notice Owner can pause user swaps from occuring
     function pause() external onlyOwner {
         _pause();
     }
 
+    /// @notice Owner can unpause so user swaps can occur
     function unpause() external onlyOwner {
         _unpause();
     }
 
+    /// @notice Owner can update where the funds are pulled from and sent to upon a swap
     function setFundsOwner(address _fundsOwner) external onlyOwner {
         if (_fundsOwner == address(0)) revert CommonEventsAndErrors.InvalidAddress();
         fundsOwner = _fundsOwner;
         emit FundsOwnerSet(_fundsOwner);
     }
 
+    /// @notice Owner can update the offer price at which user swaps can occur
+    /// @dev The new price must be within the `offerPriceUpdateThresholdBps` threshold of
+    /// the existing price
     function setOfferPrice(uint256 _offerPrice) external onlyOwner {
         if (_offerPrice == 0) revert CommonEventsAndErrors.ExpectedNonZero();
 
         uint256 existingOfferPrice = offerPrice;
-        uint256 delta = _offerPrice > existingOfferPrice
-            ? _offerPrice - existingOfferPrice
-            : existingOfferPrice - _offerPrice;
-        uint256 deltaBps = delta * BPS_100_PCT / existingOfferPrice;
-        if (deltaBps > offerPriceUpdateThresholdBps) revert OfferPriceDeltaTooBig(deltaBps, offerPriceUpdateThresholdBps);
+        uint256 absMaxDelta = existingOfferPrice * offerPriceUpdateThresholdBps / BPS_100_PCT;
+        if (_offerPrice > existingOfferPrice) {
+            uint256 maxValid = existingOfferPrice + absMaxDelta;
+            if (_offerPrice > maxValid) revert OfferPriceDeltaTooBig(_offerPrice, maxValid);
+        } else {
+            uint256 minValid = existingOfferPrice > absMaxDelta
+                ? existingOfferPrice - absMaxDelta
+                : 0;
+            if (_offerPrice < minValid) revert OfferPriceDeltaTooBig(_offerPrice, minValid);
+        }
 
         offerPrice = _offerPrice;
         emit OfferPriceSet(_offerPrice);
     }
 
+    /// @notice Owner can update the threshold for when updating the offer price
     function setOfferPriceUpdateThresholdBps(uint256 _offerPriceUpdateThresholdBps) external onlyOwner {
         offerPriceUpdateThresholdBps = _offerPriceUpdateThresholdBps;
         emit OfferPriceUpdateThresholdBpsSet(_offerPriceUpdateThresholdBps);
     }
 
+    /// @notice Swap `userSellToken` for `userBuyToken`, at the `offerPrice`
     function swap(uint256 sellTokenAmount) external whenNotPaused returns (uint256 buyTokenAmount) {
         if (sellTokenAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
 
         // eg 1000 OHM * 11.4 DAI/OHM == 11_400 DAI
         buyTokenAmount = sellTokenAmount * offerPrice / scalar;
 
-        emit Swap(msg.sender, sellTokenAmount, buyTokenAmount);
-        userSellToken.safeTransferFrom(msg.sender, fundsOwner, sellTokenAmount);
-        userBuyToken.safeTransferFrom(fundsOwner, msg.sender, buyTokenAmount);
+        address _fundsOwner = fundsOwner;
+        emit Swap(msg.sender, _fundsOwner, sellTokenAmount, buyTokenAmount);
+
+        userSellToken.safeTransferFrom(msg.sender, _fundsOwner, sellTokenAmount);
+        userBuyToken.safeTransferFrom(_fundsOwner, msg.sender, buyTokenAmount);
     }
 }
