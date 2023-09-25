@@ -4,7 +4,11 @@ import { useEffect, useState } from 'react';
 import { ZERO, fromAtto } from 'utils/bigNumber';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { useWallet } from 'providers/WalletProvider';
-import { TempleLineOfCredit__factory, ERC20__factory, TlcStrategy__factory } from 'types/typechain';
+import {
+  TempleLineOfCredit__factory,
+  ERC20__factory,
+  TreasuryReservesVault__factory,
+} from 'types/typechain';
 import env from 'constants/env';
 import { getBigNumberFromString, getTokenInfo } from 'components/Vault/utils';
 import { ITlcDataTypes } from 'types/typechain/contracts/interfaces/v2/templeLineOfCredit/ITempleLineOfCredit';
@@ -16,6 +20,7 @@ import Borrow from './Borrow';
 import Repay from './Repay';
 import Overview from './Overview';
 import { fetchGenericSubgraph } from 'utils/subgraph';
+import { min } from 'lodash';
 
 interface IProps {
   isOpen: boolean;
@@ -99,6 +104,25 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
     });
   }, [balance]);
 
+  const getMaxBorrow: () => Promise<number> = async () => {
+    if (!signer) {
+      return 0;
+    }
+
+    const trvContract = new TreasuryReservesVault__factory(signer).attach(env.contracts.treasuryReservesVault);
+    const tlcContract = new TempleLineOfCredit__factory(signer).attach(env.contracts.tlc);
+    const tlcStrategy = await tlcContract.tlcStrategy();
+    const daiToken = await tlcContract.daiToken();
+
+    // This is the amount that it is configured to borrow based on the current utilisation
+    const availableForStrategy = await trvContract.availableForStrategyToBorrow(tlcStrategy, daiToken);
+
+    // This is the amount of DAI left in TRV for all strategies (including what's in DSR base strategy)
+    const availableDai = await trvContract.totalAvailable(daiToken);
+
+    return Math.min(fromAtto(availableForStrategy), fromAtto(availableDai));
+  };
+
   const updateAccountPosition = async () => {
     if (!signer || !wallet) return;
     try {
@@ -108,17 +132,13 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
       const debtInfo = await tlcContract.debtTokenDetails();
       setAccountPosition(position);
 
-      // Get DAI balance in TlcStrategy
-      const tlcStrategyAddress = await tlcContract.tlcStrategy();
-      const tlcStrategy = new TlcStrategy__factory(signer).attach(tlcStrategyAddress);
-      const assets = await tlcStrategy.latestAssetBalances();
-      const dai = assets.find((a) => a.asset === env.contracts.dai);
+      const maxBorrow = await getMaxBorrow();
 
       setTlcInfo({
         minBorrow: fromAtto(min),
         borrowRate: fromAtto(debtInfo[1].interestRate),
         liquidationLtv: fromAtto(debtInfo[0].maxLtvRatio),
-        strategyBalance: dai ? fromAtto(dai.balance) : 0,
+        strategyBalance: maxBorrow,
       });
     } catch (e) {
       console.log(e);
