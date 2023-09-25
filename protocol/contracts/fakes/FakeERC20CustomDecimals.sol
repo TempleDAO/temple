@@ -4,19 +4,23 @@ pragma solidity 0.8.19;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 /**
- * A Fake ERC20 contract for testing. Can create as many named toknens as we need. They all have public
+ * A Fake ERC20 contract for testing, with custom decimal places. Can create as many named toknens as we need. They all have public
  * mint to aid testing
  */
-contract FakeERC20 is ERC20 {
+contract FakeERC20CustomDecimals is ERC20 {
+    uint8 private immutable _decimals;
+
     constructor (
         string memory name_,
         string memory symbol_,
         address initialAccount,
-        uint256 initialBalance
+        uint256 initialBalance,
+        uint8 decimals_
     ) ERC20(name_, symbol_) {
         if (initialAccount != address(0) && initialBalance > 0) {
             _mint(initialAccount, initialBalance);
         }
+        _decimals = decimals_;
     }
 
     function mint(address to, uint256 amount) external {
@@ -25,5 +29,9 @@ contract FakeERC20 is ERC20 {
 
     function burn(address account, uint256 amount) external {
         _burn(account, amount);
+    }
+
+    function decimals() override public view returns (uint8) {
+        return _decimals;
     }
 }
