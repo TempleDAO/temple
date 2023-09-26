@@ -20,7 +20,6 @@ import Borrow from './Borrow';
 import Repay from './Repay';
 import Overview from './Overview';
 import { fetchGenericSubgraph } from 'utils/subgraph';
-import { min } from 'lodash';
 
 interface IProps {
   isOpen: boolean;
