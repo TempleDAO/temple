@@ -17,11 +17,13 @@ async function main() {
     'OTC_OFFER.DAI_OHM',
     factory,
     factory.deploy,
-    CORE_ADDRESSES.EXTERNAL.OLYMPUS.OHM_TOKEN,
-    CORE_ADDRESSES.EXTERNAL.MAKER_DAO.DAI_TOKEN,
+    CORE_ADDRESSES.EXTERNAL.OLYMPUS.OHM_TOKEN, // user sell token
+    CORE_ADDRESSES.EXTERNAL.MAKER_DAO.DAI_TOKEN, // user buy token
     CORE_ADDRESSES.CORE.FARMING_MULTISIG, // fundsOwner
     ethers.utils.parseEther("11.4"), // initial offerPrice -- always 18 dp
-    2_000, // max new price delta - 20% from current price
+    0, // offerPricingToken = OfferPricingToken.UserBuyToken
+    ethers.utils.parseEther("11"), // minOfferPrice
+    ethers.utils.parseEther("12"), // maxOfferPrice
   );
 
 }

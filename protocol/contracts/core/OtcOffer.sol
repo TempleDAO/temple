@@ -53,19 +53,18 @@ contract OtcOffer is Pausable, Ownable {
     // @notice How to scale the fixed point buyTokenAmount given differences in token decimal places.
     uint256 public immutable scalar;
 
-    /// @notice Any update to the `offerPrice` must be within this percentage (as basis points. 20% = 2_000) 
-    /// of the existing `offerPrice`.
-    uint256 public offerPriceUpdateThresholdBps;
+    // @notice The minimum valid offer price (in order to avoid an incorrectly set/fat fingered price being set)
+    uint128 public minValidOfferPrice;
 
-    /// @notice 100% represented as basis points.
-    uint256 public constant BPS_100_PCT = 10_000;
+    // @notice The maximum valid offer price (in order to avoid an incorrectly set/fat fingered price being set)
+    uint128 public maxValidOfferPrice;
 
     event OfferPriceSet(uint256 _offerPrice);
-    event OfferPriceUpdateThresholdBpsSet(uint256 offerPriceUpdateThresholdBps);
+    event OfferPriceRangeSet(uint128 minValidOfferPrice, uint128 maxValidOfferPrice);
     event Swap(address indexed account, address indexed fundsOwner, uint256 userSellTokenAmount, uint256 userBuyTokenAmount);
     event FundsOwnerSet(address indexed fundsOwner);
 
-    error OfferPriceDeltaTooBig(uint256 newOfferPrice, uint256 maxPriceAllowed);
+    error OfferPriceNotValid();
 
     constructor(
         address _userSellToken,
@@ -73,7 +72,8 @@ contract OtcOffer is Pausable, Ownable {
         address _fundsOwner,
         uint256 _offerPrice,
         OfferPricingToken _offerPricingToken,
-        uint256 _offerPriceUpdateThresholdBps
+        uint128 _minValidOfferPrice,
+        uint128 _maxValidOfferPrice
     ) {
         userSellToken = IERC20Metadata(_userSellToken);
         userBuyToken = IERC20Metadata(_userBuyToken);
@@ -81,7 +81,8 @@ contract OtcOffer is Pausable, Ownable {
 
         offerPrice = _offerPrice;
         offerPricingToken = _offerPricingToken;
-        offerPriceUpdateThresholdBps = _offerPriceUpdateThresholdBps;
+        minValidOfferPrice = _minValidOfferPrice;
+        maxValidOfferPrice = _maxValidOfferPrice;
 
         // The price is always specified in 18dp
         // Eg If selling OHM (9dp) for USDC (6dp):
@@ -111,31 +112,19 @@ contract OtcOffer is Pausable, Ownable {
     }
 
     /// @notice Owner can update the offer price at which user swaps can occur
-    /// @dev The new price must be within the `offerPriceUpdateThresholdBps` threshold of
-    /// the existing price
+    /// @dev The new price must be within the `minValidOfferPrice` <= price <= `maxValidOfferPrice` range
     function setOfferPrice(uint256 _offerPrice) external onlyOwner {
-        if (_offerPrice == 0) revert CommonEventsAndErrors.ExpectedNonZero();
-
-        uint256 existingOfferPrice = offerPrice;
-        uint256 absMaxDelta = existingOfferPrice * offerPriceUpdateThresholdBps / BPS_100_PCT;
-        if (_offerPrice > existingOfferPrice) {
-            uint256 maxValid = existingOfferPrice + absMaxDelta;
-            if (_offerPrice > maxValid) revert OfferPriceDeltaTooBig(_offerPrice, maxValid);
-        } else {
-            uint256 minValid = existingOfferPrice > absMaxDelta
-                ? existingOfferPrice - absMaxDelta
-                : 0;
-            if (_offerPrice < minValid) revert OfferPriceDeltaTooBig(_offerPrice, minValid);
-        }
-
+        if (_offerPrice < minValidOfferPrice || _offerPrice > maxValidOfferPrice) revert OfferPriceNotValid();
         offerPrice = _offerPrice;
         emit OfferPriceSet(_offerPrice);
     }
 
     /// @notice Owner can update the threshold for when updating the offer price
-    function setOfferPriceUpdateThresholdBps(uint256 _offerPriceUpdateThresholdBps) external onlyOwner {
-        offerPriceUpdateThresholdBps = _offerPriceUpdateThresholdBps;
-        emit OfferPriceUpdateThresholdBpsSet(_offerPriceUpdateThresholdBps);
+    function setOfferPriceRange(uint128 _minValidOfferPrice, uint128 _maxValidOfferPrice) external onlyOwner {
+        if (_minValidOfferPrice > _maxValidOfferPrice) revert CommonEventsAndErrors.InvalidParam();
+        minValidOfferPrice = _minValidOfferPrice;
+        maxValidOfferPrice = _maxValidOfferPrice;
+        emit OfferPriceRangeSet(_minValidOfferPrice, _maxValidOfferPrice);
     }
 
     /// @notice Swap `userSellToken` for `userBuyToken`, at the `offerPrice`

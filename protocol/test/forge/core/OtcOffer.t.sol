@@ -24,18 +24,19 @@ contract OtcOfferTestBase is TempleTest {
     IERC20Metadata public usdcToken = IERC20Metadata(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48); // 6dp
 
     uint256 public constant offerPrice = 11.4e18;
-    uint256 public constant maxDelta = 2_000; // 20%
+    uint128 public constant minPrice = 11e18;
+    uint128 public constant maxPrice = 12e18;
 
     function setUp() public {
         fork("mainnet", 18210210);
 
-        otcOfferDaiOhm = new OtcOffer(address(ohmToken), address(daiToken), fundsOwner, offerPrice, OtcOffer.OfferPricingToken.UserBuyToken, maxDelta);
+        otcOfferDaiOhm = new OtcOffer(address(ohmToken), address(daiToken), fundsOwner, offerPrice, OtcOffer.OfferPricingToken.UserBuyToken, minPrice, maxPrice);
         otcOfferDaiOhm.transferOwnership(owner);
 
-        otcOfferOhmDai = new OtcOffer(address(daiToken), address(ohmToken), fundsOwner, offerPrice, OtcOffer.OfferPricingToken.UserSellToken, maxDelta);
+        otcOfferOhmDai = new OtcOffer(address(daiToken), address(ohmToken), fundsOwner, offerPrice, OtcOffer.OfferPricingToken.UserSellToken, minPrice, maxPrice);
         otcOfferOhmDai.transferOwnership(owner);
 
-        otcOfferUsdcOhm = new OtcOffer(address(ohmToken), address(usdcToken), fundsOwner, offerPrice, OtcOffer.OfferPricingToken.UserBuyToken, maxDelta);
+        otcOfferUsdcOhm = new OtcOffer(address(ohmToken), address(usdcToken), fundsOwner, offerPrice, OtcOffer.OfferPricingToken.UserBuyToken, minPrice, maxPrice);
         otcOfferUsdcOhm.transferOwnership(owner);
     }
 
@@ -63,32 +64,47 @@ contract OtcOfferTestAdmin is OtcOfferTestBase {
     event Unpaused(address account);
 
     event OfferPriceSet(uint256 _offerPrice);
-    event OfferPriceUpdateThresholdBpsSet(uint256 offerPriceUpdateThresholdBps);
+    event OfferPriceRangeSet(uint128 minValidOfferPrice, uint128 maxValidOfferPrice);
     event FundsOwnerSet(address indexed fundsOwner);
 
     function test_init() public {
-        // DAI/OHM
+        // OHM=>DAI
         { 
             assertEq(address(otcOfferDaiOhm.userSellToken()), address(ohmToken));
             assertEq(address(otcOfferDaiOhm.userBuyToken()), address(daiToken));
             assertEq(otcOfferDaiOhm.fundsOwner(), fundsOwner);
             assertEq(otcOfferDaiOhm.OFFER_PRICE_DECIMALS(), 18);
             assertEq(otcOfferDaiOhm.offerPrice(), offerPrice);
+            assertEq(uint256(otcOfferDaiOhm.offerPricingToken()), uint256(OtcOffer.OfferPricingToken.UserBuyToken));
             assertEq(otcOfferDaiOhm.scalar(), 1e9);
-            assertEq(otcOfferDaiOhm.offerPriceUpdateThresholdBps(), maxDelta);
-            assertEq(otcOfferDaiOhm.BPS_100_PCT(), 10_000);
+            assertEq(otcOfferDaiOhm.minValidOfferPrice(), minPrice);
+            assertEq(otcOfferDaiOhm.maxValidOfferPrice(), maxPrice);
         }
 
-        // USDC/OHM
+        // DAI=>OHM
+        { 
+            assertEq(address(otcOfferOhmDai.userSellToken()), address(daiToken));
+            assertEq(address(otcOfferOhmDai.userBuyToken()), address(ohmToken));
+            assertEq(otcOfferOhmDai.fundsOwner(), fundsOwner);
+            assertEq(otcOfferOhmDai.OFFER_PRICE_DECIMALS(), 18);
+            assertEq(otcOfferOhmDai.offerPrice(), offerPrice);
+            assertEq(uint256(otcOfferOhmDai.offerPricingToken()), uint256(OtcOffer.OfferPricingToken.UserSellToken));
+            assertEq(otcOfferOhmDai.scalar(), 1e9);
+            assertEq(otcOfferOhmDai.minValidOfferPrice(), minPrice);
+            assertEq(otcOfferOhmDai.maxValidOfferPrice(), maxPrice);
+        }
+
+        // OHM=>USDC
         {
             assertEq(address(otcOfferUsdcOhm.userSellToken()), address(ohmToken));
             assertEq(address(otcOfferUsdcOhm.userBuyToken()), address(usdcToken));
             assertEq(otcOfferUsdcOhm.fundsOwner(), fundsOwner);
             assertEq(otcOfferUsdcOhm.OFFER_PRICE_DECIMALS(), 18);
             assertEq(otcOfferUsdcOhm.offerPrice(), offerPrice);
+            assertEq(uint256(otcOfferUsdcOhm.offerPricingToken()), uint256(OtcOffer.OfferPricingToken.UserBuyToken));
             assertEq(otcOfferUsdcOhm.scalar(), 1e21);
-            assertEq(otcOfferUsdcOhm.offerPriceUpdateThresholdBps(), maxDelta);
-            assertEq(otcOfferUsdcOhm.BPS_100_PCT(), 10_000);
+            assertEq(otcOfferUsdcOhm.minValidOfferPrice(), minPrice);
+            assertEq(otcOfferUsdcOhm.maxValidOfferPrice(), maxPrice);
         }
     }
 
@@ -129,35 +145,32 @@ contract OtcOfferTestAdmin is OtcOfferTestBase {
         assertEq(otcOfferDaiOhm.fundsOwner(), alice);
     }
 
-    function test_setOfferPriceUpdateThresholdBps() public {
+    function test_setOfferPriceRange() public {
         vm.startPrank(owner);
+
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
+        otcOfferDaiOhm.setOfferPriceRange(12, 11);
 
         vm.expectEmit(address(otcOfferDaiOhm));
-        emit OfferPriceUpdateThresholdBpsSet(100);
-        otcOfferDaiOhm.setOfferPriceUpdateThresholdBps(100);
-        assertEq(otcOfferDaiOhm.offerPriceUpdateThresholdBps(), 100);
-    }
-
-    function test_setOfferPrice_failZero() public {
-        vm.startPrank(owner);
-
-        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
-        otcOfferDaiOhm.setOfferPrice(0);
+        emit OfferPriceRangeSet(1e18, 100e18);
+        otcOfferDaiOhm.setOfferPriceRange(1e18, 100e18);
+        assertEq(otcOfferDaiOhm.minValidOfferPrice(), 1e18);
+        assertEq(otcOfferDaiOhm.maxValidOfferPrice(), 100e18);
     }
 
     function test_setOfferPrice_failDeltaAbove() public {
         vm.startPrank(owner);
 
-        uint256 newPrice = offerPrice*120/100+1; // just above the threshold
-        vm.expectRevert(abi.encodeWithSelector(OtcOffer.OfferPriceDeltaTooBig.selector, newPrice, offerPrice*120/100));
+        uint256 newPrice = 12e18+1; // just above the threshold
+        vm.expectRevert(abi.encodeWithSelector(OtcOffer.OfferPriceNotValid.selector));
         otcOfferDaiOhm.setOfferPrice(newPrice);
     }
 
     function test_setOfferPrice_failDeltaBelow() public {
         vm.startPrank(owner);
 
-        uint256 newPrice = offerPrice*80/100-1; // just below the threshold
-        vm.expectRevert(abi.encodeWithSelector(OtcOffer.OfferPriceDeltaTooBig.selector, newPrice, offerPrice*80/100));
+        uint256 newPrice = 11e18-1; // just below the threshold
+        vm.expectRevert(abi.encodeWithSelector(OtcOffer.OfferPriceNotValid.selector));
         otcOfferDaiOhm.setOfferPrice(newPrice);
     }
 
@@ -165,7 +178,7 @@ contract OtcOfferTestAdmin is OtcOfferTestBase {
         vm.startPrank(owner);
 
         // Right on the threshold above
-        uint256 newPrice = offerPrice*120/100;
+        uint256 newPrice = 12e18;
         vm.expectEmit(address(otcOfferDaiOhm));
         emit OfferPriceSet(newPrice);
         otcOfferDaiOhm.setOfferPrice(newPrice);
@@ -175,26 +188,7 @@ contract OtcOfferTestAdmin is OtcOfferTestBase {
         otcOfferDaiOhm.setOfferPrice(offerPrice);
 
         // Right on the threshold below
-        newPrice = offerPrice*80/100;
-        vm.expectEmit(address(otcOfferDaiOhm));
-        emit OfferPriceSet(newPrice);
-        otcOfferDaiOhm.setOfferPrice(newPrice);
-        assertEq(otcOfferDaiOhm.offerPrice(), newPrice);
-    }
-
-    function test_setOfferPrice_bigNegativeDelta() public {
-        vm.startPrank(owner);
-        otcOfferDaiOhm.setOfferPriceUpdateThresholdBps(15_000); // 150%
-
-        // Right on the threshold above
-        uint256 newPrice = offerPrice*250/100;
-        vm.expectEmit(address(otcOfferDaiOhm));
-        emit OfferPriceSet(newPrice);
-        otcOfferDaiOhm.setOfferPrice(newPrice);
-        assertEq(otcOfferDaiOhm.offerPrice(), newPrice);
-
-        // Floored at 1 (0 not possible because of guard)
-        newPrice = 1;
+        newPrice = 11e18;
         vm.expectEmit(address(otcOfferDaiOhm));
         emit OfferPriceSet(newPrice);
         otcOfferDaiOhm.setOfferPrice(newPrice);
@@ -223,9 +217,9 @@ contract OtcOfferTestAccess is OtcOfferTestBase {
         otcOfferDaiOhm.setOfferPrice(100e18);
     }
 
-    function test_access_setOfferPriceUpdateThresholdBps() public {
+    function test_access_setOfferPriceRange() public {
         expectOnlyOwner();
-        otcOfferDaiOhm.setOfferPriceUpdateThresholdBps(100);
+        otcOfferDaiOhm.setOfferPriceRange(100, 100);
     }
 }
 
