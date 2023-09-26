@@ -34,7 +34,7 @@ const CORE_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
             FARMING_MULTISIG: '0x81960c465605cddD9772a8653111D4aBE580Ce1e',
         },
         OTC_OFFER: {
-            DAI_OHM: '0x167baf16baD1e65A4bc61E860c64d49c782b9e4a',
+            DAI_OHM: '0x09fDF85893c1277BDC9Ef1be2ACDf29EE5e19771',
         },
         EXTERNAL: {
             MAKER_DAO: {
