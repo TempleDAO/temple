@@ -11,11 +11,9 @@
     "dev": "yarn build && source .env && node ./dist/main.js",
     "build:image": "docker build --tag temple-tasks .",
     "anvil:mainnet-fork": "anvil -f https://eth-mainnet.g.alchemy.com/v2/LjzU7NEw1jfJZSDBP10rGeg53cSlzscP --config-out anvil.json --fork-block-number 18189826",
-    "local-fork:test:tlc": "(cd ../../protocol && forge script --fork-url http://127.0.0.1:8545 scripts/deploys/localhost/v2/999-localhost-tlc-mainnet-test.s.sol)",
+    "local-fork:test:tlc": "(cd ../../protocol && forge script --fork-url http://127.0.0.1:8545 scripts/deploys/localhost/v2/999-localhost-tlc-mainnet-test.s.sol)"
   },
   "dependencies": {
-    "@ethersproject/bignumber": "^5.5.0",
-    "@ethersproject/units": "^5.7.0",
     "@mountainpath9/overlord": "^0.7.0",
     "date-fns": "^2.30.0",
     "discord.js": "^14.13.0"

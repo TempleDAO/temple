@@ -1,21 +1,18 @@
-
-
 import { ethers } from 'ethers';
-import { Chain, MAINNET } from "@/chains";
-import { CheckEthBalanceType } from "@/common/eth-auto-checker";
-import { TlcBatchLiquidateConfig } from "@/tlc/batch-liquidate";
-
+import { Chain, MAINNET } from '@/chains';
+import { CheckEthBalanceType } from '@/common/eth-auto-checker';
+import { TlcBatchLiquidateConfig } from '@/tlc/batch-liquidate';
 
 const CHECK_ETH_BALANCE_CONFIG: CheckEthBalanceType = (chain: Chain) => ({
   CHAIN: chain,
   WALLET_NAME: 'temple_automation',
-  MIN_ETH_BALANCE: ethers.utils.parseEther("0.1"),
+  MIN_ETH_BALANCE: ethers.utils.parseEther('0.1'),
 });
 
-const TLC_BATCH_LIQUIDATE_CONFIG : TlcBatchLiquidateConfig = {
-    CHAIN: MAINNET,
-    WALLET_NAME: 'temple_automation',
-    TLC_ADDRESS: '0xcbc0A8d5C7352Fe3625614ea343019e6d6b89031',
+const TLC_BATCH_LIQUIDATE_CONFIG: TlcBatchLiquidateConfig = {
+  CHAIN: MAINNET,
+  WALLET_NAME: 'temple_automation',
+  TLC_ADDRESS: '0xcbc0A8d5C7352Fe3625614ea343019e6d6b89031',
 };
 
 export const CONFIG = {

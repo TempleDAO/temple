@@ -10,7 +10,6 @@ export function matchLog<TArgsArray extends unknown[], TArgsObject>(
   contract: ethers.BaseContract,
   eventFilter: TypedEventFilter<TypedEvent<TArgsArray, TArgsObject>>
 ): (TArgsArray & TArgsObject) | undefined {
-
   if (eventFilter.address && eventFilter.address !== ev.address) {
     return undefined;
   }
@@ -21,7 +20,6 @@ export function matchLog<TArgsArray extends unknown[], TArgsObject>(
   const args = contract.interface.parseLog(ev).args;
   return args as TArgsArray & TArgsObject;
 }
-
 
 function matchTopics(
   filter: Array<string | Array<string>> | undefined,
