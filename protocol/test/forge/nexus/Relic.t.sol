@@ -85,9 +85,13 @@ contract RelicTestBase is TempleTest {
         relic.mintRelic(bob, Relic.Enclave.Mystery);
         // mint some shards to bob
         changePrank(executor);
-        shard.setTemplarMinter(operator, true);
         shard.setShardId(SHARD_1_ID, true);
         shard.setShardId(SHARD_2_ID, true);
+        shard.setShardId(SHARD_3_ID, true);
+        shard.setMinterAllowedShardId(operator, SHARD_1_ID, true);
+        shard.setMinterAllowedShardId(operator, SHARD_2_ID, true);
+        shard.setMinterAllowedShardId(operator, SHARD_3_ID, true);
+        
         changePrank(operator);
         shard.mint(bob, SHARD_1_ID, 5);
         shard.mint(bob, SHARD_2_ID, 10);
@@ -282,7 +286,6 @@ contract RelicSettersTest is RelicTestAccess {
         emit ShardSet(alice);
         relic.setShard(alice);
         assertEq(address(relic.shard()), alice);
-        // todo setUp() for other contracts and addresses
     }
 
     function test_setXPRarityThreshold() public {
@@ -422,8 +425,6 @@ contract RelicSettersTest is RelicTestAccess {
         relic.setRelicXP(invalidRelicId, xp);
 
         uint256 relicId = relicIds[0];
-        // Relic.RelicInfo storage relicInfo = relic.relicInfos(relicId);
-        // uint256 oldXp = relicInfo.xp;
         (,,uint256 oldXp) = relic.relicInfos(relicId);
         vm.expectEmit(address(relic));
         emit RelicXPSet(relicId, oldXp, xp);
@@ -448,8 +449,8 @@ contract RelicViewTest is RelicSettersTest {
         uint256 tokenId = relic.totalSupply() - 1;
         string memory uri = relic.tokenURI(tokenId);
         assertEq(uri, string.concat(BASE_URI, "common/", Strings.toString(tokenId)));
-        assertEq(relic.getBaseUriRarity(Relic.Rarity.Common), commonBaseUri);
-        assertEq(relic.getBaseUriRarity(Relic.Rarity.Uncommon), uncommonBaseUri);
+        assertEq(relic.getRarityBaseUri(Relic.Rarity.Common), commonBaseUri);
+        assertEq(relic.getRarityBaseUri(Relic.Rarity.Uncommon), uncommonBaseUri);
     }
 
     function test_getBalanceBatch() public {
@@ -545,7 +546,6 @@ contract RelicTest is RelicViewTest {
     }
 
     function test_shardApproval() public {
-        // todo
         uint256[] memory shardIds = new uint256[](2);
         uint256[] memory amounts = new uint256[](2);
         shardIds[0] = SHARD_1_ID;
@@ -815,7 +815,7 @@ contract RelicTest is RelicViewTest {
         uint256 relicId = _blacklistAccount(true, true, 0, alice, shardIds, amounts);
         assertEq(relic.getEquippedShardAmount(relicId, shardIds[0]), amounts[0]);
         assertEq(relic.getEquippedShardAmount(relicId, shardIds[1]), amounts[1]);
-        // invalid owner
+        // invalid owner. bob is owner of relic Id 0
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         relic.burnBlacklistedAccountShards(alice, true, 0, shardIds);
         
@@ -885,6 +885,44 @@ contract RelicTest is RelicViewTest {
         changePrank(bob);
         relic.safeTransferFrom(bob, alice, bobRelics[0]);
         assertEq(relic.ownerOf(bobRelics[0]), alice);
+    }
+
+    function test_checkpointRelicRarity() public {
+        vm.startPrank(executor);
+        vm.expectRevert(abi.encodeWithSelector(Relic.InvalidRelic.selector, 100));
+        relic.checkpointRelicRarity(100);
+        uint256 relicId = relic.nextTokenId() - 1;
+        relic.checkpointRelicRarity(relicId);
+        (, Relic.Rarity rarity, uint128 xp) = relic.relicInfos(relicId);
+        assertEq(xp, 0);
+        relic.setXPRarityThreshold(Relic.Rarity.Uncommon, 10);
+        relic.setXPRarityThreshold(Relic.Rarity.Rare, 30);
+        relic.setXPRarityThreshold(Relic.Rarity.Epic, 60);
+        relic.setXPRarityThreshold(Relic.Rarity.Legendary, 100);
+        relic.setXPController(operator, true);
+        changePrank(operator);
+        relic.setRelicXP(relicId, 10);
+        relic.checkpointRelicRarity(relicId);
+        (, rarity, xp) = relic.relicInfos(relicId);
+        assertEq(xp, 10);
+        assertEq(uint8(rarity), uint8(Relic.Rarity.Uncommon));
+        relic.setRelicXP(relicId, 31);
+        // no checkpoint
+        assertEq(uint8(rarity), uint8(Relic.Rarity.Uncommon));
+        relic.checkpointRelicRarity(relicId);
+        (, rarity, xp) = relic.relicInfos(relicId);
+        assertEq(uint8(rarity), uint8(Relic.Rarity.Rare));
+        relic.setRelicXP(relicId, 78);
+        // no checkpoint
+        (, rarity, xp) = relic.relicInfos(relicId);
+        assertEq(uint8(rarity), uint8(Relic.Rarity.Rare));
+        relic.checkpointRelicRarity(relicId);
+        (, rarity, xp) = relic.relicInfos(relicId);
+        assertEq(uint8(rarity), uint8(Relic.Rarity.Epic));
+        relic.setRelicXP(relicId, 101);
+        relic.checkpointRelicRarity(relicId);
+        (, rarity, xp) = relic.relicInfos(relicId);
+        assertEq(uint8(rarity), uint8(Relic.Rarity.Legendary));
     }
 
     function test_supportsInterface() public {
