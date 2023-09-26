@@ -25,11 +25,25 @@ contract OtcOffer is Pausable, Ownable {
     /// @notice The number of decimal places represented by `offerPrice`
     uint8 public constant OFFER_PRICE_DECIMALS = 18;
 
-    /// @notice The offer price, in terms of `userBuyToken/userSellToken` - eg 11 DAI/OHM when user selling OHM => DAI
-    /// @dev offerPrice is always specified in 1e18 precision
+    /// @notice The offer price, specified in terms of `offerPricingToken`.
     uint256 public offerPrice;
 
-    // @notice How to scale when calculating the `buyTokenAmount == sellTokenAmount * offerPrice / scalar`
+    enum OfferPricingToken {
+        /// @notice The offerPrice 'pricing' token is defined in terms of the `userBuyToken`
+        /// ie price is userBuyToken / userSellToken
+        /// eg when user sells OHM to buy DAI, the price is defined in terms of DAI/OHM
+        UserBuyToken,
+
+        /// @notice The offerPrice 'pricing' token is defined in terms of the `userBuyToken`
+        /// ie price is userSellToken / userBuyToken
+        /// eg when user sells DAI to buy OHM, the price can still be defined in terms of DAI/OHM
+        UserSellToken
+    }
+
+    /// @notice Which token the `offerPrice` is defined in terms of.
+    OfferPricingToken public immutable offerPricingToken;
+
+    // @notice How to scale the fixed point buyTokenAmount given differences in token decimal places.
     uint256 public immutable scalar;
 
     /// @notice Any update to the `offerPrice` must be within this percentage (as basis points. 20% = 2_000) 
@@ -51,6 +65,7 @@ contract OtcOffer is Pausable, Ownable {
         address _userBuyToken,
         address _fundsOwner,
         uint256 _offerPrice,
+        OfferPricingToken _offerPricingToken,
         uint256 _offerPriceUpdateThresholdBps
     ) {
         userSellToken = IERC20Metadata(_userSellToken);
@@ -58,14 +73,17 @@ contract OtcOffer is Pausable, Ownable {
         fundsOwner = _fundsOwner;
 
         offerPrice = _offerPrice;
+        offerPricingToken = _offerPricingToken;
         offerPriceUpdateThresholdBps = _offerPriceUpdateThresholdBps;
 
         // The price is always specified in 18dp
         // Eg If selling OHM (9dp) for USDC (6dp):
         // 1000 OHM (9dp) * 11 USDC/OHM (18dp) = 11_000 USDC (6dp)
         // So this would need to get scaled down by 30dp
-        uint256 scaleDownDecimals = OFFER_PRICE_DECIMALS + userSellToken.decimals() - userBuyToken.decimals();
-        scalar = 10 ** scaleDownDecimals;
+        uint256 scaleDecimals = offerPricingToken == OfferPricingToken.UserBuyToken
+            ? OFFER_PRICE_DECIMALS + userSellToken.decimals() - userBuyToken.decimals()
+            : OFFER_PRICE_DECIMALS + userBuyToken.decimals() - userSellToken.decimals();
+        scalar = 10 ** scaleDecimals;
     }
 
     /// @notice Owner can pause user swaps from occuring
@@ -117,13 +135,34 @@ contract OtcOffer is Pausable, Ownable {
     function swap(uint256 sellTokenAmount) external whenNotPaused returns (uint256 buyTokenAmount) {
         if (sellTokenAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
 
-        // eg 1000 OHM * 11.4 DAI/OHM == 11_400 DAI
-        buyTokenAmount = sellTokenAmount * offerPrice / scalar;
+        buyTokenAmount = quote(sellTokenAmount);
 
         address _fundsOwner = fundsOwner;
         emit Swap(msg.sender, _fundsOwner, sellTokenAmount, buyTokenAmount);
 
         userSellToken.safeTransferFrom(msg.sender, _fundsOwner, sellTokenAmount);
         userBuyToken.safeTransferFrom(_fundsOwner, msg.sender, buyTokenAmount);
+    }
+
+    /// @notice How many `userBuyToken` you would receive given an amount of `sellTokenAmount`
+    function quote(uint256 sellTokenAmount) public view returns (uint256 buyTokenAmount) {
+        buyTokenAmount = offerPricingToken == OfferPricingToken.UserBuyToken
+            ? sellTokenAmount * offerPrice / scalar
+            : sellTokenAmount * scalar / offerPrice;
+    }
+
+    /**
+     * @notice The available funds for a user swap is goverend by the amount of `userBuyToken` that
+     * the `fundsOwner` has available.
+     * @dev The minimum of the `fundsOwner` balance of `userBuyToken`, and the spending 
+     * approval from `fundsOwner` to this OtcOffer contract.
+     */
+    function userBuyTokenAvailable() external view returns (uint256) {
+        address _fundsOwner = fundsOwner;
+        uint256 _balance = userBuyToken.balanceOf(_fundsOwner);
+        uint256 _allowance = userBuyToken.allowance(_fundsOwner, address(this));
+        return _balance < _allowance
+            ? _balance
+            : _allowance;
     }
 }

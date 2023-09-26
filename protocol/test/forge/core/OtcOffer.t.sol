@@ -7,7 +7,13 @@ import { OtcOffer } from "contracts/core/OtcOffer.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 
 contract OtcOfferTestBase is TempleTest {
+    // user sells OHM and buys DAI
     OtcOffer public otcOfferDaiOhm;
+
+    // user sells DAI and buys OHM
+    OtcOffer public otcOfferOhmDai;
+
+    // user sells OHM and buys USDC
     OtcOffer public otcOfferUsdcOhm;
 
     address public fundsOwner = makeAddr("fundsOwner");
@@ -23,9 +29,13 @@ contract OtcOfferTestBase is TempleTest {
     function setUp() public {
         fork("mainnet", 18210210);
 
-        otcOfferDaiOhm = new OtcOffer(address(ohmToken), address(daiToken), fundsOwner, offerPrice, maxDelta);
+        otcOfferDaiOhm = new OtcOffer(address(ohmToken), address(daiToken), fundsOwner, offerPrice, OtcOffer.OfferPricingToken.UserBuyToken, maxDelta);
         otcOfferDaiOhm.transferOwnership(owner);
-        otcOfferUsdcOhm = new OtcOffer(address(ohmToken), address(usdcToken), fundsOwner, offerPrice, maxDelta);
+
+        otcOfferOhmDai = new OtcOffer(address(daiToken), address(ohmToken), fundsOwner, offerPrice, OtcOffer.OfferPricingToken.UserSellToken, maxDelta);
+        otcOfferOhmDai.transferOwnership(owner);
+
+        otcOfferUsdcOhm = new OtcOffer(address(ohmToken), address(usdcToken), fundsOwner, offerPrice, OtcOffer.OfferPricingToken.UserBuyToken, maxDelta);
         otcOfferUsdcOhm.transferOwnership(owner);
     }
 
@@ -222,6 +232,63 @@ contract OtcOfferTestAccess is OtcOfferTestBase {
 contract OtcOfferTestSwap is OtcOfferTestBase {
     event Swap(address indexed account, address indexed fundsOwner, uint256 userSellTokenAmount, uint256 userBuyTokenAmount);
 
+    function test_quote() public {
+        // User sells OHM for DAI
+        // Price defined as 11.4 DAI/OHM
+        {
+            uint256 sellAmount = 100e9;
+            uint256 expectedBuyAmount = 1_140e18;
+            assertEq(otcOfferDaiOhm.quote(sellAmount), expectedBuyAmount);
+        }
+
+        // User sells DAI for OHM
+        // Price still defined as 11.4 DAI/OHM
+        {
+            uint256 sellAmount = 1_140e18; // DAI
+            uint256 expectedBuyAmount = 100e9; // OHM
+            assertEq(otcOfferOhmDai.quote(sellAmount), expectedBuyAmount);
+        }
+
+        // User sells OHM for USDC
+        // Price defined as 11.4 USDC/OHM
+        {
+            uint256 sellAmount = 100e9;
+            uint256 expectedBuyAmount = 1_140e6;
+            assertEq(otcOfferUsdcOhm.quote(sellAmount), expectedBuyAmount);
+        }
+    }
+
+    function test_userBuyTokenAvailable() public {
+        // No buy token funds available by default
+        assertEq(otcOfferDaiOhm.userBuyTokenAvailable(), 0);
+
+        // Deal funds but no approvals - still 0
+        deal(address(daiToken), fundsOwner, 100e18, true);
+        assertEq(otcOfferDaiOhm.userBuyTokenAvailable(), 0);
+
+        // Approve some - now the min
+        vm.startPrank(fundsOwner);
+        daiToken.approve(address(otcOfferDaiOhm), 25e18);
+        assertEq(otcOfferDaiOhm.userBuyTokenAvailable(), 25e18);
+
+        // Still the min of both
+        daiToken.approve(address(otcOfferDaiOhm), 125e18);
+        assertEq(otcOfferDaiOhm.userBuyTokenAvailable(), 100e18);
+
+        // Alice sells 1 OHM
+        {
+            deal(address(ohmToken), alice, 1e9, true);
+            changePrank(alice);
+            ohmToken.approve(address(otcOfferDaiOhm), 1e9);
+            otcOfferDaiOhm.swap(1e9);
+        }
+
+        // Now decreases by this amount
+        assertEq(otcOfferDaiOhm.userBuyTokenAvailable(), 100e18 - 11.4e18);
+        deal(address(daiToken), fundsOwner, 200e18, true);
+        assertEq(otcOfferDaiOhm.userBuyTokenAvailable(), 125e18 - 11.4e18);
+    }
+
     function test_swap_fail() public {
         vm.startPrank(alice);
 
@@ -275,6 +342,29 @@ contract OtcOfferTestSwap is OtcOfferTestBase {
         assertEq(ohmToken.balanceOf(fundsOwner), sellAmount);
         assertEq(daiToken.balanceOf(alice), expectedBuyAmount);
         assertEq(daiToken.balanceOf(fundsOwner), 0);
+    }
+
+    function test_swap_daiohm_success() public {
+        uint256 sellAmount = 1_140e18; // DAI 18 dp's
+        uint256 expectedBuyAmount = 100e9; // OHM 9 dp's
+
+        deal(address(ohmToken), fundsOwner, expectedBuyAmount, true);
+        vm.prank(fundsOwner);
+        ohmToken.approve(address(otcOfferOhmDai), expectedBuyAmount);
+
+        deal(address(daiToken), alice, sellAmount, true);
+        vm.startPrank(alice);
+        daiToken.approve(address(otcOfferOhmDai), sellAmount);
+
+        vm.expectEmit(address(otcOfferOhmDai));
+        emit Swap(alice, fundsOwner, sellAmount, expectedBuyAmount);
+
+        otcOfferOhmDai.swap(sellAmount);
+
+        assertEq(daiToken.balanceOf(alice), 0);
+        assertEq(daiToken.balanceOf(fundsOwner), sellAmount);
+        assertEq(ohmToken.balanceOf(alice), expectedBuyAmount);
+        assertEq(ohmToken.balanceOf(fundsOwner), 0);
     }
 
     function test_swap_ohmusdc_success() public {
