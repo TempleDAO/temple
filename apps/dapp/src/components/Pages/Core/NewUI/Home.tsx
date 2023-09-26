@@ -24,6 +24,7 @@ import ClaimModal from './ClaimModal';
 import UnstakeOgtModal from './UnstakeModal';
 import { useWallet } from 'providers/WalletProvider';
 import TLCModal from './TLC/TLCModal';
+import OtcModal from './OtcModal';
 
 interface Metrics {
   price: number;
@@ -106,6 +107,7 @@ const Home = ({ tlc }: { tlc?: boolean }) => {
   const [showConnect, setShowConnect] = useState(false);
 
   const [isTlcModalOpen, setIsTlcModalOpen] = useState(false);
+  const [isOtcModalOpen, setIsOtcModalOpen] = useState(false);
   const [isClaimModalOpen, setIsClaimModalOpen] = useState(false);
   const [isUnstakeModalOpen, setIsUnstakeModalOpen] = useState(false);
 
@@ -181,6 +183,7 @@ const Home = ({ tlc }: { tlc?: boolean }) => {
     <>
       <LegacyLinkHeader>
         {tlc && <LegacyLink onClick={() => clickHandler(setIsTlcModalOpen)}>Temple Lending</LegacyLink>}
+        <LegacyLink onClick={() => clickHandler(setIsOtcModalOpen)}>Ohmage</LegacyLink>
         <LegacyLink onClick={() => clickHandler(setIsClaimModalOpen)}>Claim from vaults</LegacyLink>
         <LegacyLink onClick={() => clickHandler(setIsUnstakeModalOpen)}>Unstake OGT</LegacyLink>
       </LegacyLinkHeader>
@@ -293,7 +296,8 @@ const Home = ({ tlc }: { tlc?: boolean }) => {
         <CopyrightRow>© {new Date().getFullYear()} TempleDAO. All rights reserved.</CopyrightRow>
       </FooterContainer>
       <TLCModal isOpen={!!walletAddress && isTlcModalOpen} onClose={() => setIsTlcModalOpen(false)} />
-      <ClaimModal isOpen={true && isClaimModalOpen} onClose={() => setIsClaimModalOpen(false)} />
+      <OtcModal isOpen={isOtcModalOpen} onClose={() => setIsOtcModalOpen(false)} />
+      <ClaimModal isOpen={isClaimModalOpen} onClose={() => setIsClaimModalOpen(false)} />
       <UnstakeOgtModal isOpen={isUnstakeModalOpen} onClose={() => setIsUnstakeModalOpen(false)} />
     </>
   );

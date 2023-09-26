@@ -21,6 +21,7 @@ interface Contracts {
   lockedOgTemple: string;
   ogTemple: string;
   olympus: string;
+  otcOffer: string;
   teamPayments?: string[];
   temple: string;
   templeStaking: string;
