@@ -9,6 +9,13 @@ import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/I
 
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 
+/**
+ * @title OTC Offer
+ *
+ * @notice Temple offers OTC purchases to users on certain tokens - slippage and price impact free.
+ * Temple sets the offer price and users can swap tokens for any arbitrary size at this price, up to some
+ * max amount of treasury funds (determined by the `fundsOwner` balance and ERC20 approvals).
+ */
 contract OtcOffer is Pausable, Ownable {
     using SafeERC20 for IERC20Metadata;
 
