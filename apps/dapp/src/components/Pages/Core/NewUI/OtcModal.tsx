@@ -7,12 +7,12 @@ import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { TradeButton } from './Home';
 import { useWallet } from 'providers/WalletProvider';
 import { formatToken } from 'utils/formatter';
-import { OtcOffer__factory } from 'types/typechain';
+import { OtcOffer__factory, ERC20__factory } from 'types/typechain';
 import env from 'constants/env';
 import { getBigNumberFromString, getTokenInfo } from 'components/Vault/utils';
 import { useNotification } from 'providers/NotificationProvider';
-import { ERC20__factory } from 'types/typechain/typechain';
 import { fromAtto } from 'utils/bigNumber';
+import { ethers } from 'ethers';
 
 interface IProps {
   isOpen: boolean;
@@ -29,13 +29,13 @@ export const OtcModal: React.FC<IProps> = ({ isOpen, onClose }) => {
   const { openNotification } = useNotification();
 
   // Fetch the allowance for OtcOffer to spend OHM
+  const checkAllowance = async () => {
+    if (!signer || !wallet) return;
+    const ohmContract = new ERC20__factory(signer).attach(env.contracts.olympus);
+    const allowance = await ohmContract.allowance(wallet, env.contracts.otcOffer);
+    setAllowance(fromAtto(allowance));
+  };
   useEffect(() => {
-    const checkAllowance = async () => {
-      if (!signer || !wallet) return;
-      const ohmContract = new ERC20__factory(signer).attach(env.contracts.olympus);
-      const allowance = await ohmContract.allowance(wallet, env.contracts.otcOffer);
-      setAllowance(fromAtto(allowance));
-    };
     checkAllowance();
   }, [signer]);
 
@@ -57,13 +57,13 @@ export const OtcModal: React.FC<IProps> = ({ isOpen, onClose }) => {
     if (!signer || !wallet) return;
     const ohmContract = new ERC20__factory(signer).attach(env.contracts.olympus);
     try {
-      const tx = await ohmContract.approve(env.contracts.otcOffer, 2 ** 256 - 1);
+      const tx = await ohmContract.approve(env.contracts.otcOffer, ethers.constants.MaxUint256);
       const receipt = await tx.wait();
       openNotification({
         title: `Approved OtcOffer to spend OHM`,
         hash: receipt.transactionHash,
       });
-      setAllowance(2 ** 256 - 1);
+      checkAllowance();
     } catch (e) {
       console.log(e);
       openNotification({
