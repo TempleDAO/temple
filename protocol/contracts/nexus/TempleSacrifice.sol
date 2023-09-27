@@ -10,11 +10,14 @@ import { CommonEventsAndErrors } from "../common/CommonEventsAndErrors.sol";
 import { mulDiv } from "@prb/math/src/Common.sol";
 
 contract TempleSacrifice is Ownable {
+    using SafeERC20 for ITempleERC20Token;
 
     /// @notice the Relic ERC721A token
     IRelic public immutable relic;
     /// @notice the temple token used for payment in minting a relic
     ITempleERC20Token public immutable templeToken;
+    /// @notice send sacrificed temple to this address
+    address public sacrificedTempleRecipient;
     /// @notice start time from which price increases
     uint64 public originTime;
     /// @notice custom price set by governance
@@ -35,6 +38,7 @@ contract TempleSacrifice is Ownable {
     event CustomPriceSet(uint256 price);
     event TempleSacrificed(address account, uint256 amount);
     event PriceParamsSet(PriceParam params);
+    event TempleRecipientSet(address recipient);
 
     error FutureOriginTime(uint64 originTime);
 
@@ -43,6 +47,12 @@ contract TempleSacrifice is Ownable {
         templeToken = ITempleERC20Token(_templeToken);
         /// @dev caution so that origin time is never 0 and lesser than or equal to current block timestamp
         originTime = uint64(block.timestamp);
+    }
+
+    function setSacrificedTempleRecipient(address recipient) external onlyOwner {
+        if (recipient == address(0)) { revert CommonEventsAndErrors.InvalidParam(); }
+        sacrificedTempleRecipient = recipient;
+        emit TempleRecipientSet(recipient);
     }
 
     /*
@@ -91,7 +101,7 @@ contract TempleSacrifice is Ownable {
     function sacrifice(IRelic.Enclave enclave) external {
         if (block.timestamp < originTime) { revert FutureOriginTime(originTime); }
         uint256 amount = _getPrice();
-        templeToken.burnFrom(msg.sender, amount);
+        templeToken.safeTransferFrom(msg.sender, sacrificedTempleRecipient, amount);
         relic.mintRelic(msg.sender, enclave);
         emit TempleSacrificed(msg.sender, amount);
     }

@@ -30,6 +30,7 @@ contract TempleSacrificeTestBase is TempleTest {
     event CustomPriceSet(uint256 price);
     event TempleSacrificed(address account, uint256 amount);
     event PriceParamsSet(TempleSacrifice.PriceParam params);
+    event TempleRecipientSet(address recipient);
 
 
     function setUp() public {
@@ -70,6 +71,16 @@ contract TempleSacrificeAccessTest is TempleSacrificeTestBase {
         vm.startPrank(caller);
         vm.expectRevert("Ownable: caller is not the owner");
         templeSacrifice.setOriginTime(uint64(block.timestamp));
+    }
+
+    function test_access_setSacrificedTempleRecipientFail(address caller) public {
+        vm.assume(caller != address(this));
+        vm.startPrank(caller);
+        vm.expectRevert("Ownable: caller is not the owner");
+        templeSacrifice.setSacrificedTempleRecipient(alice);
+    }
+    function test_access_setSacrificedTempleRecipientSuccess() public {
+        templeSacrifice.setSacrificedTempleRecipient(alice);
     }
 
     function test_access_setOriginTimetSuccess() public {
@@ -127,6 +138,15 @@ contract TempleSacrificeTest is TempleSacrificeAccessTest {
         emit OriginTimeSet(ts);
         templeSacrifice.setOriginTime(ts);
         assertEq(templeSacrifice.originTime(), ts);
+    }
+
+    function test_setSacrificedTempleRecipient() public {
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
+        templeSacrifice.setSacrificedTempleRecipient(address(0));
+        vm.expectEmit(address(templeSacrifice));
+        emit TempleRecipientSet(bob);
+        templeSacrifice.setSacrificedTempleRecipient(bob);
+        assertEq(templeSacrifice.sacrificedTempleRecipient(), bob);
     }
 
     function test_setPriceParams() public {
@@ -188,9 +208,11 @@ contract TempleSacrificeTest is TempleSacrificeAccessTest {
         templeSacrifice.sacrifice(IRelic.Enclave.Chaos);
 
         _mintTemple(alice, 1_000 ether);
+        templeSacrifice.setSacrificedTempleRecipient(bob);
         vm.startPrank(alice);
         templeToken.approve(address(templeSacrifice), 1_000 ether);
         uint256 aliceTempleBalanceBefore = templeToken.balanceOf(alice);
+        uint256 recipientBalanceBefore = templeToken.balanceOf(bob);
 
         vm.warp(originTime);
         uint256 price = templeSacrifice.getPrice();
@@ -199,6 +221,7 @@ contract TempleSacrificeTest is TempleSacrificeAccessTest {
         templeSacrifice.sacrifice(IRelic.Enclave.Chaos);
         assertEq(price, _calculatePrice(params));
         assertEq(templeToken.balanceOf(alice), aliceTempleBalanceBefore - price);
+        assertEq(templeToken.balanceOf(bob), recipientBalanceBefore + price);
     }
 
     function test_getPrice() public {
