@@ -28,6 +28,7 @@ interface Contracts {
   templeV2Router: string;
   swap1InchRouter: string;
   tlc: string;
+  treasuryReservesVault: string;
   treasuryIv: string;
   vaultOps: string;
   vaultProxy: string;
