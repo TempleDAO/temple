@@ -210,6 +210,7 @@ const Home = ({ tlc }: { tlc?: boolean }) => {
                   {tlc && <TradeButton onClick={() => clickHandler(setIsTlcModalOpen)}>Borrow</TradeButton>}
                 </ButtonContainer>
                 <LearnMoreLink onClick={() => clickHandler(setIsClaimModalOpen)}>Claim from Vaults</LearnMoreLink>
+                <LearnMoreLink onClick={() => clickHandler(setIsOtcModalOpen)}>Sell OHM OTC</LearnMoreLink>
               </>
             )}
           </ContentContainer>

@@ -21,7 +21,7 @@ const env: Environment = {
     lockedOgTemple: '0x879B843868dA248B1F2F53b4f8CC6e17e7E8b949',
     ogTemple: '0x654590F810f01B51dc7B86915D4632977e49EA33',
     olympus: '0x64aa3364f17a4d01c6f1751fd97c2bd3d7e7f1d5',
-    otcOffer: '',
+    otcOffer: '0x687A4B0Ac18Ed3796D55E6A1d747bD75591a8bac',
     // Preserve the order of this array: array index == epoch number. Append only.
     teamPayments: [
       '0xF7b10A0C780a3906D9A9F3d706EcD2624B6ED84e',
