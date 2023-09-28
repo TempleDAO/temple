@@ -5,7 +5,6 @@ import {
   taskSuccessSilent,
 } from '@mountainpath9/overlord';
 import { formatBigNumber } from '@/common/utils';
-import { BigNumber } from 'ethers';
 import {
   DISCORD_WEBHOOK_URL_KEY,
   DiscordMesage,
@@ -17,7 +16,7 @@ export type CheckEthBalanceType = (chain: Chain) => CheckEthBalanceConfig;
 export interface CheckEthBalanceConfig {
   CHAIN: Chain;
   WALLET_NAME: string;
-  MIN_ETH_BALANCE: BigNumber;
+  MIN_ETH_BALANCE: bigint;
 }
 
 export async function checkLowEthBalance(
@@ -26,8 +25,8 @@ export async function checkLowEthBalance(
 ): Promise<FallibleTaskResult> {
   const provider = await ctx.getProvider(config.CHAIN.id);
   const signer = await ctx.getSigner(provider, config.WALLET_NAME);
-  const balance = await signer.getBalance();
   const walletAddress = await signer.getAddress();
+  const balance = await provider.getBalance(walletAddress);
   const ethBalanceStr = formatBigNumber(balance, 18, 6);
 
   const values = {
@@ -36,7 +35,7 @@ export async function checkLowEthBalance(
   };
   ctx.logger.info(`Check eth balance: ${JSON.stringify(values)}`);
 
-  if (balance.lt(config.MIN_ETH_BALANCE)) {
+  if (balance < config.MIN_ETH_BALANCE) {
     // Report low balance
     ctx.logger.error(
       `Eth balance below the required amount: ${JSON.stringify(values)}`
@@ -63,8 +62,8 @@ async function buildDiscordMessageCheckEth(
   chain: Chain,
   submittedAt: Date,
   watchAddress: string,
-  ethBalance: BigNumber,
-  minBalance: BigNumber
+  ethBalance: bigint,
+  minBalance: bigint
 ): Promise<DiscordMesage> {
   const content = [
     `**TEMPLE LOW ETH ALERT [${chain.name}]**`,

@@ -5,7 +5,7 @@
   "license": "AGPL-3.0-or-later",
   "scripts": {
     "prepare": "yarn typechain",
-    "typechain": "typechain --target=ethers-v5 --out-dir src/typechain abi/*.json",
+    "typechain": "typechain --target=ethers-v6 --out-dir src/typechain abi/*.json",
     "clean": "rm -rf dist",
     "build": "yarn clean && tsc && tsc-alias -p tsconfig.json",
     "dev": "yarn build && source .env && node ./dist/main.js",
@@ -14,12 +14,12 @@
     "local-fork:test:tlc": "(cd ../../protocol && forge script --fork-url http://127.0.0.1:8545 scripts/deploys/localhost/v2/999-localhost-tlc-mainnet-test.s.sol)"
   },
   "dependencies": {
-    "@mountainpath9/overlord": "^0.7.0",
+    "@mountainpath9/overlord": "^0.8.1",
     "date-fns": "^2.30.0",
     "discord.js": "^14.13.0"
   },
   "devDependencies": {
-    "@typechain/ethers-v5": "^10.2.0",
+    "@typechain/ethers-v6": "^0.5.0",
     "@types/jquery": "^3.5.19",
     "tsc-alias": "^1.8.3",
     "typechain": "^8.1.1",

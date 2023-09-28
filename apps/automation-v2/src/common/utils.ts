@@ -1,16 +1,16 @@
-import { BigNumber } from 'ethers';
-import { Provider, TransactionReceipt } from '@ethersproject/abstract-provider';
-import * as ethers from 'ethers';
-import { TypedEventFilter, TypedEvent } from '@/typechain/common';
+import {
+  formatUnits,
+  ContractTransactionReceipt,
+  Provider,
+} from 'ethers';
 import { format } from 'date-fns';
 import { Chain } from '@/chains';
 import { DiscordMesage } from './discord';
 
-export async function getBlockTimestamp(
-  provider: Provider
-): Promise<BigNumber> {
+export async function getBlockTimestamp(provider: Provider): Promise<bigint> {
   const latestBlock = await provider.getBlock('latest');
-  return BigNumber.from(latestBlock.timestamp);
+  if (!latestBlock) throw Error('undefined block');
+  return BigInt(latestBlock.timestamp);
 }
 
 export function bpsToFraction(bps: number): number {
@@ -60,16 +60,13 @@ export function assertNever(x: never): never {
   throw new Error('Unexpected object: ' + x);
 }
 
-// String representation of a BigNumber, which is represented with a certain number of decimals
+// String representation of a bigint, which is represented with a certain number of decimals
 export function formatBigNumber(
-  bn: ethers.BigNumber,
+  bn: bigint,
   dnDecimals: number,
   displayDecimals: number
 ): string {
-  return formatNumber(
-    Number(ethers.utils.formatUnits(bn, dnDecimals)),
-    displayDecimals
-  );
+  return formatNumber(Number(formatUnits(bn, dnDecimals)), displayDecimals);
 }
 
 // Format numbers with a certain number of decimal places, to locale
@@ -86,75 +83,7 @@ export function formatNumber(number: number, displayDecimals: number): string {
     : number.toLocaleString('en-US');
 }
 
-export const one_gwei = ethers.BigNumber.from('1000000000');
-
-/**
- * Apply a filter to an event, and, if it matches, return it's parsed
- * values
- */
-export function matchAndDecodeEvent<TArgsArray extends unknown[], TArgsObject>(
-  contract: ethers.BaseContract,
-  eventFilter: TypedEventFilter<TypedEvent<TArgsArray, TArgsObject>>,
-  event: ethers.Event
-): TArgsObject | undefined {
-  if (matchTopics(eventFilter.topics, event.topics)) {
-    const args = contract.interface.parseLog(event).args;
-    return args as TArgsObject;
-  }
-  return undefined;
-}
-
-/**
- * Finds the events that match the specified address and filter, and
- * returns these parsed and mapped to the appropriate type
- */
-export function matchAndDecodeEvents<TArgsArray extends unknown[], TArgsObject>(
-  events: ethers.Event[],
-  contract: ethers.BaseContract,
-  address: string | undefined,
-  eventFilter: TypedEventFilter<TypedEvent<TArgsArray, TArgsObject>>
-): TypedEvent<TArgsArray, TArgsObject>[] {
-  return events
-    .filter((ev) => !address || address === ev.address)
-    .filter((ev) => matchTopics(eventFilter.topics, ev.topics))
-    .map((ev) => {
-      const args = contract.interface.parseLog(ev).args;
-      const result: TypedEvent<TArgsArray, TArgsObject> = {
-        ...ev,
-        args: args as TArgsArray & TArgsObject,
-      };
-      return result;
-    });
-}
-
-function matchTopics(
-  filter: Array<string | Array<string>> | undefined,
-  value: Array<string>
-): boolean {
-  // Implement the logic for topic filtering as described here:
-  // https://docs.ethers.io/v5/concepts/events/#events--filters
-  if (!filter) {
-    return false;
-  }
-  for (let i = 0; i < filter.length; i++) {
-    const f = filter[i];
-    const v = value[i];
-    if (typeof f == 'string') {
-      if (f !== v) {
-        return false;
-      }
-    } else {
-      if (f.indexOf(v) === -1) {
-        return false;
-      }
-    }
-  }
-  return true;
-}
-
-export function first<T>(values: T[]): T | undefined {
-  return values.length >= 1 ? values[0] : undefined;
-}
+export const one_gwei = 1000000000n;
 
 /**
  * Generate markdown for standard tx receipt fields
@@ -162,19 +91,20 @@ export function first<T>(values: T[]): T | undefined {
 export async function txReceiptMarkdown(
   provider: Provider,
   submittedAt: Date,
-  txReceipt: TransactionReceipt,
+  txReceipt: ContractTransactionReceipt,
   txUrl: string
 ): Promise<string[]> {
-  const effectiveGasPrice = ethers.BigNumber.from(txReceipt.effectiveGasPrice); // In wei
-  const gasUsed = ethers.BigNumber.from(txReceipt.gasUsed);
-  const totalFee = effectiveGasPrice.mul(gasUsed).div(one_gwei);
+  const effectiveGasPrice = txReceipt.gasPrice; // In wei
+  const gasUsed = txReceipt.gasUsed;
+  const totalFee = (effectiveGasPrice * gasUsed) / one_gwei;
   const block = await provider.getBlock(txReceipt.blockNumber);
+  if (!block) throw Error('undefined block');
   const minedAt = new Date(block.timestamp * 1000);
 
   return [
     `_Gas Price (GWEI):_ \`${formatBigNumber(effectiveGasPrice, 9, 4)}\``,
     `_Gas Used:_ \` ${formatBigNumber(gasUsed, 0, 0)}\``,
-    `_Total Fee (MATIC):_ \`${formatBigNumber(totalFee, 9, 8)}\``,
+    `_Total Fee (ETH):_ \`${formatBigNumber(totalFee, 9, 8)}\``,
     `_Mined At (Local):_ \`${format(minedAt.getTime(), 'd MMMM Y HH:mm')}\``,
     `_Mined At Unix:_ \`${minedAt.getTime()}\``,
     `_Submitted At Unix:_ \`${submittedAt.getTime()}\``,
@@ -195,7 +125,7 @@ export interface TempleTaskDiscordMetadata {
   title: string;
   events: TempleTaskDiscordEvent[];
   submittedAt: Date;
-  txReceipt: ethers.ContractReceipt;
+  txReceipt: ContractTransactionReceipt;
   txUrl: string;
 }
 

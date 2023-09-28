@@ -1,4 +1,4 @@
-import { ethers } from 'ethers';
+import { parseEther } from 'ethers';
 import { Chain, SEPOLIA } from '@/chains';
 import { CheckEthBalanceType } from '@/common/eth-auto-checker';
 import { TlcBatchLiquidateConfig } from '@/tlc/batch-liquidate';
@@ -6,7 +6,7 @@ import { TlcBatchLiquidateConfig } from '@/tlc/batch-liquidate';
 const CHECK_ETH_BALANCE_CONFIG: CheckEthBalanceType = (chain: Chain) => ({
   CHAIN: chain,
   WALLET_NAME: 'temple_automation_testnet',
-  MIN_ETH_BALANCE: ethers.utils.parseEther('0.1'),
+  MIN_ETH_BALANCE: parseEther('0.1'),
 });
 
 const TLC_BATCH_LIQUIDATE_CONFIG: TlcBatchLiquidateConfig = {

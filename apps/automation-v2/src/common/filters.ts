@@ -1,46 +1,50 @@
-import { ethers, providers } from 'ethers';
-import { TypedEventFilter, TypedEvent } from '@/typechain/common';
+import { EventLog, BaseContract } from 'ethers';
+import {
+  TypedContractEvent,
+  TypedDeferredTopicFilter,
+} from '@/typechain/common';
 
 /**
  * If a log matches the specified address and filter,
  * return these parsed and mapped to the appropriate type
  */
-export function matchLog<TArgsArray extends unknown[], TArgsObject>(
-  ev: providers.Log,
-  contract: ethers.BaseContract,
-  eventFilter: TypedEventFilter<TypedEvent<TArgsArray, TArgsObject>>
-): (TArgsArray & TArgsObject) | undefined {
-  if (eventFilter.address && eventFilter.address !== ev.address) {
-    return undefined;
+export function matchAndDecodeEvent<
+  TInputTuple extends unknown[],
+  TOutputTuple extends unknown[],
+  TArgsObject
+>(
+  ev: EventLog,
+  contract: BaseContract,
+  eventFilter: TypedDeferredTopicFilter<
+    TypedContractEvent<TInputTuple, TOutputTuple, TArgsObject>
+  >
+): TArgsObject | undefined {
+  const evTopics = ev.topics.map((e) => e);
+  if (matchTopics([eventFilter.fragment.topicHash], evTopics)) {
+    const logs = contract.interface.parseLog({
+      topics: evTopics,
+      data: ev.data,
+    });
+    if (!logs) return undefined;
+    return logs.args as TArgsObject;
   }
-
-  if (!matchTopics(eventFilter.topics, ev.topics)) {
-    return undefined;
-  }
-  const args = contract.interface.parseLog(ev).args;
-  return args as TArgsArray & TArgsObject;
 }
 
 function matchTopics(
-  filter: Array<string | Array<string>> | undefined,
+  filter: Array<null | string | Array<string>> | undefined,
   value: Array<string>
 ): boolean {
   // Implement the logic for topic filtering as described here:
   // https://docs.ethers.io/v5/concepts/events/#events--filters
-  if (!filter) {
-    return false;
-  }
+  if (!filter) return false;
   for (let i = 0; i < filter.length; i++) {
     const f = filter[i];
+    if (f === null) return false;
     const v = value[i];
     if (typeof f == 'string') {
-      if (f !== v) {
-        return false;
-      }
+      if (f !== v) return false;
     } else {
-      if (f.indexOf(v) === -1) {
-        return false;
-      }
+      if (f.indexOf(v) === -1) return false;
     }
   }
   return true;
