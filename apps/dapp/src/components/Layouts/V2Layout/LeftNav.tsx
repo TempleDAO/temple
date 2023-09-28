@@ -122,6 +122,7 @@ const NavLinkCell = styled.div`
   margin-top: 1rem;
   cursor: pointer;
   white-space: nowrap;
+  border-radius: 5px;
   &:hover {
     background-color: ${(props) => props.theme.palette.brand25};
   }
