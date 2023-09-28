@@ -12,7 +12,7 @@ import env from 'constants/env';
 import { getBigNumberFromString, getTokenInfo } from 'components/Vault/utils';
 import { useNotification } from 'providers/NotificationProvider';
 import { fromAtto } from 'utils/bigNumber';
-import { ethers } from 'ethers';
+import { BigNumber, ethers } from 'ethers';
 
 interface IProps {
   isOpen: boolean;
@@ -20,23 +20,35 @@ interface IProps {
 }
 
 const OHM = TICKER_SYMBOL.OHM;
+const ohmToNum = (amount: BigNumber) => Number(ethers.utils.formatUnits(amount, getTokenInfo(OHM).decimals));
 
 export const OtcModal: React.FC<IProps> = ({ isOpen, onClose }) => {
   const { balance, wallet, updateBalance, signer, ensureAllowance } = useWallet();
   const [input, setInput] = useState('');
-  const [output, setOutput] = useState('0');
+  const [output, setOutput] = useState(0);
+  const [availableDai, setAvailableDai] = useState(0);
   const [allowance, setAllowance] = useState(0);
   const { openNotification } = useNotification();
+
+  // Fetch the remaining DAI available for OTC
+  const getAvailableDai = async () => {
+    if (!signer) return;
+    const otcContract = new OtcOffer__factory(signer).attach(env.contracts.otcOffer);
+    const available = await otcContract.userBuyTokenAvailable();
+    setAvailableDai(fromAtto(available));
+  };
 
   // Fetch the allowance for OtcOffer to spend OHM
   const checkAllowance = async () => {
     if (!signer || !wallet) return;
     const ohmContract = new ERC20__factory(signer).attach(env.contracts.olympus);
     const allowance = await ohmContract.allowance(wallet, env.contracts.otcOffer);
-    setAllowance(fromAtto(allowance));
+    setAllowance(ohmToNum(allowance));
   };
+
   useEffect(() => {
     checkAllowance();
+    getAvailableDai();
   }, [signer]);
 
   // Fetch the DAI quote when the input amount changes
@@ -46,9 +58,9 @@ export const OtcModal: React.FC<IProps> = ({ isOpen, onClose }) => {
       const otcContract = new OtcOffer__factory(signer).attach(env.contracts.otcOffer);
       const amount = getBigNumberFromString(input, getTokenInfo(OHM).decimals);
       const quote = await otcContract.quote(amount);
-      setOutput(formatToken(quote, TICKER_SYMBOL.DAI));
+      setOutput(fromAtto(quote));
     };
-    if (input === '') setOutput('0');
+    if (input === '') setOutput(0);
     else getQuote();
   }, [input]);
 
@@ -90,7 +102,7 @@ export const OtcModal: React.FC<IProps> = ({ isOpen, onClose }) => {
         hash: receipt.transactionHash,
       });
       setInput('');
-      setOutput('0');
+      setOutput(0);
       updateBalance();
     } catch (e) {
       console.log(e);
@@ -101,8 +113,9 @@ export const OtcModal: React.FC<IProps> = ({ isOpen, onClose }) => {
     }
   };
 
-  const insufficientBalance = Number(input) > Number(formatToken(balance.OHM, OHM));
+  const insufficientBalance = Number(input) > ohmToNum(balance.OHM);
   const insufficientAllowance = allowance < Number(input);
+  const insufficientDaiAvailable = availableDai < output;
 
   return (
     <>
@@ -123,13 +136,17 @@ export const OtcModal: React.FC<IProps> = ({ isOpen, onClose }) => {
             placeholder="0.00"
             width="100%"
           />
-          <p>You will receive {output} DAI</p>
+          {insufficientDaiAvailable ? (
+            <p>Exceeds {availableDai.toFixed(2)} DAI available for OTC</p>
+          ) : (
+            <p>You will receive {output.toLocaleString()} DAI</p>
+          )}
           <TradeButton
             onClick={() => {
               if (insufficientAllowance) approve();
               else swap();
             }}
-            disabled={!signer || insufficientBalance}
+            disabled={!signer || insufficientBalance || insufficientDaiAvailable}
             style={{ margin: 'auto', whiteSpace: 'nowrap' }}
           >
             {insufficientBalance ? 'Insufficient balance' : insufficientAllowance ? 'Approve allowance' : 'Swap'}
