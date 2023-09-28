@@ -1,6 +1,4 @@
 import {
-  TaskContext,
-  TaskException,
   createTaskRunner,
   fallibleWebhookTask,
   taskSuccess,
@@ -11,9 +9,9 @@ import { batchLiquidate } from '@/tlc/batch-liquidate';
 import { CONFIG as CONFIG_TESTNETS } from '@/config/testnets';
 import { CONFIG as CONFIG_PRODNETS } from '@/config/prodnets';
 
-import { DISCORD_WEBHOOK_URL_KEY, connectDiscord } from '@/common/discord';
 import { MAINNET, SEPOLIA } from '@/chains';
 import { checkLowEthBalance } from '@/common/eth-auto-checker';
+import { discordNotifyTaskException } from '@/common/discord';
 
 async function main() {
   const runner = createTaskRunner();
@@ -52,31 +50,6 @@ async function main() {
   );
 
   runner.main();
-}
-
-async function discordNotifyTaskException(ctx: TaskContext, te: TaskException) {
-  const content = [
-    `**TEMPLE Task Failed**`,
-    `task label: ${te.label}`,
-    `task id: ${te.taskId}`,
-    `task phase: ${te.phase}`,
-  ];
-
-  if (te.exception instanceof Error) {
-    content.push(`exception type: Error`);
-    // We truncate the message here as discord doesn't like large contents
-    const message =
-      te.exception.message.length > 997
-        ? te.exception.message.substring(0, 997) + '...'
-        : te.exception.message;
-    content.push(`exception message: ${message}`);
-  } else {
-    content.push(`exception type: unknown`);
-  }
-
-  const webhookUrl = await ctx.getSecret(DISCORD_WEBHOOK_URL_KEY);
-  const discord = await connectDiscord(webhookUrl, ctx.logger);
-  await discord.postMessage({ content: content.join('\n') });
 }
 
 main();

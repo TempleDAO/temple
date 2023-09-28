@@ -45,7 +45,7 @@ export const MAINNET: Chain = {
 export const SEPOLIA: Chain = {
   id: 11155111,
   name: 'Sepolia',
-  subgraphUrl: 'https://TODO',
+  subgraphUrl: 'https://api.studio.thegraph.com/proxy/520/v2-sepolia/version/latest',
   transactionUrl(txhash: string) {
     return `https://sepolia.etherscan.io/tx/${txhash}`;
   },

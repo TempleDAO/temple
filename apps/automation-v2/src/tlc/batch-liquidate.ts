@@ -43,10 +43,6 @@ export async function batchLiquidate(
     signer
   );
 
-  await tlc.on(tlc.filters.Liquidated(), async (...args) => {
-    await console.log('tlc args liq', args);
-  });
-
   // TODO: debug function, delete before merging
   const checkAccPosition = async (accounts: string[]) => {
     console.log();
@@ -85,8 +81,16 @@ export async function batchLiquidate(
   if (!accountsToCheck) return taskSuccessSilent();
   if (accountsToCheck.length === 0) return taskSuccessSilent();
 
+  // only liquidate the accounts which have exceeded the max ltv
+  const compLiquidityAccs = await tlc.computeLiquidity(accountsToCheck);
+  const accsToLiquidate: Array<string> = [];
+  compLiquidityAccs.map( (acc, i) => {
+    if(acc.hasExceededMaxLtv) accsToLiquidate.push(accountsToCheck[i]);
+  });
   checkAccPosition(accountsToCheck);
-  const tx = await tlc.batchLiquidate(accountsToCheck, {
+  
+  // TODO: Liquidate in batch of max 100 users (e.g. pagination) to avoid tx with too much gas which could fail
+  const tx = await tlc.batchLiquidate(accsToLiquidate, {
     gasLimit: 1_000_000n,
   });
   checkAccPosition(accountsToCheck);
