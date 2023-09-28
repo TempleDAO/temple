@@ -27,7 +27,7 @@ type LegacyLinkCellProps = {
 }
 
 const LegacyLinkCell = styled.div<LegacyLinkCellProps>`
-  margin-left: 40px;
+  padding: 0 40px 0 0;
   cursor: pointer;
   color: ${({ theme }) => theme.palette.brand};
   font-weight: ${({ selected }) => selected ? 'bold' : 'normal'};
@@ -48,4 +48,5 @@ const LegacyHeader = styled.div`
   flex-direction: row;
   justify-content: left;
   margin-top: 10px;
+  margin-left: 40px;
 `;
