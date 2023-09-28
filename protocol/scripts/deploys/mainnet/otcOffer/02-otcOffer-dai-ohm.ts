@@ -19,9 +19,9 @@ async function main() {
     factory.deploy,
     CORE_ADDRESSES.EXTERNAL.OLYMPUS.OHM_TOKEN, // user sell token
     CORE_ADDRESSES.EXTERNAL.MAKER_DAO.DAI_TOKEN, // user buy token
-    CORE_ADDRESSES.CORE.FARMING_MULTISIG, // fundsOwner
-    ethers.utils.parseEther("11.4"), // initial offerPrice -- always 18 dp
-    0, // offerPricingToken = OfferPricingToken.UserBuyToken
+    CORE_ADDRESSES.OTC_OFFER.FUNDS_OWNER, // fundsOwner
+    ethers.utils.parseEther("11.33"), // initial offerPrice -- always 18 dp
+    0, // offerPricingToken == DAI (USER_BUY_TOKEN)
     ethers.utils.parseEther("11"), // minOfferPrice
     ethers.utils.parseEther("12"), // maxOfferPrice
   );
