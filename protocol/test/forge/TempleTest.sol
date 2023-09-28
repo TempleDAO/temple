@@ -45,6 +45,12 @@ abstract contract TempleTest is Test {
         vm.stopPrank();
     }
 
+    function expectOnlyOwner() internal {
+        vm.startPrank(unauthorizedUser);
+        vm.expectRevert("Ownable: caller is not the owner");
+        vm.stopPrank();
+    }
+
     function setExplicitAccess(
         ITempleElevatedAccess theContract, 
         address allowedCaller, 
