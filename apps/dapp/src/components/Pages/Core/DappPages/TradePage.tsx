@@ -1,5 +1,15 @@
+import styled from 'styled-components';
 import { Trade } from '../NewUI/TradeNew';
 
 export const TradePage = () => {
-  return <Trade />;
+  return (
+    <TradeContainer>
+      <Trade />
+    </TradeContainer>
+  );
 };
+
+const TradeContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+`;

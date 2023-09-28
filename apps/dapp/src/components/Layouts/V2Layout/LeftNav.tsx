@@ -23,37 +23,37 @@ const LeftNav = () => {
     >
       <NavContent collapsed={isNavCollapsed}>
         <TempleLogo src={temple_dao_logo} />
-        <NavLinkCell>
-          <NavLink to="/v2dapp/dashboard">
+        <NavLink to="/v2dapp/dashboard">
+          <NavLinkCell>
             <NavIcon src={dashboard} />
             {!isNavCollapsed && <NavLinkText>Dashboard</NavLinkText>}
-          </NavLink>
-        </NavLinkCell>
-        <NavLinkCell>
-          <NavLink to="/v2dapp/trade">
+          </NavLinkCell>
+        </NavLink>
+        <NavLink to="/v2dapp/trade">
+          <NavLinkCell>
             <NavIcon src={currency_exchange} />
             {!isNavCollapsed && <NavLinkText>Trade</NavLinkText>}
-          </NavLink>
-        </NavLinkCell>
-        <NavLinkCell>
-          <NavLink to="/v2dapp/borrow">
+          </NavLinkCell>
+        </NavLink>
+        <NavLink to="/v2dapp/borrow">
+          <NavLinkCell>
             <NavIcon src={payments} />
             {!isNavCollapsed && <NavLinkText>Borrow</NavLinkText>}
-          </NavLink>
-        </NavLinkCell>
-        <NavLinkCell>
-          <NavLink to="/v2dapp/legacy">
+          </NavLinkCell>
+        </NavLink>
+        <NavLink to="/v2dapp/legacy">
+          <NavLinkCell>
             <NavIcon src={restore} />
             {!isNavCollapsed && <NavLinkText>Legacy</NavLinkText>}
-          </NavLink>
-        </NavLinkCell>
+          </NavLinkCell>
+        </NavLink>
         <Separator />
-        <NavLinkCell>
-          <NavLink to="/">
+        <NavLink to="/">
+          <NavLinkCell>
             <NavIcon src={account_balance_wallet} />
             {!isNavCollapsed && <NavLinkText>Connect</NavLinkText>}
-          </NavLink>
-        </NavLinkCell>
+          </NavLinkCell>
+        </NavLink>
       </NavContent>
     </Nav>
   );
@@ -63,17 +63,18 @@ export default LeftNav;
 
 const TempleLogo = styled(Image)`
   width: 40px;
-  margin-bottom: 20px;
+  margin-bottom: 40px;
   align-self: center;
 `;
 
 const NavIcon = styled(Image)`
   vertical-align: middle;
-  display: inline;
+  // display: inline;
 `;
 
 const Separator = styled.hr`
-  margin: 1px 0;
+  margin: 10px 0;
+  position: relative;
   border: 0;
   width: 100%;
   border-top: 1px solid ${(props) => props.theme.palette.brand}};
@@ -85,9 +86,10 @@ type NavProps = {
 
 const Nav = styled.nav<NavProps>`
   background-image: url('${footerTexture}');
-  padding: 1rem;
   transition: width 0.3s ease;
   width: ${(props) => (props.collapsed ? '70px' : '200px')};
+  justify-content: center;
+  display: flex;
 `;
 
 type NavContentProps = {
@@ -98,8 +100,9 @@ const NavContent = styled.div<NavContentProps>`
   display: flex;
   flex-direction: column;
   margin-top: 10px;
-  // justify-content: ${(props) => (props.collapsed ? 'center' : 'left')};
-  // align-items: ${(props) => (props.collapsed ? 'center' : 'left')};
+  width: 90%;
+  padding-left: 8px;
+  padding-right: 8px;
 `;
 
 const NavLinkText = styled.span`
@@ -116,11 +119,12 @@ const NavLinkCell = styled.div`
   display: flex;
   align-items: center;
   padding: 10px;
+  margin-top: 1rem;
   cursor: pointer;
   white-space: nowrap;
   &:hover {
-      background-color: ${(props) => props.theme.palette.brand25};
-    }
+    background-color: ${(props) => props.theme.palette.brand25};
+  }
 `;
 
 const NavLink = styled(Link)`
