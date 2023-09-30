@@ -6,11 +6,11 @@ export interface ContractAddresses {
   CORE: {
     TEMPLE_TOKEN: string,
     CORE_MULTISIG: string,
-    FARMING_MULTISIG: string,
   },
 
   OTC_OFFER: {
     DAI_OHM: string,
+    FUNDS_OWNER: string,
   }
 
   EXTERNAL: {
@@ -27,12 +27,11 @@ const CORE_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
     mainnet: {
         CORE: {
             TEMPLE_TOKEN: '0x470ebf5f030ed85fc1ed4c2d36b9dd02e77cf1b7',
-
             CORE_MULTISIG: '0x4D6175d58C5AceEf30F546C0d5A557efFa53A950',
-            FARMING_MULTISIG: '0xb1BD5762fAf7D6F86f965a3fF324BD81bB746d00',
         },
         OTC_OFFER: {
-            DAI_OHM: '',
+            DAI_OHM: '0x687A4B0Ac18Ed3796D55E6A1d747bD75591a8bac',
+            FUNDS_OWNER: '0x5C8898f8E0F9468D4A677887bC03EE2659321012',
         },
         EXTERNAL: {
             MAKER_DAO: {
