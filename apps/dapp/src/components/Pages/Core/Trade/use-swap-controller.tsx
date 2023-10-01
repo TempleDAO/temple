@@ -67,9 +67,15 @@ export const useSwapController = () => {
 
   // Update quote on input value change or input/output token change
   useEffect(() => {
+    console.debug('initiate quote update');
     const bigValue = getBigNumberFromString(state.inputValue || '0', getTokenInfo(state.inputToken).decimals);
-    if (bigValue.eq(ZERO)) dispatch({ type: 'changeQuoteValue', value: null });
-    else debouncedFetchQuote(bigValue);
+    if (bigValue.eq(ZERO)) {
+      console.debug('input value is zero, setting quote to null');
+      dispatch({ type: 'changeQuoteValue', value: null });
+    } else {
+      console.debug('input value is not zero, fetching quote');
+      debouncedFetchQuote(bigValue);
+    }
   }, [state.inputValue, state.inputToken, state.outputToken]);
 
   // Handles selection of a new value in the select dropdown
@@ -90,6 +96,7 @@ export const useSwapController = () => {
 
   // Handles user input change
   const handleInputChange = async (value: string) => {
+    console.debug('handleInputChange', value);
     dispatch({ type: 'changeInputValue', value });
   };
 

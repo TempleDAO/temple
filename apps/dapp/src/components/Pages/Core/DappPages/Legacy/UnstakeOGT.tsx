@@ -53,7 +53,7 @@ export const UnstakeOGT = () => {
       {/* Display Unlock if they have lockedOGT, then display Unstake */}
       {lockedEntries.length > 0 ? (
         <>
-          <Subtitle>You can claim locked OGTemple from the Opening Ceremony:</Subtitle>
+          <TopSubtitle>You can claim locked OGTemple from the Opening Ceremony:</TopSubtitle>
           <ClaimButton
             isSmall
             onClick={() => handleUnlockOGT()}
@@ -109,10 +109,17 @@ const ClaimButton = styled(Button)`
   align-self: left;
 `;
 
+const TopSubtitle = styled.div`
+  color: ${({ theme }) => theme.palette.brand};
+  letter-spacing: 0.05rem;
+  line-height: 1.25rem;
+`;
+
 const Subtitle = styled.div`
   color: ${({ theme }) => theme.palette.brand};
   letter-spacing: 0.05rem;
   line-height: 1.25rem;
+  margin-top: 20px;
 `;
 
 const Title = styled.div`
