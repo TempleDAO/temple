@@ -70,6 +70,7 @@ export const ClaimFromVaults = () => {
 
   // Return component for all subvault balances
   const getVaultBalances = (vaults: Vault[] | undefined) => {
+    console.debug('getVaultBalances::vaults', vaults);
     if (!vaults) return [];
     return vaults.map((vault) => {
       const vaultGroupBalances = balances[vaultGroups[0].id];
