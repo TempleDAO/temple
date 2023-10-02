@@ -13,6 +13,7 @@ const TLC_BATCH_LIQUIDATE_CONFIG: TlcBatchLiquidateConfig = {
   CHAIN: MAINNET,
   WALLET_NAME: 'temple_automation',
   TLC_ADDRESS: '0xcbc0A8d5C7352Fe3625614ea343019e6d6b89031',
+  ACC_LIQ_MAX_CHUNK_NO: 100,
 };
 
 export const CONFIG = {

@@ -22,6 +22,7 @@ export interface TlcBatchLiquidateConfig {
   CHAIN: Chain;
   WALLET_NAME: string;
   TLC_ADDRESS: string;
+  ACC_LIQ_MAX_CHUNK_NO: number;
 }
 
 export async function batchLiquidate(
@@ -42,6 +43,20 @@ export async function batchLiquidate(
     await config.TLC_ADDRESS,
     signer
   );
+
+  const chunkify = function(itr: string[], size: number) {
+    const chunk: string[][] = [];
+    let innerChunk: string[] = [];
+    for (const v of itr) {
+      innerChunk.push(v);
+      if (innerChunk.length === size) {
+        chunk.push(innerChunk);
+        innerChunk = [];
+      }
+    }
+    if (chunk.length) chunk.push(innerChunk);
+    return chunk;
+  };
 
   // TODO: debug function, delete before merging
   const checkAccPosition = async (accounts: string[]) => {
@@ -88,92 +103,98 @@ export async function batchLiquidate(
     if(acc.hasExceededMaxLtv) accsToLiquidate.push(accountsToCheck[i]);
   });
   checkAccPosition(accountsToCheck);
+
+  // chunk compLiquidityAccs to a max number of requests per batchLiquidate
+  // e.g. try to liquidate 1000 accounts at once could use too much gas and fail
+  const accListChunks = chunkify(accsToLiquidate, config.ACC_LIQ_MAX_CHUNK_NO);
+  accListChunks.forEach(async accBatch => {
+    
+    const tx = await tlc.batchLiquidate(accBatch, {
+      gasLimit: 1_000_000n,
+    });
+    checkAccPosition(accountsToCheck);
   
-  // TODO: Liquidate in batch of max 100 users (e.g. pagination) to avoid tx with too much gas which could fail
-  const tx = await tlc.batchLiquidate(accsToLiquidate, {
-    gasLimit: 1_000_000n,
-  });
-  checkAccPosition(accountsToCheck);
-
-  const txReceipt = await tx.wait();
-  if (!txReceipt) return taskSuccessSilent();
-
-  // Grab the events
-  const events: TempleTaskDiscordEvent[] = [];
-
-  await txReceipt.logs.forEach((log) => {
-    if (log instanceof EventLog) {
-      console.log('event logs', {
-        fragment: log.fragment,
-        decoded: tlc.interface.decodeEventLog(
-          log.fragment,
-          log.data,
-          log.topics
-        ),
-      });
-      const interesRateUpdateEv = matchAndDecodeEvent(log, tlc, tlc.filters.InterestRateUpdate());
-      if(interesRateUpdateEv){
-        console.log('newInterestRate: ', interesRateUpdateEv.newInterestRate);
-      }
-      
-      const liquidatedEv = matchAndDecodeEvent(log, tlc, tlc.filters.Liquidated());
-      
-      // check if this is the liquidated event
-      if (liquidatedEv) {
-        events.push({
-          what: 'Liquidated',
-          details: [
-            `account = \`${liquidatedEv.account}\``,
-            `collateralValue = \`${formatBigNumber(
-              liquidatedEv.collateralValue,
-              18,
-              4
-            )}\``,
-            `collateralSeized = \`${formatBigNumber(
-              liquidatedEv.collateralSeized,
-              18,
-              4
-            )}\``,
-            `daiDebtWiped = \`${formatBigNumber(
-              liquidatedEv.daiDebtWiped,
-              18,
-              4
-            )}\``,
-          ],
+    const txReceipt = await tx.wait();
+    if (!txReceipt) return taskSuccessSilent();
+  
+    // Grab the events
+    const events: TempleTaskDiscordEvent[] = [];
+  
+    await txReceipt.logs.forEach((log) => {
+      if (log instanceof EventLog) {
+        console.log('event logs', {
+          fragment: log.fragment,
+          decoded: tlc.interface.decodeEventLog(
+            log.fragment,
+            log.data,
+            log.topics
+          ),
+        });
+        const interesRateUpdateEv = matchAndDecodeEvent(log, tlc, tlc.filters.InterestRateUpdate());
+        if(interesRateUpdateEv){
+          console.log('newInterestRate: ', interesRateUpdateEv.newInterestRate);
+        }
+        
+        const liquidatedEv = matchAndDecodeEvent(log, tlc, tlc.filters.Liquidated());
+        
+        // check if this is the liquidated event
+        if (liquidatedEv) {
+          events.push({
+            what: 'Liquidated',
+            details: [
+              `account = \`${liquidatedEv.account}\``,
+              `collateralValue = \`${formatBigNumber(
+                liquidatedEv.collateralValue,
+                18,
+                4
+              )}\``,
+              `collateralSeized = \`${formatBigNumber(
+                liquidatedEv.collateralSeized,
+                18,
+                4
+              )}\``,
+              `daiDebtWiped = \`${formatBigNumber(
+                liquidatedEv.daiDebtWiped,
+                18,
+                4
+              )}\``,
+            ],
+          });
+        }
+      } else {
+        // DEBUG other logs, TODO: delete
+        console.log('logs', {
+          log,
+          decoded: tlc.interface.parseLog({
+            topics: log.topics.map((t) => t),
+            data: log.data,
+          }),
         });
       }
-    } else {
-      console.log('logs', {
-        log,
-        decoded: tlc.interface.parseLog({
-          topics: log.topics.map((t) => t),
-          data: log.data,
-        }),
-      });
-    }
-  });
-
-  // if no liquidation happened, success silently
-  if (events.length === 0) return taskSuccessSilent();
-
-  const txUrl = config.CHAIN.transactionUrl(txReceipt.hash);
-  const metadata: TempleTaskDiscordMetadata = {
-    title: 'TLC Batch Liquidate',
-    events,
-    submittedAt,
-    txReceipt,
-    txUrl,
-  };
-
-  // Send notification
-  const message = await buildTempleTasksDiscordMessage(
-    provider,
-    config.CHAIN,
-    metadata
-  );
-  const webhookUrl = await ctx.getSecret(DISCORD_WEBHOOK_URL_KEY);
-  const discord = await connectDiscord(webhookUrl, ctx.logger);
-  await discord.postMessage(message);
+    });
+  
+    // if no liquidation happened, success silently
+    if (events.length === 0) return taskSuccessSilent();
+  
+    const txUrl = config.CHAIN.transactionUrl(txReceipt.hash);
+    const metadata: TempleTaskDiscordMetadata = {
+      title: 'TLC Batch Liquidate',
+      events,
+      submittedAt,
+      txReceipt,
+      txUrl,
+    };
+  
+    // Send notification
+    const message = await buildTempleTasksDiscordMessage(
+      provider,
+      config.CHAIN,
+      metadata
+    );
+    const webhookUrl = await ctx.getSecret(DISCORD_WEBHOOK_URL_KEY);
+    const discord = await connectDiscord(webhookUrl, ctx.logger);
+    await discord.postMessage(message);
+  });  
 
   return taskSuccess();
 }
