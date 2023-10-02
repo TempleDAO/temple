@@ -17,12 +17,14 @@ import {
 import { subgraphRequest } from '@/subgraph/subgraph-request';
 import { GetUserResponse } from '@/subgraph/types';
 import { matchAndDecodeEvent } from '@/common/filters';
+import { buildDiscordMessageCheckEth } from '@/common/eth-auto-checker';
 
 export interface TlcBatchLiquidateConfig {
   CHAIN: Chain;
   WALLET_NAME: string;
   TLC_ADDRESS: string;
   ACC_LIQ_MAX_CHUNK_NO: number;
+  MIN_ETH_BALANCE: bigint;
 }
 
 export async function batchLiquidate(
@@ -31,13 +33,9 @@ export async function batchLiquidate(
 ): Promise<TaskResult> {
   const provider = await ctx.getProvider(config.CHAIN.id);
   const signer = await ctx.getSigner(provider, config.WALLET_NAME);
-  const signerAddress = await signer.getAddress();
-  ctx.logger.debug(`provider network: ${(await provider.getNetwork()).name}`);
-  ctx.logger.debug(`signer address: ${signerAddress}`);
-  ctx.logger.debug(
-    `signer balance: ${await provider.getBalance(signerAddress)}`
-  );
-  ctx.logger.debug(`config.TLC_ADDRESS: ${await config.TLC_ADDRESS}`);
+  const walletAddress = await signer.getAddress();
+  const webhookUrl = await ctx.getSecret(DISCORD_WEBHOOK_URL_KEY);
+  const discord = await connectDiscord(webhookUrl, ctx.logger);
 
   const tlc: ITempleLineOfCredit = ITempleLineOfCredit__factory.connect(
     await config.TLC_ADDRESS,
@@ -191,9 +189,21 @@ export async function batchLiquidate(
       config.CHAIN,
       metadata
     );
-    const webhookUrl = await ctx.getSecret(DISCORD_WEBHOOK_URL_KEY);
-    const discord = await connectDiscord(webhookUrl, ctx.logger);
     await discord.postMessage(message);
+
+    // Send discord alert if signer wallet doesn't have sufficient eth balance
+    const ethBalance = await provider.getBalance(walletAddress);
+    if (ethBalance < config.MIN_ETH_BALANCE) {
+      const ethBalanceMessage = await buildDiscordMessageCheckEth(
+        config.CHAIN,
+        submittedAt,
+        walletAddress,
+        ethBalance,
+        config.MIN_ETH_BALANCE
+      );
+
+      await discord.postMessage(ethBalanceMessage);
+    }
   });  
 
   return taskSuccess();

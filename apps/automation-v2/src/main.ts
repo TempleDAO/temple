@@ -1,7 +1,7 @@
 import {
   createTaskRunner,
+  falliblePeriodicTask,
   fallibleWebhookTask,
-  taskSuccess,
 } from '@mountainpath9/overlord';
 
 import { batchLiquidate } from '@/tlc/batch-liquidate';
@@ -25,27 +25,19 @@ async function main() {
   runner.addPeriodicTask({
     id: 'tlc-batch-liquidate',
     cronSchedule: '*/10 * * * *',
-    action: async (ctx) => {
-      const res = await batchLiquidate(ctx, config.tlcBatchLiquidate);
-      await checkLowEthBalance(
-        ctx,
-        config.checkEthBalance(isProdnet ? MAINNET : SEPOLIA)
-      );
-      return res;
-    },
+    action: async (ctx) => await batchLiquidate(ctx, config.tlcBatchLiquidate),
   });
+
+  runner.addPeriodicTask(falliblePeriodicTask({ 
+    id: 'check-eth-balance-dsr',
+    cronSchedule: '30 * * * *',
+    action: async (ctx) => await checkLowEthBalance(ctx, config.checkEthBalance(isProdnet ? MAINNET : SEPOLIA)),
+  }));
 
   runner.addWebhookTask(
     fallibleWebhookTask({
       id: 'tlc-batch-liquidate-wh',
-      action: async (ctx) => {
-        await batchLiquidate(ctx, config.tlcBatchLiquidate);
-        await checkLowEthBalance(
-          ctx,
-          config.checkEthBalance(isProdnet ? MAINNET : SEPOLIA)
-        );
-        return taskSuccess();
-      },
+      action: async (ctx) => await batchLiquidate(ctx, config.tlcBatchLiquidate),
     })
   );
 

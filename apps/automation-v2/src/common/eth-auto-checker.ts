@@ -58,7 +58,7 @@ export async function checkLowEthBalance(
   return taskSuccessSilent();
 }
 
-async function buildDiscordMessageCheckEth(
+export async function buildDiscordMessageCheckEth(
   chain: Chain,
   submittedAt: Date,
   watchAddress: string,
