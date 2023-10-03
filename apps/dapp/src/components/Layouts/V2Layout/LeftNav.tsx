@@ -58,7 +58,9 @@ const LeftNav = () => {
       onMouseLeave={() => setNavCollapsed(true)}
     >
       <NavContent collapsed={isNavCollapsed}>
-        <TempleLogo src={temple_dao_logo} />
+        <Link to="/">
+          <TempleLogo src={temple_dao_logo} />
+        </Link>
         <NavLink to="/v2dapp/dashboard">
           <NavLinkCell>
             {/* // TODO: Icon can be split into its own component */}
@@ -165,6 +167,8 @@ const UserAddress = styled.a`
 const TempleLogo = styled(Image)`
   width: 40px;
   margin-bottom: 40px;
+  margin-left: 5px;
+  margin-top: 5px;
   align-self: center;
 `;
 
