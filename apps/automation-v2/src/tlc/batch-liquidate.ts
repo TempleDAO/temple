@@ -42,7 +42,7 @@ export async function batchLiquidate(
     signer
   );
 
-  const chunkify = function(itr: string[], size: number) {
+  const chunkify = function (itr: string[], size: number) {
     const chunk: string[][] = [];
     let innerChunk: string[] = [];
     for (const v of itr) {
@@ -52,35 +52,25 @@ export async function batchLiquidate(
         innerChunk = [];
       }
     }
-    if (chunk.length) chunk.push(innerChunk);
+    if (innerChunk.length) chunk.push(innerChunk);
     return chunk;
   };
 
   // TODO: debug function, delete before merging
   const checkAccPosition = async (accounts: string[]) => {
-    console.log();
     accounts.forEach(async (a) => {
-      console.log('**Acc to check %s **', a);
+      ctx.logger.info(`**Acc to check ${a} **`);
       const position = await tlc.accountPosition(a);
-      console.log(
-        '\t-collateral:       ',
-        formatUnits(position.collateral, 18)
-      );
-      console.log(
-        '\t-currentDebt:      ',
-        formatUnits(position.currentDebt, 18)
-      );
-      console.log('\t-maxBorrow:        ', formatUnits(position.maxBorrow, 18));
-      console.log(
-        '\t-healthFactor:     ',
-        formatUnits(position.healthFactor, 18)
-      );
-      console.log(
-        '\t-loanToValueRatio: ',
-        formatUnits(position.loanToValueRatio, 18)
-      );
+      
+      ctx.logger.info(`Position: ${JSON.stringify({
+        collateral: formatUnits(position.collateral, 18),
+        currentDebt: formatUnits(position.currentDebt, 18),
+        maxBorrow: formatUnits(position.maxBorrow, 18),
+        healthFactor: formatUnits(position.healthFactor, 18),
+        loanToValueRatio: formatUnits(position.loanToValueRatio, 18),
+      })}`)
+
     });
-    console.log();
   };
 
   const submittedAt = new Date();
@@ -88,53 +78,59 @@ export async function batchLiquidate(
   const url = getChainById(config.CHAIN.id).subgraphUrl;
   const res = await getTlcUsers(url);
   const tlcUsers = (await res()).data?.users;
-
-  const accountsToCheck = tlcUsers?.flatMap((u) => u.id);
-  // if undefiner or zero users returned from subgraph, success silently
-  if (!accountsToCheck) return taskSuccessSilent();
+  // if undefined or zero users returned from subgraph, success silently
+  if (!tlcUsers || tlcUsers.length === 0) return taskSuccessSilent();
+  
+  const accountsToCheck = tlcUsers.flatMap((u) => u.id);
   if (accountsToCheck.length === 0) return taskSuccessSilent();
 
   // only liquidate the accounts which have exceeded the max ltv
   const compLiquidityAccs = await tlc.computeLiquidity(accountsToCheck);
   const accsToLiquidate: Array<string> = [];
-  compLiquidityAccs.map( (acc, i) => {
-    if(acc.hasExceededMaxLtv) accsToLiquidate.push(accountsToCheck[i]);
+  compLiquidityAccs.map((acc, i) => {
+    if (acc.hasExceededMaxLtv) accsToLiquidate.push(accountsToCheck[i]);
   });
-  checkAccPosition(accountsToCheck);
+
+  if (accsToLiquidate.length === 0) return taskSuccessSilent();
 
   // chunk compLiquidityAccs to a max number of requests per batchLiquidate
   // e.g. try to liquidate 1000 accounts at once could use too much gas and fail
   const accListChunks = chunkify(accsToLiquidate, config.ACC_LIQ_MAX_CHUNK_NO);
-  accListChunks.forEach(async accBatch => {
-    
+  accListChunks.forEach(async (accBatch) => {
+    await checkAccPosition(accBatch); // check accs position before liquidation
     const tx = await tlc.batchLiquidate(accBatch, {
       gasLimit: 1_000_000n,
     });
-    checkAccPosition(accountsToCheck);
-  
+    await checkAccPosition(accBatch); // check accs position after liquidation
+
     const txReceipt = await tx.wait();
     if (!txReceipt) return taskSuccessSilent();
-  
+
     // Grab the events
     const events: TempleTaskDiscordEvent[] = [];
-  
+
     await txReceipt.logs.forEach((log) => {
       if (log instanceof EventLog) {
-        console.log('event logs', {
-          fragment: log.fragment,
-          decoded: tlc.interface.decodeEventLog(
-            log.fragment,
-            log.data,
-            log.topics
-          ),
-        });
-        const interesRateUpdateEv = matchAndDecodeEvent(log, tlc, tlc.filters.InterestRateUpdate());
-        if(interesRateUpdateEv){
-          console.log('newInterestRate: ', interesRateUpdateEv.newInterestRate);
+        // TODO: delete following interesRateUpdateEv logs once bot is working fine on sepolia
+        ctx.logger.info(`event log fragment name: ${log.fragment.name}`);
+        // test InterestRateUpdate filter is working
+        const interesRateUpdateEv = matchAndDecodeEvent(
+          log,
+          tlc,
+          tlc.filters.InterestRateUpdate()
+        );
+        if (interesRateUpdateEv) {
+          ctx.logger.info(
+            `newInterestRate: ${interesRateUpdateEv.newInterestRate}`
+          );
         }
-        
-        const liquidatedEv = matchAndDecodeEvent(log, tlc, tlc.filters.Liquidated());
-        
+
+        const liquidatedEv = matchAndDecodeEvent(
+          log,
+          tlc,
+          tlc.filters.Liquidated()
+        );
+
         // check if this is the liquidated event
         if (liquidatedEv) {
           events.push({
@@ -159,21 +155,12 @@ export async function batchLiquidate(
             ],
           });
         }
-      } else {
-        // DEBUG other logs, TODO: delete
-        console.log('logs', {
-          log,
-          decoded: tlc.interface.parseLog({
-            topics: log.topics.map((t) => t),
-            data: log.data,
-          }),
-        });
       }
     });
-  
+
     // if no liquidation happened, success silently
     if (events.length === 0) return taskSuccessSilent();
-  
+
     const txUrl = config.CHAIN.transactionUrl(txReceipt.hash);
     const metadata: TempleTaskDiscordMetadata = {
       title: 'TLC Batch Liquidate',
@@ -182,7 +169,7 @@ export async function batchLiquidate(
       txReceipt,
       txUrl,
     };
-  
+
     // Send notification
     const message = await buildTempleTasksDiscordMessage(
       provider,
@@ -204,7 +191,7 @@ export async function batchLiquidate(
 
       await discord.postMessage(ethBalanceMessage);
     }
-  });  
+  });
 
   return taskSuccess();
 }

@@ -11,6 +11,7 @@
     "dev": "yarn build && source .env && node ./dist/main.js",
     "build:image": "docker build --tag temple-tasks .",
     "anvil:mainnet-fork": "anvil -f https://eth-mainnet.g.alchemy.com/v2/LjzU7NEw1jfJZSDBP10rGeg53cSlzscP --config-out anvil.json --fork-block-number 18189826",
+    "anvil:sepolia-fork": "anvil -f https://eth-sepolia.g.alchemy.com/v2/sRSoYgR6rmun89HW6_0Ec09w70ztNvsN --config-out anvil.json --fork-block-number 4412324",
     "local-fork:test:tlc": "(cd ../../protocol && forge script --fork-url http://127.0.0.1:8545 scripts/deploys/localhost/v2/999-localhost-tlc-mainnet-test.s.sol)"
   },
   "dependencies": {
