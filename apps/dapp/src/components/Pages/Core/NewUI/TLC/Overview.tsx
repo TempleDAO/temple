@@ -69,7 +69,7 @@ export const Overview: React.FC<IProps> = ({ accountPosition, state, tlcInfo, se
           <p>Your LTV</p>
           <BrandParagraph>
             {accountPosition?.collateral.gt(0)
-              ? ((fromAtto(accountPosition.currentDebt) / fromAtto(accountPosition.collateral)) * 100).toFixed(2)
+              ? (fromAtto(accountPosition.loanToValueRatio)*100).toFixed(2)
               : 0}
             %
           </BrandParagraph>

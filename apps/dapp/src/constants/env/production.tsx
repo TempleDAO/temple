@@ -21,6 +21,7 @@ const env: Environment = {
     lockedOgTemple: '0x879B843868dA248B1F2F53b4f8CC6e17e7E8b949',
     ogTemple: '0x654590F810f01B51dc7B86915D4632977e49EA33',
     olympus: '0x64aa3364f17a4d01c6f1751fd97c2bd3d7e7f1d5',
+    otcOffer: '0x687A4B0Ac18Ed3796D55E6A1d747bD75591a8bac',
     // Preserve the order of this array: array index == epoch number. Append only.
     teamPayments: [
       '0xF7b10A0C780a3906D9A9F3d706EcD2624B6ED84e',
@@ -43,12 +44,14 @@ const env: Environment = {
       '0x71cA8E6da254582cDF1fA105c26bfa806913CE70',
       '0x1931c748E8824205FacEB2AC069badacEd0AF4fc',
       '0x215B8c5225fb43864ECfc15B7ac97fc78AE8f621',
+      '0xD50e540F9D4Da820eecA7428b5b5cECd2227727a',
     ],
     temple: '0x470ebf5f030ed85fc1ed4c2d36b9dd02e77cf1b7',
     templeStaking: '0x4D14b24EDb751221B3Ff08BBB8bd91D4b1c8bc77',
     templeV2FraxPair: '0x6021444f1706f15465bEe85463BCc7d7cC17Fc03',
     templeV2Router: '0x98257C876ACe5009e7B97843F8c71b3AE795c71E',
     tlc: '0xcbc0A8d5C7352Fe3625614ea343019e6d6b89031',
+    treasuryReservesVault: '0x4ea0Be853219be8C9cE27200Bdeee36881612FF2',
     swap1InchRouter: '0x1111111254EEB25477B68fb85Ed929f73A960582',
     treasuryIv: '0xae8a796bd9437Bd266664e8e9B8428B25A7D2477',
     vaultOps: '0x65fE8BaBF7DA367b2B45cBD748F0490713f84828',
