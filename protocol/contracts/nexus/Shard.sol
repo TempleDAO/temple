@@ -14,6 +14,10 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
     /// @notice Relic NFT contract
     IRelic public relic;
     address private constant ZERO_ADDRESS = 0x0000000000000000000000000000000000000000;
+    /// @notice current token index
+    uint256 private _currentIndex;
+    /// @notice current recipe index
+    uint256 private _currentRecipeIndex;
 
     /// @notice all 3 mappings below not combined into a struct for reasons allowedShardIds is read often than the rest. 
     /// also for easy public reads(read functions). avoids cycle error
@@ -22,7 +26,7 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
     mapping(address => mapping(uint256 => uint256)) public allowedShardCaps;
     mapping(address => mapping(uint256 => uint256)) public mintBalances;
     /// @notice keep track of all shards
-    EnumerableSet.UintSet private shards;
+    // EnumerableSet.UintSet private shards;
 
     /// @notice shard ids to uris
     mapping(uint256 => string) private shardUris;
@@ -32,6 +36,7 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
     mapping(uint8 => EnumerableSet.UintSet) private enclaveShards;
     /// @notice track total mints for each shard
     mapping(uint256 => uint256) public totalShardMints;
+
 
     /// @notice Enclave types
     enum Enclave {
@@ -74,7 +79,6 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
     error InvalidParamLength();
     error InvalidAccess(address caller);
     error ERC1155MissingApprovalForAll(address msgSender, address account);
-    error AccountBlacklisted(address account);
 
 
     constructor(
@@ -84,6 +88,32 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
         string memory _uri
     ) ERC1155(_uri) TempleElevatedAccess(_initialRescuer, _initialExecutor) {
         relic = IRelic(_relic);
+        _currentIndex = _currentRecipeIndex = _startTokenId();
+    }
+
+    function setNewMinterShard(address minter) external onlyElevatedAccess returns (uint256) {
+        uint256 shardId = _nextTokenId();
+        _currentIndex += 1;
+        _setMinterAllowedShardId(minter, shardId, true);
+        return shardId;
+    }
+
+    function setNewMinterShards(
+        address[] calldata minters
+    ) external onlyElevatedAccess returns (uint256[] memory shards){
+        uint256 _length = minters.length;
+        if (_length == 0) { revert InvalidParamLength(); }
+        shards = new uint256[](_length);
+        uint256 shardId;
+        for (uint i; i < _length;) {
+            shardId = _nextTokenId();
+            _currentIndex += 1;
+            _setMinterAllowedShardId(minters[i], shardId, true);
+            shards[i] = shardId;
+            unchecked {
+                ++i;
+            }
+        }
     }
 
     /*
@@ -121,57 +151,25 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
         uint256 shardId,
         bool allow
     ) external onlyElevatedAccess {
+        _setMinterAllowedShardId(minter, shardId, allow);
+    }
+
+    function _setMinterAllowedShardId(
+        address minter,
+        uint256 shardId,
+        bool allow
+    ) internal {
         if (minter == ZERO_ADDRESS) { revert ZeroAddress(); }
+        if (shardId >= _nextTokenId()) { revert CommonEventsAndErrors.InvalidParam(); }
         if (allow) {
-            /// @dev check shard ID exists before add
-            if (!shards.contains(shardId)) { revert CommonEventsAndErrors.InvalidParam(); }
             allowedShardIds[minter].add(shardId);
         } else {
             allowedShardIds[minter].remove(shardId);
         }
-        emit MinterAllowedShardIdSet(minter, shardId, allow);
+        emit MinterAllowedShardIdSet(minter, shardId, allow); 
     }
 
     /*
-     * @notice Set regular shard that templars can mint for themselves
-     * possible that partners are allowed to mint regular shards too
-     * @param shardId Shard ID
-     * @param allow If shard should be added or removed
-     */
-    function setShardId(uint256 shardId, bool allow) external onlyElevatedAccess {
-        if (allow) {
-            shards.add(shardId);
-        } else {
-            shards.remove(shardId);
-        }
-        emit ShardIdSet(shardId, allow);
-    }
-
-    /* @notice Set Shard Ids
-     * @param shardIds Shard Ids
-     * @param allows Boolean allowances
-     */
-    function setShardIds(uint256[] calldata shardIds, bool[] calldata allows) external onlyElevatedAccess {
-        uint256 _length = shardIds.length;
-        if (_length != allows.length) {  revert InvalidParamLength(); }
-        bool allow;
-        uint256 shardId;
-        for (uint i; i < _length;) {
-            shardId = shardIds[i];
-            allow = allows[i];
-            if (allow) {
-                shards.add(shardId);
-            } else {
-                shards.remove(shardId);
-            }
-            emit ShardIdSet(shardId, allow);
-            unchecked {
-                ++i;
-            }
-        }
-    }
-
-     /*
      * @notice Set multiple shard IDs that minter can mint 
      * @param minter Address of the minter
      * @param shardIds Shard IDs
@@ -190,7 +188,7 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
         for (uint i; i < _length;) {
             allowed = flags[i];
             shardId = shardIds[i];
-            if (!shards.contains(shardId)) {  revert CannotMint(shardId); }
+            if (shardId >= _nextTokenId()) { revert CannotMint(shardId); }
             EnumerableSet.UintSet storage minterShardIds = allowedShardIds[minter];
             if (allowed) {
                 minterShardIds.add(shardId);
@@ -237,13 +235,15 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
      * @param recipeId The recipe ID
      * @param recipe The recipe
      */
-    function setRecipe(uint256 recipeId, Recipe calldata recipe) external onlyElevatedAccess {
+    function setRecipe(Recipe calldata recipe) external onlyElevatedAccess {
         uint256 _inputLength = recipe.inputShardIds.length;
         if (_inputLength != recipe.inputShardAmounts.length) { revert CommonEventsAndErrors.InvalidParam(); }
         uint256 _outputLength = recipe.outputShardAmounts.length;
         if (_outputLength != recipe.outputShardIds.length) { revert CommonEventsAndErrors.InvalidParam(); }
 
+        uint256 recipeId = _nextRecipeId();
         recipes[recipeId] = recipe;
+        _currentRecipeIndex += 1;
         emit RecipeSet(recipeId, recipe);
     }
 
@@ -252,6 +252,7 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
      * @param recipeId The recipe ID
      */
     function deleteRecipe(uint256 recipeId) external onlyElevatedAccess {
+        // if (recipeId >= _nextRecipeId())
         if (recipes[recipeId].inputShardIds.length == 0) { revert CommonEventsAndErrors.InvalidParam(); }
         delete recipes[recipeId];
         emit RecipeDeleted(recipeId);
@@ -307,8 +308,7 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
         uint256 shardId,
         uint256 amount
     ) external isNotBlacklisted(to) {
-        if (!allowedShardIds[msg.sender].contains(shardId) 
-            || !shards.contains(shardId)) { revert CannotMint(shardId); }
+        if (!allowedShardIds[msg.sender].contains(shardId)) { revert CannotMint(shardId); }
         /// @dev fail early
         if (amount == 0) { revert CommonEventsAndErrors.InvalidParam(); }
         // default cap 0 value means uncapped
@@ -346,7 +346,7 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
         uint256 newBalance;
         for (uint i; i < _length;) {
             shardId = shardIds[i];
-            if (!shards.contains(shardId) || !minterShards.contains(shardId)) { revert CannotMint(shardId); }
+            if (!minterShards.contains(shardId)) { revert CannotMint(shardId); }
             amount = amounts[i];
             cap = minterShardCaps[shardId];
             newBalance =  mintBalances[msg.sender][shardId] + amount;
@@ -390,12 +390,8 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
         return allowedShardIds[minter].values();
     }
 
-    /*
-     * @notice Get all shard IDs
-     * @return Shard IDs array
-     */
-    function getAllShardIds() external view returns (uint256[] memory) {
-        return shards.values();
+    function nextTokenId() external view returns (uint256) {
+        return _nextTokenId();
     }
 
     /*
@@ -404,7 +400,7 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
      * @return If ID is a valid shard
      */
     function isShardId(uint256 id) external view returns (bool) {
-        return shards.contains(id);
+        return _startTokenId() <= id && id < _nextTokenId();
     }
 
     /*
@@ -414,6 +410,10 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
      */
     function getRecipeInfo(uint256 recipeId) external view returns (Recipe memory info) {
         info = recipes[recipeId];
+    }
+
+    function nextRecipeId() external view returns (uint256) {
+        return _currentRecipeIndex;
     }
 
     /*
@@ -459,13 +459,20 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
         }
     }
 
-    modifier isNotBlacklisted(address to) {
-        if (relic.blacklistedAccounts(to)) { revert AccountBlacklisted(to); }
-        _;
+    function _startTokenId() internal pure returns (uint256) {
+        return 1;
     }
 
-    modifier onlyRelic() {
-        if (msg.sender != address(relic)) { revert InvalidAccess(msg.sender); }
+    function _nextTokenId() internal view returns (uint256) {
+        return _currentIndex;
+    }
+
+    function _nextRecipeId() internal view returns (uint256) {
+        return _currentRecipeIndex;
+    }
+
+    modifier isNotBlacklisted(address to) {
+        if (relic.blacklistedAccounts(to)) { revert CommonEventsAndErrors.AccountBlacklisted(to); }
         _;
     }
 }

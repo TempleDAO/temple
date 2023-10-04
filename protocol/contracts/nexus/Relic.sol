@@ -22,8 +22,8 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
 
     IShard public shard;
 
-    uint256 private constant RARITIES_COUNT = 0x05;
-    uint256 private constant ENCLAVES_COUNT = 0x05;
+    // uint256 private constant RARITIES_COUNT = 0x05;
+    // uint256 private constant ENCLAVES_COUNT = 0x05;
     address private constant ZERO_ADDRESS = 0x0000000000000000000000000000000000000000;
     uint256 private constant PER_MINT_QUANTITY = 0x01;
     bytes private constant ZERO_BYTES = "";
@@ -76,7 +76,7 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
     event ShardSet(address shard);
     event RelicMinted(address to, uint256 nextTokenId, uint256 quantity);
     event XPControllerSet(address controller, bool flag);
-    event RelicXPSet(uint256 relicId, uint256 oldXp, uint256 xp);
+    event RelicXPSet(uint256 relicId, uint256 xp);
     event ShardEquipped(address caller, uint256 relicId, uint256 shardId, uint256 amount);
     event ShardsEquipped(address caller, uint256 relicId, uint256[] shardIds, uint256[] amounts);
     event ShardUnequipped(address caller, uint256 relicId, uint256 shardId, uint256 amount);
@@ -90,7 +90,6 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
     error InvalidAccess(address account);
     error InsufficientShardBalance(uint256 actualBalance, uint256 requestedBalance);
     error ZeroAddress();
-    error AccountBlacklisted(address account);
     error InvalidOwner(address invalidOwner);
     error NotEnoughShardBalance(uint256 equippedBalance, uint256 amount);
 
@@ -128,7 +127,8 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
      * @param threshold Threshold value for rarity
      */
     function setXPRarityThreshold(Rarity rarity, uint256 threshold) external onlyElevatedAccess {
-        if (!isAllowedRarity(rarity)) { revert CommonEventsAndErrors.InvalidParam(); }
+        // if (!isAllowedRarity(rarity)) { revert CommonEventsAndErrors.InvalidParam(); }
+        if (uint8(rarity) > uint8(Rarity.Legendary)) { revert CommonEventsAndErrors.InvalidParam(); }
         rarityXPThresholds[rarity] = threshold;
         emit RarityXPThresholdSet(rarity, threshold);
     }
@@ -169,7 +169,8 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
         for(uint i; i < _length;) {
             uint256 _threshold = thresholds[i];
             Rarity _rarity = rarities[i];
-            if (!isAllowedRarity(_rarity)) { revert CommonEventsAndErrors.InvalidParam(); }
+            // if (!isAllowedRarity(_rarity)) { revert CommonEventsAndErrors.InvalidParam(); } 
+            if (uint8(_rarity) > uint8(Rarity.Legendary)) { revert CommonEventsAndErrors.InvalidParam(); }
             rarityXPThresholds[_rarity] = _threshold;
             emit RarityXPThresholdSet(_rarity, _threshold);
             unchecked {
@@ -259,17 +260,17 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
      * @param relicId ID of relic
      * @param xp XP to set
      */
+     // todo change to elevatedAccess
     function setRelicXP(uint256 relicId, uint256 xp) external onlyXPController {
         if(!_exists(relicId)) { revert InvalidRelic(relicId); }
         RelicInfo storage relicInfo = relicInfos[relicId];
-        /// @notice cache to save gas
-        uint256 oldXp = relicInfo.xp;
-        if (oldXp >= xp) { revert CommonEventsAndErrors.InvalidParam(); }
+        // leave open for when xp could go down or up
         relicInfo.xp = uint128(xp);
-        emit RelicXPSet(relicId, oldXp, xp);
+        emit RelicXPSet(relicId, xp);
+        checkpointRelicRarity(relicId);
     }
 
-    function checkpointRelicRarity(uint256 relicId) external {
+    function checkpointRelicRarity(uint256 relicId) public {
         if(!_exists(relicId)) { revert InvalidRelic(relicId); }
         RelicInfo storage relicInfo = relicInfos[relicId];
         uint128 xp = relicInfo.xp;
@@ -329,7 +330,7 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
         Enclave enclave
     ) external isRelicMinter notBlacklisted(to) {
         if (to == ZERO_ADDRESS) { revert ZeroAddress(); }
-        if (!isAllowedEnclave(enclave)) { revert CommonEventsAndErrors.InvalidParam(); }
+        if (uint8(enclave) > uint8(Enclave.Structure)) { revert CommonEventsAndErrors.InvalidParam(); }
 
         uint256 _nextTokenId = _nextTokenId();
         RelicInfo storage relicInfo = relicInfos[_nextTokenId];
@@ -341,26 +342,6 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
         /// user can mint relic anytime after sacrificing temple and getting whitelisted. one at a time
         _safeMint(to, PER_MINT_QUANTITY, ZERO_BYTES);
         emit RelicMinted(to, _nextTokenId, PER_MINT_QUANTITY);
-    }
-
-    /*
-     * @notice Equip shard to a relic
-     * @param relicId ID of relic
-     * @param shardId Shard ID
-     * @param amount Amount of shards to equip
-     */
-    function equipShard(
-        uint256 relicId,
-        uint256 shardId,
-        uint256 amount
-    ) external onlyRelicOwner(relicId) notBlacklisted(msg.sender) {
-        if (amount == 0) { revert CommonEventsAndErrors.InvalidParam(); }
-        shard.safeTransferFrom(msg.sender, address(this), shardId, amount, "");
-
-        RelicInfo storage relicInfo = relicInfos[relicId];
-        relicInfo.equippedShards[shardId] += amount;
-
-        emit ShardEquipped(msg.sender, relicId, shardId, amount);
     }
 
     /*
@@ -389,31 +370,6 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
             }
         }
         emit ShardsEquipped(msg.sender, relicId, shardIds, amounts);
-    }
-
-    /*
-     * @notice Unequip shard from a relic
-     * @param relicId ID of relic
-     * @param shardId Shard ID
-     * @return amount Balance of shards to unequip
-     */
-    function unequipShard(
-        uint256 relicId,
-        uint256 shardId,
-        uint256 amount
-    ) external onlyRelicOwner(relicId) notBlacklisted(msg.sender) {
-        if (amount == 0) { revert CommonEventsAndErrors.InvalidParam(); }
-        RelicInfo storage relicInfo = relicInfos[relicId];
-        uint256 equippedAmountCache = relicInfo.equippedShards[shardId];
-        if (equippedAmountCache < amount) { 
-            revert InsufficientShardBalance(equippedAmountCache, amount); 
-        }
-        unchecked {
-            relicInfo.equippedShards[shardId] -= amount;
-        }
-        shard.safeTransferFrom(address(this), msg.sender, shardId, amount, ZERO_BYTES);
-
-        emit ShardUnequipped(msg.sender, relicId, shardId, amount);
     }
 
     /*
@@ -523,27 +479,13 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
     ) internal override {
         /// question should we allow blacklisted addresses to burn their relics?
         if (from != ZERO_ADDRESS && blacklistedAccounts[from]) {
-            revert AccountBlacklisted(from);
+            revert CommonEventsAndErrors.AccountBlacklisted(from);
         }
         if (to != ZERO_ADDRESS && blacklistedAccounts[to]) {
-            revert AccountBlacklisted(to);
+            revert CommonEventsAndErrors.AccountBlacklisted(to);
         }
         ownerRelics[from].remove(startTokenId);
         ownerRelics[to].add(startTokenId);
-    }
-
-    function isAllowedEnclave(Enclave enclave) private pure returns (bool) {
-        if (uint256(enclave) > ENCLAVES_COUNT-1) {
-            return false;
-        }
-        return true;
-    }
-
-    function isAllowedRarity(Rarity rarity) private pure returns (bool) {
-        if (uint256(rarity) > RARITIES_COUNT-1) {
-            return false;
-        }
-        return true;
     }
 
     function getEquippedShardAmount(uint256 relicId, uint256 shardId) external view returns (uint256) {
@@ -594,7 +536,7 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
     }
 
     modifier notBlacklisted(address account) {
-        if (blacklistedAccounts[account]) { revert AccountBlacklisted(account); }
+        if (blacklistedAccounts[account]) { revert CommonEventsAndErrors.AccountBlacklisted(account); }
         _;
     }
 
