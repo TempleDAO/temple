@@ -15,6 +15,7 @@ const TLC_BATCH_LIQUIDATE_CONFIG: TlcBatchLiquidateConfig = {
   TLC_ADDRESS: '0xcbc0A8d5C7352Fe3625614ea343019e6d6b89031',
   ACC_LIQ_MAX_CHUNK_NO: 100,
   MIN_ETH_BALANCE: parseEther('0.05'),
+  GAS_LIMIT: 1_000_000n,
 };
 
 export const CONFIG = {

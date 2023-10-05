@@ -7,7 +7,7 @@ import {
   formatBigNumber,
 } from '@/common/utils';
 import { ITempleLineOfCredit, ITempleLineOfCredit__factory } from '@/typechain';
-import { formatUnits, EventLog } from 'ethers';
+import { EventLog } from 'ethers';
 import {
   TaskContext,
   TaskResult,
@@ -25,6 +25,7 @@ export interface TlcBatchLiquidateConfig {
   TLC_ADDRESS: string;
   ACC_LIQ_MAX_CHUNK_NO: number;
   MIN_ETH_BALANCE: bigint;
+  GAS_LIMIT: bigint;
 }
 
 export async function batchLiquidate(
@@ -56,23 +57,6 @@ export async function batchLiquidate(
     return chunk;
   };
 
-  // TODO: debug function, delete before merging
-  const checkAccPosition = async (accounts: string[]) => {
-    accounts.forEach(async (a) => {
-      ctx.logger.info(`**Acc to check ${a} **`);
-      const position = await tlc.accountPosition(a);
-      
-      ctx.logger.info(`Position: ${JSON.stringify({
-        collateral: formatUnits(position.collateral, 18),
-        currentDebt: formatUnits(position.currentDebt, 18),
-        maxBorrow: formatUnits(position.maxBorrow, 18),
-        healthFactor: formatUnits(position.healthFactor, 18),
-        loanToValueRatio: formatUnits(position.loanToValueRatio, 18),
-      })}`)
-
-    });
-  };
-
   const submittedAt = new Date();
 
   const url = getChainById(config.CHAIN.id).subgraphUrl;
@@ -80,7 +64,6 @@ export async function batchLiquidate(
   const tlcUsers = (await res()).data?.users;
   // if undefined or zero users returned from subgraph, success silently
   if (!tlcUsers || tlcUsers.length === 0) return taskSuccessSilent();
-  
   const accountsToCheck = tlcUsers.flatMap((u) => u.id);
   if (accountsToCheck.length === 0) return taskSuccessSilent();
 
@@ -90,18 +73,15 @@ export async function batchLiquidate(
   compLiquidityAccs.map((acc, i) => {
     if (acc.hasExceededMaxLtv) accsToLiquidate.push(accountsToCheck[i]);
   });
-
   if (accsToLiquidate.length === 0) return taskSuccessSilent();
 
   // chunk compLiquidityAccs to a max number of requests per batchLiquidate
   // e.g. try to liquidate 1000 accounts at once could use too much gas and fail
   const accListChunks = chunkify(accsToLiquidate, config.ACC_LIQ_MAX_CHUNK_NO);
   accListChunks.forEach(async (accBatch) => {
-    await checkAccPosition(accBatch); // check accs position before liquidation
     const tx = await tlc.batchLiquidate(accBatch, {
-      gasLimit: 1_000_000n,
+      gasLimit: config.GAS_LIMIT,
     });
-    await checkAccPosition(accBatch); // check accs position after liquidation
 
     const txReceipt = await tx.wait();
     if (!txReceipt) return taskSuccessSilent();
@@ -111,20 +91,6 @@ export async function batchLiquidate(
 
     await txReceipt.logs.forEach((log) => {
       if (log instanceof EventLog) {
-        // TODO: delete following interesRateUpdateEv logs once bot is working fine on sepolia
-        ctx.logger.info(`event log fragment name: ${log.fragment.name}`);
-        // test InterestRateUpdate filter is working
-        const interesRateUpdateEv = matchAndDecodeEvent(
-          log,
-          tlc,
-          tlc.filters.InterestRateUpdate()
-        );
-        if (interesRateUpdateEv) {
-          ctx.logger.info(
-            `newInterestRate: ${interesRateUpdateEv.newInterestRate}`
-          );
-        }
-
         const liquidatedEv = matchAndDecodeEvent(
           log,
           tlc,
@@ -202,12 +168,6 @@ const getTlcUsers = async (url: string) => {
       users {
         ... on TlcUser {
           id
-          collateral
-          collateralUSD
-          debt
-          debtUSD
-          enterTimestamp
-          exitTimestamp
         }
       }
     }`,

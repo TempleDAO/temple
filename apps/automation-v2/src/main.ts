@@ -29,7 +29,7 @@ async function main() {
   });
 
   runner.addPeriodicTask(falliblePeriodicTask({ 
-    id: 'check-eth-balance-dsr',
+    id: 'check-eth-balance-tlc',
     cronSchedule: '30 * * * *',
     action: async (ctx) => await checkLowEthBalance(ctx, config.checkEthBalance(isProdnet ? MAINNET : SEPOLIA)),
   }));
