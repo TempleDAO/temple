@@ -22,8 +22,6 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
 
     IShard public shard;
 
-    // uint256 private constant RARITIES_COUNT = 0x05;
-    // uint256 private constant ENCLAVES_COUNT = 0x05;
     address private constant ZERO_ADDRESS = 0x0000000000000000000000000000000000000000;
     uint256 private constant PER_MINT_QUANTITY = 0x01;
     bytes private constant ZERO_BYTES = "";
@@ -127,7 +125,6 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
      * @param threshold Threshold value for rarity
      */
     function setXPRarityThreshold(Rarity rarity, uint256 threshold) external onlyElevatedAccess {
-        // if (!isAllowedRarity(rarity)) { revert CommonEventsAndErrors.InvalidParam(); }
         if (uint8(rarity) > uint8(Rarity.Legendary)) { revert CommonEventsAndErrors.InvalidParam(); }
         rarityXPThresholds[rarity] = threshold;
         emit RarityXPThresholdSet(rarity, threshold);
