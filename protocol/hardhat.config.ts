@@ -186,6 +186,13 @@ module.exports = {
         url: "http://127.0.0.1:8545/",
         accounts: "remote",
     },
+    arbitrumGoerli: {
+      url: process.env.ARBITRUM_GOERLI_RPC_URL || '',
+      accounts: process.env.ARBITRUM_GOERLI_ADDRESS_PRIVATE_KEY
+        ? [process.env.ARBITRUM_GOERLI_ADDRESS_PRIVATE_KEY]
+        : [],
+      gasPrice: 2000000000,
+    }
   },
   etherscan: {
 
