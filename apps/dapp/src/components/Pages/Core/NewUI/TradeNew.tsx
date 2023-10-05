@@ -173,17 +173,16 @@ const SwapContainer = styled.div`
 
 const ButtonContainer = styled.div`
   display: flex;
-  justify-content: center;
+  align-items: center;
   flex-direction: column;
   width: 100%;
-  margin-left: 20px;
 `;
 
 const TradeContainer = styled.div`
   display: flex;
   flex-direction: column;
-  justify-content: left;
-  align-items: left;
+  justify-content: center;
+  align-items: center;
   color: ${({ theme }) => theme.palette.brand};
   width: 400px;
 `;

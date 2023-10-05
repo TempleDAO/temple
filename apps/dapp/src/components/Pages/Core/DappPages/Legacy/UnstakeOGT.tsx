@@ -106,13 +106,13 @@ const ClaimButton = styled(Button)`
   text-transform: uppercase;
   width: max-content;
   margin-top: 20px;
-  align-self: left;
 `;
 
 const TopSubtitle = styled.div`
   color: ${({ theme }) => theme.palette.brand};
   letter-spacing: 0.05rem;
   line-height: 1.25rem;
+  text-align: center;
 `;
 
 const Subtitle = styled.div`
@@ -120,6 +120,7 @@ const Subtitle = styled.div`
   letter-spacing: 0.05rem;
   line-height: 1.25rem;
   margin-top: 20px;
+  text-align: center;
 `;
 
 const Title = styled.div`
@@ -133,11 +134,9 @@ const Title = styled.div`
 const UnstakeContainer = styled.div`
   display: flex;
   flex-direction: column;
-  justify-content: left;
-  text-align: left;
+  align-items: center;
   color: ${({ theme }) => theme.palette.brand};
   width: 350px;
-  margin-left: 40px;
 `;
 
 export default UnstakeOGT;

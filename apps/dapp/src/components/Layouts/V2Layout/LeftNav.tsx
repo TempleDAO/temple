@@ -61,7 +61,7 @@ const LeftNav = () => {
         <Link to="/">
           <TempleLogo src={temple_dao_logo} />
         </Link>
-        <NavLink to="/v2dapp/dashboard">
+        <NavLink to="/v2dapp/dashboard/all">
           <NavLinkCell>
             {/* // TODO: Icon can be split into its own component */}
             <NavIcon src={dashboard} />

@@ -29,7 +29,7 @@ import { AscendListPage } from 'components/Pages/AscendList';
 import env from 'constants/env';
 import { AnalyticsService } from 'services/AnalyticsService';
 import { Unstake } from 'components/Pages/Core/Trade/views/Unstake';
-import { DashboardPage } from 'components/Pages/Core/DappPages/DashboardPage';
+import { DashboardPage } from 'components/Pages/Core/DappPages/Dashboard';
 import { TradePage } from './components/Pages/Core/DappPages/TradePage';
 import { BorrowPage } from 'components/Pages/Core/DappPages/BorrowPage';
 import { LegacyPage } from 'components/Pages/Core/DappPages/LegacyPage';
@@ -49,7 +49,7 @@ const LoaderWrapper = styled.div`
 `;
 
 interface LazyPageProps {
-  component: React.LazyExoticComponent<(props: {}) => JSX.Element>;
+  component: React.LazyExoticComponent<() => JSX.Element>;
 }
 
 const LazyPage = ({ component: Component }: LazyPageProps) => (
@@ -83,7 +83,7 @@ ReactDOM.render(
               <Route path="ramos" element={<LazyPage component={RamosAdmin} />} />
             </Route>
             <Route path="/v2dapp/*" element={<V2Layout />}>
-            <Route path="dashboard" element={<DashboardPage />} />
+              <Route path="dashboard/*" element={<DashboardPage />} />
               <Route path="trade" element={<TradePage />} />
               <Route path="borrow" element={<BorrowPage />} />
               <Route path="legacy" element={<LegacyPage />} />
@@ -99,8 +99,6 @@ ReactDOM.render(
                 <Route path="timing" element={<Timing />} />
               </Route>
               <Route path="profile" element={<ProfilePage />} />
-              
-
               {env.featureFlags.enableAscend && (
                 <>
                   <Route path="ascend/*" element={<AscendLayout />}>
