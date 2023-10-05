@@ -1,6 +1,5 @@
 import {
   createTaskRunner,
-  falliblePeriodicTask,
   fallibleWebhookTask,
 } from '@mountainpath9/overlord';
 
@@ -9,8 +8,6 @@ import { batchLiquidate } from '@/tlc/batch-liquidate';
 import { CONFIG as CONFIG_TESTNETS } from '@/config/testnets';
 import { CONFIG as CONFIG_PRODNETS } from '@/config/prodnets';
 
-import { MAINNET, SEPOLIA } from '@/chains';
-import { checkLowEthBalance } from '@/common/eth-auto-checker';
 import { discordNotifyTaskException } from '@/common/discord';
 
 async function main() {
@@ -27,12 +24,6 @@ async function main() {
     cronSchedule: '*/10 * * * *',
     action: async (ctx) => await batchLiquidate(ctx, config.tlcBatchLiquidate),
   });
-
-  runner.addPeriodicTask(falliblePeriodicTask({ 
-    id: 'check-eth-balance-tlc',
-    cronSchedule: '30 * * * *',
-    action: async (ctx) => await checkLowEthBalance(ctx, config.checkEthBalance(isProdnet ? MAINNET : SEPOLIA)),
-  }));
 
   runner.addWebhookTask(
     fallibleWebhookTask({
