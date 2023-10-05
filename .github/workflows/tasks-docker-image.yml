@@ -37,7 +37,7 @@ jobs:
       - name: Build the tasks docker image
         run: |
           VER=${{ steps.version.outputs.VER }}
-          cd automation
+          cd apps/automation-v2
           docker build --file Dockerfile --tag temple-tasks:$VER .
           docker build --file Dockerfile --tag temple-tasks:latest .
     
