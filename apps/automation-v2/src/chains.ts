@@ -1,7 +1,6 @@
 export interface Chain {
   id: number;
   name: string;
-  subgraphUrl: string;
   transactionUrl(txhash: string): string;
   addressUrl(txhash: string): string;
 }
@@ -9,7 +8,6 @@ export interface Chain {
 export const MUMBAI: Chain = {
   id: 80001,
   name: 'Polygon Mumbai',
-  subgraphUrl: 'https://TODO',
   transactionUrl(txhash: string) {
     return `https://mumbai.polygonscan.com/tx/${txhash}`;
   },
@@ -21,7 +19,6 @@ export const MUMBAI: Chain = {
 export const ARBITRUM: Chain = {
   id: 42161,
   name: 'Arbitrum',
-  subgraphUrl: 'https://TODO',
   transactionUrl(txhash: string) {
     return `https://arbiscan.io/tx/${txhash}`;
   },
@@ -33,7 +30,6 @@ export const ARBITRUM: Chain = {
 export const MAINNET: Chain = {
   id: 1,
   name: 'Mainnet',
-  subgraphUrl: 'https://api.thegraph.com/subgraphs/name/medariox/v2-mainnet',
   transactionUrl(txhash: string) {
     return `https://etherscan.io/tx/${txhash}`;
   },
@@ -45,7 +41,6 @@ export const MAINNET: Chain = {
 export const SEPOLIA: Chain = {
   id: 11155111,
   name: 'Sepolia',
-  subgraphUrl: 'https://api.studio.thegraph.com/proxy/520/v2-sepolia/version/latest',
   transactionUrl(txhash: string) {
     return `https://sepolia.etherscan.io/tx/${txhash}`;
   },

@@ -26,6 +26,7 @@ export interface TlcBatchLiquidateConfig {
   ACC_LIQ_MAX_CHUNK_NO: number;
   MIN_ETH_BALANCE: bigint;
   GAS_LIMIT: bigint;
+  SUBGRAPH_URL: string;
 }
 
 export async function batchLiquidate(
@@ -59,8 +60,7 @@ export async function batchLiquidate(
 
   const submittedAt = new Date();
 
-  const url = getChainById(config.CHAIN.id).subgraphUrl;
-  const res = await getTlcUsers(url);
+  const res = await getTlcUsers(config.SUBGRAPH_URL);
   const tlcUsers = (await res()).data?.users;
   // if undefined or zero users returned from subgraph, success silently
   if (!tlcUsers || tlcUsers.length === 0) return taskSuccessSilent();

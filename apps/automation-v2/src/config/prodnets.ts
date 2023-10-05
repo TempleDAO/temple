@@ -16,6 +16,7 @@ const TLC_BATCH_LIQUIDATE_CONFIG: TlcBatchLiquidateConfig = {
   ACC_LIQ_MAX_CHUNK_NO: 100,
   MIN_ETH_BALANCE: parseEther('0.05'),
   GAS_LIMIT: 1_000_000n,
+  SUBGRAPH_URL: 'https://api.thegraph.com/subgraphs/name/medariox/v2-mainnet',
 };
 
 export const CONFIG = {
