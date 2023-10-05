@@ -12,4 +12,5 @@ export const TradePage = () => {
 const TradeContainer = styled.div`
   display: flex;
   flex-direction: column;
+  align-items: center;
 `;
