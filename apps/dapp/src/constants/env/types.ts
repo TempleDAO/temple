@@ -21,6 +21,7 @@ interface Contracts {
   lockedOgTemple: string;
   ogTemple: string;
   olympus: string;
+  otcOffer: string;
   teamPayments?: string[];
   temple: string;
   templeStaking: string;
@@ -28,6 +29,7 @@ interface Contracts {
   templeV2Router: string;
   swap1InchRouter: string;
   tlc: string;
+  treasuryReservesVault: string;
   treasuryIv: string;
   vaultOps: string;
   vaultProxy: string;

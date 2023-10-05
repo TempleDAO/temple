@@ -1,0 +1,42 @@
+{
+  "name": "temple-tasks",
+  "version": "0.0.1",
+  "description": "temple automation tasks using overlord framework",
+  "license": "AGPL-3.0-or-later",
+  "scripts": {
+    "prepare": "yarn typechain",
+    "typechain": "typechain --target=ethers-v6 --out-dir src/typechain abi/*.json",
+    "clean": "rm -rf dist",
+    "build": "yarn clean && tsc && tsc-alias -p tsconfig.json",
+    "dev": "yarn build && source .env && node ./dist/main.js",
+    "build:image": "docker build --tag temple-tasks .",
+    "anvil:mainnet-fork": "anvil -f https://eth-mainnet.g.alchemy.com/v2/LjzU7NEw1jfJZSDBP10rGeg53cSlzscP --config-out anvil.json --fork-block-number 18189826",
+    "anvil:sepolia-fork": "anvil -f https://eth-sepolia.g.alchemy.com/v2/sRSoYgR6rmun89HW6_0Ec09w70ztNvsN --config-out anvil.json --fork-block-number 4419527",
+    "local-fork:mainnet-test:tlc": "(cd ../../protocol && forge script --fork-url http://127.0.0.1:8545 scripts/deploys/localhost/v2/999-localhost-tlc-mainnet-test.s.sol)"
+  },
+  "dependencies": {
+    "@mountainpath9/overlord": "^0.8.1",
+    "axios": "^1.5.1",
+    "date-fns": "^2.30.0",
+    "discord.js": "^14.13.0"
+  },
+  "devDependencies": {
+    "@typechain/ethers-v6": "^0.5.0",
+    "@types/jquery": "^3.5.19",
+    "tsc-alias": "^1.8.3",
+    "typechain": "^8.1.1",
+    "typescript": "^5.1.6"
+  },
+  "lint-staged": {
+    "*.{js,ts,tsx}": [
+      "prettier --write",
+      "eslint --cache --fix"
+    ],
+    "*.{html,css}": [
+      "prettier --write"
+    ]
+  },
+  "engines": {
+    "node": "18.x"
+  }
+}

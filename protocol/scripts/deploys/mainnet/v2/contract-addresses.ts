@@ -64,20 +64,14 @@ export interface ContractAddresses {
     STRATEGIES: {
         DSR_BASE_STRATEGY: {
             ADDRESS: string,
-            EXECUTOR_MSIG: string,
-            RESCUER_MSIG: string,
             // No circuit breakers for DSR base strategy
         }
         TEMPLE_BASE_STRATEGY: {
             ADDRESS: string,
-            EXECUTOR_MSIG: string,
-            RESCUER_MSIG: string,
             // No circuit breakers for Temple base strategy
         },
         GNOSIS_SAFE_STRATEGY_TEMPLATE: {
             ADDRESS: string,
-            EXECUTOR_MSIG: string,
-            RESCUER_MSIG: string,
             UNDERLYING_GNOSIS_SAFE: string,
             CIRCUIT_BREAKERS: {
                 DAI: string,
@@ -86,8 +80,6 @@ export interface ContractAddresses {
         },
         RAMOS_STRATEGY: {
             ADDRESS: string,
-            EXECUTOR_MSIG: string,
-            RESCUER_MSIG: string,
             CIRCUIT_BREAKERS: {
                 DAI: string,
                 TEMPLE: string,
@@ -95,8 +87,6 @@ export interface ContractAddresses {
         },
         TLC_STRATEGY: {
             ADDRESS: string,
-            EXECUTOR_MSIG: string,
-            RESCUER_MSIG: string
         },
     },
     EXTERNAL: {
@@ -162,18 +152,12 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
         STRATEGIES: {
             DSR_BASE_STRATEGY: {
                 ADDRESS: '0xfB12F7170FF298CDed84C793dAb9aBBEcc01E798',
-                EXECUTOR_MSIG: '0x4D6175d58C5AceEf30F546C0d5A557efFa53A950',
-                RESCUER_MSIG: '0xb1BD5762fAf7D6F86f965a3fF324BD81bB746d00',
             },
             TEMPLE_BASE_STRATEGY: {
                 ADDRESS: '0xc1EeD9232A0A44c2463ACB83698c162966FBc78d',
-                EXECUTOR_MSIG: '0x4D6175d58C5AceEf30F546C0d5A557efFa53A950',
-                RESCUER_MSIG: '0xb1BD5762fAf7D6F86f965a3fF324BD81bB746d00',
             },
             GNOSIS_SAFE_STRATEGY_TEMPLATE: {
                 ADDRESS: '',
-                EXECUTOR_MSIG: '0x4D6175d58C5AceEf30F546C0d5A557efFa53A950',
-                RESCUER_MSIG: '0xb1BD5762fAf7D6F86f965a3fF324BD81bB746d00',
                 UNDERLYING_GNOSIS_SAFE: '',
                 CIRCUIT_BREAKERS: {
                     DAI: '',
@@ -182,8 +166,6 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
             },
             RAMOS_STRATEGY: {
                 ADDRESS: '0x04d7478fDF318C3C22cECE62Da9D78ff94807D77',
-                EXECUTOR_MSIG: '0x4D6175d58C5AceEf30F546C0d5A557efFa53A950',
-                RESCUER_MSIG: '0xb1BD5762fAf7D6F86f965a3fF324BD81bB746d00',
                 CIRCUIT_BREAKERS: {
                     DAI: '0xc075BC0f734EFE6ceD866324fc2A9DBe1065CBB1',
                     TEMPLE: '0x837a41023CF81234f89F956C94D676918b4791c1',
@@ -191,8 +173,6 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
             },
             TLC_STRATEGY: {
                 ADDRESS: '0x1757a98c1333B9dc8D408b194B2279b5AFDF70Cc',
-                EXECUTOR_MSIG: '0x4D6175d58C5AceEf30F546C0d5A557efFa53A950',
-                RESCUER_MSIG: '0xb1BD5762fAf7D6F86f965a3fF324BD81bB746d00',
             },
         },
         EXTERNAL: {
@@ -215,34 +195,34 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
     mainnet: {
         CORE: {
             TEMPLE_TOKEN: '0x470ebf5f030ed85fc1ed4c2d36b9dd02e77cf1b7',
-            CIRCUIT_BREAKER_PROXY: '',
-            GNOSIS_SAFE_GUARD: '',
-            EXECUTOR_MSIG: '',
-            RESCUER_MSIG: '',
+            CIRCUIT_BREAKER_PROXY: '0x87B8D213177FB132e508b5d7018f7b590e00a480',
+            GNOSIS_SAFE_GUARD: '0x421D1571f47614670A4D182E22628DFe41c3d64B',
+            EXECUTOR_MSIG: '0x94b62A27a2f23CBdc0220826a8452fB5055cF273',
+            RESCUER_MSIG: '0x9f90430179D9b67341BFa50559bc7B8E35629f1b',
         },
         TREASURY_RESERVES_VAULT: {
-            ADDRESS: '',
-            D_USD_TOKEN: '',
-            D_TEMPLE_TOKEN: '',
-            TPI_ORACLE: '',
+            ADDRESS: '0xf359Bae7b6AD295724e798A3Ef6Fa5109919F399',
+            D_USD_TOKEN: '0xd018d5ecCe2Cd1c230F1719367C22DfE92c696ac',
+            D_TEMPLE_TOKEN: '0x20aa0dCad8D08ccea01d94DaB76bde277d773Ca8',
+            TPI_ORACLE: '0x97e9103267D58448Bae0CF6E056F343bD7728D02',
         },
         TEMPLE_LINE_OF_CREDIT: {
-            ADDRESS: '',
+            ADDRESS: '0xcbc0A8d5C7352Fe3625614ea343019e6d6b89031',
             CIRCUIT_BREAKERS: {
-              DAI: '',
-              TEMPLE: '',
+              DAI: '0x02607D6BC3146bb3D3022E991eF54F545988fB7B',
+              TEMPLE: '0x0745D453A19DfEAd0e5fd350a231D878F5c71b8D',
             },
             INTEREST_RATE_MODELS: {
-              LINEAR_WITH_KINK: '',
+              LINEAR_WITH_KINK: '0x9498ab765BeeD8292938937079Ac56080B8a179d',
             },
         },
         RAMOS: {
             AUTOMATION_EOA: '0x67ae2161449cf3c5528fea969beba3e4f3288c61',
             TEMPLE_DAI: {
-                ADDRESS: '',
-                POOL_HELPER: '',
-                AURA_STAKING: '',
-                FEE_COLLECTOR: '',
+                ADDRESS: '0xDdF499e726Bfde29Ce035F6B355e55757F08B5EF',
+                POOL_HELPER: '0xe32089bf9724aF09C026BeC36a7d8a81500cd58A',
+                AURA_STAKING: '0x940B35488bb153b703b7c9aB3FE2C03CE48D6650',
+                FEE_COLLECTOR: '0x4D6175d58C5AceEf30F546C0d5A557efFa53A950',
                 EXTERNAL: {
                   BALANCER_LP_TOKEN: '0x8bd4a1e74a27182d23b98c10fd21d4fbb0ed4ba0',
                   BALANCER_POOL_ID: '0x8bd4a1e74a27182d23b98c10fd21d4fbb0ed4ba00002000000000000000004ed',
@@ -254,19 +234,13 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
         },
         STRATEGIES: {
             DSR_BASE_STRATEGY: {
-                ADDRESS: '',
-                EXECUTOR_MSIG: '',
-                RESCUER_MSIG: '',
+                ADDRESS: '0x8b9e20D9970Af54fbaFe64049174e24d6DE0C412',
             },
             TEMPLE_BASE_STRATEGY: {
-                ADDRESS: '',
-                EXECUTOR_MSIG: '',
-                RESCUER_MSIG: '',
+                ADDRESS: '0xB8d09B0436adF927004Cea0B096E8c05f6dFdc3b',
             },
             GNOSIS_SAFE_STRATEGY_TEMPLATE: {
                 ADDRESS: '',
-                EXECUTOR_MSIG: '',
-                RESCUER_MSIG: '',
                 UNDERLYING_GNOSIS_SAFE: '',
                 CIRCUIT_BREAKERS: {
                     DAI: '',
@@ -274,18 +248,14 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
                 },
             },
             RAMOS_STRATEGY: {
-                ADDRESS: '',
-                EXECUTOR_MSIG: '',
-                RESCUER_MSIG: '',
+                ADDRESS: '0xb867dF3efF1B234CA08B7D0d85Fb51Fd25C2c2d0',
                 CIRCUIT_BREAKERS: {
-                    DAI: '',
-                    TEMPLE: '',
+                    DAI: '0x5D93363B3c24E6899559Ca890c754b13Ca4a7290',
+                    TEMPLE: '0x37cE5F2e8956c98F706c55EEE01F0A732aF1a439',
                 },
             },
             TLC_STRATEGY: {
-                ADDRESS: '',
-                EXECUTOR_MSIG: '',
-                RESCUER_MSIG: '',
+                ADDRESS: '0xcABDE42dd767361739bD7c09C6E574057080ef01',
             },
         },
         EXTERNAL: {
