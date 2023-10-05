@@ -36,17 +36,20 @@ const LegacyLinkCell = styled.div<LegacyLinkCellProps>`
 
 const LegacyContent = styled.div`
   display: flex;
+  flex-direction: column;
+  align-items: center;
 `;
 
 const LegacyContainer = styled.div`
   display: flex;
   flex-direction: column;
+  align-items: center;
 `;
 
 const LegacyHeader = styled.div`
   display: flex;
   flex-direction: row;
-  justify-content: left;
+  align-items: center;
   margin-top: 10px;
   margin-left: 40px;
 `;
