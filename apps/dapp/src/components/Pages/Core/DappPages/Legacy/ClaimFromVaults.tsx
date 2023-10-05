@@ -190,7 +190,7 @@ const ClaimContainer = styled.div`
   flex-direction: column;
   color: ${({ theme }) => theme.palette.brand};
   width: 350px;
-  margin-left: 40px;
+  align-items: center;
 `;
 
 export default ClaimFromVaults;
