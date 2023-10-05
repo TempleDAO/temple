@@ -54,6 +54,7 @@ jobs:
       - run: forge --version
         working-directory: protocol
 
+
       - name: Run tests
         run: FOUNDRY_PROFILE=ci forge test --gas-report
         working-directory: protocol
