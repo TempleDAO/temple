@@ -24,8 +24,6 @@ contract TestnetShard is ERC1155, ERC1155Burnable {
     mapping(address => EnumerableSet.UintSet) private allowedShardIds;
     mapping(address => mapping(uint256 => uint256)) public allowedShardCaps;
     mapping(address => mapping(uint256 => uint256)) public mintBalances;
-    /// @notice keep track of all shards
-    // EnumerableSet.UintSet private shards;
 
     /// @notice shard ids to uris
     mapping(uint256 => string) private shardUris;
@@ -259,7 +257,6 @@ contract TestnetShard is ERC1155, ERC1155Burnable {
      * @param recipeId The recipe ID
      */
     function deleteRecipe(uint256 recipeId) external onlyOperator {
-        // if (recipeId >= _nextRecipeId())
         if (recipes[recipeId].inputShardIds.length == 0) { revert CommonEventsAndErrors.InvalidParam(); }
         delete recipes[recipeId];
         emit RecipeDeleted(recipeId);

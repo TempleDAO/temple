@@ -91,6 +91,11 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
         _currentIndex = _currentRecipeIndex = _startTokenId();
     }
 
+    /*
+     * @notice Enable a minter to mint a new shard. Minter is allowed to mint the next shard ID
+     * @param minter The minter
+     * @return shardId The shard ID
+     */
     function setNewMinterShard(address minter) external onlyElevatedAccess returns (uint256) {
         uint256 shardId = _nextTokenId();
         _currentIndex += 1;
@@ -98,6 +103,12 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
         return shardId;
     }
 
+    /*
+     * @notice Enable minters to mint new shards, one after the next. If there are two minters and next shard ID
+     * is 3, minter 1 and minter 2 can mint shard IDs 3 and 4 respectively
+     * @param minters Minters to enable for new shards
+     * @param xp XP to set
+     */
     function setNewMinterShards(
         address[] calldata minters
     ) external onlyElevatedAccess returns (uint256[] memory shards){
@@ -141,7 +152,8 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
     }
 
     /*
-     * @notice Set shard ID that minter(caller) is allowed to mint.
+     * @notice Set shard ID that minter is allowed to mint. This is an explicit setting.
+     * Shard ID must exist. To enable minter for a new shard, use functions setNewMinterShard and setNewMinterShards
      * @param minter Address of the minter
      * @param shardId Shard ID
      * @param allowed If minter is allowed to mint
@@ -170,7 +182,8 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
     }
 
     /*
-     * @notice Set multiple shard IDs that minter can mint 
+     * @notice Set multiple shard IDs that minter can mint. This is an explicit setting.
+     * Shard ID must exist. To enable minter for a new shard, use functions setNewMinterShard and setNewMinterShards
      * @param minter Address of the minter
      * @param shardIds Shard IDs
      * @param flags Booleans for if the partner can mint shards
@@ -232,7 +245,6 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
 
     /*
      * @notice Set a recipe for transmutation
-     * @param recipeId The recipe ID
      * @param recipe The recipe
      */
     function setRecipe(Recipe calldata recipe) external onlyElevatedAccess {
@@ -252,7 +264,6 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
      * @param recipeId The recipe ID
      */
     function deleteRecipe(uint256 recipeId) external onlyElevatedAccess {
-        // if (recipeId >= _nextRecipeId())
         if (recipes[recipeId].inputShardIds.length == 0) { revert CommonEventsAndErrors.InvalidParam(); }
         delete recipes[recipeId];
         emit RecipeDeleted(recipeId);

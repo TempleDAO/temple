@@ -49,6 +49,10 @@ contract TestnetTempleSacrifice is Ownable {
         originTime = uint64(block.timestamp);
     }
 
+    /*
+     * @notice Set recipient for sacrificed temple
+     * @param recipient Recipient
+     */
     function setSacrificedTempleRecipient(address recipient) external onlyOwner {
         if (recipient == address(0)) { revert CommonEventsAndErrors.InvalidParam(); }
         sacrificedTempleRecipient = recipient;

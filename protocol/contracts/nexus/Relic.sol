@@ -263,6 +263,10 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
         checkpointRelicRarity(relicId);
     }
 
+    /*
+     * @notice Checkpoint the rarity of a relic. This function is open to external calls.
+     * @param relicId ID of relic
+     */
     function checkpointRelicRarity(uint256 relicId) public {
         if(!_exists(relicId)) { revert InvalidRelic(relicId); }
         RelicInfo storage relicInfo = relicInfos[relicId];
@@ -479,7 +483,15 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
         ownerRelics[to].add(startTokenId);
     }
 
-    function getEquippedShardAmount(uint256 relicId, uint256 shardId) external view returns (uint256) {
+    /*
+     * @notice Get amount of equipped shards in a relic
+     * @param relicId ID of relic
+     * @param shardId Id of shard
+     */
+    function getEquippedShardAmount(
+        uint256 relicId,
+        uint256 shardId)
+     external view returns (uint256) {
         RelicInfo storage relicInfo = relicInfos[relicId];
         return relicInfo.equippedShards[shardId];
     }
@@ -493,6 +505,10 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
         uri = baseUris[rarity];
     }
 
+    /*
+     * @notice Get next relic ID
+     * @preturn Next ID
+     */
     function getNextTokenId() external view returns (uint256) {
         return _nextTokenId();
     }

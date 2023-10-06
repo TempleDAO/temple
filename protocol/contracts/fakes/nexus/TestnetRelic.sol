@@ -124,7 +124,21 @@ contract TestnetRelic is ERC721ACustom, ERC1155Receiver {
     function _baseURI(uint256 relicId) internal view override returns (string memory uri) {
         /// get uri using relicId rarity
         RelicInfo storage relicInfo = relicInfos[relicId];
-        uri = baseUris[relicInfo.rarity];
+        uri = string(
+            abi.encodePacked(
+                baseUris[relicInfo.rarity],
+                _toString(uint256(relicInfo.enclave))
+            )
+        );
+    }
+
+    /**
+     * @dev Returns the Uniform Resource Identifier (URI) for `tokenId` token.
+     */
+    function tokenURI(uint256 tokenId) public view override returns (string memory) {
+        if (!_exists(tokenId)) _revert(URIQueryForNonexistentToken.selector);
+
+        return _baseURI(tokenId);
     }
 
     /*
@@ -147,17 +161,6 @@ contract TestnetRelic is ERC721ACustom, ERC1155Receiver {
         if (minter == ZERO_ADDRESS) { revert ZeroAddress(); }
         relicMinters[minter] = allow;
         emit RelicMinterSet(minter, allow);
-    }
-
-    /*
-     * @notice Set controller of relic XP
-     * @param controller Address of XP controller
-     * @param allow If controller is allowed to set XP relic value
-     */
-    function setXPController(address controller, bool allow) external onlyOperator {
-        if (controller == ZERO_ADDRESS) { revert ZeroAddress(); }
-        xpControllers[controller] = allow;
-        emit XPControllerSet(controller, allow);
     }
 
     /*
@@ -266,7 +269,7 @@ contract TestnetRelic is ERC721ACustom, ERC1155Receiver {
      * @param xp XP to set
      */
      // todo change to elevatedAccess
-    function setRelicXP(uint256 relicId, uint256 xp) external onlyXPController {
+    function setRelicXP(uint256 relicId, uint256 xp) external onlyOperator {
         if(!_exists(relicId)) { revert InvalidRelic(relicId); }
         RelicInfo storage relicInfo = relicInfos[relicId];
         // leave open for when xp could go down or up
@@ -528,11 +531,6 @@ contract TestnetRelic is ERC721ACustom, ERC1155Receiver {
             interfaceId == 0x01ffc9a7 || // ERC165 interface ID for ERC165.
             interfaceId == 0x80ac58cd || // ERC165 interface ID for ERC721.
             interfaceId == 0x5b5e139f; // ERC165 interface ID for ERC721Metadata.
-    }
-
-    modifier onlyXPController() {
-        if (!xpControllers[msg.sender]) { revert InvalidAccess(msg.sender); }
-        _;
     }
 
     modifier onlyRelicOwner(uint256 relicId) {
