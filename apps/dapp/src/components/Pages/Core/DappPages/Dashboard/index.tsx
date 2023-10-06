@@ -1,9 +1,6 @@
 import { Route, Routes, NavLink as BaseNavLink } from 'react-router-dom';
 import styled from 'styled-components';
-import Gnosis from './Gnosis';
-import Ramos from './Ramos';
-import Tlc from './Tlc';
-import TreasuryReservesVault from './TreasuryReservesVault';
+import DashboardContent from './DashboardContent';
 
 export const DashboardPage = () => {
   return (
@@ -25,20 +22,23 @@ export const DashboardPage = () => {
           <NavLink to="gnosis">Gnosis</NavLink>
         </NavCell>
       </DashboardHeaderNav>
-      <DashboardContent>
+      <DashboardContentContainer>
         <Routes>
-          <Route path="*" element={<TreasuryReservesVault />} />
-          <Route path="treasuryreservesvault" element={<TreasuryReservesVault />} />
-          <Route path="ramos" element={<Ramos />} />
-          <Route path="tlc" element={<Tlc />} />
-          <Route path="gnosis" element={<Gnosis />} />
+          <Route path="*" element={<DashboardContent />} />
+          <Route
+            path="treasuryreservesvault"
+            element={<DashboardContent selectedDashboard={'treasuryReservesVault'} />}
+          />
+          <Route path="ramos" element={<DashboardContent selectedDashboard={'ramos'} />} />
+          <Route path="tlc" element={<DashboardContent selectedDashboard={'tlc'} />} />
+          <Route path="gnosis" element={<DashboardContent selectedDashboard={'gnosis'} />} />
         </Routes>
-      </DashboardContent>
+      </DashboardContentContainer>
     </DashboardContainer>
   );
 };
 
-const DashboardContent = styled.div`
+const DashboardContentContainer = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
