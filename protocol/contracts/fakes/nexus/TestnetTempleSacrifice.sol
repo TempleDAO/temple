@@ -9,7 +9,7 @@ import { ITempleERC20Token } from "../../interfaces/core/ITempleERC20Token.sol";
 import { CommonEventsAndErrors } from "../../common/CommonEventsAndErrors.sol";
 import { mulDiv } from "@prb/math/src/Common.sol";
 
-contract TempleSacrifice is Ownable {
+contract TestnetTempleSacrifice is Ownable {
     using SafeERC20 for ITempleERC20Token;
 
     /// @notice the Relic ERC721A token

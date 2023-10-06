@@ -8,7 +8,7 @@ import { ERC1155Burnable } from "@openzeppelin/contracts/token/ERC1155/extension
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { CommonEventsAndErrors } from "../../common/CommonEventsAndErrors.sol";
 
-contract Shard is ERC1155, ERC1155Burnable {
+contract TestnetShard is ERC1155, ERC1155Burnable {
     using EnumerableSet for EnumerableSet.UintSet;
     /// @notice Relic NFT contract
     IRelic public relic;
@@ -90,6 +90,7 @@ contract Shard is ERC1155, ERC1155Burnable {
     ) ERC1155(_uri) {
         relic = IRelic(_relic);
         _currentIndex = _currentRecipeIndex = _startTokenId();
+        operators[msg.sender] = true;
     }
 
     function setOperator(address operator, bool allow) external onlyOperator {

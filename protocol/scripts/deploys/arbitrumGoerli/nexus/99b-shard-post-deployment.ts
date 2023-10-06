@@ -10,7 +10,6 @@ async function main() {
     ensureExpectedEnvvars();
   
     const [owner] = await ethers.getSigners();
-    const ownerAddress = await owner.getAddress();
     const deployedContracts = DEPLOYED_CONTRACTS[network.name];
     const shardId1 = 123;
     const shardId2 = 456;
@@ -22,13 +21,6 @@ async function main() {
     const uri4 = "http://example4.com";
     const shard = TestnetShard__factory.connect(deployedContracts.SHARD, owner);
 
-    // minters and partners
-    {
-        const shardIds = [shardId4];
-        const allowed = [true];
-        await mine(shard.setPartnerAllowedShardIds(ownerAddress, shardIds, allowed));
-        await mine(shard.setPartnerAllowedShardCaps(ownerAddress, shardIds, [99999]));
-    }
     // uri and recipe
     {   
         const recipe = {
@@ -37,8 +29,7 @@ async function main() {
             outputShardIds: [shardId3],
             outputShardAmounts: [1]
         };
-        const recipeId = 1;
-        await mine(shard.setRecipe(recipeId, recipe));
+        await mine(shard.setRecipe(recipe));
         await mine(shard.setShardUri(shardId1, uri1));
         await mine(shard.setShardUri(shardId2, uri2));
         await mine(shard.setShardUri(shardId3, uri3));

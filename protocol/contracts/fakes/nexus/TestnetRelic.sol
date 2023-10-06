@@ -15,7 +15,7 @@ import { CommonEventsAndErrors } from "../../common/CommonEventsAndErrors.sol";
 import { IShard } from "../../interfaces/nexus/IShard.sol";
 
 
-contract Relic is ERC721ACustom, ERC1155Receiver {
+contract TestnetRelic is ERC721ACustom, ERC1155Receiver {
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.UintSet;
 

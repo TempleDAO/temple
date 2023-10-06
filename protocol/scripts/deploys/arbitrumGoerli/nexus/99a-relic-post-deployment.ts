@@ -17,9 +17,8 @@ async function main() {
         
     const ownerAddress = await owner.getAddress();
 
-    // TESTNET ONLY -- Allow msig & owner to mint Testnet Temple
-    {
-        // await mine(templeV2contracts.templeToken.addMinter(TEMPLE_V2_DEPLOYED.CORE.EXECUTOR_MSIG));       
+    // TESTNET ONLY -- Allow owner to mint Testnet Temple
+    {     
         await mine(temple.addMinter(ownerAddress));
     }
 
