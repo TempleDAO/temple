@@ -35,9 +35,6 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
     /// @notice XP thresholds for Relic rarity levels
     mapping(Rarity => uint256) public rarityXPThresholds;
 
-    /// @notice callers who can update xp info for a relic
-    mapping(address => bool) public xpControllers;
-
     /// @notice to keep track of blacklisted accounts and shard balances
     mapping(address => mapping(uint256 => uint256)) public blacklistedAccountShards;
     mapping(address => bool) public blacklistedAccounts;
@@ -73,7 +70,6 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
     event RelicMinterSet(address minter, bool allow);
     event ShardSet(address shard);
     event RelicMinted(address to, uint256 nextTokenId, uint256 quantity);
-    event XPControllerSet(address controller, bool flag);
     event RelicXPSet(uint256 relicId, uint256 xp);
     event ShardEquipped(address caller, uint256 relicId, uint256 shardId, uint256 amount);
     event ShardsEquipped(address caller, uint256 relicId, uint256[] shardIds, uint256[] amounts);
@@ -85,7 +81,6 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
     error CallerCannotMint(address msgSender);
     error InvalidRelic(uint256 relicId);
     error InvalidAddress(address invalidAddress);
-    error InvalidAccess(address account);
     error InsufficientShardBalance(uint256 actualBalance, uint256 requestedBalance);
     error ZeroAddress();
     error InvalidOwner(address invalidOwner);
@@ -116,7 +111,21 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
     function _baseURI(uint256 relicId) internal view override returns (string memory uri) {
         /// get uri using relicId rarity
         RelicInfo storage relicInfo = relicInfos[relicId];
-        uri = baseUris[relicInfo.rarity];
+        uri = string(
+            abi.encodePacked(
+                baseUris[relicInfo.rarity],
+                _toString(uint256(relicInfo.enclave))    
+            )
+        );
+    }
+
+    /**
+     * @dev Returns the Uniform Resource Identifier (URI) for `tokenId` token.
+     */
+    function tokenURI(uint256 tokenId) public view override returns (string memory) {
+        if (!_exists(tokenId)) _revert(URIQueryForNonexistentToken.selector);
+
+        return _baseURI(tokenId);
     }
 
     /*
@@ -142,17 +151,6 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
     }
 
     /*
-     * @notice Set controller of relic XP
-     * @param controller Address of XP controller
-     * @param allow If controller is allowed to set XP relic value
-     */
-    function setXPController(address controller, bool allow) external onlyElevatedAccess {
-        if (controller == ZERO_ADDRESS) { revert ZeroAddress(); }
-        xpControllers[controller] = allow;
-        emit XPControllerSet(controller, allow);
-    }
-
-    /*
      * @notice Set XP threshold for rarities
      * @param rarities Rarity array
      * @param thresholds Thresholds for XP
@@ -166,7 +164,6 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
         for(uint i; i < _length;) {
             uint256 _threshold = thresholds[i];
             Rarity _rarity = rarities[i];
-            // if (!isAllowedRarity(_rarity)) { revert CommonEventsAndErrors.InvalidParam(); } 
             if (uint8(_rarity) > uint8(Rarity.Legendary)) { revert CommonEventsAndErrors.InvalidParam(); }
             rarityXPThresholds[_rarity] = _threshold;
             emit RarityXPThresholdSet(_rarity, _threshold);
@@ -257,11 +254,10 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
      * @param relicId ID of relic
      * @param xp XP to set
      */
-     // todo change to elevatedAccess
-    function setRelicXP(uint256 relicId, uint256 xp) external onlyXPController {
+    function setRelicXP(uint256 relicId, uint256 xp) external onlyElevatedAccess {
         if(!_exists(relicId)) { revert InvalidRelic(relicId); }
         RelicInfo storage relicInfo = relicInfos[relicId];
-        // leave open for when xp could go down or up
+        // leave open for when xp could increase or decrease
         relicInfo.xp = uint128(xp);
         emit RelicXPSet(relicId, xp);
         checkpointRelicRarity(relicId);
@@ -356,7 +352,6 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
         if (_length != amounts.length) { revert InvalidParamLength(); }
         // using batch transfer as validation msg.sender owns all shards
         shard.safeBatchTransferFrom(msg.sender, address(this), shardIds, amounts, ZERO_BYTES);
-        // question change to assembly?
         uint256 shardId;
         RelicInfo storage relicInfo = relicInfos[relicId];
         for (uint i; i < _length;) {
@@ -443,7 +438,7 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
     ) external onlyElevatedAccess {
         if (!blacklistedAccounts[account]) { revert CommonEventsAndErrors.InvalidParam(); }
         if (account != ownerOf(relicId)) { revert CommonEventsAndErrors.InvalidAccess(); }
-        /// @notice shard IDs cannot be empty. Use setBlacklistAccount directly for setting account blacklist
+        /// @dev shard IDs cannot be empty. Use setBlacklistAccount directly for setting account blacklist
         uint256 _length = shardIds.length;
         if (_length == 0) { revert InvalidParamLength(); }
         mapping(uint256 => uint256) storage equippedShards = relicInfos[relicId].equippedShards;
@@ -460,7 +455,7 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
                 ++i;
             }
         }
-        /// @notice burn from this contract. equipped shards are in contract
+        /// @dev burn from this contract. equipped shards are in contract
         shard.burnBatch(address(this), shardIds, amounts);
         if (whitelistAfterBurn) {
             delete blacklistedAccounts[account];
@@ -474,7 +469,6 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
         uint256 startTokenId,
         uint256 /*quantity*/
     ) internal override {
-        /// question should we allow blacklisted addresses to burn their relics?
         if (from != ZERO_ADDRESS && blacklistedAccounts[from]) {
             revert CommonEventsAndErrors.AccountBlacklisted(from);
         }
@@ -522,13 +516,8 @@ contract Relic is ERC721ACustom, ERC1155Receiver, TempleElevatedAccess {
             interfaceId == 0x5b5e139f; // ERC165 interface ID for ERC721Metadata.
     }
 
-    modifier onlyXPController() {
-        if (!xpControllers[msg.sender]) { revert InvalidAccess(msg.sender); }
-        _;
-    }
-
     modifier onlyRelicOwner(uint256 relicId) {
-        if (msg.sender != ownerOf(relicId)) { revert InvalidAccess(msg.sender); }
+        if (msg.sender != ownerOf(relicId)) { revert CommonEventsAndErrors.InvalidAccess(); }
         _;
     }
 

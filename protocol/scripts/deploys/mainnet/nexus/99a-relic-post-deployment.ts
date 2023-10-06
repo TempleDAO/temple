@@ -24,9 +24,11 @@ async function main() {
     {
         await mine(relic.setRelicMinter(templeSacrificeAddress, true));
     }
-    // set xp controller
+    // set base uri rarity 
     {
-
+        // 0 for Common
+        const commonUri = 'ipfs://QmVBhkqq3qEeQvdCDWSXQGMX7hFDymZvy7X7J4z9GsUAB3/'
+        await mine(relic.setBaseUriRarity(0, commonUri));
     }
 }
 

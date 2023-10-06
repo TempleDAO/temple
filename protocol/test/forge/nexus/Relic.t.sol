@@ -7,7 +7,6 @@ import { Shard } from "../../../contracts/nexus/Shard.sol";
 import { FakeERC20 } from "../../../contracts/fakes/FakeERC20.sol";
 import { CommonEventsAndErrors } from "../../../contracts/common/CommonEventsAndErrors.sol";
 import { IERC1155Receiver } from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
-import {Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 
 
 contract RelicTestBase is TempleTest {
@@ -78,7 +77,6 @@ contract RelicTestBase is TempleTest {
         shard = new Shard(address(relic), rescuer, executor, BASE_URI);
         vm.startPrank(executor);
         relic.setRelicMinter(operator, true);
-        relic.setXPController(operator, true);
         relic.setShard(address(shard));
         changePrank(operator);
         relic.mintRelic(bob, Relic.Enclave.Logic);
@@ -158,6 +156,45 @@ contract RelicTestBase is TempleTest {
         relic.setXPRarityThreshold(Relic.Rarity.Epic, 60);
         relic.setXPRarityThreshold(Relic.Rarity.Legendary, 100);
     }
+
+    function _toString(uint256 value) internal pure returns (string memory str) {
+        assembly {
+            // The maximum value of a uint256 contains 78 digits (1 byte per digit), but
+            // we allocate 0xa0 bytes to keep the free memory pointer 32-byte word aligned.
+            // We will need 1 word for the trailing zeros padding, 1 word for the length,
+            // and 3 words for a maximum of 78 digits. Total: 5 * 0x20 = 0xa0.
+            let m := add(mload(0x40), 0xa0)
+            // Update the free memory pointer to allocate.
+            mstore(0x40, m)
+            // Assign the `str` to the end.
+            str := sub(m, 0x20)
+            // Zeroize the slot after the string.
+            mstore(str, 0)
+
+            // Cache the end of the memory to calculate the length later.
+            let end := str
+
+            // We write the string from rightmost digit to leftmost digit.
+            // The following is essentially a do-while loop that also handles the zero case.
+            // prettier-ignore
+            for { let temp := value } 1 {} {
+                str := sub(str, 1)
+                // Write the character to the pointer.
+                // The ASCII index of the '0' character is 48.
+                mstore8(str, add(48, mod(temp, 10)))
+                // Keep dividing `temp` until zero.
+                temp := div(temp, 10)
+                // prettier-ignore
+                if iszero(temp) { break }
+            }
+
+            let length := sub(end, str)
+            // Move the pointer 32 bytes leftwards to make room for the length.
+            str := sub(str, 0x20)
+            // Store the length.
+            mstore(str, length)
+        }
+    }
 }
 
 contract RelicTestAccess is RelicTestBase {
@@ -200,18 +237,6 @@ contract RelicTestAccess is RelicTestBase {
     function test_access_setRelicMinterSuccess() public {
         vm.startPrank(executor);
         relic.setRelicMinter(alice, true);
-    }
-
-    function test_access_setXPControllerFail(address caller) public {
-        vm.assume(caller != executor && caller != rescuer);
-        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
-        vm.startPrank(caller);
-        relic.setXPController(alice, true);
-    }
-
-    function test_access_setXPControllerSuccess() public {
-        vm.startPrank(executor);
-        relic.setXPController(alice, true);
     }
 
     function test_access_setXPRarityThresholdsFail(address caller) public {
@@ -267,14 +292,12 @@ contract RelicTestAccess is RelicTestBase {
     function test_access_setRelicXPFail(address caller) public {
         vm.assume(caller != executor && caller != rescuer && caller != operator);
         vm.startPrank(caller);
-        vm.expectRevert(abi.encodeWithSelector(Relic.InvalidAccess.selector, caller));
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         relic.setRelicXP(1, 100);
     }
 
      function test_access_setRelicXPSuccess() public {
         vm.startPrank(executor);
-        relic.setXPController(address(this), true);
-        vm.stopPrank();
         relic.setRelicXP(1, 100);
     }
 }
@@ -316,17 +339,6 @@ contract RelicSettersTest is RelicTestAccess {
         emit RelicMinterSet(alice, true);
         relic.setRelicMinter(alice, true);
         assertEq(relic.relicMinters(alice), true);
-    }
-
-    function test_setXPController() public {
-        vm.startPrank(executor);
-        vm.expectRevert(abi.encodeWithSelector(Relic.ZeroAddress.selector));
-        relic.setXPController(ZERO_ADDRESS, true);
-
-        vm.expectEmit(address(relic));
-        emit XPControllerSet(alice, true);
-        relic.setXPController(alice, true);
-        assertEq(relic.xpControllers(alice), true);
     }
 
     function test_setXPRarityThresholds() public {
@@ -417,16 +429,14 @@ contract RelicSettersTest is RelicTestAccess {
         uint256[] memory relicIds = relic.relicsOfOwner(bob);
         uint256 invalidRelicId = 999;
         uint256 xp = 100;
-        vm.startPrank(operator);
+        vm.startPrank(executor);
         vm.expectRevert(abi.encodeWithSelector(Relic.InvalidRelic.selector, invalidRelicId));
         relic.setRelicXP(invalidRelicId, xp);
         uint256 relicId = relicIds[0];
         (, Relic.Rarity rarity,uint256 newXp) = relic.relicInfos(relicId);
-        changePrank(executor);
         _setRarityThresholds();
         assertEq(uint8(rarity), uint8(Relic.Rarity.Common));
         
-        changePrank(operator);
         vm.expectEmit(address(relic));
         emit RelicXPSet(relicId, xp);
         relic.setRelicXP(relicId, xp);
@@ -444,13 +454,36 @@ contract RelicViewTest is RelicSettersTest {
         string memory uncommonBaseUri = string.concat(BASE_URI, "uncommon/");
         relic.setBaseUriRarity(Relic.Rarity.Common, commonBaseUri);
         relic.setBaseUriRarity(Relic.Rarity.Uncommon, uncommonBaseUri);
-        changePrank(operator);
-        relic.mintRelic(alice, Relic.Enclave.Chaos);
-        uint256 tokenId = relic.totalSupply() - 1;
-        string memory uri = relic.tokenURI(tokenId);
-        assertEq(uri, string.concat(BASE_URI, "common/", Strings.toString(tokenId)));
+
         assertEq(relic.getRarityBaseUri(Relic.Rarity.Common), commonBaseUri);
         assertEq(relic.getRarityBaseUri(Relic.Rarity.Uncommon), uncommonBaseUri);
+
+        changePrank(operator);
+        uint256 relicId = relic.nextTokenId();
+        relic.mintRelic(alice, Relic.Enclave.Structure);
+        changePrank(executor);
+        relic.setBaseUriRarity(commRarity, BASE_URI);
+
+        string memory expectedUri = string(
+            abi.encodePacked(
+                BASE_URI,
+                _toString(uint256(uint8(Relic.Enclave.Structure)))
+            )
+        );
+        assertEq(expectedUri, relic.tokenURI(relicId));
+        // another enclave
+        relicId = relic.nextTokenId();
+        changePrank(operator);
+        relic.mintRelic(alice, Relic.Enclave.Mystery);
+        changePrank(executor);
+        relic.setBaseUriRarity(commRarity, BASE_URI);
+        expectedUri = string(
+            abi.encodePacked(
+                BASE_URI,
+                _toString(uint256(uint8(Relic.Enclave.Mystery)))
+            )
+        );
+        assertEq(expectedUri, relic.tokenURI(relicId));
     }
 
     function test_getBalanceBatch() public {
@@ -569,7 +602,7 @@ contract RelicTest is RelicViewTest {
         amounts[0] = amounts[1] = 5;
 
         vm.startPrank(alice);
-        vm.expectRevert(abi.encodeWithSelector(Relic.InvalidAccess.selector, alice));
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         relic.batchEquipShards(relicId, shardIds, amounts);
 
         // test blacklist
@@ -611,7 +644,7 @@ contract RelicTest is RelicViewTest {
         amounts[0] = amounts[1] = 5;
 
         vm.startPrank(alice);
-        vm.expectRevert(abi.encodeWithSelector(Relic.InvalidAccess.selector, alice));
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         relic.batchUnequipShards(relicId, shardIds, amounts);
 
         // test blacklist
@@ -620,7 +653,6 @@ contract RelicTest is RelicViewTest {
             shardIds[1] = SHARD_2_ID;
             changePrank(executor);
             _blacklistAccount(true, false, RELIC_1_ID, bob, shardIds, amounts);
-            // relic.setBlacklistAccount(bob, true, RELIC_1_ID, shardIds, amounts);
             changePrank(bob);
             vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.AccountBlacklisted.selector, bob));
             relic.batchUnequipShards(relicId, shardIds, amounts);
@@ -654,7 +686,6 @@ contract RelicTest is RelicViewTest {
             assertEq(equippedAmount1, amount + 5);
 
             shardsOne[0] = SHARD_2_ID;
-            // relic.equipShard(relicId, SHARD_2_ID, amount);
             relic.batchEquipShards(relicId, shardsOne, amountsOne);
             equippedAmount2 = relic.getEquippedShardAmount(relicId, SHARD_2_ID);
             assertEq(equippedAmount2, amount + 5);
@@ -692,7 +723,6 @@ contract RelicTest is RelicViewTest {
         assertEq(dai.balanceOf(address(relic)), 0);
     }
 
-    // is blacklisting enough?
     // burning adds no incentive per supply/demand
     function test_burnBlacklistedAccountShards() public {
         uint256[] memory shardIds = new uint256[](2);
@@ -789,8 +819,6 @@ contract RelicTest is RelicViewTest {
         (, Relic.Rarity rarity, uint128 xp) = relic.relicInfos(relicId);
         assertEq(xp, 0);
         _setRarityThresholds();
-        relic.setXPController(operator, true);
-        changePrank(operator);
         relic.setRelicXP(relicId, 10);
         relic.checkpointRelicRarity(relicId);
         (, rarity, xp) = relic.relicInfos(relicId);

@@ -20,10 +20,10 @@ contract ShardTestBase is TempleTest {
     string internal constant SHARD_3_URI = "https://example3.com";
     string internal constant SHARD_4_URI = "https://example4.com";
 
-    uint256 internal constant SHARD_1_ID = 0x01; //0x7B;  // 123
-    uint256 internal constant SHARD_2_ID = 0x02;//0x1C8; // 456
-    uint256 internal constant SHARD_3_ID = 0x03; // 789
-    uint256 internal constant SHARD_4_ID = 0x04; // 420
+    uint256 internal constant SHARD_1_ID = 0x01; 
+    uint256 internal constant SHARD_2_ID = 0x02;
+    uint256 internal constant SHARD_3_ID = 0x03;
+    uint256 internal constant SHARD_4_ID = 0x04;
 
     uint256 internal constant RECIPE_1_ID = 0x01; // 1
     uint256 internal constant RECIPE_2_ID = 0x02; // 2
@@ -69,7 +69,6 @@ contract ShardTestBase is TempleTest {
     event MinterAllowedShardCapSet(address minter, uint256 shardId, uint256 cap);
     event ShardIdSet(uint256 shardId, bool allow);
     
-    // todo test minting to blacklisted accounts
     function setUp() public {
         relic = new Relic(name, symbol, rescuer, executor);
         shard = new Shard(address(relic), rescuer, executor, "http://example.com");
@@ -78,7 +77,6 @@ contract ShardTestBase is TempleTest {
         // relic setup
         {
             relic.setRelicMinter(operator, true);
-            relic.setXPController(operator, true);
             relic.setShard(address(shard));
             changePrank(operator);
             relic.mintRelic(bob, Relic.Enclave.Logic);
