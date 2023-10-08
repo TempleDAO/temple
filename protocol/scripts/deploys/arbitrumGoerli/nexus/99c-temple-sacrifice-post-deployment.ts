@@ -15,9 +15,10 @@ async function main() {
     const [owner] = await ethers.getSigners();
     const ownerAddress = await owner.getAddress();
     const deployedContracts = DEPLOYED_CONTRACTS[network.name];
-    const mockTempleSacrifice = TestnetTempleSacrifice__factory.connect(deployedContracts.TEMPLE_SACRIFICE, owner);
+    const templeSacrifice = TestnetTempleSacrifice__factory.connect(deployedContracts.TEMPLE_SACRIFICE, owner);
 
     {
+        await mine(templeSacrifice.setSacrificedTempleRecipient(ownerAddress));
         // await mine(templeSacrifice.setCustomPrice(toAtto(30)));
         // await mine(templeSacrifice.setOriginTime(blockTimestamp()));
         // await mine(templeSacrifice.setWhitelistContract(ownerAddress));
