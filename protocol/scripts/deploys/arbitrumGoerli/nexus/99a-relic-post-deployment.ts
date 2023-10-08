@@ -27,13 +27,15 @@ async function main() {
         await mine(relic.setRelicMinter(ownerAddress, true));
         await mine(relic.setRelicMinter(deployedContracts.TEMPLE_SACRIFICE, true));
     }
-    // XP controllers
-    {
-        await mine(relic.setXPController(ownerAddress, true));
-    }
     // shard
     {
         await mine(relic.setShard(deployedContracts.SHARD));
+    }
+    // set uri
+    {
+        // set for common rarity
+        const uri = 'ipfs://QmVBhkqq3qEeQvdCDWSXQGMX7hFDymZvy7X7J4z9GsUAB3/'
+        await mine(relic.setBaseUriRarity(0, uri));
     }
 
 }

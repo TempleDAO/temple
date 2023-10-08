@@ -203,6 +203,7 @@ module.exports = {
       polygon: process.env.POLYGONSCAN_API_KEY,
       goerli: process.env.ETHERSCAN_API_KEY,
       sepolia: process.env.ETHERSCAN_API_KEY,
+      arbitrumGoerli: process.env.ARBISCAN_API_KEY,
     }
   },
   mocha: {

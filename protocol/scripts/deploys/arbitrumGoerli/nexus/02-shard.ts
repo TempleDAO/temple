@@ -13,7 +13,7 @@ async function main() {
     const relicAddress = DEPLOYED_CONTRACTS[network.name].RELIC;
 
     const shardFactory = new TestnetShard__factory(owner);
-    const uri = "http://example.com";
+    const uri = 'ipfs://QmVBhkqq3qEeQvdCDWSXQGMX7hFDymZvy7X7J4z9GsUAB3/';
     await deployAndMine(
         'SHARD',
         shardFactory,

@@ -17,7 +17,8 @@ async function main() {
 
     // set sacrificed temple recipient
     {
-        await mine(templeSacrifice.setSacrificedTempleRecipient(''));
+        const recipient = '0x759bc1678e9d35BdD78C50e4bCF4aCeAf4869A8D';
+        await mine(templeSacrifice.setSacrificedTempleRecipient(recipient));
     }
     // set price params
     {
