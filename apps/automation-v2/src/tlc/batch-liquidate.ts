@@ -10,9 +10,8 @@ import {
 import { ITempleLineOfCredit, ITempleLineOfCredit__factory } from '@/typechain';
 import { EventLog } from 'ethers';
 import {
-  FallibleTaskResult,
+  TaskResult,
   TaskContext,
-  taskFailOnce,
   taskSuccess,
   taskSuccessSilent,
 } from '@mountainpath9/overlord';
@@ -25,7 +24,7 @@ export interface TlcBatchLiquidateConfig {
   WALLET_NAME: string;
   TLC_ADDRESS: string;
   ACC_LIQ_MAX_CHUNK_NO: number;
-  MIN_ETH_BALANCE: bigint;
+  MIN_ETH_BALANCE_WARNING: bigint;
   GAS_LIMIT: bigint;
   SUBGRAPH_URL: string;
 }
@@ -33,7 +32,7 @@ export interface TlcBatchLiquidateConfig {
 export async function batchLiquidate(
   ctx: TaskContext,
   config: TlcBatchLiquidateConfig
-): Promise<FallibleTaskResult> {
+): Promise<TaskResult> {
   const provider = await ctx.getProvider(config.CHAIN.id);
   const signer = await ctx.getSigner(provider, config.WALLET_NAME);
   const walletAddress = await signer.getAddress();
@@ -46,23 +45,6 @@ export async function batchLiquidate(
   );
 
   const submittedAt = new Date();
-
-  const checkEthBalance = async() => {
-    // Send discord alert if signer wallet doesn't have sufficient eth balance
-    const ethBalance = await provider.getBalance(walletAddress);
-    if (ethBalance < config.GAS_LIMIT) {
-      const ethBalanceMessage = await buildDiscordMessageCheckEth(
-        config.CHAIN,
-        submittedAt,
-        walletAddress,
-        ethBalance,
-        config.GAS_LIMIT
-      );
-  
-      await discord.postMessage(ethBalanceMessage);
-      return taskFailOnce('eth balance is less than gas limit');
-    }
-  }
 
   const chunkify = function (itr: string[], size: number) {
     const chunk: string[][] = [];
@@ -98,15 +80,9 @@ export async function batchLiquidate(
   // e.g. try to liquidate 1000 accounts at once could use too much gas and fail
   const accListChunks = chunkify(accsToLiquidate, config.ACC_LIQ_MAX_CHUNK_NO);
   for (const accBatch of accListChunks) {
-
-    // check eth balance and fail task if below min eth
-    const ethCheckRes = await checkEthBalance();
-    if (ethCheckRes) return ethCheckRes;
-    
     const tx = await tlc.batchLiquidate(accBatch, {
       gasLimit: config.GAS_LIMIT,
     });
-
     const txReceipt = await tx.wait();
     if (!txReceipt) throw Error('undefined tx receipt');
 
@@ -169,10 +145,18 @@ export async function batchLiquidate(
     await discord.postMessage(message);
   }
 
-  // check eth balance once more to send notification if needed, but don't 
-  // fail the task since liquidation was already executed successfully
-  await checkEthBalance();
-
+  // Send discord alert warning if signer wallet doesn't have sufficient eth balance
+  const ethBalance = await provider.getBalance(walletAddress);
+  if (ethBalance < config.GAS_LIMIT) {
+    const ethBalanceMessage = await buildDiscordMessageCheckEth(
+      config.CHAIN,
+      submittedAt,
+      walletAddress,
+      ethBalance,
+      config.GAS_LIMIT
+    );
+    await discord.postMessage(ethBalanceMessage);
+  }
   return taskSuccess();
 }
 
