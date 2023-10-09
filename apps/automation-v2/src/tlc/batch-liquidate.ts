@@ -1,4 +1,4 @@
-import { Chain, getChainById } from '@/chains';
+import { Chain } from '@/chains';
 import { DISCORD_WEBHOOK_URL_KEY, connectDiscord } from '@/common/discord';
 import {
   TempleTaskDiscordEvent,

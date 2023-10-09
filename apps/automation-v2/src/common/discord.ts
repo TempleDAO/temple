@@ -52,7 +52,7 @@ export async function discordNotifyTaskException(ctx: TaskContext, te: TaskExcep
     content.push(`exception type: unknown`);
   }
 
-  const webhookUrl = await ctx.getSecret(DISCORD_WEBHOOK_URL_KEY);
+  const webhookUrl = await ctx.getSecret(DISCORD_WEBHOOK_ERROR_URL_KEY);
   const discord = await connectDiscord(webhookUrl, ctx.logger);
   await discord.postMessage({ content: content.join('\n') });
 }
@@ -61,4 +61,5 @@ const DISCORD_URL_RE = new RegExp(
   'https://discord.com/api/webhooks/([^/]+)/(.+)$'
 );
 
-export const DISCORD_WEBHOOK_URL_KEY = 'temple_discord_webhook_url';
+export const DISCORD_WEBHOOK_URL_KEY = 'temple_tlc_discord_webhook_url';
+export const DISCORD_WEBHOOK_ERROR_URL_KEY = 'temple_tlc_discord_error_webhook_url';

@@ -13,7 +13,7 @@ import { discordNotifyTaskException } from '@/common/discord';
 async function main() {
   const runner = createTaskRunner();
 
-  const mode = await runner.config.requireString('temple_networks');
+  const mode = await runner.config.requireString('temple_tlc_networks');
   const isProdnet = mode === 'prodnets';
   const config = isProdnet ? CONFIG_PRODNETS : CONFIG_TESTNETS;
 
