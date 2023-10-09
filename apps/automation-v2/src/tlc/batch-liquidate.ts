@@ -78,7 +78,7 @@ export async function batchLiquidate(
   // chunk compLiquidityAccs to a max number of requests per batchLiquidate
   // e.g. try to liquidate 1000 accounts at once could use too much gas and fail
   const accListChunks = chunkify(accsToLiquidate, config.ACC_LIQ_MAX_CHUNK_NO);
-  accListChunks.forEach(async (accBatch) => {
+  for (const accBatch of accListChunks) {
     const tx = await tlc.batchLiquidate(accBatch, {
       gasLimit: config.GAS_LIMIT,
     });
@@ -157,7 +157,7 @@ export async function batchLiquidate(
 
       await discord.postMessage(ethBalanceMessage);
     }
-  });
+  }
 
   return taskSuccess();
 }
@@ -165,12 +165,10 @@ export async function batchLiquidate(
 const getTlcUsers = async (url: string) => {
   const resp = await subgraphRequest<GetUserResponse>(url, {
     query: `{
-      users {
-        ... on TlcUser {
+        tlcUsers {
           id
         }
-      }
-    }`,
+      }`,
   });
 
   return resp;
