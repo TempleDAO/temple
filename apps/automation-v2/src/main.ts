@@ -1,5 +1,6 @@
 import {
   createTaskRunner,
+  falliblePeriodicTask,
   fallibleWebhookTask,
 } from '@mountainpath9/overlord';
 
@@ -19,16 +20,20 @@ async function main() {
 
   runner.setTaskExceptionHandler(discordNotifyTaskException);
 
-  runner.addPeriodicTask({
-    id: 'tlc-batch-liquidate',
-    cronSchedule: '*/10 * * * *',
-    action: async (ctx) => await batchLiquidate(ctx, config.tlcBatchLiquidate),
-  });
+  runner.addPeriodicTask(
+    falliblePeriodicTask({
+      id: 'tlc-batch-liquidate',
+      cronSchedule: '*/10 * * * *',
+      action: async (ctx) =>
+        await batchLiquidate(ctx, config.tlcBatchLiquidate),
+    })
+  );
 
   runner.addWebhookTask(
     fallibleWebhookTask({
       id: 'tlc-batch-liquidate-wh',
-      action: async (ctx) => await batchLiquidate(ctx, config.tlcBatchLiquidate),
+      action: async (ctx) =>
+        await batchLiquidate(ctx, config.tlcBatchLiquidate),
     })
   );
 

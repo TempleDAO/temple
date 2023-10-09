@@ -9,8 +9,9 @@ import {
 import { ITempleLineOfCredit, ITempleLineOfCredit__factory } from '@/typechain';
 import { EventLog } from 'ethers';
 import {
+  FallibleTaskResult,
   TaskContext,
-  TaskResult,
+  taskFailOnce,
   taskSuccess,
   taskSuccessSilent,
 } from '@mountainpath9/overlord';
@@ -32,7 +33,7 @@ export interface TlcBatchLiquidateConfig {
 export async function batchLiquidate(
   ctx: TaskContext,
   config: TlcBatchLiquidateConfig
-): Promise<TaskResult> {
+): Promise<FallibleTaskResult> {
   const provider = await ctx.getProvider(config.CHAIN.id);
   const signer = await ctx.getSigner(provider, config.WALLET_NAME);
   const walletAddress = await signer.getAddress();
@@ -79,6 +80,21 @@ export async function batchLiquidate(
   // e.g. try to liquidate 1000 accounts at once could use too much gas and fail
   const accListChunks = chunkify(accsToLiquidate, config.ACC_LIQ_MAX_CHUNK_NO);
   for (const accBatch of accListChunks) {
+    // Send discord alert if signer wallet doesn't have sufficient eth balance
+    const ethBalance = await provider.getBalance(walletAddress);
+    if (ethBalance < config.MIN_ETH_BALANCE) {
+      const ethBalanceMessage = await buildDiscordMessageCheckEth(
+        config.CHAIN,
+        submittedAt,
+        walletAddress,
+        ethBalance,
+        config.MIN_ETH_BALANCE
+      );
+
+      await discord.postMessage(ethBalanceMessage);
+      return taskFailOnce('eth balance is less than gas limit');
+    }
+
     const tx = await tlc.batchLiquidate(accBatch, {
       gasLimit: config.GAS_LIMIT,
     });
@@ -143,20 +159,6 @@ export async function batchLiquidate(
       metadata
     );
     await discord.postMessage(message);
-
-    // Send discord alert if signer wallet doesn't have sufficient eth balance
-    const ethBalance = await provider.getBalance(walletAddress);
-    if (ethBalance < config.MIN_ETH_BALANCE) {
-      const ethBalanceMessage = await buildDiscordMessageCheckEth(
-        config.CHAIN,
-        submittedAt,
-        walletAddress,
-        ethBalance,
-        config.MIN_ETH_BALANCE
-      );
-
-      await discord.postMessage(ethBalanceMessage);
-    }
   }
 
   return taskSuccess();
@@ -165,10 +167,10 @@ export async function batchLiquidate(
 const getTlcUsers = async (url: string) => {
   const resp = await subgraphRequest<GetUserResponse>(url, {
     query: `{
-        tlcUsers {
-          id
-        }
-      }`,
+      tlcUsers(where: {debt_gt: "0"}) {
+        id
+      }
+    }`,
   });
 
   return resp;
