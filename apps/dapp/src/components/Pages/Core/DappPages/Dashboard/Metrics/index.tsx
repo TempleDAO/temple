@@ -9,64 +9,94 @@ const DashboardMetrics = ({ dashboardType }: DashboardMetricsProps) => {
   // TODO: Based on the dashboardType, we need to fetch and render the right data
   console.debug('DashboardMetrics with dashboardType: ', dashboardType);
 
+  const treasuryReservesVaultMetricsData = {
+    // one array per row
+    metrics: [
+      [
+        {
+          title: 'Total Market Value',
+          value: '$1.68 B',
+        },
+        {
+          title: 'Spot Price',
+          value: '1.31 DAI',
+        },
+        {
+          title: 'Treasury Price Index',
+          value: '1.31 DAI',
+        },
+      ],
+      [
+        {
+          title: 'Circulating Supply',
+          value: '$1.50 M',
+        },
+        {
+          title: 'Benchmark Rate',
+          value: '7% p.a.',
+        },
+      ],
+    ],
+    // these are the "small" metrics that appear below the metrics
+    // again, one array per row
+    smallMetrics: [
+      [
+        {
+          title: 'Principal',
+          value: '$1.24 B',
+        },
+        {
+          title: 'Accrued dUSD Interest',
+          value: '$980.33 K',
+        },
+        {
+          title: 'Accrued dUSD Interest',
+          value: '$0.44 B',
+        },
+        {
+          title: 'Nominal Performance',
+          value: '1.35%',
+        },
+      ],
+      [
+        {
+          title: 'Benchmarked Equity',
+          value: '$1.20 B',
+        },
+        {
+          title: 'Benchmark Performance',
+          value: '0.38%',
+        },
+      ],
+    ],
+  };
+
   return (
     <>
       {' '}
       <MetricsContainer>
-        <MetricsRow>
-          <Metric>
-            <MetricValue>$1.68 B</MetricValue>
-            <MetricTitle>Total Market Value</MetricTitle>
-          </Metric>
-          <Metric>
-            <MetricValue>1.31 DAI</MetricValue>
-            <MetricTitle>Spot Price</MetricTitle>
-          </Metric>
-          <Metric>
-            <MetricValue>1.31 DAI</MetricValue>
-            <MetricTitle>Treasury Price Index</MetricTitle>
-          </Metric>
-        </MetricsRow>
-        <MetricsRow>
-          <Metric>
-            <MetricValue>$1.50 M</MetricValue>
-            <MetricTitle>Circulating Supply</MetricTitle>
-          </Metric>
-          <Metric>
-            <MetricValue>7% p.a.</MetricValue>
-            <MetricTitle>Benchmark Rate</MetricTitle>
-          </Metric>
-        </MetricsRow>
+        {treasuryReservesVaultMetricsData.metrics.map((row) => (
+          <MetricsRow>
+            {row.map((metric) => (
+              <Metric>
+                <MetricValue>{metric.value}</MetricValue>
+                <MetricTitle>{metric.title}</MetricTitle>
+              </Metric>
+            ))}
+          </MetricsRow>
+        ))}
       </MetricsContainer>
       <MetricsContainer>
-        <MetricsRow>
-          <Metric small>
-            <MetricValue small>$1.24 B</MetricValue>
-            <MetricTitle small>Principal</MetricTitle>
-          </Metric>
-          <Metric small>
-            <MetricValue small>$980.33 K</MetricValue>
-            <MetricTitle small>Accrued dUSD Interest</MetricTitle>
-          </Metric>
-          <Metric small>
-            <MetricValue small>$0.44 B</MetricValue>
-            <MetricTitle small>Accrued dUSD Interest</MetricTitle>
-          </Metric>
-          <Metric small>
-            <MetricValue small>1.35%</MetricValue>
-            <MetricTitle small>Nominal Performance</MetricTitle>
-          </Metric>
-        </MetricsRow>
-        <MetricsRow>
-          <Metric small>
-            <MetricValue small>$1.20 B</MetricValue>
-            <MetricTitle small>Benchmarked Equity</MetricTitle>
-          </Metric>
-          <Metric small>
-            <MetricValue small>0.38%</MetricValue>
-            <MetricTitle small>Benchmark Performance</MetricTitle>
-          </Metric>
-        </MetricsRow>
+        {treasuryReservesVaultMetricsData.smallMetrics.map((row) => (
+          <MetricsRow>
+            {row.map((metric) => (
+              <Metric small>
+                <MetricValue small>{metric.value}</MetricValue>
+                <MetricTitle small>{metric.title}</MetricTitle>
+              </Metric>
+            ))}
+          </MetricsRow>
+        ))}
       </MetricsContainer>
     </>
   );
