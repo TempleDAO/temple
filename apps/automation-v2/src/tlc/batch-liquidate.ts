@@ -61,7 +61,7 @@ export async function batchLiquidate(
   const submittedAt = new Date();
 
   const res = await getTlcUsers(config.SUBGRAPH_URL);
-  const tlcUsers = (await res()).data?.users;
+  const tlcUsers = (await res()).data?.tlcUsers;
   // if undefined or zero users returned from subgraph, success silently
   if (!tlcUsers || tlcUsers.length === 0) return taskSuccessSilent();
   const accountsToCheck = tlcUsers.flatMap((u) => u.id);
@@ -84,7 +84,7 @@ export async function batchLiquidate(
     });
 
     const txReceipt = await tx.wait();
-    if (!txReceipt) return taskSuccessSilent();
+    if (!txReceipt) throw Error('undefined tx receipt');
 
     // Grab the events
     const events: TempleTaskDiscordEvent[] = [];
