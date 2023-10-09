@@ -7,7 +7,7 @@
     "prepare": "yarn typechain",
     "typechain": "typechain --target=ethers-v6 --out-dir src/typechain abi/*.json",
     "clean": "rm -rf dist",
-    "build": "yarn clean && tsc && tsc-alias -p tsconfig.json",
+    "build": "yarn clean && yarn tsc --noEmit &&  yarn esbuild --platform=node --bundle --outfile=dist/main.js src/main.ts",
     "dev": "yarn build && source .env && node ./dist/main.js",
     "build:image": "docker build --tag temple-tasks .",
     "anvil:mainnet-fork": "anvil -f https://eth-mainnet.g.alchemy.com/v2/LjzU7NEw1jfJZSDBP10rGeg53cSlzscP --config-out anvil.json --fork-block-number 18189826",
@@ -23,6 +23,7 @@
   "devDependencies": {
     "@typechain/ethers-v6": "^0.5.0",
     "@types/jquery": "^3.5.19",
+    "esbuild": "^0.19.4",
     "tsc-alias": "^1.8.3",
     "typechain": "^8.1.1",
     "typescript": "^5.1.6"
