@@ -147,13 +147,13 @@ export async function batchLiquidate(
 
   // Send discord alert warning if signer wallet doesn't have sufficient eth balance
   const ethBalance = await provider.getBalance(walletAddress);
-  if (ethBalance < config.GAS_LIMIT) {
+  if (ethBalance < config.MIN_ETH_BALANCE_WARNING) {
     const ethBalanceMessage = await buildDiscordMessageCheckEth(
       config.CHAIN,
       submittedAt,
       walletAddress,
       ethBalance,
-      config.GAS_LIMIT
+      config.MIN_ETH_BALANCE_WARNING
     );
     await discord.postMessage(ethBalanceMessage);
   }
