@@ -54,7 +54,6 @@ export const Withdraw: React.FC<IProps> = ({ accountPosition, state, setState, w
   return (
     <>
       <RemoveMargin />
-      <BackButton src={leftCaret} onClick={() => back()} />
       <Title>Withdraw TEMPLE</Title>
       <Input
         crypto={{

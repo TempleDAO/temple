@@ -62,7 +62,6 @@ export const Borrow: React.FC<IProps> = ({
   return (
     <>
       <RemoveMargin />
-      <BackButton src={leftCaret} onClick={() => back()} />
       <Title>Borrow DAI</Title>
       <Input
         crypto={{

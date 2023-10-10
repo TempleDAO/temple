@@ -43,7 +43,6 @@ export const Repay: React.FC<IProps> = ({ accountPosition, state, setState, repa
   return (
     <>
       <RemoveMargin />
-      <BackButton src={leftCaret} onClick={() => back()} />
       <Title>Repay DAI</Title>
       <Input
         crypto={{

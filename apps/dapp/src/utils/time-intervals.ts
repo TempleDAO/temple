@@ -2,8 +2,13 @@ export type LabeledTimeIntervals = readonly {
   label: ChartSupportedTimeInterval;
   interval: number;
 }[];
+type LabeledTimeIntervalsNoDaily = readonly {
+  label: ChartSupportedTimeIntervalNoDaily;
+  interval: number;
+}[];
 
 export type ChartSupportedTimeInterval = '1D' | '1W' | '1M' | '1Y';
+export type ChartSupportedTimeIntervalNoDaily = '1W' | '1M' | '1Y';
 
 export enum TIME_INTERVAL {
   ONE_HOUR = 60 * 60 * 1000,
@@ -18,6 +23,12 @@ export enum TIME_INTERVAL {
 
 export const DEFAULT_CHART_INTERVALS: LabeledTimeIntervals = [
   { interval: TIME_INTERVAL.ONE_DAY, label: '1D' },
+  { interval: TIME_INTERVAL.ONE_WEEK, label: '1W' },
+  { interval: TIME_INTERVAL.ONE_MONTH, label: '1M' },
+  { interval: TIME_INTERVAL.ONE_YEAR, label: '1Y' },
+] as const;
+
+export const CHART_INTERVALS_NO_DAILY: LabeledTimeIntervalsNoDaily = [
   { interval: TIME_INTERVAL.ONE_WEEK, label: '1W' },
   { interval: TIME_INTERVAL.ONE_MONTH, label: '1M' },
   { interval: TIME_INTERVAL.ONE_YEAR, label: '1Y' },

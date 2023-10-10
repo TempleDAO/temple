@@ -1,8 +1,6 @@
 import type { FC, Dispatch, SetStateAction, MouseEventHandler } from 'react';
 import type { ChartSupportedTimeInterval, LabeledTimeIntervals } from 'utils/time-intervals';
-
 import styled from 'styled-components';
-import { DEFAULT_CHART_INTERVALS } from 'utils/time-intervals';
 
 type IntervalTogglerProps = {
   selectedInterval: ChartSupportedTimeInterval;
@@ -10,21 +8,23 @@ type IntervalTogglerProps = {
   intervals?: LabeledTimeIntervals;
 };
 
-const IntervalToggler: FC<IntervalTogglerProps> = ({ selectedInterval, setSelectedInterval, intervals=DEFAULT_CHART_INTERVALS}) => {
-  return <TogglerContainer>
-            {intervals.map(({ label }) => (
-              <Toggle
-                key={label}
-                onClick={() => setSelectedInterval(label)}
-                selected={label === selectedInterval}>
-                {label}
-              </Toggle>
-            ))}
-          </TogglerContainer>
+const IntervalToggler: FC<IntervalTogglerProps> = ({
+  selectedInterval,
+  setSelectedInterval,
+  intervals = DEFAULT_CHART_INTERVALS,
+}) => {
+  return (
+    <TogglerContainer>
+      {intervals.map(({ label }) => (
+        <Toggle key={label} onClick={() => setSelectedInterval(label)} selected={label === selectedInterval}>
+          {label}
+        </Toggle>
+      ))}
+    </TogglerContainer>
+  );
 };
 
 export default IntervalToggler;
-
 
 const TogglerContainer = styled.div`
   display: flex;

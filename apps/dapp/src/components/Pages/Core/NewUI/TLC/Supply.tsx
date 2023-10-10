@@ -57,7 +57,6 @@ export const Supply: React.FC<IProps> = ({ accountPosition, state, minBorrow, se
   return (
     <>
       <RemoveMargin />
-      <BackButton src={leftCaret} onClick={() => back()} />
       <Title>Supply TEMPLE</Title>
       <Input
         crypto={{
