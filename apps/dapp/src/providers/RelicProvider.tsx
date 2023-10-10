@@ -317,7 +317,7 @@ export const RelicProvider = (props: PropsWithChildren<{}>) => {
     await ensureAllowance(TICKER_SYMBOL.TEMPLE_TOKEN, TEMPLE, env.nexus.templeSacrificeAddress, amount, amount);
 
     const sacrificeContract = new TempleSacrifice__factory(signer).attach(env.nexus.templeSacrificeAddress);
-    const txn = await sacrificeContract.sacrifice(wallet, enclave);
+    const txn = await sacrificeContract.sacrifice(enclave);
     const receipt = await txn.wait();
 
     setIsWhitelisted(true);

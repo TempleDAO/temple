@@ -20,7 +20,11 @@ interface ERC721A__IERC721Receiver {
 }
 
 /**
- * @title ERC721A
+ * @title ERC721ACustom
+ * This contract is a fork of https://github.com/chiru-labs/ERC721A/blob/main/contracts/ERC721A.sol
+ * Modifications:
+ * 1/ Function tokenURI(uint256 tokenId) has been modified to use the overriden version of _baseURI(uint256 tokenId).
+ *    Our implementation requires using tokenId to get the right base uri. Different token Ids have different base URIs.
  *
  * @dev Implementation of the [ERC721](https://eips.ethereum.org/EIPS/eip-721)
  * Non-Fungible Token Standard, including the Metadata extension.
@@ -298,7 +302,7 @@ abstract contract ERC721ACustom is IERC721A {
      * token will be the concatenation of the `baseURI` and the `tokenId`. Empty
      * by default, it can be overridden in child contracts.
      */
-    function _baseURI(uint256 tokenId) internal view virtual returns (string memory) {
+    function _baseURI(uint256 /*tokenId*/) internal view virtual returns (string memory) {
         return '';
     }
 

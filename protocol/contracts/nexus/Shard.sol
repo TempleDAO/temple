@@ -11,31 +11,32 @@ import { CommonEventsAndErrors } from "../common/CommonEventsAndErrors.sol";
 
 contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
     using EnumerableSet for EnumerableSet.UintSet;
-
+    /// @notice Relic NFT contract
     IRelic public relic;
     address private constant ZERO_ADDRESS = 0x0000000000000000000000000000000000000000;
+    /// @notice current token index
+    uint256 private _currentIndex;
+    /// @notice current recipe index
+    uint256 private _currentRecipeIndex;
 
-    /// @notice all 3 mappings below not combined into a struct for reasons allowedPartnerShardIds read often than rest. 
-    /* also for easy public reads(read functions). avoids cycle error
-     * choosing mapping of address to EnumerableSet to help supporting view functions like getPartnerMintInfo
-     */
-    mapping(address => EnumerableSet.UintSet) private allowedPartnerShardIds;
-    mapping(address => mapping(uint256 => uint256)) public allowedPartnersShardCaps;
-    mapping(address => mapping(uint256 => uint256)) public partnerMintBalances;
-    /// @notice keep track of all shards reserved for partners. helps to guard general mints also
-    EnumerableSet.UintSet private partnerShards;
+    /// @notice all 3 mappings below not combined into a struct for reasons allowedShardIds is read often than the rest. 
+    /// also for easy public reads(read functions). avoids cycle error
+    /// choosing mapping of address to EnumerableSet to help supporting view functions like getMintInfo
+    mapping(address => EnumerableSet.UintSet) private allowedShardIds;
+    mapping(address => mapping(uint256 => uint256)) public allowedShardCaps;
+    mapping(address => mapping(uint256 => uint256)) public mintBalances;
+    /// @notice keep track of all shards
+    // EnumerableSet.UintSet private shards;
 
     /// @notice shard ids to uris
-    mapping(uint256 => string) public shardUris;
-
-    /// @notice minters who can mint for templars
-    mapping(address => bool) public templarMinters;
-
+    mapping(uint256 => string) private shardUris;
+    /// @notice Recipe for transmutation of shards.
     mapping(uint256 => Recipe) private recipes;
-
-    //todo each shard should belong to exactly 1 enclave. an enclave can have many shards
-    // mapping(Enclave => EnumerableSet.UintSet) private enclaveShards;
+    /// @notice each shard belongs to exactly 1 enclave. an enclave can have many shards
     mapping(uint8 => EnumerableSet.UintSet) private enclaveShards;
+    /// @notice track total mints for each shard
+    mapping(uint256 => uint256) public totalShardMints;
+
 
     /// @notice Enclave types
     enum Enclave {
@@ -43,11 +44,12 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
         Mystery,
         Logic,
         Order,
-        Structure
+        Structure,
+        None
     }
 
     /// @notice for compact view functions
-    struct PartnerMintInfo {
+    struct MintInfo {
         uint256[] shardIds;
         uint256[] caps;
         uint256[] balances;
@@ -62,30 +64,21 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
     }
 
     event Transmuted(address caller, uint256 recipeId);
-    event ShardMinted();
     event ShardUriSet(uint256 shardId, string uri);
     event RecipeSet(uint256 recipeId, Recipe recipe);
-    event PartnerAllowedShardIdSet(address partner, uint256 shardId, bool allow);
-    event PartnerAllowedShardIdsSet(address partner, uint256[] shardIds, bool[] allowances);
-    event PartnerAllowedShardCapsSet(address partner, uint256[] shardIds, uint256[] caps);
-    event TemplarMinterSet(address minter, bool allowed);
     event RecipeDeleted(uint256 recipeId);
     event ShardEnclaveSet(Enclave enclave, uint256 shardId);
+    event ShardIdSet(uint256 shardId, bool allow);
+    event MinterAllowedShardIdSet(address partner, uint256 shardId, bool allow);
+    event MinterAllowedShardCapSet(address minter, uint256 shardId, uint256 cap);
 
-    error ReservedPartnerShard(uint256 shardId);
-    error ShardMintNotAllowed(address caller, uint256 shardId);
-    error CannotTransmute(address caller);
-    error CannotMint(address caller);
+    error CannotMint(uint256 shardId);
     error MintCapExceeded(uint256 cap, uint256 amount);
     error InvalidRecipe(uint256 recipeId);
     error ZeroAddress();
-    error PartnerAllowShardFailed(address partner, uint256 shardId, bool allowed);
     error InvalidParamLength();
     error InvalidAccess(address caller);
-    error InvalidCaller(address caller);
     error ERC1155MissingApprovalForAll(address msgSender, address account);
-    error AccountBlacklisted(address account);
-    error SetShardEnclaveFailed();
 
 
     constructor(
@@ -95,17 +88,58 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
         string memory _uri
     ) ERC1155(_uri) TempleElevatedAccess(_initialRescuer, _initialExecutor) {
         relic = IRelic(_relic);
+        _currentIndex = _currentRecipeIndex = _startTokenId();
     }
 
+    /*
+     * @notice Enable a minter to mint a new shard. Minter is allowed to mint the next shard ID
+     * @param minter The minter
+     * @return shardId The shard ID
+     */
+    function setNewMinterShard(address minter) external onlyElevatedAccess returns (uint256) {
+        uint256 shardId = _nextTokenId();
+        _currentIndex += 1;
+        _setMinterAllowedShardId(minter, shardId, true);
+        return shardId;
+    }
+
+    /*
+     * @notice Enable minters to mint new shards, one after the next. If there are two minters and next shard ID
+     * is 3, minter 1 and minter 2 can mint shard IDs 3 and 4 respectively
+     * @param minters Minters to enable for new shards
+     * @param xp XP to set
+     */
+    function setNewMinterShards(
+        address[] calldata minters
+    ) external onlyElevatedAccess returns (uint256[] memory shards){
+        uint256 _length = minters.length;
+        if (_length == 0) { revert InvalidParamLength(); }
+        shards = new uint256[](_length);
+        uint256 shardId;
+        for (uint i; i < _length;) {
+            shardId = _nextTokenId();
+            _currentIndex += 1;
+            _setMinterAllowedShardId(minters[i], shardId, true);
+            shards[i] = shardId;
+            unchecked {
+                ++i;
+            }
+        }
+    }
+
+    /*
+     * @notice Set shard enclave
+     * @param enclave Enclave
+     * @param shardId Shard ID
+     */
     function setShardEnclave(Enclave enclave, uint256 shardId) external onlyElevatedAccess {
-        // remove if shard already belongs to an enclave
+        /// remove if shard already belongs to an enclave
         uint256 _length = uint256(uint8(Enclave.Structure)) + 1;
         uint8 enclaveIndex = uint8(enclave);
-        bool success;
         for (uint i; i < _length;) {
+            /// @dev checking set contains shard in a loop with a break. avoid worst case by calling remove _length times
             if (enclaveShards[uint8(i)].contains(shardId)) {
-                /*success =*/ enclaveShards[uint8(i)].remove(shardId);
-                // if (!success) { revert SetShardEnclaveFailed(); }
+                enclaveShards[uint8(i)].remove(shardId);
                 break;
             }
             unchecked {
@@ -113,126 +147,154 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
             }
         }
         // add shardId to enclave
-        /*success =*/ enclaveShards[enclaveIndex].add(shardId);
-        // if (!success) { revert SetShardEnclaveFailed(); } 
+        enclaveShards[enclaveIndex].add(shardId);
         emit ShardEnclaveSet(enclave, shardId);
     }
 
-    function getEnclaveShards(Enclave enclave) external view returns (uint256[] memory) {
-        return enclaveShards[uint8(enclave)].values();
-    }
-
-    function isEnclaveShard(Enclave enclave, uint256 shardId) external view returns (bool) {
-        return enclaveShards[uint8(enclave)].contains(shardId);
-    }
-
-    function setTemplarMinter(address minter, bool allowed) external onlyElevatedAccess {
-        if (minter == ZERO_ADDRESS) { revert ZeroAddress(); }
-        templarMinters[minter] = allowed;
-        emit TemplarMinterSet(minter, allowed);
-    }
-
-    /// @notice shardId should not have been minted, nextId =< shardId 
-    function setPartnerAllowedShardId(address partner, uint256 shardId, bool allow) external onlyElevatedAccess {
-        /// @notice admin should check shardId does not exist
-        if (partner == ZERO_ADDRESS) { revert ZeroAddress(); }
-        bool success;
-        if (allow) {
-            success = allowedPartnerShardIds[partner].add(shardId);
-            if (!success) { revert PartnerAllowShardFailed(partner, shardId, allow); }
-            partnerShards.add(shardId);
-        } else {
-            success = allowedPartnerShardIds[partner].remove(shardId);
-            if (!success) { revert PartnerAllowShardFailed(partner, shardId, allow); }
-            partnerShards.remove(shardId);
-        }
-        emit PartnerAllowedShardIdSet(partner, shardId, allow);
-    }
-
-    function setPartnerAllowedShardIds(
-        address partner,
-        uint256[] memory shardIds,
-        bool[] memory flags
+    /*
+     * @notice Set shard ID that minter is allowed to mint. This is an explicit setting.
+     * Shard ID must exist. To enable minter for a new shard, use functions setNewMinterShard and setNewMinterShards
+     * @param minter Address of the minter
+     * @param shardId Shard ID
+     * @param allowed If minter is allowed to mint
+     */
+    function setMinterAllowedShardId(
+        address minter,
+        uint256 shardId,
+        bool allow
     ) external onlyElevatedAccess {
-         if (partner == ZERO_ADDRESS) { revert ZeroAddress(); }
-         uint256 _length = shardIds.length;
-         bool allowed;
-         uint256 shardId;
-         if (_length != flags.length) { revert InvalidParamLength(); }
-         for (uint i; i < _length;) {
+        _setMinterAllowedShardId(minter, shardId, allow);
+    }
+
+    function _setMinterAllowedShardId(
+        address minter,
+        uint256 shardId,
+        bool allow
+    ) internal {
+        if (minter == ZERO_ADDRESS) { revert ZeroAddress(); }
+        if (shardId >= _nextTokenId()) { revert CommonEventsAndErrors.InvalidParam(); }
+        if (allow) {
+            allowedShardIds[minter].add(shardId);
+        } else {
+            allowedShardIds[minter].remove(shardId);
+        }
+        emit MinterAllowedShardIdSet(minter, shardId, allow); 
+    }
+
+    /*
+     * @notice Set multiple shard IDs that minter can mint. This is an explicit setting.
+     * Shard ID must exist. To enable minter for a new shard, use functions setNewMinterShard and setNewMinterShards
+     * @param minter Address of the minter
+     * @param shardIds Shard IDs
+     * @param flags Booleans for if the partner can mint shards
+     */
+    function setMinterAllowedShardIds(
+        address minter,
+        uint256[] calldata shardIds,
+        bool[] calldata flags
+    ) external onlyElevatedAccess {
+        if (minter == ZERO_ADDRESS) { revert ZeroAddress(); }
+        uint256 _length = shardIds.length;
+        if (_length != flags.length) { revert InvalidParamLength(); }
+        bool allowed;
+        uint256 shardId;
+        for (uint i; i < _length;) {
             allowed = flags[i];
             shardId = shardIds[i];
-
-            EnumerableSet.UintSet storage partnerShardIds = allowedPartnerShardIds[partner];
-            if (allowed && !partnerShardIds.contains(shardId)) {
-                /// @dev ignoring return values if add failed so that we don't revert in the iteration. to allow completion
-                /* success = */ partnerShardIds.add(shardId);
-                //if (!success) { revert PartnerAllowShardFailed(partner, shardId, allowed); }
-                // also keep track of all partner shards, for convenience guard checks when user mints
-                if (!partnerShards.contains(shardId)) {
-                    partnerShards.add(shardId);
-                }
-            } else if (!allowed && partnerShardIds.contains(shardId)){
-                /* success = */ partnerShardIds.remove(shardId);
-                // if (!success) { revert PartnerAllowShardFailed(partner, shardId, allowed); }
-                if (partnerShards.contains(shardId)) {
-                    partnerShards.remove(shardId);
-                }
+            if (shardId >= _nextTokenId()) { revert CannotMint(shardId); }
+            EnumerableSet.UintSet storage minterShardIds = allowedShardIds[minter];
+            if (allowed) {
+                minterShardIds.add(shardId);
+            } else {
+                minterShardIds.remove(shardId);
             }
-            unchecked {
-                 ++i;
-             }
-         }
-         emit PartnerAllowedShardIdsSet(partner, shardIds, flags);
-    }
-
-    /// @notice set the caps for shards partners can mint
-    function setPartnerAllowedShardCaps(
-        address partner,
-        uint256[] memory shardIds,
-        uint256[] memory caps
-    ) external onlyElevatedAccess {
-        /// @notice 0 by default which is unlimited
-        if (partner == ZERO_ADDRESS) { revert ZeroAddress(); }
-        uint256 _length = shardIds.length;
-        if (_length != caps.length) { revert InvalidParamLength(); }
-        for (uint i; i < _length; ) {
-            allowedPartnersShardCaps[partner][shardIds[i]] = caps[i];
+            emit MinterAllowedShardIdSet(minter, shardId, allowed);
             unchecked {
                 ++i;
             }
         }
-        emit PartnerAllowedShardCapsSet(partner, shardIds, caps);
     }
 
-    /// @notice Set a recipe for transmutation
-    function setRecipe(uint256 recipeId, Recipe calldata recipe) external onlyElevatedAccess {
+    /*
+     * @notice Set the caps for shards minters can mint
+     * cap is 0 by default which means unlimited
+     * @param minter Address of the partner
+     * @param shardIds Shard IDs
+     * @param caps The maximum amount partner can mint for each shard
+     */
+    function setAllowedShardCaps(
+        address minter,
+        uint256[] calldata shardIds,
+        uint256[] calldata caps
+    ) external onlyElevatedAccess {
+        if (minter == ZERO_ADDRESS) { revert ZeroAddress(); }
+        uint256 _length = shardIds.length;
+        if (_length != caps.length) { revert InvalidParamLength(); }
+        uint256 shardId;
+        uint256 cap;
+        for (uint i; i < _length; ) {
+            shardId = shardIds[i];
+            cap = caps[i];
+            allowedShardCaps[minter][shardId] = cap;
+            emit MinterAllowedShardCapSet(minter, shardId, cap);
+            unchecked {
+                ++i;
+            }
+        }
+    }
+
+    /*
+     * @notice Set a recipe for transmutation
+     * @param recipe The recipe
+     */
+    function setRecipe(Recipe calldata recipe) external onlyElevatedAccess {
         uint256 _inputLength = recipe.inputShardIds.length;
         if (_inputLength != recipe.inputShardAmounts.length) { revert CommonEventsAndErrors.InvalidParam(); }
         uint256 _outputLength = recipe.outputShardAmounts.length;
         if (_outputLength != recipe.outputShardIds.length) { revert CommonEventsAndErrors.InvalidParam(); }
 
+        uint256 recipeId = _nextRecipeId();
         recipes[recipeId] = recipe;
+        _currentRecipeIndex += 1;
         emit RecipeSet(recipeId, recipe);
     }
 
+    /*
+     * @notice Delete recipe
+     * @param recipeId The recipe ID
+     */
     function deleteRecipe(uint256 recipeId) external onlyElevatedAccess {
-        Recipe storage recipe = recipes[recipeId];
-        if (recipe.inputShardIds.length == 0) { revert CommonEventsAndErrors.InvalidParam(); }
+        if (recipes[recipeId].inputShardIds.length == 0) { revert CommonEventsAndErrors.InvalidParam(); }
         delete recipes[recipeId];
         emit RecipeDeleted(recipeId);
     }
 
-    function setShardUri(uint256 shardId, string memory uri) external onlyElevatedAccess {
-        if (bytes(uri).length == 0 ) { revert CommonEventsAndErrors.InvalidParam(); }
-        shardUris[shardId] = uri;
-        emit ShardUriSet(shardId, uri);
+    /*
+     * @notice Set uri string of shard ID
+     * @param shardId The shard ID
+     * @param uri The uri string
+     * @return String uri of the shard ID
+     */
+    function setShardUri(uint256 shardId, string memory _uri) external onlyElevatedAccess {
+        if (bytes(_uri).length == 0 ) { revert CommonEventsAndErrors.InvalidParam(); }
+        shardUris[shardId] = _uri;
+        emit ShardUriSet(shardId, _uri);
     }
 
+    /*
+     * @notice Get uri string of shard ID
+     * @param shardId The shard ID
+     * @return String uri of the shard ID
+     */
     function uri(uint256 shardId) public view override returns (string memory) {
         return shardUris[shardId];
     }
 
+    /*
+     * @notice Transmute caller shards to create a new shard using a recipe
+     * Caller shards are burned and new shard(s) are minted to caller.
+     * @param recipeId The ID of the recipe
+     */
     function transmute(uint256 recipeId) external {
         address caller = msg.sender;
         Recipe memory recipe = recipes[recipeId];
@@ -244,46 +306,67 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
         emit Transmuted(caller, recipeId);
     }
 
-    function partnerMint(address to, uint256 shardId, uint256 amount) external isNotBlacklisted(to) {
-        if (!allowedPartnerShardIds[msg.sender].contains(shardId)) { revert ShardMintNotAllowed(msg.sender, shardId); }
-        // default 0 value means uncapped
-        uint256 cap = allowedPartnersShardCaps[msg.sender][shardId];
-        // check partner balances
-        uint256 newBalance = partnerMintBalances[msg.sender][shardId] + amount;
+    /*
+     * @notice Mint shard. This is a guarded function which only allows callers with perms to mint.
+     * Function checks if receiving mint address is blacklisted by Relic contract.
+     * If caps is set on shard ID for caller, new balance is checked.
+     * @param to The address to mint to
+     * @param shardId The shard ID
+     * @param amount The amount of shard ID to mint
+     */
+    function mint(
+        address to,
+        uint256 shardId,
+        uint256 amount
+    ) external isNotBlacklisted(to) {
+        if (!allowedShardIds[msg.sender].contains(shardId)) { revert CannotMint(shardId); }
+        /// @dev fail early
+        if (amount == 0) { revert CommonEventsAndErrors.InvalidParam(); }
+        // default cap 0 value means uncapped
+        uint256 cap = allowedShardCaps[msg.sender][shardId];
+        uint256 newBalance = mintBalances[msg.sender][shardId] + amount;
         if (cap > 0 && newBalance > cap) {
             revert MintCapExceeded(cap, newBalance);
         }
-        partnerMintBalances[msg.sender][shardId] = newBalance;
-        /// @notice not duplicating variable for tracking partner mint because only partner can mint to given addresses
+        mintBalances[msg.sender][shardId] = newBalance;
+        totalShardMints[shardId] += amount;
         _mint(to, shardId, amount, "");
         /// @dev track event with TransferSingle
     }
-
-    /// @notice Lets an approved partner mint shards in batch
-    function partnerBatchMint(
+    
+    /*
+     * @notice Mint shards in batch for allowed minters. 
+     * This is a guarded function which only allowed contracts/addresses can mint.
+     * Function checks if receiving mint address is blacklisted by Relic contract.
+     * @param to The address to mint to
+     * @param shardIds The shard IDs
+     * @param amounts The amount of each shard ID to mint
+     */
+    function mintBatch(
         address to,
-        uint256[] memory shardIds,
-        uint256[] memory amounts
-    ) external isNotBlacklisted(to) {
+        uint256[] calldata shardIds,
+        uint256[] calldata amounts
+    ) external isNotBlacklisted(to){
         uint256 _length = shardIds.length;
         if (_length != amounts.length) { revert InvalidParamLength(); }
         uint256 cap;
         uint256 shardId;
         uint256 amount;
-        EnumerableSet.UintSet storage allowedPartnerShards = allowedPartnerShardIds[msg.sender];
-        mapping(uint256 => uint256) storage _allowedPartnerShardCaps = allowedPartnersShardCaps[msg.sender];
+        EnumerableSet.UintSet storage minterShards = allowedShardIds[msg.sender];
+        mapping(uint256 => uint256) storage minterShardCaps = allowedShardCaps[msg.sender];
         uint256 newBalance;
         for (uint i; i < _length;) {
             shardId = shardIds[i];
-            if (!allowedPartnerShards.contains(shardId)) { revert ShardMintNotAllowed(msg.sender, shardId); }
+            if (!minterShards.contains(shardId)) { revert CannotMint(shardId); }
             amount = amounts[i];
-            cap = _allowedPartnerShardCaps[shardId];
-            newBalance =  partnerMintBalances[msg.sender][shardId] + amount;
+            cap = minterShardCaps[shardId];
+            newBalance =  mintBalances[msg.sender][shardId] + amount;
             /// @dev checking only if cap set. 0 (default value) is uncapped
             if (cap > 0 && cap < newBalance) {
                 revert MintCapExceeded(cap, amount);
             }
-            partnerMintBalances[msg.sender][shardId] = newBalance;
+            mintBalances[msg.sender][shardId] = newBalance;
+            totalShardMints[shardId] += amount;
             unchecked {
                 ++i;
             }
@@ -291,36 +374,13 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
         _mintBatch(to, shardIds, amounts, "");
     }
 
-    function mint(
-        address to,
-        uint256 shardId,
-        uint256 amount
-    ) external onlyTemplarMinters isNotBlacklisted(to) {
-        if(partnerShards.contains(shardId))  { revert ReservedPartnerShard(shardId); }
-        /// @dev fail early
-        if (amount == 0) { revert CommonEventsAndErrors.InvalidParam(); }
-        _mint(to, shardId, amount, "");
-    }
-
-    function mintBatch(
-        address to,
-        uint256[] memory shardIds,
-        uint256[] memory amounts
-    ) external onlyTemplarMinters isNotBlacklisted(to) {
-        uint256 _length = shardIds.length;
-        if (_length != amounts.length) { revert InvalidParamLength(); }
-        // validate shards
-        uint256 shardId;
-        for (uint i; i < _length;) {
-            shardId = shardIds[i];
-            if(partnerShards.contains(shardId))  { revert ReservedPartnerShard(shardId); }
-            unchecked {
-                ++i;
-            }
-        }
-        _mintBatch(to, shardIds, amounts, "");
-    }
-
+    /*
+     * @notice Burn batch shards. Overriden from base contract. 
+     * Modified to allow Relic contract to burn blacklisted account shards.
+     * @param account The account owning the shard
+     * @param ids The shard IDs
+     * @param values The amounts of each shard to burn
+     */
     function burnBatch(address account, uint256[] memory ids, uint256[] memory values) public override {
         // allow relic to burn blacklisted relic shards
         if (_msgSender() == address(relic)) {
@@ -332,66 +392,98 @@ contract Shard is ERC1155, ERC1155Burnable, TempleElevatedAccess {
         _burnBatch(account, ids, values);
     }
 
-    /// @notice if we ever go back to the token type ID substitution mechanism
-    // function setURI(string memory uri) external onlyOperator {
-    //     _setURI(uri);
-    // }
-
-    // function uriLegacy() external view returns (string memory) {
-    //     return uri();
-    // }
-
-    function getPartnerAllowedShardIds(address partner) external view returns (uint256[] memory) {
-        return allowedPartnerShardIds[partner].values();
+    /*
+     * @notice Get shard IDs a minter is allowed to mint
+     * @param minter The minter with perms
+     * @return Shard IDs array
+     */
+    function getMinterAllowedShardIds(address minter) external view returns (uint256[] memory) {
+        return allowedShardIds[minter].values();
     }
 
-    function getAllPartnerShardIds() external view returns (uint256[] memory) {
-        return partnerShards.values();
+    function nextTokenId() external view returns (uint256) {
+        return _nextTokenId();
     }
 
+    /*
+     * @notice Check if given ID is a valid shard ID
+     * @param id The ID to check
+     * @return If ID is a valid shard
+     */
+    function isShardId(uint256 id) external view returns (bool) {
+        return _startTokenId() <= id && id < _nextTokenId();
+    }
+
+    /*
+     * @notice Get information about a recipe
+     * @param recipeId The ID of the recipe
+     * @return Recipe information struct. see above
+     */
     function getRecipeInfo(uint256 recipeId) external view returns (Recipe memory info) {
         info = recipes[recipeId];
     }
 
-    function isPartnerShard(uint256 shardId) external view returns (bool) {
-        return partnerShards.contains(shardId);
+    function nextRecipeId() external view returns (uint256) {
+        return _currentRecipeIndex;
     }
 
-    /// @notice not validating partner and reverting. caller should check and handle zero values
-    function getPartnerMintsInfo(address partner) external view returns (PartnerMintInfo memory info) {
-        EnumerableSet.UintSet storage partnerShardIds = allowedPartnerShardIds[partner];
-        /// workaround: storage pointer is not implicitly convertible to expected type uint256[] memory
-        /// also have to cast enumerable set to uint256[] to be able to return. 
-        /// Types containing (nested) mappings can only be parameters or return variables of internal or library functions
-        uint256 _length = partnerShardIds.length();
+    /*
+     * @notice Get shard IDs of an enclave
+     * @param enclave The enclave
+     * @return Shard IDs of enclave
+     */
+    function getEnclaveShards(Enclave enclave) external view returns (uint256[] memory) {
+        return enclaveShards[uint8(enclave)].values();
+    }
+
+    /*
+     * @notice Determines if a shard ID belongs to an enclave
+     * @param enclave The enclave
+     * @param shardId The shard ID
+     * @return True if shard ID belongs to enclave, else false.
+     */
+    function isEnclaveShard(Enclave enclave, uint256 shardId) external view returns (bool) {
+        return enclaveShards[uint8(enclave)].contains(shardId);
+    }
+
+    /*
+     * @notice Get the information of a minter. 
+     * Fucntion is not validating minter and reverting. Caller should check and handle zero values
+     * @param minter The minter
+     * @return MintInfo struct information of minter
+     */
+    function getMintInfo(address minter) external view returns (MintInfo memory info) {
+        EnumerableSet.UintSet storage minterShards = allowedShardIds[minter];
+        uint256 _length = minterShards.length();
         info.shardIds = new uint256[](_length);
         info.balances = new uint256[](_length);
         info.caps = new uint256[](_length);
         uint256 shardId;
-        /// @dev indices don't start at 0
-        for (uint i = 1; i < _length;) {
-            shardId = partnerShardIds.at(i);
-            info.shardIds[i-1] = shardId;
-            info.balances[i-1] = partnerMintBalances[partner][shardId];
-            info.caps[i-1] = allowedPartnersShardCaps[partner][i-1];
+        for (uint i = 0; i < _length;) {
+            shardId = minterShards.at(i);
+            info.shardIds[i] = shardId;
+            info.balances[i] = mintBalances[minter][shardId];
+            info.caps[i] = allowedShardCaps[minter][shardId];
             unchecked {
                 ++i;
             }
         }
     }
 
+    function _startTokenId() internal pure returns (uint256) {
+        return 1;
+    }
+
+    function _nextTokenId() internal view returns (uint256) {
+        return _currentIndex;
+    }
+
+    function _nextRecipeId() internal view returns (uint256) {
+        return _currentRecipeIndex;
+    }
+
     modifier isNotBlacklisted(address to) {
-        if (relic.blacklistedAccounts(to)) { revert AccountBlacklisted(to); }
-        _;
-    }
-
-    modifier onlyRelic() {
-        if (msg.sender != address(relic)) { revert InvalidCaller(msg.sender); }
-        _;
-    }
-
-    modifier onlyTemplarMinters() {
-        if (!templarMinters[msg.sender]) { revert CannotMint(msg.sender); }
+        if (relic.blacklistedAccounts(to)) { revert CommonEventsAndErrors.AccountBlacklisted(to); }
         _;
     }
 }
