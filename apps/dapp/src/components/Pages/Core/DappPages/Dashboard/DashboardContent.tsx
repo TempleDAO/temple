@@ -3,30 +3,35 @@ import DashboardChart from './Chart';
 import DashboardMetrics from './Metrics';
 import DashboardTransactionHistory from './Table';
 
-export type DashboardType = 'treasuryReservesVault' | 'ramos' | 'tlc' | 'gnosis';
+export enum DashboardType {
+  TREASURY_RESERVES_VAULT,
+  RAMOS,
+  TLC,
+  GNOSIS,
+}
 
 type DashboardContentProps = {
   selectedDashboard?: DashboardType;
 };
 
-const DashboardContent = ({ selectedDashboard = 'treasuryReservesVault' }: DashboardContentProps) => {
+const DashboardContent = ({ selectedDashboard = DashboardType.TREASURY_RESERVES_VAULT }: DashboardContentProps) => {
   const dashboardData = {
-    treasuryReservesVault: {
+    [DashboardType.TREASURY_RESERVES_VAULT]: {
       title: 'Treasury Reserves Vault',
       description:
         'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque vehicula tincidunt eleifend. Nam congue magna in mi dignissim, id gravida sem ornare. Sed in nunc fermentum, consectetur ipsum a, varius augue. Nullam finibus velit eget ligula efficitur, in luctus lacus efficitur. Nam egestas tempor gravida. Ut mollis libero ac tincidunt fermentum. Etiam et ante vitae metus ultrices tempus.',
     },
-    ramos: {
+    [DashboardType.RAMOS]: {
       title: 'RAMOS',
       description:
         'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque vehicula tincidunt eleifend. Nam congue magna in mi dignissim, id gravida sem ornare. Sed in nunc fermentum, consectetur ipsum a, varius augue. Nullam finibus velit eget ligula efficitur, in luctus lacus efficitur. Nam egestas tempor gravida. Ut mollis libero ac tincidunt fermentum. Etiam et ante vitae metus ultrices tempus.',
     },
-    tlc: {
+    [DashboardType.TLC]: {
       title: 'TLC',
       description:
         'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque vehicula tincidunt eleifend. Nam congue magna in mi dignissim, id gravida sem ornare. Sed in nunc fermentum, consectetur ipsum a, varius augue. Nullam finibus velit eget ligula efficitur, in luctus lacus efficitur. Nam egestas tempor gravida. Ut mollis libero ac tincidunt fermentum. Etiam et ante vitae metus ultrices tempus.',
     },
-    gnosis: {
+    [DashboardType.GNOSIS]: {
       title: 'Gnosis',
       description:
         'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque vehicula tincidunt eleifend. Nam congue magna in mi dignissim, id gravida sem ornare. Sed in nunc fermentum, consectetur ipsum a, varius augue. Nullam finibus velit eget ligula efficitur, in luctus lacus efficitur. Nam egestas tempor gravida. Ut mollis libero ac tincidunt fermentum. Etiam et ante vitae metus ultrices tempus.',
