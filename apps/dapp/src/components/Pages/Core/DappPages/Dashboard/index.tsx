@@ -1,6 +1,6 @@
 import { Route, Routes, NavLink as BaseNavLink } from 'react-router-dom';
 import styled from 'styled-components';
-import DashboardContent from './DashboardContent';
+import DashboardContent, { DashboardType } from './DashboardContent';
 
 export const DashboardPage = () => {
   return (
@@ -27,11 +27,11 @@ export const DashboardPage = () => {
           <Route path="*" element={<DashboardContent />} />
           <Route
             path="treasuryreservesvault"
-            element={<DashboardContent selectedDashboard={'treasuryReservesVault'} />}
+            element={<DashboardContent selectedDashboard={DashboardType.TREASURY_RESERVES_VAULT} />}
           />
-          <Route path="ramos" element={<DashboardContent selectedDashboard={'ramos'} />} />
-          <Route path="tlc" element={<DashboardContent selectedDashboard={'tlc'} />} />
-          <Route path="gnosis" element={<DashboardContent selectedDashboard={'gnosis'} />} />
+          <Route path="ramos" element={<DashboardContent selectedDashboard={DashboardType.RAMOS} />} />
+          <Route path="tlc" element={<DashboardContent selectedDashboard={DashboardType.TLC} />} />
+          <Route path="gnosis" element={<DashboardContent selectedDashboard={DashboardType.GNOSIS} />} />
         </Routes>
       </DashboardContentContainer>
     </DashboardContainer>
