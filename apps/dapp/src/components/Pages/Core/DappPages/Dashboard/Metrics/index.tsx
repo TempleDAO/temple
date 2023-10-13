@@ -1,84 +1,46 @@
+import Loader from 'components/Loader/Loader';
+import { useEffect, useMemo, useState } from 'react';
 import styled from 'styled-components';
+import { Nullable } from 'types/util';
 import { DashboardType } from '../DashboardContent';
+import { ArrangedDashboardMetrics, DashboardMetricsService } from './DashboardMetricsService';
 
 type DashboardMetricsProps = {
   dashboardType: DashboardType;
 };
 
 const DashboardMetrics = ({ dashboardType }: DashboardMetricsProps) => {
-  // TODO: Based on the dashboardType, we need to fetch and render the right data
   console.debug('DashboardMetrics with dashboardType: ', dashboardType);
 
-  const treasuryReservesVaultMetricsData = {
-    // one array per row
-    metrics: [
-      [
-        {
-          title: 'Total Market Value',
-          value: '$1.68 B',
-        },
-        {
-          title: 'Spot Price',
-          value: '1.31 DAI',
-        },
-        {
-          title: 'Treasury Price Index',
-          value: '1.31 DAI',
-        },
-      ],
-      [
-        {
-          title: 'Circulating Supply',
-          value: '$1.50 M',
-        },
-        {
-          title: 'Benchmark Rate',
-          value: '7% p.a.',
-        },
-      ],
-    ],
-    // these are the "small" metrics that appear below the metrics
-    // again, one array per row
-    smallMetrics: [
-      [
-        {
-          title: 'Principal',
-          value: '$1.24 B',
-        },
-        {
-          title: 'Accrued dUSD Interest',
-          value: '$980.33 K',
-        },
-        {
-          title: 'Accrued dUSD Interest',
-          value: '$0.44 B',
-        },
-        {
-          title: 'Nominal Performance',
-          value: '1.35%',
-        },
-      ],
-      [
-        {
-          title: 'Benchmarked Equity',
-          value: '$1.20 B',
-        },
-        {
-          title: 'Benchmark Performance',
-          value: '0.38%',
-        },
-      ],
-    ],
-  };
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [sourceData, setSourceData] = useState<Nullable<ArrangedDashboardMetrics>>(null);
 
-  return (
+  const dashboardMetricsService = useMemo(() => new DashboardMetricsService(), []);
+
+  useEffect(() => {
+    const loadMetrics = async () => {
+      setIsLoading(true);
+      const metrics = await dashboardMetricsService.getMetrics(dashboardType);
+      setSourceData(metrics);
+      setIsLoading(false);
+    };
+
+    loadMetrics();
+  }, [dashboardMetricsService, dashboardType]);
+
+  useEffect(() => {
+    console.log(sourceData);
+  }, [sourceData]);
+
+  return (sourceData === null || isLoading) ? (
+    <Loader />
+  ) : (
     <>
-      {' '}
       <MetricsContainer>
-        {treasuryReservesVaultMetricsData.metrics.map((row) => (
-          <MetricsRow>
-            {row.map((metric) => (
-              <Metric>
+        {sourceData.metrics.map((row, idx) => (
+          <MetricsRow key={idx}>
+            {row.map((metric, idx) => (
+              <Metric key={idx}>
                 <MetricValue>{metric.value}</MetricValue>
                 <MetricTitle>{metric.title}</MetricTitle>
               </Metric>
@@ -87,10 +49,10 @@ const DashboardMetrics = ({ dashboardType }: DashboardMetricsProps) => {
         ))}
       </MetricsContainer>
       <MetricsContainer>
-        {treasuryReservesVaultMetricsData.smallMetrics.map((row) => (
-          <MetricsRow>
-            {row.map((metric) => (
-              <Metric small>
+        {sourceData.smallMetrics.map((row, idx) => (
+          <MetricsRow key={idx}>
+            {row.map((metric, idx) => (
+              <Metric small key={idx}>
                 <MetricValue small>{metric.value}</MetricValue>
                 <MetricTitle small>{metric.title}</MetricTitle>
               </Metric>
