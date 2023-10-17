@@ -135,6 +135,8 @@ const env: Environment = {
     protocolMetrics: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-metrics',
     balancerV2: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-balancer-v2',
     ramos: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-ramos',
+    // TODO: Need the correct subgraph url for Temple V2
+    templeV2: 'https://api.thegraph.com/subgraphs/name/medariox/v2-mainnet/graphql',
     // Original Balancer Subgraph
     // balancerV2: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-v2-beta',
   },
