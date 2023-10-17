@@ -1,4 +1,4 @@
-import { Route, Routes, NavLink as BaseNavLink } from 'react-router-dom';
+import { Route, Routes, NavLink as BaseNavLink, Navigate } from 'react-router-dom';
 import styled from 'styled-components';
 import DashboardContent, { DashboardType } from './DashboardContent';
 
@@ -7,10 +7,7 @@ export const DashboardPage = () => {
     <DashboardContainer>
       <DashboardHeaderNav>
         <NavCell>
-          <NavLink to="all">All</NavLink>
-        </NavCell>
-        <NavCell>
-          <NavLink to="treasuryreservesvault">Treasury Reserves Vaults</NavLink>
+          <NavLink to="treasuryreservesvault">All</NavLink>
         </NavCell>
         <NavCell>
           <NavLink to="ramos">RAMOS</NavLink>
@@ -18,20 +15,16 @@ export const DashboardPage = () => {
         <NavCell>
           <NavLink to="tlc">TLC</NavLink>
         </NavCell>
-        <NavCell>
-          <NavLink to="gnosis">Gnosis</NavLink>
-        </NavCell>
       </DashboardHeaderNav>
       <DashboardContentContainer>
         <Routes>
-          <Route path="*" element={<DashboardContent />} />
+          <Route path="*" element={<Navigate replace to="treasuryreservesvault" />} />
           <Route
             path="treasuryreservesvault"
             element={<DashboardContent selectedDashboard={DashboardType.TREASURY_RESERVES_VAULT} />}
           />
           <Route path="ramos" element={<DashboardContent selectedDashboard={DashboardType.RAMOS} />} />
           <Route path="tlc" element={<DashboardContent selectedDashboard={DashboardType.TLC} />} />
-          <Route path="gnosis" element={<DashboardContent selectedDashboard={DashboardType.GNOSIS} />} />
         </Routes>
       </DashboardContentContainer>
     </DashboardContainer>

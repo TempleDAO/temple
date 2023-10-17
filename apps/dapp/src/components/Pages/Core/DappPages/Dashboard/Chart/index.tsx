@@ -12,15 +12,6 @@ const DashboardChart = ({ dashboardType }: DashboardChartProps) => {
   
   return (
     <>
-      <BaseCurrencyContainer>
-        <BaseCurrencyTitle>Base Currency</BaseCurrencyTitle>
-        <BaseCurrencySelectorContainer>
-          {/* // TODO: Pill shaped selector */}
-          <CurrencyOption>USD</CurrencyOption>
-          <CurrencyOption>DAI</CurrencyOption>
-          <CurrencyOption>TEMPLE</CurrencyOption>
-        </BaseCurrencySelectorContainer>
-      </BaseCurrencyContainer>
       <ChartContainer>
         {/* // TODO: This price chart needs updated with the right data */}
         {/* // And also fixed to be the proper width */}
