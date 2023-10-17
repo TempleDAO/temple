@@ -7,7 +7,7 @@ export enum DashboardType {
   TREASURY_RESERVES_VAULT,
   RAMOS,
   TLC,
-  TEMBLE_BASE,
+  TEMPLE_BASE,
   DSR_BASE,
 }
 
@@ -32,7 +32,7 @@ const DashboardContent = ({ selectedDashboard = DashboardType.TREASURY_RESERVES_
       description:
         'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque vehicula tincidunt eleifend. Nam congue magna in mi dignissim, id gravida sem ornare. Sed in nunc fermentum, consectetur ipsum a, varius augue. Nullam finibus velit eget ligula efficitur, in luctus lacus efficitur. Nam egestas tempor gravida. Ut mollis libero ac tincidunt fermentum. Etiam et ante vitae metus ultrices tempus.',
     },
-    [DashboardType.TEMBLE_BASE]: {
+    [DashboardType.TEMPLE_BASE]: {
       title: 'TempleBaseStrategy',
       description:
         'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque vehicula tincidunt eleifend. Nam congue magna in mi dignissim, id gravida sem ornare. Sed in nunc fermentum, consectetur ipsum a, varius augue. Nullam finibus velit eget ligula efficitur, in luctus lacus efficitur. Nam egestas tempor gravida. Ut mollis libero ac tincidunt fermentum. Etiam et ante vitae metus ultrices tempus.',

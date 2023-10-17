@@ -1,3 +1,5 @@
+import { SubGraphResponse } from "hooks/core/types";
+
 export class SubgraphQueryError extends Error {
   constructor(graphqlErrors: any[]) {
     super(graphqlErrors.map((errorPath) => errorPath.message).join(';'));
@@ -10,7 +12,7 @@ export const fetchSubgraph = async (query: string) => {
   return fetchGenericSubgraph('https://api.thegraph.com/subgraphs/name/templedao/templedao-metrics', query);
 };
 
-export const fetchGenericSubgraph = async (url: string, query: string) => {
+export const fetchGenericSubgraph = async <R extends SubGraphResponse<object>>(url: string, query: string) => {
   const result = await fetch(url, {
     method: 'POST',
     headers: {
@@ -21,7 +23,7 @@ export const fetchGenericSubgraph = async (url: string, query: string) => {
       query,
     }),
   });
-  const response = await result.json();
+  const response: R = await result.json();
 
   if (response.errors) {
     throw new SubgraphQueryError(response.errors);
