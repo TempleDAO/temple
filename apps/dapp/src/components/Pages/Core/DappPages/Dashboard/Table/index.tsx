@@ -8,11 +8,13 @@ type DashboardTransactionHistoryProps = {
   dashboardType: DashboardType;
 };
 
+export type TxHistoryFilterType = 'lastweek' | 'last30days' | 'all';
+
 const DashboardTransactionHistory = ({ dashboardType }: DashboardTransactionHistoryProps) => {
   // TODO: Based on the dashboardType, we need to fetch and render the right data
   console.debug('DashboardTransactionHistory with dashboardType: ', dashboardType);
 
-  const [filter, setFilter] = useState('all');
+  const [filter, setFilter] = useState<TxHistoryFilterType>('all');
 
   return (
     <TransactionHistoryContainer>
@@ -31,7 +33,7 @@ const DashboardTransactionHistory = ({ dashboardType }: DashboardTransactionHist
         </TransactionTimePeriod>
       </TransactionHistoryHeader>
       <TransactionHistoryContent>
-        <TxnHistoryTable filter={filter} />
+        <TxnHistoryTable dashboardType={dashboardType} filter={filter} />
       </TransactionHistoryContent>
     </TransactionHistoryContainer>
   );

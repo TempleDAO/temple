@@ -31,7 +31,7 @@ export const DashboardPage = () => {
           />
           <Route path="ramos" element={<DashboardContent selectedDashboard={DashboardType.RAMOS} />} />
           <Route path="tlc" element={<DashboardContent selectedDashboard={DashboardType.TLC} />} />
-          <Route path="templebase" element={<DashboardContent selectedDashboard={DashboardType.TEMBLE_BASE} />} />
+          <Route path="templebase" element={<DashboardContent selectedDashboard={DashboardType.TEMPLE_BASE} />} />
           <Route path="dsrbase" element={<DashboardContent selectedDashboard={DashboardType.DSR_BASE} />} />
         </Routes>
       </DashboardContentContainer>
