@@ -1,6 +1,17 @@
 import millify from 'millify';
 import { fetchGenericSubgraph, fetchSubgraph } from 'utils/subgraph';
 import { DashboardType } from '../DashboardContent';
+import env from 'constants/env';
+
+enum Strategy {
+  RAMOS = 'RamosStrategy',
+  TLC = 'TlcStrategy',
+}
+
+enum Token {
+  DAI = 'DAI',
+  TEMPLE_DEBT = 'dUSD',
+}
 
 export interface TreasuryReservesVaultMetrics {
   totalMarketValue: number;
@@ -26,7 +37,7 @@ export interface ArrangedDashboardMetrics {
   smallMetrics: DashboardMetric[][];
 }
 
-export interface RamosMetrics {
+export interface StrategyMetrics {
   valueOfHoldings: number;
   nominalEquity: number;
   benchmarkedEquity: number;
@@ -52,8 +63,11 @@ export class DashboardMetricsService {
         const rawMetrics = await this.fetchTreasuryReservesVaultMetrics();
         return this.getArrangedTreasuryReservesVaultMetrics(rawMetrics);
       case DashboardType.RAMOS:
-        const ramosMetrics = await this.fetchRamosMetrics();
-        return this.getArrangedRamosMetrics(ramosMetrics);
+        const ramosMetrics = await this.fetchStrategyMetrics(Strategy.RAMOS);
+        return this.getArrangedStrategyMetrics(ramosMetrics);
+      case DashboardType.TLC:
+        const tlcMetrics = await this.fetchStrategyMetrics(Strategy.TLC);
+        return this.getArrangedStrategyMetrics(tlcMetrics);
       default:
         return {
           metrics: [],
@@ -62,7 +76,7 @@ export class DashboardMetricsService {
     }
   }
 
-  async fetchRamosMetrics(): Promise<RamosMetrics> {
+  async fetchStrategyMetrics(strategy: Strategy): Promise<StrategyMetrics> {
     let metrics = {
       valueOfHoldings: 0,
       nominalEquity: 0,
@@ -79,22 +93,25 @@ export class DashboardMetricsService {
     };
 
     try {
-      // TODO: move the subgraph url to an env variable
       const allMetricsPromises = [
         fetchGenericSubgraph(
-          'https://api.studio.thegraph.com/query/520/v2-sepolia/version/latest',
+          env.subgraph.templeV2,
           `{
             strategies {
               name
               id
-              totalMarketValueUSD #valueOfHoldings
-              nominalEquityUSD #nominalEquity
-              benchmarkedEquityUSD #benchmarkedEquity   
-              # interestRate ??
-              # debtShare ??
-              # debtCeiling ??
-              # debtCeilingUtilization ??
-              # totalRepayment ??
+              totalMarketValueUSD
+              nominalEquityUSD
+              benchmarkedEquityUSD
+              strategyTokens {
+                symbol
+                rate
+                premiumRate
+                debtShare
+                debtCeiling
+                debtCeilingUtil
+              }
+              totalRepaymentUSD
               principalUSD
               accruedInterestUSD
               nominalPerformance
@@ -108,18 +125,23 @@ export class DashboardMetricsService {
 
       const ramosSubgraphData = ramosSubgraphResponse?.data?.strategies.find(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (strategy: any) => strategy.name === 'Ramos'
+        (_strategy: any) => _strategy.name === strategy
+      );
+
+      const daiStrategyTokenData = ramosSubgraphData?.strategyTokens.find(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (_strategyToken: any) => _strategyToken.symbol === Token.DAI
       );
 
       metrics = {
         valueOfHoldings: parseFloat(ramosSubgraphData.totalMarketValueUSD),
         nominalEquity: parseFloat(ramosSubgraphData.nominalEquityUSD),
         benchmarkedEquity: parseFloat(ramosSubgraphData.benchmarkedEquityUSD),
-        interestRate: parseFloat('0'),
-        debtShare: parseFloat('0'),
-        debtCeiling: parseFloat('0'),
-        debtCeilingUtilization: parseFloat('0'),
-        totalRepayment: parseFloat('0'),
+        interestRate: parseFloat(daiStrategyTokenData.rate) + parseFloat(daiStrategyTokenData.premiumRate),
+        debtShare: parseFloat(daiStrategyTokenData.debtShare),
+        debtCeiling: parseFloat(daiStrategyTokenData.debtCeiling),
+        debtCeilingUtilization: parseFloat(daiStrategyTokenData.debtCeilingUtil),
+        totalRepayment: parseFloat(ramosSubgraphData.totalRepaymentUSD),
         principal: parseFloat(ramosSubgraphData.principalUSD),
         accruidInterest: parseFloat(ramosSubgraphData.accruedInterestUSD),
         nominalPerformance: parseFloat(ramosSubgraphData.nominalPerformance),
@@ -151,7 +173,7 @@ export class DashboardMetricsService {
       // TODO: move the subgraph url to an env variable
       const allMetricsPromises = [
         fetchGenericSubgraph(
-          'https://api.studio.thegraph.com/query/520/v2-sepolia/version/latest',
+          env.subgraph.templeV2,
           `{
           treasuryReservesVaults {
             totalMarketValueUSD
@@ -198,10 +220,11 @@ export class DashboardMetricsService {
 
   private async getBenchmarkRate() {
     const debtTokensResponse = await fetchGenericSubgraph(
-      'https://api.studio.thegraph.com/query/520/v2-sepolia/version/latest',
+      env.subgraph.templeV2,
       `{
         debtTokens {
           name
+          symbol
           baseRate
         }
       }`
@@ -210,7 +233,7 @@ export class DashboardMetricsService {
     const debtTokensData = debtTokensResponse?.data?.debtTokens;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return debtTokensData.find((debtToken: any) => debtToken.name === 'Temple Debt USD')?.baseRate;
+    return debtTokensData.find((debtToken: any) => debtToken.symbol === Token.TEMPLE_DEBT)?.baseRate;
   }
 
   private async getTempleCirculatingSupply(): Promise<string> {
@@ -229,7 +252,7 @@ export class DashboardMetricsService {
 
   private async getTempleSpotPrice() {
     const response = await fetchGenericSubgraph(
-      'https://api.studio.thegraph.com/query/520/v2-sepolia/version/latest',
+      env.subgraph.templeV2,
       `{
           tokens {
              name
@@ -330,7 +353,7 @@ export class DashboardMetricsService {
    * Small metrics appear below the "main" metrics and are formatted smaller, without a border, etc.
    * Each array represents a row of metrics
    */
-  getArrangedRamosMetrics(metrics: RamosMetrics) {
+  getArrangedStrategyMetrics(metrics: StrategyMetrics) {
     return {
       metrics: [
         [
@@ -370,27 +393,19 @@ export class DashboardMetricsService {
             title: 'Total Repayment',
             value: `${metrics.totalRepayment} DAI`,
           },
+        ],
+        [
           {
             title: 'Principal',
             value: `$${this.formatBigMoney(metrics.principal)}`,
           },
-        ],
-        [
           {
             title: 'Accrued dUSD Interest',
             value: `$${this.formatBigMoney(metrics.benchmarkedEquity)}`,
           },
           {
-            title: 'Nominal Equity',
-            value: `$${this.formatBigMoney(metrics.nominalEquity)}`,
-          },
-          {
             title: 'Nominal Performance',
             value: `${this.formatPercent(metrics.nominalPerformance)}%`,
-          },
-          {
-            title: 'Benchmarked Equity',
-            value: `$${this.formatBigMoney(metrics.benchmarkedEquity)}`,
           },
           {
             title: 'Benchmark Performance',

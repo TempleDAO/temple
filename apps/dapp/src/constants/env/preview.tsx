@@ -43,6 +43,7 @@ const env: Environment = {
     protocolMetrics: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-metrics',
     balancerV2: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-balancer-v2',
     ramos: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-ramos',
+    templeV2: 'https://api.studio.thegraph.com/query/520/v2-sepolia/version/latest',
     // Original Balancer Subgraph
     // balancerV2: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-goerli-v2',
   },

@@ -3,6 +3,7 @@ interface Subgraphs {
   protocolMetrics: string;
   balancerV2: string;
   ramos: string;
+  templeV2: string;
 }
 
 interface Contracts {
