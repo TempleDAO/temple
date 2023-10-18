@@ -8,7 +8,7 @@ import { formatNumberAbbreviated } from 'utils/formatter';
 type LineChartProps<T> = {
   chartData: T[];
   xDataKey: DataKey<keyof T>;
-  lines: { series: DataKey<keyof T>; color: string; name?: string }[];
+  lines: { series: DataKey<keyof T>; color: string }[];
   xTickFormatter: (xValue: any, index: number) => string;
   tooltipLabelFormatter: (value: any) => string;
   tooltipValuesFormatter?: (value: number, name: string) => string[];
