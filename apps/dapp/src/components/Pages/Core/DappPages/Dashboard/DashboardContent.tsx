@@ -21,16 +21,19 @@ const DashboardContent = ({ selectedDashboard = DashboardType.TREASURY_RESERVES_
       title: 'Treasury Reserves Vault',
       description:
         'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque vehicula tincidunt eleifend. Nam congue magna in mi dignissim, id gravida sem ornare. Sed in nunc fermentum, consectetur ipsum a, varius augue. Nullam finibus velit eget ligula efficitur, in luctus lacus efficitur. Nam egestas tempor gravida. Ut mollis libero ac tincidunt fermentum. Etiam et ante vitae metus ultrices tempus.',
+      chartStrategyNames: ['TlcStrategy', 'TempleBaseStrategy', 'RamosStrategy', 'DsrBaseStrategy'],
     },
     [DashboardType.RAMOS]: {
       title: 'RAMOS',
       description:
         'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque vehicula tincidunt eleifend. Nam congue magna in mi dignissim, id gravida sem ornare. Sed in nunc fermentum, consectetur ipsum a, varius augue. Nullam finibus velit eget ligula efficitur, in luctus lacus efficitur. Nam egestas tempor gravida. Ut mollis libero ac tincidunt fermentum. Etiam et ante vitae metus ultrices tempus.',
+      chartStrategyNames: [''],
     },
     [DashboardType.TLC]: {
       title: 'TLC',
       description:
         'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque vehicula tincidunt eleifend. Nam congue magna in mi dignissim, id gravida sem ornare. Sed in nunc fermentum, consectetur ipsum a, varius augue. Nullam finibus velit eget ligula efficitur, in luctus lacus efficitur. Nam egestas tempor gravida. Ut mollis libero ac tincidunt fermentum. Etiam et ante vitae metus ultrices tempus.',
+      chartStrategyNames: ['TlcStrategy'],
     },
     [DashboardType.TEMPLE_BASE]: {
       title: 'TempleBaseStrategy',
@@ -41,16 +44,19 @@ const DashboardContent = ({ selectedDashboard = DashboardType.TREASURY_RESERVES_
       title: 'DsrBaseStrategy',
       description:
         'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque vehicula tincidunt eleifend. Nam congue magna in mi dignissim, id gravida sem ornare. Sed in nunc fermentum, consectetur ipsum a, varius augue. Nullam finibus velit eget ligula efficitur, in luctus lacus efficitur. Nam egestas tempor gravida. Ut mollis libero ac tincidunt fermentum. Etiam et ante vitae metus ultrices tempus.',
+      chartStrategyNames: [],
     },
   };
+
+  const dashboard = dashboardData[selectedDashboard]
 
   return (
     <DashboardContentContainer>
       <Header>
-        <HeaderTitle>{dashboardData[selectedDashboard].title}</HeaderTitle>
-        <HeaderText>{dashboardData[selectedDashboard].description}</HeaderText>
+        <HeaderTitle>{dashboard.title}</HeaderTitle>
+        <HeaderText>{dashboard.description}</HeaderText>
       </Header>
-      <DashboardChart dashboardType={selectedDashboard} />
+      <DashboardChart dashboardType={selectedDashboard} strategyNames={dashboard.chartStrategyNames}/>
       <DashboardMetrics dashboardType={selectedDashboard} />
       <DashboardTransactionHistory dashboardType={selectedDashboard} />
     </DashboardContentContainer>
