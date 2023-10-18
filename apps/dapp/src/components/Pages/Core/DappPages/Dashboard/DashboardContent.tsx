@@ -27,7 +27,7 @@ const DashboardContent = ({ selectedDashboard = DashboardType.TREASURY_RESERVES_
       title: 'RAMOS',
       description:
         'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque vehicula tincidunt eleifend. Nam congue magna in mi dignissim, id gravida sem ornare. Sed in nunc fermentum, consectetur ipsum a, varius augue. Nullam finibus velit eget ligula efficitur, in luctus lacus efficitur. Nam egestas tempor gravida. Ut mollis libero ac tincidunt fermentum. Etiam et ante vitae metus ultrices tempus.',
-      chartStrategyNames: [''],
+      chartStrategyNames: ['RamosStrategy'],
     },
     [DashboardType.TLC]: {
       title: 'TLC',

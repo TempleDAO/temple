@@ -22,7 +22,7 @@ export type V2StrategyMetric = keyof Omit<V2StrategyDailySnapshot, 'timeframe' |
 
 
 async function fetchCoreV2<RawResponse extends Record<string, unknown>>(query: string) {
-    const resp: RawResponse = (await fetchGenericSubgraph(environmentConfig.subgraph.v2, query)).data
+    const resp: RawResponse = (await fetchGenericSubgraph(environmentConfig.subgraph.templeV2, query)).data
     return resp
 }
 
