@@ -20,6 +20,7 @@ declare module 'styled-components' {
       light: string;
       light75: string;
       light50: string;
+      charts: string[];
       enclave: {
         structure: string;
         order: string;
