@@ -1,21 +1,58 @@
 import styled from 'styled-components';
 import { DashboardType } from '../DashboardContent';
-import { TemplePriceChart } from './PriceChart';
+import V2StrategyMetricsChart from './V2StrategyMetricsChart';
+import { InputSelect } from 'components/InputSelect/InputSelect';
+import { V2StrategyMetric } from 'hooks/use-coreV2-strategy-data';
+import { useState } from 'react';
+import { ChartSupportedTimeInterval, DEFAULT_CHART_INTERVALS } from 'utils/time-intervals';
+import { IntervalToggler } from 'components/Charts';
 
 type DashboardChartProps = {
   dashboardType: DashboardType;
+  strategyNames: string[];
 };
 
-const DashboardChart = ({ dashboardType }: DashboardChartProps) => {
-  // TODO: Based on the dashboardType, we need to fetch and render the right data
+const metricOptions: { value: V2StrategyMetric, label: string }[] = [
+    { label: 'Total Market Value', value: 'totalMarketValueUSD' },
+    { label: 'Accrued Interest', value: 'accruedInterestUSD' },
+    { label: 'Benchmark Performance', value: 'benchmarkPerformance' },
+    { label: 'Benchmarked Equity', value: 'benchmarkedEquityUSD' },
+    { label: 'Credit', value: 'creditUSD' },
+    { label: 'Debt', value: 'debtUSD' },
+    { label: 'Principal', value: 'principalUSD' },
+    { label: 'Nominal Equity', value: 'nominalEquityUSD' },
+    { label: 'Nominal Performance', value: 'nominalPerformance' },
+]
+
+const DashboardChart = ({ dashboardType, strategyNames }: DashboardChartProps) => {
   console.debug('DashboardChart with dashboardType: ', dashboardType);
-  
+  const [selectedMetric, setSelectedMetric] = useState<V2StrategyMetric>("totalMarketValueUSD")
+  const [selectedInterval, setSelectedInterval] = useState<ChartSupportedTimeInterval>('1M');
+
+  const intervals = DEFAULT_CHART_INTERVALS.filter(i=> ['1W', '1M', '1Y'].includes(i.label))
+
   return (
     <>
       <ChartContainer>
-        {/* // TODO: This price chart needs updated with the right data */}
-        {/* // And also fixed to be the proper width */}
-        <TemplePriceChart />
+      <ChartHeader>
+          <InputSelect
+            options={metricOptions}
+            defaultValue={metricOptions[0]}
+            onChange={(e) => setSelectedMetric(e.value)}
+            minWidth='17rem'
+          />
+          <IntervalToggler
+              selectedInterval={selectedInterval}
+              setSelectedInterval={setSelectedInterval}
+              intervals={intervals}
+          />
+      </ChartHeader>
+        <V2StrategyMetricsChart
+          dashboardType={dashboardType}
+          selectedMetric={selectedMetric}
+          selectedInterval={selectedInterval}
+          strategyNames={strategyNames}
+        />
       </ChartContainer>
     </>
   );
@@ -23,37 +60,20 @@ const DashboardChart = ({ dashboardType }: DashboardChartProps) => {
 
 export default DashboardChart;
 
+
+const ChartHeader = styled.div`
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 2rem;
+    width: 100%;
+`;
+
 const ChartContainer = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
   margin: 1rem 0;
   width: 70vw;
-`;
-
-const CurrencyOption = styled.div`
-  display: flex;
-  flex-direction: row;
-  padding: 10px;
-`;
-
-const BaseCurrencySelectorContainer = styled.div`
-  display: flex;
-  width: 100%;
-`;
-
-const BaseCurrencyTitle = styled.div`
-  color: ${(props) => props.theme.palette.brand};
-  white-space: nowrap;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-`;
-
-const BaseCurrencyContainer = styled.div`
-  display: flex;
-  flex-direction: row;
-  width: 100%;
-  margin: 20px;
 `;

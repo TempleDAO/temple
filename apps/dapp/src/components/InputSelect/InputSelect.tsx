@@ -16,6 +16,7 @@ export interface SelectTempleDaoProps {
   defaultValue?: Option;
   // use to limit the number of elements shown in the menu at anytime
   maxMenuItems?: number;
+  minWidth?: string;
 }
 
 /**
@@ -55,7 +56,7 @@ export const InputSelect = (props: SelectTempleDaoProps) => {
           textTransform: 'uppercase',
           textAlign: 'left',
           padding: '0 0.5rem',
-          minWidth: ' 7.5rem  /* 120/16 */',
+          minWidth: props.minWidth ?? '7.5rem  /* 120/16 */',
           cursor: 'pointer',
           height: selectHeight,
           zIndex: 2, // place it above the menu 👇
