@@ -25,7 +25,7 @@ export const fetchGenericSubgraph = async <R extends SubGraphResponse<object>>(u
   });
   const response: R = await result.json();
 
-  if (response.errors) {
+  if (response.errors || !result.ok) {
     throw new SubgraphQueryError(response.errors);
   }
   return response;
