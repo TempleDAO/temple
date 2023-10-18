@@ -46,6 +46,16 @@ const theme: DefaultTheme = {
     light: '#FFFFFF',
     light75: darken(0.25, '#FFFFFF'),
     light50: darken(0.5, '#FFFFFF'),
+    // https://www.figma.com/file/fZ7bvpavsMdADJjsk7QIsw/Temple-Core?type=design&node-id=4901-16456&mode=design&t=ctnue8yba6NEWJ1c-0
+    charts: [
+      '#D0BE75',
+      '#FFDEC9',
+      '#BD7B4F',
+      '#00846B',
+      '#876FAC',
+      '#AF444A',
+      '#24809D',
+    ],
     enclave: {
       structure: '#01806C',
       order: '#BBAA6C',
