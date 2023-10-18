@@ -35,12 +35,13 @@ const DashboardChart = ({ dashboardType, strategyNames }: DashboardChartProps) =
     <>
       <ChartContainer>
       <ChartHeader>
-          <InputSelect
-            options={metricOptions}
-            defaultValue={metricOptions[0]}
-            onChange={(e) => setSelectedMetric(e.value)}
-            minWidth='17rem'
-          />
+         <SelectMetricContainer>
+            <InputSelect
+              options={metricOptions}
+              defaultValue={metricOptions[0]}
+              onChange={(e) => setSelectedMetric(e.value)}
+            />
+          </SelectMetricContainer>
           <IntervalToggler
               selectedInterval={selectedInterval}
               setSelectedInterval={setSelectedInterval}
@@ -60,6 +61,9 @@ const DashboardChart = ({ dashboardType, strategyNames }: DashboardChartProps) =
 
 export default DashboardChart;
 
+const SelectMetricContainer = styled.div`
+  min-width: 20rem;
+`
 
 const ChartHeader = styled.div`
     display: flex;
