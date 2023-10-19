@@ -54,7 +54,6 @@ const TxnHistoryTable = ({ dashboardType, filter }: Props) => {
     setData([]);
     setCurrentPage(1);
     setBlockNumber(0);
-    setRowsPerPage(10);
     setTotalPages(0);
   }, []);
   // Set default values TotalPages & BlockNumber on start
@@ -138,7 +137,7 @@ const TxnHistoryTable = ({ dashboardType, filter }: Props) => {
               dToken: 'dUsd', // TODO: update dynamically from strategy
               borrow: tx.kind === 'Borrow' ? amount : 0,
               repay: tx.kind === 'Repay' ? amount : 0,
-              txHash: tx.id,
+              txHash: tx.hash,
             };
           })
         );
@@ -152,7 +151,7 @@ const TxnHistoryTable = ({ dashboardType, filter }: Props) => {
 
   return (
     <TableContainer>
-      <PaginationControls totalPages={totalPages} rowsPerPage={rowsPerPage} currentPage={currentPage} setCurrentPage={setCurrentPage} />
+      <PaginationControls totalPages={totalPages} rowsPerPage={rowsPerPage} currentPage={currentPage} setCurrentPage={setCurrentPage} setRowsPerPage={setRowsPerPage} />
         <TxnDataTable dataSubset={data} dataLoading={isLoading}/>
     </TableContainer>
   );
