@@ -1,18 +1,22 @@
+import { useQuery, UseQueryResult } from '@tanstack/react-query';
 import millify from 'millify';
 import { fetchGenericSubgraph, fetchSubgraph } from 'utils/subgraph';
 import { DashboardType } from '../DashboardContent';
 import env from 'constants/env';
+import { Metrics } from 'hooks/core/types';
+import { useMemo } from 'react';
 
-enum Strategy {
+export enum StrategyKey {
   RAMOS = 'RamosStrategy',
   TLC = 'TlcStrategy',
+  TEMPLEBASE = 'TempleBaseStrategy',
+  DSRBASE = 'DsrBaseStrategy',
 }
 
-enum Token {
+export enum TokenSymbols {
   DAI = 'DAI',
   TEMPLE_DEBT = 'dUSD',
 }
-
 export interface TreasuryReservesVaultMetrics {
   totalMarketValue: number;
   spotPrice: number;
@@ -52,31 +56,121 @@ export interface StrategyMetrics {
   benchmarkPerformance: number;
 }
 
-export class DashboardMetricsService {
-  constructor() {
-    console.debug('DashboardMetrics constructor');
-  }
+// type MetricsMap = {
+//   [strategy in StrategyKey]: UseQueryResult<StrategyMetrics>;
+// };
 
-  async getMetrics(dashboardType: DashboardType): Promise<ArrangedDashboardMetrics> {
+export default function useDashboardV2Metrics() {
+  // useQuery to get all the metrics when the hook loads
+  // and they have
+
+  // to start, just manually create 4 useQuery hooks
+  // and return them in the hook return object
+  // later we can make this more dynamic/generic
+  // and use a loop to create the hooks
+
+  const ramosMetrics = useQuery({
+    queryKey: ['getMetrics', StrategyKey.RAMOS],
+    queryFn: async () => {
+      const metrics = await fetchStrategyMetrics(StrategyKey.RAMOS);
+      return metrics;
+    },
+    refetchInterval: 1000 * 60,
+    staleTime: 1000 * 60,
+  });
+
+  const tlcMetrics = useQuery({
+    queryKey: ['getMetrics', StrategyKey.TLC],
+    queryFn: async () => {
+      const metrics = await fetchStrategyMetrics(StrategyKey.TLC);
+      return metrics;
+    },
+    refetchInterval: 1000 * 60,
+    staleTime: 1000 * 60,
+  });
+
+  const templeBaseMetrics = useQuery({
+    queryKey: ['getMetrics', StrategyKey.TEMPLEBASE],
+    queryFn: async () => {
+      const metrics = await fetchStrategyMetrics(StrategyKey.TEMPLEBASE);
+      return metrics;
+    },
+    refetchInterval: 1000 * 60,
+    staleTime: 1000 * 60,
+  });
+
+  const dsrBaseMetrics = useQuery({
+    queryKey: ['getMetrics', StrategyKey.DSRBASE],
+    queryFn: async () => {
+      const metrics = await fetchStrategyMetrics(StrategyKey.DSRBASE);
+      return metrics;
+    },
+    refetchInterval: 1000 * 60,
+    staleTime: 1000 * 60,
+  });
+
+  const treasuryReservesVaultMetrics = useQuery({
+    queryKey: ['getMetrics', DashboardType.TREASURY_RESERVES_VAULT],
+    queryFn: async () => {
+      const metrics = await fetchTreasuryReservesVaultMetrics();
+      return metrics;
+    },
+    refetchInterval: 1000 * 60,
+    staleTime: 1000 * 60,
+  });
+
+  const isLoading = useMemo(() => {
+    return (
+      ramosMetrics.isLoading ||
+      tlcMetrics.isLoading ||
+      templeBaseMetrics.isLoading ||
+      dsrBaseMetrics.isLoading ||
+      treasuryReservesVaultMetrics.isLoading
+    );
+  }, [
+    ramosMetrics.isLoading,
+    tlcMetrics.isLoading,
+    templeBaseMetrics.isLoading,
+    dsrBaseMetrics.isLoading,
+    treasuryReservesVaultMetrics.isLoading,
+  ]);
+
+  const metrics = useMemo(() => {
+    return {
+      [StrategyKey.RAMOS]: ramosMetrics,
+      [StrategyKey.TLC]: tlcMetrics,
+      [StrategyKey.TEMPLEBASE]: templeBaseMetrics,
+      [StrategyKey.DSRBASE]: dsrBaseMetrics,
+      [DashboardType.TREASURY_RESERVES_VAULT]: treasuryReservesVaultMetrics,
+    };
+  }, [ramosMetrics, tlcMetrics, templeBaseMetrics, dsrBaseMetrics, treasuryReservesVaultMetrics]);
+
+  const getMetrics = async (dashboardType: DashboardType): Promise<ArrangedDashboardMetrics> => {
     switch (dashboardType) {
       case DashboardType.TREASURY_RESERVES_VAULT:
-        const rawMetrics = await this.fetchTreasuryReservesVaultMetrics();
-        return this.getArrangedTreasuryReservesVaultMetrics(rawMetrics);
+        const rawMetrics = await fetchTreasuryReservesVaultMetrics();
+        return getArrangedTreasuryReservesVaultMetrics(rawMetrics);
       case DashboardType.RAMOS:
-        const ramosMetrics = await this.fetchStrategyMetrics(Strategy.RAMOS);
-        return this.getArrangedStrategyMetrics(ramosMetrics);
+        const ramosMetrics = await fetchStrategyMetrics(StrategyKey.RAMOS);
+        return getArrangedStrategyMetrics(ramosMetrics);
       case DashboardType.TLC:
-        const tlcMetrics = await this.fetchStrategyMetrics(Strategy.TLC);
-        return this.getArrangedStrategyMetrics(tlcMetrics);
+        const tlcMetrics = await fetchStrategyMetrics(StrategyKey.TLC);
+        return getArrangedStrategyMetrics(tlcMetrics);
+      case DashboardType.TEMBLE_BASE:
+        const templeBaseMetrics = await fetchStrategyMetrics(StrategyKey.TEMPLEBASE);
+        return getArrangedStrategyMetrics(templeBaseMetrics);
+      case DashboardType.DSR_BASE:
+        const dsrBaseMetrics = await fetchStrategyMetrics(StrategyKey.DSRBASE);
+        return getArrangedStrategyMetrics(dsrBaseMetrics);
       default:
         return {
           metrics: [],
           smallMetrics: [],
         };
     }
-  }
+  };
 
-  async fetchStrategyMetrics(strategy: Strategy): Promise<StrategyMetrics> {
+  const fetchStrategyMetrics = async (strategy: StrategyKey): Promise<StrategyMetrics> => {
     let metrics = {
       valueOfHoldings: 0,
       nominalEquity: 0,
@@ -130,7 +224,7 @@ export class DashboardMetricsService {
 
       const daiStrategyTokenData = ramosSubgraphData?.strategyTokens.find(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (_strategyToken: any) => _strategyToken.symbol === Token.DAI
+        (_strategyToken: any) => _strategyToken.symbol === TokenSymbols.DAI
       );
 
       metrics = {
@@ -152,10 +246,10 @@ export class DashboardMetricsService {
     }
 
     return metrics;
-  }
+  };
 
-  async fetchTreasuryReservesVaultMetrics(): Promise<TreasuryReservesVaultMetrics> {
-    let metrics = {
+  const fetchTreasuryReservesVaultMetrics = async (): Promise<TreasuryReservesVaultMetrics> => {
+    let metrics: TreasuryReservesVaultMetrics = {
       totalMarketValue: 0,
       spotPrice: 0,
       treasuryPriceIndex: 0,
@@ -170,7 +264,6 @@ export class DashboardMetricsService {
     };
 
     try {
-      // TODO: move the subgraph url to an env variable
       const allMetricsPromises = [
         fetchGenericSubgraph(
           env.subgraph.templeV2,
@@ -187,9 +280,9 @@ export class DashboardMetricsService {
           }
       }`
         ),
-        this.getBenchmarkRate(),
-        this.getTempleCirculatingSupply(),
-        this.getTempleSpotPrice(),
+        getBenchmarkRate(),
+        getTempleCirculatingSupply(),
+        getTempleSpotPrice(),
       ];
 
       const [trvSubgraphResponse, benchmarkRate, templeCirculatingSupply, templeSpotPrice] = await Promise.all(
@@ -216,9 +309,9 @@ export class DashboardMetricsService {
     }
 
     return metrics;
-  }
+  };
 
-  private async getBenchmarkRate() {
+  const getBenchmarkRate = async () => {
     const debtTokensResponse = await fetchGenericSubgraph(
       env.subgraph.templeV2,
       `{
@@ -233,10 +326,10 @@ export class DashboardMetricsService {
     const debtTokensData = debtTokensResponse?.data?.debtTokens;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return debtTokensData.find((debtToken: any) => debtToken.symbol === Token.TEMPLE_DEBT)?.baseRate;
-  }
+    return debtTokensData.find((debtToken: any) => debtToken.symbol === TokenSymbols.TEMPLE_DEBT)?.baseRate;
+  };
 
-  private async getTempleCirculatingSupply(): Promise<string> {
+  const getTempleCirculatingSupply = async (): Promise<string> => {
     const response = await fetchSubgraph(
       `{
         protocolMetrics(first: 1, orderBy: timestamp, orderDirection: desc) {
@@ -248,9 +341,9 @@ export class DashboardMetricsService {
     const data = response?.data?.protocolMetrics?.[0] || {};
 
     return data.templeCirculatingSupply;
-  }
+  };
 
-  private async getTempleSpotPrice() {
+  const getTempleSpotPrice = async () => {
     const response = await fetchGenericSubgraph(
       env.subgraph.templeV2,
       `{
@@ -265,20 +358,24 @@ export class DashboardMetricsService {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return tokenData.find((token: any) => token.name === 'Temple')?.price;
-  }
+  };
 
-  formatPercent(input: number) {
+  const formatPercent = (input: number) => {
     return Math.round(input * 100).toFixed(2);
-  }
+  };
 
   /**
    * This function will format a number into a string with commas and a decimal point
    * It uses the millify library to add K, M, or B (thousand, million, million)
    * to the end of the number if it is large enough
    */
-  formatBigMoney(input: number) {
+  const formatBigMoney = (input: number) => {
     return millify(input, { precision: 2 });
-  }
+  };
+
+  const formatPrice = (input: number) => {
+    return input.toFixed(2);
+  };
 
   /**
    * This function will return the metrics in the format that the DashboardMetrics component expects
@@ -286,31 +383,31 @@ export class DashboardMetricsService {
    * Small metrics appear below the "main" metrics and are formatted smaller, without a border, etc.
    * Each array represents a row of metrics
    */
-  getArrangedTreasuryReservesVaultMetrics(metrics: TreasuryReservesVaultMetrics) {
+  const getArrangedTreasuryReservesVaultMetrics = (metrics: TreasuryReservesVaultMetrics) => {
     return {
       metrics: [
         [
           {
             title: 'Total Market Value',
-            value: `$${this.formatBigMoney(metrics.totalMarketValue)}`,
+            value: `$${formatBigMoney(metrics.totalMarketValue)}`,
           },
           {
             title: 'Spot Price',
-            value: `${metrics.spotPrice} DAI`,
+            value: `${formatPrice(metrics.spotPrice)} DAI`,
           },
           {
             title: 'Treasury Price Index',
-            value: `${metrics.treasuryPriceIndex} DAI`,
+            value: `${formatPrice(metrics.treasuryPriceIndex)} DAI`,
           },
         ],
         [
           {
             title: 'Circulating Supply',
-            value: `$${this.formatBigMoney(metrics.circulatingSupply)}`,
+            value: `$${formatBigMoney(metrics.circulatingSupply)}`,
           },
           {
             title: 'Benchmark Rate',
-            value: `${this.formatPercent(metrics.benchmarkRate)}% p.a.`,
+            value: `${formatPercent(metrics.benchmarkRate)}% p.a.`,
           },
         ],
       ],
@@ -318,34 +415,34 @@ export class DashboardMetricsService {
         [
           {
             title: 'Principal',
-            value: `$${this.formatBigMoney(metrics.principal)}`,
+            value: `$${formatBigMoney(metrics.principal)}`,
           },
           {
             title: 'Accrued dUSD Interest',
-            value: `$${this.formatBigMoney(metrics.accruedInterest)}`,
+            value: `$${formatBigMoney(metrics.accruedInterest)}`,
           },
           {
             title: 'Nominal Equity',
-            value: `$${this.formatBigMoney(metrics.nominalEquity)}`,
+            value: `$${formatBigMoney(metrics.nominalEquity)}`,
           },
           {
             title: 'Nominal Performance',
-            value: `${this.formatPercent(metrics.nominalPerformance)}%`,
+            value: `${formatPercent(metrics.nominalPerformance)}%`,
           },
         ],
         [
           {
             title: 'Benchmarked Equity',
-            value: `$${this.formatBigMoney(metrics.benchmarkedEquity)}`,
+            value: `$${formatBigMoney(metrics.benchmarkedEquity)}`,
           },
           {
             title: 'Benchmark Performance',
-            value: `${this.formatPercent(metrics.benchmarkPerformance)}%`,
+            value: `${formatPercent(metrics.benchmarkPerformance)}%`,
           },
         ],
       ],
     };
-  }
+  };
 
   /**
    * This function will return the metrics in the format that the DashboardMetrics component expects
@@ -353,25 +450,25 @@ export class DashboardMetricsService {
    * Small metrics appear below the "main" metrics and are formatted smaller, without a border, etc.
    * Each array represents a row of metrics
    */
-  getArrangedStrategyMetrics(metrics: StrategyMetrics) {
+  const getArrangedStrategyMetrics = (metrics: StrategyMetrics) => {
     return {
       metrics: [
         [
           {
             title: 'Value of Holdings',
-            value: `$${this.formatBigMoney(metrics.valueOfHoldings)}`,
+            value: `$${formatBigMoney(metrics.valueOfHoldings)}`,
           },
           {
             title: 'Nominal Equity',
-            value: `$${this.formatBigMoney(metrics.nominalEquity)}`,
+            value: `$${formatBigMoney(metrics.nominalEquity)}`,
           },
           {
             title: 'Benchmarked Equity',
-            value: `$${this.formatBigMoney(metrics.benchmarkedEquity)}`,
+            value: `$${formatBigMoney(metrics.benchmarkedEquity)}`,
           },
           {
             title: 'Interest Rate',
-            value: `${this.formatPercent(metrics.interestRate)}%`,
+            value: `${formatPercent(metrics.interestRate)}%`,
           },
         ],
       ],
@@ -379,40 +476,51 @@ export class DashboardMetricsService {
         [
           {
             title: 'Debt Share',
-            value: `${this.formatPercent(metrics.debtShare)}%`,
+            value: `${formatPercent(metrics.debtShare)}%`,
           },
           {
             title: 'Debt Ceiling',
-            value: `$${this.formatBigMoney(metrics.debtCeiling)}`,
+            value: `$${formatBigMoney(metrics.debtCeiling)}`,
           },
           {
             title: 'Debt Ceiling Utilization',
-            value: `${this.formatPercent(metrics.debtCeilingUtilization)}%`,
+            value: `${formatPercent(metrics.debtCeilingUtilization)}%`,
           },
           {
             title: 'Total Repayment',
-            value: `${metrics.totalRepayment} DAI`,
+            value: `${formatBigMoney(metrics.totalRepayment)} DAI`,
           },
         ],
         [
           {
             title: 'Principal',
-            value: `$${this.formatBigMoney(metrics.principal)}`,
+            value: `$${formatBigMoney(metrics.principal)}`,
           },
           {
             title: 'Accrued dUSD Interest',
-            value: `$${this.formatBigMoney(metrics.benchmarkedEquity)}`,
+            value: `$${formatBigMoney(metrics.benchmarkedEquity)}`,
           },
           {
             title: 'Nominal Performance',
-            value: `${this.formatPercent(metrics.nominalPerformance)}%`,
+            value: `${formatPercent(metrics.nominalPerformance)}%`,
           },
           {
             title: 'Benchmark Performance',
-            value: `${this.formatPercent(metrics.benchmarkPerformance)}%`,
+            value: `${formatPercent(metrics.benchmarkPerformance)}%`,
           },
         ],
       ],
     };
-  }
+  };
+
+  return {
+    isLoading,
+    tlcMetrics,
+    ramosMetrics,
+    templeBaseMetrics,
+    dsrBaseMetrics,
+    treasuryReservesVaultMetrics,
+    getArrangedTreasuryReservesVaultMetrics,
+    getArrangedStrategyMetrics,
+  };
 }
