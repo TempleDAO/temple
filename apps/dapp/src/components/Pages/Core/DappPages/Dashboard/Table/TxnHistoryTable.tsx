@@ -61,11 +61,13 @@ const TxnHistoryTable = ({ dashboardType, filter }: Props) => {
     (async ()=> {
       await restartTable();
       const strategyType = dashboardTypeToStrategyType(dashboardType);
-      const whereQuery = strategyType === 'All' ? `` : `( where: {name: "${strategyType}"} )`;
+      const strategyQuery = strategyType === 'All' ? `` : `( where: {name: "${strategyType}"} )`;
+      // TODO: workout how to update transactionCount give the filter
+
       const { data: res } = await fetchGenericSubgraph<FetchTxnsResponse>(
         env.subgraph.templeV2,
         `{
-            strategies${whereQuery} {
+            strategies${strategyQuery} {
               transactionCount
             }
             _meta {
@@ -81,26 +83,30 @@ const TxnHistoryTable = ({ dashboardType, filter }: Props) => {
       setTotalPages(Math.ceil(txCountTotal / rowsPerPage));
       setBlockNumber(res._meta.block.number);
     })();
-  }, [dashboardType, rowsPerPage, restartTable]);
+  }, [dashboardType, rowsPerPage, filter, restartTable]);
 
   const fetchTransactions = useCallback(
     async (strategyType: StrategyType): Promise<Transactions> => {
-      let whereQuery = ``;
-      whereQuery = strategyType === 'All' ? `` : `( where: {name: "${strategyType}"} )`;
-      if (blockNumber > 0) {
-        whereQuery =
-          strategyType === 'All'
-            ? `( block: { number: ${blockNumber} } )`
-            : `( block: { number: ${blockNumber} } where: {name: "${strategyType}"})`;
+      
+      const strategyQuery = strategyType === 'All' ? `` : `where: { name: "${strategyType}" }`;
+      const blockNumberQueryParam = blockNumber > 0 ? `block: { number: ${blockNumber} }` : ``;
+      let strategyAndBlockQuery = '';
+      if (blockNumberQueryParam.length > 0 || strategyQuery.length> 0){
+        strategyAndBlockQuery = `(${blockNumberQueryParam} ${strategyQuery})`
       }
+      
       const paginationQuery = `skip: ${(currentPage - 1) * rowsPerPage} first: ${rowsPerPage}`;
+      
+      const dateNowSecs = Math.round( Date.now() / 1000);
+      const filterQuery = `where: { timestamp_gt: ${ dateNowSecs - txHistoryFilterTypeToSeconds(filter)} }`;
+
       const { data: res } = await fetchGenericSubgraph<FetchTxnsResponse>(
         env.subgraph.templeV2,
         `{
-          strategies${whereQuery} {
+          strategies${strategyAndBlockQuery} {
             name
             id
-            transactions(orderBy: timestamp, orderDirection: desc ${paginationQuery}) {
+            transactions(orderBy: timestamp, orderDirection: desc ${paginationQuery} ${filterQuery}) {
               hash
               amount
               amountUSD
@@ -119,7 +125,7 @@ const TxnHistoryTable = ({ dashboardType, filter }: Props) => {
       }
       return txns;
     },
-    [blockNumber, currentPage, rowsPerPage]
+    [blockNumber, currentPage, rowsPerPage, filter]
   );
 
   // Fetch strategies tx data
@@ -128,7 +134,6 @@ const TxnHistoryTable = ({ dashboardType, filter }: Props) => {
       setIsLoading(true);
       try {
         const txns = await fetchTransactions(dashboardTypeToStrategyType(dashboardType));
-        // TODO: USE filter
         setData(
           txns.map((tx) => {
             const amount = Number(Number(tx.amount).toFixed(2));
@@ -171,6 +176,19 @@ const dashboardTypeToStrategyType = (dType: DashboardType) => {
       return 'All';
   }
 };
+
+const txHistoryFilterTypeToSeconds = (filter: TxHistoryFilterType) => {
+  const dateNowSecs = Math.round( Date.now() / 1000);
+  const oneDaySecs = 86400;
+  switch(filter) {
+    case "all":
+      return dateNowSecs;
+    case "last30days":
+      return oneDaySecs * 30;
+    case "lastweek":
+      return oneDaySecs * 7;
+  }
+}
 
 export default TxnHistoryTable;
 
