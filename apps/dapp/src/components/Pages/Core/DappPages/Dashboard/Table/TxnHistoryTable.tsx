@@ -7,6 +7,7 @@ import { DashboardType } from '../DashboardContent';
 import { format } from 'date-fns';
 import { TableRow, TxnDataTable } from './TxnDataTable';
 import { PaginationControls } from './TxnPaginationControl';
+import env from 'constants/env/local';
 
 type Props = {
   dashboardType: DashboardType;
@@ -63,7 +64,7 @@ const TxnHistoryTable = ({ dashboardType, filter }: Props) => {
       const strategyType = dashboardTypeToStrategyType(dashboardType);
       const whereQuery = strategyType === 'All' ? `` : `( where: {name: "${strategyType}"} )`;
       const { data: res } = await fetchGenericSubgraph<FetchTxnsResponse>(
-        'https://api.studio.thegraph.com/query/520/v2-sepolia/version/latest',
+        env.subgraph.templeV2,
         `{
             strategies${whereQuery} {
               transactionCount
@@ -95,7 +96,7 @@ const TxnHistoryTable = ({ dashboardType, filter }: Props) => {
       }
       const paginationQuery = `skip: ${(currentPage - 1) * rowsPerPage} first: ${rowsPerPage}`;
       const { data: res } = await fetchGenericSubgraph<FetchTxnsResponse>(
-        'https://api.studio.thegraph.com/query/520/v2-sepolia/version/latest',
+        env.subgraph.templeV2,
         `{
           strategies${whereQuery} {
             name
@@ -122,6 +123,7 @@ const TxnHistoryTable = ({ dashboardType, filter }: Props) => {
     [blockNumber, currentPage, rowsPerPage]
   );
 
+  // Fetch strategies tx data
   useEffect(() => {
     (async () => {
       setIsLoading(true);
@@ -151,13 +153,7 @@ const TxnHistoryTable = ({ dashboardType, filter }: Props) => {
   return (
     <TableContainer>
       <PaginationControls totalPages={totalPages} rowsPerPage={rowsPerPage} currentPage={currentPage} setCurrentPage={setCurrentPage} />
-      {isLoading ? (
-        <p>Loading....</p>
-      ) : data.length === 0 ? (
-        <p>No data available</p>
-      ) : (
-        <TxnDataTable dataSubset={data} />
-      )}
+        <TxnDataTable dataSubset={data} dataLoading={isLoading}/>
     </TableContainer>
   );
 };
