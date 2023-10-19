@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import styled from 'styled-components';
 import { Nullable } from 'types/util';
 import { DashboardType } from '../DashboardContent';
-import { ArrangedDashboardMetrics, DashboardMetricsService } from './DashboardMetricsService';
+import useDashboardV2Metrics, { ArrangedDashboardMetrics } from '../hooks/use-dashboardv2-metrics';
 
 type DashboardMetricsProps = {
   dashboardType: DashboardType;
@@ -12,21 +12,37 @@ type DashboardMetricsProps = {
 const DashboardMetrics = ({ dashboardType }: DashboardMetricsProps) => {
   console.debug('DashboardMetrics with dashboardType: ', dashboardType);
 
-  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [sourceData, setSourceData] = useState<Nullable<ArrangedDashboardMetrics>>(null);
 
-  const dashboardMetricsService = useMemo(() => new DashboardMetricsService(), []);
+  const {
+    tlcMetrics,
+    ramosMetrics,
+    templeBaseMetrics,
+    dsrBaseMetrics,
+    treasuryReservesVaultMetrics,
+    getArrangedStrategyMetrics,
+    getArrangedTreasuryReservesVaultMetrics,
+    isLoading,
+  } = useDashboardV2Metrics();
 
   useEffect(() => {
-    const loadMetrics = async () => {
-      setIsLoading(true);
-      const metrics = await dashboardMetricsService.getMetrics(dashboardType);
-      setSourceData(metrics);
-      setIsLoading(false);
-    };
+    if (isLoading) {
+      return setSourceData(null);
+    }
 
-    loadMetrics();
-  }, [dashboardMetricsService, dashboardType]);
+    switch (dashboardType) {
+      case DashboardType.TREASURY_RESERVES_VAULT:
+        return setSourceData(getArrangedTreasuryReservesVaultMetrics(treasuryReservesVaultMetrics.data!));
+      case DashboardType.TLC:
+        return setSourceData(getArrangedStrategyMetrics(tlcMetrics.data!));
+      case DashboardType.RAMOS:
+        return setSourceData(getArrangedStrategyMetrics(ramosMetrics.data!));
+      case DashboardType.TEMBLE_BASE:
+        return setSourceData(getArrangedStrategyMetrics(templeBaseMetrics.data!));
+      case DashboardType.DSR_BASE:
+        return setSourceData(getArrangedStrategyMetrics(dsrBaseMetrics.data!));
+    }
+  }, [dashboardType]);
 
   useEffect(() => {
     console.log(sourceData);
