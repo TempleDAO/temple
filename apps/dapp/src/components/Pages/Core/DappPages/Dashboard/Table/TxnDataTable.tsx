@@ -1,4 +1,6 @@
+import { LoadingText } from 'components/Pages/Core/components/LoaderVault/commons/LoadingText';
 import styled from 'styled-components';
+import { loading } from 'utils/loading-value';
 
 export type TableRow = {
   date: string;
@@ -10,8 +12,10 @@ export type TableRow = {
 
 type Props = {
   dataSubset: TableRow[];
+  dataLoading: boolean;
 };
-export const TxnDataTable = ({ dataSubset }: Props) => {
+export const TxnDataTable = (props: Props) => {
+  const { dataSubset, dataLoading } = props;
   return (
     <DataTable>
       <thead>
@@ -24,15 +28,31 @@ export const TxnDataTable = ({ dataSubset }: Props) => {
         </tr>
       </thead>
       <tbody>
-        {dataSubset.map((row, index) => (
-          <DataRow key={index}>
-            <DataCell>{row.date}</DataCell>
-            <DataCell>{row.dToken}</DataCell>
-            <DataCell>{row.borrow}</DataCell>
-            <DataCell>{row.repay}</DataCell>
-            <DataCell>{row.txHash.slice(0, 12) + '...'}</DataCell>
+        {dataLoading ? (
+          [...Array(3)].map((_, index) => ( // Adds 3 loading rows
+            <DataRow key={index}>
+              {[...Array(5)].map((_, i) => ( // Adds 5 loading cells, same no of table headers 
+                <DataCell key={i}>
+                  <LoadingText value={loading()} />
+                </DataCell>
+              ))}
+            </DataRow>
+          ))
+        ) : dataSubset.length === 0 ? (
+          <DataRow>
+            <DataCell>No data available</DataCell>
           </DataRow>
-        ))}
+        ) : (
+          dataSubset.map((row, index) => (
+            <DataRow key={index}>
+              <DataCell>{row.date}</DataCell>
+              <DataCell>{row.dToken}</DataCell>
+              <DataCell>{row.borrow}</DataCell>
+              <DataCell>{row.repay}</DataCell>
+              <DataCell>{row.txHash.slice(0, 12) + '...'}</DataCell>
+            </DataRow>
+          ))
+        )}
       </tbody>
     </DataTable>
   );
