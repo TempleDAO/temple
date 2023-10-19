@@ -1,4 +1,5 @@
 import { LoadingText } from 'components/Pages/Core/components/LoaderVault/commons/LoadingText';
+import env from 'constants/env/local';
 import styled from 'styled-components';
 import { loading } from 'utils/loading-value';
 
@@ -49,7 +50,7 @@ export const TxnDataTable = (props: Props) => {
               <DataCell>{row.dToken}</DataCell>
               <DataCell>{row.borrow}</DataCell>
               <DataCell>{row.repay}</DataCell>
-              <DataCell>{row.txHash.slice(0, 12) + '...'}</DataCell>
+              <DataCell><LinkStyled href={`${env.etherscan}/tx/${row.txHash}`} target='_blank'>{row.txHash.slice(0, 12) + '...'}</LinkStyled></DataCell>
             </DataRow>
           ))
         )}
@@ -77,4 +78,13 @@ const DataCell = styled.td`
   padding: 8px;
   text-align: left;
   color: ${({ theme }) => theme.palette.brandLight};
+`;
+
+const LinkStyled = styled.a`
+  color: ${({ theme }) => theme.palette.brandLight};
+  font-size: 0.9rem;
+  font-weight: 300;
+  &:hover {
+    color: ${({ theme }) => theme.palette.brandDark};
+  }
 `;
