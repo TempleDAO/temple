@@ -24,7 +24,6 @@ const tooltipLabelFormatters: Record<ChartSupportedTimeInterval, XAxisTickFormat
 };
 
 
-const tooltipValuesFormatter = (value: number, name: string) => [formatNumberFixedDecimals(value, 4).toString(), name];
 
 const yDomain: AxisDomain = ([dataMin, dataMax]) => [dataMin - dataMin * 0.01, dataMax + dataMax * 0.01];
 
@@ -59,16 +58,17 @@ function transpose(data: V2StrategyDailySnapshot[], metric: V2StrategyMetric, fo
 type MetricFormatter = (v: string) => number;
 
 const metricFormatters: { [k in V2StrategyMetric]: MetricFormatter } = {
-    'accruedInterestUSD': parseInt,
-    'benchmarkPerformance': parseFloat,
-    'benchmarkedEquityUSD': parseInt,
-    'creditUSD': parseInt,
-    'debtUSD': parseInt,
-    'nominalEquityUSD': parseInt,
-    'nominalPerformance': parseFloat,
-    'principalUSD': parseInt,
+    'accruedInterestUSD': parseFloat,
+    'benchmarkPerformance': (value: string)=>parseFloat(value) * 100,
+    'benchmarkedEquityUSD': parseFloat,
+    'creditUSD': parseFloat,
+    'debtUSD': parseFloat,
+    'nominalEquityUSD': parseFloat,
+    'nominalPerformance': (value: string)=>parseFloat(value) * 100,
+    'principalUSD': parseFloat,
     'totalMarketValueUSD': parseFloat
 }
+
 
 const V2StrategyMetricsChart: React.FC<{
     dashboardType: DashboardType ;
@@ -77,40 +77,48 @@ const V2StrategyMetricsChart: React.FC<{
     selectedInterval: ChartSupportedTimeInterval;
 }> = ({ dashboardType, selectedMetric, selectedInterval, strategyNames }) => {
 
+    const formatMetricName = (name: string) => `${name} (${selectedMetric.endsWith('Performance') ? '%' : 'USD'})`
+
+    const tooltipValuesFormatter = (value: number, name: string) => [
+        formatNumberFixedDecimals(value, 2).toString(),
+        formatMetricName(name)
+    ];
+
     const theme = useTheme();
     const formatMetric = metricFormatters[selectedMetric]
 
     const { dailyMetrics } = useCoreV2StrategyData()
 
-    // TODO: alternatively fetch only strategies we need, but since we
-    // need all strategies for the TRV dashboard anyway we can just as well reuse
-    // what we have
+    // we need all strategies for the TRV dashboard anyway we can just as well reuse
+    // what we have and filter client side
+
     const filteredData = dailyMetrics.filter(m=> strategyNames.includes(m.strategy.name))
 
     // if we are rendering chart for only one strategy we can use data as is
     // otherwise we have to transpose and show the selected metric for every strategy
     const transformedData = strategyNames.length === 1
-                          ? filteredData.map(
-                              m=>({
-                    timestamp: m.timestamp,
-                    accruedInterestUSD: metricFormatters.accruedInterestUSD(m.accruedInterestUSD),
-                    benchmarkPerformance: metricFormatters.benchmarkPerformance(m.benchmarkPerformance),
-                    benchmarkedEquityUSD: metricFormatters.benchmarkedEquityUSD(m.benchmarkedEquityUSD),
-                    creditUSD: metricFormatters.creditUSD(m.creditUSD),
-                    debtUSD: metricFormatters.debtUSD(m.debtUSD),
-                    nominalEquityUSD: metricFormatters.nominalEquityUSD(m.nominalEquityUSD),
-                    nominalPerformance: metricFormatters.nominalPerformance(m.nominalPerformance),
-                    principalUSD: metricFormatters.principalUSD(m.principalUSD),
-                    totalMarketValueUSD: metricFormatters.totalMarketValueUSD(m.totalMarketValueUSD)
-                }))
-    : transpose(filteredData, selectedMetric, formatMetric)
+        ? filteredData.map(
+            m => ({
+                timestamp: m.timestamp,
+                accruedInterestUSD: metricFormatters.accruedInterestUSD(m.accruedInterestUSD),
+                benchmarkPerformance: metricFormatters.benchmarkPerformance(m.benchmarkPerformance),
+                benchmarkedEquityUSD: metricFormatters.benchmarkedEquityUSD(m.benchmarkedEquityUSD),
+                creditUSD: metricFormatters.creditUSD(m.creditUSD),
+                debtUSD: metricFormatters.debtUSD(m.debtUSD),
+                nominalEquityUSD: metricFormatters.nominalEquityUSD(m.nominalEquityUSD),
+                nominalPerformance: metricFormatters.nominalPerformance(m.nominalPerformance),
+                principalUSD: metricFormatters.principalUSD(m.principalUSD),
+                totalMarketValueUSD: metricFormatters.totalMarketValueUSD(m.totalMarketValueUSD)
+            }))
+        : transpose(filteredData, selectedMetric, formatMetric)
 
     const formattedData = formatTimestampedChartData(
         transformedData,
         [],
         (a) => ({
             ...a,
-            timestamp: (typeof a.timestamp === 'string' ? parseInt(a.timestamp) : a.timestamp) * 1000 }))
+            timestamp: (typeof a.timestamp === 'string' ? parseInt(a.timestamp) : a.timestamp) * 1000
+        }))
 
 
     const xDataKey = "timestamp";
@@ -121,12 +129,12 @@ const V2StrategyMetricsChart: React.FC<{
     }
 
     const metrics = Object.keys(
-            formattedData[selectedInterval][0]
-        ).filter(k => k !== xDataKey);
+        formattedData[selectedInterval][0]
+    ).filter(k => k !== xDataKey);
 
     const lines = dashboardType === DashboardType.TREASURY_RESERVES_VAULT
-                ? metrics.map((metric, ix) => ({series: metric, color: colors[ix % colors.length]}))
-                : [{series: selectedMetric, color: colors[0]}]
+        ? metrics.map((metric, ix) => ({ series: metric, color: colors[ix % colors.length] }))
+        : [{series: selectedMetric, color: colors[0]}]
     return (
             <LineChart
                 chartData={formattedData[selectedInterval].reverse()}
@@ -134,9 +142,9 @@ const V2StrategyMetricsChart: React.FC<{
                 lines={lines}
                 xTickFormatter={tickFormatters[selectedInterval]}
                 tooltipLabelFormatter={tooltipLabelFormatters[selectedInterval]}
-                legendFormatter={name => name}
+                legendFormatter={formatMetricName}
                 yDomain={yDomain}
-                tooltipValuesFormatter={(value, name) => tooltipValuesFormatter(value, name)}
+                tooltipValuesFormatter={tooltipValuesFormatter}
             />
     );
 }
