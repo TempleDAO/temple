@@ -13,27 +13,25 @@ export const PaginationControls = (props: PaginationControlProps) => {
 
   return (
     <PaginationContainer>
-      {[...Array(totalPages)].map((_, index) => (
-        <PageLink
+      {[...Array(totalPages)].map((_, index) => <PageLink
           selected={currentPage === index + 1}
-          key={index}
+          key={index + 1}
           onClick={() => setCurrentPage(index + 1)}
           disabled={currentPage === index + 1}
         >
           {index + 1}
-        </PageLink>
-      ))}
+        </PageLink>)}
 
-      <PageLink selected onClick={() => setCurrentPage(1)}>
+      <PageLink onClick={() => setCurrentPage(1)} disabled={currentPage === 1}>
         First
       </PageLink>
-      <PageLink selected onClick={() => setCurrentPage((prev) => prev - 1)} disabled={currentPage === 1}>
+      <PageLink onClick={() => setCurrentPage((prev) => prev - 1)} disabled={currentPage === 1}>
         Prev
       </PageLink>
-      <PageLink selected onClick={() => setCurrentPage((prev) => prev + 1)} disabled={currentPage === totalPages}>
+      <PageLink onClick={() => setCurrentPage((prev) => prev + 1)} disabled={currentPage === totalPages}>
         Next
       </PageLink>
-      <PageLink selected onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages}>
+      <PageLink onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages}>
         Last
       </PageLink>
     </PaginationContainer>
@@ -46,10 +44,10 @@ type PageLinkProps = {
 
 const PageLink = styled.button<PageLinkProps>`
   margin: 0 5px;
-  color: ${({ selected, theme }) => (selected ? theme.palette.brand : theme.palette.brandLight)};
+  color: ${({ selected, theme }) => (selected ? theme.palette.brandLight : theme.palette.brand)};
   border: none;
   padding: 0;
-  cursor: pointer;
+  cursor: ${({ disabled }) => (disabled ? 'not-allowed' : 'pointer')};
   background: none;
   box-shadow: none;
   border-radius: 0px;
