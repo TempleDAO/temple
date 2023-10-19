@@ -21,6 +21,8 @@ export interface V2StrategyDailySnapshot {
 export type V2StrategyMetric = keyof Omit<V2StrategyDailySnapshot, 'timeframe' | 'timestamp' | 'strategy'>;
 
 
+const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
+
 async function fetchCoreV2<RawResponse extends Record<string, unknown>>(query: string) {
     const resp: RawResponse = (await fetchGenericSubgraph(environmentConfig.subgraph.templeV2, query)).data
     return resp
@@ -28,8 +30,7 @@ async function fetchCoreV2<RawResponse extends Record<string, unknown>>(query: s
 
 
 async function fetchStrategyDailySnapshots(now: Date) {
-    // TODO: filter strategies here?
-    let since = Math.floor((now.getTime() - 365 * 24 * 60 * 60 * 1000) / 1000).toString()
+    let since = Math.floor((now.getTime() - ONE_YEAR_MS) / 1000).toString()
     const result: V2StrategyDailySnapshot[] = []
     const itemsPerPage = 1000 // current max page size
     while (true) {
