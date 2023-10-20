@@ -658,6 +658,10 @@ export function expectAddressWithPrivateKey() {
   if (network.name == 'sepolia' && !process.env.SEPOLIA_ADDRESS_PRIVATE_KEY) {
     throw new Error("Missing environment variable SEPOLIA_ADDRESS_PRIVATE_KEY. A mumbai address private key with eth is required to deploy/manage contracts");
   }
+
+  if (network.name == 'arbitrumGoerli' && !process.env.ARBITRUM_GOERLI_ADDRESS_PRIVATE_KEY) {
+    throw new Error("Missing environment variable ARBITRUM_GOERLI_ADDRESS_PRIVATE_KEY. An arbitrum goerli address private key with eth is required to deploy/manage contracts");
+  }
 }
 
 const expectedEnvvars: { [key: string]: string[] } = {

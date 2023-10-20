@@ -13,9 +13,24 @@ import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol
 import { IERC721A } from "../../interfaces/nexus/IERC721A.sol";
 import { CommonEventsAndErrors } from "../../common/CommonEventsAndErrors.sol";
 import { IShard } from "../../interfaces/nexus/IShard.sol";
+import { IRelic } from "../../interfaces/nexus/IRelic.sol";
 
 
-contract TestnetRelic is ERC721ACustom, ERC1155Receiver {
+interface ITestnetShard is IShard {
+    /**
+     * @dev See {IERC1155-safeBatchTransferFrom}.
+     */
+    function safeBatchTransferFrom(
+        address from,
+        address to,
+        uint256[] memory ids,
+        uint256[] memory values,
+        bytes memory data
+    ) external;
+}
+
+
+contract TestnetRelic is IRelic, ERC721ACustom, ERC1155Receiver {
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.UintSet;
 
@@ -42,57 +57,16 @@ contract TestnetRelic is ERC721ACustom, ERC1155Receiver {
     mapping(address => bool) public blacklistedAccounts;
     mapping(address => bool) public relicMinters;
     mapping(address => EnumerableSet.UintSet) private ownerRelics;
+    /// @notice id to enclave name
+    mapping(uint256 => string) public enclaveNames;
 
     /// @notice operators for testnet
     mapping(address => bool) public operators;
 
-    enum Rarity {
-        Common,
-        Uncommon,
-        Rare,
-        Epic,
-        Legendary
-    }
 
-    enum Enclave {
-        Chaos,
-        Mystery,
-        Logic,
-        Order,
-        Structure
-    }
-
-    struct RelicInfo {
-        Enclave enclave;
-        Rarity rarity;
-        uint128 xp;
-        /// @notice shards equipped to this contract. can extract owner of relic from ownerOf(relicId)
-        mapping(uint256 => uint256) equippedShards;
-    }
-
-    event RarityXPThresholdSet(Rarity rarity, uint256 threshold);
-    event RarityBaseUriSet(Rarity rarity, string uri);
-    event RelicMinterSet(address minter, bool allow);
-    event ShardSet(address shard);
-    event RelicMinted(address to, uint256 nextTokenId, uint256 quantity);
-    event XPControllerSet(address controller, bool flag);
-    event RelicXPSet(uint256 relicId, uint256 xp);
-    event ShardEquipped(address caller, uint256 relicId, uint256 shardId, uint256 amount);
-    event ShardsEquipped(address caller, uint256 relicId, uint256[] shardIds, uint256[] amounts);
-    event ShardUnequipped(address caller, uint256 relicId, uint256 shardId, uint256 amount);
-    event ShardsUnequipped(address recipient, uint256 relicId, uint256[] shardIds, uint256[] amounts);
-    event AccountBlacklistSet(address account, bool blacklist, uint256[] shardIds, uint256[] amounts);
     event OperatorSet(address operator, bool allow);
 
-    error InvalidParamLength();
-    error CallerCannotMint(address msgSender);
-    error InvalidRelic(uint256 relicId);
-    error InvalidAddress(address invalidAddress);
     error InvalidAccess(address account);
-    error InsufficientShardBalance(uint256 actualBalance, uint256 requestedBalance);
-    error ZeroAddress();
-    error InvalidOwner(address invalidOwner);
-    error NotEnoughShardBalance(uint256 equippedBalance, uint256 amount);
 
     constructor(
         string memory _name,
@@ -117,6 +91,18 @@ contract TestnetRelic is ERC721ACustom, ERC1155Receiver {
     }
 
     /*
+     * @notice Set enclave ID to name mapping
+     * @param id enclave ID
+     * @param name Name of Enclave
+     */
+    function setEnclaveName(uint256 id, string memory name) external override onlyOperator {
+        if (id == 0) { revert CommonEventsAndErrors.InvalidParam(); }
+        if (bytes(name).length == 0) { revert CommonEventsAndErrors.InvalidParam(); }
+        enclaveNames[id] = name;
+        emit EnclaveNameSet(id, name);
+    }
+
+    /*
      * @notice Override _baseURI. Modified to use relicId. URI of NFT depends on rarity of relic.
      * @param enclave Enclave
      * @param shardId Shard ID
@@ -127,7 +113,7 @@ contract TestnetRelic is ERC721ACustom, ERC1155Receiver {
         uri = string(
             abi.encodePacked(
                 baseUris[relicInfo.rarity],
-                _toString(uint256(relicInfo.enclave))
+                _toString(uint256(relicInfo.enclaveId))
             )
         );
     }
@@ -135,7 +121,7 @@ contract TestnetRelic is ERC721ACustom, ERC1155Receiver {
     /**
      * @dev Returns the Uniform Resource Identifier (URI) for `tokenId` token.
      */
-    function tokenURI(uint256 tokenId) public view override returns (string memory) {
+    function tokenURI(uint256 tokenId) public view override(ERC721ACustom, IRelic) returns (string memory) {
         if (!_exists(tokenId)) _revert(URIQueryForNonexistentToken.selector);
 
         return _baseURI(tokenId);
@@ -331,25 +317,24 @@ contract TestnetRelic is ERC721ACustom, ERC1155Receiver {
     /*
      * @notice Mint Relic. Function checks if recipient address is blacklisted
      * @param to Address of recipient
-     * @param enclave Enclave type
+     * @param enclaveId Enclave ID
      */
     function mintRelic(
         address to,
-        Enclave enclave
+        uint256 enclaveId
     ) external isRelicMinter notBlacklisted(to) {
-        if (to == ZERO_ADDRESS) { revert ZeroAddress(); }
-        if (uint8(enclave) > uint8(Enclave.Structure)) { revert CommonEventsAndErrors.InvalidParam(); }
+        if (to == address(0)) { revert ZeroAddress(); }
+        if (!isValidEnclaveId(enclaveId)) { revert CommonEventsAndErrors.InvalidParam(); }
 
-        uint256 _nextTokenId = _nextTokenId();
-        RelicInfo storage relicInfo = relicInfos[_nextTokenId];
-        relicInfo.enclave = enclave;
-        relicInfo.rarity = Rarity.Common;
-        relicInfo.xp = uint128(0);
+        uint256 nextTokenId_ = _nextTokenId();
+        RelicInfo storage relicInfo = relicInfos[nextTokenId_];
+        relicInfo.enclaveId = enclaveId;
+        // relicInfo.rarity = Rarity.Common;
+        // relicInfo.xp = uint128(0);
         
-        ownerRelics[to].add(_nextTokenId);
+        ownerRelics[to].add(nextTokenId_);
         /// user can mint relic anytime after sacrificing temple and getting whitelisted. one at a time
         _safeMint(to, PER_MINT_QUANTITY, ZERO_BYTES);
-        emit RelicMinted(to, _nextTokenId, PER_MINT_QUANTITY);
     }
 
     /*
@@ -424,7 +409,7 @@ contract TestnetRelic is ERC721ACustom, ERC1155Receiver {
      * @notice Get next token Id
      * @return uint256 Next token Id
      */
-    function nextTokenId() external view returns (uint256) {
+    function nextTokenId() public view returns (uint256) {
         return _nextTokenId();
     }
 
@@ -500,6 +485,30 @@ contract TestnetRelic is ERC721ACustom, ERC1155Receiver {
         RelicInfo storage relicInfo = relicInfos[relicId];
         return relicInfo.equippedShards[shardId];
     }
+
+    /*
+     * @notice Get equipped Shard IDs in a Relic
+     * @param relicId ID of relic
+     * @return Array of shards equipped in Relic
+     */
+    function getEquippedShardIDs(uint256 relicId) external override view returns (uint256[] memory) {
+        if (!_exists(relicId)) { revert CommonEventsAndErrors.InvalidParam(); }
+
+        uint256 currentShard = nextTokenId() - 1;
+        RelicInfo storage relicInfo = relicInfos[relicId];
+        uint256[] memory shardIds = new uint256[](currentShard);
+        uint256 shardIndex = 0;
+        for (uint i=1; i<=currentShard;) {
+            if (relicInfo.equippedShards[i] > 0) {
+                shardIds[shardIndex] = i;
+                shardIndex += 1;
+            }
+            unchecked {
+                ++i;
+            }
+        }
+        return shardIds;
+    }
     
     /*
      * @notice Get URI of rarity
@@ -514,6 +523,15 @@ contract TestnetRelic is ERC721ACustom, ERC1155Receiver {
         return _nextTokenId();
     }
 
+    /*
+     * @notice Check if id is valid Enclave ID
+     * @param enclaveId The ID to check
+     * @return Bool if valid
+     */
+    function isValidEnclaveId(uint256 enclaveId) public override view returns (bool) {
+        return (bytes(enclaveNames[enclaveId]).length > 0);
+    }
+
     /**
      * @dev Returns true if this contract implements the interface defined by
      * `interfaceId`. See the corresponding
@@ -522,7 +540,7 @@ contract TestnetRelic is ERC721ACustom, ERC1155Receiver {
      *
      * This function call must use less than 30000 gas.
      */
-    function supportsInterface(bytes4 interfaceId) public pure override(ERC165, IERC165, IERC721A) returns (bool) {
+    function supportsInterface(bytes4 interfaceId) public pure override(ERC165, IERC165, IERC721A, IRelic) returns (bool) {
         // The interface IDs are constants representing the first 4 bytes
         // of the XOR of all function selectors in the interface.
         // See: [ERC165](https://eips.ethereum.org/EIPS/eip-165)

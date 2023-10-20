@@ -108,13 +108,13 @@ contract TestnetTempleSacrifice {
     /*
      * @notice Sacrifice TEMPLE tokens to mint a Relic
      * Caller must approve contract to spend TEMPLE tokens
-     * @param enclave Enclave relic will be part of 
+     * @param enclaveId Enclave ID 
      */
-    function sacrifice(IRelic.Enclave enclave) external {
+    function sacrifice(uint256 enclaveId) external {
         if (block.timestamp < originTime) { revert FutureOriginTime(originTime); }
         uint256 amount = _getPrice();
         templeToken.safeTransferFrom(msg.sender, sacrificedTempleRecipient, amount);
-        relic.mintRelic(msg.sender, enclave);
+        relic.mintRelic(msg.sender, enclaveId);
         emit TempleSacrificed(msg.sender, amount);
     }
 

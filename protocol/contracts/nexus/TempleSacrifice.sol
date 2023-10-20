@@ -9,6 +9,10 @@ import { ITempleERC20Token } from "../interfaces/core/ITempleERC20Token.sol";
 import { CommonEventsAndErrors } from "../common/CommonEventsAndErrors.sol";
 import { mulDiv } from "@prb/math/src/Common.sol";
 
+/* @notice TempleSacrifice contract
+ *
+ *
+ */
 contract TempleSacrifice is Ownable {
     using SafeERC20 for ITempleERC20Token;
 
@@ -29,9 +33,9 @@ contract TempleSacrifice is Ownable {
     PriceParam public priceParams;
 
     struct PriceParam {
-        uint64 priceMaxPeriod;
         uint128 minimumPrice;
         uint128 maximumPrice;
+        uint64 priceMaxPeriod;
     }
 
     event OriginTimeSet(uint64 originTime);
@@ -42,13 +46,18 @@ contract TempleSacrifice is Ownable {
 
     error FutureOriginTime(uint64 originTime);
 
-    constructor(address _relic, address _templeToken) Ownable() {
+    constructor(address _relic, address _templeToken, address _sacrificedTempleRecipient) Ownable() {
         relic = IRelic(_relic);
         templeToken = ITempleERC20Token(_templeToken);
+        sacrificedTempleRecipient = _sacrificedTempleRecipient;
         /// @dev caution so that origin time is never 0 and lesser than or equal to current block timestamp
         originTime = uint64(block.timestamp);
     }
 
+    /*
+     * @notice Set sacrificed temple recipient.
+     * @param recipient Recipient
+     */
     function setSacrificedTempleRecipient(address recipient) external onlyOwner {
         if (recipient == address(0)) { revert CommonEventsAndErrors.InvalidParam(); }
         sacrificedTempleRecipient = recipient;
@@ -96,16 +105,15 @@ contract TempleSacrifice is Ownable {
     /*
      * @notice Sacrifice TEMPLE tokens to mint a Relic
      * Caller must approve contract to spend TEMPLE tokens
-     * @param enclave Enclave relic will be part of 
+     * @param enclaveId Enclave ID
      */
-    function sacrifice(IRelic.Enclave enclave) external {
+    function sacrifice(uint256 enclaveId) external {
         if (block.timestamp < originTime) { revert FutureOriginTime(originTime); }
         uint256 amount = _getPrice();
         templeToken.safeTransferFrom(msg.sender, sacrificedTempleRecipient, amount);
-        relic.mintRelic(msg.sender, enclave);
+        relic.mintRelic(msg.sender, enclaveId);
         emit TempleSacrificed(msg.sender, amount);
     }
-
    
     /*
      * @notice Get amount of TEMPLE tokens to mint a Relic
