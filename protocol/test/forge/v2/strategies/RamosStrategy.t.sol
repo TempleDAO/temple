@@ -496,11 +496,13 @@ contract RamosStrategyTestBalances is RamosStrategyTestBase {
         _setUp();
     }
 
-    function checkBalance(uint256 expected) internal {
+    function checkBalance(uint256 expectedDai, uint256 expectedTemple) internal {
         ITempleStrategy.AssetBalance[] memory assetBalances = strategy.latestAssetBalances();
-        assertEq(assetBalances.length, 1);
+        assertEq(assetBalances.length, 2);
         assertEq(assetBalances[0].asset, address(dai));
-        assertEq(assetBalances[0].balance, expected);
+        assertEq(assetBalances[0].balance, expectedDai);
+        assertEq(assetBalances[1].asset, address(temple));
+        assertEq(assetBalances[1].balance, expectedTemple);
     }
 
     function test_latestAssetBalances() public {
@@ -512,14 +514,14 @@ contract RamosStrategyTestBalances is RamosStrategyTestBase {
         assertEq(initialBalances.ramosStable, 5872605221247683475983439);
 
         // Assets set, no balances
-        checkBalance(initialBalances.ramosStable);
+        checkBalance(initialBalances.ramosStable, initialBalances.ramosTemple);
 
         // Deal some assets to the strategy - no change
         {
             deal(address(dai), address(strategy), 5e18, true);
             deal(address(aura), address(strategy), 100e18, true);
             deal(address(bal), address(strategy), 200e18, true);
-            checkBalance(initialBalances.ramosStable);
+            checkBalance(initialBalances.ramosStable, initialBalances.ramosTemple);
         }
         
         // Deal some BPTs to the `amoStaking` -- balance changes because Ramos didn't
@@ -534,8 +536,9 @@ contract RamosStrategyTestBalances is RamosStrategyTestBase {
             // Balancer takes a portion of fees - the total supply isn't exactly an extra 10k
             expectedTotalBpt += extraBpt + 0.020752113873203652e18;
 
-            uint256 expected = initialBalances.totalStable * expectedRamosBpt / expectedTotalBpt;
-            checkBalance(expected);
+            uint256 expectedDai = initialBalances.totalStable * expectedRamosBpt / expectedTotalBpt;
+            uint256 expectedTemple = initialBalances.totalTemple * expectedRamosBpt / expectedTotalBpt;
+            checkBalance(expectedDai, expectedTemple);
         }
 
         // Add some BPTs to the user, Ramos' balance of stables changes as the ratio changes
@@ -546,8 +549,9 @@ contract RamosStrategyTestBalances is RamosStrategyTestBase {
             // Balancer takes a portion of fees - the total supply isn't exactly an extra 10k
             expectedTotalBpt += extraBpt + 0.020752113873203652e18;
 
-            uint256 expected = initialBalances.totalStable * expectedRamosBpt / expectedTotalBpt;
-            checkBalance(expected);
+            uint256 expectedDai = initialBalances.totalStable * expectedRamosBpt / expectedTotalBpt;
+            uint256 expectedTemple = initialBalances.totalTemple * expectedRamosBpt / expectedTotalBpt;
+            checkBalance(expectedDai, expectedTemple);
         }
     }
 }
@@ -581,9 +585,9 @@ contract RamosStrategyTestBorrowAndRepay is RamosStrategyTestBase {
         Balances memory balancesBefore = getRamosBalances();
         assetBalances = strategy.latestAssetBalances();
         uint256 daiBalanceBefore = assetBalances[0].balance;
+        uint256 templeBalanceBefore = assetBalances[1].balance;
 
         (uint256 templeAmount, uint256 bptOut,, IBalancerVault.JoinPoolRequest memory requestData) = strategy.proportionalAddLiquidityQuote(amount, slippageBps);
-
 
         vm.prank(executor);
         {
@@ -610,6 +614,7 @@ contract RamosStrategyTestBorrowAndRepay is RamosStrategyTestBase {
 
         assetBalances = strategy.latestAssetBalances();
         uint256 daiBalanceAfter = assetBalances[0].balance;
+        uint256 templeBalanceAfter = assetBalances[1].balance;
 
         assertEq(dai.balanceOf(address(strategy)), 0);
         assertEq(dai.balanceOf(address(trv)), TRV_STARTING_BALANCE-amount);
@@ -620,6 +625,7 @@ contract RamosStrategyTestBorrowAndRepay is RamosStrategyTestBase {
         // Thus, the share is decreased and the token balances corresponding to the share are also decreased
         // check the balance with delta. 1e18 = 100%
         assertApproxEqRel(daiBalanceAfter-daiBalanceBefore, amount, 1e5);
+        assertApproxEqRel(templeBalanceAfter-templeBalanceBefore, templeAmount, 1e5);
 
         assertEq(dUSD.balanceOf(address(strategy)), amount);
         assertEq(dUSD.balanceOf(address(trv)), 0);
@@ -652,6 +658,7 @@ contract RamosStrategyTestBorrowAndRepay is RamosStrategyTestBase {
         Balances memory balancesBefore = getRamosBalances();
         ITempleStrategy.AssetBalance[] memory assetBalances = strategy.latestAssetBalances();
         uint256 daiBalanceBefore = assetBalances[0].balance;
+        uint256 templeBalanceBefore = assetBalances[1].balance;
 
         // Remove liquidity and repay
         (uint256 burnTempleAmount, uint256 repayDaiAmount,,, IBalancerVault.ExitPoolRequest memory requestDataForRemoveLiquidity) = strategy.proportionalRemoveLiquidityQuote(bptToRemove, slippageBps);
@@ -673,15 +680,18 @@ contract RamosStrategyTestBorrowAndRepay is RamosStrategyTestBase {
             strategy.removeLiquidity(requestDataForRemoveLiquidity, bptToRemove);
         }
 
-        assetBalances = strategy.latestAssetBalances();
-        uint256 daiBalanceAfter = assetBalances[0].balance;
-
         assertEq(dai.balanceOf(address(strategy)), 0);
         assertEq(dai.balanceOf(address(trv)), TRV_STARTING_BALANCE+repayDaiAmount);
         // When removing liquidity, some tokens are transferred to the protocol fee collector address as a protocol fee.
         // https://etherscan.io/tx/0xa8680834644a6fedfa72d6fd819fe605fe55577f9116a739ffce0f88c21539e9
         // check the balance with delta. 1e18 = 100%
-        assertApproxEqRel(daiBalanceBefore-daiBalanceAfter, repayDaiAmount, 1e5);
+        {
+            assetBalances = strategy.latestAssetBalances();
+            uint256 daiBalanceAfter = assetBalances[0].balance;
+            uint256 templeBalanceAfter = assetBalances[1].balance;
+            assertApproxEqRel(daiBalanceBefore-daiBalanceAfter, repayDaiAmount, 1e5);
+            assertApproxEqRel(templeBalanceBefore-templeBalanceAfter, burnTempleAmount, 1e5);
+        }
 
         // The full debt was paid off
         uint256 expectedDusdBalance = dusdAmount-repayDaiAmount;
