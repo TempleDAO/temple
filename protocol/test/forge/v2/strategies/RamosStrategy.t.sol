@@ -216,7 +216,7 @@ contract RamosStrategyTestAdmin is RamosStrategyTestBase {
         assertEq(strategy.rescuer(), rescuer);
         assertEq(strategy.apiVersion(), "1.0.0");
         assertEq(strategy.strategyName(), "RamosStrategy");
-        assertEq(strategy.strategyVersion(), "1.0.0");
+        assertEq(strategy.strategyVersion(), "1.0.1");
         assertEq(address(strategy.treasuryReservesVault()), address(trv));
         assertEq(address(strategy.quoteToken()), address(dai));
         ITempleStrategy.AssetBalanceDelta[] memory adjs = strategy.manualAdjustments();
