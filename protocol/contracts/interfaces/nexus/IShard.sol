@@ -34,7 +34,6 @@ interface IShard {
     event RecipeSet(uint256 recipeId, Recipe recipe);
     event RecipeDeleted(uint256 recipeId);
     event ShardEnclaveSet(uint256 enclaveId, uint256 indexed shardId);
-    event ShardIdSet(uint256 indexed shardId, bool allow);
     event MinterAllowedShardIdSet(address indexed partner, uint256 indexed shardId, bool allow);
     event MinterAllowedShardCapSet(address indexed minter, uint256 indexed shardId, uint256 cap);
     event EnclaveNameSet(uint256 id, string name);
@@ -42,9 +41,7 @@ interface IShard {
     error CannotMint(uint256 shardId);
     error MintCapExceeded(uint256 cap, uint256 amount);
     error InvalidRecipe(uint256 recipeId);
-    error ZeroAddress();
     error InvalidParamLength();
-    error InvalidAccess(address caller);
     error ERC1155MissingApprovalForAll(address msgSender, address account);
 
     /**
@@ -120,10 +117,10 @@ interface IShard {
     // ) external;
 
     /*
-     * @notice Set a recipe for transmutation
+     * @notice Add a recipe for transmutation
      * @param recipe The recipe
      */
-    function setRecipe(Recipe calldata recipe) external;
+    function addRecipe(Recipe calldata recipe) external;
 
     /*
      * @notice Delete recipe
@@ -152,16 +149,6 @@ interface IShard {
      * @param recipeId The ID of the recipe
      */
     function transmute(uint256 recipeId) external;
-
-    /*
-     * @notice Mint shard. This is a guarded function which only allows callers with perms to mint.
-     * Function checks if receiving mint address is blacklisted by Relic contract.
-     * If caps is set on shard ID for caller, new balance is checked.
-     * @param to The address to mint to
-     * @param shardId The shard ID
-     * @param amount The amount of shard ID to mint
-     */
-    function mint(address to, uint256 shardId, uint256 amount) external;
 
     /*
      * @notice Mint shards in batch for allowed minters. 
@@ -223,14 +210,6 @@ interface IShard {
      * @return Shard IDs of enclave
      */
     function getEnclaveShards(uint256 enclaveId) external view returns (uint256[] memory);
-
-    /*
-     * @notice Determines if a shard ID belongs to an enclave
-     * @param enclaveId The enclave ID
-     * @param shardId The shard ID
-     * @return True if shard ID belongs to enclave, else false.
-     */
-    function isEnclaveShard(uint256 enclaveId, uint256 shardId) external view returns (bool);
 
     /*
      * @notice Get the information of a minter. 

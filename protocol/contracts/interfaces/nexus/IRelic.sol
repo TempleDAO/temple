@@ -21,13 +21,11 @@ interface IRelic {
         Structure
     }
 
-    struct RelicInfo {
-        // Enclave enclave;
+    struct RelicInfoView {
         uint256 enclaveId;
         Rarity rarity;
         uint128 xp;
-        /// @notice shards equipped to this contract. can extract owner of relic from ownerOf(relicId)
-        mapping(uint256 => uint256) equippedShards;
+        uint256[] shards;
     }
 
     event RarityXPThresholdSet(Rarity rarity, uint256 threshold);
@@ -35,9 +33,7 @@ interface IRelic {
     event RelicMinterSet(address indexed minter, bool allow);
     event ShardSet(address shard);
     event RelicXPSet(uint256 indexed relicId, uint256 xp);
-    event ShardEquipped(address indexed caller, uint256 indexed relicId, uint256 indexed shardId, uint256 amount);
     event ShardsEquipped(address indexed caller, uint256 indexed relicId, uint256[] shardIds, uint256[] amounts);
-    event ShardUnequipped(address indexed caller, uint256 indexed relicId, uint256 indexed shardId, uint256 amount);
     event ShardsUnequipped(address indexed recipient, uint256 indexed relicId, uint256[] shardIds, uint256[] amounts);
     event AccountBlacklistSet(address indexed account, bool blacklist, uint256[] shardIds, uint256[] amounts);
     event EnclaveNameSet(uint256 id, string name);
@@ -45,11 +41,10 @@ interface IRelic {
     error InvalidParamLength();
     error CallerCannotMint(address msgSender);
     error InvalidRelic(uint256 relicId);
-    error InvalidAddress(address invalidAddress);
     error InsufficientShardBalance(uint256 actualBalance, uint256 requestedBalance);
-    error ZeroAddress();
-    error InvalidOwner(address invalidOwner);
     error NotEnoughShardBalance(uint256 equippedBalance, uint256 amount);
+    error CannotBlacklist(uint256 relicId);
+    error RelicWithBlacklistedShards();
 
     /*
      * @notice Get balance of address
@@ -93,21 +88,46 @@ interface IRelic {
      */
     function setBaseUriRarity(Rarity rarity, string memory uri) external;
 
-    /* @notice Set blacklist for an account with or without shards.
-     * If no shards are given, the account will only be blacklisted from
-     * minting new relics
-     * if flag is true, blacklist will set account and shards to true. Else, false.
+    /* 
+     * @notice Set blacklist for an account's Relic's Shards. Validation checks for account's Relic ownership.
+     * Function checks and validates equipped shards before blacklisting.
      * @param account Account to blacklist
+     * @param relicId Id of Relic
+     * @param shardIds An array of Shard Ids
+     * @param amounts An array of balances for each Shard Id to blacklist
+     */
+    function setBlacklistedShards(
+        address account,
+        uint256 relicId,
+        uint256[] calldata shardIds,
+        uint256[] calldata amounts
+    ) external;
+
+    /* 
+     * @notice Whitelist for an account's Relic's Shards
+     * Function checks there are no Shards blacklisted before whitelisting.
+     * @param account Account to blacklist
+     * @param relicId Id of Relic
      * @param blacklist If to blacklist account
-     * @param shardIds Shard IDs
-     * @param amounts Amount to blacklist for each shard
+     */
+    function unsetBlacklistedShards(
+        address account,
+        uint256 relicId,
+        uint256[] calldata shardIds,
+        uint256[] calldata amounts
+    ) external;
+
+    /* 
+     * @notice Set blacklist for an account's Relic. Validation checks Relic is owned by account
+     * Set blacklist to false for whitelisting. Function checks there are no Shards blacklisted before whitelisting.
+     * @param account Account to blacklist
+     * @param relicId Id of Relic
+     * @param blacklist If to blacklist account
      */
     function setBlacklistAccount(
         address account,
-        bool blacklist,
         uint256 relicId,
-        uint256[] memory shardIds,
-        uint256[] memory amounts
+        bool blacklist
     ) external;
 
     /*
@@ -240,11 +260,18 @@ interface IRelic {
      external view returns (uint256);
 
     /*
+     * @notice Get Relic Info view
+     * @param relicId Id of Relic
+     * @return RelicInfoView
+     */
+    function getRelicInfo(uint256 relicId) external view returns (RelicInfoView memory info);
+
+    /*
      * @notice Get equipped Shard IDs in a Relic
      * @param relicId ID of relic
      * @return Array of shards equipped in Relic
      */
-    function getEquippedShardIDs(uint256 relicId) external view returns (uint256[] memory);
+    function getEquippedShardIds(uint256 relicId) external view returns (uint256[] memory);
 
     /*
      * @notice Set enclave ID to name mapping

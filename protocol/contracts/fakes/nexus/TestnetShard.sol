@@ -12,7 +12,6 @@ contract TestnetShard is ERC1155, ERC1155Burnable {
     using EnumerableSet for EnumerableSet.UintSet;
     /// @notice Relic NFT contract
     IRelic public relic;
-    address private constant ZERO_ADDRESS = 0x0000000000000000000000000000000000000000;
     /// @notice current token index
     uint256 private _currentIndex;
     /// @notice current recipe index
@@ -164,7 +163,7 @@ contract TestnetShard is ERC1155, ERC1155Burnable {
         uint256 shardId,
         bool allow
     ) internal {
-        if (minter == ZERO_ADDRESS) { revert ZeroAddress(); }
+        if (minter == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
         if (shardId >= _nextTokenId()) { revert CommonEventsAndErrors.InvalidParam(); }
         if (allow) {
             allowedShardIds[minter].add(shardId);
@@ -185,7 +184,7 @@ contract TestnetShard is ERC1155, ERC1155Burnable {
         uint256[] calldata shardIds,
         bool[] calldata flags
     ) external onlyOperator {
-        if (minter == ZERO_ADDRESS) { revert ZeroAddress(); }
+        if (minter == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
         uint256 _length = shardIds.length;
         if (_length != flags.length) { revert InvalidParamLength(); }
         bool allowed;
@@ -219,7 +218,7 @@ contract TestnetShard is ERC1155, ERC1155Burnable {
         uint256[] calldata shardIds,
         uint256[] calldata caps
     ) external onlyOperator {
-        if (minter == ZERO_ADDRESS) { revert ZeroAddress(); }
+        if (minter == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
         uint256 _length = shardIds.length;
         if (_length != caps.length) { revert InvalidParamLength(); }
         uint256 shardId;

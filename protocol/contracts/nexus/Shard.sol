@@ -7,21 +7,21 @@ import { IShard } from "../interfaces/nexus/IShard.sol";
 import { ERC1155 } from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import { ERC1155Burnable } from "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Burnable.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import { TempleElevatedAccess } from "../v2/access/TempleElevatedAccess.sol";
+import { ElevatedAccess } from "./access/ElevatedAccess.sol";
 import { CommonEventsAndErrors } from "../common/CommonEventsAndErrors.sol";
 
 
 /* @notice Shard contract
  * Shard.sol is a ERC1155 implementation that allows partners and permitted entities to mint so called shards.
- * A Shard can be equipped into a Relic. Unlike Relics, shard IDs are not unique and this mean many shards with 
- * the same ID can be minted by allowed entities.
- *
+ * A Shard can be equipped into a Relic. Unlike Relics, shard IDs are not unique and this means many shards with 
+ * the same ID can be minted by allowed entities. Permitted entities mints are controlled by caps for shards.
+ * Each Shard belongs to 1 enclave, but an enclave can have many Shards.
+ * Shards are the collection pieces and enable collaboration with partners. Shards can be equipped into Relics.
  */
-contract Shard is IShard, ERC1155, ERC1155Burnable, TempleElevatedAccess {
+contract Shard is IShard, ERC1155, ERC1155Burnable, ElevatedAccess {
     using EnumerableSet for EnumerableSet.UintSet;
     /// @notice Relic NFT contract
     IRelic public immutable relic;
-    address private constant ZERO_ADDRESS = 0x0000000000000000000000000000000000000000;
     uint256 private constant START_TOKEN_ID = 1;
     /// @notice current token index
     uint256 private _currentIndex;
@@ -53,25 +53,12 @@ contract Shard is IShard, ERC1155, ERC1155Burnable, TempleElevatedAccess {
 
     constructor(
         address _relic,
-        address _initialRescuer,
         address _initialExecutor,
         string memory _uri
-    ) ERC1155(_uri) TempleElevatedAccess(_initialRescuer, _initialExecutor) {
+    ) ERC1155(_uri) ElevatedAccess(_initialExecutor) {
         relic = IRelic(_relic);
         _currentIndex = _currentRecipeIndex = START_TOKEN_ID;
     }
-
-    /*
-     * @notice Enable a minter to mint a new shard. Minter is allowed to mint the next shard ID
-     * @param minter The minter
-     * @return shardId The shard ID
-     */
-    // function setNewMinterShard(address minter) external override onlyElevatedAccess returns (uint256) {
-    //     uint256 shardId = nextTokenId();
-    //     _currentIndex = shardId + 1;
-    //     _setMinterAllowedShardId(minter, shardId, true);
-    //     return shardId;
-    // }
 
     /*
      * @notice Set enclave ID to name mapping
@@ -115,40 +102,15 @@ contract Shard is IShard, ERC1155, ERC1155Burnable, TempleElevatedAccess {
      * @param shardId Shard ID
      */
     function setShardEnclave(uint256 enclaveId, uint256 shardId) external override onlyElevatedAccess {
-        
-        // uint8 _length = uint8(Enclave.None) + 1;
-        // uint8 enclaveIndex = uint8(enclave);
-        // uint256 _length = enclaveToShards[enclaveId].values().length;
-
         if(!isValidEnclaveId(enclaveId)) { revert CommonEventsAndErrors.InvalidParam(); }
-        uint256 _length = enclaveIds.length();
         /// remove if shard already belongs to an enclave
-        for (uint i; i < _length;) {
-            if (enclaveToShards[i].remove(shardId)) {
-                break;
-            }
-            unchecked {
-                ++i;
-            }
-        }
+        uint256 oldEnclaveId = shardToEnclave[shardId];
+        enclaveToShards[oldEnclaveId].remove(shardId);
+
         // add shardId to enclave
         enclaveToShards[enclaveId].add(shardId);
         shardToEnclave[shardId] = enclaveId;
         emit ShardEnclaveSet(enclaveId, shardId);
-        // for (uint8 i; i < _length;) {
-        //     /// @dev checking set contains shard in a loop with a break. avoid worst case by calling remove _length times
-        //     if (enclaveToShards[i].contains(shardId)) {
-        //         enclaveToShards[i].remove(shardId);
-        //         break;
-        //     }
-        //     unchecked {
-        //         ++i;
-        //     }
-        // }
-        // // add shardId to enclave
-        // enclaveToShards[enclaveIndex].add(shardId);
-        // shardToEnclave[shardId] = enclaveIndex;
-        // emit ShardEnclaveSet(enclave, shardId);
     }
 
     function _setMinterAllowedShardId(
@@ -156,7 +118,7 @@ contract Shard is IShard, ERC1155, ERC1155Burnable, TempleElevatedAccess {
         uint256 shardId,
         bool allow
     ) internal {
-        if (minter == ZERO_ADDRESS) { revert ZeroAddress(); }
+        if (minter == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
         if (shardId >= nextTokenId()) { revert CommonEventsAndErrors.InvalidParam(); }
         if (allow) {
             allowedShardIds[minter].add(shardId);
@@ -178,7 +140,6 @@ contract Shard is IShard, ERC1155, ERC1155Burnable, TempleElevatedAccess {
         uint256[] calldata shardIds,
         bool[] calldata allow
     ) external override onlyElevatedAccess {
-        if (minter == ZERO_ADDRESS) { revert ZeroAddress(); }
         uint256 _length = shardIds.length;
         if (_length != allow.length) { revert InvalidParamLength(); }
         bool allowed;
@@ -186,14 +147,7 @@ contract Shard is IShard, ERC1155, ERC1155Burnable, TempleElevatedAccess {
         for (uint i; i < _length;) {
             allowed = allow[i];
             shardId = shardIds[i];
-            if (shardId >= nextTokenId()) { revert CannotMint(shardId); }
-            EnumerableSet.UintSet storage minterShardIds = allowedShardIds[minter];
-            if (allowed) {
-                minterShardIds.add(shardId);
-            } else {
-                minterShardIds.remove(shardId);
-            }
-            emit MinterAllowedShardIdSet(minter, shardId, allowed);
+            _setMinterAllowedShardId(minter, shardId, allowed);
             unchecked {
                 ++i;
             }
@@ -212,13 +166,14 @@ contract Shard is IShard, ERC1155, ERC1155Burnable, TempleElevatedAccess {
         uint256[] calldata shardIds,
         uint256[] calldata caps
     ) external override onlyElevatedAccess {
-        if (minter == ZERO_ADDRESS) { revert ZeroAddress(); }
+        if (minter == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
         uint256 _length = shardIds.length;
         if (_length != caps.length) { revert InvalidParamLength(); }
         uint256 shardId;
         uint256 cap;
         for (uint i; i < _length; ) {
             shardId = shardIds[i];
+            if (!allowedShardIds[minter].contains(shardId)) { revert CommonEventsAndErrors.InvalidAddress(); }
             cap = caps[i];
             allowedShardCaps[minter][shardId] = cap;
             emit MinterAllowedShardCapSet(minter, shardId, cap);
@@ -229,10 +184,10 @@ contract Shard is IShard, ERC1155, ERC1155Burnable, TempleElevatedAccess {
     }
 
     /*
-     * @notice Set a recipe for transmutation
+     * @notice Add a recipe for transmutation
      * @param recipe The recipe
      */
-    function setRecipe(Recipe calldata recipe) external override onlyElevatedAccess {
+    function addRecipe(Recipe calldata recipe) external override onlyElevatedAccess {
         uint256 _inputLength = recipe.inputShardIds.length;
         if (_inputLength != recipe.inputShardAmounts.length) { revert CommonEventsAndErrors.InvalidParam(); }
         uint256 _outputLength = recipe.outputShardAmounts.length;
@@ -240,7 +195,7 @@ contract Shard is IShard, ERC1155, ERC1155Burnable, TempleElevatedAccess {
 
         uint256 recipeId = nextRecipeId();
         recipes[recipeId] = recipe;
-        _currentRecipeIndex += 1;
+        _currentRecipeIndex = recipeId + 1;
         emit RecipeSet(recipeId, recipe);
     }
 
@@ -289,34 +244,6 @@ contract Shard is IShard, ERC1155, ERC1155Burnable, TempleElevatedAccess {
         _mintBatch(caller, recipe.outputShardIds, recipe.outputShardAmounts, "");
 
         emit Transmuted(caller, recipeId);
-    }
-
-    /*
-     * @notice Mint shard. This is a guarded function which only allows callers with perms to mint.
-     * Function checks if receiving mint address is blacklisted by Relic contract.
-     * If caps is set on shard ID for caller, new balance is checked.
-     * @param to The address to mint to
-     * @param shardId The shard ID
-     * @param amount The amount of shard ID to mint
-     */
-    function mint(
-        address to,
-        uint256 shardId,
-        uint256 amount
-    ) external override isNotBlacklisted(to) {
-        if (!allowedShardIds[msg.sender].contains(shardId)) { revert CannotMint(shardId); }
-        /// @dev fail early
-        if (amount == 0) { revert CommonEventsAndErrors.InvalidParam(); }
-        // default cap 0 value means uncapped
-        uint256 cap = allowedShardCaps[msg.sender][shardId];
-        uint256 newBalance = mintBalances[msg.sender][shardId] + amount;
-        if (cap > 0 && newBalance > cap) {
-            revert MintCapExceeded(cap, newBalance);
-        }
-        mintBalances[msg.sender][shardId] = newBalance;
-        totalShardMints[shardId] += amount;
-        _mint(to, shardId, amount, "");
-        /// @dev track event with TransferSingle
     }
     
     /*
@@ -435,16 +362,6 @@ contract Shard is IShard, ERC1155, ERC1155Burnable, TempleElevatedAccess {
      */
     function getEnclaveShards(uint256 enclaveId) external override view returns (uint256[] memory) {
         return enclaveToShards[enclaveId].values();
-    }
-
-    /*
-     * @notice Determines if a shard ID belongs to an enclave
-     * @param enclaveId The Enclave ID
-     * @param shardId The shard ID
-     * @return True if shard ID belongs to enclave, else false.
-     */
-    function isEnclaveShard(uint256 enclaveId, uint256 shardId) external override view returns (bool) {
-        return enclaveToShards[enclaveId].contains(shardId);
     }
 
     /*

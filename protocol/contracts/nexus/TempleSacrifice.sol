@@ -4,16 +4,18 @@ pragma solidity 0.8.19;
 
 import { IRelic } from "../interfaces/nexus/IRelic.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+// import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { ElevatedAccess } from "./access/ElevatedAccess.sol";
 import { ITempleERC20Token } from "../interfaces/core/ITempleERC20Token.sol";
 import { CommonEventsAndErrors } from "../common/CommonEventsAndErrors.sol";
 import { mulDiv } from "@prb/math/src/Common.sol";
 
 /* @notice TempleSacrifice contract
- *
- *
+ * Players can mint Relics via this contract by sacrificing TEMPLE tokens at a price. 
+ * Price increases linearly from start time until a configured period. There can be occasions where price is fixed, for example,
+ * during a flash sale.
  */
-contract TempleSacrifice is Ownable {
+contract TempleSacrifice is ElevatedAccess {
     using SafeERC20 for ITempleERC20Token;
 
     /// @notice the Relic ERC721A token
@@ -46,7 +48,12 @@ contract TempleSacrifice is Ownable {
 
     error FutureOriginTime(uint64 originTime);
 
-    constructor(address _relic, address _templeToken, address _sacrificedTempleRecipient) Ownable() {
+    constructor(
+        address _relic,
+        address _templeToken,
+        address _sacrificedTempleRecipient,
+        address _initialExecutor
+    ) ElevatedAccess(_initialExecutor) {
         relic = IRelic(_relic);
         templeToken = ITempleERC20Token(_templeToken);
         sacrificedTempleRecipient = _sacrificedTempleRecipient;
@@ -58,7 +65,7 @@ contract TempleSacrifice is Ownable {
      * @notice Set sacrificed temple recipient.
      * @param recipient Recipient
      */
-    function setSacrificedTempleRecipient(address recipient) external onlyOwner {
+    function setSacrificedTempleRecipient(address recipient) external onlyElevatedAccess {
         if (recipient == address(0)) { revert CommonEventsAndErrors.InvalidParam(); }
         sacrificedTempleRecipient = recipient;
         emit TempleRecipientSet(recipient);
@@ -68,7 +75,7 @@ contract TempleSacrifice is Ownable {
      * @notice Set price parameters.
      * @param _priceParams Price parameters to set
      */
-    function setPriceParams(PriceParam calldata _priceParams) external onlyOwner {
+    function setPriceParams(PriceParam calldata _priceParams) external onlyElevatedAccess {
         if (_priceParams.minimumPrice > _priceParams.maximumPrice) { revert CommonEventsAndErrors.InvalidParam(); }
         if (_priceParams.minimumPrice < MINIMUM_CUSTOM_PRICE) { revert CommonEventsAndErrors.InvalidParam(); }
         if (_priceParams.priceMaxPeriod == 0) { revert CommonEventsAndErrors.InvalidParam(); }
@@ -84,7 +91,7 @@ contract TempleSacrifice is Ownable {
      * Origin time is the start of the linear ascending price to params.priceMaxPeriod
      * @param _originTime Origin time
      */
-    function setOriginTime(uint64 _originTime) external onlyOwner {
+    function setOriginTime(uint64 _originTime) external onlyElevatedAccess {
         if (_originTime < block.timestamp) { revert CommonEventsAndErrors.InvalidParam(); }
         originTime = _originTime;
         emit OriginTimeSet(originTime);
@@ -96,7 +103,7 @@ contract TempleSacrifice is Ownable {
      * a flash sale or at a discounted price.
      * @param _price Custom price 
      */
-    function setCustomPrice(uint256 _price) external onlyOwner {
+    function setCustomPrice(uint256 _price) external onlyElevatedAccess {
         if (_price != 0 && _price < MINIMUM_CUSTOM_PRICE) { revert CommonEventsAndErrors.InvalidParam(); }
         customPrice = _price;
         emit CustomPriceSet(customPrice);
@@ -109,7 +116,7 @@ contract TempleSacrifice is Ownable {
      */
     function sacrifice(uint256 enclaveId) external {
         if (block.timestamp < originTime) { revert FutureOriginTime(originTime); }
-        uint256 amount = _getPrice();
+        uint256 amount = _getPrice(customPrice, originTime);
         templeToken.safeTransferFrom(msg.sender, sacrificedTempleRecipient, amount);
         relic.mintRelic(msg.sender, enclaveId);
         emit TempleSacrificed(msg.sender, amount);
@@ -123,19 +130,19 @@ contract TempleSacrifice is Ownable {
         if (block.timestamp < originTime && customPrice == 0) {
             return type(uint256).max;
         }
-        return _getPrice();
+        return _getPrice(customPrice, originTime);
     }
 
-    function _getPrice() private view returns (uint256) {
-        if (customPrice > 0) {
-            return customPrice;
+    function _getPrice(uint256 _customPrice, uint256 _originTime) private view returns (uint256) {
+        if (_customPrice > 0) {
+            return _customPrice;
         }
         /// @dev starts from params.minimumPrice and tops at params.maximumPrice over params.priceMaxPeriod. 
         /// Rounded up. price unit in TEMPLE
         uint256 timeDifference;
         unchecked {
             /// @dev safe because timestamp is checked in parent function.
-            timeDifference = block.timestamp - originTime;
+            timeDifference = block.timestamp - _originTime;
         }
         PriceParam memory paramsCache = priceParams;
         uint256 price = paramsCache.minimumPrice + 
