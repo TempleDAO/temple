@@ -1,9 +1,8 @@
-import { useQuery, UseQueryResult } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import millify from 'millify';
 import { fetchGenericSubgraph, fetchSubgraph } from 'utils/subgraph';
 import { DashboardType } from '../DashboardContent';
 import env from 'constants/env';
-import { Metrics } from 'hooks/core/types';
 import { useMemo } from 'react';
 
 export enum StrategyKey {
@@ -56,18 +55,17 @@ export interface StrategyMetrics {
   benchmarkPerformance: number;
 }
 
-// type MetricsMap = {
-//   [strategy in StrategyKey]: UseQueryResult<StrategyMetrics>;
-// };
+
+
+const CACHE_TTL = 1000 * 60;
 
 export default function useDashboardV2Metrics() {
-  // useQuery to get all the metrics when the hook loads
-  // and they have
-
-  // to start, just manually create 4 useQuery hooks
-  // and return them in the hook return object
-  // later we can make this more dynamic/generic
-  // and use a loop to create the hooks
+  // TODO: In the future we can refactor this.
+  // Ideally should not enumerate every strategy but instead do it dynamically
+  // by e.g. iterating over the StrategyKey enum
+  // type MetricsMap = {
+  //   [strategy in StrategyKey]: UseQueryResult<StrategyMetrics>;
+  // };
 
   const ramosMetrics = useQuery({
     queryKey: ['getMetrics', StrategyKey.RAMOS],
@@ -75,8 +73,8 @@ export default function useDashboardV2Metrics() {
       const metrics = await fetchStrategyMetrics(StrategyKey.RAMOS);
       return metrics;
     },
-    refetchInterval: 1000 * 60,
-    staleTime: 1000 * 60,
+    refetchInterval: CACHE_TTL,
+    staleTime: CACHE_TTL,
   });
 
   const tlcMetrics = useQuery({
@@ -85,8 +83,8 @@ export default function useDashboardV2Metrics() {
       const metrics = await fetchStrategyMetrics(StrategyKey.TLC);
       return metrics;
     },
-    refetchInterval: 1000 * 60,
-    staleTime: 1000 * 60,
+    refetchInterval: CACHE_TTL,
+    staleTime: CACHE_TTL,
   });
 
   const templeBaseMetrics = useQuery({
@@ -95,8 +93,8 @@ export default function useDashboardV2Metrics() {
       const metrics = await fetchStrategyMetrics(StrategyKey.TEMPLEBASE);
       return metrics;
     },
-    refetchInterval: 1000 * 60,
-    staleTime: 1000 * 60,
+    refetchInterval: CACHE_TTL,
+    staleTime: CACHE_TTL,
   });
 
   const dsrBaseMetrics = useQuery({
@@ -105,8 +103,8 @@ export default function useDashboardV2Metrics() {
       const metrics = await fetchStrategyMetrics(StrategyKey.DSRBASE);
       return metrics;
     },
-    refetchInterval: 1000 * 60,
-    staleTime: 1000 * 60,
+    refetchInterval: CACHE_TTL,
+    staleTime: CACHE_TTL,
   });
 
   const treasuryReservesVaultMetrics = useQuery({
@@ -115,8 +113,8 @@ export default function useDashboardV2Metrics() {
       const metrics = await fetchTreasuryReservesVaultMetrics();
       return metrics;
     },
-    refetchInterval: 1000 * 60,
-    staleTime: 1000 * 60,
+    refetchInterval: CACHE_TTL,
+    staleTime: CACHE_TTL,
   });
 
   const isLoading = useMemo(() => {
@@ -134,41 +132,6 @@ export default function useDashboardV2Metrics() {
     dsrBaseMetrics.isLoading,
     treasuryReservesVaultMetrics.isLoading,
   ]);
-
-  const metrics = useMemo(() => {
-    return {
-      [StrategyKey.RAMOS]: ramosMetrics,
-      [StrategyKey.TLC]: tlcMetrics,
-      [StrategyKey.TEMPLEBASE]: templeBaseMetrics,
-      [StrategyKey.DSRBASE]: dsrBaseMetrics,
-      [DashboardType.TREASURY_RESERVES_VAULT]: treasuryReservesVaultMetrics,
-    };
-  }, [ramosMetrics, tlcMetrics, templeBaseMetrics, dsrBaseMetrics, treasuryReservesVaultMetrics]);
-
-  const getMetrics = async (dashboardType: DashboardType): Promise<ArrangedDashboardMetrics> => {
-    switch (dashboardType) {
-      case DashboardType.TREASURY_RESERVES_VAULT:
-        const rawMetrics = await fetchTreasuryReservesVaultMetrics();
-        return getArrangedTreasuryReservesVaultMetrics(rawMetrics);
-      case DashboardType.RAMOS:
-        const ramosMetrics = await fetchStrategyMetrics(StrategyKey.RAMOS);
-        return getArrangedStrategyMetrics(ramosMetrics);
-      case DashboardType.TLC:
-        const tlcMetrics = await fetchStrategyMetrics(StrategyKey.TLC);
-        return getArrangedStrategyMetrics(tlcMetrics);
-      case DashboardType.TEMBLE_BASE:
-        const templeBaseMetrics = await fetchStrategyMetrics(StrategyKey.TEMPLEBASE);
-        return getArrangedStrategyMetrics(templeBaseMetrics);
-      case DashboardType.DSR_BASE:
-        const dsrBaseMetrics = await fetchStrategyMetrics(StrategyKey.DSRBASE);
-        return getArrangedStrategyMetrics(dsrBaseMetrics);
-      default:
-        return {
-          metrics: [],
-          smallMetrics: [],
-        };
-    }
-  };
 
   const fetchStrategyMetrics = async (strategy: StrategyKey): Promise<StrategyMetrics> => {
     let metrics = {
