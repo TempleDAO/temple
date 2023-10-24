@@ -8,8 +8,8 @@ export class SubgraphQueryError extends Error {
 }
 
 // Preserved to avoid a larger refactor across the code base for now
-export const fetchSubgraph = async (query: string) => {
-  return fetchGenericSubgraph('https://api.thegraph.com/subgraphs/name/templedao/templedao-metrics', query);
+export const fetchSubgraph = async <R extends SubGraphResponse<object>>(query: string) => {
+  return fetchGenericSubgraph<R>('https://api.thegraph.com/subgraphs/name/templedao/templedao-metrics', query);
 };
 
 export const fetchGenericSubgraph = async <R extends SubGraphResponse<object>>(url: string, query: string) => {
