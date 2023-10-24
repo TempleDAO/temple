@@ -135,7 +135,7 @@ const V2StrategyMetricsChart: React.FC<{
     ).filter(k => k !== xDataKey);
 
     const lines = dashboardType === DashboardType.TREASURY_RESERVES_VAULT
-        ? metrics.map((metric, ix) => ({ series: metric, color: colors[ix % colors.length] }))
+        ? metrics.map((metric, ix) => ({ series: metric, color: colors[ix % colors.length]}))
         : [{series: selectedMetric, color: colors[0]}]
     return (
             <LineChart
