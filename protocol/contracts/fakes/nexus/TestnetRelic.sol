@@ -4,7 +4,8 @@ pragma solidity 0.8.19;
 
 
 import { ERC721ACustom } from "../../nexus/ERC721ACustom.sol";
-import { ERC1155Receiver } from "../../nexus/ERC1155Receiver.sol";
+import { ERC1155Holder } from "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
+import { ERC1155Receiver } from "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Receiver.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -30,7 +31,7 @@ interface ITestnetShard is IShard {
 }
 
 
-contract TestnetRelic is IRelic, ERC721ACustom, ERC1155Receiver {
+contract TestnetRelic is IRelic, ERC721ACustom, ERC1155Holder {
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.UintSet;
 
@@ -604,7 +605,7 @@ contract TestnetRelic is IRelic, ERC721ACustom, ERC1155Receiver {
      *
      * This function call must use less than 30000 gas.
      */
-    function supportsInterface(bytes4 interfaceId) public pure override(ERC165, IERC165, IERC721A, IRelic) returns (bool) {
+    function supportsInterface(bytes4 interfaceId) public pure override(ERC1155Receiver, IERC721A, IRelic) returns (bool) {
         // The interface IDs are constants representing the first 4 bytes
         // of the XOR of all function selectors in the interface.
         // See: [ERC165](https://eips.ethereum.org/EIPS/eip-165)
