@@ -1,198 +1,69 @@
-import { SubGraphResponse } from 'hooks/core/types';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import { fetchGenericSubgraph } from 'utils/subgraph';
 import { TxHistoryFilterType } from '.';
 import { DashboardType } from '../DashboardContent';
 import { format } from 'date-fns';
-import { TableRow, TxnDataTable } from './TxnDataTable';
+import { TxnDataTable } from './TxnDataTable';
 import { PaginationControls } from './TxnPaginationControl';
-import env from 'constants/env/local';
+import { useTxHistory, useTxHistoryPaginationDefaults } from '../hooks/use-dashboardv2-txHistory';
 
 type Props = {
   dashboardType: DashboardType;
   filter: TxHistoryFilterType;
 };
 
-export type StrategyType = 'TlcStrategy' | 'DsrBaseStrategy' | 'RamosStrategy' | 'TempleBaseStrategy' | 'All';
-
-type Transactions = {
-  hash: string;
-  amount: string;
-  amountUsd: string;
-  id: string;
-  from: string;
-  to: string;
-  kind: 'Repay' | 'Borrow';
-  timestamp: string;
-  type?: StrategyType;
-}[];
-
-type StrategyTxns = {
-  name: StrategyType;
-  id: string;
-  transactions: Transactions;
-}[];
-
-type Meta = {
-  block: {
-    number: number;
-  };
-};
-
-type FetchTxnsResponse = SubGraphResponse<{ strategies: StrategyTxns; _meta: Meta }>;
-
 const TxnHistoryTable = ({ dashboardType, filter }: Props) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [data, setData] = useState<TableRow[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [blockNumber, setBlockNumber] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
 
-  const restartTable = useCallback(async()=> {
-    setData([]);
-    setCurrentPage(1);
-    setBlockNumber(0);
-    setTotalPages(0);
-  }, []);
-  // Set default values TotalPages & BlockNumber on start
-  useEffect(() => {
-    (async ()=> {
-      await restartTable();
-      const strategyType = dashboardTypeToStrategyType(dashboardType);
-      const strategyQuery = strategyType === 'All' ? `` : `( where: {name: "${strategyType}"} )`;
-      const dateNowSecs = Math.round( Date.now() / 1000);
-      const filterQuery = `( where: { timestamp_gt: ${ dateNowSecs - txHistoryFilterTypeToSeconds(filter)} } )`;
-
-      const { data: res } = await fetchGenericSubgraph<FetchTxnsResponse>(
-        env.subgraph.templeV2,
-        `{
-            strategies${strategyQuery} {
-              transactions${filterQuery} {
-                hash
-              }
-            }
-            _meta {
-              block {
-                number
-              }
-            }
-          }`
-      );
-      if (!res) return;
-      let txCountTotal = 0;
-      res.strategies.map(s=> txCountTotal += s.transactions.length);
-      setTotalPages(Math.ceil(txCountTotal / rowsPerPage));
-      setBlockNumber(res._meta.block.number);
-    })();
-  }, [dashboardType, rowsPerPage, filter, restartTable]);
-
-  const fetchTransactions = useCallback(
-    async (strategyType: StrategyType): Promise<Transactions> => {
-      
-      const strategyQuery = strategyType === 'All' ? `` : `where: { name: "${strategyType}" }`;
-      const blockNumberQueryParam = blockNumber > 0 ? `block: { number: ${blockNumber} }` : ``;
-      let strategyAndBlockQuery = '';
-      if (blockNumberQueryParam.length > 0 || strategyQuery.length> 0){
-        strategyAndBlockQuery = `(${blockNumberQueryParam} ${strategyQuery})`
-      }
-      
-      const paginationQuery = `skip: ${(currentPage - 1) * rowsPerPage} first: ${rowsPerPage}`;
-      
-      const dateNowSecs = Math.round( Date.now() / 1000);
-      const filterQuery = `where: { timestamp_gt: ${ dateNowSecs - txHistoryFilterTypeToSeconds(filter)} }`;
-
-      const { data: res } = await fetchGenericSubgraph<FetchTxnsResponse>(
-        env.subgraph.templeV2,
-        `{
-          strategies${strategyAndBlockQuery} {
-            name
-            id
-            transactions(orderBy: timestamp, orderDirection: desc ${paginationQuery} ${filterQuery}) {
-              hash
-              amount
-              amountUSD
-              id
-              from
-              kind
-              timestamp
-            }
-          }
-        }`
-      );
-      if (!res) return [];
-      const txns: Transactions = [];
-      for (const strategy of res.strategies) {
-        strategy.transactions.map((t) => txns.push({type: strategy.name, ...t}));
-      }
-      return txns;
-    },
-    [blockNumber, currentPage, rowsPerPage, filter]
+  const pagDefault = useTxHistoryPaginationDefaults(
+    dashboardType,
+    rowsPerPage,
+    filter
   );
 
+  const txHistory = useTxHistory({
+    dashboardType,
+    filter,
+    currentPage,
+    rowsPerPage,
+    blockNumber: pagDefault.data?.blockNumber || 0,
+  });
+  
+  // when user changes currentPage, rowsPerPage or filter refetch
+  useEffect(()=> {
+    pagDefault.refetch();
+    txHistory.refetch();
+  }, [currentPage, rowsPerPage, filter, dashboardType])
+
+  const isLoading = pagDefault.isLoading || pagDefault.isFetching || txHistory.isLoading || txHistory.isFetching;
+
   // Fetch strategies tx data
-  useEffect(() => {
-    (async () => {
-      setIsLoading(true);
-      try {
-        const txns = await fetchTransactions(dashboardTypeToStrategyType(dashboardType));
-        setData(
-          txns.map((tx) => {
-            const amount = Number(Number(tx.amount).toFixed(2));
-            return {
-              type: tx.type,
-              date: format(new Date(Number(tx.timestamp) * 1000), 'yyyy-MM-dd'),
-              dToken: 'dUsd', // TODO: update dynamically from strategy
-              borrow: tx.kind === 'Borrow' ? amount : 0,
-              repay: tx.kind === 'Repay' ? amount : 0,
-              txHash: tx.hash,
-            };
-          })
-        );
-      } catch (error) {
-        console.error('Error fetching data: ', error);
-        // Handle error appropriately
-      }
-      setIsLoading(false);
-    })();
-  }, [filter, dashboardType, fetchTransactions]);
+  const dataToTable = txHistory.data?.map((tx) => {
+    const amount = Number(Number(tx.amount).toFixed(2));
+    return {
+      type: tx.type,
+      date: format(new Date(Number(tx.timestamp) * 1000), 'yyyy-MM-dd'),
+      dToken: 'dUsd', // TODO: update dynamically from strategy
+      borrow: tx.kind === 'Borrow' ? amount : 0,
+      repay: tx.kind === 'Repay' ? amount : 0,
+      txHash: tx.hash,
+    };
+  });
 
   return (
     <TableContainer>
-      <PaginationControls totalPages={totalPages} rowsPerPage={rowsPerPage} currentPage={currentPage} setCurrentPage={setCurrentPage} setRowsPerPage={setRowsPerPage} />
-        <TxnDataTable dataSubset={data} dataLoading={isLoading}/>
+      <PaginationControls
+        totalPages={pagDefault.data?.totalPages || 0}
+        rowsPerPage={rowsPerPage}
+        currentPage={currentPage}
+        setCurrentPage={setCurrentPage}
+        setRowsPerPage={setRowsPerPage}
+      />
+      <TxnDataTable dataSubset={dataToTable} dataLoading={isLoading} />
     </TableContainer>
   );
 };
-
-const dashboardTypeToStrategyType = (dType: DashboardType) => {
-  switch (dType) {
-    case DashboardType.TLC:
-      return 'TlcStrategy';
-    case DashboardType.RAMOS:
-      return 'RamosStrategy';
-    case DashboardType.DSR_BASE:
-      return 'DsrBaseStrategy';
-    case DashboardType.TEMPLE_BASE:
-      return 'TempleBaseStrategy';
-    default:
-      return 'All';
-  }
-};
-
-const txHistoryFilterTypeToSeconds = (filter: TxHistoryFilterType) => {
-  const dateNowSecs = Math.round( Date.now() / 1000);
-  const oneDaySecs = 86400;
-  switch(filter) {
-    case "all":
-      return dateNowSecs;
-    case "last30days":
-      return oneDaySecs * 30;
-    case "lastweek":
-      return oneDaySecs * 7;
-  }
-}
 
 export default TxnHistoryTable;
 
