@@ -1,7 +1,6 @@
 import leftCaret from 'assets/images/newui-images/leftCaret.svg';
-import { TradeButton } from '../Home';
-import { Input } from '../HomeInput';
-import { formatToken } from 'utils/formatter';
+import { TradeButton } from '../../../NewUI/Home';
+import { Input } from '../../../NewUI/HomeInput';
 import { ITlcDataTypes } from 'types/typechain/contracts/interfaces/v2/templeLineOfCredit/ITempleLineOfCredit';
 import {
   BackButton,
@@ -20,22 +19,20 @@ import {
   Warning,
 } from './TLCModal';
 import { fromAtto } from 'utils/bigNumber';
-import { BigNumber } from 'ethers';
 
 interface IProps {
   accountPosition: ITlcDataTypes.AccountPositionStructOutput | undefined;
   state: State;
-  minBorrow: number | undefined;
   setState: React.Dispatch<React.SetStateAction<State>>;
-  supply: () => void;
+  withdraw: () => void;
   back: () => void;
 }
 
-export const Supply: React.FC<IProps> = ({ accountPosition, state, minBorrow, setState, supply, back }) => {
+export const Withdraw: React.FC<IProps> = ({ accountPosition, state, setState, withdraw, back }) => {
   const getEstimatedCollateral = (): number => {
     return accountPosition
-      ? fromAtto(accountPosition.collateral) + Number(state.supplyValue)
-      : Number(state.supplyValue);
+      ? fromAtto(accountPosition.collateral) - Number(state.withdrawValue)
+      : Number(state.withdrawValue);
   };
 
   const getEstimatedLTV = (): string => {
@@ -48,60 +45,55 @@ export const Supply: React.FC<IProps> = ({ accountPosition, state, minBorrow, se
     return getEstimatedCollateral() * (MAX_LTV / 100);
   };
 
-  const minSupply = minBorrow ? (1 / (MAX_LTV / 100)) * minBorrow : 0;
-  const unusedSupply = accountPosition
-    ? fromAtto(accountPosition.collateral) - fromAtto(accountPosition.currentDebt)
-    : 0;
-  const estimatedUnusedSupply = Number(state.supplyValue) + unusedSupply;
+  const getMaxWithdraw = (): number => {
+    return accountPosition
+      ? (-1 * fromAtto(accountPosition.currentDebt)) / (MAX_LTV / 100) + fromAtto(accountPosition.collateral)
+      : 0;
+  };
 
   return (
     <>
       <RemoveMargin />
-      <Title>Supply TEMPLE</Title>
+      <Title>Withdraw TEMPLE</Title>
       <Input
         crypto={{
           kind: 'value',
           value: 'TEMPLE',
         }}
-        handleChange={(value: string) => setState({ ...state, supplyValue: value })}
+        handleChange={(value: string) => setState({ ...state, withdrawValue: value })}
         isNumber
-        value={state.supplyValue}
+        value={state.withdrawValue}
         placeholder="0"
         onHintClick={() => {
-          setState({ ...state, supplyValue: formatToken(state.inputTokenBalance, state.inputToken) });
+          setState({ ...state, withdrawValue: getMaxWithdraw().toFixed(2) });
         }}
         min={0}
-        hint={`Balance: ${formatToken(state.inputTokenBalance, state.inputToken)}`}
+        hint={`Max: ${getMaxWithdraw().toFixed(2)}`}
         width="100%"
       />
-      {estimatedUnusedSupply < minSupply && (
-        <Warning>
-          <InfoCircle>
-            <p>i</p>
-          </InfoCircle>
-          <p>
-            You should supply at least {(minSupply - unusedSupply).toFixed(2)} TEMPLE in order to meet the minimum
-            borrow requirement.
-          </p>
-        </Warning>
-      )}
-      {/* Only display range slider if the user has borrows */}
+      {/* Only display if user has borrows */}
       {accountPosition?.currentDebt.gt(0) && (
         <>
+          <Warning>
+            <InfoCircle>
+              <p>i</p>
+            </InfoCircle>
+            <p>MAX represents the amount of supplied TEMPLE that you can withdraw without liquidation.</p>
+          </Warning>
           <MarginTop />
           <RangeLabel>Estimated DAI LTV: {getEstimatedLTV()}%</RangeLabel>
           <RangeSlider
             onChange={(e) => {
               if (!accountPosition) return;
               let ltvPercent = ((Number(e.target.value) / 100) * MAX_LTV) / 100;
-              // Max LTV is the current LTV
-              const maxLtv = fromAtto(accountPosition.currentDebt) / fromAtto(accountPosition.collateral);
-              if (ltvPercent > maxLtv) ltvPercent = maxLtv;
-              const newSupply = (
-                fromAtto(accountPosition.currentDebt) / ltvPercent -
+              // Min LTV is the current LTV
+              const minLtv = fromAtto(accountPosition.currentDebt) / fromAtto(accountPosition.collateral);
+              if (ltvPercent < minLtv) ltvPercent = minLtv;
+              const withdrawAmount = (
+                (-1 * fromAtto(accountPosition.currentDebt)) / ltvPercent +
                 fromAtto(accountPosition.collateral)
               ).toFixed(2);
-              setState({ ...state, supplyValue: `${Number(newSupply) > 0 ? newSupply : '0'}` });
+              setState({ ...state, withdrawValue: `${Number(withdrawAmount) > 0 ? withdrawAmount : '0'}` });
             }}
             min={0}
             max={100}
@@ -122,14 +114,15 @@ export const Supply: React.FC<IProps> = ({ accountPosition, state, minBorrow, se
       </GradientContainer>
       <FlexCol>
         <TradeButton
-          onClick={() => supply()}
-          disabled={Number(state.supplyValue) <= 0 || Number(state.supplyValue) > fromAtto(state.inputTokenBalance)}
+          onClick={() => withdraw()}
+          // Disable if amount is 0 or greater than max withdraw
+          disabled={Number(state.withdrawValue) <= 0 || Number(state.withdrawValue) > getMaxWithdraw()}
         >
-          Supply
+          Withdraw
         </TradeButton>
       </FlexCol>
     </>
   );
 };
 
-export default Supply;
+export default Withdraw;

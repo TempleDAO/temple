@@ -1,6 +1,6 @@
 import leftCaret from 'assets/images/newui-images/leftCaret.svg';
-import { TradeButton } from '../Home';
-import { Input } from '../HomeInput';
+import { TradeButton } from '../../../NewUI/Home';
+import { Input } from '../../../NewUI/HomeInput';
 import checkmark from 'assets/images/newui-images/check.svg';
 import { formatToken } from 'utils/formatter';
 import { ITlcDataTypes } from 'types/typechain/contracts/interfaces/v2/templeLineOfCredit/ITempleLineOfCredit';

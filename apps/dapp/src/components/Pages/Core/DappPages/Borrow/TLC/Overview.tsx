@@ -1,6 +1,6 @@
 import daiImg from 'assets/images/newui-images/tokens/dai.png';
 import templeImg from 'assets/images/newui-images/tokens/temple.png';
-import { TradeButton } from '../Home';
+import { TradeButton } from '../../../NewUI/Home';
 import { formatToken } from 'utils/formatter';
 import { ITlcDataTypes } from 'types/typechain/contracts/interfaces/v2/templeLineOfCredit/ITempleLineOfCredit';
 import { FlexBetween, Screen, State, RemoveMargin, Title, Copy, MarginTop, Prices, Rule, TlcInfo } from './TLCModal';
@@ -68,10 +68,7 @@ export const Overview: React.FC<IProps> = ({ accountPosition, state, tlcInfo, se
         <FlexBetween>
           <p>Your LTV</p>
           <BrandParagraph>
-            {accountPosition?.collateral.gt(0)
-              ? (fromAtto(accountPosition.loanToValueRatio)*100).toFixed(2)
-              : 0}
-            %
+            {accountPosition?.collateral.gt(0) ? (fromAtto(accountPosition.loanToValueRatio) * 100).toFixed(2) : 0}%
           </BrandParagraph>
         </FlexBetween>
         <FlexBetween>
