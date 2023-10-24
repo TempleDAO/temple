@@ -1,5 +1,6 @@
 import styled from 'styled-components';
 import DashboardChart from './Chart';
+import { StrategyKey } from './hooks/use-dashboardv2-metrics';
 import DashboardMetrics from './Metrics';
 import DashboardTransactionHistory from './Table';
 
@@ -19,7 +20,7 @@ type DashboardData = {
   [key in DashboardType]: {
     title: string;
     description: string;
-    chartStrategyNames: string[]; // TODO: type this and share across whole dashboard
+    chartStrategyNames: StrategyKey[];
  }
 }
 
@@ -29,31 +30,32 @@ const DashboardContent = ({ selectedDashboard = DashboardType.TREASURY_RESERVES_
       title: 'Treasury Reserves Vault',
       description:
         'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque vehicula tincidunt eleifend. Nam congue magna in mi dignissim, id gravida sem ornare. Sed in nunc fermentum, consectetur ipsum a, varius augue. Nullam finibus velit eget ligula efficitur, in luctus lacus efficitur. Nam egestas tempor gravida. Ut mollis libero ac tincidunt fermentum. Etiam et ante vitae metus ultrices tempus.',
-      chartStrategyNames: ['TlcStrategy', 'TempleBaseStrategy', 'RamosStrategy', 'DsrBaseStrategy'],
+
+      chartStrategyNames: [StrategyKey.TLC, StrategyKey.TEMPLEBASE, StrategyKey.RAMOS, StrategyKey.DSRBASE],
     },
     [DashboardType.RAMOS]: {
       title: 'RAMOS',
       description:
         'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque vehicula tincidunt eleifend. Nam congue magna in mi dignissim, id gravida sem ornare. Sed in nunc fermentum, consectetur ipsum a, varius augue. Nullam finibus velit eget ligula efficitur, in luctus lacus efficitur. Nam egestas tempor gravida. Ut mollis libero ac tincidunt fermentum. Etiam et ante vitae metus ultrices tempus.',
-      chartStrategyNames: ['RamosStrategy'],
+      chartStrategyNames: [StrategyKey.RAMOS],
     },
     [DashboardType.TLC]: {
       title: 'TLC',
       description:
         'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque vehicula tincidunt eleifend. Nam congue magna in mi dignissim, id gravida sem ornare. Sed in nunc fermentum, consectetur ipsum a, varius augue. Nullam finibus velit eget ligula efficitur, in luctus lacus efficitur. Nam egestas tempor gravida. Ut mollis libero ac tincidunt fermentum. Etiam et ante vitae metus ultrices tempus.',
-      chartStrategyNames: ['TlcStrategy'],
+      chartStrategyNames: [StrategyKey.TLC],
     },
     [DashboardType.TEMPLE_BASE]: {
       title: 'TempleBaseStrategy',
       description:
         'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque vehicula tincidunt eleifend. Nam congue magna in mi dignissim, id gravida sem ornare. Sed in nunc fermentum, consectetur ipsum a, varius augue. Nullam finibus velit eget ligula efficitur, in luctus lacus efficitur. Nam egestas tempor gravida. Ut mollis libero ac tincidunt fermentum. Etiam et ante vitae metus ultrices tempus.',
-      chartStrategyNames: ['TempleBaseStrategy'],
+      chartStrategyNames: [StrategyKey.TEMPLEBASE],
     },
     [DashboardType.DSR_BASE]: {
       title: 'DsrBaseStrategy',
       description:
         'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque vehicula tincidunt eleifend. Nam congue magna in mi dignissim, id gravida sem ornare. Sed in nunc fermentum, consectetur ipsum a, varius augue. Nullam finibus velit eget ligula efficitur, in luctus lacus efficitur. Nam egestas tempor gravida. Ut mollis libero ac tincidunt fermentum. Etiam et ante vitae metus ultrices tempus.',
-      chartStrategyNames: ['DsrBaseStrategy'],
+      chartStrategyNames: [StrategyKey.DSRBASE],
     },
   };
 
