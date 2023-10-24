@@ -151,7 +151,7 @@ export default function useDashboardV2Metrics() {
 
     try {
       const allMetricsPromises = [
-        fetchGenericSubgraph(
+        fetchGenericSubgraph<any>(
           env.subgraph.templeV2,
           `{
             strategies {
@@ -275,7 +275,7 @@ export default function useDashboardV2Metrics() {
   };
 
   const getBenchmarkRate = async () => {
-    const debtTokensResponse = await fetchGenericSubgraph(
+    const debtTokensResponse = await fetchGenericSubgraph<any>(
       env.subgraph.templeV2,
       `{
         debtTokens {
@@ -293,7 +293,7 @@ export default function useDashboardV2Metrics() {
   };
 
   const getTempleCirculatingSupply = async (): Promise<string> => {
-    const response = await fetchSubgraph(
+    const response = await fetchSubgraph<any>(
       `{
         protocolMetrics(first: 1, orderBy: timestamp, orderDirection: desc) {
           templeCirculatingSupply
@@ -307,7 +307,7 @@ export default function useDashboardV2Metrics() {
   };
 
   const getTempleSpotPrice = async () => {
-    const response = await fetchGenericSubgraph(
+    const response = await fetchGenericSubgraph<any>(
       env.subgraph.templeV2,
       `{
           tokens {
