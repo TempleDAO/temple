@@ -48,7 +48,7 @@ const DashboardMetrics = ({ dashboardType }: DashboardMetricsProps) => {
     console.log(sourceData);
   }, [sourceData]);
 
-  return (sourceData === null || isLoading) ? (
+  return sourceData === null || isLoading ? (
     <Loader />
   ) : (
     <>
