@@ -269,7 +269,7 @@ export class MetricsService {
    */
   private getStakedOGTempleTransactions = async (walletAddress: string) => {
     try {
-      const response = await fetchSubgraph(
+      const response = await fetchSubgraph<any>(
         `{
         stakes(where: {templar: "${walletAddress.toLowerCase()}"}) {
           templar {
@@ -306,7 +306,7 @@ export class MetricsService {
   };
 
   private getProtocolMetrics = async (): Promise<ProtocolMetrics> => {
-    const response = await fetchSubgraph(
+    const response = await fetchSubgraph<any>(
       `{
         protocolMetrics(first: 1, orderBy: timestamp, orderDirection: desc) {
           templePrice
