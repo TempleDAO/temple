@@ -14,7 +14,7 @@ type Props = {
   filter: TxHistoryFilterType;
 };
 
-type StrategyType = 'TlcStrategy' | 'DsrBaseStrategy' | 'RamosStrategy' | 'TempleBaseStrategy' | 'All';
+export type StrategyType = 'TlcStrategy' | 'DsrBaseStrategy' | 'RamosStrategy' | 'TempleBaseStrategy' | 'All';
 
 type Transactions = {
   hash: string;
@@ -25,12 +25,12 @@ type Transactions = {
   to: string;
   kind: 'Repay' | 'Borrow';
   timestamp: string;
+  type?: StrategyType;
 }[];
 
 type StrategyTxns = {
   name: StrategyType;
   id: string;
-  transactionCount: number;
   transactions: Transactions;
 }[];
 
@@ -62,13 +62,16 @@ const TxnHistoryTable = ({ dashboardType, filter }: Props) => {
       await restartTable();
       const strategyType = dashboardTypeToStrategyType(dashboardType);
       const strategyQuery = strategyType === 'All' ? `` : `( where: {name: "${strategyType}"} )`;
-      // TODO: workout how to update transactionCount give the filter
+      const dateNowSecs = Math.round( Date.now() / 1000);
+      const filterQuery = `( where: { timestamp_gt: ${ dateNowSecs - txHistoryFilterTypeToSeconds(filter)} } )`;
 
       const { data: res } = await fetchGenericSubgraph<FetchTxnsResponse>(
         env.subgraph.templeV2,
         `{
             strategies${strategyQuery} {
-              transactionCount
+              transactions${filterQuery} {
+                hash
+              }
             }
             _meta {
               block {
@@ -79,7 +82,7 @@ const TxnHistoryTable = ({ dashboardType, filter }: Props) => {
       );
       if (!res) return;
       let txCountTotal = 0;
-      res.strategies.map(s=> txCountTotal += s.transactionCount);
+      res.strategies.map(s=> txCountTotal += s.transactions.length);
       setTotalPages(Math.ceil(txCountTotal / rowsPerPage));
       setBlockNumber(res._meta.block.number);
     })();
@@ -121,7 +124,7 @@ const TxnHistoryTable = ({ dashboardType, filter }: Props) => {
       if (!res) return [];
       const txns: Transactions = [];
       for (const strategy of res.strategies) {
-        strategy.transactions.map((t) => txns.push(t));
+        strategy.transactions.map((t) => txns.push({type: strategy.name, ...t}));
       }
       return txns;
     },
@@ -138,6 +141,7 @@ const TxnHistoryTable = ({ dashboardType, filter }: Props) => {
           txns.map((tx) => {
             const amount = Number(Number(tx.amount).toFixed(2));
             return {
+              type: tx.type,
               date: format(new Date(Number(tx.timestamp) * 1000), 'yyyy-MM-dd'),
               dToken: 'dUsd', // TODO: update dynamically from strategy
               borrow: tx.kind === 'Borrow' ? amount : 0,
