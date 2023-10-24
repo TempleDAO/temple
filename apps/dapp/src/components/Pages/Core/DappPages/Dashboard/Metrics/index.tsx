@@ -37,7 +37,7 @@ const DashboardMetrics = ({ dashboardType }: DashboardMetricsProps) => {
         return setSourceData(getArrangedStrategyMetrics(tlcMetrics.data!));
       case DashboardType.RAMOS:
         return setSourceData(getArrangedStrategyMetrics(ramosMetrics.data!));
-      case DashboardType.TEMBLE_BASE:
+      case DashboardType.TEMPLE_BASE:
         return setSourceData(getArrangedStrategyMetrics(templeBaseMetrics.data!));
       case DashboardType.DSR_BASE:
         return setSourceData(getArrangedStrategyMetrics(dsrBaseMetrics.data!));
