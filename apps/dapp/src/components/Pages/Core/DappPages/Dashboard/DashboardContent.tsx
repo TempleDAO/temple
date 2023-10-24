@@ -15,8 +15,16 @@ type DashboardContentProps = {
   selectedDashboard?: DashboardType;
 };
 
+type DashboardData = {
+  [key in DashboardType]: {
+    title: string;
+    description: string;
+    chartStrategyNames: string[]; // TODO: type this and share across whole dashboard
+ }
+}
+
 const DashboardContent = ({ selectedDashboard = DashboardType.TREASURY_RESERVES_VAULT }: DashboardContentProps) => {
-  const dashboardData = {
+  const dashboardData: DashboardData = {
     [DashboardType.TREASURY_RESERVES_VAULT]: {
       title: 'Treasury Reserves Vault',
       description:
