@@ -21,8 +21,8 @@ type DashboardData = {
     title: string;
     description: string;
     chartStrategyNames: StrategyKey[];
- }
-}
+  };
+};
 
 const DashboardContent = ({ selectedDashboard = DashboardType.TREASURY_RESERVES_VAULT }: DashboardContentProps) => {
   const dashboardData: DashboardData = {
@@ -59,7 +59,7 @@ const DashboardContent = ({ selectedDashboard = DashboardType.TREASURY_RESERVES_
     },
   };
 
-  const dashboard = dashboardData[selectedDashboard]
+  const dashboard = dashboardData[selectedDashboard];
 
   return (
     <DashboardContentContainer>
@@ -67,7 +67,7 @@ const DashboardContent = ({ selectedDashboard = DashboardType.TREASURY_RESERVES_
         <HeaderTitle>{dashboard.title}</HeaderTitle>
         <HeaderText>{dashboard.description}</HeaderText>
       </Header>
-      <DashboardChart dashboardType={selectedDashboard} strategyNames={dashboard.chartStrategyNames}/>
+      <DashboardChart dashboardType={selectedDashboard} strategyNames={dashboard.chartStrategyNames} />
       <DashboardMetrics dashboardType={selectedDashboard} />
       <DashboardTransactionHistory dashboardType={selectedDashboard} />
     </DashboardContentContainer>
