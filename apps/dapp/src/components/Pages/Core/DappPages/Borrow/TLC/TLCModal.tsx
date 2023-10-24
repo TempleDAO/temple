@@ -4,11 +4,7 @@ import { useEffect, useState } from 'react';
 import { ZERO, fromAtto } from 'utils/bigNumber';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { useWallet } from 'providers/WalletProvider';
-import {
-  TempleLineOfCredit__factory,
-  ERC20__factory,
-  TreasuryReservesVault__factory,
-} from 'types/typechain';
+import { TempleLineOfCredit__factory, ERC20__factory, TreasuryReservesVault__factory } from 'types/typechain';
 import env from 'constants/env';
 import { getBigNumberFromString, getTokenInfo } from 'components/Vault/utils';
 import { ITlcDataTypes } from 'types/typechain/contracts/interfaces/v2/templeLineOfCredit/ITempleLineOfCredit';
@@ -18,7 +14,6 @@ import Supply from './Supply';
 import Withdraw from './Withdraw';
 import Borrow from './Borrow';
 import Repay from './Repay';
-import Overview from './Overview';
 import { fetchGenericSubgraph } from 'utils/subgraph';
 
 interface IProps {
@@ -337,14 +332,7 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
               back={() => setScreen('overview')}
             />
           ) : (
-            <Overview
-              accountPosition={accountPosition}
-              state={state}
-              tlcInfo={tlcInfo}
-              setScreen={setScreen}
-              prices={prices}
-              liquidationInfo={getLiquidationInfo()}
-            />
+            <></>
           )}
         </ModalContainer>
       </Popover>
