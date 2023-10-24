@@ -92,7 +92,9 @@ const V2StrategyMetricsChart: React.FC<{
     // we need all strategies for the TRV dashboard anyway we can just as well reuse
     // what we have and filter client side
 
-    const filteredData = dailyMetrics.filter(m=> strategyNames.includes(m.strategy.name))
+    const filteredData = dailyMetrics
+                        ?.filter(m=> strategyNames.includes(m.strategy.name))
+                         .sort((a,b) => parseInt(a.timestamp) - parseInt(b.timestamp)) ?? []
 
     // if we are rendering chart for only one strategy we can use data as is
     // otherwise we have to transpose and show the selected metric for every strategy
@@ -137,7 +139,7 @@ const V2StrategyMetricsChart: React.FC<{
         : [{series: selectedMetric, color: colors[0]}]
     return (
             <LineChart
-                chartData={formattedData[selectedInterval].reverse()}
+                chartData={formattedData[selectedInterval]}
                 xDataKey={"timestamp"}
                 lines={lines}
                 xTickFormatter={tickFormatters[selectedInterval]}
