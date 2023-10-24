@@ -69,7 +69,7 @@ export const TLCModal: React.FC<IProps> = ({ isOpen, onClose }) => {
   const [prices, setPrices] = useState<Prices>({ templePrice: 0, daiPrice: 0, tpi: 0 });
 
   const getPrices = async () => {
-    const { data } = await fetchGenericSubgraph(
+    const { data } = await fetchGenericSubgraph<any>(
       'https://api.thegraph.com/subgraphs/name/templedao/templedao-ramos',
       `{
         metrics {
