@@ -8,13 +8,13 @@ import { formatNumberAbbreviated } from 'utils/formatter';
 type LineChartProps<T> = {
   chartData: T[];
   xDataKey: DataKey<keyof T>;
-  lines: { series: DataKey<keyof T>; color: string; hide?: boolean}[];
+  lines: { series: DataKey<keyof T>; color: string; hide?: boolean }[];
   xTickFormatter: (xValue: any, index: number) => string;
   tooltipLabelFormatter: (value: any) => string;
   tooltipValuesFormatter?: (value: number, name: string) => string[];
   legendFormatter?: (value: string) => string;
   yDomain?: AxisDomain;
-  onLegendClick?: (key: string)=> void;
+  onLegendClick?: (key: string) => void;
 };
 
 export default function LineChart<T>(props: React.PropsWithChildren<LineChartProps<T>>) {
@@ -30,30 +30,29 @@ export default function LineChart<T>(props: React.PropsWithChildren<LineChartPro
   } = props;
   const theme = useTheme();
 
-    const [hiddenLines, setHiddenLines] = useState(
-      Object.fromEntries(lines.map(s=>[s.series.toString(), s.hide || false]))
+  const [hiddenLines, setHiddenLines] = useState(
+    Object.fromEntries(lines.map((s) => [s.series.toString(), s.hide || false]))
+  );
+
+  const toggleLineVisibility = (key: string) => {
+    //there must be always at least one visible line
+    // otherwise the chart breaks
+    const nextState = {
+      ...hiddenLines,
+      [key]: !hiddenLines[key],
+    };
+
+    const totalLines = Object.values(hiddenLines).length;
+    const wouldBeHiddenLinesCount = Object.values(nextState).reduce(
+      (hiddenCount, isHidden) => (isHidden ? hiddenCount + 1 : hiddenCount),
+      0
     );
 
-    const toggleLineVisibility = (key: string)=>{
-        //there must be always at least one visible line
-        // otherwise the chart breaks
-        const nextState = {
-            ...hiddenLines,
-            [key]: !hiddenLines[key]
-        }
-
-        const totalLines = Object.values(hiddenLines).length
-        const wouldBeHiddenLinesCount = Object
-            .values(nextState)
-            .reduce((hiddenCount, isHidden) => isHidden ? hiddenCount + 1 : hiddenCount, 0)
-        console.dir({nextState, wouldBeHiddenLinesCount, totalLines})
-
-        if (totalLines - wouldBeHiddenLinesCount === 0){
-            return
-        }
-        setHiddenLines(nextState)
-
+    if (totalLines - wouldBeHiddenLinesCount === 0) {
+      return;
     }
+    setHiddenLines(nextState);
+  };
   return (
     <ResponsiveContainer minHeight={200} minWidth={320} height={350}>
       <RechartsLineChart data={chartData}>
@@ -102,7 +101,12 @@ export default function LineChart<T>(props: React.PropsWithChildren<LineChartPro
           }
         />
         {lines.length > 1 && legendFormatter ? (
-          <Legend verticalAlign="top" height={20} formatter={legendFormatter} onClick={(e)=>toggleLineVisibility(e.dataKey) } />
+          <Legend
+            verticalAlign="top"
+            height={20}
+            formatter={legendFormatter}
+            onClick={(e) => toggleLineVisibility(e.dataKey)}
+          />
         ) : null}
       </RechartsLineChart>
     </ResponsiveContainer>
