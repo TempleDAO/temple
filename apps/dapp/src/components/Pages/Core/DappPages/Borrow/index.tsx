@@ -65,18 +65,21 @@ export const BorrowPage = () => {
 
   const getPrices = async () => {
     const { data } = await fetchGenericSubgraph(
-      'https://api.thegraph.com/subgraphs/name/templedao/templedao-ramos',
+      'https://api.thegraph.com/subgraphs/name/medariox/v2-mainnet',
       `{
-        metrics {
-          treasuryPriceIndexUSD
-          templePriceUSD
+        tokens {
+          price
+          symbol
+        }
+        treasuryReservesVaults {
+          treasuryPriceIndex
         }
       }`
     );
     setPrices({
-      templePrice: parseFloat(data.metrics[0].templePriceUSD),
-      daiPrice: 1,
-      tpi: parseFloat(data.metrics[0].treasuryPriceIndexUSD),
+      templePrice: data.tokens.filter((t: any) => t.symbol == 'TEMPLE')[0].price,
+      daiPrice: data.tokens.filter((t: any) => t.symbol == 'DAI')[0].price,
+      tpi: data.treasuryReservesVaults[0].treasuryPriceIndex,
     });
   };
 
@@ -98,32 +101,39 @@ export const BorrowPage = () => {
     });
   }, [balance]);
 
-  const getTlcInfo = async () => {
+  const getAccountPosition = async () => {
     if (!signer || !wallet) return;
+    const tlcContract = new TempleLineOfCredit__factory(signer).attach(env.contracts.tlc);
+    const position = await tlcContract.accountPosition(wallet);
+    setAccountPosition(position);
+  };
+
+  const getTlcInfo = async () => {
+    getAccountPosition();
     try {
-      const tlcContract = new TempleLineOfCredit__factory(signer).attach(env.contracts.tlc);
-      const position = await tlcContract.accountPosition(wallet);
-      setAccountPosition(position);
-
-      const min = await tlcContract.minBorrowAmount();
-      const debtInfo = await tlcContract.debtTokenDetails();
-
-      // Get strategy balance
-      const trvContract = new TreasuryReservesVault__factory(signer).attach(env.contracts.treasuryReservesVault);
-      const tlcStrategy = await tlcContract.tlcStrategy();
-      const daiToken = await tlcContract.daiToken();
-      // Amount configured to borrow based on the current utilisation
-      const availableForStrategy = await trvContract.availableForStrategyToBorrow(tlcStrategy, daiToken);
-      // DAI left in TRV for all strategies (including what's in DSR base strategy)
-      const availableDai = await trvContract.totalAvailable(daiToken);
-      const debtCeiling = await trvContract.strategyDebtCeiling(tlcStrategy, daiToken);
+      const { data } = await fetchGenericSubgraph(
+        'https://api.thegraph.com/subgraphs/name/medariox/v2-mainnet',
+        `{
+          tlcdailySnapshots(orderBy: timestamp, orderDirection: desc, first: 1) {
+            interestRate
+            maxLTVRatio
+            minBorrowAmount
+          }
+          strategies(where: {name: "TlcStrategy"}) {
+            strategyTokens(where: {symbol: "DAI"}) {
+              availableToBorrow
+              debtCeiling
+            }
+          }
+        }`
+      );
 
       setTlcInfo({
-        minBorrow: fromAtto(min),
-        borrowRate: fromAtto(debtInfo[1].interestRate),
-        liquidationLtv: fromAtto(debtInfo[0].maxLtvRatio),
-        strategyBalance: Math.min(fromAtto(availableForStrategy), fromAtto(availableDai)),
-        debtCeiling: fromAtto(debtCeiling),
+        minBorrow: data.tlcdailySnapshots[0].minBorrowAmount,
+        borrowRate: data.tlcdailySnapshots[0].interestRate,
+        liquidationLtv: data.tlcdailySnapshots[0].maxLTVRatio,
+        strategyBalance: data.strategies[0].strategyTokens[0].availableToBorrow,
+        debtCeiling: data.strategies[0].strategyTokens[0].debtCeiling,
       });
     } catch (e) {
       console.log(e);
@@ -282,11 +292,11 @@ export const BorrowPage = () => {
           <MinWidth>
             <FlexBetween>
               <MetricContainer>
-                <LeadMetric>${tlcInfo && tlcInfo.debtCeiling.toLocaleString()}</LeadMetric>
+                <LeadMetric>${tlcInfo && Number(tlcInfo.debtCeiling).toLocaleString()}</LeadMetric>
                 <BrandParagraph>Total Debt Ceiling</BrandParagraph>
               </MetricContainer>
               <MetricContainer>
-                <LeadMetric>${tlcInfo && tlcInfo.strategyBalance.toLocaleString()}</LeadMetric>
+                <LeadMetric>${tlcInfo && Number(tlcInfo.strategyBalance).toLocaleString()}</LeadMetric>
                 <BrandParagraph>Available to Borrow</BrandParagraph>
               </MetricContainer>
               <MetricContainer>
