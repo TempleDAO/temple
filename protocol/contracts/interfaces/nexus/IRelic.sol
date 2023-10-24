@@ -197,18 +197,19 @@ interface IRelic {
      * @return amount Amount of token to recover
      */
     function recoverToken(address token, address to, uint256 amount) external;
-    /*
-     * @notice Burn blacklisted account shards.
-     * Shard IDs may not be empty. In this case, use setBlacklistAccount
+   /*
+     * @notice Burn blacklisted Relic Shards.
+     * Shard IDs may not be empty. 
      * @param account Address of account
-     * @param whitelistAfterBurn If to whitelist account after burning of shards
-     * @return balances Balances of shards equipped in relic
+     * @param relicId Relic Id
+     * @param shardIds Shard Ids
+     * @param amounts Amounts of shards
      */
-    function burnBlacklistedAccountShards(
+    function burnBlacklistedRelicShards( // burnBlacklistedShards
         address account,
-        bool whitelistAfterBurn,
         uint256 relicId,
-        uint256[] memory shardIds
+        uint256[] calldata shardIds,
+        uint256[] calldata amounts
     ) external;
     /*
      * @notice Get URI of rarity

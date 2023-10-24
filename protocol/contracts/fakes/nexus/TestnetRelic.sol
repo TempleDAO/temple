@@ -488,42 +488,68 @@ contract TestnetRelic is IRelic, ERC721ACustom, ERC1155Holder {
         IERC20(token).safeTransfer(to, amount);
         emit CommonEventsAndErrors.TokenRecovered(to, token, amount);
     }
-    /*
-     * @notice Burn blacklisted account shards.
-     * Shard IDs may not be empty. In this case, use setBlacklistAccount
+
+   /*
+     * @notice Burn blacklisted Relic Shards.
+     * Shard IDs may not be empty. 
      * @param account Address of account
-     * @param whitelistAfterBurn If to whitelist account after burning of shards
-     * @return balances Balances of shards equipped in relic
+     * @param relicId Relic Id
+     * @param shardIds Shard Ids
+     * @param amounts Amounts of shards
      */
-    function burnBlacklistedAccountShards(
+    function burnBlacklistedRelicShards( // burnBlacklistedShards
         address account,
-        bool whitelistAfterBurn,
         uint256 relicId,
-        uint256[] calldata shardIds
-    ) external onlyOperator {
-        if (!blacklistedAccounts[account]) { revert CommonEventsAndErrors.InvalidParam(); }
-        if (account != ownerOf(relicId)) { revert CommonEventsAndErrors.InvalidAccess(); }
-        /// @notice shard IDs cannot be empty. Use setBlacklistAccount directly for setting account blacklist
+        uint256[] calldata shardIds,
+        uint256[] calldata amounts
+    ) external override onlyOperator {
+        // account could be whitelisted or blacklisted. important check is account's Relic shards are blacklisted
+        _validateBlacklisting(account, relicId);
         uint256 _length = shardIds.length;
         if (_length == 0) { revert InvalidParamLength(); }
         mapping(uint256 => uint256) storage equippedShards = relicInfos[relicId].equippedShards;
-        uint256[] memory amounts = new uint256[](_length);
+        mapping(uint256 => uint256) storage blacklistedShards = blacklistedRelicShards[relicId];
         uint256 shardId;
+        uint256 amount;
+        uint256 equippedShardBalance;
+        uint256 blacklistedShardsCountCache;
         for(uint i; i < _length;) {
             shardId = shardIds[i];
-            amounts[i] = blacklistedRelicShards[relicId][shardId];
-            /// delete only for argument shards
-            delete blacklistedRelicShards[relicId][shardId];
-            /// update equipped shards for relic
-            equippedShards[shardId] -= amounts[i];
+            amount = amounts[i];
+            // update tracking variables
+            blacklistedShards[shardId] -= amount;
+            equippedShardBalance = equippedShards[shardId] - amount;
+            blacklistedShardsCountCache = blacklistedShardsCount[relicId];
+            blacklistedShardsCount[relicId] = blacklistedShardsCountCache - amount;
+            /// @dev avoid stack too deep
+            _updateTrackingVariables(
+                account,
+                relicId,
+                shardId,
+                blacklistedShardsCountCache == amount,
+                equippedShardBalance == 0
+            );
             unchecked {
                 ++i;
             }
         }
-        /// @notice burn from this contract. equipped shards are in contract
+        /// @dev burn from this contract. equipped shards are in contract
         shard.burnBatch(address(this), shardIds, amounts);
-        if (whitelistAfterBurn) {
-            delete blacklistedAccounts[account];
+    }
+
+    function _updateTrackingVariables(
+        address account,
+        uint256 relicId,
+        uint256 shardId,
+        bool blacklistedShardsCountCacheIsEqualAmount,
+        bool equippedShardBalanceIsEqualZero
+    ) internal {
+        // update tracking variables
+        if (blacklistedShardsCountCacheIsEqualAmount) {
+            blacklistedAccounts[account] = false;
+        }
+        if (equippedShardBalanceIsEqualZero) {
+            relicInfos[relicId].shards.remove(shardId);
         }
     }
 
