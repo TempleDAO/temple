@@ -2,6 +2,7 @@ import { LoadingText } from 'components/Pages/Core/components/LoaderVault/common
 import env from 'constants/env/local';
 import styled from 'styled-components';
 import { loading } from 'utils/loading-value';
+import { StrategyType } from './TxnHistoryTable';
 
 export type TableRow = {
   date: string;
@@ -9,6 +10,7 @@ export type TableRow = {
   borrow: number;
   repay: number;
   txHash: string;
+  type?: StrategyType;
 };
 
 type Props = {
@@ -21,6 +23,7 @@ export const TxnDataTable = (props: Props) => {
     <DataTable>
       <thead>
         <tr>
+          <TableHeader>Type</TableHeader>
           <TableHeader>Date</TableHeader>
           <TableHeader>Debt Token</TableHeader>
           <TableHeader>Borrow</TableHeader>
@@ -46,6 +49,7 @@ export const TxnDataTable = (props: Props) => {
         ) : (
           dataSubset.map((row, index) => (
             <DataRow key={index}>
+              <DataCell>{row.type}</DataCell>
               <DataCell>{row.date}</DataCell>
               <DataCell>{row.dToken}</DataCell>
               <DataCell>{row.borrow}</DataCell>
