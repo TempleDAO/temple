@@ -1,6 +1,5 @@
+import { useQuery } from '@tanstack/react-query';
 import environmentConfig from 'constants/env';
-import { useState } from 'react';
-import useInterval from 'use-interval';
 import { fetchGenericSubgraph } from 'utils/subgraph';
 
 export interface V2StrategyDailySnapshot {
@@ -29,7 +28,8 @@ async function fetchCoreV2<RawResponse extends Record<string, unknown>>(query: s
 }
 
 
-async function fetchStrategyDailySnapshots(now: Date) {
+async function fetchStrategyDailySnapshots() {
+    const now = new Date();
     let since = Math.floor((now.getTime() - ONE_YEAR_MS) / 1000).toString()
     const result: V2StrategyDailySnapshot[] = []
     const itemsPerPage = 1000 // current max page size
@@ -66,16 +66,14 @@ async function fetchStrategyDailySnapshots(now: Date) {
     return result
 }
 
-export default function useCoreV2StrategyData(intervalMinutes = 20) {
-    const [dailyMetrics, setDailyMetrics] = useState<V2StrategyDailySnapshot[]>([])
+export default function useCoreV2StrategyData() {
+    const TWENTY_MINUTES_MS = 1000*60*20
+    const {data: dailyMetrics } = useQuery({
+        queryKey: ['strategiesDailySnapshots'],
+        queryFn: fetchStrategyDailySnapshots,
+        refetchInterval: TWENTY_MINUTES_MS,
+        staleTime: TWENTY_MINUTES_MS,
+    })
 
-    async function refreshMetrics() {
-        console.debug(`Refetching v2 strategy metrics`)
-        const data = await fetchStrategyDailySnapshots(new Date())
-        setDailyMetrics(data ?? [])
-    }
-
-    useInterval(refreshMetrics, intervalMinutes * 60 * 1000, true);
     return { dailyMetrics }
-
 }
