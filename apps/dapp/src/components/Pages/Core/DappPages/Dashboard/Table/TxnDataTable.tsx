@@ -2,7 +2,7 @@ import { LoadingText } from 'components/Pages/Core/components/LoaderVault/common
 import env from 'constants/env/local';
 import styled from 'styled-components';
 import { loading } from 'utils/loading-value';
-import { StrategyType } from './TxnHistoryTable';
+import { StrategyType } from '../hooks/use-dashboardv2-txHistory';
 
 export type TableRow = {
   date: string;
@@ -14,7 +14,7 @@ export type TableRow = {
 };
 
 type Props = {
-  dataSubset: TableRow[];
+  dataSubset: TableRow[] | undefined;
   dataLoading: boolean;
 };
 export const TxnDataTable = (props: Props) => {
@@ -42,7 +42,7 @@ export const TxnDataTable = (props: Props) => {
               ))}
             </DataRow>
           ))
-        ) : dataSubset.length === 0 ? (
+        ) : !dataSubset || dataSubset.length === 0 ? (
           <DataRow>
             <DataCell>No data available</DataCell>
           </DataRow>
