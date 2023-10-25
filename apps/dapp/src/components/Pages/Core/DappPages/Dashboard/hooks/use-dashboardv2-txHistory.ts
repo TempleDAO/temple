@@ -1,7 +1,7 @@
 import { fetchGenericSubgraph } from 'utils/subgraph';
 import env from 'constants/env';
 import { SubGraphResponse } from 'hooks/core/types';
-import { CreateApiQuery, QUERY_KEY } from 'hooks/api/use-react-query';
+import { useApiQuery, ROOT_QUERY_KEY } from 'hooks/api/use-react-query';
 import { TxHistoryFilterType } from '../Table';
 import { DashboardType } from '../DashboardContent';
 
@@ -9,6 +9,11 @@ export type StrategyType = 'TlcStrategy' | 'DsrBaseStrategy' | 'RamosStrategy' |
 
 type Transactions = {
   hash: string;
+  token: {
+    id: string;
+    name: string;
+    symbol: string;
+  };
   amount: string;
   amountUsd: string;
   id: string;
@@ -75,16 +80,16 @@ const dashboardTypeToStrategyType = (dType: DashboardType) => {
 };
 
 const useTxHistory = (props: Props) =>
-  CreateApiQuery<StrategyType, Transactions>(
-    QUERY_KEY.GET_TX_HISTORY,
-    dashboardTypeToStrategyType(props.dashboardType),
+  useApiQuery<Transactions, DashboardType>(
+    ROOT_QUERY_KEY.GET_TX_HISTORY,
     () => {
       return fetchTransactions(props);
-    }
+    },
+    props.dashboardType
   );
 
 const fetchTransactions = async (props: Props): Promise<Transactions> => {
-  const {dashboardType, blockNumber, currentPage, rowsPerPage, filter} = props;
+  const { dashboardType, blockNumber, currentPage, rowsPerPage, filter } = props;
   const strategyType = dashboardTypeToStrategyType(dashboardType);
   const strategyQuery = strategyType === 'All' ? `` : `where: { name: "${strategyType}" }`;
   const blockNumberQueryParam = blockNumber > 0 ? `block: { number: ${blockNumber} }` : ``;
@@ -106,6 +111,11 @@ const fetchTransactions = async (props: Props): Promise<Transactions> => {
         id
         transactions(orderBy: timestamp, orderDirection: desc ${paginationQuery} ${filterQuery}) {
             hash
+            token {
+              id
+              name
+              symbol
+            }
             amount
             amountUSD
             id
@@ -129,7 +139,7 @@ const useTxHistoryPaginationDefaults = (
   rowsPerPage: number,
   filter: TxHistoryFilterType
 ) =>
-  CreateApiQuery<string, PaginationDefaults | undefined>(QUERY_KEY.GET_TX_HISTORY, 'DsrBaseStrategy', async () => {
+  useApiQuery<PaginationDefaults>(ROOT_QUERY_KEY.GET_TX_PAG_DEFAULT, async () => {
     return fetchPaginationDefaults(dashboardType, rowsPerPage, filter);
   });
 const fetchPaginationDefaults = async (
@@ -157,18 +167,21 @@ const fetchPaginationDefaults = async (
             }
           }`
   );
-  if (!res) return;
-  let txCountTotal = 0;
-  res.strategies.map((s) => (txCountTotal += s.transactions.length));
-  const pagDefaults: PaginationDefaults = {
-    totalPages: Math.ceil(txCountTotal / rowsPerPage),
-    blockNumber: res._meta.block.number,
+
+  let pagDefaults: PaginationDefaults = {
+    totalPages: 0,
+    blockNumber: 0,
   };
+
+  if (res) {
+    let txCountTotal = 0;
+    res.strategies.map((s) => (txCountTotal += s.transactions.length));
+    pagDefaults = {
+      totalPages: Math.ceil(txCountTotal / rowsPerPage),
+      blockNumber: res._meta.block.number,
+    };
+  }
   return pagDefaults;
 };
 
-
-export {
-    useTxHistory, 
-    useTxHistoryPaginationDefaults
-}
+export { useTxHistory, useTxHistoryPaginationDefaults };
