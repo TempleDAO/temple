@@ -17,25 +17,30 @@ type Props = {
   dataSubset: TableRow[] | undefined;
   dataLoading: boolean;
 };
+
+const tableHeaders = [
+  "Type",
+  "Date",
+  "Debt Token",
+  "Borrow",
+  "Repay",
+  "Tx Hash"
+];
+
 export const TxnDataTable = (props: Props) => {
   const { dataSubset, dataLoading } = props;
   return (
     <DataTable>
       <thead>
         <tr>
-          <TableHeader>Type</TableHeader>
-          <TableHeader>Date</TableHeader>
-          <TableHeader>Debt Token</TableHeader>
-          <TableHeader>Borrow</TableHeader>
-          <TableHeader>Repay</TableHeader>
-          <TableHeader>Tx Hash</TableHeader>
+          {tableHeaders.map((t,i) => <TableHeader key={i}>{t}</TableHeader>)}
         </tr>
       </thead>
       <tbody>
         {dataLoading ? (
           [...Array(3)].map((_, index) => ( // Adds 3 loading rows
             <DataRow key={index}>
-              {[...Array(5)].map((_, i) => ( // Adds 5 loading cells, same no of table headers 
+              {[...Array(tableHeaders.length)].map((_, i) => ( // Adds 5 loading cells, same no of table headers 
                 <DataCell key={i}>
                   <LoadingText value={loading()} />
                 </DataCell>
