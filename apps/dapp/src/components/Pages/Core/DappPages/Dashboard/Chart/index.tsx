@@ -44,11 +44,13 @@ const DashboardChart = ({ dashboardType, strategyNames }: DashboardChartProps) =
               isSearchable={false}
             />
           </SelectMetricContainer>
-          <IntervalToggler
-            selectedInterval={selectedInterval}
-            setSelectedInterval={setSelectedInterval}
-            intervals={intervals}
-          />
+          <IntervalTogglerContainer>
+            <IntervalToggler
+              selectedInterval={selectedInterval}
+              setSelectedInterval={setSelectedInterval}
+              intervals={intervals}
+            />
+          </IntervalTogglerContainer>
         </ChartHeader>
         <V2StrategyMetricsChart
           dashboardType={dashboardType}
@@ -64,15 +66,22 @@ const DashboardChart = ({ dashboardType, strategyNames }: DashboardChartProps) =
 export default DashboardChart;
 
 const SelectMetricContainer = styled.div`
-  min-width: 20rem;
+  min-width: 17rem;
+  max-width: 20rem;
+  flex: 1;
+`;
+
+const IntervalTogglerContainer = styled.div`
+  margin-left: auto;
 `;
 
 const ChartHeader = styled.div`
+  gap: 1rem;
   display: flex;
   flex-direction: row;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  padding: 2rem;
+  padding: 1rem;
   width: 100%;
 `;
 
