@@ -69,6 +69,7 @@ contract Shard is IShard, ERC1155, ERC1155Burnable, ElevatedAccess {
         if (id == 0) { revert CommonEventsAndErrors.InvalidParam(); }
         if (bytes(name).length == 0) { revert CommonEventsAndErrors.InvalidParam(); }
         enclaveNames[id] = name;
+        enclaveIds.add(id);
         emit EnclaveNameSet(id, name);
     }
 

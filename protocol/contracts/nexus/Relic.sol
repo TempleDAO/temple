@@ -50,6 +50,8 @@ contract Relic is IRelic, ERC721ACustom, ERC1155Holder, ElevatedAccess {
     mapping(uint256 => uint256) public blacklistedShardsCount;
     mapping(address => bool) public relicMinters;
     mapping(address => EnumerableSet.UintSet) private ownerRelics;
+    /// @notice set of enclave IDs added.
+    EnumerableSet.UintSet private enclaveIds;
     /// @notice id to enclave name
     mapping(uint256 => string) public enclaveNames;
 
@@ -88,6 +90,7 @@ contract Relic is IRelic, ERC721ACustom, ERC1155Holder, ElevatedAccess {
         if (id == 0) { revert CommonEventsAndErrors.InvalidParam(); }
         if (bytes(name).length == 0) { revert CommonEventsAndErrors.InvalidParam(); }
         enclaveNames[id] = name;
+        enclaveIds.add(id);
         emit EnclaveNameSet(id, name);
     }
 
