@@ -1,41 +1,36 @@
 import { UseQueryResult, useQuery } from '@tanstack/react-query';
 
 // Centralize all the dApp react query keys in case we need to cancel or invalidate them
-// through the app, this makes it easier to track them
-export enum ROOT_QUERY_KEY {
-  GET_TX_PAG_DEFAULT = 'getTxPaginationDefaultValues',
-  GET_TX_HISTORY = 'getTxHistory',
+// through the app, this makes it easier to track them, please add new ones as required
+export const getQueryKey = {
+  txPagDefault: () => ['getTxPaginationDefaultValues'],
+  txHistory: () => ['getTxHistory'],
+  metrics: (s?: StrategyKey) => {return s ? ['getMetrics', s] : ['getMetrics']},
+  trvMetrics: () => ['getTreasureReserveMetrics'],
+}
+
+export enum StrategyKey {
+  RAMOS = 'RamosStrategy',
+  TLC = 'TlcStrategy',
+  TEMPLEBASE = 'TempleBaseStrategy',
+  DSRBASE = 'DsrBaseStrategy',
+  ALL = 'All'
 }
 
 const CACHE_TTL = 1000 * 60;
 
-
-/** useApiQuery: has two signatures to overload it
- * 
- * 1. Generic \<Response> only requires a ROOT_QUERY_KEY and callback fn
- * 2. Generics <Response, AdditionalKeyType> same as above but it also concatenate the additionalKey to the ROOT_QUERY_KEY
+/** useApiQuery: wrapper of useQuery for general dApp configs
  * 
  * @param key select ROOT_QUERY_KEY, add new one when required
  * @param fn callback function to be executed
- * @param additionalKey callback function to be executed
  * @returns UseQueryResult\<Response>
  */
 function useApiQuery <Response>(
-  key: ROOT_QUERY_KEY,
+  key: string[],
   fn: () => Promise<Response>
-): UseQueryResult<Response>;
-function useApiQuery <Response, AdditionalKeyType>(
-  key: ROOT_QUERY_KEY,
-  fn: () => Promise<Response>,
-  additionalKey: AdditionalKeyType
-): UseQueryResult<Response>;
-function useApiQuery <Response, AdditionalKeyType>(
-  key: ROOT_QUERY_KEY,
-  fn: () => Promise<Response>,
-  additionalKey?: AdditionalKeyType
-) {
+): UseQueryResult<Response> {
   return useQuery({
-    queryKey: [key, additionalKey as AdditionalKeyType],
+    queryKey: key,
     queryFn: fn,
     refetchInterval: CACHE_TTL,
     staleTime: CACHE_TTL,
