@@ -21,8 +21,6 @@ export const PaginationControls = (props: PaginationControlProps) => {
     { label: '100 rows', value: 100 },
   ];
 
-  // console.log('option filtered', dropdownOptions.filter(v=> v.value===rowsPerPage)[0]);
-
   return (
     <PaginationContainer>
       {[...Array(totalPages)].map((_, index) => (
