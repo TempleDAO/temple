@@ -1,16 +1,8 @@
-import { useQuery } from '@tanstack/react-query';
 import millify from 'millify';
 import { fetchGenericSubgraph, fetchSubgraph } from 'utils/subgraph';
-import { DashboardType } from '../DashboardContent';
 import env from 'constants/env';
 import { useMemo } from 'react';
-
-export enum StrategyKey {
-  RAMOS = 'RamosStrategy',
-  TLC = 'TlcStrategy',
-  TEMPLEBASE = 'TempleBaseStrategy',
-  DSRBASE = 'DsrBaseStrategy',
-}
+import { getQueryKey, StrategyKey, useApiQuery } from 'hooks/api/use-react-query';
 
 export enum TokenSymbols {
   DAI = 'DAI',
@@ -56,9 +48,6 @@ export interface StrategyMetrics {
 }
 
 
-
-const CACHE_TTL = 1000 * 60;
-
 export default function useDashboardV2Metrics() {
   // TODO: In the future we can refactor this.
   // Ideally should not enumerate every strategy but instead do it dynamically
@@ -67,55 +56,45 @@ export default function useDashboardV2Metrics() {
   //   [strategy in StrategyKey]: UseQueryResult<StrategyMetrics>;
   // };
 
-  const ramosMetrics = useQuery({
-    queryKey: ['getMetrics', StrategyKey.RAMOS],
-    queryFn: async () => {
+  const ramosMetrics = useApiQuery<StrategyMetrics>(
+    getQueryKey.metrics(StrategyKey.RAMOS),
+    async () => {
       const metrics = await fetchStrategyMetrics(StrategyKey.RAMOS);
       return metrics;
-    },
-    refetchInterval: CACHE_TTL,
-    staleTime: CACHE_TTL,
-  });
+    }
+  );
 
-  const tlcMetrics = useQuery({
-    queryKey: ['getMetrics', StrategyKey.TLC],
-    queryFn: async () => {
+  const tlcMetrics = useApiQuery<StrategyMetrics>(
+    getQueryKey.metrics(StrategyKey.TLC),
+    async () => {
       const metrics = await fetchStrategyMetrics(StrategyKey.TLC);
       return metrics;
-    },
-    refetchInterval: CACHE_TTL,
-    staleTime: CACHE_TTL,
-  });
+    }
+  );
 
-  const templeBaseMetrics = useQuery({
-    queryKey: ['getMetrics', StrategyKey.TEMPLEBASE],
-    queryFn: async () => {
+  const templeBaseMetrics = useApiQuery<StrategyMetrics>(
+    getQueryKey.metrics(StrategyKey.TEMPLEBASE),
+    async () => {
       const metrics = await fetchStrategyMetrics(StrategyKey.TEMPLEBASE);
       return metrics;
-    },
-    refetchInterval: CACHE_TTL,
-    staleTime: CACHE_TTL,
-  });
+    }
+  );
 
-  const dsrBaseMetrics = useQuery({
-    queryKey: ['getMetrics', StrategyKey.DSRBASE],
-    queryFn: async () => {
+  const dsrBaseMetrics = useApiQuery<StrategyMetrics>(
+    getQueryKey.metrics(StrategyKey.DSRBASE),
+    async () => {
       const metrics = await fetchStrategyMetrics(StrategyKey.DSRBASE);
       return metrics;
-    },
-    refetchInterval: CACHE_TTL,
-    staleTime: CACHE_TTL,
-  });
+    }
+  );
 
-  const treasuryReservesVaultMetrics = useQuery({
-    queryKey: ['getMetrics', DashboardType.TREASURY_RESERVES_VAULT],
-    queryFn: async () => {
+  const treasuryReservesVaultMetrics = useApiQuery<TreasuryReservesVaultMetrics>(
+    getQueryKey.trvMetrics(),
+    async () => {
       const metrics = await fetchTreasuryReservesVaultMetrics();
       return metrics;
-    },
-    refetchInterval: CACHE_TTL,
-    staleTime: CACHE_TTL,
-  });
+    }
+  );
 
   const isLoading = useMemo(() => {
     return (

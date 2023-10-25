@@ -1,8 +1,8 @@
 import { LoadingText } from 'components/Pages/Core/components/LoaderVault/commons/LoadingText';
 import env from 'constants/env/local';
+import { StrategyKey } from 'hooks/api/use-react-query';
 import styled from 'styled-components';
 import { loading } from 'utils/loading-value';
-import { StrategyType } from '../hooks/use-dashboardv2-txHistory';
 
 export type TableRow = {
   date: string;
@@ -10,7 +10,7 @@ export type TableRow = {
   borrow: number;
   repay: number;
   txHash: string;
-  type?: StrategyType;
+  type?: StrategyKey;
 };
 
 type Props = {
