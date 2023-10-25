@@ -33,10 +33,11 @@ interface IShard {
     event ShardUriSet(uint256 indexed shardId, string uri);
     event RecipeSet(uint256 recipeId, Recipe recipe);
     event RecipeDeleted(uint256 recipeId);
-    event ShardEnclaveSet(uint256 enclaveId, uint256 indexed shardId);
+    // event ShardEnclaveSet(uint256 enclaveId, uint256 indexed shardId);
     event MinterAllowedShardIdSet(address indexed partner, uint256 indexed shardId, bool allow);
     event MinterAllowedShardCapSet(address indexed minter, uint256 indexed shardId, uint256 cap);
-    event EnclaveNameSet(uint256 id, string name);
+    // event EnclaveNameSet(uint256 id, string name);
+    event NexusCommonSet(address nexusCommon);
 
     error CannotMint(uint256 shardId);
     error MintCapExceeded(uint256 cap, uint256 amount);
@@ -69,7 +70,7 @@ interface IShard {
      * @param enclaveId Enclave ID
      * @param shardId Shard ID
      */
-    function setShardEnclave(uint256 enclaveId, uint256 shardId) external;
+    // function setShardEnclave(uint256 enclaveId, uint256 shardId) external;
 
     /*
      * @notice Set the caps for shards minters can mint
@@ -169,7 +170,7 @@ interface IShard {
      * @param id enclave ID
      * @param name Name of Enclave
      */
-    function setEnclaveName(uint256 id, string memory name) external;
+    // function setEnclaveName(uint256 id, string memory name) external;
 
     /*
      * @notice Get shard IDs a minter is allowed to mint
@@ -205,13 +206,6 @@ interface IShard {
     function nextRecipeId() external view returns (uint256);
 
     /*
-     * @notice Get shard IDs of an enclave
-     * @param enclaveId The enclave ID
-     * @return Shard IDs of enclave
-     */
-    function getEnclaveShards(uint256 enclaveId) external view returns (uint256[] memory);
-
-    /*
      * @notice Get the information of a minter. 
      * Fucntion is not validating minter and reverting. Caller should check and handle zero values
      * @param minter The minter
@@ -219,16 +213,4 @@ interface IShard {
      */
     function getMintInfo(address minter) external view returns (MintInfo[] memory info);
 
-    /*
-     * @notice Get all enclave Ids
-     * @return Enclave Ids
-     */
-    function getAllEnclaveIds() external view returns (uint256[] memory);
-
-    /*
-     * @notice Check if id is valid Enclave ID
-     * @param enclaveId The ID to check
-     * @return Bool if valid
-     */
-    function isValidEnclaveId(uint256 enclaveId) external view returns (bool);
 }

@@ -16,6 +16,7 @@ import { CommonEventsAndErrors } from "../common/CommonEventsAndErrors.sol";
 import { ElevatedAccess } from "./access/ElevatedAccess.sol";
 import { IShard } from "../interfaces/nexus/IShard.sol";
 import { IRelic } from "../interfaces/nexus/IRelic.sol";
+import { INexusCommon } from "../interfaces/nexus/INexusCommon.sol";
 
 /* @notice Relic Contract
  * Relic.sol is an ERC721A NFT contract with the functionality to receive and hold Shards.
@@ -30,6 +31,7 @@ contract Relic is IRelic, ERC721ACustom, ERC1155Holder, ElevatedAccess {
     using EnumerableSet for EnumerableSet.UintSet;
 
     IShard public shard;
+    INexusCommon public nexusCommon;
 
     uint256 private constant PER_MINT_QUANTITY = 0x01;
     bytes private constant ZERO_BYTES = "";
@@ -50,10 +52,6 @@ contract Relic is IRelic, ERC721ACustom, ERC1155Holder, ElevatedAccess {
     mapping(uint256 => uint256) public blacklistedShardsCount;
     mapping(address => bool) public relicMinters;
     mapping(address => EnumerableSet.UintSet) private ownerRelics;
-    /// @notice set of enclave IDs added.
-    EnumerableSet.UintSet private enclaveIds;
-    /// @notice id to enclave name
-    mapping(uint256 => string) public enclaveNames;
 
     struct RelicInfo {
         uint256 enclaveId;
@@ -68,8 +66,11 @@ contract Relic is IRelic, ERC721ACustom, ERC1155Holder, ElevatedAccess {
     constructor(
         string memory _name,
         string memory _symbol,
+        address _nexusCommon,
         address _initialExecutor
-    ) ERC721ACustom(_name, _symbol) ElevatedAccess(_initialExecutor) {}
+    ) ERC721ACustom(_name, _symbol) ElevatedAccess(_initialExecutor) {
+        nexusCommon = INexusCommon(_nexusCommon);
+    }
 
     /*
      * @notice Set shard contract
@@ -81,17 +82,10 @@ contract Relic is IRelic, ERC721ACustom, ERC1155Holder, ElevatedAccess {
         emit ShardSet(address(shard));
     }
 
-    /*
-     * @notice Set enclave ID to name mapping
-     * @param id enclave ID
-     * @param name Name of Enclave
-     */
-    function setEnclaveName(uint256 id, string memory name) external override onlyElevatedAccess {
-        if (id == 0) { revert CommonEventsAndErrors.InvalidParam(); }
-        if (bytes(name).length == 0) { revert CommonEventsAndErrors.InvalidParam(); }
-        enclaveNames[id] = name;
-        enclaveIds.add(id);
-        emit EnclaveNameSet(id, name);
+    function setNexusCommon(address _contract) external onlyElevatedAccess {
+        if (address(0) == _contract) { revert CommonEventsAndErrors.InvalidAddress(); }
+        nexusCommon = INexusCommon(_contract);
+        emit NexusCommonSet(_contract);
     }
 
     /*
@@ -355,8 +349,7 @@ contract Relic is IRelic, ERC721ACustom, ERC1155Holder, ElevatedAccess {
         uint256 enclaveId
     ) external override isRelicMinter notBlacklisted(to) {
         if (to == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
-        // if (uint8(enclave) > uint8(Enclave.Structure)) { revert CommonEventsAndErrors.InvalidParam(); }
-        if (!isValidEnclaveId(enclaveId)) { revert CommonEventsAndErrors.InvalidParam(); }
+        if (!nexusCommon.isValidEnclaveId(enclaveId)) { revert CommonEventsAndErrors.InvalidParam(); }
 
         uint256 nextTokenId_ = _nextTokenId();
         RelicInfo storage relicInfo = relicInfos[nextTokenId_];
@@ -595,15 +588,6 @@ contract Relic is IRelic, ERC721ACustom, ERC1155Holder, ElevatedAccess {
             xp: relicInfo.xp,
             shards: relicInfo.shards.values()
         });
-    }
-
-    /*
-     * @notice Check if id is valid Enclave ID
-     * @param enclaveId The ID to check
-     * @return Bool if valid
-     */
-    function isValidEnclaveId(uint256 enclaveId) public override view returns (bool) {
-        return (bytes(enclaveNames[enclaveId]).length > 0);
     }
 
     /**

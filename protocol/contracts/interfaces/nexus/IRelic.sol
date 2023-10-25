@@ -37,6 +37,7 @@ interface IRelic {
     event ShardsUnequipped(address indexed recipient, uint256 indexed relicId, uint256[] shardIds, uint256[] amounts);
     event AccountBlacklistSet(address indexed account, bool blacklist, uint256[] shardIds, uint256[] amounts);
     event EnclaveNameSet(uint256 id, string name);
+    event NexusCommonSet(address nexusCommon);
 
     error InvalidParamLength();
     error CallerCannotMint(address msgSender);
@@ -273,18 +274,4 @@ interface IRelic {
      * @return Array of shards equipped in Relic
      */
     function getEquippedShardIds(uint256 relicId) external view returns (uint256[] memory);
-
-    /*
-     * @notice Set enclave ID to name mapping
-     * @param id enclave ID
-     * @param name Name of Enclave
-     */
-    function setEnclaveName(uint256 id, string memory name) external;
-
-    /*
-     * @notice Check if id is valid Enclave ID
-     * @param enclaveId The ID to check
-     * @return Bool if valid
-     */
-    function isValidEnclaveId(uint256 enclaveId) external view returns (bool);
 }

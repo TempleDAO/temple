@@ -4,6 +4,7 @@ pragma solidity 0.8.19;
 
 import { IRelic } from "../interfaces/nexus/IRelic.sol";
 import { IShard } from "../interfaces/nexus/IShard.sol";
+import { INexusCommon } from "../interfaces/nexus/INexusCommon.sol";
 import { ERC1155 } from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import { ERC1155Burnable } from "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Burnable.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
@@ -22,6 +23,7 @@ contract Shard is IShard, ERC1155, ERC1155Burnable, ElevatedAccess {
     using EnumerableSet for EnumerableSet.UintSet;
     /// @notice Relic NFT contract
     IRelic public immutable relic;
+    INexusCommon public nexusCommon;
     uint256 private constant START_TOKEN_ID = 1;
     /// @notice current token index
     uint256 private _currentIndex;
@@ -39,24 +41,18 @@ contract Shard is IShard, ERC1155, ERC1155Burnable, ElevatedAccess {
     mapping(uint256 => string) private shardUris;
     /// @notice Recipe for transmutation of shards.
     mapping(uint256 => Recipe) private recipes;
-    /// @notice each shard belongs to exactly 1 enclave. an enclave can have many shards
-    mapping(uint256 => EnumerableSet.UintSet) private enclaveToShards;
-    /// @notice reverse mapping a shard to its enclave
-    mapping(uint256 => uint256) public shardToEnclave;
-    /// @notice set of enclave IDs added. Helps to iterate when resetting a Shard's enclave in setShardEnclave
-    EnumerableSet.UintSet private enclaveIds;
-    /// @notice Id to enclave name
-    mapping(uint256 => string) public enclaveNames;
     /// @notice track total mints for each shard
     mapping(uint256 => uint256) public totalShardMints;
 
 
     constructor(
         address _relic,
+        address _nexusCommon,
         address _initialExecutor,
         string memory _uri
     ) ERC1155(_uri) ElevatedAccess(_initialExecutor) {
         relic = IRelic(_relic);
+        nexusCommon = INexusCommon(_nexusCommon);
         _currentIndex = _currentRecipeIndex = START_TOKEN_ID;
     }
 
@@ -65,12 +61,18 @@ contract Shard is IShard, ERC1155, ERC1155Burnable, ElevatedAccess {
      * @param id enclave ID
      * @param name Name of Enclave
      */
-    function setEnclaveName(uint256 id, string memory name) external override onlyElevatedAccess {
-        if (id == 0) { revert CommonEventsAndErrors.InvalidParam(); }
-        if (bytes(name).length == 0) { revert CommonEventsAndErrors.InvalidParam(); }
-        enclaveNames[id] = name;
-        enclaveIds.add(id);
-        emit EnclaveNameSet(id, name);
+    // function setEnclaveName(uint256 id, string memory name) external override onlyElevatedAccess {
+    //     if (id == 0) { revert CommonEventsAndErrors.InvalidParam(); }
+    //     if (bytes(name).length == 0) { revert CommonEventsAndErrors.InvalidParam(); }
+    //     enclaveNames[id] = name;
+    //     enclaveIds.add(id);
+    //     emit EnclaveNameSet(id, name);
+    // }
+
+    function setNexusCommon(address _contract) external onlyElevatedAccess {
+        if (address(0) == _contract) { revert CommonEventsAndErrors.InvalidAddress(); }
+        nexusCommon = INexusCommon(_contract);
+        emit NexusCommonSet(_contract);
     }
 
     /*
@@ -102,17 +104,17 @@ contract Shard is IShard, ERC1155, ERC1155Burnable, ElevatedAccess {
      * @param enclaveId Enclave ID
      * @param shardId Shard ID
      */
-    function setShardEnclave(uint256 enclaveId, uint256 shardId) external override onlyElevatedAccess {
-        if(!isValidEnclaveId(enclaveId)) { revert CommonEventsAndErrors.InvalidParam(); }
-        /// remove if shard already belongs to an enclave
-        uint256 oldEnclaveId = shardToEnclave[shardId];
-        enclaveToShards[oldEnclaveId].remove(shardId);
+    // function setShardEnclave(uint256 enclaveId, uint256 shardId) external override onlyElevatedAccess {
+    //     if(!isValidEnclaveId(enclaveId)) { revert CommonEventsAndErrors.InvalidParam(); }
+    //     /// remove if shard already belongs to an enclave
+    //     uint256 oldEnclaveId = shardToEnclave[shardId];
+    //     enclaveToShards[oldEnclaveId].remove(shardId);
 
-        // add shardId to enclave
-        enclaveToShards[enclaveId].add(shardId);
-        shardToEnclave[shardId] = enclaveId;
-        emit ShardEnclaveSet(enclaveId, shardId);
-    }
+    //     // add shardId to enclave
+    //     enclaveToShards[enclaveId].add(shardId);
+    //     shardToEnclave[shardId] = enclaveId;
+    //     emit ShardEnclaveSet(enclaveId, shardId);
+    // }
 
     function _setMinterAllowedShardId(
         address minter,
@@ -341,39 +343,12 @@ contract Shard is IShard, ERC1155, ERC1155Burnable, ElevatedAccess {
     }
 
     /*
-     * @notice Get all enclave Ids
-     * @return Enclave Ids
-     */
-    function getAllEnclaveIds() external override view returns (uint256[] memory ids) {
-        ids = enclaveIds.values();
-    }
-
-    /*
      * @notice Get next Recipe Id
      * @return Id of recipe
      */
     function nextRecipeId() public override view returns (uint256) {
         return _currentRecipeIndex;
     }
-
-    /*
-     * @notice Get shard IDs of an enclave
-     * @param enclaveId The Enclave ID
-     * @return Shard IDs of Enclave
-     */
-    function getEnclaveShards(uint256 enclaveId) external override view returns (uint256[] memory) {
-        return enclaveToShards[enclaveId].values();
-    }
-
-    /*
-     * @notice Check if id is valid Enclave ID
-     * @param enclaveId The ID to check
-     * @return Bool if valid
-     */
-    function isValidEnclaveId(uint256 enclaveId) public override view returns (bool) {
-        return (bytes(enclaveNames[enclaveId]).length > 0);
-    }
-
 
     /*
      * @notice Get the information of a minter. 

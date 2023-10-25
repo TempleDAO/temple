@@ -15,6 +15,7 @@ import { IERC721A } from "../../interfaces/nexus/IERC721A.sol";
 import { CommonEventsAndErrors } from "../../common/CommonEventsAndErrors.sol";
 import { IShard } from "../../interfaces/nexus/IShard.sol";
 import { IRelic } from "../../interfaces/nexus/IRelic.sol";
+import { INexusCommon } from "../../interfaces/nexus/INexusCommon.sol";
 
 
 interface ITestnetShard is IShard {
@@ -36,6 +37,7 @@ contract TestnetRelic is IRelic, ERC721ACustom, ERC1155Holder {
     using EnumerableSet for EnumerableSet.UintSet;
 
     IShard public shard;
+    INexusCommon public nexusCommon;
 
     uint256 private constant PER_MINT_QUANTITY = 0x01;
     bytes private constant ZERO_BYTES = "";
@@ -60,7 +62,7 @@ contract TestnetRelic is IRelic, ERC721ACustom, ERC1155Holder {
     mapping(address => bool) public relicMinters;
     mapping(address => EnumerableSet.UintSet) private ownerRelics;
     /// @notice id to enclave name
-    mapping(uint256 => string) public enclaveNames;
+    // mapping(uint256 => string) public enclaveNames;
 
     /// @notice operators for testnet
     mapping(address => bool) public operators;
@@ -82,14 +84,22 @@ contract TestnetRelic is IRelic, ERC721ACustom, ERC1155Holder {
 
     constructor(
         string memory _name,
-        string memory _symbol
+        string memory _symbol,
+        address _nexusCommon
     ) ERC721ACustom(_name, _symbol) {
         operators[msg.sender] = true;
+        nexusCommon = INexusCommon(_nexusCommon);
     }
 
     function setOperator(address operator, bool allow) external onlyOperator {
         operators[operator] = allow;
         emit OperatorSet(operator, allow);
+    }
+
+    function setNexusCommon(address _contract) external onlyOperator {
+        if (address(0) == _contract) { revert CommonEventsAndErrors.InvalidAddress(); }
+        nexusCommon = INexusCommon(_contract);
+        emit NexusCommonSet(_contract);
     }
 
     /*
@@ -100,18 +110,6 @@ contract TestnetRelic is IRelic, ERC721ACustom, ERC1155Holder {
         if (_shard == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
         shard = IShard(_shard);
         emit ShardSet(address(shard));
-    }
-
-    /*
-     * @notice Set enclave ID to name mapping
-     * @param id enclave ID
-     * @param name Name of Enclave
-     */
-    function setEnclaveName(uint256 id, string memory name) external override onlyOperator {
-        if (id == 0) { revert CommonEventsAndErrors.InvalidParam(); }
-        if (bytes(name).length == 0) { revert CommonEventsAndErrors.InvalidParam(); }
-        enclaveNames[id] = name;
-        emit EnclaveNameSet(id, name);
     }
 
     /*
@@ -175,7 +173,6 @@ contract TestnetRelic is IRelic, ERC721ACustom, ERC1155Holder {
         for(uint i; i < _length;) {
             uint256 _threshold = thresholds[i];
             Rarity _rarity = rarities[i];
-            // if (!isAllowedRarity(_rarity)) { revert CommonEventsAndErrors.InvalidParam(); } 
             if (uint8(_rarity) > uint8(Rarity.Legendary)) { revert CommonEventsAndErrors.InvalidParam(); }
             rarityXPThresholds[_rarity] = _threshold;
             emit RarityXPThresholdSet(_rarity, _threshold);
@@ -388,7 +385,7 @@ contract TestnetRelic is IRelic, ERC721ACustom, ERC1155Holder {
         uint256 enclaveId
     ) external isRelicMinter notBlacklisted(to) {
         if (to == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
-        if (!isValidEnclaveId(enclaveId)) { revert CommonEventsAndErrors.InvalidParam(); }
+        if (!nexusCommon.isValidEnclaveId(enclaveId)) { revert CommonEventsAndErrors.InvalidParam(); }
 
         uint256 nextTokenId_ = _nextTokenId();
         RelicInfo storage relicInfo = relicInfos[nextTokenId_];
@@ -612,15 +609,6 @@ contract TestnetRelic is IRelic, ERC721ACustom, ERC1155Holder {
 
     function getNextTokenId() external view returns (uint256) {
         return _nextTokenId();
-    }
-
-    /*
-     * @notice Check if id is valid Enclave ID
-     * @param enclaveId The ID to check
-     * @return Bool if valid
-     */
-    function isValidEnclaveId(uint256 enclaveId) public override view returns (bool) {
-        return (bytes(enclaveNames[enclaveId]).length > 0);
     }
 
     /**
