@@ -91,7 +91,7 @@ const Home = ({ tlc }: { tlc?: boolean }) => {
 
   useEffect(() => {
     const fetchMetrics = async () => {
-      const { data: treasuryData } = await fetchGenericSubgraph(
+      const { data: treasuryData } = await fetchGenericSubgraph<any>(
         'https://api.thegraph.com/subgraphs/name/medariox/temple-metrics',
         `{
           metrics {
@@ -99,7 +99,7 @@ const Home = ({ tlc }: { tlc?: boolean }) => {
           }
         }`
       );
-      const { data: arbitrumTreasuryData } = await fetchGenericSubgraph(
+      const { data: arbitrumTreasuryData } = await fetchGenericSubgraph<any>(
         'https://api.thegraph.com/subgraphs/name/medariox/temple-metrics-arbitrum',
         `{
           metrics {
@@ -107,7 +107,7 @@ const Home = ({ tlc }: { tlc?: boolean }) => {
           }
         }`
       );
-      const { data: ramosData } = await fetchGenericSubgraph(
+      const { data: ramosData } = await fetchGenericSubgraph<any>(
         'https://api.thegraph.com/subgraphs/name/templedao/templedao-ramos',
         `{
           metrics {

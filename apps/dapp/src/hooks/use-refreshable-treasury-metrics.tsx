@@ -17,7 +17,7 @@ export default function useRefreshableTreasuryMetrics() {
       }
       `;
 
-      const farmEarningsResult = await fetchSubgraph(TOTAL_FARM_EARNINGS_QUERY);
+      const farmEarningsResult = await fetchSubgraph<any>(TOTAL_FARM_EARNINGS_QUERY);
 
       const day1Earnings = farmEarningsResult?.data?.dayProtocolMetrics[13].totalFarmEarnings;
       const day14Earnings = farmEarningsResult?.data?.dayProtocolMetrics[0].totalFarmEarnings;
@@ -29,7 +29,7 @@ export default function useRefreshableTreasuryMetrics() {
         }
       }`;
 
-      const totalLockedQueryResult = await fetchGenericSubgraph(env.subgraph.templeCore, VAULT_TVL_QUERY);
+      const totalLockedQueryResult = await fetchGenericSubgraph<any>(env.subgraph.templeCore, VAULT_TVL_QUERY);
 
       const tvl = totalLockedQueryResult?.data?.vaultGroup?.tvlUSD;
       const apr = (dailyEarnings / tvl) * 365 * 100;
@@ -43,7 +43,7 @@ export default function useRefreshableTreasuryMetrics() {
   }
 
   async function getTreasuryMetrics(): Promise<TreasuryMetrics> {
-    const response = await fetchSubgraph(
+    const response = await fetchSubgraph<any>(
       `{
           protocolMetrics(first: 1, orderBy: timestamp, orderDirection: desc) {
             lockedStables
