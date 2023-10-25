@@ -1,11 +1,9 @@
 import { fetchGenericSubgraph } from 'utils/subgraph';
 import env from 'constants/env';
 import { SubGraphResponse } from 'hooks/core/types';
-import { useApiQuery, ROOT_QUERY_KEY } from 'hooks/api/use-react-query';
+import { useApiQuery, getQueryKey, StrategyKey } from 'hooks/api/use-react-query';
 import { TxHistoryFilterType } from '../Table';
 import { DashboardType } from '../DashboardContent';
-
-export type StrategyType = 'TlcStrategy' | 'DsrBaseStrategy' | 'RamosStrategy' | 'TempleBaseStrategy' | 'All';
 
 type Transactions = {
   hash: string;
@@ -21,7 +19,7 @@ type Transactions = {
   to: string;
   kind: 'Repay' | 'Borrow';
   timestamp: string;
-  type?: StrategyType;
+  type?: StrategyKey;
 }[];
 
 type PaginationDefaults = {
@@ -30,7 +28,7 @@ type PaginationDefaults = {
 };
 
 type StrategyTxns = {
-  name: StrategyType;
+  name: StrategyKey;
   id: string;
   transactions: Transactions;
 }[];
@@ -64,34 +62,33 @@ const txHistoryFilterTypeToSeconds = (filter: TxHistoryFilterType) => {
   }
 };
 
-const dashboardTypeToStrategyType = (dType: DashboardType) => {
+const dashboardTypeToStrategyKey = (dType: DashboardType): StrategyKey => {
   switch (dType) {
     case DashboardType.TLC:
-      return 'TlcStrategy';
+      return StrategyKey.TLC;
     case DashboardType.RAMOS:
-      return 'RamosStrategy';
+      return StrategyKey.RAMOS;
     case DashboardType.DSR_BASE:
-      return 'DsrBaseStrategy';
+      return StrategyKey.DSRBASE;
     case DashboardType.TEMPLE_BASE:
-      return 'TempleBaseStrategy';
+      return StrategyKey.TEMPLEBASE;
     default:
-      return 'All';
+      return StrategyKey.ALL;
   }
 };
 
 const useTxHistory = (props: Props) =>
-  useApiQuery<Transactions, DashboardType>(
-    ROOT_QUERY_KEY.GET_TX_HISTORY,
+  useApiQuery<Transactions>(
+    getQueryKey.txHistory(),
     () => {
       return fetchTransactions(props);
-    },
-    props.dashboardType
+    }
   );
 
 const fetchTransactions = async (props: Props): Promise<Transactions> => {
   const { dashboardType, blockNumber, currentPage, rowsPerPage, filter } = props;
-  const strategyType = dashboardTypeToStrategyType(dashboardType);
-  const strategyQuery = strategyType === 'All' ? `` : `where: { name: "${strategyType}" }`;
+  const strategyKey = dashboardTypeToStrategyKey(dashboardType);
+  const strategyQuery = strategyKey === StrategyKey.ALL ? `` : `where: { name: "${strategyKey}" }`;
   const blockNumberQueryParam = blockNumber > 0 ? `block: { number: ${blockNumber} }` : ``;
   let strategyAndBlockQuery = '';
   if (blockNumberQueryParam.length > 0 || strategyQuery.length > 0) {
@@ -139,7 +136,7 @@ const useTxHistoryPaginationDefaults = (
   rowsPerPage: number,
   filter: TxHistoryFilterType
 ) =>
-  useApiQuery<PaginationDefaults>(ROOT_QUERY_KEY.GET_TX_PAG_DEFAULT, async () => {
+  useApiQuery<PaginationDefaults>(getQueryKey.txPagDefault(), async () => {
     return fetchPaginationDefaults(dashboardType, rowsPerPage, filter);
   });
 const fetchPaginationDefaults = async (
@@ -147,8 +144,8 @@ const fetchPaginationDefaults = async (
   rowsPerPage: number,
   filter: TxHistoryFilterType
 ) => {
-  const strategyType = dashboardTypeToStrategyType(dashboardType);
-  const strategyQuery = strategyType === 'All' ? `` : `( where: {name: "${strategyType}"} )`;
+  const strategyKey = dashboardTypeToStrategyKey(dashboardType);
+  const strategyQuery = strategyKey === StrategyKey.ALL ? `` : `( where: {name: "${strategyKey}"} )`;
   const dateNowSecs = Math.round(Date.now() / 1000);
   const filterQuery = `( where: { timestamp_gt: ${dateNowSecs - txHistoryFilterTypeToSeconds(filter)} } )`;
 
