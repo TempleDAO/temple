@@ -57,19 +57,10 @@ contract Shard is IShard, ERC1155, ERC1155Burnable, ElevatedAccess {
     }
 
     /*
-     * @notice Set enclave ID to name mapping
-     * @param id enclave ID
-     * @param name Name of Enclave
+     * @notice Set Nexus Common contract
+     * @param _contract Address of Nexus Common
      */
-    // function setEnclaveName(uint256 id, string memory name) external override onlyElevatedAccess {
-    //     if (id == 0) { revert CommonEventsAndErrors.InvalidParam(); }
-    //     if (bytes(name).length == 0) { revert CommonEventsAndErrors.InvalidParam(); }
-    //     enclaveNames[id] = name;
-    //     enclaveIds.add(id);
-    //     emit EnclaveNameSet(id, name);
-    // }
-
-    function setNexusCommon(address _contract) external onlyElevatedAccess {
+    function setNexusCommon(address _contract) external override onlyElevatedAccess {
         if (address(0) == _contract) { revert CommonEventsAndErrors.InvalidAddress(); }
         nexusCommon = INexusCommon(_contract);
         emit NexusCommonSet(_contract);
@@ -98,23 +89,6 @@ contract Shard is IShard, ERC1155, ERC1155Burnable, ElevatedAccess {
             }
         }
     }
-
-    /*
-     * @notice Set shard enclave
-     * @param enclaveId Enclave ID
-     * @param shardId Shard ID
-     */
-    // function setShardEnclave(uint256 enclaveId, uint256 shardId) external override onlyElevatedAccess {
-    //     if(!isValidEnclaveId(enclaveId)) { revert CommonEventsAndErrors.InvalidParam(); }
-    //     /// remove if shard already belongs to an enclave
-    //     uint256 oldEnclaveId = shardToEnclave[shardId];
-    //     enclaveToShards[oldEnclaveId].remove(shardId);
-
-    //     // add shardId to enclave
-    //     enclaveToShards[enclaveId].add(shardId);
-    //     shardToEnclave[shardId] = enclaveId;
-    //     emit ShardEnclaveSet(enclaveId, shardId);
-    // }
 
     function _setMinterAllowedShardId(
         address minter,

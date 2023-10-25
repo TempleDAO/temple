@@ -96,7 +96,11 @@ contract TestnetRelic is IRelic, ERC721ACustom, ERC1155Holder {
         emit OperatorSet(operator, allow);
     }
 
-    function setNexusCommon(address _contract) external onlyOperator {
+    /*
+     * @notice Set Nexus Common contract
+     * @param _contract Address of Nexus Common
+     */
+    function setNexusCommon(address _contract) external override onlyOperator {
         if (address(0) == _contract) { revert CommonEventsAndErrors.InvalidAddress(); }
         nexusCommon = INexusCommon(_contract);
         emit NexusCommonSet(_contract);

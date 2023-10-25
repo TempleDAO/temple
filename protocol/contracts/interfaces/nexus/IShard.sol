@@ -213,4 +213,10 @@ interface IShard {
      */
     function getMintInfo(address minter) external view returns (MintInfo[] memory info);
 
+    /*
+     * @notice Set Nexus Common contract
+     * @param _contract Address of Nexus Common
+     */
+    function setNexusCommon(address _contract) external;
+
 }

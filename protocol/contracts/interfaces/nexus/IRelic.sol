@@ -274,4 +274,10 @@ interface IRelic {
      * @return Array of shards equipped in Relic
      */
     function getEquippedShardIds(uint256 relicId) external view returns (uint256[] memory);
+
+    /*
+     * @notice Set Nexus Common contract
+     * @param _contract Address of Nexus Common
+     */
+    function setNexusCommon(address _contract) external;
 }

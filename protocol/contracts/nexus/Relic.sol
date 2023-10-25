@@ -82,7 +82,11 @@ contract Relic is IRelic, ERC721ACustom, ERC1155Holder, ElevatedAccess {
         emit ShardSet(address(shard));
     }
 
-    function setNexusCommon(address _contract) external onlyElevatedAccess {
+    /*
+     * @notice Set Nexus Common contract
+     * @param _contract Address of Nexus Common
+     */
+    function setNexusCommon(address _contract) external override onlyElevatedAccess {
         if (address(0) == _contract) { revert CommonEventsAndErrors.InvalidAddress(); }
         nexusCommon = INexusCommon(_contract);
         emit NexusCommonSet(_contract);
