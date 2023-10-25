@@ -1,4 +1,5 @@
 import { UseQueryResult, useQuery } from '@tanstack/react-query';
+import { StrategyKey } from 'components/Pages/Core/DappPages/Dashboard/hooks/use-dashboardv2-metrics';
 
 // Centralize all the dApp react query keys in case we need to cancel or invalidate them
 // through the app, this makes it easier to track them, please add new ones as required
@@ -9,20 +10,12 @@ export const getQueryKey = {
   trvMetrics: () => ['getTreasureReserveMetrics'],
 }
 
-export enum StrategyKey {
-  RAMOS = 'RamosStrategy',
-  TLC = 'TlcStrategy',
-  TEMPLEBASE = 'TempleBaseStrategy',
-  DSRBASE = 'DsrBaseStrategy',
-  ALL = 'All'
-}
-
 const CACHE_TTL = 1000 * 60;
 
 /** useApiQuery: wrapper of useQuery for general dApp configs
  * 
- * @param key select ROOT_QUERY_KEY, add new one when required
- * @param fn callback function to be executed
+ * @param key use getQueryKey fn, add new one when required
+ * @param fn callback query function
  * @returns UseQueryResult\<Response>
  */
 function useApiQuery <Response>(

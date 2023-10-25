@@ -1,9 +1,10 @@
 import { fetchGenericSubgraph } from 'utils/subgraph';
 import env from 'constants/env';
 import { SubGraphResponse } from 'hooks/core/types';
-import { useApiQuery, getQueryKey, StrategyKey } from 'hooks/api/use-react-query';
+import { useApiQuery, getQueryKey } from 'hooks/api/use-react-query';
 import { TxHistoryFilterType } from '../Table';
 import { DashboardType } from '../DashboardContent';
+import { StrategyKey } from './use-dashboardv2-metrics';
 
 type Transactions = {
   hash: string;
