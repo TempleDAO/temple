@@ -30,9 +30,15 @@ const TxnHistoryTable = ({ dashboardType, filter }: Props) => {
     blockNumber: pagDefault.data?.blockNumber || 0,
   });
   
-  // when user changes currentPage, rowsPerPage or filter refetch
+  // when user changes rowsPerPage or filters, refetch pagination defaults
   useEffect(()=> {
     pagDefault.refetch();
+    // restart to page one when changing amount of pages
+    setCurrentPage(1);
+  }, [rowsPerPage, filter, dashboardType])
+  
+  // when user changes currentPage, rowsPerPage or filters, refetch txns
+  useEffect(()=> {
     txHistory.refetch();
   }, [currentPage, rowsPerPage, filter, dashboardType])
 
@@ -44,7 +50,7 @@ const TxnHistoryTable = ({ dashboardType, filter }: Props) => {
     return {
       type: tx.type,
       date: format(new Date(Number(tx.timestamp) * 1000), 'yyyy-MM-dd'),
-      dToken: 'dUsd', // TODO: update dynamically from strategy
+      dToken: tx.token.symbol,
       borrow: tx.kind === 'Borrow' ? amount : 0,
       repay: tx.kind === 'Repay' ? amount : 0,
       txHash: tx.hash,
