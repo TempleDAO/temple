@@ -1,6 +1,7 @@
-import { useQuery } from '@tanstack/react-query';
-import environmentConfig from 'constants/env';
+import env from 'constants/env';
 import { fetchGenericSubgraph } from 'utils/subgraph';
+import { getQueryKey, useApiQuery } from './api/use-react-query';
+import type { SubGraphResponse } from './core/types';
 
 export interface V2StrategyDailySnapshot {
   timestamp: string;
@@ -18,26 +19,31 @@ export interface V2StrategyDailySnapshot {
   benchmarkPerformance: string;
 }
 
+type FetchV2StrategyDailySnapshotResponse = SubGraphResponse<{ strategyDailySnapshots: V2StrategyDailySnapshot[] }>;
+
 export type V2StrategyMetric = keyof Omit<V2StrategyDailySnapshot, 'timeframe' | 'timestamp' | 'strategy'>;
 
 const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
 
-async function fetchCoreV2<RawResponse extends Record<string, unknown>>(query: string) {
-  const resp: RawResponse = (await fetchGenericSubgraph(environmentConfig.subgraph.templeV2, query)).data;
-  return resp;
-}
-
 async function fetchStrategyDailySnapshots() {
   const now = new Date();
+  // the largest value from the chart time range selector 1W | 1M | 1Y
   let since = Math.floor((now.getTime() - ONE_YEAR_MS) / 1000).toString();
   const result: V2StrategyDailySnapshot[] = [];
   const itemsPerPage = 1000; // current max page size
   while (true) {
+    //  we could be missing data with this pagination strategy if
+    //  the dataset contain snapshots for different strats
+    //  created at the exact same timestamp
+    //  and all such snapshots do not fit in the same page
+    //  imho very unlikely, but possible?
+    //  solution would be to use timestamp_GTE: ${since}
+    //  and deduplicate two consecutive pages
     const query = `
             query {
             strategyDailySnapshots(first: ${itemsPerPage},
                                    orderBy: timestamp,
-                                   orderDirection: desc,
+                                   orderDirection: asc,
                                    where: {timestamp_gt: ${since}}) {
                 strategy{
                     name
@@ -56,10 +62,15 @@ async function fetchStrategyDailySnapshots() {
                 totalMarketValueUSD
             }
             }`;
-    const page = await fetchCoreV2<{ strategyDailySnapshots: V2StrategyDailySnapshot[] }>(query);
-    result.push(...page.strategyDailySnapshots);
-    since = page.strategyDailySnapshots[0].timestamp;
-    if (page.strategyDailySnapshots.length < itemsPerPage) {
+    const page = await fetchGenericSubgraph<FetchV2StrategyDailySnapshotResponse>(env.subgraph.templeV2, query);
+    const itemsOnPage = page.data?.strategyDailySnapshots.length ?? 0;
+    if (page.data) {
+      result.push(...page.data.strategyDailySnapshots);
+      const latestSnapshot = page.data.strategyDailySnapshots.at(-1);
+      if (!latestSnapshot) break;
+      since = latestSnapshot.timestamp;
+    }
+    if (itemsOnPage < itemsPerPage) {
       break;
     }
   }
@@ -67,13 +78,5 @@ async function fetchStrategyDailySnapshots() {
 }
 
 export default function useCoreV2StrategyData() {
-  const TWENTY_MINUTES_MS = 1000 * 60 * 20;
-  const { data: dailyMetrics } = useQuery({
-    queryKey: ['strategiesDailySnapshots'],
-    queryFn: fetchStrategyDailySnapshots,
-    refetchInterval: TWENTY_MINUTES_MS,
-    staleTime: TWENTY_MINUTES_MS,
-  });
-
-  return { dailyMetrics };
+  return useApiQuery<V2StrategyDailySnapshot[]>(getQueryKey.allStrategiesDailySnapshots(), fetchStrategyDailySnapshots);
 }
