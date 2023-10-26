@@ -6,18 +6,20 @@ import { StrategyKey } from 'components/Pages/Core/DappPages/Dashboard/hooks/use
 export const getQueryKey = {
   txPagDefault: () => ['getTxPaginationDefaultValues'],
   txHistory: () => ['getTxHistory'],
-  metrics: (s?: StrategyKey) => {return s ? ['getMetrics', s] : ['getMetrics']},
+  metrics: (s?: StrategyKey) => (s ? ['getMetrics', s] : ['getMetrics']),
   trvMetrics: () => ['getTreasureReserveMetrics'],
-}
+  allStrategiesDailySnapshots: () => ['strategyDailySnapshots'],
+};
 
 const CACHE_TTL = 1000 * 60;
 
 /** useApiQuery: wrapper of useQuery for general dApp configs
- * 
+ *
  * @param key use getQueryKey fn, add new one when required
  * @param fn callback query function
  * @returns UseQueryResult\<Response>
  */
+// prettier-ignore
 function useApiQuery <Response>(
   key: string[],
   fn: () => Promise<Response>
