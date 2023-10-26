@@ -65,6 +65,8 @@ const metricFormatters: { [k in V2StrategyMetric]: MetricFormatter } = {
   totalMarketValueUSD: parseFloat,
 };
 
+const numberFormatter = new Intl.NumberFormat('en', { maximumFractionDigits: 2 });
+
 const V2StrategyMetricsChart: React.FC<{
   dashboardType: DashboardType;
   strategyNames: string[];
@@ -74,7 +76,7 @@ const V2StrategyMetricsChart: React.FC<{
   const formatMetricName = (name: string) => `${name} (${selectedMetric.endsWith('Performance') ? '%' : 'USD'})`;
 
   const tooltipValuesFormatter = (value: number, name: string) => [
-    formatNumberFixedDecimals(value, 2).toString(),
+    numberFormatter.format(value),
     formatMetricName(name),
   ];
 
