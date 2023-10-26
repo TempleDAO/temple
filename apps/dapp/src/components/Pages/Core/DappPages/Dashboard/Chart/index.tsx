@@ -2,7 +2,7 @@ import styled from 'styled-components';
 import { DashboardType } from '../DashboardContent';
 import V2StrategyMetricsChart from './V2StrategyMetricsChart';
 import { InputSelect } from 'components/InputSelect/InputSelect';
-import { V2StrategyMetric } from 'hooks/use-coreV2-strategy-data';
+import { V2DailySnapshotMetric } from '../hooks/use-dashboardv2-daily-snapshots';
 import { useState } from 'react';
 import { ChartSupportedTimeInterval, DEFAULT_CHART_INTERVALS } from 'utils/time-intervals';
 import { IntervalToggler } from 'components/Charts';
@@ -12,7 +12,7 @@ type DashboardChartProps = {
   strategyNames: string[];
 };
 
-const metricOptions: { value: V2StrategyMetric; label: string }[] = [
+const metricOptions: { value: V2DailySnapshotMetric; label: string }[] = [
   { label: 'Total Market Value', value: 'totalMarketValueUSD' },
   { label: 'Accrued Interest', value: 'accruedInterestUSD' },
 
@@ -28,7 +28,7 @@ const metricOptions: { value: V2StrategyMetric; label: string }[] = [
 
 const DashboardChart = ({ dashboardType, strategyNames }: DashboardChartProps) => {
   console.debug('DashboardChart with dashboardType: ', dashboardType);
-  const [selectedMetric, setSelectedMetric] = useState<V2StrategyMetric>('totalMarketValueUSD');
+  const [selectedMetric, setSelectedMetric] = useState<V2DailySnapshotMetric>('totalMarketValueUSD');
   const [selectedInterval, setSelectedInterval] = useState<ChartSupportedTimeInterval>('1M');
 
   const intervals = DEFAULT_CHART_INTERVALS.filter((i) => ['1W', '1M', '1Y'].includes(i.label));
