@@ -20,6 +20,7 @@ const metricOptions: { value: V2StrategyMetric; label: string }[] = [
   { label: 'Benchmarked Equity', value: 'benchmarkedEquityUSD' },
   { label: 'Credit', value: 'creditUSD' },
   { label: 'Debt', value: 'debtUSD' },
+  { label: 'Net Debt', value: 'netDebtUSD' },
   { label: 'Principal', value: 'principalUSD' },
   { label: 'Nominal Equity', value: 'nominalEquityUSD' },
   { label: 'Nominal Performance', value: 'nominalPerformance' },
