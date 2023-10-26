@@ -1,7 +1,7 @@
 import env from 'constants/env';
+import { getQueryKey, useApiQuery } from 'hooks/api/use-react-query';
+import { SubGraphResponse } from 'hooks/core/types';
 import { fetchGenericSubgraph } from 'utils/subgraph';
-import { getQueryKey, useApiQuery } from './api/use-react-query';
-import type { SubGraphResponse } from './core/types';
 
 export interface V2StrategyDailySnapshot {
   timestamp: string;
@@ -21,7 +21,7 @@ export interface V2StrategyDailySnapshot {
 
 type FetchV2StrategyDailySnapshotResponse = SubGraphResponse<{ strategyDailySnapshots: V2StrategyDailySnapshot[] }>;
 
-export type V2StrategyMetric = keyof Omit<V2StrategyDailySnapshot, 'timeframe' | 'timestamp' | 'strategy'>;
+export type V2DailySnapshotMetric = keyof Omit<V2StrategyDailySnapshot, 'timeframe' | 'timestamp' | 'strategy'>;
 
 const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
 
@@ -77,6 +77,6 @@ async function fetchStrategyDailySnapshots() {
   return result;
 }
 
-export default function useCoreV2StrategyData() {
+export default function useV2StrategyDailySnapshotData() {
   return useApiQuery<V2StrategyDailySnapshot[]>(getQueryKey.allStrategiesDailySnapshots(), fetchStrategyDailySnapshots);
 }

@@ -4,9 +4,11 @@ import { useTheme } from 'styled-components';
 import { format } from 'date-fns';
 import { LineChart } from 'components/Charts';
 import Loader from 'components/Loader/Loader';
-import { formatNumberFixedDecimals } from 'utils/formatter';
 import { formatTimestampedChartData } from 'utils/charts';
-import useCoreV2StrategyData, { V2StrategyDailySnapshot, V2StrategyMetric } from 'hooks/use-coreV2-strategy-data';
+import useV2StrategyDailySnapshotData, {
+  V2StrategyDailySnapshot,
+  V2DailySnapshotMetric,
+} from '../hooks/use-dashboardv2-daily-snapshots';
 import { DashboardType } from '../DashboardContent';
 
 type XAxisTickFormatter = (timestamp: number) => string;
@@ -25,7 +27,7 @@ const tooltipLabelFormatters: Record<ChartSupportedTimeInterval, XAxisTickFormat
 
 const yDomain: AxisDomain = ([dataMin, dataMax]) => [dataMin - dataMin * 0.01, dataMax + dataMax * 0.01];
 
-function transpose(data: V2StrategyDailySnapshot[], metric: V2StrategyMetric, format: MetricFormatter) {
+function transpose(data: V2StrategyDailySnapshot[], metric: V2DailySnapshotMetric, format: MetricFormatter) {
   // in sql this is roughly
   // select timeframe,
   //     max(totalValue) filter(where strategy.name = 'FooStrategy') as FooStrategy,
@@ -52,7 +54,7 @@ function transpose(data: V2StrategyDailySnapshot[], metric: V2StrategyMetric, fo
 
 type MetricFormatter = (v: string) => number;
 
-const metricFormatters: { [k in V2StrategyMetric]: MetricFormatter } = {
+const metricFormatters: { [k in V2DailySnapshotMetric]: MetricFormatter } = {
   accruedInterestUSD: parseFloat,
   benchmarkPerformance: (value: string) => parseFloat(value) * 100,
   benchmarkedEquityUSD: parseFloat,
@@ -70,7 +72,7 @@ const numberFormatter = new Intl.NumberFormat('en', { maximumFractionDigits: 2 }
 const V2StrategyMetricsChart: React.FC<{
   dashboardType: DashboardType;
   strategyNames: string[];
-  selectedMetric: V2StrategyMetric;
+  selectedMetric: V2DailySnapshotMetric;
   selectedInterval: ChartSupportedTimeInterval;
 }> = ({ dashboardType, selectedMetric, selectedInterval, strategyNames }) => {
   const formatMetricName = (name: string) => `${name} (${selectedMetric.endsWith('Performance') ? '%' : 'USD'})`;
@@ -83,7 +85,7 @@ const V2StrategyMetricsChart: React.FC<{
   const theme = useTheme();
   const formatMetric = metricFormatters[selectedMetric];
 
-  const { data: dailyMetrics, isLoading, isError } = useCoreV2StrategyData();
+  const { data: dailyMetrics, isLoading, isError } = useV2StrategyDailySnapshotData();
 
   // we need all strategies for the TRV dashboard anyway we can just as well reuse
   // what we have and filter client side
