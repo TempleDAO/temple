@@ -42,11 +42,7 @@ const DashboardMetrics = ({ dashboardType }: DashboardMetricsProps) => {
       case DashboardType.DSR_BASE:
         return setSourceData(getArrangedStrategyMetrics(dsrBaseMetrics.data!));
     }
-  }, [dashboardType]);
-
-  useEffect(() => {
-    console.log(sourceData);
-  }, [sourceData]);
+  }, [isLoading, dashboardType]);
 
   return sourceData === null || isLoading ? (
     <Loader />
