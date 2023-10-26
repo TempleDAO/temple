@@ -1,5 +1,6 @@
 import { Dispatch, SetStateAction } from 'react';
 import styled from 'styled-components';
+import { PageRangeSelector } from './PageRangeSelector';
 
 type PaginationControlProps = {
   currentPage: number;
@@ -11,7 +12,7 @@ type PaginationControlProps = {
 
 type DropdownOptionsType = { value: number; label: string };
 
-export const PaginationControls = (props: PaginationControlProps) => {
+export const PaginationControl = (props: PaginationControlProps) => {
   const { totalPages, currentPage, rowsPerPage, setCurrentPage, setRowsPerPage } = props;
   const dropdownOptions: DropdownOptionsType[] = [
     { label: '5 rows', value: 5 },
@@ -23,17 +24,11 @@ export const PaginationControls = (props: PaginationControlProps) => {
 
   return (
     <PaginationContainer>
-      {[...Array(totalPages)].map((_, index) => (
-        <PageLink
-          selected={currentPage === index + 1}
-          key={index + 1}
-          onClick={() => setCurrentPage(index + 1)}
-          disabled={currentPage === index + 1}
-        >
-          {index + 1}
-        </PageLink>
-      ))}
-
+      <PageRangeSelector 
+        currentPage={currentPage}
+        setCurrentPage={setCurrentPage}
+        totalPages={totalPages}
+      />
       <PageLink onClick={() => setCurrentPage(1)} disabled={currentPage === 1}>
         First
       </PageLink>
@@ -47,11 +42,14 @@ export const PaginationControls = (props: PaginationControlProps) => {
         Last
       </PageLink>
       <PageLink>
-        <Select 
-          value={dropdownOptions.filter((v) => v.value === rowsPerPage)[0].value} 
-          onChange={(e) => setRowsPerPage(Number(e.currentTarget.value))}>
-          {dropdownOptions.map(o=>(
-            <option key={o.value} value={o.value}>{o.label}</option>
+        <Select
+          value={dropdownOptions.filter((v) => v.value === rowsPerPage)[0].value}
+          onChange={(e) => setRowsPerPage(Number(e.currentTarget.value))}
+        >
+          {dropdownOptions.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
           ))}
         </Select>
       </PageLink>
@@ -59,11 +57,19 @@ export const PaginationControls = (props: PaginationControlProps) => {
   );
 };
 
+const PaginationContainer = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  text-align: right;
+  margin: 10px 0;
+`;
+
 type PageLinkProps = {
   selected?: boolean;
+  disabled?: boolean;
 };
 
-const PageLink = styled.button<PageLinkProps>`
+export const PageLink = styled.button<PageLinkProps>`
   margin: 0 5px;
   color: ${({ selected, theme }) => (selected ? theme.palette.brandLight : theme.palette.brand)};
   border: none;
@@ -72,11 +78,6 @@ const PageLink = styled.button<PageLinkProps>`
   background: none;
   box-shadow: none;
   border-radius: 0px;
-`;
-
-const PaginationContainer = styled.div`
-  text-align: right;
-  margin: 10px 0;
 `;
 
 const Select = styled.select`

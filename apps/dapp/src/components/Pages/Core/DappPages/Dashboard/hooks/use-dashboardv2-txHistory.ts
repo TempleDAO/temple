@@ -25,12 +25,14 @@ type Transactions = {
 
 type PaginationDefaults = {
   totalPages: number;
+  totalTransactionCount: number;
   blockNumber: number;
 };
 
 type StrategyTxns = {
   name: StrategyKey;
   id: string;
+  transactionCount: number;
   transactions: Transactions;
 }[];
 
@@ -79,12 +81,9 @@ const dashboardTypeToStrategyKey = (dType: DashboardType): StrategyKey => {
 };
 
 const useTxHistory = (props: Props) =>
-  useApiQuery<Transactions>(
-    getQueryKey.txHistory(),
-    () => {
-      return fetchTransactions(props);
-    }
-  );
+  useApiQuery<Transactions>(getQueryKey.txHistory(), () => {
+    return fetchTransactions(props);
+  });
 
 const fetchTransactions = async (props: Props): Promise<Transactions> => {
   const { dashboardType, blockNumber, currentPage, rowsPerPage, filter } = props;
@@ -148,12 +147,14 @@ const fetchPaginationDefaults = async (
   const strategyKey = dashboardTypeToStrategyKey(dashboardType);
   const strategyQuery = strategyKey === StrategyKey.ALL ? `` : `( where: {name: "${strategyKey}"} )`;
   const dateNowSecs = Math.round(Date.now() / 1000);
-  const filterQuery = `( where: { timestamp_gt: ${dateNowSecs - txHistoryFilterTypeToSeconds(filter)} } )`;
+  // get the max allowed 1000 records for a more accurate totalPages calculation
+  const filterQuery = `( first: 1000 where: { timestamp_gt: ${dateNowSecs - txHistoryFilterTypeToSeconds(filter)} } )`;
 
   const { data: res } = await fetchGenericSubgraph<FetchTxnsResponse>(
     env.subgraph.templeV2,
     `{
             strategies${strategyQuery} {
+              transactionCount
               transactions${filterQuery} {
                 hash
               }
@@ -169,14 +170,26 @@ const fetchPaginationDefaults = async (
   let pagDefaults: PaginationDefaults = {
     totalPages: 0,
     blockNumber: 0,
+    totalTransactionCount: 0,
   };
 
   if (res) {
     let txCountTotal = 0;
-    res.strategies.map((s) => (txCountTotal += s.transactions.length));
+    if (filter === 'all') {
+      // if user chooses all transactions sum the txCountTotal of every strategy, we don't use this
+      // calc for the last30days or lastweek filters because it could show an incorrect number
+      // of totalPages, e.g. only 3 txs last week, but a total of 10000 txs in total
+      res.strategies.map((s) => (txCountTotal += s.transactionCount));
+    } else {
+      // if user chooses last30days or lastweek filters, count the length of txs of each strategy
+      // in this case there maybe a chance of incorrect calc if there are more than 1000 records,
+      // which is unlikely in foreseeable future. This due to the max 1000 records subgraph limitation
+      res.strategies.map((s) => (txCountTotal += s.transactions.length));
+    }
     pagDefaults = {
       totalPages: Math.ceil(txCountTotal / rowsPerPage),
       blockNumber: res._meta.block.number,
+      totalTransactionCount: txCountTotal
     };
   }
   return pagDefaults;

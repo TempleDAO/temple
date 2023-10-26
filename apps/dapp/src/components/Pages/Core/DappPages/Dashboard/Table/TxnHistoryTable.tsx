@@ -4,7 +4,7 @@ import { TxHistoryFilterType } from '.';
 import { DashboardType } from '../DashboardContent';
 import { format } from 'date-fns';
 import { TxnDataTable } from './TxnDataTable';
-import { PaginationControls } from './TxnPaginationControl';
+import { PaginationControl } from './PaginationControl';
 import { useTxHistory, useTxHistoryPaginationDefaults } from '../hooks/use-dashboardv2-txHistory';
 
 type Props = {
@@ -59,7 +59,7 @@ const TxnHistoryTable = ({ dashboardType, filter }: Props) => {
 
   return (
     <TableContainer>
-      <PaginationControls
+      <PaginationControl
         totalPages={pagDefault.data?.totalPages || 0}
         rowsPerPage={rowsPerPage}
         currentPage={currentPage}
