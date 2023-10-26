@@ -83,7 +83,7 @@ const V2StrategyMetricsChart: React.FC<{
   const theme = useTheme();
   const formatMetric = metricFormatters[selectedMetric];
 
-  const { dailyMetrics } = useCoreV2StrategyData();
+  const { data: dailyMetrics, isLoading, isError } = useCoreV2StrategyData();
 
   // we need all strategies for the TRV dashboard anyway we can just as well reuse
   // what we have and filter client side
@@ -120,7 +120,7 @@ const V2StrategyMetricsChart: React.FC<{
   const xDataKey = 'timestamp';
   const colors = theme.palette.charts;
 
-  if (formattedData[selectedInterval].length === 0) {
+  if (formattedData[selectedInterval].length === 0 || isLoading || isError) {
     return <Loader iconSize={48} />;
   }
 
