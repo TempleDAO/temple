@@ -1,25 +1,28 @@
-import { Route, Routes, NavLink as BaseNavLink, Navigate } from 'react-router-dom';
+import { Route, Routes, NavLink as BaseNavLink, Navigate, useSearchParams } from 'react-router-dom';
 import styled from 'styled-components';
 import DashboardContent, { DashboardType } from './DashboardContent';
 
 export const DashboardPage = () => {
+  const [searchParams] = useSearchParams();
+  // preserve search params when switching dashboards
+  const params = searchParams.toString();
   return (
     <DashboardContainer>
       <DashboardHeaderNav>
         <NavCell>
-          <NavLink to="treasuryreservesvault">All</NavLink>
+          <NavLink to={`treasuryreservesvault?${params}`}>All</NavLink>
         </NavCell>
         <NavCell>
-          <NavLink to="ramos">RAMOS</NavLink>
+          <NavLink to={`ramos?${params}`}>RAMOS</NavLink>
         </NavCell>
         <NavCell>
-          <NavLink to="tlc">TLC</NavLink>
+          <NavLink to={`tlc?${params}`}>TLC</NavLink>
         </NavCell>
         <NavCell>
-          <NavLink to="templebase">TEMPLE BASE</NavLink>
+          <NavLink to={`templebase?${params}`}>TEMPLE BASE</NavLink>
         </NavCell>
         <NavCell>
-          <NavLink to="dsrbase">DSR BASE</NavLink>
+          <NavLink to={`dsrbase?${params}`}>DSR BASE</NavLink>
         </NavCell>
       </DashboardHeaderNav>
       <DashboardContentContainer>
