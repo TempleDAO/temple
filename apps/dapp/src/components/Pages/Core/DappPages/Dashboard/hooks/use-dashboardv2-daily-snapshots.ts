@@ -3,25 +3,32 @@ import { getQueryKey, useApiQuery } from 'hooks/api/use-react-query';
 import { SubGraphResponse } from 'hooks/core/types';
 import { fetchGenericSubgraph } from 'utils/subgraph';
 
-export interface V2StrategyDailySnapshot {
+const V2DailySnapshotMetrics = [
+  'totalMarketValueUSD',
+  'debtUSD',
+  'netDebtUSD',
+  'creditUSD',
+  'principalUSD',
+  'accruedInterestUSD',
+  'nominalEquityUSD',
+  'nominalPerformance',
+  'benchmarkedEquityUSD',
+  'benchmarkPerformance',
+] as const;
+
+export type V2DailySnapshotMetric = (typeof V2DailySnapshotMetrics)[number];
+
+export type V2StrategyDailySnapshot = {
   timestamp: string;
   timeframe: string;
   strategy: { name: string };
-  totalMarketValueUSD: string;
-  debtUSD: string;
-  netDebtUSD: string;
-  creditUSD: string;
-  principalUSD: string;
-  accruedInterestUSD: string;
-  nominalEquityUSD: string;
-  nominalPerformance: string;
-  benchmarkedEquityUSD: string;
-  benchmarkPerformance: string;
+} & { [key in V2DailySnapshotMetric]: string };
+
+export function isV2DailySnapshotMetric(key?: string | null): key is V2DailySnapshotMetric {
+  return V2DailySnapshotMetrics.some((m) => m === key);
 }
 
 type FetchV2StrategyDailySnapshotResponse = SubGraphResponse<{ strategyDailySnapshots: V2StrategyDailySnapshot[] }>;
-
-export type V2DailySnapshotMetric = keyof Omit<V2StrategyDailySnapshot, 'timeframe' | 'timestamp' | 'strategy'>;
 
 const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
 
@@ -31,6 +38,7 @@ async function fetchStrategyDailySnapshots() {
   let since = Math.floor((now.getTime() - ONE_YEAR_MS) / 1000).toString();
   const result: V2StrategyDailySnapshot[] = [];
   const itemsPerPage = 1000; // current max page size
+  const metrics = V2DailySnapshotMetrics.join('\n');
   while (true) {
     //  we could be missing data with this pagination strategy if
     //  the dataset contain snapshots for different strats
@@ -50,16 +58,7 @@ async function fetchStrategyDailySnapshots() {
                 }
                 timeframe
                 timestamp
-                accruedInterestUSD
-                benchmarkPerformance
-                benchmarkedEquityUSD
-                creditUSD
-                netDebtUSD
-                debtUSD
-                nominalEquityUSD
-                nominalPerformance
-                principalUSD
-                totalMarketValueUSD
+                ${metrics}
             }
             }`;
     const page = await fetchGenericSubgraph<FetchV2StrategyDailySnapshotResponse>(env.subgraph.templeV2, query);
