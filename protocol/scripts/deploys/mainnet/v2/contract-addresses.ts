@@ -133,7 +133,7 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
             },
         },
         RAMOS: {
-            AUTOMATION_EOA: '0x67ae2161449cf3c5528fea969beba3e4f3288c61',
+            AUTOMATION_EOA: '0x221a8abddfbf7f6961369d5fe47bcf7c35360a86',
             TEMPLE_DAI: {
                 ADDRESS: '0xDdF499e726Bfde29Ce035F6B355e55757F08B5EF',
                 POOL_HELPER: '0xe32089bf9724aF09C026BeC36a7d8a81500cd58A',
