@@ -1,14 +1,21 @@
+import { useMediaQuery } from 'react-responsive';
 import { Outlet } from 'react-router-dom';
 
 import styled from 'styled-components';
+import { queryPhone, tabletAndAbove } from 'styles/breakpoints';
 import Footer from './Footer';
-import LeftNav from './LeftNav';
+import LeftNav from './Nav/LeftNav';
+import MobileNav from './Nav/MobileNav';
 
 const V2Layout = () => {
+  const isDesktop = useMediaQuery({
+    query: queryPhone,
+  });
+
   return (
     <ParentContainer>
       <MainContainer>
-        <LeftNav />
+        {isDesktop ? <LeftNav /> : <MobileNav />}
         <Content>
           <Outlet />
         </Content>
@@ -28,6 +35,10 @@ const ParentContainer = styled.div`
 
 const MainContainer = styled.div`
   display: flex;
+  flex-direction: column;
+  ${tabletAndAbove(`
+    flex-direction: row;
+  `)}
   flex-grow: 1;
 `;
 

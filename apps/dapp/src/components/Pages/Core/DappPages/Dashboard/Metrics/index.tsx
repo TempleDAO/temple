@@ -1,6 +1,8 @@
 import Loader from 'components/Loader/Loader';
 import { useEffect, useMemo, useState } from 'react';
+import { useMediaQuery } from 'react-responsive';
 import styled from 'styled-components';
+import { queryPhone } from 'styles/breakpoints';
 import { Nullable } from 'types/util';
 import { DashboardType } from '../DashboardContent';
 import useDashboardV2Metrics, { ArrangedDashboardMetrics } from '../hooks/use-dashboardv2-metrics';
@@ -44,12 +46,48 @@ const DashboardMetrics = ({ dashboardType }: DashboardMetricsProps) => {
     }
   }, [isLoading, dashboardType]);
 
-  return sourceData === null || isLoading ? (
-    <Loader />
-  ) : (
+  useEffect(() => {
+    console.log(sourceData);
+  }, [sourceData]);
+
+  const isDesktop = useMediaQuery({
+    query: queryPhone,
+  });
+
+  const mobileView = (sourceData: Nullable<ArrangedDashboardMetrics>) => (
+    <>
+      <MobileMetricsContainer>
+        {sourceData!.metrics.map((row, idx) => (
+          <>
+            {row.map((metric, idx) => (
+              <MobileMetricRow key={idx}>
+                <MobileMetricTitle>{metric.title}</MobileMetricTitle>
+                <MobileMetricValue>{metric.value}</MobileMetricValue>
+              </MobileMetricRow>
+            ))}
+          </>
+        ))}
+      </MobileMetricsContainer>
+      <MobileMetricsContainer small>
+        {sourceData!.smallMetrics.map((row, idx) => (
+          // TODO: The MobileMetricsContainer for small should be .. smaller
+          <>
+            {row.map((metric, idx) => (
+              <MobileMetricRow key={idx}>
+                <MobileMetricTitle>{metric.title}</MobileMetricTitle>
+                <MobileMetricValue>{metric.value}</MobileMetricValue>
+              </MobileMetricRow>
+            ))}
+          </>
+        ))}
+      </MobileMetricsContainer>
+    </>
+  );
+
+  const desktopView = (sourceData: Nullable<ArrangedDashboardMetrics>) => (
     <>
       <MetricsContainer>
-        {sourceData.metrics.map((row, idx) => (
+        {sourceData!.metrics.map((row, idx) => (
           <MetricsRow key={idx}>
             {row.map((metric, idx) => (
               <Metric key={idx}>
@@ -61,7 +99,7 @@ const DashboardMetrics = ({ dashboardType }: DashboardMetricsProps) => {
         ))}
       </MetricsContainer>
       <MetricsContainer>
-        {sourceData.smallMetrics.map((row, idx) => (
+        {sourceData!.smallMetrics.map((row, idx) => (
           <MetricsRow key={idx}>
             {row.map((metric, idx) => (
               <Metric small key={idx}>
@@ -74,6 +112,13 @@ const DashboardMetrics = ({ dashboardType }: DashboardMetricsProps) => {
       </MetricsContainer>
     </>
   );
+
+  const viewForDevice = useMemo(() => {
+    if (sourceData === null) return <Loader />;
+    return isDesktop ? desktopView(sourceData) : mobileView(sourceData);
+  }, [isDesktop, sourceData]);
+
+  return sourceData === null || isLoading ? <Loader /> : viewForDevice;
 };
 
 export default DashboardMetrics;
@@ -81,6 +126,35 @@ export default DashboardMetrics;
 type MetricProps = {
   small?: boolean;
 };
+
+const MobileMetricValue = styled.div<MetricProps>`
+  font-size: ${({ small }) => (small ? '10px' : '12px')};
+  color: ${({ theme }) => theme.palette.brandLight};
+`;
+
+const MobileMetricTitle = styled.div<MetricProps>`
+  font-size: ${({ small }) => (small ? '10px' : '12px')};
+  color: ${({ theme }) => theme.palette.brand};
+`;
+
+const MobileMetricRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+`;
+
+const MobileMetricsContainer = styled.div<MetricProps>`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  padding: 10px;
+  gap: 10px;
+  background: ${({ small, theme }) =>
+    small ? theme.palette.black : `linear-gradient(180deg, #000000 0%, #1A1A1A 100%)`};
+  border: ${({ small }) => (small ? 'none' : `1px solid #bd7b4f`)};
+  border-radius: 10px;
+`;
 
 const MetricValue = styled.div<MetricProps>`
   font-size: ${({ small }) => (small ? '1rem' : '2rem')};
