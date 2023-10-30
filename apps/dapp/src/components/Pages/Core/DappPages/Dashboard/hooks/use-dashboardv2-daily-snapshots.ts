@@ -3,34 +3,70 @@ import { getQueryKey, useApiQuery } from 'hooks/api/use-react-query';
 import { SubGraphResponse } from 'hooks/core/types';
 import { fetchGenericSubgraph } from 'utils/subgraph';
 
-export interface V2StrategyDailySnapshot {
+const V2SnapshotMetrics = [
+  'totalMarketValueUSD',
+  'debtUSD',
+  'netDebtUSD',
+  'creditUSD',
+  'principalUSD',
+  'accruedInterestUSD',
+  'nominalEquityUSD',
+  'nominalPerformance',
+  'benchmarkedEquityUSD',
+  'benchmarkPerformance',
+] as const;
+
+export type V2SnapshotMetric = (typeof V2SnapshotMetrics)[number];
+
+export type V2StrategySnapshot = {
   timestamp: string;
   timeframe: string;
   strategy: { name: string };
-  totalMarketValueUSD: string;
-  debtUSD: string;
-  netDebtUSD: string;
-  creditUSD: string;
-  principalUSD: string;
-  accruedInterestUSD: string;
-  nominalEquityUSD: string;
-  nominalPerformance: string;
-  benchmarkedEquityUSD: string;
-  benchmarkPerformance: string;
+} & { [key in V2SnapshotMetric]: string };
+
+export function isV2SnapshotMetric(key?: string | null): key is V2SnapshotMetric {
+  return V2SnapshotMetrics.some((m) => m === key);
 }
 
-type FetchV2StrategyDailySnapshotResponse = SubGraphResponse<{ strategyDailySnapshots: V2StrategyDailySnapshot[] }>;
+type FetchV2StrategyDailySnapshotResponse = SubGraphResponse<{ strategyDailySnapshots: V2StrategySnapshot[] }>;
+type FetchV2StrategyHourlySnapshotResponse = SubGraphResponse<{ strategyHourlySnapshots: V2StrategySnapshot[] }>;
 
-export type V2DailySnapshotMetric = keyof Omit<V2StrategyDailySnapshot, 'timeframe' | 'timestamp' | 'strategy'>;
-
+const ONE_DAY_ONE_HOUR_MS = 25 * 60 * 60 * 1000;
 const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
+
+async function fetchStrategyHourlySnapshots() {
+  const itemsPerPage = 1000;
+  const metrics = V2SnapshotMetrics.join('\n');
+  const now = new Date();
+  const since = Math.floor((now.getTime() - ONE_DAY_ONE_HOUR_MS) / 1000).toString();
+  // if # of strategies * 24 > 1000 we would be missing data
+  // but we shouldnt be getting anywhere close to that
+  const query = `
+            query {
+            strategyHourlySnapshots(first: ${itemsPerPage},
+                                   orderBy: timestamp,
+                                   orderDirection: asc,
+                                   where: {timestamp_gt: ${since}}
+                                   ) {
+                strategy{
+                    name
+                }
+                timeframe
+                timestamp
+                ${metrics}
+            }
+            }`;
+  const resp = await fetchGenericSubgraph<FetchV2StrategyHourlySnapshotResponse>(env.subgraph.templeV2, query);
+  return resp?.data?.strategyHourlySnapshots ?? [];
+}
 
 async function fetchStrategyDailySnapshots() {
   const now = new Date();
   // the largest value from the chart time range selector 1W | 1M | 1Y
   let since = Math.floor((now.getTime() - ONE_YEAR_MS) / 1000).toString();
-  const result: V2StrategyDailySnapshot[] = [];
+  const result: V2StrategySnapshot[] = [];
   const itemsPerPage = 1000; // current max page size
+  const metrics = V2SnapshotMetrics.join('\n');
   while (true) {
     //  we could be missing data with this pagination strategy if
     //  the dataset contain snapshots for different strats
@@ -50,16 +86,7 @@ async function fetchStrategyDailySnapshots() {
                 }
                 timeframe
                 timestamp
-                accruedInterestUSD
-                benchmarkPerformance
-                benchmarkedEquityUSD
-                creditUSD
-                netDebtUSD
-                debtUSD
-                nominalEquityUSD
-                nominalPerformance
-                principalUSD
-                totalMarketValueUSD
+                ${metrics}
             }
             }`;
     const page = await fetchGenericSubgraph<FetchV2StrategyDailySnapshotResponse>(env.subgraph.templeV2, query);
@@ -77,6 +104,21 @@ async function fetchStrategyDailySnapshots() {
   return result;
 }
 
-export default function useV2StrategyDailySnapshotData() {
-  return useApiQuery<V2StrategyDailySnapshot[]>(getQueryKey.allStrategiesDailySnapshots(), fetchStrategyDailySnapshots);
+export default function useV2StrategySnapshotData() {
+  const {
+    data: dailyMetrics,
+    isLoading: dL,
+    isError: dE,
+  } = useApiQuery<V2StrategySnapshot[]>(getQueryKey.allStrategiesDailySnapshots(), fetchStrategyDailySnapshots);
+  const {
+    data: hourlyMetrics,
+    isLoading: hL,
+    isError: hE,
+  } = useApiQuery<V2StrategySnapshot[]>(getQueryKey.allStrategiesHourlySnapshots(), fetchStrategyHourlySnapshots);
+
+  return {
+    dailyMetrics,
+    hourlyMetrics,
+    isLoadingOrError: dL || dE || hL || hE,
+  };
 }

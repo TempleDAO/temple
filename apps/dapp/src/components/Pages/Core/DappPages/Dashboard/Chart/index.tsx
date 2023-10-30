@@ -2,17 +2,18 @@ import styled from 'styled-components';
 import { DashboardType } from '../DashboardContent';
 import V2StrategyMetricsChart from './V2StrategyMetricsChart';
 import { InputSelect } from 'components/InputSelect/InputSelect';
-import { V2DailySnapshotMetric } from '../hooks/use-dashboardv2-daily-snapshots';
+import { isV2SnapshotMetric, V2SnapshotMetric } from '../hooks/use-dashboardv2-daily-snapshots';
 import { useState } from 'react';
 import { ChartSupportedTimeInterval, DEFAULT_CHART_INTERVALS } from 'utils/time-intervals';
 import { IntervalToggler } from 'components/Charts';
+import { useSearchParams } from 'react-router-dom';
 
 type DashboardChartProps = {
   dashboardType: DashboardType;
   strategyNames: string[];
 };
 
-const metricOptions: { value: V2DailySnapshotMetric; label: string }[] = [
+const metricOptions: { value: V2SnapshotMetric; label: string }[] = [
   { label: 'Total Market Value', value: 'totalMarketValueUSD' },
   { label: 'Accrued Interest', value: 'accruedInterestUSD' },
 
@@ -26,12 +27,24 @@ const metricOptions: { value: V2DailySnapshotMetric; label: string }[] = [
   { label: 'Nominal Performance', value: 'nominalPerformance' },
 ];
 
+const CHART_SELECTOR_QUERY_PARAM = 'chart';
+
 const DashboardChart = ({ dashboardType, strategyNames }: DashboardChartProps) => {
   console.debug('DashboardChart with dashboardType: ', dashboardType);
-  const [selectedMetric, setSelectedMetric] = useState<V2DailySnapshotMetric>('totalMarketValueUSD');
+
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const defaultMetric: V2SnapshotMetric = 'totalMarketValueUSD';
+  const chosenMetric = searchParams.get(CHART_SELECTOR_QUERY_PARAM);
+  const selectedMetric: V2SnapshotMetric = isV2SnapshotMetric(chosenMetric) ? chosenMetric : defaultMetric;
+
   const [selectedInterval, setSelectedInterval] = useState<ChartSupportedTimeInterval>('1M');
 
-  const intervals = DEFAULT_CHART_INTERVALS.filter((i) => ['1W', '1M', '1Y'].includes(i.label));
+  const selectMetric = (value: string) => {
+    if (isV2SnapshotMetric(value)) {
+      setSearchParams({ ...searchParams, [CHART_SELECTOR_QUERY_PARAM]: value });
+    }
+  };
 
   return (
     <>
@@ -40,17 +53,13 @@ const DashboardChart = ({ dashboardType, strategyNames }: DashboardChartProps) =
           <SelectMetricContainer>
             <InputSelect
               options={metricOptions}
-              defaultValue={metricOptions[0]}
-              onChange={(e) => setSelectedMetric(e.value)}
+              defaultValue={metricOptions.find((m) => m.value === selectedMetric)}
+              onChange={(e) => selectMetric(e.value)}
               isSearchable={false}
             />
           </SelectMetricContainer>
           <IntervalTogglerContainer>
-            <IntervalToggler
-              selectedInterval={selectedInterval}
-              setSelectedInterval={setSelectedInterval}
-              intervals={intervals}
-            />
+            <IntervalToggler selectedInterval={selectedInterval} setSelectedInterval={setSelectedInterval} />
           </IntervalTogglerContainer>
         </ChartHeader>
         <V2StrategyMetricsChart
