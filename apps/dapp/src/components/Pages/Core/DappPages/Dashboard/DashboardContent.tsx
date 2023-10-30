@@ -1,4 +1,5 @@
 import styled from 'styled-components';
+import { tabletAndAbove } from 'styles/breakpoints';
 import DashboardChart from './Chart';
 import { StrategyKey } from './hooks/use-dashboardv2-metrics';
 import DashboardMetrics from './Metrics';
@@ -76,6 +77,10 @@ const DashboardContent = ({ selectedDashboard = DashboardType.TREASURY_RESERVES_
 
 const HeaderText = styled.div`
   align-items: left;
+  display: none;
+  ${tabletAndAbove(`
+    display: block;
+  `)}
 `;
 
 const HeaderTitle = styled.h2`

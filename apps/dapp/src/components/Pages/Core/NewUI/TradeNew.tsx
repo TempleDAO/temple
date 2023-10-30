@@ -12,6 +12,7 @@ import { pixelsToRems } from 'styles/mixins';
 import { useEffect } from 'react';
 import { useNotification } from 'providers/NotificationProvider';
 import { TransactionPreviewModal } from 'components/TransactionSettingsModal/TransactionPreviewModal';
+import { tabletAndAbove } from 'styles/breakpoints';
 
 export const Trade = () => {
   const {
@@ -160,15 +161,19 @@ const HeaderText = styled.div`
   text-align: center;
   color: #ffdec9;
   margin-top: 10px;
-  margin-left: 40px;
   margin-bottom: 40px;
+  ${tabletAndAbove(`
+    margin-left: 40px;
+  `)};
 `;
 
 const SwapContainer = styled.div`
   display: flex;
   justify-content: center;
   flex-direction: column;
-  margin-left: 20px;
+  ${tabletAndAbove(`
+    margin-left: 20px;
+  `)};
 `;
 
 const ButtonContainer = styled.div`
