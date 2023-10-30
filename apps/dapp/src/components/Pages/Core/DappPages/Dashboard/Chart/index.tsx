@@ -4,7 +4,7 @@ import V2StrategyMetricsChart from './V2StrategyMetricsChart';
 import { InputSelect } from 'components/InputSelect/InputSelect';
 import { isV2SnapshotMetric, V2SnapshotMetric } from '../hooks/use-dashboardv2-daily-snapshots';
 import { useState } from 'react';
-import { ChartSupportedTimeInterval } from 'utils/time-intervals';
+import { ChartSupportedTimeInterval, DEFAULT_CHART_INTERVALS } from 'utils/time-intervals';
 import { IntervalToggler } from 'components/Charts';
 import { useSearchParams } from 'react-router-dom';
 
@@ -53,7 +53,7 @@ const DashboardChart = ({ dashboardType, strategyNames }: DashboardChartProps) =
           <SelectMetricContainer>
             <InputSelect
               options={metricOptions}
-              defaultValue={metricOptions[0]}
+              defaultValue={metricOptions.find((m) => m.value === selectedMetric)}
               onChange={(e) => selectMetric(e.value)}
               isSearchable={false}
             />
