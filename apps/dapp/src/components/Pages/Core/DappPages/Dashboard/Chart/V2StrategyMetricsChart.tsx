@@ -5,9 +5,9 @@ import { format } from 'date-fns';
 import { LineChart } from 'components/Charts';
 import Loader from 'components/Loader/Loader';
 import { formatTimestampedChartData } from 'utils/charts';
-import useV2StrategyDailySnapshotData, {
-  V2StrategyDailySnapshot,
-  V2DailySnapshotMetric,
+import useV2StrategySnapshotData, {
+  V2SnapshotMetric,
+  V2StrategySnapshot,
 } from '../hooks/use-dashboardv2-daily-snapshots';
 import { DashboardType } from '../DashboardContent';
 
@@ -27,7 +27,7 @@ const tooltipLabelFormatters: Record<ChartSupportedTimeInterval, XAxisTickFormat
 
 const yDomain: AxisDomain = ([dataMin, dataMax]) => [dataMin - dataMin * 0.01, dataMax + dataMax * 0.01];
 
-function transpose(data: V2StrategyDailySnapshot[], metric: V2DailySnapshotMetric, format: MetricFormatter) {
+function transpose(data: V2StrategySnapshot[], metric: V2SnapshotMetric, format: MetricFormatter) {
   // in sql this is roughly
   // select timeframe,
   //     max(totalValue) filter(where strategy.name = 'FooStrategy') as FooStrategy,
@@ -54,7 +54,7 @@ function transpose(data: V2StrategyDailySnapshot[], metric: V2DailySnapshotMetri
 
 type MetricFormatter = (v: string) => number;
 
-const metricFormatters: { [k in V2DailySnapshotMetric]: MetricFormatter } = {
+const metricFormatters: { [k in V2SnapshotMetric]: MetricFormatter } = {
   accruedInterestUSD: parseFloat,
   benchmarkPerformance: (value: string) => parseFloat(value) * 100,
   benchmarkedEquityUSD: parseFloat,
@@ -67,12 +67,26 @@ const metricFormatters: { [k in V2DailySnapshotMetric]: MetricFormatter } = {
   totalMarketValueUSD: parseFloat,
 };
 
+const formatV2StrategySnapshot = (m: V2StrategySnapshot) => ({
+  timestamp: m.timestamp,
+  accruedInterestUSD: metricFormatters.accruedInterestUSD(m.accruedInterestUSD),
+  benchmarkPerformance: metricFormatters.benchmarkPerformance(m.benchmarkPerformance),
+  benchmarkedEquityUSD: metricFormatters.benchmarkedEquityUSD(m.benchmarkedEquityUSD),
+  creditUSD: metricFormatters.creditUSD(m.creditUSD),
+  debtUSD: metricFormatters.debtUSD(m.debtUSD),
+  netDebtUSD: metricFormatters.netDebtUSD(m.netDebtUSD),
+  nominalEquityUSD: metricFormatters.nominalEquityUSD(m.nominalEquityUSD),
+  nominalPerformance: metricFormatters.nominalPerformance(m.nominalPerformance),
+  principalUSD: metricFormatters.principalUSD(m.principalUSD),
+  totalMarketValueUSD: metricFormatters.totalMarketValueUSD(m.totalMarketValueUSD),
+});
+
 const numberFormatter = new Intl.NumberFormat('en', { maximumFractionDigits: 2 });
 
 const V2StrategyMetricsChart: React.FC<{
   dashboardType: DashboardType;
   strategyNames: string[];
-  selectedMetric: V2DailySnapshotMetric;
+  selectedMetric: V2SnapshotMetric;
   selectedInterval: ChartSupportedTimeInterval;
 }> = ({ dashboardType, selectedMetric, selectedInterval, strategyNames }) => {
   const formatMetricName = (name: string) => `${name} (${selectedMetric.endsWith('Performance') ? '%' : 'USD'})`;
@@ -85,36 +99,35 @@ const V2StrategyMetricsChart: React.FC<{
   const theme = useTheme();
   const formatMetric = metricFormatters[selectedMetric];
 
-  const { data: dailyMetrics, isLoading, isError } = useV2StrategyDailySnapshotData();
+  const { dailyMetrics, hourlyMetrics, isLoadingOrError } = useV2StrategySnapshotData();
 
   // we need all strategies for the TRV dashboard anyway we can just as well reuse
   // what we have and filter client side
 
-  const filteredData =
+  const filteredDaily =
     dailyMetrics
+      ?.filter((m) => strategyNames.includes(m.strategy.name))
+      .sort((a, b) => parseInt(a.timestamp) - parseInt(b.timestamp)) ?? [];
+
+  const filteredHourly =
+    hourlyMetrics
       ?.filter((m) => strategyNames.includes(m.strategy.name))
       .sort((a, b) => parseInt(a.timestamp) - parseInt(b.timestamp)) ?? [];
 
   // if we are rendering chart for only one strategy we can use data as is
   // otherwise we have to transpose and show the selected metric for every strategy
-  const transformedData =
-    strategyNames.length === 1
-      ? filteredData.map((m) => ({
-          timestamp: m.timestamp,
-          accruedInterestUSD: metricFormatters.accruedInterestUSD(m.accruedInterestUSD),
-          benchmarkPerformance: metricFormatters.benchmarkPerformance(m.benchmarkPerformance),
-          benchmarkedEquityUSD: metricFormatters.benchmarkedEquityUSD(m.benchmarkedEquityUSD),
-          creditUSD: metricFormatters.creditUSD(m.creditUSD),
-          debtUSD: metricFormatters.debtUSD(m.debtUSD),
-          netDebtUSD: metricFormatters.netDebtUSD(m.netDebtUSD),
-          nominalEquityUSD: metricFormatters.nominalEquityUSD(m.nominalEquityUSD),
-          nominalPerformance: metricFormatters.nominalPerformance(m.nominalPerformance),
-          principalUSD: metricFormatters.principalUSD(m.principalUSD),
-          totalMarketValueUSD: metricFormatters.totalMarketValueUSD(m.totalMarketValueUSD),
-        }))
-      : transpose(filteredData, selectedMetric, formatMetric);
 
-  const formattedData = formatTimestampedChartData(transformedData, [], (a) => ({
+  const transformedDaily =
+    strategyNames.length === 1
+      ? filteredDaily.map(formatV2StrategySnapshot)
+      : transpose(filteredDaily, selectedMetric, formatMetric);
+
+  const transformedHourly =
+    strategyNames.length === 1
+      ? filteredHourly.map(formatV2StrategySnapshot)
+      : transpose(filteredHourly, selectedMetric, formatMetric);
+
+  const formattedData = formatTimestampedChartData(transformedDaily, transformedHourly, (a) => ({
     ...a,
     timestamp: (typeof a.timestamp === 'string' ? parseInt(a.timestamp) : a.timestamp) * 1000,
   }));
@@ -122,7 +135,7 @@ const V2StrategyMetricsChart: React.FC<{
   const xDataKey = 'timestamp';
   const colors = theme.palette.charts;
 
-  if (formattedData[selectedInterval].length === 0 || isLoading || isError) {
+  if (formattedData[selectedInterval].length === 0 || isLoadingOrError) {
     return <Loader iconSize={48} />;
   }
 

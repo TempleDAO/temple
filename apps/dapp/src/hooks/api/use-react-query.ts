@@ -9,6 +9,7 @@ export const getQueryKey = {
   metrics: (s?: StrategyKey) => (s ? ['getMetrics', s] : ['getMetrics']),
   trvMetrics: () => ['getTreasureReserveMetrics'],
   allStrategiesDailySnapshots: () => ['strategyDailySnapshots'],
+  allStrategiesHourlySnapshots: () => ['strategyHourlySnapshots'],
 };
 
 const CACHE_TTL = 1000 * 60;
