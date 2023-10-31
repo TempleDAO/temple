@@ -3,8 +3,8 @@ pragma solidity 0.8.19;
 // Temple (nexus/TempleSacrifice.sol)
 
 import { IRelic } from "../interfaces/nexus/IRelic.sol";
+import { ITempleSacrifice } from "../interfaces/nexus/ITempleSacrifice.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-// import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { ElevatedAccess } from "./access/ElevatedAccess.sol";
 import { ITempleERC20Token } from "../interfaces/core/ITempleERC20Token.sol";
 import { CommonEventsAndErrors } from "../common/CommonEventsAndErrors.sol";
@@ -15,7 +15,7 @@ import { mulDiv } from "@prb/math/src/Common.sol";
  * Price increases linearly from start time until a configured period. There can be occasions where price is fixed, for example,
  * during a flash sale.
  */
-contract TempleSacrifice is ElevatedAccess {
+contract TempleSacrifice is ITempleSacrifice, ElevatedAccess {
     using SafeERC20 for ITempleERC20Token;
 
     /// @notice the Relic ERC721A token
@@ -33,20 +33,6 @@ contract TempleSacrifice is ElevatedAccess {
     uint256 private constant ONE_ETHER = 1 ether;
     /// @notice Price parameters 
     PriceParam public priceParams;
-
-    struct PriceParam {
-        uint128 minimumPrice;
-        uint128 maximumPrice;
-        uint64 priceMaxPeriod;
-    }
-
-    event OriginTimeSet(uint64 originTime);
-    event CustomPriceSet(uint256 price);
-    event TempleSacrificed(address account, uint256 amount);
-    event PriceParamsSet(PriceParam params);
-    event TempleRecipientSet(address recipient);
-
-    error FutureOriginTime(uint64 originTime);
 
     constructor(
         address _relic,

@@ -2,17 +2,9 @@ pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (interfaces/nexus/IShard.sol)
 
-interface IShard {
-    /// @notice Enclave types
-    enum Enclave {
-        Chaos,
-        Mystery,
-        Logic,
-        Order,
-        Structure,
-        None
-    }
+import { IERC1155 } from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 
+interface IShard is IERC1155 {
     /*
      * struct for partner mint information
      */
@@ -33,10 +25,8 @@ interface IShard {
     event ShardUriSet(uint256 indexed shardId, string uri);
     event RecipeSet(uint256 recipeId, Recipe recipe);
     event RecipeDeleted(uint256 recipeId);
-    // event ShardEnclaveSet(uint256 enclaveId, uint256 indexed shardId);
     event MinterAllowedShardIdSet(address indexed partner, uint256 indexed shardId, bool allow);
     event MinterAllowedShardCapSet(address indexed minter, uint256 indexed shardId, uint256 cap);
-    // event EnclaveNameSet(uint256 id, string name);
     event NexusCommonSet(address nexusCommon);
 
     error CannotMint(uint256 shardId);
@@ -64,13 +54,6 @@ interface IShard {
     function setNewMinterShards(
         address[] calldata minters
     ) external returns (uint256[] memory shards);
-
-    /*
-     * @notice Set shard enclave
-     * @param enclaveId Enclave ID
-     * @param shardId Shard ID
-     */
-    // function setShardEnclave(uint256 enclaveId, uint256 shardId) external;
 
     /*
      * @notice Set the caps for shards minters can mint
@@ -106,16 +89,6 @@ interface IShard {
      * @param values The amounts of each shard to burn
      */
     function burnBatch(address account, uint256[] memory ids, uint256[] memory values) external;
-
-    // function safeTransferFrom(address from, address to, uint256 id, uint256 value, bytes memory data) external;
-
-    // function safeBatchTransferFrom(
-    //     address from,
-    //     address to,
-    //     uint256[] memory ids,
-    //     uint256[] memory values,
-    //     bytes memory data
-    // ) external;
 
     /*
      * @notice Add a recipe for transmutation
@@ -166,13 +139,6 @@ interface IShard {
     ) external;
 
     /*
-     * @notice Set enclave ID to name mapping
-     * @param id enclave ID
-     * @param name Name of Enclave
-     */
-    // function setEnclaveName(uint256 id, string memory name) external;
-
-    /*
      * @notice Get shard IDs a minter is allowed to mint
      * @param minter The minter with perms
      * @return Shard IDs array
@@ -219,4 +185,26 @@ interface IShard {
      */
     function setNexusCommon(address _contract) external;
 
+    /*
+     * @notice Get cap value a partner can mint for Shard 
+     * @param minter Partner
+     * @param shardId Shard Id
+     * @return Cap
+     */
+    function allowedShardCaps(address minter, uint256 shardId) external returns (uint256);
+
+    /*
+     * @notice Get mint balances minted by partner address
+     * @param minter Partner
+     * @param shardId Shard Id
+     * @return Balance
+     */
+    function mintBalances(address minter, uint256 shardId) external returns (uint256);
+
+    /*
+     * @notice Get total mint balances for Shard
+     * @param shardId ShardId
+     * @return Total Shards
+     */
+    function totalShardMints(uint256 shardId) external returns (uint256);
 }

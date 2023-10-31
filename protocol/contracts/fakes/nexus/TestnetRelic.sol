@@ -360,7 +360,7 @@ contract TestnetRelic is IRelic, ERC721ACustom, ERC1155Holder {
      * @param shardIds Shard IDs
      * @return balances Balances of shards equipped in relic
      */
-    function getBalanceBatch(
+    function getEquippedShards(
         uint256 relicId,
         uint256[] memory shardIds
     ) external view returns(uint256[] memory balances) {

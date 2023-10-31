@@ -1,10 +1,16 @@
 pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Temple (interfaces/nexus/IRelic.sol)
+// Temple (interfaces/nexus/INexusCommon.sol)
 
 interface INexusCommon {
     event ShardEnclaveSet(uint256 enclaveId, uint256 indexed shardId);
     event EnclaveNameSet(uint256 id, string name);
+
+    /*
+     * @notice Set shard contract
+     * @param _shard Shard contract
+     */
+    function setShard(address _shard) external;
 
     /*
      * @notice Set enclave ID to name mapping
@@ -39,4 +45,18 @@ interface INexusCommon {
      * @return Bool
      */
     function isValidEnclaveId(uint256 enclaveId) external view returns (bool);
+
+    /*
+     * @notice Shard Id to Enclave Id. Reverse mapping a shard to its enclave
+     * @param shardId Shard Id
+     * @return Enclave Id
+     */
+    function shardToEnclave(uint256 shardId) external returns (uint256);
+
+    /*
+     * @notice Get enclave name from Shard Id
+     * @param enclaveId Id of enclave
+     * @return Enclave name
+     */
+    function enclaveNames(uint256 enclaveId) external returns (string memory);
 }

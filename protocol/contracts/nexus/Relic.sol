@@ -10,7 +10,6 @@ import { ERC1155Holder } from "@openzeppelin/contracts/token/ERC1155/utils/ERC11
 import { ERC1155Receiver } from "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Receiver.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
-import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import { IERC721A } from "../interfaces/nexus/IERC721A.sol";
 import { CommonEventsAndErrors } from "../common/CommonEventsAndErrors.sol";
 import { ElevatedAccess } from "./access/ElevatedAccess.sol";
@@ -43,14 +42,14 @@ contract Relic is IRelic, ERC721ACustom, ERC1155Holder, ElevatedAccess {
     mapping(Rarity => string) private baseUris;
 
     /// @notice XP thresholds for Relic rarity levels
-    mapping(Rarity => uint256) public rarityXPThresholds;
+    mapping(Rarity => uint256) public override rarityXPThresholds;
 
     /// @notice to keep track of blacklisted relics and blacklisted shard balances
-    mapping(uint256 => mapping(uint256 => uint256)) public blacklistedRelicShards;
-    mapping(address => bool) public blacklistedAccounts;
+    mapping(uint256 => mapping(uint256 => uint256)) public override blacklistedRelicShards;
+    mapping(address => bool) public override blacklistedAccounts;
     /// @notice count of shards blacklisted for Relic
-    mapping(uint256 => uint256) public blacklistedShardsCount;
-    mapping(address => bool) public relicMinters;
+    mapping(uint256 => uint256) public override blacklistedShardsCount;
+    mapping(address => bool) public override relicMinters;
     mapping(address => EnumerableSet.UintSet) private ownerRelics;
 
     struct RelicInfo {
@@ -205,19 +204,19 @@ contract Relic is IRelic, ERC721ACustom, ERC1155Holder, ElevatedAccess {
         /// @dev only valid in storage because it contains a (nested) mapping.
         mapping(uint256 => uint256) storage equippedShards = relicInfos[relicId].equippedShards;
         uint256 shardsCount;
-        uint256 equippedShardBalance;
+        uint256 blacklistedRelicBalance;
         /// cache for gas savings
         mapping(uint256 => uint256) storage blacklistedRelic = blacklistedRelicShards[relicId];
         for(uint i; i < _length;) {
             shardId = shardIds[i];
             amount = amounts[i];
             /// blacklist only equipped shards
-            equippedShardBalance = equippedShards[shardId];
+            blacklistedRelicBalance = blacklistedRelic[shardId] + amount;
             /// @dev checks that we don't blacklist more than equipped. condition holds if shardIds are duplicated in calldata
-            if (equippedShardBalance < amount + blacklistedRelic[shardId]) {
-                revert NotEnoughShardBalance(equippedShardBalance, amount + blacklistedRelic[shardId]);
+            if (equippedShards[shardId] < blacklistedRelicBalance) {
+                revert NotEnoughShardBalance(equippedShards[shardId], blacklistedRelicBalance);
             }
-            blacklistedRelic[shardId] = amount;
+            blacklistedRelic[shardId] = blacklistedRelicBalance;
             shardsCount += amount;
             unchecked {
                 ++i;
@@ -326,7 +325,7 @@ contract Relic is IRelic, ERC721ACustom, ERC1155Holder, ElevatedAccess {
      * @param shardIds Shard IDs
      * @return balances Balances of shards equipped in relic
      */
-    function getBalanceBatch(
+    function getEquippedShards(
         uint256 relicId,
         uint256[] memory shardIds
     ) external override view returns(uint256[] memory balances) {
@@ -362,7 +361,7 @@ contract Relic is IRelic, ERC721ACustom, ERC1155Holder, ElevatedAccess {
         // relicInfo.xp = uint128(0);
         
         ownerRelics[to].add(nextTokenId_);
-        /// user can mint relic anytime after sacrificing temple and getting whitelisted. one at a time
+        /// user can mint relic anytime after sacrificing some sacrifice tokens and getting whitelisted. one at a time
         _safeMint(to, PER_MINT_QUANTITY, ZERO_BYTES);
     }
 
@@ -446,7 +445,7 @@ contract Relic is IRelic, ERC721ACustom, ERC1155Holder, ElevatedAccess {
      * @notice Get next token Id
      * @return uint256 Next token Id
      */
-    function nextTokenId() public override view returns (uint256) {
+    function nextTokenId() external override view returns (uint256) {
         return _nextTokenId();
     }
 
@@ -491,6 +490,7 @@ contract Relic is IRelic, ERC721ACustom, ERC1155Holder, ElevatedAccess {
             // update tracking variables
             blacklistedShards[shardId] -= amount;
             equippedShardBalance = equippedShards[shardId] - amount;
+            equippedShards[shardId] = equippedShardBalance;
             blacklistedShardsCountCache = blacklistedShardsCount[relicId];
             blacklistedShardsCount[relicId] = blacklistedShardsCountCache - amount;
             /// @dev avoid stack too deep

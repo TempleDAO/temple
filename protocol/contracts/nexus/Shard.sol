@@ -34,15 +34,15 @@ contract Shard is IShard, ERC1155, ERC1155Burnable, ElevatedAccess {
     /// also for easy public reads(read functions). avoids cycle error
     /// choosing mapping of address to EnumerableSet to help supporting view functions like getMintInfo
     mapping(address => EnumerableSet.UintSet) private allowedShardIds;
-    mapping(address => mapping(uint256 => uint256)) public allowedShardCaps;
-    mapping(address => mapping(uint256 => uint256)) public mintBalances;
+    mapping(address => mapping(uint256 => uint256)) public override allowedShardCaps;
+    mapping(address => mapping(uint256 => uint256)) public override mintBalances;
 
     /// @notice shard ids to uris
     mapping(uint256 => string) private shardUris;
     /// @notice Recipe for transmutation of shards.
     mapping(uint256 => Recipe) private recipes;
     /// @notice track total mints for each shard
-    mapping(uint256 => uint256) public totalShardMints;
+    mapping(uint256 => uint256) public override totalShardMints;
 
 
     constructor(
@@ -70,7 +70,6 @@ contract Shard is IShard, ERC1155, ERC1155Burnable, ElevatedAccess {
      * @notice Enable minters to mint new shards, one after the next. If there are two minters and next shard ID
      * is 3, minter 1 and minter 2 can mint shard IDs 3 and 4 respectively
      * @param minters Minters to enable for new shards
-     * @param xp XP to set
      */
     function setNewMinterShards(
         address[] calldata minters

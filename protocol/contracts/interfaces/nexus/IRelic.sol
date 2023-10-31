@@ -4,21 +4,13 @@ pragma solidity 0.8.19;
 
 import { IERC721A } from "./IERC721A.sol";
 
-interface IRelic {
+interface IRelic is IERC721A {
     enum Rarity {
         Common,
         Uncommon,
         Rare,
         Epic,
         Legendary
-    }
-
-    enum Enclave {
-        Chaos,
-        Mystery,
-        Logic,
-        Order,
-        Structure
     }
 
     struct RelicInfoView {
@@ -46,18 +38,6 @@ interface IRelic {
     error NotEnoughShardBalance(uint256 equippedBalance, uint256 amount);
     error CannotBlacklist(uint256 relicId);
     error RelicWithBlacklistedShards();
-
-    /*
-     * @notice Get balance of address
-     * @param owner Address to check balance for
-     */
-    // function balanceOf(address owner) external view returns (uint256);
-
-    /*
-     * @notice Check owner of a relic
-     * @param tokenId Relic Id
-     */
-    // function ownerOf(uint256 tokenId) external view returns (address);
 
     /*
      * @notice Set shard contract
@@ -151,7 +131,7 @@ interface IRelic {
      * @param shardIds Shard IDs
      * @return balances Balances of shards equipped in relic
      */
-    function getBalanceBatch(
+    function getEquippedShards(
         uint256 relicId,
         uint256[] memory shardIds
     ) external view returns(uint256[] memory balances);
@@ -280,4 +260,33 @@ interface IRelic {
      * @param _contract Address of Nexus Common
      */
     function setNexusCommon(address _contract) external;
+
+    /*
+     * @notice Get blacklisted Shards of Relic. 
+     * This is used to keep track of blacklisted relics and blacklisted shard balances
+     * @param relicId Relic Id
+     * @param shardId Shard Id
+     * @return Count of ShardId blacklisted for Relic
+     */
+    function blacklistedRelicShards(uint256 relicId, uint256 shardId) external returns (uint256);
+
+    /*
+     * @notice Get count of shards blacklisted for Relic
+     * @param shardId Shard Id
+     * @return Count of blacklisted Shards
+     */
+    function blacklistedShardsCount(uint256 shardId) external returns (uint256);
+    /*
+     * @notice Check for Relic minter status for address
+     * @param minter Address to check
+     * @return If address is Relic minter
+     */
+    function relicMinters(address minter) external returns (bool);
+
+    /*
+     * @notice Get XP thresholds for Relic rarity
+     * @param rarity Rarity
+     * @return Threshold value for rarity
+     */
+    function rarityXPThresholds(Rarity rarity) external returns (uint256);
 }

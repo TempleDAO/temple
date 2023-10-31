@@ -7,21 +7,31 @@ import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableS
 import { CommonEventsAndErrors } from "../common/CommonEventsAndErrors.sol";
 import { ElevatedAccess } from "./access/ElevatedAccess.sol";
 import { INexusCommon } from "../interfaces/nexus/INexusCommon.sol";
+import { IShard } from "../interfaces/nexus/IShard.sol";
 
 contract NexusCommon is INexusCommon, ElevatedAccess {
     using EnumerableSet for EnumerableSet.UintSet;
 
+    IShard public shard;
 
     /// @notice each shard belongs to exactly 1 enclave. an enclave can have many shards
     mapping(uint256 => EnumerableSet.UintSet) private enclaveToShards;
     /// @notice reverse mapping a shard to its enclave
-    mapping(uint256 => uint256) public shardToEnclave;
+    mapping(uint256 => uint256) public override shardToEnclave;
     /// @notice set of enclave IDs added.
     EnumerableSet.UintSet private enclaveIds;
     /// @notice id to enclave name
-    mapping(uint256 => string) public enclaveNames;
+    mapping(uint256 => string) public override enclaveNames;
 
     constructor(address _initialExecutor) ElevatedAccess(_initialExecutor) {}
+
+    /*
+     * @notice Set shard contract
+     * @param _shard Shard contract
+     */
+    function setShard(address _shard) external override onlyElevatedAccess {
+        shard = IShard(_shard);
+    }
 
     /*
      * @notice Set enclave ID to name mapping
@@ -42,7 +52,9 @@ contract NexusCommon is INexusCommon, ElevatedAccess {
      * @param shardId Shard ID
      */
     function setShardEnclave(uint256 enclaveId, uint256 shardId) external override onlyElevatedAccess {
+        if (enclaveId == 0) { revert CommonEventsAndErrors.InvalidParam(); }
         if(bytes(enclaveNames[enclaveId]).length == 0) { revert CommonEventsAndErrors.InvalidParam(); }
+        if (!shard.isShardId(shardId)) { revert CommonEventsAndErrors.InvalidParam(); }
         /// remove if shard already belongs to an enclave
         uint256 oldEnclaveId = shardToEnclave[shardId];
         enclaveToShards[oldEnclaveId].remove(shardId);

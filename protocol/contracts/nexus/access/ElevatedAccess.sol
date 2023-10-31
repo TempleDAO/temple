@@ -1,6 +1,6 @@
 pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Temple (v2/access/ElevatedAccess.sol)
+// Temple (nexus/access/ElevatedAccess.sol)
 
 import { IElevatedAccess } from "contracts/interfaces/nexus/access/IElevatedAccess.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
@@ -68,12 +68,11 @@ abstract contract ElevatedAccess is IElevatedAccess {
     }
 
     function isElevatedAccess(address caller, bytes4 fnSelector) internal view returns (bool) {
-        if (caller == executor || explicitFunctionAccess[caller][fnSelector]) {
-            // the executor can call all functions
-            // or the caller has been given explicit access on this function
-            return true;
-        }
-        return false;
+        // true if the executor can call all functions
+        // or the caller has been given explicit access on this function
+        return (
+            caller == executor || explicitFunctionAccess[caller][fnSelector]
+        );
     }
 
     /**

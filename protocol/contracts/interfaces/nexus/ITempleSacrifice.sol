@@ -2,9 +2,16 @@ pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (interfaces/nexus/ITempleSacrifice.sol)
 
-import { IRelic } from "./IRelic.sol";
 
 interface ITempleSacrifice {
+
+    event OriginTimeSet(uint64 originTime);
+    event CustomPriceSet(uint256 price);
+    event TempleSacrificed(address account, uint256 amount);
+    event PriceParamsSet(PriceParam params);
+    event TempleRecipientSet(address recipient);
+
+    error FutureOriginTime(uint64 originTime);
 
     struct PriceParam {
         uint64 priceMaxPeriod;

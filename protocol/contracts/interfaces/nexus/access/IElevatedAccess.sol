@@ -3,14 +3,10 @@ pragma solidity 0.8.19;
 // Temple (interfaces/nexus/access/IElevatedAccess.sol)
 
 /**
- * @notice Inherit to add Executor and Rescuer roles for DAO elevated access.
+ * @notice Inherit to add Executor role for DAO elevated access.
  */ 
 interface IElevatedAccess {
     event ExplicitAccessSet(address indexed account, bytes4 indexed fnSelector, bool indexed value);
-    event RescueModeSet(bool indexed value);
-
-    event NewRescuerProposed(address indexed oldRescuer, address indexed oldProposedRescuer, address indexed newProposedRescuer);
-    event NewRescuerAccepted(address indexed oldRescuer, address indexed newRescuer);
 
     event NewExecutorProposed(address indexed oldExecutor, address indexed oldProposedExecutor, address indexed newProposedExecutor);
     event NewExecutorAccepted(address indexed oldExecutor, address indexed newExecutor);
