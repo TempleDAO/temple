@@ -30,7 +30,9 @@ contract NexusCommon is INexusCommon, ElevatedAccess {
      * @param _shard Shard contract
      */
     function setShard(address _shard) external override onlyElevatedAccess {
+        if(_shard == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
         shard = IShard(_shard);
+        emit ShardSet(_shard);
     }
 
     /*

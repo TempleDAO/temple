@@ -5,6 +5,7 @@ pragma solidity 0.8.19;
 interface INexusCommon {
     event ShardEnclaveSet(uint256 enclaveId, uint256 indexed shardId);
     event EnclaveNameSet(uint256 id, string name);
+    event ShardSet(address indexed shard);
 
     /*
      * @notice Set shard contract
