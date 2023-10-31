@@ -3,6 +3,8 @@ import env from 'constants/env/local';
 import styled from 'styled-components';
 import { loading } from 'utils/loading-value';
 import { StrategyKey } from '../hooks/use-dashboardv2-metrics';
+import { ArrowButtonUpDown } from 'components/Pages/Ascend/components/Trade/styles';
+import { TxHistoryTableHeader } from './TxnHistoryTable';
 
 export type TableRow = {
   date: string;
@@ -16,18 +18,25 @@ export type TableRow = {
 type Props = {
   dataSubset: TableRow[] | undefined;
   dataLoading: boolean;
+  tableHeaders: TxHistoryTableHeader[];
+  updateTableHeaders: (currentHeader: TxHistoryTableHeader) => void;
 };
 
-const tableHeaders = ['Type', 'Date', 'Debt Token', 'Borrow', 'Repay', 'Tx Hash'];
-
 export const TxnDataTable = (props: Props) => {
-  const { dataSubset, dataLoading } = props;
+
+  const { dataSubset, dataLoading, tableHeaders, updateTableHeaders } = props;
   return (
     <DataTable>
       <thead>
         <tr>
-          {tableHeaders.map((t, i) => (
-            <TableHeader key={i}>{t}</TableHeader>
+          {tableHeaders.map((h, i) => (
+            <TableHeader key={i} onClick={() => updateTableHeaders(h)}>
+              {h.name}
+              {h.orderDesc !== undefined && <ArrowButtonUpDown 
+                clicked={h.orderDesc} 
+                onClick={() => updateTableHeaders(h)}
+              />}
+            </TableHeader>
           ))}
         </tr>
       </thead>

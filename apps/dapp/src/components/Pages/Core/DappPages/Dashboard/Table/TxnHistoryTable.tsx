@@ -12,10 +12,53 @@ type Props = {
   filter: TxHistoryFilterType;
 };
 
+export type TxHistoryTableHeader = {
+  name: 'Type' | 'Date' | 'Debt Token' | 'Borrow' | 'Repay' | 'Tx Hash';
+  orderDesc?: boolean; 
+}
+
 const TxnHistoryTable = ({ dashboardType, filter }: Props) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [tableHeaders, setTableHeaders] = useState<TxHistoryTableHeader[]>([
+    {
+      name: 'Type',
+      orderDesc: undefined,
+    },
+    {
+      name: 'Date',
+      orderDesc: true,
+    },
+    {
+      name: 'Debt Token',
+      orderDesc: undefined,
+    },
+    {
+      name: 'Borrow',
+      orderDesc: undefined,
+    },
+    {
+      name: 'Repay',
+      orderDesc: undefined,
+    },
+    {
+      name: 'Tx Hash',
+      orderDesc: undefined,
+    },
+  ]);
 
+  const updateTableHeaders = (currentHeader: TxHistoryTableHeader) => setTableHeaders(prevState => {
+    const newState = prevState.map((prevHeader)=>{
+      if(prevHeader.name == currentHeader.name){
+        return { ...prevHeader, orderDesc: !prevHeader.orderDesc };
+      }
+      else {
+        return { ...prevHeader, orderDesc: undefined};
+      }
+    });
+    return newState;
+  });
+  
   const pagDefault = useTxHistoryPaginationDefaults(
     dashboardType,
     rowsPerPage,
@@ -28,6 +71,7 @@ const TxnHistoryTable = ({ dashboardType, filter }: Props) => {
     currentPage,
     rowsPerPage,
     blockNumber: pagDefault.data?.blockNumber || 0,
+    tableHeaders
   });
   
   // when user changes rowsPerPage or filters, refetch pagination defaults
@@ -40,7 +84,7 @@ const TxnHistoryTable = ({ dashboardType, filter }: Props) => {
   // when user changes currentPage, rowsPerPage or filters, refetch txns
   useEffect(()=> {
     txHistory.refetch();
-  }, [currentPage, rowsPerPage, filter, dashboardType])
+  }, [currentPage, rowsPerPage, filter, dashboardType, tableHeaders])
 
   const isLoading = pagDefault.isLoading || pagDefault.isFetching || txHistory.isLoading || txHistory.isFetching;
 
@@ -49,7 +93,7 @@ const TxnHistoryTable = ({ dashboardType, filter }: Props) => {
     const amount = Number(Number(tx.amount).toFixed(2));
     return {
       type: tx.type,
-      date: format(new Date(Number(tx.timestamp) * 1000), 'yyyy-MM-dd'),
+      date: format(new Date(Number(tx.timestamp) * 1000), 'yyyy-MM-dd H:mm:ss O'),
       dToken: tx.token.symbol,
       borrow: tx.kind === 'Borrow' ? amount : 0,
       repay: tx.kind === 'Repay' ? amount : 0,
@@ -66,7 +110,12 @@ const TxnHistoryTable = ({ dashboardType, filter }: Props) => {
         setCurrentPage={setCurrentPage}
         setRowsPerPage={setRowsPerPage}
       />
-      <TxnDataTable dataSubset={dataToTable} dataLoading={isLoading} />
+      <TxnDataTable 
+        dataSubset={dataToTable}
+        dataLoading={isLoading}
+        tableHeaders={tableHeaders}
+        updateTableHeaders={updateTableHeaders}
+      />
     </TableContainer>
   );
 };

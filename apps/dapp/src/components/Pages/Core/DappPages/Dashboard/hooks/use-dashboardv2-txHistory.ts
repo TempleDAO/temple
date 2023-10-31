@@ -5,6 +5,7 @@ import { useApiQuery, getQueryKey } from 'hooks/api/use-react-query';
 import { TxHistoryFilterType } from '../Table';
 import { DashboardType } from '../DashboardContent';
 import { StrategyKey } from './use-dashboardv2-metrics';
+import { TxHistoryTableHeader } from '../Table/TxnHistoryTable';
 
 type Transactions = {
   hash: string;
@@ -50,6 +51,7 @@ type Props = {
   currentPage: number;
   rowsPerPage: number;
   blockNumber: number;
+  tableHeaders: TxHistoryTableHeader[];
 };
 
 const txHistoryFilterTypeToSeconds = (filter: TxHistoryFilterType) => {
@@ -86,7 +88,7 @@ const useTxHistory = (props: Props) =>
   });
 
 const fetchTransactions = async (props: Props): Promise<Transactions> => {
-  const { dashboardType, blockNumber, currentPage, rowsPerPage, filter } = props;
+  const { dashboardType, blockNumber, currentPage, rowsPerPage, filter, tableHeaders } = props;
   const strategyKey = dashboardTypeToStrategyKey(dashboardType);
   const strategyQuery = strategyKey === StrategyKey.ALL ? `` : `where: { name: "${strategyKey}" }`;
   const blockNumberQueryParam = blockNumber > 0 ? `block: { number: ${blockNumber} }` : ``;
@@ -99,30 +101,52 @@ const fetchTransactions = async (props: Props): Promise<Transactions> => {
 
   const dateNowSecs = Math.round(Date.now() / 1000);
   const filterQuery = `where: { timestamp_gt: ${dateNowSecs - txHistoryFilterTypeToSeconds(filter)} }`;
+  const orderHeader = tableHeaders.find(h => h.orderDesc !== undefined);
+  
+  // set default ordering
+  let orderBy = 'timestamp';
+  let orderType: 'asc' | 'desc' = 'desc';
+  
+  // if order header is present, order accordingly 
+  if(orderHeader){
+    orderType=  orderHeader.orderDesc ? 'desc' : 'asc';
+    switch(orderHeader.name){
+      case 'Date':
+      case 'Type':
+        break;
+      case 'Debt Token':
+        orderBy = 'token';
+      case 'Borrow':
+        orderBy = 'amount';
+      case 'Repay':
+        orderBy = 'amount';
+      case 'Tx Hash':
+        orderBy = 'id';
+    }
+  }
 
-  const { data: res } = await fetchGenericSubgraph<FetchTxnsResponse>(
-    env.subgraph.templeV2,
-    `{
-        strategies${strategyAndBlockQuery} {
-        name
+  const subgraphQuery = `{
+    strategies${strategyAndBlockQuery} {
+    name
+    id
+    transactions(orderBy: ${orderBy}, orderDirection: ${orderType} ${paginationQuery} ${filterQuery}) {
+        hash
+        token {
+          id
+          name
+          symbol
+        }
+        amount
+        amountUSD
         id
-        transactions(orderBy: timestamp, orderDirection: desc ${paginationQuery} ${filterQuery}) {
-            hash
-            token {
-              id
-              name
-              symbol
-            }
-            amount
-            amountUSD
-            id
-            from
-            kind
-            timestamp
-        }
-        }
-    }`
-  );
+        from
+        kind
+        timestamp
+    }
+    }
+  }`;
+
+  const { data: res } = await fetchGenericSubgraph<FetchTxnsResponse>(env.subgraph.templeV2, subgraphQuery);
   if (!res) return [];
   const txns: Transactions = [];
   for (const strategy of res.strategies) {
