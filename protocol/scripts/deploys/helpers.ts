@@ -33,6 +33,7 @@ interface TeamPayments {
   TEMPLE_TEAM_EPOCH_19: string;
   TEMPLE_TEAM_EPOCH_20: string;
   TEMPLE_TEAM_EPOCH_21: string;
+  TEMPLE_TEAM_EPOCH_22A: string;
 }
 
 export interface DeployedContracts {
@@ -293,6 +294,7 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
       TEMPLE_TEAM_EPOCH_19: '0x1931c748E8824205FacEB2AC069badacEd0AF4fc',
       TEMPLE_TEAM_EPOCH_20: '0x215B8c5225fb43864ECfc15B7ac97fc78AE8f621',
       TEMPLE_TEAM_EPOCH_21: '0xD50e540F9D4Da820eecA7428b5b5cECd2227727a',
+      TEMPLE_TEAM_EPOCH_22A: '0xDDbea74f5c53063e6c489d3a424e95c3c2BfB2cb',
     },
 
     TEMPLE_TEAM_PAYMENTS_IMPLEMENTATION: '',
@@ -500,24 +502,27 @@ export async function deployAndMine<
   if (factory.deploy !== deploy) {
     throw new Error("Contract factory and deploy method don't match");
   }
-  
+
   // Ensure none of the args are empty
-  args.forEach((a,i) => {
-  if (!(a.toString()))
-    throw new Error(`Empty arg in position ${i}`);
+  args.forEach((a, i) => {
+    if (!a.toString()) throw new Error(`Empty arg in position ${i}`);
   });
-  
+
   const renderedArgs = JSON.stringify(args, null, 2);
-  
-  console.log(`*******Deploying ${name} on ${network.name} with args ${renderedArgs}`);
-  const contract = await factory.deploy(...args) as T;
-  console.log(`Deployed... waiting for transaction to mine: ${contract.deployTransaction.hash}`);
+
+  console.log(
+    `*******Deploying ${name} on ${network.name} with args ${renderedArgs}`
+  );
+  const contract = (await factory.deploy(...args)) as T;
+  console.log(
+    `Deployed... waiting for transaction to mine: ${contract.deployTransaction.hash}`
+  );
   console.log();
   await contract.deployed();
   console.log('Contract deployed');
   console.log(`${name}=${contract.address}`);
   console.log(`export ${name}=${contract.address}`);
-  
+
   const argsPath = `scripts/deploys/${network.name}/deploymentArgs/${contract.address}.js`;
   const verifyCommand = `yarn hardhat verify --network ${network.name} ${contract.address} --constructor-args ${argsPath}`;
   ensureDirectoryExistence(argsPath);
@@ -525,7 +530,7 @@ export async function deployAndMine<
   contents += `\n// ${verifyCommand}`;
   contents += `\nmodule.exports = ${renderedArgs};`;
   fs.writeFileSync(argsPath, contents);
-  
+
   console.log(verifyCommand);
   console.log('********************\n');
 
@@ -548,12 +553,19 @@ export function expectAddressWithPrivateKey() {
     );
   }
 
-  if (network.name == 'polygonMumbai' && !process.env.MUMBAI_ADDRESS_PRIVATE_KEY) {
-    throw new Error("Missing environment variable MUMBAI_ADDRESS_PRIVATE_KEY. A mumbai address private key with eth is required to deploy/manage contracts");
+  if (
+    network.name == 'polygonMumbai' &&
+    !process.env.MUMBAI_ADDRESS_PRIVATE_KEY
+  ) {
+    throw new Error(
+      'Missing environment variable MUMBAI_ADDRESS_PRIVATE_KEY. A mumbai address private key with eth is required to deploy/manage contracts'
+    );
   }
 
   if (network.name == 'sepolia' && !process.env.SEPOLIA_ADDRESS_PRIVATE_KEY) {
-    throw new Error("Missing environment variable SEPOLIA_ADDRESS_PRIVATE_KEY. A mumbai address private key with eth is required to deploy/manage contracts");
+    throw new Error(
+      'Missing environment variable SEPOLIA_ADDRESS_PRIVATE_KEY. A mumbai address private key with eth is required to deploy/manage contracts'
+    );
   }
 }
 
@@ -624,14 +636,23 @@ export async function waitForMaxGas(
   return currentGasPrice;
 }
 
-export async function setExplicitAccess(contract: Contract, allowedCaller: string, fnNames: string[], value: boolean) {
-    const access: ITempleElevatedAccess.ExplicitAccessStruct[] = fnNames.map(fn => {
-        return {
-            fnSelector: contract.interface.getSighash(contract.interface.getFunction(fn)),
-            allowed: value
-        }
-    });
-    return await mine(contract.setExplicitAccess(allowedCaller, access));
+export async function setExplicitAccess(
+  contract: Contract,
+  allowedCaller: string,
+  fnNames: string[],
+  value: boolean
+) {
+  const access: ITempleElevatedAccess.ExplicitAccessStruct[] = fnNames.map(
+    (fn) => {
+      return {
+        fnSelector: contract.interface.getSighash(
+          contract.interface.getFunction(fn)
+        ),
+        allowed: value,
+      };
+    }
+  );
+  return await mine(contract.setExplicitAccess(allowedCaller, access));
 }
 
 const { AddressZero } = ethers.constants;
