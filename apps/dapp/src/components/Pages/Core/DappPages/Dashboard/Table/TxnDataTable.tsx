@@ -18,14 +18,7 @@ type Props = {
   dataLoading: boolean;
 };
 
-const tableHeaders = [
-  "Type",
-  "Date",
-  "Debt Token",
-  "Borrow",
-  "Repay",
-  "Tx Hash"
-];
+const tableHeaders = ['Type', 'Date', 'Debt Token', 'Borrow', 'Repay', 'Tx Hash'];
 
 export const TxnDataTable = (props: Props) => {
   const { dataSubset, dataLoading } = props;
@@ -33,20 +26,32 @@ export const TxnDataTable = (props: Props) => {
     <DataTable>
       <thead>
         <tr>
-          {tableHeaders.map((t,i) => <TableHeader key={i}>{t}</TableHeader>)}
+          {tableHeaders.map((t, i) => (
+            <TableHeader key={i}>{t}</TableHeader>
+          ))}
         </tr>
       </thead>
       <tbody>
         {dataLoading ? (
-          [...Array(3)].map((_, index) => ( // Adds 3 loading rows
-            <DataRow key={index}>
-              {[...Array(tableHeaders.length)].map((_, i) => ( // Adds 5 loading cells, same no of table headers 
-                <DataCell key={i}>
-                  <LoadingText value={loading()} />
-                </DataCell>
-              ))}
-            </DataRow>
-          ))
+          [...Array(3)].map(
+            (
+              _,
+              index // Adds 3 loading rows
+            ) => (
+              <DataRow key={index}>
+                {[...Array(tableHeaders.length)].map(
+                  (
+                    _,
+                    i // Adds x no of loading cells, same as no of table headers
+                  ) => (
+                    <DataCell key={i}>
+                      <LoadingText value={loading()} />
+                    </DataCell>
+                  )
+                )}
+              </DataRow>
+            )
+          )
         ) : !dataSubset || dataSubset.length === 0 ? (
           <DataRow>
             <DataCell>No data available</DataCell>
@@ -59,7 +64,11 @@ export const TxnDataTable = (props: Props) => {
               <DataCell>{row.dToken}</DataCell>
               <DataCell>{row.borrow}</DataCell>
               <DataCell>{row.repay}</DataCell>
-              <DataCell><LinkStyled href={`${env.etherscan}/tx/${row.txHash}`} target='_blank'>{row.txHash.slice(0, 12) + '...'}</LinkStyled></DataCell>
+              <DataCell>
+                <LinkStyled href={`${env.etherscan}/tx/${row.txHash}`} target="_blank">
+                  {row.txHash.slice(0, 12) + '...'}
+                </LinkStyled>
+              </DataCell>
             </DataRow>
           ))
         )}
@@ -71,6 +80,7 @@ export const TxnDataTable = (props: Props) => {
 const TableHeader = styled.th`
   text-align: left;
   padding: 8px;
+  cursor: pointer;
 `;
 
 const DataTable = styled.table`

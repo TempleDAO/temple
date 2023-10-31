@@ -1,3 +1,4 @@
+import { CSSProperties } from 'react';
 import Select from 'react-select';
 import { theme } from 'styles/theme';
 
@@ -16,6 +17,8 @@ export interface SelectTempleDaoProps {
   // use to limit the number of elements shown in the menu at anytime
   maxMenuItems?: number;
   isSearchable?: boolean;
+  width?: string;
+  fontSize?: string;
 }
 
 /**
@@ -58,6 +61,7 @@ export const InputSelect = (props: SelectTempleDaoProps) => {
           cursor: 'pointer',
           height: selectHeight,
           zIndex: 2, // place it above the menu 👇
+          width: props.width,
         }),
         menu: (base, state) => ({
           ...base,
@@ -80,6 +84,7 @@ export const InputSelect = (props: SelectTempleDaoProps) => {
           height: selectHeight,
           borderBottom: `0.0625rem solid ${theme.palette.brand}`,
           fontWeight: 'bold',
+          fontSize: props.fontSize,
           color: theme.palette.brandLight,
         }),
         indicatorSeparator: () => ({
@@ -92,7 +97,7 @@ export const InputSelect = (props: SelectTempleDaoProps) => {
           textAlign: 'center',
           width: '100%',
           fontWeight: 'bold',
-          fontSize: '1.25rem',
+          fontSize: props.fontSize ?? '1.25rem',
           color: theme.palette.brandLight,
         }),
         valueContainer: (base) => ({

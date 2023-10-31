@@ -1,6 +1,7 @@
 import { Dispatch, SetStateAction } from 'react';
 import styled from 'styled-components';
 import { PageRangeSelector } from './PageRangeSelector';
+import { InputSelect } from 'components/InputSelect/InputSelect';
 
 type PaginationControlProps = {
   currentPage: number;
@@ -41,18 +42,13 @@ export const PaginationControl = (props: PaginationControlProps) => {
       <PageLink onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages}>
         Last
       </PageLink>
-      <PageLink>
-        <Select
-          value={dropdownOptions.filter((v) => v.value === rowsPerPage)[0].value}
-          onChange={(e) => setRowsPerPage(Number(e.currentTarget.value))}
-        >
-          {dropdownOptions.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </Select>
-      </PageLink>
+      <InputSelect
+        onChange={(e:DropdownOptionsType) => setRowsPerPage(e.value)}
+        options={dropdownOptions}
+        defaultValue={dropdownOptions.find(o => o.value === rowsPerPage)}
+        width='6rem'
+        fontSize='0.68rem'
+      />
     </PaginationContainer>
   );
 };
@@ -78,13 +74,4 @@ export const PageLink = styled.button<PageLinkProps>`
   background: none;
   box-shadow: none;
   border-radius: 0px;
-`;
-
-const Select = styled.select`
-  ${({ theme }) => theme.typography.body}
-  border: 1px solid ${({ theme }) => theme.palette.brand};
-  padding: 0.2rem;
-  background: none;
-  color: #fff;
-  font-size: 0.8rem;
 `;

@@ -1,5 +1,5 @@
 import { Dispatch, SetStateAction } from 'react';
-import { useRangePagination } from '../../../../../../../hooks/use-range-pagination';
+import { useRangePagination } from 'hooks/use-range-pagination';
 import { PageLink } from '.';
 import styled from 'styled-components';
 
