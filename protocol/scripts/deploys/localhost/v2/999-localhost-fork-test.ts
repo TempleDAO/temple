@@ -200,26 +200,26 @@ async function main() {
    * has been executed.
    */
   {
-    // Core executor & rescuer accept their new roles on trv
+    // Core executor accept their new roles on trv
     await acceptOwnershipCore(TEMPLE_V2_ADDRESSES, TEMPLE_V2_INSTANCES.TREASURY_RESERVES_VAULT.INSTANCE);
     
-    // Core executor & rescuer accept their new roles on tlc
+    // Core executor accept their new roles on tlc
     await acceptOwnershipCore(TEMPLE_V2_ADDRESSES, TEMPLE_V2_INSTANCES.TEMPLE_LINE_OF_CREDIT.INSTANCE);
     
-    // DSR strategy executor & rescuer accept their new roles
-    await acceptExecutor(TEMPLE_V2_INSTANCES.STRATEGIES.DSR_BASE_STRATEGY.INSTANCE, TEMPLE_V2_ADDRESSES.STRATEGIES.DSR_BASE_STRATEGY.EXECUTOR_MSIG);
+    // DSR strategy executor accept their new roles
+    await acceptExecutor(TEMPLE_V2_INSTANCES.STRATEGIES.DSR_BASE_STRATEGY.INSTANCE, TEMPLE_V2_ADDRESSES.CORE.EXECUTOR_MSIG);
         
-    // Temple base strategy executor & rescuer accept their new roles
-    await acceptExecutor(TEMPLE_V2_INSTANCES.STRATEGIES.TEMPLE_BASE_STRATEGY.INSTANCE, TEMPLE_V2_ADDRESSES.STRATEGIES.TEMPLE_BASE_STRATEGY.EXECUTOR_MSIG);
+    // Temple base strategy executor accept their new roles
+    await acceptExecutor(TEMPLE_V2_INSTANCES.STRATEGIES.TEMPLE_BASE_STRATEGY.INSTANCE, TEMPLE_V2_ADDRESSES.CORE.EXECUTOR_MSIG);
     
-    // TLC strategy executor & rescuer accept their new roles
-    await acceptExecutor(TEMPLE_V2_INSTANCES.STRATEGIES.TLC_STRATEGY.INSTANCE, TEMPLE_V2_ADDRESSES.STRATEGIES.TLC_STRATEGY.EXECUTOR_MSIG);
+    // TLC strategy executor accept their new roles
+    await acceptExecutor(TEMPLE_V2_INSTANCES.STRATEGIES.TLC_STRATEGY.INSTANCE, TEMPLE_V2_ADDRESSES.CORE.EXECUTOR_MSIG);
     
-    // Gnosis1 strategy executor & rescuer accept their new roles
-    // await acceptExecutorAndRescuer(TEMPLE_V2_INSTANCES.STRATEGIES.GNOSIS_SAFE_STRATEGY_TEMPLATE.INSTANCE, TEMPLE_V2_ADDRESSES.STRATEGIES.GNOSIS_SAFE_STRATEGY_TEMPLATE.EXECUTOR_MSIG, TEMPLE_V2_ADDRESSES.STRATEGIES.GNOSIS_SAFE_STRATEGY_TEMPLATE.RESCUER_MSIG);
+    // Gnosis1 strategy executor accept their new roles
+    // await acceptExecutor(TEMPLE_V2_INSTANCES.STRATEGIES.GNOSIS_SAFE_STRATEGY_TEMPLATE.INSTANCE, TEMPLE_V2_ADDRESSES.CORE.EXECUTOR_MSIG);
     
-    // Ramos strategy executor & rescuer accept their new roles
-    await acceptExecutor(TEMPLE_V2_INSTANCES.STRATEGIES.RAMOS_STRATEGY.INSTANCE, TEMPLE_V2_ADDRESSES.STRATEGIES.RAMOS_STRATEGY.EXECUTOR_MSIG);
+    // Ramos strategy executor accept their new roles
+    await acceptExecutor(TEMPLE_V2_INSTANCES.STRATEGIES.RAMOS_STRATEGY.INSTANCE, TEMPLE_V2_ADDRESSES.CORE.EXECUTOR_MSIG);
   }
 
   // /* Recovery gnosys1 strategy */

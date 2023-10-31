@@ -1,0 +1,7 @@
+// mainnet: CORE.GNOSIS_SAFE_GUARD=0x421D1571f47614670A4D182E22628DFe41c3d64B
+// yarn hardhat verify --network mainnet 0x421D1571f47614670A4D182E22628DFe41c3d64B --constructor-args scripts/deploys/mainnet/deploymentArgs/0x421D1571f47614670A4D182E22628DFe41c3d64B.js
+module.exports = [
+  "0x9f90430179D9b67341BFa50559bc7B8E35629f1b",
+  "0xb1E8AB0a81AaDf632a653E46Caeda1593d71d143",
+  3
+];

@@ -23,7 +23,7 @@ contract RamosStrategy  is AbstractStrategy, IRamosTokenVault {
     using SafeERC20 for IERC20;
     using SafeERC20 for ITempleERC20Token;
     
-    string private constant VERSION = "1.0.0";
+    string private constant VERSION = "1.0.1";
 
     /**
      * @notice The RAMOS contract used to manage the TPI
@@ -145,12 +145,16 @@ contract RamosStrategy  is AbstractStrategy, IRamosTokenVault {
         AssetBalance[] memory assetBalances
     ) {
         // get RAMOS's quote token balance
-        (,, uint256 quoteTokenBalance) = ramos.positions();
+        (, uint256 templeTokenBalance, uint256 quoteTokenBalance) = ramos.positions();
 
-        assetBalances = new AssetBalance[](1);
+        assetBalances = new AssetBalance[](2);
         assetBalances[0] = AssetBalance({
             asset: address(quoteToken),
             balance: quoteTokenBalance
+        });
+        assetBalances[1] = AssetBalance({
+            asset: address(templeToken),
+            balance: templeTokenBalance
         });
     }
 
