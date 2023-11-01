@@ -2,20 +2,20 @@ import { useMediaQuery } from 'react-responsive';
 import { Outlet } from 'react-router-dom';
 
 import styled from 'styled-components';
-import { queryPhone, tabletAndAbove } from 'styles/breakpoints';
+import { queryMinTablet, tabletAndAbove } from 'styles/breakpoints';
 import Footer from './Footer';
 import LeftNav from './Nav/LeftNav';
 import MobileNav from './Nav/MobileNav';
 
 const V2Layout = () => {
-  const isDesktop = useMediaQuery({
-    query: queryPhone,
+  const isTabletOrAbove = useMediaQuery({
+    query: queryMinTablet,
   });
 
   return (
     <ParentContainer>
       <MainContainer>
-        {isDesktop ? <LeftNav /> : <MobileNav />}
+        {isTabletOrAbove ? <LeftNav /> : <MobileNav />}
         <Content>
           <Outlet />
         </Content>
