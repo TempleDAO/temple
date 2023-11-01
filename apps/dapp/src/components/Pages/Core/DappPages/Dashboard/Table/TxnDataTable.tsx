@@ -28,17 +28,16 @@ export const TxnDataTable = (props: Props) => {
   return (
     <DataTable>
       <thead>
-        <tr>
+        <HeaderRow>
           {tableHeaders.map((h, i) => (
             <TableHeader key={i} onClick={() => updateTableHeaders(h)}>
-              {h.name}
-              {h.orderDesc !== undefined && <ArrowButtonUpDown 
-                clicked={h.orderDesc} 
-                onClick={() => updateTableHeaders(h)}
-              />}
+              <InnerDataRow>
+                {h.name}
+                {h.orderDesc !== undefined ? <ArrowButtonUpDown clicked={h.orderDesc} /> : <EmptySpace />}
+              </InnerDataRow>
             </TableHeader>
           ))}
-        </tr>
+        </HeaderRow>
       </thead>
       <tbody>
         {dataLoading ? (
@@ -87,9 +86,23 @@ export const TxnDataTable = (props: Props) => {
 };
 
 const TableHeader = styled.th`
+  vertical-align: top;
   text-align: left;
   padding: 8px;
   cursor: pointer;
+`;
+
+const HeaderRow = styled.tr`
+  overflow: hidden;
+  white-space: nowrap;
+`;
+
+const InnerDataRow = styled.div`
+  display: flex;
+`;
+
+const EmptySpace = styled.p`
+  width: 21px;
 `;
 
 const DataTable = styled.table`
@@ -98,6 +111,8 @@ const DataTable = styled.table`
 `;
 
 const DataRow = styled.tr`
+  overflow: hidden;
+  white-space: nowrap;
   border-top: 1px solid ${({ theme }) => theme.palette.brand};
   border-bottom: 1px solid ${({ theme }) => theme.palette.brand};
 `;

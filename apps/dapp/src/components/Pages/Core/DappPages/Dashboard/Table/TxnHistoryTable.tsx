@@ -47,13 +47,17 @@ const TxnHistoryTable = ({ dashboardType, filter }: Props) => {
     },
   ]);
 
-  const updateTableHeaders = (currentHeader: TxHistoryTableHeader) => setTableHeaders(prevState => {
-    const newState = prevState.map((prevHeader)=>{
-      if(prevHeader.name == currentHeader.name){
-        return { ...prevHeader, orderDesc: !prevHeader.orderDesc };
+  const updateTableHeaders = (clickedHeader: TxHistoryTableHeader) => setTableHeaders(prevState => {
+    const newState = prevState.map((prevStateHeader)=>{
+      // if clickedHeader is Borrow or Repay, share the orderBy state. This behaviour is because both Borrow & Repay amounts
+      // share the same subgraph property. See how 'const dataToTable' is initialized below
+      if ((clickedHeader.name === 'Borrow' || clickedHeader.name === 'Repay') && (prevStateHeader.name === 'Borrow' || prevStateHeader.name === 'Repay')){
+        return { ...prevStateHeader, orderDesc: !prevStateHeader.orderDesc};
+      } else if(prevStateHeader.name === clickedHeader.name){
+        return { ...prevStateHeader, orderDesc: !prevStateHeader.orderDesc };
       }
       else {
-        return { ...prevHeader, orderDesc: undefined};
+        return { ...prevStateHeader, orderDesc: undefined};
       }
     });
     return newState;
@@ -86,13 +90,13 @@ const TxnHistoryTable = ({ dashboardType, filter }: Props) => {
     txHistory.refetch();
   }, [currentPage, rowsPerPage, filter, dashboardType, tableHeaders])
 
-  const isLoading = pagDefault.isLoading || pagDefault.isFetching || txHistory.isLoading || txHistory.isFetching;
+  const isLoading = pagDefault.isLoading || txHistory.isLoading;
 
   // Fetch strategies tx data
   const dataToTable = txHistory.data?.map((tx) => {
     const amount = Number(Number(tx.amount).toFixed(2));
     return {
-      type: tx.type,
+      type: tx.strategy.name,
       date: format(new Date(Number(tx.timestamp) * 1000), 'yyyy-MM-dd H:mm:ss O'),
       dToken: tx.token.symbol,
       borrow: tx.kind === 'Borrow' ? amount : 0,
