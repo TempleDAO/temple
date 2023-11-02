@@ -15,11 +15,9 @@ import {
   RebalanceUp,
   WithdrawStable,
 } from './components';
-import { limitInput, handleBlur } from './helpers';
 import { TransactionSettingsModal } from 'components/TransactionSettingsModal/TransactionSettingsModal';
 import { useState } from 'react';
 import environmentConfig from 'constants/env';
-import { Input } from 'components/Pages/Core/NewUI/HomeInput';
 
 const Container = styled.div`
   display: grid;
@@ -40,7 +38,6 @@ const RamosAdmin = () => {
   const {
     tpf,
     templePrice,
-    percentageOfGapToClose,
     rebalanceUpAmounts,
     rebalanceDownAmounts,
     depositStableAmounts,
@@ -49,7 +46,6 @@ const RamosAdmin = () => {
     createJoinPoolRequest,
     createExitPoolRequest,
     createDepositAndStakeRequest,
-    setPercentageOfGapToClose,
     setSlippageTolerance,
     calculateRecommendedAmounts,
   } = useRamosAdmin();
@@ -106,7 +102,7 @@ const RamosAdmin = () => {
       <div>
         <p>
           RAMOS:{' '}
-          <a href={`https://etherscan.io/address/${ramosAddress}`} target="_blank">
+          <a href={`https://etherscan.io/address/${ramosAddress}`} target="_blank" rel="noreferrer">
             {ramosAddress}
           </a>
         </p>
@@ -120,19 +116,6 @@ const RamosAdmin = () => {
         </p>
       </Container>
       <Container>
-        <Content>
-          <p>Percentage of gap to close: </p>
-          <Input
-            value={percentageOfGapToClose}
-            small
-            max={100}
-            suffix="%"
-            handleChange={(e: string) => {
-              setPercentageOfGapToClose(limitInput(e));
-            }}
-            onBlur={() => setPercentageOfGapToClose(handleBlur(percentageOfGapToClose ?? 100, 0, 100))}
-          />
-        </Content>
         <Content>
           <Button isSmall onClick={calculateRecommendedAmounts} label="RECALCULATE" />
           <Button isSmall onClick={() => setIsTxSettingsOpen(true)} label="TRANSACTION SETTINGS" />

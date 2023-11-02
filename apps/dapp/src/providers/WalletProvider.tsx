@@ -49,7 +49,7 @@ const INITIAL_STATE: WalletState = {
 
 const WalletContext = createContext<WalletState>(INITIAL_STATE);
 
-export const WalletProvider = (props: PropsWithChildren<{}>) => {
+export const WalletProvider = (props: PropsWithChildren<object>) => {
   const { children } = props;
 
   const [{ wallet, connecting }] = useConnectWallet();

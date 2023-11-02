@@ -51,20 +51,21 @@ export function useRamosAdmin() {
   const [slippageTolerance, setSlippageTolerance] = useState(0.5);
 
   const isConnected =
-    ramos &&
+    ramos !== undefined &&
     tokens.stable.balance.gt(DBN_ZERO) &&
     tokens.temple.balance.gt(DBN_ZERO) &&
     tokens.temple.address !== '' &&
     tokens.stable.address !== '' &&
-    maxRebalanceAmounts &&
-    signer &&
-    poolId &&
-    balancerHelpers &&
+    maxRebalanceAmounts !== undefined &&
+    signer !== undefined &&
+    poolId !== undefined &&
+    balancerHelpers !== undefined &&
     tpf &&
     templePrice &&
     templePrice.gt(DBN_ZERO) &&
     percentageBounds &&
-    bptToken;
+    bptToken !== undefined;
+
 
   // outputs
   const [rebalanceUpAmounts, setRebalanceUpAmounts] = useState<{ bptIn: BigNumber; amountOut: BigNumber }>();
@@ -80,7 +81,7 @@ export function useRamosAdmin() {
         const BALANCER_VAULT_ADDRESS = await RAMOS_CONTRACT.balancerVault();
         const BALANCER_VAULT_CONTRACT = IBalancerVault__factory.connect(BALANCER_VAULT_ADDRESS, signer);
         const BALANCER_HELPERS_CONTRACT = IBalancerHelpers__factory.connect(BALANCER_HELPERS_ADDRESS, signer);
-        // const [tokenAddresses, balances] = await BALANCER_VAULT_CONTRACT.getPoolTokens(POOL_ID);
+        const [tokenAddresses, balances] = await BALANCER_VAULT_CONTRACT.getPoolTokens(POOL_ID);
         const BPT_TOKEN_ADDRESS = await RAMOS_CONTRACT.bptToken();
         const BPT_TOKEN_CONTRACT = new ERC20__factory(signer).attach(BPT_TOKEN_ADDRESS);
         const TPF = await RAMOS_CONTRACT.treasuryPriceIndex(); // should be TPF, not TPI
@@ -102,13 +103,13 @@ export function useRamosAdmin() {
         setBalancerHelpers(BALANCER_HELPERS_CONTRACT);
         setTpf(DecimalBigNumber.fromBN(TPF, 4));
         const tempTokens = { ...tokens };
-        // tokenAddresses.forEach((tokenAddr: any, index: any) => {
-        //   if (isTemple(tokenAddr)) {
-        //     tempTokens.temple = { address: tokenAddr, balance: DecimalBigNumber.fromBN(balances[index], 18) };
-        //   } else {
-        //     tempTokens.stable = { address: tokenAddr, balance: DecimalBigNumber.fromBN(balances[index], 18) };
-        //   }
-        // });
+        tokenAddresses.forEach((tokenAddr: any, index: any) => {
+          if (isTemple(tokenAddr)) {
+            tempTokens.temple = { address: tokenAddr, balance: DecimalBigNumber.fromBN(balances[index], 18) };
+          } else {
+            tempTokens.stable = { address: tokenAddr, balance: DecimalBigNumber.fromBN(balances[index], 18) };
+          }
+        });
         setTokens(tempTokens);
         setBptToken(BPT_TOKEN_CONTRACT);
       }
