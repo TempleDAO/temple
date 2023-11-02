@@ -42,6 +42,8 @@ const RamosAdmin = () => {
     rebalanceDownAmounts,
     depositStableAmounts,
     withdrawStableAmounts,
+    totalAvailableDaiTrv,
+    totalAvailableTempleTrv,
     handleAddLiquidityInput,
     createJoinPoolRequest,
     createExitPoolRequest,
@@ -82,7 +84,7 @@ const RamosAdmin = () => {
     },
   ];
 
-  const ramosAddress = environmentConfig.contracts.ramos;
+  const { ramos: RAMOS_ADDRESS, treasuryReservesVault: TRV_ADDRESS } = environmentConfig.contracts;
 
   return (
     <div>
@@ -99,21 +101,35 @@ const RamosAdmin = () => {
           setSlippageTolerance(settings.slippageTolerance);
         }}
       />
-      <div>
-        <p>
-          RAMOS:{' '}
-          <a href={`https://etherscan.io/address/${ramosAddress}`} target="_blank" rel="noreferrer">
-            {ramosAddress}
-          </a>
-        </p>
-      </div>
       <Container>
-        <p>
-          Current Spot Price: <strong>{templePrice?.formatUnits() ?? <EllipsisLoader />}</strong>
-        </p>
-        <p>
-          Current Treasury Price Index: <strong>{tpf?.formatUnits() ?? <EllipsisLoader />}</strong>
-        </p>
+        <div>
+          <p>
+            RAMOS:{' '}
+            <a href={`https://etherscan.io/address/${RAMOS_ADDRESS}`} target="_blank" rel="noreferrer">
+              {RAMOS_ADDRESS}
+            </a>
+          </p>
+          <p>
+            Current Spot Price: <strong>{templePrice?.formatUnits() ?? <EllipsisLoader />}</strong>
+          </p>
+          <p>
+            Current Treasury Price Index: <strong>{tpf?.formatUnits() ?? <EllipsisLoader />}</strong>
+          </p>
+        </div>
+        <div>
+          <p>
+            TRV:{' '}
+            <a href={`https://etherscan.io/address/${TRV_ADDRESS}`} target="_blank" rel="noreferrer">
+              {TRV_ADDRESS}
+            </a>
+          </p>
+          <p>
+            Total Available Dai: <strong>{totalAvailableDaiTrv ?? <EllipsisLoader />}</strong>
+          </p>
+          <p>
+            Total Available Temple: <strong>{totalAvailableTempleTrv ?? <EllipsisLoader />}</strong>
+          </p>
+        </div>
       </Container>
       <Container>
         <Content>
