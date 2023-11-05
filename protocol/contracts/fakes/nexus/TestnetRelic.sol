@@ -214,7 +214,7 @@ contract TestnetRelic is IRelic, ERC721ACustom, ERC1155Holder {
         if (blacklist) {
             blacklistedAccounts[account] = true;
         } else {
-            if (blacklistedShardsCount[relicId] > 0) { revert CannotBlacklist(relicId); }
+            if (blacklistedShardsCount[relicId] > 0) { revert CannotWhitelist(relicId); }
             blacklistedAccounts[account] = false;
         }
     }
@@ -570,11 +570,6 @@ contract TestnetRelic is IRelic, ERC721ACustom, ERC1155Holder {
         }
         ownerRelics[from].remove(startTokenId);
         ownerRelics[to].add(startTokenId);
-    }
-
-    function getEquippedShardAmount(uint256 relicId, uint256 shardId) external view returns (uint256) {
-        RelicInfo storage relicInfo = relicInfos[relicId];
-        return relicInfo.equippedShards[shardId];
     }
 
     /*

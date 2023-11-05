@@ -23,20 +23,23 @@ interface IRelic is IERC721A {
     event RarityXPThresholdSet(Rarity rarity, uint256 threshold);
     event RarityBaseUriSet(Rarity rarity, string uri);
     event RelicMinterSet(address indexed minter, bool allow);
+    event RelicMinted(address indexed to, uint256 relicId, uint256 enclaveId);
     event ShardSet(address shard);
     event RelicXPSet(uint256 indexed relicId, uint256 xp);
     event ShardsEquipped(address indexed caller, uint256 indexed relicId, uint256[] shardIds, uint256[] amounts);
     event ShardsUnequipped(address indexed recipient, uint256 indexed relicId, uint256[] shardIds, uint256[] amounts);
     event AccountBlacklistSet(address indexed account, bool blacklist, uint256[] shardIds, uint256[] amounts);
+    event AccountBlacklisted(address indexed account, bool blacklist);
     event EnclaveNameSet(uint256 id, string name);
     event NexusCommonSet(address nexusCommon);
+    event ShardBlacklistUpdated(uint256 relicId, uint256 shardId, uint256 amount);
 
     error InvalidParamLength();
     error CallerCannotMint(address msgSender);
     error InvalidRelic(uint256 relicId);
     error InsufficientShardBalance(uint256 actualBalance, uint256 requestedBalance);
     error NotEnoughShardBalance(uint256 equippedBalance, uint256 amount);
-    error CannotBlacklist(uint256 relicId);
+    error CannotWhitelist(uint256 relicId);
     error RelicWithBlacklistedShards();
 
     /*
@@ -229,17 +232,6 @@ interface IRelic is IERC721A {
      * @return uint256 Next token Id
      */
     function nextTokenId() external view returns (uint256);
-
-    /*
-     * @notice Get amount of equipped shards in a relic
-     * @param relicId ID of relic
-     * @param shardId Id of shard
-     * @return Equipped shard amount
-     */
-    function getEquippedShardAmount(
-        uint256 relicId,
-        uint256 shardId)
-     external view returns (uint256);
 
     /*
      * @notice Get Relic Info view

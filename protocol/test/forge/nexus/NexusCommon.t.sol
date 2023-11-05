@@ -6,7 +6,6 @@ import { NexusCommon } from "../../../contracts/nexus/NexusCommon.sol";
 import { CommonEventsAndErrors } from "../../../contracts/common/CommonEventsAndErrors.sol";
 import { Relic } from "../../../contracts/nexus/Relic.sol";
 import { Shard } from "../../../contracts/nexus/Shard.sol";
-import { console } from "forge-std/console.sol";
 
 contract NexusCommonTestBase is TempleTest {
     NexusCommon public nexusCommon;

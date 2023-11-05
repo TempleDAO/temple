@@ -177,9 +177,10 @@ contract Relic is IRelic, ERC721ACustom, ERC1155Holder, ElevatedAccess {
         if (blacklist) {
             blacklistedAccounts[account] = true;
         } else {
-            if (blacklistedShardsCount[relicId] > 0) { revert CannotBlacklist(relicId); }
+            if (blacklistedShardsCount[relicId] > 0) { revert CannotWhitelist(relicId); }
             blacklistedAccounts[account] = false;
         }
+        emit AccountBlacklisted(account, blacklist);
     }
 
     /* 
@@ -217,6 +218,7 @@ contract Relic is IRelic, ERC721ACustom, ERC1155Holder, ElevatedAccess {
                 revert NotEnoughShardBalance(equippedShards[shardId], blacklistedRelicBalance);
             }
             blacklistedRelic[shardId] = blacklistedRelicBalance;
+            emit ShardBlacklistUpdated(relicId, shardId, amount);
             shardsCount += amount;
             unchecked {
                 ++i;
@@ -255,6 +257,7 @@ contract Relic is IRelic, ERC721ACustom, ERC1155Holder, ElevatedAccess {
             blacklistedRelicShardsCache = blacklistedRelic[shardId];
             if (amount > blacklistedRelicShardsCache) { revert CommonEventsAndErrors.InvalidParam(); }
             shardsCount += amount;
+            emit ShardBlacklistUpdated(relicId, shardId, amount);
             unchecked {
                 blacklistedRelic[shardId] = blacklistedRelicShardsCache - amount;
                 ++i;
@@ -361,6 +364,8 @@ contract Relic is IRelic, ERC721ACustom, ERC1155Holder, ElevatedAccess {
         // relicInfo.xp = uint128(0);
         
         ownerRelics[to].add(nextTokenId_);
+        /// keeping another event because of extra details in RelicMinted event
+        emit RelicMinted(to, nextTokenId_, enclaveId);
         /// user can mint relic anytime after sacrificing some sacrifice tokens and getting whitelisted. one at a time
         _safeMint(to, PER_MINT_QUANTITY, ZERO_BYTES);
     }
@@ -477,7 +482,7 @@ contract Relic is IRelic, ERC721ACustom, ERC1155Holder, ElevatedAccess {
         // account could be whitelisted or blacklisted. important check is account's Relic shards are blacklisted
         _validateBlacklisting(account, relicId);
         uint256 _length = shardIds.length;
-        if (_length == 0) { revert InvalidParamLength(); }
+        if (_length != amounts.length) { revert InvalidParamLength(); }
         mapping(uint256 => uint256) storage equippedShards = relicInfos[relicId].equippedShards;
         mapping(uint256 => uint256) storage blacklistedShards = blacklistedRelicShards[relicId];
         uint256 shardId;
@@ -544,20 +549,6 @@ contract Relic is IRelic, ERC721ACustom, ERC1155Holder, ElevatedAccess {
         if (equippedShardBalanceIsEqualZero) {
             relicInfos[relicId].shards.remove(shardId);
         }
-    }
-
-    /*
-     * @notice Get amount of equipped shards in a relic
-     * @param relicId ID of relic
-     * @param shardId Id of shard
-     * @return Equipped shard amount
-     */
-    function getEquippedShardAmount(
-        uint256 relicId,
-        uint256 shardId)
-     external override view returns (uint256) {
-        RelicInfo storage relicInfo = relicInfos[relicId];
-        return relicInfo.equippedShards[shardId];
     }
 
     /*
