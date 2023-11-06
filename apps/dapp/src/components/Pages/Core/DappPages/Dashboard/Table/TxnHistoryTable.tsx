@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { TxHistoryFilterType } from '.';
 import { DashboardType } from '../DashboardContent';
 import { format } from 'date-fns';
-import { TxnDataTable } from './TxnDataTable';
+import { TableRow, TxnDataTable } from './TxnDataTable';
 import { PaginationControl } from './PaginationControl';
 import { useTxHistory, useTxHistoryPaginationDefaults } from '../hooks/use-dashboardv2-txHistory';
 
@@ -12,8 +12,17 @@ type Props = {
   filter: TxHistoryFilterType;
 };
 
+export enum TableHeaders {
+  Date = 'Date',
+  Type = 'Type',
+  Strategy = 'Strategy',
+  Token = 'Token',
+  Amount = 'Amount',
+  TxHash = 'Tx Hash',
+}
+
 export type TxHistoryTableHeader = {
-  name: 'Type' | 'Date' | 'Debt Token' | 'Borrow' | 'Repay' | 'Tx Hash';
+  name: TableHeaders;
   orderDesc?: boolean; 
 }
 
@@ -22,38 +31,34 @@ const TxnHistoryTable = ({ dashboardType, filter }: Props) => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [tableHeaders, setTableHeaders] = useState<TxHistoryTableHeader[]>([
     {
-      name: 'Type',
-      orderDesc: undefined,
-    },
-    {
-      name: 'Date',
+      name: TableHeaders.Date,
       orderDesc: true,
     },
     {
-      name: 'Debt Token',
+      name: TableHeaders.Type,
       orderDesc: undefined,
     },
     {
-      name: 'Borrow',
+      name: TableHeaders.Strategy,
       orderDesc: undefined,
     },
     {
-      name: 'Repay',
+      name: TableHeaders.Token,
       orderDesc: undefined,
     },
     {
-      name: 'Tx Hash',
+      name: TableHeaders.Amount,
+      orderDesc: undefined,
+    },
+    {
+      name: TableHeaders.TxHash,
       orderDesc: undefined,
     },
   ]);
 
   const updateTableHeaders = (clickedHeader: TxHistoryTableHeader) => setTableHeaders(prevState => {
     const newState = prevState.map((prevStateHeader)=>{
-      // if clickedHeader is Borrow or Repay, share the orderBy state. This behaviour is because both Borrow & Repay amounts
-      // share the same subgraph property. See how 'const dataToTable' is initialized below
-      if ((clickedHeader.name === 'Borrow' || clickedHeader.name === 'Repay') && (prevStateHeader.name === 'Borrow' || prevStateHeader.name === 'Repay')){
-        return { ...prevStateHeader, orderDesc: !prevStateHeader.orderDesc};
-      } else if(prevStateHeader.name === clickedHeader.name){
+      if(prevStateHeader.name === clickedHeader.name){
         return { ...prevStateHeader, orderDesc: !prevStateHeader.orderDesc };
       }
       else {
@@ -93,17 +98,17 @@ const TxnHistoryTable = ({ dashboardType, filter }: Props) => {
   const isLoading = pagDefault.isLoading || txHistory.isLoading;
 
   // Fetch strategies tx data
-  const dataToTable = txHistory.data?.map((tx) => {
-    const amount = Number(Number(tx.amount).toFixed(2));
-    return {
-      type: tx.strategy.name,
-      date: format(new Date(Number(tx.timestamp) * 1000), 'yyyy-MM-dd H:mm:ss O'),
-      dToken: tx.token.symbol,
-      borrow: tx.kind === 'Borrow' ? amount : 0,
-      repay: tx.kind === 'Repay' ? amount : 0,
-      txHash: tx.hash,
-    };
-  });
+  const dataToTable: TableRow[] | undefined = txHistory.data?.map((tx) => {
+      const amount = Number(Number(tx.amount).toFixed(2));
+      return {
+        date: format(new Date(Number(tx.timestamp) * 1000), 'yyyy-MM-dd H:mm:ss O'),
+        type: tx.kind,
+        strategy: tx.strategy.name,
+        token: tx.token.symbol,
+        amount: amount,
+        txHash: tx.hash,
+      };
+    });
 
   return (
     <TableContainer>

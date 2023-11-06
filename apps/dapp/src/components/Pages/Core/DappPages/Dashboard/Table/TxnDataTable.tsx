@@ -6,13 +6,18 @@ import { StrategyKey } from '../hooks/use-dashboardv2-metrics';
 import { ArrowButtonUpDown } from 'components/Pages/Ascend/components/Trade/styles';
 import { TxHistoryTableHeader } from './TxnHistoryTable';
 
+export enum TxType {
+  Borrow = 'Borrow',
+  Repay = 'Repay',
+ }
+
 export type TableRow = {
   date: string;
-  dToken: string;
-  borrow: number;
-  repay: number;
+  type: TxType;
+  strategy?: StrategyKey;
+  token: string;
+  amount: number;
   txHash: string;
-  type?: StrategyKey;
 };
 
 type Props = {
@@ -67,11 +72,11 @@ export const TxnDataTable = (props: Props) => {
         ) : (
           dataSubset.map((row, index) => (
             <DataRow key={index}>
-              <DataCell>{row.type}</DataCell>
               <DataCell>{row.date}</DataCell>
-              <DataCell>{row.dToken}</DataCell>
-              <DataCell>{row.borrow}</DataCell>
-              <DataCell>{row.repay}</DataCell>
+              <DataCell>{row.type}</DataCell>
+              <DataCell>{row.strategy}</DataCell>
+              <DataCell>{row.token}</DataCell>
+              <DataCell>{row.amount}</DataCell>
               <DataCell>
                 <LinkStyled href={`${env.etherscan}/tx/${row.txHash}`} target="_blank">
                   {row.txHash.slice(0, 12) + '...'}

@@ -5,7 +5,8 @@ import { useApiQuery, getQueryKey } from 'hooks/api/use-react-query';
 import { TxHistoryFilterType } from '../Table';
 import { DashboardType } from '../DashboardContent';
 import { StrategyKey } from './use-dashboardv2-metrics';
-import { TxHistoryTableHeader } from '../Table/TxnHistoryTable';
+import { TableHeaders, TxHistoryTableHeader } from '../Table/TxnHistoryTable';
+import { TxType } from '../Table/TxnDataTable';
 
 type Transactions = {
   hash: string;
@@ -23,7 +24,7 @@ type Transactions = {
   id: string;
   from: string;
   to: string;
-  kind: 'Repay' | 'Borrow';
+  kind: TxType;
   timestamp: string;
 }[];
 
@@ -89,16 +90,17 @@ const dashboardTypeToStrategyKey = (dType: DashboardType): StrategyKey => {
 const getTableHeaderOrderByType = (tableHeader?: TxHistoryTableHeader) => {
   if (!tableHeader) return 'timestamp';
   switch(tableHeader.name){
-    case 'Type':
-      return 'strategy__name';
     case 'Date':
       return 'timestamp';
-    case 'Debt Token':
+    case TableHeaders.Strategy:
+      return 'strategy__name';
+    case TableHeaders.Type:
+      return 'kind';
+    case TableHeaders.Token:
       return 'token__name';
-    case 'Borrow':
-    case 'Repay':
+    case TableHeaders.Amount:
       return 'amount';
-    case 'Tx Hash':
+    case TableHeaders.TxHash:
       return 'hash';
   }
 }
