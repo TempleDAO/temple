@@ -1,3 +1,4 @@
+import { ReactNode } from 'react';
 import styled, { css } from 'styled-components';
 
 import { tabletAndAbove } from 'styles/breakpoints';
@@ -15,11 +16,9 @@ import {
   RebalanceUp,
   WithdrawStable,
 } from './components';
-import { limitInput, handleBlur } from './helpers';
 import { TransactionSettingsModal } from 'components/TransactionSettingsModal/TransactionSettingsModal';
 import { useState } from 'react';
 import environmentConfig from 'constants/env';
-import { Input } from 'components/Pages/Core/NewUI/HomeInput';
 
 const Container = styled.div`
   display: grid;
@@ -40,40 +39,28 @@ const RamosAdmin = () => {
   const {
     tpf,
     templePrice,
-    percentageOfGapToClose,
     rebalanceUpAmounts,
     rebalanceDownAmounts,
     depositStableAmounts,
     withdrawStableAmounts,
+    totalAvailableDaiTrv,
+    totalAvailableTempleTrv,
+    ramosStrategyVersion,
     handleAddLiquidityInput,
     createJoinPoolRequest,
     createExitPoolRequest,
     createDepositAndStakeRequest,
-    setPercentageOfGapToClose,
     setSlippageTolerance,
     calculateRecommendedAmounts,
   } = useRamosAdmin();
   const [isTxSettingsOpen, setIsTxSettingsOpen] = useState(false);
+  
+  const tpfFormatted = tpf?.formatUnits(5);
+  const templePriceFormatted = templePrice?.formatUnits(5);
+  const totalAvailableDaiTrvFormatted = totalAvailableDaiTrv?.formatUnits(5);
+  const totalAvailableTempleTrvFormatted = totalAvailableTempleTrv?.formatUnits(5);
 
   const tabs = [
-    {
-      label: 'Rebalance',
-      content: (
-        <Container>
-          <RebalanceUp amounts={rebalanceUpAmounts} />
-          <RebalanceDown amounts={rebalanceDownAmounts} />
-        </Container>
-      ),
-    },
-    {
-      label: 'Stable',
-      content: (
-        <Container>
-          <DepositStable amounts={depositStableAmounts} />
-          <WithdrawStable amounts={withdrawStableAmounts} />
-        </Container>
-      ),
-    },
     {
       label: 'Liquidity',
       content: (
@@ -84,9 +71,33 @@ const RamosAdmin = () => {
         </Container>
       ),
     },
+    {
+      label: 'Rebalance',
+      content: (
+        <Container>
+          <RebalanceUp amounts={rebalanceUpAmounts} />
+          <RebalanceDown amounts={rebalanceDownAmounts} />
+          <Button isSmall onClick={calculateRecommendedAmounts} label="RECALCULATE" />
+        </Container>
+      ),
+    },
+    {
+      label: 'Stable',
+      content: (
+        <Container>
+          <DepositStable amounts={depositStableAmounts} />
+          <WithdrawStable amounts={withdrawStableAmounts} />
+          <Button isSmall onClick={calculateRecommendedAmounts} label="RECALCULATE" />
+        </Container>
+      ),
+    },
   ];
 
-  const ramosAddress = environmentConfig.contracts.ramos;
+  const {
+    ramos: RAMOS_ADDRESS,
+    treasuryReservesVault: TRV_ADDRESS,
+    ramosStrategy: RAMOS_STRATEGY,
+  } = environmentConfig.contracts;
 
   return (
     <div>
@@ -103,43 +114,72 @@ const RamosAdmin = () => {
           setSlippageTolerance(settings.slippageTolerance);
         }}
       />
-      <div>
-        <p>
-          RAMOS:{' '}
-          <a href={`https://etherscan.io/address/${ramosAddress}`} target="_blank">
-            {ramosAddress}
-          </a>
-        </p>
-      </div>
       <Container>
-        <p>
-          Current Spot Price: <strong>{templePrice?.formatUnits() ?? <EllipsisLoader />}</strong>
-        </p>
-        <p>
-          Current Treasury Price Index: <strong>{tpf?.formatUnits() ?? <EllipsisLoader />}</strong>
-        </p>
+        <Header
+          alias="RAMOS"
+          contractAddress={RAMOS_ADDRESS}
+          additionalDetails={
+            <>
+              <p>
+                Current Spot Price: <strong>{templePriceFormatted ?? <EllipsisLoader />}</strong>
+              </p>
+              <p>
+                Current Treasury Price Index: <strong>{tpfFormatted ?? <EllipsisLoader />}</strong>
+              </p>
+            </>
+          }
+        />
+        <Header
+          alias="TRV"
+          contractAddress={TRV_ADDRESS}
+          additionalDetails={
+            <>
+              <p>
+                Total Available Dai: <strong>{totalAvailableDaiTrvFormatted ?? <EllipsisLoader />}</strong>
+              </p>
+              <p>
+                Total Available Temple: <strong>{totalAvailableTempleTrvFormatted ?? <EllipsisLoader />}</strong>
+              </p>
+            </>
+          }
+        />
+        <Header
+          alias="RAMOS STRATEGY"
+          contractAddress={RAMOS_STRATEGY}
+          additionalDetails={
+            <p>
+              Version: <strong>{ramosStrategyVersion ?? <EllipsisLoader />}</strong>
+            </p>
+          }
+        />
       </Container>
       <Container>
         <Content>
-          <p>Percentage of gap to close: </p>
-          <Input
-            value={percentageOfGapToClose}
-            small
-            max={100}
-            suffix="%"
-            handleChange={(e: string) => {
-              setPercentageOfGapToClose(limitInput(e));
-            }}
-            onBlur={() => setPercentageOfGapToClose(handleBlur(percentageOfGapToClose ?? 100, 0, 100))}
-          />
-        </Content>
-        <Content>
-          <Button isSmall onClick={calculateRecommendedAmounts} label="RECALCULATE" />
           <Button isSmall onClick={() => setIsTxSettingsOpen(true)} label="TRANSACTION SETTINGS" />
         </Content>
       </Container>
       <br />
       <Tabs tabs={tabs} />
+    </div>
+  );
+};
+
+type Props = {
+  alias: string;
+  contractAddress: string;
+  additionalDetails?: ReactNode;
+};
+const Header = (props: Props) => {
+  const { alias, contractAddress, additionalDetails } = props;
+  return (
+    <div>
+      <p>
+        {alias + ' '}
+        <a href={`https://etherscan.io/address/${contractAddress}`} target="_blank" rel="noreferrer">
+          {contractAddress.slice(0, 6) + '.....' + contractAddress.slice(-6)}
+        </a>
+      </p>
+      {additionalDetails}
     </div>
   );
 };
