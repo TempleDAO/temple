@@ -12,6 +12,12 @@ import {
   IBalancerVault__factory,
   ERC20__factory,
   ERC20,
+  TreasuryReservesVault,
+  TreasuryReservesVault__factory,
+  RamosStrategy,
+  RamosStrategy__factory,
+  BalancerPoolHelper,
+  BalancerPoolHelper__factory,
 } from 'types/typechain';
 
 import {
@@ -30,7 +36,13 @@ import { ZERO } from 'utils/bigNumber';
 import { DBN_TEN_THOUSAND, DBN_ZERO, DecimalBigNumber } from 'utils/DecimalBigNumber';
 
 export function useRamosAdmin() {
-  const { ramos: RAMOS_ADDRESS, balancerHelpers: BALANCER_HELPERS_ADDRESS } = environmentConfig.contracts;
+  const {
+    ramos: RAMOS_ADDRESS,
+    ramosStrategy: RAMOS_STRATEGY_ADDRESS,
+    ramosPoolHelper: RAMOS_POOL_HELPER_ADDRESS,
+    balancerHelpers: BALANCER_HELPERS_ADDRESS,
+    treasuryReservesVault: TRV_ADDRESS,
+  } = environmentConfig.contracts;
 
   //internal state
   const { signer } = useWallet();
@@ -40,31 +52,45 @@ export function useRamosAdmin() {
   });
   const [bptToken, setBptToken] = useState<ERC20>();
   const [ramos, setRamos] = useState<Ramos>();
+  const [ramosPoolHelper, setRamosPoolHelper] = useState<BalancerPoolHelper>();
+  const [balPooltokensOrdered, setBalPooltokensOrdered] = useState<Array<string> | undefined>(undefined);
+  const [ramosStrategy, setRamosStrategy] = useState<RamosStrategy>();
+  const [trv, setTrv] = useState<TreasuryReservesVault>();
   const [balancerHelpers, setBalancerHelpers] = useState<IBalancerHelpers>();
   const [poolId, setPoolId] = useState<string>();
   const [tpf, setTpf] = useState<DecimalBigNumber>();
   const [templePrice, setTemplePrice] = useState<DecimalBigNumber>();
+  const [totalAvailableDaiTrv, setTotalAvailableDaiTrv] = useState<DecimalBigNumber>();
+  const [totalAvailableTempleTrv, setTotalAvailableTempleTrv] = useState<DecimalBigNumber>();
+  const [ramosStrategyVersion, setRamosStrategyVersion] = useState<string>();
   const [percentageOfGapToClose, setPercentageOfGapToClose] = useState(100);
-  const [maxRebalanceAmounts, setMaxRebalanceAmounts] =
-    useState<{ bpt: DecimalBigNumber; stable: DecimalBigNumber; temple: DecimalBigNumber }>();
+  const [maxRebalanceAmounts, setMaxRebalanceAmounts] = useState<{
+    bpt: DecimalBigNumber;
+    stable: DecimalBigNumber;
+    temple: DecimalBigNumber;
+  }>();
   const [percentageBounds, setPercentageBounds] = useState<{ up: DecimalBigNumber; down: DecimalBigNumber }>();
   const [slippageTolerance, setSlippageTolerance] = useState(0.5);
 
   const isConnected =
-    ramos &&
+    ramos !== undefined &&
+    ramosPoolHelper !== undefined &&
+    ramosStrategy !== undefined &&
+    trv !== undefined &&
     tokens.stable.balance.gt(DBN_ZERO) &&
     tokens.temple.balance.gt(DBN_ZERO) &&
     tokens.temple.address !== '' &&
     tokens.stable.address !== '' &&
-    maxRebalanceAmounts &&
-    signer &&
-    poolId &&
-    balancerHelpers &&
+    maxRebalanceAmounts !== undefined &&
+    signer !== undefined &&
+    poolId !== undefined &&
+    balancerHelpers !== undefined &&
     tpf &&
     templePrice &&
     templePrice.gt(DBN_ZERO) &&
     percentageBounds &&
-    bptToken;
+    bptToken !== undefined;
+
 
   // outputs
   const [rebalanceUpAmounts, setRebalanceUpAmounts] = useState<{ bptIn: BigNumber; amountOut: BigNumber }>();
@@ -74,44 +100,49 @@ export function useRamosAdmin() {
 
   useEffect(() => {
     async function setContracts() {
-      if (signer) {
-        const RAMOS_CONTRACT = new Ramos__factory(signer).attach(RAMOS_ADDRESS);
-        const POOL_ID = await RAMOS_CONTRACT.balancerPoolId();
-        const BALANCER_VAULT_ADDRESS = await RAMOS_CONTRACT.balancerVault();
-        const BALANCER_VAULT_CONTRACT = IBalancerVault__factory.connect(BALANCER_VAULT_ADDRESS, signer);
-        const BALANCER_HELPERS_CONTRACT = IBalancerHelpers__factory.connect(BALANCER_HELPERS_ADDRESS, signer);
-        // const [tokenAddresses, balances] = await BALANCER_VAULT_CONTRACT.getPoolTokens(POOL_ID);
-        const BPT_TOKEN_ADDRESS = await RAMOS_CONTRACT.bptToken();
-        const BPT_TOKEN_CONTRACT = new ERC20__factory(signer).attach(BPT_TOKEN_ADDRESS);
-        const TPF = await RAMOS_CONTRACT.treasuryPriceIndex(); // should be TPF, not TPI
-        const MAX_REBALANCE_AMOUNTS = await RAMOS_CONTRACT.maxRebalanceAmounts();
-        const PERCENTAGE_BOUND_LOW = await RAMOS_CONTRACT.rebalancePercentageBoundLow();
-        const PERCENTAGE_BOUND_UP = await RAMOS_CONTRACT.rebalancePercentageBoundUp();
+      if (!signer) return;
+      const RAMOS_CONTRACT = new Ramos__factory(signer).attach(RAMOS_ADDRESS);
+      const RAMOS_POOL_HELPER_CONTRACT = new BalancerPoolHelper__factory(signer).attach(RAMOS_POOL_HELPER_ADDRESS);
+      const RAMOS_STRATEGY_CONTRACT = new RamosStrategy__factory(signer).attach(RAMOS_STRATEGY_ADDRESS);
+      const TRV_CONTRACT = new TreasuryReservesVault__factory(signer).attach(TRV_ADDRESS);
+      const POOL_ID = await RAMOS_CONTRACT.balancerPoolId();
+      const BALANCER_VAULT_ADDRESS = await RAMOS_CONTRACT.balancerVault();
+      const BALANCER_VAULT_CONTRACT = IBalancerVault__factory.connect(BALANCER_VAULT_ADDRESS, signer);
+      const BALANCER_HELPERS_CONTRACT = IBalancerHelpers__factory.connect(BALANCER_HELPERS_ADDRESS, signer);
+      const [tokenAddresses, balances] = await BALANCER_VAULT_CONTRACT.getPoolTokens(POOL_ID);
+      const BPT_TOKEN_ADDRESS = await RAMOS_CONTRACT.bptToken();
+      const BPT_TOKEN_CONTRACT = new ERC20__factory(signer).attach(BPT_TOKEN_ADDRESS);
+      const TPF = await RAMOS_CONTRACT.treasuryPriceIndex(); // should be TPF, not TPI
+      const MAX_REBALANCE_AMOUNTS = await RAMOS_CONTRACT.maxRebalanceAmounts();
+      const PERCENTAGE_BOUND_LOW = await RAMOS_CONTRACT.rebalancePercentageBoundLow();
+      const PERCENTAGE_BOUND_UP = await RAMOS_CONTRACT.rebalancePercentageBoundUp();
 
-        setMaxRebalanceAmounts({
-          temple: DecimalBigNumber.fromBN(MAX_REBALANCE_AMOUNTS.protocolToken, 18),
-          stable: DecimalBigNumber.fromBN(MAX_REBALANCE_AMOUNTS.quoteToken, 18),
-          bpt: DecimalBigNumber.fromBN(MAX_REBALANCE_AMOUNTS.bpt, 18),
-        });
-        setPercentageBounds({
-          down: DecimalBigNumber.fromBN(PERCENTAGE_BOUND_LOW, 0),
-          up: DecimalBigNumber.fromBN(PERCENTAGE_BOUND_UP, 0),
-        });
-        setRamos(RAMOS_CONTRACT);
-        setPoolId(POOL_ID);
-        setBalancerHelpers(BALANCER_HELPERS_CONTRACT);
-        setTpf(DecimalBigNumber.fromBN(TPF, 4));
-        const tempTokens = { ...tokens };
-        // tokenAddresses.forEach((tokenAddr: any, index: any) => {
-        //   if (isTemple(tokenAddr)) {
-        //     tempTokens.temple = { address: tokenAddr, balance: DecimalBigNumber.fromBN(balances[index], 18) };
-        //   } else {
-        //     tempTokens.stable = { address: tokenAddr, balance: DecimalBigNumber.fromBN(balances[index], 18) };
-        //   }
-        // });
-        setTokens(tempTokens);
-        setBptToken(BPT_TOKEN_CONTRACT);
-      }
+      setMaxRebalanceAmounts({
+        temple: DecimalBigNumber.fromBN(MAX_REBALANCE_AMOUNTS.protocolToken, 18),
+        stable: DecimalBigNumber.fromBN(MAX_REBALANCE_AMOUNTS.quoteToken, 18),
+        bpt: DecimalBigNumber.fromBN(MAX_REBALANCE_AMOUNTS.bpt, 18),
+      });
+      setPercentageBounds({
+        down: DecimalBigNumber.fromBN(PERCENTAGE_BOUND_LOW, 0),
+        up: DecimalBigNumber.fromBN(PERCENTAGE_BOUND_UP, 0),
+      });
+      setRamos(RAMOS_CONTRACT);
+      setRamosPoolHelper(RAMOS_POOL_HELPER_CONTRACT);
+      setRamosStrategy(RAMOS_STRATEGY_CONTRACT);
+      setTrv(TRV_CONTRACT);
+      setPoolId(POOL_ID);
+      setBalancerHelpers(BALANCER_HELPERS_CONTRACT);
+      setTpf(DecimalBigNumber.fromBN(TPF, 18));
+      const tempTokens = { ...tokens };
+      tokenAddresses.forEach((tokenAddr: any, index: any) => {
+        if (isTemple(tokenAddr)) {
+          tempTokens.temple = { address: tokenAddr, balance: DecimalBigNumber.fromBN(balances[index], 18) };
+        } else {
+          tempTokens.stable = { address: tokenAddr, balance: DecimalBigNumber.fromBN(balances[index], 18) };
+        }
+      });
+      setTokens(tempTokens);
+      setBptToken(BPT_TOKEN_CONTRACT);
     }
     setContracts();
   }, [signer]);
@@ -123,9 +154,40 @@ export function useRamosAdmin() {
   }, [tokens]);
 
   useEffect(() => {
+    // set treasury reserve vault total dai/temple available
+    const setTrvTotalAvailable = async () => {
+      if (!isConnected) return;
+      const tDai = await trv.totalAvailable(tokens.stable.address);
+      const tTemple = await trv.totalAvailable(tokens.temple.address);
+      setTotalAvailableDaiTrv(DecimalBigNumber.fromBN(tDai, 18));
+      setTotalAvailableTempleTrv(DecimalBigNumber.fromBN(tTemple, 18));
+    };
+    if (isConnected) setTrvTotalAvailable();
+  }, [tokens, trv, isConnected]);
+
+  useEffect(() => {
     const setInitAmounts = async () => await calculateRecommendedAmounts();
     setInitAmounts();
-  }, [isConnected]);
+  }, [isConnected, balPooltokensOrdered]);
+
+  useEffect(() => {
+    const setInitAmounts = async () => await calculateRecommendedAmounts();
+    const initProtocolTokenIndex = async () => {
+      if (!isConnected) return;
+      const protIndexBal = await ramosPoolHelper.protocolTokenIndexInBalancerPool();
+      setBalPooltokensOrdered(
+        protIndexBal.toNumber() == 1
+          ? [tokens.stable.address, tokens.temple.address]
+          : [tokens.temple.address, tokens.stable.address]
+      );
+    };
+    const initRamosStrategyVersion = async () => {
+      const rsVersion = await ramosStrategy?.strategyVersion();      setRamosStrategyVersion(rsVersion);
+    }
+    initProtocolTokenIndex();
+    setInitAmounts();
+    initRamosStrategyVersion();
+  }, [isConnected, ramosPoolHelper]);
 
   const handleAddLiquidityInput = async (stableAmount: DecimalBigNumber) => {
     let templeAmount = DBN_ZERO;
@@ -137,8 +199,14 @@ export function useRamosAdmin() {
 
   const createJoinPoolRequest = async (templeAmount: BigNumber, stableAmount: BigNumber) => {
     if (isConnected) {
-      const tokenAddrs = [tokens.temple.address, tokens.stable.address];
-      const initJoinReq = makeJoinRequest(tokenAddrs, [templeAmount, stableAmount]);
+      const proportionalAddLiquidityQuote = await ramosStrategy.callStatic.proportionalAddLiquidityQuote(
+        stableAmount,
+        50
+      );
+      const reqDataQuote = proportionalAddLiquidityQuote.requestData;
+      const tokenAddrs = reqDataQuote.assets;
+
+      const initJoinReq = makeJoinRequest(tokenAddrs, reqDataQuote.maxAmountsIn);
       const { amountsIn, bptOut } = await balancerHelpers.queryJoin(poolId, ramos.address, ramos.address, initJoinReq);
       const joinPoolRequest = makeJoinRequest(tokenAddrs, amountsIn);
       return {
@@ -149,29 +217,27 @@ export function useRamosAdmin() {
   };
 
   const createExitPoolRequest = async (exitAmountBpt: BigNumber) => {
-    if (isConnected) {
-      const tokenAddrs = [tokens.temple.address, tokens.stable.address];
-      const initExitReq = makeExitRequest(
-        tokenAddrs,
-        [ZERO, ZERO],
-        exitAmountBpt,
-        WeightedPoolExitKind.EXACT_BPT_IN_FOR_TOKENS_OUT
-      );
-      const { bptIn, amountsOut } = await balancerHelpers.queryExit(poolId, ramos.address, ramos.address, initExitReq);
+    if (!isConnected || !balPooltokensOrdered) return;
+    const initExitReq = makeExitRequest(
+      balPooltokensOrdered,
+      [ZERO, ZERO],
+      exitAmountBpt,
+      WeightedPoolExitKind.EXACT_BPT_IN_FOR_TOKENS_OUT
+    );
+    const { bptIn, amountsOut } = await balancerHelpers.queryExit(poolId, ramos.address, ramos.address, initExitReq);
 
-      const minAmountsOut = [
-        applySlippage(amountsOut[0], slippageTolerance),
-        applySlippage(amountsOut[1], slippageTolerance),
-      ];
+    const minAmountsOut = [
+      applySlippage(amountsOut[0], slippageTolerance),
+      applySlippage(amountsOut[1], slippageTolerance),
+    ];
 
-      const exitRequest = makeExitRequest(
-        tokenAddrs,
-        minAmountsOut,
-        bptIn,
-        WeightedPoolExitKind.EXACT_BPT_IN_FOR_TOKENS_OUT
-      );
-      return formatExitRequestTuple(exitRequest);
-    }
+    const exitRequest = makeExitRequest(
+      balPooltokensOrdered,
+      minAmountsOut,
+      bptIn,
+      WeightedPoolExitKind.EXACT_BPT_IN_FOR_TOKENS_OUT
+    );
+    return formatExitRequestTuple(exitRequest);
   };
 
   const createDepositAndStakeRequest = async (bptAmountIn: DecimalBigNumber) => {
@@ -186,7 +252,7 @@ export function useRamosAdmin() {
   };
 
   const calculateRebalanceUp = async (bps: DecimalBigNumber) => {
-    if (isConnected && bps.gt(DBN_ZERO)) {
+    if (isConnected && balPooltokensOrdered && bps.gt(DBN_ZERO)) {
       const targetPrice = await calculateTargetPriceUp(templePrice, bps, ramos, percentageOfGapToClose);
 
       const templeBalanceAtTargetPrice = tokens.stable.balance.div(targetPrice, targetPrice.getDecimals());
@@ -196,7 +262,7 @@ export function useRamosAdmin() {
 
       const amountsOut = [templeAmountOut.toBN(18), ZERO];
       const exitRequest = makeExitRequest(
-        [tokens.temple.address, tokens.stable.address],
+        balPooltokensOrdered,
         amountsOut,
         ethers.constants.MaxInt256,
         WeightedPoolExitKind.BPT_IN_FOR_EXACT_TOKENS_OUT
@@ -208,15 +274,14 @@ export function useRamosAdmin() {
   };
 
   const calculateDepositStable = async (bps: DecimalBigNumber) => {
-    if (isConnected && bps.gt(DBN_ZERO)) {
+    if (isConnected && balPooltokensOrdered && bps.gt(DBN_ZERO)) {
       const targetPrice = await calculateTargetPriceUp(templePrice, bps, ramos, percentageOfGapToClose);
-
       const stableAmountAtTargetPrice = tokens.temple.balance.mul(targetPrice);
       let stableAmount = stableAmountAtTargetPrice.sub(tokens.stable.balance);
 
       if (stableAmount.gt(maxRebalanceAmounts.stable)) stableAmount = maxRebalanceAmounts.stable;
       const amountsIn = [ZERO, stableAmount.toBN(18)];
-      const joinPoolRequest = makeJoinRequest([tokens.temple.address, tokens.stable.address], amountsIn);
+      const joinPoolRequest = makeJoinRequest(balPooltokensOrdered, amountsIn);
       const amounts = await balancerHelpers.queryJoin(poolId, ramos.address, ramos.address, joinPoolRequest);
       return {
         amountIn: amounts.amountsIn[1],
@@ -226,88 +291,85 @@ export function useRamosAdmin() {
   };
 
   const calculateRebalanceDown = async (bps: DecimalBigNumber) => {
-    if (isConnected) {
-      const targetPrice = await calculateTargetPriceDown(templePrice, bps, ramos, percentageOfGapToClose);
+    if (!isConnected || !balPooltokensOrdered) return;
+    const targetPrice = await calculateTargetPriceDown(templePrice, bps, ramos, percentageOfGapToClose);
 
-      const templeBalanceAtTargetPrice = tokens.stable.balance.div(targetPrice, 18);
-      let templeAmount = templeBalanceAtTargetPrice.sub(tokens.temple.balance);
+    const templeBalanceAtTargetPrice = tokens.stable.balance.div(targetPrice, 18);
+    let templeAmount = templeBalanceAtTargetPrice.sub(tokens.temple.balance);
 
-      if (templeAmount.gt(maxRebalanceAmounts.temple)) templeAmount = maxRebalanceAmounts.temple;
+    if (templeAmount.gt(maxRebalanceAmounts.temple)) templeAmount = maxRebalanceAmounts.temple;
 
-      const initAmountsIn: BigNumber[] = [templeAmount.toBN(18), ZERO];
-      const joinPoolRequest = makeJoinRequest([tokens.temple.address, tokens.stable.address], initAmountsIn);
-      const { amountsIn, bptOut } = await balancerHelpers.queryJoin(
-        poolId,
-        ramos.address,
-        ramos.address,
-        joinPoolRequest
-      );
+    const initAmountsIn: BigNumber[] = [templeAmount.toBN(18), ZERO];
+    const joinPoolRequest = makeJoinRequest(balPooltokensOrdered, initAmountsIn);
+    const { amountsIn, bptOut } = await balancerHelpers.queryJoin(
+      poolId,
+      ramos.address,
+      ramos.address,
+      joinPoolRequest
+    );
 
-      return {
-        amountIn: amountsIn[0],
-        bptOut: applySlippage(bptOut, slippageTolerance),
-      };
-    }
+    return {
+      amountIn: amountsIn[0],
+      bptOut: applySlippage(bptOut, slippageTolerance),
+    };
   };
 
   const calculateWithdrawStable = async (bps: DecimalBigNumber) => {
-    if (isConnected) {
-      const targetPrice = await calculateTargetPriceDown(templePrice, bps, ramos, percentageOfGapToClose);
+    if (!isConnected || !balPooltokensOrdered) return;
+    const targetPrice = await calculateTargetPriceDown(templePrice, bps, ramos, percentageOfGapToClose);
 
-      const stableBalanceAtTargetPrice = tokens.temple.balance.mul(targetPrice);
-      let stableAmount = tokens.stable.balance.sub(stableBalanceAtTargetPrice);
+    const stableBalanceAtTargetPrice = tokens.temple.balance.mul(targetPrice);
+    let stableAmount = tokens.stable.balance.sub(stableBalanceAtTargetPrice);
 
-      if (stableAmount.gt(maxRebalanceAmounts.stable)) stableAmount = maxRebalanceAmounts.stable;
+    if (stableAmount.gt(maxRebalanceAmounts.stable)) stableAmount = maxRebalanceAmounts.stable;
 
-      const amountsOut = [ZERO, stableAmount.toBN(18)];
-      const exitRequest = makeExitRequest(
-        [tokens.temple.address, tokens.stable.address],
-        amountsOut,
-        ethers.constants.MaxInt256,
-        WeightedPoolExitKind.BPT_IN_FOR_EXACT_TOKENS_OUT
-      );
-      const amounts = await balancerHelpers.queryExit(poolId, ramos.address, ramos.address, exitRequest);
+    const amountsOut = [ZERO, stableAmount.toBN(18)];
+    const exitRequest = makeExitRequest(
+      balPooltokensOrdered,
+      amountsOut,
+      ethers.constants.MaxInt256,
+      WeightedPoolExitKind.BPT_IN_FOR_EXACT_TOKENS_OUT
+    );
+    const amounts = await balancerHelpers.queryExit(poolId, ramos.address, ramos.address, exitRequest);
 
-      return {
-        amountOut: applySlippage(amounts.amountsOut[1], slippageTolerance),
-        bptIn: amounts.bptIn,
-      };
-    }
+    return {
+      amountOut: applySlippage(amounts.amountsOut[1], slippageTolerance),
+      bptIn: amounts.bptIn,
+    };
   };
 
   const calculateRecommendedAmounts = async () => {
-    if (isConnected) {
-      if (templePrice.gt(tpf)) {
-        setRebalanceUpAmounts({ amountOut: ZERO, bptIn: ZERO });
-        setDepositStableAmounts({ amountIn: ZERO, bptOut: ZERO });
-        // account for percentage bounds
-        const tpfRangeAdjusted = tpf.add(tpf.mul(percentageBounds.up).div(DBN_TEN_THOUSAND, tpf.getDecimals()));
-        if (templePrice.gt(tpfRangeAdjusted)) {
-          const basisPointsDiff = getBpsPercentageFromTpf(tpfRangeAdjusted, templePrice);
-          const withdrawStable = await calculateWithdrawStable(basisPointsDiff);
-          const rebalanceDown = await calculateRebalanceDown(basisPointsDiff);
-          withdrawStable && setWithdrawStableAmounts(withdrawStable);
-          rebalanceDown && setRebalanceDownAmounts(rebalanceDown);
-        } else {
-          setWithdrawStableAmounts({ amountOut: ZERO, bptIn: ZERO });
-          setRebalanceDownAmounts({ amountIn: ZERO, bptOut: ZERO });
-        }
-      } else if (tpf.gt(templePrice)) {
+    if (!isConnected || !balPooltokensOrdered) return;
+    if (templePrice.gt(tpf)) {
+      setRebalanceUpAmounts({ amountOut: ZERO, bptIn: ZERO });
+      setDepositStableAmounts({ amountIn: ZERO, bptOut: ZERO });
+      // account for percentage bounds
+      const tpfRangeAdjusted = tpf.add(tpf.mul(percentageBounds.up).div(DBN_TEN_THOUSAND, tpf.getDecimals()));
+      if (templePrice.gt(tpfRangeAdjusted)) {
+        const basisPointsDiff = getBpsPercentageFromTpf(tpfRangeAdjusted, templePrice);
+        const withdrawStable = await calculateWithdrawStable(basisPointsDiff);
+        const rebalanceDown = await calculateRebalanceDown(basisPointsDiff);
+        withdrawStable && setWithdrawStableAmounts(withdrawStable);
+        rebalanceDown && setRebalanceDownAmounts(rebalanceDown);
+      } else {
         setWithdrawStableAmounts({ amountOut: ZERO, bptIn: ZERO });
         setRebalanceDownAmounts({ amountIn: ZERO, bptOut: ZERO });
-        // account for percentage bounds
-        const tpfRangeAdjusted = tpf.sub(tpf.mul(percentageBounds.down).div(DBN_TEN_THOUSAND, tpf.getDecimals()));
-        if (tpfRangeAdjusted.gt(templePrice)) {
-          const basisPointsDiff = getBpsPercentageFromTpf(tpfRangeAdjusted, templePrice);
-          const rebalanceUp = await calculateRebalanceUp(basisPointsDiff);
-          const depositStable = await calculateDepositStable(basisPointsDiff);
+      }
+    } else if (tpf.gt(templePrice)) {
+      setWithdrawStableAmounts({ amountOut: ZERO, bptIn: ZERO });
+      setRebalanceDownAmounts({ amountIn: ZERO, bptOut: ZERO });
+      // account for percentage bounds
+      const tpfRangeAdjusted = tpf.sub(tpf.mul(percentageBounds.down).div(DBN_TEN_THOUSAND, tpf.getDecimals()));
+      if (tpfRangeAdjusted.gt(templePrice)) {
+        const basisPointsDiff = getBpsPercentageFromTpf(tpfRangeAdjusted, templePrice);
+        const rebalanceUp = await calculateRebalanceUp(basisPointsDiff);
+        const depositStable = await calculateDepositStable(basisPointsDiff);
 
-          depositStable && setDepositStableAmounts(depositStable);
-          rebalanceUp && setRebalanceUpAmounts(rebalanceUp);
-        } else {
-          setRebalanceUpAmounts({ amountOut: ZERO, bptIn: ZERO });
-          setDepositStableAmounts({ amountIn: ZERO, bptOut: ZERO });
-        }
+        depositStable && setDepositStableAmounts(depositStable);
+        rebalanceUp && setRebalanceUpAmounts(rebalanceUp);
+      } else {
+        setRebalanceUpAmounts({ amountOut: ZERO, bptIn: ZERO });
+        setDepositStableAmounts({ amountIn: ZERO, bptOut: ZERO });
       }
     }
   };
@@ -320,6 +382,9 @@ export function useRamosAdmin() {
     rebalanceDownAmounts,
     depositStableAmounts,
     withdrawStableAmounts,
+    totalAvailableDaiTrv,
+    totalAvailableTempleTrv,
+    ramosStrategyVersion,
     createJoinPoolRequest,
     handleAddLiquidityInput,
     createExitPoolRequest,
