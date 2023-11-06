@@ -45,7 +45,7 @@ const TxnHistoryTable = ({ dashboardType, txFilter }: Props) => {
         const target = event.target as HTMLInputElement;
         // only set row filter type if value is 'Borrow' or 'Repay'
         // subgraph only accept the exact value for this property
-        if (target.value.includes(TxType.Borrow) || target.value.includes(TxType.Repay)){
+        if (target.value.includes(TxType.Borrow) || target.value.includes(TxType.Repay) || target.value.length === 0 ){
           setRowFilter(s => ({...s, type: target.value}));
         }
       }, 500)
