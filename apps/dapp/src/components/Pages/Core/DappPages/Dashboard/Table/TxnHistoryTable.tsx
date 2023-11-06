@@ -47,10 +47,8 @@ const TxnHistoryTable = ({ dashboardType, txFilter }: Props) => {
         // subgraph only accept the exact value for this property
         if (target.value.includes(TxType.Borrow) || target.value.includes(TxType.Repay)){
           setRowFilter(s => ({...s, type: target.value}));
-        } else{
-          console.log('not valid', target.value);
         }
-      }, 750)
+      }, 500)
     },
     {
       name: TableHeaders.Strategy,
@@ -58,7 +56,7 @@ const TxnHistoryTable = ({ dashboardType, txFilter }: Props) => {
       filter: useDebouncedCallback(async (event: FormEvent<EventTarget>) => {
         const target = event.target as HTMLInputElement;
         setRowFilter(s => ({...s, strategy: target.value}));
-      }, 750)
+      }, 500)
     },
     {
       name: TableHeaders.Token,
@@ -66,7 +64,7 @@ const TxnHistoryTable = ({ dashboardType, txFilter }: Props) => {
       filter: useDebouncedCallback(async (event: FormEvent<EventTarget>) => {
         const target = event.target as HTMLInputElement;
         setRowFilter(s => ({...s, token: target.value}));
-      }, 750)
+      }, 500)
     },
     {
       name: TableHeaders.Amount,
@@ -119,6 +117,7 @@ const TxnHistoryTable = ({ dashboardType, txFilter }: Props) => {
   }, [currentPage, rowsPerPage, txFilter, rowFilter, dashboardType, tableHeaders])
 
   const isLoading = pagDefault.isLoading || txHistory.isLoading;
+  const isRefetching = pagDefault.isRefetching || txHistory.isRefetching;
 
   // Fetch strategies tx data
   const dataToTable: TableRow[] | undefined = txHistory.data?.map((tx) => {
@@ -145,6 +144,7 @@ const TxnHistoryTable = ({ dashboardType, txFilter }: Props) => {
       <TxnDataTable 
         dataSubset={dataToTable}
         dataLoading={isLoading}
+        dataRefetching={isRefetching}
         tableHeaders={tableHeaders}
         updateTableHeaders={updateTableHeaders}
       />

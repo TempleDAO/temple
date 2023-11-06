@@ -24,13 +24,16 @@ export type TableRow = {
 type Props = {
   dataSubset: TableRow[] | undefined;
   dataLoading: boolean;
+  dataRefetching: boolean;
   tableHeaders: TxHistoryTableHeader[];
   updateTableHeaders: (currentHeader: TxHistoryTableHeader) => void;
 };
 
 export const TxnDataTable = (props: Props) => {
 
-  const { dataSubset, dataLoading, tableHeaders, updateTableHeaders } = props;
+  const { dataSubset, dataLoading, dataRefetching, tableHeaders, updateTableHeaders } = props;
+  const skeletonRowsNo = dataLoading ? 3 : dataRefetching ? 1 : 0;
+
   return (
     <DataTable>
       <thead>
@@ -47,32 +50,16 @@ export const TxnDataTable = (props: Props) => {
         </HeaderRow>
       </thead>
       <tbody>
-        {dataLoading ? (
-          [...Array(3)].map(
-            (
-              _,
-              index // Adds 3 loading rows
-            ) => (
-              <DataRow key={index}>
-                {[...Array(tableHeaders.length)].map(
-                  (
-                    _,
-                    i // Adds x no of loading cells, same as no of table headers
-                  ) => (
-                    <DataCell key={i}>
-                      <LoadingText value={loading()} />
-                    </DataCell>
-                  )
-                )}
-              </DataRow>
-            )
-          )
-        ) : !dataSubset || dataSubset.length === 0 ? (
+        {dataLoading ? 
+          loadSkeletonRows(3, tableHeaders.length)
+        : !dataSubset || dataSubset.length === 0 ? (
           <DataRow>
             <DataCell>No data available</DataCell>
           </DataRow>
         ) : (
-          dataSubset.map((row, index) => (
+          <>
+          {dataRefetching && loadSkeletonRows(1, tableHeaders.length)}
+          {dataSubset.map((row, index) => (
             <DataRow key={index}>
               <DataCell>{row.date}</DataCell>
               <DataCell>{row.type}</DataCell>
@@ -85,12 +72,35 @@ export const TxnDataTable = (props: Props) => {
                 </LinkStyled>
               </DataCell>
             </DataRow>
-          ))
+          ))}
+          </>
         )}
       </tbody>
     </DataTable>
   );
 };
+
+const loadSkeletonRows = (skeletonRowsNo: number, skeletonColumnsNo: number) => {
+  return([...Array(skeletonRowsNo)].map(
+    (
+      _,
+      index
+    ) => (
+      <DataRow key={index}>
+        {[...Array(skeletonColumnsNo)].map(
+          (
+            _,
+            i // Adds x no of loading cells, same as no of table headers
+          ) => (
+            <DataCell key={i}>
+              <LoadingText value={loading()} />
+            </DataCell>
+          )
+        )}
+      </DataRow>
+    )
+  ))
+}
 
 const TableHeader = styled.th`
   vertical-align: top;
