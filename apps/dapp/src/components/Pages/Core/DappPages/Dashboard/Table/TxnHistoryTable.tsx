@@ -1,15 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, FormEvent } from 'react';
 import styled from 'styled-components';
 import { TxHistoryFilterType } from '.';
 import { DashboardType } from '../DashboardContent';
 import { format } from 'date-fns';
-import { TableRow, TxnDataTable } from './TxnDataTable';
+import { TableRow, TxType, TxnDataTable } from './TxnDataTable';
 import { PaginationControl } from './PaginationControl';
-import { useTxHistory, useTxHistoryPaginationDefaults } from '../hooks/use-dashboardv2-txHistory';
+import { RowFilter, useTxHistory, useTxHistoryPaginationDefaults } from '../hooks/use-dashboardv2-txHistory';
+import { useDebouncedCallback } from 'use-debounce';
 
 type Props = {
   dashboardType: DashboardType;
-  filter: TxHistoryFilterType;
+  txFilter: TxHistoryFilterType;
 };
 
 export enum TableHeaders {
@@ -23,12 +24,15 @@ export enum TableHeaders {
 
 export type TxHistoryTableHeader = {
   name: TableHeaders;
-  orderDesc?: boolean; 
+  orderDesc?: boolean;
+  filter?: (event: FormEvent<HTMLInputElement>) => void;  
 }
 
-const TxnHistoryTable = ({ dashboardType, filter }: Props) => {
+const TxnHistoryTable = ({ dashboardType, txFilter }: Props) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [rowFilter, setRowFilter] = useState<RowFilter>({});
+
   const [tableHeaders, setTableHeaders] = useState<TxHistoryTableHeader[]>([
     {
       name: TableHeaders.Date,
@@ -37,14 +41,32 @@ const TxnHistoryTable = ({ dashboardType, filter }: Props) => {
     {
       name: TableHeaders.Type,
       orderDesc: undefined,
+      filter: useDebouncedCallback(async (event: FormEvent<EventTarget>) => {
+        const target = event.target as HTMLInputElement;
+        // only set row filter type if value is 'Borrow' or 'Repay'
+        // subgraph only accept the exact value for this property
+        if (target.value.includes(TxType.Borrow) || target.value.includes(TxType.Repay)){
+          setRowFilter(s => ({...s, type: target.value}));
+        } else{
+          console.log('not valid', target.value);
+        }
+      }, 750)
     },
     {
       name: TableHeaders.Strategy,
       orderDesc: undefined,
+      filter: useDebouncedCallback(async (event: FormEvent<EventTarget>) => {
+        const target = event.target as HTMLInputElement;
+        setRowFilter(s => ({...s, strategy: target.value}));
+      }, 750)
     },
     {
       name: TableHeaders.Token,
       orderDesc: undefined,
+      filter: useDebouncedCallback(async (event: FormEvent<EventTarget>) => {
+        const target = event.target as HTMLInputElement;
+        setRowFilter(s => ({...s, token: target.value}));
+      }, 750)
     },
     {
       name: TableHeaders.Amount,
@@ -71,12 +93,13 @@ const TxnHistoryTable = ({ dashboardType, filter }: Props) => {
   const pagDefault = useTxHistoryPaginationDefaults(
     dashboardType,
     rowsPerPage,
-    filter
+    txFilter
   );
 
   const txHistory = useTxHistory({
     dashboardType,
-    filter,
+    txFilter,
+    rowFilter,
     currentPage,
     rowsPerPage,
     blockNumber: pagDefault.data?.blockNumber || 0,
@@ -88,12 +111,12 @@ const TxnHistoryTable = ({ dashboardType, filter }: Props) => {
     pagDefault.refetch();
     // restart to page one when changing amount of pages
     setCurrentPage(1);
-  }, [rowsPerPage, filter, dashboardType])
+  }, [rowsPerPage, txFilter, rowFilter, dashboardType])
   
   // when user changes currentPage, rowsPerPage or filters, refetch txns
   useEffect(()=> {
     txHistory.refetch();
-  }, [currentPage, rowsPerPage, filter, dashboardType, tableHeaders])
+  }, [currentPage, rowsPerPage, txFilter, rowFilter, dashboardType, tableHeaders])
 
   const isLoading = pagDefault.isLoading || txHistory.isLoading;
 

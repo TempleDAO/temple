@@ -8,30 +8,34 @@ type DashboardTransactionHistoryProps = {
   dashboardType: DashboardType;
 };
 
-export type TxHistoryFilterType = 'lastweek' | 'last30days' | 'all';
+export enum TxHistoryFilterType {
+  lastweek = 'lastweek',
+  last30days = 'last30days',
+  all = 'all',
+  }
 
 const DashboardTransactionHistory = ({ dashboardType }: DashboardTransactionHistoryProps) => {
   
-  const [filter, setFilter] = useState<TxHistoryFilterType>('all');
+  const [txFilter, setTxFilter] = useState<TxHistoryFilterType>(TxHistoryFilterType.all);
 
   return (
     <TransactionHistoryContainer>
       <TransactionHistoryHeader>
         <TransactionHistoryTitle>Transaction History</TransactionHistoryTitle>
         <TransactionTimePeriod>
-          <FilterButton isSmall selected={filter === 'lastweek'} onClick={() => setFilter('lastweek')}>
+          <FilterButton isSmall selected={txFilter === 'lastweek'} onClick={() => setTxFilter(TxHistoryFilterType.lastweek)}>
             Last week
           </FilterButton>
-          <FilterButton isSmall selected={filter === 'last30days'} onClick={() => setFilter('last30days')}>
+          <FilterButton isSmall selected={txFilter === 'last30days'} onClick={() => setTxFilter(TxHistoryFilterType.last30days)}>
             Last 30 Days
           </FilterButton>
-          <FilterButton isSmall selected={filter === 'all'} onClick={() => setFilter('all')}>
+          <FilterButton isSmall selected={txFilter === 'all'} onClick={() => setTxFilter(TxHistoryFilterType.all)}>
             All
           </FilterButton>
         </TransactionTimePeriod>
       </TransactionHistoryHeader>
       <TransactionHistoryContent>
-        <TxnHistoryTable dashboardType={dashboardType} filter={filter} />
+        <TxnHistoryTable dashboardType={dashboardType} txFilter={txFilter} />
       </TransactionHistoryContent>
     </TransactionHistoryContainer>
   );

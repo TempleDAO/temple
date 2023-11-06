@@ -5,6 +5,7 @@ import { loading } from 'utils/loading-value';
 import { StrategyKey } from '../hooks/use-dashboardv2-metrics';
 import { ArrowButtonUpDown } from 'components/Pages/Ascend/components/Trade/styles';
 import { TxHistoryTableHeader } from './TxnHistoryTable';
+import { theme } from 'styles/theme';
 
 export enum TxType {
   Borrow = 'Borrow',
@@ -35,11 +36,12 @@ export const TxnDataTable = (props: Props) => {
       <thead>
         <HeaderRow>
           {tableHeaders.map((h, i) => (
-            <TableHeader key={i} onClick={() => updateTableHeaders(h)}>
-              <InnerDataRow>
+            <TableHeader key={i}>
+              <InnerDataRow onClick={() => updateTableHeaders(h)}>
                 {h.name}
                 {h.orderDesc !== undefined ? <ArrowButtonUpDown clicked={h.orderDesc} /> : <EmptySpace />}
               </InnerDataRow>
+              <InputStyled type="text" onInput={h.filter} disabled={!h.filter}/>
             </TableHeader>
           ))}
         </HeaderRow>
@@ -104,6 +106,7 @@ const HeaderRow = styled.tr`
 
 const InnerDataRow = styled.div`
   display: flex;
+  height: 1.5rem;
 `;
 
 const EmptySpace = styled.p`
@@ -135,4 +138,19 @@ const LinkStyled = styled.a`
   &:hover {
     color: ${({ theme }) => theme.palette.brandDark};
   }
+`;
+
+const InputStyled = styled.input<{disabled: boolean}>`
+  ${theme.typography.fonts.fontBody};
+  color: ${({disabled}) => `${disabled ? theme.palette.brand25:theme.palette.brand}`};;
+  background-color: transparent;
+  border: solid;
+  border-width: thin;
+  width: 100%;
+  padding: 0.2rem;
+  outline: none;
+  &:hover {
+    cursor: ${({disabled}) => `${disabled ? 'not-allowed':'text'}`}
+  }
+  appearance: textfield;
 `;

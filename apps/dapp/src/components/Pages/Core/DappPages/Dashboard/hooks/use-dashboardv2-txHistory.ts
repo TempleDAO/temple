@@ -50,9 +50,16 @@ type FetchTxnsResponse = SubGraphResponse<{
   _meta: Meta 
 }>;
 
+export type RowFilter = {
+  type?: string;
+  strategy?: string;
+  token?: string;
+}
+
 type Props = {
   dashboardType: DashboardType;
-  filter: TxHistoryFilterType;
+  txFilter: TxHistoryFilterType;
+  rowFilter: RowFilter;
   currentPage: number;
   rowsPerPage: number;
   blockNumber: number;
@@ -63,11 +70,11 @@ const txHistoryFilterTypeToSeconds = (filter: TxHistoryFilterType) => {
   const dateNowSecs = Math.round(Date.now() / 1000);
   const oneDaySecs = 86400;
   switch (filter) {
-    case 'all':
+    case TxHistoryFilterType.all:
       return dateNowSecs;
-    case 'last30days':
+    case TxHistoryFilterType.last30days:
       return oneDaySecs * 30;
-    case 'lastweek':
+    case TxHistoryFilterType.lastweek:
       return oneDaySecs * 7;
   }
 };
@@ -90,7 +97,7 @@ const dashboardTypeToStrategyKey = (dType: DashboardType): StrategyKey => {
 const getTableHeaderOrderByType = (tableHeader?: TxHistoryTableHeader) => {
   if (!tableHeader) return 'timestamp';
   switch(tableHeader.name){
-    case 'Date':
+    case TableHeaders.Date:
       return 'timestamp';
     case TableHeaders.Strategy:
       return 'strategy__name';
@@ -111,7 +118,15 @@ const useTxHistory = (props: Props) =>
   });
 
 const fetchTransactions = async (props: Props): Promise<Transactions> => {
-  const { dashboardType, blockNumber, currentPage, rowsPerPage, filter, tableHeaders } = props;
+  const { 
+    dashboardType,
+    blockNumber,
+    currentPage,
+    rowsPerPage,
+    txFilter,
+    rowFilter,
+    tableHeaders
+  } = props;
   const strategyKey = dashboardTypeToStrategyKey(dashboardType);
   const strategyQuery = strategyKey === StrategyKey.ALL ? `` : `strategy_: {name: "${strategyKey}"}`;
   const blockNumberQueryParam = blockNumber > 0 ? `block: { number: ${blockNumber} }` : ``;
@@ -119,7 +134,18 @@ const fetchTransactions = async (props: Props): Promise<Transactions> => {
   const paginationQuery = `skip: ${(currentPage - 1) * rowsPerPage} first: ${rowsPerPage}`;
 
   const dateNowSecs = Math.round(Date.now() / 1000);
-  const whereQuery = `${blockNumberQueryParam} where: { ${strategyQuery} timestamp_gt: ${dateNowSecs - txHistoryFilterTypeToSeconds(filter)} }`;
+  const typeRowFilterQuery = `${rowFilter.type ? 'kind: '+rowFilter.type : ''}`;
+  const strategyRowFilterQuery = `${rowFilter.strategy ? 'strategy_: {name_contains_nocase: "'+rowFilter.strategy+'"}' : ''}`;
+  const tokenRowFilterQuery = `${rowFilter.token ? 'token_: {symbol_contains_nocase: "'+rowFilter.token+'"}' : ''}`;
+  const whereQuery = `
+    ${blockNumberQueryParam} 
+    where: { 
+      ${strategyQuery} 
+      timestamp_gt: ${dateNowSecs - txHistoryFilterTypeToSeconds(txFilter)} 
+      ${typeRowFilterQuery} 
+      ${strategyRowFilterQuery} 
+      ${tokenRowFilterQuery}
+    }`;
   const orderHeader = tableHeaders.find(h => h.orderDesc !== undefined);
   
   // set default ordering
