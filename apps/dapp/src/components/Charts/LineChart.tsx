@@ -10,6 +10,7 @@ type LineChartProps<T> = {
   xDataKey: DataKey<keyof T>;
   lines: { series: DataKey<keyof T>; color: string; hide?: boolean }[];
   xTickFormatter: (xValue: any, index: number) => string;
+  yTickFormatter?: (yValue: any, index: number) => string;
   tooltipLabelFormatter: (value: any) => string;
   tooltipValuesFormatter?: (value: number, name: string) => string[];
   legendFormatter?: (value: string) => string;
@@ -23,6 +24,7 @@ export default function LineChart<T>(props: React.PropsWithChildren<LineChartPro
     xDataKey,
     lines,
     xTickFormatter,
+    yTickFormatter,
     tooltipLabelFormatter,
     tooltipValuesFormatter,
     legendFormatter,
@@ -75,7 +77,9 @@ export default function LineChart<T>(props: React.PropsWithChildren<LineChartPro
           tickMargin={10}
         />
         <YAxis
-          tickFormatter={(value) => formatNumberAbbreviated(value).string}
+          tickFormatter={
+            yTickFormatter ? (val, i) => yTickFormatter(val, i) : (value) => formatNumberAbbreviated(value).string
+          }
           tick={{ stroke: theme.palette.brandLight }}
           domain={yDomain}
           tickMargin={10}
