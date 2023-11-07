@@ -340,13 +340,6 @@ export function useRamosAdmin() {
 
   const createExitPoolRequest = async (exitAmountBpt: BigNumber) => {
     if (!isConnected || !balPooltokensOrdered) return;
-    const initExitReq = makeExitRequest(
-      balPooltokensOrdered,
-      [ZERO, ZERO],
-      exitAmountBpt,
-      WeightedPoolExitKind.EXACT_BPT_IN_FOR_TOKENS_OUT
-    );
-    const { bptIn } = await balancerHelpers.queryExit(poolId, ramos.address, ramos.address, initExitReq);
     const proportionalRemoveLiquidityQuote = await ramosStrategy.callStatic.proportionalRemoveLiquidityQuote(
       exitAmountBpt,
       slippageTolerance * 100
@@ -356,7 +349,7 @@ export function useRamosAdmin() {
     const exitRequest = makeExitRequest(
       balPooltokensOrdered,
       reqDataQuote.minAmountsOut,
-      bptIn,
+      exitAmountBpt,
       WeightedPoolExitKind.EXACT_BPT_IN_FOR_TOKENS_OUT
     );
     return formatExitRequestTuple(exitRequest);
