@@ -323,7 +323,7 @@ export function useRamosAdmin() {
     if (isConnected) {
       const proportionalAddLiquidityQuote = await ramosStrategy.callStatic.proportionalAddLiquidityQuote(
         stableAmount,
-        slippageTolerance
+        slippageTolerance * 100
       );
       const reqDataQuote = proportionalAddLiquidityQuote.requestData;
       const tokenAddrs = reqDataQuote.assets;
@@ -340,23 +340,16 @@ export function useRamosAdmin() {
 
   const createExitPoolRequest = async (exitAmountBpt: BigNumber) => {
     if (!isConnected || !balPooltokensOrdered) return;
-    const initExitReq = makeExitRequest(
-      balPooltokensOrdered,
-      [ZERO, ZERO],
+    const proportionalRemoveLiquidityQuote = await ramosStrategy.callStatic.proportionalRemoveLiquidityQuote(
       exitAmountBpt,
-      WeightedPoolExitKind.EXACT_BPT_IN_FOR_TOKENS_OUT
+      slippageTolerance * 100
     );
-    const { bptIn, amountsOut } = await balancerHelpers.queryExit(poolId, ramos.address, ramos.address, initExitReq);
-
-    const minAmountsOut = [
-      applySlippage(amountsOut[0], slippageTolerance),
-      applySlippage(amountsOut[1], slippageTolerance),
-    ];
+    const reqDataQuote = proportionalRemoveLiquidityQuote.requestData;
 
     const exitRequest = makeExitRequest(
       balPooltokensOrdered,
-      minAmountsOut,
-      bptIn,
+      reqDataQuote.minAmountsOut,
+      exitAmountBpt,
       WeightedPoolExitKind.EXACT_BPT_IN_FOR_TOKENS_OUT
     );
     return formatExitRequestTuple(exitRequest);
