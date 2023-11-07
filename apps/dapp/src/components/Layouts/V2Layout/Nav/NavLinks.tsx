@@ -8,6 +8,7 @@ import currency_exchange from '../assets/currency_exchange.png';
 import dashboard from '../assets/dashboard.png';
 import payments from '../assets/payments.png';
 import restore from '../assets/restore.png';
+import candle from '../assets/candle.png';
 import temple_dao_logo from '../assets/temple-dao-logo.png';
 import TruncatedAddress from 'components/TruncatedAddress';
 
@@ -81,6 +82,12 @@ const NavLinks = ({ isNavCollapsed = false, onClickHandler }: NavLinksProps) => 
         <NavLinkCell>
           <NavIcon src={payments} />
           {!isNavCollapsed && <NavLinkText>Borrow</NavLinkText>}
+        </NavLinkCell>
+      </NavLink>
+      <NavLink to="/v2dapp/ohmage">
+        <NavLinkCell>
+          <NavIcon src={candle} />
+          {!isNavCollapsed && <NavLinkText>Ohmage</NavLinkText>}
         </NavLinkCell>
       </NavLink>
       <NavLink to="/v2dapp/legacy" onClick={() => wrappedClickHandler()}>
@@ -187,22 +194,6 @@ const Separator = styled.hr`
   border: 0;
   width: 100%;
   border-top: 1px solid ${(props) => props.theme.palette.brand}};
-`;
-
-type NavContentProps = {
-  collapsed: boolean;
-};
-
-const NavContent = styled.div<NavContentProps>`
-  display: flex;
-  flex-direction: column;
-  margin-top: 10px;
-  width: 100%;
-  padding-left: 8px;
-  padding-right: 8px;
-  ${tabletAndAbove(`
-    width: 90%;
-  `)};
 `;
 
 type NavLinkProps = {

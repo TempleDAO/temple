@@ -1,13 +1,11 @@
-import leftCaret from 'assets/images/newui-images/leftCaret.svg';
-import { TradeButton } from '../Home';
-import { Input } from '../HomeInput';
+import { TradeButton } from '../../../NewUI/Home';
+import { Input } from '../../../NewUI/HomeInput';
 import { formatToken } from 'utils/formatter';
 import { ITlcDataTypes } from 'types/typechain/contracts/interfaces/v2/templeLineOfCredit/ITempleLineOfCredit';
 import {
-  BackButton,
   Copy,
   FlexBetween,
-  FlexCol,
+  FlexColCenter,
   InfoCircle,
   MAX_LTV,
   MarginTop,
@@ -17,9 +15,8 @@ import {
   State,
   Title,
   Warning,
-} from './TLCModal';
+} from '../index';
 import { ZERO, fromAtto } from 'utils/bigNumber';
-import styled from 'styled-components';
 
 interface IProps {
   accountPosition: ITlcDataTypes.AccountPositionStructOutput | undefined;
@@ -27,10 +24,9 @@ interface IProps {
   setState: React.Dispatch<React.SetStateAction<State>>;
   repay: () => void;
   repayAll: () => void;
-  back: () => void;
 }
 
-export const Repay: React.FC<IProps> = ({ accountPosition, state, setState, repay, repayAll, back }) => {
+export const Repay: React.FC<IProps> = ({ accountPosition, state, setState, repay, repayAll }) => {
   const getEstimatedLTV = (): string => {
     return accountPosition
       ? (
@@ -43,7 +39,6 @@ export const Repay: React.FC<IProps> = ({ accountPosition, state, setState, repa
   return (
     <>
       <RemoveMargin />
-      <BackButton src={leftCaret} onClick={() => back()} />
       <Title>Repay DAI</Title>
       <Input
         crypto={{
@@ -98,7 +93,7 @@ export const Repay: React.FC<IProps> = ({ accountPosition, state, setState, repa
         <RangeLabel>0%</RangeLabel>
         <RangeLabel>{MAX_LTV}%</RangeLabel>
       </FlexBetween>
-      <FlexCol>
+      <FlexColCenter>
         <TradeButton
           onClick={() => repay()}
           // Disable if repay amount is lte zero, gt wallet balance, or gt current debt
@@ -120,7 +115,7 @@ export const Repay: React.FC<IProps> = ({ accountPosition, state, setState, repa
         >
           Repay Total
         </TradeButton>
-      </FlexCol>
+      </FlexColCenter>
     </>
   );
 };
