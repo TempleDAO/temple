@@ -323,7 +323,7 @@ export function useRamosAdmin() {
     if (isConnected) {
       const proportionalAddLiquidityQuote = await ramosStrategy.callStatic.proportionalAddLiquidityQuote(
         stableAmount,
-        slippageTolerance
+        slippageTolerance * 100
       );
       const reqDataQuote = proportionalAddLiquidityQuote.requestData;
       const tokenAddrs = reqDataQuote.assets;
