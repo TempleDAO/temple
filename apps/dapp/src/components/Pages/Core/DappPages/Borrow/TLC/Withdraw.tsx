@@ -1,12 +1,10 @@
-import leftCaret from 'assets/images/newui-images/leftCaret.svg';
-import { TradeButton } from '../Home';
-import { Input } from '../HomeInput';
+import { TradeButton } from '../../../NewUI/Home';
+import { Input } from '../../../NewUI/HomeInput';
 import { ITlcDataTypes } from 'types/typechain/contracts/interfaces/v2/templeLineOfCredit/ITempleLineOfCredit';
 import {
-  BackButton,
   Copy,
   FlexBetween,
-  FlexCol,
+  FlexColCenter,
   GradientContainer,
   InfoCircle,
   MAX_LTV,
@@ -17,7 +15,7 @@ import {
   State,
   Title,
   Warning,
-} from './TLCModal';
+} from '../index';
 import { fromAtto } from 'utils/bigNumber';
 
 interface IProps {
@@ -25,10 +23,9 @@ interface IProps {
   state: State;
   setState: React.Dispatch<React.SetStateAction<State>>;
   withdraw: () => void;
-  back: () => void;
 }
 
-export const Withdraw: React.FC<IProps> = ({ accountPosition, state, setState, withdraw, back }) => {
+export const Withdraw: React.FC<IProps> = ({ accountPosition, state, setState, withdraw }) => {
   const getEstimatedCollateral = (): number => {
     return accountPosition
       ? fromAtto(accountPosition.collateral) - Number(state.withdrawValue)
@@ -54,7 +51,6 @@ export const Withdraw: React.FC<IProps> = ({ accountPosition, state, setState, w
   return (
     <>
       <RemoveMargin />
-      <BackButton src={leftCaret} onClick={() => back()} />
       <Title>Withdraw TEMPLE</Title>
       <Input
         crypto={{
@@ -113,7 +109,7 @@ export const Withdraw: React.FC<IProps> = ({ accountPosition, state, setState, w
           total TEMPLE collateral.
         </Copy>
       </GradientContainer>
-      <FlexCol>
+      <FlexColCenter>
         <TradeButton
           onClick={() => withdraw()}
           // Disable if amount is 0 or greater than max withdraw
@@ -121,7 +117,7 @@ export const Withdraw: React.FC<IProps> = ({ accountPosition, state, setState, w
         >
           Withdraw
         </TradeButton>
-      </FlexCol>
+      </FlexColCenter>
     </>
   );
 };

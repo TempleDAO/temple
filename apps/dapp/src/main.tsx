@@ -31,9 +31,10 @@ import { AnalyticsService } from 'services/AnalyticsService';
 import { Unstake } from 'components/Pages/Core/Trade/views/Unstake';
 import { DashboardPage } from 'components/Pages/Core/DappPages/Dashboard';
 import { TradePage } from './components/Pages/Core/DappPages/TradePage';
-import { BorrowPage } from 'components/Pages/Core/DappPages/BorrowPage';
+import { BorrowPage } from 'components/Pages/Core/DappPages/Borrow';
 import { LegacyPage } from 'components/Pages/Core/DappPages/LegacyPage';
 import V2Layout from 'components/Layouts/V2Layout';
+import { OhmagePage } from 'components/Pages/Core/DappPages/OhmagePage';
 
 // Separate Chunks
 const TeamPayments = React.lazy(() => import('components/Pages/TeamPayments'));
@@ -86,30 +87,8 @@ ReactDOM.render(
               <Route path="dashboard/*" element={<DashboardPage />} />
               <Route path="trade" element={<TradePage />} />
               <Route path="borrow" element={<BorrowPage />} />
+              <Route path="ohmage" element={<OhmagePage />} />
               <Route path="legacy" element={<LegacyPage />} />
-            </Route>
-            <Route path="/dapp/*" element={<CoreLayout />}>
-              <Route path="vaults" element={<VaultListPage />} />
-              <Route path="unstake" element={<Unstake />} />
-              <Route path="vaults/:vaultId/*" element={<VaultPage />}>
-                <Route path="claim" element={<VaultClaim />} />
-                <Route path="stake" element={<Stake />} />
-                <Route path="summary" element={<Summary />} />
-                <Route path="strategy" element={<Strategy />} />
-                <Route path="timing" element={<Timing />} />
-              </Route>
-              <Route path="profile" element={<ProfilePage />} />
-              {env.featureFlags.enableAscend && (
-                <>
-                  <Route path="ascend/*" element={<AscendLayout />}>
-                    <Route path="" element={<AscendListPage />} />
-                    <Route path="admin" element={<PoolListPage />} />
-                    <Route path="admin/new" element={<CreateLBPPage />} />
-                    <Route path="admin/:poolAddress/*" element={<EditLBPPage />} />
-                    <Route path=":poolAddress" element={<AscendPage />} />
-                  </Route>
-                </>
-              )}
             </Route>
           </>
         </Routes>
