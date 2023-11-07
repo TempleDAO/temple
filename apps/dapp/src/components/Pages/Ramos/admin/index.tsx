@@ -46,6 +46,7 @@ const RamosAdmin = () => {
     totalAvailableDaiTrv,
     totalAvailableTempleTrv,
     ramosStrategyVersion,
+    slippageTolerance,
     handleAddLiquidityInput,
     createJoinPoolRequest,
     createExitPoolRequest,
@@ -104,7 +105,7 @@ const RamosAdmin = () => {
       <TransactionSettingsModal
         hasDeadline={false}
         closeOnClickOutside={false}
-        defaultSlippage={0.5}
+        defaultSlippage={slippageTolerance}
         isOpen={isTxSettingsOpen}
         onClose={() => {
           setIsTxSettingsOpen(false);

@@ -47,7 +47,7 @@ export const WrongNetworkPopover = () => {
     }
 
     const isSupported = isSupportedChain(currentNetworkId);
-    if ((!isSupported && !isOpen) || (!IS_PROD && defaultChainForEnv.id !== currentNetworkId)) {
+    if ((!isSupported && !isOpen) || (defaultChainForEnv.id !== currentNetworkId)) {
       setIsOpen(true);
     } else if (isSupported && isOpen) {
       setIsOpen(false);
@@ -57,7 +57,7 @@ export const WrongNetworkPopover = () => {
   const onDismiss = () => {
     // Only allow dismissing popover in staging and dev environments.
     setIsOpen(false);
-    setDismissedChainId(currentNetworkId!);
+    setDismissedChainId(currentNetworkId);
   };
 
   // Not all wallets allow switching network programatically.
