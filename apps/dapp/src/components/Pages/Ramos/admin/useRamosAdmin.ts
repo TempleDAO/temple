@@ -24,6 +24,7 @@ import {
   applySlippage,
   calculateTargetPriceDown,
   calculateTargetPriceUp,
+  decodeUserData,
   formatExitRequestTuple,
   formatJoinRequestTuple,
   getBpsPercentageFromTpf,
@@ -326,14 +327,10 @@ export function useRamosAdmin() {
         slippageTolerance * 100
       );
       const reqDataQuote = proportionalAddLiquidityQuote.requestData;
-      const tokenAddrs = reqDataQuote.assets;
-
-      const initJoinReq = makeJoinRequest(tokenAddrs, reqDataQuote.maxAmountsIn);
-      const { amountsIn, bptOut } = await balancerHelpers.queryJoin(poolId, ramos.address, ramos.address, initJoinReq);
-      const joinPoolRequest = makeJoinRequest(tokenAddrs, amountsIn);
+      const { bptOut } = decodeUserData(reqDataQuote.userData);
       return {
-        joinPoolRequest: formatJoinRequestTuple(joinPoolRequest),
-        minBptOut: applySlippage(bptOut, slippageTolerance).toString(),
+        joinPoolRequest: formatJoinRequestTuple(reqDataQuote),
+        minBptOut: bptOut,
       };
     }
   };
@@ -345,14 +342,7 @@ export function useRamosAdmin() {
       slippageTolerance * 100
     );
     const reqDataQuote = proportionalRemoveLiquidityQuote.requestData;
-
-    const exitRequest = makeExitRequest(
-      balPooltokensOrdered,
-      reqDataQuote.minAmountsOut,
-      exitAmountBpt,
-      WeightedPoolExitKind.EXACT_BPT_IN_FOR_TOKENS_OUT
-    );
-    return formatExitRequestTuple(exitRequest);
+    return formatExitRequestTuple(reqDataQuote);
   };
 
   const createDepositAndStakeRequest = async (bptAmountIn: DecimalBigNumber) => {
