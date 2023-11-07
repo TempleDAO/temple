@@ -67,7 +67,7 @@ export const TransactionSettingsModal: React.FC<IProps> = ({
         </Tooltip>
       </Header>
       <Input
-        crypto={{ kind: 'value', value: 'SLIPPAGE' }}
+        crypto={{ kind: 'value', value: 'SLIPPAGE %' }}
         hint="DEFAULT"
         placeholder="0"
         onHintClick={() => {
