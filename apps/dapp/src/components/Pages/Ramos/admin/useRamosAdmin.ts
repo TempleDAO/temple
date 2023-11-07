@@ -346,16 +346,16 @@ export function useRamosAdmin() {
       exitAmountBpt,
       WeightedPoolExitKind.EXACT_BPT_IN_FOR_TOKENS_OUT
     );
-    const { bptIn, amountsOut } = await balancerHelpers.queryExit(poolId, ramos.address, ramos.address, initExitReq);
-
-    const minAmountsOut = [
-      applySlippage(amountsOut[0], slippageTolerance),
-      applySlippage(amountsOut[1], slippageTolerance),
-    ];
+    const { bptIn } = await balancerHelpers.queryExit(poolId, ramos.address, ramos.address, initExitReq);
+    const proportionalRemoveLiquidityQuote = await ramosStrategy.callStatic.proportionalRemoveLiquidityQuote(
+      exitAmountBpt,
+      slippageTolerance * 100
+    );
+    const reqDataQuote = proportionalRemoveLiquidityQuote.requestData;
 
     const exitRequest = makeExitRequest(
       balPooltokensOrdered,
-      minAmountsOut,
+      reqDataQuote.minAmountsOut,
       bptIn,
       WeightedPoolExitKind.EXACT_BPT_IN_FOR_TOKENS_OUT
     );
