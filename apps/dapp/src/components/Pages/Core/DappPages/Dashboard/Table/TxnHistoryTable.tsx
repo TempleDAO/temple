@@ -1,11 +1,11 @@
-import { useEffect, useState, FormEvent } from 'react';
+import { useState, FormEvent } from 'react';
 import styled from 'styled-components';
 import { TxHistoryFilterType } from '.';
 import { DashboardType } from '../DashboardContent';
 import { format } from 'date-fns';
 import { TableRow, TxType, TxnDataTable } from './TxnDataTable';
 import { PaginationControl } from './PaginationControl';
-import { RowFilter, useTxHistory, useTxHistoryPaginationDefaults } from '../hooks/use-dashboardv2-txHistory';
+import { RowFilter, useTxHistory, useTxHistoryAvailableRows } from '../hooks/use-dashboardv2-txHistory';
 import { useDebouncedCallback } from 'use-debounce';
 
 type Props = {
@@ -88,9 +88,8 @@ const TxnHistoryTable = ({ dashboardType, txFilter }: Props) => {
     return newState;
   });
   
-  const pagDefault = useTxHistoryPaginationDefaults(
+  const availableRows = useTxHistoryAvailableRows(
     dashboardType,
-    rowsPerPage,
     txFilter
   );
 
@@ -98,26 +97,14 @@ const TxnHistoryTable = ({ dashboardType, txFilter }: Props) => {
     dashboardType,
     txFilter,
     rowFilter,
-    currentPage,
-    rowsPerPage,
-    blockNumber: pagDefault.data?.blockNumber || 0,
+    offset: (currentPage -1) * rowsPerPage,
+    limit: rowsPerPage,
+    blockNumber: availableRows.data?.blockNumber || 0,
     tableHeaders
   });
-  
-  // when user changes rowsPerPage or filters, refetch pagination defaults
-  useEffect(()=> {
-    pagDefault.refetch();
-    // restart to page one when changing amount of pages
-    setCurrentPage(1);
-  }, [rowsPerPage, txFilter, rowFilter, dashboardType])
-  
-  // when user changes currentPage, rowsPerPage or filters, refetch txns
-  useEffect(()=> {
-    txHistory.refetch();
-  }, [currentPage, rowsPerPage, txFilter, rowFilter, dashboardType, tableHeaders])
 
-  const isLoading = pagDefault.isLoading || txHistory.isLoading;
-  const isRefetching = pagDefault.isRefetching || txHistory.isRefetching;
+  const isLoading = availableRows.isLoading || txHistory.isLoading;
+  const isRefetching = availableRows.isRefetching || txHistory.isRefetching;
 
   // Fetch strategies tx data
   const dataToTable: TableRow[] | undefined = txHistory.data?.map((tx) => {
@@ -135,7 +122,7 @@ const TxnHistoryTable = ({ dashboardType, txFilter }: Props) => {
   return (
     <TableContainer>
       <PaginationControl
-        totalPages={pagDefault.data?.totalPages || 0}
+        totalPages={(availableRows.data?.totalRowCount  || 0) / rowsPerPage}
         rowsPerPage={rowsPerPage}
         currentPage={currentPage}
         setCurrentPage={setCurrentPage}
