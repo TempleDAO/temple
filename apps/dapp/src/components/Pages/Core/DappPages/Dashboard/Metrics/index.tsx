@@ -157,25 +157,24 @@ const MobileMetricsContainer = styled.div<MetricProps>`
 `;
 
 const MetricValue = styled.div<MetricProps>`
-  font-size: ${({ small }) => (small ? '1rem' : '2rem')};
+  font-size: ${({ small }) => (small ? '0.9rem' : '1.8rem')};
   color: ${({ theme }) => theme.palette.brandLight};
 `;
 
 const MetricTitle = styled.div<MetricProps>`
-  font-size: ${({ small }) => (small ? '1rem' : '1.25rem')};
+  font-size: ${({ small }) => (small ? '0.9rem' : '1rem')};
   color: ${({ theme }) => theme.palette.brand};
 `;
 
 const Metric = styled.div<MetricProps>`
-  width: 250px;
+  width: 200px;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   border: ${({ small, theme }) => (small ? 'none' : `1px solid ${theme.palette.brand}}`)};
   border-radius: 0.75rem;
-  gap: 10px;
-  padding: 1rem 0;
+  padding: 0.75rem 0;
   background: ${({ theme }) => theme.palette.black};
 `;
 
