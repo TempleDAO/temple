@@ -4,15 +4,13 @@ import { StrategyKey } from 'components/Pages/Core/DappPages/Dashboard/hooks/use
 // Centralize all the dApp react query keys in case we need to cancel or invalidate them
 // through the app, this makes it easier to track them, please add new ones as required
 export const getQueryKey = {
-  txPagDefault: () => ['getTxPaginationDefaultValues'],
-  txHistory: () => ['getTxHistory'],
   metrics: (s?: StrategyKey) => (s ? ['getMetrics', s] : ['getMetrics']),
   trvMetrics: () => ['getTreasureReserveMetrics'],
   allStrategiesDailySnapshots: () => ['strategyDailySnapshots'],
   allStrategiesHourlySnapshots: () => ['strategyHourlySnapshots'],
 };
 
-const CACHE_TTL = 1000 * 60;
+export const CACHE_TTL = 1000 * 60;
 
 /** useApiQuery: wrapper of useQuery for general dApp configs
  *

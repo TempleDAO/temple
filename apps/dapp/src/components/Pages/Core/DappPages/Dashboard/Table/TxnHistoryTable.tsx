@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import styled from 'styled-components';
 import { TxHistoryFilterType } from '.';
 import { DashboardType } from '../DashboardContent';
 import { format } from 'date-fns';
 import { TxnDataTable } from './TxnDataTable';
 import { PaginationControls } from './TxnPaginationControl';
-import { useTxHistory, useTxHistoryPaginationDefaults } from '../hooks/use-dashboardv2-txHistory';
+import { useTxHistory, useTxHistoryAvailableRows } from '../hooks/use-dashboardv2-txHistory';
 
 type Props = {
   dashboardType: DashboardType;
@@ -16,33 +16,21 @@ const TxnHistoryTable = ({ dashboardType, filter }: Props) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
-  const pagDefault = useTxHistoryPaginationDefaults(
+  const availableRows = useTxHistoryAvailableRows(
     dashboardType,
-    rowsPerPage,
     filter
   );
 
   const txHistory = useTxHistory({
     dashboardType,
     filter,
-    currentPage,
-    rowsPerPage,
-    blockNumber: pagDefault.data?.blockNumber || 0,
+    offset: (currentPage -1) * rowsPerPage,
+    limit: rowsPerPage,
+    blockNumber: availableRows.data?.blockNumber || 0,
   });
   
-  // when user changes rowsPerPage or filters, refetch pagination defaults
-  useEffect(()=> {
-    pagDefault.refetch();
-    // restart to page one when changing amount of pages
-    setCurrentPage(1);
-  }, [rowsPerPage, filter, dashboardType])
-  
-  // when user changes currentPage, rowsPerPage or filters, refetch txns
-  useEffect(()=> {
-    txHistory.refetch();
-  }, [currentPage, rowsPerPage, filter, dashboardType])
 
-  const isLoading = pagDefault.isLoading || pagDefault.isFetching || txHistory.isLoading || txHistory.isFetching;
+  const isLoading = availableRows.isLoading || availableRows.isFetching || txHistory.isLoading || txHistory.isFetching;
 
   // Fetch strategies tx data
   const dataToTable = txHistory.data?.map((tx) => {
@@ -60,7 +48,7 @@ const TxnHistoryTable = ({ dashboardType, filter }: Props) => {
   return (
     <TableContainer>
       <PaginationControls
-        totalPages={pagDefault.data?.totalPages || 0}
+        totalPages={(availableRows.data?.totalRowCount  || 0) / rowsPerPage}
         rowsPerPage={rowsPerPage}
         currentPage={currentPage}
         setCurrentPage={setCurrentPage}

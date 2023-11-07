@@ -1,10 +1,11 @@
 import { fetchGenericSubgraph } from 'utils/subgraph';
 import env from 'constants/env';
 import { SubGraphResponse } from 'hooks/core/types';
-import { useApiQuery, getQueryKey } from 'hooks/api/use-react-query';
+import { CACHE_TTL, useApiQuery } from 'hooks/api/use-react-query';
 import { TxHistoryFilterType } from '../Table';
 import { DashboardType } from '../DashboardContent';
 import { StrategyKey } from './use-dashboardv2-metrics';
+import { useQuery } from '@tanstack/react-query';
 
 type Transactions = {
   hash: string;
@@ -23,8 +24,8 @@ type Transactions = {
   type?: StrategyKey;
 }[];
 
-type PaginationDefaults = {
-  totalPages: number;
+type AvailableRows = {
+  totalRowCount: number;
   blockNumber: number;
 };
 
@@ -45,8 +46,8 @@ type FetchTxnsResponse = SubGraphResponse<{ strategies: StrategyTxns; _meta: Met
 type Props = {
   dashboardType: DashboardType;
   filter: TxHistoryFilterType;
-  currentPage: number;
-  rowsPerPage: number;
+  offset: number;
+  limit: number;
   blockNumber: number;
 };
 
@@ -79,15 +80,15 @@ const dashboardTypeToStrategyKey = (dType: DashboardType): StrategyKey => {
 };
 
 const useTxHistory = (props: Props) =>
-  useApiQuery<Transactions>(
-    getQueryKey.txHistory(),
-    () => {
-      return fetchTransactions(props);
-    }
-  );
+  useQuery({
+    queryKey: ['TxHistory', props.dashboardType, props.filter, props.offset, props.limit, props.blockNumber],
+    queryFn: () => fetchTransactions(props),
+    refetchInterval: CACHE_TTL,
+    staleTime: CACHE_TTL,
+  });
 
 const fetchTransactions = async (props: Props): Promise<Transactions> => {
-  const { dashboardType, blockNumber, currentPage, rowsPerPage, filter } = props;
+  const { dashboardType, blockNumber, offset, limit, filter } = props;
   const strategyKey = dashboardTypeToStrategyKey(dashboardType);
   const strategyQuery = strategyKey === StrategyKey.ALL ? `` : `where: { name: "${strategyKey}" }`;
   const blockNumberQueryParam = blockNumber > 0 ? `block: { number: ${blockNumber} }` : ``;
@@ -96,7 +97,7 @@ const fetchTransactions = async (props: Props): Promise<Transactions> => {
     strategyAndBlockQuery = `(${blockNumberQueryParam} ${strategyQuery})`;
   }
 
-  const paginationQuery = `skip: ${(currentPage - 1) * rowsPerPage} first: ${rowsPerPage}`;
+  const paginationQuery = `skip: ${offset} first: ${limit}`;
 
   const dateNowSecs = Math.round(Date.now() / 1000);
   const filterQuery = `where: { timestamp_gt: ${dateNowSecs - txHistoryFilterTypeToSeconds(filter)} }`;
@@ -132,19 +133,21 @@ const fetchTransactions = async (props: Props): Promise<Transactions> => {
   return txns;
 };
 
-const useTxHistoryPaginationDefaults = (
+
+const useTxHistoryAvailableRows = (
   dashboardType: DashboardType,
-  rowsPerPage: number,
   filter: TxHistoryFilterType
-) =>
-  useApiQuery<PaginationDefaults>(getQueryKey.txPagDefault(), async () => {
-    return fetchPaginationDefaults(dashboardType, rowsPerPage, filter);
+) => useQuery({
+    queryKey: ['TxHistoryAvailableRows', dashboardType, filter],
+    queryFn: () => fetchTxHistoryAvailableRows(dashboardType, filter),
+    refetchInterval: CACHE_TTL,
+    staleTime: CACHE_TTL,
   });
-const fetchPaginationDefaults = async (
+
+const fetchTxHistoryAvailableRows = async (
   dashboardType: DashboardType,
-  rowsPerPage: number,
   filter: TxHistoryFilterType
-) => {
+): Promise<AvailableRows> => {
   const strategyKey = dashboardTypeToStrategyKey(dashboardType);
   const strategyQuery = strategyKey === StrategyKey.ALL ? `` : `( where: {name: "${strategyKey}"} )`;
   const dateNowSecs = Math.round(Date.now() / 1000);
@@ -166,20 +169,20 @@ const fetchPaginationDefaults = async (
           }`
   );
 
-  let pagDefaults: PaginationDefaults = {
-    totalPages: 0,
+  let result: AvailableRows = {
+    totalRowCount: 0,
     blockNumber: 0,
   };
 
   if (res) {
-    let txCountTotal = 0;
-    res.strategies.map((s) => (txCountTotal += s.transactions.length));
-    pagDefaults = {
-      totalPages: Math.ceil(txCountTotal / rowsPerPage),
+    let totalRowCount = 0;
+    res.strategies.map((s) => (totalRowCount += s.transactions.length));
+    result = {
+      totalRowCount,
       blockNumber: res._meta.block.number,
     };
   }
-  return pagDefaults;
+  return result;
 };
 
-export { useTxHistory, useTxHistoryPaginationDefaults };
+export { useTxHistory, useTxHistoryAvailableRows };
