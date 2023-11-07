@@ -1,10 +1,9 @@
 import styled from 'styled-components';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ZERO, fromAtto } from 'utils/bigNumber';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { useWallet } from 'providers/WalletProvider';
-import { ERC20__factory, TempleLineOfCredit__factory, TreasuryReservesVault__factory } from 'types/typechain';
-import env from 'constants/env';
+import { ERC20__factory, TempleLineOfCredit__factory } from 'types/typechain';
 import { ITlcDataTypes } from 'types/typechain/contracts/interfaces/v2/templeLineOfCredit/ITempleLineOfCredit';
 import { fetchGenericSubgraph } from 'utils/subgraph';
 import { BigNumber } from 'ethers';
@@ -20,6 +19,7 @@ import Supply from './TLC/Supply';
 import { getBigNumberFromString, getTokenInfo } from 'components/Vault/utils';
 import { useNotification } from 'providers/NotificationProvider';
 import { TemplePriceChart } from './Chart';
+import env from 'constants/env';
 
 export type State = {
   supplyValue: string;
@@ -63,8 +63,8 @@ export const BorrowPage = () => {
   const [tlcInfo, setTlcInfo] = useState<TlcInfo>();
   const [prices, setPrices] = useState<Prices>({ templePrice: 0, daiPrice: 0, tpi: 0 });
 
-  const getPrices = async () => {
-    const { data } = await fetchGenericSubgraph(
+  const getPrices = useCallback(async () => {
+    const { data } = await fetchGenericSubgraph<any>(
       'https://api.thegraph.com/subgraphs/name/medariox/v2-mainnet',
       `{
         tokens {
@@ -81,40 +81,21 @@ export const BorrowPage = () => {
       daiPrice: data.tokens.filter((t: any) => t.symbol == 'DAI')[0].price,
       tpi: data.treasuryReservesVaults[0].treasuryPriceIndex,
     });
-  };
+  }, []);
 
-  useEffect(() => {
-    const onMount = async () => {
-      await updateBalance();
-      await getTlcInfo();
-      await getPrices();
+  const getTlcInfo = useCallback(async () => {
+    const getAccountPosition = async () => {
+      if (!signer || !wallet) return;
+      const tlcContract = new TempleLineOfCredit__factory(signer).attach(env.contracts.tlc);
+      const position = await tlcContract.accountPosition(wallet);
+      setAccountPosition(position);
     };
-    onMount();
-  }, [signer]);
-
-  // Update token balances
-  useEffect(() => {
-    setState({
-      ...state,
-      inputTokenBalance: balance.TEMPLE,
-      outputTokenBalance: balance.DAI,
-    });
-  }, [balance]);
-
-  const getAccountPosition = async () => {
-    if (!signer || !wallet) return;
-    const tlcContract = new TempleLineOfCredit__factory(signer).attach(env.contracts.tlc);
-    const position = await tlcContract.accountPosition(wallet);
-    setAccountPosition(position);
-  };
-
-  const getTlcInfo = async () => {
     getAccountPosition();
     try {
-      const { data } = await fetchGenericSubgraph(
-        'https://api.thegraph.com/subgraphs/name/medariox/v2-mainnet',
+      const { data } = await fetchGenericSubgraph<any>(
+        env.subgraph.templeV2,
         `{
-          tlcdailySnapshots(orderBy: timestamp, orderDirection: desc, first: 1) {
+          tlcDailySnapshots(orderBy: timestamp, orderDirection: desc, first: 1) {
             interestRate
             maxLTVRatio
             minBorrowAmount
@@ -127,18 +108,35 @@ export const BorrowPage = () => {
           }
         }`
       );
-
       setTlcInfo({
-        minBorrow: data.tlcdailySnapshots[0].minBorrowAmount,
-        borrowRate: data.tlcdailySnapshots[0].interestRate,
-        liquidationLtv: data.tlcdailySnapshots[0].maxLTVRatio,
+        minBorrow: data.tlcDailySnapshots[0].minBorrowAmount,
+        borrowRate: data.tlcDailySnapshots[0].interestRate,
+        liquidationLtv: data.tlcDailySnapshots[0].maxLTVRatio,
         strategyBalance: data.strategies[0].strategyTokens[0].availableToBorrow,
         debtCeiling: data.strategies[0].strategyTokens[0].debtCeiling,
       });
     } catch (e) {
       console.log(e);
     }
-  };
+  }, [signer, wallet]);
+
+  useEffect(() => {
+    const onMount = async () => {
+      await updateBalance();
+      await getTlcInfo();
+      await getPrices();
+    };
+    onMount();
+  }, [getTlcInfo, updateBalance, getPrices]);
+
+  // Update token balances
+  useEffect(() => {
+    setState((state) => ({
+      ...state,
+      inputTokenBalance: balance.TEMPLE,
+      outputTokenBalance: balance.DAI,
+    }));
+  }, [balance]);
 
   const getLiquidationInfo = (additionalDebt?: number) => {
     if (!accountPosition || !tlcInfo) return <></>;
@@ -426,16 +424,9 @@ export const BorrowPage = () => {
               minBorrow={tlcInfo?.minBorrow}
               setState={setState}
               supply={supply}
-              back={() => setModal('closed')}
             />
           ) : modal === 'withdraw' ? (
-            <Withdraw
-              accountPosition={accountPosition}
-              state={state}
-              setState={setState}
-              withdraw={withdraw}
-              back={() => setModal('closed')}
-            />
+            <Withdraw accountPosition={accountPosition} state={state} setState={setState} withdraw={withdraw} />
           ) : modal === 'borrow' ? (
             <Borrow
               accountPosition={accountPosition}
@@ -445,7 +436,6 @@ export const BorrowPage = () => {
               liquidationInfo={getLiquidationInfo}
               setState={setState}
               borrow={borrow}
-              back={() => setModal('closed')}
             />
           ) : (
             <Repay
@@ -454,7 +444,6 @@ export const BorrowPage = () => {
               setState={setState}
               repay={repay}
               repayAll={repayAll}
-              back={() => setModal('closed')}
             />
           )}
         </ModalContainer>
@@ -553,7 +542,7 @@ const NumContainer = styled.div`
   text-align: left;
 `;
 
-const MarginTop = styled.div`
+export const MarginTop = styled.div`
   margin-top: 1rem;
 `;
 
@@ -566,7 +555,7 @@ const USDMetric = styled.div`
   font-size: 0.9rem;
 `;
 
-const Copy = styled.p`
+export const Copy = styled.p`
   color: ${({ theme }) => theme.palette.brandLight};
   letter-spacing: 0.05rem;
   font-size: 0.9rem;
@@ -581,7 +570,7 @@ const ModalContainer = styled.div`
   width: 350px;
 `;
 
-const Rule = styled.hr`
+export const Rule = styled.hr`
   border: 0;
   border-top: 1px solid ${({ theme }) => theme.palette.brand};
   margin: 0.5rem 0 0 0;
@@ -591,7 +580,7 @@ const BrandParagraph = styled.p`
   color: ${({ theme }) => theme.palette.brand};
 `;
 
-const FlexBetween = styled.div`
+export const FlexBetween = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -622,4 +611,120 @@ const MetricContainer = styled.div`
   align-items: center;
   justify-content: center;
   padding: 1.25rem;
+`;
+
+export const RemoveMargin = styled.div`
+  margin-top: -25px;
+`;
+
+export const BackButton = styled.img`
+  width: 0.75rem;
+  cursor: pointer;
+  position: absolute;
+  top: 1.25rem;
+  left: 1rem;
+`;
+
+export const Title = styled.div`
+  font-size: 1.5rem;
+  padding-bottom: 1rem;
+  padding-top: 1.25rem;
+  margin-bottom: 1rem;
+  color: ${({ theme }) => theme.palette.brandLight};
+  background: linear-gradient(
+    90deg,
+    rgba(196, 196, 196, 0) 0.49%,
+    rgba(89, 89, 89, 0.48) 50.04%,
+    rgba(196, 196, 196, 0) 100%
+  );
+`;
+
+export const RangeLabel = styled.div`
+  margin-bottom: 0.6rem;
+  text-align: left;
+  font-size: 0.8rem;
+  letter-spacing: 0.075rem;
+  color: ${({ theme }) => theme.palette.brandLight};
+`;
+
+export const RangeSlider = styled.input.attrs({ type: 'range' })<{ progress: number }>`
+  -webkit-appearance: none;
+  width: 100%;
+  height: 0.5rem;
+  background: ${({ theme }) => theme.palette.brandLight};
+  outline: none;
+  border-radius: 1rem;
+  margin-bottom: 0.4rem;
+
+  // Progress style with brand and brandLight
+  background: linear-gradient(
+    90deg,
+    ${({ theme }) => theme.palette.brand} ${({ progress }) => progress}%,
+    ${({ theme }) => theme.palette.brandLight} ${({ progress }) => progress}%
+  );
+  transition: background 0.2s ease-in-out;
+
+  // Thumb styles
+  ::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 50%;
+    background: ${({ theme }) => theme.palette.brand};
+    cursor: pointer;
+  }
+  ::-moz-range-thumb {
+    width: 1rem;
+    height: 1rem;
+    border-radius: 50%;
+    background: ${({ theme }) => theme.palette.brand};
+    cursor: pointer;
+  }
+`;
+
+export const GradientContainer = styled.div`
+  background: linear-gradient(
+    90deg,
+    rgba(196, 196, 196, 0) 0.49%,
+    rgba(89, 89, 89, 0.48) 50.04%,
+    rgba(196, 196, 196, 0) 100%
+  );
+  border-top: 1px solid ${({ theme }) => theme.palette.brand};
+  border-bottom: 1px solid ${({ theme }) => theme.palette.brand};
+  padding: 0.5rem 0;
+  margin: 1rem 0;
+`;
+
+export const Warning = styled.div`
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: left;
+  text-align: left;
+  gap: 0.5rem;
+  p {
+    font-size: 0.8rem;
+  }
+  margin-bottom: -0.5rem;
+`;
+
+export const InfoCircle = styled.div`
+  margin: 0.25rem;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 50%;
+  border: 1px solid ${({ theme }) => theme.palette.brand};
+`;
+
+export const FlexColCenter = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 `;

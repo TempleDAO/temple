@@ -1,13 +1,11 @@
-import leftCaret from 'assets/images/newui-images/leftCaret.svg';
 import { TradeButton } from '../../../NewUI/Home';
 import { Input } from '../../../NewUI/HomeInput';
 import { formatToken } from 'utils/formatter';
 import { ITlcDataTypes } from 'types/typechain/contracts/interfaces/v2/templeLineOfCredit/ITempleLineOfCredit';
 import {
-  BackButton,
   Copy,
   FlexBetween,
-  FlexCol,
+  FlexColCenter,
   GradientContainer,
   InfoCircle,
   MAX_LTV,
@@ -18,9 +16,8 @@ import {
   State,
   Title,
   Warning,
-} from './TLCModal';
+} from '../index';
 import { fromAtto } from 'utils/bigNumber';
-import { BigNumber } from 'ethers';
 
 interface IProps {
   accountPosition: ITlcDataTypes.AccountPositionStructOutput | undefined;
@@ -28,10 +25,9 @@ interface IProps {
   minBorrow: number | undefined;
   setState: React.Dispatch<React.SetStateAction<State>>;
   supply: () => void;
-  back: () => void;
 }
 
-export const Supply: React.FC<IProps> = ({ accountPosition, state, minBorrow, setState, supply, back }) => {
+export const Supply: React.FC<IProps> = ({ accountPosition, state, minBorrow, setState, supply }) => {
   const getEstimatedCollateral = (): number => {
     return accountPosition
       ? fromAtto(accountPosition.collateral) + Number(state.supplyValue)
@@ -120,14 +116,14 @@ export const Supply: React.FC<IProps> = ({ accountPosition, state, minBorrow, se
           total TEMPLE collateral.
         </Copy>
       </GradientContainer>
-      <FlexCol>
+      <FlexColCenter>
         <TradeButton
           onClick={() => supply()}
           disabled={Number(state.supplyValue) <= 0 || Number(state.supplyValue) > fromAtto(state.inputTokenBalance)}
         >
           Supply
         </TradeButton>
-      </FlexCol>
+      </FlexColCenter>
     </>
   );
 };

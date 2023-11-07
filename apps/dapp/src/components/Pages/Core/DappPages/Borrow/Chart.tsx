@@ -1,4 +1,4 @@
-import { DEFAULT_CHART_INTERVALS, ChartSupportedTimeIntervalNoDaily } from 'utils/time-intervals';
+import { ChartSupportedTimeInterval, LabeledTimeIntervals, TIME_INTERVAL } from 'utils/time-intervals';
 import type { AxisDomain } from 'recharts/types/util/types';
 import { useEffect, useState } from 'react';
 import { useTheme } from 'styled-components';
@@ -8,17 +8,25 @@ import Loader from 'components/Loader/Loader';
 import { formatNumberAbbreviated, formatNumberFixedDecimals } from 'utils/formatter';
 import { formatDailyDataPoints } from 'utils/charts';
 import { fetchGenericSubgraph } from 'utils/subgraph';
-import { IntervalTogglerExcludeDaily } from 'components/Charts/IntervalToggler';
+import IntervalToggler from 'components/Charts/IntervalToggler';
+import env from 'constants/env';
 
 type XAxisTickFormatter = (timestamp: number) => string;
 
-const tickFormatters: Record<ChartSupportedTimeIntervalNoDaily, XAxisTickFormatter> = {
+type ChartIntervals = '1W' | '1M' | '1Y';
+const CHART_INTERVALS: LabeledTimeIntervals = [
+  { interval: TIME_INTERVAL.ONE_WEEK, label: '1W' },
+  { interval: TIME_INTERVAL.ONE_MONTH, label: '1M' },
+  { interval: TIME_INTERVAL.ONE_YEAR, label: '1Y' },
+] as const;
+
+const tickFormatters: Record<ChartIntervals, XAxisTickFormatter> = {
   '1W': (timestamp) => format(timestamp, 'eee d LLL'),
   '1M': (timestamp) => format(timestamp, 'MMM do'),
   '1Y': (timestamp) => format(timestamp, 'MMM do y'),
 };
 
-const tooltipLabelFormatters: Record<ChartSupportedTimeIntervalNoDaily, XAxisTickFormatter> = {
+const tooltipLabelFormatters: Record<ChartIntervals, XAxisTickFormatter> = {
   ...tickFormatters,
 };
 
@@ -32,30 +40,30 @@ const tooltipValuesFormatter = (value: number, name: string) => [
 const yDomain: AxisDomain = ([dataMin, dataMax]) => [dataMin * 0.5, Number((dataMax * 1.5).toFixed(2))];
 
 export const TemplePriceChart = () => {
-  const [selectedInterval, setSelectedInterval] = useState<ChartSupportedTimeIntervalNoDaily>('1M');
+  const [selectedInterval, setSelectedInterval] = useState<ChartIntervals>('1M');
   const theme = useTheme();
   const [metrics, setMetrics] = useState<Metric[]>();
 
   useEffect(() => {
     const fetchMetrics = async () => {
-      const { data } = await fetchGenericSubgraph(
-        'https://api.thegraph.com/subgraphs/name/medariox/v2-mainnet',
+      const { data } = await fetchGenericSubgraph<any>(
+        env.subgraph.templeV2,
         `{
-            tlcdailySnapshots(orderBy: timestamp, orderDirection: desc) {
+            tlcDailySnapshots(orderBy: timestamp, orderDirection: desc) {
               timestamp
               utilRatio
               interestRate
             }
           }`
       );
-      setMetrics(data.tlcdailySnapshots);
+      setMetrics(data.tlcDailySnapshots);
     };
     fetchMetrics();
   }, []);
 
   if (!metrics) return <Loader />;
 
-  const formattedData = formatDailyDataPoints(metrics, DEFAULT_CHART_INTERVALS, new Date().getTime(), (metric) => ({
+  const formattedData = formatDailyDataPoints(metrics, CHART_INTERVALS, new Date().getTime(), (metric) => ({
     timestamp: metric.timestamp * 1000,
     utilRatio: metric.utilRatio * 100,
     interestRate: metric.interestRate * 100,
@@ -63,7 +71,11 @@ export const TemplePriceChart = () => {
 
   return (
     <>
-      <IntervalTogglerExcludeDaily selectedInterval={selectedInterval} setSelectedInterval={setSelectedInterval} />
+      <IntervalToggler
+        selectedInterval={selectedInterval}
+        setSelectedInterval={setSelectedInterval as any}
+        intervals={CHART_INTERVALS}
+      />
       {
         <LineChart
           chartData={formattedData[selectedInterval].reverse()}

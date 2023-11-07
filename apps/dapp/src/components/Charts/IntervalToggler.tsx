@@ -1,6 +1,7 @@
 import type { FC, Dispatch, SetStateAction, MouseEventHandler } from 'react';
 import type { ChartSupportedTimeInterval, LabeledTimeIntervals } from 'utils/time-intervals';
 import styled from 'styled-components';
+import { DEFAULT_CHART_INTERVALS } from 'utils/time-intervals';
 
 type IntervalTogglerProps = {
   selectedInterval: ChartSupportedTimeInterval;

@@ -1,7 +1,5 @@
-import { Popover } from 'components/Popover';
 import styled from 'styled-components';
-import { useEffect, useState } from 'react';
-import _ from 'lodash';
+import { useCallback, useEffect, useState } from 'react';
 import { Input } from '../NewUI/HomeInput';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { TradeButton } from '../NewUI/Home';
@@ -25,26 +23,25 @@ export const OhmagePage = () => {
   const [allowance, setAllowance] = useState(0);
   const { openNotification } = useNotification();
 
-  // Fetch the remaining DAI available for OTC
-  const getAvailableDai = async () => {
-    if (!signer) return;
-    const otcContract = new OtcOffer__factory(signer).attach(env.contracts.otcOffer);
-    const available = await otcContract.userBuyTokenAvailable();
-    setAvailableDai(fromAtto(available));
-  };
-
   // Fetch the allowance for OtcOffer to spend OHM
-  const checkAllowance = async () => {
+  const checkAllowance = useCallback(async () => {
     if (!signer || !wallet) return;
     const ohmContract = new ERC20__factory(signer).attach(env.contracts.olympus);
     const allowance = await ohmContract.allowance(wallet, env.contracts.otcOffer);
     setAllowance(ohmToNum(allowance));
-  };
+  }, [signer, wallet]);
 
   useEffect(() => {
+    // Fetch the remaining DAI available for OTC
+    const getAvailableDai = async () => {
+      if (!signer) return;
+      const otcContract = new OtcOffer__factory(signer).attach(env.contracts.otcOffer);
+      const available = await otcContract.userBuyTokenAvailable();
+      setAvailableDai(fromAtto(available));
+    };
     checkAllowance();
     getAvailableDai();
-  }, [signer]);
+  }, [signer, checkAllowance]);
 
   // Fetch the DAI quote when the input amount changes
   useEffect(() => {
@@ -57,7 +54,7 @@ export const OhmagePage = () => {
     };
     if (input === '') setOutput(0);
     else getQuote();
-  }, [input]);
+  }, [input, signer]);
 
   // Approve OtcOffer to spend OHM
   const approve = async () => {
@@ -140,7 +137,7 @@ export const OhmagePage = () => {
             if (insufficientAllowance) approve();
             else swap();
           }}
-          disabled={!signer || insufficientBalance || insufficientDaiAvailable}
+          disabled={!signer || insufficientBalance || insufficientDaiAvailable || balance.OHM.isZero()}
           style={{ margin: 'auto', whiteSpace: 'nowrap' }}
         >
           {insufficientBalance ? 'Insufficient balance' : insufficientAllowance ? 'Approve allowance' : 'Swap'}
