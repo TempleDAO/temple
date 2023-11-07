@@ -21,20 +21,20 @@ export const handleBlur = (value: number | '', minValue: number, maxValue: numbe
   return value;
 };
 
-export const formatJoinRequestTuple = (request?: IBalancerVault.JoinPoolRequestStruct): string => {
+export const formatJoinRequestTuple = (request?: IBalancerVault.JoinPoolRequestStructOutput): string => {
   if (request) {
     return `[[${request.assets.map((asset) => `"${asset}"`).join(',')}],[${request.maxAmountsIn
       .map((amount) => `"${amount}"`)
-      .join(',')}],"${request.userData}",false]`;
+      .join(',')}],"${request.userData}",${request.fromInternalBalance}]`;
   }
   return '';
 };
 
-export const formatExitRequestTuple = (request?: IBalancerVault.ExitPoolRequestStruct): string => {
+export const formatExitRequestTuple = (request?: IBalancerVault.ExitPoolRequestStructOutput): string => {
   if (request) {
     return `[[${request?.assets.map((asset) => `"${asset}"`).join(',')}],[${request?.minAmountsOut
       .map((amount) => `"${amount}"`)
-      .join(',')}],"${request?.userData}",false]`;
+      .join(',')}],"${request.userData}",${request.toInternalBalance}]`;
   }
   return '';
 };
@@ -83,6 +83,15 @@ export const calculateTargetPriceUp = async (
   const adjustedBps = limitedBasisPoints.div(DBN_TEN_THOUSAND, basisPoints.getDecimals());
   return currentPrice.add(currentPrice.mul(adjustedBps));
 };
+
+export const decodeUserData = (userData: string) => {
+  const [joinType,amountsIn,bptOut] = ethers.utils.defaultAbiCoder.decode(['uint256', 'uint256[]', 'uint256'], userData);
+  return {
+    joinType,
+    amountsIn,
+    bptOut,
+  }
+}
 
 export const makeJoinRequest = (tokens: string[], amountsIn: BigNumber[]): IBalancerVault.JoinPoolRequestStruct => {
   // 1 === WeightedJoinPoolKind.EXACT_TOKENS_IN_FOR_BPT_OUT
