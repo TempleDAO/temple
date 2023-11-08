@@ -1,4 +1,4 @@
-import { useState, FormEvent } from 'react';
+import { useState } from 'react';
 import styled from 'styled-components';
 import { TxHistoryFilterType } from '.';
 import { DashboardType } from '../DashboardContent';
@@ -7,6 +7,8 @@ import { TableRow, TxType, TxnDataTable } from './TxnDataTable';
 import { PaginationControl } from './PaginationControl';
 import { RowFilter, useTxHistory, useTxHistoryAvailableRows } from '../hooks/use-dashboardv2-txHistory';
 import { useDebouncedCallback } from 'use-debounce';
+import { StrategyKey } from '../hooks/use-dashboardv2-metrics';
+import { SelectTempleDaoOptions } from 'components/InputSelect/InputSelect';
 
 type Props = {
   dashboardType: DashboardType;
@@ -22,10 +24,16 @@ export enum TableHeaders {
   TxHash = 'Tx Hash',
 }
 
+enum DebtToken {
+  DAI = 'DAI',
+  TEMPLE = 'TEMPLE',
+}
+
 export type TxHistoryTableHeader = {
   name: TableHeaders;
   orderDesc?: boolean;
-  filter?: (event: FormEvent<HTMLInputElement>) => void;  
+  filter?: (event: HTMLInputElement) => void;
+  dropdownOptions?: SelectTempleDaoOptions;
 }
 
 const TxnHistoryTable = ({ dashboardType, txFilter }: Props) => {
@@ -41,26 +49,43 @@ const TxnHistoryTable = ({ dashboardType, txFilter }: Props) => {
     {
       name: TableHeaders.Type,
       orderDesc: undefined,
-      filter: useDebouncedCallback(async (event: FormEvent<EventTarget>) => {
-        const target = event.target as HTMLInputElement;
-        setRowFilter(s => ({...s, type: target.value}));
-      }, 500)
+      filter: useDebouncedCallback(async (event: HTMLInputElement) => {
+        setRowFilter(s => ({...s, type: event.value}));
+      }, 200),
+      // TODO: get the values programatically from subpgrah
+      dropdownOptions: [
+        { label:'All', value: '' },
+        { label: TxType.Borrow, value: TxType.Borrow },
+        { label: TxType.Repay, value: TxType.Repay },
+      ]
     },
     {
       name: TableHeaders.Strategy,
       orderDesc: undefined,
-      filter: useDebouncedCallback(async (event: FormEvent<EventTarget>) => {
-        const target = event.target as HTMLInputElement;
-        setRowFilter(s => ({...s, strategy: target.value}));
-      }, 500)
+      filter: useDebouncedCallback(async (event: HTMLInputElement) => {
+        setRowFilter(s => ({...s, strategy: event.value}));
+      }, 200),
+      // TODO: get the values programatically from subpgrah
+      dropdownOptions: [
+        { label:'All', value: '' },
+        { label: StrategyKey.RAMOS, value: StrategyKey.RAMOS },
+        { label: StrategyKey.TLC, value: StrategyKey.TLC },
+        { label: StrategyKey.TEMPLEBASE, value: StrategyKey.TEMPLEBASE },
+        { label: StrategyKey.DSRBASE, value: StrategyKey.DSRBASE },
+      ]
     },
     {
       name: TableHeaders.Token,
       orderDesc: undefined,
-      filter: useDebouncedCallback(async (event: FormEvent<EventTarget>) => {
-        const target = event.target as HTMLInputElement;
-        setRowFilter(s => ({...s, token: target.value}));
-      }, 500)
+      filter: useDebouncedCallback(async (event: HTMLInputElement) => {
+        setRowFilter(s => ({...s, token: event.value}));
+      }, 200),
+      // TODO: get the values programatically from subpgrah
+      dropdownOptions: [
+        { label:'All', value: '' },
+        { label: DebtToken.DAI, value: DebtToken.DAI },
+        { label: DebtToken.TEMPLE, value: DebtToken.TEMPLE },
+      ]
     },
     {
       name: TableHeaders.Amount,
@@ -72,7 +97,7 @@ const TxnHistoryTable = ({ dashboardType, txFilter }: Props) => {
     },
   ]);
 
-  const updateTableHeaders = (clickedHeader: TxHistoryTableHeader) => setTableHeaders(prevState => {
+  const updateTableHeadersOrder = (clickedHeader: TxHistoryTableHeader) => setTableHeaders(prevState => {
     const newState = prevState.map((prevStateHeader)=>{
       if(prevStateHeader.name === clickedHeader.name){
         return { ...prevStateHeader, orderDesc: !prevStateHeader.orderDesc };
@@ -132,7 +157,7 @@ const TxnHistoryTable = ({ dashboardType, txFilter }: Props) => {
         dataLoading={isLoading}
         dataRefetching={isRefetching}
         tableHeaders={tableHeaders}
-        updateTableHeaders={updateTableHeaders}
+        updateTableHeadersOrder={updateTableHeadersOrder}
       />
     </TableContainer>
   );

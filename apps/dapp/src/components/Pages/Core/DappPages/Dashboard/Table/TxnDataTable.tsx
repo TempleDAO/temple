@@ -5,12 +5,12 @@ import { loading } from 'utils/loading-value';
 import { StrategyKey } from '../hooks/use-dashboardv2-metrics';
 import { ArrowButtonUpDown } from 'components/Pages/Ascend/components/Trade/styles';
 import { TxHistoryTableHeader } from './TxnHistoryTable';
-import { theme } from 'styles/theme';
+import { InputSelect } from 'components/InputSelect/InputSelect';
 
 export enum TxType {
   Borrow = 'Borrow',
   Repay = 'Repay',
- }
+}
 
 export type TableRow = {
   date: string;
@@ -26,12 +26,11 @@ type Props = {
   dataLoading: boolean;
   dataRefetching: boolean;
   tableHeaders: TxHistoryTableHeader[];
-  updateTableHeaders: (currentHeader: TxHistoryTableHeader) => void;
+  updateTableHeadersOrder: (currentHeader: TxHistoryTableHeader) => void;
 };
 
 export const TxnDataTable = (props: Props) => {
-
-  const { dataSubset, dataLoading, dataRefetching, tableHeaders, updateTableHeaders } = props;
+  const { dataSubset, dataLoading, dataRefetching, tableHeaders, updateTableHeadersOrder } = props;
 
   return (
     <DataTable>
@@ -39,39 +38,47 @@ export const TxnDataTable = (props: Props) => {
         <HeaderRow>
           {tableHeaders.map((h, i) => (
             <TableHeader key={i}>
-              <InnerDataRow onClick={() => updateTableHeaders(h)}>
+              <InnerDataRow onClick={() => updateTableHeadersOrder(h)}>
                 {h.name}
                 {h.orderDesc !== undefined ? <ArrowButtonUpDown clicked={h.orderDesc} /> : <EmptySpace />}
               </InnerDataRow>
-              <InputStyled type="text" onInput={h.filter} disabled={!h.filter}/>
+              {h.filter && h.dropdownOptions && (
+                <InputSelect
+                  onChange={h.filter}
+                  options={h.dropdownOptions}
+                  defaultValue={h.dropdownOptions[0]}
+                  fontSize="0.68rem"
+                  textAlign="left"
+                />
+              )}
             </TableHeader>
           ))}
         </HeaderRow>
       </thead>
       <tbody>
-        {dataLoading ? 
+        {dataLoading ? (
           loadSkeletonRows(1, tableHeaders.length)
-        : !dataSubset || dataSubset.length === 0 ? (
+        ) : !dataSubset || dataSubset.length === 0 ? (
           <DataRow>
             <DataCell>No data available</DataCell>
           </DataRow>
         ) : (
           <>
-          {dataRefetching && loadSkeletonRows(1, tableHeaders.length)}
-          {dataSubset.map((row, index) => (
-            <DataRow key={index}>
-              <DataCell>{row.date}</DataCell>
-              <DataCell>{row.type}</DataCell>
-              <DataCell>{row.strategy}</DataCell>
-              <DataCell>{row.token}</DataCell>
-              <DataCell>{row.amount}</DataCell>
-              <DataCell>
-                <LinkStyled href={`${env.etherscan}/tx/${row.txHash}`} target="_blank">
-                  {row.txHash.slice(0, 12) + '...'}
-                </LinkStyled>
-              </DataCell>
-            </DataRow>
-          ))}
+            {dataRefetching && loadSkeletonRows(1, tableHeaders.length)}
+            {dataSubset.map((row, index) => (
+              <DataRow key={index}>
+                <DataCell>{row.date}</DataCell>
+                <DataCell>{row.type}</DataCell>
+                <DataCell>{row.strategy}</DataCell>
+                <DataCell>{row.token}</DataCell>
+                <DataCell>{row.amount}</DataCell>
+                <DataCell>
+                  <LinkStyled href={`${env.etherscan}/tx/${row.txHash}`} target="_blank">
+                    {row.txHash.slice(0, 12) + '...'}
+                  </LinkStyled>
+                </DataCell>
+              </DataRow>
+            ))}
           </>
         )}
       </tbody>
@@ -80,26 +87,21 @@ export const TxnDataTable = (props: Props) => {
 };
 
 const loadSkeletonRows = (skeletonRowsNo: number, skeletonColumnsNo: number) => {
-  return([...Array(skeletonRowsNo)].map(
-    (
-      _,
-      index
-    ) => (
-      <DataRow key={index}>
-        {[...Array(skeletonColumnsNo)].map(
-          (
-            _,
-            i // Adds x no of loading cells, same as no of table headers
-          ) => (
-            <DataCell key={i}>
-              <LoadingText value={loading()} />
-            </DataCell>
-          )
-        )}
-      </DataRow>
-    )
-  ))
-}
+  return [...Array(skeletonRowsNo)].map((_, index) => (
+    <DataRow key={index}>
+      {[...Array(skeletonColumnsNo)].map(
+        (
+          _,
+          i // Adds x no of loading cells, same as no of table headers
+        ) => (
+          <DataCell key={i}>
+            <LoadingText value={loading()} />
+          </DataCell>
+        )
+      )}
+    </DataRow>
+  ));
+};
 
 const TableHeader = styled.th`
   vertical-align: top;
@@ -149,17 +151,3 @@ const LinkStyled = styled.a`
   }
 `;
 
-const InputStyled = styled.input<{disabled: boolean}>`
-  ${theme.typography.fonts.fontBody};
-  color: ${({disabled}) => `${disabled ? theme.palette.brand25:theme.palette.brand}`};;
-  background-color: transparent;
-  border: solid;
-  border-width: thin;
-  width: 100%;
-  padding: 0.2rem;
-  outline: none;
-  &:hover {
-    cursor: ${({disabled}) => `${disabled ? 'not-allowed':'text'}`}
-  }
-  appearance: textfield;
-`;

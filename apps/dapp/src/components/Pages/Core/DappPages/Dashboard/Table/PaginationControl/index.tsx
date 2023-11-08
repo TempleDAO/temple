@@ -1,7 +1,7 @@
 import { Dispatch, SetStateAction } from 'react';
 import styled from 'styled-components';
 import { PageRangeSelector } from './PageRangeSelector';
-import { InputSelect } from 'components/InputSelect/InputSelect';
+import { InputSelect, SelectTempleDaoOptions, Option } from 'components/InputSelect/InputSelect';
 
 type PaginationControlProps = {
   currentPage: number;
@@ -11,17 +11,16 @@ type PaginationControlProps = {
   setRowsPerPage: Dispatch<SetStateAction<number>>;
 };
 
-type DropdownOptionsType = { value: number; label: string };
+const dropdownOptions: SelectTempleDaoOptions = [
+  { label: '5 rows', value: 5 },
+  { label: '10 rows', value: 10 },
+  { label: '20 rows', value: 20 },
+  { label: '50 rows', value: 50 },
+  { label: '100 rows', value: 100 },
+];
 
 export const PaginationControl = (props: PaginationControlProps) => {
   const { totalPages, currentPage, rowsPerPage, setCurrentPage, setRowsPerPage } = props;
-  const dropdownOptions: DropdownOptionsType[] = [
-    { label: '5 rows', value: 5 },
-    { label: '10 rows', value: 10 },
-    { label: '20 rows', value: 20 },
-    { label: '50 rows', value: 50 },
-    { label: '100 rows', value: 100 },
-  ];
 
   return (
     <PaginationContainer>
@@ -43,11 +42,12 @@ export const PaginationControl = (props: PaginationControlProps) => {
         Last
       </PageLink>
       <InputSelect
-        onChange={(e:DropdownOptionsType) => setRowsPerPage(e.value)}
+        onChange={(e:Option) => setRowsPerPage(Number(e.value))}
         options={dropdownOptions}
         defaultValue={dropdownOptions.find(o => o.value === rowsPerPage)}
         width='6rem'
         fontSize='0.68rem'
+        zIndex={5} // place it above table filter dropdowns when they overlap on mobile
       />
     </PaginationContainer>
   );
