@@ -43,11 +43,7 @@ const TxnHistoryTable = ({ dashboardType, txFilter }: Props) => {
       orderDesc: undefined,
       filter: useDebouncedCallback(async (event: FormEvent<EventTarget>) => {
         const target = event.target as HTMLInputElement;
-        // only set row filter type if value is 'Borrow' or 'Repay'
-        // subgraph only accept the exact value for this property
-        if (target.value.includes(TxType.Borrow) || target.value.includes(TxType.Repay) || target.value.length === 0 ){
-          setRowFilter(s => ({...s, type: target.value}));
-        }
+        setRowFilter(s => ({...s, type: target.value}));
       }, 500)
     },
     {
@@ -88,10 +84,11 @@ const TxnHistoryTable = ({ dashboardType, txFilter }: Props) => {
     return newState;
   });
   
-  const availableRows = useTxHistoryAvailableRows(
+  const availableRows = useTxHistoryAvailableRows({
     dashboardType,
-    txFilter
-  );
+    txFilter,
+    rowFilter
+  });
 
   const txHistory = useTxHistory({
     dashboardType,
@@ -111,7 +108,7 @@ const TxnHistoryTable = ({ dashboardType, txFilter }: Props) => {
       const amount = Number(Number(tx.amount).toFixed(2));
       return {
         date: format(new Date(Number(tx.timestamp) * 1000), 'yyyy-MM-dd H:mm:ss O'),
-        type: tx.kind,
+        type: tx.name,
         strategy: tx.strategy.name,
         token: tx.token.symbol,
         amount: amount,
@@ -119,10 +116,12 @@ const TxnHistoryTable = ({ dashboardType, txFilter }: Props) => {
       };
     });
 
+    const totalPages = Math.ceil((availableRows.data?.totalRowCount  || 0) / rowsPerPage);
+
   return (
     <TableContainer>
       <PaginationControl
-        totalPages={(availableRows.data?.totalRowCount  || 0) / rowsPerPage}
+        totalPages={totalPages}
         rowsPerPage={rowsPerPage}
         currentPage={currentPage}
         setCurrentPage={setCurrentPage}

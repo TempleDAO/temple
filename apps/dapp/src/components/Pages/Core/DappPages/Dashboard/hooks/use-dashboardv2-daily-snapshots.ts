@@ -109,12 +109,12 @@ export default function useV2StrategySnapshotData() {
     data: dailyMetrics,
     isLoading: dL,
     isError: dE,
-  } = useApiQuery<V2StrategySnapshot[]>(getQueryKey.allStrategiesDailySnapshots(), fetchStrategyDailySnapshots);
+  } = useApiQuery(getQueryKey.allStrategiesDailySnapshots(), fetchStrategyDailySnapshots);
   const {
     data: hourlyMetrics,
     isLoading: hL,
     isError: hE,
-  } = useApiQuery<V2StrategySnapshot[]>(getQueryKey.allStrategiesHourlySnapshots(), fetchStrategyHourlySnapshots);
+  } = useApiQuery(getQueryKey.allStrategiesHourlySnapshots(), fetchStrategyHourlySnapshots);
 
   return {
     dailyMetrics,

@@ -32,7 +32,6 @@ type Props = {
 export const TxnDataTable = (props: Props) => {
 
   const { dataSubset, dataLoading, dataRefetching, tableHeaders, updateTableHeaders } = props;
-  const skeletonRowsNo = dataLoading ? 3 : dataRefetching ? 1 : 0;
 
   return (
     <DataTable>
@@ -51,7 +50,7 @@ export const TxnDataTable = (props: Props) => {
       </thead>
       <tbody>
         {dataLoading ? 
-          loadSkeletonRows(3, tableHeaders.length)
+          loadSkeletonRows(1, tableHeaders.length)
         : !dataSubset || dataSubset.length === 0 ? (
           <DataRow>
             <DataCell>No data available</DataCell>

@@ -1,13 +1,12 @@
 import { fetchGenericSubgraph } from 'utils/subgraph';
 import env from 'constants/env';
 import { SubGraphResponse } from 'hooks/core/types';
-import { CACHE_TTL } from 'hooks/api/use-react-query';
 import { TxHistoryFilterType } from '../Table';
 import { DashboardType } from '../DashboardContent';
 import { StrategyKey } from './use-dashboardv2-metrics';
 import { TableHeaders, TxHistoryTableHeader } from '../Table/TxnHistoryTable';
 import { TxType } from '../Table/TxnDataTable';
-import { useQuery } from '@tanstack/react-query';
+import { getQueryKey, useApiQuery } from 'hooks/api/use-react-query';
 
 type Transactions = {
   hash: string;
@@ -25,7 +24,7 @@ type Transactions = {
   id: string;
   from: string;
   to: string;
-  kind: TxType;
+  name: TxType;
   timestamp: string;
 }[];
 
@@ -45,19 +44,19 @@ type Meta = {
   };
 };
 
-type FetchTxnsResponse = SubGraphResponse<{ 
+type FetchTxnsResponse = SubGraphResponse<{
   strategyTransactions: Transactions;
   metrics: Metrics;
-  _meta: Meta 
+  _meta: Meta;
 }>;
 
 export type RowFilter = {
   type?: string;
   strategy?: string;
   token?: string;
-}
+};
 
-type Props = {
+export type TxHistoryProps = {
   dashboardType: DashboardType;
   txFilter: TxHistoryFilterType;
   rowFilter: RowFilter;
@@ -66,6 +65,12 @@ type Props = {
   blockNumber: number;
   tableHeaders: TxHistoryTableHeader[];
 };
+
+export type TxHistoryAvailableRowsProps = {
+  dashboardType: DashboardType;
+  txFilter: TxHistoryFilterType;
+  rowFilter: RowFilter;
+}
 
 const txHistoryFilterTypeToSeconds = (filter: TxHistoryFilterType) => {
   const dateNowSecs = Math.round(Date.now() / 1000);
@@ -97,13 +102,13 @@ const dashboardTypeToStrategyKey = (dType: DashboardType): StrategyKey => {
 
 const getTableHeaderOrderByType = (tableHeader?: TxHistoryTableHeader) => {
   if (!tableHeader) return 'timestamp';
-  switch(tableHeader.name){
+  switch (tableHeader.name) {
     case TableHeaders.Date:
       return 'timestamp';
     case TableHeaders.Strategy:
       return 'strategy__name';
     case TableHeaders.Type:
-      return 'kind';
+      return 'name';
     case TableHeaders.Token:
       return 'token__name';
     case TableHeaders.Amount:
@@ -111,39 +116,29 @@ const getTableHeaderOrderByType = (tableHeader?: TxHistoryTableHeader) => {
     case TableHeaders.TxHash:
       return 'hash';
   }
-}
+};
 
-const useTxHistory = (props: Props) => {
-const { dashboardType, txFilter, rowFilter, offset, limit, blockNumber } = props;
-  return useQuery({
-    queryKey: ['TxHistory', dashboardType, txFilter, rowFilter, offset, limit, blockNumber],
-    queryFn: () => fetchTransactions(props),
-    refetchInterval: CACHE_TTL,
-    staleTime: CACHE_TTL,
-  });
-}
+const useTxHistory = (props: TxHistoryProps) =>
+  useApiQuery(
+    getQueryKey.txHistory(props),
+    () => fetchTransactions(props)
+  );
 
-const fetchTransactions = async (props: Props): Promise<Transactions> => {
-  const { 
-    dashboardType,
-    blockNumber,
-    offset,
-    limit,
-    txFilter,
-    rowFilter,
-    tableHeaders
-  } = props;
+const fetchTransactions = async (props: TxHistoryProps): Promise<Transactions> => {
+  const { dashboardType, blockNumber, offset, limit, txFilter, rowFilter, tableHeaders } = props;
 
   const strategyKey = dashboardTypeToStrategyKey(dashboardType);
   const strategyQuery = strategyKey === StrategyKey.ALL ? `` : `strategy_: {name: "${strategyKey}"}`;
-  const blockNumberQueryParam = blockNumber > 0 ? `block: { number: ${blockNumber} }` : ``;
+  const blockNumberQueryParam = blockNumber > 0 ? (`block: { number: ${blockNumber} }`) : ``;
 
   const paginationQuery = `skip: ${offset} first: ${limit}`;
 
   const dateNowSecs = Math.round(Date.now() / 1000);
-  const typeRowFilterQuery = `${rowFilter.type ? 'kind: '+rowFilter.type : ''}`;
-  const strategyRowFilterQuery = `${rowFilter.strategy ? 'strategy_: {name_contains_nocase: "'+rowFilter.strategy+'"}' : ''}`;
-  const tokenRowFilterQuery = `${rowFilter.token ? 'token_: {symbol_contains_nocase: "'+rowFilter.token+'"}' : ''}`;
+  const typeRowFilterQuery = `${rowFilter.type ? ('name_contains_nocase: "' + rowFilter.type + '"') : ''}`;
+  const strategyRowFilterQuery = `${
+    rowFilter.strategy ? ('strategy_: {name_contains_nocase: "' + rowFilter.strategy + '"}') : ''
+  }`;
+  const tokenRowFilterQuery = `${rowFilter.token ? ('token_: {symbol_contains_nocase: "' + rowFilter.token + '"}') : ''}`;
   const whereQuery = `
     ${blockNumberQueryParam} 
     where: { 
@@ -153,11 +148,11 @@ const fetchTransactions = async (props: Props): Promise<Transactions> => {
       ${strategyRowFilterQuery} 
       ${tokenRowFilterQuery}
     }`;
-  const orderHeader = tableHeaders.find(h => h.orderDesc !== undefined);
-  
+  const orderHeader = tableHeaders.find((h) => h.orderDesc !== undefined);
+
   // set default ordering
-  const orderBy =  getTableHeaderOrderByType(tableHeaders.find(h=>h.orderDesc!==undefined));
-  const orderType = orderHeader ? orderHeader.orderDesc ? 'desc' : 'asc' : 'desc';
+  const orderBy = getTableHeaderOrderByType(tableHeaders.find((h) => h.orderDesc !== undefined));
+  const orderType = orderHeader ? (orderHeader.orderDesc ? 'desc' : 'asc') : 'desc';
 
   const subgraphQuery = `{
     strategyTransactions(orderBy: ${orderBy}, orderDirection: ${orderType} ${paginationQuery} ${whereQuery}) {
@@ -175,7 +170,7 @@ const fetchTransactions = async (props: Props): Promise<Transactions> => {
       amountUSD
       id
       from
-      kind
+      name
       timestamp
     }
   }`;
@@ -185,26 +180,32 @@ const fetchTransactions = async (props: Props): Promise<Transactions> => {
   return res.strategyTransactions;
 };
 
+const useTxHistoryAvailableRows = (props: TxHistoryAvailableRowsProps) =>
+  useApiQuery(
+    getQueryKey.txHistoryAvailableRows(props),
+    () => fetchTxHistoryAvailableRows(props)
+  );
 
-const useTxHistoryAvailableRows = (
-  dashboardType: DashboardType,
-  filter: TxHistoryFilterType
-) => useQuery({
-    queryKey: ['TxHistoryAvailableRows', dashboardType, filter],
-    queryFn: () => fetchTxHistoryAvailableRows(dashboardType, filter),
-    refetchInterval: CACHE_TTL,
-    staleTime: CACHE_TTL,
-  });
-
-const fetchTxHistoryAvailableRows = async (
-  dashboardType: DashboardType,
-  filter: TxHistoryFilterType
-): Promise<AvailableRows> => {
+const fetchTxHistoryAvailableRows = async (props: TxHistoryAvailableRowsProps): Promise<AvailableRows> => {
+  const {dashboardType, rowFilter, txFilter} = props;
   const strategyKey = dashboardTypeToStrategyKey(dashboardType);
   const strategyQuery = strategyKey === StrategyKey.ALL ? `` : `strategy_: {name: "${strategyKey}"}`;
   const dateNowSecs = Math.round(Date.now() / 1000);
+  const typeRowFilterQuery = `${rowFilter.type ? ('name_contains_nocase: "' + rowFilter.type + '"') : ''}`;
+  const strategyRowFilterQuery = `${
+    rowFilter.strategy ? ('strategy_: {name_contains_nocase: "' + rowFilter.strategy + '"}') : ''
+  }`;
+  const tokenRowFilterQuery = `${rowFilter.token ? ('token_: {symbol_contains_nocase: "' + rowFilter.token + '"}') : ''}`;
   // get the max allowed 1000 records for a more accurate totalPages calculation
-  const whereQuery = `( first: 1000 where: { ${strategyQuery} timestamp_gt: ${dateNowSecs - txHistoryFilterTypeToSeconds(filter)} } )`;
+  const whereQuery = `( first: 1000 
+    where: { 
+      ${strategyQuery} 
+      timestamp_gt: ${ dateNowSecs - txHistoryFilterTypeToSeconds(txFilter) } 
+      ${typeRowFilterQuery} 
+      ${strategyRowFilterQuery} 
+      ${tokenRowFilterQuery}
+    } 
+  )`;
   const subgraphQuery = `{
     metrics {
       strategyTransactionCount
@@ -225,12 +226,17 @@ const fetchTxHistoryAvailableRows = async (
     blockNumber: 0,
     totalTransactionCount: 0,
   };
+  // const rowFilters = rowFilter.strategy || rowFilter.token || rowFilter.type;
+  let hasRowFilters = false;
+  if (rowFilter.strategy) hasRowFilters = rowFilter.strategy.length > 0;
+  if (rowFilter.token) hasRowFilters = rowFilter.token.length > 0;
+  if (rowFilter.type) hasRowFilters = rowFilter.type.length > 0;
   if (res) {
     let totalRowCount = 0;
-    if (filter === 'all' && strategyKey === StrategyKey.ALL) {
-      // if user chooses all transactions sum the txCountTotal of every strategy, we don't use this
-      // calc for the last30days or lastweek filters because it could show an incorrect number
-      // of totalPages, e.g. only 3 txs last week, but a total of 10000 txs in total
+    // if (props.txFilter === TxHistoryFilterType.all && strategyKey === StrategyKey.ALL && (rowFilters && rowFilters?.length === 0)) {
+    if (props.txFilter === TxHistoryFilterType.all && strategyKey === StrategyKey.ALL && !hasRowFilters) {
+      // if user chooses all transactions, sum the txCountTotal of every strategy, we don't use this
+      // calc for the last30days or lastweek filters because it could show an incorrect number of totalPages
       totalRowCount = res.metrics[0].strategyTransactionCount;
     } else {
       // if user chooses last30days or lastweek filters, count the length of txs of each strategy
@@ -238,15 +244,11 @@ const fetchTxHistoryAvailableRows = async (
       // which is unlikely in foreseeable future. This due to the max 1000 records subgraph limitation
       totalRowCount = res.strategyTransactions.length;
     }
-    // pagDefaults = {
-    //   totalPages: Math.ceil(txCountTotal / rowsPerPage),
-    
-    //** */
-    // res.strategyTransactions.map((s) => (totalRowCount += s.));
+
     result = {
       totalRowCount,
       blockNumber: res._meta.block.number,
-      totalTransactionCount: totalRowCount
+      totalTransactionCount: totalRowCount,
     };
   }
   return result;
