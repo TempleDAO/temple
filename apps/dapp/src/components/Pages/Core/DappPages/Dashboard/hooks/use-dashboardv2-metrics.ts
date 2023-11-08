@@ -156,6 +156,7 @@ export default function useDashboardV2Metrics() {
           `{
             strategies {
               name
+              isShutdown
               id
               totalMarketValueUSD
               nominalEquityUSD
@@ -182,7 +183,7 @@ export default function useDashboardV2Metrics() {
 
       const ramosSubgraphData = ramosSubgraphResponse?.data?.strategies.find(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (_strategy: any) => _strategy.name === strategy
+        (_strategy: any) => _strategy.name === strategy && _strategy.isShutdown === false
       );
 
       const daiStrategyTokenData = ramosSubgraphData?.strategyTokens.find(
@@ -447,7 +448,8 @@ export default function useDashboardV2Metrics() {
             title: 'Debt Ceiling Utilization',
             value: `${formatPercent(metrics.debtCeilingUtilization)}%`,
           },
-        ],[
+        ],
+        [
           {
             title: 'Total Repayment',
             value: `${formatBigMoney(metrics.totalRepayment)} DAI`,
@@ -460,7 +462,8 @@ export default function useDashboardV2Metrics() {
             title: 'Accrued dUSD Interest',
             value: `$${formatBigMoney(metrics.benchmarkedEquity)}`,
           },
-        ],[
+        ],
+        [
           {
             title: 'Nominal Performance',
             value: `${formatPercent(metrics.nominalPerformance)}%`,
