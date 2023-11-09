@@ -70,7 +70,7 @@ export const InputSelect = (props: SelectTempleDaoProps) => {
           paddingTop: '1.5rem',
           marginTop: '-1.5rem',
           border: `0.0625rem solid ${theme.palette.brand}`,
-          zIndex: props.zIndex,
+          zIndex: props.zIndex ?? 1,
         }),
         menuList: (base, state) => ({
           base,

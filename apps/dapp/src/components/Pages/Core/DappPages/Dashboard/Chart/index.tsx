@@ -56,7 +56,6 @@ const DashboardChart = ({ dashboardType, strategyNames }: DashboardChartProps) =
               defaultValue={metricOptions.find((m) => m.value === selectedMetric)}
               onChange={(e) => selectMetric(e.value)}
               isSearchable={false}
-              zIndex={1}
             />
           </SelectMetricContainer>
           <IntervalTogglerContainer>
