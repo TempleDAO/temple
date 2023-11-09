@@ -8,10 +8,10 @@ import { DBN_ZERO, DecimalBigNumber } from 'utils/DecimalBigNumber';
 import { InputArea, RequestArea, TitleWrapper } from '../styles';
 
 interface IProps {
-  handleInput: (
+  handleInput?: (
     stableAmount: DecimalBigNumber
   ) => Promise<{ templeAmount: DecimalBigNumber; stableAmount: DecimalBigNumber }>;
-  calculateFunc: (
+  calculateFunc?: (
     templeAmount: BigNumber,
     stableAmount: BigNumber
   ) => Promise<{ joinPoolRequest: string; minBptOut: string } | undefined>;
@@ -42,6 +42,7 @@ export const AddLiquidity: React.FC<IProps> = ({ calculateFunc, handleInput }) =
         small
         handleChange={async (e: string) => {
           if (Number(e)) {
+            if(!handleInput) return;
             setAmounts(await handleInput(DecimalBigNumber.parseUnits(e, 18)));
           } else setAmounts({ templeAmount: DBN_ZERO, stableAmount: DBN_ZERO });
         }}
@@ -51,6 +52,7 @@ export const AddLiquidity: React.FC<IProps> = ({ calculateFunc, handleInput }) =
         isSmall
         label="CREATE REQUEST PARAMS"
         onClick={async () => {
+          if(!calculateFunc) return;
           const poolInfo = await calculateFunc(amounts.templeAmount.toBN(18), amounts.stableAmount.toBN(18));
           setJoinPoolInfo(poolInfo);
         }}
