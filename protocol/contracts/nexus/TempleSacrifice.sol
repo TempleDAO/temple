@@ -7,6 +7,7 @@ import { ITempleSacrifice } from "../interfaces/nexus/ITempleSacrifice.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { ElevatedAccess } from "./access/ElevatedAccess.sol";
 import { ITempleERC20Token } from "../interfaces/core/ITempleERC20Token.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { CommonEventsAndErrors } from "../common/CommonEventsAndErrors.sol";
 import { mulDiv } from "@prb/math/src/Common.sol";
 
@@ -16,12 +17,12 @@ import { mulDiv } from "@prb/math/src/Common.sol";
  * during a flash sale.
  */
 contract TempleSacrifice is ITempleSacrifice, ElevatedAccess {
-    using SafeERC20 for ITempleERC20Token;
+    using SafeERC20 for IERC20;
 
     /// @notice the Relic ERC721A token
     IRelic public immutable relic;
     /// @notice the temple token used for payment in minting a relic
-    ITempleERC20Token public immutable templeToken;
+    IERC20 public immutable sacrificeToken;
     /// @notice send sacrificed temple to this address
     address public sacrificedTempleRecipient;
     /// @notice start time from which price increases
@@ -36,12 +37,12 @@ contract TempleSacrifice is ITempleSacrifice, ElevatedAccess {
 
     constructor(
         address _relic,
-        address _templeToken,
+        address _sacrificeToken,
         address _sacrificedTempleRecipient,
         address _initialExecutor
     ) ElevatedAccess(_initialExecutor) {
         relic = IRelic(_relic);
-        templeToken = ITempleERC20Token(_templeToken);
+        sacrificeToken = ITempleERC20Token(_sacrificeToken);
         sacrificedTempleRecipient = _sacrificedTempleRecipient;
         /// @dev caution so that origin time is never 0 and lesser than or equal to current block timestamp
         originTime = uint64(block.timestamp);
@@ -103,7 +104,7 @@ contract TempleSacrifice is ITempleSacrifice, ElevatedAccess {
     function sacrifice(uint256 enclaveId) external {
         if (block.timestamp < originTime) { revert FutureOriginTime(originTime); }
         uint256 amount = _getPrice(customPrice, originTime);
-        templeToken.safeTransferFrom(msg.sender, sacrificedTempleRecipient, amount);
+        sacrificeToken.safeTransferFrom(msg.sender, sacrificedTempleRecipient, amount);
         relic.mintRelic(msg.sender, enclaveId);
         emit TempleSacrificed(msg.sender, amount);
     }

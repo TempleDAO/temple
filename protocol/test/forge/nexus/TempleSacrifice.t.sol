@@ -1,77 +1,78 @@
 pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
+// Temple (tests/forge/nexus/TempleSacrifice.sol)
 
-// import { TempleTest } from "../TempleTest.sol";
-// import { Relic } from "../../../contracts/nexus/Relic.sol";
-// import { Shard } from "../../../contracts/nexus/Shard.sol";
-// import { TempleSacrifice } from "../../../contracts/nexus/TempleSacrifice.sol";
-// import { TempleERC20Token } from "../../../contracts/core/TempleERC20Token.sol";
-// import { CommonEventsAndErrors } from "../../../contracts/common/CommonEventsAndErrors.sol";
-// import { IERC1155Receiver } from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
-// import { IRelic } from "../../../contracts/interfaces/nexus/IRelic.sol";
-
-
-// contract TempleSacrificeTestBase is TempleTest {
-
-//     Relic public relic;
-//     Shard public shard;
-//     TempleSacrifice public templeSacrifice;
-//     TempleERC20Token public templeToken; 
+import { TempleTest } from "../TempleTest.sol";
+import { Relic } from "../../../contracts/nexus/Relic.sol";
+import { Shard } from "../../../contracts/nexus/Shard.sol";
+import { TempleSacrifice } from "../../../contracts/nexus/TempleSacrifice.sol";
+import { TempleERC20Token } from "../../../contracts/core/TempleERC20Token.sol";
+import { CommonEventsAndErrors } from "../../../contracts/common/CommonEventsAndErrors.sol";
+import { IERC1155Receiver } from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
+import { IRelic } from "../../../contracts/interfaces/nexus/IRelic.sol";
 
 
-//     string private constant name = "RELIC";
-//     string private constant symbol = "REL";
+contract TempleSacrificeTestBase is TempleTest {
 
-//     uint256 internal constant MINIMUM_CUSTOM_PRICE = 30 ether;
-//     uint256 internal constant ONE_ETHER = 1 ether;
-//     uint256 internal constant PRICE_MAX_PERIOD = 365 days;
-
-//     event OriginTimeSet(uint64 originTime);
-//     event CustomPriceSet(uint256 price);
-//     event TempleSacrificed(address account, uint256 amount);
-//     event PriceParamsSet(TempleSacrifice.PriceParam params);
-//     event TempleRecipientSet(address recipient);
+    Relic public relic;
+    Shard public shard;
+    TempleSacrifice public templeSacrifice;
+    TempleERC20Token public sacrificeToken; 
 
 
-//     function setUp() public {
-//         relic = new Relic(name, symbol, rescuer, executor);
-//         shard = new Shard(address(relic), rescuer, executor, "http://example.com");
-//         templeToken = new TempleERC20Token();
-//         templeToken.addMinter(bob);
-//         templeToken.addMinter(alice);
-//         templeToken.addMinter(address(this));
-//         templeSacrifice = new TempleSacrifice(address(relic), address(templeToken), bob);
-//         vm.startPrank(executor);
-//         relic.setRelicMinter(address(templeSacrifice), true);
-//         vm.stopPrank();
-//     }
+    string private constant name = "RELIC";
+    string private constant symbol = "REL";
 
-//     function test_initialization() public {
-//         assertEq(address(templeSacrifice.templeToken()), address(templeToken));
-//         assertEq(address(templeSacrifice.relic()), address(relic));
-//         assertEq(address(templeSacrifice.owner()), address(this));
-//         assertEq(relic.relicMinters(address(templeSacrifice)), true);
-//     }
+    uint256 internal constant MINIMUM_CUSTOM_PRICE = 30 ether;
+    uint256 internal constant ONE_ETHER = 1 ether;
+    uint256 internal constant PRICE_MAX_PERIOD = 365 days;
 
-//     function _mintTemple(address to, uint256 amount) internal {
-//         templeToken.mint(to, amount);
-//     }
+    event OriginTimeSet(uint64 originTime);
+    event CustomPriceSet(uint256 price);
+    event TempleSacrificed(address account, uint256 amount);
+    event PriceParamsSet(TempleSacrifice.PriceParam params);
+    event TempleRecipientSet(address recipient);
 
-//     function _getPriceParams() internal pure returns (TempleSacrifice.PriceParam memory params) {
-//         params.minimumPrice = uint128(MINIMUM_CUSTOM_PRICE);
-//         params.maximumPrice = uint128(200 * ONE_ETHER);
-//         params.priceMaxPeriod = 365 days;
-//     }
-// }
 
-// contract TempleSacrificeAccessTest is TempleSacrificeTestBase {
+    function setUp() public {
+        relic = new Relic(name, symbol, rescuer, executor);
+        shard = new Shard(address(relic), rescuer, executor, "http://example.com");
+        sacrificeToken = new TempleERC20Token();
+        sacrificeToken.addMinter(bob);
+        sacrificeToken.addMinter(alice);
+        sacrificeToken.addMinter(address(this));
+        templeSacrifice = new TempleSacrifice(address(relic), address(sacrificeToken), bob, executor);
+        vm.startPrank(executor);
+        relic.setRelicMinter(address(templeSacrifice), true);
+        vm.stopPrank();
+    }
 
-//     function test_access_setOriginTimetFail(address caller) public {
-//         vm.assume(caller != address(this));
-//         vm.startPrank(caller);
-//         vm.expectRevert("Ownable: caller is not the owner");
-//         templeSacrifice.setOriginTime(uint64(block.timestamp));
-//     }
+    function test_initialization() public {
+        assertEq(address(templeSacrifice.sacrificeToken()), address(sacrificeToken));
+        assertEq(address(templeSacrifice.relic()), address(relic));
+        assertEq(address(templeSacrifice.executor()), executor);
+        assertEq(relic.relicMinters(address(templeSacrifice)), true);
+    }
+
+    function _mintTemple(address to, uint256 amount) internal {
+        sacrificeToken.mint(to, amount);
+    }
+
+    function _getPriceParams() internal pure returns (TempleSacrifice.PriceParam memory params) {
+        params.minimumPrice = uint128(MINIMUM_CUSTOM_PRICE);
+        params.maximumPrice = uint128(200 * ONE_ETHER);
+        params.priceMaxPeriod = 365 days;
+    }
+}
+
+contract TempleSacrificeAccessTest is TempleSacrificeTestBase {
+
+    function test_access_setOriginTimetFail(address caller) public {
+        vm.assume(caller != address(this));
+        vm.startPrank(caller);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
+        templeSacrifice.setOriginTime(uint64(block.timestamp));
+    }
 
 //     function test_access_setSacrificedTempleRecipientFail(address caller) public {
 //         vm.assume(caller != address(this));
@@ -108,7 +109,7 @@ pragma solidity 0.8.19;
 //     function test_access_setCustomPriceSuccess() public {
 //         templeSacrifice.setCustomPrice(20**18);
 //     }
-// }
+}
 
 // contract TempleSacrificeTest is TempleSacrificeAccessTest {
 
@@ -210,9 +211,9 @@ pragma solidity 0.8.19;
 //         _mintTemple(alice, 1_000 ether);
 //         templeSacrifice.setSacrificedTempleRecipient(bob);
 //         vm.startPrank(alice);
-//         templeToken.approve(address(templeSacrifice), 1_000 ether);
-//         uint256 aliceTempleBalanceBefore = templeToken.balanceOf(alice);
-//         uint256 recipientBalanceBefore = templeToken.balanceOf(bob);
+//         sacrificeToken.approve(address(templeSacrifice), 1_000 ether);
+//         uint256 aliceTempleBalanceBefore = sacrificeToken.balanceOf(alice);
+//         uint256 recipientBalanceBefore = sacrificeToken.balanceOf(bob);
 
 //         vm.warp(originTime);
 //         uint256 price = templeSacrifice.getPrice();
@@ -220,8 +221,8 @@ pragma solidity 0.8.19;
 //         emit TempleSacrificed(alice, price);
 //         templeSacrifice.sacrifice(IRelic.Enclave.Chaos);
 //         assertEq(price, _calculatePrice(params));
-//         assertEq(templeToken.balanceOf(alice), aliceTempleBalanceBefore - price);
-//         assertEq(templeToken.balanceOf(bob), recipientBalanceBefore + price);
+//         assertEq(sacrificeToken.balanceOf(alice), aliceTempleBalanceBefore - price);
+//         assertEq(sacrificeToken.balanceOf(bob), recipientBalanceBefore + price);
 //     }
 
 //     function test_getPrice() public {

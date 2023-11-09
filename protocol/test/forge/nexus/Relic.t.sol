@@ -1,5 +1,6 @@
 pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
+// Temple (tests/forge/nexus/Relic.t.sol)
 
 import { TempleTest } from "../TempleTest.sol";
 import { Relic } from "../../../contracts/nexus/Relic.sol";
@@ -106,9 +107,9 @@ contract RelicTestBase is TempleTest {
     event NexusCommonSet(address nexusCommon);
 
     function setUp() public {
-        relic = new Relic(NAME, SYMBOL, rescuer, executor);
-        shard = new Shard(address(relic), rescuer, executor, BASE_URI);
         nexusCommon = new NexusCommon(executor);
+        relic = new Relic(NAME, SYMBOL, address(nexusCommon), executor);
+        shard = new Shard(address(relic), address(nexusCommon), executor, BASE_URI);
         vm.startPrank(executor);
         relic.setRelicMinter(operator, true);
         relic.setShard(address(shard));

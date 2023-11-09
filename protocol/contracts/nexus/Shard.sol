@@ -269,7 +269,11 @@ contract Shard is IShard, ERC1155, ERC1155Burnable, ElevatedAccess {
      * @param ids The shard IDs
      * @param values The amounts of each shard to burn
      */
-    function burnBatch(address account, uint256[] memory ids, uint256[] memory values) public override(ERC1155Burnable, IShard) {
+    function burnBatch(
+        address account,
+        uint256[] memory ids,
+        uint256[] memory values
+    ) public override(ERC1155Burnable, IShard) {
         // allow relic to burn blacklisted relic shards
         if (_msgSender() == address(relic)) {
             _burnBatch(account, ids, values);
