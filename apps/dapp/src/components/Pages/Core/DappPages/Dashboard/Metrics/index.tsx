@@ -157,12 +157,12 @@ const MobileMetricsContainer = styled.div<MetricProps>`
 `;
 
 const MetricValue = styled.div<MetricProps>`
-  font-size: ${({ small }) => (small ? '0.9rem' : '1.8rem')};
+  font-size: ${({ small }) => (small ? '1.1rem' : '1.8rem')};
   color: ${({ theme }) => theme.palette.brandLight};
 `;
 
 const MetricTitle = styled.div<MetricProps>`
-  font-size: ${({ small }) => (small ? '0.9rem' : '1rem')};
+  font-size: ${({ small }) => (small ? '1rem' : '1.1rem')};
   color: ${({ theme }) => theme.palette.brand};
 `;
 
