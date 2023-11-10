@@ -35,17 +35,6 @@ interface IShard is IERC1155 {
     error InvalidParamLength();
     error ERC1155MissingApprovalForAll(address msgSender, address account);
 
-    /**
-     * @dev See {IERC1155-safeBatchTransferFrom}.
-     */
-    function safeBatchTransferFrom(
-        address from,
-        address to,
-        uint256[] memory ids,
-        uint256[] memory values,
-        bytes memory data
-    ) external;
-
     /*
      * @notice Enable minters to mint new shards, one after the next. If there are two minters and next shard ID
      * is 3, minter 1 and minter 2 can mint shard IDs 3 and 4 respectively

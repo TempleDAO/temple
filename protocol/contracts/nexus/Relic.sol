@@ -141,7 +141,6 @@ contract Relic is IRelic, ERC721ACustom, ERC1155Holder, ElevatedAccess {
         for(uint i; i < _length;) {
             uint256 _threshold = thresholds[i];
             Rarity _rarity = rarities[i];
-            if (uint8(_rarity) > uint8(Rarity.Legendary)) { revert CommonEventsAndErrors.InvalidParam(); }
             rarityXPThresholds[_rarity] = _threshold;
             emit RarityXPThresholdSet(_rarity, _threshold);
             unchecked {
@@ -528,9 +527,10 @@ contract Relic is IRelic, ERC721ACustom, ERC1155Holder, ElevatedAccess {
             revert CommonEventsAndErrors.AccountBlacklisted(to);
         }
         // DAO/admin should handle Relic's blacklisted shards explicitly
-        if (blacklistedShardsCount[startTokenId] > 0) {
-            revert RelicWithBlacklistedShards();
-        }
+        /// @dev it is impossible to unset blacklist for an account with blacklisted shards > 0
+        // if (blacklistedShardsCount[startTokenId] > 0) {
+        //     revert RelicWithBlacklistedShards();
+        // }
         ownerRelics[from].remove(startTokenId);
         ownerRelics[to].add(startTokenId);
     }

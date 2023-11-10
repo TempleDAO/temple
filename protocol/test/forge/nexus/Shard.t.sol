@@ -75,6 +75,7 @@ contract ShardTestBase is TempleTest {
     event MinterAllowedShardIdSet(address minter, uint256 shardId, bool allow);
     event MinterAllowedShardCapSet(address minter, uint256 shardId, uint256 cap);
     event ShardIdSet(uint256 shardId, bool allow);
+    event NexusCommonSet(address nexusCommon);
     
     function setUp() public {
         nexusCommon = new NexusCommon(executor);
@@ -404,6 +405,16 @@ contract ShardTestAccess is ShardTestView {
 }
 
 contract ShardTest is ShardTestAccess {
+
+    function test_setNexusCommon() public {
+        vm.startPrank(executor);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
+        shard.setNexusCommon(address(0));
+
+        vm.expectEmit(address(shard));
+        emit NexusCommonSet(address(nexusCommon));
+        shard.setNexusCommon(address(nexusCommon));
+    }
 
     function test_setMinterAllowedShardIds() public {
         vm.startPrank(executor);

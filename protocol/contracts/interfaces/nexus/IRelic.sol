@@ -40,7 +40,6 @@ interface IRelic is IERC721A {
     error InsufficientShardBalance(uint256 actualBalance, uint256 requestedBalance);
     error NotEnoughShardBalance(uint256 equippedBalance, uint256 amount);
     error CannotWhitelist(uint256 relicId);
-    error RelicWithBlacklistedShards();
 
     /*
      * @notice Set shard contract

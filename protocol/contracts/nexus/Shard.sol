@@ -351,23 +351,6 @@ contract Shard is IShard, ERC1155, ERC1155Burnable, ElevatedAccess {
         }
     }
 
-    /**
-     * @dev See {IERC1155-safeBatchTransferFrom}.
-     */
-    function safeBatchTransferFrom(
-        address from,
-        address to,
-        uint256[] memory ids,
-        uint256[] memory values,
-        bytes memory data
-    ) public override(IShard, ERC1155) {
-        address sender = _msgSender();
-        if (from != sender && !isApprovedForAll(from, sender)) {
-            revert ERC1155MissingApprovalForAll(sender, from);
-        }
-        _safeBatchTransferFrom(from, to, ids, values, data);
-    }
-
     modifier isNotBlacklisted(address to) {
         if (relic.blacklistedAccounts(to)) { revert CommonEventsAndErrors.AccountBlacklisted(to); }
         _;

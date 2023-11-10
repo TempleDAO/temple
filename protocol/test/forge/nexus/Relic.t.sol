@@ -504,6 +504,8 @@ contract RelicSettersTest is RelicTestAccess {
     function test_setBaseUriRarity() public {
         string memory uri = "http://example.com";
         vm.startPrank(executor);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
+        relic.setBaseUriRarity(commRarity, "");
         vm.expectEmit(address(relic));
         emit RarityBaseUriSet(commRarity, uri);
         relic.setBaseUriRarity(commRarity, uri);
@@ -695,6 +697,9 @@ contract RelicViewTest is RelicSettersTest {
         changePrank(executor);
         relic.setBaseUriRarity(commRarity, BASE_URI);
 
+        vm.expectRevert(abi.encodeWithSelector(IERC721A.URIQueryForNonexistentToken.selector));
+        relic.tokenURI(100);
+
         string memory expectedUri = string(
             abi.encodePacked(
                 BASE_URI,
@@ -778,6 +783,9 @@ contract RelicViewTest is RelicSettersTest {
         changePrank(bob);
         shard.setApprovalForAll(address(relic), true);
         relic.batchEquipShards(RELIC_1_ID, shardIds, amounts);
+
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
+        relic.getEquippedShardIds(100);
         
         uint256[] memory equipped = relic.getEquippedShards(relicId, shardIds);
         uint256[] memory ids =  relic.getEquippedShardIds(relicId);
@@ -859,7 +867,11 @@ contract RelicTest is RelicViewTest {
         relic.unsetBlacklistedShards(alice, relicId, shardIds, amounts);
         _blacklistAccount(false, false, relicId, alice, _emptyUintArray(0), _emptyUintArray(0));
 
+        // invalid enclave id
         changePrank(operator);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
+        relic.mintRelic(alice, 100);
+
         uint256[] memory relicsBefore = relic.relicsOfOwner(alice);
         uint256 nextTokenId = relic.nextTokenId();
         vm.expectEmit(address(relic));
@@ -1117,6 +1129,7 @@ contract RelicTest is RelicViewTest {
         changePrank(bob);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.AccountBlacklisted.selector, alice));
         relic.safeTransferFrom(bob, alice, bobRelics[0]);
+        
 
         // check new owner
         changePrank(executor);
