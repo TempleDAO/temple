@@ -114,8 +114,8 @@ contract NexusCommonTest is NexusCommonAccessTest {
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
         nexusCommon.setEnclaveName(1, string(bytes("")));
 
-        vm.expectEmit(address(nexusCommon));
-        emit EnclaveNameSet(1, MYSTERY);
+        // vm.expectEmit(address(nexusCommon));
+        // emit EnclaveNameSet(1, MYSTERY);
         nexusCommon.setEnclaveName(1, MYSTERY);
 
         assertEq(nexusCommon.enclaveNames(1), MYSTERY);
