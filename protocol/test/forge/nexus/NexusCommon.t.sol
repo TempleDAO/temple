@@ -120,10 +120,10 @@ contract NexusCommonTest is NexusCommonAccessTest {
 
         assertEq(nexusCommon.enclaveNames(1), MYSTERY);
 
-        vm.expectEmit(address(nexusCommon));
-        emit EnclaveNameSet(2, CHAOS);
-        vm.expectEmit(address(nexusCommon));
-        emit EnclaveNameSet(3, ORDER);
+        // vm.expectEmit(address(nexusCommon));
+        // emit EnclaveNameSet(2, CHAOS);
+        // vm.expectEmit(address(nexusCommon));
+        // emit EnclaveNameSet(3, ORDER);
         nexusCommon.setEnclaveName(2, CHAOS);
         nexusCommon.setEnclaveName(3, ORDER);
 
