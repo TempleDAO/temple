@@ -7,7 +7,7 @@ interface ITempleSacrifice {
 
     event OriginTimeSet(uint64 originTime);
     event CustomPriceSet(uint256 price);
-    event TempleSacrificed(address account, uint256 amount);
+    event TokenSacrificed(address account, uint256 amount);
     event PriceParamsSet(PriceParam params);
     event TempleRecipientSet(address recipient);
 

@@ -106,7 +106,7 @@ contract TempleSacrifice is ITempleSacrifice, ElevatedAccess {
         uint256 amount = _getPrice(customPrice, originTime);
         sacrificeToken.safeTransferFrom(msg.sender, sacrificedTempleRecipient, amount);
         relic.mintRelic(msg.sender, enclaveId);
-        emit TempleSacrificed(msg.sender, amount);
+        emit TokenSacrificed(msg.sender, amount);
     }
    
     /*

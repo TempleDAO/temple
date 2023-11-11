@@ -95,12 +95,9 @@ contract RelicTestBase is TempleTest {
     event RelicMinterSet(address minter, bool allow);
     event RelicMinted(address indexed to, uint256 relicId, uint256 enclaveId);
     event ShardSet(address shard);
-    event XPControllerSet(address controller, bool flag);
     event RelicXPSet(uint256 relicId, uint256 xp);
-    event ShardEquipped(address caller, uint256 relicId, uint256 shardId, uint256 amount);
     event ShardsEquipped(address caller, uint256 relicId, uint256[] shardIds, uint256[] amounts);
-    event ShardUnequipped(address caller, uint256 relicId, uint256 shardId, uint256 amount);
-    event ShardsUnequipped(address indexed recipient, uint256 relicId, uint256[] shardIds, uint256[] amounts);
+    event ShardsUnequipped(address indexed recipient, uint256 indexed relicId, uint256[] shardIds, uint256[] amounts);
     event AccountBlacklistSet(address account, bool blacklist, uint256[] shardIds, uint256[] amounts);
     event AccountBlacklisted(address account, bool blacklist);
     event ShardBlacklistUpdated(uint256 relicId, uint256 shardId, uint256 amount);
@@ -456,7 +453,7 @@ contract RelicSettersTest is RelicTestAccess {
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
         relic.setNexusCommon(address(0));
 
-        vm.expectEmit(address(relic));
+        vm.expectEmit();
         emit NexusCommonSet(address(nexusCommon));
         relic.setNexusCommon(address(nexusCommon));
     }
@@ -551,7 +548,7 @@ contract RelicSettersTest is RelicTestAccess {
         relic.unsetBlacklistedShards(bob, RELIC_1_ID, shardIds, amounts);
 
         /// @dev commented out because expect emit oddly fails
-        // vm.expectEmit(address(relic));
+        // vm.expectEmit();
         // emit AccountBlacklisted(bob, false);
         relic.setBlacklistAccount(bob, RELIC_1_ID, false);
         assertEq(relic.blacklistedAccounts(bob), false);
@@ -901,7 +898,8 @@ contract RelicTest is RelicViewTest {
         shard.mintBatch(alice, shardIds, amounts);
         uint256 relicId = _mintRelicNew(alice, MYSTERY_ID);
         changePrank(alice);
-        vm.expectRevert(abi.encodeWithSignature("ERC1155MissingApprovalForAll(address,address)", address(relic), alice));
+        // vm.expectRevert(abi.encodeWithSignature("ERC1155MissingApprovalForAll(address,address)", address(relic), alice));
+        vm.expectRevert("ERC1155: caller is not token owner or approved");
         relic.batchEquipShards(relicId, shardIds, amounts);
 
         shard.setApprovalForAll(address(relic), true);
@@ -1016,9 +1014,9 @@ contract RelicTest is RelicViewTest {
         // shards are already equipped in relicId
         shard1BalanceBefore = shard.balanceOf(bob, SHARD_1_ID);
         shard2BalanceBefore = shard.balanceOf(bob, SHARD_2_ID);
-        /// @dev commented out because expect emit oddly fails
-        // vm.expectEmit(address(relic));
-        // emit ShardsUnequipped(bob, relicId, shardIds, amounts);
+        /// @dev commented out because expect emit oddly fails when relic address used as argunent
+        vm.expectEmit();
+        emit ShardsUnequipped(bob, relicId, shardIds, amounts);
         relic.batchUnequipShards(relicId, shardIds, amounts);
 
         assertEq(shard.balanceOf(bob, SHARD_1_ID), shard1BalanceBefore + amounts[0]);

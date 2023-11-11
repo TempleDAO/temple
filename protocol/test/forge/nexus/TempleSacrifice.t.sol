@@ -35,7 +35,7 @@ contract TempleSacrificeTestBase is TempleTest {
 
     event OriginTimeSet(uint64 originTime);
     event CustomPriceSet(uint256 price);
-    event TempleSacrificed(address account, uint256 amount);
+    event TokenSacrificed(address account, uint256 amount);
     event PriceParamsSet(TempleSacrifice.PriceParam params);
     event TempleRecipientSet(address recipient);
 
@@ -235,8 +235,8 @@ contract TempleSacrificeTest is TempleSacrificeAccessTest {
 
         vm.warp(originTime);
         uint256 price = templeSacrifice.getPrice();
-        // vm.expectEmit(address(templeSacrifice));
-        // emit TempleSacrificed(alice, price);
+        vm.expectEmit(address(templeSacrifice));
+        emit TokenSacrificed(alice, price);
         templeSacrifice.sacrifice(CHAOS_ID);
         assertEq(price, _calculatePrice(params));
         assertEq(sacrificeToken.balanceOf(alice), aliceTempleBalanceBefore - price);

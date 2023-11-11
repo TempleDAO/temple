@@ -440,6 +440,7 @@ contract ShardTest is ShardTestAccess {
         shard.setMinterAllowedShardIds(alice, shardIds, allows);
 
         shardIds[0] = SHARD_2_ID;
+        /// @dev emit oddly fails
         // vm.expectEmit(address(shard));
         // emit MinterAllowedShardIdSet(alice, shardIds[0], allows[0]);
         // vm.expectEmit(address(shard));
