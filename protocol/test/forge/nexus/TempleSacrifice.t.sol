@@ -37,7 +37,7 @@ contract TempleSacrificeTestBase is TempleTest {
     event CustomPriceSet(uint256 price);
     event TokenSacrificed(address account, uint256 amount);
     event PriceParamsSet(TempleSacrifice.PriceParam params);
-    event TempleRecipientSet(address recipient);
+    event TokenRecipientSet(address recipient);
 
 
     function setUp() public {
@@ -81,16 +81,16 @@ contract TempleSacrificeAccessTest is TempleSacrificeTestBase {
         templeSacrifice.setOriginTime(uint64(block.timestamp));
     }
 
-    function test_access_setSacrificedTempleRecipientFail(address caller) public {
+    function test_access_setSacrificedTokenRecipientFail(address caller) public {
         vm.assume(caller != executor);
         vm.startPrank(caller);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
-        templeSacrifice.setSacrificedTempleRecipient(alice);
+        templeSacrifice.setSacrificedTokenRecipient(alice);
     }
 
-    function test_access_setSacrificedTempleRecipientSuccess() public {
+    function test_access_setSacrificedTokenRecipientSuccess() public {
         vm.startPrank(executor);
-        templeSacrifice.setSacrificedTempleRecipient(alice);
+        templeSacrifice.setSacrificedTokenRecipient(alice);
     }
 
     function test_access_setOriginTimetSuccess() public {
@@ -154,14 +154,14 @@ contract TempleSacrificeTest is TempleSacrificeAccessTest {
         assertEq(templeSacrifice.originTime(), ts);
     }
 
-    function test_setSacrificedTempleRecipient() public {
+    function test_setSacrificedTokenRecipient() public {
         vm.startPrank(executor);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
-        templeSacrifice.setSacrificedTempleRecipient(address(0));
+        templeSacrifice.setSacrificedTokenRecipient(address(0));
         vm.expectEmit(address(templeSacrifice));
-        emit TempleRecipientSet(bob);
-        templeSacrifice.setSacrificedTempleRecipient(bob);
-        assertEq(templeSacrifice.sacrificedTempleRecipient(), bob);
+        emit TokenRecipientSet(bob);
+        templeSacrifice.setSacrificedTokenRecipient(bob);
+        assertEq(templeSacrifice.sacrificedTokenRecipient(), bob);
     }
 
     function test_setPriceParams() public {
@@ -227,7 +227,7 @@ contract TempleSacrificeTest is TempleSacrificeAccessTest {
         changePrank(bob);
         _mintTemple(alice, 1_000 ether);
         changePrank(executor);
-        templeSacrifice.setSacrificedTempleRecipient(bob);
+        templeSacrifice.setSacrificedTokenRecipient(bob);
         changePrank(alice);
         sacrificeToken.approve(address(templeSacrifice), 1_000 ether);
         uint256 aliceTempleBalanceBefore = sacrificeToken.balanceOf(alice);

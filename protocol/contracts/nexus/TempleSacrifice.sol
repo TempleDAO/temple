@@ -24,7 +24,7 @@ contract TempleSacrifice is ITempleSacrifice, ElevatedAccess {
     /// @notice the temple token used for payment in minting a relic
     IERC20 public immutable sacrificeToken;
     /// @notice send sacrificed temple to this address
-    address public sacrificedTempleRecipient;
+    address public sacrificedTokenRecipient;
     /// @notice start time from which price increases
     uint64 public originTime;
     /// @notice custom price set by governance
@@ -38,12 +38,12 @@ contract TempleSacrifice is ITempleSacrifice, ElevatedAccess {
     constructor(
         address _relic,
         address _sacrificeToken,
-        address _sacrificedTempleRecipient,
+        address _sacrificedTokenRecipient,
         address _initialExecutor
     ) ElevatedAccess(_initialExecutor) {
         relic = IRelic(_relic);
         sacrificeToken = ITempleERC20Token(_sacrificeToken);
-        sacrificedTempleRecipient = _sacrificedTempleRecipient;
+        sacrificedTokenRecipient = _sacrificedTokenRecipient;
         /// @dev caution so that origin time is never 0 and lesser than or equal to current block timestamp
         originTime = uint64(block.timestamp);
     }
@@ -52,10 +52,10 @@ contract TempleSacrifice is ITempleSacrifice, ElevatedAccess {
      * @notice Set sacrificed temple recipient.
      * @param recipient Recipient
      */
-    function setSacrificedTempleRecipient(address recipient) external onlyElevatedAccess {
+    function setSacrificedTokenRecipient(address recipient) external onlyElevatedAccess {
         if (recipient == address(0)) { revert CommonEventsAndErrors.InvalidParam(); }
-        sacrificedTempleRecipient = recipient;
-        emit TempleRecipientSet(recipient);
+        sacrificedTokenRecipient = recipient;
+        emit TokenRecipientSet(recipient);
     }
 
     /*
@@ -97,14 +97,14 @@ contract TempleSacrifice is ITempleSacrifice, ElevatedAccess {
     }
 
     /*
-     * @notice Sacrifice TEMPLE tokens to mint a Relic
-     * Caller must approve contract to spend TEMPLE tokens
+     * @notice Sacrifice tokens to mint a Relic
+     * Caller must approve contract to spend tokens
      * @param enclaveId Enclave ID
      */
     function sacrifice(uint256 enclaveId) external {
         if (block.timestamp < originTime) { revert FutureOriginTime(originTime); }
         uint256 amount = _getPrice(customPrice, originTime);
-        sacrificeToken.safeTransferFrom(msg.sender, sacrificedTempleRecipient, amount);
+        sacrificeToken.safeTransferFrom(msg.sender, sacrificedTokenRecipient, amount);
         relic.mintRelic(msg.sender, enclaveId);
         emit TokenSacrificed(msg.sender, amount);
     }

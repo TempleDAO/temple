@@ -9,7 +9,7 @@ interface ITempleSacrifice {
     event CustomPriceSet(uint256 price);
     event TokenSacrificed(address account, uint256 amount);
     event PriceParamsSet(PriceParam params);
-    event TempleRecipientSet(address recipient);
+    event TokenRecipientSet(address recipient);
 
     error FutureOriginTime(uint64 originTime);
 
@@ -23,7 +23,7 @@ interface ITempleSacrifice {
      * @notice Set sacrificed temple recipient.
      * @param recipient Recipient
      */
-    function setSacrificedTempleRecipient(address recipient) external;
+    function setSacrificedTokenRecipient(address recipient) external;
 
     /*
      * @notice Set price parameters.
