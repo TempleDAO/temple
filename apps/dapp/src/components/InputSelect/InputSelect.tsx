@@ -3,7 +3,7 @@ import Select from 'react-select';
 import { theme } from 'styles/theme';
 
 export type Option = {
-  value: string | number;
+  value: string | number | undefined;
   label: string;
 };
 

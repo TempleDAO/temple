@@ -1,8 +1,11 @@
 import { useState } from 'react';
+import { useMediaQuery } from 'react-responsive';
 import { Button as BaseButton } from 'components/Button/Button';
 import styled from 'styled-components';
 import TxnHistoryTable from './TxnHistoryTable';
 import { DashboardType } from '../DashboardContent';
+import { dashboardTypeToStrategyKey } from '../hooks/use-dashboardv2-txHistory';
+import { queryPhone } from 'styles/breakpoints';
 
 type DashboardTransactionHistoryProps = {
   dashboardType: DashboardType;
@@ -17,10 +20,15 @@ export enum TxHistoryFilterType {
 const DashboardTransactionHistory = ({ dashboardType }: DashboardTransactionHistoryProps) => {
   
   const [txFilter, setTxFilter] = useState<TxHistoryFilterType>(TxHistoryFilterType.all);
+  const selectedStrategy = dashboardTypeToStrategyKey(dashboardType);
+
+  const isDesktop = useMediaQuery({
+    query: queryPhone,
+  });
 
   return (
     <TransactionHistoryContainer>
-      <TransactionHistoryHeader>
+      <TransactionHistoryHeader isDesktop={isDesktop}>
         <TransactionHistoryTitle>Transaction History</TransactionHistoryTitle>
         <TransactionTimePeriod>
           <FilterButton isSmall selected={txFilter === 'lastweek'} onClick={() => setTxFilter(TxHistoryFilterType.lastweek)}>
@@ -35,7 +43,7 @@ const DashboardTransactionHistory = ({ dashboardType }: DashboardTransactionHist
         </TransactionTimePeriod>
       </TransactionHistoryHeader>
       <TransactionHistoryContent>
-        <TxnHistoryTable dashboardType={dashboardType} txFilter={txFilter} />
+        <TxnHistoryTable dashboardType={dashboardType} txFilter={txFilter} selectedStrategy={selectedStrategy}/>
       </TransactionHistoryContent>
     </TransactionHistoryContainer>
   );
@@ -63,9 +71,9 @@ const TransactionHistoryContent = styled.div`
   width: 100%;
 `;
 
-const TransactionHistoryHeader = styled.div`
+const TransactionHistoryHeader = styled.div<{isDesktop: boolean}>`
   display: flex;
-  flex-direction: row;
+  flex-direction: ${({isDesktop}) => isDesktop ? 'row' : 'column'};
   justify-content: space-between;
   align-items: center;
 `;

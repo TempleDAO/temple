@@ -6,6 +6,8 @@ import { StrategyKey } from '../hooks/use-dashboardv2-metrics';
 import { ArrowButtonUpDown } from 'components/Pages/Ascend/components/Trade/styles';
 import { TxHistoryTableHeader } from './TxnHistoryTable';
 import { InputSelect } from 'components/InputSelect/InputSelect';
+import { useMediaQuery } from 'react-responsive';
+import { queryMinTablet } from 'styles/breakpoints';
 
 export enum TxType {
   Borrow = 'Borrow',
@@ -31,58 +33,65 @@ type Props = {
 
 export const TxnDataTable = (props: Props) => {
   const { dataSubset, dataLoading, dataRefetching, tableHeaders, updateTableHeadersOrder } = props;
-
+  const isDesktop = useMediaQuery({
+    query: queryMinTablet,
+  });
   return (
-    <DataTable>
-      <thead>
-        <HeaderRow>
-          {tableHeaders.map((h, i) => (
-            <TableHeader key={i}>
-              <InnerDataRow onClick={() => updateTableHeadersOrder(h)}>
-                {h.name}
-                {h.orderDesc !== undefined ? <ArrowButtonUpDown clicked={h.orderDesc} /> : <EmptySpace />}
-              </InnerDataRow>
-              {h.filter && h.dropdownOptions && (
-                <InputSelect
-                  onChange={h.filter}
-                  options={h.dropdownOptions}
-                  defaultValue={h.dropdownOptions[0]}
-                  fontSize="0.68rem"
-                  textAlign="left"
-                />
-              )}
-            </TableHeader>
-          ))}
-        </HeaderRow>
-      </thead>
-      <tbody>
-        {dataLoading ? (
-          loadSkeletonRows(1, tableHeaders.length)
-        ) : !dataSubset || dataSubset.length === 0 ? (
-          <DataRow>
-            <DataCell>No data available</DataCell>
-          </DataRow>
-        ) : (
-          <>
-            {dataRefetching && loadSkeletonRows(1, tableHeaders.length)}
-            {dataSubset.map((row, index) => (
-              <DataRow key={index}>
-                <DataCell>{row.date}</DataCell>
-                <DataCell>{row.type}</DataCell>
-                <DataCell>{row.strategy}</DataCell>
-                <DataCell>{row.token}</DataCell>
-                <DataCell>{row.amount}</DataCell>
-                <DataCell>
-                  <LinkStyled href={`${env.etherscan}/tx/${row.txHash}`} target="_blank">
-                    {row.txHash.slice(0, 12) + '...'}
-                  </LinkStyled>
-                </DataCell>
-              </DataRow>
+    <ScrollContainer>
+      <DataTable isDesktop={isDesktop}>
+        <thead>
+          <HeaderRow>
+            {tableHeaders.map((h, i) => (
+              <TableHeader key={i} style={{ width: h.width }}>
+                <InnerDataRow onClick={() => updateTableHeadersOrder(h)}>
+                  {h.name}
+                  {h.orderDesc !== undefined ? <ArrowButtonUpDown clicked={h.orderDesc} /> : <EmptySpace />}
+                </InnerDataRow>
+                {h.rowFilter && (
+                  // div wrapper forces to re-render InputSelect if default value
+                  <div key={h.rowFilter.defaultValue.value}>
+                    <InputSelect
+                      onChange={h.rowFilter.filterFn}
+                      options={h.rowFilter.dropdownOptions}
+                      defaultValue={h.rowFilter.defaultValue}
+                      fontSize="0.68rem"
+                      textAlign="left"
+                    />
+                  </div>
+                )}
+              </TableHeader>
             ))}
-          </>
-        )}
-      </tbody>
-    </DataTable>
+          </HeaderRow>
+        </thead>
+        <tbody>
+          {dataLoading ? (
+            loadSkeletonRows(1, tableHeaders.length)
+          ) : !dataSubset || dataSubset.length === 0 ? (
+            <DataRow>
+              <DataCell>No data available</DataCell>
+            </DataRow>
+          ) : (
+            <>
+              {dataRefetching && loadSkeletonRows(1, tableHeaders.length)}
+              {dataSubset.map((row, index) => (
+                <DataRow key={index}>
+                  <DataCell>{row.date}</DataCell>
+                  <DataCell>{row.type}</DataCell>
+                  <DataCell>{row.strategy}</DataCell>
+                  <DataCell>{row.token}</DataCell>
+                  <DataCell>{row.amount}</DataCell>
+                  <DataCell>
+                    <LinkStyled href={`${env.etherscan}/tx/${row.txHash}`} target="_blank">
+                      {row.txHash.slice(0, 12) + '...'}
+                    </LinkStyled>
+                  </DataCell>
+                </DataRow>
+              ))}
+            </>
+          )}
+        </tbody>
+      </DataTable>
+    </ScrollContainer>
   );
 };
 
@@ -111,7 +120,6 @@ const TableHeader = styled.th`
 `;
 
 const HeaderRow = styled.tr`
-  overflow: hidden;
   white-space: nowrap;
 `;
 
@@ -124,8 +132,16 @@ const EmptySpace = styled.p`
   width: 21px;
 `;
 
-const DataTable = styled.table`
+const ScrollContainer = styled.div`
+  min-height: 250px;
+  overflow-x: auto;
+`;
+
+const DataTable = styled.table<{ isDesktop: boolean }>`
   border-collapse: collapse;
+  min-width: ${({ isDesktop }) => (isDesktop ? '' : '750px')};
+  table-layout: ${({ isDesktop }) => (isDesktop ? 'fixed' : '')};
+  width: ${({ isDesktop }) => (isDesktop ? '100%' : '')};
   color: ${({ theme }) => theme.palette.brand};
 `;
 
@@ -150,4 +166,3 @@ const LinkStyled = styled.a`
     color: ${({ theme }) => theme.palette.brandDark};
   }
 `;
-
