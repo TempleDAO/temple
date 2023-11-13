@@ -2,13 +2,14 @@ import type { DataKey, AxisDomain } from 'recharts/types/util/types';
 
 import React, { useState } from 'react';
 import { useTheme } from 'styled-components';
-import { ResponsiveContainer, LineChart as RechartsLineChart, Line, XAxis, YAxis, Tooltip, Legend } from 'recharts';
+import { ResponsiveContainer, Line, XAxis, YAxis, Tooltip, Legend, ComposedChart, Area } from 'recharts';
 import { formatNumberAbbreviated } from 'utils/formatter';
 
 type LineChartProps<T> = {
   chartData: T[];
   xDataKey: DataKey<keyof T>;
   lines: { series: DataKey<keyof T>; color: string; hide?: boolean }[];
+  stackedItems?: { series: string; color: string; stackId: string; hide?: boolean }[];
   xTickFormatter: (xValue: any, index: number) => string;
   yTickFormatter?: (yValue: any, index: number) => string;
   tooltipLabelFormatter: (value: any) => string;
@@ -23,6 +24,7 @@ export default function LineChart<T>(props: React.PropsWithChildren<LineChartPro
     chartData,
     xDataKey,
     lines,
+    stackedItems,
     xTickFormatter,
     yTickFormatter,
     tooltipLabelFormatter,
@@ -32,9 +34,10 @@ export default function LineChart<T>(props: React.PropsWithChildren<LineChartPro
   } = props;
   const theme = useTheme();
 
-  const [hiddenLines, setHiddenLines] = useState(
-    Object.fromEntries(lines.map((s) => [s.series.toString(), s.hide || false]))
-  );
+  const [hiddenLines, setHiddenLines] = useState({
+    ...Object.fromEntries(lines.map((s) => [s.series.toString(), s.hide || false])),
+    ...Object.fromEntries(stackedItems?.map((s) => [s.series.toString(), s.hide || false]) ?? []),
+  });
 
   const toggleLineVisibility = (key: string) => {
     //there must be always at least one visible line
@@ -57,7 +60,7 @@ export default function LineChart<T>(props: React.PropsWithChildren<LineChartPro
   };
   return (
     <ResponsiveContainer minHeight={200} minWidth={320} height={350}>
-      <RechartsLineChart data={chartData} margin={{ left: 30 }}>
+      <ComposedChart data={chartData} margin={{ left: 30 }}>
         {lines.map((line) => (
           <Line
             key={line.series.toString()}
@@ -67,6 +70,19 @@ export default function LineChart<T>(props: React.PropsWithChildren<LineChartPro
             strokeWidth={2}
             dot={false}
             hide={hiddenLines[line.series.toString()]}
+          />
+        ))}
+
+        {stackedItems?.map((item) => (
+          <Area
+            key={item.series}
+            dataKey={item.series}
+            fill={item.color}
+            stackId={item.stackId}
+            stroke={item.color}
+            strokeWidth={2}
+            type={'monotone'}
+            hide={hiddenLines[item.series.toString()]}
           />
         ))}
         <XAxis
@@ -104,15 +120,16 @@ export default function LineChart<T>(props: React.PropsWithChildren<LineChartPro
               : undefined
           }
         />
-        {lines.length > 1 && legendFormatter ? (
+        {legendFormatter ? (
           <Legend
             verticalAlign="top"
+            wrapperStyle={{ minHeight: '20px', height: 'auto', padding: '1rem' }}
             height={20}
             formatter={legendFormatter}
             onClick={(e) => toggleLineVisibility(e.dataKey)}
           />
         ) : null}
-      </RechartsLineChart>
+      </ComposedChart>
     </ResponsiveContainer>
   );
 }

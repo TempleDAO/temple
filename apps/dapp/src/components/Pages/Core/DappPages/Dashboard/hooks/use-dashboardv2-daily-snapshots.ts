@@ -19,10 +19,28 @@ const V2SnapshotMetrics = [
 
 export type V2SnapshotMetric = (typeof V2SnapshotMetrics)[number];
 
+// these tokens add up to the corresponding metric
+const STRATEGY_TOKEN_FIELDS = ['symbol', 'debtUSD', 'creditUSD', 'assetBalance', 'marketValueUSD'] as const;
+
+export type StrategyTokenField = (typeof STRATEGY_TOKEN_FIELDS)[number];
+
+const QUERIED_FIELDS = `
+  strategy{
+    name
+  }
+  timeframe
+  timestamp
+  ${V2SnapshotMetrics.join('\n')}
+  strategyTokens{
+     ${STRATEGY_TOKEN_FIELDS.join('\n')}
+  }
+`;
+
 export type V2StrategySnapshot = {
   timestamp: string;
   timeframe: string;
   strategy: { name: string };
+  strategyTokens: { [key in (typeof STRATEGY_TOKEN_FIELDS)[number]]: string }[];
 } & { [key in V2SnapshotMetric]: string };
 
 export function isV2SnapshotMetric(key?: string | null): key is V2SnapshotMetric {
@@ -37,7 +55,6 @@ const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
 
 async function fetchStrategyHourlySnapshots() {
   const itemsPerPage = 1000;
-  const metrics = V2SnapshotMetrics.join('\n');
   const now = new Date();
   const since = Math.floor((now.getTime() - ONE_DAY_ONE_HOUR_MS) / 1000).toString();
   // if # of strategies * 24 > 1000 we would be missing data
@@ -49,12 +66,7 @@ async function fetchStrategyHourlySnapshots() {
                                    orderDirection: asc,
                                    where: {timestamp_gt: ${since}}
                                    ) {
-                strategy{
-                    name
-                }
-                timeframe
-                timestamp
-                ${metrics}
+              ${QUERIED_FIELDS}
             }
             }`;
   const resp = await fetchGenericSubgraph<FetchV2StrategyHourlySnapshotResponse>(env.subgraph.templeV2, query);
@@ -67,7 +79,6 @@ async function fetchStrategyDailySnapshots() {
   let since = Math.floor((now.getTime() - ONE_YEAR_MS) / 1000).toString();
   const result: V2StrategySnapshot[] = [];
   const itemsPerPage = 1000; // current max page size
-  const metrics = V2SnapshotMetrics.join('\n');
   while (true) {
     //  we could be missing data with this pagination strategy if
     //  the dataset contain snapshots for different strats
@@ -82,12 +93,7 @@ async function fetchStrategyDailySnapshots() {
                                    orderBy: timestamp,
                                    orderDirection: asc,
                                    where: {timestamp_gt: ${since}}) {
-                strategy{
-                    name
-                }
-                timeframe
-                timestamp
-                ${metrics}
+              ${QUERIED_FIELDS}
             }
             }`;
     const page = await fetchGenericSubgraph<FetchV2StrategyDailySnapshotResponse>(env.subgraph.templeV2, query);
