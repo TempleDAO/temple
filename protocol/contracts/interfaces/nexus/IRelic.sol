@@ -22,7 +22,7 @@ interface IRelic is IERC721A {
 
     event RarityXPThresholdSet(Rarity rarity, uint256 threshold);
     event RarityBaseUriSet(Rarity rarity, string uri);
-    event RelicMinterSet(address indexed minter, bool allow);
+    // event RelicMinterSet(address indexed minter, bool allow);
     event RelicMinted(address indexed to, uint256 relicId, uint256 enclaveId);
     event ShardSet(address shard);
     event RelicXPSet(uint256 indexed relicId, uint256 xp);
@@ -33,6 +33,7 @@ interface IRelic is IERC721A {
     event EnclaveNameSet(uint256 id, string name);
     event NexusCommonSet(address nexusCommon);
     event ShardBlacklistUpdated(uint256 relicId, uint256 shardId, uint256 amount);
+    event RelicMinterEnclaveSet(address indexed minter, uint256 enclaveId, bool allowed);
 
     error InvalidParamLength();
     error CallerCannotMint(address msgSender);
@@ -52,7 +53,15 @@ interface IRelic is IERC721A {
      * @param minter Address to mint relics
      * @param allow If minter is allowed to mint
      */
-    function setRelicMinter(address minter, bool allow) external;
+    // function setRelicMinter(address minter, bool allow) external;
+
+    /*
+     * @notice Set relic minter's enclave Ids to mint
+     * @param minter Address to mint relics
+     * @param enclaveIds "enclave" Ids to mint. Could be a special non-enclave id.
+     * @param allow If minter is allowed to mint enclave Id
+     */
+    function setRelicMinterEnclaveIds(address minter, uint256[] memory enclaveIds, bool[] memory allow) external;
 
     /*
      * @notice Set XP threshold for rarities
@@ -267,12 +276,13 @@ interface IRelic is IERC721A {
      * @return Count of blacklisted Shards
      */
     function blacklistedShardsCount(uint256 shardId) external returns (uint256);
+
     /*
-     * @notice Check for Relic minter status for address
+     * @notice Get Relic minter enclave Ids
      * @param minter Address to check
-     * @return If address is Relic minter
+     * @return Enclave Ids
      */
-    function relicMinters(address minter) external returns (bool);
+    function getRelicMinterEnclaveIds(address minter) external view returns (uint256[] memory);
 
     /*
      * @notice Get XP thresholds for Relic rarity
@@ -280,4 +290,12 @@ interface IRelic is IERC721A {
      * @return Threshold value for rarity
      */
     function rarityXPThresholds(Rarity rarity) external returns (uint256);
+
+     /*
+     * @notice Get status of address minting Relic with enclaveId
+     * @param minter Address of mitner
+     * @param enclaveId Id of enclave
+     * @return True or False
+     */
+    function isRelicMinter(address minter, uint256 enclaveId) external view returns (bool);
 }

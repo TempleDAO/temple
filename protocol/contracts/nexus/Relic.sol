@@ -49,7 +49,9 @@ contract Relic is IRelic, ERC721ACustom, ERC1155Holder, ElevatedAccess {
     mapping(address => bool) public override blacklistedAccounts;
     /// @notice count of shards blacklisted for Relic
     mapping(uint256 => uint256) public override blacklistedShardsCount;
-    mapping(address => bool) public override relicMinters;
+    // mapping(address => bool) public override relicMinters;
+    /// @notice some relic minting contracts may only mint special partner relic "enclave" Ids
+    mapping(address => EnumerableSet.UintSet) private relicMinterEnclaveIds;
     mapping(address => EnumerableSet.UintSet) private ownerRelics;
 
     struct RelicInfo {
@@ -121,10 +123,38 @@ contract Relic is IRelic, ERC721ACustom, ERC1155Holder, ElevatedAccess {
      * @param minter Address to mint relics
      * @param allow If minter is allowed to mint
      */
-    function setRelicMinter(address minter, bool allow) external override onlyElevatedAccess {
+    // function setRelicMinter(address minter, bool allow) external override onlyElevatedAccess {
+    //     if (minter == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
+    //     relicMinters[minter] = allow;
+    //     emit RelicMinterSet(minter, allow);
+    // }
+
+    /*
+     * @notice Set relic minter's enclave Ids to mint
+     * @param minter Address to mint relics
+     * @param enclaveIds "enclave" Ids to mint. Could be a special non-enclave id.
+     * @param allow If minter is allowed to mint enclave Id
+     */
+    function setRelicMinterEnclaveIds(address minter, uint256[] memory enclaveIds, bool[] memory allow) external override onlyElevatedAccess {
         if (minter == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
-        relicMinters[minter] = allow;
-        emit RelicMinterSet(minter, allow);
+        uint256 _length = enclaveIds.length;
+        if (_length != allow.length) { revert InvalidParamLength(); }
+        EnumerableSet.UintSet storage minterEnclaveIds = relicMinterEnclaveIds[minter];
+        uint256 enclaveId;
+        bool allowed;
+        for (uint i; i < _length;) {
+            allowed = allow[i];
+            enclaveId = enclaveIds[i];
+            if (allowed) {
+                minterEnclaveIds.add(enclaveId);
+            } else {
+                minterEnclaveIds.remove(enclaveId);
+            }
+            emit RelicMinterEnclaveSet(minter, enclaveId, allowed);
+            unchecked {
+                ++i;
+            }
+        }
     }
 
     /*
@@ -352,9 +382,10 @@ contract Relic is IRelic, ERC721ACustom, ERC1155Holder, ElevatedAccess {
     function mintRelic(
         address to,
         uint256 enclaveId
-    ) external override isRelicMinter notBlacklisted(to) {
+    ) external override notBlacklisted(to) {
         if (to == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
         if (!nexusCommon.isValidEnclaveId(enclaveId)) { revert CommonEventsAndErrors.InvalidParam(); }
+        if (!isRelicMinter(msg.sender, enclaveId)) { revert CallerCannotMint(msg.sender); }
 
         uint256 nextTokenId_ = _nextTokenId();
         RelicInfo storage relicInfo = relicInfos[nextTokenId_];
@@ -560,6 +591,15 @@ contract Relic is IRelic, ERC721ACustom, ERC1155Holder, ElevatedAccess {
         if (!_exists(relicId)) { revert CommonEventsAndErrors.InvalidParam(); }
         return relicInfos[relicId].shards.values();
     }
+
+    /*
+     * @notice Get Relic minter enclave Ids
+     * @param minter Address to check
+     * @return Enclave Ids
+     */
+    function getRelicMinterEnclaveIds(address minter) external override view returns (uint256[] memory) {
+        return relicMinterEnclaveIds[minter].values();
+    }
     
     /*
      * @notice Get URI of rarity
@@ -583,6 +623,16 @@ contract Relic is IRelic, ERC721ACustom, ERC1155Holder, ElevatedAccess {
             xp: relicInfo.xp,
             shards: relicInfo.shards.values()
         });
+    }
+
+    /*
+     * @notice Get status of address minting Relic with enclaveId
+     * @param minter Address of mitner
+     * @param enclaveId Id of enclave
+     * @return True or False
+     */
+    function isRelicMinter(address minter, uint256 enclaveId) public override view returns (bool) {
+        return relicMinterEnclaveIds[minter].contains(enclaveId);
     }
 
     /**
@@ -611,11 +661,6 @@ contract Relic is IRelic, ERC721ACustom, ERC1155Holder, ElevatedAccess {
 
     modifier notBlacklisted(address account) {
         if (blacklistedAccounts[account]) { revert CommonEventsAndErrors.AccountBlacklisted(account); }
-        _;
-    }
-
-    modifier isRelicMinter() {
-        if (!relicMinters[msg.sender]) { revert CallerCannotMint(msg.sender); }
         _;
     }
 }

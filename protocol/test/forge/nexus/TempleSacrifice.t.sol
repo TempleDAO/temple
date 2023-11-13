@@ -1,6 +1,6 @@
 pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Temple (tests/forge/nexus/TempleSacrifice.sol)
+// Temple (tests/forge/nexus/TempleSacrifice.t.sol)
 
 import { TempleTest } from "../TempleTest.sol";
 import { Relic } from "../../../contracts/nexus/Relic.sol";
@@ -11,7 +11,7 @@ import { TempleERC20Token } from "../../../contracts/core/TempleERC20Token.sol";
 import { CommonEventsAndErrors } from "../../../contracts/common/CommonEventsAndErrors.sol";
 import { IERC1155Receiver } from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import { IRelic } from "../../../contracts/interfaces/nexus/IRelic.sol";
-import { ITempleSacrifice } from "../../../contracts/interfaces/nexus/ITempleSacrifice.sol";
+import { IBaseSacrifice } from "../../../contracts/interfaces/nexus/IBaseSacrifice.sol";
 
 
 contract TempleSacrificeTestBase is TempleTest {
@@ -31,7 +31,12 @@ contract TempleSacrificeTestBase is TempleTest {
     uint256 internal constant ONE_ETHER = 1 ether;
     uint256 internal constant PRICE_MAX_PERIOD = 365 days;
 
+    // todo import into common class NexusTestBase
+    uint256 internal constant MYSTERY_ID = 0x01;
     uint256 internal constant CHAOS_ID = 0x02;
+    uint256 internal constant ORDER_ID = 0x03;
+    uint256 internal constant STRUCTURE_ID = 0x04;
+    uint256 internal constant LOGIC_ID = 0x05;
 
     event OriginTimeSet(uint64 originTime);
     event CustomPriceSet(uint256 price);
@@ -50,7 +55,15 @@ contract TempleSacrificeTestBase is TempleTest {
         sacrificeToken.addMinter(bob);
         sacrificeToken.addMinter(alice);
         templeSacrifice = new TempleSacrifice(address(relic), address(sacrificeToken), bob, executor);
-        relic.setRelicMinter(address(templeSacrifice), true);
+        uint256[] memory enclaveIds = new uint256[](5);
+        bool[] memory allow = new bool[](5);
+        enclaveIds[0] = MYSTERY_ID;
+        enclaveIds[1] = CHAOS_ID;
+        enclaveIds[2] = STRUCTURE_ID;
+        enclaveIds[3] = LOGIC_ID;
+        enclaveIds[4] = ORDER_ID;
+        allow[0] = allow[1] = allow[2] = allow[3] = allow[4] = true;
+        relic.setRelicMinterEnclaveIds(address(templeSacrifice), enclaveIds, allow);
         vm.stopPrank();
     }
 
@@ -58,7 +71,12 @@ contract TempleSacrificeTestBase is TempleTest {
         assertEq(address(templeSacrifice.sacrificeToken()), address(sacrificeToken));
         assertEq(address(templeSacrifice.relic()), address(relic));
         assertEq(address(templeSacrifice.executor()), executor);
-        assertEq(relic.relicMinters(address(templeSacrifice)), true);
+        assertEq(templeSacrifice.sacrificedTokenRecipient(), bob);
+        assertEq(relic.isRelicMinter(address(templeSacrifice), MYSTERY_ID), true);
+        assertEq(relic.isRelicMinter(address(templeSacrifice), LOGIC_ID), true);
+        assertEq(relic.isRelicMinter(address(templeSacrifice), CHAOS_ID), true);
+        assertEq(relic.isRelicMinter(address(templeSacrifice), STRUCTURE_ID), true);
+        assertEq(relic.isRelicMinter(address(templeSacrifice), ORDER_ID), true);
     }
 
     function _mintTemple(address to, uint256 amount) internal {
@@ -74,13 +92,6 @@ contract TempleSacrificeTestBase is TempleTest {
 
 contract TempleSacrificeAccessTest is TempleSacrificeTestBase {
 
-    function test_access_setOriginTimetFail(address caller) public {
-        vm.assume(caller != executor);
-        vm.startPrank(caller);
-        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
-        templeSacrifice.setOriginTime(uint64(block.timestamp));
-    }
-
     function test_access_setSacrificedTokenRecipientFail(address caller) public {
         vm.assume(caller != executor);
         vm.startPrank(caller);
@@ -92,38 +103,9 @@ contract TempleSacrificeAccessTest is TempleSacrificeTestBase {
         vm.startPrank(executor);
         templeSacrifice.setSacrificedTokenRecipient(alice);
     }
-
-    function test_access_setOriginTimetSuccess() public {
-        vm.startPrank(executor);
-        templeSacrifice.setOriginTime(uint64(block.timestamp));
-    }
-
-    function test_access_setPriceParamsFail(address caller) public {
-        vm.assume(caller != executor);
-        vm.startPrank(caller);
-        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
-        templeSacrifice.setPriceParams(_getPriceParams());
-    }
-
-    function test_access_setPriceParamsSuccess() public {
-        vm.startPrank(executor);
-        templeSacrifice.setPriceParams(_getPriceParams());
-    }
-
-    function test_access_setCustomPriceFail(address caller) public {
-        vm.assume(caller != executor);
-        vm.startPrank(caller);
-        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
-        templeSacrifice.setCustomPrice(10**18);
-    }
-
-    function test_access_setCustomPriceSuccess() public {
-        vm.startPrank(executor);
-        templeSacrifice.setCustomPrice(20**18);
-    }
 }
 
-contract TempleSacrificeTest is TempleSacrificeAccessTest {
+contract TempleSacrificeTest is TempleSacrificeTestBase {
 
     function _calculatePrice(
         TempleSacrifice.PriceParam memory params
@@ -133,25 +115,6 @@ contract TempleSacrificeTest is TempleSacrificeAccessTest {
         if (price > params.maximumPrice) {
             price = params.maximumPrice;
         }
-    }
-
-    function test_setOriginTime() public {
-        vm.startPrank(executor);
-        uint64 originTime = uint64(block.timestamp - 1);
-        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
-        templeSacrifice.setOriginTime(originTime);
-
-        uint64 ts = uint64(block.timestamp);
-        vm.expectEmit(address(templeSacrifice));
-        emit OriginTimeSet(ts);
-        templeSacrifice.setOriginTime(ts);
-        assertEq(templeSacrifice.originTime(), ts);
-
-        vm.expectEmit(address(templeSacrifice));
-        ts = uint64(block.timestamp + 10);
-        emit OriginTimeSet(ts);
-        templeSacrifice.setOriginTime(ts);
-        assertEq(templeSacrifice.originTime(), ts);
     }
 
     function test_setSacrificedTokenRecipient() public {
@@ -164,57 +127,16 @@ contract TempleSacrificeTest is TempleSacrificeAccessTest {
         assertEq(templeSacrifice.sacrificedTokenRecipient(), bob);
     }
 
-    function test_setPriceParams() public {
-        vm.startPrank(executor);
-        TempleSacrifice.PriceParam memory params;
-        params.minimumPrice = 2;
-        params.maximumPrice = 1;
-        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
-        templeSacrifice.setPriceParams(params);
-
-        params.maximumPrice = uint128(MINIMUM_CUSTOM_PRICE + 1);
-        params.minimumPrice = uint128(MINIMUM_CUSTOM_PRICE - 1);
-        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
-        templeSacrifice.setPriceParams(params);
-
-        params.minimumPrice = uint128(MINIMUM_CUSTOM_PRICE);
-        params.maximumPrice = uint128(MINIMUM_CUSTOM_PRICE * 2);
-        // params.priceMaxPeriod = 0;
-        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
-        templeSacrifice.setPriceParams(params);
-
-        params.priceMaxPeriod = 365 days;
-        vm.expectEmit(address(templeSacrifice));
-        emit PriceParamsSet(params);
-        templeSacrifice.setPriceParams(params);
-        (uint64 maxPeriod, uint128 minPrice, uint128 maxPrice) = templeSacrifice.priceParams();
-        assertEq(maxPeriod, params.priceMaxPeriod);
-        assertEq(minPrice, params.minimumPrice);
-        assertEq(maxPrice, params.maximumPrice);
-    }
-
-    function test_setCustomPrice() public {
-        vm.startPrank(executor);
-        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
-        templeSacrifice.setCustomPrice(MINIMUM_CUSTOM_PRICE - 1);
-
-        uint256 customPrice = 500 * (10**18);
-        vm.expectEmit(address(templeSacrifice));
-        emit CustomPriceSet(customPrice);
-        templeSacrifice.setCustomPrice(customPrice);
-        assertEq(templeSacrifice.customPrice(), customPrice);
-    }
-
     function test_sacrifice() public {
         vm.startPrank(executor);
         uint64 originTime = uint64(block.timestamp + 100);
         templeSacrifice.setOriginTime(originTime);
 
-        vm.expectRevert(abi.encodeWithSelector(ITempleSacrifice.FutureOriginTime.selector, originTime));
+        vm.expectRevert(abi.encodeWithSelector(IBaseSacrifice.FutureOriginTime.selector, originTime));
         templeSacrifice.sacrifice(CHAOS_ID);
         
         vm.warp(originTime - 1);
-        vm.expectRevert(abi.encodeWithSelector(ITempleSacrifice.FutureOriginTime.selector, originTime));
+        vm.expectRevert(abi.encodeWithSelector(IBaseSacrifice.FutureOriginTime.selector, originTime));
         templeSacrifice.sacrifice(CHAOS_ID);
 
         vm.warp(originTime + 1);
@@ -241,64 +163,5 @@ contract TempleSacrificeTest is TempleSacrificeAccessTest {
         assertEq(price, _calculatePrice(params));
         assertEq(sacrificeToken.balanceOf(alice), aliceTempleBalanceBefore - price);
         assertEq(sacrificeToken.balanceOf(bob), recipientBalanceBefore + price);
-    }
-
-    function test_getPrice() public {
-        vm.startPrank(executor);
-        // set params
-        TempleSacrifice.PriceParam memory params = _getPriceParams();
-        templeSacrifice.setPriceParams(params);
-        // origin time same as block.timestamp (set in constructor)
-        uint256 price = templeSacrifice.getPrice();
-        assertEq(price, MINIMUM_CUSTOM_PRICE);
-        // set origin time
-        uint256 timestamp = block.timestamp;
-        templeSacrifice.setOriginTime(uint64(timestamp + 100 seconds));
-        price = templeSacrifice.getPrice();
-        assertEq(price, type(uint256).max);
-        templeSacrifice.setCustomPrice(35 * 1 ether);
-        price = templeSacrifice.getPrice();
-        assertEq(price, 35 * 1 ether);
-        templeSacrifice.setCustomPrice(49 * 1 ether);
-        price = templeSacrifice.getPrice();
-        assertEq(price, 49 * 1 ether);
-        // can set very high custom price
-        templeSacrifice.setCustomPrice(120 * 1 ether);
-        price = templeSacrifice.getPrice();
-        assertEq(price, 120 * 1 ether);
-        // reset custom price to 0
-        templeSacrifice.setCustomPrice(0);
-        price = templeSacrifice.getPrice();
-        assertEq(price, type(uint256).max);
-
-        // timestamp warps
-        templeSacrifice.setOriginTime(uint64(block.timestamp + 100));
-        vm.warp(block.timestamp + 99);
-        price = templeSacrifice.getPrice();
-        assertEq(price, type(uint256).max);
-        // origin time same as block timestamp
-        vm.warp(block.timestamp + 1);
-        price = templeSacrifice.getPrice();
-        assertEq(price, MINIMUM_CUSTOM_PRICE);
-        // 3 months
-        vm.warp(block.timestamp + 91.25 days);
-        price = templeSacrifice.getPrice();
-        assertEq(price, _calculatePrice(params));
-        // 9 months
-        vm.warp(block.timestamp + 182.5 days);
-        price = templeSacrifice.getPrice();
-        assertEq(price, _calculatePrice(params));
-        // 1 year
-        vm.warp(block.timestamp + 91.25 days);
-        price = templeSacrifice.getPrice();
-        assertEq(price, _calculatePrice(params));
-        // 1 year + 1 second
-        vm.warp(block.timestamp + 1);
-        price = templeSacrifice.getPrice();
-        assertEq(price, _calculatePrice(params));
-        // 2 years. price does not go over maximum set price
-        vm.warp(block.timestamp + 365 days);
-        price = templeSacrifice.getPrice();
-        assertLe(price, params.maximumPrice);
     }
 }

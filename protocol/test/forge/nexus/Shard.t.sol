@@ -4,6 +4,7 @@ pragma solidity 0.8.19;
 
 
 import { TempleTest } from "../TempleTest.sol";
+import { NexusTestBase } from "./Nexus.t.sol";
 import { Relic } from "../../../contracts/nexus/Relic.sol";
 import { Shard } from "../../../contracts/nexus/Shard.sol";
 import { IShard } from "../../../contracts/interfaces/nexus/IShard.sol";
@@ -11,41 +12,10 @@ import { NexusCommon } from "../../../contracts/nexus/NexusCommon.sol";
 import { CommonEventsAndErrors } from "../../../contracts/common/CommonEventsAndErrors.sol";
 
 
-contract ShardTestBase is TempleTest {
+contract ShardTestBase is NexusTestBase {
     Relic public relic;
     Shard public shard;
     NexusCommon public nexusCommon;
-
-    string private constant name = "RELIC";
-    string private constant symbol = "REL";
-
-    string internal constant SHARD_1_URI = "https://example1.com";
-    string internal constant SHARD_2_URI = "https://example2.com";
-    string internal constant SHARD_3_URI = "https://example3.com";
-    string internal constant SHARD_4_URI = "https://example4.com";
-
-    uint256 internal constant SHARD_1_ID = 0x01; 
-    uint256 internal constant SHARD_2_ID = 0x02;
-    uint256 internal constant SHARD_3_ID = 0x03;
-    uint256 internal constant SHARD_4_ID = 0x04;
-
-    uint256 internal constant RECIPE_1_ID = 0x01; // 1
-    uint256 internal constant RECIPE_2_ID = 0x02; // 2
-    uint256 internal constant RECIPE_3_ID = 0x03; // 3
-
-    uint256 internal constant RELIC_1_ID = 0x01; // 1
-
-    uint256 internal constant MYSTERY_ID = 0x01;
-    uint256 internal constant CHAOS_ID = 0x02;
-    uint256 internal constant ORDER_ID = 0x03;
-    uint256 internal constant STRUCTURE_ID = 0x04;
-    uint256 internal constant LOGIC_ID = 0x05;
-
-    string internal constant MYSTERY = "MYSTERY";
-    string internal constant CHAOS = "CHAOS";
-    string internal constant ORDER = "ORDER";
-    string internal constant STRUCTURE = "STRUCTURE";
-    string internal constant LOGIC = "LOGIC";
 
     enum Rarity {
         Common,
@@ -63,23 +33,23 @@ contract ShardTestBase is TempleTest {
         uint256[] outputShardAmounts;
     }
 
-    event Transmuted(address caller, uint256 recipeId);
+    event Transmuted(address indexed caller, uint256 recipeId);
     event ShardMinted();
-    event ShardUriSet(uint256 shardId, string uri);
+    event ShardUriSet(uint256 indexed shardId, string uri);
     event RecipeSet(uint256 recipeId, Shard.Recipe recipe);
     event RecipeDeleted(uint256 recipeId);
     event PartnerAllowedShardIdSet(address partner, uint256 shardId, bool allow);
     event TransferSingle(address operator, address from, address to, uint256 id, uint256 value);
     event ShardEnclaveSet(uint256 enclaveId, uint256 shardId);
     event RegularShardIdSet(uint256 shardId, bool allow);
-    event MinterAllowedShardIdSet(address minter, uint256 shardId, bool allow);
-    event MinterAllowedShardCapSet(address minter, uint256 shardId, uint256 cap);
+    event MinterAllowedShardIdSet(address indexed minter, uint256 indexed shardId, bool allow);
+    event MinterAllowedShardCapSet(address indexed minter, uint256 indexed shardId, uint256 cap);
     event ShardIdSet(uint256 shardId, bool allow);
     event NexusCommonSet(address nexusCommon);
     
     function setUp() public {
         nexusCommon = new NexusCommon(executor);
-        relic = new Relic(name, symbol, address(nexusCommon), executor);
+        relic = new Relic(NAME, SYMBOL, address(nexusCommon), executor);
         shard = new Shard(address(relic), address(nexusCommon), executor, "http://example.com");
 
         vm.startPrank(executor);
@@ -92,7 +62,7 @@ contract ShardTestBase is TempleTest {
         }
         // relic setup
         {
-            relic.setRelicMinter(operator, true);
+            _enableAllEnclavesForMinter(relic, operator);
             relic.setShard(address(shard));
             changePrank(operator);
             relic.mintRelic(bob, LOGIC_ID);
@@ -440,13 +410,12 @@ contract ShardTest is ShardTestAccess {
         shard.setMinterAllowedShardIds(alice, shardIds, allows);
 
         shardIds[0] = SHARD_2_ID;
-        /// @dev emit oddly fails
-        // vm.expectEmit(address(shard));
-        // emit MinterAllowedShardIdSet(alice, shardIds[0], allows[0]);
-        // vm.expectEmit(address(shard));
-        // emit MinterAllowedShardIdSet(alice, shardIds[1], allows[1]);
-        // vm.expectEmit(address(shard));
-        // emit MinterAllowedShardIdSet(alice, shardIds[2], allows[2]);
+        vm.expectEmit(address(shard));
+        emit MinterAllowedShardIdSet(alice, shardIds[0], allows[0]);
+        vm.expectEmit(address(shard));
+        emit MinterAllowedShardIdSet(alice, shardIds[1], allows[1]);
+        vm.expectEmit(address(shard));
+        emit MinterAllowedShardIdSet(alice, shardIds[2], allows[2]);
         shard.setMinterAllowedShardIds(alice, shardIds, allows);
         
         uint256[] memory shards = shard.getMinterAllowedShardIds(alice);
@@ -471,10 +440,10 @@ contract ShardTest is ShardTestAccess {
         minters[0] = bob;
         minters[1] = alice;
         uint256 nextId = shard.nextTokenId();
-        // vm.expectEmit(address(shard));
-        // emit MinterAllowedShardIdSet(bob, nextId, true);
-        // vm.expectEmit(address(shard));
-        // emit MinterAllowedShardIdSet(alice, nextId+1, true);
+        vm.expectEmit(address(shard));
+        emit MinterAllowedShardIdSet(bob, nextId, true);
+        vm.expectEmit(address(shard));
+        emit MinterAllowedShardIdSet(alice, nextId+1, true);
         shard.setNewMinterShards(minters);
         assertEq(shard.nextTokenId(), nextId+2);
         assertEq(shard.isShardId(nextId), true);
@@ -511,10 +480,10 @@ contract ShardTest is ShardTestAccess {
         // alice is not an allowed minter
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
         shard.setAllowedShardCaps(alice, shardIds, caps);
-        // vm.expectEmit(address(shard));
-        // emit MinterAllowedShardCapSet(alice, SHARD_1_ID, caps[0]);
-        // vm.expectEmit(address(shard));
-        // emit MinterAllowedShardCapSet(alice, SHARD_2_ID, caps[1]);
+        vm.expectEmit(address(shard));
+        emit MinterAllowedShardCapSet(operator, SHARD_1_ID, caps[0]);
+        vm.expectEmit(address(shard));
+        emit MinterAllowedShardCapSet(operator, SHARD_2_ID, caps[1]);
         shard.setAllowedShardCaps(operator, shardIds, caps);
         assertEq(shard.allowedShardCaps(operator, shardIds[0]), caps[0]);
         assertEq(shard.allowedShardCaps(operator, shardIds[1]), caps[1]);
@@ -591,8 +560,8 @@ contract ShardTest is ShardTestAccess {
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
         shard.setShardUri(SHARD_1_ID, "");
 
-        // vm.expectEmit(address(shard));
-        // emit ShardUriSet(SHARD_1_ID, SHARD_1_URI);
+        vm.expectEmit(address(shard));
+        emit ShardUriSet(SHARD_1_ID, SHARD_1_URI);
         shard.setShardUri(SHARD_1_ID, SHARD_1_URI);
         assertEq(shard.uri(SHARD_1_ID), SHARD_1_URI);
         shard.setShardUri(SHARD_2_ID, SHARD_2_URI);
@@ -619,8 +588,8 @@ contract ShardTest is ShardTestAccess {
         uint256 shard2BalanceBefore = shard.balanceOf(bob, SHARD_2_ID);
         uint256 shard3BalanceBefore = shard.balanceOf(bob, SHARD_3_ID);
 
-        // vm.expectEmit(address(shard));
-        // emit Transmuted(bob, RECIPE_1_ID);
+        vm.expectEmit(address(shard));
+        emit Transmuted(bob, RECIPE_1_ID);
         shard.transmute(RECIPE_1_ID);
         assertEq(shard.balanceOf(bob, SHARD_1_ID), shard1BalanceBefore-2);
         assertEq(shard.balanceOf(bob, SHARD_2_ID), shard2BalanceBefore-1);

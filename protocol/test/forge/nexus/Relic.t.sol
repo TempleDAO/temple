@@ -3,6 +3,7 @@ pragma solidity 0.8.19;
 // Temple (tests/forge/nexus/Relic.t.sol)
 
 import { TempleTest } from "../TempleTest.sol";
+import { NexusTestBase } from "./Nexus.t.sol";
 import { Relic } from "../../../contracts/nexus/Relic.sol";
 import { NexusCommon } from "../../../contracts/nexus/NexusCommon.sol";
 import { IRelic } from "../../../contracts/interfaces/nexus/IRelic.sol";
@@ -13,43 +14,12 @@ import { FakeERC20 } from "../../../contracts/fakes/FakeERC20.sol";
 import { CommonEventsAndErrors } from "../../../contracts/common/CommonEventsAndErrors.sol";
 import { IERC1155Receiver } from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 
-
-contract RelicTestBase is TempleTest {
+contract RelicTestBase is NexusTestBase {
     using EnumerableSet for EnumerableSet.UintSet;
 
     Relic public relic;
     Shard public shard;
     NexusCommon public nexusCommon;
-
-    FakeERC20 public temple = new FakeERC20("TEMPLE", "TEMPLE", address(0), 0);
-    FakeERC20 public dai = new FakeERC20("DAI", "DAI", address(0), 0);
-
-    string private constant NAME = "RELIC";
-    string private constant SYMBOL = "REL";
-    string internal constant BASE_URI = "http://example.com/";
-
-    uint256 internal constant RARITIES_COUNT = 0x05;
-    uint256 internal constant ENCLAVES_COUNT = 0x05;
-    uint256 internal constant PER_MINT_QUANTITY = 0x01;
-    bytes internal constant ZERO_BYTES = "";
-
-    uint256 internal constant SHARD_1_ID = 0x01;
-    uint256 internal constant SHARD_2_ID = 0x02;
-    uint256 internal constant SHARD_3_ID = 0x03;
-    uint256 internal constant RELIC_1_ID = 0x01;
-
-    uint256 internal constant MYSTERY_ID = 0x01;
-    uint256 internal constant CHAOS_ID = 0x02;
-    uint256 internal constant ORDER_ID = 0x03;
-    uint256 internal constant STRUCTURE_ID = 0x04;
-    uint256 internal constant LOGIC_ID = 0x05;
-
-    string internal constant MYSTERY = "MYSTERY";
-    string internal constant CHAOS = "CHAOS";
-    string internal constant ORDER = "ORDER";
-    string internal constant STRUCTURE = "STRUCTURE";
-    string internal constant LOGIC = "LOGIC";
-
 
     Relic.Rarity public commRarity = IRelic.Rarity.Common;
     Relic.Rarity public uncommonRarity = IRelic.Rarity.Uncommon;
@@ -92,23 +62,28 @@ contract RelicTestBase is TempleTest {
 
     event RarityXPThresholdSet(Relic.Rarity rarity, uint256 threshold);
     event RarityBaseUriSet(Relic.Rarity rarity, string uri);
-    event RelicMinterSet(address minter, bool allow);
     event RelicMinted(address indexed to, uint256 relicId, uint256 enclaveId);
     event ShardSet(address shard);
-    event RelicXPSet(uint256 relicId, uint256 xp);
+    event RelicXPSet(uint256 indexed relicId, uint256 xp);
     event ShardsEquipped(address caller, uint256 relicId, uint256[] shardIds, uint256[] amounts);
     event ShardsUnequipped(address indexed recipient, uint256 indexed relicId, uint256[] shardIds, uint256[] amounts);
     event AccountBlacklistSet(address account, bool blacklist, uint256[] shardIds, uint256[] amounts);
-    event AccountBlacklisted(address account, bool blacklist);
+    event AccountBlacklisted(address indexed account, bool blacklist);
     event ShardBlacklistUpdated(uint256 relicId, uint256 shardId, uint256 amount);
     event NexusCommonSet(address nexusCommon);
+    event RelicMinterEnclaveSet(address indexed minter, uint256 enclaveId, bool allowed);
 
     function setUp() public {
         nexusCommon = new NexusCommon(executor);
         relic = new Relic(NAME, SYMBOL, address(nexusCommon), executor);
         shard = new Shard(address(relic), address(nexusCommon), executor, BASE_URI);
         vm.startPrank(executor);
-        relic.setRelicMinter(operator, true);
+        uint256[] memory enclaveIds = new uint256[](2);
+        bool[] memory allow = new bool[](2);
+        enclaveIds[0] = MYSTERY_ID;
+        enclaveIds[1] = CHAOS_ID;
+        allow[0] = allow[1] = true;
+        relic.setRelicMinterEnclaveIds(operator, enclaveIds, allow);
         relic.setShard(address(shard));
         relic.setNexusCommon(address(nexusCommon));
         dai.mint(executor, 10 ether);
@@ -123,7 +98,7 @@ contract RelicTestBase is TempleTest {
 
         {
             changePrank(operator);
-            relic.mintRelic(bob, LOGIC_ID);
+            relic.mintRelic(bob, CHAOS_ID);
             relic.mintRelic(bob, MYSTERY_ID);
         }
 
@@ -133,7 +108,7 @@ contract RelicTestBase is TempleTest {
             newMinters[0] = newMinters[1] = newMinters[2] = newMinters[3] = operator;
             shard.setNewMinterShards(newMinters); // Ids: 1,2,3,4
             uint256[] memory shardIds = new uint256[](1);
-            bool[] memory allow = new bool[](1);
+            allow = new bool[](1);
             allow[0] = true;
             shardIds[0] = SHARD_1_ID;
             shard.setMinterAllowedShardIds(bob, shardIds, allow);
@@ -156,7 +131,6 @@ contract RelicTestBase is TempleTest {
         assertEq(relic.name(), NAME);
         assertEq(relic.symbol(), SYMBOL);
         assertEq(relic.executor(), executor);
-        assertEq(relic.relicMinters(operator), true);
         assertEq(address(relic.shard()), address(shard));
     }
 
@@ -221,45 +195,6 @@ contract RelicTestBase is TempleTest {
         thresholds[3] = 100;
         relic.setXPRarityThresholds(rarities, thresholds);
     }
-
-    function _toString(uint256 value) internal pure returns (string memory str) {
-        assembly {
-            // The maximum value of a uint256 contains 78 digits (1 byte per digit), but
-            // we allocate 0xa0 bytes to keep the free memory pointer 32-byte word aligned.
-            // We will need 1 word for the trailing zeros padding, 1 word for the length,
-            // and 3 words for a maximum of 78 digits. Total: 5 * 0x20 = 0xa0.
-            let m := add(mload(0x40), 0xa0)
-            // Update the free memory pointer to allocate.
-            mstore(0x40, m)
-            // Assign the `str` to the end.
-            str := sub(m, 0x20)
-            // Zeroize the slot after the string.
-            mstore(str, 0)
-
-            // Cache the end of the memory to calculate the length later.
-            let end := str
-
-            // We write the string from rightmost digit to leftmost digit.
-            // The following is essentially a do-while loop that also handles the zero case.
-            // prettier-ignore
-            for { let temp := value } 1 {} {
-                str := sub(str, 1)
-                // Write the character to the pointer.
-                // The ASCII index of the '0' character is 48.
-                mstore8(str, add(48, mod(temp, 10)))
-                // Keep dividing `temp` until zero.
-                temp := div(temp, 10)
-                // prettier-ignore
-                if iszero(temp) { break }
-            }
-
-            let length := sub(end, str)
-            // Move the pointer 32 bytes leftwards to make room for the length.
-            str := sub(str, 0x20)
-            // Store the length.
-            mstore(str, length)
-        }
-    }
 }
 
 contract RelicTestAccess is RelicTestBase {
@@ -267,7 +202,7 @@ contract RelicTestAccess is RelicTestBase {
     // address internal constant relicAddress = address(relic);
     function test_access_setShardFail(address caller) public {
         /// use fuzzing
-        vm.assume(caller != executor && caller != rescuer);
+        vm.assume(caller != executor);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         vm.startPrank(caller);
         relic.setShard(alice);
@@ -280,7 +215,7 @@ contract RelicTestAccess is RelicTestBase {
 
     function test_access_setNexusCommonFail(address caller) public {
         /// use fuzzing
-        vm.assume(caller != executor && caller != rescuer);
+        vm.assume(caller != executor);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         vm.startPrank(caller);
         relic.setNexusCommon(address(nexusCommon));
@@ -291,20 +226,30 @@ contract RelicTestAccess is RelicTestBase {
         relic.setNexusCommon(address(nexusCommon));
     }
 
-    function test_access_setRelicMinterFail(address caller) public {
-        vm.assume(caller != executor && caller != rescuer);
+    function test_access_setRelicMinterEnclaveIdsFail(address caller) public {
+        vm.assume(caller != executor);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         vm.startPrank(caller);
-        relic.setRelicMinter(alice, true);
+        uint256[] memory enclaveIds = new uint256[](2);
+        bool[] memory allow = new bool[](2);
+        enclaveIds[0] = MYSTERY_ID;
+        enclaveIds[1] = CHAOS_ID;
+        allow[0] = allow[1] = true;
+        relic.setRelicMinterEnclaveIds(operator, enclaveIds, allow);
     }
 
-    function test_access_setRelicMinterSuccess() public {
+    function test_access_setRelicMinterEnclaveIdsSuccess() public {
         vm.startPrank(executor);
-        relic.setRelicMinter(alice, true);
+        uint256[] memory enclaveIds = new uint256[](2);
+        bool[] memory allow = new bool[](2);
+        enclaveIds[0] = MYSTERY_ID;
+        enclaveIds[1] = CHAOS_ID;
+        allow[0] = allow[1] = true;
+        relic.setRelicMinterEnclaveIds(operator, enclaveIds, allow);
     }
 
     function test_access_setXPRarityThresholdsFail(address caller) public {
-        vm.assume(caller != executor && caller != rescuer);
+        vm.assume(caller != executor);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         Relic.Rarity[] memory rarities = new Relic.Rarity[](1);
         rarities[0] = commRarity;
@@ -324,7 +269,7 @@ contract RelicTestAccess is RelicTestBase {
     }
 
     function test_access_setBaseUriRarityFail(address caller) public {
-        vm.assume(caller != executor && caller != rescuer);
+        vm.assume(caller != executor);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         vm.startPrank(caller);
         relic.setBaseUriRarity(commRarity, "some string");
@@ -336,7 +281,7 @@ contract RelicTestAccess is RelicTestBase {
     }
 
     function test_access_setBlacklistAccountFail(address caller) public {
-        vm.assume(caller != executor && caller != rescuer);
+        vm.assume(caller != executor);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         vm.startPrank(caller);
         relic.setBlacklistAccount(bob, RELIC_1_ID, true);
@@ -348,7 +293,7 @@ contract RelicTestAccess is RelicTestBase {
     }
 
     function test_access_setBlacklistedShardsFail(address caller) public {
-        vm.assume(caller != executor && caller != rescuer);
+        vm.assume(caller != executor);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         vm.startPrank(caller);
         uint256[] memory shardIds = new uint256[](1);
@@ -368,7 +313,7 @@ contract RelicTestAccess is RelicTestBase {
     }
 
     function test_access_unsetBlacklistedShardsFail(address caller) public {
-        vm.assume(caller != executor && caller != rescuer);
+        vm.assume(caller != executor);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         vm.startPrank(caller);
         uint256[] memory shardIds = new uint256[](1);
@@ -389,7 +334,7 @@ contract RelicTestAccess is RelicTestBase {
     }
 
     function test_access_setRelicXPFail(address caller) public {
-        vm.assume(caller != executor && caller != rescuer && caller != operator);
+        vm.assume(caller != executor && caller != operator);
         vm.startPrank(caller);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         relic.setRelicXP(1, 100);
@@ -401,7 +346,7 @@ contract RelicTestAccess is RelicTestBase {
     }
 
     function test_recoverTokenFail(address caller) public {
-        vm.assume(caller != executor && caller != rescuer);
+        vm.assume(caller != executor);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         vm.startPrank(caller);
         relic.recoverToken(address(dai), alice, 1 ether);
@@ -414,7 +359,7 @@ contract RelicTestAccess is RelicTestBase {
     }
 
     function test_burnBlacklistedRelicShardsFail(address caller) public {
-        vm.assume(caller != executor && caller != rescuer);
+        vm.assume(caller != executor);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         vm.startPrank(caller);
         uint256[] memory shardIds = new uint256[](1);
@@ -458,22 +403,34 @@ contract RelicSettersTest is RelicTestAccess {
         relic.setNexusCommon(address(nexusCommon));
     }
 
-    function test_setRelicMinter() public {
+    function test_setRelicMinterEnclaveIds() public {
+        uint256[] memory enclaveIds = new uint256[](2);
+        bool[] memory allow = new bool[](1);
         vm.startPrank(executor);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
-        relic.setRelicMinter(address(0), true);
+        relic.setRelicMinterEnclaveIds(address(0), enclaveIds, allow);
 
-        /// @dev commented out because expect emit oddly fails
-        // vm.expectEmit(address(relic));
-        // emit RelicMinterSet(alice, true);
-        relic.setRelicMinter(alice, true);
-        assertEq(relic.relicMinters(alice), true);
+        allow[0] = true;
+        enclaveIds[0] = LOGIC_ID;
+        enclaveIds[1] = ORDER_ID;
+        vm.expectRevert(abi.encodeWithSelector(IRelic.InvalidParamLength.selector));
+        relic.setRelicMinterEnclaveIds(alice, enclaveIds, allow);
 
-        /// @dev commented out because expect emit oddly fails
-        // vm.expectEmit(address(relic));
-        // emit RelicMinterSet(alice, false);
-        relic.setRelicMinter(alice, false);
-        assertEq(relic.relicMinters(alice), false);
+        allow = new bool[](2);
+        allow[0] = allow[1] = true;
+        vm.expectEmit(address(relic));
+        emit RelicMinterEnclaveSet(alice, enclaveIds[0], allow[0]);
+        vm.expectEmit(address(relic));
+        emit RelicMinterEnclaveSet(alice, enclaveIds[1], allow[1]);
+        relic.setRelicMinterEnclaveIds(alice, enclaveIds, allow);
+        assertEq(relic.isRelicMinter(alice, enclaveIds[0]), allow[0]);
+        assertEq(relic.isRelicMinter(alice, enclaveIds[1]), allow[1]);
+
+        allow[1] = false;
+        vm.expectEmit(address(relic));
+        emit RelicMinterEnclaveSet(alice, enclaveIds[1], allow[1]);
+        relic.setRelicMinterEnclaveIds(alice, enclaveIds, allow);
+        assertEq(relic.isRelicMinter(alice, enclaveIds[1]), false);
     }
 
     function test_setXPRarityThresholds() public {
@@ -536,8 +493,8 @@ contract RelicSettersTest is RelicTestAccess {
         relic.setBlacklistedShards(bob, RELIC_1_ID, shardIds, amounts);
 
         /// @dev commented out because expect emit oddly fails
-        // vm.expectEmit(address(relic));
-        // emit AccountBlacklisted(bob, true);
+        vm.expectEmit(address(relic));
+        emit AccountBlacklisted(bob, true);
         relic.setBlacklistAccount(bob, RELIC_1_ID, true);
 
         assertEq(relic.blacklistedAccounts(bob), true);
@@ -548,8 +505,8 @@ contract RelicSettersTest is RelicTestAccess {
         relic.unsetBlacklistedShards(bob, RELIC_1_ID, shardIds, amounts);
 
         /// @dev commented out because expect emit oddly fails
-        // vm.expectEmit();
-        // emit AccountBlacklisted(bob, false);
+        vm.expectEmit();
+        emit AccountBlacklisted(bob, false);
         relic.setBlacklistAccount(bob, RELIC_1_ID, false);
         assertEq(relic.blacklistedAccounts(bob), false);
     }
@@ -667,8 +624,8 @@ contract RelicSettersTest is RelicTestAccess {
         assertEq(uint8(relicInfoView.rarity), uint8(IRelic.Rarity.Common));
         
         /// @dev commented out because expect emit oddly fails
-        // vm.expectEmit(address(relic));
-        // emit RelicXPSet(relicId, xp);
+        vm.expectEmit(address(relic));
+        emit RelicXPSet(relicId, xp);
         relic.setRelicXP(relicId, xp);
 
         relicInfoView = relic.getRelicInfo(relicId);
@@ -680,6 +637,7 @@ contract RelicSettersTest is RelicTestAccess {
 contract RelicViewTest is RelicSettersTest {
     function test_baseURI() public {
         vm.startPrank(executor);
+        _enableAllEnclavesForMinter(relic, operator);
         string memory commonBaseUri = string.concat(BASE_URI, "common/");
         string memory uncommonBaseUri = string.concat(BASE_URI, "uncommon/");
         relic.setBaseUriRarity(IRelic.Rarity.Common, commonBaseUri);
@@ -805,7 +763,9 @@ contract RelicViewTest is RelicSettersTest {
 
     function test_totalMinted() public {
         uint256 totalMinted = relic.totalMinted();
-        vm.startPrank(operator);
+        vm.startPrank(executor);
+        _enableAllEnclavesForMinter(relic, operator);
+        changePrank(operator);
         relic.mintRelic(alice, CHAOS_ID);
         assertEq(relic.totalMinted(), totalMinted+1);
         relic.mintRelic(bob, STRUCTURE_ID);
@@ -830,6 +790,22 @@ contract RelicViewTest is RelicSettersTest {
     function test_tokenURI() public {
         /// @dev see test_baseURI
     }
+
+    function test_isRelicMinter() public {
+        assertEq(relic.isRelicMinter(alice, MYSTERY_ID), false);
+        vm.startPrank(executor);
+        uint256[] memory enclaveIds = new uint256[](2);
+        bool[] memory allow = new bool[](2);
+        enclaveIds[0] = MYSTERY_ID;
+        enclaveIds[1] = CHAOS_ID;
+        allow[0] = allow[1] = true;
+        relic.setRelicMinterEnclaveIds(alice, enclaveIds, allow);
+        assertEq(relic.isRelicMinter(alice, enclaveIds[0]), true);
+        assertEq(relic.isRelicMinter(alice, enclaveIds[1]), true);
+        allow[1] = false;
+        relic.setRelicMinterEnclaveIds(alice, enclaveIds, allow);
+        assertEq(relic.isRelicMinter(alice, enclaveIds[1]), false);
+    }
 }
 
 contract RelicTest is RelicViewTest {
@@ -849,6 +825,7 @@ contract RelicTest is RelicViewTest {
         amounts[0] = 10;
         amounts[1] = 20;
         changePrank(executor);
+        _enableAllEnclavesForMinter(relic, operator);
         uint256 relicId = _blacklistAccount(true, true, 0, alice, shardIds, amounts);
 
         // zero address test
@@ -868,6 +845,16 @@ contract RelicTest is RelicViewTest {
         changePrank(operator);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
         relic.mintRelic(alice, 100);
+
+        changePrank(executor);
+        uint256[] memory enclaveIds = new uint256[](1);
+        bool[] memory allow = new bool[](1);
+        allow[0] = false;
+        enclaveIds[0] = MYSTERY_ID;
+        relic.setRelicMinterEnclaveIds(operator, enclaveIds, allow);
+        changePrank(operator);
+        vm.expectRevert(abi.encodeWithSelector(IRelic.CallerCannotMint.selector, operator));
+        relic.mintRelic(alice, MYSTERY_ID);
 
         uint256[] memory relicsBefore = relic.relicsOfOwner(alice);
         uint256 nextTokenId = relic.nextTokenId();
@@ -1014,7 +1001,7 @@ contract RelicTest is RelicViewTest {
         // shards are already equipped in relicId
         shard1BalanceBefore = shard.balanceOf(bob, SHARD_1_ID);
         shard2BalanceBefore = shard.balanceOf(bob, SHARD_2_ID);
-        /// @dev commented out because expect emit oddly fails when relic address used as argunent
+        
         vm.expectEmit();
         emit ShardsUnequipped(bob, relicId, shardIds, amounts);
         relic.batchUnequipShards(relicId, shardIds, amounts);
@@ -1111,7 +1098,9 @@ contract RelicTest is RelicViewTest {
         shardIds[1] = SHARD_2_ID;
         amounts[0] = 10;
         amounts[1] = 20;
-        vm.startPrank(operator);
+        vm.startPrank(executor);
+        _enableAllEnclavesForMinter(relic, operator);
+        changePrank(operator);
         relic.mintRelic(alice, STRUCTURE_ID);
         relic.mintRelic(alice, CHAOS_ID);
         uint256[] memory aliceRelics = relic.relicsOfOwner(alice);
