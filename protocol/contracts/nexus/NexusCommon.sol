@@ -90,7 +90,6 @@ contract NexusCommon is INexusCommon, ElevatedAccess {
      * @return Bool
      */
     function isValidEnclaveId(uint256 enclaveId) external override view returns (bool) {
-        // return bytes(enclaveNames[enclaveId]).length > 0;
         return enclaveIds.contains(enclaveId);
     }
 }

@@ -143,6 +143,12 @@ contract BaseeSacrificeAccessTest is BaseSacrificeTestBase {
         emit CustomPriceSet(customPrice);
         mockSacrifice.setCustomPrice(customPrice);
         assertEq(mockSacrifice.customPrice(), customPrice);
+
+        // reset
+        vm.expectEmit(address(mockSacrifice));
+        emit CustomPriceSet(0);
+        mockSacrifice.setCustomPrice(0);
+        assertEq(mockSacrifice.customPrice(), 0);
     }
 
     function test_getPrice_baseSacrifice() public {

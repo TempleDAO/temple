@@ -2,7 +2,7 @@ pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (tests/forge/nexus/Relic.t.sol)
 
-import { TempleTest } from "../TempleTest.sol";
+
 import { NexusTestBase } from "./Nexus.t.sol";
 import { Relic } from "../../../contracts/nexus/Relic.sol";
 import { NexusCommon } from "../../../contracts/nexus/NexusCommon.sol";
@@ -10,9 +10,7 @@ import { IRelic } from "../../../contracts/interfaces/nexus/IRelic.sol";
 import { IERC721A } from "../../../contracts/interfaces/nexus/IERC721A.sol";
 import { Shard } from "../../../contracts/nexus/Shard.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import { FakeERC20 } from "../../../contracts/fakes/FakeERC20.sol";
 import { CommonEventsAndErrors } from "../../../contracts/common/CommonEventsAndErrors.sol";
-import { IERC1155Receiver } from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 
 contract RelicTestBase is NexusTestBase {
     using EnumerableSet for EnumerableSet.UintSet;
@@ -72,6 +70,7 @@ contract RelicTestBase is NexusTestBase {
     event ShardBlacklistUpdated(uint256 relicId, uint256 shardId, uint256 amount);
     event NexusCommonSet(address nexusCommon);
     event RelicMinterEnclaveSet(address indexed minter, uint256 enclaveId, bool allowed);
+    event ApprovalForAll(address caller, address operator, bool approved);
 
     function setUp() public {
         nexusCommon = new NexusCommon(executor);
@@ -125,13 +124,6 @@ contract RelicTestBase is NexusTestBase {
         }
         
         vm.stopPrank();
-    }
-
-    function test_initialization() public {
-        assertEq(relic.name(), NAME);
-        assertEq(relic.symbol(), SYMBOL);
-        assertEq(relic.executor(), executor);
-        assertEq(address(relic.shard()), address(shard));
     }
 
     function _mintRelicNew(address to, uint256 enclaveId) internal returns (uint256) {
@@ -198,6 +190,13 @@ contract RelicTestBase is NexusTestBase {
 }
 
 contract RelicTestAccess is RelicTestBase {
+
+    function test_initialization() public {
+        assertEq(relic.name(), NAME);
+        assertEq(relic.symbol(), SYMBOL);
+        assertEq(relic.executor(), executor);
+        assertEq(address(relic.shard()), address(shard));
+    }
 
     // address internal constant relicAddress = address(relic);
     function test_access_setShardFail(address caller) public {
@@ -380,7 +379,7 @@ contract RelicTestAccess is RelicTestBase {
     }
 }
 
-contract RelicSettersTest is RelicTestAccess {
+contract RelicSettersTest is RelicTestBase {
     
     function test_setShard() public {
         address relicAddress = address(relic);
@@ -492,7 +491,6 @@ contract RelicSettersTest is RelicTestAccess {
         // blacklist relic shards to trigger error
         relic.setBlacklistedShards(bob, RELIC_1_ID, shardIds, amounts);
 
-        /// @dev commented out because expect emit oddly fails
         vm.expectEmit(address(relic));
         emit AccountBlacklisted(bob, true);
         relic.setBlacklistAccount(bob, RELIC_1_ID, true);
@@ -504,7 +502,6 @@ contract RelicSettersTest is RelicTestAccess {
         // unset blacklisted shards
         relic.unsetBlacklistedShards(bob, RELIC_1_ID, shardIds, amounts);
 
-        /// @dev commented out because expect emit oddly fails
         vm.expectEmit();
         emit AccountBlacklisted(bob, false);
         relic.setBlacklistAccount(bob, RELIC_1_ID, false);
@@ -558,7 +555,50 @@ contract RelicSettersTest is RelicTestAccess {
 
         assertEq(relic.blacklistedAccounts(bob), true);
         assertEq(relic.blacklistedRelicShards(RELIC_1_ID, shardIds[0]), 2);
-        assertEq(relic.blacklistedShardsCount(shardIds[0]), 2);
+        // assertEq(relic.blacklistedShardsCount(RELIC_1_ID), 2);
+
+        // overlapping shards, edge cases
+        _enableAllEnclavesForMinter(relic, operator);
+        uint256 relicId = _mintRelicNew(alice, ORDER_ID);
+        // mint and equip shards
+        shardIds = new uint256[](6);
+        amounts = new uint256[](6);
+        shardIds[0] = SHARD_1_ID;
+        shardIds[1] = SHARD_2_ID;
+        shardIds[2] = SHARD_3_ID;
+        shardIds[3] = SHARD_3_ID;
+        shardIds[4] = SHARD_4_ID;
+        shardIds[5] = SHARD_5_ID;
+        amounts[0] = amounts[1] = amounts[2] = amounts[3] = amounts[4] = amounts[5] = 20;
+        changePrank(executor);
+        address[] memory minters = new address[](1);
+        minters[0] = operator;
+        shard.setNewMinterShards(minters);
+        _equipShards(relicId, alice, shardIds, amounts);
+        changePrank(executor);
+        // blacklist 6 of each shard Id
+        amounts = new uint256[](3);
+        shardIds = new uint256[](3);
+        shardIds[0] = SHARD_1_ID;
+        shardIds[1] = SHARD_2_ID;
+        shardIds[2] = SHARD_3_ID;
+        amounts[0] = amounts[1] = amounts[2] = 6;
+        relic.setBlacklistedShards(alice, relicId, shardIds, amounts);
+        assertEq(relic.blacklistedRelicShards(relicId, shardIds[0]), 6);
+        assertEq(relic.blacklistedRelicShards(relicId, shardIds[1]), 6);
+        assertEq(relic.blacklistedRelicShards(relicId, shardIds[2]), 6);
+        assertEq(relic.blacklistedShardsCount(relicId), 18);
+        // blacklist 10 more of different shard Ids. Id 3 is repeating
+        shardIds = new uint256[](3);
+        shardIds[0] = SHARD_3_ID;
+        shardIds[1] = SHARD_4_ID;
+        shardIds[2] = SHARD_5_ID;
+        amounts[0] = amounts[1] = amounts[2] = 10;
+        relic.setBlacklistedShards(alice, relicId, shardIds, amounts);
+        assertEq(relic.blacklistedRelicShards(relicId, shardIds[0]), 16);
+        assertEq(relic.blacklistedRelicShards(relicId, shardIds[1]), 10);
+        assertEq(relic.blacklistedRelicShards(relicId, shardIds[2]), 10);
+        assertEq(relic.blacklistedShardsCount(relicId), 48);
     }
 
     function test_unsetBlacklistedShards() public {
@@ -623,7 +663,6 @@ contract RelicSettersTest is RelicTestAccess {
         _setRarityThresholds();
         assertEq(uint8(relicInfoView.rarity), uint8(IRelic.Rarity.Common));
         
-        /// @dev commented out because expect emit oddly fails
         vm.expectEmit(address(relic));
         emit RelicXPSet(relicId, xp);
         relic.setRelicXP(relicId, xp);
@@ -634,7 +673,7 @@ contract RelicSettersTest is RelicTestAccess {
     }
 }
 
-contract RelicViewTest is RelicSettersTest {
+contract RelicViewTest is RelicTestBase {
     function test_baseURI() public {
         vm.startPrank(executor);
         _enableAllEnclavesForMinter(relic, operator);
@@ -808,9 +847,7 @@ contract RelicViewTest is RelicSettersTest {
     }
 }
 
-contract RelicTest is RelicViewTest {
-
-    event ApprovalForAll(address caller, address operator, bool approved);
+contract RelicTest is RelicTestBase {
 
     function test_mintRelic() public {
         vm.startPrank(alice);
@@ -1160,5 +1197,7 @@ contract RelicTest is RelicViewTest {
         assertEq(relic.supportsInterface(0x01ffc9a7), true); // ERC165 interface ID for ERC165.
         assertEq(relic.supportsInterface(0x80ac58cd), true); // ERC165 interface ID for ERC721.
         assertEq(relic.supportsInterface(0x5b5e139f), true); // ERC165 interface ID for ERC721Metadata.
+
+        assertEq(relic.supportsInterface(0x5b5d128e), false);
     }
 }

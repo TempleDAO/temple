@@ -2,19 +2,17 @@ pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (tests/forge/nexus/TempleSacrifice.t.sol)
 
-import { TempleTest } from "../TempleTest.sol";
+import { NexusTestBase } from "./Nexus.t.sol";
 import { Relic } from "../../../contracts/nexus/Relic.sol";
 import { Shard } from "../../../contracts/nexus/Shard.sol";
 import { NexusCommon } from "../../../contracts/nexus/NexusCommon.sol";
 import { TempleSacrifice } from "../../../contracts/nexus/TempleSacrifice.sol";
 import { TempleERC20Token } from "../../../contracts/core/TempleERC20Token.sol";
 import { CommonEventsAndErrors } from "../../../contracts/common/CommonEventsAndErrors.sol";
-import { IERC1155Receiver } from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
-import { IRelic } from "../../../contracts/interfaces/nexus/IRelic.sol";
 import { IBaseSacrifice } from "../../../contracts/interfaces/nexus/IBaseSacrifice.sol";
 
 
-contract TempleSacrificeTestBase is TempleTest {
+contract TempleSacrificeTestBase is NexusTestBase {
 
     Relic public relic;
     Shard public shard;
@@ -22,21 +20,9 @@ contract TempleSacrificeTestBase is TempleTest {
     TempleSacrifice public templeSacrifice;
     TempleERC20Token public sacrificeToken; 
 
-
-    string private constant NAME = "RELIC";
-    string private constant SYMBOL = "REL";
-    string internal constant BASE_URI = "http://example.com/";
-
     uint256 internal constant MINIMUM_CUSTOM_PRICE = 30 ether;
     uint256 internal constant ONE_ETHER = 1 ether;
     uint256 internal constant PRICE_MAX_PERIOD = 365 days;
-
-    // todo import into common class NexusTestBase
-    uint256 internal constant MYSTERY_ID = 0x01;
-    uint256 internal constant CHAOS_ID = 0x02;
-    uint256 internal constant ORDER_ID = 0x03;
-    uint256 internal constant STRUCTURE_ID = 0x04;
-    uint256 internal constant LOGIC_ID = 0x05;
 
     event OriginTimeSet(uint64 originTime);
     event CustomPriceSet(uint256 price);
@@ -67,18 +53,6 @@ contract TempleSacrificeTestBase is TempleTest {
         vm.stopPrank();
     }
 
-    function test_initialization() public {
-        assertEq(address(templeSacrifice.sacrificeToken()), address(sacrificeToken));
-        assertEq(address(templeSacrifice.relic()), address(relic));
-        assertEq(address(templeSacrifice.executor()), executor);
-        assertEq(templeSacrifice.sacrificedTokenRecipient(), bob);
-        assertEq(relic.isRelicMinter(address(templeSacrifice), MYSTERY_ID), true);
-        assertEq(relic.isRelicMinter(address(templeSacrifice), LOGIC_ID), true);
-        assertEq(relic.isRelicMinter(address(templeSacrifice), CHAOS_ID), true);
-        assertEq(relic.isRelicMinter(address(templeSacrifice), STRUCTURE_ID), true);
-        assertEq(relic.isRelicMinter(address(templeSacrifice), ORDER_ID), true);
-    }
-
     function _mintTemple(address to, uint256 amount) internal {
         sacrificeToken.mint(to, amount);
     }
@@ -91,6 +65,17 @@ contract TempleSacrificeTestBase is TempleTest {
 }
 
 contract TempleSacrificeAccessTest is TempleSacrificeTestBase {
+    function test_initialization() public {
+        assertEq(address(templeSacrifice.sacrificeToken()), address(sacrificeToken));
+        assertEq(address(templeSacrifice.relic()), address(relic));
+        assertEq(address(templeSacrifice.executor()), executor);
+        assertEq(templeSacrifice.sacrificedTokenRecipient(), bob);
+        assertEq(relic.isRelicMinter(address(templeSacrifice), MYSTERY_ID), true);
+        assertEq(relic.isRelicMinter(address(templeSacrifice), LOGIC_ID), true);
+        assertEq(relic.isRelicMinter(address(templeSacrifice), CHAOS_ID), true);
+        assertEq(relic.isRelicMinter(address(templeSacrifice), STRUCTURE_ID), true);
+        assertEq(relic.isRelicMinter(address(templeSacrifice), ORDER_ID), true);
+    }
 
     function test_access_setSacrificedTokenRecipientFail(address caller) public {
         vm.assume(caller != executor);
@@ -155,6 +140,7 @@ contract TempleSacrificeTest is TempleSacrificeTestBase {
         uint256 aliceTempleBalanceBefore = sacrificeToken.balanceOf(alice);
         uint256 recipientBalanceBefore = sacrificeToken.balanceOf(bob);
 
+        uint256 relicId = relic.nextTokenId();
         vm.warp(originTime);
         uint256 price = templeSacrifice.getPrice();
         vm.expectEmit(address(templeSacrifice));
@@ -163,5 +149,6 @@ contract TempleSacrificeTest is TempleSacrificeTestBase {
         assertEq(price, _calculatePrice(params));
         assertEq(sacrificeToken.balanceOf(alice), aliceTempleBalanceBefore - price);
         assertEq(sacrificeToken.balanceOf(bob), recipientBalanceBefore + price);
+        assertEq(relic.ownerOf(relicId), alice);
     }
 }

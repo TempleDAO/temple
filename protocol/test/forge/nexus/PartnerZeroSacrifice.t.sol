@@ -3,14 +3,11 @@ pragma solidity 0.8.19;
 // Temple (tests/forge/nexus/PartnerZeroSacrifice.t.sol)
 
 
-import { TempleTest } from "../TempleTest.sol";
+import { NexusTestBase } from "./Nexus.t.sol";
 import { Relic } from "../../../contracts/nexus/Relic.sol";
-import { Shard } from "../../../contracts/nexus/Shard.sol";
 import { NexusCommon } from "../../../contracts/nexus/NexusCommon.sol";
-import { TempleERC20Token } from "../../../contracts/core/TempleERC20Token.sol";
 import { CommonEventsAndErrors } from "../../../contracts/common/CommonEventsAndErrors.sol";
 import { PartnerZeroSacrifice } from "../../../contracts/nexus/PartnerZeroSacrifice.sol";
-import { IRelic } from "../../../contracts/interfaces/nexus/IRelic.sol";
 import { IBaseSacrifice } from "../../../contracts/interfaces/nexus/IBaseSacrifice.sol";
 import { IElevatedAccess } from "../../../contracts/interfaces/nexus/access/IElevatedAccess.sol";
 
@@ -27,15 +24,11 @@ contract MockPartnerProxy {
     }
 }
 
-contract PartnerZeroSacrificeTestBase is TempleTest {
+contract PartnerZeroSacrificeTestBase is NexusTestBase {
     Relic public relic;
     NexusCommon public nexusCommon;
     PartnerZeroSacrifice public partnerSacrifice;
     MockPartnerProxy public mockPartnerProxy;
-
-    string private constant NAME = "RELIC";
-    string private constant SYMBOL = "REL";
-    string internal constant BASE_URI = "http://example.com/";
 
     uint256 internal constant NON_ENCLAVE_ID = 10;
 
@@ -62,15 +55,15 @@ contract PartnerZeroSacrificeTestBase is TempleTest {
         partnerSacrifice.setExplicitAccess(address(mockPartnerProxy), accessArray);
         vm.stopPrank();
     }
+}
 
+contract PartnerSacrificeAccessTest is PartnerZeroSacrificeTestBase {
     function test_initialization() public {
         assertEq(address(partnerSacrifice.relic()), address(relic));
         assertEq(partnerSacrifice.executor(), executor);
         assertEq(relic.isRelicMinter(address(partnerSacrifice), NON_ENCLAVE_ID), true);
     }
-}
 
-contract PartnerSacrificeAccessTest is PartnerZeroSacrificeTestBase {
     function test_access_sacrificeFail(address caller) public {
         vm.assume(caller != executor);
         vm.startPrank(caller);
@@ -79,8 +72,8 @@ contract PartnerSacrificeAccessTest is PartnerZeroSacrificeTestBase {
     }
 
     function test_access_sacrificeSuccess() public {
-        vm.startPrank(executor);
-        partnerSacrifice.sacrifice(NON_ENCLAVE_ID, alice);
+        vm.startPrank(address(mockPartnerProxy));
+        mockPartnerProxy.execute(alice);
     }
 }
 

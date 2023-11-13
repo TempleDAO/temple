@@ -275,7 +275,7 @@ interface IRelic is IERC721A {
      * @param shardId Shard Id
      * @return Count of blacklisted Shards
      */
-    function blacklistedShardsCount(uint256 shardId) external returns (uint256);
+    function blacklistedShardsCount(uint256 relicId) external returns (uint256);
 
     /*
      * @notice Get Relic minter enclave Ids

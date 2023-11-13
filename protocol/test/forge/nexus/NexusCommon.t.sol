@@ -2,28 +2,19 @@ pragma solidity 0.8.19;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (tests/forge/nexus/NexusCommon.t.sol)
 
-import { TempleTest } from "../TempleTest.sol";
+import { NexusTestBase } from "./Nexus.t.sol";
 import { NexusCommon } from "../../../contracts/nexus/NexusCommon.sol";
 import { CommonEventsAndErrors } from "../../../contracts/common/CommonEventsAndErrors.sol";
 import { Relic } from "../../../contracts/nexus/Relic.sol";
 import { Shard } from "../../../contracts/nexus/Shard.sol";
 
-contract NexusCommonTestBase is TempleTest {
+contract NexusCommonTestBase is NexusTestBase {
     NexusCommon public nexusCommon;
     Relic public relic;
     Shard public shard;
 
-    string constant MYSTERY = "Mystery";
-    string constant CHAOS = "Chaos";
-    string constant STRUCTURE = "Structure";
-    string constant ORDER = "Order";
-    string constant LOGIC = "Logic";
-
-    string private constant NAME = "RELIC";
-    string private constant SYMBOL = "REL";
-
-    event EnclaveNameSet(uint256 id, string name);
     event ShardEnclaveSet(uint256 enclaveId, uint256 indexed shardId);
+    event EnclaveNameSet(uint256 id, string name);
     event ShardSet(address indexed shard);
 
 
@@ -32,7 +23,6 @@ contract NexusCommonTestBase is TempleTest {
         relic = new Relic(NAME, SYMBOL, address(nexusCommon), executor);
         shard = new Shard(address(relic), address(nexusCommon), executor, "http://example.com");
 
-        
         {
             vm.startPrank(executor);
             address[] memory minters = new address[](2);
@@ -45,13 +35,19 @@ contract NexusCommonTestBase is TempleTest {
         }
     }
 
-    function test_initialization() public {
-        assertEq(address(nexusCommon.shard()), address(shard));
-        assertEq(nexusCommon.executor(), executor);
+    function _setEnclaveNames() internal {
+        nexusCommon.setEnclaveName(1, MYSTERY);
+        nexusCommon.setEnclaveName(2, CHAOS);
+        nexusCommon.setEnclaveName(3, ORDER);
     }
 }
 
 contract NexusCommonAccessTest is NexusCommonTestBase {
+
+    function test_initialization() public {
+        assertEq(address(nexusCommon.shard()), address(shard));
+        assertEq(nexusCommon.executor(), executor);
+    }
 
     function test_setEnclaveNameAccessFail(address caller) public {
         vm.assume(caller != executor);
@@ -85,15 +81,9 @@ contract NexusCommonAccessTest is NexusCommonTestBase {
         vm.startPrank(executor);
         nexusCommon.setShard(address(shard));
     }
-
-    function _setEnclaveNames() internal {
-        nexusCommon.setEnclaveName(1, MYSTERY);
-        nexusCommon.setEnclaveName(2, CHAOS);
-        nexusCommon.setEnclaveName(3, ORDER);
-    }
 }
 
-contract NexusCommonTest is NexusCommonAccessTest {
+contract NexusCommonTest is NexusCommonTestBase {
 
     function test_setShard() public {
         vm.startPrank(executor);
@@ -114,21 +104,27 @@ contract NexusCommonTest is NexusCommonAccessTest {
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
         nexusCommon.setEnclaveName(1, string(bytes("")));
 
-        // vm.expectEmit(address(nexusCommon));
-        // emit EnclaveNameSet(1, MYSTERY);
+        vm.expectEmit(address(nexusCommon));
+        emit EnclaveNameSet(1, MYSTERY);
         nexusCommon.setEnclaveName(1, MYSTERY);
 
         assertEq(nexusCommon.enclaveNames(1), MYSTERY);
 
-        // vm.expectEmit(address(nexusCommon));
-        // emit EnclaveNameSet(2, CHAOS);
-        // vm.expectEmit(address(nexusCommon));
-        // emit EnclaveNameSet(3, ORDER);
+        vm.expectEmit(address(nexusCommon));
+        emit EnclaveNameSet(2, CHAOS);
+        vm.expectEmit(address(nexusCommon));
+        emit EnclaveNameSet(3, ORDER);
         nexusCommon.setEnclaveName(2, CHAOS);
         nexusCommon.setEnclaveName(3, ORDER);
 
         assertEq(nexusCommon.enclaveNames(2), CHAOS);
         assertEq(nexusCommon.enclaveNames(3), ORDER);
+
+        // update enclave name
+        vm.expectEmit(address(nexusCommon));
+        emit EnclaveNameSet(2, STRUCTURE);
+        nexusCommon.setEnclaveName(2, STRUCTURE);
+        assertEq(nexusCommon.enclaveNames(2), STRUCTURE);
     }
 
     function test_setShardEnclave() public {

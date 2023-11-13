@@ -27,6 +27,7 @@ contract NexusTestBase is TempleTest {
     uint256 internal constant SHARD_2_ID = 0x02;
     uint256 internal constant SHARD_3_ID = 0x03;
     uint256 internal constant SHARD_4_ID = 0x04;
+    uint256 internal constant SHARD_5_ID = 0x05;
 
     uint256 internal constant MYSTERY_ID = 0x01;
     uint256 internal constant CHAOS_ID = 0x02;

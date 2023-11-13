@@ -3,7 +3,6 @@ pragma solidity 0.8.19;
 // Temple (tests/forge/nexus/Shard.t.sol)
 
 
-import { TempleTest } from "../TempleTest.sol";
 import { NexusTestBase } from "./Nexus.t.sol";
 import { Relic } from "../../../contracts/nexus/Relic.sol";
 import { Shard } from "../../../contracts/nexus/Shard.sol";
@@ -96,17 +95,6 @@ contract ShardTestBase is NexusTestBase {
         vm.stopPrank();
     }
 
-    function test_initialization() public {
-        assertEq(address(shard.relic()), address(relic));
-        assertEq(shard.executor(), executor);
-        assertEq(shard.uri(SHARD_1_ID), SHARD_1_URI);
-        assertEq(shard.uri(SHARD_2_ID), SHARD_2_URI);
-        assertEq(shard.uri(SHARD_3_ID), SHARD_3_URI);
-        assertEq(shard.uri(SHARD_4_ID), SHARD_4_URI);
-        assertEq(shard.nextTokenId(), 5);
-        assertEq(shard.nextRecipeId(), 1);
-    }
-
     function _setRecipe1() internal {
         Shard.Recipe memory recipe = _getRecipe1();
         vm.startPrank(executor);
@@ -149,6 +137,16 @@ contract ShardTestBase is NexusTestBase {
 }
 
 contract ShardTestView is ShardTestBase {
+    function test_initialization() public {
+        assertEq(address(shard.relic()), address(relic));
+        assertEq(shard.executor(), executor);
+        assertEq(shard.uri(SHARD_1_ID), SHARD_1_URI);
+        assertEq(shard.uri(SHARD_2_ID), SHARD_2_URI);
+        assertEq(shard.uri(SHARD_3_ID), SHARD_3_URI);
+        assertEq(shard.uri(SHARD_4_ID), SHARD_4_URI);
+        assertEq(shard.nextTokenId(), 5);
+        assertEq(shard.nextRecipeId(), 1);
+    }
 
     function test_nextTokenId() public {
         uint256 currentId = shard.nextTokenId() - 1;
@@ -258,7 +256,7 @@ contract ShardTestView is ShardTestBase {
 }
 
 
-contract ShardTestAccess is ShardTestView {
+contract ShardTestAccess is ShardTestBase {
 
      function test_access_setNexusCommonFail(address caller) public {
         /// use fuzzing
@@ -374,7 +372,7 @@ contract ShardTestAccess is ShardTestView {
     }
 }
 
-contract ShardTest is ShardTestAccess {
+contract ShardTest is ShardTestBase {
 
     function test_setNexusCommon() public {
         vm.startPrank(executor);
