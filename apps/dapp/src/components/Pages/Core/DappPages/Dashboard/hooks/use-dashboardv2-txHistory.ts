@@ -6,7 +6,8 @@ import { DashboardType } from '../DashboardContent';
 import { StrategyKey } from './use-dashboardv2-metrics';
 import { TableHeaders, TxHistoryTableHeader } from '../Table/TxnHistoryTable';
 import { TxType } from '../Table/TxnDataTable';
-import { getQueryKey, useApiQuery } from 'hooks/api/use-react-query';
+import { getQueryKey } from 'utils/react-query-helpers';
+import { useQuery } from '@tanstack/react-query';
 
 type Transactions = {
   hash: string;
@@ -85,7 +86,7 @@ const txHistoryFilterTypeToSeconds = (filter: TxHistoryFilterType) => {
   }
 };
 
-const dashboardTypeToStrategyKey = (dType: DashboardType): StrategyKey => {
+export const dashboardTypeToStrategyKey = (dType: DashboardType): StrategyKey => {
   switch (dType) {
     case DashboardType.TLC:
       return StrategyKey.TLC;
@@ -119,10 +120,10 @@ const getTableHeaderOrderByType = (tableHeader?: TxHistoryTableHeader) => {
 };
 
 const useTxHistory = (props: TxHistoryProps) =>
-  useApiQuery(
-    getQueryKey.txHistory(props),
-    () => fetchTransactions(props)
-  );
+  useQuery({
+    queryKey: getQueryKey.txHistory(props),
+    queryFn: () => fetchTransactions(props),
+  });
 
 const fetchTransactions = async (props: TxHistoryProps): Promise<Transactions> => {
   const { dashboardType, blockNumber, offset, limit, txFilter, rowFilter, tableHeaders } = props;
@@ -181,10 +182,10 @@ const fetchTransactions = async (props: TxHistoryProps): Promise<Transactions> =
 };
 
 const useTxHistoryAvailableRows = (props: TxHistoryAvailableRowsProps) =>
-  useApiQuery(
-    getQueryKey.txHistoryAvailableRows(props),
-    () => fetchTxHistoryAvailableRows(props)
-  );
+  useQuery({
+    queryKey: getQueryKey.txHistoryAvailableRows(props),
+    queryFn: () => fetchTxHistoryAvailableRows(props)
+  });
 
 const fetchTxHistoryAvailableRows = async (props: TxHistoryAvailableRowsProps): Promise<AvailableRows> => {
   const {dashboardType, rowFilter, txFilter} = props;

@@ -1,5 +1,6 @@
+import { useQuery } from '@tanstack/react-query';
 import env from 'constants/env';
-import { getQueryKey, useApiQuery } from 'hooks/api/use-react-query';
+import { getQueryKey } from 'utils/react-query-helpers';
 import { SubGraphResponse } from 'hooks/core/types';
 import { fetchGenericSubgraph } from 'utils/subgraph';
 
@@ -104,17 +105,29 @@ async function fetchStrategyDailySnapshots() {
   return result;
 }
 
+const CACHE_TTL = 1000 * 60;
+
 export default function useV2StrategySnapshotData() {
   const {
     data: dailyMetrics,
     isLoading: dL,
     isError: dE,
-  } = useApiQuery(getQueryKey.allStrategiesDailySnapshots(), fetchStrategyDailySnapshots);
+  } = useQuery({
+    queryKey: getQueryKey.allStrategiesDailySnapshots(),
+    queryFn: fetchStrategyDailySnapshots,
+    refetchInterval: CACHE_TTL,
+    staleTime: CACHE_TTL,
+  });
   const {
     data: hourlyMetrics,
     isLoading: hL,
     isError: hE,
-  } = useApiQuery(getQueryKey.allStrategiesHourlySnapshots(), fetchStrategyHourlySnapshots);
+  } = useQuery({
+    queryKey: getQueryKey.allStrategiesHourlySnapshots(),
+    queryFn: fetchStrategyHourlySnapshots,
+    refetchInterval: CACHE_TTL,
+    staleTime: CACHE_TTL,
+  });
 
   return {
     dailyMetrics,
