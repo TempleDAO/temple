@@ -5,9 +5,9 @@ import { loading } from 'utils/loading-value';
 import { StrategyKey } from '../hooks/use-dashboardv2-metrics';
 import { ArrowButtonUpDown } from 'components/Pages/Ascend/components/Trade/styles';
 import { TxHistoryTableHeader } from './TxnHistoryTable';
-import { InputSelect } from 'components/InputSelect/InputSelect';
 import { useMediaQuery } from 'react-responsive';
 import { queryMinTablet } from 'styles/breakpoints';
+import { RowFilterDropdown, updateRowDropdownCheckbox } from './RowFilterDropdown';
 
 export enum TxType {
   Borrow = 'Borrow',
@@ -29,10 +29,18 @@ type Props = {
   dataRefetching: boolean;
   tableHeaders: TxHistoryTableHeader[];
   updateTableHeadersOrder: (currentHeader: TxHistoryTableHeader) => void;
+  updateRowDropdownCheckbox: updateRowDropdownCheckbox;
 };
 
 export const TxnDataTable = (props: Props) => {
-  const { dataSubset, dataLoading, dataRefetching, tableHeaders, updateTableHeadersOrder } = props;
+  const { 
+    dataSubset,
+    dataLoading,
+    dataRefetching,
+    tableHeaders,
+    updateTableHeadersOrder,
+    updateRowDropdownCheckbox 
+  } = props;
   const isDesktop = useMediaQuery({
     query: queryMinTablet,
   });
@@ -43,22 +51,17 @@ export const TxnDataTable = (props: Props) => {
           <HeaderRow>
             {tableHeaders.map((h, i) => (
               <TableHeader key={i} style={{ width: h.width }}>
-                <InnerDataRow onClick={() => updateTableHeadersOrder(h)}>
-                  {h.name}
+                <InnerDataRow>
+                  <HeaderTitleContainer onClick={() => updateTableHeadersOrder(h)}>{h.name}</HeaderTitleContainer>
                   {h.orderDesc !== undefined ? <ArrowButtonUpDown clicked={h.orderDesc} /> : <EmptySpace />}
-                </InnerDataRow>
-                {h.rowFilter && (
-                  // div wrapper forces to re-render InputSelect if default value
-                  <div key={h.rowFilter.defaultValue.value}>
-                    <InputSelect
-                      onChange={h.rowFilter.filterFn}
-                      options={h.rowFilter.dropdownOptions}
-                      defaultValue={h.rowFilter.defaultValue}
-                      fontSize="0.68rem"
-                      textAlign="left"
+                  {h.rowFilter && (
+                    <RowFilterDropdown
+                      name={h.name}
+                      rowFilter={h.rowFilter}
+                      updateRowDropdownCheckbox={updateRowDropdownCheckbox}
                     />
-                  </div>
-                )}
+                  )}
+                </InnerDataRow>
               </TableHeader>
             ))}
           </HeaderRow>
@@ -116,7 +119,11 @@ const TableHeader = styled.th`
   vertical-align: top;
   text-align: left;
   padding: 8px;
+`;
+
+const HeaderTitleContainer = styled.div`
   cursor: pointer;
+  margin-right: 0.5rem;
 `;
 
 const HeaderRow = styled.tr`
@@ -129,7 +136,7 @@ const InnerDataRow = styled.div`
 `;
 
 const EmptySpace = styled.p`
-  width: 21px;
+  width: 1rem;
 `;
 
 const ScrollContainer = styled.div`
