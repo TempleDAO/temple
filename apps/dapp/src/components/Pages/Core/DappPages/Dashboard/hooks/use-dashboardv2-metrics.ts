@@ -4,6 +4,7 @@ import { fetchGenericSubgraph, fetchSubgraph } from 'utils/subgraph';
 import { DashboardType } from '../DashboardContent';
 import env from 'constants/env';
 import { useMemo } from 'react';
+import { getQueryKey } from 'utils/react-query-helpers';
 
 export enum StrategyKey {
   RAMOS = 'RamosStrategy',
@@ -67,7 +68,7 @@ export default function useDashboardV2Metrics() {
   // };
 
   const ramosMetrics = useQuery({
-    queryKey: ['getMetrics', StrategyKey.RAMOS],
+    queryKey: getQueryKey.metrics(StrategyKey.RAMOS),
     queryFn: async () => {
       const metrics = await fetchStrategyMetrics(StrategyKey.RAMOS);
       return metrics;
@@ -77,7 +78,7 @@ export default function useDashboardV2Metrics() {
   });
 
   const tlcMetrics = useQuery({
-    queryKey: ['getMetrics', StrategyKey.TLC],
+    queryKey: getQueryKey.metrics(StrategyKey.TLC),
     queryFn: async () => {
       const metrics = await fetchStrategyMetrics(StrategyKey.TLC);
       return metrics;
@@ -87,7 +88,7 @@ export default function useDashboardV2Metrics() {
   });
 
   const templeBaseMetrics = useQuery({
-    queryKey: ['getMetrics', StrategyKey.TEMPLEBASE],
+    queryKey: getQueryKey.metrics(StrategyKey.TEMPLEBASE),
     queryFn: async () => {
       const metrics = await fetchStrategyMetrics(StrategyKey.TEMPLEBASE);
       return metrics;
@@ -97,7 +98,7 @@ export default function useDashboardV2Metrics() {
   });
 
   const dsrBaseMetrics = useQuery({
-    queryKey: ['getMetrics', StrategyKey.DSRBASE],
+    queryKey: getQueryKey.metrics(StrategyKey.DSRBASE),
     queryFn: async () => {
       const metrics = await fetchStrategyMetrics(StrategyKey.DSRBASE);
       return metrics;
@@ -107,7 +108,7 @@ export default function useDashboardV2Metrics() {
   });
 
   const treasuryReservesVaultMetrics = useQuery({
-    queryKey: ['getMetrics', DashboardType.TREASURY_RESERVES_VAULT],
+    queryKey: getQueryKey.trvMetrics(DashboardType.TREASURY_RESERVES_VAULT),
     queryFn: async () => {
       const metrics = await fetchTreasuryReservesVaultMetrics();
       return metrics;

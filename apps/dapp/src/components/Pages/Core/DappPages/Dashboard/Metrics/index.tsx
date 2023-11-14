@@ -1,5 +1,5 @@
 import Loader from 'components/Loader/Loader';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, Fragment } from 'react';
 import { useMediaQuery } from 'react-responsive';
 import styled from 'styled-components';
 import { queryPhone } from 'styles/breakpoints';
@@ -58,27 +58,27 @@ const DashboardMetrics = ({ dashboardType }: DashboardMetricsProps) => {
     <>
       <MobileMetricsContainer>
         {sourceData!.metrics.map((row, idx) => (
-          <>
+          <Fragment key={idx}>
             {row.map((metric, idx) => (
               <MobileMetricRow key={idx}>
                 <MobileMetricTitle>{metric.title}</MobileMetricTitle>
                 <MobileMetricValue>{metric.value}</MobileMetricValue>
               </MobileMetricRow>
             ))}
-          </>
+          </Fragment>
         ))}
       </MobileMetricsContainer>
       <MobileMetricsContainer small>
         {sourceData!.smallMetrics.map((row, idx) => (
           // TODO: The MobileMetricsContainer for small should be .. smaller
-          <>
+          <Fragment key={idx}>
             {row.map((metric, idx) => (
               <MobileMetricRow key={idx}>
                 <MobileMetricTitle>{metric.title}</MobileMetricTitle>
                 <MobileMetricValue>{metric.value}</MobileMetricValue>
               </MobileMetricRow>
             ))}
-          </>
+          </Fragment>
         ))}
       </MobileMetricsContainer>
     </>
