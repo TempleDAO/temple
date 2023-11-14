@@ -11,7 +11,7 @@ export enum StrategyKey {
   TLC = 'TlcStrategy',
   TEMPLEBASE = 'TempleBaseStrategy',
   DSRBASE = 'DsrBaseStrategy',
-  ALL = 'All'
+  ALL = 'All',
 }
 
 export enum TokenSymbols {
@@ -156,6 +156,7 @@ export default function useDashboardV2Metrics() {
           `{
             strategies {
               name
+              isShutdown
               id
               totalMarketValueUSD
               nominalEquityUSD
@@ -182,7 +183,7 @@ export default function useDashboardV2Metrics() {
 
       const ramosSubgraphData = ramosSubgraphResponse?.data?.strategies.find(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (_strategy: any) => _strategy.name === strategy
+        (_strategy: any) => _strategy.name === strategy && _strategy.isShutdown === false
       );
 
       const daiStrategyTokenData = ramosSubgraphData?.strategyTokens.find(
@@ -362,8 +363,6 @@ export default function useDashboardV2Metrics() {
             title: 'Treasury Price Index',
             value: `${formatPrice(metrics.treasuryPriceIndex)} DAI`,
           },
-        ],
-        [
           {
             title: 'Circulating Supply',
             value: `$${formatBigMoney(metrics.circulatingSupply)}`,
@@ -388,12 +387,12 @@ export default function useDashboardV2Metrics() {
             title: 'Nominal Equity',
             value: `$${formatBigMoney(metrics.nominalEquity)}`,
           },
+        ],
+        [
           {
             title: 'Nominal Performance',
             value: `${formatPercent(metrics.nominalPerformance)}%`,
           },
-        ],
-        [
           {
             title: 'Benchmarked Equity',
             value: `$${formatBigMoney(metrics.benchmarkedEquity)}`,
@@ -449,12 +448,12 @@ export default function useDashboardV2Metrics() {
             title: 'Debt Ceiling Utilization',
             value: `${formatPercent(metrics.debtCeilingUtilization)}%`,
           },
+        ],
+        [
           {
             title: 'Total Repayment',
             value: `${formatBigMoney(metrics.totalRepayment)} DAI`,
           },
-        ],
-        [
           {
             title: 'Principal',
             value: `$${formatBigMoney(metrics.principal)}`,
@@ -463,6 +462,8 @@ export default function useDashboardV2Metrics() {
             title: 'Accrued dUSD Interest',
             value: `$${formatBigMoney(metrics.benchmarkedEquity)}`,
           },
+        ],
+        [
           {
             title: 'Nominal Performance',
             value: `${formatPercent(metrics.nominalPerformance)}%`,
