@@ -60,11 +60,9 @@ const metricFormatters: { [k in V2SnapshotMetric]: MetricFormatter } = {
   benchmarkPerformance: (value: string) => parseFloat(value) * 100,
   benchmarkedEquityUSD: parseFloat,
   creditUSD: parseFloat,
-  // TODO: toggle this inverted debt
-  /* debtUSD: (value: string) => -1 * parseFloat(value),
-   *   netDebtUSD: (value: string) => -1 * parseFloat(value), */
-  debtUSD: parseFloat,
-  netDebtUSD: parseFloat,
+  // invert debt to make it negative
+  debtUSD: (value: string) => -1 * parseFloat(value),
+  netDebtUSD: (value: string) => -1 * parseFloat(value),
   nominalEquityUSD: parseFloat,
   nominalPerformance: (value: string) => parseFloat(value) * 100,
   principalUSD: parseFloat,
@@ -87,11 +85,13 @@ const V2StrategyMetricsChart: React.FC<{
   ];
 
   const formatV2StrategySnapshot = (m: V2StrategySnapshot) => {
+    // whatever is returned from this is rendered in the chart
     const data = {
       [selectedMetric]: metricFormatters[selectedMetric](m[selectedMetric]),
       timestamp: m.timestamp,
     };
 
+    // for netDebt we show extra metrics
     if (selectedMetric === 'netDebtUSD') {
       return {
         ...data,
@@ -100,29 +100,28 @@ const V2StrategyMetricsChart: React.FC<{
       };
     }
 
-    // augment the selected metric with individual
-
+    // augment the selected metric with the "split by asset" version
+    // stored in the strategTokens array
     const selectedMetricToStrategyTokenMetric = new Map<V2SnapshotMetric, StrategyTokenField>([
       ['debtUSD', 'debtUSD'],
       ['creditUSD', 'creditUSD'],
+      ['principalUSD', 'principalUSD'],
+      ['accruedInterestUSD', 'accruedInterestUSD'],
       ['totalMarketValueUSD', 'marketValueUSD'],
     ]);
 
     const strategyTokenMetric = selectedMetricToStrategyTokenMetric.get(selectedMetric);
 
-    // TODO: toggle this for inverted Debt
-    /* const strategyTokenFormatter = selectedMetric === 'debtUSD' ? (x: string) => parseFloat(x) * -1 : parseFloat */
-    const strategyTokenFormatter = parseFloat;
+    if (strategyTokenMetric) {
+      // toggle this for inverted Debt
+      const strategyTokenFormatter = selectedMetric === 'debtUSD' ? (x: string) => parseFloat(x) * -1 : parseFloat;
 
-    const strategyTokens = strategyTokenMetric
-      ? Object.fromEntries(
-          m.strategyTokens.map((t) => [
-            `${selectedMetric}__${t.symbol}`,
-            strategyTokenFormatter(t[strategyTokenMetric]),
-          ])
-        )
-      : undefined;
-    return { ...data, ...strategyTokens };
+      const strategyTokens = Object.fromEntries(
+        m.strategyTokens.map((t) => [`${selectedMetric}__${t.symbol}`, strategyTokenFormatter(t[strategyTokenMetric])])
+      );
+      return { ...data, ...strategyTokens };
+    }
+    return data;
   };
 
   const theme = useTheme();

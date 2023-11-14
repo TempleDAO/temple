@@ -20,7 +20,15 @@ const V2SnapshotMetrics = [
 export type V2SnapshotMetric = (typeof V2SnapshotMetrics)[number];
 
 // these tokens add up to the corresponding metric
-const STRATEGY_TOKEN_FIELDS = ['symbol', 'debtUSD', 'creditUSD', 'assetBalance', 'marketValueUSD'] as const;
+const STRATEGY_TOKEN_FIELDS = [
+  'symbol',
+  'debtUSD',
+  'creditUSD',
+  'assetBalance',
+  'marketValueUSD',
+  'principalUSD',
+  'accruedInterestUSD',
+] as const;
 
 export type StrategyTokenField = (typeof STRATEGY_TOKEN_FIELDS)[number];
 
