@@ -1,37 +1,49 @@
 import { useState } from 'react';
+import { useMediaQuery } from 'react-responsive';
 import { Button as BaseButton } from 'components/Button/Button';
 import styled from 'styled-components';
 import TxnHistoryTable from './TxnHistoryTable';
 import { DashboardType } from '../DashboardContent';
+import { dashboardTypeToStrategyKey } from '../hooks/use-dashboardv2-txHistory';
+import { queryPhone } from 'styles/breakpoints';
 
 type DashboardTransactionHistoryProps = {
   dashboardType: DashboardType;
 };
 
-export type TxHistoryFilterType = 'lastweek' | 'last30days' | 'all';
+export enum TxHistoryFilterType {
+  lastweek = 'lastweek',
+  last30days = 'last30days',
+  all = 'all',
+  }
 
 const DashboardTransactionHistory = ({ dashboardType }: DashboardTransactionHistoryProps) => {
   
-  const [filter, setFilter] = useState<TxHistoryFilterType>('all');
+  const [txFilter, setTxFilter] = useState<TxHistoryFilterType>(TxHistoryFilterType.all);
+  const selectedStrategy = dashboardTypeToStrategyKey(dashboardType);
+
+  const isDesktop = useMediaQuery({
+    query: queryPhone,
+  });
 
   return (
     <TransactionHistoryContainer>
-      <TransactionHistoryHeader>
+      <TransactionHistoryHeader isDesktop={isDesktop}>
         <TransactionHistoryTitle>Transaction History</TransactionHistoryTitle>
         <TransactionTimePeriod>
-          <FilterButton isSmall selected={filter === 'lastweek'} onClick={() => setFilter('lastweek')}>
+          <FilterButton isSmall selected={txFilter === 'lastweek'} onClick={() => setTxFilter(TxHistoryFilterType.lastweek)}>
             Last week
           </FilterButton>
-          <FilterButton isSmall selected={filter === 'last30days'} onClick={() => setFilter('last30days')}>
+          <FilterButton isSmall selected={txFilter === 'last30days'} onClick={() => setTxFilter(TxHistoryFilterType.last30days)}>
             Last 30 Days
           </FilterButton>
-          <FilterButton isSmall selected={filter === 'all'} onClick={() => setFilter('all')}>
+          <FilterButton isSmall selected={txFilter === 'all'} onClick={() => setTxFilter(TxHistoryFilterType.all)}>
             All
           </FilterButton>
         </TransactionTimePeriod>
       </TransactionHistoryHeader>
       <TransactionHistoryContent>
-        <TxnHistoryTable dashboardType={dashboardType} filter={filter} />
+        <TxnHistoryTable dashboardType={dashboardType} txFilter={txFilter} selectedStrategy={selectedStrategy}/>
       </TransactionHistoryContent>
     </TransactionHistoryContainer>
   );
@@ -59,9 +71,9 @@ const TransactionHistoryContent = styled.div`
   width: 100%;
 `;
 
-const TransactionHistoryHeader = styled.div`
+const TransactionHistoryHeader = styled.div<{isDesktop: boolean}>`
   display: flex;
-  flex-direction: row;
+  flex-direction: ${({isDesktop}) => isDesktop ? 'row' : 'column'};
   justify-content: space-between;
   align-items: center;
 `;
