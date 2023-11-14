@@ -60,19 +60,7 @@ export default function LineChart<T>(props: React.PropsWithChildren<LineChartPro
   };
   return (
     <ResponsiveContainer minHeight={200} minWidth={320} height={350}>
-      <ComposedChart data={chartData} margin={{ left: 30 }}>
-        {lines.map((line) => (
-          <Line
-            key={line.series.toString()}
-            type="monotone"
-            dataKey={line.series}
-            stroke={line.color}
-            strokeWidth={2}
-            dot={false}
-            hide={hiddenLines[line.series.toString()]}
-          />
-        ))}
-
+      <ComposedChart data={chartData} margin={{ left: 30 }} stackOffset={'sign'}>
         {stackedItems?.map((item) => (
           <Area
             key={item.series}
@@ -83,6 +71,18 @@ export default function LineChart<T>(props: React.PropsWithChildren<LineChartPro
             strokeWidth={2}
             type={'monotone'}
             hide={hiddenLines[item.series.toString()]}
+            fillOpacity={0.5}
+          />
+        ))}
+        {lines.map((line) => (
+          <Line
+            key={line.series.toString()}
+            type="monotone"
+            dataKey={line.series}
+            stroke={line.color}
+            strokeWidth={2}
+            dot={false}
+            hide={hiddenLines[line.series.toString()]}
           />
         ))}
         <XAxis
