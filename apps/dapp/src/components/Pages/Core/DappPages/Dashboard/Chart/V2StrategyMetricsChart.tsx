@@ -139,7 +139,10 @@ const V2StrategyMetricsChart: React.FC<{
     return <Loader iconSize={48} />;
   }
 
-  const metrics = Object.keys(formattedData[selectedInterval][0]).filter((k) => k !== xDataKey);
+  // sort to make color coding deterministic when switching interval/rerendering
+  const metrics = Object.keys(formattedData[selectedInterval][0])
+    .filter((k) => k !== xDataKey)
+    .sort();
 
   const lines =
     dashboardType === DashboardType.TREASURY_RESERVES_VAULT

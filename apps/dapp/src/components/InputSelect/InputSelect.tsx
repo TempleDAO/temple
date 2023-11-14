@@ -1,8 +1,9 @@
+import type * as CSS from 'csstype';
 import Select from 'react-select';
 import { theme } from 'styles/theme';
 
 export type Option = {
-  value: string | number;
+  value: string | number | undefined;
   label: string;
 };
 
@@ -16,6 +17,10 @@ export interface SelectTempleDaoProps {
   // use to limit the number of elements shown in the menu at anytime
   maxMenuItems?: number;
   isSearchable?: boolean;
+  width?: CSS.Property.Width;
+  fontSize?: CSS.Property.FontSize;
+  textAlign?: CSS.Property.TextAlign;
+  zIndex?: CSS.Property.ZIndex;
 }
 
 /**
@@ -52,18 +57,19 @@ export const InputSelect = (props: SelectTempleDaoProps) => {
           borderRadius: `calc(${selectHeight} / 4)`,
           boxShadow: 'none',
           fontSize: '1rem',
-          textTransform: 'uppercase',
           textAlign: 'left',
           padding: '0 0.5rem',
           cursor: 'pointer',
           height: selectHeight,
-          zIndex: 2, // place it above the menu 👇
+          zIndex: props.zIndex ? Number(props.zIndex) + 1 : 2, // place it above the menu 👇
+          width: props.width,
         }),
         menu: (base, state) => ({
           ...base,
           paddingTop: '1.5rem',
           marginTop: '-1.5rem',
           border: `0.0625rem solid ${theme.palette.brand}`,
+          zIndex: props.zIndex ?? 1,
         }),
         menuList: (base, state) => ({
           base,
@@ -80,6 +86,7 @@ export const InputSelect = (props: SelectTempleDaoProps) => {
           height: selectHeight,
           borderBottom: `0.0625rem solid ${theme.palette.brand}`,
           fontWeight: 'bold',
+          fontSize: props.fontSize,
           color: theme.palette.brandLight,
         }),
         indicatorSeparator: () => ({
@@ -89,10 +96,10 @@ export const InputSelect = (props: SelectTempleDaoProps) => {
           ...base,
           opacity: state.isDisabled ? 0.5 : 1,
           transition: 'opacity 300ms',
-          textAlign: 'center',
+          textAlign: props.textAlign ??  'center',
           width: '100%',
           fontWeight: 'bold',
-          fontSize: '1.25rem',
+          fontSize: props.fontSize ?? '1.25rem',
           color: theme.palette.brandLight,
         }),
         valueContainer: (base) => ({
