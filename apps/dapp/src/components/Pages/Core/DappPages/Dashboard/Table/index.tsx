@@ -20,7 +20,6 @@ export enum TxHistoryFilterType {
 const DashboardTransactionHistory = ({ dashboardType }: DashboardTransactionHistoryProps) => {
   
   const [txFilter, setTxFilter] = useState<TxHistoryFilterType>(TxHistoryFilterType.all);
-  const selectedStrategy = dashboardTypeToStrategyKey(dashboardType);
 
   const isDesktop = useMediaQuery({
     query: queryPhone,
@@ -43,7 +42,7 @@ const DashboardTransactionHistory = ({ dashboardType }: DashboardTransactionHist
         </TransactionTimePeriod>
       </TransactionHistoryHeader>
       <TransactionHistoryContent>
-        <TxnHistoryTable dashboardType={dashboardType} txFilter={txFilter} selectedStrategy={selectedStrategy}/>
+        <TxnHistoryTable dashboardType={dashboardType} txFilter={txFilter} />
       </TransactionHistoryContent>
     </TransactionHistoryContainer>
   );
