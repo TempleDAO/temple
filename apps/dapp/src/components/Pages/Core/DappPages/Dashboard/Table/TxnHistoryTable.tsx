@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import type * as CSS from 'csstype';
 import styled from 'styled-components';
 import { TxHistoryFilterType } from '.';
@@ -54,6 +54,14 @@ const TxnHistoryTable = (props: Props) => {
   const [blockNumber, setBlockNumber] = useState(0);
   const [rowFilter, setRowFilter] = useState<RowFilter>({});
 
+  const allStrategyDropdowns = useMemo(() => [
+    { label: 'All', value: undefined },
+    { label: StrategyKey.RAMOS, value: StrategyKey.RAMOS },
+    { label: StrategyKey.TLC, value: StrategyKey.TLC },
+    { label: StrategyKey.TEMPLEBASE, value: StrategyKey.TEMPLEBASE },
+    { label: StrategyKey.DSRBASE, value: StrategyKey.DSRBASE },
+  ],[]);
+
   const [tableHeaders, setTableHeaders] = useState<TxHistoryTableHeader[]>([
     {
       name: TableHeaders.Date,
@@ -86,13 +94,7 @@ const TxnHistoryTable = (props: Props) => {
           setRowFilter((s) => ({ ...s, strategy: event.value }));
         }, 200),
         // TODO: get dropdown values programatically, see https://github.com/TempleDAO/temple/pull/880#discussion_r1386151604
-        dropdownOptions: [
-          { label: 'All', value: undefined },
-          { label: StrategyKey.RAMOS, value: StrategyKey.RAMOS },
-          { label: StrategyKey.TLC, value: StrategyKey.TLC },
-          { label: StrategyKey.TEMPLEBASE, value: StrategyKey.TEMPLEBASE },
-          { label: StrategyKey.DSRBASE, value: StrategyKey.DSRBASE },
-        ],
+        dropdownOptions: allStrategyDropdowns,
         defaultValue: { label: selectedStrategy, value: selectedStrategy },
       },
     },
@@ -150,7 +152,9 @@ const TxnHistoryTable = (props: Props) => {
             ...prevStateHeader,
             rowFilter: prevStateHeader.rowFilter && {
               filterFn: prevStateHeader.rowFilter.filterFn,
-              dropdownOptions: prevStateHeader.rowFilter.dropdownOptions,
+              dropdownOptions: selectedStrategy === StrategyKey.ALL
+                  ? allStrategyDropdowns
+                  : [{ label: selectedStrategy, value: selectedStrategy }],
               defaultValue: { label: selectedStrategy, value: selectedStrategy },
             },
           };
@@ -159,7 +163,11 @@ const TxnHistoryTable = (props: Props) => {
       });
       return newState;
     });
-  }, [dashboardType]);
+  }, [dashboardType, allStrategyDropdowns]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [rowsPerPage]);
 
   const availableRows = useTxHistoryAvailableRows({
     dashboardType,

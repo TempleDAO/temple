@@ -24,11 +24,7 @@ export const PaginationControl = (props: PaginationControlProps) => {
 
   return (
     <PaginationContainer>
-      <PageRangeSelector 
-        currentPage={currentPage}
-        setCurrentPage={setCurrentPage}
-        totalPages={totalPages}
-      />
+      <PageRangeSelector currentPage={currentPage} setCurrentPage={setCurrentPage} totalPages={totalPages} />
       <PageLink onClick={() => setCurrentPage(1)} disabled={currentPage === 1}>
         First
       </PageLink>
@@ -42,11 +38,11 @@ export const PaginationControl = (props: PaginationControlProps) => {
         Last
       </PageLink>
       <InputSelect
-        onChange={(e:Option) => setRowsPerPage(Number(e.value))}
+        onChange={(e: Option) => setRowsPerPage(Number(e.value))}
         options={dropdownOptions}
-        defaultValue={dropdownOptions.find(o => o.value === rowsPerPage)}
-        width='6rem'
-        fontSize='0.68rem'
+        defaultValue={dropdownOptions.find((o) => o.value === rowsPerPage)}
+        width="6rem"
+        fontSize="0.68rem"
         zIndex={5} // place it above table filter dropdowns when they overlap on mobile
       />
     </PaginationContainer>
@@ -67,7 +63,8 @@ type PageLinkProps = {
 
 export const PageLink = styled.button<PageLinkProps>`
   margin: 0 5px;
-  color: ${({ selected, theme }) => (selected ? theme.palette.brandLight : theme.palette.brand)};
+  color: ${({ selected, disabled, theme }) =>
+    disabled ? theme.palette.brand50 : selected ? theme.palette.brandLight : theme.palette.brand};
   border: none;
   padding: 0;
   cursor: ${({ disabled }) => (disabled ? 'not-allowed' : 'pointer')};

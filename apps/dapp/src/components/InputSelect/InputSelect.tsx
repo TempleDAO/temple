@@ -57,7 +57,6 @@ export const InputSelect = (props: SelectTempleDaoProps) => {
           borderRadius: `calc(${selectHeight} / 4)`,
           boxShadow: 'none',
           fontSize: '1rem',
-          textTransform: 'uppercase',
           textAlign: 'left',
           padding: '0 0.5rem',
           cursor: 'pointer',
