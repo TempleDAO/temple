@@ -57,7 +57,7 @@ export default function LineChart<T>(props: React.PropsWithChildren<LineChartPro
   };
   return (
     <ResponsiveContainer minHeight={200} minWidth={320} height={350}>
-      <RechartsLineChart data={chartData}>
+      <RechartsLineChart data={chartData} margin={{ left: 30 }}>
         {lines.map((line) => (
           <Line
             key={line.series.toString()}
