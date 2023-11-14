@@ -1,7 +1,7 @@
 import { ChartSupportedTimeInterval, LabeledTimeIntervals, TIME_INTERVAL } from 'utils/time-intervals';
 import type { AxisDomain } from 'recharts/types/util/types';
 import { useEffect, useState } from 'react';
-import { useTheme } from 'styled-components';
+import styled, { useTheme } from 'styled-components';
 import { format } from 'date-fns';
 import { LineChart } from 'components/Charts';
 import Loader from 'components/Loader/Loader';
@@ -39,7 +39,7 @@ const tooltipValuesFormatter = (value: number, name: string) => [
 
 const yDomain: AxisDomain = ([dataMin, dataMax]) => [dataMin * 0.5, Number((dataMax * 1.5).toFixed(2))];
 
-export const TemplePriceChart = () => {
+export const TlcChart = () => {
   const [selectedInterval, setSelectedInterval] = useState<ChartIntervals>('1M');
   const theme = useTheme();
   const [metrics, setMetrics] = useState<Metric[]>();
@@ -71,11 +71,13 @@ export const TemplePriceChart = () => {
 
   return (
     <>
-      <IntervalToggler
-        selectedInterval={selectedInterval}
-        setSelectedInterval={setSelectedInterval as any}
-        intervals={CHART_INTERVALS}
-      />
+      <IntervalPosition>
+        <IntervalToggler
+          selectedInterval={selectedInterval}
+          setSelectedInterval={setSelectedInterval as any}
+          intervals={CHART_INTERVALS}
+        />
+      </IntervalPosition>
       {
         <LineChart
           chartData={formattedData[selectedInterval].reverse()}
@@ -97,3 +99,9 @@ export const TemplePriceChart = () => {
     </>
   );
 };
+
+const IntervalPosition = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+`;
