@@ -30,6 +30,7 @@ declare module 'styled-components' {
       };
       gradients: {
         dark: string;
+        grey: string;
       };
     };
     metrics: {
