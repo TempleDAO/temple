@@ -555,7 +555,7 @@ contract RelicSettersTest is RelicTestBase {
 
         assertEq(relic.blacklistedAccounts(bob), true);
         assertEq(relic.blacklistedRelicShards(RELIC_1_ID, shardIds[0]), 2);
-        // assertEq(relic.blacklistedShardsCount(RELIC_1_ID), 2);
+        assertEq(relic.blacklistedShardsCount(RELIC_1_ID), 2);
 
         // overlapping shards, edge cases
         _enableAllEnclavesForMinter(relic, operator);
@@ -646,9 +646,70 @@ contract RelicSettersTest is RelicTestBase {
         relic.unsetBlacklistedShards(bob, RELIC_1_ID, shardIds, amounts);
 
         assertEq(relic.blacklistedAccounts(bob), false);
-        assertEq(relic.blacklistedShardsCount(shardIds[0]), 0);
+        assertEq(relic.blacklistedShardsCount(RELIC_1_ID), 0);
         assertEq(relic.blacklistedRelicShards(RELIC_1_ID, shardIds[0]), 0);
 
+        // multiple and overlapping cases
+        _enableAllEnclavesForMinter(relic, operator);
+        uint256 relicId = _mintRelicNew(alice, ORDER_ID);
+        // mint and equip shards
+        shardIds = new uint256[](6);
+        amounts = new uint256[](6);
+        shardIds[0] = SHARD_1_ID;
+        shardIds[1] = SHARD_2_ID;
+        shardIds[2] = SHARD_3_ID;
+        shardIds[3] = SHARD_3_ID;
+        shardIds[4] = SHARD_4_ID;
+        shardIds[5] = SHARD_5_ID;
+        amounts[0] = amounts[1] = amounts[2] = amounts[3] = amounts[4] = amounts[5] = 20;
+        changePrank(executor);
+        address[] memory minters = new address[](1);
+        minters[0] = operator;
+        shard.setNewMinterShards(minters);
+        _equipShards(relicId, alice, shardIds, amounts);
+        changePrank(executor);
+        // blacklist all shards, all amounts
+        relic.setBlacklistedShards(alice, relicId, shardIds, amounts);
+        // unset some
+        amounts[0] = amounts[3] = 3;
+        amounts[1] = amounts[5] = 0;
+        amounts[2] = amounts[4] = 5;
+        relic.unsetBlacklistedShards(alice, relicId, shardIds, amounts);
+        assertEq(relic.blacklistedAccounts(alice), true);
+        assertEq(relic.blacklistedShardsCount(relicId), 104);
+        assertEq(relic.blacklistedRelicShards(relicId, shardIds[0]), 17);
+        assertEq(relic.blacklistedRelicShards(relicId, shardIds[1]), 20);
+        assertEq(relic.blacklistedRelicShards(relicId, shardIds[2]), relic.blacklistedRelicShards(relicId, shardIds[3]));
+        assertEq(relic.blacklistedRelicShards(relicId, shardIds[3]), 32);
+        assertEq(relic.blacklistedRelicShards(relicId, shardIds[4]), 15);
+        assertEq(relic.blacklistedRelicShards(relicId, shardIds[5]), 20);
+        amounts[0] = amounts[3] = 5;
+        amounts[1] = amounts[5] = 10;
+        amounts[2] = amounts[4] = 5;
+        relic.unsetBlacklistedShards(alice, relicId, shardIds, amounts);
+        assertEq(relic.blacklistedAccounts(alice), true);
+        assertEq(relic.blacklistedShardsCount(relicId), 64);
+        assertEq(relic.blacklistedRelicShards(relicId, shardIds[0]), 12);
+        assertEq(relic.blacklistedRelicShards(relicId, shardIds[1]), 10);
+        assertEq(relic.blacklistedRelicShards(relicId, shardIds[2]), 22);
+        assertEq(relic.blacklistedRelicShards(relicId, shardIds[3]), relic.blacklistedRelicShards(relicId, shardIds[2]));
+        assertEq(relic.blacklistedRelicShards(relicId, shardIds[4]), 10);
+        assertEq(relic.blacklistedRelicShards(relicId, shardIds[5]), 10);
+        amounts[0] = 12; 
+        amounts[1] = 10;
+        amounts[2] = 22; 
+        amounts[3] = 0;
+        amounts[4] = 10;
+        amounts[5] = 10;
+        relic.unsetBlacklistedShards(alice, relicId, shardIds, amounts);
+        assertEq(relic.blacklistedAccounts(alice), false);
+        assertEq(relic.blacklistedShardsCount(relicId), 0);
+        assertEq(relic.blacklistedRelicShards(relicId, shardIds[0]), 0);
+        assertEq(relic.blacklistedRelicShards(relicId, shardIds[1]), 0);
+        assertEq(relic.blacklistedRelicShards(relicId, shardIds[2]), 0);
+        assertEq(relic.blacklistedRelicShards(relicId, shardIds[3]), 0);
+        assertEq(relic.blacklistedRelicShards(relicId, shardIds[4]), 0);
+        assertEq(relic.blacklistedRelicShards(relicId, shardIds[5]), 0);
     }
 
     function test_setRelicXP() public {
