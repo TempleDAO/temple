@@ -65,7 +65,7 @@ contract PartnerSacrificeAccessTest is PartnerZeroSacrificeTestBase {
     }
 
     function test_access_sacrificeFail(address caller) public {
-        vm.assume(caller != executor);
+        vm.assume(caller != executor && caller != address(mockPartnerProxy));
         vm.startPrank(caller);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         partnerSacrifice.sacrifice(NON_ENCLAVE_ID, alice);
