@@ -1,5 +1,4 @@
 import { ChartSupportedTimeInterval } from 'utils/time-intervals';
-import type { AxisDomain } from 'recharts/types/util/types';
 import { useTheme } from 'styled-components';
 import { format } from 'date-fns';
 import { LineChart } from 'components/Charts';
@@ -25,8 +24,6 @@ const tooltipLabelFormatters: Record<ChartSupportedTimeInterval, XAxisTickFormat
   ...tickFormatters,
   '1D': (timestamp) => format(timestamp, 'MMM do, h aaa'),
 };
-
-const yDomain: AxisDomain = ([dataMin, dataMax]) => [dataMin - dataMin * 0.01, dataMax + dataMax * 0.01];
 
 function transpose(data: V2StrategySnapshot[], metric: V2SnapshotMetric, format: MetricFormatter) {
   // in sql this is roughly
@@ -203,7 +200,6 @@ const V2StrategyMetricsChart: React.FC<{
       xTickFormatter={tickFormatters[selectedInterval]}
       tooltipLabelFormatter={tooltipLabelFormatters[selectedInterval]}
       legendFormatter={formatMetricName}
-      yDomain={yDomain}
       tooltipValuesFormatter={tooltipValuesFormatter}
     />
   );
