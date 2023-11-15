@@ -34,8 +34,8 @@ export const RowFilterDropdown = (props: Props) => {
         <DropdownOptionsContainer ref={ref}>
           {dropdownOptions.map((op, idx) => (
             <DropdownOption key={idx} isChecked={op.checked}>
-              <RadioCheckbox
-                key={idx}
+              <RadioCheckbox 
+                id={op.label}
                 defaultChecked={op.checked}
                 onClick={(e) => {
                   const target = e.target as HTMLInputElement;
@@ -54,7 +54,7 @@ export const RowFilterDropdown = (props: Props) => {
                   setDropdownOpened(!dropdownOpened);
                 }}
               />
-              <OptionLabel>{op.label}</OptionLabel>
+              <OptionLabel htmlFor={op.label}>{op.label}</OptionLabel>
             </DropdownOption>
           ))}
         </DropdownOptionsContainer>
@@ -85,6 +85,7 @@ function useOutsideClick(callback: () => void) {
 
 const OptionLabel = styled.label`
   vertical-align: super;
+  cursor: pointer;
 `;
 
 const DropdownOptionsContainer = styled.div`
