@@ -3,7 +3,7 @@ import styled from 'styled-components';
 
 import Image from '../../../Image/Image';
 import footerTexture from 'assets/images/newui-images/footerTexture.svg';
-import temple_dao_logo from '../assets/temple-dao-logo.png';
+import temple_dao_logo from 'assets/images/sun-art.svg';
 import core_hamburger from 'assets/icons/core-hamburger.svg';
 import { MobileNavOverlay } from './MobileNavOverlay';
 import NavLinks from './NavLinks';
