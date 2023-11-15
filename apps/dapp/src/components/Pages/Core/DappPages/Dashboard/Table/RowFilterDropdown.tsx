@@ -1,53 +1,56 @@
-import { Dispatch, SetStateAction, useState } from 'react';
+import { Dispatch, SetStateAction, useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { FilterButton } from 'components/Pages/Ascend/components/Trade/styles';
-import checkmark from 'assets/images/newui-images/check.svg';
 import { RowFilter } from '../hooks/use-dashboardv2-txHistory';
 import { TableHeaders } from './TxnHistoryTable';
+import { RadioCheckbox } from 'components/Checkbox/RadioCheckbox';
 
 export type DropdownCheckOption = {
   label: string;
   checked: boolean;
 };
 export type DropdownCheckOptions = Array<DropdownCheckOption>;
-export type RowFilterDropdownProps = {
-  setRowFilter: Dispatch<SetStateAction<RowFilter>>;
-  dropdownOptions: DropdownCheckOptions;
-};
 
-export type updateRowDropdownCheckbox = (newOption: DropdownCheckOption) => void;
+export type updateRowDropdownCheckbox = (clickedHeader: TableHeaders, newOption: DropdownCheckOption) => void;
 type Props = {
   name: TableHeaders;
-  rowFilter: RowFilterDropdownProps;
+  dropdownOptions: DropdownCheckOptions;
+  setRowFilter: Dispatch<SetStateAction<RowFilter>>;
   updateRowDropdownCheckbox: updateRowDropdownCheckbox;
 };
 
 export const RowFilterDropdown = (props: Props) => {
-  const { rowFilter, name, updateRowDropdownCheckbox } = props;
+  const { name, dropdownOptions, setRowFilter, updateRowDropdownCheckbox } = props;
   const [dropdownOpened, setDropdownOpened] = useState(false);
+
+  const ref = useOutsideClick(() => {
+    setDropdownOpened(false);
+  });
+
   return (
     <>
       <FilterButton onClick={() => setDropdownOpened(!dropdownOpened)} />
       {dropdownOpened && (
-        <DropdownOptionsContainer>
-          {rowFilter.dropdownOptions.map((op, idx) => (
+        <DropdownOptionsContainer ref={ref}>
+          {dropdownOptions.map((op, idx) => (
             <DropdownOption key={idx} isChecked={op.checked}>
-              <Checkbox
+              <RadioCheckbox
                 key={idx}
                 defaultChecked={op.checked}
-                onChange={(e) => {
+                onClick={(e) => {
+                  const target = e.target as HTMLInputElement;
                   switch (name) {
                     case TableHeaders.Type:
-                      rowFilter.setRowFilter((s) => ({ ...s, type: e.target.checked ? op.label : undefined }));
+                      setRowFilter((s) => ({ ...s, type: target.checked ? op.label : undefined }));
                       break;
                     case TableHeaders.Strategy:
-                      rowFilter.setRowFilter((s) => ({ ...s, strategy: e.target.checked ? op.label : undefined }));
+                      setRowFilter((s) => ({ ...s, strategy: target.checked ? op.label : undefined }));
                       break;
                     case TableHeaders.Token:
-                      rowFilter.setRowFilter((s) => ({ ...s, token: e.target.checked ? op.label : undefined }));
+                      setRowFilter((s) => ({ ...s, token: target.checked ? op.label : undefined }));
                       break;
                   }
-                  updateRowDropdownCheckbox({ label: op.label, checked: e.target.checked });
+                  updateRowDropdownCheckbox(name, { label: op.label, checked: target.checked });
                   setDropdownOpened(!dropdownOpened);
                 }}
               />
@@ -60,6 +63,26 @@ export const RowFilterDropdown = (props: Props) => {
   );
 };
 
+function useOutsideClick(callback: () => void) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClick = (ev: MouseEvent) => {
+      const target = ev.target as HTMLDivElement;
+      if (ref.current && !ref.current.contains(target)) {
+        callback();
+      }
+    };
+    document.addEventListener('click', handleClick, true);
+
+    return () => {
+      document.removeEventListener('click', handleClick, true);
+    };
+  }, [ref, callback]);
+
+  return ref;
+}
+
 const OptionLabel = styled.label`
   vertical-align: super;
 `;
@@ -69,14 +92,16 @@ const DropdownOptionsContainer = styled.div`
   display: flex;
   flex-direction: column;
   min-width: 5rem;
-  margin-top: 2rem;
+  margin-top: 1.7rem;
   background-color: ${(props) => props.theme.palette.dark};
-  border-radius: 5px 5px 0px 0px;
-  border: 1px solid;
-  border-color: ${({theme}) => theme.palette.brand}
+  border-radius: 2px;
+  border: 1.5px solid;
+  border-color: ${({ theme }) => theme.palette.brand};
 `;
 
 const DropdownOption = styled.div<{ isChecked: boolean }>`
+  display: flex;
+  flex-direction: row;
   padding: 5px 10px;
   ${({ isChecked, theme }) => {
     if (!isChecked) return `background-color: ${theme.palette.dark}`;
@@ -87,30 +112,4 @@ const DropdownOption = styled.div<{ isChecked: boolean }>`
       ${theme.palette.gradients.grey}
     );`;
   }}
-`;
-
-const Checkbox = styled.input.attrs({ type: 'checkbox' })`
-  /* removing default appearance */
-  -webkit-appearance: none;
-  appearance: none;
-  /* creating a custom design */
-  width: 1.6em;
-  height: 1.6em;
-  border-radius: 0.15em;
-  margin-right: 0.5em;
-  border: ${({ theme }) => `0.15em solid ${theme.palette.brand}`};
-  outline: none;
-  cursor: pointer;
-  &:checked {
-    background-color: ${({ theme }) => `${theme.palette.brand}`};
-    position: relative;
-  }
-  &:checked::before {
-    content: ${`url('${checkmark}')`};
-    font-size: 1.5em;
-    color: ${({ theme }) => `${theme.palette.black}`};
-    position: absolute;
-    right: 1px;
-    top: -5px;
-  }
 `;

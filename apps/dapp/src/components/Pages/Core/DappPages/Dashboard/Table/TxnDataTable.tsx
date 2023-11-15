@@ -8,6 +8,8 @@ import { TxHistoryTableHeader } from './TxnHistoryTable';
 import { useMediaQuery } from 'react-responsive';
 import { queryMinTablet } from 'styles/breakpoints';
 import { RowFilterDropdown, updateRowDropdownCheckbox } from './RowFilterDropdown';
+import { Dispatch, SetStateAction } from 'react';
+import { RowFilter } from '../hooks/use-dashboardv2-txHistory';
 
 export enum TxType {
   Borrow = 'Borrow',
@@ -28,18 +30,20 @@ type Props = {
   dataLoading: boolean;
   dataRefetching: boolean;
   tableHeaders: TxHistoryTableHeader[];
+  setRowFilter: Dispatch<SetStateAction<RowFilter>>;
   updateTableHeadersOrder: (currentHeader: TxHistoryTableHeader) => void;
   updateRowDropdownCheckbox: updateRowDropdownCheckbox;
 };
 
 export const TxnDataTable = (props: Props) => {
-  const { 
+  const {
     dataSubset,
     dataLoading,
     dataRefetching,
     tableHeaders,
+    setRowFilter,
     updateTableHeadersOrder,
-    updateRowDropdownCheckbox 
+    updateRowDropdownCheckbox,
   } = props;
   const isDesktop = useMediaQuery({
     query: queryMinTablet,
@@ -50,14 +54,19 @@ export const TxnDataTable = (props: Props) => {
         <thead>
           <HeaderRow>
             {tableHeaders.map((h, i) => (
-              <TableHeader key={i} style={{ width: h.width }}>
+              <TableHeader key={i} style={isDesktop ? { width: h.width } : { minWidth: h.width }}>
                 <InnerDataRow>
                   <HeaderTitleContainer onClick={() => updateTableHeadersOrder(h)}>{h.name}</HeaderTitleContainer>
-                  {h.orderDesc !== undefined ? <ArrowButtonUpDown clicked={h.orderDesc} /> : <EmptySpace />}
-                  {h.rowFilter && (
+                  {h.orderDesc !== undefined ? (
+                    <ArrowButtonUpDown clicked={h.orderDesc} onClick={() => updateTableHeadersOrder(h)} />
+                  ) : (
+                    <EmptySpace />
+                  )}
+                  {h.dropdownOptions && (
                     <RowFilterDropdown
                       name={h.name}
-                      rowFilter={h.rowFilter}
+                      dropdownOptions={h.dropdownOptions}
+                      setRowFilter={setRowFilter}
                       updateRowDropdownCheckbox={updateRowDropdownCheckbox}
                     />
                   )}
@@ -146,7 +155,6 @@ const ScrollContainer = styled.div`
 
 const DataTable = styled.table<{ isDesktop: boolean }>`
   border-collapse: collapse;
-  min-width: ${({ isDesktop }) => (isDesktop ? '' : '750px')};
   table-layout: ${({ isDesktop }) => (isDesktop ? 'fixed' : '')};
   width: ${({ isDesktop }) => (isDesktop ? '100%' : '')};
   color: ${({ theme }) => theme.palette.brand};
