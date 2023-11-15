@@ -11,11 +11,13 @@ import { getBigNumberFromString, getTokenInfo } from 'components/Vault/utils';
 import { useNotification } from 'providers/NotificationProvider';
 import { fromAtto } from 'utils/bigNumber';
 import { BigNumber, ethers } from 'ethers';
+import { useConnectWallet } from '@web3-onboard/react';
 
 const OHM = TICKER_SYMBOL.OHM;
 const ohmToNum = (amount: BigNumber) => Number(ethers.utils.formatUnits(amount, getTokenInfo(OHM).decimals));
 
 export const OhmagePage = () => {
+  const [{}, connect] = useConnectWallet();
   const { balance, wallet, updateBalance, signer, ensureAllowance } = useWallet();
   const [input, setInput] = useState('');
   const [output, setOutput] = useState(0);
@@ -132,16 +134,27 @@ export const OhmagePage = () => {
         ) : (
           <p>You will receive {output.toLocaleString()} DAI</p>
         )}
-        <TradeButton
-          onClick={() => {
-            if (insufficientAllowance) approve();
-            else swap();
-          }}
-          disabled={!signer || insufficientBalance || insufficientDaiAvailable || balance.OHM.isZero()}
-          style={{ margin: 'auto', whiteSpace: 'nowrap' }}
-        >
-          {insufficientBalance ? 'Insufficient balance' : insufficientAllowance ? 'Approve allowance' : 'Swap'}
-        </TradeButton>
+        {wallet ? (
+          <TradeButton
+            onClick={() => {
+              if (insufficientAllowance) approve();
+              else swap();
+            }}
+            disabled={!signer || insufficientBalance || insufficientDaiAvailable || balance.OHM.isZero()}
+            style={{ margin: 'auto', whiteSpace: 'nowrap' }}
+          >
+            {insufficientBalance ? 'Insufficient balance' : insufficientAllowance ? 'Approve allowance' : 'Swap'}
+          </TradeButton>
+        ) : (
+          <TradeButton
+            onClick={() => {
+              connect();
+            }}
+            style={{ margin: 'auto', whiteSpace: 'nowrap' }}
+          >
+            Connect Wallet
+          </TradeButton>
+        )}
       </Container>
     </Center>
   );

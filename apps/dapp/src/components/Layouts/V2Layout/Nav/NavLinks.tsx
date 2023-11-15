@@ -9,7 +9,7 @@ import dashboard from '../assets/dashboard.png';
 import payments from '../assets/payments.png';
 import restore from '../assets/restore.png';
 import candle from '../assets/candle.png';
-import temple_dao_logo from '../assets/temple-dao-logo.png';
+import temple_dao_logo from 'assets/images/sun-art.svg';
 import TruncatedAddress from 'components/TruncatedAddress';
 
 import Loader from 'components/Loader/Loader';
@@ -64,7 +64,9 @@ const NavLinks = ({ isNavCollapsed = false, onClickHandler }: NavLinksProps) => 
 
   return (
     <>
-      <TempleLogo src={temple_dao_logo} />
+      <TempleLink to="/">
+        <TempleLogo src={temple_dao_logo} />
+      </TempleLink>
       <NavLink to="/v2dapp/dashboard/all" onClick={() => wrappedClickHandler()}>
         <NavLinkCell>
           {/* // TODO: Icon can be split into its own component */}
@@ -182,6 +184,10 @@ const TempleLogo = styled(Image)`
     margin-top: 5px;
     align-self: center;
   `)};
+`;
+
+const TempleLink = styled(Link)`
+  align-self: center;
 `;
 
 const NavIcon = styled(Image)`
