@@ -49,7 +49,6 @@ contract Relic is IRelic, ERC721ACustom, ERC1155Holder, ElevatedAccess {
     mapping(address => bool) public override blacklistedAccounts;
     /// @notice count of shards blacklisted for Relic
     mapping(uint256 => uint256) public override blacklistedShardsCount;
-    // mapping(address => bool) public override relicMinters;
     /// @notice some relic minting contracts may only mint special partner relic "enclave" Ids
     mapping(address => EnumerableSet.UintSet) private relicMinterEnclaveIds;
     mapping(address => EnumerableSet.UintSet) private ownerRelics;
@@ -117,17 +116,6 @@ contract Relic is IRelic, ERC721ACustom, ERC1155Holder, ElevatedAccess {
 
         return _baseURI(tokenId);
     }
-
-    /*
-     * @notice Set relic minter
-     * @param minter Address to mint relics
-     * @param allow If minter is allowed to mint
-     */
-    // function setRelicMinter(address minter, bool allow) external override onlyElevatedAccess {
-    //     if (minter == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
-    //     relicMinters[minter] = allow;
-    //     emit RelicMinterSet(minter, allow);
-    // }
 
     /*
      * @notice Set relic minter's enclave Ids to mint

@@ -19,8 +19,6 @@ contract TempleSacrifice is ITempleSacrifice, BaseSacrifice {
     /// @notice send sacrificed temple to this address
     address public sacrificedTokenRecipient;
 
-    // error FutureOriginTime(uint256 originTime);
-
     constructor(
         address _relic,
         address _token,

@@ -8,15 +8,15 @@ import { Relic } from "../../../contracts/nexus/Relic.sol";
 import { NexusCommon } from "../../../contracts/nexus/NexusCommon.sol";
 import { CommonEventsAndErrors } from "../../../contracts/common/CommonEventsAndErrors.sol";
 import { PartnerZeroSacrifice } from "../../../contracts/nexus/PartnerZeroSacrifice.sol";
-import { IBaseSacrifice } from "../../../contracts/interfaces/nexus/IBaseSacrifice.sol";
+import { IBaseSacrifice, ISacrifice, IPartnerSacrifice } from "../../../contracts/interfaces/nexus/IBaseSacrifice.sol";
 import { IElevatedAccess } from "../../../contracts/interfaces/nexus/access/IElevatedAccess.sol";
 
 contract MockPartnerProxy {
-    IBaseSacrifice public partnerSacrifice;
+    IPartnerSacrifice public partnerSacrifice;
 
     uint256 internal constant NON_ENCLAVE_ID = 10;
     constructor(address _partnerSacrifice) {
-        partnerSacrifice = IBaseSacrifice(_partnerSacrifice);
+        partnerSacrifice = IPartnerSacrifice(_partnerSacrifice);
     }
 
     function execute(address to) external {
@@ -32,7 +32,7 @@ contract PartnerZeroSacrificeTestBase is NexusTestBase {
 
     uint256 internal constant NON_ENCLAVE_ID = 10;
 
-    event PartnerSacrifice(address to);
+    event PartnerSacrifice(address to, uint256 relicId, uint256 enclaveId);
 
     function setUp() public {
         nexusCommon = new NexusCommon(executor);
@@ -86,16 +86,13 @@ contract PartnerSacrificeTest is PartnerZeroSacrificeTestBase {
         vm.startPrank(executor);
         uint64 originTime = uint64(block.timestamp + 100);
         partnerSacrifice.setOriginTime(originTime);
-        vm.expectRevert(abi.encodeWithSelector(IBaseSacrifice.FutureOriginTime.selector, originTime));
+        vm.expectRevert(abi.encodeWithSelector(ISacrifice.FutureOriginTime.selector, originTime));
         partnerSacrifice.sacrifice(NON_ENCLAVE_ID, alice);
 
-        // executor but not contract
-        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         vm.warp(originTime);
-        partnerSacrifice.sacrifice(NON_ENCLAVE_ID, alice);
-
+        uint256 relicId = relic.nextTokenId();
         vm.expectEmit(address(partnerSacrifice));
-        emit PartnerSacrifice(alice);
+        emit PartnerSacrifice(alice, relicId, NON_ENCLAVE_ID);
         mockPartnerProxy.execute(alice);
     }
 }

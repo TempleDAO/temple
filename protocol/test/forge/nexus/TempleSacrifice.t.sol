@@ -9,7 +9,7 @@ import { NexusCommon } from "../../../contracts/nexus/NexusCommon.sol";
 import { TempleSacrifice } from "../../../contracts/nexus/TempleSacrifice.sol";
 import { TempleERC20Token } from "../../../contracts/core/TempleERC20Token.sol";
 import { CommonEventsAndErrors } from "../../../contracts/common/CommonEventsAndErrors.sol";
-import { IBaseSacrifice } from "../../../contracts/interfaces/nexus/IBaseSacrifice.sol";
+import { IBaseSacrifice, ISacrifice } from "../../../contracts/interfaces/nexus/IBaseSacrifice.sol";
 
 
 contract TempleSacrificeTestBase is NexusTestBase {
@@ -117,11 +117,11 @@ contract TempleSacrificeTest is TempleSacrificeTestBase {
         uint64 originTime = uint64(block.timestamp + 100);
         templeSacrifice.setOriginTime(originTime);
 
-        vm.expectRevert(abi.encodeWithSelector(IBaseSacrifice.FutureOriginTime.selector, originTime));
+        vm.expectRevert(abi.encodeWithSelector(ISacrifice.FutureOriginTime.selector, originTime));
         templeSacrifice.sacrifice(CHAOS_ID);
         
         vm.warp(originTime - 1);
-        vm.expectRevert(abi.encodeWithSelector(IBaseSacrifice.FutureOriginTime.selector, originTime));
+        vm.expectRevert(abi.encodeWithSelector(ISacrifice.FutureOriginTime.selector, originTime));
         templeSacrifice.sacrifice(CHAOS_ID);
 
         vm.warp(originTime + 1);

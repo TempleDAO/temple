@@ -3,8 +3,6 @@ pragma solidity 0.8.19;
 // Temple (nexus/BaseSacrifice.sol)
 
 
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IBaseSacrifice } from "../interfaces/nexus/IBaseSacrifice.sol";
 import { ElevatedAccess } from "./access/ElevatedAccess.sol";
 import { CommonEventsAndErrors } from "../common/CommonEventsAndErrors.sol";
@@ -64,9 +62,9 @@ abstract contract BaseSacrifice is IBaseSacrifice, ElevatedAccess {
      * @notice Sacrifice tokens to mint a Relic
      * Caller must approve contract to spend tokens
      * @param enclaveId Enclave ID
+     * @param to Relic recipient
      */
-    function sacrifice(uint256 enclaveId) external virtual {}
-    function sacrifice(uint256 enclaveId, address to) external virtual {}
+    // function sacrifice(uint256 enclaveId, address to) external virtual {}
 
     /*
      * @notice Get amount of tokens to mint a Relic
