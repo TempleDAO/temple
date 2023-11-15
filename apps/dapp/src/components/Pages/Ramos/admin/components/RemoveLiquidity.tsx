@@ -52,8 +52,9 @@ export const RemoveLiquidity: React.FC<IProps> = ({ calculateFunc }) => {
       />
       {exitPoolRequest && (
         <>
-          <p>To apply, create a RAMOS.removeLiquidity() transaction with parameters</p>
+          <p>To apply, create a RamosStrategy.removeLiquidity() transaction with parameters</p>
           <RequestArea>request: {exitPoolRequest}</RequestArea>
+          <RequestArea>bptAmount: {`${exitAmountBpt}`}</RequestArea>
         </>
       )}
     </InputArea>

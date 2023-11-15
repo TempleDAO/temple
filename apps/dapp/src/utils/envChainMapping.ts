@@ -12,7 +12,7 @@ export type ChainDefinition = {
 
 export const MAINNET_CHAIN: ChainDefinition = {
   id: 1,
-  name: 'Etherium',
+  name: 'Ethereum',
   label: 'Ethereum Mainnet',
   token: 'ETH',
   rpcUrl: env.rpcUrl,

@@ -156,3 +156,26 @@ export async function buildTempleTasksDiscordMessage(
     content: content.join('\n'),
   };
 }
+
+export async function buildDiscordMessageCheckEth(
+    chain: Chain,
+    submittedAt: Date,
+    watchAddress: string,
+    ethBalance: bigint,
+    minBalance: bigint
+  ): Promise<DiscordMesage> {
+    const content = [
+      `**TEMPLE LOW ETH ALERT [${chain.name}]**`,
+      ``,
+      `_address:_ ${watchAddress}`,
+      `_required eth:_ ${formatBigNumber(minBalance, 18, 6)}`,
+      `_eth balance:_  ${formatBigNumber(ethBalance, 18, 6)}`,
+      `_submitted at:_ ${submittedAt.toISOString()}`,
+      ``,
+      `${chain.addressUrl(watchAddress)}`,
+    ];
+  
+    return {
+      content: content.join('\n'),
+    };
+  }

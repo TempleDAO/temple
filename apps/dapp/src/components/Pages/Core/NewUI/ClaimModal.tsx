@@ -9,6 +9,7 @@ import { BigNumber } from 'ethers';
 import { useWithdrawFromVault } from 'hooks/core/use-withdraw-from-vault';
 import { VaultButton } from '../VaultPages/VaultContent';
 import { useTokenContractAllowance } from 'hooks/core/use-token-contract-allowance';
+import { getBigNumberFromString } from 'components/Vault/utils';
 import env from 'constants/env';
 import _ from 'lodash';
 
@@ -21,6 +22,9 @@ const EMPTY_CLAIM_STATE = {
   claimSubvaultAddress: '',
   claimAmount: '',
 };
+
+// The early withdrawal vault minimum withdrawal amount
+const MIN_WITHDRAWAL_AMOUNT = BigNumber.from(1_000);
 
 export const ClaimModal: React.FC<IProps> = ({ isOpen, onClose }) => {
   const {
@@ -109,13 +113,10 @@ export const ClaimModal: React.FC<IProps> = ({ isOpen, onClose }) => {
             <ErrorLabel>{formatErrorMessage(earlyWithdrawError.message) || 'Something went wrong'}</ErrorLabel>
           )}
 
-          {Number(claimState.claimAmount) === 0 ? (
+          {getBigNumberFromString(claimState.claimAmount).lt(MIN_WITHDRAWAL_AMOUNT) ? (
             <ClaimButton
               label={`Nothing to Claim`}
               disabled={true}
-              onClick={async () => {
-                await earlyWithdraw(claimState.claimSubvaultAddress, claimState.claimAmount);
-              }}
             />
           ) : earlyWithdrawAllowance === 0 ? (
             <ClaimButton

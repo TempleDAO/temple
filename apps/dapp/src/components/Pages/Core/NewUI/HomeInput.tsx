@@ -254,6 +254,7 @@ export const InputStyled = styled.input`
 `;
 
 const Ticker = styled.p`
+  text-wrap: nowrap;
   margin: 0;
   color: ${theme.palette.brandLight};
   font-weight: bold;
