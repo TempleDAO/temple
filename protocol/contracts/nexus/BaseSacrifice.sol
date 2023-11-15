@@ -59,14 +59,6 @@ abstract contract BaseSacrifice is IBaseSacrifice, ElevatedAccess {
     }
 
     /*
-     * @notice Sacrifice tokens to mint a Relic
-     * Caller must approve contract to spend tokens
-     * @param enclaveId Enclave ID
-     * @param to Relic recipient
-     */
-    // function sacrifice(uint256 enclaveId, address to) external virtual {}
-
-    /*
      * @notice Get amount of tokens to mint a Relic
      * @return Relic price
      */
