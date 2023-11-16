@@ -3,7 +3,6 @@ import millify from 'millify';
 import { fetchGenericSubgraph, fetchSubgraph } from 'utils/subgraph';
 import { DashboardType } from '../DashboardContent';
 import env from 'constants/env';
-import { useMemo } from 'react';
 import { getQueryKey } from 'utils/react-query-helpers';
 
 export enum StrategyKey {
@@ -53,7 +52,7 @@ export interface StrategyMetrics {
 
 const CACHE_TTL = 1000 * 60;
 
-export default function useDashboardV2Metrics() {
+export default function useDashboardV2Metrics(dashboardType: DashboardType) {
   // TODO: In the future we can refactor this.
   // Ideally should not enumerate every strategy but instead do it dynamically
   // by e.g. iterating over the StrategyKey enum
@@ -111,21 +110,24 @@ export default function useDashboardV2Metrics() {
     staleTime: CACHE_TTL,
   });
 
-  const isLoading = useMemo(() => {
-    return (
-      ramosMetrics.isLoading ||
-      tlcMetrics.isLoading ||
-      templeBaseMetrics.isLoading ||
-      dsrBaseMetrics.isLoading ||
-      treasuryReservesVaultMetrics.isLoading
-    );
-  }, [
-    ramosMetrics.isLoading,
-    tlcMetrics.isLoading,
-    templeBaseMetrics.isLoading,
-    dsrBaseMetrics.isLoading,
-    treasuryReservesVaultMetrics.isLoading,
-  ]);
+  const dashboardMetrics = useQuery({
+    queryKey: getQueryKey.metricsDashboard(dashboardType),
+    queryFn: () => {
+      switch (dashboardType) {
+        case DashboardType.TREASURY_RESERVES_VAULT:
+          return treasuryReservesVaultMetrics.data && getArrangedTreasuryReservesVaultMetrics(treasuryReservesVaultMetrics.data);
+        // case DashboardType.TLC:
+        //   return tlcMetrics.data && getArrangedStrategyMetrics(tlcMetrics.data);
+        case DashboardType.RAMOS:
+          return ramosMetrics.data && getArrangedStrategyMetrics(ramosMetrics.data);
+        case DashboardType.TEMPLE_BASE:
+          return templeBaseMetrics.data && getArrangedStrategyMetrics(templeBaseMetrics.data);
+        case DashboardType.DSR_BASE:
+          return dsrBaseMetrics.data && getArrangedStrategyMetrics(dsrBaseMetrics.data);
+      }
+    },
+    enabled: !!treasuryReservesVaultMetrics.data && !!tlcMetrics.data && !!ramosMetrics.data && !!templeBaseMetrics.data && !!dsrBaseMetrics.data
+  })
 
   const fetchStrategyMetrics = async (strategy: StrategyKey): Promise<StrategyMetrics> => {
     let metrics = {
@@ -426,12 +428,7 @@ export default function useDashboardV2Metrics() {
   };
 
   return {
-    isLoading,
-    tlcMetrics,
-    ramosMetrics,
-    templeBaseMetrics,
-    dsrBaseMetrics,
-    treasuryReservesVaultMetrics,
+    dashboardMetrics,
     getArrangedTreasuryReservesVaultMetrics,
     getArrangedStrategyMetrics,
   };

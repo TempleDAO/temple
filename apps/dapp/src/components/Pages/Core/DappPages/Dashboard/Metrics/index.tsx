@@ -1,10 +1,9 @@
 import Loader from 'components/Loader/Loader';
-import { useEffect, useMemo, useState, Fragment } from 'react';
+import { useMemo, Fragment } from 'react';
 import { useMediaQuery } from 'react-responsive';
 import styled from 'styled-components';
 import * as breakpoints from 'styles/breakpoints';
 import { queryPhone } from 'styles/breakpoints';
-import { Nullable } from 'types/util';
 import { DashboardType } from '../DashboardContent';
 import useDashboardV2Metrics, { ArrangedDashboardMetrics } from '../hooks/use-dashboardv2-metrics';
 
@@ -13,52 +12,16 @@ type DashboardMetricsProps = {
 };
 
 const DashboardMetrics = ({ dashboardType }: DashboardMetricsProps) => {
-  console.debug('DashboardMetrics with dashboardType: ', dashboardType);
-
-  const [sourceData, setSourceData] = useState<Nullable<ArrangedDashboardMetrics>>(null);
-
-  const {
-    tlcMetrics,
-    ramosMetrics,
-    templeBaseMetrics,
-    dsrBaseMetrics,
-    treasuryReservesVaultMetrics,
-    getArrangedStrategyMetrics,
-    getArrangedTreasuryReservesVaultMetrics,
-    isLoading,
-  } = useDashboardV2Metrics();
-
-  useEffect(() => {
-    if (isLoading) {
-      return setSourceData(null);
-    }
-
-    switch (dashboardType) {
-      case DashboardType.TREASURY_RESERVES_VAULT:
-        return setSourceData(getArrangedTreasuryReservesVaultMetrics(treasuryReservesVaultMetrics.data!));
-      // case DashboardType.TLC: // TODO: Hidden until launch
-      //   return setSourceData(getArrangedStrategyMetrics(tlcMetrics.data!));
-      case DashboardType.RAMOS:
-        return setSourceData(getArrangedStrategyMetrics(ramosMetrics.data!));
-      case DashboardType.TEMPLE_BASE:
-        return setSourceData(getArrangedStrategyMetrics(templeBaseMetrics.data!));
-      case DashboardType.DSR_BASE:
-        return setSourceData(getArrangedStrategyMetrics(dsrBaseMetrics.data!));
-    }
-  }, [isLoading, dashboardType]);
-
-  useEffect(() => {
-    console.log(sourceData);
-  }, [sourceData]);
+  const { dashboardMetrics } = useDashboardV2Metrics(dashboardType);
 
   const isDesktop = useMediaQuery({
     query: queryPhone,
   });
 
-  const mobileView = (sourceData: Nullable<ArrangedDashboardMetrics>) => (
+  const mobileView = (sourceData: ArrangedDashboardMetrics) => (
     <MobileContainer>
       <MobileMetricsContainer>
-        {sourceData!.metrics.map((row, idx) => (
+        {sourceData.metrics.map((row, idx) => (
           <Fragment key={idx}>
             {row.map((metric, idx) => (
               <MobileMetricRow key={idx}>
@@ -70,7 +33,7 @@ const DashboardMetrics = ({ dashboardType }: DashboardMetricsProps) => {
         ))}
       </MobileMetricsContainer>
       <MobileMetricsContainer small>
-        {sourceData!.smallMetrics.map((row, idx) => (
+        {sourceData.smallMetrics.map((row, idx) => (
           // TODO: The MobileMetricsContainer for small should be .. smaller
           <Fragment key={idx}>
             {row.map((metric, idx) => (
@@ -85,11 +48,11 @@ const DashboardMetrics = ({ dashboardType }: DashboardMetricsProps) => {
     </MobileContainer>
   );
 
-  const desktopView = (sourceData: Nullable<ArrangedDashboardMetrics>) => (
+  const desktopView = (sourceData: ArrangedDashboardMetrics) => (
     <>
       <MetricsContainer>
         <MetricsRow>
-          {sourceData!.metrics.map((row) =>
+          {sourceData.metrics.map((row) =>
             row.map((metric, idx) => (
               <Metric key={idx}>
                 <MetricValue>{metric.value}</MetricValue>
@@ -99,7 +62,7 @@ const DashboardMetrics = ({ dashboardType }: DashboardMetricsProps) => {
           )}
         </MetricsRow>
         <MetricsRow>
-          {sourceData!.smallMetrics.map((row) =>
+          {sourceData.smallMetrics.map((row) =>
             row.map((metric, idx) => (
               <Metric small key={idx}>
                 <MetricValue small>{metric.value}</MetricValue>
@@ -113,11 +76,11 @@ const DashboardMetrics = ({ dashboardType }: DashboardMetricsProps) => {
   );
 
   const viewForDevice = useMemo(() => {
-    if (sourceData === null) return <Loader />;
-    return isDesktop ? desktopView(sourceData) : mobileView(sourceData);
-  }, [isDesktop, sourceData]);
+    if (!dashboardMetrics.data || dashboardMetrics.data === null) return <Loader />;
+    return isDesktop ? desktopView(dashboardMetrics.data) : mobileView(dashboardMetrics.data);
+  }, [isDesktop, dashboardMetrics.data]);
 
-  return sourceData === null || isLoading ? <Loader /> : viewForDevice;
+  return dashboardMetrics.data === null || dashboardMetrics.isLoading ? <Loader /> : viewForDevice;
 };
 
 export default DashboardMetrics;
@@ -188,7 +151,7 @@ const Metric = styled.div<MetricProps>`
 `;
 
 const MobileContainer = styled.div`
-  width: 45vh;
+  width: 45%;
   margin: 2rem 0;
 `;
 
@@ -196,16 +159,16 @@ const MetricsContainer = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 100vh;
+  width: 100%;
   margin: 2rem 0;
   gap: 2rem 0;
 
   ${breakpoints.tabletToDesktop(`
-    width: 80vh;
+    width: 80%;
   }`)}
 
   ${breakpoints.phoneToTablet(`
-    width: 70vh;
+    width: 70%;
   }`)}
 `;
 

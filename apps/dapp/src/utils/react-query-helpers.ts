@@ -8,6 +8,7 @@ export const getQueryKey = {
   txHistory: (props: TxHistoryProps) => ['TxHistory', props.dashboardType, props.txFilter, props.rowFilter, props.offset, props.limit, props.blockNumber, props.tableHeaders],
   txHistoryAvailableRows: (props: TxHistoryAvailableRowsProps) => ['TxHistoryAvailableRows', props.dashboardType, props.txFilter, props.rowFilter],
   metrics: (s?: StrategyKey) => (s ? ['getMetrics', s] : ['getMetrics']),
+  metricsDashboard: (d: DashboardType) => (['metricsDashboard', d]),
   trvMetrics: (d?: DashboardType) => (d ? ['getTreasureReserveMetrics', d] : ['getTreasureReserveMetrics']),
   allStrategiesDailySnapshots: () => ['strategyDailySnapshots'],
   allStrategiesHourlySnapshots: () => ['strategyHourlySnapshots'],
