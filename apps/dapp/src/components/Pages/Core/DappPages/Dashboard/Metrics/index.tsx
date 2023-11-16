@@ -19,7 +19,7 @@ const DashboardMetrics = ({ dashboardType }: DashboardMetricsProps) => {
   });
 
   const mobileView = (sourceData: ArrangedDashboardMetrics) => (
-    <MobileContainer>
+    <>
       <MobileMetricsContainer>
         {sourceData.metrics.map((row, idx) => (
           <Fragment key={idx}>
@@ -45,7 +45,7 @@ const DashboardMetrics = ({ dashboardType }: DashboardMetricsProps) => {
           </Fragment>
         ))}
       </MobileMetricsContainer>
-    </MobileContainer>
+    </>
   );
 
   const desktopView = (sourceData: ArrangedDashboardMetrics) => (
@@ -148,11 +148,6 @@ const Metric = styled.div<MetricProps>`
   ${breakpoints.phoneToSmallTablet(`
     flex: 30%;
   }`)}
-`;
-
-const MobileContainer = styled.div`
-  width: 45%;
-  margin: 2rem 0;
 `;
 
 const MetricsContainer = styled.div`
