@@ -92,4 +92,5 @@ const TransactionHistoryContainer = styled.div`
   display: flex;
   flex-direction: column;
   width: 70vw;
+  margin-bottom: 2rem;
 `;

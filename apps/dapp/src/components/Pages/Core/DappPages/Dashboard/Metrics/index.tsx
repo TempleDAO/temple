@@ -2,6 +2,7 @@ import Loader from 'components/Loader/Loader';
 import { useEffect, useMemo, useState, Fragment } from 'react';
 import { useMediaQuery } from 'react-responsive';
 import styled from 'styled-components';
+import * as breakpoints from 'styles/breakpoints';
 import { queryPhone } from 'styles/breakpoints';
 import { Nullable } from 'types/util';
 import { DashboardType } from '../DashboardContent';
@@ -55,7 +56,7 @@ const DashboardMetrics = ({ dashboardType }: DashboardMetricsProps) => {
   });
 
   const mobileView = (sourceData: Nullable<ArrangedDashboardMetrics>) => (
-    <>
+    <MobileContainer>
       <MobileMetricsContainer>
         {sourceData!.metrics.map((row, idx) => (
           <Fragment key={idx}>
@@ -81,34 +82,32 @@ const DashboardMetrics = ({ dashboardType }: DashboardMetricsProps) => {
           </Fragment>
         ))}
       </MobileMetricsContainer>
-    </>
+    </MobileContainer>
   );
 
   const desktopView = (sourceData: Nullable<ArrangedDashboardMetrics>) => (
     <>
       <MetricsContainer>
-        {sourceData!.metrics.map((row, idx) => (
-          <MetricsRow key={idx}>
-            {row.map((metric, idx) => (
+        <MetricsRow>
+          {sourceData!.metrics.map((row) =>
+            row.map((metric, idx) => (
               <Metric key={idx}>
                 <MetricValue>{metric.value}</MetricValue>
                 <MetricTitle>{metric.title}</MetricTitle>
               </Metric>
-            ))}
-          </MetricsRow>
-        ))}
-      </MetricsContainer>
-      <MetricsContainer>
-        {sourceData!.smallMetrics.map((row, idx) => (
-          <MetricsRow key={idx}>
-            {row.map((metric, idx) => (
+            ))
+          )}
+        </MetricsRow>
+        <MetricsRow>
+          {sourceData!.smallMetrics.map((row) =>
+            row.map((metric, idx) => (
               <Metric small key={idx}>
                 <MetricValue small>{metric.value}</MetricValue>
                 <MetricTitle small>{metric.title}</MetricTitle>
               </Metric>
-            ))}
-          </MetricsRow>
-        ))}
+            ))
+          )}
+        </MetricsRow>
       </MetricsContainer>
     </>
   );
@@ -167,8 +166,10 @@ const MetricTitle = styled.div<MetricProps>`
 `;
 
 const Metric = styled.div<MetricProps>`
-  width: 200px;
+  min-width: ${({small}) => (small ? '120px': '180px;')}
+  max-width: 30%;
   display: flex;
+  flex: 10%;
   flex-direction: column;
   justify-content: center;
   align-items: center;
@@ -176,19 +177,45 @@ const Metric = styled.div<MetricProps>`
   border-radius: 0.75rem;
   padding: 0.75rem 0;
   background: ${({ theme }) => theme.palette.black};
+
+  ${breakpoints.smallTabletToTablet(`
+    flex: 20%;
+  }`)}
+
+  ${breakpoints.phoneToSmallTablet(`
+    flex: 30%;
+  }`)}
+`;
+
+const MobileContainer = styled.div`
+  width: 45vh;
+  margin: 2rem 0;
 `;
 
 const MetricsContainer = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 100%;
+  width: 100vh;
+  margin: 2rem 0;
+  gap: 2rem 0;
+
+  ${breakpoints.tabletToDesktop(`
+    width: 80vh;
+  }`)}
+
+  ${breakpoints.phoneToTablet(`
+    width: 70vh;
+  }`)}
 `;
 
 const MetricsRow = styled.div`
   display: flex;
-  flex-direction: row;
+  flex-wrap: wrap;
   justify-content: space-evenly;
-  gap: 4rem;
-  margin: 2rem 0;
+  gap: 2rem 4rem;
+
+  ${breakpoints.phoneToTablet(`
+    gap: 1rem 3rem;
+  }`)}
 `;

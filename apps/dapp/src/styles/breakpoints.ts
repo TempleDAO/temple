@@ -30,6 +30,38 @@ export const verySmallDesktop = (styles: string | Css) => {
   `;
 }
 
+export const phoneToSmallTablet = (styles: string | Css) => {
+  return css`
+    @media screen and ${queryPhoneToSmallTablet} {
+      ${styles}
+    }
+  `;
+}
+
+export const phoneToTablet = (styles: string | Css) => {
+  return css`
+    @media screen and ${queryPhoneToTablet} {
+      ${styles}
+    }
+  `;
+}
+
+export const smallTabletToTablet = (styles: string | Css) => {
+  return css`
+    @media screen and ${querySmalTabletToTablet} {
+      ${styles}
+    }
+  `;
+}
+
+export const tabletToDesktop = (styles: string | Css) => {
+  return css`
+    @media screen and ${queryTabletToDesktop} {
+      ${styles}
+    }
+  `;
+}
+
 /**
  * Use this queries with `useMediaQuery`
  * If we need to add new queries add them here soo they can be reused
@@ -51,6 +83,26 @@ export const queryMaxTablet = toQuery({
 
 export const queryMaxLaptop = toQuery({
   maxWidth: theme.metrics.devices.laptop,
+});
+
+export const queryPhoneToSmallTablet = toQuery({
+  minWidth: theme.metrics.devices.phone,
+  maxWidth: theme.metrics.devices.smallTablet,
+});
+
+export const queryPhoneToTablet = toQuery({
+  minWidth: theme.metrics.devices.phone,
+  maxWidth: theme.metrics.devices.tablet,
+});
+
+export const querySmalTabletToTablet = toQuery({
+  minWidth: theme.metrics.devices.smallTablet,
+  maxWidth: theme.metrics.devices.tablet,
+});
+
+export const queryTabletToDesktop = toQuery({
+  minWidth: theme.metrics.devices.tablet,
+  maxWidth: theme.metrics.desktop.maxWidth,
 });
 
 export const queryVerySmallDesktop = toQuery({

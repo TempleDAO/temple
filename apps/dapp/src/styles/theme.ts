@@ -75,6 +75,7 @@ const theme: DefaultTheme = {
       maxWidth: '72rem' /* 1152/16 */,
     },
     devices: {
+      smallTablet: '50rem' /* 800/16 */,
       tablet: '64rem' /* 1024/16 */,
       laptop: '90rem' /* 1440/16 */,
       phone: '37.5rem' /* 600/16 */,
