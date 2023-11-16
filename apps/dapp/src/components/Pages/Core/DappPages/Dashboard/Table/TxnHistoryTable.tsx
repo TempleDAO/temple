@@ -12,14 +12,12 @@ import {
   useTxHistory,
   useTxHistoryAvailableRows,
 } from '../hooks/use-dashboardv2-txHistory';
-import { useDebouncedCallback } from 'use-debounce';
 import { StrategyKey } from '../hooks/use-dashboardv2-metrics';
-import { Option, SelectTempleDaoOptions } from 'components/InputSelect/InputSelect';
+import { DropdownCheckOption, DropdownCheckOptions } from './RowFilterDropdown';
 
 type Props = {
   dashboardType: DashboardType;
   txFilter: TxHistoryFilterType;
-  selectedStrategy: StrategyKey;
 };
 
 export enum TableHeaders {
@@ -40,90 +38,68 @@ export type TxHistoryTableHeader = {
   name: TableHeaders;
   width: CSS.Property.Width;
   orderDesc?: boolean;
-  rowFilter?: {
-    filterFn: (event: HTMLInputElement) => void;
-    dropdownOptions: SelectTempleDaoOptions;
-    defaultValue: Option;
-  };
+  dropdownOptions?: DropdownCheckOptions;
 };
 
 const TxnHistoryTable = (props: Props) => {
-  const { dashboardType, txFilter, selectedStrategy } = props;
+  const { dashboardType, txFilter } = props;
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [blockNumber, setBlockNumber] = useState(0);
   const [rowFilter, setRowFilter] = useState<RowFilter>({});
 
-  const allStrategyDropdowns = useMemo(() => [
-    { label: 'All', value: undefined },
-    { label: StrategyKey.RAMOS, value: StrategyKey.RAMOS },
-    { label: StrategyKey.TLC, value: StrategyKey.TLC },
-    { label: StrategyKey.TEMPLEBASE, value: StrategyKey.TEMPLEBASE },
-    { label: StrategyKey.DSRBASE, value: StrategyKey.DSRBASE },
-  ],[]);
+  const allStrategyDropdowns = useMemo(
+    () => [
+      { label: StrategyKey.RAMOS, checked: false },
+      { label: StrategyKey.TLC, checked: false },
+      { label: StrategyKey.TEMPLEBASE, checked: false },
+      { label: StrategyKey.DSRBASE, checked: false },
+    ],
+    []
+  );
 
   const [tableHeaders, setTableHeaders] = useState<TxHistoryTableHeader[]>([
     {
       name: TableHeaders.Date,
       orderDesc: true,
-      width: '32.64%',
+      width: '245px',
     },
     {
       name: TableHeaders.Type,
       orderDesc: undefined,
-      width: '9.95%',
-      rowFilter: {
-        filterFn: useDebouncedCallback(async (event: HTMLInputElement) => {
-          setRowFilter((s) => ({ ...s, type: event.value }));
-        }, 200),
-        // TODO: get dropdown values programatically, see https://github.com/TempleDAO/temple/pull/880#discussion_r1386151604
-        dropdownOptions: [
-          { label: 'All', value: undefined },
-          { label: TxType.Borrow, value: TxType.Borrow },
-          { label: TxType.Repay, value: TxType.Repay },
-        ],
-        defaultValue: { label: 'All', value: undefined },
-      },
+      width: '93px',
+      // TODO: get dropdown values programatically, see https://github.com/TempleDAO/temple/pull/880#discussion_r1386151604
+      dropdownOptions: [
+        { label: TxType.Borrow, checked: false },
+        { label: TxType.Repay, checked: false },
+      ],
     },
     {
       name: TableHeaders.Strategy,
       orderDesc: undefined,
-      width: '16.48%',
-      rowFilter: {
-        filterFn: useDebouncedCallback(async (event: HTMLInputElement) => {
-          setRowFilter((s) => ({ ...s, strategy: event.value }));
-        }, 200),
-        // TODO: get dropdown values programatically, see https://github.com/TempleDAO/temple/pull/880#discussion_r1386151604
-        dropdownOptions: allStrategyDropdowns,
-        defaultValue: { label: selectedStrategy, value: selectedStrategy },
-      },
+      width: '123px',
+      // TODO: get dropdown values programatically, see https://github.com/TempleDAO/temple/pull/880#discussion_r1386151604
+      dropdownOptions: allStrategyDropdowns,
     },
     {
       name: TableHeaders.Token,
       orderDesc: undefined,
-      width: '10.87%',
-      rowFilter: {
-        filterFn: useDebouncedCallback(async (event: HTMLInputElement) => {
-          setRowFilter((s) => ({ ...s, token: event.value }));
-        }, 200),
-        // TODO: get dropdown values programatically, see https://github.com/TempleDAO/temple/pull/880#discussion_r1386151604
-        dropdownOptions: [
-          { label: 'All', value: undefined },
-          { label: DebtToken.DAI, value: DebtToken.DAI },
-          { label: DebtToken.TEMPLE, value: DebtToken.TEMPLE },
-        ],
-        defaultValue: { label: 'All', value: undefined },
-      },
+      width: '100px',
+      // TODO: get dropdown values programatically, see https://github.com/TempleDAO/temple/pull/880#discussion_r1386151604
+      dropdownOptions: [
+        { label: DebtToken.DAI, checked: false },
+        { label: DebtToken.TEMPLE, checked: false },
+      ],
     },
     {
       name: TableHeaders.Amount,
       orderDesc: undefined,
-      width: '12.93%',
+      width: '97px',
     },
     {
       name: TableHeaders.TxHash,
       orderDesc: undefined,
-      width: '17.13%',
+      width: '128px',
     },
   ]);
 
@@ -132,34 +108,68 @@ const TxnHistoryTable = (props: Props) => {
       const newState = prevState.map((prevStateHeader) => {
         if (prevStateHeader.name === clickedHeader.name) {
           return { ...prevStateHeader, orderDesc: !prevStateHeader.orderDesc };
-        } else {
-          return { ...prevStateHeader, orderDesc: undefined };
         }
+        return { ...prevStateHeader, orderDesc: undefined };
       });
       return newState;
     });
 
+  const updateRowDropdownCheckbox = (clickedHeader: TableHeaders, newOption: DropdownCheckOption) => {
+    setCurrentPage(1);
+    setTableHeaders((prevState) => {
+      const newState: TxHistoryTableHeader[] = prevState.map((prevStateHeader) => {
+        // if table header with no filters, do nothing
+        if (!prevStateHeader.dropdownOptions) return prevStateHeader;
+        // if prevState is not the table header clicked, do nothing
+        if (clickedHeader !== prevStateHeader.name) return prevStateHeader;
+        const newDropdownOptions = prevStateHeader.dropdownOptions.map((prevOp) => {
+          prevOp.checked = false;
+          if (prevOp.label === newOption.label) prevOp.checked = newOption.checked;
+          return { ...prevOp };
+        });
+        return {
+          ...prevStateHeader,
+          dropdownOptions: newDropdownOptions,
+        };
+      });
+      return newState;
+    });
+  };
+
   useEffect(() => {
     const selectedStrategy = dashboardTypeToStrategyKey(dashboardType);
     setTableHeaders((prevState) => {
+      // When user changes dashboard url:
+      //  1. reset page
+      setCurrentPage(1);
+      //  2. reset row filters
+      setRowFilter((s) => ({ ...s, type: undefined }));
+      setRowFilter((s) => ({ ...s, strategy: undefined }));
+      setRowFilter((s) => ({ ...s, token: undefined }));
+      //  3. update table dropdown value & reset column sorting to default Date orderDesc
       const newState = prevState.map((prevStateHeader) => {
+        //  3.1 set default strategy dropdown depending on selected dashboard
         if (prevStateHeader.name === TableHeaders.Strategy) {
-          // When user changes dashboard url:
-          //  1. reset page
-          setCurrentPage(1);
-          //  2. update table strategy dropdown default value
+          if (!prevStateHeader.dropdownOptions) return {...prevStateHeader, orderDesc: undefined};
           return {
             ...prevStateHeader,
-            rowFilter: prevStateHeader.rowFilter && {
-              filterFn: prevStateHeader.rowFilter.filterFn,
-              dropdownOptions: selectedStrategy === StrategyKey.ALL
-                  ? allStrategyDropdowns
-                  : [{ label: selectedStrategy, value: selectedStrategy }],
-              defaultValue: { label: selectedStrategy, value: selectedStrategy },
-            },
+            orderDesc: undefined,
+            dropdownOptions:
+              selectedStrategy === StrategyKey.ALL
+                ? allStrategyDropdowns
+                : [{ label: selectedStrategy, checked: true }],
           };
         }
-        return prevStateHeader;
+        //  3.2 reset all other dropdown values
+        if (!prevStateHeader.dropdownOptions) return { ...prevStateHeader, orderDesc: TableHeaders.Date === prevStateHeader.name ? true : undefined };
+        const newDropdownOptions = prevStateHeader.dropdownOptions.map((prevOp) => {
+          return { ...prevOp, checked: false };
+        });
+        return {
+          ...prevStateHeader,
+          orderDesc: TableHeaders.Date === prevStateHeader.name ? true : undefined,
+          dropdownOptions: newDropdownOptions,
+        };
       });
       return newState;
     });
@@ -221,7 +231,9 @@ const TxnHistoryTable = (props: Props) => {
         dataLoading={isLoading}
         dataRefetching={isRefetching}
         tableHeaders={tableHeaders}
+        setRowFilter={setRowFilter}
         updateTableHeadersOrder={updateTableHeadersOrder}
+        updateRowDropdownCheckbox={updateRowDropdownCheckbox}
       />
     </TableContainer>
   );
