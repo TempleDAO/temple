@@ -1,11 +1,11 @@
 import { ChartSupportedTimeInterval } from 'utils/time-intervals';
-import type { AxisDomain } from 'recharts/types/util/types';
 import { useTheme } from 'styled-components';
 import { format } from 'date-fns';
 import { LineChart } from 'components/Charts';
 import Loader from 'components/Loader/Loader';
 import { formatTimestampedChartData } from 'utils/charts';
 import useV2StrategySnapshotData, {
+  StrategyTokenField,
   V2SnapshotMetric,
   V2StrategySnapshot,
 } from '../hooks/use-dashboardv2-daily-snapshots';
@@ -24,8 +24,6 @@ const tooltipLabelFormatters: Record<ChartSupportedTimeInterval, XAxisTickFormat
   ...tickFormatters,
   '1D': (timestamp) => format(timestamp, 'MMM do, h aaa'),
 };
-
-const yDomain: AxisDomain = ([dataMin, dataMax]) => [dataMin - dataMin * 0.01, dataMax + dataMax * 0.01];
 
 function transpose(data: V2StrategySnapshot[], metric: V2SnapshotMetric, format: MetricFormatter) {
   // in sql this is roughly
@@ -59,27 +57,14 @@ const metricFormatters: { [k in V2SnapshotMetric]: MetricFormatter } = {
   benchmarkPerformance: (value: string) => parseFloat(value) * 100,
   benchmarkedEquityUSD: parseFloat,
   creditUSD: parseFloat,
-  debtUSD: parseFloat,
-  netDebtUSD: parseFloat,
+  // invert debt to make it negative
+  debtUSD: (value: string) => -1 * parseFloat(value),
+  netDebtUSD: (value: string) => -1 * parseFloat(value),
   nominalEquityUSD: parseFloat,
   nominalPerformance: (value: string) => parseFloat(value) * 100,
   principalUSD: parseFloat,
   totalMarketValueUSD: parseFloat,
 };
-
-const formatV2StrategySnapshot = (m: V2StrategySnapshot) => ({
-  timestamp: m.timestamp,
-  accruedInterestUSD: metricFormatters.accruedInterestUSD(m.accruedInterestUSD),
-  benchmarkPerformance: metricFormatters.benchmarkPerformance(m.benchmarkPerformance),
-  benchmarkedEquityUSD: metricFormatters.benchmarkedEquityUSD(m.benchmarkedEquityUSD),
-  creditUSD: metricFormatters.creditUSD(m.creditUSD),
-  debtUSD: metricFormatters.debtUSD(m.debtUSD),
-  netDebtUSD: metricFormatters.netDebtUSD(m.netDebtUSD),
-  nominalEquityUSD: metricFormatters.nominalEquityUSD(m.nominalEquityUSD),
-  nominalPerformance: metricFormatters.nominalPerformance(m.nominalPerformance),
-  principalUSD: metricFormatters.principalUSD(m.principalUSD),
-  totalMarketValueUSD: metricFormatters.totalMarketValueUSD(m.totalMarketValueUSD),
-});
 
 const numberFormatter = new Intl.NumberFormat('en', { maximumFractionDigits: 2 });
 
@@ -95,6 +80,46 @@ const V2StrategyMetricsChart: React.FC<{
     numberFormatter.format(value),
     formatMetricName(name),
   ];
+
+  const formatV2StrategySnapshot = (m: V2StrategySnapshot) => {
+    // whatever is returned from this is rendered in the chart
+    const data = {
+      [selectedMetric]: metricFormatters[selectedMetric](m[selectedMetric]),
+      timestamp: m.timestamp,
+    };
+
+    // for netDebt we show extra metrics
+    if (selectedMetric === 'netDebtUSD') {
+      return {
+        ...data,
+        debtUSD: metricFormatters.debtUSD(m['debtUSD']),
+        creditUSD: metricFormatters.creditUSD(m['creditUSD']),
+      };
+    }
+
+    // augment the selected metric with the "split by asset" version
+    // stored in the strategTokens array
+    const selectedMetricToStrategyTokenMetric = new Map<V2SnapshotMetric, StrategyTokenField>([
+      ['debtUSD', 'debtUSD'],
+      ['creditUSD', 'creditUSD'],
+      ['principalUSD', 'principalUSD'],
+      ['accruedInterestUSD', 'accruedInterestUSD'],
+      ['totalMarketValueUSD', 'marketValueUSD'],
+    ]);
+
+    const strategyTokenMetric = selectedMetricToStrategyTokenMetric.get(selectedMetric);
+
+    if (strategyTokenMetric) {
+      // toggle this for inverted Debt
+      const strategyTokenFormatter = selectedMetric === 'debtUSD' ? (x: string) => parseFloat(x) * -1 : parseFloat;
+
+      const strategyTokens = Object.fromEntries(
+        m.strategyTokens.map((t) => [`${selectedMetric}__${t.symbol}`, strategyTokenFormatter(t[strategyTokenMetric])])
+      );
+      return { ...data, ...strategyTokens };
+    }
+    return data;
+  };
 
   const theme = useTheme();
   const formatMetric = metricFormatters[selectedMetric];
@@ -139,24 +164,42 @@ const V2StrategyMetricsChart: React.FC<{
     return <Loader iconSize={48} />;
   }
 
-  // sort to make color coding deterministic when switching interval/rerendering
-  const metrics = Object.keys(formattedData[selectedInterval][0])
-    .filter((k) => k !== xDataKey)
-    .sort();
+  // infer available metrics from the data
+  // cant look at first element only because strategyTokens
+  // can can change during the lifetime of strategy
+  const allKeys = new Set(formattedData[selectedInterval].flatMap((row) => Object.keys(row)));
+  allKeys.delete(xDataKey);
 
+  // sort to make color coding deterministic when switching interval/rerendering
+  const metrics = [...allKeys].sort();
+
+  // TRV renders selected metric of all strategies as multiline chart
+  // other dashboards show the selected metric only (single line)
   const lines =
     dashboardType === DashboardType.TREASURY_RESERVES_VAULT
       ? metrics.map((metric, ix) => ({ series: metric, color: colors[ix % colors.length] }))
       : [{ series: selectedMetric, color: colors[0] }];
+
+  // for non trv dashboard, pluck all other metrics
+  // (individual assets that make up the metric)
+  // to render as stacked area chart
+  const stackedItems =
+    dashboardType !== DashboardType.TREASURY_RESERVES_VAULT
+      ? // add +1 to skip the first color which is always the selectedMetric
+        metrics
+          .filter((m) => m !== selectedMetric)
+          .map((metric, ix) => ({ series: metric, color: colors[(ix + 1) % colors.length], stackId: 'a' }))
+      : undefined;
+
   return (
     <LineChart
       chartData={formattedData[selectedInterval]}
       xDataKey={'timestamp'}
       lines={lines}
+      stackedItems={stackedItems}
       xTickFormatter={tickFormatters[selectedInterval]}
       tooltipLabelFormatter={tooltipLabelFormatters[selectedInterval]}
       legendFormatter={formatMetricName}
-      yDomain={yDomain}
       tooltipValuesFormatter={tooltipValuesFormatter}
     />
   );
