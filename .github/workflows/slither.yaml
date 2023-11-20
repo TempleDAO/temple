@@ -27,9 +27,12 @@ jobs:
         working-directory: protocol
   
       - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1.0.10
+        uses: foundry-rs/foundry-toolchain@v1
         with:
-          cache: true
+          # Need to turn the cache off in slither so it can be used by
+          # protocol tests instead
+          # https://github.com/foundry-rs/foundry-toolchain/issues/33
+          cache: false
         #with:
         #  version: nightly-ca67d15f4abd46394b324c50e21e66f306a1162d
       
