@@ -88,8 +88,8 @@ const txHistoryFilterTypeToSeconds = (filter: TxHistoryFilterType) => {
 
 export const dashboardTypeToStrategyKey = (dType: DashboardType): StrategyKey => {
   switch (dType) {
-    case DashboardType.TLC:
-      return StrategyKey.TLC;
+    // case DashboardType.TLC: // TODO: Removed until launch
+    //   return StrategyKey.TLC;
     case DashboardType.RAMOS:
       return StrategyKey.RAMOS;
     case DashboardType.DSR_BASE:
