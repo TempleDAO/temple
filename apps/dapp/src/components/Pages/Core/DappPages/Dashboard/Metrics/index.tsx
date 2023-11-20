@@ -35,8 +35,8 @@ const DashboardMetrics = ({ dashboardType }: DashboardMetricsProps) => {
     switch (dashboardType) {
       case DashboardType.TREASURY_RESERVES_VAULT:
         return setSourceData(getArrangedTreasuryReservesVaultMetrics(treasuryReservesVaultMetrics.data!));
-      case DashboardType.TLC:
-        return setSourceData(getArrangedStrategyMetrics(tlcMetrics.data!));
+      // case DashboardType.TLC: // TODO: Hidden until launch
+      //   return setSourceData(getArrangedStrategyMetrics(tlcMetrics.data!));
       case DashboardType.RAMOS:
         return setSourceData(getArrangedStrategyMetrics(ramosMetrics.data!));
       case DashboardType.TEMPLE_BASE:

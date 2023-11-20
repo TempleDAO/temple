@@ -140,7 +140,7 @@ const Home = ({ tlc }: { tlc?: boolean }) => {
               {/* // TODO: Link */}
               <LearnMoreLink>Learn More</LearnMoreLink>
               <ButtonContainer>
-                <Link to="/v2dapp/dashboard">
+                <Link to="/v2dapp/trade">
                   <LaunchAppButton label={'Launch App'} role="button" />
                 </Link>
               </ButtonContainer>
