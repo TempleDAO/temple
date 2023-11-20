@@ -42,14 +42,16 @@ contract TempleSacrifice is ITempleSacrifice, BaseSacrifice {
 
     /*
      * @notice Sacrifice tokens to mint a Relic
-     * Caller must approve contract to spend tokens
-     * @param enclaveId Enclave ID
+     * Caller must approve contract to spend tokens.
+     * @param enclaveId Enclave ID 
+     * @param to Destination address
      */
-    function sacrifice(uint256 enclaveId) external override {
+    function sacrifice(uint256 enclaveId, address to) external override {
         if (block.timestamp < originTime) { revert FutureOriginTime(originTime); }
+        if (to == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
         uint256 amount = _getPrice(customPrice, originTime);
         sacrificeToken.safeTransferFrom(msg.sender, sacrificedTokenRecipient, amount);
-        relic.mintRelic(msg.sender, enclaveId);
+        relic.mintRelic(to, enclaveId);
         emit TokenSacrificed(msg.sender, amount);
     }
 }

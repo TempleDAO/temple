@@ -9,8 +9,10 @@ interface ISacrifice {
     event TokenSacrificed(address account, uint256 amount);
     event PartnerSacrifice(address to, uint256 relicId, uint256 enclaveId);
     event OriginTimeSet(uint64 originTime);
+    event RelicMintCapSet(uint256 cap);
 
     error FutureOriginTime(uint64 originTime);
+    error MintCapExceeded(uint256 newTotal);
    
     /*
      * @notice Get amount of tokens to mint a Relic
@@ -24,16 +26,34 @@ interface ISacrifice {
      * @param _originTime Origin time
      */
     function setOriginTime(uint64 _originTime) external;
-}
 
-interface IPartnerSacrifice is ISacrifice {
     /*
      * @notice Sacrifice tokens to mint a Relic
-     * Caller must approve contract to spend tokens. Special case for partner Relic mint
+     * Caller must approve contract to spend tokens.
      * @param enclaveId Enclave ID 
      * @param to Destination address
      */
     function sacrifice(uint256 enclaveId, address to) external;
+}
+
+interface IPartnerSacrifice is ISacrifice {
+    /*
+     * @notice Get mint cap for partner
+     * @return Mint Cap
+     */
+    function mintCap() external view returns (uint256);
+    
+    /*
+     * @notice Get total Relics minted by partner
+     * @return Total minted Relics
+     */
+    function totalMinted() external view returns (uint256);
+
+    /*
+     * @notice set mint cap for partner
+     * @param cap Cap to set
+     */
+    function setMintCap(uint256 cap) external;
 }
 
 interface IBaseSacrifice is ISacrifice {
@@ -61,13 +81,6 @@ interface IBaseSacrifice is ISacrifice {
      * @param _price Custom price 
      */
     function setCustomPrice(uint256 _price) external;
-
-    /*
-     * @notice Sacrifice tokens to mint a Relic
-     * Caller must approve contract to spend tokens
-     * @param enclaveId Enclave ID 
-     */
-    function sacrifice(uint256 enclaveId) external;
 
     /*
      * @notice Sacrifice Token address

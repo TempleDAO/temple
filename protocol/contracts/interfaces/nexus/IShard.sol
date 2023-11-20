@@ -97,7 +97,7 @@ interface IShard is IERC1155 {
      * @param uri The uri string
      * @return String uri of the shard ID
      */
-    function setShardUri(uint256 shardId, string memory uri) external;
+    function setShardUri(uint256 shardId, string memory _uri) external;
 
     /*
      * @notice Get uri string of shard ID

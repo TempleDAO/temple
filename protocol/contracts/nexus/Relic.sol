@@ -64,11 +64,11 @@ contract Relic is IRelic, ERC721ACustom, ERC1155Holder, ElevatedAccess {
     }
 
     constructor(
-        string memory _name,
-        string memory _symbol,
+        string memory name_,
+        string memory symbol_,
         address _nexusCommon,
         address _initialExecutor
-    ) ERC721ACustom(_name, _symbol) ElevatedAccess(_initialExecutor) {
+    ) ERC721ACustom(name_, symbol_) ElevatedAccess(_initialExecutor) {
         nexusCommon = INexusCommon(_nexusCommon);
     }
 

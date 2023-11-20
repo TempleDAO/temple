@@ -6,7 +6,6 @@ import { TempleTest } from "../TempleTest.sol";
 import { BaseSacrifice } from "../../../contracts/nexus/BaseSacrifice.sol";
 import { MockSacrifice }  from "./MockSacrifice.t.sol";
 import { CommonEventsAndErrors } from "../../../contracts/common/CommonEventsAndErrors.sol";
-import {console} from "forge-std/console.sol";
 
 contract BaseSacrificeTestBase is TempleTest {
     MockSacrifice public mockSacrifice;
@@ -159,10 +158,6 @@ contract BaseeSacrificeAccessTest is BaseSacrificeTestBase {
         mockSacrifice.setPriceParams(params);
         // origin time same as block.timestamp (set in constructor)
         uint256 price = mockSacrifice.getPrice();
-        console.log("custom prcie", mockSacrifice.customPrice());
-        console.log("origintime", mockSacrifice.originTime());
-        console.log("cblocktime", block.timestamp);
-        console.log("getPrice", mockSacrifice.getPrice());
         assertApproxEqRel(price, MINIMUM_CUSTOM_PRICE, 0.01e18);
         // set origin time
         uint256 timestamp = block.timestamp;

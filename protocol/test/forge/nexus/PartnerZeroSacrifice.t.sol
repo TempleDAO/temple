@@ -8,7 +8,7 @@ import { Relic } from "../../../contracts/nexus/Relic.sol";
 import { NexusCommon } from "../../../contracts/nexus/NexusCommon.sol";
 import { CommonEventsAndErrors } from "../../../contracts/common/CommonEventsAndErrors.sol";
 import { PartnerZeroSacrifice } from "../../../contracts/nexus/PartnerZeroSacrifice.sol";
-import { IBaseSacrifice, ISacrifice, IPartnerSacrifice } from "../../../contracts/interfaces/nexus/IBaseSacrifice.sol";
+import { IPartnerSacrifice, ISacrifice } from "../../../contracts/interfaces/nexus/IBaseSacrifice.sol";
 import { IElevatedAccess } from "../../../contracts/interfaces/nexus/access/IElevatedAccess.sol";
 
 contract MockPartnerProxy {
@@ -90,9 +90,39 @@ contract PartnerSacrificeTest is PartnerZeroSacrificeTestBase {
         partnerSacrifice.sacrifice(NON_ENCLAVE_ID, alice);
 
         vm.warp(originTime);
+
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
+        partnerSacrifice.sacrifice(NON_ENCLAVE_ID, address(0));
+
+        // mint cap is 0
         uint256 relicId = relic.nextTokenId();
+        uint256 totalMinted = partnerSacrifice.totalMinted();
         vm.expectEmit(address(partnerSacrifice));
         emit PartnerSacrifice(alice, relicId, NON_ENCLAVE_ID);
         mockPartnerProxy.execute(alice);
+        assertEq(relic.ownerOf(relicId), alice);
+        assertEq(partnerSacrifice.totalMinted(), totalMinted+1);
+
+        // mint cap > 0
+        uint256 mintCap = 2;
+        partnerSacrifice.setMintCap(2);
+        relicId = relic.nextTokenId();
+        totalMinted = partnerSacrifice.totalMinted();
+        vm.expectEmit(address(partnerSacrifice));
+        emit PartnerSacrifice(alice, relicId, NON_ENCLAVE_ID);
+        mockPartnerProxy.execute(alice);
+        assertEq(partnerSacrifice.totalMinted(), totalMinted+1);
+        assertEq(relic.ownerOf(relicId), alice);
+
+        vm.expectRevert(abi.encodeWithSelector(ISacrifice.MintCapExceeded.selector, mintCap+1));
+        mockPartnerProxy.execute(alice);
+
+        // update mintCap and mint
+        partnerSacrifice.setMintCap(3);
+        relicId = relic.nextTokenId();
+        vm.expectEmit(address(partnerSacrifice));
+        emit PartnerSacrifice(alice, relicId, NON_ENCLAVE_ID);
+        mockPartnerProxy.execute(alice);
+        assertEq(partnerSacrifice.totalMinted(), totalMinted+2);
     }
 }

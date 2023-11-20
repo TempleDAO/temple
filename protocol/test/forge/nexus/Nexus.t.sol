@@ -3,8 +3,6 @@ pragma solidity 0.8.19;
 // Temple (tests/forge/nexus/NexusTestBase.t.sol)
 
 
-import { BaseSacrifice } from "../../../contracts/nexus/BaseSacrifice.sol";
-import { ElevatedAccess } from "../../../contracts/nexus/access/ElevatedAccess.sol";
 import { TempleTest } from "../TempleTest.sol";
 import { FakeERC20 } from "../../../contracts/fakes/FakeERC20.sol";
 import { IRelic } from "../../../contracts/interfaces/nexus/IRelic.sol";

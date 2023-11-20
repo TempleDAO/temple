@@ -9,7 +9,7 @@ import { NexusCommon } from "../../../contracts/nexus/NexusCommon.sol";
 import { TempleSacrifice } from "../../../contracts/nexus/TempleSacrifice.sol";
 import { TempleERC20Token } from "../../../contracts/core/TempleERC20Token.sol";
 import { CommonEventsAndErrors } from "../../../contracts/common/CommonEventsAndErrors.sol";
-import { IBaseSacrifice, ISacrifice } from "../../../contracts/interfaces/nexus/IBaseSacrifice.sol";
+import { ISacrifice } from "../../../contracts/interfaces/nexus/IBaseSacrifice.sol";
 
 
 contract TempleSacrificeTestBase is NexusTestBase {
@@ -116,21 +116,26 @@ contract TempleSacrificeTest is TempleSacrificeTestBase {
         vm.startPrank(executor);
         uint64 originTime = uint64(block.timestamp + 100);
         templeSacrifice.setOriginTime(originTime);
+        address to = alice;
 
         vm.expectRevert(abi.encodeWithSelector(ISacrifice.FutureOriginTime.selector, originTime));
-        templeSacrifice.sacrifice(CHAOS_ID);
+        templeSacrifice.sacrifice(CHAOS_ID, to);
         
         vm.warp(originTime - 1);
         vm.expectRevert(abi.encodeWithSelector(ISacrifice.FutureOriginTime.selector, originTime));
-        templeSacrifice.sacrifice(CHAOS_ID);
+        templeSacrifice.sacrifice(CHAOS_ID, to);
 
         vm.warp(originTime + 1);
         TempleSacrifice.PriceParam memory params = _getPriceParams();
         templeSacrifice.setPriceParams(params);
 
+        // address(0)
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
+        templeSacrifice.sacrifice(CHAOS_ID, address(0));
+
         // ERC20: insufficient allowance
         vm.expectRevert("ERC20: insufficient allowance");
-        templeSacrifice.sacrifice(CHAOS_ID);
+        templeSacrifice.sacrifice(CHAOS_ID, to);
         changePrank(bob);
         _mintTemple(alice, 1_000 ether);
         changePrank(executor);
@@ -145,10 +150,10 @@ contract TempleSacrificeTest is TempleSacrificeTestBase {
         uint256 price = templeSacrifice.getPrice();
         vm.expectEmit(address(templeSacrifice));
         emit TokenSacrificed(alice, price);
-        templeSacrifice.sacrifice(CHAOS_ID);
+        templeSacrifice.sacrifice(CHAOS_ID, to);
         assertEq(price, _calculatePrice(params));
         assertEq(sacrificeToken.balanceOf(alice), aliceTempleBalanceBefore - price);
         assertEq(sacrificeToken.balanceOf(bob), recipientBalanceBefore + price);
-        assertEq(relic.ownerOf(relicId), alice);
+        assertEq(relic.ownerOf(relicId), to);
     }
 }

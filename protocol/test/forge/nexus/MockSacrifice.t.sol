@@ -17,5 +17,5 @@ contract MockSacrifice is BaseSacrifice {
         originTime = uint64(block.timestamp);
     }
 
-    function sacrifice(uint256 enclaveId) external virtual {}
+    function sacrifice(uint256 enclaveId, address to) external virtual {}
 }
