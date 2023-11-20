@@ -11,9 +11,8 @@
   evm_version = "paris"           # See https://www.evmdiff.com/features?name=PUSH0&kind=opcode
 
 [profile.ci]
-  fuzz = { runs = 5000 }
+  fuzz = { runs = 5000, seed = "0x4444" }
   invariant = { runs = 1000 }
-  seed = 0x4444
 
 [profile.lite]
   fuzz = { runs = 50 }
