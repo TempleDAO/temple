@@ -3,7 +3,7 @@ import {
     ensureExpectedEnvvars,
     mine
 } from '../../helpers';
-import { TestnetShard__factory } from '../../../../typechain';
+import { Shard__factory } from '../../../../typechain';
 import { DEPLOYED_CONTRACTS } from '../../helpers';
 
 async function main() {
@@ -15,9 +15,14 @@ async function main() {
     const shardId2 = 2;
     const shardId3 = 3;
 
-    const shard = TestnetShard__factory.connect(deployedContracts.SHARD, owner);
+    const shard = Shard__factory.connect(deployedContracts.SHARD, owner);
 
-    // uri and recipe
+    await mine(shard.setNexusCommon(deployedContracts.NEXUS_COMMON));
+    const ownerAddress = await owner.getAddress();
+    const minters = [ownerAddress, ownerAddress, ownerAddress, ownerAddress, ownerAddress]
+    await mine(shard.setNewMinterShards(minters));
+
+    // recipe
     {   
         const recipe = {
             inputShardIds: [shardId1, shardId2],
@@ -25,9 +30,10 @@ async function main() {
             outputShardIds: [shardId3],
             outputShardAmounts: [1]
         };
-        await mine(shard.setRecipe(recipe));
-        // await mine(shard.setShardUri(shardId1, uri1));
+        await mine(shard.addRecipe(recipe));
     }
+    const shard1Uri = 'http://www.example.com/1';
+    await mine(shard.setShardUri(shardId1, shard1Uri));
 }
 
 // We recommend this pattern to be able to use async/await everywhere

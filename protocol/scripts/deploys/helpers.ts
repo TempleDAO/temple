@@ -116,6 +116,8 @@ export interface DeployedContracts {
   RELIC: string;
   SHARD: string;
   TEMPLE_SACRIFICE: string;
+  NEXUS_COMMON: string;
+  PARTNER_ZERO_SACRIFICE: string;
 }
 
 export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
@@ -194,7 +196,9 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     // NEXUS
     RELIC: '',
     SHARD: '',
-    TEMPLE_SACRIFICE: ''
+    TEMPLE_SACRIFICE: '',
+    NEXUS_COMMON: '',
+    PARTNER_ZERO_SACRIFICE: ''
   },
   goerli: {
     // No longer active/unused
@@ -278,7 +282,9 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     // NEXUS
     RELIC: '',
     SHARD: '',
-    TEMPLE_SACRIFICE: ''
+    TEMPLE_SACRIFICE: '',
+    NEXUS_COMMON: '',
+    PARTNER_ZERO_SACRIFICE: ''
   },
   mainnet: {
     // From network/environment
@@ -384,7 +390,9 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     // NEXUS
     RELIC: '',
     SHARD: '',
-    TEMPLE_SACRIFICE: ''
+    TEMPLE_SACRIFICE: '',
+    NEXUS_COMMON: '',
+    PARTNER_ZERO_SACRIFICE: ''
   },
   localhost: {
     // From network/environment (setup when 00-localhost-env.ts script is run)
@@ -464,7 +472,9 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     // NEXUS
     RELIC: '',
     SHARD: '',
-    TEMPLE_SACRIFICE: ''
+    TEMPLE_SACRIFICE: '',
+    NEXUS_COMMON: '',
+    PARTNER_ZERO_SACRIFICE: ''
   },
   arbitrumGoerli: {
     // From network/environment (setup when 00-localhost-env.ts script is run)
@@ -542,7 +552,9 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     // NEXUS
     RELIC: '0x915f8a22715aA064c95390542F56366a1d5D4933',
     SHARD: '0x965235fd4498a8B7c2cCD3B1CB6d1D45F19Ca5AD',
-    TEMPLE_SACRIFICE: '0x4f2e8401B745ef897e0f257047Bd7E0c5035e5F2'
+    TEMPLE_SACRIFICE: '0x4f2e8401B745ef897e0f257047Bd7E0c5035e5F2',
+    NEXUS_COMMON: '',
+    PARTNER_ZERO_SACRIFICE: ''
   }
 };
 

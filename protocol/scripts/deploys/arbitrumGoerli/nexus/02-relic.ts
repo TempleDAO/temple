@@ -1,22 +1,26 @@
 import '@nomiclabs/hardhat-ethers';
-import { ethers } from 'hardhat';
-import { TestnetRelic__factory } from '../../../../typechain';
+import { ethers, network } from 'hardhat';
+import { Relic__factory } from '../../../../typechain';
 import {
   deployAndMine,
   ensureExpectedEnvvars,
+  DEPLOYED_CONTRACTS
 } from '../../helpers';
 
 async function main() {
   ensureExpectedEnvvars();
   const [owner] = await ethers.getSigners();
 
-  const relicFactory= new TestnetRelic__factory(owner);
+  const relicFactory= new Relic__factory(owner);
+  const nexusCommon = DEPLOYED_CONTRACTS[network.name].NEXUS_COMMON;
   await deployAndMine(
       'RELIC',
       relicFactory,
       relicFactory.deploy,
       "RELIC",
-      "REL"
+      "REL",
+      nexusCommon,
+      await owner.getAddress() // initial executor
   );
 
 }
