@@ -51,7 +51,7 @@ const TxnHistoryTable = (props: Props) => {
   const allStrategyDropdowns = useMemo(
     () => [
       { label: StrategyKey.RAMOS, checked: false },
-      { label: StrategyKey.TLC, checked: false },
+      // { label: StrategyKey.TLC, checked: false }, // TODO: Hidden until launch
       { label: StrategyKey.TEMPLEBASE, checked: false },
       { label: StrategyKey.DSRBASE, checked: false },
     ],

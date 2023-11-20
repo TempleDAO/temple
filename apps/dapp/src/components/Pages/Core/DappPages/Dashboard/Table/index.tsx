@@ -4,7 +4,6 @@ import { Button as BaseButton } from 'components/Button/Button';
 import styled from 'styled-components';
 import TxnHistoryTable from './TxnHistoryTable';
 import { DashboardType } from '../DashboardContent';
-import { dashboardTypeToStrategyKey } from '../hooks/use-dashboardv2-txHistory';
 import { queryPhone } from 'styles/breakpoints';
 
 type DashboardTransactionHistoryProps = {

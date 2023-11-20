@@ -8,7 +8,7 @@ import DashboardTransactionHistory from './Table';
 export enum DashboardType {
   TREASURY_RESERVES_VAULT,
   RAMOS,
-  TLC,
+  // TLC, TODO: Hidden until launch
   TEMPLE_BASE,
   DSR_BASE,
 }
@@ -30,32 +30,33 @@ const DashboardContent = ({ selectedDashboard = DashboardType.TREASURY_RESERVES_
     [DashboardType.TREASURY_RESERVES_VAULT]: {
       title: 'Treasury Reserves Vault',
       description:
-        'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque vehicula tincidunt eleifend. Nam congue magna in mi dignissim, id gravida sem ornare. Sed in nunc fermentum, consectetur ipsum a, varius augue. Nullam finibus velit eget ligula efficitur, in luctus lacus efficitur. Nam egestas tempor gravida. Ut mollis libero ac tincidunt fermentum. Etiam et ante vitae metus ultrices tempus.',
-
-      chartStrategyNames: [StrategyKey.TLC, StrategyKey.TEMPLEBASE, StrategyKey.RAMOS, StrategyKey.DSRBASE],
+        'The Treasury Reserves Vault (TRV) is the source of capital for current Treasury allocations. When funding and Strategy parameters are approved, the TRV will transfer funds e.g. DAI to the deployed Strategy borrower. The current equity of the Strategy is discounted by the cost of capital whereby the Benchmark interest rate is set to match the current Base Strategy.',
+      //StrategyKey.TLC, TODO: Hidden until launch
+      chartStrategyNames: [StrategyKey.TEMPLEBASE, StrategyKey.RAMOS, StrategyKey.DSRBASE],
     },
     [DashboardType.RAMOS]: {
-      title: 'RAMOS',
+      title: 'Ramos',
       description:
-        'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque vehicula tincidunt eleifend. Nam congue magna in mi dignissim, id gravida sem ornare. Sed in nunc fermentum, consectetur ipsum a, varius augue. Nullam finibus velit eget ligula efficitur, in luctus lacus efficitur. Nam egestas tempor gravida. Ut mollis libero ac tincidunt fermentum. Etiam et ante vitae metus ultrices tempus.',
+        'Ramos is the automated market operations (AMO) manager that supplies liquidity to the TEMPLE/DAI pool on the Balancer Exchange platform. A bot manages the contract to support TEMPLE trading, reduce price volatility, and earn farming rewards.',
       chartStrategyNames: [StrategyKey.RAMOS],
     },
-    [DashboardType.TLC]: {
-      title: 'TLC',
-      description:
-        'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque vehicula tincidunt eleifend. Nam congue magna in mi dignissim, id gravida sem ornare. Sed in nunc fermentum, consectetur ipsum a, varius augue. Nullam finibus velit eget ligula efficitur, in luctus lacus efficitur. Nam egestas tempor gravida. Ut mollis libero ac tincidunt fermentum. Etiam et ante vitae metus ultrices tempus.',
-      chartStrategyNames: [StrategyKey.TLC],
-    },
+    // TODO: Hidden until launch
+    // [DashboardType.TLC]: {
+    //   title: 'TLC',
+    //   description:
+    //     'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque vehicula tincidunt eleifend. Nam congue magna in mi dignissim, id gravida sem ornare. Sed in nunc fermentum, consectetur ipsum a, varius augue. Nullam finibus velit eget ligula efficitur, in luctus lacus efficitur. Nam egestas tempor gravida. Ut mollis libero ac tincidunt fermentum. Etiam et ante vitae metus ultrices tempus.',
+    //   chartStrategyNames: [StrategyKey.TLC],
+    // },
     [DashboardType.TEMPLE_BASE]: {
-      title: 'TempleBaseStrategy',
+      title: 'Temple Base',
       description:
-        'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque vehicula tincidunt eleifend. Nam congue magna in mi dignissim, id gravida sem ornare. Sed in nunc fermentum, consectetur ipsum a, varius augue. Nullam finibus velit eget ligula efficitur, in luctus lacus efficitur. Nam egestas tempor gravida. Ut mollis libero ac tincidunt fermentum. Etiam et ante vitae metus ultrices tempus.',
+        'The TEMPLE base strategy is not currently active.',
       chartStrategyNames: [StrategyKey.TEMPLEBASE],
     },
     [DashboardType.DSR_BASE]: {
-      title: 'DsrBaseStrategy',
+      title: 'DSR Base',
       description:
-        'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque vehicula tincidunt eleifend. Nam congue magna in mi dignissim, id gravida sem ornare. Sed in nunc fermentum, consectetur ipsum a, varius augue. Nullam finibus velit eget ligula efficitur, in luctus lacus efficitur. Nam egestas tempor gravida. Ut mollis libero ac tincidunt fermentum. Etiam et ante vitae metus ultrices tempus.',
+        'Idle capital in the Treasury Reserve Vault (TRV) that is not currently deployed to a Strategy borrower will be automatically directed to a Base Strategy to earn yield. Currently, the Base Strategy is set to the Dai Savings Rate (DSR). The current rate of return for the Base Strategy also serves as the Benchmark interest rate for the Strategy borrower.',
       chartStrategyNames: [StrategyKey.DSRBASE],
     },
   };
