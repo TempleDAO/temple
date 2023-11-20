@@ -13,6 +13,7 @@
 [profile.ci]
   fuzz = { runs = 5000 }
   invariant = { runs = 1000 }
+  seed = 0x4444
 
 [profile.lite]
   fuzz = { runs = 50 }

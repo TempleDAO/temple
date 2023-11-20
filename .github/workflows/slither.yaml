@@ -28,6 +28,8 @@ jobs:
   
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1.0.10
+        with:
+          cache: true
         #with:
         #  version: nightly-ca67d15f4abd46394b324c50e21e66f306a1162d
       
