@@ -29,17 +29,17 @@ contract TreasuryReservesVaultTestBorrow is TreasuryReservesVaultTestBase {
             vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.BorrowTokenNotEnabled.selector));
             trv.borrow(dai, 123, alice);
             
-            changePrank(executor);
+            vm.startPrank(executor);
             trv.setBorrowToken(dai, address(0), 100, 101, address(dUSD));
         }
 
         // Strategy needs to exist
         {
-            changePrank(address(strategy));
+            vm.startPrank(address(strategy));
             vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.StrategyNotEnabled.selector));
             trv.borrow(dai, 123, alice);
 
-            changePrank(executor);
+            vm.startPrank(executor);
             ITempleStrategy.AssetBalance[] memory debtCeiling = new ITempleStrategy.AssetBalance[](1);
             debtCeiling[0] = ITempleStrategy.AssetBalance(address(dai), 5e18);
             trv.addStrategy(address(strategy), 100, debtCeiling);
@@ -49,7 +49,7 @@ contract TreasuryReservesVaultTestBorrow is TreasuryReservesVaultTestBase {
 
         // Too much
         {
-            changePrank(address(strategy));
+            vm.startPrank(address(strategy));
             vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.DebtCeilingBreached.selector, 5e18, 5.01e18));
             trv.borrow(dai, 5.01e18, alice);
         }
@@ -62,14 +62,14 @@ contract TreasuryReservesVaultTestBorrow is TreasuryReservesVaultTestBase {
 
         // Global paused
         {
-            changePrank(executor);
+            vm.startPrank(executor);
             trv.setGlobalPaused(true, false);
 
-            changePrank(address(strategy));
+            vm.startPrank(address(strategy));
             vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.BorrowPaused.selector));
             trv.borrow(dai, 5.0e18, alice);
 
-            changePrank(executor);
+            vm.startPrank(executor);
             trv.setGlobalPaused(false, false);
         }
 
@@ -77,11 +77,11 @@ contract TreasuryReservesVaultTestBorrow is TreasuryReservesVaultTestBase {
         {
             trv.setStrategyPaused(address(strategy), true, false);
 
-            changePrank(address(strategy));
+            vm.startPrank(address(strategy));
             vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.BorrowPaused.selector));
             trv.borrow(dai, 5.0e18, alice);
 
-            changePrank(executor);
+            vm.startPrank(executor);
             trv.setStrategyPaused(address(strategy), false, false);
         }
 
@@ -89,17 +89,17 @@ contract TreasuryReservesVaultTestBorrow is TreasuryReservesVaultTestBase {
         {
             trv.setStrategyIsShuttingDown(address(strategy), true);
 
-            changePrank(address(strategy));
+            vm.startPrank(address(strategy));
             vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.StrategyIsShutdown.selector));
             trv.borrow(dai, 5.0e18, alice);
 
-            changePrank(executor);
+            vm.startPrank(executor);
             trv.setStrategyIsShuttingDown(address(strategy), false);
         }
 
         // TRV not funded with DAI
         {
-            changePrank(address(strategy));
+            vm.startPrank(address(strategy));
             vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InsufficientBalance.selector, address(dai), 5.0e18, 0));
 
             trv.borrow(dai, 5.0e18, alice);
@@ -118,16 +118,16 @@ contract TreasuryReservesVaultTestBorrow is TreasuryReservesVaultTestBase {
 
         // disable the borrow token and it should now revert
         {
-            changePrank(executor);
+            vm.startPrank(executor);
             IERC20[] memory disableBorrowTokens = new IERC20[](1);
             disableBorrowTokens[0] = dai;
             trv.updateStrategyEnabledBorrowTokens(address(strategy), new IERC20[](0), disableBorrowTokens);
 
-            changePrank(address(strategy));
+            vm.startPrank(address(strategy));
             vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.BorrowTokenNotEnabled.selector));
             trv.borrow(dai, 5e18, alice);
 
-            changePrank(address(strategy));
+            vm.startPrank(address(strategy));
             vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.BorrowTokenNotEnabled.selector));
             trv.borrowMax(dai, alice);
         }
@@ -148,7 +148,7 @@ contract TreasuryReservesVaultTestBorrow is TreasuryReservesVaultTestBase {
         // Do a repay such that there's a credit balance.
         {
             deal(address(dai), address(alice), 3e18, true);
-            changePrank(alice);
+            vm.startPrank(alice);
             dai.approve(address(trv), 3e18);
 
             vm.expectEmit(address(trv));
@@ -164,7 +164,7 @@ contract TreasuryReservesVaultTestBorrow is TreasuryReservesVaultTestBase {
 
         // Taken from credits (still some left)
         {
-            changePrank(address(strategy));
+            vm.startPrank(address(strategy));
 
             vm.expectEmit(address(trv));
             emit Borrow(address(strategy), address(dai), alice, 2e18);
@@ -181,7 +181,7 @@ contract TreasuryReservesVaultTestBorrow is TreasuryReservesVaultTestBase {
 
         // Taken from credits and issue debt
         {
-            changePrank(address(strategy));
+            vm.startPrank(address(strategy));
 
             vm.expectEmit(address(trv));
             emit Borrow(address(strategy), address(dai), alice, 5e18);
@@ -216,7 +216,7 @@ contract TreasuryReservesVaultTestBorrow is TreasuryReservesVaultTestBase {
         // If done as the strategy then it just pulls straight from TRV
         // (doesn't pull from itself again)
         {
-            changePrank(address(baseStrategy));
+            vm.startPrank(address(baseStrategy));
 
             vm.expectEmit(address(trv));
             emit Borrow(address(baseStrategy), address(dai), alice, 5e18);
@@ -246,7 +246,7 @@ contract TreasuryReservesVaultTestBorrow is TreasuryReservesVaultTestBase {
 
         // Pulled straight from the TRV as there's no base strategy set
         {
-            changePrank(address(strategy));
+            vm.startPrank(address(strategy));
 
             vm.expectEmit(address(trv));
             emit Borrow(address(strategy), address(dai), alice, 5e18);
@@ -291,7 +291,7 @@ contract TreasuryReservesVaultTestBorrow is TreasuryReservesVaultTestBase {
         }
 
         {
-            changePrank(address(strategy));
+            vm.startPrank(address(strategy));
 
             vm.expectEmit(address(trv));
             emit Borrow(address(strategy), address(dai), alice, 5e18);
@@ -342,7 +342,7 @@ contract TreasuryReservesVaultTestBorrow is TreasuryReservesVaultTestBase {
         }
 
         {
-            changePrank(address(strategy));
+            vm.startPrank(address(strategy));
 
             vm.expectEmit(address(trv));
             emit Borrow(address(strategy), address(dai), alice, 5e18);
@@ -398,7 +398,7 @@ contract TreasuryReservesVaultTestBorrow is TreasuryReservesVaultTestBase {
         }
 
         {
-            changePrank(address(strategy));
+            vm.startPrank(address(strategy));
 
             vm.expectEmit(address(trv));
             emit Borrow(address(strategy), address(dai), alice, 5e18);
@@ -441,24 +441,24 @@ contract TreasuryReservesVaultTestBorrow is TreasuryReservesVaultTestBase {
             vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.BorrowTokenNotEnabled.selector));
             trv.borrowMax(dai, alice);
 
-            changePrank(executor);
+            vm.startPrank(executor);
             trv.setBorrowToken(dai, address(0), 0, 0, address(dUSD));
             deal(address(dai), address(trv), 120e18, true);
         }
 
         {
-            changePrank(address(strategy));
+            vm.startPrank(address(strategy));
             vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.StrategyNotEnabled.selector));
             trv.borrowMax(dai, alice);
 
-            changePrank(executor);
+            vm.startPrank(executor);
             ITempleStrategy.AssetBalance[] memory debtCeiling = new ITempleStrategy.AssetBalance[](1);
             debtCeiling[0] = ITempleStrategy.AssetBalance(address(dai), 50e18);
             trv.addStrategy(address(strategy), -123, debtCeiling);
         }
 
         {
-            changePrank(address(strategy));
+            vm.startPrank(address(strategy));
 
             vm.expectEmit(address(trv));
             emit Borrow(address(strategy), address(dai), alice, 50e18);

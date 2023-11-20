@@ -167,7 +167,7 @@ contract TempleElevatedAccessTestSetters is TempleElevatedAccessTestBase {
         emit NewRescuerProposed(rescuer, address(0), alice);
         mock.proposeNewRescuer(alice);
 
-        changePrank(alice);
+        vm.startPrank(alice);
         vm.expectEmit(address(mock));
         emit NewRescuerAccepted(rescuer, alice);
         mock.acceptRescuer();
@@ -181,7 +181,7 @@ contract TempleElevatedAccessTestSetters is TempleElevatedAccessTestBase {
         emit NewRescuerProposed(rescuer, address(0), executor);
         mock.proposeNewRescuer(executor);
 
-        changePrank(executor);
+        vm.startPrank(executor);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
         mock.acceptRescuer();
     }
@@ -196,7 +196,7 @@ contract TempleElevatedAccessTestSetters is TempleElevatedAccessTestBase {
         emit NewExecutorProposed(executor, address(0), alice);
         mock.proposeNewExecutor(alice);
 
-        changePrank(alice);
+        vm.startPrank(alice);
         vm.expectEmit(address(mock));
         emit NewExecutorAccepted(executor, alice);
         mock.acceptExecutor();
@@ -210,7 +210,7 @@ contract TempleElevatedAccessTestSetters is TempleElevatedAccessTestBase {
         emit NewExecutorProposed(executor, address(0), rescuer);
         mock.proposeNewExecutor(rescuer);
 
-        changePrank(rescuer);
+        vm.startPrank(rescuer);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
         mock.acceptExecutor();
     }
@@ -242,14 +242,14 @@ contract TempleElevatedAccessTestSetters is TempleElevatedAccessTestBase {
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         mock.wycpnbqcyf();
 
-        changePrank(executor);
+        vm.startPrank(executor);
         bytes4 fnSig = bytes4(keccak256("wycpnbqcyf()"));
         vm.expectEmit(address(mock));
         emit ExplicitAccessSet(alice, fnSig, true);
         setExplicitAccess(mock, alice, fnSig, true);
 
         // Now succeeds
-        changePrank(alice);
+        vm.startPrank(alice);
         mock.wycpnbqcyf();
     }
 
@@ -284,14 +284,14 @@ contract TempleElevatedAccessTestModifiers is TempleElevatedAccessTestBase {
             vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
             mock.validateOnlyInRescueMode();
 
-            changePrank(executor);
+            vm.startPrank(executor);
             vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
             mock.validateOnlyInRescueMode();
         }
 
         // No access for rescuer until they first set rescue mode.
         {
-            changePrank(rescuer);
+            vm.startPrank(rescuer);
             vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
             mock.validateOnlyInRescueMode();
 
@@ -301,11 +301,11 @@ contract TempleElevatedAccessTestModifiers is TempleElevatedAccessTestBase {
 
         // Still no access for alice or executor
         {
-            changePrank(alice);
+            vm.startPrank(alice);
             vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
             mock.validateOnlyInRescueMode();
 
-            changePrank(executor);
+            vm.startPrank(executor);
             vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
             mock.validateOnlyInRescueMode();
         }
@@ -319,17 +319,17 @@ contract TempleElevatedAccessTestModifiers is TempleElevatedAccessTestBase {
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         mock.validateOnlyElevatedAccess();
 
-        changePrank(rescuer);
+        vm.startPrank(rescuer);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         mock.validateOnlyElevatedAccess();
 
         // The executor has access
-        changePrank(executor);
+        vm.startPrank(executor);
         mock.validateOnlyElevatedAccess();
 
         // Set alice to now have explicit access too
         setExplicitAccess(mock, alice, Mock.validateOnlyElevatedAccess.selector, true);
-        changePrank(alice);
+        vm.startPrank(alice);
         mock.validateOnlyElevatedAccess();
     }
 
@@ -339,21 +339,21 @@ contract TempleElevatedAccessTestModifiers is TempleElevatedAccessTestBase {
         mock.setRescueMode(true);
         assertEq(mock.inRescueMode(), true);
 
-        changePrank(alice);
+        vm.startPrank(alice);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         mock.validateOnlyElevatedAccess();
 
-        changePrank(executor);
+        vm.startPrank(executor);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         mock.validateOnlyElevatedAccess();
 
         // The rescuer has access
-        changePrank(rescuer);
+        vm.startPrank(rescuer);
         mock.validateOnlyElevatedAccess();
 
         // Set alice to now have explicit access too -- but still no access
         setExplicitAccess(mock, alice, Mock.validateOnlyElevatedAccess.selector, true);
-        changePrank(alice);
+        vm.startPrank(alice);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         mock.validateOnlyElevatedAccess();
     }
@@ -369,24 +369,24 @@ contract TempleElevatedAccessTestModifiers is TempleElevatedAccessTestBase {
             vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
             mock.checkSig();
 
-            changePrank(executor);
+            vm.startPrank(executor);
             setExplicitAccess(mock, alice, Mock.checkSig.selector, true);
 
-            changePrank(alice);
+            vm.startPrank(alice);
             mock.checkSig();
         }
 
         // When using `this.`, have to set it to the thing which calls that external function
         // ie the mock contract calling validateOnlyElevatedAccess()
         {
-            changePrank(alice);
+            vm.startPrank(alice);
             vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
             mock.checkSigThis();
 
-            changePrank(executor);
+            vm.startPrank(executor);
             setExplicitAccess(mock, address(mock), Mock.validateOnlyElevatedAccess.selector, true);
 
-            changePrank(alice);
+            vm.startPrank(alice);
             mock.checkSigThis();
         }
     }
