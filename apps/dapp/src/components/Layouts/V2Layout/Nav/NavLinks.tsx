@@ -80,12 +80,13 @@ const NavLinks = ({ isNavCollapsed = false, onClickHandler }: NavLinksProps) => 
           {!isNavCollapsed && <NavLinkText>Trade</NavLinkText>}
         </NavLinkCell>
       </NavLink>
-      <NavLink to="/v2dapp/borrow" onClick={() => wrappedClickHandler()}>
+      {/* // TODO: Hidden until launch */}
+      {/* <NavLink to="/v2dapp/borrow" onClick={() => wrappedClickHandler()}>
         <NavLinkCell>
           <NavIcon src={payments} />
           {!isNavCollapsed && <NavLinkText>Borrow</NavLinkText>}
         </NavLinkCell>
-      </NavLink>
+      </NavLink> */}
       <NavLink to="/v2dapp/ohmage">
         <NavLinkCell>
           <NavIcon src={candle} />
