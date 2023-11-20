@@ -218,7 +218,7 @@ contract TempleTokenBaseStrategyTrvWithdraw is TempleTokenBaseStrategyTestBase {
         vm.startPrank(executor);
         strategy.borrowAndDeposit(borrowAmount);
 
-        changePrank(address(trv));
+        vm.startPrank(address(trv));
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
         strategy.trvWithdraw(0);
 
@@ -246,7 +246,7 @@ contract TempleTokenBaseStrategyTrvWithdraw is TempleTokenBaseStrategyTestBase {
 
         // Do a direct TRV withdraw, pranking the TRV.
         // Calling trvWithdraw directly doesn't burn the dUSD (this is done in the 'complex' test)
-        changePrank(address(trv));
+        vm.startPrank(address(trv));
         vm.expectEmit(address(strategy));
         emit TempleMinted(withdrawAmount); // Not limited by how much was deposited
         uint256 withdrawn = strategy.trvWithdraw(withdrawAmount);

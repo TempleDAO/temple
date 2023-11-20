@@ -115,7 +115,7 @@ contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
         assertEq(position.loanToValueRatio, 0.595e18);
 
         // Now alice can't execute on the remove collateral
-        changePrank(alice);
+        vm.startPrank(alice);
         vm.expectRevert(abi.encodeWithSelector(ExceededMaxLtv.selector, collateralAmount-1, collateralValue(collateralAmount-1), borrowAmount));
         tlc.removeCollateral(1, alice);
 
@@ -190,32 +190,32 @@ contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
         templeToken.approve(address(tlc), 2*collateralAmount);
 
         {
-            changePrank(rescuer);
+            vm.startPrank(rescuer);
             tlc.setRescueMode(true);
 
-            changePrank(alice);
+            vm.startPrank(alice);
             vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
             tlc.addCollateral(collateralAmount, alice);
 
-            changePrank(rescuer);
+            vm.startPrank(rescuer);
             tlc.setRescueMode(false);
 
-            changePrank(alice);
+            vm.startPrank(alice);
             tlc.addCollateral(collateralAmount, alice);
         }
 
         {
-            changePrank(rescuer);
+            vm.startPrank(rescuer);
             tlc.setRescueMode(true);
 
-            changePrank(alice);
+            vm.startPrank(alice);
             vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
             tlc.removeCollateral(50, alice);
 
-            changePrank(rescuer);
+            vm.startPrank(rescuer);
             tlc.setRescueMode(false);
 
-            changePrank(alice);
+            vm.startPrank(alice);
             tlc.removeCollateral(50, alice);
         }
     }
@@ -227,7 +227,7 @@ contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
         vm.startPrank(executor);
         templeCircuitBreaker.updateCap(100_000e18);
 
-        changePrank(alice);
+        vm.startPrank(alice);
         tlc.removeCollateral(100_000e18, alice);
 
         // Circuit breaker breached

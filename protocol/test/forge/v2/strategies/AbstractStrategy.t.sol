@@ -137,7 +137,7 @@ contract AbstractStrategyTestAdmin is AbstractStrategyTestBase {
         dai.approve(address(strategy), 25);
         dai.mint(alice, 25);
 
-        changePrank(executor);
+        vm.startPrank(executor);
         dUSD.mint(address(strategy), 60);
  
         bytes memory params = abi.encode(2, 10, alice);

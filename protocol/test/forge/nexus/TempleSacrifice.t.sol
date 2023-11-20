@@ -136,11 +136,11 @@ contract TempleSacrificeTest is TempleSacrificeTestBase {
         // ERC20: insufficient allowance
         vm.expectRevert("ERC20: insufficient allowance");
         templeSacrifice.sacrifice(CHAOS_ID, to);
-        changePrank(bob);
+        vm.startPrank(bob);
         _mintTemple(alice, 1_000 ether);
-        changePrank(executor);
+        vm.startPrank(executor);
         templeSacrifice.setSacrificedTokenRecipient(bob);
-        changePrank(alice);
+        vm.startPrank(alice);
         sacrificeToken.approve(address(templeSacrifice), 1_000 ether);
         uint256 aliceTempleBalanceBefore = sacrificeToken.balanceOf(alice);
         uint256 recipientBalanceBefore = sacrificeToken.balanceOf(bob);

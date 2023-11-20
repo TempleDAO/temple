@@ -372,9 +372,9 @@ contract GnosisStrategyTestBorrowAndRepay is GnosisStrategyTestBase {
         strategy.repay(dai, repayAmount);
 
         // The safe needs to send dai to the strategy before repaying.
-        changePrank(gnosisSafeWallet);
+        vm.startPrank(gnosisSafeWallet);
         dai.transfer(address(strategy), repayAmount);
-        changePrank(executor);
+        vm.startPrank(executor);
 
         vm.expectEmit();
         emit Repay(address(dai), repayAmount);
@@ -407,9 +407,9 @@ contract GnosisStrategyTestBorrowAndRepay is GnosisStrategyTestBase {
         strategy.borrow(dai, borrowAmount);
 
         // The safe needs to send dai to the strategy before repaying.
-        changePrank(gnosisSafeWallet);
+        vm.startPrank(gnosisSafeWallet);
         dai.transfer(address(strategy), borrowAmount);
-        changePrank(executor);
+        vm.startPrank(executor);
 
         vm.expectEmit();
         emit Repay(address(dai), borrowAmount);

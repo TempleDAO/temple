@@ -462,7 +462,7 @@ contract ThresholdSafeGuardTestAccess is ThresholdSafeGuardTestBase {
         guard.setDisableGuardChecks(true);
 
         // Still not for the executor
-        changePrank(executor);
+        vm.startPrank(executor);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         guard.setDisableGuardChecks(true);
 
@@ -877,7 +877,7 @@ contract ThresholdSafeGuardTest is ThresholdSafeGuardTestBase {
 
         // Not enough signers - disabled, so passes
         {
-            changePrank(rescuer);
+            vm.startPrank(rescuer);
             guard.setRescueMode(true);
             guard.setDisableGuardChecks(true);
 
@@ -892,7 +892,7 @@ contract ThresholdSafeGuardTest is ThresholdSafeGuardTestBase {
 
         // Re-enabled -- Not enough signers again
         {
-            changePrank(rescuer);
+            vm.startPrank(rescuer);
             guard.setDisableGuardChecks(false);
             guard.setRescueMode(false);
 
@@ -922,7 +922,7 @@ contract ThresholdSafeGuardExecuteTest is ThresholdSafeGuardTestBase {
     function test_checkSafeExecute_withOverrideTresholdSet_ethTransfer() public {
         _setup();
 
-        changePrank(executor);
+        vm.startPrank(executor);
         guard.setEthTransferThreshold(address(mock), 3);
 
         assertEq(address(mock).balance, 1e18);
@@ -970,7 +970,7 @@ contract ThresholdSafeGuardExecuteTest is ThresholdSafeGuardTestBase {
     function test_checkSafeExecute_withOverrideTresholdSet_function() public {
         _setup();
 
-        changePrank(executor);
+        vm.startPrank(executor);
         bytes4 fnSelector = mock.doThing2Args_Selector();
         guard.setFunctionThreshold(address(mock), fnSelector, 3);
 
@@ -1020,7 +1020,7 @@ contract ThresholdSafeGuardExecuteTest is ThresholdSafeGuardTestBase {
     function test_checkSafeExecute_withOverrideTresholdSet_withContractSig() public {
         _setup();
 
-        changePrank(executor);
+        vm.startPrank(executor);
         bytes4 fnSelector = mock.doThing2Args_Selector();
         guard.setFunctionThreshold(address(mock), fnSelector, 3);
 

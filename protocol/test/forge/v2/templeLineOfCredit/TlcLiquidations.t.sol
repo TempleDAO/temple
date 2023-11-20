@@ -53,7 +53,7 @@ contract TempleLineOfCreditTestCheckLiquidity is TlcBaseTest {
         vm.startPrank(executor);
         tlc.setMaxLtvRatio(0.8e18);
 
-        changePrank(alice);
+        vm.startPrank(alice);
         daiToken.approve(address(tlc), daiBorrowAmount);
         tlc.repayAll(alice);
 
@@ -127,14 +127,14 @@ contract TempleLineOfCreditTestBatchLiquidate is TlcBaseTest {
 
         // Rescue mode is turned off
         tlc.setRescueMode(false);
-        changePrank(executor);
+        vm.startPrank(executor);
 
         // Still can't liquidate Alice since liquidations are still paused
         vm.expectRevert(abi.encodeWithSelector(Paused.selector));
         tlc.batchLiquidate(accounts);
 
         // Time is given to alice to unwind - she does
-        changePrank(alice);
+        vm.startPrank(alice);
         daiToken.approve(address(tlc), 1_000e18);
         tlc.repay(1_000e18, alice);
 
@@ -143,7 +143,7 @@ contract TempleLineOfCreditTestBatchLiquidate is TlcBaseTest {
         assertEq(status[0].hasExceededMaxLtv, false);
 
         // Liquidations are now unpaused
-        changePrank(executor);
+        vm.startPrank(executor);
         tlc.setLiquidationsPaused(false);
 
         // Liquidations now run - but nothing was liquidated
