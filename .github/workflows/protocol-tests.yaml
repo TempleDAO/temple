@@ -12,23 +12,41 @@ concurrency:
 jobs:
   hardhatTests:
     name: Hardhat Tests
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
+    runs-on: ${{ matrix.os }}
+    permissions:
+      # required for all workflows
+      security-events: write
+      # only required for workflows in private repositories
+      actions: read
+      contents: read
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+        node_version:
+          - 18
 
-      - uses: actions/setup-node@v3
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node_version }}
+        uses: actions/setup-node@v4
         with:
-          node-version: '18.x'
+          node-version: ${{ matrix.node_version }}
           cache: 'yarn'
           cache-dependency-path: protocol/yarn.lock
 
-      - run: yarn install
+      - name: Install yarn project
+        run: yarn install
         working-directory: protocol
 
-      - run: yarn compile
+      - name: Hardhat Compile
+        run: yarn compile
         working-directory: protocol
 
-      - run: yarn test
+      - name: Hardhat Test
+        run: yarn test
         working-directory: protocol
         env:
           TESTS_MAINNET_RPC_URL: ${{ secrets.TESTS_MAINNET_RPC_URL }}
