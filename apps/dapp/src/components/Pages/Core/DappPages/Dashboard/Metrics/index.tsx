@@ -49,12 +49,11 @@ const DashboardMetrics = ({ dashboardType }: DashboardMetricsProps) => {
   );
 
   const desktopView = (sourceData: ArrangedDashboardMetrics) => (
-    <>
       <MetricsContainer>
         <MetricsRow>
           {sourceData.metrics.map((row) =>
-            row.map((metric, idx) => (
-              <Metric key={idx}>
+            row.map((metric) => (
+              <Metric key={metric.title}>
                 <MetricValue>{metric.value}</MetricValue>
                 <MetricTitle>{metric.title}</MetricTitle>
               </Metric>
@@ -63,8 +62,8 @@ const DashboardMetrics = ({ dashboardType }: DashboardMetricsProps) => {
         </MetricsRow>
         <MetricsRow>
           {sourceData.smallMetrics.map((row) =>
-            row.map((metric, idx) => (
-              <Metric small key={idx}>
+            row.map((metric) => (
+              <Metric small key={metric.title}>
                 <MetricValue small>{metric.value}</MetricValue>
                 <MetricTitle small>{metric.title}</MetricTitle>
               </Metric>
@@ -72,7 +71,6 @@ const DashboardMetrics = ({ dashboardType }: DashboardMetricsProps) => {
           )}
         </MetricsRow>
       </MetricsContainer>
-    </>
   );
 
   const viewForDevice = useMemo(() => {
@@ -90,12 +88,12 @@ type MetricProps = {
 };
 
 const MobileMetricValue = styled.div<MetricProps>`
-  font-size: ${({ small }) => (small ? '10px' : '12px')};
+  font-size: ${({ small }) => (small ? '10px;' : '12px;')};
   color: ${({ theme }) => theme.palette.brandLight};
 `;
 
 const MobileMetricTitle = styled.div<MetricProps>`
-  font-size: ${({ small }) => (small ? '10px' : '12px')};
+  font-size: ${({ small }) => (small ? '10px;' : '12px;')};
   color: ${({ theme }) => theme.palette.brand};
 `;
 
@@ -113,67 +111,54 @@ const MobileMetricsContainer = styled.div<MetricProps>`
   padding: 10px;
   gap: 10px;
   background: ${({ small, theme }) =>
-    small ? theme.palette.black : `linear-gradient(180deg, #000000 0%, #1A1A1A 100%)`};
-  border: ${({ small }) => (small ? 'none' : `1px solid #bd7b4f`)};
+    small ? theme.palette.black : `linear-gradient(180deg, #000000 0%, #1A1A1A 100%);`};
+  border: ${({ small }) => (small ? 'none;' : `1px solid #bd7b4f;`)};
   border-radius: 10px;
 `;
 
 const MetricValue = styled.div<MetricProps>`
-  font-size: ${({ small }) => (small ? '1.1rem' : '1.8rem')};
+  font-size: ${({ small }) => (small ? '1.1rem;' : '1.8rem;')};
   color: ${({ theme }) => theme.palette.brandLight};
 `;
 
 const MetricTitle = styled.div<MetricProps>`
-  font-size: ${({ small }) => (small ? '1rem' : '1.1rem')};
+  font-size: ${({ small }) => (small ? '1rem;' : '1.1rem;')};
   color: ${({ theme }) => theme.palette.brand};
 `;
 
 const Metric = styled.div<MetricProps>`
-  min-width: ${({small}) => (small ? '120px': '180px;')}
-  max-width: 30%;
+  min-width: ${({small}) => (small ? '130px;': '180px;')}
+  max-width: 25%;
   display: flex;
-  flex: 10%;
+  flex: ${({small}) => (small ? '20%;' : '30%;')}
   flex-direction: column;
   justify-content: center;
+  text-align: center;
+  text-wrap: nowrap;
   align-items: center;
-  border: ${({ small, theme }) => (small ? 'none' : `1px solid ${theme.palette.brand}}`)};
+  border: ${({ small, theme }) => (small ? 'none;' : `1px solid ${theme.palette.brand}};`)};
   border-radius: 0.75rem;
   padding: 0.75rem 0;
   background: ${({ theme }) => theme.palette.black};
-
-  ${breakpoints.smallTabletToTablet(`
-    flex: 20%;
-  }`)}
-
-  ${breakpoints.phoneToSmallTablet(`
-    flex: 30%;
-  }`)}
+  margin: auto;
 `;
 
 const MetricsContainer = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 100%;
+  width: 70vw;
   margin: 2rem 0;
   gap: 2rem 0;
-
-  ${breakpoints.tabletToDesktop(`
-    width: 80%;
-  }`)}
-
-  ${breakpoints.phoneToTablet(`
-    width: 70%;
-  }`)}
 `;
 
 const MetricsRow = styled.div`
   display: flex;
   flex-wrap: wrap;
-  justify-content: space-evenly;
+  justify-content: space-between;
   gap: 2rem 4rem;
 
   ${breakpoints.phoneToTablet(`
-    gap: 1rem 3rem;
+    gap: 1rem 2rem;
   }`)}
 `;
