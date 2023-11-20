@@ -57,7 +57,7 @@ export const AddLiquidity: React.FC<IProps> = ({ calculateFunc, handleInput }) =
       />
       {joinPoolInfo && (
         <>
-          <p>To apply, create a RAMOS.addLiquidity() transaction with parameters</p>
+          <p>To apply, create a RamosStrategy.addLiquidity() transaction with parameters</p>
           <RequestArea>request: {joinPoolInfo.joinPoolRequest}</RequestArea>
           <RequestArea>minBptOut: {`${joinPoolInfo.minBptOut}`}</RequestArea>
         </>

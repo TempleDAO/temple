@@ -1,7 +1,4 @@
-import {
-  createTaskRunner,
-  fallibleWebhookTask,
-} from '@mountainpath9/overlord';
+import { createTaskRunner, fallibleWebhookTask } from '@mountainpath9/overlord';
 
 import { batchLiquidate } from '@/tlc/batch-liquidate';
 
@@ -13,7 +10,7 @@ import { discordNotifyTaskException } from '@/common/discord';
 async function main() {
   const runner = createTaskRunner();
 
-  const mode = await runner.config.requireString('temple_networks');
+  const mode = await runner.config.requireString('temple_tlc_networks');
   const isProdnet = mode === 'prodnets';
   const config = isProdnet ? CONFIG_PRODNETS : CONFIG_TESTNETS;
 
@@ -28,7 +25,8 @@ async function main() {
   runner.addWebhookTask(
     fallibleWebhookTask({
       id: 'tlc-batch-liquidate-wh',
-      action: async (ctx) => await batchLiquidate(ctx, config.tlcBatchLiquidate),
+      action: async (ctx) =>
+        await batchLiquidate(ctx, config.tlcBatchLiquidate),
     })
   );
 

@@ -35,6 +35,7 @@ interface Contracts {
   vaultProxy: string;
   vaultEarlyExit: string;
   ramos: string;
+  ramosStrategy: string;
   ramosPoolHelper: string;
   balancerHelpers: string;
 }
