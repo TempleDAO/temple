@@ -315,7 +315,7 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
         vm.startPrank(rescuer);
         tlc.setRescueMode(true);
 
-        changePrank(alice);
+        vm.startPrank(alice);
         daiToken.approve(address(tlc), borrowDaiAmount);
         {
             vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
@@ -325,11 +325,11 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
             tlc.repayAll(alice);
         }
 
-        changePrank(rescuer);
+        vm.startPrank(rescuer);
         tlc.setRescueMode(false);
 
         {
-            changePrank(alice);
+            vm.startPrank(alice);
             tlc.repay(1, alice);
             tlc.repayAll(alice);
         }

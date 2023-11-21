@@ -263,7 +263,7 @@ contract DsrBaseStrategyTestBorrowAndRepay is DsrBaseStrategyTestBase {
         trv.setStrategyDebtCeiling(address(strategy), dai, borrowAmount);
         deal(address(dai), address(trv), 100e18, true);
 
-        changePrank(executor);
+        vm.startPrank(executor);
         strategy.borrowAndDeposit(borrowAmount);
 
         ITempleStrategy.AssetBalance[] memory assetBalances1 = strategy.latestAssetBalances();
@@ -294,7 +294,7 @@ contract DsrBaseStrategyTestBorrowAndRepay is DsrBaseStrategyTestBase {
         trv.setStrategyDebtCeiling(address(strategy), dai, borrowAmount);
         deal(address(dai), address(trv), 100e18, true);
 
-        changePrank(executor);
+        vm.startPrank(executor);
         strategy.borrowAndDeposit(borrowAmount);
 
         // Move forward and check the increase.
@@ -316,7 +316,7 @@ contract DsrBaseStrategyTestBorrowAndRepay is DsrBaseStrategyTestBase {
 
         // Executor initiates the shutdown.
         {
-            changePrank(executor);
+            vm.startPrank(executor);
             trv.setStrategyIsShuttingDown(address(strategy), true);
             (,, bool isShuttingDown,) = trv.strategies(address(strategy));
             assertTrue(isShuttingDown);
@@ -331,7 +331,7 @@ contract DsrBaseStrategyTestBorrowAndRepay is DsrBaseStrategyTestBase {
 
         // Do the shutdown
         {
-            changePrank(executor);
+            vm.startPrank(executor);
 
             vm.expectEmit(address(strategy));
             emit DaiWithdrawn(borrowAmount-1);
@@ -435,7 +435,7 @@ contract DsrBaseStrategyTestTrvWithdraw is DsrBaseStrategyTestBase {
         vm.startPrank(executor);
         strategy.borrowAndDeposit(borrowAmount);
 
-        changePrank(address(trv));
+        vm.startPrank(address(trv));
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
         strategy.trvWithdraw(0);
 
@@ -463,7 +463,7 @@ contract DsrBaseStrategyTestTrvWithdraw is DsrBaseStrategyTestBase {
 
         // Do a direct TRV withdraw, pranking the TRV.
         // Calling trvWithdraw directly doesn't burn the dUSD (this is done in the 'complex' test)
-        changePrank(address(trv));
+        vm.startPrank(address(trv));
         vm.expectEmit(address(strategy));
         emit DaiWithdrawn(borrowAmount - 1); // DSR Rounding
         uint256 withdrawn = strategy.trvWithdraw(withdrawAmount);
