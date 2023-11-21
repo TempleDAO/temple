@@ -61,14 +61,14 @@ contract RelicTestBase is NexusTestBase {
     event RarityXPThresholdSet(Relic.Rarity rarity, uint256 threshold);
     event RarityBaseUriSet(Relic.Rarity rarity, string uri);
     event RelicMinted(address indexed to, uint256 relicId, uint256 enclaveId);
-    event ShardSet(address shard);
+    event ShardSet(address indexed shard);
     event RelicXPSet(uint256 indexed relicId, uint256 xp);
     event ShardsEquipped(address caller, uint256 relicId, uint256[] shardIds, uint256[] amounts);
     event ShardsUnequipped(address indexed recipient, uint256 indexed relicId, uint256[] shardIds, uint256[] amounts);
     event AccountBlacklistSet(address account, bool blacklist, uint256[] shardIds, uint256[] amounts);
     event AccountBlacklisted(address indexed account, bool blacklist);
     event ShardBlacklistUpdated(uint256 relicId, uint256 shardId, uint256 amount);
-    event NexusCommonSet(address nexusCommon);
+    event NexusCommonSet(address indexed nexusCommon);
     event RelicMinterEnclaveSet(address indexed minter, uint256 enclaveId, bool allowed);
     event ApprovalForAll(address caller, address operator, bool approved);
 

@@ -10,6 +10,11 @@ import { ElevatedAccess } from "./access/ElevatedAccess.sol";
 import { BaseSacrifice } from "./BaseSacrifice.sol";
 import { CommonEventsAndErrors } from "../common/CommonEventsAndErrors.sol";
 
+/**
+ * @notice A user sacrifices Tokens in order to mint a Relic
+ * The amount required to sacrifice is based on a time increasing rate unless
+ * otherwise overridden
+ */
 contract TempleSacrifice is ITempleSacrifice, BaseSacrifice {
     using SafeERC20 for IERC20;
     /// @notice the Relic ERC721A token
@@ -46,12 +51,14 @@ contract TempleSacrifice is ITempleSacrifice, BaseSacrifice {
      * @param enclaveId Enclave ID 
      * @param to Destination address
      */
-    function sacrifice(uint256 enclaveId, address to) external override {
+    function sacrifice(uint256 enclaveId, address to) external override returns (uint256 relicId) {
         if (block.timestamp < originTime) { revert FutureOriginTime(originTime); }
         if (to == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
+
         uint256 amount = _getPrice(customPrice, originTime);
         sacrificeToken.safeTransferFrom(msg.sender, sacrificedTokenRecipient, amount);
-        relic.mintRelic(to, enclaveId);
-        emit TokenSacrificed(msg.sender, amount);
+
+        relicId = relic.mintRelic(to, enclaveId);
+        emit TokenSacrificed(msg.sender, address(sacrificeToken), amount);
     }
 }

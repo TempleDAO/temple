@@ -26,10 +26,9 @@ contract TempleSacrificeTestBase is NexusTestBase {
 
     event OriginTimeSet(uint64 originTime);
     event CustomPriceSet(uint256 price);
-    event TokenSacrificed(address account, uint256 amount);
+    event TokenSacrificed(address indexed fromAccount, address indexed token, uint256 amount);
     event PriceParamsSet(TempleSacrifice.PriceParam params);
     event TokenRecipientSet(address recipient);
-
 
     function setUp() public {
         nexusCommon = new NexusCommon(executor);
@@ -91,6 +90,7 @@ contract TempleSacrificeAccessTest is TempleSacrificeTestBase {
 }
 
 contract TempleSacrificeTest is TempleSacrificeTestBase {
+    event RelicMinted(address indexed to, uint256 relicId, uint256 enclaveId);
 
     function _calculatePrice(
         TempleSacrifice.PriceParam memory params
@@ -148,9 +148,12 @@ contract TempleSacrificeTest is TempleSacrificeTestBase {
         uint256 relicId = relic.nextTokenId();
         vm.warp(originTime);
         uint256 price = templeSacrifice.getPrice();
+        vm.expectEmit(address(relic));
+        emit RelicMinted(to, relicId, CHAOS_ID);
         vm.expectEmit(address(templeSacrifice));
-        emit TokenSacrificed(alice, price);
-        templeSacrifice.sacrifice(CHAOS_ID, to);
+        emit TokenSacrificed(alice, address(sacrificeToken), price);
+        uint256 actualRelicId = templeSacrifice.sacrifice(CHAOS_ID, to);
+        assertEq(actualRelicId, relicId);
         assertEq(price, _calculatePrice(params));
         assertEq(sacrificeToken.balanceOf(alice), aliceTempleBalanceBefore - price);
         assertEq(sacrificeToken.balanceOf(bob), recipientBalanceBefore + price);
