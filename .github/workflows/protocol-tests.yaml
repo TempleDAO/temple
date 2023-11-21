@@ -5,55 +5,149 @@ on:
     paths:
       - 'protocol/**'
 
-jobs:
-  e2eTest:
-    name: Hardhat Tests
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
+concurrency:
+  group: ${{github.workflow}}-${{github.ref}}
+  cancel-in-progress: true
 
-      - uses: actions/setup-node@v3
+jobs:
+  hardhatTests:
+    name: Hardhat Tests
+    runs-on: ${{ matrix.os }}
+    permissions:
+      # required for all workflows
+      security-events: write
+      # only required for workflows in private repositories
+      actions: read
+      contents: read
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+        node_version:
+          - 18
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node_version }}
+        uses: actions/setup-node@v4
         with:
-          node-version: '18.x'
+          node-version: ${{ matrix.node_version }}
           cache: 'yarn'
           cache-dependency-path: protocol/yarn.lock
 
-      - run: yarn install
+      - name: Install yarn project
+        run: yarn install
         working-directory: protocol
 
-      - run: yarn compile
+      - name: Hardhat Compile
+        run: yarn compile
         working-directory: protocol
 
-      - run: yarn test
+      - name: Hardhat Test
+        run: yarn test
         working-directory: protocol
         env:
           TESTS_MAINNET_RPC_URL: ${{ secrets.TESTS_MAINNET_RPC_URL }}
 
-  fuzzTest:
+  foundryTests:
     name: Foundry Tests
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    permissions:
+      # required for all workflows
+      security-events: write
+      # only required for workflows in private repositories
+      actions: read
+      contents: read
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+        node_version:
+          - 18
+
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
           submodules: recursive
 
-      - uses: actions/setup-node@v3
+      - name: Use Node.js ${{ matrix.node_version }}
+        uses: actions/setup-node@v4
         with:
-          node-version: '18.x'
+          node-version: ${{ matrix.node_version }}
           cache: 'yarn'
           cache-dependency-path: protocol/yarn.lock
 
-      - run: yarn install
+      - name: Install yarn project
+        run: yarn install
         working-directory: protocol
 
       - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1.0.10
-        #with:
-        #  version: nightly-ca67d15f4abd46394b324c50e21e66f306a1162d
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+          #  version: nightly-ca67d15f4abd46394b324c50e21e66f306a1162d
+          cache: true
       
-      - run: forge --version
+      - name: Show the Foundry CI config
+        run: forge config
+        env:
+          FOUNDRY_PROFILE: ci
+        
+      - name: Show the Foundry version
+        run: forge --version
         working-directory: protocol
 
-      - name: Run tests
-        run: FOUNDRY_PROFILE=ci forge test --gas-report
+      - name: Foundry tests
+        run: forge test --gas-report
         working-directory: protocol
+        env:
+          FOUNDRY_PROFILE: ci
+          MAINNET_RPC_URL: ${{ secrets.TESTS_MAINNET_RPC_URL }}
+
+  slither:
+    name: Slither
+    runs-on: ${{ matrix.os }}
+    permissions:
+      # only required for workflows in private repositories
+      actions: read
+      contents: read
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+        node_version:
+          - 18
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Use Node.js ${{ matrix.node_version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node_version }}
+          cache: 'yarn'
+          cache-dependency-path: protocol/yarn.lock
+
+      - name: Install yarn project
+        run: yarn install
+        working-directory: protocol
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+          #  version: nightly-ca67d15f4abd46394b324c50e21e66f306a1162d
+          cache: false
+
+      - name: install slither
+        run: cd protocol && pip install -r slither.requirements.txt
+
+      # Can't output to SARIF for private repos without paying for Advanced Security
+      - name: run slither
+        run: cd protocol && yarn slither-check     
