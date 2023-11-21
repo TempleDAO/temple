@@ -10,7 +10,7 @@ export const DashboardPage = () => {
     <DashboardContainer>
       <DashboardHeaderNav>
         <NavCell>
-          <NavLink to={`treasuryreservesvault?${params}`}>All</NavLink>
+          <NavLink to={`treasuryreservesvault?${params}`}>TRV</NavLink>
         </NavCell>
         <NavCell>
           <NavLink to={`ramos?${params}`}>RAMOS</NavLink>

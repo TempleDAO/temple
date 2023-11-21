@@ -7,21 +7,38 @@ import temple_dao_logo from 'assets/images/sun-art.svg';
 import core_hamburger from 'assets/icons/core-hamburger.svg';
 import { MobileNavOverlay } from './MobileNavOverlay';
 import NavLinks from './NavLinks';
+import { Link } from 'react-router-dom';
+import { MenuNavItem, MenuNavItems } from '..';
 
-const MobileNav = () => {
-  const [panelOpen, setPanelOpen] = useState(false);
+type MobileNavProps = {
+  menuNavItems: MenuNavItems;
+  onSelectMenuNavItems: (mi: MenuNavItem) => void;
+};
+
+const MobileNav = (props: MobileNavProps) => {
+  const { menuNavItems, onSelectMenuNavItems } = props;
+  const [slideIn, setSlideIn] = useState(false);
 
   const MenuItems = () => (
     <StyledNav>
-      <NavLinks isNavCollapsed={false} onClickHandler={() => setPanelOpen(false)} />
+      <NavLinks
+        menuNavItems={menuNavItems}
+        onSelectMenuNavItems={onSelectMenuNavItems}
+        isNavCollapsed={false}
+        onClickHandler={() => setSlideIn(false)}
+      />
     </StyledNav>
   );
 
   return (
     <NavContainer>
-      <TempleLogo src={temple_dao_logo} />
-      <HamburgerIcon src={core_hamburger} onClick={() => setPanelOpen(true)} />
-      {panelOpen && <MobileNavOverlay Content={() => <MenuItems />} hidePanel={() => setPanelOpen(false)} />}
+      <TempleLink to="/">
+        <TempleLogo src={temple_dao_logo} />
+      </TempleLink>
+      <HamburgerIcon src={core_hamburger} onClick={() => setSlideIn(true)} />
+      {slideIn && (
+        <MobileNavOverlay Content={() => <MenuItems />} hidePanel={() => setSlideIn(false)} slideIn={slideIn} />
+      )}
     </NavContainer>
   );
 };
@@ -55,15 +72,18 @@ const StyledNav = styled.nav`
   background-image: url('${footerTexture}');
 
   display: flex;
-  gap: 2rem;
   flex-direction: column;
   padding-top: 1rem;
   padding-bottom: 1rem;
-  padding-left: 1rem;
   height: 100%;
 `;
 
 const TempleLogo = styled(Image)`
   width: 40px;
   margin-left: 20px;
+`;
+
+const TempleLink = styled(Link)`
+  padding: 1rem;
+  width: 40px;
 `;
