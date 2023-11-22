@@ -16,8 +16,8 @@ type XAxisTickFormatter = (timestamp: number) => string;
 const tickFormatters: Record<ChartSupportedTimeInterval, XAxisTickFormatter> = {
   '1D': (timestamp) => format(timestamp, 'h aaa'),
   '1W': (timestamp) => format(timestamp, 'eee d LLL'),
-  '1M': (timestamp) => format(timestamp, 'MMM do'),
-  '1Y': (timestamp) => format(timestamp, 'MMM do y'),
+  '1M': (timestamp) => format(timestamp, 'MMM d'),
+  '1Y': (timestamp) => format(timestamp, 'MMM d y'),
 };
 
 const tooltipLabelFormatters: Record<ChartSupportedTimeInterval, XAxisTickFormatter> = {
