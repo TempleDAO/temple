@@ -2,7 +2,7 @@ import type { DataKey, AxisDomain } from 'recharts/types/util/types';
 
 import React, { useState } from 'react';
 import { useTheme } from 'styled-components';
-import { ResponsiveContainer, Line, XAxis, YAxis, Tooltip, Legend, ComposedChart, Area } from 'recharts';
+import { CartesianGrid, ResponsiveContainer, Line, XAxis, YAxis, Tooltip, Legend, ComposedChart, Area } from 'recharts';
 import { formatNumberAbbreviated } from 'utils/formatter';
 
 type LineChartProps<T> = {
@@ -61,6 +61,7 @@ export default function LineChart<T>(props: React.PropsWithChildren<LineChartPro
   return (
     <ResponsiveContainer minHeight={200} minWidth={320} height={350}>
       <ComposedChart data={chartData} margin={{ left: 30 }} stackOffset={'sign'}>
+        <CartesianGrid horizontal={true} vertical={false} stroke={theme.palette.brandDarker}/>
         {stackedItems?.map((item) => (
           <Area
             key={item.series}
@@ -86,6 +87,8 @@ export default function LineChart<T>(props: React.PropsWithChildren<LineChartPro
           />
         ))}
         <XAxis
+          axisLine={false}
+          tickLine={false}
           dataKey={xDataKey}
           tickFormatter={xTickFormatter}
           tick={{ stroke: theme.palette.brandLight }}
@@ -93,6 +96,8 @@ export default function LineChart<T>(props: React.PropsWithChildren<LineChartPro
           tickMargin={10}
         />
         <YAxis
+          axisLine={false}
+          tickLine={false}
           tickFormatter={
             yTickFormatter ? (val, i) => yTickFormatter(val, i) : (value) => formatNumberAbbreviated(value).string
           }
