@@ -97,5 +97,5 @@ const ChartContainer = styled.div`
   flex-direction: column;
   align-items: center;
   margin: 1rem 0;
-  width: 70vw;
+  width: 100%;
 `;

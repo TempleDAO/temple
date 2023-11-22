@@ -45,8 +45,7 @@ export default MobileNav;
 
 const NavContainer = styled.div`
   box-sizing: border-box;
-  padding-top: 1rem;
-  padding-bottom: 1rem;
+  padding: 16px 20px;
   display: flex;
   flex-direction: row;
   justify-content: space-between;
@@ -79,10 +78,8 @@ const StyledNav = styled.nav`
 
 const TempleLogo = styled(Image)`
   width: 40px;
-  margin-left: 20px;
 `;
 
 const TempleLink = styled(Link)`
-  // padding: 1rem;
   width: 40px;
 `;

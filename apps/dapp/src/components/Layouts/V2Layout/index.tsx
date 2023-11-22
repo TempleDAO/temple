@@ -1,4 +1,5 @@
 import { FunctionComponent, SVGProps, useState } from 'react';
+import * as breakpoints from 'styles/breakpoints';
 import { useMediaQuery } from 'react-responsive';
 import { Outlet, useLocation } from 'react-router-dom';
 
@@ -110,7 +111,7 @@ const ParentContainer = styled.div`
 const MainContainer = styled.div`
   display: flex;
   flex-direction: column;
-  ${tabletAndAbove(`
+  ${breakpoints.tabletAndAbove(`
     flex-direction: row;
   `)}
   flex-grow: 1;
@@ -119,6 +120,9 @@ const MainContainer = styled.div`
 const Content = styled.div`
   height: 100%;
   flex-grow: 1;
-  padding: 1rem;
+  padding: 25px 20px;
+  ${breakpoints.phoneAndAbove(`
+    padding: 40px 120px 80px 120px;
+  `)}
   background-color: ${(props) => props.theme.palette.dark};
 `;

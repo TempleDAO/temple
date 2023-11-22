@@ -1,10 +1,9 @@
 import { useState } from 'react';
-import { useMediaQuery } from 'react-responsive';
 import { Button as BaseButton } from 'components/Button/Button';
 import styled from 'styled-components';
+import * as breakpoints from 'styles/breakpoints';
 import TxnHistoryTable from './TxnHistoryTable';
 import { DashboardType } from '../DashboardContent';
-import { queryPhone } from 'styles/breakpoints';
 
 type DashboardTransactionHistoryProps = {
   dashboardType: DashboardType;
@@ -20,13 +19,9 @@ const DashboardTransactionHistory = ({ dashboardType }: DashboardTransactionHist
   
   const [txFilter, setTxFilter] = useState<TxHistoryFilterType>(TxHistoryFilterType.all);
 
-  const isDesktop = useMediaQuery({
-    query: queryPhone,
-  });
-
   return (
     <TransactionHistoryContainer>
-      <TransactionHistoryHeader isDesktop={isDesktop}>
+      <TransactionHistoryHeader>
         <TransactionHistoryTitle>Transaction History</TransactionHistoryTitle>
         <TransactionTimePeriod>
           <FilterButton isSmall selected={txFilter === 'lastweek'} onClick={() => setTxFilter(TxHistoryFilterType.lastweek)}>
@@ -54,12 +49,17 @@ type FilterButtonProps = {
 };
 
 const FilterButton = styled(BaseButton)<FilterButtonProps>`
-  margin: 0 5px;
+  padding: 0;
+  margin-right: 20px;
   height: 25px;
   border-radius: 5px;
   text-decoration: ${({ selected }) => (selected ? 'underline' : 'none')};
+  color: ${({ selected, theme }) => (selected ? theme.palette.brandLight : theme.palette.brand)};
   border: 0px;
   white-space: nowrap;
+  &:last-child {
+    margin-right: 0;
+  }
 `;
 
 const TransactionHistoryContent = styled.div`
@@ -69,11 +69,16 @@ const TransactionHistoryContent = styled.div`
   width: 100%;
 `;
 
-const TransactionHistoryHeader = styled.div<{isDesktop: boolean}>`
+const TransactionHistoryHeader = styled.div`
   display: flex;
-  flex-direction: ${({isDesktop}) => isDesktop ? 'row' : 'column'};
+  flex-direction: column;
+  align-self: start;
   justify-content: space-between;
-  align-items: center;
+  ${breakpoints.phoneAndAbove(`
+    flex-direction: row;
+    align-items: left;
+    align-self: auto;
+  `)}
 `;
 
 const TransactionTimePeriod = styled.div`
@@ -84,13 +89,16 @@ const TransactionTimePeriod = styled.div`
 `;
 
 const TransactionHistoryTitle = styled.div`
-  font-size: 1.5rem;
+  font-size: 18px;
+  ${breakpoints.tabletAndAbove(`
+    font-size: 24px;
+  `)}
   color: ${({ theme }) => theme.palette.brandLight};
 `;
 
 const TransactionHistoryContainer = styled.div`
   display: flex;
   flex-direction: column;
-  width: 70vw;
   margin-bottom: 2rem;
+  width: 100%
 `;

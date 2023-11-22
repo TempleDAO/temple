@@ -1,5 +1,5 @@
 import styled from 'styled-components';
-import { tabletAndAbove } from 'styles/breakpoints';
+import * as breakpoints from 'styles/breakpoints';
 import DashboardChart from './Chart';
 import { StrategyKey } from './hooks/use-dashboardv2-metrics';
 import DashboardMetrics from './Metrics';
@@ -78,28 +78,34 @@ const DashboardContent = ({ selectedDashboard = DashboardType.TREASURY_RESERVES_
 
 const HeaderText = styled.div`
   align-items: left;
-  display: none;
-  ${tabletAndAbove(`
-    display: block;
+  display: block;
+  font-size: 12px;
+  color: ${({theme}) => theme.palette.brand};
+  ${breakpoints.tabletAndAbove(`
+    font-size: 16px;
   `)}
 `;
 
 const HeaderTitle = styled.h2`
-  font-size: 36px;
   color: ${(props) => props.theme.palette.brandLight};
+  font-size: 24px;
+  margin: 0;
+  ${breakpoints.tabletAndAbove(`
+    font-size: 36px;
+  `)}
 `;
 
 const Header = styled.div`
   display: flex;
   flex-direction: column;
   align-items: left;
-  width: 70vw;
 `;
 
 const DashboardContentContainer = styled.div`
   display: flex;
+  gap: 30px;
   flex-direction: column;
-  align-items: center;
+  width: 100%;
 `;
 
 export default DashboardContent;

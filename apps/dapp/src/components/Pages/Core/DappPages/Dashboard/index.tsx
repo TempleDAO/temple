@@ -1,4 +1,5 @@
 import { Route, Routes, NavLink as BaseNavLink, Navigate, useSearchParams } from 'react-router-dom';
+import * as breakpoints from 'styles/breakpoints';
 import styled from 'styled-components';
 import DashboardContent, { DashboardType } from './DashboardContent';
 
@@ -62,11 +63,12 @@ const NavLink = styled(BaseNavLink)<NavLinkProps>`
 
   &.active {
     text-decoration: underline;
+    color: ${({theme})=> theme.palette.brandLight}
   }
 `;
 
 const NavCell = styled.div`
-  padding: 0 1rem;
+  padding-right: 1rem;
   font-size: 1.2rem;
   font-weight: 600;
   cursor: pointer;
@@ -79,11 +81,22 @@ const NavCell = styled.div`
 const DashboardHeaderNav = styled.div`
   display: flex;
   align-items: center;
-  padding: 0 0 1rem 0;
+  margin-bottom: 20px;
+  white-space: nowrap;
+  overflow-x: scroll;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  ${breakpoints.tabletAndAbove(`
+    margin-bottom: 80px;
+  `)}
 `;
 
 const DashboardContainer = styled.div`
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: left;
+  ${breakpoints.tabletAndAbove(`
+    align-items: center;
+  `)}
 `;

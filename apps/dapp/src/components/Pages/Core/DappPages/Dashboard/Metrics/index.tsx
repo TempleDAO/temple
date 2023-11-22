@@ -88,12 +88,10 @@ type MetricProps = {
 };
 
 const MobileMetricValue = styled.div<MetricProps>`
-  font-size: ${({ small }) => (small ? '10px;' : '12px;')};
   color: ${({ theme }) => theme.palette.brandLight};
 `;
 
 const MobileMetricTitle = styled.div<MetricProps>`
-  font-size: ${({ small }) => (small ? '10px;' : '12px;')};
   color: ${({ theme }) => theme.palette.brand};
 `;
 
@@ -108,7 +106,7 @@ const MobileMetricsContainer = styled.div<MetricProps>`
   flex-direction: column;
   align-items: center;
   width: 100%;
-  padding: 10px;
+  padding: ${({ small }) => small ? 'none': '10px'};
   gap: 10px;
   background: ${({ small, theme }) =>
     small ? theme.palette.black : `linear-gradient(180deg, #000000 0%, #1A1A1A 100%);`};
@@ -147,7 +145,6 @@ const MetricsContainer = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 70vw;
   margin: 2rem 0;
   gap: 2rem 0;
 `;

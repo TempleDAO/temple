@@ -33,7 +33,7 @@ const NavLinks = (props: NavLinksProps) => {
   const [{ connectedChain }] = useSetChain();
   const currentChainId = parseInt(connectedChain?.id || '', 16);
 
-  const onMenuClick = async(mi: MenuNavItem) =>{
+  const onMenuClick = async (mi: MenuNavItem) => {
     await onSelectMenuNavItems(mi);
     if (onClickHandler) onClickHandler();
   };
@@ -54,12 +54,12 @@ const NavLinks = (props: NavLinksProps) => {
     // TODO: What to do in this case?
     if (isBlocked) return alert('Restricted Jurisdiction');
     await connect();
-    if(onClickHandler) onClickHandler();
+    if (onClickHandler) onClickHandler();
   };
   const disconnectWallet = async () => {
     if (!wallet) return;
     await disconnect(wallet);
-    if(onClickHandler) onClickHandler();
+    if (onClickHandler) onClickHandler();
   };
 
   return (
@@ -67,20 +67,22 @@ const NavLinks = (props: NavLinksProps) => {
       <TempleLink to="/">
         <TempleLogo src={temple_dao_logo} />
       </TempleLink>
-      {menuNavItems.map((mi) => (
-        <NavLinkContainer lightcolor={mi.selected}>
-        <NavLink key={mi.label} to={mi.linkTo} onClick={() => onMenuClick(mi)}>
-          <NavLinkCell lightcolor={mi.selected}>
-            <mi.Logo id={mi.label} fill={mi.selected ? theme.palette.brandLight : theme.palette.brand} />
-            {!isNavCollapsed && <NavLinkText lightcolor={mi.selected}>{mi.label}</NavLinkText>}
-          </NavLinkCell>
-        </NavLink>
-        </NavLinkContainer>
-      ))}
+      <VertNavContainer>
+        {menuNavItems.map((mi) => (
+          <NavLinkContainer key={mi.label} lightcolor={mi.selected}>
+            <NavLink to={mi.linkTo} onClick={() => onMenuClick(mi)}>
+              <NavLinkCell lightcolor={mi.selected}>
+                <mi.Logo id={mi.label} fill={mi.selected ? theme.palette.brandLight : theme.palette.brand} />
+                {!isNavCollapsed && <NavLinkText lightcolor={mi.selected}>{mi.label}</NavLinkText>}
+              </NavLinkCell>
+            </NavLink>
+          </NavLinkContainer>
+        ))}
+      </VertNavContainer>
       <Separator />
       <WalletContainer>
         {/* // TODO: We also need an "Off" or disconnected version of this button */}
-        {connecting && <Loader iconSize={24}  />}
+        {connecting && <Loader iconSize={24} />}
         {!connecting && !isBlocked && (
           <>
             {wallet ? (
@@ -108,11 +110,7 @@ const NavLinks = (props: NavLinksProps) => {
             ) : (
               <div onClick={connectWallet}>
                 <Wallet fill={theme.palette.light} />
-                {!isNavCollapsed && (
-                  <NavLinkText style={{ cursor: 'pointer' }}>
-                    Connect
-                  </NavLinkText>
-                )}
+                {!isNavCollapsed && <NavLinkText style={{ cursor: 'pointer' }}>Connect</NavLinkText>}
               </div>
             )}
           </>
@@ -138,7 +136,6 @@ const UserAddress = styled.a`
 
 const TempleLogo = styled(Image)`
   width: 40px;
-  margin-left: 5px;
   ${tabletAndAbove(`
     margin-bottom: 40px;
     margin-top: 5px;
@@ -147,8 +144,9 @@ const TempleLogo = styled(Image)`
 `;
 
 const TempleLink = styled(Link)`
-  padding: 1rem;
+  padding-left: 1rem;
   width: 40px;
+  margin-bottom: 30px;
 `;
 
 const Separator = styled.hr`
@@ -163,6 +161,12 @@ type NavLinkProps = {
   small?: boolean;
   lightcolor?: boolean;
 };
+
+const VertNavContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+`;
 
 const NavLinkText = styled.span<NavLinkProps>`
   margin-left: 0.5rem;
@@ -182,22 +186,22 @@ const NavLinkCell = styled.div<NavLinkProps>`
   white-space: nowrap;
   border-radius: 5px;
   fill: ${({ lightcolor, theme }) => (lightcolor ? theme.palette.brandLight : 'current')};
-  ${tabletAndAbove(`
-    padding: 10px;
-  `)}
 `;
 
 const NavLinkContainer = styled.div<NavLinkProps>`
-  background: ${({lightcolor, theme}) => lightcolor ? theme.palette.gradients.greyVertical : 'none'};
+  height: 56px;
+  padding: 16px 40px 16px 30px;
+  background: ${({ lightcolor, theme }) => (lightcolor ? theme.palette.gradients.greyVertical : 'none')};
   &:hover {
-    background-color: ${({theme}) => theme.palette.brand25};
+    background-color: ${({ theme }) => theme.palette.brand25};
   }
+  ${tabletAndAbove(`
+    padding-left: 25px;
+  `)}
 `;
 
 const NavLink = styled(Link)`
   display: flex;
-  height: 4rem;
-  padding: 1rem;
   align-items: center;
   flex-direction: row;
   &:hover {
@@ -220,8 +224,8 @@ const WalletContainer = styled.div`
   display: flex;
   flex-direction: row;
   white-space: nowrap;
-  padding: 1rem;
+  padding: 16px 40px 16px 30px;
   ${breakpoints.minTablet(`
-    padding-left: 26px;
+    padding-left: 25px;
   `)}
 `;
