@@ -127,7 +127,6 @@ const loadSkeletonRows = (skeletonRowsNo: number, skeletonColumnsNo: number) => 
 const TableHeader = styled.th`
   vertical-align: top;
   text-align: left;
-  padding: 8px;
 `;
 
 const HeaderTitleContainer = styled.div`
@@ -149,8 +148,8 @@ const EmptySpace = styled.p`
 `;
 
 const ScrollContainer = styled.div`
-  min-height: 250px;
   overflow-x: auto;
+  margin-top: 1rem;
 `;
 
 const DataTable = styled.table<{ isDesktop: boolean }>`
@@ -169,6 +168,7 @@ const DataRow = styled.tr`
 
 const DataCell = styled.td`
   padding: 8px;
+  padding-left: 0;
   text-align: left;
   color: ${({ theme }) => theme.palette.brandLight};
 `;

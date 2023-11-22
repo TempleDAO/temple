@@ -74,6 +74,7 @@ const TransactionHistoryHeader = styled.div`
   flex-direction: column;
   align-self: start;
   justify-content: space-between;
+  gap: 30px;
   ${breakpoints.phoneAndAbove(`
     flex-direction: row;
     align-items: left;

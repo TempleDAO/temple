@@ -219,13 +219,6 @@ const TxnHistoryTable = (props: Props) => {
 
   return (
     <TableContainer>
-      <PaginationControl
-        totalPages={totalPages}
-        rowsPerPage={rowsPerPage}
-        currentPage={currentPage}
-        setCurrentPage={setCurrentPage}
-        setRowsPerPage={setRowsPerPage}
-      />
       <TxnDataTable
         dataSubset={dataToTable}
         dataLoading={isLoading}
@@ -234,6 +227,13 @@ const TxnHistoryTable = (props: Props) => {
         setRowFilter={setRowFilter}
         updateTableHeadersOrder={updateTableHeadersOrder}
         updateRowDropdownCheckbox={updateRowDropdownCheckbox}
+      />
+      <PaginationControl
+        totalPages={totalPages}
+        rowsPerPage={rowsPerPage}
+        currentPage={currentPage}
+        setCurrentPage={setCurrentPage}
+        setRowsPerPage={setRowsPerPage}
       />
     </TableContainer>
   );
