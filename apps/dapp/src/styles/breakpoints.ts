@@ -62,6 +62,14 @@ export const tabletToDesktop = (styles: string | Css) => {
   `;
 }
 
+export const minTablet = (styles: string | Css) => {
+  return css`
+    @media screen and ${queryMinTablet} {
+      ${styles}
+    }
+  `;
+}
+
 /**
  * Use this queries with `useMediaQuery`
  * If we need to add new queries add them here soo they can be reused

@@ -78,7 +78,6 @@ const WindowOverlay = styled.div<{ slideIn: boolean }>`
   z-index: 80;
   position: fixed;
   display: flex;
-  width: 100%;
   height: 100%;
   top: 0;
   left: 0;

@@ -4,7 +4,7 @@ import styled from 'styled-components';
 import Image from '../../../Image/Image';
 import footerTexture from 'assets/images/newui-images/footerTexture.svg';
 import temple_dao_logo from 'assets/images/sun-art.svg';
-import core_hamburger from 'assets/icons/core-hamburger.svg';
+import core_hamburger from 'assets/icons/core-hamburger.svg?react';
 import { MobileNavOverlay } from './MobileNavOverlay';
 import NavLinks from './NavLinks';
 import { Link } from 'react-router-dom';
@@ -35,10 +35,8 @@ const MobileNav = (props: MobileNavProps) => {
       <TempleLink to="/">
         <TempleLogo src={temple_dao_logo} />
       </TempleLink>
-      <HamburgerIcon src={core_hamburger} onClick={() => setSlideIn(true)} />
-      {slideIn && (
-        <MobileNavOverlay Content={() => <MenuItems />} hidePanel={() => setSlideIn(false)} slideIn={slideIn} />
-      )}
+      <HamburgerIcon onClick={() => setSlideIn(!slideIn)} />
+      <MobileNavOverlay Content={() => <MenuItems />} hidePanel={() => setSlideIn(false)} slideIn={slideIn} />
     </NavContainer>
   );
 };
@@ -56,14 +54,15 @@ const NavContainer = styled.div`
   height: 100%;
 `;
 
-const HamburgerIcon = styled(Image)`
+const HamburgerIcon = styled(core_hamburger)`
   cursor: pointer;
   transition: all 300ms ease;
+  fill: ${({theme})=> theme.palette.brand};
   width: 40px;
   height: 40px;
   margin-right: 20px;
   &:hover {
-    filter: contrast(1000%);
+    fill: ${({theme})=> theme.palette.light75};
   }
 `;
 
@@ -84,6 +83,6 @@ const TempleLogo = styled(Image)`
 `;
 
 const TempleLink = styled(Link)`
-  padding: 1rem;
+  // padding: 1rem;
   width: 40px;
 `;

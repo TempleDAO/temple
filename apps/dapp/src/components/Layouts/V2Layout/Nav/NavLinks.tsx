@@ -6,6 +6,7 @@ import Image from '../../../Image/Image';
 import WalletLogo from 'assets/icons/account_balance_wallet.svg?react';
 import temple_dao_logo from 'assets/images/sun-art.svg';
 import TruncatedAddress from 'components/TruncatedAddress';
+import * as breakpoints from 'styles/breakpoints';
 
 import Loader from 'components/Loader/Loader';
 import { Link } from 'react-router-dom';
@@ -52,13 +53,13 @@ const NavLinks = (props: NavLinksProps) => {
   const connectWallet = async () => {
     // TODO: What to do in this case?
     if (isBlocked) return alert('Restricted Jurisdiction');
+    await connect();
     if(onClickHandler) onClickHandler();
-    connect();
   };
   const disconnectWallet = async () => {
     if (!wallet) return;
+    await disconnect(wallet);
     if(onClickHandler) onClickHandler();
-    disconnect(wallet);
   };
 
   return (
@@ -67,21 +68,23 @@ const NavLinks = (props: NavLinksProps) => {
         <TempleLogo src={temple_dao_logo} />
       </TempleLink>
       {menuNavItems.map((mi) => (
-        <NavLink key={mi.label} light={mi.selected} to={mi.linkTo} onClick={() => onMenuClick(mi)}>
-          <NavLinkCell light={mi.selected}>
+        <NavLinkContainer lightcolor={mi.selected}>
+        <NavLink key={mi.label} to={mi.linkTo} onClick={() => onMenuClick(mi)}>
+          <NavLinkCell lightcolor={mi.selected}>
             <mi.Logo id={mi.label} fill={mi.selected ? theme.palette.brandLight : theme.palette.brand} />
-            {!isNavCollapsed && <NavLinkText light={mi.selected}>{mi.label}</NavLinkText>}
+            {!isNavCollapsed && <NavLinkText lightcolor={mi.selected}>{mi.label}</NavLinkText>}
           </NavLinkCell>
         </NavLink>
+        </NavLinkContainer>
       ))}
       <Separator />
-      <div>
+      <WalletContainer>
         {/* // TODO: We also need an "Off" or disconnected version of this button */}
-        {connecting && <Loader iconSize={24} />}
+        {connecting && <Loader iconSize={24}  />}
         {!connecting && !isBlocked && (
           <>
             {wallet ? (
-              <WalletContainer>
+              <>
                 <Wallet onClick={disconnectWallet} />
                 {!isNavCollapsed && (
                   <UserAddress
@@ -101,16 +104,16 @@ const NavLinks = (props: NavLinksProps) => {
                     }
                   </UserAddress>
                 )}
-              </WalletContainer>
+              </>
             ) : (
-              <WalletContainer onClick={connectWallet}>
+              <div onClick={connectWallet}>
                 <Wallet fill={theme.palette.light} />
                 {!isNavCollapsed && (
-                  <NavLinkText light style={{ cursor: 'pointer' }}>
+                  <NavLinkText style={{ cursor: 'pointer' }}>
                     Connect
                   </NavLinkText>
                 )}
-              </WalletContainer>
+              </div>
             )}
           </>
         )}
@@ -120,7 +123,7 @@ const NavLinks = (props: NavLinksProps) => {
             {!isNavCollapsed && <NavLinkText small>Blocked</NavLinkText>}
           </>
         )}
-      </div>
+      </WalletContainer>
     </>
   );
 };
@@ -148,17 +151,6 @@ const TempleLink = styled(Link)`
   width: 40px;
 `;
 
-const Wallet = styled(WalletLogo)`
-  cursor: pointer;
-  vertical-align: middle;
-  min-width: 24px;
-  fill: ${({ fill, theme }) => fill ?? theme.palette.brand};
-  stroke: ${({ stroke, theme }) => stroke ?? theme.palette.brand50};
-  &:hover {
-    stroke: ${({ fill, theme }) => (fill ? transparentize(0.75, fill) : theme.palette.brand75)};
-  }
-`;
-
 const Separator = styled.hr`
   margin: 10px 0;
   position: relative;
@@ -169,13 +161,13 @@ const Separator = styled.hr`
 
 type NavLinkProps = {
   small?: boolean;
-  light?: boolean;
+  lightcolor?: boolean;
 };
 
 const NavLinkText = styled.span<NavLinkProps>`
   margin-left: 0.5rem;
   font-weight: 700;
-  color: ${({ theme, light }) => (light ? theme.palette.brandLight : theme.palette.brand)};
+  color: ${({ theme, lightcolor }) => (lightcolor ? theme.palette.brandLight : theme.palette.brand)};
   vertical-align: middle;
   &:hover {
     text-decoration: underline;
@@ -189,24 +181,38 @@ const NavLinkCell = styled.div<NavLinkProps>`
   cursor: pointer;
   white-space: nowrap;
   border-radius: 5px;
-  fill: ${({ light, theme }) => (light ? theme.palette.brandLight : 'current')}
-  &:hover {
-    background-color: ${(props) => props.theme.palette.brand25};
-  }
+  fill: ${({ lightcolor, theme }) => (lightcolor ? theme.palette.brandLight : 'current')};
   ${tabletAndAbove(`
     padding: 10px;
   `)}
 `;
 
-const NavLink = styled(Link)<NavLinkProps>`
+const NavLinkContainer = styled.div<NavLinkProps>`
+  background: ${({lightcolor, theme}) => lightcolor ? theme.palette.gradients.greyVertical : 'none'};
+  &:hover {
+    background-color: ${({theme}) => theme.palette.brand25};
+  }
+`;
+
+const NavLink = styled(Link)`
   display: flex;
   height: 4rem;
   padding: 1rem;
   align-items: center;
   flex-direction: row;
-  background: ${({light, theme}) => light ? theme.palette.gradients.greyVertical : 'none'};
   &:hover {
     text-decoration: underline;
+  }
+`;
+
+const Wallet = styled(WalletLogo)`
+  cursor: pointer;
+  vertical-align: middle;
+  min-width: 24px;
+  fill: ${({ fill, theme }) => fill ?? theme.palette.brand};
+  stroke: ${({ stroke, theme }) => stroke ?? theme.palette.brand50};
+  &:hover {
+    stroke: ${({ fill, theme }) => (fill ? transparentize(0.75, fill) : theme.palette.brand75)};
   }
 `;
 
@@ -215,5 +221,7 @@ const WalletContainer = styled.div`
   flex-direction: row;
   white-space: nowrap;
   padding: 1rem;
-  padding-left: 1.5rem;
+  ${breakpoints.minTablet(`
+    padding-left: 26px;
+  `)}
 `;
