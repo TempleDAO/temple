@@ -57,8 +57,9 @@ const HamburgerIcon = styled(core_hamburger)`
   cursor: pointer;
   transition: all 300ms ease;
   fill: ${({theme})=> theme.palette.brand};
-  width: 40px;
-  height: 40px;
+  align-self: center;
+  width: 24px;
+  height: 24px;
   margin-right: 20px;
   &:hover {
     fill: ${({theme})=> theme.palette.light75};
