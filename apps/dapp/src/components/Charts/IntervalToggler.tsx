@@ -49,5 +49,6 @@ const Toggle = styled.span<ToggleProps>`
     color: white;
   }
   font-size: 1rem;
+  text-decoration: ${({selected}) => (selected ? 'underline': 'none')};
   font-weight: ${({ selected }) => (selected ? 'bold' : '')};
 `;
