@@ -54,14 +54,11 @@ type MetricFormatter = (v: string) => number;
 
 const metricFormatters: { [k in V2SnapshotMetric]: MetricFormatter } = {
   accruedInterestUSD: parseFloat,
-  benchmarkPerformance: (value: string) => parseFloat(value) * 100,
   benchmarkedEquityUSD: parseFloat,
   creditUSD: parseFloat,
   // invert debt to make it negative
   debtUSD: (value: string) => -1 * parseFloat(value),
   netDebtUSD: (value: string) => -1 * parseFloat(value),
-  nominalEquityUSD: parseFloat,
-  nominalPerformance: (value: string) => parseFloat(value) * 100,
   principalUSD: parseFloat,
   totalMarketValueUSD: parseFloat,
 };
