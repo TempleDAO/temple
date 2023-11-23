@@ -4,6 +4,7 @@ import { FilterButton } from 'components/Pages/Ascend/components/Trade/styles';
 import { RowFilter } from '../hooks/use-dashboardv2-txHistory';
 import { TableHeaders } from './TxnHistoryTable';
 import { RadioCheckbox } from 'components/Checkbox/RadioCheckbox';
+import { useOutsideClick } from 'hooks/use-outside-click';
 
 export type DropdownCheckOption = {
   label: string;
@@ -22,8 +23,9 @@ type Props = {
 export const RowFilterDropdown = (props: Props) => {
   const { name, dropdownOptions, setRowFilter, updateRowDropdownCheckbox } = props;
   const [dropdownOpened, setDropdownOpened] = useState(false);
+  const ref = useRef(null);
 
-  const ref = useOutsideClick(() => {
+  useOutsideClick(ref, () => {
     setDropdownOpened(false);
   });
 
@@ -62,26 +64,6 @@ export const RowFilterDropdown = (props: Props) => {
     </>
   );
 };
-
-function useOutsideClick(callback: () => void) {
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClick = (ev: MouseEvent) => {
-      const target = ev.target as HTMLDivElement;
-      if (ref.current && !ref.current.contains(target)) {
-        callback();
-      }
-    };
-    document.addEventListener('click', handleClick, true);
-
-    return () => {
-      document.removeEventListener('click', handleClick, true);
-    };
-  }, [ref, callback]);
-
-  return ref;
-}
 
 const OptionLabel = styled.label`
   vertical-align: super;

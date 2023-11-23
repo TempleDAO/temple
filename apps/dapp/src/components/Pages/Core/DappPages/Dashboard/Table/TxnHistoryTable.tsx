@@ -14,6 +14,9 @@ import {
 } from '../hooks/use-dashboardv2-txHistory';
 import { StrategyKey } from '../hooks/use-dashboardv2-metrics';
 import { DropdownCheckOption, DropdownCheckOptions } from './RowFilterDropdown';
+import { useMediaQuery } from 'react-responsive';
+import { queryMinTablet } from 'styles/breakpoints';
+import env from 'constants/env/local';
 
 type Props = {
   dashboardType: DashboardType;
@@ -37,6 +40,7 @@ enum DebtToken {
 export type TxHistoryTableHeader = {
   name: TableHeaders;
   width: CSS.Property.Width;
+  isHidden: boolean;
   orderDesc?: boolean;
   dropdownOptions?: DropdownCheckOptions;
 };
@@ -47,6 +51,7 @@ const TxnHistoryTable = (props: Props) => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [blockNumber, setBlockNumber] = useState(0);
   const [rowFilter, setRowFilter] = useState<RowFilter>({});
+  const isBiggerThanTablet = useMediaQuery({ query: queryMinTablet });
 
   const allStrategyDropdowns = useMemo(
     () => [
@@ -62,12 +67,14 @@ const TxnHistoryTable = (props: Props) => {
     {
       name: TableHeaders.Date,
       orderDesc: true,
-      width: '245px',
+      width: isBiggerThanTablet ? '245px' : '107px',
+      isHidden: false,
     },
     {
       name: TableHeaders.Type,
       orderDesc: undefined,
       width: '93px',
+      isHidden: isBiggerThanTablet ? false : true,
       // TODO: get dropdown values programatically, see https://github.com/TempleDAO/temple/pull/880#discussion_r1386151604
       dropdownOptions: [
         { label: TxType.Borrow, checked: false },
@@ -78,13 +85,15 @@ const TxnHistoryTable = (props: Props) => {
       name: TableHeaders.Strategy,
       orderDesc: undefined,
       width: '123px',
+      isHidden: isBiggerThanTablet ? false : true,
       // TODO: get dropdown values programatically, see https://github.com/TempleDAO/temple/pull/880#discussion_r1386151604
       dropdownOptions: allStrategyDropdowns,
     },
     {
       name: TableHeaders.Token,
       orderDesc: undefined,
-      width: '100px',
+      width: isBiggerThanTablet ? '100px' : '99px',
+      isHidden: false,
       // TODO: get dropdown values programatically, see https://github.com/TempleDAO/temple/pull/880#discussion_r1386151604
       dropdownOptions: [
         { label: DebtToken.DAI, checked: false },
@@ -94,12 +103,14 @@ const TxnHistoryTable = (props: Props) => {
     {
       name: TableHeaders.Amount,
       orderDesc: undefined,
-      width: '97px',
+      width: isBiggerThanTablet ? '97px' : '128px',
+      isHidden: false,
     },
     {
       name: TableHeaders.TxHash,
       orderDesc: undefined,
-      width: '128px',
+      width: isBiggerThanTablet ? '128px' : '99px',
+      isHidden: isBiggerThanTablet ? false : true,
     },
   ]);
 
@@ -150,7 +161,7 @@ const TxnHistoryTable = (props: Props) => {
       const newState = prevState.map((prevStateHeader) => {
         //  3.1 set default strategy dropdown depending on selected dashboard
         if (prevStateHeader.name === TableHeaders.Strategy) {
-          if (!prevStateHeader.dropdownOptions) return {...prevStateHeader, orderDesc: undefined};
+          if (!prevStateHeader.dropdownOptions) return { ...prevStateHeader, orderDesc: undefined };
           return {
             ...prevStateHeader,
             orderDesc: undefined,
@@ -161,7 +172,8 @@ const TxnHistoryTable = (props: Props) => {
           };
         }
         //  3.2 reset all other dropdown values
-        if (!prevStateHeader.dropdownOptions) return { ...prevStateHeader, orderDesc: TableHeaders.Date === prevStateHeader.name ? true : undefined };
+        if (!prevStateHeader.dropdownOptions)
+          return { ...prevStateHeader, orderDesc: TableHeaders.Date === prevStateHeader.name ? true : undefined };
         const newDropdownOptions = prevStateHeader.dropdownOptions.map((prevOp) => {
           return { ...prevOp, checked: false };
         });
@@ -205,13 +217,37 @@ const TxnHistoryTable = (props: Props) => {
   // Fetch strategies tx data
   const dataToTable: TableRow[] | undefined = txHistory.data?.map((tx) => {
     const amount = Number(Number(tx.amount).toFixed(2));
+    const datetime = format(new Date(Number(tx.timestamp) * 1000), 'yyyy-MM-dd H:mm:ss O');
+    const dateOnly = format(new Date(Number(tx.timestamp) * 1000), 'yyyy-MM-dd');
+    const timeOnly = format(new Date(Number(tx.timestamp) * 1000), 'H:mm:ss');
     return {
-      date: format(new Date(Number(tx.timestamp) * 1000), 'yyyy-MM-dd H:mm:ss O'),
+      date: isBiggerThanTablet ? datetime : dateOnly,
       type: tx.name,
       strategy: tx.strategy.name,
       token: tx.token.symbol,
-      amount: amount,
+      amount: isBiggerThanTablet ? amount : tx.name === TxType.Borrow ? amount * -1 : amount,
       txHash: tx.hash,
+      extendedMobView: {
+        isOpen: false,
+        component: (
+          <>
+            <DataCell>
+              <ColText lightColor={false}>Time:</ColText>
+              <ColText lightColor={false}>Strategy:</ColText>
+              <ColText lightColor={false}>Type:</ColText>
+              <ColText lightColor={false}>TxHash:</ColText>
+            </DataCell>
+            <DataCell>
+              <ColText lightColor>{timeOnly}</ColText>
+              <ColText lightColor>{tx.strategy.name}</ColText>
+              <ColText lightColor>{tx.name}</ColText>
+              <LinkStyled href={`${env.etherscan}/tx/${tx.hash}`} target="_blank">
+                {tx.hash.slice(0, 10) + '...'}
+              </LinkStyled>
+            </DataCell>
+          </>
+        ),
+      },
     };
   });
 
@@ -245,4 +281,26 @@ const TableContainer = styled.div`
   display: flex;
   flex-direction: column;
   width: 100%;
+`;
+
+const DataCell = styled.td`
+  padding: 0;
+  padding-bottom: 1rem;
+  background-color: ${({ theme }) => theme.palette.dark};
+`;
+
+const LinkStyled = styled.a`
+  color: ${({ theme }) => theme.palette.brandLight};
+  font-size: 0.9rem;
+  font-weight: 300;
+  &:hover {
+    color: ${({ theme }) => theme.palette.brandDark};
+  }
+`;
+
+const ColText = styled.div<{ lightColor: boolean }>`
+  display: flex;
+  flex-direction: row;
+  padding-top: 0.2rem;
+  color: ${({ theme, lightColor }) => (lightColor ? theme.palette.brandLight : theme.palette.brand)};
 `;
