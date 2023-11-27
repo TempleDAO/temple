@@ -97,7 +97,7 @@ const RamosAdmin = () => {
   const {
     ramos: RAMOS_ADDRESS,
     treasuryReservesVault: TRV_ADDRESS,
-    ramosStrategy: RAMOS_STRATEGY,
+    strategies: STRATEGIES,
   } = environmentConfig.contracts;
 
   return (
@@ -146,7 +146,7 @@ const RamosAdmin = () => {
         />
         <Header
           alias="RAMOS STRATEGY"
-          contractAddress={RAMOS_STRATEGY}
+          contractAddress={STRATEGIES.ramosStrategy}
           additionalDetails={
             <p>
               Version: <strong>{ramosStrategyVersion ?? <EllipsisLoader />}</strong>
