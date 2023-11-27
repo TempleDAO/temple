@@ -14,10 +14,8 @@ async function main() {
     const deployedContracts = DEPLOYED_CONTRACTS[network.name];
     const partnerSacrifice = PartnerZeroSacrifice__factory.connect(deployedContracts.PARTNER_ZERO_SACRIFICE, owner);
     
-        
-    const ownerAddress = await owner.getAddress();
-    // for tesnet, use current time to enable sacrifice immediately
-    await mine(partnerSacrifice.setOriginTime(await blockTimestamp()));
+    // for tesnet, use close time to enable sacrifice immediately. here 360 seconds from now
+    await mine(partnerSacrifice.setOriginTime(await blockTimestamp() + 360));
 }
   
 // We recommend this pattern to be able to use async/await everywhere
