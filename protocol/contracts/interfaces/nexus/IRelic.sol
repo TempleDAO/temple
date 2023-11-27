@@ -22,16 +22,15 @@ interface IRelic is IERC721A {
 
     event RarityXPThresholdSet(Rarity rarity, uint256 threshold);
     event RarityBaseUriSet(Rarity rarity, string uri);
-    // event RelicMinterSet(address indexed minter, bool allow);
     event RelicMinted(address indexed to, uint256 relicId, uint256 enclaveId);
-    event ShardSet(address shard);
+    event ShardSet(address indexed shard);
     event RelicXPSet(uint256 indexed relicId, uint256 xp);
     event ShardsEquipped(address indexed caller, uint256 indexed relicId, uint256[] shardIds, uint256[] amounts);
     event ShardsUnequipped(address indexed recipient, uint256 indexed relicId, uint256[] shardIds, uint256[] amounts);
     event AccountBlacklistSet(address indexed account, bool blacklist, uint256[] shardIds, uint256[] amounts);
     event AccountBlacklisted(address indexed account, bool blacklist);
     event EnclaveNameSet(uint256 id, string name);
-    event NexusCommonSet(address nexusCommon);
+    event NexusCommonSet(address indexed nexusCommon);
     event ShardBlacklistUpdated(uint256 relicId, uint256 shardId, uint256 amount);
     event RelicMinterEnclaveSet(address indexed minter, uint256 enclaveId, bool allowed);
 
@@ -47,13 +46,6 @@ interface IRelic is IERC721A {
      * @param _shard Shard contract
      */
     function setShard(address _shard) external;
-
-    /*
-     * @notice Set relic minter
-     * @param minter Address to mint relics
-     * @param allow If minter is allowed to mint
-     */
-    // function setRelicMinter(address minter, bool allow) external;
 
     /*
      * @notice Set relic minter's enclave Ids to mint
@@ -152,7 +144,7 @@ interface IRelic is IERC721A {
      * @param to Address of recipient
      * @param enclaveId Enclave ID
      */
-    function mintRelic(address to, uint256 enclaveId) external;
+    function mintRelic(address to, uint256 enclaveId) external returns (uint256 tokenId);
 
     /*
      * @notice Batch equip shards to a relic
@@ -177,11 +169,13 @@ interface IRelic is IERC721A {
         uint256[] memory shardIds,
         uint256[] memory amounts
     ) external;
-     /*
+
+    /*
      * @notice Get total relics minted
      * @return uint256 Amount of relics minted
      */
     function totalMinted() external view returns (uint256);
+
     /*
      * @notice Recover tokem sent to contract by error
      * @param token Address of token
@@ -189,7 +183,8 @@ interface IRelic is IERC721A {
      * @return amount Amount of token to recover
      */
     function recoverToken(address token, address to, uint256 amount) external;
-   /*
+
+    /*
      * @notice Burn blacklisted Relic Shards.
      * Shard IDs may not be empty. 
      * @param account Address of account
@@ -197,17 +192,19 @@ interface IRelic is IERC721A {
      * @param shardIds Shard Ids
      * @param amounts Amounts of shards
      */
-    function burnBlacklistedRelicShards( // burnBlacklistedShards
+    function burnBlacklistedRelicShards(
         address account,
         uint256 relicId,
         uint256[] calldata shardIds,
         uint256[] calldata amounts
     ) external;
+
     /*
      * @notice Get URI of rarity
      * @param rarity Rarity type
      * @return uri URI
      */
+
     function getRarityBaseUri(Rarity rarity) external view returns(string memory uri);
     /**
      * @dev Returns true if this contract implements the interface defined by
@@ -217,16 +214,19 @@ interface IRelic is IERC721A {
      *
      * This function call must use less than 30000 gas.
      */
+
     function supportsInterface(bytes4 interfaceId) external view returns (bool);
     /*
      * @notice Check if an account is blacklisted
      * @param account Account
      * @return Boolean if account is blacklisted
      */
+
     function blacklistedAccounts(address account) external view returns (bool);
     /**
      * @dev Returns the Uniform Resource Identifier (URI) for `tokenId` token.
      */
+
     function tokenURI(uint256 tokenId) external view returns (string memory);
 
      /*

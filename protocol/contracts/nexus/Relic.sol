@@ -370,20 +370,20 @@ contract Relic is IRelic, ERC721ACustom, ERC1155Holder, ElevatedAccess {
     function mintRelic(
         address to,
         uint256 enclaveId
-    ) external override notBlacklisted(to) {
+    ) external override notBlacklisted(to) returns (uint256 tokenId) {
         if (to == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
         if (!nexusCommon.isValidEnclaveId(enclaveId)) { revert CommonEventsAndErrors.InvalidParam(); }
         if (!isRelicMinter(msg.sender, enclaveId)) { revert CallerCannotMint(msg.sender); }
 
-        uint256 nextTokenId_ = _nextTokenId();
-        RelicInfo storage relicInfo = relicInfos[nextTokenId_];
+        tokenId = _nextTokenId();
+        RelicInfo storage relicInfo = relicInfos[tokenId];
         relicInfo.enclaveId = enclaveId;
         // relicInfo.rarity = Rarity.Common;
         // relicInfo.xp = uint128(0);
         
-        ownerRelics[to].add(nextTokenId_);
+        ownerRelics[to].add(tokenId);
         /// keeping another event because of extra details in RelicMinted event
-        emit RelicMinted(to, nextTokenId_, enclaveId);
+        emit RelicMinted(to, tokenId, enclaveId);
         /// user can mint relic anytime after sacrificing some sacrifice tokens and getting whitelisted. one at a time
         _safeMint(to, PER_MINT_QUANTITY, ZERO_BYTES);
     }

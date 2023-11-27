@@ -9,14 +9,22 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ElevatedAccess } from "./access/ElevatedAccess.sol";
 import { CommonEventsAndErrors } from "../common/CommonEventsAndErrors.sol";
 
+/**
+ * @notice A Nexus partner approved to mint Relics for their users, up to a cap.
+ */
 contract PartnerZeroSacrifice is IPartnerSacrifice, ElevatedAccess {
     using SafeERC20 for IERC20;
+
     /// @notice the Relic ERC721A token
     IRelic public immutable relic;
+
     /// @notice start time from which price increases
     uint64 public originTime;
 
+    /// @notice A cap on how many relics can be minted by this contract
     uint256 public override mintCap;
+
+    /// @notice The current amount of relics minted by this contract
     uint256 public override totalMinted;
 
     constructor(
@@ -58,18 +66,17 @@ contract PartnerZeroSacrifice is IPartnerSacrifice, ElevatedAccess {
      * @param enclaveId Enclave ID
      * @param to Address of recipient
      */
-    function sacrifice(uint256 enclaveId, address to) external override onlyElevatedAccess {
-        // todo Put cap on amount of Relics to mint
+    function sacrifice(uint256 enclaveId, address to) external override onlyElevatedAccess returns (uint256 relicId) {
         if (block.timestamp < originTime) { revert FutureOriginTime(originTime); }
         if (to == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
-        uint256 relicId = relic.nextTokenId();
+
         uint256 _newTotalMinted = totalMinted + 1;
         if (mintCap > 0  && _newTotalMinted > mintCap) {
             revert MintCapExceeded(_newTotalMinted);
         }
         totalMinted = _newTotalMinted;
 
-        relic.mintRelic(to, enclaveId);
-        emit PartnerSacrifice(to, relicId, enclaveId);
+        relicId = relic.mintRelic(to, enclaveId);
+        emit PartnerZeroSacrificed(to, relicId, enclaveId);
     }
 }

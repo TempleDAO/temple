@@ -26,7 +26,7 @@ contract TreasuryReservesVaultTestRepay is TreasuryReservesVaultTestBase {
             vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.BorrowTokenNotEnabled.selector));
             trv.repay(dai, 123, address(strategy));
             
-            changePrank(executor);
+            vm.startPrank(executor);
             trv.setBorrowToken(dai, address(0), 100, 101, address(dUSD));
         }
 
@@ -38,24 +38,24 @@ contract TreasuryReservesVaultTestRepay is TreasuryReservesVaultTestBase {
 
         // Global paused
         {
-            changePrank(executor);
+            vm.startPrank(executor);
             trv.setGlobalPaused(false, true);
 
-            changePrank(address(strategy));
+            vm.startPrank(address(strategy));
             vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.RepaysPaused.selector));
             trv.repay(dai, 5.0e18, address(strategy));
 
-            changePrank(executor);
+            vm.startPrank(executor);
             trv.setGlobalPaused(false, false);
         }
 
         // Strategy needs to exist
         {
-            changePrank(address(strategy));
+            vm.startPrank(address(strategy));
             vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.StrategyNotEnabled.selector));
             trv.repay(dai, 5e18, address(strategy));
 
-            changePrank(executor);
+            vm.startPrank(executor);
             ITempleStrategy.AssetBalance[] memory debtCeiling = new ITempleStrategy.AssetBalance[](1);
             debtCeiling[0] = ITempleStrategy.AssetBalance(address(dai), 5e18);
             trv.addStrategy(address(strategy), 100, debtCeiling);
@@ -65,11 +65,11 @@ contract TreasuryReservesVaultTestRepay is TreasuryReservesVaultTestBase {
         {
             trv.setStrategyPaused(address(strategy), false, true);
 
-            changePrank(address(strategy));
+            vm.startPrank(address(strategy));
             vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.RepaysPaused.selector));
             trv.repay(dai, 5e18, address(strategy));
 
-            changePrank(executor);
+            vm.startPrank(executor);
             trv.setStrategyPaused(address(strategy), false, false);
         }
 
@@ -77,14 +77,14 @@ contract TreasuryReservesVaultTestRepay is TreasuryReservesVaultTestBase {
 
         // Too much
         {
-            changePrank(address(strategy));
+            vm.startPrank(address(strategy));
             vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.DebtCeilingBreached.selector, 5e18, 5.01e18));
             trv.borrow(dai, 5.01e18, alice);
         }
 
         // Payee not funded with DAI
         {
-            changePrank(address(strategy));
+            vm.startPrank(address(strategy));
             vm.expectRevert("ERC20: transfer amount exceeds balance");
             trv.repay(dai, 5e18, address(strategy));
 
@@ -98,15 +98,15 @@ contract TreasuryReservesVaultTestRepay is TreasuryReservesVaultTestBase {
 
         // Is shutting down is ok for repays
         {
-            changePrank(executor);
+            vm.startPrank(executor);
             trv.setStrategyIsShuttingDown(address(strategy), true);
 
-            changePrank(address(strategy));
+            vm.startPrank(address(strategy));
             vm.expectEmit(address(trv));
             emit Repay(address(strategy), address(dai), address(strategy), 2e18);
             trv.repay(dai, 2e18, address(strategy));
 
-            changePrank(executor);
+            vm.startPrank(executor);
             trv.setStrategyIsShuttingDown(address(strategy), false);
         }
 
@@ -119,19 +119,19 @@ contract TreasuryReservesVaultTestRepay is TreasuryReservesVaultTestBase {
         // disable the borrow token and it should now revert
         {
             deal(address(dai), address(trv), 10e18, true);
-            changePrank(address(strategy));
+            vm.startPrank(address(strategy));
             trv.borrow(dai, 10e18, alice);
 
-            changePrank(executor);
+            vm.startPrank(executor);
             IERC20[] memory disableBorrowTokens = new IERC20[](1);
             disableBorrowTokens[0] = dai;
             trv.updateStrategyEnabledBorrowTokens(address(strategy), new IERC20[](0), disableBorrowTokens);
 
-            changePrank(address(strategy));
+            vm.startPrank(address(strategy));
             vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.BorrowTokenNotEnabled.selector));
             trv.repay(dai, 2e18, address(strategy));
 
-            changePrank(address(strategy));
+            vm.startPrank(address(strategy));
             vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.BorrowTokenNotEnabled.selector));
             trv.repayAll(dai, address(strategy));
         }
@@ -151,14 +151,14 @@ contract TreasuryReservesVaultTestRepay is TreasuryReservesVaultTestBase {
 
         // Borrow some so there's a debt
         {
-            changePrank(address(strategy));
+            vm.startPrank(address(strategy));
             trv.borrow(dai, 5e18, address(strategy));
         }
 
         // Fund alice so she can repay on behalf of the strategy
         {
             deal(address(dai), alice, 50e18, true);
-            changePrank(address(alice));
+            vm.startPrank(address(alice));
             dai.approve(address(trv), 50e18);
         }
 
@@ -194,14 +194,14 @@ contract TreasuryReservesVaultTestRepay is TreasuryReservesVaultTestBase {
 
         // Borrow some so there's a debt
         {
-            changePrank(address(strategy));
+            vm.startPrank(address(strategy));
             trv.borrow(dai, 5e18, address(strategy));
         }
 
         // Fund alice so she can repay on behalf of the strategy
         {
             deal(address(dai), alice, 50e18, true);
-            changePrank(address(alice));
+            vm.startPrank(address(alice));
             dai.approve(address(trv), 50e18);
         }
 
@@ -243,7 +243,7 @@ contract TreasuryReservesVaultTestRepay is TreasuryReservesVaultTestBase {
         // If done as the strategy then it just sends straight from TRV
         // (doesn't deposit back to itself)
         {
-            changePrank(address(baseStrategy));
+            vm.startPrank(address(baseStrategy));
 
             vm.expectEmit(address(trv));
             emit Repay(address(baseStrategy), address(dai), address(baseStrategy), 7e18);
@@ -283,14 +283,14 @@ contract TreasuryReservesVaultTestRepay is TreasuryReservesVaultTestBase {
         // Fund alice so she can repay on behalf of the strategy
         {
             deal(address(dai), alice, 50e18, true);
-            changePrank(address(alice));
+            vm.startPrank(address(alice));
             dai.approve(address(trv), 50e18);
         }
 
         // Sent back to the TRV. Under the balance threshold so it remains in the TRV - not sent to 
         // the base strategy
         {
-            changePrank(address(alice));
+            vm.startPrank(address(alice));
 
             vm.expectEmit(address(trv));
             emit Repay(address(strategy), address(dai), alice, 7e18);
@@ -334,14 +334,14 @@ contract TreasuryReservesVaultTestRepay is TreasuryReservesVaultTestBase {
         // Fund alice so she can repay on behalf of the strategy
         {
             deal(address(dai), alice, 50e18, true);
-            changePrank(address(alice));
+            vm.startPrank(address(alice));
             dai.approve(address(trv), 50e18);
         }
 
         // Sent back to the TRV. Under the balance threshold so it remains in the TRV - not sent to 
         // the base strategy
         {
-            changePrank(address(alice));
+            vm.startPrank(address(alice));
 
             vm.expectEmit(address(trv));
             emit Repay(address(strategy), address(dai), alice, 15e18);
@@ -386,13 +386,13 @@ contract TreasuryReservesVaultTestRepay is TreasuryReservesVaultTestBase {
         // Fund alice so she can repay on behalf of the strategy
         {
             deal(address(dai), alice, 50e18, true);
-            changePrank(address(alice));
+            vm.startPrank(address(alice));
             dai.approve(address(trv), 50e18);
         }
 
         // Sent back to the TRV. Over the balance threshold so the base strategy is topped up.
         {
-            changePrank(address(alice));
+            vm.startPrank(address(alice));
 
             vm.expectEmit(address(trv));
             emit Repay(address(strategy), address(dai), alice, 40e18);
@@ -465,7 +465,7 @@ contract TreasuryReservesVaultTestRepay is TreasuryReservesVaultTestBase {
             vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.BorrowTokenNotEnabled.selector));
             trv.repayAll(dai, address(strategy));
 
-            changePrank(executor);
+            vm.startPrank(executor);
             trv.setBorrowToken(dai, address(0), 0, 0, address(dUSD));
             deal(address(dai), address(trv), 120e18, true);
         }
@@ -479,7 +479,7 @@ contract TreasuryReservesVaultTestRepay is TreasuryReservesVaultTestBase {
             
         // 0 amount
         {
-            changePrank(address(strategy));
+            vm.startPrank(address(strategy));
             vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
             trv.repayAll(dai, address(strategy));
 
@@ -487,7 +487,7 @@ contract TreasuryReservesVaultTestRepay is TreasuryReservesVaultTestBase {
         }
 
         {
-            changePrank(address(alice));
+            vm.startPrank(address(alice));
             dai.approve(address(trv), 5e18);
 
             vm.expectEmit(address(trv));

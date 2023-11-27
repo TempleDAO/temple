@@ -272,7 +272,7 @@ contract OtcOfferTestSwap is OtcOfferTestBase {
         // Alice sells 1 OHM
         {
             deal(address(ohmToken), alice, 1e9, true);
-            changePrank(alice);
+            vm.startPrank(alice);
             ohmToken.approve(address(otcOfferDaiOhm), 1e9);
             otcOfferDaiOhm.swap(1e9);
         }
@@ -307,11 +307,11 @@ contract OtcOfferTestSwap is OtcOfferTestBase {
         vm.expectRevert("Dai/insufficient-allowance");
         otcOfferDaiOhm.swap(sellAmount);
 
-        changePrank(fundsOwner);
+        vm.startPrank(fundsOwner);
         daiToken.approve(address(otcOfferDaiOhm), expectedBuyAmount);
 
         // Finally succeeds
-        changePrank(alice);
+        vm.startPrank(alice);
         otcOfferDaiOhm.swap(sellAmount);
     }
 

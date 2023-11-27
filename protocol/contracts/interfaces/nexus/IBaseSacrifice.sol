@@ -6,8 +6,8 @@ pragma solidity 0.8.19;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 interface ISacrifice {
-    event TokenSacrificed(address account, uint256 amount);
-    event PartnerSacrifice(address to, uint256 relicId, uint256 enclaveId);
+    event TokenSacrificed(address indexed fromAccount, address indexed token, uint256 amount);
+    event PartnerZeroSacrificed(address indexed to, uint256 relicId, uint256 enclaveId);
     event OriginTimeSet(uint64 originTime);
     event RelicMintCapSet(uint256 cap);
 
@@ -33,7 +33,7 @@ interface ISacrifice {
      * @param enclaveId Enclave ID 
      * @param to Destination address
      */
-    function sacrifice(uint256 enclaveId, address to) external;
+    function sacrifice(uint256 enclaveId, address to) external returns (uint256 relicId);
 }
 
 interface IPartnerSacrifice is ISacrifice {

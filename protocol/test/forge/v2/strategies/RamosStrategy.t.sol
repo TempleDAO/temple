@@ -115,7 +115,7 @@ contract RamosStrategyTestBase is TempleTest {
             IAuraBaseRewardPool(auraRewardsToken).withdrawAllAndUnwrap(false);
             uint256 bptBalance = bptToken.balanceOf(MAINNET_AURA_STAKING);
             bptToken.transfer(address(ramos), bptBalance);
-            changePrank(executor);
+            vm.startPrank(executor);
             ramos.depositAndStakeBptTokens(bptBalance, true);
         }
 
@@ -136,7 +136,7 @@ contract RamosStrategyTestBase is TempleTest {
             temple.addMinter(address(templeBaseStrategy));
         }
 
-        changePrank(executor);
+        vm.startPrank(executor);
         dUSD.addMinter(executor);
         dUSD.addMinter(address(trv));
         dTEMPLE.addMinter(address(trv));
@@ -452,7 +452,7 @@ contract RamosStrategyTestVaultFunctions is RamosStrategyTestBase {
         test_borrowProtocolToken();
         
         // repay protocol(temple) ramos -> trv
-        changePrank(address(ramos));
+        vm.startPrank(address(ramos));
 
         vm.expectEmit(address(strategy));
         emit RepayToken(address(temple), AMOUNT_BORROW_REPAY);
@@ -474,7 +474,7 @@ contract RamosStrategyTestVaultFunctions is RamosStrategyTestBase {
         test_borrowQuoteToken();
         
         // repay quote(dai/dUSD) ramos -> trv
-        changePrank(address(ramos));
+        vm.startPrank(address(ramos));
 
         vm.expectEmit(address(strategy));
         emit RepayToken(address(dai), AMOUNT_BORROW_REPAY);

@@ -63,13 +63,13 @@ contract ShardTestBase is NexusTestBase {
         {
             _enableAllEnclavesForMinter(relic, operator);
             relic.setShard(address(shard));
-            changePrank(operator);
+            vm.startPrank(operator);
             relic.mintRelic(bob, LOGIC_ID);
             relic.mintRelic(bob, MYSTERY_ID);
         }
         // shard setup
         {
-            changePrank(executor);
+            vm.startPrank(executor);
             address[] memory minters = new address[](4);
             minters[0] = minters[1] = minters[2] = minters[3] = operator;
             shard.setNewMinterShards(minters);
@@ -83,7 +83,7 @@ contract ShardTestBase is NexusTestBase {
             shard.setShardUri(SHARD_3_ID, SHARD_3_URI);
             shard.setShardUri(SHARD_4_ID, SHARD_4_URI);
 
-            changePrank(operator);
+            vm.startPrank(operator);
             shardIds = new uint256[](2);
             uint256[] memory amounts = new uint256[](2);
             shardIds[0] = SHARD_1_ID;
@@ -191,7 +191,7 @@ contract ShardTestView is ShardTestBase {
         shards[1] = SHARD_2_ID;
         allow[0] = allow[1] = true;
         shard.setMinterAllowedShardIds(alice, shards, allow);
-        changePrank(alice);
+        vm.startPrank(alice);
         Shard.MintInfo[] memory mintInfo = shard.getMintInfo(alice);
     
         assertEq(mintInfo.length, 2);
@@ -212,12 +212,12 @@ contract ShardTestView is ShardTestBase {
         assertEq(mintInfo[0].cap, shard1CapBefore);
         assertEq(mintInfo[1].cap, shard2CapBefore);
     
-        changePrank(executor);
+        vm.startPrank(executor);
         uint256[] memory caps = new uint256[](2);
         caps[0] = 1_000;
         caps[1] = 10_000;
         shard.setAllowedShardCaps(alice, shards, caps);
-        changePrank(alice);
+        vm.startPrank(alice);
         shard.mintBatch(bob, shards, amounts);
         mintInfo = shard.getMintInfo(alice);
         assertEq(mintInfo[0].balance, shard1BalanceBefore+10);
@@ -568,11 +568,11 @@ contract ShardTest is ShardTestBase {
 
     function test_transmute() public {
         _setRecipe1();
-        changePrank(bob);
+        vm.startPrank(bob);
         vm.expectRevert(abi.encodeWithSelector(IShard.InvalidRecipe.selector, RECIPE_2_ID));
         shard.transmute(RECIPE_2_ID);
 
-        changePrank(operator);
+        vm.startPrank(operator);
         uint256[] memory shards = new uint256[](2);
         uint256[] memory amounts = new uint256[](2);
         shards[0] = SHARD_1_ID;
@@ -580,7 +580,7 @@ contract ShardTest is ShardTestBase {
         amounts[0] = amounts[1] = 5;
         shard.mintBatch(bob, shards, amounts);
 
-        changePrank(bob);
+        vm.startPrank(bob);
         shard.setApprovalForAll(address(shard), true);
         uint256 shard1BalanceBefore = shard.balanceOf(bob, SHARD_1_ID);
         uint256 shard2BalanceBefore = shard.balanceOf(bob, SHARD_2_ID);
@@ -604,17 +604,17 @@ contract ShardTest is ShardTestBase {
             vm.startPrank(operator);
             uint256 relicId = relic.nextTokenId();
             relic.mintRelic(alice, CHAOS_ID);
-            changePrank(executor);
+            vm.startPrank(executor);
             relic.setBlacklistAccount(alice, relicId, true);
-            changePrank(operator);
+            vm.startPrank(operator);
             vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.AccountBlacklisted.selector, alice));
             shard.mintBatch(alice, shardIds, amounts);
-            changePrank(executor);
+            vm.startPrank(executor);
             relic.setBlacklistAccount(alice, relicId, false);
         }
         // param length
         {
-            changePrank(operator);
+            vm.startPrank(operator);
             shardIds = new uint256[](1);
             vm.expectRevert(abi.encodeWithSelector(IShard.InvalidParamLength.selector));
             shard.mintBatch(alice, shardIds, amounts);
@@ -624,7 +624,7 @@ contract ShardTest is ShardTestBase {
         shardIds[1] = SHARD_3_ID;
         amounts[0] = 2;
         amounts[1] = 1;
-        changePrank(executor);
+        vm.startPrank(executor);
         address[] memory minters = new address[](1);
         minters[0] = alice;
         uint256[] memory newShardIds = shard.setNewMinterShards(minters);
@@ -632,13 +632,13 @@ contract ShardTest is ShardTestBase {
         {
             // shard id not set
             shardIds[0] = newShardIds[0];
-            changePrank(operator);
+            vm.startPrank(operator);
             vm.expectRevert(abi.encodeWithSelector(IShard.CannotMint.selector, shardIds[0]));
             shard.mintBatch(alice, shardIds, amounts);
             
         }
         // reset
-        changePrank(executor);
+        vm.startPrank(executor);
         bool[] memory allow = new bool[](2);
         allow[0] = allow[1] = true;
         shard.setMinterAllowedShardIds(operator, shardIds, allow);
@@ -646,14 +646,14 @@ contract ShardTest is ShardTestBase {
         {
             caps[0] = caps[1] = 1;
             shard.setAllowedShardCaps(operator, shardIds, caps);
-            changePrank(operator);
+            vm.startPrank(operator);
             vm.expectRevert(abi.encodeWithSelector(IShard.MintCapExceeded.selector, 1, 2));
             shard.mintBatch(alice, shardIds, amounts);
         }
-        changePrank(executor);
+        vm.startPrank(executor);
         caps[0] = caps[1] = 100;
         shard.setAllowedShardCaps(operator, shardIds, caps);
-        changePrank(operator);
+        vm.startPrank(operator);
         uint256 aliceShard2BalanceBefore = shard.balanceOf(alice, newShardIds[0]);
         uint256 aliceShard3BalanceBefore = shard.balanceOf(alice, SHARD_3_ID);
         uint256 shard2MintBalanceBefore = shard.mintBalances(operator, newShardIds[0]);
@@ -681,7 +681,7 @@ contract ShardTest is ShardTestBase {
         vm.startPrank(alice);
         vm.expectRevert(abi.encodeWithSelector(IShard.ERC1155MissingApprovalForAll.selector, alice, bob));
         shard.burnBatch(bob, shardIds, amounts);
-        changePrank(bob);
+        vm.startPrank(bob);
         shard.burn(bob, SHARD_1_ID, 1);
         shard.burnBatch(bob, shardIds, amounts);
         assertEq(shard.balanceOf(bob, SHARD_1_ID), bobShard1BalanceBefore-1-amounts[0]);
@@ -692,7 +692,7 @@ contract ShardTest is ShardTestBase {
         relic.batchEquipShards(RELIC_1_ID, shardIds, amounts);
         uint256 relicShard1BalanceBefore = shard.balanceOf(address(relic), shardIds[0]);
         uint256 relicShard2BalanceBefore = shard.balanceOf(address(relic), shardIds[1]);
-        changePrank(executor);
+        vm.startPrank(executor);
         relic.setBlacklistAccount(bob, RELIC_1_ID, true);
         relic.setBlacklistedShards(bob, RELIC_1_ID, shardIds, amounts);
         relic.burnBlacklistedRelicShards(bob, RELIC_1_ID, shardIds, amounts);
@@ -700,20 +700,20 @@ contract ShardTest is ShardTestBase {
         assertEq(shard.balanceOf(address(relic), shardIds[1]), relicShard2BalanceBefore-amounts[1]);
 
         // test burn by owner and approved
-        changePrank(operator);
+        vm.startPrank(operator);
         shardIds = new uint256[](1);
         amounts = new uint256[](1);
         amounts[0] = 2;
         shardIds[0] = SHARD_2_ID;
         shard.mintBatch(alice, shardIds, amounts);
         // set approval for bob
-        changePrank(alice);
+        vm.startPrank(alice);
         shard.setApprovalForAll(bob, true);
         uint256[] memory burnAmount = new uint256[](1);
         burnAmount[0] = 1;
         shard.burnBatch(alice, shardIds, burnAmount);
         assertEq(shard.balanceOf(alice, shardIds[0]), 1);
-        changePrank(bob);
+        vm.startPrank(bob);
         shard.burnBatch(alice, shardIds, burnAmount);
         assertEq(shard.balanceOf(alice, shardIds[0]), 0);
     }

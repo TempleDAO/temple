@@ -40,7 +40,7 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
         tlc.setMaxLtvRatio(0.5e18);
 
         // Now alice can't execute on the borrow
-        changePrank(alice);
+        vm.startPrank(alice);
         vm.expectRevert(abi.encodeWithSelector(ExceededMaxLtv.selector, collateralAmount, collateralValue(collateralAmount), borrowAmount));
         tlc.borrow(borrowAmount, alice);
 
@@ -142,16 +142,16 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
         tlc.setBorrowPaused(true);
 
         uint128 borrowAmount = 50_000e18;
-        changePrank(alice);
+        vm.startPrank(alice);
 
         vm.expectRevert(abi.encodeWithSelector(Paused.selector));
         tlc.borrow(borrowAmount, alice);
 
         // Unpause
-        changePrank(executor);
+        vm.startPrank(executor);
         tlc.setBorrowPaused(false);
 
-        changePrank(alice);
+        vm.startPrank(alice);
         tlc.borrow(borrowAmount, alice);
     }
 
@@ -164,14 +164,14 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
             vm.startPrank(rescuer);
             tlc.setRescueMode(true);
 
-            changePrank(alice);
+            vm.startPrank(alice);
             vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
             tlc.borrow(borrowAmount, alice);
 
-            changePrank(rescuer);
+            vm.startPrank(rescuer);
             tlc.setRescueMode(false);
 
-            changePrank(alice);
+            vm.startPrank(alice);
             tlc.borrow(borrowAmount, alice);
         }
     }
@@ -183,7 +183,7 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
         vm.startPrank(executor);
         daiCircuitBreaker.updateCap(10_000e18);
 
-        changePrank(alice);
+        vm.startPrank(alice);
         tlc.borrow(10_000e18, alice);
 
         // Circuit breaker breached

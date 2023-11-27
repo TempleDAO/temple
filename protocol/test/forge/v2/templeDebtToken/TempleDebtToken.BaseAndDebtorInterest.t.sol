@@ -394,7 +394,7 @@ contract TempleDebtTokenTestBaseAndDebtorInterest is TempleDebtTokenTestBase {
         checkDebtor(alice, aliceInterestRate, amount, aliceExpected.baseShares, 0, startBlockTs, aliceExpected.balanceOf);
         checkDebtor(bob, bobInterestRate, amount, bobExpected.baseShares, 0, startBlockTs + 1 days, bobExpected.balanceOf-1); // balanceOf rounded down
 
-        changePrank(executor);
+        vm.startPrank(executor);
         uint96 updatedRate = 0.1e18;
         dUSD.setRiskPremiumInterestRate(alice, updatedRate);
 
@@ -481,7 +481,7 @@ contract TempleDebtTokenTestBaseAndDebtorInterest is TempleDebtTokenTestBase {
         checkDebtor(alice, aliceInterestRate, amount, aliceExpected.baseShares, 0, startBlockTs, aliceExpected.balanceOf);
         checkDebtor(bob, bobInterestRate, amount, bobExpected.baseShares, 0, startBlockTs + 1 days, bobExpected.balanceOf-1); // balanceOf rounded down
 
-        changePrank(executor);
+        vm.startPrank(executor);
         uint96 updatedRate = 0;
         dUSD.setRiskPremiumInterestRate(alice, updatedRate);
 
@@ -543,7 +543,7 @@ contract TempleDebtTokenTestBaseAndDebtorInterest is TempleDebtTokenTestBase {
         dUSD.mint(bob, amount);
 
         vm.warp(block.timestamp + 364 days);
-        changePrank(executor);
+        vm.startPrank(executor);
         dUSD.setRiskPremiumInterestRate(alice, 0.1e18);
         vm.warp(block.timestamp + 365 days);
 
@@ -558,7 +558,7 @@ contract TempleDebtTokenTestBaseAndDebtorInterest is TempleDebtTokenTestBase {
             amount
         );
 
-        changePrank(executor);
+        vm.startPrank(executor);
         dUSD.burnAll(alice);
         checkBaseInterest(DEFAULT_BASE_INTEREST, bobExpectedShares-1, compoundedBobBase-1, block.timestamp, compoundedBobBase-1, amount, 0);
         checkDebtor(alice, 0.1e18, 0, 0, 0, block.timestamp, 0);
@@ -643,7 +643,7 @@ contract TempleDebtTokenTestBaseAndDebtorInterest is TempleDebtTokenTestBase {
         dUSD.mint(bob, amount);
 
         vm.warp(block.timestamp + 364 days);
-        changePrank(executor);
+        vm.startPrank(executor);
         dUSD.setRiskPremiumInterestRate(alice, 0.1e18);
         vm.warp(block.timestamp + 365 days);
 
@@ -678,7 +678,7 @@ contract TempleDebtTokenTestBaseAndDebtorInterest is TempleDebtTokenTestBase {
         dUSD.mint(bob, amount);
 
         vm.warp(block.timestamp + 364 days);
-        changePrank(executor);
+        vm.startPrank(executor);
         dUSD.setRiskPremiumInterestRate(alice, 0.1e18);
         vm.warp(block.timestamp + 365 days);
 
@@ -715,7 +715,7 @@ contract TempleDebtTokenTestBaseAndDebtorInterest is TempleDebtTokenTestBase {
 
         vm.startPrank(executor);
         dUSD.setRiskPremiumInterestRate(account, aliceInterestRate);
-        changePrank(executor);
+        vm.startPrank(executor);
 
         dUSD.mint(account, amount);
 

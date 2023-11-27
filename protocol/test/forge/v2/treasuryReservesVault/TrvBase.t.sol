@@ -116,7 +116,7 @@ contract TreasuryReservesVaultTestAccess is TreasuryReservesVaultTestBase {
         vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.StrategyNotEnabled.selector));
         trv.shutdown(address(strategy));
 
-        changePrank(address(strategy));
+        vm.startPrank(address(strategy));
         vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.StrategyNotEnabled.selector));
         trv.shutdown(address(strategy));
     }

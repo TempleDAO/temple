@@ -61,14 +61,14 @@ contract RelicTestBase is NexusTestBase {
     event RarityXPThresholdSet(Relic.Rarity rarity, uint256 threshold);
     event RarityBaseUriSet(Relic.Rarity rarity, string uri);
     event RelicMinted(address indexed to, uint256 relicId, uint256 enclaveId);
-    event ShardSet(address shard);
+    event ShardSet(address indexed shard);
     event RelicXPSet(uint256 indexed relicId, uint256 xp);
     event ShardsEquipped(address caller, uint256 relicId, uint256[] shardIds, uint256[] amounts);
     event ShardsUnequipped(address indexed recipient, uint256 indexed relicId, uint256[] shardIds, uint256[] amounts);
     event AccountBlacklistSet(address account, bool blacklist, uint256[] shardIds, uint256[] amounts);
     event AccountBlacklisted(address indexed account, bool blacklist);
     event ShardBlacklistUpdated(uint256 relicId, uint256 shardId, uint256 amount);
-    event NexusCommonSet(address nexusCommon);
+    event NexusCommonSet(address indexed nexusCommon);
     event RelicMinterEnclaveSet(address indexed minter, uint256 enclaveId, bool allowed);
     event ApprovalForAll(address caller, address operator, bool approved);
 
@@ -87,7 +87,7 @@ contract RelicTestBase is NexusTestBase {
         relic.setNexusCommon(address(nexusCommon));
         dai.mint(executor, 10 ether);
         {
-            changePrank(executor);
+            vm.startPrank(executor);
             nexusCommon.setEnclaveName(MYSTERY_ID, MYSTERY);
             nexusCommon.setEnclaveName(CHAOS_ID, CHAOS);
             nexusCommon.setEnclaveName(LOGIC_ID, LOGIC);
@@ -96,13 +96,13 @@ contract RelicTestBase is NexusTestBase {
         }
 
         {
-            changePrank(operator);
+            vm.startPrank(operator);
             relic.mintRelic(bob, CHAOS_ID);
             relic.mintRelic(bob, MYSTERY_ID);
         }
 
         {
-            changePrank(executor);
+            vm.startPrank(executor);
             address[] memory newMinters = new address[](4);
             newMinters[0] = newMinters[1] = newMinters[2] = newMinters[3] = operator;
             shard.setNewMinterShards(newMinters); // Ids: 1,2,3,4
@@ -112,7 +112,7 @@ contract RelicTestBase is NexusTestBase {
             shardIds[0] = SHARD_1_ID;
             shard.setMinterAllowedShardIds(bob, shardIds, allow);
 
-            changePrank(operator);
+            vm.startPrank(operator);
             shardIds = new uint256[](2);
             uint256[] memory amounts = new uint256[](2);
 
@@ -127,7 +127,7 @@ contract RelicTestBase is NexusTestBase {
     }
 
     function _mintRelicNew(address to, uint256 enclaveId) internal returns (uint256) {
-        changePrank(operator);
+        vm.startPrank(operator);
         uint256 nextId = relic.nextTokenId();
         relic.mintRelic(to, enclaveId);
         return nextId;
@@ -139,9 +139,9 @@ contract RelicTestBase is NexusTestBase {
         uint256[] memory shardIds,
         uint256[] memory amounts
     ) internal {
-        changePrank(operator);
+        vm.startPrank(operator);
         shard.mintBatch(account, shardIds, amounts);
-        changePrank(account);
+        vm.startPrank(account);
         shard.setApprovalForAll(address(relic), true);
         relic.batchEquipShards(relicId, shardIds, amounts);   
     }
@@ -158,7 +158,6 @@ contract RelicTestBase is NexusTestBase {
         uint256[] memory shardIds,
         uint256[] memory amounts
     ) internal returns (uint256) {
-        changePrank(operator);
         if (newRelic) {
             relicId = _mintRelicNew(account, CHAOS_ID);
         }
@@ -166,7 +165,7 @@ contract RelicTestBase is NexusTestBase {
         if (shardIds.length > 0) {
             _equipShards(relicId, account, shardIds, amounts);
         }
-        changePrank(executor);
+        vm.startPrank(executor);
         relic.setBlacklistAccount(account, relicId, blacklist);
         if (shardIds.length > 0) {
             relic.setBlacklistedShards(account, relicId, shardIds, amounts);
@@ -305,9 +304,8 @@ contract RelicTestAccess is RelicTestBase {
         uint256[] memory shardIds = new uint256[](1);
         uint256[] memory amounts = new uint256[](1);
         shardIds[0] = amounts[0] = 1;
-        vm.startPrank(operator);
         _equipShards(RELIC_1_ID, bob, shardIds, amounts);
-        changePrank(executor);
+        vm.startPrank(executor);
         relic.setBlacklistedShards(bob, RELIC_1_ID, shardIds, amounts);
     }
 
@@ -322,12 +320,11 @@ contract RelicTestAccess is RelicTestBase {
     }
 
     function test_access_unsetBlacklistedShardsSuccess() public {
-        vm.startPrank(executor);
         uint256[] memory shardIds = new uint256[](1);
         uint256[] memory amounts = new uint256[](1);
         shardIds[0] = amounts[0] = 1;
         _equipShards(RELIC_1_ID, bob, shardIds, amounts);
-        changePrank(executor);
+        vm.startPrank(executor);
         relic.setBlacklistedShards(bob, RELIC_1_ID, shardIds, amounts);
         relic.unsetBlacklistedShards(bob, RELIC_1_ID, shardIds, amounts);
     }
@@ -368,12 +365,11 @@ contract RelicTestAccess is RelicTestBase {
     }
 
     function test_burnBlacklistedRelicShardsSuccess() public {
-        vm.startPrank(executor);
         uint256[] memory shardIds = new uint256[](1);
         uint256[] memory amounts = new uint256[](1);
         shardIds[0] = amounts[0] = 1;
         _equipShards(RELIC_1_ID, bob, shardIds, amounts);
-        changePrank(executor);
+        vm.startPrank(executor);
         relic.setBlacklistedShards(bob, RELIC_1_ID, shardIds, amounts);
         relic.burnBlacklistedRelicShards(bob, RELIC_1_ID, shardIds, amounts);
     }
@@ -481,13 +477,13 @@ contract RelicSettersTest is RelicTestBase {
         uint256[] memory amounts = new uint256[](1);
         shardIds[0] = SHARD_1_ID;
         amounts[0] = 2;
-        changePrank(operator);
+        vm.startPrank(operator);
         shard.mintBatch(bob, shardIds, amounts);
-        changePrank(bob);
+        vm.startPrank(bob);
         shard.setApprovalForAll(address(relic), true);
         relic.batchEquipShards(RELIC_1_ID, shardIds, amounts);
 
-        changePrank(executor);
+        vm.startPrank(executor);
         // blacklist relic shards to trigger error
         relic.setBlacklistedShards(bob, RELIC_1_ID, shardIds, amounts);
 
@@ -516,11 +512,11 @@ contract RelicSettersTest is RelicTestBase {
 
         vm.startPrank(operator);
         shard.mintBatch(bob, shardIds, amounts);
-        changePrank(bob);
+        vm.startPrank(bob);
         shard.setApprovalForAll(address(relic), true);
         relic.batchEquipShards(RELIC_1_ID, shardIds, amounts);
 
-        changePrank(executor);
+        vm.startPrank(executor);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
         relic.setBlacklistedShards(address(0), RELIC_1_ID, shardIds, amounts);
         
@@ -570,12 +566,12 @@ contract RelicSettersTest is RelicTestBase {
         shardIds[4] = SHARD_4_ID;
         shardIds[5] = SHARD_5_ID;
         amounts[0] = amounts[1] = amounts[2] = amounts[3] = amounts[4] = amounts[5] = 20;
-        changePrank(executor);
+        vm.startPrank(executor);
         address[] memory minters = new address[](1);
         minters[0] = operator;
         shard.setNewMinterShards(minters);
         _equipShards(relicId, alice, shardIds, amounts);
-        changePrank(executor);
+        vm.startPrank(executor);
         // blacklist 6 of each shard Id
         amounts = new uint256[](3);
         shardIds = new uint256[](3);
@@ -610,11 +606,11 @@ contract RelicSettersTest is RelicTestBase {
         {
             vm.startPrank(operator);
             shard.mintBatch(bob, shardIds, amounts);
-            changePrank(bob);
+            vm.startPrank(bob);
             shard.setApprovalForAll(address(relic), true);
             relic.batchEquipShards(RELIC_1_ID, shardIds, amounts);
 
-            changePrank(executor);
+            vm.startPrank(executor);
             relic.setBlacklistedShards(bob, RELIC_1_ID, shardIds, amounts);
         }
 
@@ -662,12 +658,12 @@ contract RelicSettersTest is RelicTestBase {
         shardIds[4] = SHARD_4_ID;
         shardIds[5] = SHARD_5_ID;
         amounts[0] = amounts[1] = amounts[2] = amounts[3] = amounts[4] = amounts[5] = 20;
-        changePrank(executor);
+        vm.startPrank(executor);
         address[] memory minters = new address[](1);
         minters[0] = operator;
         shard.setNewMinterShards(minters);
         _equipShards(relicId, alice, shardIds, amounts);
-        changePrank(executor);
+        vm.startPrank(executor);
         // blacklist all shards, all amounts
         relic.setBlacklistedShards(alice, relicId, shardIds, amounts);
         // unset some
@@ -746,10 +742,10 @@ contract RelicViewTest is RelicTestBase {
         assertEq(relic.getRarityBaseUri(IRelic.Rarity.Common), commonBaseUri);
         assertEq(relic.getRarityBaseUri(IRelic.Rarity.Uncommon), uncommonBaseUri);
 
-        changePrank(operator);
+        vm.startPrank(operator);
         uint256 relicId = relic.nextTokenId();
         relic.mintRelic(alice, STRUCTURE_ID);
-        changePrank(executor);
+        vm.startPrank(executor);
         relic.setBaseUriRarity(commRarity, BASE_URI);
 
         vm.expectRevert(abi.encodeWithSelector(IERC721A.URIQueryForNonexistentToken.selector));
@@ -764,9 +760,9 @@ contract RelicViewTest is RelicTestBase {
         assertEq(expectedUri, relic.tokenURI(relicId));
         // another enclave
         relicId = relic.nextTokenId();
-        changePrank(operator);
+        vm.startPrank(operator);
         relic.mintRelic(alice, MYSTERY_ID);
-        changePrank(executor);
+        vm.startPrank(executor);
         relic.setBaseUriRarity(commRarity, BASE_URI);
         expectedUri = string(
             abi.encodePacked(
@@ -806,7 +802,7 @@ contract RelicViewTest is RelicTestBase {
         mintAmounts[2] = 20;
         shard.mintBatch(alice, mintShardIds, mintAmounts);
         amounts[0] = amounts[1] = 5;
-        changePrank(alice);
+        vm.startPrank(alice);
         shard.setApprovalForAll(address(relic), true);
         relic.batchEquipShards(relicId, shardIds, amounts);
 
@@ -833,9 +829,9 @@ contract RelicViewTest is RelicTestBase {
 
         vm.startPrank(executor);
         shard.setMinterAllowedShardIds(operator, shardIds, allow);
-        changePrank(operator);
+        vm.startPrank(operator);
         shard.mintBatch(bob, shardIds, amounts);
-        changePrank(bob);
+        vm.startPrank(bob);
         shard.setApprovalForAll(address(relic), true);
         relic.batchEquipShards(RELIC_1_ID, shardIds, amounts);
 
@@ -865,7 +861,7 @@ contract RelicViewTest is RelicTestBase {
         uint256 totalMinted = relic.totalMinted();
         vm.startPrank(executor);
         _enableAllEnclavesForMinter(relic, operator);
-        changePrank(operator);
+        vm.startPrank(operator);
         relic.mintRelic(alice, CHAOS_ID);
         assertEq(relic.totalMinted(), totalMinted+1);
         relic.mintRelic(bob, STRUCTURE_ID);
@@ -922,12 +918,12 @@ contract RelicTest is RelicTestBase {
         shardIds[1] = SHARD_2_ID;
         amounts[0] = 10;
         amounts[1] = 20;
-        changePrank(executor);
+        vm.startPrank(executor);
         _enableAllEnclavesForMinter(relic, operator);
         uint256 relicId = _blacklistAccount(true, true, 0, alice, shardIds, amounts);
 
         // zero address test
-        changePrank(operator);
+        vm.startPrank(operator);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
         relic.mintRelic(address(0), STRUCTURE_ID);
 
@@ -935,22 +931,22 @@ contract RelicTest is RelicTestBase {
         relic.mintRelic(alice, CHAOS_ID);
 
         // reset blacklist
-        changePrank(executor);
+        vm.startPrank(executor);
         relic.unsetBlacklistedShards(alice, relicId, shardIds, amounts);
         _blacklistAccount(false, false, relicId, alice, _emptyUintArray(0), _emptyUintArray(0));
 
         // invalid enclave id
-        changePrank(operator);
+        vm.startPrank(operator);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
         relic.mintRelic(alice, 100);
 
-        changePrank(executor);
+        vm.startPrank(executor);
         uint256[] memory enclaveIds = new uint256[](1);
         bool[] memory allow = new bool[](1);
         allow[0] = false;
         enclaveIds[0] = MYSTERY_ID;
         relic.setRelicMinterEnclaveIds(operator, enclaveIds, allow);
-        changePrank(operator);
+        vm.startPrank(operator);
         vm.expectRevert(abi.encodeWithSelector(IRelic.CallerCannotMint.selector, operator));
         relic.mintRelic(alice, MYSTERY_ID);
 
@@ -982,7 +978,7 @@ contract RelicTest is RelicTestBase {
         vm.startPrank(operator);
         shard.mintBatch(alice, shardIds, amounts);
         uint256 relicId = _mintRelicNew(alice, MYSTERY_ID);
-        changePrank(alice);
+        vm.startPrank(alice);
         // vm.expectRevert(abi.encodeWithSignature("ERC1155MissingApprovalForAll(address,address)", address(relic), alice));
         vm.expectRevert("ERC1155: caller is not token owner or approved");
         relic.batchEquipShards(relicId, shardIds, amounts);
@@ -1007,19 +1003,18 @@ contract RelicTest is RelicTestBase {
         // test blacklist
         shardIds[0] = SHARD_1_ID;
         shardIds[1] = SHARD_2_ID;
-        changePrank(executor);
         _blacklistAccount(true, false, RELIC_1_ID, bob, shardIds, amounts);
-        changePrank(bob);
+        vm.startPrank(bob);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.AccountBlacklisted.selector, bob));
         relic.batchEquipShards(relicId, shardIds, amounts);
         // reset blacklist
-        changePrank(executor);
+        vm.startPrank(executor);
         relic.unsetBlacklistedShards(bob, relicId, shardIds, amounts);
         _blacklistAccount(false, false, RELIC_1_ID, bob, _emptyUintArray(0), _emptyUintArray(0));
         assertEq(relic.blacklistedAccounts(bob), false);
 
         // invalid param length
-        changePrank(bob);
+        vm.startPrank(bob);
         amounts = new uint256[](3);
         amounts[0] = amounts[1] = amounts[2] = 5;
         vm.expectRevert(abi.encodeWithSelector(IRelic.InvalidParamLength.selector));
@@ -1051,20 +1046,19 @@ contract RelicTest is RelicTestBase {
         {
             shardIds[0] = SHARD_1_ID;
             shardIds[1] = SHARD_2_ID;
-            changePrank(executor);
             _blacklistAccount(true, false, RELIC_1_ID, bob, shardIds, amounts);
-            changePrank(bob);
+            vm.startPrank(bob);
             vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.AccountBlacklisted.selector, bob));
             relic.batchUnequipShards(relicId, shardIds, amounts);
             // reset blacklist
-            changePrank(executor);
+            vm.startPrank(executor);
             relic.unsetBlacklistedShards(bob, RELIC_1_ID, shardIds, amounts);
             relic.setBlacklistAccount(bob, RELIC_1_ID, false);
             assertEq(relic.blacklistedAccounts(bob), false);
         }
         // invalid param length
         {
-            changePrank(bob);
+            vm.startPrank(bob);
             amounts = new uint256[](3);
             amounts[0] = amounts[1] = amounts[2] = 5;
             vm.expectRevert(abi.encodeWithSelector(IRelic.InvalidParamLength.selector));
@@ -1152,7 +1146,6 @@ contract RelicTest is RelicTestBase {
         relic.burnBlacklistedRelicShards(bob, RELIC_1_ID, shardIds, amounts);
 
         // equip shards and blacklist an account
-        changePrank(operator);
         amounts = new uint256[](2);
         amounts[0] = 2;
         amounts[1] = 3;
@@ -1172,7 +1165,7 @@ contract RelicTest is RelicTestBase {
         assertEq(relic.blacklistedRelicShards(relicId, shardIds[1]), amounts[1]);
         assertEq(relic.blacklistedShardsCount(relicId), amounts[0] + amounts[1]);
 
-        changePrank(executor);
+        vm.startPrank(executor);
         relic.burnBlacklistedRelicShards(alice, relicId, shardIds, amounts);
         assertEq(relic.blacklistedAccounts(alice), false);
         assertEq(relic.blacklistedRelicShards(relicId, shardIds[0]), 0);
@@ -1198,29 +1191,28 @@ contract RelicTest is RelicTestBase {
         amounts[1] = 20;
         vm.startPrank(executor);
         _enableAllEnclavesForMinter(relic, operator);
-        changePrank(operator);
+        vm.startPrank(operator);
         relic.mintRelic(alice, STRUCTURE_ID);
         relic.mintRelic(alice, CHAOS_ID);
         uint256[] memory aliceRelics = relic.relicsOfOwner(alice);
         uint256[] memory bobRelics = relic.relicsOfOwner(bob);
-        changePrank(executor);
         // mint new relic for alice, equip shards and blacklist
         uint256 aliceRelicId = _blacklistAccount(true, true, 0, alice, shardIds, amounts);
 
         // sending from and to alice should fail
-        changePrank(alice);
+        vm.startPrank(alice);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.AccountBlacklisted.selector, alice));
         relic.safeTransferFrom(alice, bob, aliceRelics[1]);
-        changePrank(bob);
+        vm.startPrank(bob);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.AccountBlacklisted.selector, alice));
         relic.safeTransferFrom(bob, alice, bobRelics[0]);
         
 
         // check new owner
-        changePrank(executor);
+        vm.startPrank(executor);
         relic.unsetBlacklistedShards(alice, aliceRelicId, shardIds, amounts);
         _blacklistAccount(false, false, aliceRelicId, alice, _emptyUintArray(0), _emptyUintArray(0));
-        changePrank(bob);
+        vm.startPrank(bob);
         relic.safeTransferFrom(bob, alice, bobRelics[0]);
         assertEq(relic.ownerOf(bobRelics[0]), alice);
     }

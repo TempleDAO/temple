@@ -19,8 +19,8 @@ contract MockPartnerProxy {
         partnerSacrifice = IPartnerSacrifice(_partnerSacrifice);
     }
 
-    function execute(address to) external {
-        partnerSacrifice.sacrifice(NON_ENCLAVE_ID, to);
+    function execute(address to) external returns (uint256 relicId) {
+        relicId = partnerSacrifice.sacrifice(NON_ENCLAVE_ID, to);
     }
 }
 
@@ -32,7 +32,7 @@ contract PartnerZeroSacrificeTestBase is NexusTestBase {
 
     uint256 internal constant NON_ENCLAVE_ID = 10;
 
-    event PartnerSacrifice(address to, uint256 relicId, uint256 enclaveId);
+    event PartnerZeroSacrificed(address indexed to, uint256 relicId, uint256 enclaveId);
 
     function setUp() public {
         nexusCommon = new NexusCommon(executor);
@@ -98,8 +98,9 @@ contract PartnerSacrificeTest is PartnerZeroSacrificeTestBase {
         uint256 relicId = relic.nextTokenId();
         uint256 totalMinted = partnerSacrifice.totalMinted();
         vm.expectEmit(address(partnerSacrifice));
-        emit PartnerSacrifice(alice, relicId, NON_ENCLAVE_ID);
-        mockPartnerProxy.execute(alice);
+        emit PartnerZeroSacrificed(alice, relicId, NON_ENCLAVE_ID);
+        uint256 actualRelicId = mockPartnerProxy.execute(alice);
+        assertEq(actualRelicId, relicId);
         assertEq(relic.ownerOf(relicId), alice);
         assertEq(partnerSacrifice.totalMinted(), totalMinted+1);
 
@@ -109,7 +110,7 @@ contract PartnerSacrificeTest is PartnerZeroSacrificeTestBase {
         relicId = relic.nextTokenId();
         totalMinted = partnerSacrifice.totalMinted();
         vm.expectEmit(address(partnerSacrifice));
-        emit PartnerSacrifice(alice, relicId, NON_ENCLAVE_ID);
+        emit PartnerZeroSacrificed(alice, relicId, NON_ENCLAVE_ID);
         mockPartnerProxy.execute(alice);
         assertEq(partnerSacrifice.totalMinted(), totalMinted+1);
         assertEq(relic.ownerOf(relicId), alice);
@@ -121,7 +122,7 @@ contract PartnerSacrificeTest is PartnerZeroSacrificeTestBase {
         partnerSacrifice.setMintCap(3);
         relicId = relic.nextTokenId();
         vm.expectEmit(address(partnerSacrifice));
-        emit PartnerSacrifice(alice, relicId, NON_ENCLAVE_ID);
+        emit PartnerZeroSacrificed(alice, relicId, NON_ENCLAVE_ID);
         mockPartnerProxy.execute(alice);
         assertEq(partnerSacrifice.totalMinted(), totalMinted+2);
     }
