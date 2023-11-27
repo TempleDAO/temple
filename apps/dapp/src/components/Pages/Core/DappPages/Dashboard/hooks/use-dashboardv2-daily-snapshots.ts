@@ -11,10 +11,7 @@ const V2SnapshotMetrics = [
   'creditUSD',
   'principalUSD',
   'accruedInterestUSD',
-  'nominalEquityUSD',
-  'nominalPerformance',
   'benchmarkedEquityUSD',
-  'benchmarkPerformance',
 ] as const;
 
 export type V2SnapshotMetric = (typeof V2SnapshotMetrics)[number];
