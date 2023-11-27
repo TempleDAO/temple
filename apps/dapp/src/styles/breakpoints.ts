@@ -6,8 +6,7 @@ type Css = FlattenInterpolation<ThemeProps<DefaultTheme>>;
 
 export const tabletAndAbove = (styles: string | Css) => {
   return css`
-    @media screen and (min-width: ${({ theme }) =>
-        theme.metrics.devices.tablet}) {
+    @media screen and (min-width: ${({ theme }) => theme.metrics.devices.tablet}) {
       ${styles}
     }
   `;
@@ -15,8 +14,7 @@ export const tabletAndAbove = (styles: string | Css) => {
 
 export const phoneAndAbove = (styles: string | Css) => {
   return css`
-    @media screen and (min-width: ${({ theme }) =>
-        theme.metrics.devices.phone}) {
+    @media screen and (min-width: ${({ theme }) => theme.metrics.devices.phone}) {
       ${styles}
     }
   `;
@@ -28,7 +26,7 @@ export const verySmallDesktop = (styles: string | Css) => {
       ${styles}
     }
   `;
-}
+};
 
 export const phoneToSmallTablet = (styles: string | Css) => {
   return css`
@@ -36,7 +34,7 @@ export const phoneToSmallTablet = (styles: string | Css) => {
       ${styles}
     }
   `;
-}
+};
 
 export const phoneToTablet = (styles: string | Css) => {
   return css`
@@ -44,7 +42,7 @@ export const phoneToTablet = (styles: string | Css) => {
       ${styles}
     }
   `;
-}
+};
 
 export const smallTabletToTablet = (styles: string | Css) => {
   return css`
@@ -52,7 +50,7 @@ export const smallTabletToTablet = (styles: string | Css) => {
       ${styles}
     }
   `;
-}
+};
 
 export const tabletToDesktop = (styles: string | Css) => {
   return css`
@@ -60,7 +58,7 @@ export const tabletToDesktop = (styles: string | Css) => {
       ${styles}
     }
   `;
-}
+};
 
 export const minTablet = (styles: string | Css) => {
   return css`
@@ -68,14 +66,21 @@ export const minTablet = (styles: string | Css) => {
       ${styles}
     }
   `;
-}
+};
+
+export const phone = (styles: string | Css) => {
+  return css`
+    @media screen and (max-width: ${({ theme }) => theme.metrics.devices.phone}) {
+      ${styles}
+    }
+  `;
+};
 
 /**
  * Use this queries with `useMediaQuery`
  * If we need to add new queries add them here soo they can be reused
  * Always use values from theme.ts `theme.metrics.devices`, again if a new device is needed add it there
  */
-
 
 export const queryPhone = toQuery({
   minWidth: theme.metrics.devices.phone,

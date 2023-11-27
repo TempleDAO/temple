@@ -65,6 +65,10 @@ const NavLink = styled(BaseNavLink)<NavLinkProps>`
     text-decoration: underline;
     color: ${({theme})=> theme.palette.brandLight}
   }
+
+  ${breakpoints.phoneToSmallTablet(`
+    font-size: 16px;
+  `)}
 `;
 
 const NavCell = styled.div`

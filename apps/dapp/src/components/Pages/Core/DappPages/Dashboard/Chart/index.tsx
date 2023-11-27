@@ -1,4 +1,5 @@
 import styled from 'styled-components';
+import * as breakpoints from 'styles/breakpoints';
 import { DashboardType } from '../DashboardContent';
 import V2StrategyMetricsChart from './V2StrategyMetricsChart';
 import { InputSelect } from 'components/InputSelect/InputSelect';
@@ -73,9 +74,11 @@ const DashboardChart = ({ dashboardType, strategyNames }: DashboardChartProps) =
 export default DashboardChart;
 
 const SelectMetricContainer = styled.div`
-  min-width: 17rem;
-  max-width: 20rem;
+  width: 100%;
   flex: 1;
+  ${breakpoints.phoneAndAbove(`
+    max-width: 20rem;
+  `)}
 `;
 
 const IntervalTogglerContainer = styled.div`
@@ -85,17 +88,18 @@ const IntervalTogglerContainer = styled.div`
 const ChartHeader = styled.div`
   gap: 1rem;
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   flex-wrap: wrap;
   align-items: center;
-  padding: 1rem;
   width: 100%;
+  ${breakpoints.phoneAndAbove(`
+    flex-direction: row;
+  `)}
 `;
 
 const ChartContainer = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin: 1rem 0;
   width: 100%;
 `;

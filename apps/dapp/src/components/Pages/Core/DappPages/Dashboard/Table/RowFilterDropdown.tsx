@@ -1,4 +1,4 @@
-import { Dispatch, SetStateAction, useEffect, useRef, useState } from 'react';
+import { Dispatch, SetStateAction, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { FilterButton } from 'components/Pages/Ascend/components/Trade/styles';
 import { RowFilter } from '../hooks/use-dashboardv2-txHistory';
@@ -80,6 +80,7 @@ const DropdownOptionsContainer = styled.div`
   border-radius: 2px;
   border: 1.5px solid;
   border-color: ${({ theme }) => theme.palette.brand};
+  z-index: 1;
 `;
 
 const DropdownOption = styled.div<{ isChecked: boolean }>`

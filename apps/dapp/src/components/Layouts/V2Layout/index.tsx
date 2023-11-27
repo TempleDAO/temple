@@ -25,8 +25,8 @@ export type MenuNavItem = {
 export type MenuNavItems = Array<MenuNavItem>;
 
 enum V2DashboardLocPaths {
-  Trv = '/v2dapp/dashboard/treasuryreservesvault',
   Trade = '/v2dapp/trade',
+  Trv = '/v2dapp/dashboard/treasuryreservesvault',
   Borrow = '/v2dapp/borrow',
   Ohmage = '/v2dapp/ohmage',
   Legacy = '/v2dapp/legacy',
@@ -39,16 +39,16 @@ const V2Layout = () => {
   const loc = useLocation();
   const [menuNavItems, setMenuNavItems] = useState<Array<MenuNavItem>>([
     {
-      label: 'Dashboard',
-      linkTo: V2DashboardLocPaths.Trv,
-      Logo: Dashboard,
-      selected: V2DashboardLocPaths.Trv === loc.pathname,
-    },
-    {
       label: 'Trade',
       linkTo: V2DashboardLocPaths.Trade,
       Logo: CurrencyExchange,
       selected: V2DashboardLocPaths.Trade === loc.pathname,
+    },
+    {
+      label: 'Dashboard',
+      linkTo: V2DashboardLocPaths.Trv,
+      Logo: Dashboard,
+      selected: V2DashboardLocPaths.Trv === loc.pathname,
     },
     // TODO: Hidden until launch
     // {
@@ -118,6 +118,7 @@ const MainContainer = styled.div`
 `;
 
 const Content = styled.div`
+  width: 100%;
   height: 100%;
   flex-grow: 1;
   padding: 25px 20px;

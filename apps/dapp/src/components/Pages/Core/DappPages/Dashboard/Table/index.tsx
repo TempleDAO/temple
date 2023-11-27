@@ -24,15 +24,15 @@ const DashboardTransactionHistory = ({ dashboardType }: DashboardTransactionHist
       <TransactionHistoryHeader>
         <TransactionHistoryTitle>Transaction History</TransactionHistoryTitle>
         <TransactionTimePeriod>
-          <FilterButton isSmall selected={txFilter === 'lastweek'} onClick={() => setTxFilter(TxHistoryFilterType.lastweek)}>
+          <IntervalToggle selected={txFilter === 'lastweek'} onClick={() => setTxFilter(TxHistoryFilterType.lastweek)}>
             Last week
-          </FilterButton>
-          <FilterButton isSmall selected={txFilter === 'last30days'} onClick={() => setTxFilter(TxHistoryFilterType.last30days)}>
+          </IntervalToggle>
+          <IntervalToggle selected={txFilter === 'last30days'} onClick={() => setTxFilter(TxHistoryFilterType.last30days)}>
             Last 30 Days
-          </FilterButton>
-          <FilterButton isSmall selected={txFilter === 'all'} onClick={() => setTxFilter(TxHistoryFilterType.all)}>
+          </IntervalToggle>
+          <IntervalToggle selected={txFilter === 'all'} onClick={() => setTxFilter(TxHistoryFilterType.all)}>
             All
-          </FilterButton>
+          </IntervalToggle>
         </TransactionTimePeriod>
       </TransactionHistoryHeader>
       <TransactionHistoryContent>
@@ -44,16 +44,17 @@ const DashboardTransactionHistory = ({ dashboardType }: DashboardTransactionHist
 
 export default DashboardTransactionHistory;
 
-type FilterButtonProps = {
+type IntervalToggleProps = {
   selected?: boolean;
 };
 
-const FilterButton = styled(BaseButton)<FilterButtonProps>`
+const IntervalToggle = styled.label<IntervalToggleProps>`
   padding: 0;
   margin-right: 20px;
   height: 25px;
   border-radius: 5px;
-  text-decoration: ${({ selected }) => (selected ? 'underline' : 'none')};
+  ${({ selected }) => (selected && 'text-decoration: underline;')}
+  ${({ selected }) => (selected && 'font-weight: bold;')}
   color: ${({ selected, theme }) => (selected ? theme.palette.brandLight : theme.palette.brand)};
   border: 0px;
   white-space: nowrap;
@@ -67,6 +68,7 @@ const TransactionHistoryContent = styled.div`
   flex-direction: column;
   align-items: center;
   width: 100%;
+  margin-top: 10px;
 `;
 
 const TransactionHistoryHeader = styled.div`
@@ -77,7 +79,7 @@ const TransactionHistoryHeader = styled.div`
   gap: 30px;
   ${breakpoints.phoneAndAbove(`
     flex-direction: row;
-    align-items: left;
+    align-items: center;
     align-self: auto;
   `)}
 `;
@@ -89,10 +91,10 @@ const TransactionTimePeriod = styled.div`
   color: ${({ theme }) => theme.palette.brandLight};
 `;
 
-const TransactionHistoryTitle = styled.div`
-  font-size: 18px;
-  ${breakpoints.tabletAndAbove(`
-    font-size: 24px;
+const TransactionHistoryTitle = styled.h4`
+  margin: 0;  
+  ${breakpoints.phoneToSmallTablet(`
+    font-size: 18px;
   `)}
   color: ${({ theme }) => theme.palette.brandLight};
 `;
