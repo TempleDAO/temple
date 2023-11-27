@@ -36,9 +36,14 @@ const env: Environment = {
     vaultProxy: '0xf5059a5D33d5853360D16C683c16e67980206f36',
     vaultEarlyExit: '',
     ramos: '',
-    ramosStrategy: '',
     ramosPoolHelper: '',
     balancerHelpers: '',
+    strategies: {
+      dsrBaseStrategy: '',
+      ramosStrategy: '',
+      templeStrategy: '',
+      tlcStrategy: '',
+    }
   },
   infuraId: '4cd22916292d4fb6be156454978c326b',
   subgraph: {

@@ -39,7 +39,7 @@ import { DBN_TEN_THOUSAND, DBN_ZERO, DecimalBigNumber } from 'utils/DecimalBigNu
 export function useRamosAdmin() {
   const {
     ramos: RAMOS_ADDRESS,
-    ramosStrategy: RAMOS_STRATEGY_ADDRESS,
+    strategies: STRATEGIES,
     ramosPoolHelper: RAMOS_POOL_HELPER_ADDRESS,
     balancerHelpers: BALANCER_HELPERS_ADDRESS,
     treasuryReservesVault: TRV_ADDRESS,
@@ -102,7 +102,7 @@ export function useRamosAdmin() {
   const setContracts = useCallback(async (signer: Signer) => {
     const RAMOS_CONTRACT = new Ramos__factory(signer).attach(RAMOS_ADDRESS);
     const RAMOS_POOL_HELPER_CONTRACT = new BalancerPoolHelper__factory(signer).attach(RAMOS_POOL_HELPER_ADDRESS);
-    const RAMOS_STRATEGY_CONTRACT = new RamosStrategy__factory(signer).attach(RAMOS_STRATEGY_ADDRESS);
+    const RAMOS_STRATEGY_CONTRACT = new RamosStrategy__factory(signer).attach(STRATEGIES.ramosStrategy);
     const TRV_CONTRACT = new TreasuryReservesVault__factory(signer).attach(TRV_ADDRESS);
     const POOL_ID = await RAMOS_CONTRACT.balancerPoolId();
     const BALANCER_VAULT_ADDRESS = await RAMOS_CONTRACT.balancerVault();
@@ -144,7 +144,7 @@ export function useRamosAdmin() {
       return {...prev};
     });
     setBptToken(BPT_TOKEN_CONTRACT);
-  },[BALANCER_HELPERS_ADDRESS, RAMOS_ADDRESS, RAMOS_POOL_HELPER_ADDRESS, RAMOS_STRATEGY_ADDRESS, TRV_ADDRESS]);
+  },[BALANCER_HELPERS_ADDRESS, RAMOS_ADDRESS, RAMOS_POOL_HELPER_ADDRESS, STRATEGIES, TRV_ADDRESS]);
 
   const calculateRebalanceUp = useCallback(async (bps: DecimalBigNumber) => {
     if (isConnected && balPooltokensOrdered && bps.gt(DBN_ZERO)) {

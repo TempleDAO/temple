@@ -4,6 +4,8 @@ import DashboardChart from './Chart';
 import { StrategyKey } from './hooks/use-dashboardv2-metrics';
 import DashboardMetrics from './Metrics';
 import DashboardTransactionHistory from './Table';
+import LinkSvg from 'assets/icons/link.svg?react';
+import env from 'constants/env';
 
 export enum DashboardType {
   TREASURY_RESERVES_VAULT,
@@ -22,6 +24,7 @@ type DashboardData = {
     title: string;
     description: string;
     chartStrategyNames: StrategyKey[];
+    link: string;
   };
 };
 
@@ -31,14 +34,15 @@ const DashboardContent = ({ selectedDashboard = DashboardType.TREASURY_RESERVES_
       title: 'Treasury Reserves Vault',
       description:
         'The Treasury Reserves Vault (TRV) is the source of capital for current Treasury allocations. When funding and Strategy parameters are approved, the TRV will transfer funds e.g. DAI to the deployed Strategy borrower. The current equity of the Strategy is discounted by the cost of capital whereby the Benchmark interest rate is set to match the current Base Strategy.',
-      //StrategyKey.TLC, TODO: Hidden until launch
       chartStrategyNames: [StrategyKey.TEMPLEBASE, StrategyKey.RAMOS, StrategyKey.DSRBASE],
+      link: env.etherscan + env.contracts.treasuryReservesVault,
     },
     [DashboardType.RAMOS]: {
       title: 'Ramos',
       description:
         'Ramos is the automated market operations (AMO) manager that supplies liquidity to the TEMPLE/DAI pool on the Balancer Exchange platform. A bot manages the contract to support TEMPLE trading, reduce price volatility, and earn farming rewards.',
       chartStrategyNames: [StrategyKey.RAMOS],
+      link: env.etherscan + env.contracts.strategies.ramosStrategy,
     },
     // TODO: Hidden until launch
     // [DashboardType.TLC]: {
@@ -46,18 +50,20 @@ const DashboardContent = ({ selectedDashboard = DashboardType.TREASURY_RESERVES_
     //   description:
     //     'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque vehicula tincidunt eleifend. Nam congue magna in mi dignissim, id gravida sem ornare. Sed in nunc fermentum, consectetur ipsum a, varius augue. Nullam finibus velit eget ligula efficitur, in luctus lacus efficitur. Nam egestas tempor gravida. Ut mollis libero ac tincidunt fermentum. Etiam et ante vitae metus ultrices tempus.',
     //   chartStrategyNames: [StrategyKey.TLC],
+    // link: env.etherscan + env.contracts.strategies.tlcStrategy,
     // },
     [DashboardType.TEMPLE_BASE]: {
       title: 'Temple Base',
-      description:
-        'The TEMPLE base strategy is not currently active.',
+      description: 'The TEMPLE base strategy is not currently active.',
       chartStrategyNames: [StrategyKey.TEMPLEBASE],
+      link: env.etherscan + env.contracts.strategies.templeStrategy,
     },
     [DashboardType.DSR_BASE]: {
       title: 'DSR Base',
       description:
         'Idle capital in the Treasury Reserve Vault (TRV) that is not currently deployed to a Strategy borrower will be automatically directed to a Base Strategy to earn yield. Currently, the Base Strategy is set to the Dai Savings Rate (DSR). The current rate of return for the Base Strategy also serves as the Benchmark interest rate for the Strategy borrower.',
       chartStrategyNames: [StrategyKey.DSRBASE],
+      link: env.etherscan + env.contracts.strategies.dsrBaseStrategy,
     },
   };
 
@@ -66,7 +72,10 @@ const DashboardContent = ({ selectedDashboard = DashboardType.TREASURY_RESERVES_
   return (
     <DashboardContentContainer>
       <Header>
-        <HeaderTitle>{dashboard.title}</HeaderTitle>
+        <HeaderTextContainer>
+          <HeaderTitle>{dashboard.title}</HeaderTitle>
+          <LinkIcon onClick={() => window.open(dashboard.link, "_blank")}/>
+        </HeaderTextContainer>
         <HeaderText>{dashboard.description}</HeaderText>
       </Header>
       <DashboardChart dashboardType={selectedDashboard} strategyNames={dashboard.chartStrategyNames} />
@@ -76,12 +85,22 @@ const DashboardContent = ({ selectedDashboard = DashboardType.TREASURY_RESERVES_
   );
 };
 
+const LinkIcon = styled(LinkSvg)`
+  fill:${({theme}) => theme.palette.brand};
+  cursor: pointer;
+`;
+
+const HeaderTextContainer = styled.div`
+  display: flex;
+  align-items: center;
+`;
+
 const HeaderText = styled.div`
   align-items: left;
   display: block;
   font-size: 12px;
-  color: ${({theme}) => theme.palette.brand};
-  ${breakpoints.tabletAndAbove(`
+  color: ${({ theme }) => theme.palette.brand};
+  ${breakpoints.phoneAndAbove(`
     font-size: 16px;
   `)}
 `;
@@ -90,6 +109,7 @@ const HeaderTitle = styled.h2`
   color: ${(props) => props.theme.palette.brandLight};
   font-size: 24px;
   margin: 0;
+  margin-right: 15px;
   ${breakpoints.tabletAndAbove(`
     font-size: 36px;
   `)}
