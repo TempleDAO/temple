@@ -129,7 +129,9 @@ export const TxnDataTable = (props: Props) => {
                     <DataCell isHidden={tableHeaders[2].isHidden}>{row.strategy}</DataCell>
                     <DataCell isHidden={tableHeaders[3].isHidden}>{row.token}</DataCell>
                     <DataCell isHidden={tableHeaders[4].isHidden}>
-                      {row.amount} {!isBiggerThanTablet && (row.extendedMobView.isOpen ? <ArrowUp /> : <ArrowDown />)}
+                      <FlexContainer>
+                        {row.amount} {!isBiggerThanTablet && (row.extendedMobView.isOpen ? <ArrowUp /> : <ArrowDown />)}
+                      </FlexContainer>
                     </DataCell>
                     <DataCell isHidden={tableHeaders[5].isHidden}>
                       <LinkStyled href={`${env.etherscan}/tx/${row.txHash}`} target="_blank">
@@ -175,6 +177,12 @@ const TableHeader = styled.th<{ isHidden: boolean }>`
 
 const ArrowDown = styled(dropdownIcon)`
   fill: ${({ theme }) => theme.palette.brand};
+`;
+
+const FlexContainer = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 `;
 
 const ArrowUp = styled(dropdownIcon)`
