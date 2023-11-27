@@ -17,14 +17,11 @@ const metricOptions: { value: V2SnapshotMetric; label: string }[] = [
   { label: 'Total Market Value', value: 'totalMarketValueUSD' },
   { label: 'Accrued Interest', value: 'accruedInterestUSD' },
 
-  { label: 'Benchmark Performance', value: 'benchmarkPerformance' },
   { label: 'Benchmarked Equity', value: 'benchmarkedEquityUSD' },
   { label: 'Credit', value: 'creditUSD' },
   { label: 'Debt', value: 'debtUSD' },
   { label: 'Net Debt', value: 'netDebtUSD' },
   { label: 'Principal', value: 'principalUSD' },
-  { label: 'Nominal Equity', value: 'nominalEquityUSD' },
-  { label: 'Nominal Performance', value: 'nominalPerformance' },
 ];
 
 const CHART_SELECTOR_QUERY_PARAM = 'chart';
