@@ -17,6 +17,7 @@ import { DropdownCheckOption, DropdownCheckOptions } from './RowFilterDropdown';
 import { useMediaQuery } from 'react-responsive';
 import { queryMinTablet } from 'styles/breakpoints';
 import env from 'constants/env/local';
+import LinkSvg from 'assets/icons/link.svg?react';
 
 type Props = {
   dashboardType: DashboardType;
@@ -232,18 +233,21 @@ const TxnHistoryTable = (props: Props) => {
         component: (
           <>
             <DataCell>
-              <ColText lightColor={false}>Time:</ColText>
-              <ColText lightColor={false}>Strategy:</ColText>
-              <ColText lightColor={false}>Type:</ColText>
-              <ColText lightColor={false}>TxHash:</ColText>
+              <ColText lightColor={false}>Time</ColText>
+              <ColText lightColor>{timeOnly}</ColText>
             </DataCell>
             <DataCell>
-              <ColText lightColor>{timeOnly}</ColText>
+              <ColText lightColor={false}>Strategy</ColText>
               <ColText lightColor>{tx.strategy.name}</ColText>
-              <ColText lightColor>{tx.name}</ColText>
-              <LinkStyled href={`${env.etherscan}/tx/${tx.hash}`} target="_blank">
-                {tx.hash.slice(0, 10) + '...'}
-              </LinkStyled>
+            </DataCell>
+            <DataCell>
+              <ColText lightColor={false}>Type</ColText>
+              <FlexContainer>
+                <ColText lightColor style={{ flexGrow: 1 }}>
+                  {tx.name}
+                </ColText>
+                <LinkIcon onClick={() => window.open(`${env.etherscan}/tx/${tx.hash}`, '_blank')} />
+              </FlexContainer>
             </DataCell>
           </>
         ),
@@ -285,22 +289,26 @@ const TableContainer = styled.div`
 
 const DataCell = styled.td`
   padding: 0;
-  padding-bottom: 1rem;
+  padding-bottom: 20px;
+  font-size: 12px;
+  font-weight: 700;
   background-color: ${({ theme }) => theme.palette.dark};
 `;
 
-const LinkStyled = styled.a`
-  color: ${({ theme }) => theme.palette.brandLight};
-  font-size: 0.9rem;
-  font-weight: 300;
-  &:hover {
-    color: ${({ theme }) => theme.palette.brandDark};
-  }
+const FlexContainer = styled.div`
+  display: flex;
+  flex: wrap;
+`;
+
+const LinkIcon = styled(LinkSvg)`
+  fill: ${({ theme }) => theme.palette.brandLight};
+  cursor: pointer;
+  width: 15px;
 `;
 
 const ColText = styled.div<{ lightColor: boolean }>`
   display: flex;
   flex-direction: row;
-  padding-top: 0.2rem;
+  padding-top: 5px;
   color: ${({ theme, lightColor }) => (lightColor ? theme.palette.brandLight : theme.palette.brand)};
 `;

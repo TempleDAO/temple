@@ -69,7 +69,7 @@ export const TxnDataTable = (props: Props) => {
         if (r == row) {
           return { ...r, extendedMobView: { isOpen: !emv.isOpen, component: emv.component } };
         }
-        return { ...r, extendedMobView: { isOpen: false, component: emv.component } };
+        return r;
       })
     );
   };
@@ -194,6 +194,7 @@ const HeaderRow = styled.tr`
 const InnerDataRow = styled.div`
   display: flex;
   height: 1.5rem;
+  font-size: 12px;
 `;
 
 const EmptySpace = styled.p`
@@ -218,8 +219,10 @@ const DataRow = styled.tr<{ hasBorderBotton: boolean }>`
 
 const DataCell = styled.td<{ isHidden?: boolean }>`
   position: relative;
-  padding: 8px 0;
+  padding: 20px 0;
   ${({ isHidden }) => isHidden && 'display: none;'}
+  font-size: 13px;
+  font-weight: 700;
   text-align: left;
   color: ${({ theme }) => theme.palette.brandLight};
   text-align-last: justify;
