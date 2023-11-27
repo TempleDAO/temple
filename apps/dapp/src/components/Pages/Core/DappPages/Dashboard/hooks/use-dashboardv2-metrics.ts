@@ -26,10 +26,7 @@ export interface TreasuryReservesVaultMetrics {
   benchmarkRate: number;
   principal: number;
   accruedInterest: number;
-  nominalEquity: number;
-  nominalPerformance: number;
   benchmarkedEquity: number;
-  benchmarkPerformance: number;
 }
 
 type DashboardMetric = {
@@ -44,7 +41,6 @@ export interface ArrangedDashboardMetrics {
 
 export interface StrategyMetrics {
   valueOfHoldings: number;
-  nominalEquity: number;
   benchmarkedEquity: number;
   interestRate: number;
   debtShare: number;
@@ -53,8 +49,6 @@ export interface StrategyMetrics {
   totalRepayment: number;
   principal: number;
   accruidInterest: number;
-  nominalPerformance: number;
-  benchmarkPerformance: number;
 }
 
 const CACHE_TTL = 1000 * 60;
@@ -136,7 +130,6 @@ export default function useDashboardV2Metrics() {
   const fetchStrategyMetrics = async (strategy: StrategyKey): Promise<StrategyMetrics> => {
     let metrics = {
       valueOfHoldings: 0,
-      nominalEquity: 0,
       benchmarkedEquity: 0,
       interestRate: 0,
       debtShare: 0,
@@ -145,8 +138,6 @@ export default function useDashboardV2Metrics() {
       totalRepayment: 0,
       principal: 0,
       accruidInterest: 0,
-      nominalPerformance: 0,
-      benchmarkPerformance: 0,
     };
 
     try {
@@ -159,7 +150,6 @@ export default function useDashboardV2Metrics() {
               isShutdown
               id
               totalMarketValueUSD
-              nominalEquityUSD
               benchmarkedEquityUSD
               strategyTokens {
                 symbol
@@ -172,8 +162,6 @@ export default function useDashboardV2Metrics() {
               totalRepaymentUSD
               principalUSD
               accruedInterestUSD
-              nominalPerformance
-              benchmarkPerformance
             }
       }`
         ),
@@ -193,7 +181,6 @@ export default function useDashboardV2Metrics() {
 
       metrics = {
         valueOfHoldings: parseFloat(ramosSubgraphData.totalMarketValueUSD),
-        nominalEquity: parseFloat(ramosSubgraphData.nominalEquityUSD),
         benchmarkedEquity: parseFloat(ramosSubgraphData.benchmarkedEquityUSD),
         interestRate: parseFloat(daiStrategyTokenData.rate) + parseFloat(daiStrategyTokenData.premiumRate),
         debtShare: parseFloat(daiStrategyTokenData.debtShare),
@@ -202,8 +189,6 @@ export default function useDashboardV2Metrics() {
         totalRepayment: parseFloat(ramosSubgraphData.totalRepaymentUSD),
         principal: parseFloat(ramosSubgraphData.principalUSD),
         accruidInterest: parseFloat(ramosSubgraphData.accruedInterestUSD),
-        nominalPerformance: parseFloat(ramosSubgraphData.nominalPerformance),
-        benchmarkPerformance: parseFloat(ramosSubgraphData.benchmarkPerformance),
       };
     } catch (error) {
       console.info(error);
@@ -221,10 +206,7 @@ export default function useDashboardV2Metrics() {
       benchmarkRate: 0,
       principal: 0,
       accruedInterest: 0,
-      nominalEquity: 0,
-      nominalPerformance: 0,
       benchmarkedEquity: 0,
-      benchmarkPerformance: 0,
     };
 
     try {
@@ -237,10 +219,7 @@ export default function useDashboardV2Metrics() {
             treasuryPriceIndex
             principalUSD
             accruedInterestUSD
-            nominalEquityUSD
-            nominalPerformance
             benchmarkedEquityUSD
-            benchmarkPerformance
           }
       }`
         ),
@@ -263,10 +242,7 @@ export default function useDashboardV2Metrics() {
         benchmarkRate: parseFloat(benchmarkRate),
         principal: parseFloat(trvSubgraphData.principalUSD),
         accruedInterest: parseFloat(trvSubgraphData.accruedInterestUSD),
-        nominalEquity: parseFloat(trvSubgraphData.nominalEquityUSD),
-        nominalPerformance: parseFloat(trvSubgraphData.nominalPerformance),
         benchmarkedEquity: parseFloat(trvSubgraphData.benchmarkedEquityUSD),
-        benchmarkPerformance: parseFloat(trvSubgraphData.benchmarkPerformance),
       };
     } catch (error) {
       console.info(error);
@@ -384,22 +360,8 @@ export default function useDashboardV2Metrics() {
             value: `$${formatBigMoney(metrics.accruedInterest)}`,
           },
           {
-            title: 'Nominal Equity',
-            value: `$${formatBigMoney(metrics.nominalEquity)}`,
-          },
-        ],
-        [
-          {
-            title: 'Nominal Performance',
-            value: `${formatPercent(metrics.nominalPerformance)}%`,
-          },
-          {
             title: 'Benchmarked Equity',
             value: `$${formatBigMoney(metrics.benchmarkedEquity)}`,
-          },
-          {
-            title: 'Benchmark Performance',
-            value: `${formatPercent(metrics.benchmarkPerformance)}%`,
           },
         ],
       ],
@@ -419,10 +381,6 @@ export default function useDashboardV2Metrics() {
           {
             title: 'Value of Holdings',
             value: `$${formatBigMoney(metrics.valueOfHoldings)}`,
-          },
-          {
-            title: 'Nominal Equity',
-            value: `$${formatBigMoney(metrics.nominalEquity)}`,
           },
           {
             title: 'Benchmarked Equity',
@@ -461,16 +419,6 @@ export default function useDashboardV2Metrics() {
           {
             title: 'Accrued dUSD Interest',
             value: `$${formatBigMoney(metrics.benchmarkedEquity)}`,
-          },
-        ],
-        [
-          {
-            title: 'Nominal Performance',
-            value: `${formatPercent(metrics.nominalPerformance)}%`,
-          },
-          {
-            title: 'Benchmark Performance',
-            value: `${formatPercent(metrics.benchmarkPerformance)}%`,
           },
         ],
       ],
