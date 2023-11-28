@@ -358,7 +358,7 @@ export default function useDashboardV2Metrics(dashboardType: DashboardType) {
             value: `$${formatBigMoney(metrics.principal)}`,
           },
           {
-            title: 'Accrued dUSD Interest',
+            title: 'Accrued Interest',
             value: `$${formatBigMoney(metrics.accruedInterest)}`,
           },
           {
@@ -412,14 +412,14 @@ export default function useDashboardV2Metrics(dashboardType: DashboardType) {
         [
           {
             title: 'Total Repayment',
-            value: `${formatBigMoney(metrics.totalRepayment)} DAI`,
+            value: `$${formatBigMoney(metrics.totalRepayment)}`,
           },
           {
             title: 'Principal',
             value: `$${formatBigMoney(metrics.principal)}`,
           },
           {
-            title: 'Accrued dUSD Interest',
+            title: 'Accrued Interest',
             value: `$${formatBigMoney(metrics.benchmarkedEquity)}`,
           },
         ],
