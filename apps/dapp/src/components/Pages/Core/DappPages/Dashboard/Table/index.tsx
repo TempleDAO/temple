@@ -92,8 +92,9 @@ const TransactionTimePeriod = styled.div`
 `;
 
 const TransactionHistoryTitle = styled.h4`
-  margin: 0;  
-  ${breakpoints.phoneToSmallTablet(`
+  margin: 0;
+  margin-top: 20px;
+  ${breakpoints.phone(`
     font-size: 18px;
   `)}
   color: ${({ theme }) => theme.palette.brandLight};

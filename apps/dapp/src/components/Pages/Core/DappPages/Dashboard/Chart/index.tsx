@@ -8,6 +8,7 @@ import { useState } from 'react';
 import { ChartSupportedTimeInterval } from 'utils/time-intervals';
 import { IntervalToggler } from 'components/Charts';
 import { useSearchParams } from 'react-router-dom';
+import { useMediaQuery } from 'react-responsive';
 
 type DashboardChartProps = {
   dashboardType: DashboardType;
@@ -31,6 +32,9 @@ const DashboardChart = ({ dashboardType, strategyNames }: DashboardChartProps) =
   console.debug('DashboardChart with dashboardType: ', dashboardType);
 
   const [searchParams, setSearchParams] = useSearchParams();
+  const isDesktop = useMediaQuery({
+    query: breakpoints.queryPhone,
+  });
 
   const defaultMetric: V2SnapshotMetric = 'totalMarketValueUSD';
   const chosenMetric = searchParams.get(CHART_SELECTOR_QUERY_PARAM);
@@ -54,6 +58,7 @@ const DashboardChart = ({ dashboardType, strategyNames }: DashboardChartProps) =
               defaultValue={metricOptions.find((m) => m.value === selectedMetric)}
               onChange={(e) => selectMetric(e.value)}
               isSearchable={false}
+              fontSize={isDesktop? '16px' : '12px'}
             />
           </SelectMetricContainer>
           <IntervalTogglerContainer>

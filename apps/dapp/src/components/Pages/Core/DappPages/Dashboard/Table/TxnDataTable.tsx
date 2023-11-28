@@ -25,7 +25,7 @@ export type TableRow = {
   token: string;
   amount: number;
   txHash: string;
-  extendedMobView: {
+  expRowMobView: {
     isOpen: boolean;
     component: ReactNode;
   };
@@ -65,9 +65,9 @@ export const TxnDataTable = (props: Props) => {
   const clickTableRow = (row?: TableRow) => {
     setTableRows((prevRows) =>
       prevRows?.map((r) => {
-        const emv = r.extendedMobView;
+        const emv = r.expRowMobView;
         if (r == row) {
-          return { ...r, extendedMobView: { isOpen: !emv.isOpen, component: emv.component } };
+          return { ...r, expRowMobView: { isOpen: !emv.isOpen, component: emv.component } };
         }
         return r;
       })
@@ -114,8 +114,8 @@ export const TxnDataTable = (props: Props) => {
           <>
             {dataRefetching && loadSkeletonRows(1, tableHeaders.filter((h) => h.isHidden === false).length)}
             {tableRows.map((row) => {
-              // deconstruct so we can remove extendedMobView, and then use rowData as key of the Fragment
-              const { extendedMobView, ...rowData } = row;
+              // deconstruct so we can remove expRowMobView, and then use rowData as key of the Fragment
+              const { expRowMobView, ...rowData } = row;
               return (
                 <Fragment key={JSON.stringify(rowData)}>
                   <DataRow
@@ -130,7 +130,7 @@ export const TxnDataTable = (props: Props) => {
                     <DataCell isHidden={tableHeaders[3].isHidden}>{row.token}</DataCell>
                     <DataCell isHidden={tableHeaders[4].isHidden}>
                       <FlexContainer>
-                        {row.amount} {!isBiggerThanTablet && (row.extendedMobView.isOpen ? <ArrowUp /> : <ArrowDown />)}
+                        {row.amount} {!isBiggerThanTablet && (row.expRowMobView.isOpen ? <ArrowUp /> : <ArrowDown />)}
                       </FlexContainer>
                     </DataCell>
                     <DataCell isHidden={tableHeaders[5].isHidden}>
@@ -140,7 +140,7 @@ export const TxnDataTable = (props: Props) => {
                     </DataCell>
                   </DataRow>
                   <DataRow hasBorderBotton onClick={() => clickTableRow(row)}>
-                    {row.extendedMobView.isOpen && !isBiggerThanTablet && row.extendedMobView.component}
+                    {row.expRowMobView.isOpen && !isBiggerThanTablet && row.expRowMobView.component}
                   </DataRow>
                 </Fragment>
               );

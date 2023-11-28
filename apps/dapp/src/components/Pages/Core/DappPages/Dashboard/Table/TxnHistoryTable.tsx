@@ -64,6 +64,22 @@ const TxnHistoryTable = (props: Props) => {
     []
   );
 
+  // Show/hide table columns automatically when screen is resized 
+  useEffect(() => {
+    setTableHeaders((prevTableHeaders) => {
+      return prevTableHeaders.map((th) => {
+        switch (th.name) {
+          case TableHeaders.Type:
+          case TableHeaders.Strategy:
+          case TableHeaders.TxHash:
+            return { ...th, isHidden: !isBiggerThanTablet };
+          default:
+            return th;
+        }
+      });
+    });
+  }, [isBiggerThanTablet]);
+
   const [tableHeaders, setTableHeaders] = useState<TxHistoryTableHeader[]>([
     {
       name: TableHeaders.Date,
@@ -228,7 +244,7 @@ const TxnHistoryTable = (props: Props) => {
       token: tx.token.symbol,
       amount: isBiggerThanTablet ? amount : tx.name === TxType.Borrow ? amount * -1 : amount,
       txHash: tx.hash,
-      extendedMobView: {
+      expRowMobView: {
         isOpen: false,
         component: (
           <>
@@ -297,7 +313,7 @@ const DataCell = styled.td`
 
 const FlexContainer = styled.div`
   display: flex;
-  flex: wrap;
+  padding-right: 5px;
 `;
 
 const LinkIcon = styled(LinkSvg)`
