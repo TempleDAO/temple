@@ -4,6 +4,10 @@ import React, { useState } from 'react';
 import { useTheme } from 'styled-components';
 import { CartesianGrid, ResponsiveContainer, Line, XAxis, YAxis, Tooltip, Legend, ComposedChart, Area } from 'recharts';
 import { formatNumberAbbreviated } from 'utils/formatter';
+import { ContentType, TooltipProps } from 'recharts/types/component/Tooltip';
+import { NameType, ValueType } from 'recharts/types/component/DefaultTooltipContent';
+import { useMediaQuery } from 'react-responsive';
+import { queryPhone } from 'styles/breakpoints';
 
 type LineChartProps<T> = {
   chartData: T[];
@@ -58,6 +62,10 @@ export default function LineChart<T>(props: React.PropsWithChildren<LineChartPro
     }
     setHiddenLines(nextState);
   };
+
+  const isDesktop = useMediaQuery({
+    query: queryPhone,
+  });
   return (
     <ResponsiveContainer minHeight={200} minWidth={320} height={350}>
       <ComposedChart data={chartData} margin={{ left: 30 }} stackOffset={'sign'}>
@@ -107,13 +115,19 @@ export default function LineChart<T>(props: React.PropsWithChildren<LineChartPro
         />
         <Tooltip
           wrapperStyle={{ outline: 'none' }}
+          separator={isDesktop ? ': ' : ':\n  '}
           contentStyle={{
             backgroundColor: theme.palette.dark75,
             color: theme.palette.brand,
             borderRadius: '15px',
             border: 0,
+            minWidth: '180px',
           }}
-          itemStyle={{ backgroundColor: theme.palette.dark75, color: theme.palette.brandLight }}
+          itemStyle={{
+            backgroundColor: theme.palette.dark75,
+            color: theme.palette.brandLight,
+            whiteSpace: 'pre',
+          }}
           labelStyle={{ backgroundColor: theme.palette.dark75, fontWeight: 'bold' }}
           labelFormatter={tooltipLabelFormatter}
           formatter={

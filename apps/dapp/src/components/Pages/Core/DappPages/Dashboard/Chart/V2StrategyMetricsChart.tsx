@@ -63,7 +63,7 @@ const metricFormatters: { [k in V2SnapshotMetric]: MetricFormatter } = {
   totalMarketValueUSD: parseFloat,
 };
 
-const numberFormatter = new Intl.NumberFormat('en', { maximumFractionDigits: 2 });
+const numberFormatter = new Intl.NumberFormat('en', { maximumFractionDigits: 0 });
 
 const V2StrategyMetricsChart: React.FC<{
   dashboardType: DashboardType;
@@ -71,7 +71,7 @@ const V2StrategyMetricsChart: React.FC<{
   selectedMetric: V2SnapshotMetric;
   selectedInterval: ChartSupportedTimeInterval;
 }> = ({ dashboardType, selectedMetric, selectedInterval, strategyNames }) => {
-  const formatMetricName = (name: string) => `${name} (${selectedMetric.endsWith('Performance') ? '%' : 'USD'})`;
+  const formatMetricName = (name: string) => `${name} (${selectedMetric.endsWith('Performance') ? '%' : '$'})`;
 
   const tooltipValuesFormatter = (value: number, name: string) => [
     numberFormatter.format(value),
