@@ -18,19 +18,13 @@ export const V2Account = () => {
   const { walletAddress } = useWallet();
   const [{ connectedChain }] = useSetChain();
   const currentChainId = useMemo(() => parseInt(connectedChain?.id || '', 16), [connectedChain]);
-  const { isBlocked } = useGeoBlocked();
 
   const isSmallDesktop = useMediaQuery({
     query: queryVerySmallDesktop,
   });
 
-
   if (connecting) {
     return <Loader />;
-  }
-
-  if (isBlocked) {
-    return <ConnectButton disabled label="Restricted Jurisdiction" isSmall isActive isUppercase role="button" />;
   }
 
   if (wallet) {
