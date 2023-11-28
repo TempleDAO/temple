@@ -1,6 +1,6 @@
-import { FC, KeyboardEventHandler } from 'react';
+import { FC } from 'react';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useEffect, useCallback } from 'react';
 import styled from 'styled-components';
 import { backgroundImage, buttonResets } from 'styles/mixins';
 import hamburgerX from 'assets/icons/core-x-hamburger.svg';
@@ -17,23 +17,21 @@ interface MobileNavOverlayProps {
   // will dismiss the panel.
   enableContextDismiss?: boolean;
 
+  slideIn: boolean;
   hidePanel: () => void;
 }
 
 export function MobileNavOverlay(props: MobileNavOverlayProps): JSX.Element {
-  const [slideIn, setSlideIn] = useState(false);
-  useEffect(() => setSlideIn(true), []);
+  const {slideIn} = props;
 
   const enableDismissFromContext = props.enableContextDismiss || props.enableContextDismiss == undefined;
 
-  // Slide out, then indicate to parent that we are done.
   const startDismiss = useCallback(() => {
-    setSlideIn(false);
     setTimeout(props.hidePanel, SLIDE_MS);
   }, [props.hidePanel]);
 
-  const handleKeyPress: KeyboardEventHandler = useCallback(
-    (e) => {
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
       if (e.key === 'Escape' && enableDismissFromContext) {
         startDismiss();
       }
@@ -42,12 +40,11 @@ export function MobileNavOverlay(props: MobileNavOverlayProps): JSX.Element {
   );
 
   useEffect(() => {
-    //@ts-ignore
-    document.addEventListener('keydown', handleKeyPress, false);
-
-    //@ts-ignore
-    return () => document.removeEventListener('keydown', handleKeyPress, false);
-  }, [handleKeyPress]);
+    document.addEventListener('keydown', handleKeyDown, false);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown, false);
+    };
+  }, [handleKeyDown]);
 
   return (
     <>
@@ -58,7 +55,6 @@ export function MobileNavOverlay(props: MobileNavOverlayProps): JSX.Element {
             startDismiss();
           }
         }}
-        onKeyPress={handleKeyPress}
       >
         <ContentPanel
           widthPercent={props.widthPercent || 50}
@@ -82,7 +78,6 @@ const WindowOverlay = styled.div<{ slideIn: boolean }>`
   z-index: 80;
   position: fixed;
   display: flex;
-  width: 100%;
   height: 100%;
   top: 0;
   left: 0;

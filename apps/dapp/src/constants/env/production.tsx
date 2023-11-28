@@ -60,9 +60,14 @@ const env: Environment = {
     vaultProxy: '0x6f5bB7cC4F3D6628d0095545552757AB377FE15C',
     vaultEarlyExit: '0x24719d3AF60e1B622a29317d29E5Ce283617DeEC',
     ramos: '0xDdF499e726Bfde29Ce035F6B355e55757F08B5EF',
-    ramosStrategy: '0xDA5CeF575eaEF14032C5006eb5cbEbE7eE0E347b',
     ramosPoolHelper: '0xe32089bf9724aF09C026BeC36a7d8a81500cd58A',
     balancerHelpers: '0x5aDDCCa35b7A0D07C74063c48700C8590E87864E',
+    strategies: {
+      dsrBaseStrategy: '0x8b9e20D9970Af54fbaFe64049174e24d6DE0C412',
+      ramosStrategy: '0xDA5CeF575eaEF14032C5006eb5cbEbE7eE0E347b',
+      templeStrategy: '0xB8d09B0436adF927004Cea0B096E8c05f6dFdc3b',
+      tlcStrategy: '0xcABDE42dd767361739bD7c09C6E574057080ef01',
+    }
   },
   gas: {
     swapFraxForTemple: 300000,

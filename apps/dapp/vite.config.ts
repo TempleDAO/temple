@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import legacy from '@vitejs/plugin-legacy';
+import svgr from 'vite-plugin-svgr';
 import path from 'path';
 import { dependencies } from './package.json';
 
@@ -25,6 +26,7 @@ const plugins = [
       plugins: ['babel-plugin-styled-components'],
     },
   }),
+  svgr(),
   legacy(),
 ];
 
