@@ -65,14 +65,14 @@ async function connectToContracts(signer: Signer): Promise<ContractInstances> {
   const {
     ramos: RAMOS_ADDRESS,
     ramosPoolHelper: RAMOS_POOL_HELPER_ADDRESS,
-    ramosStrategy: RAMOS_STRATEGY_ADDRESS,
+    strategies: STRATEGIES,
     balancerHelpers: BALANCER_HELPERS_ADDRESS,
     treasuryReservesVault: TRV_ADDRESS,
   } = environmentConfig.contracts;
 
   const ramos = Ramos__factory.connect(RAMOS_ADDRESS, signer);
   const ramosPoolHelper = BalancerPoolHelper__factory.connect(RAMOS_POOL_HELPER_ADDRESS, signer);
-  const ramosStrategy = RamosStrategy__factory.connect(RAMOS_STRATEGY_ADDRESS, signer);
+  const ramosStrategy = RamosStrategy__factory.connect(STRATEGIES.ramosStrategy, signer);
   const balancerHelpers = IBalancerHelpers__factory.connect(BALANCER_HELPERS_ADDRESS, signer);
   const trv = TreasuryReservesVault__factory.connect(TRV_ADDRESS, signer);
 
@@ -95,7 +95,7 @@ async function connectToContracts(signer: Signer): Promise<ContractInstances> {
 export function useRamosAdmin() {
   const { signer } = useWallet();
   const [ramosAdmin, setRamosAdmin] = useState<RamosAdmin>();
-  let tokens = {
+  const tokens = {
     temple: { address: '', balance: DBN_ZERO },
     stable: { address: '', balance: DBN_ZERO },
   };

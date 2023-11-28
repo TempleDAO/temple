@@ -32,7 +32,6 @@ export const PageRangeSelector = (props: Props) => {
             key={pageNumber}
             onClick={() => setCurrentPage(pageNumber)}
             selected={currentPage === pageNumber}
-            disabled={currentPage === pageNumber}
           >
             {pageNumber}
           </PageLink>

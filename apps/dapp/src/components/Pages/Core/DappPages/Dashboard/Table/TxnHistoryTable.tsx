@@ -14,6 +14,10 @@ import {
 } from '../hooks/use-dashboardv2-txHistory';
 import { StrategyKey } from '../hooks/use-dashboardv2-metrics';
 import { DropdownCheckOption, DropdownCheckOptions } from './RowFilterDropdown';
+import { useMediaQuery } from 'react-responsive';
+import { queryMinTablet } from 'styles/breakpoints';
+import env from 'constants/env/local';
+import linkSvg from 'assets/icons/link.svg?react';
 
 type Props = {
   dashboardType: DashboardType;
@@ -37,6 +41,7 @@ enum DebtToken {
 export type TxHistoryTableHeader = {
   name: TableHeaders;
   width: CSS.Property.Width;
+  isHidden: boolean;
   orderDesc?: boolean;
   dropdownOptions?: DropdownCheckOptions;
 };
@@ -47,6 +52,7 @@ const TxnHistoryTable = (props: Props) => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [blockNumber, setBlockNumber] = useState(0);
   const [rowFilter, setRowFilter] = useState<RowFilter>({});
+  const isBiggerThanTablet = useMediaQuery({ query: queryMinTablet });
 
   const allStrategyDropdowns = useMemo(
     () => [
@@ -58,16 +64,34 @@ const TxnHistoryTable = (props: Props) => {
     []
   );
 
+  // Show/hide table columns automatically when screen is resized 
+  useEffect(() => {
+    setTableHeaders((prevTableHeaders) => {
+      return prevTableHeaders.map((th) => {
+        switch (th.name) {
+          case TableHeaders.Type:
+          case TableHeaders.Strategy:
+          case TableHeaders.TxHash:
+            return { ...th, isHidden: !isBiggerThanTablet };
+          default:
+            return th;
+        }
+      });
+    });
+  }, [isBiggerThanTablet]);
+
   const [tableHeaders, setTableHeaders] = useState<TxHistoryTableHeader[]>([
     {
       name: TableHeaders.Date,
       orderDesc: true,
-      width: '245px',
+      width: isBiggerThanTablet ? '245px' : '107px',
+      isHidden: false,
     },
     {
       name: TableHeaders.Type,
       orderDesc: undefined,
       width: '93px',
+      isHidden: isBiggerThanTablet ? false : true,
       // TODO: get dropdown values programatically, see https://github.com/TempleDAO/temple/pull/880#discussion_r1386151604
       dropdownOptions: [
         { label: TxType.Borrow, checked: false },
@@ -78,13 +102,15 @@ const TxnHistoryTable = (props: Props) => {
       name: TableHeaders.Strategy,
       orderDesc: undefined,
       width: '123px',
+      isHidden: isBiggerThanTablet ? false : true,
       // TODO: get dropdown values programatically, see https://github.com/TempleDAO/temple/pull/880#discussion_r1386151604
       dropdownOptions: allStrategyDropdowns,
     },
     {
       name: TableHeaders.Token,
       orderDesc: undefined,
-      width: '100px',
+      width: isBiggerThanTablet ? '100px' : '99px',
+      isHidden: false,
       // TODO: get dropdown values programatically, see https://github.com/TempleDAO/temple/pull/880#discussion_r1386151604
       dropdownOptions: [
         { label: DebtToken.DAI, checked: false },
@@ -94,12 +120,14 @@ const TxnHistoryTable = (props: Props) => {
     {
       name: TableHeaders.Amount,
       orderDesc: undefined,
-      width: '97px',
+      width: isBiggerThanTablet ? '97px' : '128px',
+      isHidden: false,
     },
     {
       name: TableHeaders.TxHash,
       orderDesc: undefined,
-      width: '128px',
+      width: isBiggerThanTablet ? '128px' : '99px',
+      isHidden: isBiggerThanTablet ? false : true,
     },
   ]);
 
@@ -150,7 +178,7 @@ const TxnHistoryTable = (props: Props) => {
       const newState = prevState.map((prevStateHeader) => {
         //  3.1 set default strategy dropdown depending on selected dashboard
         if (prevStateHeader.name === TableHeaders.Strategy) {
-          if (!prevStateHeader.dropdownOptions) return {...prevStateHeader, orderDesc: undefined};
+          if (!prevStateHeader.dropdownOptions) return { ...prevStateHeader, orderDesc: undefined };
           return {
             ...prevStateHeader,
             orderDesc: undefined,
@@ -161,7 +189,8 @@ const TxnHistoryTable = (props: Props) => {
           };
         }
         //  3.2 reset all other dropdown values
-        if (!prevStateHeader.dropdownOptions) return { ...prevStateHeader, orderDesc: TableHeaders.Date === prevStateHeader.name ? true : undefined };
+        if (!prevStateHeader.dropdownOptions)
+          return { ...prevStateHeader, orderDesc: TableHeaders.Date === prevStateHeader.name ? true : undefined };
         const newDropdownOptions = prevStateHeader.dropdownOptions.map((prevOp) => {
           return { ...prevOp, checked: false };
         });
@@ -205,13 +234,40 @@ const TxnHistoryTable = (props: Props) => {
   // Fetch strategies tx data
   const dataToTable: TableRow[] | undefined = txHistory.data?.map((tx) => {
     const amount = Number(Number(tx.amount).toFixed(2));
+    const datetime = format(new Date(Number(tx.timestamp) * 1000), 'yyyy-MM-dd H:mm:ss O');
+    const dateOnly = format(new Date(Number(tx.timestamp) * 1000), 'yyyy-MM-dd');
+    const timeOnly = format(new Date(Number(tx.timestamp) * 1000), 'H:mm:ss');
     return {
-      date: format(new Date(Number(tx.timestamp) * 1000), 'yyyy-MM-dd H:mm:ss O'),
+      date: isBiggerThanTablet ? datetime : dateOnly,
       type: tx.name,
       strategy: tx.strategy.name,
       token: tx.token.symbol,
-      amount: amount,
+      amount: isBiggerThanTablet ? amount : tx.name === TxType.Borrow ? amount * -1 : amount,
       txHash: tx.hash,
+      expRowMobView: {
+        isOpen: false,
+        component: (
+          <>
+            <DataCell>
+              <ColText lightColor={false}>Time</ColText>
+              <ColText lightColor>{timeOnly}</ColText>
+            </DataCell>
+            <DataCell>
+              <ColText lightColor={false}>Strategy</ColText>
+              <ColText lightColor>{tx.strategy.name}</ColText>
+            </DataCell>
+            <DataCell>
+              <ColText lightColor={false}>Type</ColText>
+              <FlexContainer>
+                <ColText lightColor style={{ flexGrow: 1 }}>
+                  {tx.name}
+                </ColText>
+                <LinkIcon onClick={() => window.open(`${env.etherscan}/tx/${tx.hash}`, '_blank')} />
+              </FlexContainer>
+            </DataCell>
+          </>
+        ),
+      },
     };
   });
 
@@ -219,13 +275,6 @@ const TxnHistoryTable = (props: Props) => {
 
   return (
     <TableContainer>
-      <PaginationControl
-        totalPages={totalPages}
-        rowsPerPage={rowsPerPage}
-        currentPage={currentPage}
-        setCurrentPage={setCurrentPage}
-        setRowsPerPage={setRowsPerPage}
-      />
       <TxnDataTable
         dataSubset={dataToTable}
         dataLoading={isLoading}
@@ -234,6 +283,13 @@ const TxnHistoryTable = (props: Props) => {
         setRowFilter={setRowFilter}
         updateTableHeadersOrder={updateTableHeadersOrder}
         updateRowDropdownCheckbox={updateRowDropdownCheckbox}
+      />
+      <PaginationControl
+        totalPages={totalPages}
+        rowsPerPage={rowsPerPage}
+        currentPage={currentPage}
+        setCurrentPage={setCurrentPage}
+        setRowsPerPage={setRowsPerPage}
       />
     </TableContainer>
   );
@@ -244,5 +300,31 @@ export default TxnHistoryTable;
 const TableContainer = styled.div`
   display: flex;
   flex-direction: column;
-  width: 70vw;
+  width: 100%;
+`;
+
+const DataCell = styled.td`
+  padding: 0;
+  padding-bottom: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  background-color: ${({ theme }) => theme.palette.dark};
+`;
+
+const FlexContainer = styled.div`
+  display: flex;
+  padding-right: 5px;
+`;
+
+const LinkIcon = styled(linkSvg)`
+  fill: ${({ theme }) => theme.palette.brandLight};
+  cursor: pointer;
+  width: 15px;
+`;
+
+const ColText = styled.div<{ lightColor: boolean }>`
+  display: flex;
+  flex-direction: row;
+  padding-top: 5px;
+  color: ${({ theme, lightColor }) => (lightColor ? theme.palette.brandLight : theme.palette.brand)};
 `;

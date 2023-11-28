@@ -8,32 +8,22 @@ import { queryVerySmallDesktop, verySmallDesktop } from 'styles/breakpoints';
 
 import { useConnectWallet, useSetChain } from '@web3-onboard/react';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useWallet } from 'providers/WalletProvider';
 import { MAINNET_CHAIN, SEPOLIA_CHAIN } from 'utils/envChainMapping';
+import { useGeoBlocked } from 'hooks/use-geo-blocked';
 
 export const V2Account = () => {
   const [{ wallet, connecting }, connect, disconnect] = useConnectWallet();
   const { walletAddress } = useWallet();
   const [{ connectedChain }] = useSetChain();
   const currentChainId = useMemo(() => parseInt(connectedChain?.id || '', 16), [connectedChain]);
+  const { isBlocked } = useGeoBlocked();
 
   const isSmallDesktop = useMediaQuery({
     query: queryVerySmallDesktop,
   });
 
-  const [isBlocked, setIsBlocked] = useState(false);
-
-  useEffect(() => {
-    const checkBlocked = async () => {
-      const blocked = await fetch(`${window.location.href}api/geoblock`)
-        .then((res) => res.json())
-        .then((res) => res.blocked)
-        .catch(() => false);
-      setIsBlocked(blocked);
-    };
-    checkBlocked();
-  }, []);
 
   if (connecting) {
     return <Loader />;
