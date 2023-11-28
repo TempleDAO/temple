@@ -23,7 +23,7 @@ export type TableRow = {
   type: TxType;
   strategy?: StrategyKey;
   token: string;
-  amount: number;
+  amount: string;
   txHash: string;
   expRowMobView: {
     isOpen: boolean;

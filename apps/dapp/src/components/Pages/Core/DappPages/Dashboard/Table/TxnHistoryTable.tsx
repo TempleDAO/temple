@@ -18,6 +18,7 @@ import { useMediaQuery } from 'react-responsive';
 import { queryMinTablet } from 'styles/breakpoints';
 import env from 'constants/env/local';
 import linkSvg from 'assets/icons/link.svg?react';
+import { formatNumberWithCommas } from 'utils/formatter';
 
 type Props = {
   dashboardType: DashboardType;
@@ -64,15 +65,21 @@ const TxnHistoryTable = (props: Props) => {
     []
   );
 
-  // Show/hide table columns automatically when screen is resized 
+  // Show/hide/resize table columns automatically when screen is resized
   useEffect(() => {
     setTableHeaders((prevTableHeaders) => {
       return prevTableHeaders.map((th) => {
         switch (th.name) {
+          case TableHeaders.Date:
+            return { ...th, width: isBiggerThanTablet ? '245px' : '107px' };
+          case TableHeaders.Token:
+            return { ...th, width: isBiggerThanTablet ? '100px' : '99px' };
+          case TableHeaders.Amount:
+            return { ...th, width: isBiggerThanTablet ? '97px' : '128px' };
           case TableHeaders.Type:
           case TableHeaders.Strategy:
           case TableHeaders.TxHash:
-            return { ...th, isHidden: !isBiggerThanTablet };
+            return { ...th, width: isBiggerThanTablet ? '128px' : '99px', isHidden: !isBiggerThanTablet };
           default:
             return th;
         }
@@ -233,7 +240,8 @@ const TxnHistoryTable = (props: Props) => {
 
   // Fetch strategies tx data
   const dataToTable: TableRow[] | undefined = txHistory.data?.map((tx) => {
-    const amount = Number(Number(tx.amount).toFixed(2));
+    const amountResponsive = isBiggerThanTablet ? tx.amount : tx.name === TxType.Borrow ? Number(tx.amount) * -1 : tx.amount;
+    const amountFmt = formatNumberWithCommas(amountResponsive);
     const datetime = format(new Date(Number(tx.timestamp) * 1000), 'yyyy-MM-dd H:mm:ss O');
     const dateOnly = format(new Date(Number(tx.timestamp) * 1000), 'yyyy-MM-dd');
     const timeOnly = format(new Date(Number(tx.timestamp) * 1000), 'H:mm:ss');
@@ -242,7 +250,7 @@ const TxnHistoryTable = (props: Props) => {
       type: tx.name,
       strategy: tx.strategy.name,
       token: tx.token.symbol,
-      amount: isBiggerThanTablet ? amount : tx.name === TxType.Borrow ? amount * -1 : amount,
+      amount: amountFmt,
       txHash: tx.hash,
       expRowMobView: {
         isOpen: false,
