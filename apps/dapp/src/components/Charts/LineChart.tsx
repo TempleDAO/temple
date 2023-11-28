@@ -4,8 +4,6 @@ import React, { useState } from 'react';
 import { useTheme } from 'styled-components';
 import { CartesianGrid, ResponsiveContainer, Line, XAxis, YAxis, Tooltip, Legend, ComposedChart, Area } from 'recharts';
 import { formatNumberAbbreviated } from 'utils/formatter';
-import { ContentType, TooltipProps } from 'recharts/types/component/Tooltip';
-import { NameType, ValueType } from 'recharts/types/component/DefaultTooltipContent';
 import { useMediaQuery } from 'react-responsive';
 import { queryPhone } from 'styles/breakpoints';
 
