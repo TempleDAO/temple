@@ -1,10 +1,9 @@
 import { useState } from 'react';
-import { useMediaQuery } from 'react-responsive';
 import { Button as BaseButton } from 'components/Button/Button';
 import styled from 'styled-components';
+import * as breakpoints from 'styles/breakpoints';
 import TxnHistoryTable from './TxnHistoryTable';
 import { DashboardType } from '../DashboardContent';
-import { queryPhone } from 'styles/breakpoints';
 
 type DashboardTransactionHistoryProps = {
   dashboardType: DashboardType;
@@ -20,24 +19,20 @@ const DashboardTransactionHistory = ({ dashboardType }: DashboardTransactionHist
   
   const [txFilter, setTxFilter] = useState<TxHistoryFilterType>(TxHistoryFilterType.all);
 
-  const isDesktop = useMediaQuery({
-    query: queryPhone,
-  });
-
   return (
     <TransactionHistoryContainer>
-      <TransactionHistoryHeader isDesktop={isDesktop}>
+      <TransactionHistoryHeader>
         <TransactionHistoryTitle>Transaction History</TransactionHistoryTitle>
         <TransactionTimePeriod>
-          <FilterButton isSmall selected={txFilter === 'lastweek'} onClick={() => setTxFilter(TxHistoryFilterType.lastweek)}>
+          <IntervalToggle selected={txFilter === 'lastweek'} onClick={() => setTxFilter(TxHistoryFilterType.lastweek)}>
             Last week
-          </FilterButton>
-          <FilterButton isSmall selected={txFilter === 'last30days'} onClick={() => setTxFilter(TxHistoryFilterType.last30days)}>
+          </IntervalToggle>
+          <IntervalToggle selected={txFilter === 'last30days'} onClick={() => setTxFilter(TxHistoryFilterType.last30days)}>
             Last 30 Days
-          </FilterButton>
-          <FilterButton isSmall selected={txFilter === 'all'} onClick={() => setTxFilter(TxHistoryFilterType.all)}>
+          </IntervalToggle>
+          <IntervalToggle selected={txFilter === 'all'} onClick={() => setTxFilter(TxHistoryFilterType.all)}>
             All
-          </FilterButton>
+          </IntervalToggle>
         </TransactionTimePeriod>
       </TransactionHistoryHeader>
       <TransactionHistoryContent>
@@ -49,17 +44,23 @@ const DashboardTransactionHistory = ({ dashboardType }: DashboardTransactionHist
 
 export default DashboardTransactionHistory;
 
-type FilterButtonProps = {
+type IntervalToggleProps = {
   selected?: boolean;
 };
 
-const FilterButton = styled(BaseButton)<FilterButtonProps>`
-  margin: 0 5px;
+const IntervalToggle = styled.label<IntervalToggleProps>`
+  padding: 0;
+  margin-right: 20px;
   height: 25px;
   border-radius: 5px;
-  text-decoration: ${({ selected }) => (selected ? 'underline' : 'none')};
+  ${({ selected }) => (selected && 'text-decoration: underline;')}
+  ${({ selected }) => (selected && 'font-weight: bold;')}
+  color: ${({ selected, theme }) => (selected ? theme.palette.brandLight : theme.palette.brand)};
   border: 0px;
   white-space: nowrap;
+  &:last-child {
+    margin-right: 0;
+  }
 `;
 
 const TransactionHistoryContent = styled.div`
@@ -67,13 +68,20 @@ const TransactionHistoryContent = styled.div`
   flex-direction: column;
   align-items: center;
   width: 100%;
+  margin-top: 10px;
 `;
 
-const TransactionHistoryHeader = styled.div<{isDesktop: boolean}>`
+const TransactionHistoryHeader = styled.div`
   display: flex;
-  flex-direction: ${({isDesktop}) => isDesktop ? 'row' : 'column'};
+  flex-direction: column;
+  align-self: start;
   justify-content: space-between;
-  align-items: center;
+  gap: 30px;
+  ${breakpoints.phoneAndAbove(`
+    flex-direction: row;
+    align-items: center;
+    align-self: auto;
+  `)}
 `;
 
 const TransactionTimePeriod = styled.div`
@@ -83,13 +91,18 @@ const TransactionTimePeriod = styled.div`
   color: ${({ theme }) => theme.palette.brandLight};
 `;
 
-const TransactionHistoryTitle = styled.div`
-  font-size: 1.5rem;
+const TransactionHistoryTitle = styled.h4`
+  margin: 0;
+  margin-top: 20px;
+  ${breakpoints.phone(`
+    font-size: 18px;
+  `)}
   color: ${({ theme }) => theme.palette.brandLight};
 `;
 
 const TransactionHistoryContainer = styled.div`
   display: flex;
   flex-direction: column;
-  width: 70vw;
+  margin-bottom: 2rem;
+  width: 100%
 `;

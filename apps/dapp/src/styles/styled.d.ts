@@ -31,6 +31,7 @@ declare module 'styled-components' {
       gradients: {
         dark: string;
         grey: string;
+        greyVertical: string;
       };
     };
     metrics: {
@@ -40,6 +41,7 @@ declare module 'styled-components' {
         maxWidth: string;
       };
       devices: {
+        smallTablet: string;
         tablet: string;
         laptop: string;
         phone: string;

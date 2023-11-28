@@ -36,7 +36,12 @@ interface Contracts {
   vaultProxy: string;
   vaultEarlyExit: string;
   ramos: string;
-  ramosStrategy: string;
+  strategies: {
+    dsrBaseStrategy: string;
+    ramosStrategy: string;
+    templeStrategy: string;
+    tlcStrategy: string;
+  }
   ramosPoolHelper: string;
   balancerHelpers: string;
 }

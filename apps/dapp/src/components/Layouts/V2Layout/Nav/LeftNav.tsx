@@ -3,8 +3,15 @@ import styled from 'styled-components';
 
 import footerTexture from 'assets/images/newui-images/footerTexture.svg';
 import NavLinks from './NavLinks';
+import { MenuNavItem, MenuNavItems } from '..';
 
-const LeftNav = () => {
+type LeftNavProps = {
+  menuNavItems: MenuNavItems;
+  onSelectMenuNavItems: (mi: MenuNavItem) => void;
+};
+
+const LeftNav = (props: LeftNavProps) => {
+  const { menuNavItems, onSelectMenuNavItems } = props;
   const [isNavCollapsed, setNavCollapsed] = useState(true);
 
   return (
@@ -15,6 +22,8 @@ const LeftNav = () => {
     >
       <NavContent collapsed={isNavCollapsed}>
         <NavLinks
+          menuNavItems={menuNavItems}
+          onSelectMenuNavItems={onSelectMenuNavItems}
           isNavCollapsed={isNavCollapsed}
         />
       </NavContent>
@@ -44,34 +53,5 @@ const NavContent = styled.div<NavContentProps>`
   display: flex;
   flex-direction: column;
   margin-top: 10px;
-  padding-left: 8px;
-  padding-right: 8px;
-`;
-
-type NavLinkProps = {
-  small?: boolean;
-};
-
-const NavLinkText = styled.span<NavLinkProps>`
-  margin-left: 0.5rem;
-  font-weight: 700;
-  color: ${(props) => props.theme.palette.brand};
-  vertical-align: middle;
-  &:hover {
-    text-decoration: underline;
-  }
-  font-size: ${(props) => (props.small ? '0.75rem' : '1rem')};
-`;
-
-const NavLinkCell = styled.div`
-  display: flex;
-  align-items: center;
-  padding: 10px;
-  margin-top: 1rem;
-  cursor: pointer;
-  white-space: nowrap;
-  border-radius: 5px;
-  &:hover {
-    background-color: ${(props) => props.theme.palette.brand25};
-  }
+  width: 100%;
 `;

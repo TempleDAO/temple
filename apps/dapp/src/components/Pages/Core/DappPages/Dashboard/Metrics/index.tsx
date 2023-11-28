@@ -1,9 +1,9 @@
 import Loader from 'components/Loader/Loader';
-import { useEffect, useMemo, useState, Fragment } from 'react';
+import { useMemo, Fragment } from 'react';
 import { useMediaQuery } from 'react-responsive';
 import styled from 'styled-components';
+import * as breakpoints from 'styles/breakpoints';
 import { queryPhone } from 'styles/breakpoints';
-import { Nullable } from 'types/util';
 import { DashboardType } from '../DashboardContent';
 import useDashboardV2Metrics, { ArrangedDashboardMetrics } from '../hooks/use-dashboardv2-metrics';
 
@@ -12,52 +12,16 @@ type DashboardMetricsProps = {
 };
 
 const DashboardMetrics = ({ dashboardType }: DashboardMetricsProps) => {
-  console.debug('DashboardMetrics with dashboardType: ', dashboardType);
-
-  const [sourceData, setSourceData] = useState<Nullable<ArrangedDashboardMetrics>>(null);
-
-  const {
-    tlcMetrics,
-    ramosMetrics,
-    templeBaseMetrics,
-    dsrBaseMetrics,
-    treasuryReservesVaultMetrics,
-    getArrangedStrategyMetrics,
-    getArrangedTreasuryReservesVaultMetrics,
-    isLoading,
-  } = useDashboardV2Metrics();
-
-  useEffect(() => {
-    if (isLoading) {
-      return setSourceData(null);
-    }
-
-    switch (dashboardType) {
-      case DashboardType.TREASURY_RESERVES_VAULT:
-        return setSourceData(getArrangedTreasuryReservesVaultMetrics(treasuryReservesVaultMetrics.data!));
-      // case DashboardType.TLC: // TODO: Hidden until launch
-      //   return setSourceData(getArrangedStrategyMetrics(tlcMetrics.data!));
-      case DashboardType.RAMOS:
-        return setSourceData(getArrangedStrategyMetrics(ramosMetrics.data!));
-      case DashboardType.TEMPLE_BASE:
-        return setSourceData(getArrangedStrategyMetrics(templeBaseMetrics.data!));
-      case DashboardType.DSR_BASE:
-        return setSourceData(getArrangedStrategyMetrics(dsrBaseMetrics.data!));
-    }
-  }, [isLoading, dashboardType]);
-
-  useEffect(() => {
-    console.log(sourceData);
-  }, [sourceData]);
+  const { dashboardMetrics } = useDashboardV2Metrics(dashboardType);
 
   const isDesktop = useMediaQuery({
     query: queryPhone,
   });
 
-  const mobileView = (sourceData: Nullable<ArrangedDashboardMetrics>) => (
+  const mobileView = (sourceData: ArrangedDashboardMetrics) => (
     <>
       <MobileMetricsContainer>
-        {sourceData!.metrics.map((row, idx) => (
+        {sourceData.metrics.map((row, idx) => (
           <Fragment key={idx}>
             {row.map((metric, idx) => (
               <MobileMetricRow key={idx}>
@@ -69,7 +33,7 @@ const DashboardMetrics = ({ dashboardType }: DashboardMetricsProps) => {
         ))}
       </MobileMetricsContainer>
       <MobileMetricsContainer small>
-        {sourceData!.smallMetrics.map((row, idx) => (
+        {sourceData.smallMetrics.map((row, idx) => (
           // TODO: The MobileMetricsContainer for small should be .. smaller
           <Fragment key={idx}>
             {row.map((metric, idx) => (
@@ -84,41 +48,37 @@ const DashboardMetrics = ({ dashboardType }: DashboardMetricsProps) => {
     </>
   );
 
-  const desktopView = (sourceData: Nullable<ArrangedDashboardMetrics>) => (
-    <>
+  const desktopView = (sourceData: ArrangedDashboardMetrics) => (
       <MetricsContainer>
-        {sourceData!.metrics.map((row, idx) => (
-          <MetricsRow key={idx}>
-            {row.map((metric, idx) => (
-              <Metric key={idx}>
+        <MetricsRow>
+          {sourceData.metrics.map((row) =>
+            row.map((metric) => (
+              <Metric key={metric.title}>
                 <MetricValue>{metric.value}</MetricValue>
                 <MetricTitle>{metric.title}</MetricTitle>
               </Metric>
-            ))}
-          </MetricsRow>
-        ))}
-      </MetricsContainer>
-      <MetricsContainer>
-        {sourceData!.smallMetrics.map((row, idx) => (
-          <MetricsRow key={idx}>
-            {row.map((metric, idx) => (
-              <Metric small key={idx}>
+            ))
+          )}
+        </MetricsRow>
+        <MetricsRow>
+          {sourceData.smallMetrics.map((row) =>
+            row.map((metric) => (
+              <Metric small key={metric.title}>
                 <MetricValue small>{metric.value}</MetricValue>
                 <MetricTitle small>{metric.title}</MetricTitle>
               </Metric>
-            ))}
-          </MetricsRow>
-        ))}
+            ))
+          )}
+        </MetricsRow>
       </MetricsContainer>
-    </>
   );
 
   const viewForDevice = useMemo(() => {
-    if (sourceData === null) return <Loader />;
-    return isDesktop ? desktopView(sourceData) : mobileView(sourceData);
-  }, [isDesktop, sourceData]);
+    if (!dashboardMetrics.data || dashboardMetrics.data === null) return <Loader />;
+    return isDesktop ? desktopView(dashboardMetrics.data) : mobileView(dashboardMetrics.data);
+  }, [isDesktop, dashboardMetrics.data]);
 
-  return sourceData === null || isLoading ? <Loader /> : viewForDevice;
+  return dashboardMetrics.data === null || dashboardMetrics.isLoading ? <Loader /> : viewForDevice;
 };
 
 export default DashboardMetrics;
@@ -128,12 +88,10 @@ type MetricProps = {
 };
 
 const MobileMetricValue = styled.div<MetricProps>`
-  font-size: ${({ small }) => (small ? '10px' : '12px')};
   color: ${({ theme }) => theme.palette.brandLight};
 `;
 
 const MobileMetricTitle = styled.div<MetricProps>`
-  font-size: ${({ small }) => (small ? '10px' : '12px')};
   color: ${({ theme }) => theme.palette.brand};
 `;
 
@@ -148,47 +106,56 @@ const MobileMetricsContainer = styled.div<MetricProps>`
   flex-direction: column;
   align-items: center;
   width: 100%;
-  padding: 10px;
+  padding: ${({ small }) => small ? 'none': '10px'};
   gap: 10px;
   background: ${({ small, theme }) =>
-    small ? theme.palette.black : `linear-gradient(180deg, #000000 0%, #1A1A1A 100%)`};
-  border: ${({ small }) => (small ? 'none' : `1px solid #bd7b4f`)};
+    small ? theme.palette.black : `linear-gradient(180deg, #000000 0%, #1A1A1A 100%);`};
+  border: ${({ small }) => (small ? 'none;' : `1px solid #bd7b4f;`)};
   border-radius: 10px;
 `;
 
 const MetricValue = styled.div<MetricProps>`
-  font-size: ${({ small }) => (small ? '1.1rem' : '1.8rem')};
+  font-size: ${({ small }) => (small ? '1.1rem;' : '1.8rem;')};
   color: ${({ theme }) => theme.palette.brandLight};
 `;
 
 const MetricTitle = styled.div<MetricProps>`
-  font-size: ${({ small }) => (small ? '1rem' : '1.1rem')};
+  font-size: ${({ small }) => (small ? '1rem;' : '1.1rem;')};
   color: ${({ theme }) => theme.palette.brand};
 `;
 
 const Metric = styled.div<MetricProps>`
-  width: 200px;
+  min-width: ${({small}) => (small ? '130px;': '180px;')}
+  max-width: 25%;
   display: flex;
+  flex: ${({small}) => (small ? '20%;' : '30%;')}
   flex-direction: column;
   justify-content: center;
+  text-align: center;
+  text-wrap: nowrap;
   align-items: center;
-  border: ${({ small, theme }) => (small ? 'none' : `1px solid ${theme.palette.brand}}`)};
+  border: ${({ small, theme }) => (small ? 'none;' : `1px solid ${theme.palette.brand}};`)};
   border-radius: 0.75rem;
   padding: 0.75rem 0;
   background: ${({ theme }) => theme.palette.black};
+  margin: auto;
 `;
 
 const MetricsContainer = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 100%;
+  margin: 2rem 0;
+  gap: 2rem 0;
 `;
 
 const MetricsRow = styled.div`
   display: flex;
-  flex-direction: row;
-  justify-content: space-evenly;
-  gap: 4rem;
-  margin: 2rem 0;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 2rem 4rem;
+
+  ${breakpoints.phoneToTablet(`
+    gap: 1rem 2rem;
+  }`)}
 `;
