@@ -25,11 +25,11 @@ export type MenuNavItem = {
 export type MenuNavItems = Array<MenuNavItem>;
 
 enum V2DashboardLocPaths {
-  Trade = '/v2dapp/trade',
-  Trv = '/v2dapp/dashboard/treasuryreservesvault',
-  Borrow = '/v2dapp/borrow',
-  Ohmage = '/v2dapp/ohmage',
-  Legacy = '/v2dapp/legacy',
+  Trade = '/dapp/trade',
+  Trv = '/dapp/dashboard/treasuryreservesvault',
+  Borrow = '/dapp/borrow',
+  Ohmage = '/dapp/ohmage',
+  Legacy = '/dapp/legacy',
 }
 
 const V2Layout = () => {
