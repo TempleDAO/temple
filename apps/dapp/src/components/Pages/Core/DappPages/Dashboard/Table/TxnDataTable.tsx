@@ -85,11 +85,6 @@ export const TxnDataTable = (props: Props) => {
             >
               <InnerDataRow>
                 <HeaderTitleContainer onClick={() => updateTableHeadersOrder(h)}>{h.name}</HeaderTitleContainer>
-                {h.orderDesc !== undefined ? (
-                  <ArrowButtonUpDown clicked={h.orderDesc} onClick={() => updateTableHeadersOrder(h)} />
-                ) : (
-                  <EmptySpace />
-                )}
                 {h.dropdownOptions && (
                   <RowFilterDropdown
                     name={h.name}
@@ -97,6 +92,11 @@ export const TxnDataTable = (props: Props) => {
                     setRowFilter={setRowFilter}
                     updateRowDropdownCheckbox={updateRowDropdownCheckbox}
                   />
+                )}
+                {h.orderDesc !== undefined ? (
+                  <ArrowButtonUpDown clicked={h.orderDesc} onClick={() => updateTableHeadersOrder(h)} />
+                ) : (
+                  <EmptySpace />
                 )}
               </InnerDataRow>
             </TableHeader>
@@ -192,7 +192,7 @@ const ArrowUp = styled(dropdownIcon)`
 
 const HeaderTitleContainer = styled.div`
   cursor: pointer;
-  margin-right: 0.5rem;
+  margin-right: 5px;
 `;
 
 const HeaderRow = styled.tr`
@@ -242,7 +242,7 @@ const DataCell = styled.td<{ isHidden?: boolean }>`
 const LinkStyled = styled.a`
   color: ${({ theme }) => theme.palette.brandLight};
   font-size: 0.9rem;
-  font-weight: 300;
+  font-weight: 700;
   &:hover {
     color: ${({ theme }) => theme.palette.brandDark};
   }

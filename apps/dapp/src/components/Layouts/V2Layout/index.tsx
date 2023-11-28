@@ -4,7 +4,7 @@ import { useMediaQuery } from 'react-responsive';
 import { Outlet, useLocation } from 'react-router-dom';
 
 import styled from 'styled-components';
-import { queryMinTablet, tabletAndAbove } from 'styles/breakpoints';
+import { queryMinTablet } from 'styles/breakpoints';
 import Footer from './Footer';
 import LeftNav from './Nav/LeftNav';
 import MobileNav from './Nav/MobileNav';
@@ -71,15 +71,15 @@ const V2Layout = () => {
     },
   ]);
 
-  const onSelectMenuNavItems = async (mi: MenuNavItem) => {
-    await setMenuNavItems((prevState) => {
-      const newState = prevState.map((m) => {
-        if (m == mi) {
-          return { ...m, selected: true };
+  const onSelectMenuNavItems = async (selectedMenuItem: MenuNavItem) => {
+    await setMenuNavItems((prevSelectedMenuNavItems) => {
+      const newSelectedMenuNavItems = prevSelectedMenuNavItems.map((prevMenuItem) => {
+        if (prevMenuItem == selectedMenuItem) {
+          return { ...prevMenuItem, selected: true };
         }
-        return { ...m, selected: false };
+        return { ...prevMenuItem, selected: false };
       });
-      return newState;
+      return newSelectedMenuNavItems;
     });
   };
 

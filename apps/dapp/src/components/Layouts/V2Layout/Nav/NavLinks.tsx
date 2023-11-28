@@ -81,7 +81,6 @@ const NavLinks = (props: NavLinksProps) => {
       </VertNavContainer>
       <Separator />
       <WalletContainer>
-        {/* // TODO: We also need an "Off" or disconnected version of this button */}
         {connecting && <Loader iconSize={24} />}
         {!connecting && !isBlocked && (
           <>
