@@ -9,26 +9,10 @@ import NotificationManager from 'components/Notification/NotificationManager';
 import PageLayout from 'components/Layouts/Page';
 import Loader from 'components/Loader/Loader';
 import Disclaimer from 'components/Pages/Disclaimer';
-import CoreLayout from 'components/Layouts/CoreLayout';
-import VaultPage from 'components/Pages/Core/Vault';
-import ProfilePage from 'components/Pages/Core/Profile/Profile';
-import VaultListPage from 'components/Pages/Core/VaultList';
 import Home from 'components/Pages/Core/NewUI/Home';
-import PoolListPage from 'components/Pages/Ascend/PoolList';
-import { Claim as VaultClaim } from 'components/Pages/Core/VaultPages/Claim';
-import { Stake } from 'components/Pages/Core/VaultPages/Stake';
-import { Summary } from 'components/Pages/Core/VaultPages/Summary';
-import { Strategy } from 'components/Pages/Core/VaultPages/Strategy';
-import Timing from 'components/Pages/Core/VaultPages/Timing';
-import { AscendLayout } from 'components/Layouts/Ascend';
-import { CreateLBPPage } from 'components/Pages/Ascend/admin/create';
-import { EditLBPPage } from 'components/Pages/Ascend/admin/edit';
-import { AscendPage } from 'components/Pages/Ascend';
-import { AscendListPage } from 'components/Pages/AscendList';
 
 import env from 'constants/env';
 import { AnalyticsService } from 'services/AnalyticsService';
-import { Unstake } from 'components/Pages/Core/Trade/views/Unstake';
 import { DashboardPage } from 'components/Pages/Core/DappPages/Dashboard';
 import { TradePage } from './components/Pages/Core/DappPages/TradePage';
 import { BorrowPage } from 'components/Pages/Core/DappPages/Borrow';
@@ -83,7 +67,7 @@ ReactDOM.render(
               <Route path="team-payments" element={<LazyPage component={TeamPayments} />} />
               <Route path="ramos" element={<LazyPage component={RamosAdmin} />} />
             </Route>
-            <Route path="/v2dapp/*" element={<V2Layout />}>
+            <Route path="/dapp/*" element={<V2Layout />}>
               <Route path="dashboard/*" element={<DashboardPage />} />
               <Route path="trade" element={<TradePage />} />
               <Route path="borrow" element={<BorrowPage />} />

@@ -140,7 +140,7 @@ const Home = ({ tlc }: { tlc?: boolean }) => {
               {/* // TODO: Link */}
               <LearnMoreLink>Learn More</LearnMoreLink>
               <ButtonContainer>
-                <Link to="/v2dapp/trade">
+                <Link to="/dapp/trade">
                   <LaunchAppButton label={'Launch App'} role="button" />
                 </Link>
               </ButtonContainer>
@@ -188,7 +188,7 @@ const Home = ({ tlc }: { tlc?: boolean }) => {
           </MarketingRow>
         ))}
         <LaunchAppWrapper>
-          <Link to="/v2dapp/dashboard">
+          <Link to="/dapp/dashboard">
             <LaunchAppButton isUppercase={false} label={'Launch App'} role="button" />
           </Link>
         </LaunchAppWrapper>
