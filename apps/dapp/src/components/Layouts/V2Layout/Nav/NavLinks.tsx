@@ -1,21 +1,13 @@
 import styled from 'styled-components';
-import { useConnectWallet, useSetChain } from '@web3-onboard/react';
-import { useWallet } from 'providers/WalletProvider';
 
 import Image from '../../../Image/Image';
-import WalletLogo from 'assets/icons/account_balance_wallet.svg?react';
 import temple_dao_logo from 'assets/images/sun-art.svg';
-import TruncatedAddress from 'components/TruncatedAddress';
-import * as breakpoints from 'styles/breakpoints';
 
-import Loader from 'components/Loader/Loader';
 import { Link } from 'react-router-dom';
 import { tabletAndAbove } from 'styles/breakpoints';
-import { MAINNET_CHAIN, SEPOLIA_CHAIN } from 'utils/envChainMapping';
 import { theme } from 'styles/theme';
-import { transparentize } from 'polished';
 import { MenuNavItem, MenuNavItems } from '..';
-import { useGeoBlocked } from 'hooks/use-geo-blocked';
+import { WalletNav } from './WalletNav';
 
 type NavLinksProps = {
   menuNavItems: MenuNavItems;
@@ -26,39 +18,9 @@ type NavLinksProps = {
 
 const NavLinks = (props: NavLinksProps) => {
   const { menuNavItems, onSelectMenuNavItems, isNavCollapsed = false, onClickHandler } = props;
-  const [{ wallet, connecting }, connect, disconnect] = useConnectWallet();
-  const { walletAddress } = useWallet();
-  const { isBlocked } = useGeoBlocked();
-
-  const [{ connectedChain }] = useSetChain();
-  const currentChainId = parseInt(connectedChain?.id || '', 16);
 
   const onMenuClick = async (mi: MenuNavItem) => {
     await onSelectMenuNavItems(mi);
-    if (onClickHandler) onClickHandler();
-  };
-  const getChainExplorerURL = (ensOrAddress: string, chainId?: number) => {
-    switch (chainId) {
-      case MAINNET_CHAIN.id:
-        return `https://etherscan.io/address/${ensOrAddress}`;
-      case SEPOLIA_CHAIN.id:
-        return `https://sepolia.etherscan.io/address/${ensOrAddress}`;
-      default:
-        return '#';
-    }
-  };
-
-  const explorerUrl = getChainExplorerURL(walletAddress || '', currentChainId);
-
-  const connectWallet = async () => {
-    // TODO: What to do in this case?
-    if (isBlocked) return alert('Restricted Jurisdiction');
-    await connect();
-    if (onClickHandler) onClickHandler();
-  };
-  const disconnectWallet = async () => {
-    if (!wallet) return;
-    await disconnect(wallet);
     if (onClickHandler) onClickHandler();
   };
 
@@ -80,58 +42,12 @@ const NavLinks = (props: NavLinksProps) => {
         ))}
       </VertNavContainer>
       <Separator />
-      <WalletContainer>
-        {connecting && <Loader iconSize={24} />}
-        {!connecting && !isBlocked && (
-          <>
-            {wallet ? (
-              <>
-                <Wallet onClick={disconnectWallet} />
-                {!isNavCollapsed && (
-                  <UserAddress
-                    target="_blank"
-                    rel="noreferrer noopener"
-                    href={explorerUrl}
-                    onClick={(e) => {
-                      if (explorerUrl === '#') {
-                        e.preventDefault();
-                      }
-                    }}
-                  >
-                    {
-                      <NavLinkText>
-                        <TruncatedAddress address={walletAddress || ''} />
-                      </NavLinkText>
-                    }
-                  </UserAddress>
-                )}
-              </>
-            ) : (
-              <div onClick={connectWallet}>
-                <Wallet fill={theme.palette.light} />
-                {!isNavCollapsed && <NavLinkText style={{ cursor: 'pointer' }}>Connect</NavLinkText>}
-              </div>
-            )}
-          </>
-        )}
-        {isBlocked && (
-          <>
-            <Wallet fill={theme.palette.grayOpaque} />
-            {!isNavCollapsed && <NavLinkText small>Blocked</NavLinkText>}
-          </>
-        )}
-      </WalletContainer>
+      <WalletNav isNavCollapsed={isNavCollapsed} onClickHandler={onClickHandler}/>
     </>
   );
 };
 
 export default NavLinks;
-
-const UserAddress = styled.a`
-  color: ${({ theme }) => theme.palette.brandLight};
-  font-size: 0.75rem;
-  font-weight: 300;
-`;
 
 const TempleLogo = styled(Image)`
   width: 40px;
@@ -206,25 +122,4 @@ const NavLink = styled(Link)`
   &:hover {
     text-decoration: underline;
   }
-`;
-
-const Wallet = styled(WalletLogo)`
-  cursor: pointer;
-  vertical-align: middle;
-  min-width: 24px;
-  fill: ${({ fill, theme }) => fill ?? theme.palette.brand};
-  stroke: ${({ stroke, theme }) => stroke ?? theme.palette.brand50};
-  &:hover {
-    stroke: ${({ fill, theme }) => (fill ? transparentize(0.75, fill) : theme.palette.brand75)};
-  }
-`;
-
-const WalletContainer = styled.div`
-  display: flex;
-  flex-direction: row;
-  white-space: nowrap;
-  padding: 16px 40px 16px 30px;
-  ${breakpoints.minTablet(`
-    padding-left: 25px;
-  `)}
 `;

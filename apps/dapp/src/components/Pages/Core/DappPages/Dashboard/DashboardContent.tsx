@@ -4,7 +4,7 @@ import DashboardChart from './Chart';
 import { StrategyKey } from './hooks/use-dashboardv2-metrics';
 import DashboardMetrics from './Metrics';
 import DashboardTransactionHistory from './Table';
-import LinkSvg from 'assets/icons/link.svg?react';
+import linkSvg from 'assets/icons/link.svg?react';
 import env from 'constants/env';
 
 export enum DashboardType {
@@ -85,7 +85,7 @@ const DashboardContent = ({ selectedDashboard = DashboardType.TREASURY_RESERVES_
   );
 };
 
-const LinkIcon = styled(LinkSvg)`
+const LinkIcon = styled(linkSvg)`
   fill:${({theme}) => theme.palette.brand};
   cursor: pointer;
 `;

@@ -4,7 +4,7 @@ import styled from 'styled-components';
 import Image from '../../../Image/Image';
 import footerTexture from 'assets/images/newui-images/footerTexture.svg';
 import temple_dao_logo from 'assets/images/sun-art.svg';
-import core_hamburger from 'assets/icons/core-hamburger.svg?react';
+import coreHamburger from 'assets/icons/core-hamburger.svg?react';
 import { MobileNavOverlay } from './MobileNavOverlay';
 import NavLinks from './NavLinks';
 import { Link } from 'react-router-dom';
@@ -53,7 +53,7 @@ const NavContainer = styled.div`
   height: 100%;
 `;
 
-const HamburgerIcon = styled(core_hamburger)`
+const HamburgerIcon = styled(coreHamburger)`
   cursor: pointer;
   transition: all 300ms ease;
   fill: ${({theme})=> theme.palette.brand};

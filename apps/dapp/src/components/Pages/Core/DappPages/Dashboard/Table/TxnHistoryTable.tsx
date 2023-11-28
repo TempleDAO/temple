@@ -17,7 +17,7 @@ import { DropdownCheckOption, DropdownCheckOptions } from './RowFilterDropdown';
 import { useMediaQuery } from 'react-responsive';
 import { queryMinTablet } from 'styles/breakpoints';
 import env from 'constants/env/local';
-import LinkSvg from 'assets/icons/link.svg?react';
+import linkSvg from 'assets/icons/link.svg?react';
 
 type Props = {
   dashboardType: DashboardType;
@@ -316,7 +316,7 @@ const FlexContainer = styled.div`
   padding-right: 5px;
 `;
 
-const LinkIcon = styled(LinkSvg)`
+const LinkIcon = styled(linkSvg)`
   fill: ${({ theme }) => theme.palette.brandLight};
   cursor: pointer;
   width: 15px;
