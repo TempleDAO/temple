@@ -47,7 +47,7 @@ export interface StrategyMetrics {
   debtCeilingUtilization: number;
   totalRepayment: number;
   principal: number;
-  accruidInterest: number;
+  accruedInterest: number;
 }
 
 const CACHE_TTL = 1000 * 60;
@@ -139,7 +139,7 @@ export default function useDashboardV2Metrics(dashboardType: DashboardType) {
       debtCeilingUtilization: 0,
       totalRepayment: 0,
       principal: 0,
-      accruidInterest: 0,
+      accruedInterest: 0,
     };
 
     try {
@@ -190,7 +190,7 @@ export default function useDashboardV2Metrics(dashboardType: DashboardType) {
         debtCeilingUtilization: parseFloat(daiStrategyTokenData.debtCeilingUtil),
         totalRepayment: parseFloat(ramosSubgraphData.totalRepaymentUSD),
         principal: parseFloat(ramosSubgraphData.principalUSD),
-        accruidInterest: parseFloat(ramosSubgraphData.accruedInterestUSD),
+        accruedInterest: parseFloat(ramosSubgraphData.accruedInterestUSD),
       };
     } catch (error) {
       console.info(error);
@@ -358,7 +358,7 @@ export default function useDashboardV2Metrics(dashboardType: DashboardType) {
             value: `$${formatBigMoney(metrics.principal)}`,
           },
           {
-            title: 'Accrued dUSD Interest',
+            title: 'Accrued Interest',
             value: `$${formatBigMoney(metrics.accruedInterest)}`,
           },
           {
@@ -397,12 +397,12 @@ export default function useDashboardV2Metrics(dashboardType: DashboardType) {
       smallMetrics: [
         [
           {
-            title: 'Debt Share',
+            title: 'Debt Share (DAI)',
             value: `${formatPercent(metrics.debtShare)}%`,
           },
           {
-            title: 'Debt Ceiling',
-            value: `$${formatBigMoney(metrics.debtCeiling)}`,
+            title: 'Debt Ceiling (DAI)',
+            value: `${formatBigMoney(metrics.debtCeiling)}`,
           },
           {
             title: 'Debt Ceiling Utilization',
@@ -412,15 +412,15 @@ export default function useDashboardV2Metrics(dashboardType: DashboardType) {
         [
           {
             title: 'Total Repayment',
-            value: `${formatBigMoney(metrics.totalRepayment)} DAI`,
+            value: `$${formatBigMoney(metrics.totalRepayment)}`,
           },
           {
             title: 'Principal',
             value: `$${formatBigMoney(metrics.principal)}`,
           },
           {
-            title: 'Accrued dUSD Interest',
-            value: `$${formatBigMoney(metrics.benchmarkedEquity)}`,
+            title: 'Accrued Interest',
+            value: `$${formatBigMoney(metrics.accruedInterest)}`,
           },
         ],
       ],
