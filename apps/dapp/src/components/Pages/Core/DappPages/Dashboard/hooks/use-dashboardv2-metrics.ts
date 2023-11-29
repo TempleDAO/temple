@@ -397,12 +397,12 @@ export default function useDashboardV2Metrics(dashboardType: DashboardType) {
       smallMetrics: [
         [
           {
-            title: 'Debt Share',
+            title: 'Debt Share (DAI)',
             value: `${formatPercent(metrics.debtShare)}%`,
           },
           {
-            title: 'Debt Ceiling',
-            value: `$${formatBigMoney(metrics.debtCeiling)}`,
+            title: 'Debt Ceiling (DAI)',
+            value: `${formatBigMoney(metrics.debtCeiling)}`,
           },
           {
             title: 'Debt Ceiling Utilization',
@@ -420,7 +420,7 @@ export default function useDashboardV2Metrics(dashboardType: DashboardType) {
           },
           {
             title: 'Accrued Interest',
-            value: `$${formatBigMoney(metrics.benchmarkedEquity)}`,
+            value: `$${formatBigMoney(metrics.accruidInterest)}`,
           },
         ],
       ],
