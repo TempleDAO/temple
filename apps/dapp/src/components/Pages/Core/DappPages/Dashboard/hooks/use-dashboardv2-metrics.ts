@@ -47,7 +47,7 @@ export interface StrategyMetrics {
   debtCeilingUtilization: number;
   totalRepayment: number;
   principal: number;
-  accruidInterest: number;
+  accruedInterest: number;
 }
 
 const CACHE_TTL = 1000 * 60;
@@ -139,7 +139,7 @@ export default function useDashboardV2Metrics(dashboardType: DashboardType) {
       debtCeilingUtilization: 0,
       totalRepayment: 0,
       principal: 0,
-      accruidInterest: 0,
+      accruedInterest: 0,
     };
 
     try {
@@ -190,7 +190,7 @@ export default function useDashboardV2Metrics(dashboardType: DashboardType) {
         debtCeilingUtilization: parseFloat(daiStrategyTokenData.debtCeilingUtil),
         totalRepayment: parseFloat(ramosSubgraphData.totalRepaymentUSD),
         principal: parseFloat(ramosSubgraphData.principalUSD),
-        accruidInterest: parseFloat(ramosSubgraphData.accruedInterestUSD),
+        accruedInterest: parseFloat(ramosSubgraphData.accruedInterestUSD),
       };
     } catch (error) {
       console.info(error);
@@ -420,7 +420,7 @@ export default function useDashboardV2Metrics(dashboardType: DashboardType) {
           },
           {
             title: 'Accrued Interest',
-            value: `$${formatBigMoney(metrics.accruidInterest)}`,
+            value: `$${formatBigMoney(metrics.accruedInterest)}`,
           },
         ],
       ],
