@@ -13,6 +13,7 @@ async function main() {
 
     // Transfer ownership to the multisig
     await mine(CORE_INSTANCES.OTC_OFFER.DAI_OHM.transferOwnership(CORE_ADDRESSES.CORE.CORE_MULTISIG));
+    await mine(CORE_INSTANCES.OTC_OFFER.DAI_GOHM.transferOwnership(CORE_ADDRESSES.CORE.CORE_MULTISIG));
 }
   
 // We recommend this pattern to be able to use async/await everywhere

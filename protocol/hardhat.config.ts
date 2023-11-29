@@ -186,6 +186,13 @@ module.exports = {
         url: "http://127.0.0.1:8545/",
         accounts: "remote",
     },
+    arbitrumGoerli: {
+      url: process.env.ARBITRUM_GOERLI_RPC_URL || '',
+      accounts: process.env.ARBITRUM_GOERLI_ADDRESS_PRIVATE_KEY
+        ? [process.env.ARBITRUM_GOERLI_ADDRESS_PRIVATE_KEY]
+        : [],
+      gasPrice: 2000000000,
+    }
   },
   etherscan: {
 
@@ -196,6 +203,7 @@ module.exports = {
       polygon: process.env.POLYGONSCAN_API_KEY,
       goerli: process.env.ETHERSCAN_API_KEY,
       sepolia: process.env.ETHERSCAN_API_KEY,
+      arbitrumGoerli: process.env.ARBISCAN_API_KEY,
     }
   },
   mocha: {
