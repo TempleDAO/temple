@@ -16,7 +16,7 @@ async function main() {
     const deployedContracts = DEPLOYED_CONTRACTS[network.name];
     const templeSacrifice = TempleSacrifice__factory.connect(deployedContracts.TEMPLE_SACRIFICE, owner);
 
-    await mine(templeSacrifice.setOriginTime(await blockTimestamp()));
+    await mine(templeSacrifice.setOriginTime(await blockTimestamp() + 360));
     const priceParams = {
         priceMaxPeriod: 1732125018,
         minimumPrice: toAtto(30),
