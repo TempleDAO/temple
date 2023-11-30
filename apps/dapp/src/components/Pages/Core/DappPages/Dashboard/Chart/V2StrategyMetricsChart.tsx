@@ -63,7 +63,7 @@ const metricFormatters: { [k in V2SnapshotMetric]: MetricFormatter } = {
   totalMarketValueUSD: parseFloat,
 };
 
-const numberFormatter = new Intl.NumberFormat('en', { maximumFractionDigits: 2 });
+const numberFormatter = new Intl.NumberFormat('en', { maximumFractionDigits: 0, style: 'currency', currency: 'USD' });
 
 const V2StrategyMetricsChart: React.FC<{
   dashboardType: DashboardType;
@@ -71,7 +71,13 @@ const V2StrategyMetricsChart: React.FC<{
   selectedMetric: V2SnapshotMetric;
   selectedInterval: ChartSupportedTimeInterval;
 }> = ({ dashboardType, selectedMetric, selectedInterval, strategyNames }) => {
-  const formatMetricName = (name: string) => `${name} (${selectedMetric.endsWith('Performance') ? '%' : 'USD'})`;
+  const formatMetricName = (name: string) =>
+    `${name
+      // insert a space before all caps
+      .replace(/([A-Z][a-z])/g, ' $1')
+      // uppercase the first character
+      .replace(/^./, (str) => str.toUpperCase())
+      .replace(/USD/, '')}`;
 
   const tooltipValuesFormatter = (value: number, name: string) => [
     numberFormatter.format(value),
@@ -111,7 +117,7 @@ const V2StrategyMetricsChart: React.FC<{
       const strategyTokenFormatter = selectedMetric === 'debtUSD' ? (x: string) => parseFloat(x) * -1 : parseFloat;
 
       const strategyTokens = Object.fromEntries(
-        m.strategyTokens.map((t) => [`${selectedMetric}__${t.symbol}`, strategyTokenFormatter(t[strategyTokenMetric])])
+        m.strategyTokens.map((t) => [`${selectedMetric}: ${t.symbol}`, strategyTokenFormatter(t[strategyTokenMetric])])
       );
       return { ...data, ...strategyTokens };
     }
