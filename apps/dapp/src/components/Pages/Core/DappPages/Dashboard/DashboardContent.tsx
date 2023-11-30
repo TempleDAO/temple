@@ -5,7 +5,10 @@ import { StrategyKey } from './hooks/use-dashboardv2-metrics';
 import DashboardMetrics from './Metrics';
 import DashboardTransactionHistory from './Table';
 import linkSvg from 'assets/icons/link.svg?react';
-import env from 'constants/env';
+
+// import env from 'constants/env/'; 
+import env from 'constants/env/production'; // TODO: this is hardcoding prod vars, use the line above in case we want to use preview.tsx or production.tsx according to VITE_ENV
+
 
 export enum DashboardType {
   TREASURY_RESERVES_VAULT,
