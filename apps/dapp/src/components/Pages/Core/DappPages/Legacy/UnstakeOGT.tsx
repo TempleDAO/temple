@@ -8,8 +8,11 @@ import { formatBigNumber, formatTemple, getBigNumberFromString } from 'component
 import { ZERO } from 'utils/bigNumber';
 import { useStaking } from 'providers/StakingProvider';
 import { BigNumber } from 'ethers';
+import { useConnectWallet } from '@web3-onboard/react';
+import { TradeButton } from '../../NewUI/Home';
 
 export const UnstakeOGT = () => {
+  const [{}, connect] = useConnectWallet();
   const { wallet, signer, balance, updateBalance } = useWallet();
   const [_, refreshWallet] = useRefreshWalletState();
   const [unstakeAmount, setUnstakeAmount] = useState<string>('');
@@ -54,14 +57,24 @@ export const UnstakeOGT = () => {
       {lockedEntries.length > 0 ? (
         <>
           <TopSubtitle>You can claim locked OGTemple from the Opening Ceremony:</TopSubtitle>
-          <ClaimButton
-            isSmall
-            onClick={() => handleUnlockOGT()}
-            disabled={Date.now() < lockedEntries[0].lockedUntilTimestamp}
-          >
-            Claim {formatTemple(lockedEntries.reduce((sum, cur) => sum.add(cur.balanceOGTemple), BigNumber.from('0')))}{' '}
-            OGTemple
-          </ClaimButton>
+          {!wallet ? (
+            <TradeButton
+              label={`Connect`}
+              onClick={() => {
+                connect();
+              }}
+            />
+          ) : (
+            <TradeButton
+              isSmall
+              onClick={() => handleUnlockOGT()}
+              disabled={Date.now() < lockedEntries[0].lockedUntilTimestamp}
+            >
+              Claim{' '}
+              {formatTemple(lockedEntries.reduce((sum, cur) => sum.add(cur.balanceOGTemple), BigNumber.from('0')))}{' '}
+              OGTemple
+            </TradeButton>
+          )}
           <Subtitle>
             {lockedEntries.length > 1 && (
               <span>
@@ -80,9 +93,18 @@ export const UnstakeOGT = () => {
             TEMPLE.
           </Subtitle>
           <ButtonContainer>
-            <ClaimButton disabled={buttonIsDisabled} onClick={() => unstake(unstakeAmount)}>
-              Unstake OGTEMPLE
-            </ClaimButton>
+            {!wallet ? (
+              <TradeButton
+                label={`Connect`}
+                onClick={() => {
+                  connect();
+                }}
+              />
+            ) : (
+              <TradeButton disabled={buttonIsDisabled} onClick={() => unstake(unstakeAmount)}>
+                Unstake OGTEMPLE
+              </TradeButton>
+            )}
           </ButtonContainer>
         </>
       )}
