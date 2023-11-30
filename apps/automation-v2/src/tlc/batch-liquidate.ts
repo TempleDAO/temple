@@ -191,7 +191,7 @@ const getTlcUsers = async (ctx: TaskContext, url: string, retries: number) => {
       url,
       {
         query: `{
-        tlcUsers(block: {number: 18189826} where: {debt_gt: "0"}) {
+        tlcUsers(where: {debt_gt: "0"}) {
           id
         }
       }`,
