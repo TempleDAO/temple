@@ -65,23 +65,19 @@ export async function batchLiquidate(
   };
 
   let res: AxiosResponse<GetUserResponse> | undefined = undefined;
+  const randomUrlFirstAlchemyApi = Math.random() < 0.5;
   try {
     // try subgraph call with thegraph api endpoint 
     res = await getTlcUsers(
       ctx,
-      config.SUBGRAPH_URL,
+      randomUrlFirstAlchemyApi ? config.SUBGRAPH_ALCHEMY_URL : config.SUBGRAPH_URL,
       config.SUBGRAPH_RETRY_LIMIT
     );
   } catch (e) {
-    // log thegraph request api error
-    if (e instanceof SubgraphError){
-      ctx.logger.error(JSON.stringify(e));
-    }
-
     // fallback subgraph call to try with alchemy api endpoint
     res = await getTlcUsers(
       ctx,
-      config.SUBGRAPH_ALCHEMY_URL,
+      randomUrlFirstAlchemyApi ? config.SUBGRAPH_URL : config.SUBGRAPH_ALCHEMY_URL,
       config.SUBGRAPH_RETRY_LIMIT
     );
   }
@@ -203,6 +199,7 @@ const getTlcUsers = async (ctx: TaskContext, url: string, retries: number) => {
       retry: (e, attemptNumber) => {
         if (e instanceof Error) {
           ctx.logger.error(`subgraph retry ${attemptNumber} after rate limit`);
+          ctx.logger.error(`${JSON.stringify(e)}`);
           return true;
         }
         return false;
