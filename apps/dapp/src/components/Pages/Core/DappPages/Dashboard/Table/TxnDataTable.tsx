@@ -77,7 +77,7 @@ export const TxnDataTable = (props: Props) => {
     <DataTable isBiggerThanTablet={isBiggerThanPhone}>
       <thead>
         <HeaderRow>
-          {tableHeaders.map((h, i) => (
+          {tableHeaders.map((h) => (
             <TableHeader
               key={h.name}
               isHidden={h.isHidden}

@@ -21,7 +21,7 @@ type Transactions = {
     symbol: string;
   };
   amount: string;
-  amountUsd: string;
+  amountUSD: string;
   id: string;
   from: string;
   to: string;
