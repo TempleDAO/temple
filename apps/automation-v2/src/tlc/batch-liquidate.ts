@@ -18,6 +18,8 @@ import {
 import { subgraphRequest } from '@/subgraph/subgraph-request';
 import { GetUserResponse } from '@/subgraph/types';
 import { matchAndDecodeEvent } from '@/common/filters';
+import { backOff } from 'exponential-backoff';
+import { AxiosResponse } from 'axios';
 
 export interface TlcBatchLiquidateConfig {
   CHAIN: Chain;
@@ -27,6 +29,8 @@ export interface TlcBatchLiquidateConfig {
   MIN_ETH_BALANCE_WARNING: bigint;
   GAS_LIMIT: bigint;
   SUBGRAPH_URL: string;
+  SUBGRAPH_ALCHEMY_URL: string;
+  SUBGRAPH_RETRY_LIMIT: number;
 }
 
 export async function batchLiquidate(
@@ -60,9 +64,26 @@ export async function batchLiquidate(
     return chunk;
   };
 
+  let res: AxiosResponse<GetUserResponse> | undefined = undefined;
+  const randomUrlFirstAlchemyApi = Math.random() < 0.5;
+  try {
+    // try subgraph call with thegraph api endpoint 
+    res = await getTlcUsers(
+      ctx,
+      randomUrlFirstAlchemyApi ? config.SUBGRAPH_ALCHEMY_URL : config.SUBGRAPH_URL,
+      config.SUBGRAPH_RETRY_LIMIT
+    );
+  } catch (e) {
+    // fallback subgraph call to try with alchemy api endpoint
+    res = await getTlcUsers(
+      ctx,
+      randomUrlFirstAlchemyApi ? config.SUBGRAPH_URL : config.SUBGRAPH_ALCHEMY_URL,
+      config.SUBGRAPH_RETRY_LIMIT
+    );
+  }
 
-  const res = await getTlcUsers(config.SUBGRAPH_URL);
-  const tlcUsers = (await res()).data?.tlcUsers;
+  const tlcUsers = res.data.data?.tlcUsers;
+  ctx.logger.info(`tlcUsers to check: ${JSON.stringify(tlcUsers)}`);
   // if undefined or zero users returned from subgraph, success silently
   if (!tlcUsers || tlcUsers.length === 0) return taskSuccessSilent();
   const accountsToCheck = tlcUsers.flatMap((u) => u.id);
@@ -160,14 +181,30 @@ export async function batchLiquidate(
   return taskSuccess();
 }
 
-const getTlcUsers = async (url: string) => {
-  const resp = await subgraphRequest<GetUserResponse>(url, {
-    query: `{
-      tlcUsers(where: {debt_gt: "0"}) {
-        id
-      }
-    }`,
-  });
-
-  return resp;
+const getTlcUsers = async (ctx: TaskContext, url: string, retries: number) => {
+  return backOff(
+    subgraphRequest<GetUserResponse>(
+      url,
+      {
+        query: `{
+        tlcUsers(where: {debt_gt: "0"}) {
+          id
+        }
+      }`,
+      },
+      ctx.logger
+    ),
+    {
+      numOfAttempts: retries,
+      retry: (e, attemptNumber) => {
+        if (e instanceof Error) {
+          ctx.logger.error(`subgraph retry no ${attemptNumber}`);
+          ctx.logger.error(`${JSON.stringify(e)}`);
+          return true;
+        }
+        return false;
+      },
+      startingDelay: 200, // The delay, in milliseconds, before executing the function for the first time. Default value is 100 ms.
+    }
+  );
 };

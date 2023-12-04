@@ -67,3 +67,5 @@ jobs:
           VER=${{ steps.version.outputs.VER }}
           docker tag temple-tasks:$VER $ECR_REGISTRY/temple-tasks:$VER
           docker push $ECR_REGISTRY/temple-tasks:$VER
+          docker tag temple-tasks:$VER $ECR_REGISTRY/temple-tasks:latest
+          docker push $ECR_REGISTRY/temple-tasks:latest

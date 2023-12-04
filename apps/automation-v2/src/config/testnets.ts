@@ -10,6 +10,8 @@ const TLC_BATCH_LIQUIDATE_CONFIG: TlcBatchLiquidateConfig = {
   MIN_ETH_BALANCE_WARNING: parseEther('0.1'),
   GAS_LIMIT: 1_000_000n,
   SUBGRAPH_URL: 'https://api.studio.thegraph.com/proxy/520/v2-sepolia/version/latest',
+  SUBGRAPH_ALCHEMY_URL: '',
+  SUBGRAPH_RETRY_LIMIT: 3,
 };
 
 export const CONFIG = {
