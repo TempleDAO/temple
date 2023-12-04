@@ -273,7 +273,7 @@ export default function useDashboardV2Metrics(dashboardType: DashboardType) {
 
   const getTempleCirculatingSupply = async (): Promise<string> => {
     const response = await fetchGenericSubgraph<any>(
-      'https://api.thegraph.com/subgraphs/name/medariox/temple-metrics',
+      env.subgraph.protocolMetrics,
       `{
         metrics(first: 1, orderBy: timestamp, orderDirection: desc) {
           templeCirculatingSupply
