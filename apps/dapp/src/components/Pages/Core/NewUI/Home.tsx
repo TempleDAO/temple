@@ -18,6 +18,7 @@ import { RAMOSMetrics } from './RAMOSMetrics';
 import { Button } from 'components/Button/Button';
 import { useEffect, useState } from 'react';
 import { fetchGenericSubgraph } from 'utils/subgraph';
+import env from 'constants/env';
 
 interface Metrics {
   price: number;
@@ -92,7 +93,7 @@ const Home = ({ tlc }: { tlc?: boolean }) => {
   useEffect(() => {
     const fetchMetrics = async () => {
       const { data: treasuryData } = await fetchGenericSubgraph<any>(
-        'https://api.thegraph.com/subgraphs/name/medariox/temple-metrics',
+        env.subgraph.protocolMetrics,
         `{
           metrics {
             treasuryValueUSD
@@ -100,7 +101,7 @@ const Home = ({ tlc }: { tlc?: boolean }) => {
         }`
       );
       const { data: arbitrumTreasuryData } = await fetchGenericSubgraph<any>(
-        'https://api.thegraph.com/subgraphs/name/medariox/temple-metrics-arbitrum',
+        env.subgraph.protocolMetricsArbitrum,
         `{
           metrics {
             treasuryValueUSD
@@ -108,17 +109,17 @@ const Home = ({ tlc }: { tlc?: boolean }) => {
         }`
       );
       const { data: ramosData } = await fetchGenericSubgraph<any>(
-        'https://api.thegraph.com/subgraphs/name/templedao/templedao-ramos',
+        env.subgraph.protocolMetrics,
         `{
           metrics {
-            treasuryPriceIndexUSD
-            templePriceUSD
+            treasuryPriceIndex
+            templePrice
           }
         }`
       );
       setMetrics({
-        price: parseFloat(ramosData.metrics[0].templePriceUSD),
-        tpi: parseFloat(ramosData.metrics[0].treasuryPriceIndexUSD),
+        price: parseFloat(ramosData.metrics[0].templePrice),
+        tpi: parseFloat(ramosData.metrics[0].treasuryPriceIndex),
         treasury:
           parseFloat(treasuryData.metrics[0].treasuryValueUSD) +
           parseFloat(arbitrumTreasuryData.metrics[0].treasuryValueUSD),
