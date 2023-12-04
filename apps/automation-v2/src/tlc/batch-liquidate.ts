@@ -16,7 +16,7 @@ import {
   taskSuccessSilent,
 } from '@mountainpath9/overlord';
 import { subgraphRequest } from '@/subgraph/subgraph-request';
-import { GetUserResponse, SubgraphError } from '@/subgraph/types';
+import { GetUserResponse } from '@/subgraph/types';
 import { matchAndDecodeEvent } from '@/common/filters';
 import { backOff } from 'exponential-backoff';
 import { AxiosResponse } from 'axios';
@@ -198,7 +198,7 @@ const getTlcUsers = async (ctx: TaskContext, url: string, retries: number) => {
       numOfAttempts: retries,
       retry: (e, attemptNumber) => {
         if (e instanceof Error) {
-          ctx.logger.error(`subgraph retry ${attemptNumber} after rate limit`);
+          ctx.logger.error(`subgraph retry no ${attemptNumber}`);
           ctx.logger.error(`${JSON.stringify(e)}`);
           return true;
         }
