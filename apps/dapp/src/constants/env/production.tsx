@@ -136,9 +136,12 @@ const env: Environment = {
   network: 1,
   etherscan: 'https://etherscan.io',
   subgraph: {
+    // TODO: These need updated to the templedao organization subgraphs once they are deployed
     templeCore: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-core',
-    protocolMetrics: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-metrics',
+    protocolMetrics: 'https://api.thegraph.com/subgraphs/name/medariox/temple-metrics',
+    protocolMetricsArbitrum: 'https://api.thegraph.com/subgraphs/name/medariox/temple-metrics-arbitrum',
     balancerV2: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-balancer-v2',
+    // TODO: Will be deprecated
     ramos: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-ramos',
     templeV2: 'https://api.thegraph.com/subgraphs/name/medariox/v2-mainnet',
     // Original Balancer Subgraph

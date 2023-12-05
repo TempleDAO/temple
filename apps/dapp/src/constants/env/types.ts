@@ -1,6 +1,7 @@
 interface Subgraphs {
   templeCore: string;
   protocolMetrics: string;
+  protocolMetricsArbitrum: string;
   balancerV2: string;
   ramos: string;
   templeV2: string;

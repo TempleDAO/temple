@@ -18,6 +18,7 @@ import { RAMOSMetrics } from './RAMOSMetrics';
 import { Button } from 'components/Button/Button';
 import { useEffect, useState } from 'react';
 import { fetchGenericSubgraph } from 'utils/subgraph';
+import env from 'constants/env';
 
 interface Metrics {
   price: number;
@@ -92,7 +93,7 @@ const Home = ({ tlc }: { tlc?: boolean }) => {
   useEffect(() => {
     const fetchMetrics = async () => {
       const { data: treasuryData } = await fetchGenericSubgraph<any>(
-        'https://api.thegraph.com/subgraphs/name/medariox/temple-metrics',
+        env.subgraph.protocolMetrics,
         `{
           metrics {
             treasuryValueUSD
@@ -100,7 +101,7 @@ const Home = ({ tlc }: { tlc?: boolean }) => {
         }`
       );
       const { data: arbitrumTreasuryData } = await fetchGenericSubgraph<any>(
-        'https://api.thegraph.com/subgraphs/name/medariox/temple-metrics-arbitrum',
+        env.subgraph.protocolMetricsArbitrum,
         `{
           metrics {
             treasuryValueUSD
@@ -108,17 +109,25 @@ const Home = ({ tlc }: { tlc?: boolean }) => {
         }`
       );
       const { data: ramosData } = await fetchGenericSubgraph<any>(
-        'https://api.thegraph.com/subgraphs/name/templedao/templedao-ramos',
+        env.subgraph.ramos,
         `{
           metrics {
-            treasuryPriceIndexUSD
-            templePriceUSD
+            spotPrice
+          }
+        }`
+      );
+
+      const {data: tpiData } = await fetchGenericSubgraph<any>(
+        env.subgraph.templeV2,
+        `{
+          tpiOracles {
+            currentTpi
           }
         }`
       );
       setMetrics({
-        price: parseFloat(ramosData.metrics[0].templePriceUSD),
-        tpi: parseFloat(ramosData.metrics[0].treasuryPriceIndexUSD),
+        price: parseFloat(ramosData.metrics[0].spotPrice),
+        tpi: parseFloat(tpiData.tpiOracles[0].currentTpi),
         treasury:
           parseFloat(treasuryData.metrics[0].treasuryValueUSD) +
           parseFloat(arbitrumTreasuryData.metrics[0].treasuryValueUSD),
@@ -226,28 +235,6 @@ const Home = ({ tlc }: { tlc?: boolean }) => {
     </>
   );
 };
-
-const LegacyLinkHeader = styled.div`
-  position: absolute;
-  width: 100%;
-  display: flex;
-  flex-direction: row;
-  padding: 5px;
-  height: 70px;
-  background-color: black;
-  background-image: url('${footerTexture}');
-  background-size: cover;
-  border-bottom: 2px solid ${({ theme }) => theme.palette.brandDarker};
-  border-top: 2px solid ${({ theme }) => theme.palette.brandDarker};
-  font-size: 14px;
-  z-index: 3;
-`;
-
-const TempleLogoWrapper = styled.div`
-  display: flex;
-  justify-content: left;
-  width: 100%;
-`;
 
 const LaunchAppWrapper = styled.div`
   display: flex;
