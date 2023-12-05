@@ -44,9 +44,12 @@ const env: Environment = {
     }
   },
   subgraph: {
+    // TODO: These need updated to the templedao organization subgraphs once they are deployed
     templeCore: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-core-goerli',
-    protocolMetrics: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-metrics',
+    protocolMetrics: 'https://api.thegraph.com/subgraphs/name/medariox/temple-metrics',
+    protocolMetricsArbitrum: 'https://api.thegraph.com/subgraphs/name/medariox/temple-metrics-arbitrum',
     balancerV2: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-balancer-v2',
+    // TODO: Will be deprecated
     ramos: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-ramos',
     // TODO: restore this
     // templeV2: 'https://api.studio.thegraph.com/query/520/v2-sepolia/version/latest',

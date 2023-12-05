@@ -272,15 +272,16 @@ export default function useDashboardV2Metrics(dashboardType: DashboardType) {
   };
 
   const getTempleCirculatingSupply = async (): Promise<string> => {
-    const response = await fetchSubgraph<any>(
+    const response = await fetchGenericSubgraph<any>(
+      env.subgraph.protocolMetrics,
       `{
-        protocolMetrics(first: 1, orderBy: timestamp, orderDirection: desc) {
+        metrics(first: 1, orderBy: timestamp, orderDirection: desc) {
           templeCirculatingSupply
         }
       }`
     );
 
-    const data = response?.data?.protocolMetrics?.[0] || {};
+    const data = response?.data?.metrics?.[0] || {};
 
     return data.templeCirculatingSupply;
   };
