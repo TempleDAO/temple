@@ -13,6 +13,7 @@ import { useEffect } from 'react';
 import { useNotification } from 'providers/NotificationProvider';
 import { TransactionPreviewModal } from 'components/TransactionSettingsModal/TransactionPreviewModal';
 import { tabletAndAbove } from 'styles/breakpoints';
+import { useConnectWallet } from '@web3-onboard/react';
 
 export const Trade = () => {
   const {
@@ -25,6 +26,7 @@ export const Trade = () => {
     handleTransaction,
   } = useSwapController();
 
+  const [{ wallet }, connect] = useConnectWallet();
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [isSlippageModalOpen, setIsSlippageModalOpen] = useState(false);
 
@@ -98,11 +100,20 @@ export const Trade = () => {
           <AdvancedSettingsButton onClick={() => setIsSlippageModalOpen(true)}>
             Advanced Settings
           </AdvancedSettingsButton>
-          <TradeButton
-            disabled={!state.quote || state.quote.returnAmount.lte(0)}
-            label="Preview"
-            onClick={() => setIsPreviewModalOpen(true)}
-          />
+          {!wallet ? (
+            <TradeButton
+              label={`Connect`}
+              onClick={() => {
+                connect();
+              }}
+            />
+          ) : (
+            <TradeButton
+              disabled={!state.quote || state.quote.returnAmount.lte(0)}
+              label="Preview"
+              onClick={() => setIsPreviewModalOpen(true)}
+            />
+          )}
         </ButtonContainer>
       </SwapContainer>
     </TradeContainer>

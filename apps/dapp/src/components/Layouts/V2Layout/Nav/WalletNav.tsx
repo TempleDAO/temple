@@ -15,7 +15,6 @@ import { useState } from 'react';
 import { useConnectWallet, useSetChain } from '@web3-onboard/react';
 import { useWallet } from 'providers/WalletProvider';
 import TruncatedAddress from 'components/TruncatedAddress';
-import { useGeoBlocked } from 'hooks/use-geo-blocked';
 
 type WalletNavProps = {
   isNavCollapsed: boolean;
@@ -26,7 +25,6 @@ export const WalletNav = (props: WalletNavProps) => {
   const { isNavCollapsed, onClickHandler } = props;
   const [{ wallet, connecting }, connect, disconnect] = useConnectWallet();
   const { walletAddress } = useWallet();
-  const { isBlocked } = useGeoBlocked();
 
   const [isWalletDropdownOpen, setIsWalletDropdownOpen] = useState(false);
   const [{ connectedChain }] = useSetChain();
@@ -46,8 +44,6 @@ export const WalletNav = (props: WalletNavProps) => {
   const explorerUrl = getChainExplorerURL(walletAddress || '', currentChainId);
 
   const connectWallet = async () => {
-    // TODO: What to do in this case?
-    if (isBlocked) return alert('Restricted Jurisdiction');
     if (onClickHandler) onClickHandler();
     await connect();
   };
@@ -60,7 +56,7 @@ export const WalletNav = (props: WalletNavProps) => {
   return (
     <WalletContainer onMouseLeave={() => setIsWalletDropdownOpen(false)}>
       {connecting && <Loader iconSize={24} />}
-      {!connecting && !isBlocked && wallet ? (
+      {!connecting && wallet ? (
         <FlexColumnContainer>
           <WalletConnectedContainer onClick={() => setIsWalletDropdownOpen(!isWalletDropdownOpen)}>
             <WalletIcon />
@@ -91,12 +87,6 @@ export const WalletNav = (props: WalletNavProps) => {
           <WalletIcon fill={theme.palette.light} />
           {!isNavCollapsed && <NavLinkText style={{ cursor: 'pointer' }}>Connect</NavLinkText>}
         </div>
-      )}
-      {!connecting && isBlocked && (
-        <>
-          <WalletIcon fill={theme.palette.grayOpaque} />
-          {!isNavCollapsed && <NavLinkText small>Blocked</NavLinkText>}
-        </>
       )}
     </WalletContainer>
   );
