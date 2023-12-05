@@ -10,6 +10,8 @@ import { VaultButton } from '../../VaultPages/VaultContent';
 import { useTokenContractAllowance } from 'hooks/core/use-token-contract-allowance';
 import env from 'constants/env';
 import _ from 'lodash';
+import { useConnectWallet } from '@web3-onboard/react';
+import { TradeButton } from '../../NewUI/Home';
 
 const EMPTY_CLAIM_STATE = {
   claimSubvaultAddress: '',
@@ -17,6 +19,7 @@ const EMPTY_CLAIM_STATE = {
 };
 
 export const ClaimFromVaults = () => {
+  const [{ wallet }, connect] = useConnectWallet();
   const {
     balances: { balances, isLoading: balancesIsLoading },
     vaultGroups: { vaultGroups, isLoading: vaultGroupsIsLoading },
@@ -103,7 +106,14 @@ export const ClaimFromVaults = () => {
       )}
 
       <ButtonContainer>
-        {Number(claimState.claimAmount) === 0 ? (
+        {!wallet ? (
+          <TradeButton
+            label={`Connect`}
+            onClick={() => {
+              connect();
+            }}
+          />
+        ) : Number(claimState.claimAmount) === 0 ? (
           <ClaimButton
             label={`Nothing to Claim`}
             disabled={true}

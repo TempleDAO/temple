@@ -21,14 +21,9 @@ export const Account = () => {
   const isSmallDesktop = useMediaQuery({
     query: queryVerySmallDesktop,
   });
-  const { isBlocked } = useGeoBlocked();
 
   if (connecting) {
     return <Loader />;
-  }
-
-  if (isBlocked) {
-    return <ConnectButton disabled label="Restricted Jurisdiction" isSmall isActive isUppercase role="button" />;
   }
 
   if (wallet) {

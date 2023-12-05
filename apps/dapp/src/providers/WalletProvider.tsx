@@ -66,6 +66,8 @@ export const WalletProvider = (props: PropsWithChildren<object>) => {
       } else {
         setWalletAddress(undefined);
       }
+    } else {
+      setWalletAddress(undefined);
     }
   }, [wallet, connecting]);
 
