@@ -104,7 +104,7 @@ const V2StrategyMetricsChart: React.FC<{
     // stored in the strategTokens array
     const selectedMetricToStrategyTokenMetric = new Map<V2SnapshotMetric, StrategyTokenField>([
       ['debtUSD', 'debtUSD'],
-      ['creditUSD', 'creditUSD'],
+      ['creditUSD', 'totalCreditUSD'],
       ['principalUSD', 'principalUSD'],
       ['accruedInterestUSD', 'accruedInterestUSD'],
       ['totalMarketValueUSD', 'marketValueUSD'],
