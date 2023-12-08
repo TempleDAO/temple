@@ -53,15 +53,13 @@ function transpose(data: V2StrategySnapshot[], metric: V2SnapshotMetric, format:
 type MetricFormatter = (v: string) => number;
 
 const parseNumericMetric = (v: string)=> Math.round(parseFloat(v))
-const parseDebtMetric = (v: string) => Math.round(parseFloat(v)) * -1
 
 const metricFormatters: { [k in V2SnapshotMetric]: MetricFormatter } = {
   accruedInterestUSD: parseNumericMetric,
   benchmarkedEquityUSD: parseNumericMetric,
   creditUSD: parseNumericMetric,
-  // invert debt to make it negative
-  debtUSD: parseDebtMetric,
-  netDebtUSD: parseDebtMetric,
+  debtUSD: parseNumericMetric,
+  netDebtUSD: parseNumericMetric,
   principalUSD: parseNumericMetric,
   totalMarketValueUSD: parseNumericMetric,
 };
@@ -117,10 +115,9 @@ const V2StrategyMetricsChart: React.FC<{
 
     if (strategyTokenMetric) {
       // toggle this for inverted Debt
-      const strategyTokenFormatter = selectedMetric === 'debtUSD' ? parseDebtMetric : parseNumericMetric
 
       const strategyTokens = Object.fromEntries(
-        m.strategyTokens.map((t) => [`${selectedMetric}: ${t.symbol}`, strategyTokenFormatter(t[strategyTokenMetric])])
+        m.strategyTokens.map((t) => [`${selectedMetric}: ${t.symbol}`, parseNumericMetric(t[strategyTokenMetric])])
       );
       return { ...data, ...strategyTokens };
     }
