@@ -20,7 +20,7 @@ export type V2SnapshotMetric = (typeof V2SnapshotMetrics)[number];
 const STRATEGY_TOKEN_FIELDS = [
   'symbol',
   'debtUSD',
-  'totalCreditUSD',
+  'creditUSD',
   'assetBalance',
   'marketValueUSD',
   'principalUSD',
