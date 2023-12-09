@@ -1,6 +1,6 @@
 import { ReactNode, useState, useEffect, useRef, SetStateAction, Fragment } from 'react';
 import { LoadingText } from 'components/Pages/Core/components/LoaderVault/commons/LoadingText';
-import env from 'constants/env/local';
+import env from 'constants/env';
 import styled from 'styled-components';
 import { loading } from 'utils/loading-value';
 import { StrategyKey } from '../hooks/use-dashboardv2-metrics';
