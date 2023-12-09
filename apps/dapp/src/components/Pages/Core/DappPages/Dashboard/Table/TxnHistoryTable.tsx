@@ -16,7 +16,7 @@ import { StrategyKey } from '../hooks/use-dashboardv2-metrics';
 import { DropdownCheckOption, DropdownCheckOptions } from './RowFilterDropdown';
 import { useMediaQuery } from 'react-responsive';
 import { queryMinTablet } from 'styles/breakpoints';
-import env from 'constants/env/local';
+import env from 'constants/env';
 import linkSvg from 'assets/icons/link.svg?react';
 import { formatNumberWithCommas } from 'utils/formatter';
 
