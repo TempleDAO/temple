@@ -33,7 +33,7 @@ const DashboardContent = ({ selectedDashboard = DashboardType.TREASURY_RESERVES_
     [DashboardType.TREASURY_RESERVES_VAULT]: {
       title: 'Treasury Reserves Vault',
       description:
-        'The Treasury Reserves Vault (TRV) is the source of capital for current Treasury allocations. When funding and Strategy parameters are approved, the TRV will transfer funds e.g. DAI to the deployed Strategy borrower. The current equity of the Strategy is discounted by the cost of capital whereby the Benchmark interest rate is set to match the current Base Strategy.',
+        'Treasury Reserves Vault (TRV) coordinates and manages the flow of capital for current Treasury allocations. When funding and management parameters are approved for a Strategy, the TRV will transfer funds e.g. DAI and issue corresponding debt to the Strategy borrower. The current equity of the Strategy is discounted by the loan principal and accrued interest benchmarked to the prevailing rate of the current Base Strategy for the borrowed token.',
       chartStrategyNames: [StrategyKey.TEMPLEBASE, StrategyKey.RAMOS, StrategyKey.DSRBASE],
       link: `${env.etherscan}/address/${env.contracts.treasuryReservesVault}`,
     },
@@ -54,14 +54,14 @@ const DashboardContent = ({ selectedDashboard = DashboardType.TREASURY_RESERVES_
     // },
     [DashboardType.TEMPLE_BASE]: {
       title: 'Temple Base',
-      description: 'The TEMPLE base strategy is not currently active.',
+      description: 'Temple Base strategy is the source of automated market operations (AMO) TEMPLE tokens in the Treasury framework. The TRV facilitates the withdrawal of newly minted TEMPLE tokens from and the issuance of TEMPLE debt to the Temple Base strategy. These TEMPLE tokens will be borrowed by a Treasury Strategy such as Ramos to generate returns. Once these tokens are repaid to the TRV, they will be deposited to the Temple Base strategy to be burned. From the perspective of the TRV, positive returns will be realized when TEMPLE flows to the Temple Base strategy is net positive.',
       chartStrategyNames: [StrategyKey.TEMPLEBASE],
       link: `${env.etherscan}/address/${env.contracts.strategies.templeStrategy}`,
     },
     [DashboardType.DSR_BASE]: {
       title: 'DSR Base',
       description:
-        'Idle capital in the Treasury Reserve Vault (TRV) that is not currently deployed to a Strategy borrower will be automatically directed to a Base Strategy to earn yield. Currently, the Base Strategy is set to the Dai Savings Rate (DSR). The current rate of return for the Base Strategy also serves as the Benchmark interest rate for the Strategy borrower.',
+        'Idle capital in the Treasury Reserves Vault (TRV) that is not currently deployed to a Strategy borrower will be automatically directed to a Base Strategy to earn yield. Currently, the Base Strategy is set to the Dai Savings Rate (DSR) which makes DAI the base currency of the TRV. The current rate of return for DSR Base also serves as the benchmark interest rate for the Treasury Strategy that borrows DAI from the TRV.',
       chartStrategyNames: [StrategyKey.DSRBASE],
       link: `${env.etherscan}/address/${env.contracts.strategies.dsrBaseStrategy}`,
     },
