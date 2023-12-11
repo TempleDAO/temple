@@ -6,7 +6,7 @@ import { DecimalBigNumber } from 'utils/DecimalBigNumber';
 import { InputArea, RequestArea } from '../styles';
 
 interface IProps {
-  calculateFunc: (
+  calculateFunc?: (
     bptAmountIn: DecimalBigNumber
   ) => Promise<{ bptAmountIn: BigNumber; useContractBalance: boolean } | undefined>;
 }
@@ -33,6 +33,7 @@ export const DepositAndStakeBpt: React.FC<IProps> = ({ calculateFunc }) => {
         label="CREATE REQUEST PARAMS"
         onClick={async () => {
           if (amount) {
+            if(!calculateFunc) return;
             const amounts = await calculateFunc(amount);
             if (amounts) setStakeParams(amounts);
           }

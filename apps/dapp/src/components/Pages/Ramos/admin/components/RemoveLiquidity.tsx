@@ -8,7 +8,7 @@ import { ZERO } from 'utils/bigNumber';
 import { InputArea, RequestArea, TitleWrapper } from '../styles';
 
 interface IProps {
-  calculateFunc: (exitAmountBpt: BigNumber) => Promise<string | undefined>;
+  calculateFunc?: (exitAmountBpt: BigNumber) => Promise<string | undefined>;
 }
 export const RemoveLiquidity: React.FC<IProps> = ({ calculateFunc }) => {
   const [exitAmountBpt, setExitAmountBpt] = useState(ZERO);
@@ -46,6 +46,7 @@ export const RemoveLiquidity: React.FC<IProps> = ({ calculateFunc }) => {
         isSmall
         label="CREATE REQUEST PARAMS"
         onClick={async () => {
+          if(!calculateFunc) return;
           const request = await calculateFunc(exitAmountBpt);
           setExitPoolRequest(request);
         }}
