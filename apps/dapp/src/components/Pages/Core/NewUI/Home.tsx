@@ -117,7 +117,7 @@ const Home = ({ tlc }: { tlc?: boolean }) => {
         }`
       );
 
-      const {data: tpiData } = await fetchGenericSubgraph<any>(
+      const { data: tpiData } = await fetchGenericSubgraph<any>(
         env.subgraph.templeV2,
         `{
           tpiOracles {
@@ -147,7 +147,9 @@ const Home = ({ tlc }: { tlc?: boolean }) => {
               <NewTempleText>The New Temple</NewTempleText>
               <TradeDetailText>A safe and stable token, appreciating over time.</TradeDetailText>
               {/* // TODO: Link */}
-              <LearnMoreLink>Learn More</LearnMoreLink>
+              <LearnMoreLink href="https://docs.templedao.link/" target={'_blank'}>
+                Learn More
+              </LearnMoreLink>
               <ButtonContainer>
                 <Link to="/dapp/trade">
                   <LaunchAppButton label={'Launch App'} role="button" />
@@ -309,7 +311,7 @@ const TradeDetailText = styled.div`
   margin-top: 1rem;
 `;
 
-const LearnMoreLink = styled.span`
+const LearnMoreLink = styled.a`
   font-size: 0.85rem;
   letter-spacing: 0.06rem;
   margin-top: 1rem;
