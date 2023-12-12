@@ -9,7 +9,10 @@ export const useGeoBlocked = () => {
       const blocked = await fetch(`${window.location.href}api/geoblock`)
         .then((res) => res.json())
         .then((res) => res.blocked)
-        .catch(() => false);
+        .catch((err: unknown) => {
+          console.log('geoblock error:', err);
+          return false;
+        });
       setIsBlocked(blocked);
       setLoading(false);
     };
