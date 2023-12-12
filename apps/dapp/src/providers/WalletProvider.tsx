@@ -19,7 +19,6 @@ import {
 import env from 'constants/env';
 import { ZERO } from 'utils/bigNumber';
 import { Nullable } from 'types/util';
-import { useGeoBlocked } from 'hooks/use-geo-blocked';
 
 // We want to save gas burn $ for the Templars,
 // so we approving 1M up front, so only 1 approve TXN is required for approve
@@ -56,7 +55,7 @@ export const WalletProvider = (props: PropsWithChildren<object>) => {
   const [{ wallet, connecting }] = useConnectWallet();
   const [signer, setSigner] = useState<Nullable<Signer>>(null);
   const [walletAddress, setWalletAddress] = useState<string | undefined>();
-  
+
   useEffect(() => {
     if (wallet) {
       const ethersProvider = new ethers.providers.Web3Provider(wallet.provider);
@@ -74,7 +73,6 @@ export const WalletProvider = (props: PropsWithChildren<object>) => {
   const { openNotification } = useNotification();
 
   const [balanceState, setBalanceState] = useState<Balance>(INITIAL_STATE.balance);
-  const { isBlocked } = useGeoBlocked();
 
   const getBalance = async (walletAddress: string, signer: Signer) => {
     if (!walletAddress || !signer) {
@@ -220,7 +218,7 @@ export const WalletProvider = (props: PropsWithChildren<object>) => {
         wallet: walletAddress, // to be deprecated, keeping now for backwards compatibility
         walletAddress,
         ensureAllowance,
-        signer: isBlocked ? null : signer || null,
+        signer,
         getBalance: updateBalance,
         updateBalance,
         collectTempleTeamPayment,
