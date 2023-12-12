@@ -2,6 +2,8 @@ import styled from 'styled-components';
 
 import { backgroundImage, buttonResets, flexCenter } from 'styles/mixins';
 import arrowIcon from 'assets/icons/arrow-icon-no-background.svg';
+import arrowUpIcon from 'assets/icons/arrow-icon-up.svg';
+import filterIcon from 'assets/icons/filter-icon.svg';
 import { theme } from 'styles/theme'; 
 
 export const Wrapper = styled.div<{ verticalAlignment?: 'top' | 'center' }>`
@@ -66,6 +68,26 @@ export const ToggleButton = styled.button`
   margin-top: calc(-0.2rem - 0.5625rem);
   margin-bottom: -0.5625rem;
   z-index: 50;
+`;
+
+export const FilterButton = styled.button`
+  ${buttonResets}
+
+  ${backgroundImage(filterIcon)}
+
+  width: 1rem;
+  height: 1rem;
+`;
+
+export const ArrowButtonUpDown = styled.button<{clicked?: boolean}>`
+  ${buttonResets}
+
+  ${backgroundImage(arrowUpIcon)}
+
+  transform: ${({ clicked }) => clicked && 'rotate(180deg)'};
+  transition: all 150ms;
+  width: 1rem;
+  height: 1rem;
 `;
 
 export const SwapButton = styled.button`

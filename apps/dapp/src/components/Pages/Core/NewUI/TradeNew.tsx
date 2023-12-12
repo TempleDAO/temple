@@ -12,6 +12,8 @@ import { pixelsToRems } from 'styles/mixins';
 import { useEffect } from 'react';
 import { useNotification } from 'providers/NotificationProvider';
 import { TransactionPreviewModal } from 'components/TransactionSettingsModal/TransactionPreviewModal';
+import { tabletAndAbove } from 'styles/breakpoints';
+import { useConnectWallet } from '@web3-onboard/react';
 
 export const Trade = () => {
   const {
@@ -24,6 +26,7 @@ export const Trade = () => {
     handleTransaction,
   } = useSwapController();
 
+  const [{ wallet }, connect] = useConnectWallet();
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [isSlippageModalOpen, setIsSlippageModalOpen] = useState(false);
 
@@ -58,7 +61,7 @@ export const Trade = () => {
   }, [state.error]);
 
   return (
-    <>
+    <TradeContainer>
       <TransactionSettingsModal
         isOpen={isSlippageModalOpen}
         defaultSlippage={INITIAL_STATE.slippageTolerance}
@@ -93,14 +96,27 @@ export const Trade = () => {
           />
           <InvertButton onClick={handleChangeMode} />
         </InputsContainer>
-        <AdvancedSettingsButton onClick={() => setIsSlippageModalOpen(true)}>Advanced Settings</AdvancedSettingsButton>
-        <TradeButton
-          disabled={!state.quote || state.quote.returnAmount.lte(0)}
-          label="Preview"
-          onClick={() => setIsPreviewModalOpen(true)}
-        />
+        <ButtonContainer>
+          <AdvancedSettingsButton onClick={() => setIsSlippageModalOpen(true)}>
+            Advanced Settings
+          </AdvancedSettingsButton>
+          {!wallet ? (
+            <TradeButton
+              label={`Connect`}
+              onClick={() => {
+                connect();
+              }}
+            />
+          ) : (
+            <TradeButton
+              disabled={!state.quote || state.quote.returnAmount.lte(0)}
+              label="Preview"
+              onClick={() => setIsPreviewModalOpen(true)}
+            />
+          )}
+        </ButtonContainer>
       </SwapContainer>
-    </>
+    </TradeContainer>
   );
 };
 
@@ -138,29 +154,51 @@ const AdvancedSettingsButton = styled.div`
   font-weight: 700;
   font-size: 12px;
   line-height: 153.11%;
-  text-align: center;
+  // text-align: center;
   letter-spacing: 0.095em;
   text-decoration-line: underline;
   color: #bd7b4f;
-  margin: 10px;
+  margin-top: 20px;
+  margin-bottom: 20px;
   cursor: pointer;
 `;
 
 const HeaderText = styled.div`
   height: 32px;
-  padding: 40px;
   font-size: 36px;
   line-height: 42px;
   display: flex;
   align-items: center;
   text-align: center;
   color: #ffdec9;
+  margin-top: 10px;
+  margin-bottom: 40px;
+  ${tabletAndAbove(`
+    margin-left: 40px;
+  `)};
 `;
 
 const SwapContainer = styled.div`
   display: flex;
-  align-items: center;
   justify-content: center;
   flex-direction: column;
-  position: relative;
+  ${tabletAndAbove(`
+    margin-left: 20px;
+  `)};
+`;
+
+const ButtonContainer = styled.div`
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  width: 100%;
+`;
+
+const TradeContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: ${({ theme }) => theme.palette.brand};
+  width: 400px;
 `;

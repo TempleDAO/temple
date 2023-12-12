@@ -1,14 +1,11 @@
-import leftCaret from 'assets/images/newui-images/leftCaret.svg';
-import { TradeButton } from '../Home';
-import { Input } from '../HomeInput';
+import { TradeButton } from '../../../NewUI/Home';
+import { Input } from '../../../NewUI/HomeInput';
 import checkmark from 'assets/images/newui-images/check.svg';
-import { formatToken } from 'utils/formatter';
 import { ITlcDataTypes } from 'types/typechain/contracts/interfaces/v2/templeLineOfCredit/ITempleLineOfCredit';
 import {
-  BackButton,
   Copy,
   FlexBetween,
-  FlexCol,
+  FlexColCenter,
   GradientContainer,
   InfoCircle,
   MAX_LTV,
@@ -22,7 +19,7 @@ import {
   Title,
   TlcInfo,
   Warning,
-} from './TLCModal';
+} from '../index';
 import { fromAtto } from 'utils/bigNumber';
 import styled from 'styled-components';
 import { ReactNode, useState } from 'react';
@@ -35,18 +32,9 @@ interface IProps {
   liquidationInfo: (debt?: number) => ReactNode;
   setState: React.Dispatch<React.SetStateAction<State>>;
   borrow: () => void;
-  back: () => void;
 }
 
-export const Borrow: React.FC<IProps> = ({
-  accountPosition,
-  state,
-  tlcInfo,
-  liquidationInfo,
-  setState,
-  borrow,
-  back,
-}) => {
+export const Borrow: React.FC<IProps> = ({ accountPosition, state, tlcInfo, liquidationInfo, setState, borrow }) => {
   const [checkbox, setCheckbox] = useState(false);
 
   const getEstimatedLTV = (): string => {
@@ -62,7 +50,6 @@ export const Borrow: React.FC<IProps> = ({
   return (
     <>
       <RemoveMargin />
-      <BackButton src={leftCaret} onClick={() => back()} />
       <Title>Borrow DAI</Title>
       <Input
         crypto={{
@@ -156,7 +143,7 @@ export const Borrow: React.FC<IProps> = ({
           {/* <a href="#">Find out more</a> */}
         </div>
       </RiskAcknowledgement>
-      <FlexCol>
+      <FlexColCenter>
         <TradeButton
           onClick={() => borrow()}
           disabled={
@@ -168,7 +155,7 @@ export const Borrow: React.FC<IProps> = ({
         >
           Borrow
         </TradeButton>
-      </FlexCol>
+      </FlexColCenter>
     </>
   );
 };

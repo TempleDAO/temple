@@ -34,15 +34,26 @@ const env: Environment = {
     vaultProxy: '',
     vaultEarlyExit: '',
     ramos: '0x82ce000a51E8474378f7b555bcC4de5992052452',
-    ramosStrategy: '0xB9507b59f91FF320631d30f774142631b30C537A',
     ramosPoolHelper: '0xbfC24c9d7D57C413618CE11cea1e313a2E8D9e1d',
     balancerHelpers: '0xdAE7e32ADc5d490a43cCba1f0c736033F2b4eFca',
+    strategies: {
+      dsrBaseStrategy: '0x472C7cDb6E730ff499E118dE6260c6b44c61d7bf',
+      ramosStrategy: '0xB9507b59f91FF320631d30f774142631b30C537A',
+      templeStrategy: '0xECe4ff1bd589b488350557A5C36D823C7B47E82F',
+      tlcStrategy: '0x415A9B41700AC645d9C22F2499a6E853b625F792',
+    }
   },
   subgraph: {
+    // TODO: These need updated to the templedao organization subgraphs once they are deployed
     templeCore: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-core-goerli',
-    protocolMetrics: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-metrics',
+    protocolMetrics: 'https://api.thegraph.com/subgraphs/name/medariox/temple-metrics',
+    protocolMetricsArbitrum: 'https://api.thegraph.com/subgraphs/name/medariox/temple-metrics-arbitrum',
     balancerV2: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-balancer-v2',
+    // TODO: Will be deprecated
     ramos: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-ramos',
+    // TODO: restore this
+    // templeV2: 'https://api.studio.thegraph.com/query/520/v2-sepolia/version/latest',
+    templeV2: 'https://api.thegraph.com/subgraphs/name/medariox/v2-mainnet'
     // Original Balancer Subgraph
     // balancerV2: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-goerli-v2',
   },

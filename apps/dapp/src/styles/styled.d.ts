@@ -20,6 +20,7 @@ declare module 'styled-components' {
       light: string;
       light75: string;
       light50: string;
+      charts: string[];
       enclave: {
         structure: string;
         order: string;
@@ -29,6 +30,8 @@ declare module 'styled-components' {
       };
       gradients: {
         dark: string;
+        grey: string;
+        greyVertical: string;
       };
     };
     metrics: {
@@ -38,6 +41,7 @@ declare module 'styled-components' {
         maxWidth: string;
       };
       devices: {
+        smallTablet: string;
         tablet: string;
         laptop: string;
         phone: string;

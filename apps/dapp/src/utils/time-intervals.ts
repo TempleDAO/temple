@@ -2,7 +2,6 @@ export type LabeledTimeIntervals = readonly {
   label: ChartSupportedTimeInterval;
   interval: number;
 }[];
-
 export type ChartSupportedTimeInterval = '1D' | '1W' | '1M' | '1Y';
 
 export enum TIME_INTERVAL {

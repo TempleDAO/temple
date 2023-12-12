@@ -37,7 +37,7 @@ export function formatTimestampedChartData<
   };
 }
 
-function formatDailyDataPoints<U extends UnformattedTimestampedValue, F extends FormattedTimestampedValue>(
+export function formatDailyDataPoints<U extends UnformattedTimestampedValue, F extends FormattedTimestampedValue>(
   data: U[],
   timeIntervals: LabeledTimeIntervals,
   now: number,

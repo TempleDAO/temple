@@ -1,7 +1,7 @@
 import type { ChartSupportedTimeInterval } from 'utils/time-intervals';
 import type { AxisDomain } from 'recharts/types/util/types';
 import { useState } from 'react';
-import { useTheme } from 'styled-components';
+import styled, { useTheme } from 'styled-components';
 import { format } from 'date-fns';
 import { LineChart, IntervalToggler } from 'components/Charts';
 import Loader from 'components/Loader/Loader';
@@ -45,8 +45,9 @@ export const TemplePriceChart = () => {
 
   return (
     <>
-      <IntervalToggler selectedInterval={selectedInterval} setSelectedInterval={setSelectedInterval} />
-      {
+      <ChartHeader>
+        <IntervalToggler selectedInterval={selectedInterval} setSelectedInterval={setSelectedInterval} />
+      </ChartHeader>
         <LineChart
           chartData={formattedData[selectedInterval].reverse()}
           xDataKey="timestamp"
@@ -65,7 +66,6 @@ export const TemplePriceChart = () => {
             )
           }
         />
-      }
     </>
   );
 };
@@ -77,3 +77,12 @@ function formatData(metric: RamosMetrics) {
     tpiUSD: metric.treasuryPriceIndexUSD,
   };
 }
+
+const ChartHeader = styled.div`
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1.25rem;
+  width: 90%;
+`;
