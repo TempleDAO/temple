@@ -78,17 +78,13 @@ const V2Layout = () => {
   useEffect(() => {
     // Define all permitted paths
     const permittedPaths = ['/dapp/legacy'];
-    console.log('loading', loading);
-    console.log('isBlocked', isBlocked);
     if (loading || (!loading && !isBlocked)) return;
     // Force redirect to permitted path
     if (!permittedPaths.find((path) => path === loc.pathname)) {
-      console.log('redirecting');
       navigate(permittedPaths[0]);
     }
     // Remove nav items that are not permitted
     if (menuNavItems.length > permittedPaths.length) {
-      console.log('removing nav items');
       const newMenuNavItems = menuNavItems.filter((menuItem) =>
         permittedPaths.find((path) => path === menuItem.linkTo)
       );
