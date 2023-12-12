@@ -29,30 +29,23 @@ interface Metrics {
 const MarketingContent = [
   {
     image: obtainTemple,
-    header: 'Elevate Your Portfolio',
-    text: 'Simply buy and hold $TEMPLE in your wallet, then relax as the Treasury farms on your behalf.',
+    header: 'Obtain $TEMPLE',
+    text: 'Provide your tokens, growing the Temple Treasury and recieving $TEMPLE in return.',
   },
   {
     image: intrValue,
-    header: 'Find Refuge in the Temple',
-    text: 'Each $TEMPLE token is backed by stable assets in the Treasury. The $TEMPLE price tracks the growth of Treasury assets through a metric called Treasury Price Index (TPI).',
+    header: 'Intrinsic value',
+    text: 'Each $TEMPLE token has intrinsic value equal to the treasury value, divided by the number of $TEMPLE tokens.',
   },
   {
     image: treasuryGrowth,
-    header: 'Growth that Transcends Volatility',
-    text: (
-      <>
-        Enjoy the top stable yields in DeFi without worrying about actively managing any positions.
-        <br />
-        <br />
-        TPI rises over time as the Temple Treasury generates revenue and grows in value.
-      </>
-    ),
+    header: 'Treasury Growth',
+    text: 'The Temple Treasury is put to work, generating revenue for the protocol. This will drive up the intrinsic value of each $TEMPLE token over time.',
   },
   {
     image: elasticFloor,
-    header: 'A Token for All Seasons',
-    text: 'If $TEMPLE price trades below the TPI, automated price protection is engaged through our AMO-styled liquidity manager (RAMOS).',
+    header: 'Elastic Floor ',
+    text: 'If the $TEMPLE token price drops below the intrinsic value, a contract will buy back tokens at randomised times and in randomised amounts, restoring the price and maintaining an elastic floor.',
   },
 ];
 
