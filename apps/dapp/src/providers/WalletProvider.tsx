@@ -19,7 +19,6 @@ import {
 import env from 'constants/env';
 import { ZERO } from 'utils/bigNumber';
 import { Nullable } from 'types/util';
-import { useGeoBlocked } from 'hooks/use-geo-blocked';
 
 // We want to save gas burn $ for the Templars,
 // so we approving 1M up front, so only 1 approve TXN is required for approve
