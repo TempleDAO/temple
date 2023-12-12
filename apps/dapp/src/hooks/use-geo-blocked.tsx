@@ -6,7 +6,7 @@ export const useGeoBlocked = () => {
 
   useEffect(() => {
     const checkBlocked = async () => {
-      const blocked = await fetch(`${window.location.host}/api/geoblock`)
+      const blocked = await fetch(`https://${window.location.host}/api/geoblock`)
         .then((res) => res.json())
         .then((res) => res.blocked)
         .catch((err: unknown) => {
