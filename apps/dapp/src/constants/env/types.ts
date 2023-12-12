@@ -1,8 +1,10 @@
 interface Subgraphs {
   templeCore: string;
   protocolMetrics: string;
+  protocolMetricsArbitrum: string;
   balancerV2: string;
   ramos: string;
+  templeV2: string;
 }
 
 interface Contracts {
@@ -35,7 +37,12 @@ interface Contracts {
   vaultProxy: string;
   vaultEarlyExit: string;
   ramos: string;
-  ramosStrategy: string;
+  strategies: {
+    dsrBaseStrategy: string;
+    ramosStrategy: string;
+    templeStrategy: string;
+    tlcStrategy: string;
+  }
   ramosPoolHelper: string;
   balancerHelpers: string;
 }

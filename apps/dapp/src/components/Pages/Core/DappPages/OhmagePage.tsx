@@ -1,10 +1,8 @@
-import { Popover } from 'components/Popover';
 import styled from 'styled-components';
-import { useEffect, useState } from 'react';
-import _ from 'lodash';
-import { Input } from './HomeInput';
+import { useCallback, useEffect, useState } from 'react';
+import { Input } from '../NewUI/HomeInput';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
-import { TradeButton } from './Home';
+import { TradeButton } from '../NewUI/Home';
 import { useWallet } from 'providers/WalletProvider';
 import { formatToken } from 'utils/formatter';
 import { OtcOffer__factory, ERC20__factory } from 'types/typechain';
@@ -13,16 +11,13 @@ import { getBigNumberFromString, getTokenInfo } from 'components/Vault/utils';
 import { useNotification } from 'providers/NotificationProvider';
 import { fromAtto } from 'utils/bigNumber';
 import { BigNumber, ethers } from 'ethers';
-
-interface IProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
+import { useConnectWallet } from '@web3-onboard/react';
 
 const OHM = TICKER_SYMBOL.OHM;
 const ohmToNum = (amount: BigNumber) => Number(ethers.utils.formatUnits(amount, getTokenInfo(OHM).decimals));
 
-export const OtcModal: React.FC<IProps> = ({ isOpen, onClose }) => {
+export const OhmagePage = () => {
+  const [{}, connect] = useConnectWallet();
   const { balance, wallet, updateBalance, signer, ensureAllowance } = useWallet();
   const [input, setInput] = useState('');
   const [output, setOutput] = useState(0);
@@ -30,26 +25,25 @@ export const OtcModal: React.FC<IProps> = ({ isOpen, onClose }) => {
   const [allowance, setAllowance] = useState(0);
   const { openNotification } = useNotification();
 
-  // Fetch the remaining DAI available for OTC
-  const getAvailableDai = async () => {
-    if (!signer) return;
-    const otcContract = new OtcOffer__factory(signer).attach(env.contracts.otcOffer);
-    const available = await otcContract.userBuyTokenAvailable();
-    setAvailableDai(fromAtto(available));
-  };
-
   // Fetch the allowance for OtcOffer to spend OHM
-  const checkAllowance = async () => {
+  const checkAllowance = useCallback(async () => {
     if (!signer || !wallet) return;
     const ohmContract = new ERC20__factory(signer).attach(env.contracts.olympus);
     const allowance = await ohmContract.allowance(wallet, env.contracts.otcOffer);
     setAllowance(ohmToNum(allowance));
-  };
+  }, [signer, wallet]);
 
   useEffect(() => {
+    // Fetch the remaining DAI available for OTC
+    const getAvailableDai = async () => {
+      if (!signer) return;
+      const otcContract = new OtcOffer__factory(signer).attach(env.contracts.otcOffer);
+      const available = await otcContract.userBuyTokenAvailable();
+      setAvailableDai(fromAtto(available));
+    };
     checkAllowance();
     getAvailableDai();
-  }, [signer]);
+  }, [signer, checkAllowance]);
 
   // Fetch the DAI quote when the input amount changes
   useEffect(() => {
@@ -62,7 +56,7 @@ export const OtcModal: React.FC<IProps> = ({ isOpen, onClose }) => {
     };
     if (input === '') setOutput(0);
     else getQuote();
-  }, [input]);
+  }, [input, signer]);
 
   // Approve OtcOffer to spend OHM
   const approve = async () => {
@@ -118,42 +112,51 @@ export const OtcModal: React.FC<IProps> = ({ isOpen, onClose }) => {
   const insufficientDaiAvailable = availableDai < output;
 
   return (
-    <>
-      <Popover isOpen={isOpen} onClose={onClose} closeOnClickOutside showCloseButton>
-        <Container>
-          <Title>Ohmage</Title>
-          <Subtitle>Swap OHM to DAI with zero slippage</Subtitle>
-          <Input
-            crypto={{
-              kind: 'value',
-              value: OHM,
-            }}
-            value={input}
-            hint={`Balance: ${formatToken(balance.OHM, OHM)}`}
-            onHintClick={() => setInput(formatToken(balance.OHM, OHM))}
-            handleChange={(value: string) => setInput(value)}
-            isNumber
-            placeholder="0.00"
-            width="100%"
-          />
-          {insufficientDaiAvailable ? (
-            <p>Exceeds {availableDai.toFixed(2)} DAI available for OTC</p>
-          ) : (
-            <p>You will receive {output.toLocaleString()} DAI</p>
-          )}
+    <Center>
+      <Container>
+        <Title>Ohmage</Title>
+        <Subtitle>Swap OHM to DAI with zero slippage</Subtitle>
+        <Input
+          crypto={{
+            kind: 'value',
+            value: OHM,
+          }}
+          value={input}
+          hint={`Balance: ${formatToken(balance.OHM, OHM)}`}
+          onHintClick={() => setInput(formatToken(balance.OHM, OHM))}
+          handleChange={(value: string) => setInput(value)}
+          isNumber
+          placeholder="0.00"
+          width="100%"
+        />
+        {insufficientDaiAvailable ? (
+          <p>Exceeds {availableDai.toFixed(2)} DAI available for OTC</p>
+        ) : (
+          <p>You will receive {output.toLocaleString()} DAI</p>
+        )}
+        {wallet ? (
           <TradeButton
             onClick={() => {
               if (insufficientAllowance) approve();
               else swap();
             }}
-            disabled={!signer || insufficientBalance || insufficientDaiAvailable}
+            disabled={!signer || insufficientBalance || insufficientDaiAvailable || balance.OHM.isZero()}
             style={{ margin: 'auto', whiteSpace: 'nowrap' }}
           >
             {insufficientBalance ? 'Insufficient balance' : insufficientAllowance ? 'Approve allowance' : 'Swap'}
           </TradeButton>
-        </Container>
-      </Popover>
-    </>
+        ) : (
+          <TradeButton
+            onClick={() => {
+              connect();
+            }}
+            style={{ margin: 'auto', whiteSpace: 'nowrap' }}
+          >
+            Connect Wallet
+          </TradeButton>
+        )}
+      </Container>
+    </Center>
   );
 };
 
@@ -178,4 +181,10 @@ const Container = styled.div`
   width: 350px;
 `;
 
-export default OtcModal;
+const Center = styled.div`
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  margin-top: 2rem;
+`;

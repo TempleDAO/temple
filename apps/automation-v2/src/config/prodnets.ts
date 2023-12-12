@@ -10,6 +10,8 @@ const TLC_BATCH_LIQUIDATE_CONFIG: TlcBatchLiquidateConfig = {
   MIN_ETH_BALANCE_WARNING: parseEther('0.1'),
   GAS_LIMIT: 1_000_000n,
   SUBGRAPH_URL: 'https://api.thegraph.com/subgraphs/name/medariox/v2-mainnet',
+  SUBGRAPH_ALCHEMY_URL: 'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-v2-mainnet/version/v0.1.0/api',
+  SUBGRAPH_RETRY_LIMIT: 3,
 };
 
 export const CONFIG = {

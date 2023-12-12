@@ -36,39 +36,22 @@ const Content = styled.div`
 `;
 
 const RamosAdmin = () => {
-  const {
-    tpf,
-    templePrice,
-    rebalanceUpAmounts,
-    rebalanceDownAmounts,
-    depositStableAmounts,
-    withdrawStableAmounts,
-    totalAvailableDaiTrv,
-    totalAvailableTempleTrv,
-    ramosStrategyVersion,
-    slippageTolerance,
-    handleAddLiquidityInput,
-    createJoinPoolRequest,
-    createExitPoolRequest,
-    createDepositAndStakeRequest,
-    setSlippageTolerance,
-    calculateRecommendedAmounts,
-  } = useRamosAdmin();
+  const ramosAdmin = useRamosAdmin();
   const [isTxSettingsOpen, setIsTxSettingsOpen] = useState(false);
   
-  const tpfFormatted = tpf?.formatUnits(5);
-  const templePriceFormatted = templePrice?.formatUnits(5);
-  const totalAvailableDaiTrvFormatted = totalAvailableDaiTrv?.formatUnits(5);
-  const totalAvailableTempleTrvFormatted = totalAvailableTempleTrv?.formatUnits(5);
+  const tpfFormatted = ramosAdmin && ramosAdmin.tpf?.formatUnits(5);
+  const templePriceFormatted = ramosAdmin && ramosAdmin.templePrice?.formatUnits(5);
+  const totalAvailableDaiTrvFormatted = ramosAdmin && ramosAdmin.totalAvailableDaiTrv?.formatUnits(5);
+  const totalAvailableTempleTrvFormatted = ramosAdmin && ramosAdmin.totalAvailableTempleTrv?.formatUnits(5);
 
   const tabs = [
     {
       label: 'Liquidity',
       content: (
         <Container>
-          <AddLiquidity calculateFunc={createJoinPoolRequest} handleInput={handleAddLiquidityInput} />
-          <RemoveLiquidity calculateFunc={createExitPoolRequest} />
-          <DepositAndStakeBpt calculateFunc={createDepositAndStakeRequest} />
+          <AddLiquidity calculateFunc={ramosAdmin.createJoinPoolRequest} handleInput={ramosAdmin.handleAddLiquidityInput} />
+          <RemoveLiquidity calculateFunc={ramosAdmin.createExitPoolRequest} />
+          <DepositAndStakeBpt calculateFunc={ramosAdmin.createDepositAndStakeRequest} />
         </Container>
       ),
     },
@@ -76,9 +59,9 @@ const RamosAdmin = () => {
       label: 'Rebalance',
       content: (
         <Container>
-          <RebalanceUp amounts={rebalanceUpAmounts} />
-          <RebalanceDown amounts={rebalanceDownAmounts} />
-          <Button isSmall onClick={calculateRecommendedAmounts} label="RECALCULATE" />
+          <RebalanceUp amounts={ramosAdmin.rebalanceUpAmounts} />
+          <RebalanceDown amounts={ramosAdmin.rebalanceDownAmounts} />
+          <Button isSmall onClick={ramosAdmin.calculateRecommendedAmounts} label="RECALCULATE" />
         </Container>
       ),
     },
@@ -86,9 +69,9 @@ const RamosAdmin = () => {
       label: 'Stable',
       content: (
         <Container>
-          <DepositStable amounts={depositStableAmounts} />
-          <WithdrawStable amounts={withdrawStableAmounts} />
-          <Button isSmall onClick={calculateRecommendedAmounts} label="RECALCULATE" />
+          <DepositStable amounts={ramosAdmin.depositStableAmounts} />
+          <WithdrawStable amounts={ramosAdmin.withdrawStableAmounts} />
+          <Button isSmall onClick={ramosAdmin.calculateRecommendedAmounts} label="RECALCULATE" />
         </Container>
       ),
     },
@@ -97,7 +80,7 @@ const RamosAdmin = () => {
   const {
     ramos: RAMOS_ADDRESS,
     treasuryReservesVault: TRV_ADDRESS,
-    ramosStrategy: RAMOS_STRATEGY,
+    strategies: STRATEGIES,
   } = environmentConfig.contracts;
 
   return (
@@ -105,14 +88,14 @@ const RamosAdmin = () => {
       <TransactionSettingsModal
         hasDeadline={false}
         closeOnClickOutside={false}
-        defaultSlippage={slippageTolerance}
+        defaultSlippage={ramosAdmin.slippageTolerance}
         isOpen={isTxSettingsOpen}
         onClose={() => {
           setIsTxSettingsOpen(false);
-          calculateRecommendedAmounts();
+          ramosAdmin.calculateRecommendedAmounts();
         }}
         onChange={(settings) => {
-          setSlippageTolerance(settings.slippageTolerance);
+          ramosAdmin.setSlippageTolerance(settings.slippageTolerance);
         }}
       />
       <Container>
@@ -122,10 +105,10 @@ const RamosAdmin = () => {
           additionalDetails={
             <>
               <p>
-                Current Spot Price: <strong>{templePriceFormatted ?? <EllipsisLoader />}</strong>
+                Current Spot Price: <strong>{templePriceFormatted ?? <EllipsisLoader /> }</strong>
               </p>
               <p>
-                Current Treasury Price Index: <strong>{tpfFormatted ?? <EllipsisLoader />}</strong>
+                Current Treasury Price Index: <strong>{tpfFormatted ?? <EllipsisLoader /> }</strong>
               </p>
             </>
           }
@@ -136,20 +119,20 @@ const RamosAdmin = () => {
           additionalDetails={
             <>
               <p>
-                Total Available Dai: <strong>{totalAvailableDaiTrvFormatted ?? <EllipsisLoader />}</strong>
+                Total Available Dai: <strong>{ totalAvailableDaiTrvFormatted ?? <EllipsisLoader /> }</strong>
               </p>
               <p>
-                Total Available Temple: <strong>{totalAvailableTempleTrvFormatted ?? <EllipsisLoader />}</strong>
+                Total Available Temple: <strong>{ totalAvailableTempleTrvFormatted ?? <EllipsisLoader /> }</strong>
               </p>
             </>
           }
         />
         <Header
           alias="RAMOS STRATEGY"
-          contractAddress={RAMOS_STRATEGY}
+          contractAddress={STRATEGIES.ramosStrategy}
           additionalDetails={
             <p>
-              Version: <strong>{ramosStrategyVersion ?? <EllipsisLoader />}</strong>
+              Version: <strong>{ ramosAdmin ? ramosAdmin.ramosStrategyVersion : <EllipsisLoader /> }</strong>
             </p>
           }
         />

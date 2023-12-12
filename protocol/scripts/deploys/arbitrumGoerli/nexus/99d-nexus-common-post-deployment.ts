@@ -13,8 +13,6 @@ async function main() {
     const deployedContracts = DEPLOYED_CONTRACTS[network.name];
     const nexusCommon = NexusCommon__factory.connect(deployedContracts.NEXUS_COMMON, owner);
     
-        
-    const ownerAddress = await owner.getAddress();
     // set shard
     await mine(nexusCommon.setShard(deployedContracts.SHARD));
     // enclave names

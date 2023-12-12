@@ -19,6 +19,7 @@ import {
 import env from 'constants/env';
 import { ZERO } from 'utils/bigNumber';
 import { Nullable } from 'types/util';
+import { useGeoBlocked } from 'hooks/use-geo-blocked';
 
 // We want to save gas burn $ for the Templars,
 // so we approving 1M up front, so only 1 approve TXN is required for approve
@@ -65,24 +66,15 @@ export const WalletProvider = (props: PropsWithChildren<object>) => {
       } else {
         setWalletAddress(undefined);
       }
+    } else {
+      setWalletAddress(undefined);
     }
   }, [wallet, connecting]);
 
   const { openNotification } = useNotification();
 
   const [balanceState, setBalanceState] = useState<Balance>(INITIAL_STATE.balance);
-  const [isBlocked, setIsBlocked] = useState(false);
-
-  useEffect(() => {
-    const checkBlocked = async () => {
-      const blocked = await fetch(`${window.location.href}api/geoblock`)
-        .then((res) => res.json())
-        .then((res) => res.blocked)
-        .catch(() => false);
-      setIsBlocked(blocked);
-    };
-    checkBlocked();
-  }, []);
+  const { isBlocked } = useGeoBlocked();
 
   const getBalance = async (walletAddress: string, signer: Signer) => {
     if (!walletAddress || !signer) {

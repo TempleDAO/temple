@@ -23,7 +23,7 @@ async function main() {
 
     // set Relic minter enclave IDs
     const enclaveIds = [1, 2, 3, 4, 5];
-    const allow = [true, true, true, true];
+    const allow = [true, true, true, true, true];
     await mine(relic.setRelicMinterEnclaveIds(deployedContracts.TEMPLE_SACRIFICE, enclaveIds, allow));
     const zeroRarityUri = "ipfs://QmVBhkqq3qEeQvdCDWSXQGMX7hFDymZvy7X7J4z9GsUAB3/";
     await mine(relic.setBaseUriRarity(0, zeroRarityUri));

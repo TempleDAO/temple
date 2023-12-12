@@ -46,6 +46,16 @@ const theme: DefaultTheme = {
     light: '#FFFFFF',
     light75: darken(0.25, '#FFFFFF'),
     light50: darken(0.5, '#FFFFFF'),
+    // https://www.figma.com/file/fZ7bvpavsMdADJjsk7QIsw/Temple-Core?type=design&node-id=4901-16456&mode=design&t=ctnue8yba6NEWJ1c-0
+    charts: [
+      '#D0BE75',
+      '#FFDEC9',
+      '#BD7B4F',
+      '#00846B',
+      '#876FAC',
+      '#AF444A',
+      '#24809D',
+    ],
     enclave: {
       structure: '#01806C',
       order: '#BBAA6C',
@@ -55,6 +65,8 @@ const theme: DefaultTheme = {
     },
     gradients: {
       dark: 'linear-gradient(180deg, #353535 45.25%, #101010 87.55%)',
+      grey: 'linear-gradient(90deg, rgba(196, 196, 196, 0) 0.49%, rgba(89, 89, 89, 0.48) 50.04%, rgba(196, 196, 196, 0) 100%)',
+      greyVertical: 'var(--gradient-light-vertical, linear-gradient(180deg, #353535 45.25%, #101010 81.46%, #0B0A0A 87.55%))',
     },
   },
   metrics: {
@@ -64,6 +76,7 @@ const theme: DefaultTheme = {
       maxWidth: '72rem' /* 1152/16 */,
     },
     devices: {
+      smallTablet: '50rem' /* 800/16 */,
       tablet: '64rem' /* 1024/16 */,
       laptop: '90rem' /* 1440/16 */,
       phone: '37.5rem' /* 600/16 */,
