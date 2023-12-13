@@ -23,6 +23,7 @@ import { OhmagePage } from 'components/Pages/Core/DappPages/OhmagePage';
 // Separate Chunks
 const TeamPayments = React.lazy(() => import('components/Pages/TeamPayments'));
 const RamosAdmin = React.lazy(() => import('components/Pages/Ramos/admin'));
+const SafeAdmin = React.lazy(() => import('components/Pages/Safe/admin'));
 
 const LoaderWrapper = styled.div`
   display: flex;
@@ -66,6 +67,7 @@ ReactDOM.render(
               <Route path="disclaimer" element={<Disclaimer />} />
               <Route path="team-payments" element={<LazyPage component={TeamPayments} />} />
               <Route path="ramos" element={<LazyPage component={RamosAdmin} />} />
+              <Route path="safe" element={<LazyPage component={SafeAdmin} />} />
             </Route>
             <Route path="/dapp/*" element={<V2Layout />}>
               <Route path="dashboard/*" element={<DashboardPage />} />
