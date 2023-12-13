@@ -11,7 +11,6 @@ import { useConnectWallet, useSetChain } from '@web3-onboard/react';
 import { useMemo } from 'react';
 import { useWallet } from 'providers/WalletProvider';
 import { MAINNET_CHAIN, SEPOLIA_CHAIN } from 'utils/envChainMapping';
-import { useGeoBlocked } from 'hooks/use-geo-blocked';
 
 export const V2Account = () => {
   const [{ wallet, connecting }, connect, disconnect] = useConnectWallet();

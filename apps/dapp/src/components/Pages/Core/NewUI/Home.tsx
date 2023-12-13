@@ -29,23 +29,30 @@ interface Metrics {
 const MarketingContent = [
   {
     image: obtainTemple,
-    header: 'Obtain $TEMPLE',
-    text: 'Provide your tokens, growing the Temple Treasury and recieving $TEMPLE in return.',
+    header: 'Elevate Your Portfolio',
+    text: 'Simply buy and hold $TEMPLE in your wallet, then relax as the Treasury farms on your behalf.',
   },
   {
     image: intrValue,
-    header: 'Intrinsic value',
-    text: 'Each $TEMPLE token has intrinsic value equal to the treasury value, divided by the number of $TEMPLE tokens.',
+    header: 'Find Refuge in the Temple',
+    text: 'Each $TEMPLE token is backed by stable assets in the Treasury. The $TEMPLE price tracks the growth of Treasury assets through a metric called Treasury Price Index (TPI).',
   },
   {
     image: treasuryGrowth,
-    header: 'Treasury Growth',
-    text: 'The Temple Treasury is put to work, generating revenue for the protocol. This will drive up the intrinsic value of each $TEMPLE token over time.',
+    header: 'Growth that Transcends Volatility',
+    text: (
+      <>
+        Enjoy the top stable yields in DeFi without worrying about actively managing any positions.
+        <br />
+        <br />
+        TPI rises over time as the Temple Treasury generates revenue and grows in value.
+      </>
+    ),
   },
   {
     image: elasticFloor,
-    header: 'Elastic Floor ',
-    text: 'If the $TEMPLE token price drops below the intrinsic value, a contract will buy back tokens at randomised times and in randomised amounts, restoring the price and maintaining an elastic floor.',
+    header: 'A Token for All Seasons',
+    text: 'If $TEMPLE price trades below the TPI, automated price protection is engaged through our AMO-styled liquidity manager (RAMOS).',
   },
 ];
 
@@ -145,8 +152,7 @@ const Home = ({ tlc }: { tlc?: boolean }) => {
           <ContentContainer>
             <>
               <NewTempleText>The New Temple</NewTempleText>
-              <TradeDetailText>A safe and stable token, appreciating over time.</TradeDetailText>
-              {/* // TODO: Link */}
+              <TradeDetailText>A wrapped treasury token with steady price growth in all conditions</TradeDetailText>
               <LearnMoreLink href="https://docs.templedao.link/" target={'_blank'}>
                 Learn More
               </LearnMoreLink>

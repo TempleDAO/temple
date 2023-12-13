@@ -80,11 +80,17 @@ const V2Layout = () => {
     const permittedPaths = ['/dapp/legacy'];
     if (loading || (!loading && !isBlocked)) return;
     // Force redirect to permitted path
-    if (!permittedPaths.find((path) => path === loc.pathname)) navigate(permittedPaths[0]);
+    if (!permittedPaths.find((path) => path === loc.pathname)) {
+      navigate(permittedPaths[0]);
+    }
     // Remove nav items that are not permitted
-    const newMenuNavItems = menuNavItems.filter((menuItem) => permittedPaths.find((path) => path === menuItem.linkTo));
-    setMenuNavItems(newMenuNavItems);
-  }, [loading, isBlocked, loc]);
+    if (menuNavItems.length > permittedPaths.length) {
+      const newMenuNavItems = menuNavItems.filter((menuItem) =>
+        permittedPaths.find((path) => path === menuItem.linkTo)
+      );
+      setMenuNavItems(newMenuNavItems);
+    }
+  }, [loading, isBlocked, loc, navigate, menuNavItems]);
 
   const onSelectMenuNavItems = async (selectedMenuItem: MenuNavItem) => {
     await setMenuNavItems((prevSelectedMenuNavItems) => {
