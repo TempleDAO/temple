@@ -15,6 +15,7 @@ import Payments from 'assets/icons/payments.svg?react';
 import Candle from 'assets/icons/candle.svg?react';
 import Restore from 'assets/icons/restore.svg?react';
 import { useGeoBlocked } from 'hooks/use-geo-blocked';
+import GeoblockModal from 'components/Popover/GeoblockModal';
 
 export type MenuNavItem = {
   label: string;
@@ -40,6 +41,7 @@ const V2Layout = () => {
   const loc = useLocation();
   const navigate = useNavigate();
   const { isBlocked, loading } = useGeoBlocked();
+  const [geoblockModalOpen, setGeoblockModalOpen] = useState(false);
   const [menuNavItems, setMenuNavItems] = useState<Array<MenuNavItem>>([
     {
       label: 'Trade',
@@ -89,6 +91,7 @@ const V2Layout = () => {
         permittedPaths.find((path) => path === menuItem.linkTo)
       );
       setMenuNavItems(newMenuNavItems);
+      setGeoblockModalOpen(true);
     }
   }, [loading, isBlocked, loc, navigate, menuNavItems]);
 
@@ -113,6 +116,7 @@ const V2Layout = () => {
           <MobileNav menuNavItems={menuNavItems} onSelectMenuNavItems={onSelectMenuNavItems} />
         )}
         <Content>
+          <GeoblockModal isOpen={geoblockModalOpen} onClose={() => setGeoblockModalOpen(false)} />
           <Outlet />
         </Content>
       </MainContainer>
