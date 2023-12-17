@@ -38,7 +38,7 @@ const INITIAL_STATE: RelicService = {
     isWhitelisted: false,
   },
   sacrificeTemple: {
-    handler: async () => {},
+    handler: async () => void {},
     isLoading: false,
     error: null,
   },
@@ -64,7 +64,7 @@ const TXN_SUCCESS_CODE = 1;
 
 const RelicContext = createContext(INITIAL_STATE);
 
-export const RelicProvider = (props: PropsWithChildren<{}>) => {
+export const RelicProvider = (props: PropsWithChildren<unknown>) => {
   const { wallet, ensureAllowance, signer } = useWallet();
   const { openNotification } = useNotification();
 
@@ -108,9 +108,9 @@ export const RelicProvider = (props: PropsWithChildren<{}>) => {
     const fetchRelicData = async (relicIds: BigNumber[]) => {
       return Promise.all(
         relicIds.map(async (relicId) => {
-          const [enclave, rarity, xp] = await relicContract.relicInfos(relicId);
+          const [enclaveId, rarity, xp] = await relicContract.getRelicInfo(relicId);
           const [itemBalances] = await Promise.all([
-            relicContract.getBalanceBatch(relicId, itemIds),
+            relicContract.getEquippedShards(relicId, itemIds),
             // relicContract.getRelicInfos(relicId) as Promise<[RelicRarity, RelicEnclave]>,
             // relicContract.relicInfos(relicId),
           ]);
@@ -118,7 +118,7 @@ export const RelicProvider = (props: PropsWithChildren<{}>) => {
           // rarity: number;
           // xp: BigNumber;
           const items = extractValidItems(itemBalances);
-          return { id: relicId, enclave, rarity, xp, items } as RelicData;
+          return { id: relicId, enclave: enclaveId.toNumber(), rarity, xp, items } as RelicData;
         })
       );
     };
@@ -317,7 +317,7 @@ export const RelicProvider = (props: PropsWithChildren<{}>) => {
     await ensureAllowance(TICKER_SYMBOL.TEMPLE_TOKEN, TEMPLE, env.nexus.templeSacrificeAddress, amount, amount);
 
     const sacrificeContract = new TempleSacrifice__factory(signer).attach(env.nexus.templeSacrificeAddress);
-    const txn = await sacrificeContract.sacrifice(enclave);
+    const txn = await sacrificeContract.sacrifice(enclave, wallet);
     const receipt = await txn.wait();
 
     setIsWhitelisted(true);
