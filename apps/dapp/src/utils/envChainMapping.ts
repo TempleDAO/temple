@@ -42,15 +42,15 @@ export const ARBITRUM_CHAIN: ChainDefinition = {
   rpcUrl: env.rpcUrl,
 };
 
-export const ARBITRUM_GOERLI_CHAIN: ChainDefinition = {
-  id: 421613,
-  token: 'AGOR',
-  name: 'Arbitrum Goerli',
-  label: 'Arbitrum Goerli',
+export const ARBITRUM_SEPOLIA_CHAIN: ChainDefinition = {
+  id: 421614,
+  token: 'ETH',
+  name: 'Arbitrum Sepolia',
+  label: 'Arbitrum Sepolia',
   rpcUrl: env.rpcUrl,
 };
 
-const APP_CHAINS = [MAINNET_CHAIN, SEPOLIA_CHAIN, LOCAL_CHAIN, ARBITRUM_CHAIN, ARBITRUM_GOERLI_CHAIN];
+const APP_CHAINS = [MAINNET_CHAIN, SEPOLIA_CHAIN, LOCAL_CHAIN, ARBITRUM_CHAIN, ARBITRUM_SEPOLIA_CHAIN];
 
 export const getChainById = (id: string) => {
   const _id = parseInt(id, 16);
@@ -66,7 +66,7 @@ export const APP_CHAINS_FOR_WEB3_INIT = APP_CHAINS.map((chainDefinition) => ({
 
 if (env.featureFlags.nexusOnlyMode) {
   ENV_CHAIN_MAPPING.set('production-nexus', ARBITRUM_CHAIN);
-  ENV_CHAIN_MAPPING.set('preview-nexus', ARBITRUM_GOERLI_CHAIN);
+  ENV_CHAIN_MAPPING.set('preview-nexus', ARBITRUM_SEPOLIA_CHAIN);
   ENV_CHAIN_MAPPING.set('local', LOCAL_CHAIN);
 } else {
   ENV_CHAIN_MAPPING.set('production', MAINNET_CHAIN);
