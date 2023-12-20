@@ -106,4 +106,7 @@ export interface Environment {
   featureFlags: {
     enableAscend: boolean;
   };
+  safe: {
+    gnosisWalletOne: string;
+  };
 }
