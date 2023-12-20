@@ -1,111 +1,97 @@
-import styled, { css } from 'styled-components';
-
-import { tabletAndAbove } from 'styles/breakpoints';
-import EllipsisLoader from 'components/EllipsisLoader';
-import Tooltip, { TooltipIcon } from 'components/Tooltip/Tooltip';
-import { Input } from 'components/Pages/Core/NewUI/HomeInput';
-import { Button } from 'components/Button/Button';
-import { useEffect, useState } from 'react';
-import { useDebouncedCallback } from 'use-debounce';
+import styled from 'styled-components';
+import { useState } from 'react';
+import { useSafeSdk } from 'hooks/use-safe-sdk';
+import env from 'constants/env';
+import { InputSelect } from 'components/InputSelect/InputSelect';
+import { Address } from '@web3-onboard/core/dist/types';
+import { SafeTxsDataTable } from './SafeTxDataTable';
 import { useWallet } from 'providers/WalletProvider';
-import { ethers } from "ethers";
-import { EthersAdapter } from '@safe-global/protocol-kit';
-import { useConnectWallet } from '@web3-onboard/react';
+import { useSafeCheckOwner, useSafeDataSubset, useSafePendingTxs } from 'safeApi/use-safe-open-api';
+import { queryPhone } from 'styles/breakpoints';
+import { useMediaQuery } from 'react-responsive';
 
 const SafeAdmin = () => {
+  const { walletAddress } = useWallet();
+  const [safeWallet, setSafeWallet] = useState<Address>(env.safe.gnosisWalletOne);
+  const safeSdk = useSafeSdk(safeWallet);
+  const safePendingTxsApi = useSafePendingTxs(safeWallet);
+  const {data: isSafeOwner} = useSafeCheckOwner(safeWallet, walletAddress);
+  const {data: dataSubset} = useSafeDataSubset( safePendingTxsApi, isSafeOwner ?? false, safeSdk);
+  const isAbovePhone = useMediaQuery({
+    query: queryPhone,
+  });
 
-  const [safeTxId, setSafeTxId] = useState(undefined);
-
-  const [{ wallet }] = useConnectWallet();
-  const { walletAddress, signer } = useWallet();
-
-  useEffect(() => {
-    if (!wallet) return;
-    const ethersProvider = new ethers.providers.Web3Provider(wallet.provider);
-    // const ethAdapter = new EthersAdapter({
-    //   ethers,
-    //   signerOrProvider: ethersProvider.getSigner()
-    // })
-    
-  }, [wallet]);
-
-  
-
-  console.log('walletAddress', walletAddress);
+  const safeOption = (safeAlias: string, safeWallet: Address) => {
+    return {
+      label: `${safeAlias} (${safeWallet.slice(0, 5)}...${safeWallet.slice(safeWallet.length - 5, safeWallet.length)})`,
+      value: safeWallet,
+    };
+  };
+  const safeWalletOptions: { value: Address; label: string }[] = [
+    safeOption('Multisig One', env.safe.gnosisWalletOne),
+  ];
 
   return (
     <Container>
-      <InputArea>
-        <h3>Safe App</h3>
-        <TitleWrapper>
-          <p>Enter the Safe Tx Id you want to sign or execute</p>
-          <Tooltip
-            content={
-              <>
-                <p>Remove liquidity from balancer pool receiving both</p>
-                <p>Treasury Price Floor is expected to be within bounds of multisig set range.</p>
-                <p>
-                  Withdraw and unwrap BPT tokens from Aura staking and send to balancer pool to receive both tokens.
-                </p>
-              </>
-            }
-          >
-            <TooltipIcon />
-          </Tooltip>
-        </TitleWrapper>
-
-        <Input
-          crypto={{ kind: 'value', value: 'Tx Id' }}
-          small
-          handleChange={useDebouncedCallback((e) => {
-            setSafeTxId(e);
-          }, 300)}
-        />
-        <Button
-          isSmall
-          label="SIGN / EXECUTE"
-          onClick={async () => {
-            console.log('click', safeTxId);
-          }}
-        />
-      </InputArea>
+      <AreaDelimiter>
+        <div>
+          <h3>Safe App</h3>
+          <Section label="Select Gnosis Safe Wallet">
+            <InputSelect
+              options={safeWalletOptions}
+              defaultValue={safeWalletOptions[0]}
+              onChange={(e) => setSafeWallet(e.value)}
+              isSearchable={false}
+              width={isAbovePhone ? '450px' : '300px'}
+            />
+          </Section>
+        </div>
+        <Section label="Queued Safe Transactions">
+          <SafeTxsDataTable
+            dataLoading={safePendingTxsApi.isLoading}
+            dataSubset={dataSubset}
+            tableHeaders={['Action', 'SafeTx', 'Status', 'Confirmations', 'Date']}
+          />
+        </Section>
+      </AreaDelimiter>
     </Container>
   );
 };
 
 export default SafeAdmin;
 
-
 const Container = styled.div`
-  display: grid;
-  grid-template-columns: 1fr;
   gap: 2rem;
-  ${tabletAndAbove(css`
-    grid-template-columns: 1fr 1fr;
-  `)}
 `;
 
-const InputArea = styled.div`
+const AreaDelimiter = styled.div`
   h3 {
     margin-top: 0.5rem;
     margin-bottom: 0;
-  }
-  p {
-    margin: 0;
   }
   display: flex;
   border: ${({ theme }) => `1px solid ${theme.palette.brand}`};
   border-radius: 2rem;
   padding: 1rem;
   flex-direction: column;
-  gap: 1rem;
 `;
 
-const TitleWrapper = styled.div`
+type SectionProps = {
+  label: string;
+  children: React.ReactNode;
+};
+const Section = (props: SectionProps) => {
+  return (
+    <SectionContainer>
+      <p>{props.label}</p>
+      {props.children}
+    </SectionContainer>
+  );
+};
+
+const SectionContainer = styled.div`
   display: flex;
-  gap: 0.5rem;
-  align-items: center;
-  small {
-    margin-top: 0.5rem;
-  }
+  flex-direction: column;
+  margin-top: 3rem;
+  overflow-x: auto;
 `;

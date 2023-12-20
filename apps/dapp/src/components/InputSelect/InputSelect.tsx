@@ -62,13 +62,14 @@ export const InputSelect = (props: SelectTempleDaoProps) => {
           cursor: 'pointer',
           height: selectHeight,
           zIndex: props.zIndex ? Number(props.zIndex) + 1 : 2, // place it above the menu 👇
-          width: props.width,
+          width: props.width ?? '100%',
         }),
         menu: (base, state) => ({
           ...base,
           paddingTop: '1.5rem',
           marginTop: '-1.5rem',
           border: `0.0625rem solid ${theme.palette.brand}`,
+          width: props.width ?? '100%',
           zIndex: props.zIndex ?? 1,
         }),
         menuList: (base, state) => ({
