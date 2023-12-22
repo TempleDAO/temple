@@ -75,7 +75,7 @@ export default defineConfig({
       data: path.resolve(__dirname, 'src/data'),
       types: path.resolve(__dirname, 'src/types'),
       constants: path.resolve(__dirname, 'src/constants'),
-      safeApi: path.resolve(__dirname, 'safeOpenApi'),
+      safe: path.resolve(__dirname, 'src/safe'),
     },
   },
   envPrefix: 'VITE',

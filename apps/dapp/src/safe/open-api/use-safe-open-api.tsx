@@ -4,7 +4,7 @@ import { UseQueryResult, useQuery } from '@tanstack/react-query';
 import { SafeStatus, SafeTableRow } from 'components/Pages/Safe/admin/SafeTxDataTable';
 import { useWallet } from 'providers/WalletProvider';
 import { format } from 'date-fns';
-import { useSafeSdk } from 'hooks/use-safe-sdk';
+import { useSafeSdk } from '../sdk/use-safe-sdk';
 
 type SafeApiRes<T> = {
   count: number;

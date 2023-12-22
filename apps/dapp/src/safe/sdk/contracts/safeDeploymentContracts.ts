@@ -14,7 +14,7 @@ import {
   getSimulateTxAccessorDeployment,
 } from '@safe-global/safe-deployments';
 import { safeDeploymentsL1ChainIds, safeDeploymentsVersions } from './config';
-import { ContractNetworkConfig } from '../types';
+import { ContractNetworkConfig } from '../utils/types';
 import {
   getCompatibilityFallbackHandlerContractInstance,
   getCreateCallContractInstance,

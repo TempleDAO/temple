@@ -5,7 +5,7 @@ import {
 } from '@safe-global/safe-core-sdk-types'
 import { bufferToHex, ecrecover, pubToAddress } from 'ethereumjs-util'
 import { EthSafeSignature } from './SafeSignature'
-import { sameString } from '../utils'
+import { sameString } from '../utils/utils'
 
 export function generatePreValidatedSignature(ownerAddress: string): SafeSignature {
   const signature =

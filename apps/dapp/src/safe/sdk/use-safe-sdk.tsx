@@ -9,17 +9,17 @@ import {
   getTransactionHash,
   isSafeMultisigTransactionResponse,
   toSafeTransactionType,
-} from 'components/Pages/Safe/admin/utils';
-import { V1Service, SafeMultisigConfirmation } from 'safeApi/client';
+} from './utils/utils';
+import { V1Service, SafeMultisigConfirmation } from 'safe/open-api/client';
 import { Nullable } from 'types/util';
 import {
   SafeMultisigTransactionResponse,
   TransactionOptions,
   TransactionResult,
 } from '@safe-global/safe-core-sdk-types';
-import { adjustVInSignature, generatePreValidatedSignature } from 'components/Pages/Safe/admin/signatures';
-import { getSafeContract } from 'components/Pages/Safe/admin/contracts/safeDeploymentContracts';
-import { DEFAULT_SAFE_VERSION } from 'components/Pages/Safe/admin/contracts/config';
+import { adjustVInSignature, generatePreValidatedSignature } from './signatures';
+import { getSafeContract } from './contracts/safeDeploymentContracts';
+import { DEFAULT_SAFE_VERSION } from './contracts/config';
 
 
 export const useSafeSdk = (signer: Nullable<Signer>, safeAddress: string) => {
