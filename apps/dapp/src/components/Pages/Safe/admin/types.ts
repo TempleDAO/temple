@@ -6,8 +6,7 @@ import {
   SafeVersion
 } from '@safe-global/safe-core-sdk-types'
 import { AbiItem } from 'web3-utils'
-import { Safe as Safe_V1_4_1 } from 'types/typechain/safe/src/ethers-v5/v1.4.1/Safe'
-import { Gnosis_safe as Safe_V1_3_0 } from 'types/typechain/safe/src/ethers-v5/v1.3.0/Gnosis_safe'
+import { Gnosis_safe as Safe_V1_3_0 } from 'types/typechain/safe/v1.3.0/Gnosis_safe'
 
 export type SafeTransactionOptionalProps = Pick<
   SafeTransactionDataPartial,
@@ -134,7 +133,7 @@ export type ConnectSafeConfig =
   | ConnectSafeConfigWithPredictedSafe
 
 export interface CreateTransactionProps {
-  safeContract: Safe_V1_4_1 | Safe_V1_3_0, 
+  safeContract: Safe_V1_3_0, 
   signer: Signer,
   multiSendCallOnlyContractAddress: string,
   multiSendContractAddress: string,
@@ -169,7 +168,7 @@ export interface SwapOwnerTxParams {
 
 type StandardizeSafeTxDataWithSafeContractProps = {
   /** safeContract - The Safe contract to use */
-  safeContract: Safe_V1_4_1 | Safe_V1_3_0
+  safeContract: Safe_V1_3_0
   /** predictedSafe - The configuration of the Safe that is not yet deployed */
   predictedSafe?: never
 }

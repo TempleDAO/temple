@@ -25,22 +25,14 @@ import {
   getSignMessageLibContractInstance,
   getSimulateTxAccessorContractInstance,
 } from './contractInstancesEthers';
-import { Compatibility_fallback_handler as CompatibilityFallbackHandler_V1_3_0 } from 'types/typechain/safe/src/ethers-v5/v1.3.0/Compatibility_fallback_handler';
-import { Create_call as CreateCall_V1_3_0 } from 'types/typechain/safe/src/ethers-v5/v1.3.0/Create_call';
-import { Gnosis_safe as SafeMasterCopy_V1_3_0 } from 'types/typechain/safe/src/ethers-v5/v1.3.0/Gnosis_safe';
-import { Multi_send as MultiSend_V1_3_0 } from 'types/typechain/safe/src/ethers-v5/v1.3.0/Multi_send';
-import { Multi_send_call_only as MultiSendCallOnly_V1_3_0 } from 'types/typechain/safe/src/ethers-v5/v1.3.0/Multi_send_call_only';
-import { Proxy_factory as SafeProxyFactory_V1_3_0 } from 'types/typechain/safe/src/ethers-v5/v1.3.0/Proxy_factory';
-import { Sign_message_lib as SignMessageLib_V1_3_0 } from 'types/typechain/safe/src/ethers-v5/v1.3.0/Sign_message_lib';
-import { Simulate_tx_accessor as SimulateTxAccessor_V1_3_0 } from 'types/typechain/safe/src/ethers-v5/v1.3.0/Simulate_tx_accessor';
-import { Compatibility_fallback_handler as CompatibilityFallbackHandler_V1_4_1 } from 'types/typechain/safe/src/ethers-v5/v1.4.1/Compatibility_fallback_handler';
-import { Create_call as CreateCall_V1_4_1 } from 'types/typechain/safe/src/ethers-v5/v1.4.1/Create_call';
-import { Multi_send as MultiSend_V1_4_1 } from 'types/typechain/safe/src/ethers-v5/v1.4.1/Multi_send';
-import { Multi_send_call_only as MultiSendCallOnly_V1_4_1 } from 'types/typechain/safe/src/ethers-v5/v1.4.1/Multi_send_call_only';
-import { Safe as SafeMasterCopy_V1_4_1 } from 'types/typechain/safe/src/ethers-v5/v1.4.1/Safe';
-import { Safe_proxy_factory as SafeProxyFactory_V1_4_1 } from 'types/typechain/safe/src/ethers-v5/v1.4.1/Safe_proxy_factory';
-import { Sign_message_lib as SignMessageLib_V1_4_1 } from 'types/typechain/safe/src/ethers-v5/v1.4.1/Sign_message_lib';
-import { Simulate_tx_accessor as SimulateTxAccessor_V1_4_1 } from 'types/typechain/safe/src/ethers-v5/v1.4.1/Simulate_tx_accessor';
+import { Compatibility_fallback_handler as CompatibilityFallbackHandler_V1_3_0 } from 'types/typechain/safe/v1.3.0/Compatibility_fallback_handler';
+import { Create_call as CreateCall_V1_3_0 } from 'types/typechain/safe/v1.3.0/Create_call';
+import { Gnosis_safe as SafeMasterCopy_V1_3_0 } from 'types/typechain/safe/v1.3.0/Gnosis_safe';
+import { Multi_send as MultiSend_V1_3_0 } from 'types/typechain/safe/v1.3.0/Multi_send';
+import { Multi_send_call_only as MultiSendCallOnly_V1_3_0 } from 'types/typechain/safe/v1.3.0/Multi_send_call_only';
+import { Proxy_factory as SafeProxyFactory_V1_3_0 } from 'types/typechain/safe/v1.3.0/Proxy_factory';
+import { Sign_message_lib as SignMessageLib_V1_3_0 } from 'types/typechain/safe/v1.3.0/Sign_message_lib';
+import { Simulate_tx_accessor as SimulateTxAccessor_V1_3_0 } from 'types/typechain/safe/v1.3.0/Simulate_tx_accessor';
 
 interface GetContractInstanceProps {
   signer: Signer;
@@ -62,10 +54,12 @@ export function getSafeContractDeploymentDetails(
   const filters: DeploymentFilter = { version, network: chainId.toString(), released: true };
   if (safeDeploymentsL1ChainIds.includes(chainId) || isL1SafeMasterCopy) {
     const safeSingletonContractDetails = getSafeSingletonDeployment(filters);
+    console.log('using SafeContract L1', safeSingletonContractDetails);
     if (!safeSingletonContractDetails) throw Error('undefined safeSingletonContractDetails');
     return safeSingletonContractDetails;
   }
   const safeL2SingletonContractDetails = getSafeL2SingletonDeployment(filters);
+  console.log('using SafeContract L2', safeL2SingletonContractDetails);
   if (!safeL2SingletonContractDetails) throw Error('undefined safeL2SingletonContractDetails');
   return safeL2SingletonContractDetails;
 }
@@ -80,11 +74,15 @@ export function getCompatibilityFallbackHandlerContractDeploymentDetails(
     network: chainId.toString(),
     released: true,
   });
-  if (!compatibilityFallbackHandlerDeploymentDetails) throw Error('undefined compatibilityFallbackHandlerDeploymentDetails');
+  if (!compatibilityFallbackHandlerDeploymentDetails)
+    throw Error('undefined compatibilityFallbackHandlerDeploymentDetails');
   return compatibilityFallbackHandlerDeploymentDetails;
 }
 
-export function getMultiSendCallOnlyContractDeploymentDetails(safeVersion: SafeVersion, chainId: number): SingletonDeployment {
+export function getMultiSendCallOnlyContractDeploymentDetails(
+  safeVersion: SafeVersion,
+  chainId: number
+): SingletonDeployment {
   const version = safeDeploymentsVersions[safeVersion].multiSendCallOnlyVersion;
   const multiSendCallOnlyContractDeploymentDetails = getMultiSendCallOnlyDeployment({
     version,
@@ -97,21 +95,39 @@ export function getMultiSendCallOnlyContractDeploymentDetails(safeVersion: SafeV
 
 export function getMultiSendContractDeploymentDetails(safeVersion: SafeVersion, chainId: number): SingletonDeployment {
   const version = safeDeploymentsVersions[safeVersion].multiSendVersion;
-  const multiSendContractDeploymentDetails = getMultiSendDeployment({ version, network: chainId.toString(), released: true });
+  const multiSendContractDeploymentDetails = getMultiSendDeployment({
+    version,
+    network: chainId.toString(),
+    released: true,
+  });
   if (!multiSendContractDeploymentDetails) throw Error('multiSendContractDeploymentDetails undefined');
   return multiSendContractDeploymentDetails;
 }
 
-export function getSafeProxyFactoryContractDeploymentDetails(safeVersion: SafeVersion, chainId: number): SingletonDeployment {
+export function getSafeProxyFactoryContractDeploymentDetails(
+  safeVersion: SafeVersion,
+  chainId: number
+): SingletonDeployment {
   const version = safeDeploymentsVersions[safeVersion].safeProxyFactoryVersion;
-  const proxyFactoryDeploymentDetails = getProxyFactoryDeployment({ version, network: chainId.toString(), released: true });
+  const proxyFactoryDeploymentDetails = getProxyFactoryDeployment({
+    version,
+    network: chainId.toString(),
+    released: true,
+  });
   if (!proxyFactoryDeploymentDetails) throw Error('undefined proxyFactoryDeploymentDetails');
   return proxyFactoryDeploymentDetails;
 }
 
-export function getSignMessageLibContractDeploymentDetails(safeVersion: SafeVersion, chainId: number): SingletonDeployment {
+export function getSignMessageLibContractDeploymentDetails(
+  safeVersion: SafeVersion,
+  chainId: number
+): SingletonDeployment {
   const version = safeDeploymentsVersions[safeVersion].signMessageLibVersion;
-  const signMessageLibDeploymentDetails = getSignMessageLibDeployment({ version, network: chainId.toString(), released: true });
+  const signMessageLibDeploymentDetails = getSignMessageLibDeployment({
+    version,
+    network: chainId.toString(),
+    released: true,
+  });
   if (!signMessageLibDeploymentDetails) throw Error('undefined signMessageLibDeploymentDetails');
   return signMessageLibDeploymentDetails;
 }
@@ -128,7 +144,11 @@ export function getSimulateTxAccessorContractDeploymentDetails(
   chainId: number
 ): SingletonDeployment {
   const version = safeDeploymentsVersions[safeVersion].createCallVersion;
-  const simulateTxAccessorDeploymentDetails = getSimulateTxAccessorDeployment({ version, network: chainId.toString(), released: true });
+  const simulateTxAccessorDeploymentDetails = getSimulateTxAccessorDeployment({
+    version,
+    network: chainId.toString(),
+    released: true,
+  });
   if (!simulateTxAccessorDeploymentDetails) throw Error('undefined simulateTxAccessorDeploymentDetails');
   return simulateTxAccessorDeploymentDetails;
 }
@@ -137,12 +157,10 @@ export async function getSafeContract({
   signer,
   safeVersion,
   customSafeAddress,
-  isL1SafeMasterCopy,
   customContracts,
-}: GetSafeContractInstanceProps): Promise<SafeMasterCopy_V1_4_1 | SafeMasterCopy_V1_3_0> {
+}: GetSafeContractInstanceProps): Promise<SafeMasterCopy_V1_3_0> {
   const safeContractDeploymentDetails = getSafeContractDeploymentDetails(safeVersion, await signer.getChainId());
   const safeContract = getSafeContractInstance(
-    safeVersion,
     customSafeAddress ?? customContracts?.safeMasterCopyAddress ?? safeContractDeploymentDetails.defaultAddress,
     signer
   );
@@ -157,10 +175,12 @@ export async function getProxyFactoryContract({
   signer,
   safeVersion,
   customContracts,
-}: GetContractInstanceProps): Promise<SafeProxyFactory_V1_4_1 | SafeProxyFactory_V1_3_0> {
-  const safeProxyFactoryContractDeploymentDetails = getSafeProxyFactoryContractDeploymentDetails(safeVersion, await signer.getChainId());
-  const safeProxyFactoryContract = getSafeProxyFactoryContractInstance(
+}: GetContractInstanceProps): Promise<SafeProxyFactory_V1_3_0> {
+  const safeProxyFactoryContractDeploymentDetails = getSafeProxyFactoryContractDeploymentDetails(
     safeVersion,
+    await signer.getChainId()
+  );
+  const safeProxyFactoryContract = getSafeProxyFactoryContractInstance(
     customContracts?.safeMasterCopyAddress ?? safeProxyFactoryContractDeploymentDetails.defaultAddress,
     signer
   );
@@ -175,10 +195,12 @@ export async function getCompatibilityFallbackHandlerContract({
   signer,
   safeVersion,
   customContracts,
-}: GetContractInstanceProps): Promise<CompatibilityFallbackHandler_V1_4_1 | CompatibilityFallbackHandler_V1_3_0> {
-  const fallbackHandlerContractDeploymentDetails = getCompatibilityFallbackHandlerContractDeploymentDetails(safeVersion, await signer.getChainId());
-  const fallbackHandlerContract = getCompatibilityFallbackHandlerContractInstance(
+}: GetContractInstanceProps): Promise<CompatibilityFallbackHandler_V1_3_0> {
+  const fallbackHandlerContractDeploymentDetails = getCompatibilityFallbackHandlerContractDeploymentDetails(
     safeVersion,
+    await signer.getChainId()
+  );
+  const fallbackHandlerContract = getCompatibilityFallbackHandlerContractInstance(
     customContracts?.safeMasterCopyAddress ?? fallbackHandlerContractDeploymentDetails.defaultAddress,
     signer
   );
@@ -193,10 +215,12 @@ export async function getMultiSendContract({
   signer,
   safeVersion,
   customContracts,
-}: GetContractInstanceProps): Promise<MultiSend_V1_4_1 | MultiSend_V1_3_0> {
-  const multiSendContractDeploymentDetails = getMultiSendContractDeploymentDetails(safeVersion, await signer.getChainId());
-  const multiSendContract = getMultiSendContractInstance(
+}: GetContractInstanceProps): Promise<MultiSend_V1_3_0> {
+  const multiSendContractDeploymentDetails = getMultiSendContractDeploymentDetails(
     safeVersion,
+    await signer.getChainId()
+  );
+  const multiSendContract = getMultiSendContractInstance(
     customContracts?.safeMasterCopyAddress ?? multiSendContractDeploymentDetails.defaultAddress,
     signer
   );
@@ -211,10 +235,12 @@ export async function getMultiSendCallOnlyContract({
   signer,
   safeVersion,
   customContracts,
-}: GetContractInstanceProps): Promise<MultiSendCallOnly_V1_4_1 | MultiSendCallOnly_V1_3_0> {
-  const multiSendCallOnlyContractDeploymentDetails = getMultiSendCallOnlyContractDeploymentDetails(safeVersion, await signer.getChainId());
-  const multiSendCallOnlyContract = getMultiSendCallOnlyContractInstance(
+}: GetContractInstanceProps): Promise<MultiSendCallOnly_V1_3_0> {
+  const multiSendCallOnlyContractDeploymentDetails = getMultiSendCallOnlyContractDeploymentDetails(
     safeVersion,
+    await signer.getChainId()
+  );
+  const multiSendCallOnlyContract = getMultiSendCallOnlyContractInstance(
     customContracts?.safeMasterCopyAddress ?? multiSendCallOnlyContractDeploymentDetails.defaultAddress,
     signer
   );
@@ -229,10 +255,12 @@ export async function getSignMessageLibContract({
   signer,
   safeVersion,
   customContracts,
-}: GetContractInstanceProps): Promise<SignMessageLib_V1_4_1 | SignMessageLib_V1_3_0> {
-  const signMessageLibContractDeploymentDetails = getSignMessageLibContractDeploymentDetails(safeVersion, await signer.getChainId());
-  const signMessageLibContract = getSignMessageLibContractInstance(
+}: GetContractInstanceProps): Promise<SignMessageLib_V1_3_0> {
+  const signMessageLibContractDeploymentDetails = getSignMessageLibContractDeploymentDetails(
     safeVersion,
+    await signer.getChainId()
+  );
+  const signMessageLibContract = getSignMessageLibContractInstance(
     customContracts?.safeMasterCopyAddress ?? signMessageLibContractDeploymentDetails.defaultAddress,
     signer
   );
@@ -247,10 +275,12 @@ export async function getCreateCallContract({
   signer,
   safeVersion,
   customContracts,
-}: GetContractInstanceProps): Promise<CreateCall_V1_4_1 | CreateCall_V1_3_0> {
-  const createCallContractDeploymentDetails = getCreateCallContractDeploymentDetails(safeVersion, await signer.getChainId());
-  const createCallContract = getCreateCallContractInstance(
+}: GetContractInstanceProps): Promise<CreateCall_V1_3_0> {
+  const createCallContractDeploymentDetails = getCreateCallContractDeploymentDetails(
     safeVersion,
+    await signer.getChainId()
+  );
+  const createCallContract = getCreateCallContractInstance(
     customContracts?.safeMasterCopyAddress ?? createCallContractDeploymentDetails.defaultAddress,
     signer
   );
@@ -265,10 +295,12 @@ export async function getSimulateTxAccessorContract({
   signer,
   safeVersion,
   customContracts,
-}: GetContractInstanceProps): Promise<SimulateTxAccessor_V1_4_1 | SimulateTxAccessor_V1_3_0> {
-  const simulateTxAccessorContractDeploymentDetails = getSimulateTxAccessorContractDeploymentDetails(safeVersion, await signer.getChainId());
-  const simulateTxAccessorContract = getSimulateTxAccessorContractInstance(
+}: GetContractInstanceProps): Promise<SimulateTxAccessor_V1_3_0> {
+  const simulateTxAccessorContractDeploymentDetails = getSimulateTxAccessorContractDeploymentDetails(
     safeVersion,
+    await signer.getChainId()
+  );
+  const simulateTxAccessorContract = getSimulateTxAccessorContractInstance(
     customContracts?.safeMasterCopyAddress ?? simulateTxAccessorContractDeploymentDetails.defaultAddress,
     signer
   );

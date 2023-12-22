@@ -5,10 +5,8 @@ import {
   SafeVersion,
   SafeTransaction,
 } from '@safe-global/safe-core-sdk-types'
-import semverSatisfies from 'semver/functions/satisfies'
-// import {} from '@'
-import { Safe as Safe_V1_4_1 } from 'types/typechain/safe/src/ethers-v5/v1.4.1/Safe'
-import { Gnosis_safe as Safe_V1_3_0 } from 'types/typechain/safe/src/ethers-v5/v1.3.0/Gnosis_safe'
+import semver from 'semver'
+import { Gnosis_safe as Safe_V1_3_0 } from 'types/typechain/safe/v1.3.0/Gnosis_safe'
 import { getSafeContract, getSimulateTxAccessorContract } from '../contracts/safeDeploymentContracts'
 
 // Every byte == 00 -> 4  Gas cost
@@ -36,7 +34,7 @@ function estimateDataGasCosts(data: string): number {
 
 export async function estimateGas(
   safeVersion: SafeVersion,
-  safeContract: Safe_V1_4_1 | Safe_V1_3_0,
+  safeContract: Safe_V1_3_0,
   signer: Signer,
   to: string,
   valueInWei: string,
@@ -72,7 +70,7 @@ export async function estimateGas(
 }
 
 export async function estimateTxGas(
-  safeContract: Safe_V1_4_1 | Safe_V1_3_0,
+  safeContract: Safe_V1_3_0,
   signer: Signer,
   to: string,
   valueInWei: string,
@@ -152,13 +150,13 @@ export async function estimateTxGas(
  *
  */
 export async function estimateSafeTxGas(
-  safe: Safe_V1_4_1 | Safe_V1_3_0,
+  safe: Safe_V1_3_0,
   safeTransaction: SafeTransaction,
   signer: Signer,
 ): Promise<string> {
   const safeVersion = await safe.VERSION() as SafeVersion;
 
-  if (semverSatisfies(safeVersion, '>=1.3.0')) {
+  if (semver.satisfies(safeVersion, '>=1.3.0')) {
     const safeTxGas = await estimateSafeTxGasWithSimulate(safe, safeTransaction, signer)
 
     return addExtraGasForSafety(safeTxGas)
@@ -196,7 +194,7 @@ function addExtraGasForSafety(safeTxGas: string): string {
  *
  */
 async function estimateSafeTxGasWithRequiredTxGas(
-  safe: Safe_V1_4_1 | Safe_V1_3_0,
+  safe: Safe_V1_3_0,
   safeTransaction: SafeTransaction,
   signer: Signer,
 ): Promise<string> {
@@ -288,7 +286,7 @@ function parseSafeTxGasErrorResponse(error: any) {
  *
  */
 async function estimateSafeTxGasWithSimulate(
-  safe: Safe_V1_4_1 | Safe_V1_3_0,
+  safe: Safe_V1_3_0,
   safeTransaction: SafeTransaction,
   signer: Signer,
 ): Promise<string> {
