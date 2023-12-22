@@ -14,6 +14,7 @@ export type SafeTableRow = {
   confirmations: string;
   alreadySigned: boolean;
   isOwner: boolean;
+  nonce: number;
   action: () => void;
 };
 
@@ -78,6 +79,7 @@ export const SafeTxsDataTable = (props: Props) => {
                         }
                       />
                     </DataCell>
+                    <DataCell>{row.nonce}</DataCell>
                     <DataCell>
                       <LinkStyled href={`${env.etherscan}/tx/${row.txHash}`} target="_blank">
                         {row.txHash.slice(0, 12) + '...'}

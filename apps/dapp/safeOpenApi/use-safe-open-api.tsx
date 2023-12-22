@@ -4,8 +4,7 @@ import { UseQueryResult, useQuery } from '@tanstack/react-query';
 import { SafeStatus, SafeTableRow } from 'components/Pages/Safe/admin/SafeTxDataTable';
 import { useWallet } from 'providers/WalletProvider';
 import { format } from 'date-fns';
-import { executeSafeTx, signSafeTx } from 'hooks/use-safe-sdk';
-// import { useSafeSdkProps } from 'hooks/use-safe-sdk';
+import { useSafeSdk } from 'hooks/use-safe-sdk';
 
 type SafeApiRes<T> = {
   count: number;
@@ -35,7 +34,15 @@ export const useSafePendingTxs = (safeWallet: Address): UseQueryResult<SafeApiRe
         undefined,
         undefined,
         undefined,
-        'false' // should return executed txs, if false only return queued txs
+        'false', // should return executed txs, if false only return queued txs
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        'nonce' // order asc by nonce, so users see transactions to be executed
       );
     },
     refetchInterval: 5000
@@ -64,6 +71,7 @@ export const useSafeDataSubset = (
   safeAddress: string,
 ) => {
   const { walletAddress, signer } = useWallet();
+  const { signSafeTx, executeSafeTx} = useSafeSdk(signer, safeAddress);
   return useQuery({
     queryKey: ['getSafeDataSubset', walletAddress, safePendingTxsApi, isOwner],
     queryFn: () => {
@@ -82,18 +90,17 @@ export const useSafeDataSubset = (
           confirmations: `${txConfirmations.length}/${tx.confirmationsRequired}`,
           alreadySigned: alreadySigned,
           isOwner,
+          nonce: tx.nonce,
           action: async () => {
             switch (status) {
               case 'awaiting_signing':
                 try {
-
-                  // await safeSdk.signSafeTx(tx.safeTxHash);
-                  await signSafeTx(signer, tx.safeTxHash);
+                  await signSafeTx(tx.safeTxHash);
                 } catch (e) {}
                 return;
               case 'awaiting_execution':
                 try {
-                  const resExec = await executeSafeTx(signer, safeAddress, tx.safeTxHash);
+                  const resExec = await executeSafeTx(tx.safeTxHash);
                   console.log('resExec', resExec);
                 } catch (e) {}
                 return;

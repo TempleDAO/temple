@@ -22,9 +22,8 @@ import { SENTINEL_ADDRESS, ZERO_ADDRESS } from './safeConstants';
 import { estimateGas } from './transactions/gas';
 import { DEFAULT_SAFE_VERSION } from './contracts/config';
 import { EthSafeSignature } from './signatures';
-import { Safe as Safe_V1_4_1 } from 'types/typechain/safe/src/ethers-v5/v1.4.1/Safe';
-import { Gnosis_safe as Safe_V1_3_0 } from 'types/typechain/safe/src/ethers-v5/v1.3.0/Gnosis_safe';
-import { getMultiSendCallOnlyContract, getMultiSendCallOnlyContractDeploymentDetails, getMultiSendContract, getMultiSendContractDeploymentDetails } from './contracts/safeDeploymentContracts';
+import { Gnosis_safe as Safe_V1_3_0 } from 'types/typechain/safe/v1.3.0/Gnosis_safe';
+import { getMultiSendCallOnlyContract, getMultiSendCallOnlyContractDeploymentDetails, getMultiSendContract, getMultiSendContractDeploymentDetails, getSafeContract } from './contracts/safeDeploymentContracts';
 
 export function isSafeMultisigTransactionResponse(
   safeTransaction: SafeTransaction | SafeMultisigTransactionResponse
@@ -39,7 +38,7 @@ export function isSafeMultisigTransactionResponse(
  * @returns The converted transaction with type SafeTransaction
  */
 export const toSafeTransactionType = async (
-  safeContract: Safe_V1_4_1 | Safe_V1_3_0,
+  safeContract: Safe_V1_3_0,
   signer: Signer,
   serviceTransactionResponse: SafeMultisigTransactionResponse
 ): Promise<SafeTransaction> => {
@@ -136,7 +135,7 @@ const createTransaction = async ({
  * @returns The new Safe transaction
  */
 export const copyTransaction = async (
-  safeContract: Safe_V1_4_1 | Safe_V1_3_0,
+  safeContract: Safe_V1_3_0,
   signer: Signer,
   safeTransaction: SafeTransaction
 ): Promise<SafeTransaction> => {
@@ -163,7 +162,7 @@ export const copyTransaction = async (
  * @returns The transaction hash of the Safe transaction
  */
 export const getTransactionHash = async (
-  safeContract: Safe_V1_4_1 | Safe_V1_3_0,
+  safeContract: Safe_V1_3_0,
   safeTransaction: SafeTransaction
 ): Promise<string> => {
   if (!safeContract) {
@@ -192,7 +191,7 @@ export const getTransactionHash = async (
  * @returns The list of owners
  */
 export const getOwnersWhoApprovedTx = async (
-  safeContract: Safe_V1_4_1 | Safe_V1_3_0,
+  safeContract: Safe_V1_3_0,
   txHash: string
 ): Promise<string[]> => {
   if (!safeContract) {
@@ -200,11 +199,9 @@ export const getOwnersWhoApprovedTx = async (
   }
 
   const owners = await getOwners(safeContract);
-  console.log('1 owners', owners);
   const ownersWhoApproved: string[] = [];
   for (const owner of owners) {
     const approved = await safeContract.approvedHashes(owner, txHash);
-    console.log('2 approved', approved);
     if (approved.gt(0)) {
       ownersWhoApproved.push(owner);
     }
@@ -217,7 +214,7 @@ export const getOwnersWhoApprovedTx = async (
  *
  * @returns The list of owners
  */
-export const getOwners = async (safeContract: Safe_V1_4_1 | Safe_V1_3_0): Promise<string[]> => {
+export const getOwners = async (safeContract: Safe_V1_3_0): Promise<string[]> => {
   if (!safeContract) {
     throw new Error('Safe is not deployed');
   }
@@ -230,7 +227,7 @@ export const getOwners = async (safeContract: Safe_V1_4_1 | Safe_V1_3_0): Promis
  *
  * @returns The Safe threshold
  */
-export const getThreshold = async (safeContract: Safe_V1_4_1 | Safe_V1_3_0): Promise<number> => {
+export const getThreshold = async (safeContract: Safe_V1_3_0): Promise<number> => {
   if (!safeContract) {
     throw new Error('Safe is not deployed');
   }
@@ -345,4 +342,30 @@ export function standardizeMetaTransactionData(
     operation: tx.operation ?? OperationType.Call
   }
   return standardizedTxs
+}
+
+/**
+   * Returns the Safe Transaction encoded
+   *
+   * @async
+   * @param {SafeTransaction} safeTransaction - The Safe transaction to be encoded.
+   * @returns {Promise<string>} The encoded transaction
+   *
+   */
+export const getEncodedTransaction = async(safeContract: Safe_V1_3_0, safeTransaction: SafeTransaction): Promise<string> => {
+  
+  const encodedTransaction: string = safeContract.interface.encodeFunctionData('execTransaction', [
+    safeTransaction.data.to,
+    safeTransaction.data.value,
+    safeTransaction.data.data,
+    safeTransaction.data.operation,
+    safeTransaction.data.safeTxGas,
+    safeTransaction.data.baseGas,
+    safeTransaction.data.gasPrice,
+    safeTransaction.data.gasToken,
+    safeTransaction.data.refundReceiver,
+    safeTransaction.encodedSignatures()
+  ]) as string
+
+  return encodedTransaction
 }

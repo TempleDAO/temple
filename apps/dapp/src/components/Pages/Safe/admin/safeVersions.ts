@@ -1,4 +1,4 @@
-import semverSatisfies from 'semver/functions/satisfies'
+import semver from 'semver'
 
 export enum SAFE_FEATURES {
   SAFE_TX_GAS_OPTIONAL = 'SAFE_TX_GAS_OPTIONAL',
@@ -21,5 +21,5 @@ export const hasSafeFeature = (feature: SAFE_FEATURES, version: string): boolean
     return false
   }
 
-  return semverSatisfies(version, SAFE_FEATURES_BY_VERSION[feature])
+  return semver.satisfies(version, SAFE_FEATURES_BY_VERSION[feature])
 }
