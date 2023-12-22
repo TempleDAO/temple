@@ -5,7 +5,7 @@ import { InputSelect } from 'components/InputSelect/InputSelect';
 import { Address } from '@web3-onboard/core/dist/types';
 import { SafeTxsDataTable } from './SafeTxDataTable';
 import { useWallet } from 'providers/WalletProvider';
-import { useSafeCheckOwner, useSafeDataSubset, useSafePendingTxs } from 'safeApi/use-safe-open-api';
+import { useSafeCheckOwner, useSafeDataSubset, useSafePendingTxs } from 'safe/open-api/use-safe-open-api';
 import { queryPhone } from 'styles/breakpoints';
 import { useMediaQuery } from 'react-responsive';
 

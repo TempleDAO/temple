@@ -11,7 +11,7 @@ import {
 import { SAFE_FEATURES, hasSafeFeature } from './safeVersions';
 import { arrayify } from '@ethersproject/bytes';
 import { pack as solidityPack } from '@ethersproject/solidity';
-import EthSafeTransaction from './transactions/SafeTransaction';
+import EthSafeTransaction from '../transactions/SafeTransaction';
 import {
   CreateTransactionProps,
   SafeConfig,
@@ -19,11 +19,11 @@ import {
   StandardizeSafeTransactionDataProps,
 } from './types';
 import { SENTINEL_ADDRESS, ZERO_ADDRESS } from './safeConstants';
-import { estimateGas } from './transactions/gas';
-import { DEFAULT_SAFE_VERSION } from './contracts/config';
-import { EthSafeSignature } from './signatures';
+import { estimateGas } from '../transactions/gas';
+import { DEFAULT_SAFE_VERSION } from '../contracts/config';
+import { EthSafeSignature } from '../signatures';
 import { Gnosis_safe as Safe_V1_3_0 } from 'types/typechain/safe/v1.3.0/Gnosis_safe';
-import { getMultiSendCallOnlyContract, getMultiSendCallOnlyContractDeploymentDetails, getMultiSendContract, getMultiSendContractDeploymentDetails, getSafeContract } from './contracts/safeDeploymentContracts';
+import { getMultiSendCallOnlyContract, getMultiSendCallOnlyContractDeploymentDetails, getMultiSendContract, getMultiSendContractDeploymentDetails, getSafeContract } from '../contracts/safeDeploymentContracts';
 
 export function isSafeMultisigTransactionResponse(
   safeTransaction: SafeTransaction | SafeMultisigTransactionResponse
