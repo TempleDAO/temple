@@ -4,7 +4,8 @@ import { UseQueryResult, useQuery } from '@tanstack/react-query';
 import { SafeStatus, SafeTableRow } from 'components/Pages/Safe/admin/SafeTxDataTable';
 import { useWallet } from 'providers/WalletProvider';
 import { format } from 'date-fns';
-import { useSafeSdkProps } from 'hooks/use-safe-sdk';
+import { executeSafeTx, signSafeTx } from 'hooks/use-safe-sdk';
+// import { useSafeSdkProps } from 'hooks/use-safe-sdk';
 
 type SafeApiRes<T> = {
   count: number;
@@ -37,7 +38,7 @@ export const useSafePendingTxs = (safeWallet: Address): UseQueryResult<SafeApiRe
         'false' // should return executed txs, if false only return queued txs
       );
     },
-    refetchInterval: 3000
+    refetchInterval: 5000
   });
 
 export const useSafeAllTransactions = (safeWallet: Address): UseQueryResult<SafeApiRes<AllTransactionsSchema>> =>
@@ -60,9 +61,9 @@ export const useSafeCheckOwner = (safeWallet: Address, ownerAddress: Address | u
 export const useSafeDataSubset = (
   safePendingTxsApi: UseQueryResult<SafeApiRes<SafeMultisigTransactionResponse[]>>, 
   isOwner: boolean,
-  safeSdk: useSafeSdkProps,
+  safeAddress: string,
 ) => {
-  const { walletAddress } = useWallet();
+  const { walletAddress, signer } = useWallet();
   return useQuery({
     queryKey: ['getSafeDataSubset', walletAddress, safePendingTxsApi, isOwner],
     queryFn: () => {
@@ -85,12 +86,14 @@ export const useSafeDataSubset = (
             switch (status) {
               case 'awaiting_signing':
                 try {
-                  await safeSdk.signSafeTx(tx.safeTxHash);
+
+                  // await safeSdk.signSafeTx(tx.safeTxHash);
+                  await signSafeTx(signer, tx.safeTxHash);
                 } catch (e) {}
                 return;
               case 'awaiting_execution':
                 try {
-                  const resExec = await safeSdk.executeSafeTx(tx.safeTxHash);
+                  const resExec = await executeSafeTx(signer, safeAddress, tx.safeTxHash);
                   console.log('resExec', resExec);
                 } catch (e) {}
                 return;

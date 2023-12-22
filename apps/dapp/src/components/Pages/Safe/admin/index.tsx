@@ -1,6 +1,6 @@
 import styled from 'styled-components';
 import { useState } from 'react';
-import { useSafeSdk } from 'hooks/use-safe-sdk';
+// import { useSafeSdk } from 'hooks/use-safe-sdk';
 import env from 'constants/env';
 import { InputSelect } from 'components/InputSelect/InputSelect';
 import { Address } from '@web3-onboard/core/dist/types';
@@ -13,10 +13,10 @@ import { useMediaQuery } from 'react-responsive';
 const SafeAdmin = () => {
   const { walletAddress } = useWallet();
   const [safeWallet, setSafeWallet] = useState<Address>(env.safe.gnosisWalletOne);
-  const safeSdk = useSafeSdk(safeWallet);
+  // const safeSdk = useSafeSdk(safeWallet);
   const safePendingTxsApi = useSafePendingTxs(safeWallet);
   const {data: isSafeOwner} = useSafeCheckOwner(safeWallet, walletAddress);
-  const {data: dataSubset} = useSafeDataSubset( safePendingTxsApi, isSafeOwner ?? false, safeSdk);
+  const {data: dataSubset} = useSafeDataSubset( safePendingTxsApi, isSafeOwner ?? false, safeWallet);
   const isAbovePhone = useMediaQuery({
     query: queryPhone,
   });
