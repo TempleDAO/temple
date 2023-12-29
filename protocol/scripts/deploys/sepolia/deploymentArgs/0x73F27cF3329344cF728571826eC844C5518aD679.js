@@ -1,0 +1,8 @@
+// sepolia: NEXUS.RELIC=0x73F27cF3329344cF728571826eC844C5518aD679
+// yarn hardhat verify --network sepolia 0x73F27cF3329344cF728571826eC844C5518aD679 --constructor-args scripts/deploys/sepolia/deploymentArgs/0x73F27cF3329344cF728571826eC844C5518aD679.js
+module.exports = [
+  "RELIC",
+  "REL",
+  "0xf5968367a8acBe9ffACA4049E40A4C1F78b18952",
+  "0x81960c465605cddD9772a8653111D4aBE580Ce1e"
+];

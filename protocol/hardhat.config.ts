@@ -180,7 +180,7 @@ module.exports = {
         accounts: process.env.SEPOLIA_ADDRESS_PRIVATE_KEY
             ? [process.env.SEPOLIA_ADDRESS_PRIVATE_KEY]
             : [],
-        gasPrice: 2000000000,
+        gasPrice: parseInt(process.env.SEPOLIA_GAS_IN_GWEI || '0') * 1000000000,
     },
     anvil: {
         url: "http://127.0.0.1:8545/",
