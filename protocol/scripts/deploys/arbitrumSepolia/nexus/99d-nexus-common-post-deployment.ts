@@ -1,9 +1,10 @@
+import '@nomiclabs/hardhat-ethers';
 import { ethers, network } from 'hardhat';
 import {
     ensureExpectedEnvvars,
     mine
 } from '../../helpers';
-import { TempleERC20Token__factory, NexusCommon__factory } from '../../../../typechain';
+import { NexusCommon__factory } from '../../../../typechain';
 import { DEPLOYED_CONTRACTS } from '../../helpers';
 
 async function main() {

@@ -18,7 +18,7 @@ async function main() {
 
     await mine(templeSacrifice.setOriginTime(await blockTimestamp() + 360));
     const priceParams = {
-        priceMaxPeriod: 1732125018,
+        priceMaxPeriod: 1735918484,
         minimumPrice: toAtto(30),
         maximumPrice: toAtto(100)
     }

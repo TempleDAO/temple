@@ -3,7 +3,7 @@ import {
     ensureExpectedEnvvars,
     mine
 } from '../../helpers';
-import { TempleERC20Token__factory, Relic__factory, TempleSacrifice__factory } from '../../../../typechain';
+import { TempleERC20Token__factory, Relic__factory } from '../../../../typechain';
 import { DEPLOYED_CONTRACTS } from '../../helpers';
 
 async function main() {
