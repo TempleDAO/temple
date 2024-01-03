@@ -186,13 +186,6 @@ module.exports = {
         url: "http://127.0.0.1:8545/",
         accounts: "remote",
     },
-    arbitrumGoerli: {
-      url: process.env.ARBITRUM_GOERLI_RPC_URL || '',
-      accounts: process.env.ARBITRUM_GOERLI_ADDRESS_PRIVATE_KEY
-        ? [process.env.ARBITRUM_GOERLI_ADDRESS_PRIVATE_KEY]
-        : [],
-      gasPrice: 2000000000,
-    },
     arbitrumSepolia: {
       url: process.env.ARBITRUM_SEPOLIA_RPC_URL || '',
       accounts: process.env.ARBITRUM_SEPOLIA_ADDRESS_PRIVATE_KEY
@@ -210,7 +203,6 @@ module.exports = {
       polygon: process.env.POLYGONSCAN_API_KEY,
       goerli: process.env.ETHERSCAN_API_KEY,
       sepolia: process.env.ETHERSCAN_API_KEY,
-      arbitrumGoerli: process.env.ARBISCAN_API_KEY,
       arbitrumSepolia: process.env.ARBISCAN_API_KEY,
     },
     customChains: [

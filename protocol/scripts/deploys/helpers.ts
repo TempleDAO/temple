@@ -480,86 +480,6 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     NEXUS_COMMON: '',
     PARTNER_ZERO_SACRIFICE: ''
   },
-  arbitrumGoerli: {
-    // From network/environment (setup when 00-localhost-env.ts script is run)
-    FRAX: process.env.FRAX || '',
-
-    // Active contrats
-    TEMPLE: '0xcbc7cf85dd0AB91Aa2671400E86ebf3AaC6dc658',
-    TEMPLE_TEAM_PAYMENTS_IMPLEMENTATION: '',
-    TEMPLE_TEAM_PAYMENTS_FACTORY: '',
-
-    TEMPLE_V2_FRAX_PAIR: '',
-    TEMPLE_V2_FEI_PAIR: '',
-    TEMPLE_V2_ROUTER: '',
-
-    OPS_MANAGER: '',
-    OPS_MANAGER_LIB: '',
-    JOINING_FEE: '',
-    VAULT_PROXY: '',
-    VAULT_EARLY_WITHDRAW: '',
-    TREASURY_IV: '',
-
-    GENERIC_ZAPS: '',
-    TEMPLE_ZAPS: '',
-
-    // RAMOS (BB-A-USD)
-    RAMOS_BB_A_USD: '',
-    RAMOS_BB_A_USD_POOL_HELPER: '',
-    RAMOS_BB_A_USD_AURA_STAKING: '',
-
-    // RAMOS (BB-E-USD)
-    RAMOS_BB_E_USD: '',
-    RAMOS_BB_E_USD_POOL_HELPER: '',
-    RAMOS_BB_E_USD_AURA_STAKING: '',
-
-    // RAMOS (DAI)
-    RAMOS_DAI: '',
-    RAMOS_DAI_POOL_HELPER: '',
-    RAMOS_DAI_AURA_STAKING: '',
-
-    // Balancer
-    BALANCER_TOKEN: '',
-    BALANCER_VAULT: '',
-    BB_A_USD_TOKEN: '',
-    BB_E_USD_TOKEN: '',
-    DAI_TOKEN: '',
-
-    // Aura
-    AURA_TOKEN: '',
-    AURA_BOOSTER: '',
-
-    // RAMOS dependencies (BB-A-USD)
-    TEMPLE_BB_A_USD_LP_TOKEN: '',
-    TEMPLE_BB_A_USD_BALANCER_POOL_ID: '',
-    TEMPLE_BB_A_USD_AURA_POOL_ID: '',
-    TEMPLE_BB_A_USD_REWARDS: '',
-    TEMPLE_BB_A_USD_AURA_STAKING_DEPOSIT_TOKEN: '',
-
-    // RAMOS dependencies (BB-E-USD)
-    TEMPLE_BB_E_USD_LP_TOKEN: '',
-    TEMPLE_BB_E_USD_BALANCER_POOL_ID: '',
-    TEMPLE_BB_E_USD_AURA_POOL_ID: '',
-    TEMPLE_BB_E_USD_REWARDS: '',
-    TEMPLE_BB_E_USD_AURA_STAKING_DEPOSIT_TOKEN: '',
-
-    // RAMOS dependencies (DAI)
-    TEMPLE_DAI_LP_TOKEN: '',
-    TEMPLE_DAI_BALANCER_POOL_ID: '',
-    TEMPLE_DAI_AURA_POOL_ID: '',
-    TEMPLE_DAI_REWARDS: '',
-    TEMPLE_DAI_AURA_STAKING_DEPOSIT_TOKEN: '',
-
-    MULTISIG: '0x8626f6940e2eb28930efb4cef49b2d1f2c9c1199', // Account #19
-    FARM_MULTISIG: '0x8626f6940e2eb28930efb4cef49b2d1f2c9c1199',
-
-    // NEXUS
-    RELIC: '0x4b410e5Dc4823B24301038E1bAe9b7B1204F6608',
-    SHARD: '0x53b77919E73807a491371212323EB4D0671CC238',
-    TEMPLE_SACRIFICE: '0xcAeAc87b834c8FE98e5E9CA4f96Ffb616AD27bc4',
-    NEXUS_COMMON: '0xe6327BEa2966CeE72b24C79Cd90FFBf01A61e8Cc',
-    PARTNER_ZERO_SACRIFICE: '0x08C0E5d99C9BD140c2cdf3c1B6171f1Aa91D4FD0'
-  },
   arbitrumSepolia: {
     // From network/environment (setup when 00-localhost-env.ts script is run)
     FRAX: process.env.FRAX || '',
@@ -767,10 +687,6 @@ export function expectAddressWithPrivateKey() {
     );
   }
 
-  if (network.name == 'arbitrumGoerli' && !process.env.ARBITRUM_GOERLI_ADDRESS_PRIVATE_KEY) {
-    throw new Error("Missing environment variable ARBITRUM_GOERLI_ADDRESS_PRIVATE_KEY. An arbitrum goerli address private key with eth is required to deploy/manage contracts");
-  }
-
   if (network.name == 'arbitrumSepolia' && !process.env.ARBITRUM_SEPOLIA_ADDRESS_PRIVATE_KEY) {
     throw new Error("Missing environment variable ARBITRUM_SEPOLIA_ADDRESS_PRIVATE_KEY. An arbitrum sepolia address private key with eth is required to deploy/manage contracts");
   }
@@ -789,7 +705,6 @@ const expectedEnvvars: { [key: string]: string[] } = {
   gnosisChiado: ['GNOSIS_CHIADO_ADDRESS_PRIVATE_KEY', 'GNOSIS_CHIADO_RPC_URL'],
   polygonMumbai: ['MUMBAI_ADDRESS_PRIVATE_KEY', 'MUMBAI_RPC_URL'],
   sepolia: ['SEPOLIA_ADDRESS_PRIVATE_KEY', 'SEPOLIA_RPC_URL'],
-  arbitrumGoerli: ['ARBITRUM_GOERLI_ADDRESS_PRIVATE_KEY', 'ARBITRUM_GOERLI_RPC_URL'],
   arbitrumSepolia: ['ARBITRUM_SEPOLIA_ADDRESS_PRIVATE_KEY', 'ARBITRUM_SEPOLIA_RPC_URL'],
   anvil: [],
   localhost: [],
