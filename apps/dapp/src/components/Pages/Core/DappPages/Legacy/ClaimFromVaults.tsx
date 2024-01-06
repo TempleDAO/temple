@@ -1,17 +1,18 @@
 import styled from 'styled-components';
 import { useVaultContext } from '../../VaultContext';
-import { formatBigNumber, formatTemple } from 'components/Vault/utils';
+import { formatBigNumber, formatTemple, getBigNumberFromString } from 'components/Vault/utils';
 import { ZERO } from 'utils/bigNumber';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Vault, VaultGroup } from 'components/Vault/types';
-import { BigNumber } from 'ethers';
+import { BigNumber, ethers } from 'ethers';
 import { useWithdrawFromVault } from 'hooks/core/use-withdraw-from-vault';
 import { VaultButton } from '../../VaultPages/VaultContent';
-import { useTokenContractAllowance } from 'hooks/core/use-token-contract-allowance';
 import env from 'constants/env';
-import _ from 'lodash';
 import { useConnectWallet } from '@web3-onboard/react';
 import { TradeButton } from '../../NewUI/Home';
+import { ERC20__factory } from 'types/typechain';
+import { useWallet } from 'providers/WalletProvider';
+import { useNotification } from 'providers/NotificationProvider';
 
 const EMPTY_CLAIM_STATE = {
   claimSubvaultAddress: '',
@@ -20,6 +21,7 @@ const EMPTY_CLAIM_STATE = {
 
 export const ClaimFromVaults = () => {
   const [{ wallet }, connect] = useConnectWallet();
+  const { walletAddress, signer } = useWallet();
   const {
     balances: { balances, isLoading: balancesIsLoading },
     vaultGroups: { vaultGroups, isLoading: vaultGroupsIsLoading },
@@ -32,6 +34,8 @@ export const ClaimFromVaults = () => {
   });
   const [earlyWithdraw, { isLoading: earlyWithdrawIsLoading, error: earlyWithdrawError }] = earlyWithdrawRequest;
   const [assumedActiveVaultGroup, setAssumedActiveVaultGroup] = useState({} as VaultGroup);
+  const [allowance, setAllowance] = useState(ZERO);
+  const { openNotification } = useNotification();
 
   // Initialize assumedActiveVaultGroup, claimState, zeroVaultBalance
   useEffect(() => {
@@ -49,21 +53,44 @@ export const ClaimFromVaults = () => {
 
   const [claimState, setClaimState] = useState(EMPTY_CLAIM_STATE);
 
+  const fetchAllowance = useCallback(async () => {
+    if (!signer || !walletAddress) return;
+    const subvaultContract = new ERC20__factory(signer).attach(claimState.claimSubvaultAddress);
+    const allowance = await subvaultContract.allowance(walletAddress, env.contracts.vaultEarlyExit);
+    setAllowance(allowance);
+  }, [signer, walletAddress, claimState.claimSubvaultAddress]);
+
+  useEffect(() => {
+    fetchAllowance();
+  }, [fetchAllowance]);
+
+  // Approve Early Withdraw to spend Subvault tokens
+  const approve = async () => {
+    if (!signer || !wallet) return;
+    const subvaultContract = new ERC20__factory(signer).attach(claimState.claimSubvaultAddress);
+    try {
+      const tx = await subvaultContract.approve(env.contracts.vaultEarlyExit, ethers.constants.MaxUint256);
+      const receipt = await tx.wait();
+      openNotification({
+        title: `Approved Early Withdraw`,
+        hash: receipt.transactionHash,
+      });
+      fetchAllowance();
+    } catch (e) {
+      console.log(e);
+      openNotification({
+        title: `Failed to increase Early Withdraw allowance`,
+        hash: '',
+      });
+    }
+  };
+
   const claimAmountHandler = (contract: string, value: BigNumber) => {
     setClaimState({
       claimSubvaultAddress: contract,
       claimAmount: formatBigNumber(value),
     });
   };
-
-  // Early withdraw allowance hook
-  const [
-    { allowance: earlyWithdrawAllowance, isLoading: earlyWithdrawAllowanceIsLoading },
-    increaseEarlyWithdrawAllowance,
-  ] = useTokenContractAllowance(
-    { address: claimState.claimSubvaultAddress, name: 'vault ERC20' },
-    env.contracts.vaultEarlyExit
-  );
 
   const formatErrorMessage = (errorMessage: string) => {
     const boundary = errorMessage.indexOf('(');
@@ -95,6 +122,8 @@ export const ClaimFromVaults = () => {
     });
   };
 
+  const insufficientAllowance = allowance.lt(getBigNumberFromString(claimState.claimAmount));
+
   return (
     <ClaimContainer>
       <ClaimTitle>Claim from Vaults</ClaimTitle>
@@ -121,12 +150,11 @@ export const ClaimFromVaults = () => {
               await earlyWithdraw(claimState.claimSubvaultAddress, claimState.claimAmount);
             }}
           />
-        ) : earlyWithdrawAllowance === 0 ? (
+        ) : insufficientAllowance ? (
           <ClaimButton
             label={'Approve Early Withdraw'}
-            disabled={earlyWithdrawAllowanceIsLoading}
             onClick={async () => {
-              await increaseEarlyWithdrawAllowance();
+              await approve();
             }}
           />
         ) : (
