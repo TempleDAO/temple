@@ -2,7 +2,7 @@ import styled from 'styled-components';
 import { useVaultContext } from '../../VaultContext';
 import { formatBigNumber, formatTemple, getBigNumberFromString } from 'components/Vault/utils';
 import { ZERO } from 'utils/bigNumber';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Vault, VaultGroup } from 'components/Vault/types';
 import { BigNumber, ethers } from 'ethers';
 import { useWithdrawFromVault } from 'hooks/core/use-withdraw-from-vault';
@@ -122,7 +122,10 @@ export const ClaimFromVaults = () => {
     });
   };
 
-  const insufficientAllowance = allowance.lt(getBigNumberFromString(claimState.claimAmount));
+  const insufficientAllowance = useMemo(
+    () => allowance.lt(getBigNumberFromString(claimState.claimAmount)),
+    [allowance, claimState.claimAmount]
+  );
 
   return (
     <ClaimContainer>
