@@ -1,6 +1,5 @@
 import { ADDRESS_ZERO } from 'utils/bigNumber';
 import { Environment } from './types';
-import { RARITY_TYPE } from 'components/Pages/Nexus/types';
 
 const env: Environment = {
   alchemyId: 'XiIZxWykHU5AOFBwxKgxseXWN984Mp8F',

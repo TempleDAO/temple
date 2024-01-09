@@ -133,6 +133,7 @@ const env: Environment = {
   },
   templeMultisig: '0xe2Bb722DA825eBfFa1E368De244bdF08ed68B5c4',
   nexus: {
+    // TODO: Needs updated with the new Nexus contract addresses
     templeRelicAddress: '0x2817F045D6a0c94af2aC1964A548Bd3f79E33AaD',
     templeShardsAddress: '0xd641b65438206A33a0832D0CD38be8e5Bdc6D935',
     templeSacrificeAddress: '0x300d96730c70bA3430eE413515B4016427946Ed0',
