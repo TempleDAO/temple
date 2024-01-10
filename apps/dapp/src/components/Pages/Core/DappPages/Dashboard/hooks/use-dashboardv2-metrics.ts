@@ -288,19 +288,17 @@ export default function useDashboardV2Metrics(dashboardType: DashboardType) {
 
   const getTempleSpotPrice = async () => {
     const response = await fetchGenericSubgraph<any>(
-      env.subgraph.templeV2,
+      env.subgraph.ramos,
       `{
-          tokens {
-             name
-             price
-           }
+        metrics {
+          spotPrice
+        }
       }`
     );
 
-    const tokenData = response?.data?.tokens;
+    const data = response?.data?.metrics?.[0] || {};
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return tokenData.find((token: any) => token.name === 'Temple')?.price;
+    return data.spotPrice;
   };
 
   const formatPercent = (input: number) => {
