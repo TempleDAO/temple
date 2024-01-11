@@ -1,4 +1,3 @@
-import { Address } from '@web3-onboard/core/dist/types';
 import { AllTransactionsSchema, SafeMultisigTransactionResponse, V1Service } from './client';
 import { UseQueryResult, useQuery } from '@tanstack/react-query';
 import { SafeStatus, SafeTableRow } from 'components/Pages/Safe/admin/SafeTxDataTable';
@@ -13,12 +12,12 @@ type SafeApiRes<T> = {
   results: T;
 };
 
-export const useSafePendingTxs = (safeWallet: Address): UseQueryResult<SafeApiRes<SafeMultisigTransactionResponse[]>> =>
+export const useSafePendingTxs = (safeWalletAddress: string): UseQueryResult<SafeApiRes<SafeMultisigTransactionResponse[]>> =>
   useQuery({
-    queryKey: ['getPendingSafeTransactions', safeWallet],
+    queryKey: ['getPendingSafeTransactions', safeWalletAddress],
     queryFn: () => {
       return V1Service.v1SafesMultisigTransactionsList(
-        safeWallet,
+        safeWalletAddress,
         undefined,
         undefined,
         undefined,
@@ -48,19 +47,19 @@ export const useSafePendingTxs = (safeWallet: Address): UseQueryResult<SafeApiRe
     refetchInterval: 5000
   });
 
-export const useSafeAllTransactions = (safeWallet: Address): UseQueryResult<SafeApiRes<AllTransactionsSchema>> =>
+export const useSafeAllTransactions = (safeWalletAddress: string): UseQueryResult<SafeApiRes<AllTransactionsSchema>> =>
   useQuery({
-    queryKey: ['getAllSafeTransactions', safeWallet],
+    queryKey: ['getAllSafeTransactions', safeWalletAddress],
     queryFn: () => {
-      return V1Service.v1SafesAllTransactionsList(safeWallet);
+      return V1Service.v1SafesAllTransactionsList(safeWalletAddress);
     },
   });
 
-export const useSafeCheckOwner = (safeWallet: Address, ownerAddress: Address | undefined): UseQueryResult<boolean> =>
+export const useSafeCheckOwner = (safeWalletAddress: string, ownerAddress: string | undefined): UseQueryResult<boolean> =>
   useQuery({
-    queryKey: ['checkSafeOwner', safeWallet],
+    queryKey: ['checkSafeOwner', safeWalletAddress],
     queryFn: async () => {
-      const safeDetails = await V1Service.v1SafesRead(safeWallet);
+      const safeDetails = await V1Service.v1SafesRead(safeWalletAddress);
       return safeDetails.owners.filter((o) => o.toLowerCase() === ownerAddress?.toLowerCase()).length > 0;
     },
   });
@@ -68,10 +67,10 @@ export const useSafeCheckOwner = (safeWallet: Address, ownerAddress: Address | u
 export const useSafeDataSubset = (
   safePendingTxsApi: UseQueryResult<SafeApiRes<SafeMultisigTransactionResponse[]>>, 
   isOwner: boolean,
-  safeAddress: string,
+  address: string,
 ) => {
   const { walletAddress, signer } = useWallet();
-  const { signSafeTx, executeSafeTx} = useSafeSdk(signer, safeAddress);
+  const { signSafeTx, executeSafeTx} = useSafeSdk(signer, address);
   return useQuery({
     queryKey: ['getSafeDataSubset', walletAddress, safePendingTxsApi, isOwner],
     queryFn: () => {

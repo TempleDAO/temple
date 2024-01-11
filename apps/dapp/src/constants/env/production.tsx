@@ -163,9 +163,10 @@ const env: Environment = {
     api_host: 'https://app.posthog.com',
   },
   templeMultisig: '0xe2Bb722DA825eBfFa1E368De244bdF08ed68B5c4',
-  safe: {
-    gnosisWalletOne: '',
-  },
+  safes: [{
+    name: 'TBC',
+    address: 'TBC'
+  }],
 };
 
 export default env;

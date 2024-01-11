@@ -127,9 +127,16 @@ const env: Environment = {
     enableAscend: true,
   },
   templeMultisig: '0x3a320fF715dCBbF097e15257B7051dd08fdfb7A2',
-  safe: {
-    gnosisWalletOne: '0x5CE28cAE5aAb002DcBc076d5A551A473a7C9dF89',
-  },
+  safes: [
+    {
+      name: 'Multisig One',
+      address: '0x5CE28cAE5aAb002DcBc076d5A551A473a7C9dF89',
+    },
+    {
+      name: 'Multisig Two',
+      address: '0x0000000000000000000000',
+    },
+  ]
 };
 
 export default env;
