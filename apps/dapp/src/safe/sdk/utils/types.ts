@@ -81,13 +81,6 @@ type SafeConfigWithSafeAddressProps = {
   predictedSafe?: never
 }
 
-type SafeConfigWithPredictedSafeProps = {
-  /** safeAddress - The address of the Safe account to use */
-  safeAddress?: never
-  /** predictedSafe - The configuration of the Safe that is not yet deployed */
-  predictedSafe: PredictedSafeProps
-}
-
 export type SafeConfigProps = {
   /** ethAdapter - Ethereum adapter */
   ethAdapter: EthAdapter
@@ -98,8 +91,6 @@ export type SafeConfigProps = {
 }
 
 export type SafeConfigWithSafeAddress = SafeConfigProps & SafeConfigWithSafeAddressProps
-export type SafeConfigWithPredictedSafe = SafeConfigProps & SafeConfigWithPredictedSafeProps
-export type SafeConfig = SafeConfigWithSafeAddress | SafeConfigWithPredictedSafe
 
 type ConnectSafeConfigWithSafeAddressProps = {
   /** safeAddress - The address of the Safe account to use */
@@ -143,27 +134,6 @@ export interface CreateTransactionProps {
   options?: SafeTransactionOptionalProps
   /** onlyCalls - Forces the execution of the transaction array with MultiSendCallOnly contract */
   onlyCalls?: boolean
-}
-
-export interface AddOwnerTxParams {
-  /** ownerAddress - The address of the new owner */
-  ownerAddress: string
-  /** threshold - The new threshold */
-  threshold?: number
-}
-
-export interface RemoveOwnerTxParams {
-  /** ownerAddress - The address of the owner that will be removed */
-  ownerAddress: string
-  /** threshold - The new threshold */
-  threshold?: number
-}
-
-export interface SwapOwnerTxParams {
-  /** oldOwnerAddress - The old owner address */
-  oldOwnerAddress: string
-  /** newOwnerAddress - The new owner address */
-  newOwnerAddress: string
 }
 
 type StandardizeSafeTxDataWithSafeContractProps = {

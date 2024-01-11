@@ -14,16 +14,15 @@ import { pack as solidityPack } from '@ethersproject/solidity';
 import EthSafeTransaction from '../transactions/SafeTransaction';
 import {
   CreateTransactionProps,
-  SafeConfig,
-  SafeConfigWithPredictedSafe,
   StandardizeSafeTransactionDataProps,
 } from './types';
-import { SENTINEL_ADDRESS, ZERO_ADDRESS } from './safeConstants';
 import { estimateGas } from '../transactions/gas';
 import { DEFAULT_SAFE_VERSION } from '../contracts/config';
-import { EthSafeSignature } from '../signatures';
+import { EthSafeSignature } from '../signatures/SafeSignature';
 import { Gnosis_safe as Safe_V1_3_0 } from 'types/typechain/safe/v1.3.0/Gnosis_safe';
 import { getMultiSendCallOnlyContract, getMultiSendCallOnlyContractDeploymentDetails, getMultiSendContract, getMultiSendContractDeploymentDetails, getSafeContract } from '../contracts/safeDeploymentContracts';
+
+export const ZERO_ADDRESS = `0x${'0'.repeat(40)}`
 
 export function isSafeMultisigTransactionResponse(
   safeTransaction: SafeTransaction | SafeMultisigTransactionResponse
@@ -301,38 +300,10 @@ export async function standardizeSafeTransactionData({
   };
 }
 
-export function createMemoizedFunction<T extends (...args: Parameters<T>) => ReturnType<T>>(
-  callback: T,
-  cache: Record<string, ReturnType<T>> = {}
-) {
-  return (...args: Parameters<T>): ReturnType<T> => {
-    const key = JSON.stringify(args);
-
-    cache[key] = cache[key] || callback(...args);
-
-    return cache[key];
-  };
-}
-
-export function isSafeConfigWithPredictedSafe(config: SafeConfig): config is SafeConfigWithPredictedSafe {
-  return (config as unknown as SafeConfigWithPredictedSafe).predictedSafe !== undefined;
-}
-
 export function sameString(str1: string, str2: string): boolean {
   return str1.toLowerCase() === str2.toLowerCase();
 }
 
-export function isZeroAddress(address: string): boolean {
-  return sameString(address, ZERO_ADDRESS);
-}
-
-function isSentinelAddress(address: string): boolean {
-  return sameString(address, SENTINEL_ADDRESS);
-}
-
-export function isRestrictedAddress(address: string): boolean {
-  return isZeroAddress(address) || isSentinelAddress(address);
-}
 
 export function standardizeMetaTransactionData(
   tx: SafeTransactionDataPartial
