@@ -9,8 +9,6 @@ const typeChainDirectorySafePath = path.join(__dirname, `../${outDirSafe}`)
 const outDirBuild = 'dist/typechain/safe/'
 const typeChainDirectoryBuildPath = path.join(__dirname, `../${outDirBuild}`)
 
-const outDirTests = 'typechain/safe/tests/'
-
 // Contract list for which the Typechain files will be generated
 // Will be included in dist/ folder
 const safeContractsPath = './node_modules/@safe-global/safe-deployments/dist/assets'
@@ -22,17 +20,6 @@ const safeContracts_V1_3_0 = [
   `${safeContractsPath}/v1.3.0/simulate_tx_accessor.json`
 ].join(' ')
 
-const safeContractsTestV1_3_0Path =
-  './node_modules/@gnosis.pm/safe-contracts/build/artifacts/contracts'
-const testContracts_V1_3_0 = [
-  `${safeContractsTestV1_3_0Path}/examples/guards/DebugTransactionGuard.sol/DebugTransactionGuard.json`,
-  `${safeContractsTestV1_3_0Path}/examples/guards/DefaultCallbackHandler.sol/DefaultCallbackHandler.json`
-].join(' ')
-
-
-// Remove existing Typechain files
-execSync(`rimraf ${outDirSafe} ${outDirTests}`)
-
 // Generate Typechain files
 function generateTypechainFiles(
   typechainVersion: string,
@@ -40,7 +27,6 @@ function generateTypechainFiles(
   contractList: string
 ): void {
   const cmd = `typechain --target ${typechainVersion} --out-dir ${outDir} ${contractList}`;
-  // console.log('cmd', cmd)
   execSync(cmd)
   console.log(`Generated typechain ${typechainVersion} at ${outDir}`)
 }
@@ -74,13 +60,6 @@ function generateTypes(typechainTarget: string) {
   moveTypechainFiles(
     `${typeChainDirectorySafePath}v1.3.0`,
     `${typeChainDirectoryBuildPath}v1.3.0`
-  )
-
-  // Tests
-  generateTypechainFiles(
-    typechainTarget,
-    `${outDirTests}v1.3.0`,
-    testContracts_V1_3_0
   )
 }
 
