@@ -1,8 +1,8 @@
-import { SafeSignature } from '@safe-global/safe-core-sdk-types'
+import { SafeSignature } from '@safe-global/safe-core-sdk-types';
 
 export class EthSafeSignature implements SafeSignature {
-  signer: string
-  data: string
+  signer: string;
+  data: string;
 
   /**
    * Creates an instance of a Safe signature.
@@ -12,8 +12,8 @@ export class EthSafeSignature implements SafeSignature {
    * @returns The Safe signature instance
    */
   constructor(signer: string, signature: string) {
-    this.signer = signer
-    this.data = signature
+    this.signer = signer;
+    this.data = signature;
   }
 
   /**
@@ -22,7 +22,7 @@ export class EthSafeSignature implements SafeSignature {
    * @returns The static part of the Safe signature
    */
   staticPart(/* dynamicOffset: number */) {
-    return this.data
+    return this.data;
   }
 
   /**
@@ -31,6 +31,6 @@ export class EthSafeSignature implements SafeSignature {
    * @returns The dynamic part of the Safe signature
    */
   dynamicPart() {
-    return ''
+    return '';
   }
 }

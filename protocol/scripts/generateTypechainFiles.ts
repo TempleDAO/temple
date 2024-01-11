@@ -17,12 +17,8 @@ const safeContractsPath = './node_modules/@safe-global/safe-deployments/dist/ass
 
 const safeContracts_V1_3_0 = [
   `${safeContractsPath}/v1.3.0/gnosis_safe.json`,
-  `${safeContractsPath}/v1.3.0/proxy_factory.json`,
   `${safeContractsPath}/v1.3.0/multi_send.json`,
   `${safeContractsPath}/v1.3.0/multi_send_call_only.json`,
-  `${safeContractsPath}/v1.3.0/compatibility_fallback_handler.json`,
-  `${safeContractsPath}/v1.3.0/sign_message_lib.json`,
-  `${safeContractsPath}/v1.3.0/create_call.json`,
   `${safeContractsPath}/v1.3.0/simulate_tx_accessor.json`
 ].join(' ')
 

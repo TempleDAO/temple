@@ -17,7 +17,7 @@ import {
   TransactionOptions,
   TransactionResult,
 } from '@safe-global/safe-core-sdk-types';
-import { adjustVInSignature, generatePreValidatedSignature } from './signatures';
+import { adjustVInSignature, generatePreValidatedSignature } from './signatures/utils';
 import { getSafeContract } from './contracts/safeDeploymentContracts';
 import { DEFAULT_SAFE_VERSION } from './contracts/config';
 
