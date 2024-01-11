@@ -1,33 +1,31 @@
 import styled from 'styled-components';
 import { useState } from 'react';
 import env from 'constants/env';
-import { InputSelect } from 'components/InputSelect/InputSelect';
-import { Address } from '@web3-onboard/core/dist/types';
+import { InputSelect, Option } from 'components/InputSelect/InputSelect';
 import { SafeTxsDataTable } from './SafeTxDataTable';
 import { useWallet } from 'providers/WalletProvider';
 import { useSafeCheckOwner, useSafeDataSubset, useSafePendingTxs } from 'safe/open-api/use-safe-open-api';
 import { queryPhone } from 'styles/breakpoints';
 import { useMediaQuery } from 'react-responsive';
+import { SafeWallet } from 'constants/env/types';
 
 const SafeAdmin = () => {
   const { walletAddress } = useWallet();
-  const [safeWallet, setSafeWallet] = useState<Address>(env.safe.gnosisWalletOne);
-  const safePendingTxsApi = useSafePendingTxs(safeWallet);
-  const {data: isSafeOwner} = useSafeCheckOwner(safeWallet, walletAddress);
-  const {data: dataSubset} = useSafeDataSubset( safePendingTxsApi, isSafeOwner ?? false, safeWallet);
+  const [safeWallet, setSafeWallet] = useState<SafeWallet>(env.safes[0]);
+  const safePendingTxsApi = useSafePendingTxs(safeWallet.address);
+  const { data: isSafeOwner } = useSafeCheckOwner(safeWallet.address, walletAddress);
+  const { data: dataSubset } = useSafeDataSubset(safePendingTxsApi, isSafeOwner ?? false, safeWallet.address);
   const isAbovePhone = useMediaQuery({
     query: queryPhone,
   });
 
-  const safeOption = (safeAlias: string, safeWallet: Address) => {
-    return {
-      label: `${safeAlias} (${safeWallet.slice(0, 5)}...${safeWallet.slice(safeWallet.length - 5, safeWallet.length)})`,
-      value: safeWallet,
-    };
-  };
-  const safeWalletOptions: { value: Address; label: string }[] = [
-    safeOption('Multisig One', env.safe.gnosisWalletOne),
-  ];
+  const safeWalletOptions: Option[] = env.safes.map((safe) => ({
+    label: `${safe.name} (${safe.address.slice(0, 5)}...${safe.address.slice(
+      safe.address.length - 5,
+      safe.address.length
+    )})`,
+    value: safe.address,
+  }));  
 
   return (
     <Container>
@@ -44,7 +42,7 @@ const SafeAdmin = () => {
             />
           </Section>
         </div>
-        <Section label="Queued Safe Transactions">
+        <Section label="Queued Safe Transactions" overflowX>
           <SafeTxsDataTable
             dataLoading={safePendingTxsApi.isLoading}
             dataSubset={dataSubset}
@@ -77,19 +75,20 @@ const AreaDelimiter = styled.div`
 type SectionProps = {
   label: string;
   children: React.ReactNode;
+  overflowX?: boolean;
 };
 const Section = (props: SectionProps) => {
   return (
-    <SectionContainer>
+    <SectionContainer {...props}>
       <p>{props.label}</p>
       {props.children}
     </SectionContainer>
   );
 };
 
-const SectionContainer = styled.div`
+const SectionContainer = styled.div<{overflowX?: boolean}>`
   display: flex;
   flex-direction: column;
   margin-top: 3rem;
-  overflow-x: auto;
+  overflow-x: ${({ overflowX }) => (overflowX ? 'auto' : 'unset')};
 `;
