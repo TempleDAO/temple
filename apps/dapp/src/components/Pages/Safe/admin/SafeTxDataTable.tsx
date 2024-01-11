@@ -27,7 +27,7 @@ type Props = {
 export const SafeTxsDataTable = (props: Props) => {
   const { dataSubset, dataLoading, tableHeaders } = props;
 
-  const [tableRows, setSafeTableRows] = useState<Array<SafeTableRow>>([]);
+  const [safeTableRows, setSafeTableRows] = useState<Array<SafeTableRow>>([]);
   const ref = useRef(null);
 
   useEffect(() => {
@@ -51,13 +51,13 @@ export const SafeTxsDataTable = (props: Props) => {
       <tbody>
         {dataLoading ? (
           loadSkeletonRows(1, tableHeaders.length)
-        ) : !tableRows || tableRows.length === 0 ? (
+        ) : !safeTableRows || safeTableRows.length === 0 ? (
           <DataRow hasBorderBotton>
             <DataCell>No data available</DataCell>
           </DataRow>
         ) : (
           <>
-            {tableRows.map((row) => {
+            {safeTableRows.map((row) => {
               return (
                 <Fragment key={JSON.stringify(row)}>
                   <DataRow hasBorderBotton={false} ref={ref} key={row.txHash}>
