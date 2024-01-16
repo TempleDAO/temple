@@ -1,6 +1,9 @@
 import styled from 'styled-components';
 
-import { NAV_MOBILE_HEIGHT_PIXELS, NAV_DESKTOP_HEIGHT_PIXELS } from 'components/Layouts/CoreLayout/Header';
+import {
+  NAV_MOBILE_HEIGHT_PIXELS,
+  NAV_DESKTOP_HEIGHT_PIXELS,
+} from 'components/Layouts/CoreLayout/Header';
 import { tabletAndAbove } from 'styles/breakpoints';
 import { pixelsToRems } from 'styles/mixins';
 

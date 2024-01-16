@@ -1,4 +1,9 @@
-import type { SubGraphQuery, GetVaultGroupsResponse, GetVaultGroupResponse, GetMetricsResponse } from './types';
+import type {
+  SubGraphQuery,
+  GetVaultGroupsResponse,
+  GetVaultGroupResponse,
+  GetMetricsResponse,
+} from './types';
 
 import { useEffect, useState, useMemo, useRef } from 'react';
 
@@ -57,7 +62,9 @@ const createGetVaultGroupsQuery = (walletAddress = ''): SubGraphQuery => ({
   }`,
 });
 
-export const createUserTransactionsQuery = (walletAddress: string): SubGraphQuery => {
+export const createUserTransactionsQuery = (
+  walletAddress: string
+): SubGraphQuery => {
   return {
     query: `{
       user(id: "${walletAddress.toLowerCase()}") {
@@ -77,7 +84,10 @@ export const createUserTransactionsQuery = (walletAddress: string): SubGraphQuer
   };
 };
 
-const createVaultGroupQuery = (vaultGroupId: string, walletAddress = ''): SubGraphQuery => ({
+const createVaultGroupQuery = (
+  vaultGroupId: string,
+  walletAddress = ''
+): SubGraphQuery => ({
   query: `{
     vaultGroup(id: "${vaultGroupId.toLowerCase()}") {
       id
@@ -101,13 +111,16 @@ const createVaultGroupQuery = (vaultGroupId: string, walletAddress = ''): SubGra
 });
 
 export const useVaultMetrics = () => {
-  const [request, resp] = useSubgraphRequest<GetMetricsResponse>(env.subgraph.templeCore, {
-    query: `{
+  const [request, resp] = useSubgraphRequest<GetMetricsResponse>(
+    env.subgraph.templeCore,
+    {
+      query: `{
         metrics {
           tvlUSD
         }
       }`,
-  });
+    }
+  );
 
   useEffect(() => {
     request();
@@ -121,10 +134,11 @@ export const useListCoreVaultGroups = () => {
   const didRequest = useRef(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  const [request, { response, isLoading: requestPending, error }] = useSubgraphRequest<GetVaultGroupsResponse>(
-    env.subgraph.templeCore,
-    createGetVaultGroupsQuery(wallet || '')
-  );
+  const [request, { response, isLoading: requestPending, error }] =
+    useSubgraphRequest<GetVaultGroupsResponse>(
+      env.subgraph.templeCore,
+      createGetVaultGroupsQuery(wallet || '')
+    );
 
   useEffect(() => {
     if (isConnecting) {
@@ -160,10 +174,11 @@ export const useGetVaultGroup = (vaultGroupId: string) => {
   const { wallet, isConnecting } = useWallet();
   const [isLoading, setIsLoading] = useState(true);
 
-  const [request, { response, isLoading: requestPending, error }] = useSubgraphRequest<GetVaultGroupResponse>(
-    env.subgraph.templeCore,
-    createVaultGroupQuery(vaultGroupId, wallet || '')
-  );
+  const [request, { response, isLoading: requestPending, error }] =
+    useSubgraphRequest<GetVaultGroupResponse>(
+      env.subgraph.templeCore,
+      createVaultGroupQuery(vaultGroupId, wallet || '')
+    );
 
   useEffect(() => {
     if (isConnecting) {

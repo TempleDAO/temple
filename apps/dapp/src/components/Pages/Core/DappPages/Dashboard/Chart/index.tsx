@@ -3,7 +3,10 @@ import * as breakpoints from 'styles/breakpoints';
 import { DashboardType } from '../DashboardContent';
 import V2StrategyMetricsChart from './V2StrategyMetricsChart';
 import { InputSelect } from 'components/InputSelect/InputSelect';
-import { isV2SnapshotMetric, V2SnapshotMetric } from '../hooks/use-dashboardv2-daily-snapshots';
+import {
+  isV2SnapshotMetric,
+  V2SnapshotMetric,
+} from '../hooks/use-dashboardv2-daily-snapshots';
 import { useState } from 'react';
 import { ChartSupportedTimeInterval } from 'utils/time-intervals';
 import { IntervalToggler } from 'components/Charts';
@@ -28,7 +31,10 @@ const metricOptions: { value: V2SnapshotMetric; label: string }[] = [
 
 const CHART_SELECTOR_QUERY_PARAM = 'chart';
 
-const DashboardChart = ({ dashboardType, strategyNames }: DashboardChartProps) => {
+const DashboardChart = ({
+  dashboardType,
+  strategyNames,
+}: DashboardChartProps) => {
   console.debug('DashboardChart with dashboardType: ', dashboardType);
 
   const [searchParams, setSearchParams] = useSearchParams();
@@ -38,9 +44,12 @@ const DashboardChart = ({ dashboardType, strategyNames }: DashboardChartProps) =
 
   const defaultMetric: V2SnapshotMetric = 'totalMarketValueUSD';
   const chosenMetric = searchParams.get(CHART_SELECTOR_QUERY_PARAM);
-  const selectedMetric: V2SnapshotMetric = isV2SnapshotMetric(chosenMetric) ? chosenMetric : defaultMetric;
+  const selectedMetric: V2SnapshotMetric = isV2SnapshotMetric(chosenMetric)
+    ? chosenMetric
+    : defaultMetric;
 
-  const [selectedInterval, setSelectedInterval] = useState<ChartSupportedTimeInterval>('1M');
+  const [selectedInterval, setSelectedInterval] =
+    useState<ChartSupportedTimeInterval>('1M');
 
   const selectMetric = (value: string) => {
     if (isV2SnapshotMetric(value)) {
@@ -55,14 +64,19 @@ const DashboardChart = ({ dashboardType, strategyNames }: DashboardChartProps) =
           <SelectMetricContainer>
             <InputSelect
               options={metricOptions}
-              defaultValue={metricOptions.find((m) => m.value === selectedMetric)}
+              defaultValue={metricOptions.find(
+                (m) => m.value === selectedMetric
+              )}
               onChange={(e) => selectMetric(e.value)}
               isSearchable={false}
-              fontSize={isDesktop? '16px' : '12px'}
+              fontSize={isDesktop ? '16px' : '12px'}
             />
           </SelectMetricContainer>
           <IntervalTogglerContainer>
-            <IntervalToggler selectedInterval={selectedInterval} setSelectedInterval={setSelectedInterval} />
+            <IntervalToggler
+              selectedInterval={selectedInterval}
+              setSelectedInterval={setSelectedInterval}
+            />
           </IntervalTogglerContainer>
         </ChartHeader>
         <V2StrategyMetricsChart

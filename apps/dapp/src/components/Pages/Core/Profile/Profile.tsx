@@ -1,7 +1,13 @@
 import { useEffect, useMemo, useRef } from 'react';
 import styled from 'styled-components';
 import { subDays } from 'date-fns';
-import { FlexibleXYPlot, XAxis, YAxis, LineSeries, ChartLabel } from 'react-vis';
+import {
+  FlexibleXYPlot,
+  XAxis,
+  YAxis,
+  LineSeries,
+  ChartLabel,
+} from 'react-vis';
 import { BigNumber } from 'ethers';
 
 import { PageWrapper } from '../utils';
@@ -50,7 +56,9 @@ const ProfilePage = () => {
     getBalance();
   }, [wallet]);
 
-  const vaultGroupBalances = new Map(Object.values(balances).flatMap((vaultGroup) => Object.entries(vaultGroup)));
+  const vaultGroupBalances = new Map(
+    Object.values(balances).flatMap((vaultGroup) => Object.entries(vaultGroup))
+  );
   const vaultValues = Array.from(vaultGroupBalances.values());
 
   const totalStakedAcrossAllVaults = vaultValues.reduce((total, vault) => {
@@ -63,19 +71,27 @@ const ProfilePage = () => {
 
   const claimableVaults = new Set(
     vaultGroups.flatMap((vaultGroup) => {
-      return vaultGroup.vaults.filter(({ unlockDate }) => unlockDate === 'NOW').map(({ id }) => id);
+      return vaultGroup.vaults
+        .filter(({ unlockDate }) => unlockDate === 'NOW')
+        .map(({ id }) => id);
     })
   );
 
-  const { data, yDomain, xDomain } = useChartData(wallet || '', fromAtto(totalBalancesAcrossVaults));
+  const { data, yDomain, xDomain } = useChartData(
+    wallet || '',
+    fromAtto(totalBalancesAcrossVaults)
+  );
 
-  const claimableBalance = Array.from(vaultGroupBalances.entries()).reduce((total, [address, vault]) => {
-    if (!claimableVaults.has(address)) {
-      return total;
-    }
+  const claimableBalance = Array.from(vaultGroupBalances.entries()).reduce(
+    (total, [address, vault]) => {
+      if (!claimableVaults.has(address)) {
+        return total;
+      }
 
-    return total.add(vault.balance || ZERO);
-  }, BigNumber.from(0));
+      return total.add(vault.balance || ZERO);
+    },
+    BigNumber.from(0)
+  );
 
   const faithBalance = faith.usableFaith;
 
@@ -88,7 +104,8 @@ const ProfilePage = () => {
     }, lockedOGTempleBalance);
   }
 
-  const hasLegacyTemple = lockedOGTempleBalance.gt(ZERO) || faithBalance.gt(ZERO);
+  const hasLegacyTemple =
+    lockedOGTempleBalance.gt(ZERO) || faithBalance.gt(ZERO);
 
   return (
     <PageWrapper>
@@ -182,11 +199,18 @@ const ProfilePage = () => {
             </ProfileMeta>
           </ProfileOverview>
           <SectionWrapper>
-            <ProfileVaults isLoading={isLoading} vaultGroupBalances={balances} vaultGroups={vaultGroups} />
+            <ProfileVaults
+              isLoading={isLoading}
+              vaultGroupBalances={balances}
+              vaultGroups={vaultGroups}
+            />
           </SectionWrapper>
           {hasLegacyTemple && (
             <SectionWrapper>
-              <ProfileLegacyTemple lockedOgTempleBalance={lockedOGTempleBalance} faithBalance={faithBalance} />
+              <ProfileLegacyTemple
+                lockedOgTempleBalance={lockedOGTempleBalance}
+                faithBalance={faithBalance}
+              />
             </SectionWrapper>
           )}
         </>
@@ -215,10 +239,11 @@ interface TransactionResponse {
 }
 
 const useChartData = (wallet: string, totalBalance: number) => {
-  const [fetchTransactions, { response }] = useSubgraphRequest<TransactionResponse>(
-    env.subgraph.templeCore,
-    createUserTransactionsQuery(wallet || '')
-  );
+  const [fetchTransactions, { response }] =
+    useSubgraphRequest<TransactionResponse>(
+      env.subgraph.templeCore,
+      createUserTransactionsQuery(wallet || '')
+    );
 
   useEffect(() => {
     if (!wallet) {
@@ -255,20 +280,27 @@ const useChartData = (wallet: string, totalBalance: number) => {
       })),
     ];
 
-    const sortedByDate = merged.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
-    const dataPoints = sortedByDate.reduce<{ y: number; x: number; d: Date }[]>((acc, transaction) => {
-      const lastBalance = acc[acc.length - 1]?.y || 0;
-      const nextBalance =
-        transaction.type === 'deposit' ? lastBalance + transaction.amount : lastBalance - transaction.amount;
+    const sortedByDate = merged.sort(
+      (a, b) => a.timestamp.getTime() - b.timestamp.getTime()
+    );
+    const dataPoints = sortedByDate.reduce<{ y: number; x: number; d: Date }[]>(
+      (acc, transaction) => {
+        const lastBalance = acc[acc.length - 1]?.y || 0;
+        const nextBalance =
+          transaction.type === 'deposit'
+            ? lastBalance + transaction.amount
+            : lastBalance - transaction.amount;
 
-      acc.push({
-        d: transaction.timestamp,
-        x: transaction.timestamp.getTime(),
-        y: nextBalance,
-      });
+        acc.push({
+          d: transaction.timestamp,
+          x: transaction.timestamp.getTime(),
+          y: nextBalance,
+        });
 
-      return acc;
-    }, []);
+        return acc;
+      },
+      []
+    );
 
     const END_OF_GRAPH_PADDING = 2 * 60 * 1000;
 
@@ -281,7 +313,10 @@ const useChartData = (wallet: string, totalBalance: number) => {
     const largest = [...dataPoints].sort((a, b) => b.y - a.y)[0]?.y || 0;
     const largestBalance = largest + 500;
     const yDomain = [0, largestBalance];
-    const xDomain = [dataPoints[0]?.x || 0, now.getTime() + END_OF_GRAPH_PADDING];
+    const xDomain = [
+      dataPoints[0]?.x || 0,
+      now.getTime() + END_OF_GRAPH_PADDING,
+    ];
 
     return {
       data: dataPoints,

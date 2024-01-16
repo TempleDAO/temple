@@ -82,7 +82,7 @@ export const VaultInput = ({
       event.preventDefault();
     }
   };
-  
+
   return (
     <InputWrapper isDisabled={disabled}>
       <InputTokenWrapper>

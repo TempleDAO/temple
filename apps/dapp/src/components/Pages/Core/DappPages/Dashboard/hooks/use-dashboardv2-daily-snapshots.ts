@@ -48,12 +48,18 @@ export type V2StrategySnapshot = {
   strategyTokens: { [key in (typeof STRATEGY_TOKEN_FIELDS)[number]]: string }[];
 } & { [key in V2SnapshotMetric]: string };
 
-export function isV2SnapshotMetric(key?: string | null): key is V2SnapshotMetric {
+export function isV2SnapshotMetric(
+  key?: string | null
+): key is V2SnapshotMetric {
   return V2SnapshotMetrics.some((m) => m === key);
 }
 
-type FetchV2StrategyDailySnapshotResponse = SubGraphResponse<{ strategyDailySnapshots: V2StrategySnapshot[] }>;
-type FetchV2StrategyHourlySnapshotResponse = SubGraphResponse<{ strategyHourlySnapshots: V2StrategySnapshot[] }>;
+type FetchV2StrategyDailySnapshotResponse = SubGraphResponse<{
+  strategyDailySnapshots: V2StrategySnapshot[];
+}>;
+type FetchV2StrategyHourlySnapshotResponse = SubGraphResponse<{
+  strategyHourlySnapshots: V2StrategySnapshot[];
+}>;
 
 const ONE_DAY_ONE_HOUR_MS = 25 * 60 * 60 * 1000;
 const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
@@ -61,7 +67,9 @@ const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
 async function fetchStrategyHourlySnapshots() {
   const itemsPerPage = 1000;
   const now = new Date();
-  const since = Math.floor((now.getTime() - ONE_DAY_ONE_HOUR_MS) / 1000).toString();
+  const since = Math.floor(
+    (now.getTime() - ONE_DAY_ONE_HOUR_MS) / 1000
+  ).toString();
   // if # of strategies * 24 > 1000 we would be missing data
   // but we shouldnt be getting anywhere close to that
   const query = `
@@ -74,7 +82,11 @@ async function fetchStrategyHourlySnapshots() {
               ${QUERIED_FIELDS}
             }
             }`;
-  const resp = await fetchGenericSubgraph<FetchV2StrategyHourlySnapshotResponse>(env.subgraph.templeV2, query);
+  const resp =
+    await fetchGenericSubgraph<FetchV2StrategyHourlySnapshotResponse>(
+      env.subgraph.templeV2,
+      query
+    );
   return resp?.data?.strategyHourlySnapshots ?? [];
 }
 
@@ -101,7 +113,11 @@ async function fetchStrategyDailySnapshots() {
               ${QUERIED_FIELDS}
             }
             }`;
-    const page = await fetchGenericSubgraph<FetchV2StrategyDailySnapshotResponse>(env.subgraph.templeV2, query);
+    const page =
+      await fetchGenericSubgraph<FetchV2StrategyDailySnapshotResponse>(
+        env.subgraph.templeV2,
+        query
+      );
     const itemsOnPage = page.data?.strategyDailySnapshots.length ?? 0;
     if (page.data) {
       result.push(...page.data.strategyDailySnapshots);

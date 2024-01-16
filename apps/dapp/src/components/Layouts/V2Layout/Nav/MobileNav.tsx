@@ -36,7 +36,11 @@ const MobileNav = (props: MobileNavProps) => {
         <TempleLogo src={temple_dao_logo} />
       </TempleLink>
       <HamburgerIcon onClick={() => setSlideIn(!slideIn)} />
-      <MobileNavOverlay Content={() => <MenuItems />} hidePanel={() => setSlideIn(false)} slideIn={slideIn} />
+      <MobileNavOverlay
+        Content={() => <MenuItems />}
+        hidePanel={() => setSlideIn(false)}
+        slideIn={slideIn}
+      />
     </NavContainer>
   );
 };
@@ -56,13 +60,13 @@ const NavContainer = styled.div`
 const HamburgerIcon = styled(coreHamburger)`
   cursor: pointer;
   transition: all 300ms ease;
-  fill: ${({theme})=> theme.palette.brand};
+  fill: ${({ theme }) => theme.palette.brand};
   align-self: center;
   width: 24px;
   height: 24px;
   margin-right: 20px;
   &:hover {
-    fill: ${({theme})=> theme.palette.light75};
+    fill: ${({ theme }) => theme.palette.light75};
   }
 `;
 

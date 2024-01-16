@@ -1,7 +1,13 @@
 import styled from 'styled-components';
 import { format, isDate } from 'date-fns';
 
-import { Table as BaseTable, Head, Row, Body, Cell } from 'components/Table/Table';
+import {
+  Table as BaseTable,
+  Head,
+  Row,
+  Body,
+  Cell,
+} from 'components/Table/Table';
 
 import { useVaultContext } from 'components/Pages/Core/VaultContext';
 import VaultContent from './VaultContent';
@@ -40,11 +46,17 @@ const Timing = () => {
             {vaultGroup?.vaults.map((vault) => {
               const vaultGroupBalances = balances[vaultGroup.id];
               const vaultBalance = vaultGroupBalances[vault.id] || {};
-              const unlockValue = isDate(vault.unlockDate) ? format(vault.unlockDate as Date, 'MMM do') : 'now';
+              const unlockValue = isDate(vault.unlockDate)
+                ? format(vault.unlockDate as Date, 'MMM do')
+                : 'now';
               return (
                 <Row key={vault.id}>
-                  <Cell $align="center">{vault.isActive ? `> ${vault.label} <` : vault.label}</Cell>
-                  <Cell $align="center">{formatTemple(vaultBalance.balance)} $T</Cell>
+                  <Cell $align="center">
+                    {vault.isActive ? `> ${vault.label} <` : vault.label}
+                  </Cell>
+                  <Cell $align="center">
+                    {formatTemple(vaultBalance.balance)} $T
+                  </Cell>
                   <Cell $align="center">{unlockValue}</Cell>
                   <Cell $align="center">
                     {vaultBalance.balance?.gt(ZERO) ? (
@@ -56,7 +68,9 @@ const Timing = () => {
                           earlyClaimAmount: vaultBalance.balance,
                         }}
                       >
-                        {vaultBalance.balance?.gt(ZERO) ? `Claim ${unlockValue !== 'now' ? 'Early' : ''}` : ' - '}
+                        {vaultBalance.balance?.gt(ZERO)
+                          ? `Claim ${unlockValue !== 'now' ? 'Early' : ''}`
+                          : ' - '}
                       </Link>
                     ) : (
                       ' - '

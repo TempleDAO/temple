@@ -1,6 +1,4 @@
-import {
-  Vault__factory,
-} from 'types/typechain';
+import { Vault__factory } from 'types/typechain';
 import { useWallet } from 'providers/WalletProvider';
 import useRequestState from 'hooks/use-request-state';
 

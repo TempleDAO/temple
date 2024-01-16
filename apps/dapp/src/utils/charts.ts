@@ -1,4 +1,7 @@
-import type { LabeledTimeIntervals, ChartSupportedTimeInterval } from 'utils/time-intervals';
+import type {
+  LabeledTimeIntervals,
+  ChartSupportedTimeInterval,
+} from 'utils/time-intervals';
 
 import { DEFAULT_CHART_INTERVALS } from './time-intervals';
 
@@ -10,26 +13,41 @@ interface FormattedTimestampedValue {
   timestamp: number;
 }
 
-type DataPointFormatter<U extends UnformattedTimestampedValue, F extends FormattedTimestampedValue> = (
-  dataPoint: U
-) => F;
+type DataPointFormatter<
+  U extends UnformattedTimestampedValue,
+  F extends FormattedTimestampedValue
+> = (dataPoint: U) => F;
 
-type FormattedChartData<T extends FormattedTimestampedValue> = Record<ChartSupportedTimeInterval, T[]>;
+type FormattedChartData<T extends FormattedTimestampedValue> = Record<
+  ChartSupportedTimeInterval,
+  T[]
+>;
 
 export function formatTimestampedChartData<
   U extends UnformattedTimestampedValue,
   D extends U[],
   H extends U[],
   F extends FormattedTimestampedValue
->(dailySnapshots: D, hourlySnapshots: H, formatDataPoint: DataPointFormatter<U, F>) {
+>(
+  dailySnapshots: D,
+  hourlySnapshots: H,
+  formatDataPoint: DataPointFormatter<U, F>
+) {
   const dailyData = dailySnapshots;
   const hourlyData = hourlySnapshots;
 
   const now = new Date().getTime();
 
-  const formattedDailyData = formatDailyDataPoints(dailyData, DEFAULT_CHART_INTERVALS, now, formatDataPoint);
+  const formattedDailyData = formatDailyDataPoints(
+    dailyData,
+    DEFAULT_CHART_INTERVALS,
+    now,
+    formatDataPoint
+  );
 
-  const formattedHourlyData = hourlyData.map((metric) => formatDataPoint(metric));
+  const formattedHourlyData = hourlyData.map((metric) =>
+    formatDataPoint(metric)
+  );
 
   return {
     ...formattedDailyData,
@@ -37,7 +55,10 @@ export function formatTimestampedChartData<
   };
 }
 
-export function formatDailyDataPoints<U extends UnformattedTimestampedValue, F extends FormattedTimestampedValue>(
+export function formatDailyDataPoints<
+  U extends UnformattedTimestampedValue,
+  F extends FormattedTimestampedValue
+>(
   data: U[],
   timeIntervals: LabeledTimeIntervals,
   now: number,
@@ -49,13 +70,16 @@ export function formatDailyDataPoints<U extends UnformattedTimestampedValue, F e
     '1Y': [],
   };
 
-  const sortedTimeIntervals = timeIntervals.map((interval) => interval).sort((a, b) => a.interval - b.interval);
+  const sortedTimeIntervals = timeIntervals
+    .map((interval) => interval)
+    .sort((a, b) => a.interval - b.interval);
 
   return data.reduce((acc, metric) => {
     const formattedDataPoint = formatDataPoint(metric);
 
     const biggestIntervalMatchIndex = sortedTimeIntervals.findIndex(
-      (labeledInterval) => now - formattedDataPoint.timestamp <= labeledInterval.interval
+      (labeledInterval) =>
+        now - formattedDataPoint.timestamp <= labeledInterval.interval
     );
 
     if (biggestIntervalMatchIndex === -1) {

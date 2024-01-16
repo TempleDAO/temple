@@ -1,4 +1,4 @@
-import styled from "styled-components";
+import styled from 'styled-components';
 
 export const InputArea = styled.div`
   h3 {
@@ -18,8 +18,8 @@ export const InputArea = styled.div`
 
 export const RequestArea = styled.code`
   overflow-wrap: anywhere;
-  color: ${({ theme }) => theme.palette.brand}
-`;     
+  color: ${({ theme }) => theme.palette.brand};
+`;
 
 export const TitleWrapper = styled.div`
   display: flex;

@@ -11,7 +11,9 @@ export const useStakeTemple = (onSuccess?: Callback) => {
 
   const stakeRequest = async (amount: string) => {
     if (!wallet || !signer) {
-      console.error('Missing wallet or signer when trying to unstake OGTemple.');
+      console.error(
+        'Missing wallet or signer when trying to unstake OGTemple.'
+      );
       return;
     }
 

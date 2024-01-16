@@ -12,7 +12,10 @@ export type DropdownCheckOption = {
 };
 export type DropdownCheckOptions = Array<DropdownCheckOption>;
 
-export type updateRowDropdownCheckbox = (clickedHeader: TableHeaders, newOption: DropdownCheckOption) => void;
+export type updateRowDropdownCheckbox = (
+  clickedHeader: TableHeaders,
+  newOption: DropdownCheckOption
+) => void;
 type Props = {
   name: TableHeaders;
   dropdownOptions: DropdownCheckOptions;
@@ -21,7 +24,8 @@ type Props = {
 };
 
 export const RowFilterDropdown = (props: Props) => {
-  const { name, dropdownOptions, setRowFilter, updateRowDropdownCheckbox } = props;
+  const { name, dropdownOptions, setRowFilter, updateRowDropdownCheckbox } =
+    props;
   const [dropdownOpened, setDropdownOpened] = useState(false);
   const ref = useRef(null);
 
@@ -36,23 +40,35 @@ export const RowFilterDropdown = (props: Props) => {
         <DropdownOptionsContainer ref={ref}>
           {dropdownOptions.map((op, idx) => (
             <DropdownOption key={idx} isChecked={op.checked}>
-              <RadioCheckbox 
+              <RadioCheckbox
                 id={op.label}
                 defaultChecked={op.checked}
                 onClick={(e) => {
                   const target = e.target as HTMLInputElement;
                   switch (name) {
                     case TableHeaders.Type:
-                      setRowFilter((s) => ({ ...s, type: target.checked ? op.label : undefined }));
+                      setRowFilter((s) => ({
+                        ...s,
+                        type: target.checked ? op.label : undefined,
+                      }));
                       break;
                     case TableHeaders.Strategy:
-                      setRowFilter((s) => ({ ...s, strategy: target.checked ? op.label : undefined }));
+                      setRowFilter((s) => ({
+                        ...s,
+                        strategy: target.checked ? op.label : undefined,
+                      }));
                       break;
                     case TableHeaders.Token:
-                      setRowFilter((s) => ({ ...s, token: target.checked ? op.label : undefined }));
+                      setRowFilter((s) => ({
+                        ...s,
+                        token: target.checked ? op.label : undefined,
+                      }));
                       break;
                   }
-                  updateRowDropdownCheckbox(name, { label: op.label, checked: target.checked });
+                  updateRowDropdownCheckbox(name, {
+                    label: op.label,
+                    checked: target.checked,
+                  });
                   setDropdownOpened(!dropdownOpened);
                 }}
               />

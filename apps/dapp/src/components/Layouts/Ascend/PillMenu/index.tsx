@@ -17,11 +17,7 @@ export const PillMenu = ({ links }: Props) => {
     <MenuWrapper>
       <Menu>
         {links.map(({ to, label, onClick }, i) => (
-          <MenuLink
-            key={i}
-            to={!!onClick ? '#' : to}
-            onClick={onClick}
-          >
+          <MenuLink key={i} to={!!onClick ? '#' : to} onClick={onClick}>
             {label}
           </MenuLink>
         ))}
@@ -30,15 +26,10 @@ export const PillMenu = ({ links }: Props) => {
   );
 };
 
-const MenuLink: FC<{ to: string; onClick?: () => void; }> = (props) => {
+const MenuLink: FC<{ to: string; onClick?: () => void }> = (props) => {
   const resolved = useResolvedPath(props.to);
   const match = useMatch({ path: resolved.pathname, end: true });
-  return (
-    <Link
-      {...props}
-      $isActive={!!match}
-    />
-  );
+  return <Link {...props} $isActive={!!match} />;
 };
 
 const MenuWrapper = styled.div`
@@ -59,6 +50,6 @@ const Link = styled(BaseLink)<{ $isActive: boolean }>`
   padding: 0.5rem 1rem;
   border-radius: 0.5rem;
   display: block;
-  background: ${({ $isActive }) => $isActive ? '#1D1A1A' : 'transparent'};
+  background: ${({ $isActive }) => ($isActive ? '#1D1A1A' : 'transparent')};
   transition: all ease-out 200ms;
 `;

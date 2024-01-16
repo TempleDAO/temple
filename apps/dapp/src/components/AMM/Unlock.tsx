@@ -46,7 +46,12 @@ export const Unlock: FC<UnlockProps> = ({ onExitClick, onReturnClick }) => {
               col: 'half',
             }}
           >
-            <Button label={'RETURN TO ALTAR'} isSmall isUppercase onClick={onReturnClick} />
+            <Button
+              label={'RETURN TO ALTAR'}
+              isSmall
+              isUppercase
+              onClick={onReturnClick}
+            />
           </Flex>
         )}
         {onExitClick && (
@@ -56,7 +61,12 @@ export const Unlock: FC<UnlockProps> = ({ onExitClick, onReturnClick }) => {
               col: 'half',
             }}
           >
-            <Button label={'PROCEED TO EXIT QUEUE'} isSmall isUppercase onClick={onExitClick} />
+            <Button
+              label={'PROCEED TO EXIT QUEUE'}
+              isSmall
+              isUppercase
+              onClick={onExitClick}
+            />
           </Flex>
         )}
       </Flex>

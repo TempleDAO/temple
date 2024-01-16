@@ -1,5 +1,10 @@
 import { Network } from '@ethersproject/providers';
-import { BigNumber, ContractReceipt, Signer, ContractTransaction } from 'ethers';
+import {
+  BigNumber,
+  ContractReceipt,
+  Signer,
+  ContractTransaction,
+} from 'ethers';
 import { Nullable } from 'types/util';
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
@@ -84,13 +89,29 @@ export interface FaithService {
 }
 
 export interface SwapService {
-  buy(quote: SwapInfo, tokenIn: TICKER_SYMBOL, deadline: number, slippage: number): Promise<ContractReceipt | void>;
+  buy(
+    quote: SwapInfo,
+    tokenIn: TICKER_SYMBOL,
+    deadline: number,
+    slippage: number
+  ): Promise<ContractReceipt | void>;
 
-  sell(quote: SwapInfo, tokenOut: TICKER_SYMBOL, deadline: number, slippage: number): Promise<ContractReceipt | void>;
+  sell(
+    quote: SwapInfo,
+    tokenOut: TICKER_SYMBOL,
+    deadline: number,
+    slippage: number
+  ): Promise<ContractReceipt | void>;
 
-  getSellQuote(amountToSell: BigNumber, token?: TICKER_SYMBOL): Promise<SwapInfo | void>;
+  getSellQuote(
+    amountToSell: BigNumber,
+    token?: TICKER_SYMBOL
+  ): Promise<SwapInfo | void>;
 
-  getBuyQuote(amountIn: BigNumber, token?: TICKER_SYMBOL): Promise<SwapInfo | void>;
+  getBuyQuote(
+    amountIn: BigNumber,
+    token?: TICKER_SYMBOL
+  ): Promise<SwapInfo | void>;
 
   error: Error | null;
 

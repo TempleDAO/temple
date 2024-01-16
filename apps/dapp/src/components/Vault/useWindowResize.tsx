@@ -12,9 +12,8 @@ export function useWindowResize(delay = 200) {
     window.addEventListener('resize', debouncedHandleResize);
     return () => {
       window.removeEventListener('resize', debouncedHandleResize);
-    }
+    };
   }, [delay]);
 
   return width;
 }
-

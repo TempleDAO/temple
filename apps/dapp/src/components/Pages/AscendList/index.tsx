@@ -41,11 +41,13 @@ export const AscendListPage = () => {
   const pool = createPool(response.data.pools[0]);
   const { endTimestamp } = pool.weightUpdates[pool.weightUpdates.length - 1];
   const now = Date.now();
-  
-  if (endTimestamp.getTime() < now && pool.totalLiquidity.lt(EMPTY_LIQUIDITY_THRESHOLD)) {
+
+  if (
+    endTimestamp.getTime() < now &&
+    pool.totalLiquidity.lt(EMPTY_LIQUIDITY_THRESHOLD)
+  ) {
     return EMPTY_MESSAGE;
   }
 
   return <Navigate replace to={`/dapp/ascend/${pool.address}`} />;
 };
-

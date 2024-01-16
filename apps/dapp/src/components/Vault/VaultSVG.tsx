@@ -16,8 +16,18 @@ export const VaultSVG: FC = ({ children }) => {
   });
 
   return isDesktop ? (
-    <VaultDesktop ref={vaultRef} selectedNav={selectedNav!} children={children} />
+    <VaultDesktop
+      ref={vaultRef}
+      selectedNav={selectedNav!}
+      // eslint-disable-next-line react/no-children-prop
+      children={children}
+    />
   ) : (
-    <VaultMobile ref={vaultRef} selectedNav={selectedNav!} children={children} />
+    <VaultMobile
+      ref={vaultRef}
+      selectedNav={selectedNav!}
+      // eslint-disable-next-line react/no-children-prop
+      children={children}
+    />
   );
 };

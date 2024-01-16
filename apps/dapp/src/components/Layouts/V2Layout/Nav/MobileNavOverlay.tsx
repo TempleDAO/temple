@@ -22,9 +22,10 @@ interface MobileNavOverlayProps {
 }
 
 export function MobileNavOverlay(props: MobileNavOverlayProps): JSX.Element {
-  const {slideIn} = props;
+  const { slideIn } = props;
 
-  const enableDismissFromContext = props.enableContextDismiss || props.enableContextDismiss == undefined;
+  const enableDismissFromContext =
+    props.enableContextDismiss || props.enableContextDismiss == undefined;
 
   const startDismiss = useCallback(() => {
     setTimeout(props.hidePanel, SLIDE_MS);
@@ -81,7 +82,8 @@ const WindowOverlay = styled.div<{ slideIn: boolean }>`
   height: 100%;
   top: 0;
   left: 0;
-  background-color: ${(props) => (props.slideIn ? 'rgba(0, 0, 0, 0.4)' : 'rgba(0, 0, 0, 0)')};
+  background-color: ${(props) =>
+    props.slideIn ? 'rgba(0, 0, 0, 0.4)' : 'rgba(0, 0, 0, 0)'};
   transition: background-color ${SLIDE_MS}ms ease;
 `;
 
@@ -98,7 +100,8 @@ const ContentPanel = styled.div<{
   top: 0;
   right: 0;
   background-color: ${({ theme }) => theme.palette.black};
-  transform: ${(props) => (props.slideIn ? 'translateX(0%)' : `translateX(100%)`)};
+  transform: ${(props) =>
+    props.slideIn ? 'translateX(0%)' : `translateX(100%)`};
   transition: transform ${SLIDE_MS}ms ease;
   width: 100vw;
 `;

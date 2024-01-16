@@ -1,11 +1,18 @@
-import { ChartSupportedTimeInterval, LabeledTimeIntervals, TIME_INTERVAL } from 'utils/time-intervals';
+import {
+  ChartSupportedTimeInterval,
+  LabeledTimeIntervals,
+  TIME_INTERVAL,
+} from 'utils/time-intervals';
 import type { AxisDomain } from 'recharts/types/util/types';
 import { useEffect, useState } from 'react';
 import styled, { useTheme } from 'styled-components';
 import { format } from 'date-fns';
 import { LineChart } from 'components/Charts';
 import Loader from 'components/Loader/Loader';
-import { formatNumberAbbreviated, formatNumberFixedDecimals } from 'utils/formatter';
+import {
+  formatNumberAbbreviated,
+  formatNumberFixedDecimals,
+} from 'utils/formatter';
 import { formatDailyDataPoints } from 'utils/charts';
 import { fetchGenericSubgraph } from 'utils/subgraph';
 import IntervalToggler from 'components/Charts/IntervalToggler';
@@ -37,10 +44,14 @@ const tooltipValuesFormatter = (value: number, name: string) => [
   name,
 ];
 
-const yDomain: AxisDomain = ([dataMin, dataMax]) => [dataMin * 0.5, Number((dataMax * 1.5).toFixed(2))];
+const yDomain: AxisDomain = ([dataMin, dataMax]) => [
+  dataMin * 0.5,
+  Number((dataMax * 1.5).toFixed(2)),
+];
 
 export const TlcChart = () => {
-  const [selectedInterval, setSelectedInterval] = useState<ChartIntervals>('1M');
+  const [selectedInterval, setSelectedInterval] =
+    useState<ChartIntervals>('1M');
   const theme = useTheme();
   const [metrics, setMetrics] = useState<Metric[]>();
 
@@ -63,11 +74,16 @@ export const TlcChart = () => {
 
   if (!metrics) return <Loader />;
 
-  const formattedData = formatDailyDataPoints(metrics, CHART_INTERVALS, new Date().getTime(), (metric) => ({
-    timestamp: metric.timestamp * 1000,
-    utilRatio: metric.utilRatio * 100,
-    interestRate: metric.interestRate * 100,
-  }));
+  const formattedData = formatDailyDataPoints(
+    metrics,
+    CHART_INTERVALS,
+    new Date().getTime(),
+    (metric) => ({
+      timestamp: metric.timestamp * 1000,
+      utilRatio: metric.utilRatio * 100,
+      interestRate: metric.interestRate * 100,
+    })
+  );
 
   return (
     <>
@@ -90,9 +106,14 @@ export const TlcChart = () => {
           yTickFormatter={(val, i) => formatNumberAbbreviated(val).string + '%'}
           tooltipLabelFormatter={tooltipLabelFormatters[selectedInterval]}
           yDomain={yDomain}
-          legendFormatter={(name) => (name === 'utilRatio' ? 'Utilization Rate' : 'Interest Rate')}
+          legendFormatter={(name) =>
+            name === 'utilRatio' ? 'Utilization Rate' : 'Interest Rate'
+          }
           tooltipValuesFormatter={(value, name) =>
-            tooltipValuesFormatter(value, name === 'utilRatio' ? 'Utilization Rate' : 'Interest Rate')
+            tooltipValuesFormatter(
+              value,
+              name === 'utilRatio' ? 'Utilization Rate' : 'Interest Rate'
+            )
           }
         />
       }

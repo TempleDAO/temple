@@ -9,7 +9,9 @@ interface Props {
 export const Ticks = ({ vaultGroup }: Props) => {
   const min = -270;
   const max = 0;
-  const percent = vaultGroup.enterExitWindowDurationSeconds / vaultGroup.periodDurationSeconds;
+  const percent =
+    vaultGroup.enterExitWindowDurationSeconds /
+    vaultGroup.periodDurationSeconds;
   const periods = vaultGroup.periods;
   const zoneLength = lerp(min, max, percent);
 
@@ -39,7 +41,14 @@ export const Ticks = ({ vaultGroup }: Props) => {
             width={274}
             height={22}
           >
-            <rect id="mask" x={23} y={528} width={274} height={22} fill="#C4C4C4" />
+            <rect
+              id="mask"
+              x={23}
+              y={528}
+              width={274}
+              height={22}
+              fill="#C4C4C4"
+            />
           </mask>
           <g mask="url(#mask0_4383_16241)">
             <g id="movable-frame" transform={`translate(${zoneLength})`}>
@@ -76,8 +85,20 @@ export const Ticks = ({ vaultGroup }: Props) => {
           End
         </tspan>
       </text>
-      <circle id="timeline-end-marker" cx={297.143} cy={538.765} r={3.39414} fill="#BD7B4F" />
-      <circle id="timeline-start-marker" cx={23.3238} cy={538.765} r={3.39414} fill="#BD7B4F" />
+      <circle
+        id="timeline-end-marker"
+        cx={297.143}
+        cy={538.765}
+        r={3.39414}
+        fill="#BD7B4F"
+      />
+      <circle
+        id="timeline-start-marker"
+        cx={23.3238}
+        cy={538.765}
+        r={3.39414}
+        fill="#BD7B4F"
+      />
       <text
         fill="#351F11"
         xmlSpace="preserve"
@@ -99,6 +120,10 @@ export const Ticks = ({ vaultGroup }: Props) => {
 
 const Tick = ({ id, distance }: { id: number; distance: number }) => (
   <g key={id} id={`tick-${id}`} transform={`translate(${distance})`}>
-    <path id="three-month-tickmark" d="M23 549.297V554.755M23 523.297V528.755" stroke="#351F11" />
+    <path
+      id="three-month-tickmark"
+      d="M23 549.297V554.755M23 523.297V528.755"
+      stroke="#351F11"
+    />
   </g>
 );

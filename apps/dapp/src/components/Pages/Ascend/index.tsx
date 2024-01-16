@@ -27,9 +27,11 @@ const ActiveAuction = ({ pool }: Props) => {
     <Wrapper>
       <h3>Temple Ascend</h3>
       <Description>
-        Temple Ascend is a Liquidity Bootstrapping Pool (LBP) designed to acquire $TEMPLE tokens from the circulating
-        supply. During active Ascendance Rituals, the LBP is configured to where the $TEMPLE price will start low and
-        gradually rise over time. However, price action is also affected by users trading the LBP.{' '}
+        Temple Ascend is a Liquidity Bootstrapping Pool (LBP) designed to
+        acquire $TEMPLE tokens from the circulating supply. During active
+        Ascendance Rituals, the LBP is configured to where the $TEMPLE price
+        will start low and gradually rise over time. However, price action is
+        also affected by users trading the LBP.{' '}
         <a
           href="https://templedao.medium.com/temple-ascend-progressing-temple-mechanics-18d96b1fd783"
           target="_blank"

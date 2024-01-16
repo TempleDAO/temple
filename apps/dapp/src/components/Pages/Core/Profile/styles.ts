@@ -10,7 +10,9 @@ export const Container = styled.div`
   }
 `;
 
-export const Subheading = styled.h4<{ textAlign?: 'left' | 'center' | 'right' }>`
+export const Subheading = styled.h4<{
+  textAlign?: 'left' | 'center' | 'right';
+}>`
   margin-top: 0;
 `;
 

@@ -25,7 +25,12 @@ interface IProps {
   withdraw: () => void;
 }
 
-export const Withdraw: React.FC<IProps> = ({ accountPosition, state, setState, withdraw }) => {
+export const Withdraw: React.FC<IProps> = ({
+  accountPosition,
+  state,
+  setState,
+  withdraw,
+}) => {
   const getEstimatedCollateral = (): number => {
     return accountPosition
       ? fromAtto(accountPosition.collateral) - Number(state.withdrawValue)
@@ -34,7 +39,10 @@ export const Withdraw: React.FC<IProps> = ({ accountPosition, state, setState, w
 
   const getEstimatedLTV = (): string => {
     return accountPosition
-      ? ((fromAtto(accountPosition.currentDebt) / getEstimatedCollateral()) * 100).toFixed(2)
+      ? (
+          (fromAtto(accountPosition.currentDebt) / getEstimatedCollateral()) *
+          100
+        ).toFixed(2)
       : '0.00';
   };
 
@@ -44,7 +52,8 @@ export const Withdraw: React.FC<IProps> = ({ accountPosition, state, setState, w
 
   const getMaxWithdraw = (): number => {
     return accountPosition
-      ? (-1 * fromAtto(accountPosition.currentDebt)) / (MAX_LTV / 100) + fromAtto(accountPosition.collateral)
+      ? (-1 * fromAtto(accountPosition.currentDebt)) / (MAX_LTV / 100) +
+          fromAtto(accountPosition.collateral)
       : 0;
   };
 
@@ -57,7 +66,9 @@ export const Withdraw: React.FC<IProps> = ({ accountPosition, state, setState, w
           kind: 'value',
           value: 'TEMPLE',
         }}
-        handleChange={(value: string) => setState({ ...state, withdrawValue: value })}
+        handleChange={(value: string) =>
+          setState({ ...state, withdrawValue: value })
+        }
         isNumber
         value={state.withdrawValue}
         placeholder="0"
@@ -75,7 +86,10 @@ export const Withdraw: React.FC<IProps> = ({ accountPosition, state, setState, w
             <InfoCircle>
               <p>i</p>
             </InfoCircle>
-            <p>MAX represents the amount of supplied TEMPLE that you can withdraw without liquidation.</p>
+            <p>
+              MAX represents the amount of supplied TEMPLE that you can withdraw
+              without liquidation.
+            </p>
           </Warning>
           <MarginTop />
           <RangeLabel>Estimated DAI LTV: {getEstimatedLTV()}%</RangeLabel>
@@ -84,13 +98,20 @@ export const Withdraw: React.FC<IProps> = ({ accountPosition, state, setState, w
               if (!accountPosition) return;
               let ltvPercent = ((Number(e.target.value) / 100) * MAX_LTV) / 100;
               // Min LTV is the current LTV
-              const minLtv = fromAtto(accountPosition.currentDebt) / fromAtto(accountPosition.collateral);
+              const minLtv =
+                fromAtto(accountPosition.currentDebt) /
+                fromAtto(accountPosition.collateral);
               if (ltvPercent < minLtv) ltvPercent = minLtv;
               const withdrawAmount = (
                 (-1 * fromAtto(accountPosition.currentDebt)) / ltvPercent +
                 fromAtto(accountPosition.collateral)
               ).toFixed(2);
-              setState({ ...state, withdrawValue: `${Number(withdrawAmount) > 0 ? withdrawAmount : '0'}` });
+              setState({
+                ...state,
+                withdrawValue: `${
+                  Number(withdrawAmount) > 0 ? withdrawAmount : '0'
+                }`,
+              });
             }}
             min={0}
             max={100}
@@ -105,15 +126,18 @@ export const Withdraw: React.FC<IProps> = ({ accountPosition, state, setState, w
       )}
       <GradientContainer>
         <Copy style={{ textAlign: 'left' }}>
-          You could borrow up to {getEstimatedMaxBorrow().toFixed(2)} DAI with {getEstimatedCollateral().toFixed(2)}{' '}
-          total TEMPLE collateral.
+          You could borrow up to {getEstimatedMaxBorrow().toFixed(2)} DAI with{' '}
+          {getEstimatedCollateral().toFixed(2)} total TEMPLE collateral.
         </Copy>
       </GradientContainer>
       <FlexColCenter>
         <TradeButton
           onClick={() => withdraw()}
           // Disable if amount is 0 or greater than max withdraw
-          disabled={Number(state.withdrawValue) <= 0 || Number(state.withdrawValue) > getMaxWithdraw()}
+          disabled={
+            Number(state.withdrawValue) <= 0 ||
+            Number(state.withdrawValue) > getMaxWithdraw()
+          }
         >
           Withdraw
         </TradeButton>

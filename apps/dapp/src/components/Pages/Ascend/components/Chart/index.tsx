@@ -15,19 +15,26 @@ import {
 } from 'react-vis';
 import { curveCatmullRom } from 'd3-shape';
 
-import { formatBigNumber, getBigNumberFromString } from 'components/Vault/utils';
+import {
+  formatBigNumber,
+  getBigNumberFromString,
+} from 'components/Vault/utils';
 import { formatNumberFixedDecimals } from 'utils/formatter';
 import { Pool } from 'components/Layouts/Ascend/types';
 import Loader from 'components/Loader/Loader';
 import { theme } from 'styles/theme';
 import { useAuctionContext } from '../AuctionContext';
 
-import { useCrosshairs, useLatestPriceData, Point, useGetFutureDataPoints } from './hooks';
+import {
+  useCrosshairs,
+  useLatestPriceData,
+  Point,
+  useGetFutureDataPoints,
+} from './hooks';
 
 interface Props {
   pool: Pool;
 }
-
 
 export const Chart = ({ pool }: Props) => {
   const { balances, accrued } = useAuctionContext();
@@ -35,28 +42,29 @@ export const Chart = ({ pool }: Props) => {
   const getFutureDataPoints = useGetFutureDataPoints(pool);
 
   const { data, yDomain, xDomain, predicted, legend } = useMemo(() => {
-    const {joinExits, ...data} = (response?.data || {})
+    const { joinExits, ...data } = response?.data || {};
 
     const points = Object.values(data)
       .filter((value) => value.length > 0)
       .map((value) => ({
         x: Number(value[0].timestamp) * 1000,
         y: Number(value[0].price),
-      })).sort((a, b) => {
+      }))
+      .sort((a, b) => {
         return a.x - b.x;
       });
 
     const sortedY = [...points].sort((a, b) => b.y - a.y);
     // might be overwritten by the predicted price
     let ceiling = sortedY[0]?.y || 0;
-    let floor = sortedY[sortedY.length - 1]?.y || 0;
+    const floor = sortedY[sortedY.length - 1]?.y || 0;
 
     const lastUpdate = pool.weightUpdates[pool.weightUpdates.length - 1];
     const lastUpdateEnd = lastUpdate.endTimestamp.getTime();
     const lastUpdateStart = lastUpdate.startTimestamp.getTime();
     const lbpLength = lastUpdateEnd - lastUpdateStart;
-    const xDomain = [lastUpdateStart, lastUpdateEnd + (lbpLength * 0.05)];
-    
+    const xDomain = [lastUpdateStart, lastUpdateEnd + lbpLength * 0.05];
+
     let predicted: Point[] = [];
     if (balances && points.length > 0) {
       try {
@@ -79,13 +87,16 @@ export const Chart = ({ pool }: Props) => {
     }
 
     const yFloor = floor * 0.45;
-    const yDomain = points.length > 0 ? [yFloor, ceiling + (ceiling * 0.1)] : null;
+    const yDomain =
+      points.length > 0 ? [yFloor, ceiling + ceiling * 0.1] : null;
     const yLabel = `$${accrued.symbol} Price`;
-   
-    const legend: DiscreteColorLegendProps['items']  = [{
-      title: yLabel,
-      color: theme.palette.brand,
-    }];
+
+    const legend: DiscreteColorLegendProps['items'] = [
+      {
+        title: yLabel,
+        color: theme.palette.brand,
+      },
+    ];
 
     if (predicted.length > 0) {
       legend.push({
@@ -105,7 +116,10 @@ export const Chart = ({ pool }: Props) => {
     };
   }, [pool, response, balances]);
 
-  const { crosshairValues, onMouseLeave, onNearestX } = useCrosshairs([data, predicted]);
+  const { crosshairValues, onMouseLeave, onNearestX } = useCrosshairs([
+    data,
+    predicted,
+  ]);
 
   useEffect(() => {
     request();
@@ -121,11 +135,7 @@ export const Chart = ({ pool }: Props) => {
 
   if (!data.length) {
     return (
-      <FlexibleXYPlot
-        height={400}
-        xType="time"
-        dontCheckIfEmpty
-      >
+      <FlexibleXYPlot height={400} xType="time" dontCheckIfEmpty>
         <ChartLabel
           text="Not enough data"
           includeMargin={false}
@@ -136,7 +146,7 @@ export const Chart = ({ pool }: Props) => {
           }}
         />
       </FlexibleXYPlot>
-    )
+    );
   }
 
   return (
@@ -169,7 +179,11 @@ export const Chart = ({ pool }: Props) => {
           style={{
             line: { stroke: theme.palette.brand },
             ticks: { stroke: theme.palette.brand },
-            text: { stroke: 'none', fill: theme.palette.brand, fontWeight: 600 },
+            text: {
+              stroke: 'none',
+              fill: theme.palette.brand,
+              fontWeight: 600,
+            },
           }}
           tickTotal={4}
           tickFormat={(t) => `$${t}`}
@@ -194,23 +208,21 @@ export const Chart = ({ pool }: Props) => {
         <Crosshair
           values={crosshairValues}
           titleFormat={([{ x }]: Point[]) => {
-            return ({
+            return {
               title: 'Date',
               value: format(x, 'd LLL'),
-            });
+            };
           }}
           itemsFormat={([{ y }]: Point[]) => {
-            const value = formatNumberFixedDecimals(formatBigNumber(getBigNumberFromString(y.toString())), 4);
-            return [
-              { title: 'Price', value },
-            ];
+            const value = formatNumberFixedDecimals(
+              formatBigNumber(getBigNumberFromString(y.toString())),
+              4
+            );
+            return [{ title: 'Price', value }];
           }}
         />
       </FlexibleXYPlot>
-      <DiscreteColorLegend
-        orientation="horizontal"
-        items={legend}
-      />
+      <DiscreteColorLegend orientation="horizontal" items={legend} />
     </ChartWrapper>
   );
 };

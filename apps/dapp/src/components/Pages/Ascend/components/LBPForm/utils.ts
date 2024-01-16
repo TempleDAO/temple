@@ -9,11 +9,7 @@ import { formatNumber } from 'utils/formatter';
 import { JoinType } from '../Trade/hooks/use-vault-contract';
 import env from 'constants/env';
 
-import {
-  FormToken,
-  Values,
-  InputType,
-} from './types'
+import { FormToken, Values, InputType } from './types';
 import { ZERO } from 'utils/bigNumber';
 
 export const getInitialValues = (pool?: Pool): Values => {
@@ -94,7 +90,7 @@ export const formatValueByType = (value: any, type: InputType) => {
     default:
       return value;
   }
-}
+};
 
 export const formatDate = (date: Date) => {
   if (!date) return;

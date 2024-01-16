@@ -3,7 +3,8 @@ import { Environment } from './types';
 
 const env: Environment = {
   alchemyId: 'XiIZxWykHU5AOFBwxKgxseXWN984Mp8F',
-  rpcUrl: 'https://eth-mainnet.g.alchemy.com/v2/AorwfDdHDsEjIX4HPwS70zkVjWqjv5vZ',
+  rpcUrl:
+    'https://eth-mainnet.g.alchemy.com/v2/AorwfDdHDsEjIX4HPwS70zkVjWqjv5vZ',
   backendUrl: 'https://backend.templedao.link',
   contracts: {
     balancerVault: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
@@ -68,7 +69,7 @@ const env: Environment = {
       ramosStrategy: '0xDA5CeF575eaEF14032C5006eb5cbEbE7eE0E347b',
       templeStrategy: '0xB8d09B0436adF927004Cea0B096E8c05f6dFdc3b',
       tlcStrategy: '0xcABDE42dd767361739bD7c09C6E574057080ef01',
-    }
+    },
   },
   gas: {
     swapFraxForTemple: 300000,
@@ -138,10 +139,14 @@ const env: Environment = {
   etherscan: 'https://etherscan.io',
   subgraph: {
     // TODO: These need updated to the templedao organization subgraphs once they are deployed
-    templeCore: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-core',
-    protocolMetrics: 'https://api.thegraph.com/subgraphs/name/medariox/temple-metrics',
-    protocolMetricsArbitrum: 'https://api.thegraph.com/subgraphs/name/medariox/temple-metrics-arbitrum',
-    balancerV2: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-balancer-v2',
+    templeCore:
+      'https://api.thegraph.com/subgraphs/name/templedao/templedao-core',
+    protocolMetrics:
+      'https://api.thegraph.com/subgraphs/name/medariox/temple-metrics',
+    protocolMetricsArbitrum:
+      'https://api.thegraph.com/subgraphs/name/medariox/temple-metrics-arbitrum',
+    balancerV2:
+      'https://api.thegraph.com/subgraphs/name/templedao/templedao-balancer-v2',
     // TODO: Will be deprecated
     ramos: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-ramos',
     templeV2: 'https://api.thegraph.com/subgraphs/name/medariox/v2-mainnet',

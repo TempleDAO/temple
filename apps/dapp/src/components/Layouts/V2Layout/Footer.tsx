@@ -75,7 +75,9 @@ const Footer: React.FC = () => {
           </ul>
         </Links>
       </LinkRow>
-      <CopyrightRow>© {new Date().getFullYear()} TempleDAO. All rights reserved.</CopyrightRow>
+      <CopyrightRow>
+        © {new Date().getFullYear()} TempleDAO. All rights reserved.
+      </CopyrightRow>
     </FooterContainer>
   );
 };

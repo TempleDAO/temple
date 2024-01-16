@@ -7,7 +7,10 @@ import { SubGraphResponse } from 'hooks/core/types';
 import { DecimalBigNumber } from 'utils/DecimalBigNumber';
 import { useAuctionContext } from '../AuctionContext';
 import { formatNumberFixedDecimals } from 'utils/formatter';
-import { formatBigNumber, getBigNumberFromString } from 'components/Vault/utils';
+import {
+  formatBigNumber,
+  getBigNumberFromString,
+} from 'components/Vault/utils';
 import { getSpotPrice } from '../../utils';
 
 const createQueryFragment = (after: number, before: number) => {
@@ -77,9 +80,18 @@ export const useLatestPriceData = (pool: Pool) => {
   const mainAsset = pool.tokens[0].address;
   const accruedAsset = pool.tokens[1].address;
 
-  const query = createTokenPricesQuery(pool.id, auctionEndSeconds, auctionStartSeconds, mainAsset, accruedAsset);
+  const query = createTokenPricesQuery(
+    pool.id,
+    auctionEndSeconds,
+    auctionStartSeconds,
+    mainAsset,
+    accruedAsset
+  );
 
-  return useSubgraphRequest<LatestPriceResponse>(env.subgraph.balancerV2, query);
+  return useSubgraphRequest<LatestPriceResponse>(
+    env.subgraph.balancerV2,
+    query
+  );
 };
 
 export interface Point {
@@ -150,7 +162,10 @@ export const useGetFutureDataPoints = (pool: Pool) => {
       const totalPoints = Math.floor((endDate - lastPoint.x) / oneHourMillis);
 
       // Weights from the subgraph are formatted differently, need to be reparsed with correct decimals
-      const accruedEndWeight = DecimalBigNumber.fromBN(endWeights[accrued.address as any].value, 18);
+      const accruedEndWeight = DecimalBigNumber.fromBN(
+        endWeights[accrued.address as any].value,
+        18
+      );
       const accruedCurrentWeight = currentWeights[accrued.address as any];
       const accruedRange = accruedEndWeight.sub(accruedCurrentWeight);
       const interval = accruedRange.div(

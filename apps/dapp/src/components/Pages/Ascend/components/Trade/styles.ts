@@ -4,7 +4,7 @@ import { backgroundImage, buttonResets, flexCenter } from 'styles/mixins';
 import arrowIcon from 'assets/icons/arrow-icon-no-background.svg';
 import arrowUpIcon from 'assets/icons/arrow-icon-up.svg';
 import filterIcon from 'assets/icons/filter-icon.svg';
-import { theme } from 'styles/theme'; 
+import { theme } from 'styles/theme';
 
 export const Wrapper = styled.div<{ verticalAlignment?: 'top' | 'center' }>`
   padding: 28px;
@@ -13,7 +13,7 @@ export const Wrapper = styled.div<{ verticalAlignment?: 'top' | 'center' }>`
   justify-content: ${({ verticalAlignment = 'center' }) => verticalAlignment};
   flex-direction: column;
   border-radius: 1rem;
-  background: #1D1A1A;
+  background: #1d1a1a;
 `;
 
 export const TradeHeader = styled.h3`
@@ -79,7 +79,7 @@ export const FilterButton = styled.button`
   height: 1rem;
 `;
 
-export const ArrowButtonUpDown = styled.button<{clicked?: boolean}>`
+export const ArrowButtonUpDown = styled.button<{ clicked?: boolean }>`
   ${buttonResets}
 
   ${backgroundImage(arrowUpIcon)}

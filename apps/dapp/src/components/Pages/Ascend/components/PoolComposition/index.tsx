@@ -24,23 +24,37 @@ export const PoolComposition = () => {
             <td>{accrued.symbol}</td>
             <td>
               {truncateDecimals(
-                formatNumberFixedDecimals((weights[accrued.address as any] || DBN_ZERO).formatUnits()) * 100,
+                formatNumberFixedDecimals(
+                  (weights[accrued.address as any] || DBN_ZERO).formatUnits()
+                ) * 100,
                 2
               )}
               %
             </td>
-            <td>{formatNumberFixedDecimals((balances[accrued.address as any] || DBN_ZERO).formatUnits(), 4)}</td>
+            <td>
+              {formatNumberFixedDecimals(
+                (balances[accrued.address as any] || DBN_ZERO).formatUnits(),
+                4
+              )}
+            </td>
           </tr>
           <tr>
             <td>{base.symbol}</td>
             <td>
               {truncateDecimals(
-                formatNumberFixedDecimals((weights[base.address as any] || DBN_ZERO).formatUnits()) * 100,
+                formatNumberFixedDecimals(
+                  (weights[base.address as any] || DBN_ZERO).formatUnits()
+                ) * 100,
                 2
               )}
               %
             </td>
-            <td>{formatNumberFixedDecimals((balances[base.address as any] || DBN_ZERO).formatUnits(), 4)}</td>
+            <td>
+              {formatNumberFixedDecimals(
+                (balances[base.address as any] || DBN_ZERO).formatUnits(),
+                4
+              )}
+            </td>
           </tr>
         </tbody>
       </Wrapper>

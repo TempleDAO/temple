@@ -1,8 +1,20 @@
-import { FC, useRef, useState, useCallback, useLayoutEffect, SyntheticEvent } from 'react';
+import {
+  FC,
+  useRef,
+  useState,
+  useCallback,
+  useLayoutEffect,
+  SyntheticEvent,
+} from 'react';
 import { Link, useResolvedPath, useMatch } from 'react-router-dom';
 import styled from 'styled-components';
 
-import { flexCenter, buttonResets, backgroundImage, pixelsToRems } from 'styles/mixins';
+import {
+  flexCenter,
+  buttonResets,
+  backgroundImage,
+  pixelsToRems,
+} from 'styles/mixins';
 import { UnstyledList } from 'styles/common';
 import { theme } from 'styles/theme';
 import { phoneAndAbove, verySmallDesktop } from 'styles/breakpoints';
@@ -35,7 +47,10 @@ const Header = () => {
             <Lottie animationData={animationData} height={36} width={36} />
           </Logo>
         </MobileNavLeft>
-        <Navigation isNavOpenMobile={isNavOpen} onClickMenuItem={onClickMenuItem} />
+        <Navigation
+          isNavOpenMobile={isNavOpen}
+          onClickMenuItem={onClickMenuItem}
+        />
         <AccountWrapper>
           <Account />
         </AccountWrapper>
@@ -66,11 +81,19 @@ const Navigation = ({ isNavOpenMobile, onClickMenuItem }: NavigationProps) => {
     <NavWrapper $isOpen={isNavOpenMobile}>
       <MenuWrapper>
         <Menu id="menu">
-          <MenuItem to="/dapp/vaults" onMenuItemActive={onMenuItemActive} onClick={onClickMenuItem}>
+          <MenuItem
+            to="/dapp/vaults"
+            onMenuItemActive={onMenuItemActive}
+            onClick={onClickMenuItem}
+          >
             Vaults
           </MenuItem>
           {env.featureFlags.enableAscend && (
-            <MenuItem to="/dapp/ascend" onMenuItemActive={onMenuItemActive} onClick={onClickMenuItem}>
+            <MenuItem
+              to="/dapp/ascend"
+              onMenuItemActive={onMenuItemActive}
+              onClick={onClickMenuItem}
+            >
               Ascend
             </MenuItem>
           )}
@@ -88,7 +111,13 @@ interface MenuItemProps {
   onClick?: (event: SyntheticEvent) => void;
 }
 
-const MenuItem: FC<MenuItemProps> = ({ to, children, onMenuItemActive, strictMatch = false, onClick }) => {
+const MenuItem: FC<MenuItemProps> = ({
+  to,
+  children,
+  onMenuItemActive,
+  strictMatch = false,
+  onClick,
+}) => {
   const resolved = useResolvedPath(to);
   const match = useMatch({ path: resolved.pathname, end: strictMatch });
   const menuItemRef = useRef<HTMLAnchorElement>(null);
@@ -282,12 +311,14 @@ const NavLink = styled(Link)<{ $active?: boolean }>`
   font-weight: normal;
   transition: all 150ms ease-in;
 
-  color: ${({ theme, $active }) => ($active ? theme.palette.brandLight : theme.palette.brand)};
+  color: ${({ theme, $active }) =>
+    $active ? theme.palette.brandLight : theme.palette.brand};
   text-shadow: ${({ $active }) => ($active ? COLOR_NAV_SHADOW_MOBILE : 'none')};
 
   &:hover {
     color: ${theme.palette.brandLight};
-    text-shadow: ${({ $active }) => ($active ? COLOR_NAV_SHADOW_MOBILE : 'none')};
+    text-shadow: ${({ $active }) =>
+      $active ? COLOR_NAV_SHADOW_MOBILE : 'none'};
   }
 
   ${({ $active }) =>

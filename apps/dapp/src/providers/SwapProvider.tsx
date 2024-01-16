@@ -1,4 +1,10 @@
-import { useState, useContext, createContext, PropsWithChildren, useEffect } from 'react';
+import {
+  useState,
+  useContext,
+  createContext,
+  PropsWithChildren,
+  useEffect,
+} from 'react';
 import { BigNumber, ethers } from 'ethers';
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
 import { useWallet } from 'providers/WalletProvider';
@@ -34,7 +40,11 @@ const INITIAL_STATE: SwapService = {
 };
 
 // Build batchSwap transaction details
-const buildBatchTransaction = (quote: SwapInfo, wallet: string, slippage: number) => {
+const buildBatchTransaction = (
+  quote: SwapInfo,
+  wallet: string,
+  slippage: number
+) => {
   // Compute slippage tolerance
   const limits: string[] = [];
   const slippageBps = BigNumber.from(10_000 + 100 * slippage);
@@ -42,9 +52,14 @@ const buildBatchTransaction = (quote: SwapInfo, wallet: string, slippage: number
     // tokenIn = Max to send, should be positive
     // tokenOut = Min to receive, should be negative
     // Intermediate tokens should be 0 for multihops
-    if (token.toLowerCase() === quote.tokenIn.toLowerCase()) limits[i] = quote.swapAmount.toString();
+    if (token.toLowerCase() === quote.tokenIn.toLowerCase())
+      limits[i] = quote.swapAmount.toString();
     else if (token.toLowerCase() === quote.tokenOut.toLowerCase())
-      limits[i] = quote.returnAmount.mul(10_000).div(slippageBps).mul(-1).toString();
+      limits[i] = quote.returnAmount
+        .mul(10_000)
+        .div(slippageBps)
+        .mul(-1)
+        .toString();
     else limits[i] = '0';
   });
 
@@ -63,7 +78,11 @@ const buildBatchTransaction = (quote: SwapInfo, wallet: string, slippage: number
   };
 };
 
-const buildSingleTransaction = (quote: SwapInfo, wallet: string, slippage: number) => {
+const buildSingleTransaction = (
+  quote: SwapInfo,
+  wallet: string,
+  slippage: number
+) => {
   const slippageBps = BigNumber.from(10_000 + 100 * slippage);
   return {
     single: {
@@ -90,6 +109,7 @@ const buildSingleTransaction = (quote: SwapInfo, wallet: string, slippage: numbe
 
 const SwapContext = createContext(INITIAL_STATE);
 
+// eslint-disable-next-line @typescript-eslint/ban-types
 export const SwapProvider = (props: PropsWithChildren<{}>) => {
   const [error, setError] = useState<Error | null>(null);
   const { wallet, signer, ensureAllowance } = useWallet();
@@ -107,7 +127,12 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
   }, []);
 
   // Buy TEMPLE with tokenIn
-  const buy = async (quote: SwapInfo, tokenIn: TICKER_SYMBOL, deadline: number, slippage: number) => {
+  const buy = async (
+    quote: SwapInfo,
+    tokenIn: TICKER_SYMBOL,
+    deadline: number,
+    slippage: number
+  ) => {
     // Check for signer
     if (!wallet || !signer) {
       console.error("Couldn't find wallet or signer");
@@ -123,19 +148,36 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     let receipt: TransactionReceipt | undefined;
     const swapType: SwapType = SwapType.SwapExactIn;
     const tokenInfo = getTokenInfo(tokenIn);
-    const vaultContract = new ethers.Contract(env.contracts.balancerVault, VaultABI, signer);
+    const vaultContract = new ethers.Contract(
+      env.contracts.balancerVault,
+      VaultABI,
+      signer
+    );
     const deadlineBn = Math.floor(Date.now() / 1000) + deadline * 60;
 
     // Execute swap
     try {
       if (tokenInfo.address !== ADDRESS_ZERO) {
-        const tokenContract = new ERC20__factory(signer).attach(tokenInfo.address);
-        await ensureAllowance(tokenInfo.address, tokenContract, env.contracts.balancerVault, quote.swapAmount);
+        const tokenContract = new ERC20__factory(signer).attach(
+          tokenInfo.address
+        );
+        await ensureAllowance(
+          tokenInfo.address,
+          tokenContract,
+          env.contracts.balancerVault,
+          quote.swapAmount
+        );
       }
       // Execute single swap
       if (quote.swaps.length === 1) {
         const tx = buildSingleTransaction(quote, wallet, slippage);
-        const swap = await vaultContract.swap(tx.single, tx.funds, tx.limit, deadlineBn, tx.overrides);
+        const swap = await vaultContract.swap(
+          tx.single,
+          tx.funds,
+          tx.limit,
+          deadlineBn,
+          tx.overrides
+        );
         receipt = await swap.wait();
       } else {
         // Execute batch swap
@@ -166,19 +208,27 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
       amount: formatBigNumber(quote.swapAmount),
     });
     openNotification({
-      title: `Sacrificed ${formatToken(quote.swapAmount, tokenIn, 0)} ${tokenInfo.name}`,
+      title: `Sacrificed ${formatToken(quote.swapAmount, tokenIn, 0)} ${
+        tokenInfo.name
+      }`,
       hash: receipt.transactionHash,
     });
     return receipt;
   };
 
   // Sell TEMPLE for tokenOut
-  const sell = async (quote: SwapInfo, tokenOut: TICKER_SYMBOL, deadline: number, slippage: number) => {
+  const sell = async (
+    quote: SwapInfo,
+    tokenOut: TICKER_SYMBOL,
+    deadline: number,
+    slippage: number
+  ) => {
     if (!wallet || !signer) {
       console.error("Couldn't find wallet or signer");
       setError({
         name: 'Missing wallet or signer',
-        message: "Couldn't complete sell transaction - unable to get wallet or signer",
+        message:
+          "Couldn't complete sell transaction - unable to get wallet or signer",
       });
       return;
     }
@@ -187,16 +237,33 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     // Initialize vars
     let receipt: TransactionReceipt | undefined;
     const swapType: SwapType = SwapType.SwapExactIn;
-    const templeContract = new TempleERC20Token__factory(signer).attach(env.contracts.temple);
-    const vaultContract = new ethers.Contract(env.contracts.balancerVault, VaultABI, signer);
+    const templeContract = new TempleERC20Token__factory(signer).attach(
+      env.contracts.temple
+    );
+    const vaultContract = new ethers.Contract(
+      env.contracts.balancerVault,
+      VaultABI,
+      signer
+    );
     const deadlineBn = Math.floor(Date.now() / 1000) + deadline * 60;
 
     try {
-      await ensureAllowance(env.contracts.temple, templeContract, env.contracts.balancerVault, quote.swapAmount);
+      await ensureAllowance(
+        env.contracts.temple,
+        templeContract,
+        env.contracts.balancerVault,
+        quote.swapAmount
+      );
       // Execute single swap
       if (quote.swaps.length === 1) {
         const tx = buildSingleTransaction(quote, wallet, slippage);
-        const swap = await vaultContract.swap(tx.single, tx.funds, tx.limit, deadlineBn, tx.overrides);
+        const swap = await vaultContract.swap(
+          tx.single,
+          tx.funds,
+          tx.limit,
+          deadlineBn,
+          tx.overrides
+        );
         receipt = await swap.wait();
       } else {
         // Execute batch swap
@@ -226,7 +293,9 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
       amount: formatBigNumber(quote.swapAmount),
     });
     openNotification({
-      title: `${formatBigNumber(quote.swapAmount)} ${TICKER_SYMBOL.TEMPLE_TOKEN} renounced`,
+      title: `${formatBigNumber(quote.swapAmount)} ${
+        TICKER_SYMBOL.TEMPLE_TOKEN
+      } renounced`,
       hash: receipt.transactionHash,
     });
     return receipt;
@@ -253,7 +322,10 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
   };
 
   // Get quote for selling TEMPLE_TOKEN for tokenOut
-  const getSellQuote = async (amountToSell: BigNumber, token: TICKER_SYMBOL) => {
+  const getSellQuote = async (
+    amountToSell: BigNumber,
+    token: TICKER_SYMBOL
+  ) => {
     const tokenInInfo = getTokenInfo(TICKER_SYMBOL.TEMPLE_TOKEN);
     const tokenOutInfo = getTokenInfo(token);
     const gasPrice = signer ? await signer?.getGasPrice() : BigNumber.from(0);

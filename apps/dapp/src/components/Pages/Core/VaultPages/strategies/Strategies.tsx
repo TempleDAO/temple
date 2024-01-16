@@ -65,7 +65,10 @@ export const strategies: Record<string, JSX.Element> = {
         <Section>Bonus</Section>
         <ul>
           <li>There is a bonus applied sometimes, but not always</li>
-          <li>The bonus is sometimes applied, but every now and then, it's not</li>
+          <li>
+            The bonus is sometimes applied, but every now and then, it&apos;s
+            not
+          </li>
         </ul>
       </P>
     </StrategyContainer>

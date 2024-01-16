@@ -25,7 +25,10 @@ interface IProps {
   faithBalance?: BigNumber;
 }
 
-export const ProfileLegacyTemple: React.FC<IProps> = ({ lockedOgTempleBalance = ZERO, faithBalance = ZERO }) => {
+export const ProfileLegacyTemple: React.FC<IProps> = ({
+  lockedOgTempleBalance = ZERO,
+  faithBalance = ZERO,
+}) => {
   const [isClaimPopoverOpen, setClaimPopoverOpen] = useState(false);
 
   return (
@@ -41,8 +44,9 @@ export const ProfileLegacyTemple: React.FC<IProps> = ({ lockedOgTempleBalance = 
             <Tooltip
               content={
                 <>
-                  All your $OGTEMPLE in the locking contract are represented here. If your $OGTEMPLE have unlocked, they
-                  will be able to be claimed.
+                  All your $OGTEMPLE in the locking contract are represented
+                  here. If your $OGTEMPLE have unlocked, they will be able to be
+                  claimed.
                 </>
               }
               position={'top'}

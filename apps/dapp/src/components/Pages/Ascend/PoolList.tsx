@@ -50,7 +50,11 @@ const PoolListPage = () => {
                 </Cell>
                 <Cell>{pool.swapEnabled ? 'YES' : 'NO'}</Cell>
                 <Cell>{pool.weightUpdates.length === 1 ? 'NO' : 'YES'}</Cell>
-                <Cell>{Number(pool.totalLiquidity) === 0 ? 'None' : `$${formatNumberFixedDecimals(pool.totalLiquidity, 4)}`}</Cell>
+                <Cell>
+                  {Number(pool.totalLiquidity) === 0
+                    ? 'None'
+                    : `$${formatNumberFixedDecimals(pool.totalLiquidity, 4)}`}
+                </Cell>
                 <Cell>
                   <Link to={`${pool.address}`}>Edit</Link>
                 </Cell>
