@@ -11,7 +11,6 @@ import Loader from 'components/Loader/Loader';
 import Disclaimer from 'components/Pages/Disclaimer';
 import Home from 'components/Pages/Core/NewUI/Home';
 
-import env from 'constants/env';
 import { AnalyticsService } from 'services/AnalyticsService';
 import { DashboardPage } from 'components/Pages/Core/DappPages/Dashboard';
 import { TradePage } from './components/Pages/Core/DappPages/TradePage';
