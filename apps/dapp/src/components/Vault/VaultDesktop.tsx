@@ -13,42 +13,45 @@ import { NAV_DESKTOP_HEIGHT_PIXELS } from 'components/Layouts/CoreLayout/Header'
 import { useVaultContext } from 'components/Pages/Core/VaultContext';
 import { VaultProps, VaultRef } from './types';
 
-export const VaultDesktop = forwardRef<VaultRef, VaultProps>(({ selectedNav, children }, ref) => {
-  const { vaultGroup } = useVaultContext();
-  const svgRef = useRef<SVGSVGElement>(null);
-  const popupRef = useRef(null);
+// eslint-disable-next-line react/display-name
+export const VaultDesktop = forwardRef<VaultRef, VaultProps>(
+  ({ selectedNav, children }, ref) => {
+    const { vaultGroup } = useVaultContext();
+    const svgRef = useRef<SVGSVGElement>(null);
+    const popupRef = useRef(null);
 
-  useImperativeHandle(ref, () => ({
-    get svgRef() {
-      return svgRef.current;
-    },
-    get popupRef() {
-      return popupRef.current;
-    },
-  }));
+    useImperativeHandle(ref, () => ({
+      get svgRef() {
+        return svgRef.current;
+      },
+      get popupRef() {
+        return popupRef.current;
+      },
+    }));
 
-  const navigate = useNavigate();
-  return (
-    <BoundingBox>
-      <svg height="100%" viewBox="0 0 1000 1000" fill="none" ref={svgRef}>
-        <Background />
-        <OuterRing selected={selectedNav} />
-        <RingButtons
-          selected={selectedNav}
-          onClickButton={(page) => {
-            navigate(`/dapp/vaults/${vaultGroup!.id}/${page}`);
-          }}
-        />
-        <Timeline />
-        <InnerRing selected={selectedNav} />
-        <ForeignObject x="241.5" y="239.5" width="520" height="520">
-          <Content>{children}</Content>
-        </ForeignObject>
-        <Definitions />
-      </svg>
-    </BoundingBox>
-  );
-});
+    const navigate = useNavigate();
+    return (
+      <BoundingBox>
+        <svg height="100%" viewBox="0 0 1000 1000" fill="none" ref={svgRef}>
+          <Background />
+          <OuterRing selected={selectedNav} />
+          <RingButtons
+            selected={selectedNav}
+            onClickButton={(page) => {
+              navigate(`/dapp/vaults/${vaultGroup!.id}/${page}`);
+            }}
+          />
+          <Timeline />
+          <InnerRing selected={selectedNav} />
+          <ForeignObject x="241.5" y="239.5" width="520" height="520">
+            <Content>{children}</Content>
+          </ForeignObject>
+          <Definitions />
+        </svg>
+      </BoundingBox>
+    );
+  }
+);
 
 // Need to 'trim' the corners on this square
 // otherwise the corners cover some of the ring buttons.

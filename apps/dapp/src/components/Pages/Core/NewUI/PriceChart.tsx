@@ -5,7 +5,9 @@ import styled, { useTheme } from 'styled-components';
 import { format } from 'date-fns';
 import { LineChart, IntervalToggler } from 'components/Charts';
 import Loader from 'components/Loader/Loader';
-import useRefreshableRamosMetrics, { RamosMetrics } from 'hooks/use-refreshable-ramos-metrics';
+import useRefreshableRamosMetrics, {
+  RamosMetrics,
+} from 'hooks/use-refreshable-ramos-metrics';
 import { formatNumberFixedDecimals } from 'utils/formatter';
 import { formatTimestampedChartData } from 'utils/charts';
 
@@ -18,7 +20,10 @@ const tickFormatters: Record<ChartSupportedTimeInterval, XAxisTickFormatter> = {
   '1Y': (timestamp) => format(timestamp, 'MMM do y'),
 };
 
-const tooltipLabelFormatters: Record<ChartSupportedTimeInterval, XAxisTickFormatter> = {
+const tooltipLabelFormatters: Record<
+  ChartSupportedTimeInterval,
+  XAxisTickFormatter
+> = {
   ...tickFormatters,
   '1D': (timestamp) => format(timestamp, 'MMM do, h aaa'),
 };
@@ -28,12 +33,19 @@ const tooltipValueNames = {
   templePriceUSD: 'Temple price (USD)',
 };
 
-const tooltipValuesFormatter = (value: number, name: string) => [formatNumberFixedDecimals(value, 4).toString(), name];
+const tooltipValuesFormatter = (value: number, name: string) => [
+  formatNumberFixedDecimals(value, 4).toString(),
+  name,
+];
 
-const yDomain: AxisDomain = ([dataMin, dataMax]) => [dataMin - dataMin * 0.01, dataMax + dataMax * 0.01];
+const yDomain: AxisDomain = ([dataMin, dataMax]) => [
+  dataMin - dataMin * 0.01,
+  dataMax + dataMax * 0.01,
+];
 
 export const TemplePriceChart = () => {
-  const [selectedInterval, setSelectedInterval] = useState<ChartSupportedTimeInterval>('1M');
+  const [selectedInterval, setSelectedInterval] =
+    useState<ChartSupportedTimeInterval>('1M');
   const { dailyMetrics, hourlyMetrics } = useRefreshableRamosMetrics();
   const theme = useTheme();
 
@@ -41,31 +53,44 @@ export const TemplePriceChart = () => {
     return <Loader iconSize={48} />;
   }
 
-  const formattedData = formatTimestampedChartData(dailyMetrics, hourlyMetrics, formatData);
+  const formattedData = formatTimestampedChartData(
+    dailyMetrics,
+    hourlyMetrics,
+    formatData
+  );
 
   return (
     <>
       <ChartHeader>
-        <IntervalToggler selectedInterval={selectedInterval} setSelectedInterval={setSelectedInterval} />
-      </ChartHeader>
-        <LineChart
-          chartData={formattedData[selectedInterval].reverse()}
-          xDataKey="timestamp"
-          lines={[
-            { series: 'templePriceUSD', color: theme.palette.brand },
-            { series: 'tpiUSD', color: theme.palette.light },
-          ]}
-          xTickFormatter={tickFormatters[selectedInterval]}
-          tooltipLabelFormatter={tooltipLabelFormatters[selectedInterval]}
-          yDomain={yDomain}
-          legendFormatter={(name) => (name === 'tpiUSD' ? tooltipValueNames.tpiUSD : tooltipValueNames.templePriceUSD)}
-          tooltipValuesFormatter={(value, name) =>
-            tooltipValuesFormatter(
-              value,
-              name === 'tpiUSD' ? tooltipValueNames.tpiUSD : tooltipValueNames.templePriceUSD
-            )
-          }
+        <IntervalToggler
+          selectedInterval={selectedInterval}
+          setSelectedInterval={setSelectedInterval}
         />
+      </ChartHeader>
+      <LineChart
+        chartData={formattedData[selectedInterval].reverse()}
+        xDataKey="timestamp"
+        lines={[
+          { series: 'templePriceUSD', color: theme.palette.brand },
+          { series: 'tpiUSD', color: theme.palette.light },
+        ]}
+        xTickFormatter={tickFormatters[selectedInterval]}
+        tooltipLabelFormatter={tooltipLabelFormatters[selectedInterval]}
+        yDomain={yDomain}
+        legendFormatter={(name) =>
+          name === 'tpiUSD'
+            ? tooltipValueNames.tpiUSD
+            : tooltipValueNames.templePriceUSD
+        }
+        tooltipValuesFormatter={(value, name) =>
+          tooltipValuesFormatter(
+            value,
+            name === 'tpiUSD'
+              ? tooltipValueNames.tpiUSD
+              : tooltipValueNames.templePriceUSD
+          )
+        }
+      />
     </>
   );
 };

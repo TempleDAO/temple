@@ -44,10 +44,10 @@ export const usePoolContract = (pool?: Pool) => {
   const updateWeightsGraduallyHandler = async (
     startTime: Date,
     endTime: Date,
-    _endWeights: DecimalBigNumber[],
+    _endWeights: DecimalBigNumber[]
   ) => {
     const endWeights = _endWeights.map(({ value }) => value);
-   
+
     let result;
     try {
       result = await constractInstance!.updateWeightsGradually(
@@ -76,7 +76,7 @@ export const usePoolContract = (pool?: Pool) => {
   const queryJoin = async (
     poolId: string,
     assets: string[],
-    _maxAmountsIn: DecimalBigNumber[],
+    _maxAmountsIn: DecimalBigNumber[]
   ) => {
     const maxAmountsIn = _maxAmountsIn.map(({ value }) => value);
     return constractInstance!.queryJoin(
@@ -88,7 +88,8 @@ export const usePoolContract = (pool?: Pool) => {
         maxAmountsIn,
         userData: '0x', // TODO
         fromInternalBalance: false,
-      }, {
+      },
+      {
         gasLimit: 400000,
       }
     );
@@ -98,7 +99,7 @@ export const usePoolContract = (pool?: Pool) => {
   const queryExit = async (
     poolId: string,
     assets: string[],
-    _minAmountsOut: DecimalBigNumber[],
+    _minAmountsOut: DecimalBigNumber[]
   ) => {
     const minAmountsOut = _minAmountsOut.map(({ value }) => value);
     return constractInstance!.queryExit(
@@ -110,14 +111,21 @@ export const usePoolContract = (pool?: Pool) => {
         minAmountsOut,
         userData: '0x', // TODO
         toInternalBalance: false,
-      }, {
+      },
+      {
         gasLimit: 400000,
       }
     );
   };
 
-  const [swapHandler, swapRequestState] = useRequestState(setSwapEnabledHandler, { shouldReThrow: true });
-  const [updateWeightHandler, updateWeightsRequestState] = useRequestState(updateWeightsGraduallyHandler, { shouldReThrow: true });
+  const [swapHandler, swapRequestState] = useRequestState(
+    setSwapEnabledHandler,
+    { shouldReThrow: true }
+  );
+  const [updateWeightHandler, updateWeightsRequestState] = useRequestState(
+    updateWeightsGraduallyHandler,
+    { shouldReThrow: true }
+  );
 
   return {
     setSwapEnabled: {

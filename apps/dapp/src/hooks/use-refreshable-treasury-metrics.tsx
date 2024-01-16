@@ -6,7 +6,8 @@ import env from 'constants/env';
 import { FALLBACK_VAULT_APY } from 'components/Pages/Core/Trade/constants';
 
 export default function useRefreshableTreasuryMetrics() {
-  const [treasuryMetrics, setTreasuryMetrics] = useState<TreasuryMetrics | null>(null);
+  const [treasuryMetrics, setTreasuryMetrics] =
+    useState<TreasuryMetrics | null>(null);
 
   async function getDynamicApy(): Promise<number> {
     try {
@@ -17,10 +18,14 @@ export default function useRefreshableTreasuryMetrics() {
       }
       `;
 
-      const farmEarningsResult = await fetchSubgraph<any>(TOTAL_FARM_EARNINGS_QUERY);
+      const farmEarningsResult = await fetchSubgraph<any>(
+        TOTAL_FARM_EARNINGS_QUERY
+      );
 
-      const day1Earnings = farmEarningsResult?.data?.dayProtocolMetrics[13].totalFarmEarnings;
-      const day14Earnings = farmEarningsResult?.data?.dayProtocolMetrics[0].totalFarmEarnings;
+      const day1Earnings =
+        farmEarningsResult?.data?.dayProtocolMetrics[13].totalFarmEarnings;
+      const day14Earnings =
+        farmEarningsResult?.data?.dayProtocolMetrics[0].totalFarmEarnings;
       const dailyEarnings = (day14Earnings - day1Earnings) / 14;
 
       const VAULT_TVL_QUERY = `{
@@ -29,7 +34,10 @@ export default function useRefreshableTreasuryMetrics() {
         }
       }`;
 
-      const totalLockedQueryResult = await fetchGenericSubgraph<any>(env.subgraph.templeCore, VAULT_TVL_QUERY);
+      const totalLockedQueryResult = await fetchGenericSubgraph<any>(
+        env.subgraph.templeCore,
+        VAULT_TVL_QUERY
+      );
 
       const tvl = totalLockedQueryResult?.data?.vaultGroup?.tvlUSD;
       const apr = (dailyEarnings / tvl) * 365 * 100;

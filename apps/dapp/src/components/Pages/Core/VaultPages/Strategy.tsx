@@ -14,7 +14,9 @@ export const Strategy = () => {
 
   useEffect(() => {
     if (strategyContent === DefaultText) {
-      console.error(`Programming Error: Falling back to default strategy text for vault ${id}`);
+      console.error(
+        `Programming Error: Falling back to default strategy text for vault ${id}`
+      );
     }
   }, [strategyContent, id]);
 

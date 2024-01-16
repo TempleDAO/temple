@@ -24,7 +24,10 @@ export type SwapReducerAction =
   | { type: 'changeInputValue'; value: string }
   | { type: 'changeQuoteValue'; value: SwapInfo | null }
   | { type: 'changeTxSettings'; value: TransactionSettings }
-  | { type: 'changeTokenBalances'; value: { input: BigNumber; output: BigNumber } }
+  | {
+      type: 'changeTokenBalances';
+      value: { input: BigNumber; output: BigNumber };
+    }
   | { type: 'startTx' }
   | { type: 'endTx' }
   | { type: 'txSuccess' }

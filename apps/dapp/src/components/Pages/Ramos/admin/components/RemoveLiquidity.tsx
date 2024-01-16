@@ -22,11 +22,18 @@ export const RemoveLiquidity: React.FC<IProps> = ({ calculateFunc }) => {
           content={
             <>
               <p>
-                Remove liquidity from balancer pool receiving both {TICKER_SYMBOL.TEMPLE_TOKEN} and stable tokens from
-                balancer pool.{' '}
+                Remove liquidity from balancer pool receiving both{' '}
+                {TICKER_SYMBOL.TEMPLE_TOKEN} and stable tokens from balancer
+                pool.{' '}
               </p>
-              <p>Treasury Price Floor is expected to be within bounds of multisig set range.</p>
-              <p>Withdraw and unwrap BPT tokens from Aura staking and send to balancer pool to receive both tokens.</p>
+              <p>
+                Treasury Price Floor is expected to be within bounds of multisig
+                set range.
+              </p>
+              <p>
+                Withdraw and unwrap BPT tokens from Aura staking and send to
+                balancer pool to receive both tokens.
+              </p>
             </>
           }
         >
@@ -46,14 +53,17 @@ export const RemoveLiquidity: React.FC<IProps> = ({ calculateFunc }) => {
         isSmall
         label="CREATE REQUEST PARAMS"
         onClick={async () => {
-          if(!calculateFunc) return;
+          if (!calculateFunc) return;
           const request = await calculateFunc(exitAmountBpt);
           setExitPoolRequest(request);
         }}
       />
       {exitPoolRequest && (
         <>
-          <p>To apply, create a RamosStrategy.removeLiquidity() transaction with parameters</p>
+          <p>
+            To apply, create a RamosStrategy.removeLiquidity() transaction with
+            parameters
+          </p>
           <RequestArea>request: {exitPoolRequest}</RequestArea>
           <RequestArea>bptAmount: {`${exitAmountBpt}`}</RequestArea>
         </>

@@ -1,15 +1,15 @@
-import lottie from "lottie-web"
-import { useEffect, useRef } from "react"
+import lottie from 'lottie-web';
+import { useEffect, useRef } from 'react';
 
 interface LottieProps {
-  animationData: any
-  width: number
-  height: number
+  animationData: any;
+  width: number;
+  height: number;
 }
 
 export const Lottie = ({ animationData, width, height }: LottieProps) => {
-  const element = useRef<HTMLDivElement>(null)
-  const lottieInstance = useRef<any>()
+  const element = useRef<HTMLDivElement>(null);
+  const lottieInstance = useRef<any>();
 
   useEffect(() => {
     if (element.current) {

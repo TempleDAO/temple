@@ -27,12 +27,13 @@ const Wrapper = styled.div<{ size: number }>`
     display: block;
     position: absolute;
     width: ${({ size }) => size * 0.8}px;
-    height: ${({ size }) => size * 0.8}px;;
-    margin: ${({ size }) => size / 10}px;;
-    border: ${({ size }) => size /10}px solid #fff;
+    height: ${({ size }) => size * 0.8}px;
+    margin: ${({ size }) => size / 10}px;
+    border: ${({ size }) => size / 10}px solid #fff;
     border-radius: 50%;
     animation: loading-animation 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
-    border-color: ${({ theme }) => theme.palette.brand75} transparent transparent transparent;
+    border-color: ${({ theme }) => theme.palette.brand75} transparent
+      transparent transparent;
 
     &:nth-child(1) {
       animation-delay: -0.45s;

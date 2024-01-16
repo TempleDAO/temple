@@ -4,13 +4,19 @@ import styled from 'styled-components';
 import { VaultInput } from 'components/Input/VaultInput';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { Header } from 'styles/vault';
-import VaultContent, { VaultButton } from 'components/Pages/Core/VaultPages/VaultContent';
+import VaultContent, {
+  VaultButton,
+} from 'components/Pages/Core/VaultPages/VaultContent';
 import { useWithdrawFromVault } from 'hooks/core/use-withdraw-from-vault';
 import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
 import { useVaultContext } from 'components/Pages/Core/VaultContext';
 import { useVaultBalance } from 'hooks/core/use-vault-balance';
 import { ZERO } from 'utils/bigNumber';
-import { getBigNumberFromString, formatBigNumber, formatTemple } from 'components/Vault/utils';
+import {
+  getBigNumberFromString,
+  formatBigNumber,
+  formatTemple,
+} from 'components/Vault/utils';
 import { formatNumber } from 'utils/formatter';
 import { useIsVaultExitable } from 'hooks/core/use-is-vault-exitable';
 import { AnalyticsService } from 'services/AnalyticsService';
@@ -48,21 +54,35 @@ export const Claim = () => {
   });
 
   const [amount, setAmount] = useState<string>('');
-  const [{ balance, isLoading: getBalanceLoading }, getBalance] = useVaultBalance(vault.id);
-  const [{ isLoading: refreshLoading }, refreshWalletState] = useRefreshWalletState();
-  const { withdrawEarly: earlyWithdrawRequest } = useWithdrawFromVault(vault!.id, async () => {
-    await refreshWalletState();
-    await getBalance();
-    AnalyticsService.captureEvent(AnalyticsEvent.Vault.Claim, { name: vault.id, amount });
-    setAmount('');
-  });
+  const [{ balance, isLoading: getBalanceLoading }, getBalance] =
+    useVaultBalance(vault.id);
+  const [{ isLoading: refreshLoading }, refreshWalletState] =
+    useRefreshWalletState();
+  const { withdrawEarly: earlyWithdrawRequest } = useWithdrawFromVault(
+    vault!.id,
+    async () => {
+      await refreshWalletState();
+      await getBalance();
+      AnalyticsService.captureEvent(AnalyticsEvent.Vault.Claim, {
+        name: vault.id,
+        amount,
+      });
+      setAmount('');
+    }
+  );
 
-  const [earlyWithdraw, { isLoading: earlyWithdrawIsLoading, error: earlyWithdrawError }] = earlyWithdrawRequest;
+  const [
+    earlyWithdraw,
+    { isLoading: earlyWithdrawIsLoading, error: earlyWithdrawError },
+  ] = earlyWithdrawRequest;
 
   const [checkExitStatus, { response: canExit }] = useIsVaultExitable(vault.id);
 
   const [
-    { allowance: earlyWithdrawAllowance, isLoading: earlyWithdrawAllowanceIsLoading },
+    {
+      allowance: earlyWithdrawAllowance,
+      isLoading: earlyWithdrawAllowanceIsLoading,
+    },
     increaseEarlyWithdrawAllowance,
   ] = useTokenContractAllowance(
     { address: earlyClaimState.earlyClaimSubvaultAddress, name: 'vault ERC20' },
@@ -93,8 +113,13 @@ export const Claim = () => {
   const formattedBalance = formatBigNumber(balance);
 
   const buttonIsDisabled =
-    (earlyClaimState.isClaimingEarly && (earlyWithdrawIsLoading || !earlyClaimState.earlyClaimAmount)) ||
-    (!earlyClaimState.isClaimingEarly && (getBalanceLoading || refreshLoading || !amount || bigInputValue.gt(balance)));
+    (earlyClaimState.isClaimingEarly &&
+      (earlyWithdrawIsLoading || !earlyClaimState.earlyClaimAmount)) ||
+    (!earlyClaimState.isClaimingEarly &&
+      (getBalanceLoading ||
+        refreshLoading ||
+        !amount ||
+        bigInputValue.gt(balance)));
 
   let claimLabel =
     balance.gt(ZERO) && !!canExit ? (
@@ -111,7 +136,9 @@ export const Claim = () => {
     ) : (
       <ClaimableLabel>
         Nothing to claim
-        <TempleAmountLink>&nbsp; {/* Note: this node is here for formatting/spacing */}</TempleAmountLink>
+        <TempleAmountLink>
+          &nbsp; {/* Note: this node is here for formatting/spacing */}
+        </TempleAmountLink>
       </ClaimableLabel>
     );
 
@@ -119,7 +146,9 @@ export const Claim = () => {
     claimLabel = (
       <ClaimableLabel>
         Claiming {formatTemple(earlyClaimState.earlyClaimAmount)} Early
-        <TempleAmountLink>&nbsp; {/* Note: this node is here for formatting/spacing */}</TempleAmountLink>
+        <TempleAmountLink>
+          &nbsp; {/* Note: this node is here for formatting/spacing */}
+        </TempleAmountLink>
       </ClaimableLabel>
     );
   }
@@ -131,7 +160,8 @@ export const Claim = () => {
   }, [earlyWithdrawError]);
 
   const isRegularClaimPossible = balance.lte(ZERO) || !canExit;
-  const isInputDisabled = isRegularClaimPossible && !earlyClaimState.isClaimingEarly;
+  const isInputDisabled =
+    isRegularClaimPossible && !earlyClaimState.isClaimingEarly;
 
   return (
     <VaultContent>
@@ -145,7 +175,11 @@ export const Claim = () => {
         value={amount}
         disabled={isInputDisabled}
       />
-      {!!earlyWithdrawError && <ErrorLabel>{earlyWithdrawError.message || 'Something went wrong'}</ErrorLabel>}
+      {!!earlyWithdrawError && (
+        <ErrorLabel>
+          {earlyWithdrawError.message || 'Something went wrong'}
+        </ErrorLabel>
+      )}
 
       {earlyWithdrawAllowance !== 0 && (
         <VaultButton
@@ -154,7 +188,10 @@ export const Claim = () => {
           disabled={buttonIsDisabled}
           onClick={async () => {
             if (earlyClaimState.isClaimingEarly) {
-              await earlyWithdraw(earlyClaimState.earlyClaimSubvaultAddress, amount);
+              await earlyWithdraw(
+                earlyClaimState.earlyClaimSubvaultAddress,
+                amount
+              );
               clearEarlyExitState();
             }
           }}

@@ -16,9 +16,15 @@ import { formatJoiningFee } from 'components/Vault/utils';
 
 import env from 'constants/env';
 
-const TICKERS_WITH_FAITH_BURN = new Set([TICKER_SYMBOL.TEMPLE_TOKEN, TICKER_SYMBOL.OG_TEMPLE_TOKEN]);
+const TICKERS_WITH_FAITH_BURN = new Set([
+  TICKER_SYMBOL.TEMPLE_TOKEN,
+  TICKER_SYMBOL.OG_TEMPLE_TOKEN,
+]);
 
-export const useDepositToVault = (vaultContractAddress: string, onSuccess?: DepositSuccessCallback) => {
+export const useDepositToVault = (
+  vaultContractAddress: string,
+  onSuccess?: DepositSuccessCallback
+) => {
   const { signer, wallet, ensureAllowance } = useWallet();
   const {
     faith: { usableFaith },
@@ -29,7 +35,11 @@ export const useDepositToVault = (vaultContractAddress: string, onSuccess?: Depo
 
   const { openNotification } = useNotification();
 
-  const handler = async (ticker: TICKER_SYMBOL, amount: string, useFaith = false) => {
+  const handler = async (
+    ticker: TICKER_SYMBOL,
+    amount: string,
+    useFaith = false
+  ) => {
     if (!signer || !wallet) {
       console.error(`
         Attempted to deposit to vault: ${vaultContractAddress} without a valid signer or wallet address.
@@ -39,11 +49,15 @@ export const useDepositToVault = (vaultContractAddress: string, onSuccess?: Depo
 
     // Safeguard: if we're using faith, we can only burn with OGTemple or Temple.
     if (useFaith && !TICKERS_WITH_FAITH_BURN.has(ticker)) {
-      throw new Error(`Programming Error: Attmeped to burn faith with ${ticker}`);
+      throw new Error(
+        `Programming Error: Attmeped to burn faith with ${ticker}`
+      );
     }
 
     const bigAmount = getBigNumberFromString(amount);
-    const vaultProxy = new VaultProxy__factory(signer).attach(env.contracts.vaultProxy);
+    const vaultProxy = new VaultProxy__factory(signer).attach(
+      env.contracts.vaultProxy
+    );
 
     const token = await createTokenFactoryInstance(ticker, signer);
     // Token should already be approved with a max approval at this
@@ -68,18 +82,31 @@ export const useDepositToVault = (vaultContractAddress: string, onSuccess?: Depo
     let tx: ContractTransaction;
     if (useFaith) {
       if (ticker === TICKER_SYMBOL.TEMPLE_TOKEN) {
-        tx = await vaultProxy.depositTempleWithFaith(bigAmount, bigUsableFaith, vaultContractAddress, {
-          gasLimit: 450000,
-        });
+        tx = await vaultProxy.depositTempleWithFaith(
+          bigAmount,
+          bigUsableFaith,
+          vaultContractAddress,
+          {
+            gasLimit: 450000,
+          }
+        );
       } else {
-        tx = await vaultProxy.unstakeAndDepositTempleWithFaith(bigAmount, bigUsableFaith, vaultContractAddress, {
-          gasLimit: 450000,
-        });
+        tx = await vaultProxy.unstakeAndDepositTempleWithFaith(
+          bigAmount,
+          bigUsableFaith,
+          vaultContractAddress,
+          {
+            gasLimit: 450000,
+          }
+        );
       }
     } else if (ticker === TICKER_SYMBOL.TEMPLE_TOKEN) {
       tx = await vaultProxy.depositTempleFor(bigAmount, vaultContractAddress);
     } else if (ticker === TICKER_SYMBOL.OG_TEMPLE_TOKEN) {
-      tx = await vaultProxy.unstakeAndDepositIntoVault(bigAmount, vaultContractAddress);
+      tx = await vaultProxy.unstakeAndDepositIntoVault(
+        bigAmount,
+        vaultContractAddress
+      );
     } else {
       throw new Error(`Programming Error: Unsupported token: ${ticker}`);
     }
@@ -89,7 +116,11 @@ export const useDepositToVault = (vaultContractAddress: string, onSuccess?: Depo
     const fee = (await getVaultJoiningFee()) || ZERO;
     const totalFee = formatJoiningFee(expectedDepositAmount, fee);
 
-    optimisticallyUpdateVaultStaked(vaultContractAddress, Operation.Increase, expectedDepositAmount.sub(totalFee));
+    optimisticallyUpdateVaultStaked(
+      vaultContractAddress,
+      Operation.Increase,
+      expectedDepositAmount.sub(totalFee)
+    );
 
     openNotification({
       title: 'Deposit success',

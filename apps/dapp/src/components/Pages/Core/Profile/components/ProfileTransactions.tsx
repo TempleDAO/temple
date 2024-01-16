@@ -23,7 +23,7 @@ export const ProfileTransactions = () => {
       </Container>
     );
   }
-  
+
   if (error) {
     return (
       <Container>

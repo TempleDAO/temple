@@ -34,7 +34,14 @@ interface IProps {
   borrow: () => void;
 }
 
-export const Borrow: React.FC<IProps> = ({ accountPosition, state, tlcInfo, liquidationInfo, setState, borrow }) => {
+export const Borrow: React.FC<IProps> = ({
+  accountPosition,
+  state,
+  tlcInfo,
+  liquidationInfo,
+  setState,
+  borrow,
+}) => {
   const [checkbox, setCheckbox] = useState(false);
 
   const getEstimatedLTV = (): string => {
@@ -56,7 +63,9 @@ export const Borrow: React.FC<IProps> = ({ accountPosition, state, tlcInfo, liqu
           kind: 'value',
           value: 'DAI',
         }}
-        handleChange={(value: string) => setState({ ...state, borrowValue: value })}
+        handleChange={(value: string) =>
+          setState({ ...state, borrowValue: value })
+        }
         isNumber
         value={state.borrowValue}
         placeholder="1000"
@@ -74,9 +83,10 @@ export const Borrow: React.FC<IProps> = ({ accountPosition, state, tlcInfo, liqu
         min={1000}
         hint={`Max: ${
           accountPosition
-            ? (fromAtto(accountPosition.collateral) * (MAX_LTV / 100) - fromAtto(accountPosition.currentDebt)).toFixed(
-                2
-              )
+            ? (
+                fromAtto(accountPosition.collateral) * (MAX_LTV / 100) -
+                fromAtto(accountPosition.currentDebt)
+              ).toFixed(2)
             : 0
         }`}
         width="100%"
@@ -118,7 +128,10 @@ export const Borrow: React.FC<IProps> = ({ accountPosition, state, tlcInfo, liqu
             fromAtto(accountPosition.collateral) * ltvPercent -
             fromAtto(accountPosition.currentDebt)
           ).toFixed(2);
-          setState({ ...state, borrowValue: `${Number(daiValue) > 0 ? daiValue : '0'}` });
+          setState({
+            ...state,
+            borrowValue: `${Number(daiValue) > 0 ? daiValue : '0'}`,
+          });
         }}
         min={0}
         max={100}
@@ -131,15 +144,23 @@ export const Borrow: React.FC<IProps> = ({ accountPosition, state, tlcInfo, liqu
       </FlexBetween>
       <GradientContainer>
         <Apy>
-          {tlcInfo ? (tlcInfo.borrowRate * 100).toFixed(2) : 0}% <span>interest rate</span>
+          {tlcInfo ? (tlcInfo.borrowRate * 100).toFixed(2) : 0}%{' '}
+          <span>interest rate</span>
         </Apy>
         <Rule />
         <Copy>{liquidationInfo(Number(state.borrowValue))}</Copy>
       </GradientContainer>
       <RiskAcknowledgement>
-        <Checkbox onClick={() => setCheckbox(!checkbox)} isChecked={checkbox} src={checkmark} />
+        <Checkbox
+          onClick={() => setCheckbox(!checkbox)}
+          isChecked={checkbox}
+          src={checkmark}
+        />
         <div>
-          <p>I acknowledge the risks of borrowing including increased risk of liquidation.</p>
+          <p>
+            I acknowledge the risks of borrowing including increased risk of
+            liquidation.
+          </p>
           {/* <a href="#">Find out more</a> */}
         </div>
       </RiskAcknowledgement>
@@ -148,7 +169,9 @@ export const Borrow: React.FC<IProps> = ({ accountPosition, state, tlcInfo, liqu
           onClick={() => borrow()}
           disabled={
             !checkbox ||
-            (accountPosition && fromAtto(accountPosition.maxBorrow) < Number(state.borrowValue)) ||
+            (accountPosition &&
+              fromAtto(accountPosition.maxBorrow) <
+                Number(state.borrowValue)) ||
             (tlcInfo && tlcInfo.minBorrow > Number(state.borrowValue)) ||
             (tlcInfo && tlcInfo.strategyBalance < Number(state.borrowValue))
           }
@@ -204,7 +227,8 @@ const Checkbox = styled.div<{ src: string; isChecked: boolean }>`
   border-radius: 50%;
   border: 2px solid ${({ theme }) => theme.palette.brand};
   cursor: pointer;
-  background: ${({ src, isChecked }) => (isChecked ? `url('${src}')` : 'transparent')};
+  background: ${({ src, isChecked }) =>
+    isChecked ? `url('${src}')` : 'transparent'};
   background-repeat: no-repeat;
   background-position: center;
   background-size: 1.1rem;

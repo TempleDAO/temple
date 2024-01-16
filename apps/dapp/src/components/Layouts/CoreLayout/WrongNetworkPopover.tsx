@@ -23,9 +23,13 @@ const IS_PROD = ENV === 'production';
 export const WrongNetworkPopover = () => {
   const [{ connectedChain, settingChain: loading }, setChain] = useSetChain();
 
-  const [currentChain, setCurrentChain] = useState<Nullable<ChainDefinition>>(null);
+  const [currentChain, setCurrentChain] =
+    useState<Nullable<ChainDefinition>>(null);
 
-  const currentNetworkId = useMemo(() => parseInt(connectedChain?.id || '', 16), [connectedChain]);
+  const currentNetworkId = useMemo(
+    () => parseInt(connectedChain?.id || '', 16),
+    [connectedChain]
+  );
 
   useEffect(() => {
     if (connectedChain) {
@@ -34,7 +38,8 @@ export const WrongNetworkPopover = () => {
     }
   }, [connectedChain]);
 
-  const [dismissedChainId, setDismissedChainId] = useState<Nullable<number>>(null);
+  const [dismissedChainId, setDismissedChainId] =
+    useState<Nullable<number>>(null);
   const [isOpen, setIsOpen] = useState(false);
 
   const [error, setError] = useState<Nullable<Error>>(null);
@@ -47,12 +52,22 @@ export const WrongNetworkPopover = () => {
     }
 
     const isSupported = isSupportedChain(currentNetworkId);
-    if ((!isSupported && !isOpen) || (defaultChainForEnv.id !== currentNetworkId)) {
+    if (
+      (!isSupported && !isOpen) ||
+      defaultChainForEnv.id !== currentNetworkId
+    ) {
       setIsOpen(true);
     } else if (isSupported && isOpen) {
       setIsOpen(false);
     }
-  }, [currentNetworkId, setIsOpen, isOpen, loading, dismissedChainId, defaultChainForEnv]);
+  }, [
+    currentNetworkId,
+    setIsOpen,
+    isOpen,
+    loading,
+    dismissedChainId,
+    defaultChainForEnv,
+  ]);
 
   const onDismiss = () => {
     // Only allow dismissing popover in staging and dev environments.
@@ -76,7 +91,9 @@ export const WrongNetworkPopover = () => {
         onClick={async () => {
           if (setChain) {
             try {
-              await setChain({ chainId: `0x${defaultChainForEnv.id.toString(16)}` });
+              await setChain({
+                chainId: `0x${defaultChainForEnv.id.toString(16)}`,
+              });
             } catch (e: any) {
               setError(e);
             }
@@ -92,14 +109,20 @@ export const WrongNetworkPopover = () => {
   if (error && !IS_PROD && defaultChainForEnv.id === LOCAL_CHAIN.id) {
     errorMessage = (
       <ErrorMessage>
-        Error connecting to {LOCAL_CHAIN.name}. Please make sure you have {LOCAL_CHAIN.name} added to your MetaMask
-        Networks with RPC Url: http://localhost:8545 and ChainId: {LOCAL_CHAIN.id}.
+        Error connecting to {LOCAL_CHAIN.name}. Please make sure you have{' '}
+        {LOCAL_CHAIN.name} added to your MetaMask Networks with RPC Url:
+        http://localhost:8545 and ChainId: {LOCAL_CHAIN.id}.
       </ErrorMessage>
     );
   }
 
   return (
-    <Popover isOpen={isOpen} onClose={onDismiss} showCloseButton={!setChain || !IS_PROD} header="Wrong Network">
+    <Popover
+      isOpen={isOpen}
+      onClose={onDismiss}
+      showCloseButton={!setChain || !IS_PROD}
+      header="Wrong Network"
+    >
       <Message>
         {IS_PROD || !defaultChainForEnv ? (
           <>This app only works on Ethereum Mainnet.</>
@@ -113,8 +136,17 @@ export const WrongNetworkPopover = () => {
         <li>{switchNetworkButton}</li>
         {!IS_PROD && (
           <li>
-            <SwitchNetworkButton role="button" isSmall disabled={loading} onClick={onDismiss}>
-              {!!currentChain?.name ? <>Continue with {currentChain.name}</> : <>Continue</>}
+            <SwitchNetworkButton
+              role="button"
+              isSmall
+              disabled={loading}
+              onClick={onDismiss}
+            >
+              {!!currentChain?.name ? (
+                <>Continue with {currentChain.name}</>
+              ) : (
+                <>Continue</>
+              )}
             </SwitchNetworkButton>
           </li>
         )}

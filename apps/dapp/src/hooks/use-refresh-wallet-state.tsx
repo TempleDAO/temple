@@ -7,7 +7,10 @@ import { useFaith } from 'providers/FaithProvider';
 /**
  * Load new data for the connected wallet
  */
-export const useRefreshWalletState = (): [{ isLoading: boolean }, () => Promise<void>] => {
+export const useRefreshWalletState = (): [
+  { isLoading: boolean },
+  () => Promise<void>
+] => {
   const [isLoading, setIsLoading] = useState(false);
   const { updateFaith } = useFaith();
   const { isConnected, updateBalance } = useWallet();
@@ -21,13 +24,25 @@ export const useRefreshWalletState = (): [{ isLoading: boolean }, () => Promise<
     setIsLoading(true);
 
     try {
-      await Promise.all([updateBalance(), updateFaith(), updateLockedEntries(), updateApy()]);
+      await Promise.all([
+        updateBalance(),
+        updateFaith(),
+        updateLockedEntries(),
+        updateApy(),
+      ]);
     } catch (e) {
       console.error('Failed to refresh wallet state', e);
     } finally {
       setIsLoading(false);
     }
-  }, [isConnected, updateBalance, updateFaith, updateLockedEntries, updateApy, setIsLoading]);
+  }, [
+    isConnected,
+    updateBalance,
+    updateFaith,
+    updateLockedEntries,
+    updateApy,
+    setIsLoading,
+  ]);
 
   return [
     {

@@ -26,7 +26,8 @@ export const PageRangeSelector = (props: Props) => {
   return (
     <>
       {paginationRange.map((pageNumber, i) => {
-        if (pageNumber === -1) return <DotsContainer key={i + 'dots'}>...</DotsContainer>;
+        if (pageNumber === -1)
+          return <DotsContainer key={i + 'dots'}>...</DotsContainer>;
         return (
           <PageLink
             key={pageNumber}
@@ -41,8 +42,9 @@ export const PageRangeSelector = (props: Props) => {
   );
 };
 
-
-const DotsContainer = styled.div`{
-  margin: 2px 5px;
-  color: ${({theme}) => theme.palette.brand};
-}`
+const DotsContainer = styled.div`
+   {
+    margin: 2px 5px;
+    color: ${({ theme }) => theme.palette.brand};
+  }
+`;

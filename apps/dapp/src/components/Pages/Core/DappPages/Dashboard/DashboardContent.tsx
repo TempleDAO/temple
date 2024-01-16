@@ -28,13 +28,19 @@ type DashboardData = {
   };
 };
 
-const DashboardContent = ({ selectedDashboard = DashboardType.TREASURY_RESERVES_VAULT }: DashboardContentProps) => {
+const DashboardContent = ({
+  selectedDashboard = DashboardType.TREASURY_RESERVES_VAULT,
+}: DashboardContentProps) => {
   const dashboardData: DashboardData = {
     [DashboardType.TREASURY_RESERVES_VAULT]: {
       title: 'Treasury Reserves Vault',
       description:
         'Treasury Reserves Vault (TRV) coordinates and manages the flow of capital for current Treasury allocations. When funding and management parameters are approved for a Strategy, the TRV will transfer funds e.g. DAI and issue corresponding debt to the Strategy borrower. The current equity of the Strategy is discounted by the loan principal and accrued interest benchmarked to the prevailing rate of the current Base Strategy for the borrowed token.',
-      chartStrategyNames: [StrategyKey.TEMPLEBASE, StrategyKey.RAMOS, StrategyKey.DSRBASE],
+      chartStrategyNames: [
+        StrategyKey.TEMPLEBASE,
+        StrategyKey.RAMOS,
+        StrategyKey.DSRBASE,
+      ],
       link: `${env.etherscan}/address/${env.contracts.treasuryReservesVault}`,
     },
     [DashboardType.RAMOS]: {
@@ -54,7 +60,8 @@ const DashboardContent = ({ selectedDashboard = DashboardType.TREASURY_RESERVES_
     // },
     [DashboardType.TEMPLE_BASE]: {
       title: 'Temple Base',
-      description: 'Temple Base strategy is the source of automated market operations (AMO) TEMPLE tokens in the Treasury framework. The TRV facilitates the withdrawal of newly minted TEMPLE tokens from and the issuance of TEMPLE debt to the Temple Base strategy. These TEMPLE tokens will be borrowed by a Treasury Strategy such as Ramos to generate returns. Once these tokens are repaid to the TRV, they will be deposited to the Temple Base strategy to be burned. From the perspective of the TRV, positive returns will be realized when TEMPLE flows to the Temple Base strategy is net positive.',
+      description:
+        'Temple Base strategy is the source of automated market operations (AMO) TEMPLE tokens in the Treasury framework. The TRV facilitates the withdrawal of newly minted TEMPLE tokens from and the issuance of TEMPLE debt to the Temple Base strategy. These TEMPLE tokens will be borrowed by a Treasury Strategy such as Ramos to generate returns. Once these tokens are repaid to the TRV, they will be deposited to the Temple Base strategy to be burned. From the perspective of the TRV, positive returns will be realized when TEMPLE flows to the Temple Base strategy is net positive.',
       chartStrategyNames: [StrategyKey.TEMPLEBASE],
       link: `${env.etherscan}/address/${env.contracts.strategies.templeStrategy}`,
     },
@@ -74,11 +81,14 @@ const DashboardContent = ({ selectedDashboard = DashboardType.TREASURY_RESERVES_
       <Header>
         <HeaderTextContainer>
           <HeaderTitle>{dashboard.title}</HeaderTitle>
-          <LinkIcon onClick={() => window.open(dashboard.link, "_blank")}/>
+          <LinkIcon onClick={() => window.open(dashboard.link, '_blank')} />
         </HeaderTextContainer>
         <HeaderText>{dashboard.description}</HeaderText>
       </Header>
-      <DashboardChart dashboardType={selectedDashboard} strategyNames={dashboard.chartStrategyNames} />
+      <DashboardChart
+        dashboardType={selectedDashboard}
+        strategyNames={dashboard.chartStrategyNames}
+      />
       <DashboardMetrics dashboardType={selectedDashboard} />
       <DashboardTransactionHistory dashboardType={selectedDashboard} />
     </DashboardContentContainer>
@@ -86,7 +96,7 @@ const DashboardContent = ({ selectedDashboard = DashboardType.TREASURY_RESERVES_
 };
 
 const LinkIcon = styled(linkSvg)`
-  fill:${({theme}) => theme.palette.brand};
+  fill: ${({ theme }) => theme.palette.brand};
   cursor: pointer;
 `;
 

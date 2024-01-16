@@ -47,9 +47,12 @@ export type Prices = { templePrice: number; daiPrice: number; tpi: number };
 
 export const BorrowPage = () => {
   const [{}, connect] = useConnectWallet();
-  const { balance, wallet, updateBalance, signer, ensureAllowance } = useWallet();
+  const { balance, wallet, updateBalance, signer, ensureAllowance } =
+    useWallet();
   const { openNotification } = useNotification();
-  const [modal, setModal] = useState<'closed' | 'supply' | 'withdraw' | 'borrow' | 'repay'>('closed');
+  const [modal, setModal] = useState<
+    'closed' | 'supply' | 'withdraw' | 'borrow' | 'repay'
+  >('closed');
   const [state, setState] = useState<State>({
     supplyValue: '',
     withdrawValue: '',
@@ -60,10 +63,17 @@ export const BorrowPage = () => {
     inputTokenBalance: ZERO,
     outputTokenBalance: ZERO,
   });
-  const [activeScreen, setActiveScreen] = useState<'supply' | 'borrow'>('supply');
-  const [accountPosition, setAccountPosition] = useState<ITlcDataTypes.AccountPositionStructOutput>();
+  const [activeScreen, setActiveScreen] = useState<'supply' | 'borrow'>(
+    'supply'
+  );
+  const [accountPosition, setAccountPosition] =
+    useState<ITlcDataTypes.AccountPositionStructOutput>();
   const [tlcInfo, setTlcInfo] = useState<TlcInfo>();
-  const [prices, setPrices] = useState<Prices>({ templePrice: 0, daiPrice: 0, tpi: 0 });
+  const [prices, setPrices] = useState<Prices>({
+    templePrice: 0,
+    daiPrice: 0,
+    tpi: 0,
+  });
 
   const getPrices = useCallback(async () => {
     const { data } = await fetchGenericSubgraph<any>(
@@ -79,7 +89,8 @@ export const BorrowPage = () => {
       }`
     );
     setPrices({
-      templePrice: data.tokens.filter((t: any) => t.symbol == 'TEMPLE')[0].price,
+      templePrice: data.tokens.filter((t: any) => t.symbol == 'TEMPLE')[0]
+        .price,
       daiPrice: data.tokens.filter((t: any) => t.symbol == 'DAI')[0].price,
       tpi: data.treasuryReservesVaults[0].treasuryPriceIndex,
     });
@@ -88,7 +99,9 @@ export const BorrowPage = () => {
   const getTlcInfo = useCallback(async () => {
     const getAccountPosition = async () => {
       if (!signer || !wallet) return;
-      const tlcContract = new TempleLineOfCredit__factory(signer).attach(env.contracts.tlc);
+      const tlcContract = new TempleLineOfCredit__factory(signer).attach(
+        env.contracts.tlc
+      );
       const position = await tlcContract.accountPosition(wallet);
       setAccountPosition(position);
     };
@@ -149,7 +162,8 @@ export const BorrowPage = () => {
     const liquidationDebt = collateral * liquidationLtv;
     return (
       <>
-        Given a {((debt / collateral) * 100).toFixed(2)}% LTV ratio, your collateral will be liquidated if TPI falls to{' '}
+        Given a {((debt / collateral) * 100).toFixed(2)}% LTV ratio, your
+        collateral will be liquidated if TPI falls to{' '}
         <strong>${liquidationTpi.toFixed(3)}</strong> or if your debt rises to{' '}
         <strong>${liquidationDebt.toFixed(2)}</strong>.
       </>
@@ -158,12 +172,24 @@ export const BorrowPage = () => {
 
   const supply = async () => {
     if (!signer || !wallet) return;
-    const tlcContract = new TempleLineOfCredit__factory(signer).attach(env.contracts.tlc);
-    const amount = getBigNumberFromString(state.supplyValue, getTokenInfo(state.inputToken).decimals);
+    const tlcContract = new TempleLineOfCredit__factory(signer).attach(
+      env.contracts.tlc
+    );
+    const amount = getBigNumberFromString(
+      state.supplyValue,
+      getTokenInfo(state.inputToken).decimals
+    );
     try {
       // Ensure allowance for TLC to spend TEMPLE
-      const templeContract = new ERC20__factory(signer).attach(env.contracts.temple);
-      await ensureAllowance(TICKER_SYMBOL.TEMPLE_TOKEN, templeContract, env.contracts.tlc, amount);
+      const templeContract = new ERC20__factory(signer).attach(
+        env.contracts.temple
+      );
+      await ensureAllowance(
+        TICKER_SYMBOL.TEMPLE_TOKEN,
+        templeContract,
+        env.contracts.tlc,
+        amount
+      );
       // Add collateral
       const tx = await tlcContract.addCollateral(amount, wallet);
       const receipt = await tx.wait();
@@ -185,10 +211,17 @@ export const BorrowPage = () => {
 
   const withdraw = async () => {
     if (!signer || !wallet) return;
-    const tlcContract = new TempleLineOfCredit__factory(signer).attach(env.contracts.tlc);
-    const amount = getBigNumberFromString(state.withdrawValue, getTokenInfo(state.inputToken).decimals);
+    const tlcContract = new TempleLineOfCredit__factory(signer).attach(
+      env.contracts.tlc
+    );
+    const amount = getBigNumberFromString(
+      state.withdrawValue,
+      getTokenInfo(state.inputToken).decimals
+    );
     try {
-      const tx = await tlcContract.removeCollateral(amount, wallet, { gasLimit: 160000 });
+      const tx = await tlcContract.removeCollateral(amount, wallet, {
+        gasLimit: 160000,
+      });
       const receipt = await tx.wait();
       openNotification({
         title: `Withdrew ${state.withdrawValue} TEMPLE`,
@@ -208,8 +241,13 @@ export const BorrowPage = () => {
 
   const borrow = async () => {
     if (!signer || !wallet) return;
-    const tlcContract = new TempleLineOfCredit__factory(signer).attach(env.contracts.tlc);
-    const amount = getBigNumberFromString(state.borrowValue, getTokenInfo(state.outputToken).decimals);
+    const tlcContract = new TempleLineOfCredit__factory(signer).attach(
+      env.contracts.tlc
+    );
+    const amount = getBigNumberFromString(
+      state.borrowValue,
+      getTokenInfo(state.outputToken).decimals
+    );
     try {
       const tx = await tlcContract.borrow(amount, wallet, { gasLimit: 350000 });
       const receipt = await tx.wait();
@@ -231,12 +269,22 @@ export const BorrowPage = () => {
 
   const repay = async () => {
     if (!signer || !wallet) return;
-    const tlcContract = new TempleLineOfCredit__factory(signer).attach(env.contracts.tlc);
-    const amount = getBigNumberFromString(state.repayValue, getTokenInfo(state.outputToken).decimals);
+    const tlcContract = new TempleLineOfCredit__factory(signer).attach(
+      env.contracts.tlc
+    );
+    const amount = getBigNumberFromString(
+      state.repayValue,
+      getTokenInfo(state.outputToken).decimals
+    );
     try {
       // Ensure allowance for TLC to spend DAI
       const daiContract = new ERC20__factory(signer).attach(env.contracts.dai);
-      await ensureAllowance(TICKER_SYMBOL.DAI, daiContract, env.contracts.tlc, amount);
+      await ensureAllowance(
+        TICKER_SYMBOL.DAI,
+        daiContract,
+        env.contracts.tlc,
+        amount
+      );
       // Repay DAI
       const tx = await tlcContract.repay(amount, wallet, { gasLimit: 250000 });
       const receipt = await tx.wait();
@@ -258,17 +306,31 @@ export const BorrowPage = () => {
 
   const repayAll = async () => {
     if (!signer || !wallet) return;
-    const tlcContract = new TempleLineOfCredit__factory(signer).attach(env.contracts.tlc);
-    const amount = getBigNumberFromString(state.repayValue, getTokenInfo(state.outputToken).decimals);
+    const tlcContract = new TempleLineOfCredit__factory(signer).attach(
+      env.contracts.tlc
+    );
+    const amount = getBigNumberFromString(
+      state.repayValue,
+      getTokenInfo(state.outputToken).decimals
+    );
     try {
       // Ensure allowance for TLC to spend DAI
       const daiContract = new ERC20__factory(signer).attach(env.contracts.dai);
-      await ensureAllowance(TICKER_SYMBOL.DAI, daiContract, env.contracts.tlc, amount);
+      await ensureAllowance(
+        TICKER_SYMBOL.DAI,
+        daiContract,
+        env.contracts.tlc,
+        amount
+      );
       // Repay DAI
       const tx = await tlcContract.repayAll(wallet, { gasLimit: 350000 });
       const receipt = await tx.wait();
       openNotification({
-        title: `Repaid ${accountPosition ? fromAtto(accountPosition.currentDebt).toFixed(2) : amount} DAI`,
+        title: `Repaid ${
+          accountPosition
+            ? fromAtto(accountPosition.currentDebt).toFixed(2)
+            : amount
+        } DAI`,
         hash: receipt.transactionHash,
       });
       updateBalance();
@@ -283,7 +345,8 @@ export const BorrowPage = () => {
     }
   };
 
-  const getBorrowRate = () => (tlcInfo ? (tlcInfo.borrowRate * 100).toFixed(2) : 0);
+  const getBorrowRate = () =>
+    tlcInfo ? (tlcInfo.borrowRate * 100).toFixed(2) : 0;
 
   return (
     <>
@@ -291,11 +354,15 @@ export const BorrowPage = () => {
         <FlexCol>
           <Metrics>
             <MetricContainer>
-              <LeadMetric>${tlcInfo && Number(tlcInfo.debtCeiling).toLocaleString()}</LeadMetric>
+              <LeadMetric>
+                ${tlcInfo && Number(tlcInfo.debtCeiling).toLocaleString()}
+              </LeadMetric>
               <BrandParagraph>Total Debt Ceiling</BrandParagraph>
             </MetricContainer>
             <MetricContainer>
-              <LeadMetric>${tlcInfo && Number(tlcInfo.strategyBalance).toLocaleString()}</LeadMetric>
+              <LeadMetric>
+                ${tlcInfo && Number(tlcInfo.strategyBalance).toLocaleString()}
+              </LeadMetric>
               <BrandParagraph>Available to Borrow</BrandParagraph>
             </MetricContainer>
             <MetricContainer>
@@ -310,10 +377,16 @@ export const BorrowPage = () => {
 
         <TlcContainer>
           <TlcTabs>
-            <TlcTab isActive={activeScreen == 'supply'} onClick={() => setActiveScreen('supply')}>
+            <TlcTab
+              isActive={activeScreen == 'supply'}
+              onClick={() => setActiveScreen('supply')}
+            >
               <p>Supplies</p>
             </TlcTab>
-            <TlcTab isActive={activeScreen == 'borrow'} onClick={() => setActiveScreen('borrow')}>
+            <TlcTab
+              isActive={activeScreen == 'borrow'}
+              onClick={() => setActiveScreen('borrow')}
+            >
               <p>Borrows</p>
             </TlcTab>
           </TlcTabs>
@@ -323,13 +396,21 @@ export const BorrowPage = () => {
                 <TokenImg src={templeImg} />
                 <NumContainer>
                   <LeadMetric>
-                    {accountPosition?.collateral ? formatToken(accountPosition?.collateral, state.inputToken) : 0}{' '}
+                    {accountPosition?.collateral
+                      ? formatToken(
+                          accountPosition?.collateral,
+                          state.inputToken
+                        )
+                      : 0}{' '}
                     TEMPLE
                   </LeadMetric>
                   <USDMetric>
                     $
                     {accountPosition?.collateral
-                      ? (fromAtto(accountPosition.collateral) * prices.templePrice).toLocaleString('en')
+                      ? (
+                          fromAtto(accountPosition.collateral) *
+                          prices.templePrice
+                        ).toLocaleString('en')
                       : 0}{' '}
                     USD
                   </USDMetric>
@@ -348,7 +429,9 @@ export const BorrowPage = () => {
                 </TradeButton>
                 <TradeButton
                   onClick={() => setModal('withdraw')}
-                  disabled={!accountPosition || accountPosition?.collateral.lte(0)}
+                  disabled={
+                    !accountPosition || accountPosition?.collateral.lte(0)
+                  }
                 >
                   Withdraw
                 </TradeButton>
@@ -361,13 +444,21 @@ export const BorrowPage = () => {
                 <TokenImg src={daiImg} />
                 <NumContainer>
                   <LeadMetric>
-                    {accountPosition?.currentDebt ? formatToken(accountPosition?.currentDebt, state.outputToken) : 0}{' '}
+                    {accountPosition?.currentDebt
+                      ? formatToken(
+                          accountPosition?.currentDebt,
+                          state.outputToken
+                        )
+                      : 0}{' '}
                     DAI
                   </LeadMetric>
                   <USDMetric>
                     $
                     {accountPosition?.currentDebt
-                      ? (fromAtto(accountPosition.currentDebt) * prices.daiPrice).toLocaleString('en')
+                      ? (
+                          fromAtto(accountPosition.currentDebt) *
+                          prices.daiPrice
+                        ).toLocaleString('en')
                       : 0}{' '}
                     USD
                   </USDMetric>
@@ -378,7 +469,9 @@ export const BorrowPage = () => {
                   <BrandParagraph>Your LTV</BrandParagraph>
                   <p>
                     {accountPosition?.collateral.gt(0)
-                      ? (fromAtto(accountPosition.loanToValueRatio) * 100).toFixed(2)
+                      ? (
+                          fromAtto(accountPosition.loanToValueRatio) * 100
+                        ).toFixed(2)
                       : 0}
                     %
                   </p>
@@ -399,18 +492,24 @@ export const BorrowPage = () => {
                 )}
               </BorrowMetricsCol>
               <MarginTop />
-              {accountPosition?.currentDebt.gt(0) && <Copy>{getLiquidationInfo()}</Copy>}
+              {accountPosition?.currentDebt.gt(0) && (
+                <Copy>{getLiquidationInfo()}</Copy>
+              )}
               <Rule />
               <JustifyEvenlyRow>
                 <TradeButton
                   onClick={() => setModal('borrow')}
-                  disabled={!accountPosition || accountPosition?.collateral.lte(0)}
+                  disabled={
+                    !accountPosition || accountPosition?.collateral.lte(0)
+                  }
                 >
                   Borrow
                 </TradeButton>
                 <TradeButton
                   onClick={() => setModal('repay')}
-                  disabled={!accountPosition || accountPosition?.currentDebt.lte(0)}
+                  disabled={
+                    !accountPosition || accountPosition?.currentDebt.lte(0)
+                  }
                 >
                   Repay
                 </TradeButton>
@@ -422,7 +521,12 @@ export const BorrowPage = () => {
       </PageContainer>
 
       {/* Modal for executing supply/withdraw/borrow/repay */}
-      <Popover isOpen={modal != 'closed'} onClose={() => setModal('closed')} closeOnClickOutside showCloseButton>
+      <Popover
+        isOpen={modal != 'closed'}
+        onClose={() => setModal('closed')}
+        closeOnClickOutside
+        showCloseButton
+      >
         <ModalContainer>
           {modal === 'supply' ? (
             <Supply
@@ -433,7 +537,12 @@ export const BorrowPage = () => {
               supply={supply}
             />
           ) : modal === 'withdraw' ? (
-            <Withdraw accountPosition={accountPosition} state={state} setState={setState} withdraw={withdraw} />
+            <Withdraw
+              accountPosition={accountPosition}
+              state={state}
+              setState={setState}
+              withdraw={withdraw}
+            />
           ) : modal === 'borrow' ? (
             <Borrow
               accountPosition={accountPosition}
@@ -532,7 +641,8 @@ const TlcTab = styled.div<{ isActive: boolean }>`
   cursor: pointer;
   font-weight: bold;
   letter-spacing: 1px;
-  background: ${({ isActive, theme }) => (isActive ? theme.palette.gradients.dark : 'transparent')};
+  background: ${({ isActive, theme }) =>
+    isActive ? theme.palette.gradients.dark : 'transparent'};
 `;
 
 const ValueContainer = styled.div`
@@ -672,7 +782,9 @@ export const RangeLabel = styled.div`
   color: ${({ theme }) => theme.palette.brandLight};
 `;
 
-export const RangeSlider = styled.input.attrs({ type: 'range' })<{ progress: number }>`
+export const RangeSlider = styled.input.attrs({ type: 'range' })<{
+  progress: number;
+}>`
   -webkit-appearance: none;
   width: 100%;
   height: 0.5rem;

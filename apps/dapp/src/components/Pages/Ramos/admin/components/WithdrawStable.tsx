@@ -10,9 +10,15 @@ export const WithdrawStable: React.FC<IProps> = ({ amounts }) => {
   return (
     <InputArea>
       <h3>WithdrawStable</h3>
-      <p>To apply, create a RAMOS.withdrawStable() transaction with parameters</p>
-      <RequestArea>bptAmountIn: {amounts?.bptIn.toString() ?? <EllipsisLoader />}</RequestArea>
-      <RequestArea>minAmountOut: {amounts?.amountOut.toString() ?? <EllipsisLoader />}</RequestArea>
+      <p>
+        To apply, create a RAMOS.withdrawStable() transaction with parameters
+      </p>
+      <RequestArea>
+        bptAmountIn: {amounts?.bptIn.toString() ?? <EllipsisLoader />}
+      </RequestArea>
+      <RequestArea>
+        minAmountOut: {amounts?.amountOut.toString() ?? <EllipsisLoader />}
+      </RequestArea>
     </InputArea>
   );
 };

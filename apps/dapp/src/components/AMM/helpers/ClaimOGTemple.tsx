@@ -31,9 +31,7 @@ const ClaimOGTemple = ({ lockedEntries = [], onClaim }: ClaimOGTempleProps) => {
                 }}
               >
                 <FontStyling>
-                  <strong className={'color-dark'}>
-                    CLAIMABLE AT
-                  </strong>
+                  <strong className={'color-dark'}>CLAIMABLE AT</strong>
                 </FontStyling>
               </Flex>
               <Flex
@@ -43,9 +41,7 @@ const ClaimOGTemple = ({ lockedEntries = [], onClaim }: ClaimOGTempleProps) => {
                 }}
               >
                 <HeaderRight>
-                  <strong className={'color-dark'}>
-                    AMOUNT
-                  </strong>
+                  <strong className={'color-dark'}>AMOUNT</strong>
                 </HeaderRight>
               </Flex>
             </Flex>

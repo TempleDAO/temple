@@ -50,11 +50,21 @@ export const ARBITRUM_GOERLI_CHAIN: ChainDefinition = {
   rpcUrl: env.rpcUrl,
 };
 
-const APP_CHAINS = [MAINNET_CHAIN, SEPOLIA_CHAIN, LOCAL_CHAIN, ARBITRUM_CHAIN, ARBITRUM_GOERLI_CHAIN];
+const APP_CHAINS = [
+  MAINNET_CHAIN,
+  SEPOLIA_CHAIN,
+  LOCAL_CHAIN,
+  ARBITRUM_CHAIN,
+  ARBITRUM_GOERLI_CHAIN,
+];
 
 export const getChainById = (id: string) => {
   const _id = parseInt(id, 16);
-  return (APP_CHAINS.find((chainDefinition) => chainDefinition.id === _id) as ChainDefinition) || MAINNET_CHAIN;
+  return (
+    (APP_CHAINS.find(
+      (chainDefinition) => chainDefinition.id === _id
+    ) as ChainDefinition) || MAINNET_CHAIN
+  );
 };
 
 export const APP_CHAINS_FOR_WEB3_INIT = APP_CHAINS.map((chainDefinition) => ({
@@ -69,5 +79,7 @@ ENV_CHAIN_MAPPING.set('preview', SEPOLIA_CHAIN);
 ENV_CHAIN_MAPPING.set('local', LOCAL_CHAIN);
 
 export const isSupportedChain = (chainId: number) => {
-  return Array.from(ENV_CHAIN_MAPPING).some(([_, chainDefinition]) => chainDefinition.id === chainId);
+  return Array.from(ENV_CHAIN_MAPPING).some(
+    ([_, chainDefinition]) => chainDefinition.id === chainId
+  );
 };

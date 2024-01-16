@@ -43,7 +43,14 @@ const NotificationManager = () => {
     <Notifications>
       {notifications.map((n, index) => {
         const { title, hash } = n;
-        return <Notification hash={hash} title={title} key={hash} isOpen={areOpen[index]} />;
+        return (
+          <Notification
+            hash={hash}
+            title={title}
+            key={hash}
+            isOpen={areOpen[index]}
+          />
+        );
       })}
     </Notifications>
   );

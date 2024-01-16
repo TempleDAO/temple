@@ -27,7 +27,13 @@ interface IProps {
   supply: () => void;
 }
 
-export const Supply: React.FC<IProps> = ({ accountPosition, state, minBorrow, setState, supply }) => {
+export const Supply: React.FC<IProps> = ({
+  accountPosition,
+  state,
+  minBorrow,
+  setState,
+  supply,
+}) => {
   const getEstimatedCollateral = (): number => {
     return accountPosition
       ? fromAtto(accountPosition.collateral) + Number(state.supplyValue)
@@ -36,7 +42,10 @@ export const Supply: React.FC<IProps> = ({ accountPosition, state, minBorrow, se
 
   const getEstimatedLTV = (): string => {
     return accountPosition
-      ? ((fromAtto(accountPosition.currentDebt) / getEstimatedCollateral()) * 100).toFixed(2)
+      ? (
+          (fromAtto(accountPosition.currentDebt) / getEstimatedCollateral()) *
+          100
+        ).toFixed(2)
       : '0.00';
   };
 
@@ -46,7 +55,8 @@ export const Supply: React.FC<IProps> = ({ accountPosition, state, minBorrow, se
 
   const minSupply = minBorrow ? (1 / (MAX_LTV / 100)) * minBorrow : 0;
   const unusedSupply = accountPosition
-    ? fromAtto(accountPosition.collateral) - fromAtto(accountPosition.currentDebt)
+    ? fromAtto(accountPosition.collateral) -
+      fromAtto(accountPosition.currentDebt)
     : 0;
   const estimatedUnusedSupply = Number(state.supplyValue) + unusedSupply;
 
@@ -59,15 +69,23 @@ export const Supply: React.FC<IProps> = ({ accountPosition, state, minBorrow, se
           kind: 'value',
           value: 'TEMPLE',
         }}
-        handleChange={(value: string) => setState({ ...state, supplyValue: value })}
+        handleChange={(value: string) =>
+          setState({ ...state, supplyValue: value })
+        }
         isNumber
         value={state.supplyValue}
         placeholder="0"
         onHintClick={() => {
-          setState({ ...state, supplyValue: formatToken(state.inputTokenBalance, state.inputToken) });
+          setState({
+            ...state,
+            supplyValue: formatToken(state.inputTokenBalance, state.inputToken),
+          });
         }}
         min={0}
-        hint={`Balance: ${formatToken(state.inputTokenBalance, state.inputToken)}`}
+        hint={`Balance: ${formatToken(
+          state.inputTokenBalance,
+          state.inputToken
+        )}`}
         width="100%"
       />
       {estimatedUnusedSupply < minSupply && (
@@ -76,8 +94,8 @@ export const Supply: React.FC<IProps> = ({ accountPosition, state, minBorrow, se
             <p>i</p>
           </InfoCircle>
           <p>
-            You should supply at least {(minSupply - unusedSupply).toFixed(2)} TEMPLE in order to meet the minimum
-            borrow requirement.
+            You should supply at least {(minSupply - unusedSupply).toFixed(2)}{' '}
+            TEMPLE in order to meet the minimum borrow requirement.
           </p>
         </Warning>
       )}
@@ -91,13 +109,18 @@ export const Supply: React.FC<IProps> = ({ accountPosition, state, minBorrow, se
               if (!accountPosition) return;
               let ltvPercent = ((Number(e.target.value) / 100) * MAX_LTV) / 100;
               // Max LTV is the current LTV
-              const maxLtv = fromAtto(accountPosition.currentDebt) / fromAtto(accountPosition.collateral);
+              const maxLtv =
+                fromAtto(accountPosition.currentDebt) /
+                fromAtto(accountPosition.collateral);
               if (ltvPercent > maxLtv) ltvPercent = maxLtv;
               const newSupply = (
                 fromAtto(accountPosition.currentDebt) / ltvPercent -
                 fromAtto(accountPosition.collateral)
               ).toFixed(2);
-              setState({ ...state, supplyValue: `${Number(newSupply) > 0 ? newSupply : '0'}` });
+              setState({
+                ...state,
+                supplyValue: `${Number(newSupply) > 0 ? newSupply : '0'}`,
+              });
             }}
             min={0}
             max={100}
@@ -112,14 +135,17 @@ export const Supply: React.FC<IProps> = ({ accountPosition, state, minBorrow, se
       )}
       <GradientContainer>
         <Copy style={{ textAlign: 'left' }}>
-          You could borrow up to {getEstimatedMaxBorrow().toFixed(2)} DAI with {getEstimatedCollateral().toFixed(2)}{' '}
-          total TEMPLE collateral.
+          You could borrow up to {getEstimatedMaxBorrow().toFixed(2)} DAI with{' '}
+          {getEstimatedCollateral().toFixed(2)} total TEMPLE collateral.
         </Copy>
       </GradientContainer>
       <FlexColCenter>
         <TradeButton
           onClick={() => supply()}
-          disabled={Number(state.supplyValue) <= 0 || Number(state.supplyValue) > fromAtto(state.inputTokenBalance)}
+          disabled={
+            Number(state.supplyValue) <= 0 ||
+            Number(state.supplyValue) > fromAtto(state.inputTokenBalance)
+          }
         >
           Supply
         </TradeButton>

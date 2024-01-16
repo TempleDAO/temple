@@ -4,7 +4,11 @@ import { useWallet } from 'providers/WalletProvider';
 import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
 import { useEffect, useState } from 'react';
 import { useUnstakeOGTemple } from 'hooks/core/use-unstake-ogtemple';
-import { formatBigNumber, formatTemple, getBigNumberFromString } from 'components/Vault/utils';
+import {
+  formatBigNumber,
+  formatTemple,
+  getBigNumberFromString,
+} from 'components/Vault/utils';
 import { ZERO } from 'utils/bigNumber';
 import { useStaking } from 'providers/StakingProvider';
 import { BigNumber } from 'ethers';
@@ -23,7 +27,9 @@ export const UnstakeOGT = () => {
   });
 
   useEffect(() => {
-    const amount = balance.OGTEMPLE.eq(ZERO) ? '' : formatBigNumber(balance.OGTEMPLE);
+    const amount = balance.OGTEMPLE.eq(ZERO)
+      ? ''
+      : formatBigNumber(balance.OGTEMPLE);
     setUnstakeAmount(amount);
   }, [balance]);
 
@@ -36,7 +42,10 @@ export const UnstakeOGT = () => {
 
   const bigAmount = getBigNumberFromString(unstakeAmount || '0');
   const buttonIsDisabled =
-    unstakeLoading || !unstakeAmount || balance.OGTEMPLE.lte(ZERO) || bigAmount.gt(balance.OGTEMPLE);
+    unstakeLoading ||
+    !unstakeAmount ||
+    balance.OGTEMPLE.lte(ZERO) ||
+    bigAmount.gt(balance.OGTEMPLE);
 
   const handleUnlockOGT = async () => {
     try {
@@ -56,7 +65,9 @@ export const UnstakeOGT = () => {
       {/* Display Unlock if they have lockedOGT, then display Unstake */}
       {lockedEntries.length > 0 ? (
         <>
-          <TopSubtitle>You can claim locked OGTemple from the Opening Ceremony:</TopSubtitle>
+          <TopSubtitle>
+            You can claim locked OGTemple from the Opening Ceremony:
+          </TopSubtitle>
           {!wallet ? (
             <TradeButton
               label={`Connect`}
@@ -71,26 +82,34 @@ export const UnstakeOGT = () => {
               disabled={Date.now() < lockedEntries[0].lockedUntilTimestamp}
             >
               Claim{' '}
-              {formatTemple(lockedEntries.reduce((sum, cur) => sum.add(cur.balanceOGTemple), BigNumber.from('0')))}{' '}
+              {formatTemple(
+                lockedEntries.reduce(
+                  (sum, cur) => sum.add(cur.balanceOGTemple),
+                  BigNumber.from('0')
+                )
+              )}{' '}
               OGTemple
             </TradeButton>
           )}
           <Subtitle>
             {lockedEntries.length > 1 && (
               <span>
-                You will have {lockedEntries.length} transactions to claim your locked OGTemple.
+                You will have {lockedEntries.length} transactions to claim your
+                locked OGTemple.
                 <br />
                 <br />
               </span>
             )}
-            After unlocking OGT, you will be able to convert it to TEMPLE on this same screen.
+            After unlocking OGT, you will be able to convert it to TEMPLE on
+            this same screen.
           </Subtitle>
         </>
       ) : (
         <>
           <Subtitle>
-            You have {balance.OGTEMPLE ? formatTemple(balance.OGTEMPLE) : '0.00'} OGT you can unstake and convert to
-            TEMPLE.
+            You have{' '}
+            {balance.OGTEMPLE ? formatTemple(balance.OGTEMPLE) : '0.00'} OGT you
+            can unstake and convert to TEMPLE.
           </Subtitle>
           <ButtonContainer>
             {!wallet ? (
@@ -101,7 +120,10 @@ export const UnstakeOGT = () => {
                 }}
               />
             ) : (
-              <TradeButton disabled={buttonIsDisabled} onClick={() => unstake(unstakeAmount)}>
+              <TradeButton
+                disabled={buttonIsDisabled}
+                onClick={() => unstake(unstakeAmount)}
+              >
                 Unstake OGTEMPLE
               </TradeButton>
             )}

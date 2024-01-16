@@ -102,23 +102,39 @@ export class MetricsService {
   constructor() {
     // TODO: This file was changed because of the wagmi replacement
     // We can probably remove the file entirely if we don't need it anymore
-    const {signer} = useWallet();
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const { signer } = useWallet();
     if (!signer) {
       throw new Error('No signer. Unable to initialize MetricsService');
     }
 
     this.signer = signer;
 
-    this.stableCoinContract = ERC20__factory.connect(env.contracts.frax, this.signer);
+    this.stableCoinContract = ERC20__factory.connect(
+      env.contracts.frax,
+      this.signer
+    );
 
-    this.templeCoinContract = ERC20__factory.connect(env.contracts.temple, this.signer);
+    this.templeCoinContract = ERC20__factory.connect(
+      env.contracts.temple,
+      this.signer
+    );
 
     this.frax3crv_fCoinContract =
-      env.contracts.frax3CrvFarming && new ethers.Contract(env.contracts.frax3CrvFarming, frax3crv_fABI, this.signer);
+      env.contracts.frax3CrvFarming &&
+      new ethers.Contract(
+        env.contracts.frax3CrvFarming,
+        frax3crv_fABI,
+        this.signer
+      );
 
     this.frax3crv_fRewardsContract =
       env.contracts.frax3CrvFarmingRewards &&
-      new ethers.Contract(env.contracts.frax3CrvFarmingRewards, frax3crv_fRewardsABI, this.signer);
+      new ethers.Contract(
+        env.contracts.frax3CrvFarmingRewards,
+        frax3crv_fRewardsABI,
+        this.signer
+      );
 
     this.treasuryAddress = env.contracts.treasuryIv;
     this.treasuryAddresses = [
@@ -130,11 +146,20 @@ export class MetricsService {
 
     this.farmingWalletAddress = env.contracts.farmingWallet;
 
-    this.treasuryContract = TreasuryIV__factory.connect(env.contracts.treasuryIv, this.signer);
+    this.treasuryContract = TreasuryIV__factory.connect(
+      env.contracts.treasuryIv,
+      this.signer
+    );
 
-    this.templeStakingContract = TempleStaking__factory.connect(env.contracts.templeStaking, this.signer);
+    this.templeStakingContract = TempleStaking__factory.connect(
+      env.contracts.templeStaking,
+      this.signer
+    );
 
-    this.ogTempleCoinContract = OGTemple__factory.connect(env.contracts.ogTemple, this.signer);
+    this.ogTempleCoinContract = OGTemple__factory.connect(
+      env.contracts.ogTemple,
+      this.signer
+    );
   }
 
   /**
@@ -155,20 +180,32 @@ export class MetricsService {
   }
 
   async getDashboardMetrics(): Promise<DashboardMetrics> {
-    this.ogTempleCoinContract = new OGTemple__factory().attach(await this.templeStakingContract.OG_TEMPLE());
+    this.ogTempleCoinContract = new OGTemple__factory().attach(
+      await this.templeStakingContract.OG_TEMPLE()
+    );
 
     const treasuryValue = await this.getTreasuryValue();
-    const treasuryTempleValue = fromAtto(await this.templeCoinContract.balanceOf(this.treasuryAddress));
-    const templeTotalSupply = fromAtto(await this.templeCoinContract.totalSupply());
-    const ogTempleTotalSupply = fromAtto(await this.ogTempleCoinContract.totalSupply());
+    const treasuryTempleValue = fromAtto(
+      await this.templeCoinContract.balanceOf(this.treasuryAddress)
+    );
+    const templeTotalSupply = fromAtto(
+      await this.templeCoinContract.totalSupply()
+    );
+    const ogTempleTotalSupply = fromAtto(
+      await this.ogTempleCoinContract.totalSupply()
+    );
 
-    const stakingContractApy = await this.templeStakingContract.getEpy(10000000);
+    const stakingContractApy = await this.templeStakingContract.getEpy(
+      10000000
+    );
 
     const epy = Number(stakingContractApy) / 10000000;
 
-    const { templeValue, circulatingSupply, riskFreeValue } = await this.getProtocolMetrics();
+    const { templeValue, circulatingSupply, riskFreeValue } =
+      await this.getProtocolMetrics();
 
-    const ogTempleRatio = Number(await this.templeStakingContract.balance(1000)) / 1000;
+    const ogTempleRatio =
+      Number(await this.templeStakingContract.balance(1000)) / 1000;
 
     const socialMetrics = await this.getSocialMetrics();
 
@@ -182,7 +219,8 @@ export class MetricsService {
       templeValue,
       circTempleSupply: circulatingSupply,
       circMCap: circulatingSupply * templeValue,
-      percentageStaked: (ogTempleTotalSupply * ogTempleRatio) / circulatingSupply,
+      percentageStaked:
+        (ogTempleTotalSupply * ogTempleRatio) / circulatingSupply,
       ogTemplePrice: templeValue * ogTempleRatio,
       ogTempleTotalSupply,
       ogTempleRatio,
@@ -194,23 +232,37 @@ export class MetricsService {
     const { templeValue } = await this.getProtocolMetrics();
     const currentTime = Date.now();
 
-    const templeBalance = fromAtto(await this.templeCoinContract.balanceOf(walletAddress));
+    const templeBalance = fromAtto(
+      await this.templeCoinContract.balanceOf(walletAddress)
+    );
 
-    const ogTempleRatio = Number(await this.templeStakingContract.balance(1000)) / 1000;
+    const ogTempleRatio =
+      Number(await this.templeStakingContract.balance(1000)) / 1000;
 
-    const { stakes, unstakes } = await this.getStakedOGTempleTransactions(walletAddress);
+    const { stakes, unstakes } = await this.getStakedOGTempleTransactions(
+      walletAddress
+    );
 
-    const totalSacrificed = stakes.reduce((prev: any, current: any) => prev + parseFloat(current?.stableAmount), 0);
+    const totalSacrificed = stakes.reduce(
+      (prev: any, current: any) => prev + parseFloat(current?.stableAmount),
+      0
+    );
 
     const lockedOGTempleBalance = stakes.reduce(
       (prev: any, current: any) =>
-        prev + (current.lockedUntil * 1000 > currentTime ? parseFloat(current?.ogAmount) : 0),
+        prev +
+        (current.lockedUntil * 1000 > currentTime
+          ? parseFloat(current?.ogAmount)
+          : 0),
       0
     );
 
     const OGTempleBalanceStaked = stakes.reduce(
       (prev: any, current: any) =>
-        prev + (current.lockedUntil * 1000 < currentTime ? parseFloat(current?.ogAmount) : 0),
+        prev +
+        (current.lockedUntil * 1000 < currentTime
+          ? parseFloat(current?.ogAmount)
+          : 0),
       0
     );
 
@@ -219,9 +271,11 @@ export class MetricsService {
       0
     );
 
-    const unClaimedOGTempleBalance = OGTempleBalanceStaked - OGTempleBalanceUnstaked;
+    const unClaimedOGTempleBalance =
+      OGTempleBalanceStaked - OGTempleBalanceUnstaked;
 
-    const epy = Number(await this.templeStakingContract.getEpy(10000000)) / 10000000;
+    const epy =
+      Number(await this.templeStakingContract.getEpy(10000000)) / 10000000;
 
     return {
       templeBalance,
@@ -241,7 +295,9 @@ export class MetricsService {
   private getTreasuryValue = async (): Promise<number> => {
     let treasuryValue = 0;
     for (const address of this.treasuryAddresses) {
-      treasuryValue += fromAtto(await this.stableCoinContract.balanceOf(address));
+      treasuryValue += fromAtto(
+        await this.stableCoinContract.balanceOf(address)
+      );
     }
 
     if (this.frax3crv_fCoinContract && this.frax3crv_fRewardsContract) {
@@ -260,7 +316,10 @@ export class MetricsService {
    * Helper to calculate the APY
    */
   private getTempleApy = async (epy?: any): Promise<number> => {
-    if (!epy) epy = (await this.templeStakingContract.getEpy(10000000)).toNumber() / 10000000;
+    if (!epy)
+      epy =
+        (await this.templeStakingContract.getEpy(10000000)).toNumber() /
+        10000000;
     return Math.trunc((Math.pow(epy + 1, 365.25) - 1) * 100);
   };
 

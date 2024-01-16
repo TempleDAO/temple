@@ -42,7 +42,7 @@ interface Contracts {
     ramosStrategy: string;
     templeStrategy: string;
     tlcStrategy: string;
-  }
+  };
   ramosPoolHelper: string;
   balancerHelpers: string;
 }

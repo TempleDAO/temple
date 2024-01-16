@@ -2,7 +2,9 @@ import { useState, useEffect, ReactNode } from 'react';
 import styled from 'styled-components';
 
 import { Option } from 'components/InputSelect/InputSelect';
-import VaultContent, { VaultButton } from 'components/Pages/Core/VaultPages/VaultContent';
+import VaultContent, {
+  VaultButton,
+} from 'components/Pages/Core/VaultPages/VaultContent';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { formatNumber } from 'utils/formatter';
 import { Header } from 'styles/vault';
@@ -21,7 +23,11 @@ import Tooltip from 'components/Tooltip/Tooltip';
 import { useGetZappedAssetValue } from 'hooks/core/use-get-zapped-asset-value';
 import EllipsisLoader from 'components/EllipsisLoader';
 import { ZERO } from 'utils/bigNumber';
-import { getBigNumberFromString, formatBigNumber, formatJoiningFee } from 'components/Vault/utils';
+import {
+  getBigNumberFromString,
+  formatBigNumber,
+  formatJoiningFee,
+} from 'components/Vault/utils';
 import { AnalyticsService } from 'services/AnalyticsService';
 import { AnalyticsEvent } from 'constants/events';
 
@@ -30,15 +36,33 @@ export const Stake = () => {
   const vault = activeVault!;
   const { isConnected } = useWallet();
 
-  const { options, option, setOption, balances, stakingAmount, setStakingAmount } = useStakeOptions();
+  const {
+    options,
+    option,
+    setOption,
+    balances,
+    stakingAmount,
+    setStakingAmount,
+  } = useStakeOptions();
 
-  const [getZappedAssetValue, { response: zappedAssetValue, isLoading: zappedAssetLoading, args: zapArgs }] =
-    useGetZappedAssetValue();
+  const [
+    getZappedAssetValue,
+    {
+      response: zappedAssetValue,
+      isLoading: zappedAssetLoading,
+      args: zapArgs,
+    },
+  ] = useGetZappedAssetValue();
 
-  const [getVaultJoiningFee, { response: joiningFeeResponse, isLoading: joiningFeeLoading }] =
-    useVaultJoiningFee(vault);
+  const [
+    getVaultJoiningFee,
+    { response: joiningFeeResponse, isLoading: joiningFeeLoading },
+  ] = useVaultJoiningFee(vault);
 
-  const joiningFee = !isConnected || joiningFeeLoading || !joiningFeeResponse ? null : joiningFeeResponse;
+  const joiningFee =
+    !isConnected || joiningFeeLoading || !joiningFeeResponse
+      ? null
+      : joiningFeeResponse;
 
   useEffect(() => {
     if (isConnected) {
@@ -47,15 +71,18 @@ export const Stake = () => {
   }, [isConnected, getVaultJoiningFee]);
 
   const [_, refreshBalance] = useVaultBalance(vault.id);
-  const [{ isLoading: refreshIsLoading }, refreshWalletState] = useRefreshWalletState();
-  const [deposit, { isLoading: depositLoading, error: depositError }] = useDepositToVault(
-    vault.id,
-    async (ticker, amount) => {
+  const [{ isLoading: refreshIsLoading }, refreshWalletState] =
+    useRefreshWalletState();
+  const [deposit, { isLoading: depositLoading, error: depositError }] =
+    useDepositToVault(vault.id, async (ticker, amount) => {
       refreshBalance();
       refreshWalletState();
-      AnalyticsService.captureEvent(AnalyticsEvent.Vault.Deposit, { name: vault.id, amount, ticker });
-    }
-  );
+      AnalyticsService.captureEvent(AnalyticsEvent.Vault.Deposit, {
+        name: vault.id,
+        amount,
+        ticker,
+      });
+    });
 
   const getTickerFromSelectOption = () => {
     switch (option) {
@@ -79,7 +106,8 @@ export const Stake = () => {
     console.error(`Programming Error: ${option} not implemented.`);
   };
 
-  const [{ allowance }, increaseAllowance] = useTokenVaultProxyAllowance(ticker);
+  const [{ allowance }, increaseAllowance] =
+    useTokenVaultProxyAllowance(ticker);
 
   const handleUpdateStakingAmount = (value: string) => {
     const amount = Number(value || '0');
@@ -99,10 +127,15 @@ export const Stake = () => {
   const tokenBalance = getTokenBalanceForSelectedOption();
   const stakingAmountBigNumber = getBigNumberFromString(stakingAmount);
   const bigTokenBalance = tokenBalance!;
-  const amountIsOutOfBounds = stakingAmountBigNumber.gt(bigTokenBalance) || stakingAmountBigNumber.lte(ZERO);
+  const amountIsOutOfBounds =
+    stakingAmountBigNumber.gt(bigTokenBalance) ||
+    stakingAmountBigNumber.lte(ZERO);
 
   const error =
-    !!depositError && ((depositError as MetaMaskError).data?.message || depositError.message || 'Something went wrong');
+    !!depositError &&
+    ((depositError as MetaMaskError).data?.message ||
+      depositError.message ||
+      'Something went wrong');
 
   const getZapMessage = (): ReactNode => {
     if (amountIsOutOfBounds) {
@@ -133,7 +166,8 @@ export const Stake = () => {
     if (option === TICKER_SYMBOL.OG_TEMPLE_TOKEN) {
       return (
         <>
-          Unstake {formatNumber(formatBigNumber(stakingAmountBigNumber))} {TICKER_SYMBOL.OG_TEMPLE_TOKEN} and deposit{' '}
+          Unstake {formatNumber(formatBigNumber(stakingAmountBigNumber))}{' '}
+          {TICKER_SYMBOL.OG_TEMPLE_TOKEN} and deposit{' '}
           {formatNumber(formatBigNumber(temple))} {TICKER_SYMBOL.TEMPLE_TOKEN}.
         </>
       );
@@ -154,7 +188,11 @@ export const Stake = () => {
     let depositAmount = stakingAmountBigNumber;
     if (option !== TICKER_SYMBOL.TEMPLE_TOKEN) {
       // If the option is not TEMPLE then we need to use the result from the zap request.
-      if (zapArgs?.[0] !== ticker || zapArgs?.[1] !== stakingAmount || !zappedAssetValue) {
+      if (
+        zapArgs?.[0] !== ticker ||
+        zapArgs?.[1] !== stakingAmount ||
+        !zappedAssetValue
+      ) {
         // Zap request is pending.
         return null;
       }
@@ -173,7 +211,11 @@ export const Stake = () => {
         >
           Joining Fee{' '}
         </Tooltip>
-        : {formatNumber(formatBigNumber(formatJoiningFee(depositAmount, joiningFee)))} $T
+        :{' '}
+        {formatNumber(
+          formatBigNumber(formatJoiningFee(depositAmount, joiningFee))
+        )}{' '}
+        $T
       </JoiningFee>
     );
   };
@@ -247,11 +289,17 @@ const useStakeOptions = () => {
   const [stakingAmount, setStakingAmount] = useState('');
 
   const options: { value: TickerValue; label: string }[] = [
-    { value: TICKER_SYMBOL.TEMPLE_TOKEN, label: `${TICKER_SYMBOL.TEMPLE_TOKEN}` },
+    {
+      value: TICKER_SYMBOL.TEMPLE_TOKEN,
+      label: `${TICKER_SYMBOL.TEMPLE_TOKEN}`,
+    },
   ];
 
   if (ogTemple.gt(ZERO)) {
-    options.push({ value: TICKER_SYMBOL.OG_TEMPLE_TOKEN, label: `${TICKER_SYMBOL.OG_TEMPLE_TOKEN}` });
+    options.push({
+      value: TICKER_SYMBOL.OG_TEMPLE_TOKEN,
+      label: `${TICKER_SYMBOL.OG_TEMPLE_TOKEN}`,
+    });
   }
 
   const [option, setOption] = useState(options[0].value);

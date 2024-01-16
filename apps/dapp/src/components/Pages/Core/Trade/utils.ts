@@ -16,15 +16,23 @@ export function buildSelectConfig(mode: SwapMode): CryptoSelector {
   return {
     kind: 'select',
     cryptoOptions: TOKENS_BY_MODE[mode],
-    onCryptoChange: () => {},
+    onCryptoChange: () => {
+      // do nothing
+    },
     selected: TOKENS_BY_MODE[mode][0],
   };
 }
 
-export function calculateMinAmountOut(amount: BigNumber, slippageTolerance: number, decimals: number = 18) {
+export function calculateMinAmountOut(
+  amount: BigNumber,
+  slippageTolerance: number,
+  decimals = 18
+) {
   const slippage = `${1 - slippageTolerance / 100}`;
   const slippageDbn = DecimalBigNumber.parseUnits(slippage, decimals);
-  const minAmountOutDbn = DecimalBigNumber.fromBN(amount, decimals).mul(slippageDbn);
+  const minAmountOutDbn = DecimalBigNumber.fromBN(amount, decimals).mul(
+    slippageDbn
+  );
 
   return minAmountOutDbn.toBN(decimals);
 }

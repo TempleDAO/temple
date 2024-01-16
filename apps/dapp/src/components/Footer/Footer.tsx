@@ -20,7 +20,9 @@ export const Footer = () => {
         <div>
           <h3 className={'margin-remove'}>TempleDAO</h3>
           <br />
-          <CopyrightStyled>&copy; {new Date().getFullYear()} TempleDAO. All rights reserved.</CopyrightStyled>
+          <CopyrightStyled>
+            &copy; {new Date().getFullYear()} TempleDAO. All rights reserved.
+          </CopyrightStyled>
         </div>
         <FooterGrid>
           <Column>
@@ -28,26 +30,62 @@ export const Footer = () => {
             <ul>
               <li>
                 {/* TODO: add no refere for SEO  */}
-                <a href={'https://discord.gg/templedao'} target={'_blank'} rel="noreferrer">
-                  <Image src={socialDiscordIcon} alt={''} width={24} height={24} />
+                <a
+                  href={'https://discord.gg/templedao'}
+                  target={'_blank'}
+                  rel="noreferrer"
+                >
+                  <Image
+                    src={socialDiscordIcon}
+                    alt={''}
+                    width={24}
+                    height={24}
+                  />
                   <strong>Discord</strong>
                 </a>
               </li>
               <li>
-                <a href={'https://twitter.com/templedao'} target={'_blank'} rel="noreferrer">
-                  <Image src={socialTwitterIcon} alt={''} width={24} height={24} />
+                <a
+                  href={'https://twitter.com/templedao'}
+                  target={'_blank'}
+                  rel="noreferrer"
+                >
+                  <Image
+                    src={socialTwitterIcon}
+                    alt={''}
+                    width={24}
+                    height={24}
+                  />
                   <strong>Twitter</strong>
                 </a>
               </li>
               <li>
-                <a href={'https://t.me/TempleDAOcommunity'} target={'_blank'} rel="noreferrer">
-                  <Image src={socialTelegramIcon} alt={''} width={24} height={24} />
+                <a
+                  href={'https://t.me/TempleDAOcommunity'}
+                  target={'_blank'}
+                  rel="noreferrer"
+                >
+                  <Image
+                    src={socialTelegramIcon}
+                    alt={''}
+                    width={24}
+                    height={24}
+                  />
                   <strong>Telegram</strong>
                 </a>
               </li>
               <li>
-                <a href={'https://templecodex.link'} target={'_blank'} rel="noreferrer">
-                  <Image src={socialCodexIcon} alt={''} width={24} height={24} />
+                <a
+                  href={'https://templecodex.link'}
+                  target={'_blank'}
+                  rel="noreferrer"
+                >
+                  <Image
+                    src={socialCodexIcon}
+                    alt={''}
+                    width={24}
+                    height={24}
+                  />
                   <strong>Codex</strong>
                 </a>
               </li>
@@ -57,20 +95,38 @@ export const Footer = () => {
             <h4>Resources</h4>
             <ul>
               <li>
-                <a href={'https://docs.templedao.link/'} target={'_blank'} rel="noreferrer">
+                <a
+                  href={'https://docs.templedao.link/'}
+                  target={'_blank'}
+                  rel="noreferrer"
+                >
                   <Image src={socialDocsIcon} alt={''} width={24} height={24} />
                   <strong>Docs</strong>
                 </a>
               </li>
               <li>
-                <a href={'https://templedao.medium.com/'} target={'_blank'} rel="noreferrer">
-                  <Image src={socialMediumIcon} alt={''} width={24} height={24} />
+                <a
+                  href={'https://templedao.medium.com/'}
+                  target={'_blank'}
+                  rel="noreferrer"
+                >
+                  <Image
+                    src={socialMediumIcon}
+                    alt={''}
+                    width={24}
+                    height={24}
+                  />
                   <strong>Medium</strong>
                 </a>
               </li>
               <li>
                 <a href={'mailto:templedao@protonmail.com'}>
-                  <Image src={socialMessageIcon} alt={''} width={24} height={24} />
+                  <Image
+                    src={socialMessageIcon}
+                    alt={''}
+                    width={24}
+                    height={24}
+                  />
                   <strong>Contact Us</strong>
                 </a>
               </li>

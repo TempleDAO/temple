@@ -3,7 +3,6 @@ import styled from 'styled-components';
 
 import { VaultPage } from '../types';
 
-
 type Props = {
   selected?: VaultPage;
   onClickButton: (page: VaultPage) => void;

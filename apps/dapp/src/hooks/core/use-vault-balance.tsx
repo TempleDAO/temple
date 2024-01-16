@@ -17,7 +17,9 @@ const DEFAULT_STATE = {
   staked: ZERO,
 };
 
-export const useVaultBalance = (vaultContractAddress: string): HookResponseType => {
+export const useVaultBalance = (
+  vaultContractAddress: string
+): HookResponseType => {
   const {
     balances: { balances, isLoading },
     refreshVaultBalance,
@@ -25,7 +27,8 @@ export const useVaultBalance = (vaultContractAddress: string): HookResponseType 
   } = useVaultContext();
   const fetchBalance = () => refreshVaultBalance(vaultContractAddress);
   const vaultGroupBalances = balances[vaultGroup!.id];
-  const vaultBalance = vaultGroupBalances[vaultContractAddress] || DEFAULT_STATE;
+  const vaultBalance =
+    vaultGroupBalances[vaultContractAddress] || DEFAULT_STATE;
 
   return [
     {

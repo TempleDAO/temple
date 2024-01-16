@@ -17,27 +17,19 @@ export const ChartInfoBar = ({ pool }: Props) => {
   return (
     <InfoBar>
       <InfoItem>
-        <InfoLabel>
-          Start Date
-        </InfoLabel>
+        <InfoLabel>Start Date</InfoLabel>
         <span>{format(lastUpdate.startTimestamp, 'LLL do K:mm aa')}</span>
       </InfoItem>
       <InfoItem>
-        <InfoLabel>
-          End Date
-        </InfoLabel>
+        <InfoLabel>End Date</InfoLabel>
         <span>{format(lastUpdate.endTimestamp, 'LLL do K:mm aa')}</span>
       </InfoItem>
       <InfoItem>
-        <InfoLabel>
-          Pool Value
-        </InfoLabel>
+        <InfoLabel>Pool Value</InfoLabel>
         <span>${formatTemple(pool.totalLiquidity)}</span>
       </InfoItem>
       <InfoItem>
-        <InfoLabel>
-          {label}
-        </InfoLabel>
+        <InfoLabel>{label}</InfoLabel>
         <span>{formatted}</span>
       </InfoItem>
     </InfoBar>

@@ -4,7 +4,7 @@ import styled from 'styled-components';
 import { useWallet } from 'providers/WalletProvider';
 import { Button } from 'components/Button/Button';
 
-const VaultContent = ({ children }: PropsWithChildren<{}>) => {
+const VaultContent = ({ children }: PropsWithChildren<object>) => {
   return <Content>{children}</Content>;
 };
 
@@ -45,6 +45,6 @@ export const VaultButton = (props: ComponentProps<typeof BaseVaultButton>) => {
   }
 
   return <BaseVaultButton {...props} />;
-} 
+};
 
 export default VaultContent;

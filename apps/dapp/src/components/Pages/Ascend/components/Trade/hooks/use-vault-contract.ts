@@ -13,7 +13,10 @@ export enum JoinType {
   Add = 1,
 }
 
-export const useVaultContract = (pool: undefined | Pool, vaultAddress: string) => {
+export const useVaultContract = (
+  pool: undefined | Pool,
+  vaultAddress: string
+) => {
   const { wallet, signer } = useWallet();
   const [vaultContract, setVaultContract] = useState<Contract>();
 
@@ -22,7 +25,9 @@ export const useVaultContract = (pool: undefined | Pool, vaultAddress: string) =
       return;
     }
 
-    setVaultContract(new Contract(vaultAddress as string, balancerVaultAbi, signer));
+    setVaultContract(
+      new Contract(vaultAddress as string, balancerVaultAbi, signer)
+    );
   }, [vaultAddress, vaultContract, signer, setVaultContract]);
 
   // TODO: This is commented out because of the wagmi replacement
@@ -36,7 +41,12 @@ export const useVaultContract = (pool: undefined | Pool, vaultAddress: string) =
   // const poolBalance = _poolBalance?.data?.value || ZERO;
   const poolBalance = ZERO;
 
-  const joinPool = async (poolId: string, joinType: JoinType, assets: string[], _maxAmountsIn: DecimalBigNumber[]) => {
+  const joinPool = async (
+    poolId: string,
+    joinType: JoinType,
+    assets: string[],
+    _maxAmountsIn: DecimalBigNumber[]
+  ) => {
     const maxAmountsIn = _maxAmountsIn.map((dbn) => dbn.value);
     return vaultContract!.joinPool(
       poolId,
@@ -45,7 +55,10 @@ export const useVaultContract = (pool: undefined | Pool, vaultAddress: string) =
       {
         assets,
         maxAmountsIn,
-        userData: utils.defaultAbiCoder.encode(['uint256', 'uint256[]'], [joinType, maxAmountsIn]),
+        userData: utils.defaultAbiCoder.encode(
+          ['uint256', 'uint256[]'],
+          [joinType, maxAmountsIn]
+        ),
         fromInternalBalance: false,
       },
       {
@@ -82,9 +95,17 @@ export const useVaultContract = (pool: undefined | Pool, vaultAddress: string) =
     });
   };
 
-  const getSwapQuote = async (amount: DecimalBigNumber, sellAssetAddress: string, buyAssetAddress: string) => {
-    const assetOutIndex = pool!.tokensList.findIndex((address) => address === buyAssetAddress);
-    const assetInIndex = pool!.tokensList.findIndex((address) => address === sellAssetAddress);
+  const getSwapQuote = async (
+    amount: DecimalBigNumber,
+    sellAssetAddress: string,
+    buyAssetAddress: string
+  ) => {
+    const assetOutIndex = pool!.tokensList.findIndex(
+      (address) => address === buyAssetAddress
+    );
+    const assetInIndex = pool!.tokensList.findIndex(
+      (address) => address === sellAssetAddress
+    );
 
     return vaultContract!.callStatic.queryBatchSwap(
       0,
@@ -120,7 +141,10 @@ export const useVaultContract = (pool: undefined | Pool, vaultAddress: string) =
       {
         assets,
         minAmountsOut: minAmounts,
-        userData: utils.defaultAbiCoder.encode(['uint256', 'uint256'], [1, poolBalance]), // EXACT_BPT_IN_FOR_TOKENS_OUT
+        userData: utils.defaultAbiCoder.encode(
+          ['uint256', 'uint256'],
+          [1, poolBalance]
+        ), // EXACT_BPT_IN_FOR_TOKENS_OUT
         toInternalBalance: false,
       },
       {
@@ -129,9 +153,16 @@ export const useVaultContract = (pool: undefined | Pool, vaultAddress: string) =
     );
   };
 
-  const [joinPoolRequest, joinPoolRequestState] = useRequestState(joinPool, { shouldReThrow: true });
-  const [exitPoolRequest, exitPoolRequestState] = useRequestState(exitPool, { shouldReThrow: true });
-  const [getSwapQuoteRequest, getSwapQuoteRequestState] = useRequestState(getSwapQuote, { shouldReThrow: true });
+  const [joinPoolRequest, joinPoolRequestState] = useRequestState(joinPool, {
+    shouldReThrow: true,
+  });
+  const [exitPoolRequest, exitPoolRequestState] = useRequestState(exitPool, {
+    shouldReThrow: true,
+  });
+  const [getSwapQuoteRequest, getSwapQuoteRequestState] = useRequestState(
+    getSwapQuote,
+    { shouldReThrow: true }
+  );
 
   return {
     address: vaultContract?.address || '',

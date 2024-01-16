@@ -1,4 +1,10 @@
-import { Route, Routes, NavLink as BaseNavLink, Navigate, useSearchParams } from 'react-router-dom';
+import {
+  Route,
+  Routes,
+  NavLink as BaseNavLink,
+  Navigate,
+  useSearchParams,
+} from 'react-router-dom';
 import * as breakpoints from 'styles/breakpoints';
 import styled from 'styled-components';
 import DashboardContent, { DashboardType } from './DashboardContent';
@@ -28,16 +34,38 @@ export const DashboardPage = () => {
       </DashboardHeaderNav>
       <DashboardContentContainer>
         <Routes>
-          <Route path="*" element={<Navigate replace to="treasuryreservesvault" />} />
+          <Route
+            path="*"
+            element={<Navigate replace to="treasuryreservesvault" />}
+          />
           <Route
             path="treasuryreservesvault"
-            element={<DashboardContent selectedDashboard={DashboardType.TREASURY_RESERVES_VAULT} />}
+            element={
+              <DashboardContent
+                selectedDashboard={DashboardType.TREASURY_RESERVES_VAULT}
+              />
+            }
           />
-          <Route path="ramos" element={<DashboardContent selectedDashboard={DashboardType.RAMOS} />} />
+          <Route
+            path="ramos"
+            element={
+              <DashboardContent selectedDashboard={DashboardType.RAMOS} />
+            }
+          />
           {/* // TODO: Hidden until launch */}
           {/* <Route path="tlc" element={<DashboardContent selectedDashboard={DashboardType.TLC} />} /> */}
-          <Route path="templebase" element={<DashboardContent selectedDashboard={DashboardType.TEMPLE_BASE} />} />
-          <Route path="dsrbase" element={<DashboardContent selectedDashboard={DashboardType.DSR_BASE} />} />
+          <Route
+            path="templebase"
+            element={
+              <DashboardContent selectedDashboard={DashboardType.TEMPLE_BASE} />
+            }
+          />
+          <Route
+            path="dsrbase"
+            element={
+              <DashboardContent selectedDashboard={DashboardType.DSR_BASE} />
+            }
+          />
         </Routes>
       </DashboardContentContainer>
     </DashboardContainer>
@@ -63,7 +91,7 @@ const NavLink = styled(BaseNavLink)<NavLinkProps>`
 
   &.active {
     text-decoration: underline;
-    color: ${({theme})=> theme.palette.brandLight}
+    color: ${({ theme }) => theme.palette.brandLight};
   }
 
   ${breakpoints.phoneToSmallTablet(`

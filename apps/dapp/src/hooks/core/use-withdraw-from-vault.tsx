@@ -7,7 +7,10 @@ import { Operation, useVaultContext } from 'components/Pages/Core/VaultContext';
 import { getBigNumberFromString } from 'components/Vault/utils';
 import env from 'constants/env';
 
-export const useWithdrawFromVault = (vaultContractAddress: string, onSuccess?: Callback) => {
+export const useWithdrawFromVault = (
+  vaultContractAddress: string,
+  onSuccess?: Callback
+) => {
   const { signer, wallet } = useWallet();
   const { openNotification } = useNotification();
   const { optimisticallyUpdateVaultStaked } = useVaultContext();
@@ -21,12 +24,22 @@ export const useWithdrawFromVault = (vaultContractAddress: string, onSuccess?: C
     }
 
     const bigAmount = getBigNumberFromString(amount);
-    const vaultEarlyWithdrawal = new VaultEarlyWithdraw__factory(signer).attach(env.contracts.vaultEarlyExit);
+    const vaultEarlyWithdrawal = new VaultEarlyWithdraw__factory(signer).attach(
+      env.contracts.vaultEarlyExit
+    );
 
-    const receipt = await vaultEarlyWithdrawal.withdraw(subvaultAddress, bigAmount, { gasLimit: 400000 });
+    const receipt = await vaultEarlyWithdrawal.withdraw(
+      subvaultAddress,
+      bigAmount,
+      { gasLimit: 400000 }
+    );
     await receipt.wait();
 
-    optimisticallyUpdateVaultStaked(vaultContractAddress, Operation.Decrease, bigAmount);
+    optimisticallyUpdateVaultStaked(
+      vaultContractAddress,
+      Operation.Decrease,
+      bigAmount
+    );
 
     openNotification({
       title: 'Early withdraw success',

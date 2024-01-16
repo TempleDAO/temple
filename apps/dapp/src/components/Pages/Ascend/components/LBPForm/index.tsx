@@ -13,7 +13,13 @@ import { formatNumber } from 'utils/formatter';
 import { useVaultContract, JoinType } from '../Trade/hooks/use-vault-contract';
 import { AdminCryptoInput } from './components/AdminCryptoInput';
 
-import { getInitialValues, createTokenDefaults, formatValueByType, formatDate, formatWeight } from './utils';
+import {
+  getInitialValues,
+  createTokenDefaults,
+  formatValueByType,
+  formatDate,
+  formatWeight,
+} from './utils';
 
 import { Props, FormToken, Values, InputType } from './types';
 
@@ -24,24 +30,29 @@ export const LBPForm = ({ pool }: Props) => {
 
   const { setSwapEnabled, updateWeightsGradually } = usePoolContract(pool);
   const { balances, userBalances, vaultAddress } = useAuctionContext();
-  const vaultContract = useVaultContract(pool!!, vaultAddress as any);
+  const vaultContract = useVaultContract(pool!, vaultAddress as any);
   const { createPool } = useFactoryContract();
-  const [addTokenAddress, setAddTokenAddress] = useState(env.tokens.temple.address);
+  const [addTokenAddress, setAddTokenAddress] = useState(
+    env.tokens.temple.address
+  );
   const [formValues, setFormValues] = useState(getInitialValues(pool));
 
-  const setFormValue = <T extends any>(field: keyof Values, value: T) => {
+  const setFormValue = <T,>(field: keyof Values, value: T) => {
     setFormValues((vals) => ({
       ...vals,
       [field]: value,
     }));
   };
 
-  const createChangeHandler = (fieldKey: keyof Values, type: InputType) => (event: React.ChangeEvent<any>) => {
-    setFormValue(fieldKey, formatValueByType(event.target.value, type));
-  };
+  const createChangeHandler =
+    (fieldKey: keyof Values, type: InputType) =>
+    (event: React.ChangeEvent<any>) => {
+      setFormValue(fieldKey, formatValueByType(event.target.value, type));
+    };
 
   const createTokenChangeHandler =
-    (tokenAddress: string, key: keyof FormToken, type: InputType) => (event: React.ChangeEvent<any>) => {
+    (tokenAddress: string, key: keyof FormToken, type: InputType) =>
+    (event: React.ChangeEvent<any>) => {
       setFormValues((values) => {
         const token = values.tokens[tokenAddress]!;
         return {
@@ -58,7 +69,9 @@ export const LBPForm = ({ pool }: Props) => {
     };
 
   const getOrderedFormTokens = () =>
-    Object.values(formValues.tokens).sort((a, b) => a.address.localeCompare(b.address));
+    Object.values(formValues.tokens).sort((a, b) =>
+      a.address.localeCompare(b.address)
+    );
 
   const saveForm = () => {
     const tokens = getOrderedFormTokens();
@@ -76,7 +89,11 @@ export const LBPForm = ({ pool }: Props) => {
   const updateWeights = () => {
     const tokens = getOrderedFormTokens();
     const endWeights = tokens.map(({ endWeight }) => endWeight);
-    return updateWeightsGradually.handler(formValues.startDate, formValues.endDate, endWeights);
+    return updateWeightsGradually.handler(
+      formValues.startDate,
+      formValues.endDate,
+      endWeights
+    );
   };
 
   const resetJoinPool = () => {
@@ -112,7 +129,12 @@ export const LBPForm = ({ pool }: Props) => {
 
     try {
       const assets = tokens.map(({ address }) => address);
-      const tx = await vaultContract.joinPool.request(pool.id, formValues.joinType, assets, maxAmountsIn);
+      const tx = await vaultContract.joinPool.request(
+        pool.id,
+        formValues.joinType,
+        assets,
+        maxAmountsIn
+      );
       await tx.wait();
       resetJoinPool();
     } catch (err) {
@@ -134,7 +156,9 @@ export const LBPForm = ({ pool }: Props) => {
     }
   };
 
-  const tokens = Object.values(formValues.tokens).sort((a, b) => a.index - b.index);
+  const tokens = Object.values(formValues.tokens).sort(
+    (a, b) => a.index - b.index
+  );
 
   return (
     <Form>
@@ -223,45 +247,55 @@ export const LBPForm = ({ pool }: Props) => {
         <div>
           <FieldGroup>
             <Label>Pool Tokens</Label>
-            {!isEditMode && Object.keys(formValues.tokens).length < MAX_TOKENS && (
-              <FieldGroup>
-                <AddTokenWrapper>
-                  <Select
-                    id="token-to-add"
-                    onChange={(evt) => {
-                      setAddTokenAddress(evt.target.value);
-                    }}
-                    value={addTokenAddress}
-                  >
-                    {Object.values(env.tokens).map((token) => (
-                      <option value={token.address} key={token.address}>
-                        {token.name}
-                      </option>
-                    ))}
-                  </Select>
-                  <AddButton
-                    isSmall
-                    disabled={!!formValues.tokens[addTokenAddress]}
-                    onClick={() => {
-                      const envTokens = Object.values(env.tokens);
-                      const addToken = envTokens.find(({ address }) => address === addTokenAddress);
-                      setFormValues((values) => ({
-                        ...values,
-                        tokens: {
-                          ...values.tokens,
-                          [addTokenAddress]: createTokenDefaults(addToken, tokens.length + 1),
-                        },
-                      }));
-                      const currentTokens = new Set(Object.keys(formValues.tokens).concat(addTokenAddress));
-                      const nextToken = envTokens.filter(({ address }) => !currentTokens.has(address));
-                      setAddTokenAddress(nextToken[0]?.address || '');
-                    }}
-                  >
-                    Add Token
-                  </AddButton>
-                </AddTokenWrapper>
-              </FieldGroup>
-            )}
+            {!isEditMode &&
+              Object.keys(formValues.tokens).length < MAX_TOKENS && (
+                <FieldGroup>
+                  <AddTokenWrapper>
+                    <Select
+                      id="token-to-add"
+                      onChange={(evt) => {
+                        setAddTokenAddress(evt.target.value);
+                      }}
+                      value={addTokenAddress}
+                    >
+                      {Object.values(env.tokens).map((token) => (
+                        <option value={token.address} key={token.address}>
+                          {token.name}
+                        </option>
+                      ))}
+                    </Select>
+                    <AddButton
+                      isSmall
+                      disabled={!!formValues.tokens[addTokenAddress]}
+                      onClick={() => {
+                        const envTokens = Object.values(env.tokens);
+                        const addToken = envTokens.find(
+                          ({ address }) => address === addTokenAddress
+                        );
+                        setFormValues((values) => ({
+                          ...values,
+                          tokens: {
+                            ...values.tokens,
+                            [addTokenAddress]: createTokenDefaults(
+                              addToken,
+                              tokens.length + 1
+                            ),
+                          },
+                        }));
+                        const currentTokens = new Set(
+                          Object.keys(formValues.tokens).concat(addTokenAddress)
+                        );
+                        const nextToken = envTokens.filter(
+                          ({ address }) => !currentTokens.has(address)
+                        );
+                        setAddTokenAddress(nextToken[0]?.address || '');
+                      }}
+                    >
+                      Add Token
+                    </AddButton>
+                  </AddTokenWrapper>
+                </FieldGroup>
+              )}
             {tokens.length > 0 && (
               <UnstyledList>
                 {tokens.map((token, i) => {
@@ -274,7 +308,9 @@ export const LBPForm = ({ pool }: Props) => {
                           {i + 1}. <Bold>{token.name}</Bold> ({token.address})
                         </>
                         <br />
-                        <Label htmlFor={`${token.address}-startWeight`}>Start Weight</Label>
+                        <Label htmlFor={`${token.address}-startWeight`}>
+                          Start Weight
+                        </Label>
                         <Input
                           min="0"
                           max="100"
@@ -284,12 +320,18 @@ export const LBPForm = ({ pool }: Props) => {
                           readOnly={isEditMode}
                           placeholder="0"
                           defaultValue={formatWeight(token.startWeight)}
-                          onChange={createTokenChangeHandler(token.address, 'startWeight', 'bn')}
+                          onChange={createTokenChangeHandler(
+                            token.address,
+                            'startWeight',
+                            'bn'
+                          )}
                         />
                         {isEditMode && (
                           <>
                             <br />
-                            <Label htmlFor={`${token.address}-endWeight`}>End Weight</Label>
+                            <Label htmlFor={`${token.address}-endWeight`}>
+                              End Weight
+                            </Label>
                             <Input
                               min="0"
                               max="100"
@@ -297,7 +339,11 @@ export const LBPForm = ({ pool }: Props) => {
                               type="number"
                               placeholder="0"
                               defaultValue={formatWeight(token.endWeight)}
-                              onChange={createTokenChangeHandler(token.address, 'endWeight', 'bn')}
+                              onChange={createTokenChangeHandler(
+                                token.address,
+                                'endWeight',
+                                'bn'
+                              )}
                             />
                             <br />
                             <Label>Current Liquidity</Label>
@@ -306,7 +352,11 @@ export const LBPForm = ({ pool }: Props) => {
                               placeholder="0"
                               readOnly
                               disabled
-                              value={`${poolBalance ? formatNumber(poolBalance.formatUnits()) : 0} $${token.symbol} `}
+                              value={`${
+                                poolBalance
+                                  ? formatNumber(poolBalance.formatUnits())
+                                  : 0
+                              } $${token.symbol} `}
                             />
                           </>
                         )}
@@ -328,8 +378,14 @@ export const LBPForm = ({ pool }: Props) => {
           </FieldGroup>
           {isEditMode && (
             <FieldGroup>
-              <Label>{formValues.joinType === JoinType.Add ? 'Add' : 'Initialize'} Liquidity</Label>
-              <Select value={formValues.joinType} onChange={createChangeHandler('joinType', 'number')}>
+              <Label>
+                {formValues.joinType === JoinType.Add ? 'Add' : 'Initialize'}{' '}
+                Liquidity
+              </Label>
+              <Select
+                value={formValues.joinType}
+                onChange={createChangeHandler('joinType', 'number')}
+              >
                 <option value={JoinType.Init}>Init</option>
                 <option value={JoinType.Add}>Add</option>
               </Select>
@@ -379,7 +435,14 @@ export const LBPForm = ({ pool }: Props) => {
           )}
         </div>
       </Layout>
-      {!isEditMode && <Button isSmall loading={createPool.isLoading} label="Save" onClick={saveForm} />}
+      {!isEditMode && (
+        <Button
+          isSmall
+          loading={createPool.isLoading}
+          label="Save"
+          onClick={saveForm}
+        />
+      )}
       {createPool.error && <ErrorMessage>{createPool.error}</ErrorMessage>}
     </Form>
   );

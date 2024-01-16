@@ -44,22 +44,18 @@ export const Trade = ({ pool }: Props) => {
   } = useAuctionContext();
   const [transactionSettingsOpen, setTransactionSettingsOpen] = useState(false);
 
-  const { swap, state, setSellValue, setTransactionSettings } = useVaultTradeState(
-    pool,
-    async (tokenSold, tokenBought, amount, poolId) => {
+  const { swap, state, setSellValue, setTransactionSettings } =
+    useVaultTradeState(pool, async (tokenSold, tokenBought, amount, poolId) => {
       AnalyticsService.captureEvent(AnalyticsEvent.Ascend.Swap, {
         tokenSold,
         tokenBought,
         amount,
         poolId,
       });
-    }
-  );
+    });
 
-  const [{ allowance, isLoading: allowanceIsLoading }, increaseAllowance] = useTokenContractAllowance(
-    sell as any,
-    vaultAddress
-  );
+  const [{ allowance, isLoading: allowanceIsLoading }, increaseAllowance] =
+    useTokenContractAllowance(sell as any, vaultAddress);
 
   const bigSellAmount = useMemo(() => {
     if (!state.inputValue || state.inputValue.trim() === '.') {
@@ -159,12 +155,16 @@ export const Trade = ({ pool }: Props) => {
               <>
                 Expected Output: {formatNumberFixedDecimals(receiveEstimate, 3)}
                 <br />
-                Minimum Amount: {formatNumberFixedDecimals(estimateWithSlippage, 3)}
+                Minimum Amount:{' '}
+                {formatNumberFixedDecimals(estimateWithSlippage, 3)}
               </>
             )}
             {state.quote.isLoading && <>Fetching Price...</>}
           </ReceivedValues>
-          <SlippageButton type="button" onClick={() => setTransactionSettingsOpen(true)}>
+          <SlippageButton
+            type="button"
+            onClick={() => setTransactionSettingsOpen(true)}
+          >
             {state.transactionSettings.slippageTolerance}%
           </SlippageButton>
         </SwapControls>
@@ -197,7 +197,9 @@ export const Trade = ({ pool }: Props) => {
           </SwapButton>
         )}
         {!!state.swap.error && <ErrorMessage>{state.swap.error}</ErrorMessage>}
-        {!!state.quote.error && <ErrorMessage>{state.quote.error}</ErrorMessage>}
+        {!!state.quote.error && (
+          <ErrorMessage>{state.quote.error}</ErrorMessage>
+        )}
       </Wrapper>
     </>
   );
