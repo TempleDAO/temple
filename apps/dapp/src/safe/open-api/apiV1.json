@@ -2715,7 +2715,7 @@
         },
         "dataDecoded": {
           "title": "Data decoded",
-          "type": "string",
+          "type": "object",
           "readOnly": true
         },
         "moduleTransactionId": {
@@ -2922,7 +2922,7 @@
         },
         "dataDecoded": {
           "title": "Data decoded",
-          "type": "string",
+          "type": "object",
           "readOnly": true
         },
         "confirmationsRequired": {
@@ -3317,7 +3317,7 @@
         },
         "dataDecoded": {
           "title": "Data decoded",
-          "type": "string",
+          "type": "object",
           "readOnly": true
         },
         "moduleTransactionId": {
@@ -3493,7 +3493,7 @@
         },
         "dataDecoded": {
           "title": "Data decoded",
-          "type": "string",
+          "type": "object",
           "readOnly": true
         },
         "confirmationsRequired": {
@@ -3714,7 +3714,7 @@
         },
         "dataDecoded": {
           "title": "Data decoded",
-          "type": "string",
+          "type": "object",
           "readOnly": true
         }
       }

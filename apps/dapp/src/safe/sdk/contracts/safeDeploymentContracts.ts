@@ -42,12 +42,12 @@ export function getSafeContractDeploymentDetails(
   const filters: DeploymentFilter = { version, network: chainId.toString(), released: true };
   if (safeDeploymentsL1ChainIds.includes(chainId) || isL1SafeMasterCopy) {
     const safeSingletonContractDetails = getSafeSingletonDeployment(filters);
-    console.log('using SafeContract L1', safeSingletonContractDetails);
+    console.debug('using SafeContract L1', safeSingletonContractDetails);
     if (!safeSingletonContractDetails) throw Error('undefined safeSingletonContractDetails');
     return safeSingletonContractDetails;
   }
   const safeL2SingletonContractDetails = getSafeL2SingletonDeployment(filters);
-  console.log('using SafeContract L2', safeL2SingletonContractDetails);
+  console.debug('using SafeContract L2', safeL2SingletonContractDetails);
   if (!safeL2SingletonContractDetails) throw Error('undefined safeL2SingletonContractDetails');
   return safeL2SingletonContractDetails;
 }

@@ -3,18 +3,25 @@ import { useState } from 'react';
 import env from 'constants/env';
 import { InputSelect, Option } from 'components/InputSelect/InputSelect';
 import { SafeTxsDataTable } from './SafeTxDataTable';
-import { useWallet } from 'providers/WalletProvider';
-import { useSafeCheckOwner, useSafeDataSubset, useSafePendingTxs } from 'safe/open-api/use-safe-open-api';
 import { queryPhone } from 'styles/breakpoints';
 import { useMediaQuery } from 'react-responsive';
-import { SafeWallet } from 'constants/env/types';
+import { SafeTransactionsContextProvider } from 'safe/safeContext';
 
-const SafeAdmin = () => {
-  const { walletAddress } = useWallet();
-  const [safeWallet, setSafeWallet] = useState<SafeWallet>(env.safes[0]);
-  const safePendingTxsApi = useSafePendingTxs(safeWallet.address);
-  const { data: isSafeOwner } = useSafeCheckOwner(safeWallet.address, walletAddress);
-  const { data: dataSubset } = useSafeDataSubset(safePendingTxsApi, isSafeOwner ?? false, safeWallet.address);
+
+const SafeAdminWithContext = () => {
+  const [safeWalletAddress, setSafeWalletAddress] = useState<string>(env.safes[0].address);
+  return (
+    <SafeTransactionsContextProvider safeAddress={safeWalletAddress}>
+      <SafeAdmin setSafeWalletAddress={setSafeWalletAddress}/>
+    </SafeTransactionsContextProvider>
+  );
+};
+
+type SafeAdminProps = {
+  setSafeWalletAddress: (safeWallet: string) => void;
+}
+
+const SafeAdmin = ({ setSafeWalletAddress}: SafeAdminProps) => {
   const isAbovePhone = useMediaQuery({
     query: queryPhone,
   });
@@ -25,7 +32,7 @@ const SafeAdmin = () => {
       safe.address.length
     )})`,
     value: safe.address,
-  }));  
+  }));
 
   return (
     <Container>
@@ -36,7 +43,7 @@ const SafeAdmin = () => {
             <InputSelect
               options={safeWalletOptions}
               defaultValue={safeWalletOptions[0]}
-              onChange={(e) => setSafeWallet(e.value)}
+              onChange={(e) => setSafeWalletAddress(e.value)}
               isSearchable={false}
               width={isAbovePhone ? '450px' : '300px'}
             />
@@ -44,9 +51,7 @@ const SafeAdmin = () => {
         </div>
         <Section label="Queued Safe Transactions" overflowX>
           <SafeTxsDataTable
-            dataLoading={safePendingTxsApi.isLoading}
-            dataSubset={dataSubset}
-            tableHeaders={['Action', 'Nonce', 'SafeTx', 'Status', 'Confirmations', 'Date']}
+            tableHeaders={['Action', 'Nonce', 'SafeTx', 'Status', 'Type', 'Confirmations', 'Date']}
           />
         </Section>
       </AreaDelimiter>
@@ -54,7 +59,7 @@ const SafeAdmin = () => {
   );
 };
 
-export default SafeAdmin;
+export default SafeAdminWithContext;
 
 const Container = styled.div`
   gap: 2rem;
@@ -86,7 +91,7 @@ const Section = (props: SectionProps) => {
   );
 };
 
-const SectionContainer = styled.div<{overflowX?: boolean}>`
+const SectionContainer = styled.div<{ overflowX?: boolean }>`
   display: flex;
   flex-direction: column;
   margin-top: 3rem;

@@ -4,8 +4,9 @@ import env from 'constants/env';
 import styled from 'styled-components';
 import { loading } from 'utils/loading-value';
 import { Button } from 'components/Button/Button';
+import { useSafeTransactions } from 'safe/safeContext';
 
-export type SafeStatus = 'unknown' | 'awaiting_signing' | 'awaiting_execution' | 'executing';
+export type SafeStatus = 'unknown' | 'awaiting_signing' | 'awaiting_execution' | 'loading' | 'successful' | 'error';
 
 export type SafeTableRow = {
   date: string;
@@ -13,27 +14,40 @@ export type SafeTableRow = {
   status: SafeStatus;
   confirmations: string;
   alreadySigned: boolean;
+  type: string;
   isOwner: boolean;
   nonce: number;
   action: () => void;
 };
 
 type Props = {
-  dataSubset: SafeTableRow[] | undefined;
-  dataLoading: boolean;
   tableHeaders: string[];
 };
 
 export const SafeTxsDataTable = (props: Props) => {
-  const { dataSubset, dataLoading, tableHeaders } = props;
-
+  const { tableHeaders } = props;
   const [safeTableRows, setSafeTableRows] = useState<Array<SafeTableRow>>([]);
+  const safeTransactions = useSafeTransactions();
   const ref = useRef(null);
 
   useEffect(() => {
+    const dataSubset = safeTransactions.tableRows(updateSafeTableRow);
     if (!dataSubset) return;
     setSafeTableRows(dataSubset);
-  }, [dataSubset]);
+  }, [safeTransactions]);
+
+  const updateSafeTableRow = (safeTxHash: string, newValue?: SafeTableRow) => {
+    setSafeTableRows((prevState) => {
+      const newState = prevState.map((prevStateSafeRow) => {
+        if(safeTxHash === prevStateSafeRow.txHash) {
+          return { ...prevStateSafeRow, ...newValue };
+        } else {
+          return { ...prevStateSafeRow };
+        }
+      });
+      return newState;
+    });
+  };
 
   return (
     <DataTable>
@@ -49,7 +63,7 @@ export const SafeTxsDataTable = (props: Props) => {
         </HeaderRow>
       </thead>
       <tbody>
-        {dataLoading ? (
+        {safeTransactions.isLoading() ? (
           loadSkeletonRows(1, tableHeaders.length)
         ) : !safeTableRows || safeTableRows.length === 0 ? (
           <DataRow hasBorderBotton>
@@ -58,25 +72,40 @@ export const SafeTxsDataTable = (props: Props) => {
         ) : (
           <>
             {safeTableRows.map((row) => {
+              let rowButtonLabel = 'N/A';
+              let rowButtonDisabled = true;
+              switch (row.status) {
+                case 'awaiting_signing':
+                  rowButtonLabel = 'SIGN';
+                  rowButtonDisabled = row.alreadySigned || !row.isOwner;
+                  break;
+                case 'awaiting_execution':
+                  rowButtonLabel = 'EXECUTE';
+                  rowButtonDisabled = !row.isOwner;
+                  break;
+                case 'loading':
+                  rowButtonLabel = 'LOADING';
+                  rowButtonDisabled = true;
+              }
+              let rowStatus = row.status;
+              const prevStatus = localStorage.getItem(row.txHash);
+              if (prevStatus && row.status === prevStatus && !row.alreadySigned){
+                rowStatus = 'loading';
+              }
               return (
                 <Fragment key={JSON.stringify(row)}>
                   <DataRow hasBorderBotton={false} ref={ref} key={row.txHash}>
                     <DataCell>
                       <Button
                         isSmall
-                        label={
-                          row.status === 'awaiting_signing'
-                            ? 'SIGN'
-                            : row.status === 'executing'
-                            ? 'EXECUTING...'
-                            : 'EXECUTE'
-                        }
-                        onClick={row.action}
-                        disabled={
-                          (row.status === 'awaiting_signing' && row.alreadySigned) ||
-                          !row.isOwner ||
-                          row.status === 'executing'
-                        }
+                        style={{width: '95px'}}
+                        label={rowButtonLabel}
+                        onClick={async() => {
+                          updateSafeTableRow(row.txHash, { ...row, status: 'loading'});
+                          await row.action();
+                        }}
+                        loading={row.status === 'loading'}
+                        disabled={rowButtonDisabled}
                       />
                     </DataCell>
                     <DataCell>{row.nonce}</DataCell>
@@ -85,7 +114,8 @@ export const SafeTxsDataTable = (props: Props) => {
                         {row.txHash.slice(0, 12) + '...'}
                       </LinkStyled>
                     </DataCell>
-                    <DataCell>{row.status}</DataCell>
+                    <DataCell>{rowStatus}</DataCell>
+                    <DataCell>{row.type}</DataCell>
                     <DataCell>{row.confirmations}</DataCell>
                     <DataCell>{row.date}</DataCell>
                   </DataRow>

@@ -104,7 +104,7 @@ export const useSafeSdk = (signer: Nullable<Signer>, safeAddress: string) => {
     try {
       // Use this encoded data to test on tenderly for a simulated tx e.g. https://dashboard.tenderly.co/public/safe/safe-apps/simulator/8aa753dc-43fa-4cf6-b37b-f0da7b499f18
       const encodedTx = await getEncodedTransaction(safeContract, signedSafeTransaction);
-      console.log('encodedTx', encodedTx);
+      console.debug('encodedTx', encodedTx);
       const txResponse = await safeContract.execTransaction(
         sst.to,
         sst.value,
