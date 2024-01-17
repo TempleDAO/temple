@@ -19,7 +19,8 @@
     "version:release": "standard-version",
     "version:prerelease": "standard-version --prerelease beta",
     "build-with-stats": "tsc && BUILD_STATS=true vite build",
-    "codegen:safe-api-v1": "openapi --input ./src/safe/open-api/apiV1.json --output ./src/safe/open-api/client"
+    "safe-api-v1-host":"(cd src/safe/open-api && ./replace-host.sh && rm -f apiv1.jsone)",
+    "codegen:safe-api-v1": "yarn safe-api-v1-host && openapi --input ./src/safe/open-api/apiV1.json --output ./src/safe/open-api/client"
   },
   "dependencies": {
     "@balancer-labs/sdk": "^1.0.4",
