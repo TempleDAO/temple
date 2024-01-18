@@ -1,4 +1,4 @@
-import { HTMLProps, useState } from 'react';
+import { HTMLProps, MouseEvent, useState } from 'react';
 import Image from 'components/Image/Image';
 import styled, { css } from 'styled-components';
 
@@ -12,7 +12,7 @@ export interface ButtonProps
   label?: string;
   loading?: boolean; 
 
-  onClick?(): Promise<void> | void;
+  onClick?(e?: MouseEvent): Promise<void> | void;
 }
 
 /**
@@ -37,7 +37,7 @@ export const Button = ({
    * Click handler which shows a spinner while the action is in progress.
    * If button is already in progress then callback is not called.
    */
-  const onClickHandler = async () => {
+  const onClickHandler = async (e: MouseEvent) => {
     if (isLoading) {
       return;
     }
@@ -47,7 +47,7 @@ export const Button = ({
 
     setIsLoading(true);
     try {
-      await onClick();
+      await onClick(e);
     } catch (err) {
       /* TODO: Handle JSON-RPC errors better */
       // @ts-ignore

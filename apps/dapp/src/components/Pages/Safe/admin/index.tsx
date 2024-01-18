@@ -5,26 +5,28 @@ import { InputSelect, Option } from 'components/InputSelect/InputSelect';
 import { SafeTxsDataTable } from './SafeTxDataTable';
 import { queryPhone } from 'styles/breakpoints';
 import { useMediaQuery } from 'react-responsive';
-import { SafeTransactionsContextProvider } from 'safe/safeContext';
-
+import { SafeTransactionCategory, SafeTransactionsContextProvider, useSafeTransactions } from 'safe/safeContext';
+import LinkIcon from 'assets/icons/link.svg?react';
+import { Copy } from 'components/Copy/Copy';
 
 const SafeAdminWithContext = () => {
   const [safeWalletAddress, setSafeWalletAddress] = useState<string>(env.safes[0].address);
   return (
     <SafeTransactionsContextProvider safeAddress={safeWalletAddress}>
-      <SafeAdmin setSafeWalletAddress={setSafeWalletAddress}/>
+      <SafeAdmin setSafeWalletAddress={setSafeWalletAddress} />
     </SafeTransactionsContextProvider>
   );
 };
 
 type SafeAdminProps = {
   setSafeWalletAddress: (safeWallet: string) => void;
-}
+};
 
-const SafeAdmin = ({ setSafeWalletAddress}: SafeAdminProps) => {
+const SafeAdmin = ({ setSafeWalletAddress }: SafeAdminProps) => {
   const isAbovePhone = useMediaQuery({
     query: queryPhone,
   });
+  const { safeAddress } = useSafeTransactions();
 
   const safeWalletOptions: Option[] = env.safes.map((safe) => ({
     label: `${safe.name} (${safe.address.slice(0, 5)}...${safe.address.slice(
@@ -40,18 +42,28 @@ const SafeAdmin = ({ setSafeWalletAddress}: SafeAdminProps) => {
         <div>
           <h3>Safe App</h3>
           <Section label="Select Gnosis Safe Wallet">
-            <InputSelect
-              options={safeWalletOptions}
-              defaultValue={safeWalletOptions[0]}
-              onChange={(e) => setSafeWalletAddress(e.value)}
-              isSearchable={false}
-              width={isAbovePhone ? '450px' : '300px'}
-            />
+            <FlexContainer>
+              <InputSelect
+                options={safeWalletOptions}
+                defaultValue={safeWalletOptions[0]}
+                onChange={(e) => setSafeWalletAddress(e.value)}
+                isSearchable={false}
+                width={isAbovePhone ? '450px' : '300px'}
+              />
+              <Copy value={safeAddress} />
+            </FlexContainer>
           </Section>
         </div>
-        <Section label="Queued Safe Transactions" overflowX>
+        <Section label="Queued Transactions" safeTxCategoryLink="queue" overflowX>
           <SafeTxsDataTable
-            tableHeaders={['Action', 'Nonce', 'SafeTx', 'Status', 'Type', 'Confirmations', 'Date']}
+            safeTxCategory="queue"
+            tableHeaders={['Action', 'Nonce', 'Status', 'Type', 'Confirmations', 'Date']}
+          />
+        </Section>
+        <Section label="History Transactions" safeTxCategoryLink="history" overflowX>
+          <SafeTxsDataTable
+            safeTxCategory="history"
+            tableHeaders={['Action', 'Nonce', 'Status', 'Type', 'Confirmations', 'Date']}
           />
         </Section>
       </AreaDelimiter>
@@ -80,13 +92,33 @@ const AreaDelimiter = styled.div`
 type SectionProps = {
   label: string;
   children: React.ReactNode;
+  safeTxCategoryLink?: SafeTransactionCategory;
   overflowX?: boolean;
 };
 const Section = (props: SectionProps) => {
+  const ENV_VARS = import.meta.env;
+  const ENV = ENV_VARS.VITE_ENV;
+  const IS_PROD = ENV === 'production';
+  const safeEnv = IS_PROD ? 'eth' : 'sep';
+
+  const { label, children, safeTxCategoryLink } = props;
+  const { safeAddress } = useSafeTransactions();
+
   return (
     <SectionContainer {...props}>
-      <p>{props.label}</p>
-      {props.children}
+      <FlexContainer>
+        <Label>{label}</Label>
+        {safeTxCategoryLink && (
+          <a
+            href={`https://app.safe.global/transactions/${safeTxCategoryLink}?safe=${safeEnv}:${safeAddress}`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            <LinkIcon height={16} width={16} />
+          </a>
+        )}
+      </FlexContainer>
+      {children}
     </SectionContainer>
   );
 };
@@ -96,4 +128,16 @@ const SectionContainer = styled.div<{ overflowX?: boolean }>`
   flex-direction: column;
   margin-top: 3rem;
   overflow-x: ${({ overflowX }) => (overflowX ? 'auto' : 'unset')};
+`;
+
+const Label = styled.label`
+  margin-bottom: 0.5rem;
+  font-weight: bold;
+`;
+
+const FlexContainer = styled.div`
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  align-items: center;
 `;
