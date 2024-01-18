@@ -1,14 +1,20 @@
 import { PropsWithChildren, createContext, useContext } from 'react';
-import { SafeMultisigTransactionResponse } from './open-api/client';
 import { useSafeCheckOwner, useSafeTxs } from './open-api/use-safe-open-api';
-import { SafeStatus, SafeTableRow } from 'components/Pages/Safe/admin/SafeTxDataTable';
+import { SafeTableRow } from 'components/Pages/Safe/admin/SafeTxDataTable';
 import { useWallet } from 'providers/WalletProvider';
 import { format } from 'date-fns';
 import { useSafeSdk } from './sdk/use-safe-sdk';
 
+export type SafeTransactionCategory = 'queue' | 'history';
+type SafeTransactionCategoryAction = 'return' | 'add' | 'clear';
+export type SafeStatus = 'unknown' | 'awaiting_signing' | 'awaiting_execution' | 'loading' | 'successful' | 'error';
 interface ISafeTransactionsContext {
+  safeAddress: string;
   isLoading: () => boolean;
-  tableRows: (updateSafeTableRow: (safeTxHash: string, newValue?: SafeTableRow) => void) => SafeTableRow[];
+  tableRows: (
+    safeTxCategory: SafeTransactionCategory,
+    updateSafeTableRow: (safeTxHash: string, newValue?: SafeTableRow) => void
+  ) => Promise<SafeTableRow[]>;
 }
 const SafeTransactionsContext = createContext<ISafeTransactionsContext | undefined>(undefined);
 
@@ -19,71 +25,127 @@ export function SafeTransactionsContextProvider({
   children,
   safeAddress,
 }: PropsWithChildren<SafeTransactionsContextProviderProps>) {
-  const safeTableRows: SafeTableRow[] = [];
+  const safeQueuedTableRows: SafeTableRow[] = [];
+  const safeHistoryTableRows: SafeTableRow[] = [];
   const { walletAddress, signer } = useWallet();
   const { data: isSafeOwner } = useSafeCheckOwner(safeAddress, walletAddress);
   const { signSafeTx, executeSafeTx } = useSafeSdk(signer, safeAddress);
 
-  const safePendingTransactions = useSafeTxs(safeAddress, false, true, 5000);
-  const safeExecutedTransactions = useSafeTxs(safeAddress, true, false, 5000);
+  const safeQueuedTransactions = useSafeTxs(safeAddress, walletAddress, false, true, 5000);
+  const safeExecutedTransactions = useSafeTxs(safeAddress, walletAddress, true, false, 5000);
 
-  const getAllTransactions = () => {
-    const safeTransactions: SafeMultisigTransactionResponse[] = [];
-    safeTransactions.push(...(safePendingTransactions.data?.results ?? []));
-    safeTransactions.push(...(safeExecutedTransactions.data?.results ?? []));
-    return safeTransactions;
+  const getQueuedTransactions = (safeTxCategory: SafeTransactionCategory) => {
+    if (safeTxCategory === 'queue') return safeQueuedTransactions.data?.results ?? [];
+    if (safeTxCategory === 'history') return safeExecutedTransactions.data?.results ?? [];
+  };
+
+  const getprevSafeTableRow = (safeTxCategory: SafeTransactionCategory, safeTransactionHash: string) => {
+    switch (safeTxCategory) {
+      case 'queue':
+        return safeQueuedTableRows.find((str) => str.safeTxHash === safeTransactionHash);
+      case 'history':
+        return safeHistoryTableRows.find((str) => str.safeTxHash === safeTransactionHash);
+    }
   };
 
   const isLoading = () => {
-    return safePendingTransactions.isLoading || safeExecutedTransactions.isLoading;
+    return safeQueuedTransactions.isLoading || safeExecutedTransactions.isLoading;
   };
 
-  const tableRows = (updateSafeTableRow: (safeTxHash: string, newValue?: SafeTableRow) => void) => {
-    getAllTransactions().map(async (tx) => {
+  const tableRows = async (
+    safeTxCategory: SafeTransactionCategory,
+    updateSafeTableRow: (safeTxHash: string, newValue?: SafeTableRow) => void
+  ) => {
+    safeTxCategoryAction('clear', safeTxCategory);
+    await getQueuedTransactions(safeTxCategory)?.map(async (tx) => {
       const txConfirmations = tx.confirmations ?? [];
       const thresholdReached = txConfirmations.length >= tx.confirmationsRequired;
       const alreadySigned =
         txConfirmations.filter((conf) => conf.owner.toLowerCase() === walletAddress?.toLowerCase()).length > 0;
+      const isOwner = isSafeOwner ?? false;
       let status: SafeStatus = thresholdReached ? 'awaiting_execution' : 'awaiting_signing';
       if (tx.isSuccessful && tx.isExecuted) {
         status = 'successful';
       } else if (!tx.isSuccessful && tx.isExecuted) {
         status = 'error';
       }
-      safeTableRows.push({
-        date: format(new Date(tx.submissionDate), 'yyyy-MM-dd H:mm:ss O'),
-        txHash: tx.safeTxHash,
+      let rowButtonLabel = 'N/A';
+      let rowButtonDisabled = true;
+      switch (status) {
+        case 'awaiting_signing':
+          rowButtonLabel = 'SIGN';
+          rowButtonDisabled = !walletAddress || alreadySigned || !isOwner;
+          break;
+        case 'awaiting_execution':
+          rowButtonLabel = 'EXECUTE';
+          rowButtonDisabled = !walletAddress && !isOwner;
+          break;
+      }
+
+      const tmpSafeRow: SafeTableRow = {
+        date: format(new Date(tx.submissionDate), 'yyyy-MM-dd H:mm'),
+        txHash: tx.transactionHash,
+        safeTxHash: tx.safeTxHash,
         status,
+        button: {
+          label: rowButtonLabel,
+          disabled: rowButtonDisabled,
+        },
         confirmations: `${txConfirmations.length}/${tx.confirmationsRequired}`,
-        alreadySigned: alreadySigned,
+        alreadySigned,
         type: tx.dataDecoded?.method ?? (tx.value.length > 1 ? 'transfer' : undefined),
-        isOwner: isSafeOwner ?? false,
+        isOwner,
         nonce: tx.nonce,
+        isExpanded: false,
+        dataDecode: JSON.stringify(tx.dataDecoded, null, 2),
         action: async () => {
-          const prevSafeTableRow = safeTableRows.find((str) => str.txHash === tx.safeTxHash);
+          const prevSafeTableRow = getprevSafeTableRow(safeTxCategory, tx.safeTxHash);
           try {
             if (!prevSafeTableRow) throw 'prevSafeTableRow undefined';
             switch (status) {
               case 'awaiting_signing':
                 await signSafeTx(tx.safeTxHash);
-                updateSafeTableRow(prevSafeTableRow.txHash, { ...prevSafeTableRow, status: 'loading' });
+                updateSafeTableRow(prevSafeTableRow.safeTxHash, { ...prevSafeTableRow, status: 'loading' });
                 return;
               case 'awaiting_execution':
                 await executeSafeTx(tx.safeTxHash);
-                updateSafeTableRow(prevSafeTableRow.txHash, { ...prevSafeTableRow, status: 'loading' });
+                updateSafeTableRow(prevSafeTableRow.safeTxHash, { ...prevSafeTableRow, status: 'loading' });
                 return;
             }
           } catch (e) {
             if (!prevSafeTableRow) throw 'prevSafeTableRow undefined';
-            updateSafeTableRow(prevSafeTableRow.txHash, { ...prevSafeTableRow, status: 'error' });
+            updateSafeTableRow(prevSafeTableRow.safeTxHash, { ...prevSafeTableRow, status: 'error' });
           }
         },
-      });
+      };
+      return safeTxCategoryAction('add', safeTxCategory, tmpSafeRow);
     });
-    return safeTableRows;
+    return safeTxCategoryAction('return', safeTxCategory) ?? [];
+  };
+
+  const safeTxCategoryAction = (
+    safeTxCategoryAction: SafeTransactionCategoryAction,
+    safeTxCategory: SafeTransactionCategory,
+    selectedSafeRow?: SafeTableRow
+  ) => {
+    switch (safeTxCategoryAction) {
+      case 'return':
+        if (safeTxCategory === 'queue') return safeQueuedTableRows;
+        if (safeTxCategory === 'history') return safeHistoryTableRows;
+        break;
+      case 'add':
+        if (safeTxCategory === 'queue') selectedSafeRow && safeQueuedTableRows.push(selectedSafeRow);
+        if (safeTxCategory === 'history') selectedSafeRow && safeHistoryTableRows.push(selectedSafeRow);
+        break;
+      case 'clear':
+        if (safeTxCategory === 'queue') safeQueuedTableRows.splice(0, safeQueuedTableRows.length);
+        if (safeTxCategory === 'history') safeHistoryTableRows.splice(0, safeHistoryTableRows.length);
+        break;
+    }
   };
 
   const context: ISafeTransactionsContext = {
+    safeAddress,
     tableRows,
     isLoading,
   };

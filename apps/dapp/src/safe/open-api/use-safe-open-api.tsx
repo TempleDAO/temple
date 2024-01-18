@@ -10,12 +10,13 @@ type SafeApiRes<T> = {
 
 export const useSafeTxs = (
   safeWalletAddress: string,
+  walletAddress: string | undefined,
   onlyExecuted: boolean,
   orderByNonce: boolean,
   refetchInterval?: number | false
 ): UseQueryResult<SafeApiRes<SafeMultisigTransactionResponse[]>> =>
   useQuery({
-    queryKey: ['getSafeTransactions', safeWalletAddress, onlyExecuted, refetchInterval],
+    queryKey: ['getSafeTransactions', safeWalletAddress, walletAddress, onlyExecuted, refetchInterval],
     queryFn: () => {
       return V1Service.v1SafesMultisigTransactionsList(
         safeWalletAddress,
@@ -61,7 +62,7 @@ export const useSafeCheckOwner = (
   ownerAddress: string | undefined
 ): UseQueryResult<boolean> =>
   useQuery({
-    queryKey: ['checkSafeOwner', safeWalletAddress],
+    queryKey: ['checkSafeOwner', safeWalletAddress, ownerAddress],
     queryFn: async () => {
       const safeDetails = await V1Service.v1SafesRead(safeWalletAddress);
       return safeDetails.owners.filter((o) => o.toLowerCase() === ownerAddress?.toLowerCase()).length > 0;

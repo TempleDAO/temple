@@ -37,7 +37,7 @@ export const useSafeSdk = (signer: Nullable<Signer>, safeAddress: string) => {
     const safeSignature: SafeMultisigConfirmation = {
       signature: tmpSignature,
     };
-    V1Service.v1MultisigTransactionsConfirmationsCreate(safeTxHash, safeSignature);
+    await V1Service.v1MultisigTransactionsConfirmationsCreate(safeTxHash, safeSignature);
   };
 
   const executeSafeTx = async (
