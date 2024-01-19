@@ -63,7 +63,7 @@ const TeamPayments = () => {
     dropdownOptions = teamPayments
       .map((_, i) => ({
         value: i,
-        label: `EPOCH ${i + 1}`,
+        label: teamPayments[i].name,
       }))
       .reverse();
   }
@@ -131,6 +131,7 @@ const TeamPayments = () => {
               options={dropdownOptions}
               defaultValue={dropdownOptions[0]}
               onChange={(e) => setSelectedEpoch(e.value)}
+              maxMenuItems={10}
             ></InputSelect>
           </EpochDropdownContainer>
         )}
@@ -189,7 +190,7 @@ function useTempleTeamPayments(): TeamPaymentsState {
       if (wallet && signer && selectedEpoch && env.contracts.teamPayments) {
         // Retrieve fixed allocation & claimable amounts
         const fixedTeamPayments = new TempleTeamPayments__factory(signer).attach(
-          env.contracts.teamPayments[selectedEpoch]
+          env.contracts.teamPayments[selectedEpoch].address
         );
 
         const fixedAllocation = await fixedTeamPayments.allocation(wallet);
