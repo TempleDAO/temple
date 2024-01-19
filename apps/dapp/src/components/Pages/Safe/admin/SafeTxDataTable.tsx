@@ -6,6 +6,7 @@ import { loading } from 'utils/loading-value';
 import { Button } from 'components/Button/Button';
 import { SafeStatus, SafeTransactionCategory, useSafeTransactions } from 'safe/safeContext';
 import dropdownIcon from 'assets/icons/dropdown.svg?react';
+import { Copy } from 'components/Copy/Copy';
 
 export type SafeTableRow = {
   date: string;
@@ -18,6 +19,7 @@ export type SafeTableRow = {
   isOwner: boolean;
   nonce: number;
   isExpanded: boolean;
+  dataRaw: string | null | undefined;
   dataDecode: string;
   button: {
     label: string;
@@ -129,7 +131,12 @@ export const SafeTxsDataTable = (props: Props) => {
                           />
                         )}
                         <ExpandedDataRow label="SafeTx" value={row.safeTxHash} />
-                        <ExpandedDataRow label="DataDecode" value={row.dataDecode} />
+                        {row.dataRaw && (
+                          <>
+                            <ExpandedDataRow label="DataDecode" value={row.dataDecode} sliceValue={false} />
+                            <ExpandedDataRow label="DataRaw" value={row.dataRaw} />
+                          </>
+                        )}
                       </DataCell>
                     </DataRow>
                   )}
@@ -163,10 +170,11 @@ const loadSkeletonRows = (skeletonRowsNo: number, skeletonColumnsNo: number) => 
 type ExpandedDataRowProps = {
   label: string;
   value: string;
+  sliceValue?: boolean;
   externalLink?: string;
 };
 
-const ExpandedDataRow = ({ label, value, externalLink }: ExpandedDataRowProps) => {
+const ExpandedDataRow = ({ label, value, externalLink, sliceValue = true }: ExpandedDataRowProps) => {
   const ExpandedContainer = styled.div`
     display: flex;
     flex-direction: row;
@@ -184,13 +192,14 @@ const ExpandedDataRow = ({ label, value, externalLink }: ExpandedDataRowProps) =
   `;
   return (
     <ExpandedContainer>
+      <Copy value={value} />
       <Label>{label}:</Label>
       {externalLink ? (
         <LinkStyled style={{ fontSize: 'smaller' }} href={externalLink} target="_blank">
           {value}
         </LinkStyled>
       ) : (
-        <Pre>{value}</Pre>
+        <Pre>{value.length > 70 && sliceValue ? value?.slice(0, 65) + '...' : value}</Pre>
       )}
     </ExpandedContainer>
   );
