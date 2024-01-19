@@ -192,7 +192,7 @@ export const WalletProvider = (props: PropsWithChildren<object>) => {
 
   const collectTempleTeamPayment = async (epoch: number) => {
     if (walletAddress && signer && env.contracts.teamPayments) {
-      const contractAddress = env.contracts.teamPayments[epoch];
+      const contractAddress = env.contracts.teamPayments[epoch].address;
       const teamPaymentContract = new TempleTeamPayments__factory(signer).attach(contractAddress);
 
       const collectTxn = await teamPaymentContract.claim();
