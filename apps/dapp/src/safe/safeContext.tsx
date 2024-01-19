@@ -97,6 +97,7 @@ export function SafeTransactionsContextProvider({
         isOwner,
         nonce: tx.nonce,
         isExpanded: false,
+        dataRaw: tx.data,
         dataDecode: JSON.stringify(tx.dataDecoded, null, 2),
         action: async () => {
           const prevSafeTableRow = getprevSafeTableRow(safeTxCategory, tx.safeTxHash);
