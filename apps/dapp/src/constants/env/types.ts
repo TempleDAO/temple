@@ -24,7 +24,7 @@ interface Contracts {
   ogTemple: string;
   olympus: string;
   otcOffer: string;
-  teamPayments?: string[];
+  teamPayments?: { name: string; address: string }[];
   temple: string;
   templeStaking: string;
   templeV2FraxPair: string;
@@ -42,7 +42,7 @@ interface Contracts {
     ramosStrategy: string;
     templeStrategy: string;
     tlcStrategy: string;
-  }
+  };
   ramosPoolHelper: string;
   balancerHelpers: string;
 }
