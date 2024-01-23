@@ -1,0 +1,120 @@
+{
+  "version": "1.0",
+  "chainId": "1",
+  "createdAt": 1705968869918,
+  "meta": {
+    "name": "Templo Mayor Strategy",
+    "description": "",
+    "txBuilderVersion": "1.16.3",
+    "createdFromSafeAddress": "",
+    "createdFromOwnerAddress": "",
+    "checksum": ""
+  },
+  "transactions": [
+    {
+      "to": "0x87B8D213177FB132e508b5d7018f7b590e00a480",
+      "value": "0",
+      "data": null,
+      "contractMethod": {
+        "inputs": [
+          { "internalType": "address", "name": "caller", "type": "address" },
+          {
+            "internalType": "string",
+            "name": "identifierString",
+            "type": "string"
+          }
+        ],
+        "name": "setIdentifierForCaller",
+        "payable": false
+      },
+      "contractInputsValues": {
+        "caller": "0xb28FEC0EE90680EE25d42e8101159a72E359be7c",
+        "identifierString": "TemploMayorStrategy"
+      }
+    },
+    {
+      "to": "0x87B8D213177FB132e508b5d7018f7b590e00a480",
+      "value": "0",
+      "data": null,
+      "contractMethod": {
+        "inputs": [
+          {
+            "internalType": "bytes32",
+            "name": "identifier",
+            "type": "bytes32"
+          },
+          { "internalType": "address", "name": "token", "type": "address" },
+          {
+            "internalType": "address",
+            "name": "circuitBreaker",
+            "type": "address"
+          }
+        ],
+        "name": "setCircuitBreaker",
+        "payable": false
+      },
+      "contractInputsValues": {
+        "identifier": "0xa092432a3a8413c06228829d4bc0b73f18b86660822d4b19f4af4938f700f5f9",
+        "token": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+        "circuitBreaker": "0x621bB3B5e76b72d4F100864EC0A797594C0bF43E"
+      }
+    },
+    {
+      "to": "0xf359Bae7b6AD295724e798A3Ef6Fa5109919F399",
+      "value": "0",
+      "data": null,
+      "contractMethod": {
+        "inputs": [
+          { "internalType": "address", "name": "strategy", "type": "address" },
+          {
+            "internalType": "int256",
+            "name": "underperformingEquityThreshold",
+            "type": "int256"
+          },
+          {
+            "components": [
+              { "internalType": "address", "name": "asset", "type": "address" },
+              {
+                "internalType": "uint256",
+                "name": "balance",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct ITempleStrategy.AssetBalance[]",
+            "name": "debtCeiling",
+            "type": "tuple[]"
+          }
+        ],
+        "name": "addStrategy",
+        "payable": false
+      },
+      "contractInputsValues": {
+        "strategy": "0xb28FEC0EE90680EE25d42e8101159a72E359be7c",
+        "underperformingEquityThreshold": "0",
+        "debtCeiling": "[[\"0x6B175474E89094C44Da98b954EedeAC495271d0F\",\"25000000000000000000000000\"],[\"0x470ebf5f030ed85fc1ed4c2d36b9dd02e77cf1b7\",\"0\"]]"
+      }
+    },
+    {
+      "to": "0xb28FEC0EE90680EE25d42e8101159a72E359be7c",
+      "value": "0",
+      "data": null,
+      "contractMethod": {
+        "inputs": [],
+        "name": "acceptExecutor",
+        "payable": false
+      },
+      "contractInputsValues": null
+    },
+    {
+      "to": "0x621bB3B5e76b72d4F100864EC0A797594C0bF43E",
+      "value": "0",
+      "data": null,
+      "contractMethod": {
+        "inputs": [],
+        "name": "acceptExecutor",
+        "payable": false
+      },
+      "contractInputsValues": null
+    }
+  ]
+}
