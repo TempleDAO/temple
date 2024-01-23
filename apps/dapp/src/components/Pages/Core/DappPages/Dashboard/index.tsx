@@ -25,6 +25,9 @@ export const DashboardPage = () => {
         <NavCell>
           <NavLink to={`dsrbase?${params}`}>DSR BASE</NavLink>
         </NavCell>
+        <NavCell>
+          <NavLink to={`templomayor?${params}`}>TEMPLO MAYOR</NavLink>
+        </NavCell>
       </DashboardHeaderNav>
       <DashboardContentContainer>
         <Routes>
@@ -38,6 +41,7 @@ export const DashboardPage = () => {
           {/* <Route path="tlc" element={<DashboardContent selectedDashboard={DashboardType.TLC} />} /> */}
           <Route path="templebase" element={<DashboardContent selectedDashboard={DashboardType.TEMPLE_BASE} />} />
           <Route path="dsrbase" element={<DashboardContent selectedDashboard={DashboardType.DSR_BASE} />} />
+          <Route path="templomayor" element={<DashboardContent selectedDashboard={DashboardType.TEMPLO_MAYOR_GNOSIS} />} />
         </Routes>
       </DashboardContentContainer>
     </DashboardContainer>

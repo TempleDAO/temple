@@ -61,6 +61,7 @@ const TxnHistoryTable = (props: Props) => {
       // { label: StrategyKey.TLC, checked: false }, // TODO: Hidden until launch
       { label: StrategyKey.TEMPLEBASE, checked: false },
       { label: StrategyKey.DSRBASE, checked: false },
+      { label: StrategyKey.TEMPLO_MAYOR_GNOSIS, checked: false },
     ],
     []
   );

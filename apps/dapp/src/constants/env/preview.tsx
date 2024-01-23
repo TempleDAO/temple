@@ -40,7 +40,8 @@ const env: Environment = {
       dsrBaseStrategy: '0x472C7cDb6E730ff499E118dE6260c6b44c61d7bf',
       ramosStrategy: '0xB9507b59f91FF320631d30f774142631b30C537A',
       templeStrategy: '0xECe4ff1bd589b488350557A5C36D823C7B47E82F',
-      tlcStrategy: '0x415A9B41700AC645d9C22F2499a6E853b625F792',
+      tlcStrategy: '0x415A9B41700AC645d9C22F2499a6E853b625F792',,
+      temploMayorGnosisStrategy: '',
     }
   },
   subgraph: {
