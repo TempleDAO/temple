@@ -14,14 +14,14 @@ async function main() {
 
   const circuitBreakerFactory = new TempleCircuitBreakerAllUsersPerPeriod__factory(owner);
   await deployAndMine(
-    'STRATEGIES.GNOSIS_SAFE_STRATEGY_TEMPLATE.CIRCUIT_BREAKERS.TEMPLE',
+    'STRATEGIES.TEMPLO_MAYOR_GNOSIS_STRATEGY.CIRCUIT_BREAKERS.DAI',
     circuitBreakerFactory,
     circuitBreakerFactory.deploy,
     TEMPLE_V2_ADDRESSES.CORE.RESCUER_MSIG,
     await owner.getAddress(),
     60*60*26, // 26 hours
     13, // no of buckets
-    ethers.utils.parseEther("50000000"), // cap per bucket
+    ethers.utils.parseEther("10000000"), // 10mm cap per bucket
   );
 }
 
