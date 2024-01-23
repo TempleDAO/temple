@@ -13,6 +13,7 @@ export enum DashboardType {
   // TLC, TODO: Hidden until launch
   TEMPLE_BASE,
   DSR_BASE,
+  TEMPLO_MAYOR_GNOSIS,
 }
 
 type DashboardContentProps = {
@@ -64,6 +65,13 @@ const DashboardContent = ({ selectedDashboard = DashboardType.TREASURY_RESERVES_
         'Idle capital in the Treasury Reserves Vault (TRV) that is not currently deployed to a Strategy borrower will be automatically directed to a Base Strategy to earn yield. Currently, the Base Strategy is set to the Dai Savings Rate (DSR) which makes DAI the base currency of the TRV. The current rate of return for DSR Base also serves as the benchmark interest rate for the Treasury Strategy that borrows DAI from the TRV.',
       chartStrategyNames: [StrategyKey.DSRBASE],
       link: `${env.etherscan}/address/${env.contracts.strategies.dsrBaseStrategy}`,
+    },
+    [DashboardType.TEMPLO_MAYOR_GNOSIS]: {
+      title: 'Templo Mayor',
+      description:
+        'Templo Mayor is an Gnosis Safe Omnibus strategy. An Omnibus Strategy utilises the same bookkeeping structure and approval process, but may entail several related holdings or sub-positions that are managed as a whole. For instance, deposits into different but similar or co-dependent vaults on the same platform or different platforms may be consolidated into one Omnibus Gnosis Safe. Seed allocations of a target risk profile may also be consolidated into an Omnibus Strategy to reduce the noise. Therefore an Omnibus Strategy may provide additional operational efficiency and allow Stakeholders to evaluate a series of related deployments as one composite position rather than as singletons.',
+      chartStrategyNames: [StrategyKey.TEMPLO_MAYOR_GNOSIS],
+      link: `${env.etherscan}/address/${env.contracts.strategies.temploMayorGnosisStrategy}`,
     },
   };
 

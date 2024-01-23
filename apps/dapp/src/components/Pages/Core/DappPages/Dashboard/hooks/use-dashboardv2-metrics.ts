@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import millify from 'millify';
-import { fetchGenericSubgraph, fetchSubgraph } from 'utils/subgraph';
+import { fetchGenericSubgraph } from 'utils/subgraph';
 import { DashboardType } from '../DashboardContent';
 import env from 'constants/env';
 import { getQueryKey } from 'utils/react-query-helpers';
@@ -10,6 +10,7 @@ export enum StrategyKey {
   TLC = 'TlcStrategy',
   TEMPLEBASE = 'TempleBaseStrategy',
   DSRBASE = 'DsrBaseStrategy',
+  TEMPLO_MAYOR_GNOSIS = 'TemploMayorStrategy',
   ALL = 'All',
 }
 
@@ -110,6 +111,16 @@ export default function useDashboardV2Metrics(dashboardType: DashboardType) {
     staleTime: CACHE_TTL,
   });
 
+  const temploMayorGnosisMetrics = useQuery({
+    queryKey: getQueryKey.metrics(StrategyKey.TEMPLO_MAYOR_GNOSIS),
+    queryFn: async () => {
+      const metrics = await fetchStrategyMetrics(StrategyKey.TEMPLO_MAYOR_GNOSIS);
+      return metrics;
+    },
+    refetchInterval: CACHE_TTL,
+    staleTime: CACHE_TTL,
+  });
+
   const dashboardMetrics = useQuery({
     queryKey: getQueryKey.metricsDashboard(dashboardType),
     queryFn: () => {
@@ -124,9 +135,11 @@ export default function useDashboardV2Metrics(dashboardType: DashboardType) {
           return templeBaseMetrics.data && getArrangedStrategyMetrics(templeBaseMetrics.data);
         case DashboardType.DSR_BASE:
           return dsrBaseMetrics.data && getArrangedStrategyMetrics(dsrBaseMetrics.data);
+        case DashboardType.TEMPLO_MAYOR_GNOSIS:
+          return temploMayorGnosisMetrics.data && getArrangedStrategyMetrics(temploMayorGnosisMetrics.data);
       }
     },
-    enabled: !!treasuryReservesVaultMetrics.data && !!tlcMetrics.data && !!ramosMetrics.data && !!templeBaseMetrics.data && !!dsrBaseMetrics.data
+    enabled: !!treasuryReservesVaultMetrics.data && !!tlcMetrics.data && !!ramosMetrics.data && !!templeBaseMetrics.data && !!dsrBaseMetrics.data && !!temploMayorGnosisMetrics.data
   })
 
   const fetchStrategyMetrics = async (strategy: StrategyKey): Promise<StrategyMetrics> => {
@@ -169,28 +182,28 @@ export default function useDashboardV2Metrics(dashboardType: DashboardType) {
         ),
       ];
 
-      const [ramosSubgraphResponse] = await Promise.all(allMetricsPromises);
+      const [responses] = await Promise.all(allMetricsPromises);
 
-      const ramosSubgraphData = ramosSubgraphResponse?.data?.strategies.find(
+      const subgraphData = responses?.data?.strategies.find(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (_strategy: any) => _strategy.name === strategy && _strategy.isShutdown === false
       );
 
-      const daiStrategyTokenData = ramosSubgraphData?.strategyTokens.find(
+      const daiStrategyTokenData = subgraphData?.strategyTokens.find(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (_strategyToken: any) => _strategyToken.symbol === TokenSymbols.DAI
       );
 
       metrics = {
-        valueOfHoldings: parseFloat(ramosSubgraphData.totalMarketValueUSD),
-        benchmarkedEquity: parseFloat(ramosSubgraphData.benchmarkedEquityUSD),
+        valueOfHoldings: parseFloat(subgraphData.totalMarketValueUSD),
+        benchmarkedEquity: parseFloat(subgraphData.benchmarkedEquityUSD),
         interestRate: parseFloat(daiStrategyTokenData.rate) + parseFloat(daiStrategyTokenData.premiumRate),
         debtShare: parseFloat(daiStrategyTokenData.debtShare),
         debtCeiling: parseFloat(daiStrategyTokenData.debtCeiling),
         debtCeilingUtilization: parseFloat(daiStrategyTokenData.debtCeilingUtil),
-        totalRepayment: parseFloat(ramosSubgraphData.totalRepaymentUSD),
-        principal: parseFloat(ramosSubgraphData.principalUSD),
-        accruedInterest: parseFloat(ramosSubgraphData.accruedInterestUSD),
+        totalRepayment: parseFloat(subgraphData.totalRepaymentUSD),
+        principal: parseFloat(subgraphData.principalUSD),
+        accruedInterest: parseFloat(subgraphData.accruedInterestUSD),
       };
     } catch (error) {
       console.info(error);
