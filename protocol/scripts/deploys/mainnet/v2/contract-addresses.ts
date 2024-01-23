@@ -70,7 +70,7 @@ export interface ContractAddresses {
             ADDRESS: string,
             // No circuit breakers for Temple base strategy
         },
-        GNOSIS_SAFE_STRATEGY_TEMPLATE: {
+        TEMPLO_MAYOR_GNOSIS_STRATEGY: {
             ADDRESS: string,
             UNDERLYING_GNOSIS_SAFE: string,
             CIRCUIT_BREAKERS: {
@@ -155,12 +155,12 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
             TEMPLE_BASE_STRATEGY: {
                 ADDRESS: '0xB8d09B0436adF927004Cea0B096E8c05f6dFdc3b',
             },
-            GNOSIS_SAFE_STRATEGY_TEMPLATE: {
-                ADDRESS: '',
-                UNDERLYING_GNOSIS_SAFE: '',
+            TEMPLO_MAYOR_GNOSIS_STRATEGY: {
+                ADDRESS: '0xb28FEC0EE90680EE25d42e8101159a72E359be7c',
+                UNDERLYING_GNOSIS_SAFE: '0x0591926d5d3b9Cc48ae6eFB8Db68025ddc3adFA5',
                 CIRCUIT_BREAKERS: {
-                    DAI: '',
-                    TEMPLE: '',
+                    DAI: '0x621bB3B5e76b72d4F100864EC0A797594C0bF43E',
+                    TEMPLE: '', // Not needed as yet
                 },
             },
             RAMOS_STRATEGY: {
@@ -244,7 +244,7 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
             TEMPLE_BASE_STRATEGY: {
                 ADDRESS: '0xc1EeD9232A0A44c2463ACB83698c162966FBc78d',
             },
-            GNOSIS_SAFE_STRATEGY_TEMPLATE: {
+            TEMPLO_MAYOR_GNOSIS_STRATEGY: {
                 ADDRESS: '',
                 UNDERLYING_GNOSIS_SAFE: '',
                 CIRCUIT_BREAKERS: {
@@ -337,9 +337,7 @@ export interface ContractInstances {
         TLC_STRATEGY: {
             INSTANCE: TlcStrategy,
         },
-        // This is not yet needed - but when we have a first gnosis strategy
-        // this can be used as the template.
-        GNOSIS_SAFE_STRATEGY_TEMPLATE: {
+        TEMPLO_MAYOR_GNOSIS_STRATEGY: {
             INSTANCE: GnosisStrategy,
             CIRCUIT_BREAKERS: {
                 DAI: TempleCircuitBreakerAllUsersPerPeriod,
@@ -403,11 +401,11 @@ export function connectToContracts(owner: Signer): ContractInstances {
             TLC_STRATEGY: {
                 INSTANCE: TlcStrategy__factory.connect(TEMPLE_V2_ADDRESSES.STRATEGIES.TLC_STRATEGY.ADDRESS, owner),
             },
-            GNOSIS_SAFE_STRATEGY_TEMPLATE: {
-                INSTANCE: GnosisStrategy__factory.connect(TEMPLE_V2_ADDRESSES.STRATEGIES.GNOSIS_SAFE_STRATEGY_TEMPLATE.ADDRESS, owner),
+            TEMPLO_MAYOR_GNOSIS_STRATEGY: {
+                INSTANCE: GnosisStrategy__factory.connect(TEMPLE_V2_ADDRESSES.STRATEGIES.TEMPLO_MAYOR_GNOSIS_STRATEGY.ADDRESS, owner),
                 CIRCUIT_BREAKERS: {
-                    DAI: TempleCircuitBreakerAllUsersPerPeriod__factory.connect(TEMPLE_V2_ADDRESSES.STRATEGIES.GNOSIS_SAFE_STRATEGY_TEMPLATE.CIRCUIT_BREAKERS.DAI, owner),
-                    TEMPLE: TempleCircuitBreakerAllUsersPerPeriod__factory.connect(TEMPLE_V2_ADDRESSES.STRATEGIES.GNOSIS_SAFE_STRATEGY_TEMPLATE.CIRCUIT_BREAKERS.TEMPLE, owner),
+                    DAI: TempleCircuitBreakerAllUsersPerPeriod__factory.connect(TEMPLE_V2_ADDRESSES.STRATEGIES.TEMPLO_MAYOR_GNOSIS_STRATEGY.CIRCUIT_BREAKERS.DAI, owner),
+                    TEMPLE: TempleCircuitBreakerAllUsersPerPeriod__factory.connect(TEMPLE_V2_ADDRESSES.STRATEGIES.TEMPLO_MAYOR_GNOSIS_STRATEGY.CIRCUIT_BREAKERS.TEMPLE, owner),
                 },
             },
         },

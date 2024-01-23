@@ -68,6 +68,7 @@ const env: Environment = {
       ramosStrategy: '0xDA5CeF575eaEF14032C5006eb5cbEbE7eE0E347b',
       templeStrategy: '0xB8d09B0436adF927004Cea0B096E8c05f6dFdc3b',
       tlcStrategy: '0xcABDE42dd767361739bD7c09C6E574057080ef01',
+      temploMayorGnosisStrategy: '0xb28FEC0EE90680EE25d42e8101159a72E359be7c',
     },
   },
   gas: {
