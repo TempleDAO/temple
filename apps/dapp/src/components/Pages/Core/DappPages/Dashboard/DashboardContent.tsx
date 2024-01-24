@@ -35,7 +35,12 @@ const DashboardContent = ({ selectedDashboard = DashboardType.TREASURY_RESERVES_
       title: 'Treasury Reserves Vault',
       description:
         'Treasury Reserves Vault (TRV) coordinates and manages the flow of capital for current Treasury allocations. When funding and management parameters are approved for a Strategy, the TRV will transfer funds e.g. DAI and issue corresponding debt to the Strategy borrower. The current equity of the Strategy is discounted by the loan principal and accrued interest benchmarked to the prevailing rate of the current Base Strategy for the borrowed token.',
-      chartStrategyNames: [StrategyKey.TEMPLEBASE, StrategyKey.RAMOS, StrategyKey.DSRBASE],
+      chartStrategyNames: [
+        StrategyKey.TEMPLEBASE,
+        StrategyKey.RAMOS,
+        StrategyKey.DSRBASE,
+        StrategyKey.TEMPLO_MAYOR_GNOSIS
+      ],
       link: `${env.etherscan}/address/${env.contracts.treasuryReservesVault}`,
     },
     [DashboardType.RAMOS]: {
