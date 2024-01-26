@@ -7,6 +7,8 @@ import {
     GnosisStrategy,
     GnosisStrategy__factory,
     LinearWithKinkInterestRateModel, LinearWithKinkInterestRateModel__factory,
+    OtcOffer,
+    OtcOffer__factory,
     Ramos, Ramos__factory,
     RamosStrategy, RamosStrategy__factory,
     TempleCircuitBreakerAllUsersPerPeriod, TempleCircuitBreakerAllUsersPerPeriod__factory,
@@ -78,6 +80,19 @@ export interface ContractAddresses {
                 TEMPLE: string,
             },
         },
+        FOHMO_GNOSIS_STRATEGY: {
+            ADDRESS: string,
+            UNDERLYING_GNOSIS_SAFE: string,
+            CIRCUIT_BREAKERS: {
+                DAI: string,
+                TEMPLE: string,
+            },
+            OTC_OFFER: {
+                OHM_DAI: string,
+                DAI_OHM: string,
+                DAI_GOHM: string,
+            },
+        },
         RAMOS_STRATEGY: {
             ADDRESS: string,
             CIRCUIT_BREAKERS: {
@@ -103,6 +118,10 @@ export interface ContractAddresses {
         AURA: {
           AURA_TOKEN: string,
           AURA_BOOSTER: string,
+        },
+        OLYMPUS: {
+            OHM_TOKEN: string,
+            GOHM_TOKEN: string,
         },
     }
 }
@@ -163,6 +182,19 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
                     TEMPLE: '', // Not needed as yet
                 },
             },
+            FOHMO_GNOSIS_STRATEGY: {
+                ADDRESS: '0xF179C63735690d2C08cfb231d15c0c7ac3A2Bc67',
+                UNDERLYING_GNOSIS_SAFE: '0xA0eC2aF0aE7fE5F3Ae572a2C8349f7E26bE2e5Fd',
+                CIRCUIT_BREAKERS: {
+                    DAI: '0x1d4f48f3F64c90a60ff302784CD66f1E8127852D',
+                    TEMPLE: '', // Not needed as yet
+                },
+                OTC_OFFER: {
+                    OHM_DAI: '0xA8a742A05982f853fb5836d040cf3498249041B9',
+                    DAI_OHM: '0x687A4B0Ac18Ed3796D55E6A1d747bD75591a8bac',
+                    DAI_GOHM: '0x2c4b131BEf9d676877Ae0b5b2B46914b07FB9272',
+                },
+            },
             RAMOS_STRATEGY: {
                 // v1.0.0
                 // ADDRESS: '0xb867dF3efF1B234CA08B7D0d85Fb51Fd25C2c2d0',
@@ -192,7 +224,11 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
             AURA: {
               AURA_TOKEN: '0xC0c293ce456fF0ED870ADd98a0828Dd4d2903DBF',
               AURA_BOOSTER: '0xA57b8d98dAE62B26Ec3bcC4a365338157060B234',
-          },
+            },
+            OLYMPUS: {
+                OHM_TOKEN: '0x64aa3364f17a4d01c6f1751fd97c2bd3d7e7f1d5',
+                GOHM_TOKEN: '0x0ab87046fBb341D058F17CBC4c1133F25a20a52f',
+            },
         },
     },
 
@@ -252,6 +288,19 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
                     TEMPLE: '',
                 },
             },
+            FOHMO_GNOSIS_STRATEGY: {
+                ADDRESS: '',
+                UNDERLYING_GNOSIS_SAFE: '',
+                CIRCUIT_BREAKERS: {
+                    DAI: '',
+                    TEMPLE: '',
+                },
+                OTC_OFFER: {
+                    OHM_DAI: '',
+                    DAI_OHM: '',
+                    DAI_GOHM: '',
+                },
+            },
             RAMOS_STRATEGY: {
                 ADDRESS: '0x04d7478fDF318C3C22cECE62Da9D78ff94807D77',
                 CIRCUIT_BREAKERS: {
@@ -277,7 +326,11 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
             AURA: {
               AURA_TOKEN: '0xC0c293ce456fF0ED870ADd98a0828Dd4d2903DBF',
               AURA_BOOSTER: '0xA57b8d98dAE62B26Ec3bcC4a365338157060B234',
-          },
+            },
+            OLYMPUS: {
+                OHM_TOKEN: '',
+                GOHM_TOKEN: '',
+            },
         },
     },
 }
@@ -344,6 +397,18 @@ export interface ContractInstances {
                 TEMPLE: TempleCircuitBreakerAllUsersPerPeriod,
             },
         },
+        FOHMO_GNOSIS_STRATEGY: {
+            INSTANCE: GnosisStrategy,
+            CIRCUIT_BREAKERS: {
+                DAI: TempleCircuitBreakerAllUsersPerPeriod,
+                TEMPLE: TempleCircuitBreakerAllUsersPerPeriod,
+            },
+            OTC_OFFER: {
+                OHM_DAI: OtcOffer,
+                DAI_OHM: OtcOffer,
+                DAI_GOHM: OtcOffer,
+            },
+        },
     },
     EXTERNAL: {
         MAKER_DAO: {
@@ -406,6 +471,18 @@ export function connectToContracts(owner: Signer): ContractInstances {
                 CIRCUIT_BREAKERS: {
                     DAI: TempleCircuitBreakerAllUsersPerPeriod__factory.connect(TEMPLE_V2_ADDRESSES.STRATEGIES.TEMPLO_MAYOR_GNOSIS_STRATEGY.CIRCUIT_BREAKERS.DAI, owner),
                     TEMPLE: TempleCircuitBreakerAllUsersPerPeriod__factory.connect(TEMPLE_V2_ADDRESSES.STRATEGIES.TEMPLO_MAYOR_GNOSIS_STRATEGY.CIRCUIT_BREAKERS.TEMPLE, owner),
+                },
+            },
+            FOHMO_GNOSIS_STRATEGY: {
+                INSTANCE: GnosisStrategy__factory.connect(TEMPLE_V2_ADDRESSES.STRATEGIES.FOHMO_GNOSIS_STRATEGY.ADDRESS, owner),
+                CIRCUIT_BREAKERS: {
+                    DAI: TempleCircuitBreakerAllUsersPerPeriod__factory.connect(TEMPLE_V2_ADDRESSES.STRATEGIES.FOHMO_GNOSIS_STRATEGY.CIRCUIT_BREAKERS.DAI, owner),
+                    TEMPLE: TempleCircuitBreakerAllUsersPerPeriod__factory.connect(TEMPLE_V2_ADDRESSES.STRATEGIES.FOHMO_GNOSIS_STRATEGY.CIRCUIT_BREAKERS.TEMPLE, owner),
+                },
+                OTC_OFFER: {
+                    OHM_DAI: OtcOffer__factory.connect(TEMPLE_V2_ADDRESSES.STRATEGIES.FOHMO_GNOSIS_STRATEGY.OTC_OFFER.OHM_DAI, owner),
+                    DAI_OHM: OtcOffer__factory.connect(TEMPLE_V2_ADDRESSES.STRATEGIES.FOHMO_GNOSIS_STRATEGY.OTC_OFFER.DAI_OHM, owner),
+                    DAI_GOHM: OtcOffer__factory.connect(TEMPLE_V2_ADDRESSES.STRATEGIES.FOHMO_GNOSIS_STRATEGY.OTC_OFFER.DAI_GOHM, owner),
                 },
             },
         },
