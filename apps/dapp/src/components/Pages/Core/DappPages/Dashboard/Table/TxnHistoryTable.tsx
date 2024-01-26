@@ -62,6 +62,7 @@ const TxnHistoryTable = (props: Props) => {
       { label: StrategyKey.TEMPLEBASE, checked: false },
       { label: StrategyKey.DSRBASE, checked: false },
       { label: StrategyKey.TEMPLO_MAYOR_GNOSIS, checked: false },
+      { label: StrategyKey.FOHMO_GNOSIS, checked: false },
     ],
     []
   );

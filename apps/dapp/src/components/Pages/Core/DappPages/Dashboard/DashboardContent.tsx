@@ -14,6 +14,7 @@ export enum DashboardType {
   TEMPLE_BASE,
   DSR_BASE,
   TEMPLO_MAYOR_GNOSIS,
+  FOHMO_GNOSIS,
 }
 
 type DashboardContentProps = {
@@ -39,7 +40,8 @@ const DashboardContent = ({ selectedDashboard = DashboardType.TREASURY_RESERVES_
         StrategyKey.TEMPLEBASE,
         StrategyKey.RAMOS,
         StrategyKey.DSRBASE,
-        StrategyKey.TEMPLO_MAYOR_GNOSIS
+        StrategyKey.TEMPLO_MAYOR_GNOSIS,
+        StrategyKey.FOHMO_GNOSIS,
       ],
       link: `${env.etherscan}/address/${env.contracts.treasuryReservesVault}`,
     },
@@ -77,6 +79,13 @@ const DashboardContent = ({ selectedDashboard = DashboardType.TREASURY_RESERVES_
         'Templo Mayor is an Gnosis Safe Omnibus strategy. An Omnibus Strategy utilises the same bookkeeping structure and approval process, but may entail several related holdings or sub-positions that are managed as a whole. For instance, deposits into different but similar or co-dependent vaults on the same platform or different platforms may be consolidated into one Omnibus Gnosis Safe. Seed allocations of a target risk profile may also be consolidated into an Omnibus Strategy to reduce the noise. Therefore an Omnibus Strategy may provide additional operational efficiency and allow Stakeholders to evaluate a series of related deployments as one composite position rather than as singletons.',
       chartStrategyNames: [StrategyKey.TEMPLO_MAYOR_GNOSIS],
       link: `${env.etherscan}/address/${env.contracts.strategies.temploMayorGnosisStrategy}`,
+    },
+    [DashboardType.FOHMO_GNOSIS]: {
+      title: 'Fohmo',
+      description:
+        'TODO: fohmo gonsis strategy description goes here',
+      chartStrategyNames: [StrategyKey.FOHMO_GNOSIS],
+      link: `${env.etherscan}/address/${env.contracts.strategies.fohmoGnosisStrategy}`,
     },
   };
 

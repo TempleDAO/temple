@@ -43,6 +43,7 @@ interface Contracts {
     templeStrategy: string;
     tlcStrategy: string;
     temploMayorGnosisStrategy: string;
+    fohmoGnosisStrategy: string;
   };
   ramosPoolHelper: string;
   balancerHelpers: string;
