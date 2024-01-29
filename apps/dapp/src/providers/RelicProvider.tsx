@@ -89,15 +89,14 @@ export const RelicProvider = (props: PropsWithChildren<unknown>) => {
 
     const fetchRelicIds = async () => {
       if (!walletAddress) {
-        return[];
+        return [];
       }
       try {
-        
         const relicIds = await relicContract.relicsOfOwner(walletAddress);
         if (!relicIds) {
           return [];
         }
-        return relicIds.sort((a, b) => a.toNumber() - b.toNumber());
+        return relicIds;
       } catch (error) {
         console.error('Error fetching relic ids');
         console.error(error);
@@ -297,11 +296,13 @@ export const RelicProvider = (props: PropsWithChildren<unknown>) => {
 
   const [isWhitelisted, setIsWhitelisted] = useState(false);
 
-  // TODO: This gets replaced effectively.
+  // whitelist now means at least one relic, if not must sacrifice
   const checkWhiteList = async () => {
     if (!wallet || !signer) {
       return;
     }
+
+    // const relicIds = await fetchRelicIds();
 
     const relicContract = new Relic__factory(signer).attach(env.nexus.templeRelicAddress);
     // const receipt = await relicContract.whitelisted(wallet);
@@ -314,7 +315,7 @@ export const RelicProvider = (props: PropsWithChildren<unknown>) => {
     }
 
     const TEMPLE = new ERC20__factory(signer).attach(env.nexus.templeToken);
-    await ensureAllowance(TICKER_SYMBOL.TEMPLE_TOKEN, TEMPLE, env.nexus.templeSacrificeAddress, amount, amount);
+    await ensureAllowance(TICKER_SYMBOL.TEMPLE_TOKEN, TEMPLE, env.nexus.templeSacrificeAddress, BigNumber.from(100));
 
     const sacrificeContract = new TempleSacrifice__factory(signer).attach(env.nexus.templeSacrificeAddress);
     const txn = await sacrificeContract.sacrifice(enclave, wallet);
@@ -344,7 +345,7 @@ export const RelicProvider = (props: PropsWithChildren<unknown>) => {
     try {
       const sacrificeContract = new TempleSacrifice__factory(signer).attach(env.nexus.templeSacrificeAddress);
       const price: BigNumber = await sacrificeContract.getPrice();
-      setSacrificePrice(price); 
+      setSacrificePrice(price);
     } catch (error) {
       console.error('Error fetching sacrifice price');
       console.error(error);

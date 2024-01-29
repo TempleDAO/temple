@@ -8,17 +8,22 @@ import centerCircle from 'assets/images/nexus/central_circle.png';
 import templeUniswap from 'assets/images/nexus/templeuniswap.png';
 import { Button } from 'components/Button/Button';
 import { useRelic } from 'providers/RelicProvider';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { NexusLoading } from '.';
 import { useWallet } from 'providers/WalletProvider';
-import { formatBigNumber } from 'components/Vault/utils';
 import { BigNumber } from 'ethers';
 import { Account } from 'components/Layouts/CoreLayout/Account';
 import Tooltip from 'components/Tooltip/Tooltip';
 import { clickSound } from 'utils/sound';
+import { fromAtto } from 'utils/bigNumber';
 
-export const NoRelicPanel = (props: { inventory: ItemInventory }) => {
-  const { relics } = props.inventory;
+type NoRelicPanelProps = {
+  inventory: ItemInventory;
+  onSacrificeHandler: () => Promise<void>;
+};
+
+export const NoRelicPanel = ({ inventory, onSacrificeHandler }: NoRelicPanelProps) => {
+  const { relics } = inventory;
   const { wallet, walletAddress, signer, isConnected } = useWallet();
 
   const { fetchSacrificePrice } = useRelic();
@@ -34,7 +39,7 @@ export const NoRelicPanel = (props: { inventory: ItemInventory }) => {
     if (signer && walletAddress) {
       fetchSacrificePriceHandler();
     }
-  }, [signer, walletAddress]);
+  }, [fetchSacrificePriceHandler, signer, walletAddress]);
 
   const [showConnect, setShowConnect] = useState(true);
 
@@ -50,8 +55,6 @@ export const NoRelicPanel = (props: { inventory: ItemInventory }) => {
     return <Navigate to={`../${relics[0].id.toString()}`} />;
   }
 
-  const isLoading = sacrificePriceLoading;
-
   return (
     <>
       {showConnect ? (
@@ -63,8 +66,8 @@ export const NoRelicPanel = (props: { inventory: ItemInventory }) => {
         </ConnectWalletContainer>
       ) : (
         <>
-          {isLoading && <NexusLoading />}
-          {!isLoading && <SacrificePanel amount={sacrificePrice} />}
+          {sacrificePriceLoading && <NexusLoading />}
+          {!sacrificePriceLoading && <SacrificePanel amount={sacrificePrice} onSacrificeHandler={onSacrificeHandler} />}
           {fetchSacrificePriceError && <div>Error while checking sacrifice price!</div>}
         </>
       )}
@@ -74,6 +77,7 @@ export const NoRelicPanel = (props: { inventory: ItemInventory }) => {
 
 type SacrificeUIProps = {
   amount: BigNumber;
+  onSacrificeHandler?: () => Promise<void>;
 };
 
 const TooltipContent = styled.div`
@@ -97,6 +101,8 @@ const tooltipContent = (
 );
 
 const SacrificePanel = (props: SacrificeUIProps) => {
+  const { amount, onSacrificeHandler } = props;
+
   const { sacrificeTemple } = useRelic();
 
   const [enclaveSelected, setEnclaveSelected] = useState(false);
@@ -141,10 +147,13 @@ const SacrificePanel = (props: SacrificeUIProps) => {
       <SacrificeButton
         disabled={!enclaveSelected}
         playClickSound
-        label={`Sacrifice ${formatBigNumber(props.amount, 0)} TEMPLE`}
+        label={`Sacrifice ${fromAtto(amount).toFixed(2)} TEMPLE`}
         loading={sacrificeTemple.isLoading}
         onClick={async () => {
-          await sacrificeTemple.handler(props.amount, selectedEnclave!);
+          await sacrificeTemple.handler(amount, selectedEnclave!);
+          if (onSacrificeHandler) {
+            await onSacrificeHandler();
+          }
         }}
       />
     </NexusPanel>
