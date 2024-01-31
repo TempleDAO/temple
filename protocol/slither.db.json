@@ -1,5 +1,15 @@
 [
   {
+    "elements": [],
+    "description": "solc-0.8.24 is not recommended for deployment\n",
+    "markdown": "solc-0.8.24 is not recommended for deployment\n",
+    "first_markdown_element": "",
+    "id": "5b3032c03c822484605a22ef7032b1feee37ab38b444706606c34e6d9527629b",
+    "check": "solc-version",
+    "impact": "Informational",
+    "confidence": "High"
+  },
+  {
     "elements": [
       {
         "type": "function",
