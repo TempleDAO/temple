@@ -42,6 +42,7 @@ const env: Environment = {
       templeStrategy: '0xECe4ff1bd589b488350557A5C36D823C7B47E82F',
       tlcStrategy: '0x415A9B41700AC645d9C22F2499a6E853b625F792',
       temploMayorGnosisStrategy: '',
+      fohmoGnosisStrategy: '',
     }
   },
   subgraph: {

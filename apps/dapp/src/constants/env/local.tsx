@@ -44,6 +44,7 @@ const env: Environment = {
       templeStrategy: '',
       tlcStrategy: '',
       temploMayorGnosisStrategy: '',
+      fohmoGnosisStrategy: '',
     }
   },
   infuraId: '4cd22916292d4fb6be156454978c326b',

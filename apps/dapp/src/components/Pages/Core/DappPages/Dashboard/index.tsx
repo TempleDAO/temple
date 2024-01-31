@@ -28,6 +28,9 @@ export const DashboardPage = () => {
         <NavCell>
           <NavLink to={`templomayor?${params}`}>TEMPLO MAYOR</NavLink>
         </NavCell>
+        <NavCell>
+          <NavLink to={`fohmo?${params}`}>FOHMO</NavLink>
+        </NavCell>
       </DashboardHeaderNav>
       <DashboardContentContainer>
         <Routes>
@@ -42,6 +45,7 @@ export const DashboardPage = () => {
           <Route path="templebase" element={<DashboardContent selectedDashboard={DashboardType.TEMPLE_BASE} />} />
           <Route path="dsrbase" element={<DashboardContent selectedDashboard={DashboardType.DSR_BASE} />} />
           <Route path="templomayor" element={<DashboardContent selectedDashboard={DashboardType.TEMPLO_MAYOR_GNOSIS} />} />
+          <Route path="fohmo" element={<DashboardContent selectedDashboard={DashboardType.FOHMO_GNOSIS} />} />
         </Routes>
       </DashboardContentContainer>
     </DashboardContainer>
