@@ -11,6 +11,7 @@ export enum StrategyKey {
   TEMPLEBASE = 'TempleBaseStrategy',
   DSRBASE = 'DsrBaseStrategy',
   TEMPLO_MAYOR_GNOSIS = 'TemploMayorStrategy',
+  FOHMO_GNOSIS = 'FohmoStrategy',
   ALL = 'All',
 }
 
@@ -121,6 +122,16 @@ export default function useDashboardV2Metrics(dashboardType: DashboardType) {
     staleTime: CACHE_TTL,
   });
 
+  const fohmoGnosisMetrics = useQuery({
+    queryKey: getQueryKey.metrics(StrategyKey.FOHMO_GNOSIS),
+    queryFn: async () => {
+      const metrics = await fetchStrategyMetrics(StrategyKey.FOHMO_GNOSIS);
+      return metrics;
+    },
+    refetchInterval: CACHE_TTL,
+    staleTime: CACHE_TTL,
+  });
+
   const dashboardMetrics = useQuery({
     queryKey: getQueryKey.metricsDashboard(dashboardType),
     queryFn: () => {
@@ -137,9 +148,11 @@ export default function useDashboardV2Metrics(dashboardType: DashboardType) {
           return dsrBaseMetrics.data && getArrangedStrategyMetrics(dsrBaseMetrics.data);
         case DashboardType.TEMPLO_MAYOR_GNOSIS:
           return temploMayorGnosisMetrics.data && getArrangedStrategyMetrics(temploMayorGnosisMetrics.data);
+        case DashboardType.FOHMO_GNOSIS:
+          return fohmoGnosisMetrics.data && getArrangedStrategyMetrics(fohmoGnosisMetrics.data);
       }
     },
-    enabled: !!treasuryReservesVaultMetrics.data && !!tlcMetrics.data && !!ramosMetrics.data && !!templeBaseMetrics.data && !!dsrBaseMetrics.data && !!temploMayorGnosisMetrics.data
+    enabled: !!treasuryReservesVaultMetrics.data && !!tlcMetrics.data && !!ramosMetrics.data && !!templeBaseMetrics.data && !!dsrBaseMetrics.data && !!temploMayorGnosisMetrics.data && !!fohmoGnosisMetrics.data
   })
 
   const fetchStrategyMetrics = async (strategy: StrategyKey): Promise<StrategyMetrics> => {
