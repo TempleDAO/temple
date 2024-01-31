@@ -98,6 +98,8 @@ export const dashboardTypeToStrategyKey = (dType: DashboardType): StrategyKey =>
       return StrategyKey.TEMPLEBASE;
     case DashboardType.TEMPLO_MAYOR_GNOSIS:
       return StrategyKey.TEMPLO_MAYOR_GNOSIS;
+    case DashboardType.FOHMO_GNOSIS:
+      return StrategyKey.FOHMO_GNOSIS;
     default:
       return StrategyKey.ALL;
   }

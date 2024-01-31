@@ -70,6 +70,7 @@ const env: Environment = {
       templeStrategy: '0xB8d09B0436adF927004Cea0B096E8c05f6dFdc3b',
       tlcStrategy: '0xcABDE42dd767361739bD7c09C6E574057080ef01',
       temploMayorGnosisStrategy: '0xb28FEC0EE90680EE25d42e8101159a72E359be7c',
+      fohmoGnosisStrategy: '0xF179C63735690d2C08cfb231d15c0c7ac3A2Bc67',
     },
   },
   gas: {
