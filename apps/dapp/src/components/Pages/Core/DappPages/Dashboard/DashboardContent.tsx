@@ -83,7 +83,7 @@ const DashboardContent = ({ selectedDashboard = DashboardType.TREASURY_RESERVES_
     [DashboardType.FOHMO_GNOSIS]: {
       title: 'Fohmo',
       description:
-        'TODO: fohmo gonsis strategy description goes here',
+        '',
       chartStrategyNames: [StrategyKey.FOHMO_GNOSIS],
       link: `${env.etherscan}/address/${env.contracts.strategies.fohmoGnosisStrategy}`,
     },
