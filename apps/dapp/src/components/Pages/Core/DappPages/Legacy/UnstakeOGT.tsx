@@ -29,7 +29,9 @@ export const UnstakeOGT = () => {
 
   useEffect(() => {
     const onMount = async () => {
-      if (wallet && signer) await updateLockedEntries();
+      if (wallet && signer) {
+        await Promise.all([updateLockedEntries(), updateBalance()]);
+      }
     };
     onMount();
   }, [wallet, signer]);
@@ -42,8 +44,7 @@ export const UnstakeOGT = () => {
     try {
       lockedEntries.map(async (entry) => {
         if (Date.now() > entry.lockedUntilTimestamp) await claimOgTemple(0);
-        updateLockedEntries();
-        updateBalance();
+        await Promise.all([updateLockedEntries(), updateBalance()]);
       });
     } catch (e) {
       console.log(e);
