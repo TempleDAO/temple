@@ -11,7 +11,7 @@ export const useGeoBlocked = () => {
         .then((res) => res.blocked)
         .catch((err: unknown) => {
           console.log('geoblock error:', err);
-          return false;
+          return true;
         });
       setIsBlocked(blocked);
       setLoading(false);
