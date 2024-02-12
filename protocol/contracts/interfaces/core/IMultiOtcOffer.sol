@@ -29,11 +29,11 @@ interface IMultiOtcOffer {
         uint128 _minValidOfferPrice,
         uint128 _maxValidOfferPrice,
         uint256 _offerPrice
-    ) external virtual;
+    ) external;
 
     function removeOtcMarket(bytes32 _marketId) external;
     function setMarketFundsOwner(bytes32 _marketId, address _fundsOwner) external;
-    function setOfferPrice(bytes32 _marketId, uint256 _offerPrice) external virtual;
+    function setOfferPrice(bytes32 _marketId, uint256 _offerPrice) external;
     function setOfferPriceRange(bytes32 _marketId, uint128 _minValidOfferPrice, uint128 _maxValidOfferPrice) external;
     function pause() external;
     function unpause() external;
@@ -42,4 +42,5 @@ interface IMultiOtcOffer {
     function userBuyTokenAvailable(bytes32 _marketId) external view returns (uint256);
     function getOtcMarketIds() external view returns (bytes32[] memory);
     function tokenPairExists(address token0, address token1) external view returns (bool);
+    function getMarketIdByTokens(address userBuyToken, address userSellToken) external view returns (bytes32);
 }

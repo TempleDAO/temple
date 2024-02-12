@@ -171,13 +171,17 @@ contract MultiOtcOffer is IMultiOtcOffer, Pausable, ElevatedAccess {
         return _otcMarketIds.values();
     }
 
-    function _createMarketHash(address userBuyToken, address userSellToken) internal view returns (bytes32) {
-        return userBuyToken < userSellToken ? 
-            keccak256(abi.encodePacked(userBuyToken, userSellToken)) : keccak256(abi.encodePacked(userSellToken, userBuyToken));
+    function _createMarketHash(address userBuyToken, address userSellToken) internal pure returns (bytes32) {
+        /// order is important, so not checking tokenA < tokenB
+        return keccak256(abi.encodePacked(userBuyToken, userSellToken));
     }
 
-    function tokenPairExists(address token0, address token1) external override view returns (bool) {
-        bytes32 marketId = _createMarketHash(token0, token1);
+    function getMarketIdByTokens(address userBuyToken, address userSellToken) external override view returns (bytes32) {
+        return _createMarketHash(userBuyToken, userSellToken);
+    }
+
+    function tokenPairExists(address userBuyToken, address userSellToken) external override view returns (bool) {
+        bytes32 marketId = _createMarketHash(userBuyToken, userSellToken);
         return _otcMarketIds.contains(marketId);
     }
 }
