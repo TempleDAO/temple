@@ -1,0 +1,183 @@
+pragma solidity 0.8.19;
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Temple (core/MultiOtcOffer.sol)
+
+import { Pausable } from "@openzeppelin/contracts/security/Pausable.sol";
+import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
+import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import { ElevatedAccess } from "../nexus/access/ElevatedAccess.sol";
+import { IMultiOtcOffer } from "../interfaces/core/IMultiOtcOffer.sol";
+
+
+/**
+ * @title Multi OTC Offer
+ *
+ * @notice Temple offers OTC purchases to users on certain tokens - slippage and price impact free.
+ * Temple sets the offer price and users can swap tokens for any arbitrary size at this price, up to some
+ * max amount of treasury funds (determined by the `fundsOwner` balance and ERC20 approvals). 
+ * This contract is set up to take care of multiple OTC markets. Contract owner can add and remove OTC markets.
+ */
+contract MultiOtcOffer is IMultiOtcOffer, Pausable, ElevatedAccess {
+    using SafeERC20 for IERC20Metadata;
+    using EnumerableSet for EnumerableSet.Bytes32Set;
+
+    /// @notice The number of decimal places represented by `offerPrice`
+    uint8 public constant OFFER_PRICE_DECIMALS = 18;
+
+    mapping(bytes32 => OTCMarketInfo) public otcMarketInfo;
+    mapping(bytes32 => OTCMarketPriceParams) public otcMarketPriceParams;
+    
+    EnumerableSet.Bytes32Set private _otcMarketIds;
+
+
+    event OfferPriceSet(bytes32 marketId, uint256 _offerPrice);
+    event OfferPriceRangeSet(bytes32 marketId, uint128 minValidOfferPrice, uint128 maxValidOfferPrice);
+    event Swap(address indexed account, address indexed fundsOwner, uint256 userSellTokenAmount, uint256 userBuyTokenAmount);
+    event FundsOwnerSet(bytes32 marketId, address indexed fundsOwner);
+    event OtcMarketAdded(bytes32 marketId, address userBuyToken, address userSellToken);
+    event OtcMarketRemoved(bytes32 marketId, address userBuyToken, address userSellToken);
+
+    error OfferPriceNotValid();
+    error InvalidTokenPair(address token);
+    error MarketPairExists();
+    error InvalidMarketId(bytes32 marketId);
+
+
+    constructor(
+        address _initialExecutor
+    )  ElevatedAccess(_initialExecutor) {}
+
+    function addOtcMarket(
+        OTCMarketInfo calldata _otcMarketInfo,
+        uint128 _minValidOfferPrice,
+        uint128 _maxValidOfferPrice,
+        uint256 _offerPrice
+    ) external override onlyElevatedAccess {
+        if (_otcMarketInfo.fundsOwner == address(0) ||
+            address(_otcMarketInfo.userBuyToken) == address(0) ||
+            address(_otcMarketInfo.userSellToken) == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
+        if (_otcMarketInfo.userBuyToken == _otcMarketInfo.userSellToken) { revert InvalidTokenPair(address(_otcMarketInfo.userBuyToken)); }
+        if (_minValidOfferPrice == 0 || _minValidOfferPrice > _maxValidOfferPrice) { revert CommonEventsAndErrors.InvalidParam(); }
+        if (_offerPrice < _minValidOfferPrice || _offerPrice > _maxValidOfferPrice) { revert CommonEventsAndErrors.InvalidParam(); }
+
+        // check existing hash for token pair
+        bytes32 newHash = _createMarketHash(address(_otcMarketInfo.userBuyToken), address(_otcMarketInfo.userSellToken));
+        if (!_otcMarketIds.add(newHash)) { revert MarketPairExists(); }
+        otcMarketInfo[newHash] = _otcMarketInfo;
+
+        OTCMarketPriceParams storage otcMarketParam = otcMarketPriceParams[newHash];
+        otcMarketParam.minValidOfferPrice = _minValidOfferPrice;
+        otcMarketParam.maxValidOfferPrice = _maxValidOfferPrice;
+        otcMarketParam.offerPrice = _offerPrice;
+        uint256 scaleDecimals = otcMarketParam.offerPricingToken == OfferPricingToken.UserBuyToken
+            ? OFFER_PRICE_DECIMALS + _otcMarketInfo.userSellToken.decimals() - _otcMarketInfo.userBuyToken.decimals()
+            : OFFER_PRICE_DECIMALS + _otcMarketInfo.userBuyToken.decimals() - _otcMarketInfo.userSellToken.decimals();
+        otcMarketParam.scalar = 10 ** scaleDecimals;
+
+        emit OtcMarketAdded(newHash, address(_otcMarketInfo.userBuyToken), address(_otcMarketInfo.userSellToken));
+    
+    }
+
+    function removeOtcMarket(bytes32 _marketId) external override onlyElevatedAccess {
+        if (!_otcMarketIds.remove(_marketId)) { revert InvalidMarketId(_marketId); }
+        /// cache for events
+        OTCMarketInfo memory marketInfo = otcMarketInfo[_marketId];
+        address userBuyToken = address(marketInfo.userBuyToken);
+        address userSellToken = address(marketInfo.userSellToken);
+        delete otcMarketInfo[_marketId];
+        delete otcMarketPriceParams[_marketId];
+
+        emit OtcMarketRemoved(_marketId, userBuyToken, userSellToken);
+    }
+
+    function setMarketFundsOwner(bytes32 _marketId, address _fundsOwner) external override onlyElevatedAccess {
+        if (!_otcMarketIds.contains(_marketId)) { revert InvalidMarketId(_marketId); }
+        if (_fundsOwner == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
+        OTCMarketInfo storage _otcMarketInfo = otcMarketInfo[_marketId]; 
+        _otcMarketInfo.fundsOwner = _fundsOwner;
+        emit FundsOwnerSet(_marketId, _fundsOwner);
+    }
+
+    function setOfferPrice(bytes32 _marketId, uint256 _offerPrice) external override onlyElevatedAccess {
+        if (!_otcMarketIds.contains(_marketId)) { revert InvalidMarketId(_marketId); }
+        OTCMarketPriceParams storage marketPriceParam = otcMarketPriceParams[_marketId];
+        if (_offerPrice < marketPriceParam.minValidOfferPrice || _offerPrice > marketPriceParam.maxValidOfferPrice) revert OfferPriceNotValid();
+        marketPriceParam.offerPrice = _offerPrice;
+        emit OfferPriceSet(_marketId, _offerPrice);
+    }
+
+    function setOfferPriceRange(bytes32 _marketId, uint128 _minValidOfferPrice, uint128 _maxValidOfferPrice) external override onlyElevatedAccess {
+        if (_minValidOfferPrice > _maxValidOfferPrice) revert CommonEventsAndErrors.InvalidParam();
+        OTCMarketPriceParams storage marketPriceParam = otcMarketPriceParams[_marketId];
+        marketPriceParam.minValidOfferPrice = _minValidOfferPrice;
+        marketPriceParam.maxValidOfferPrice = _maxValidOfferPrice;
+        emit OfferPriceRangeSet(_marketId, _minValidOfferPrice, _maxValidOfferPrice);
+    }
+
+    /// @notice Owner can pause user swaps from occuring
+    function pause() external override onlyElevatedAccess {
+        _pause();
+    }
+
+    /// @notice Owner can unpause so user swaps can occur
+    function unpause() external override onlyElevatedAccess {
+        _unpause();
+    }
+
+    /// @notice Swap `userSellToken` for `userBuyToken`, at the `offerPrice`
+    function swap(bytes32 marketId, uint256 sellTokenAmount) external override whenNotPaused returns (uint256 buyTokenAmount) {
+        if (!_otcMarketIds.contains(marketId)) { revert InvalidMarketId(marketId); }
+        if (sellTokenAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
+        OTCMarketInfo memory marketInfo = otcMarketInfo[marketId];
+        buyTokenAmount = quote(marketId, sellTokenAmount);
+        address _fundsOwner = marketInfo.fundsOwner;
+        IERC20Metadata _userSellToken = marketInfo.userSellToken;
+        IERC20Metadata _userBuyToken = marketInfo.userBuyToken;
+        emit Swap(msg.sender, _fundsOwner, sellTokenAmount, buyTokenAmount);
+
+        _userSellToken.safeTransferFrom(msg.sender, _fundsOwner, sellTokenAmount);
+        _userBuyToken.safeTransferFrom(_fundsOwner, msg.sender, buyTokenAmount);
+    }
+
+    /// @notice How many `userBuyToken` you would receive given an amount of `sellTokenAmount`
+    function quote(bytes32 marketId, uint256 sellTokenAmount) public override view returns (uint256 buyTokenAmount) {
+        if (!_otcMarketIds.contains(marketId)) { revert InvalidMarketId(marketId); }
+        OTCMarketPriceParams memory marketPriceParam = otcMarketPriceParams[marketId];
+        buyTokenAmount = marketPriceParam.offerPricingToken == OfferPricingToken.UserBuyToken
+            ? sellTokenAmount * marketPriceParam.offerPrice / marketPriceParam.scalar
+            : sellTokenAmount * marketPriceParam.scalar / marketPriceParam.offerPrice;
+    }
+
+     /**
+     * @notice The available funds for a user swap is goverend by the amount of `userBuyToken` that
+     * the `fundsOwner` has available.
+     * @dev The minimum of the `fundsOwner` balance of `userBuyToken`, and the spending 
+     * approval from `fundsOwner` to this OtcOffer contract.
+     */
+    function userBuyTokenAvailable(bytes32 _marketId) external override view returns (uint256) {
+        if (!_otcMarketIds.contains(_marketId)) { revert InvalidMarketId(_marketId); }
+        OTCMarketInfo memory marketInfo = otcMarketInfo[_marketId];
+        address _fundsOwner = marketInfo.fundsOwner;
+        uint256 _balance = marketInfo.userBuyToken.balanceOf(_fundsOwner);
+        uint256 _allowance = marketInfo.userBuyToken.allowance(_fundsOwner, address(this));
+        return _balance < _allowance
+            ? _balance
+            : _allowance;
+    }
+
+    function getOtcMarketIds() external view override returns (bytes32[] memory) {
+        return _otcMarketIds.values();
+    }
+
+    function _createMarketHash(address userBuyToken, address userSellToken) internal view returns (bytes32) {
+        return userBuyToken < userSellToken ? 
+            keccak256(abi.encodePacked(userBuyToken, userSellToken)) : keccak256(abi.encodePacked(userSellToken, userBuyToken));
+    }
+
+    function tokenPairExists(address token0, address token1) external override view returns (bool) {
+        bytes32 marketId = _createMarketHash(token0, token1);
+        return _otcMarketIds.contains(marketId);
+    }
+}
