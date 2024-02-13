@@ -38,13 +38,11 @@
     "solidity-coverage": "^0.8.4",
     "ts-node": "^10.9.1",
     "typechain": "^8.1.1",
-    "typescript": "^4.8.4",
-    "@safe-global/safe-deployments": "^1.26.0"
+    "typescript": "^4.8.4"
   },
   "scripts": {
     "compile": "hardhat compile",
     "typechain": "hardhat typechain",
-    "typechain:safe": "ts-node ./scripts/generateTypechainFiles.ts",
     "clean": "hardhat clean",
     "size": "hardhat size-contracts",
     "test": "NODE_ENV=test hardhat test",
