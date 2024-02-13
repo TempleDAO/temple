@@ -55,9 +55,7 @@ const env: Environment = {
     balancerV2: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-balancer-v2',
     // TODO: Will be deprecated
     ramos: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-ramos',
-    // TODO: restore this
-    // templeV2: 'https://api.studio.thegraph.com/query/520/v2-sepolia/version/latest',
-    templeV2: 'https://api.thegraph.com/subgraphs/name/medariox/v2-mainnet',
+    templeV2: 'https://api.thegraph.com/subgraphs/name/medariox/v2-testnet',
     // Original Balancer Subgraph
     // balancerV2: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-goerli-v2',
   },
