@@ -20,6 +20,7 @@
       "data/*": ["./data/*"],
       "types/*": ["./types/*"],
       "constants/*": ["./constants/*"],
+      "safe/*": ["./safe/*"],
     },
   },
   "include": ["**/*.ts", "**/*.tsx","**/*.json", "api/ping.js", "api/geoblock.js"],

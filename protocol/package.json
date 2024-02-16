@@ -70,6 +70,6 @@
     "forge-coverage-html": "forge coverage --report lcov && genhtml lcov.info -o report --branch-coverage --legend"
   },
   "engines": {
-    "node": ">=16.0.0"
+    "node": ">=18.16"
   }
 }
