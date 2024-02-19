@@ -26,24 +26,10 @@ contract MultiOtcOffer is IMultiOtcOffer, Pausable, TempleElevatedAccess {
     /// @notice The number of decimal places represented by `offerPrice`
     uint8 public constant OFFER_PRICE_DECIMALS = 18;
 
-    mapping(bytes32 marketId => OTCMarketInfo marketInfo) public otcMarketInfo;
+    mapping(bytes32 marketId => OTCMarketInfo marketInfo) private otcMarketInfo;
     
     EnumerableSet.Bytes32Set private _otcMarketIds;
-    mapping(bytes32 marketId => address[] tokens) public marketIdToTokens;
-
-
-    event OfferPriceSet(bytes32 marketId, uint256 _offerPrice);
-    event OfferPriceRangeSet(bytes32 marketId, uint128 minValidOfferPrice, uint128 maxValidOfferPrice);
-    event Swap(address indexed account, address indexed fundsOwner, uint256 userSellTokenAmount, uint256 userBuyTokenAmount);
-    event FundsOwnerSet(bytes32 marketId, address indexed fundsOwner);
-    event OtcMarketAdded(bytes32 marketId, address userBuyToken, address userSellToken);
-    event OtcMarketRemoved(bytes32 marketId, address userBuyToken, address userSellToken);
-
-    error OfferPriceNotValid();
-    error InvalidTokenPair(address token);
-    error MarketPairExists();
-    error InvalidMarketId(bytes32 marketId);
-
+    mapping(bytes32 marketId => address[] tokens) private marketIdToTokens;
 
     constructor(
         address _initialRescuer,
@@ -51,37 +37,37 @@ contract MultiOtcOffer is IMultiOtcOffer, Pausable, TempleElevatedAccess {
     )  TempleElevatedAccess(_initialRescuer, _initialExecutor) {}
 
     function addOtcMarket(
-        OTCMarketInfo calldata _otcMarketInfo,
-        uint128 _minValidOfferPrice,
-        uint128 _maxValidOfferPrice,
-        uint256 _offerPrice
-    ) external override onlyElevatedAccess {
+        OTCMarketInfo calldata _otcMarketInfo
+    ) external override onlyElevatedAccess returns (bytes32 marketId) {
         if (_otcMarketInfo.fundsOwner == address(0) ||
             address(_otcMarketInfo.userBuyToken) == address(0) ||
             address(_otcMarketInfo.userSellToken) == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
-        if (_otcMarketInfo.userBuyToken == _otcMarketInfo.userSellToken) { revert InvalidTokenPair(address(_otcMarketInfo.userBuyToken)); }
-        if (_minValidOfferPrice == 0 || _minValidOfferPrice > _maxValidOfferPrice) { revert CommonEventsAndErrors.InvalidParam(); }
-        if (_offerPrice < _minValidOfferPrice || _offerPrice > _maxValidOfferPrice) { revert CommonEventsAndErrors.InvalidParam(); }
+        if (_otcMarketInfo.userBuyToken == _otcMarketInfo.userSellToken) 
+            { revert InvalidTokenPair(address(_otcMarketInfo.userBuyToken), address(_otcMarketInfo.userSellToken)); }
+        if (_otcMarketInfo.minValidOfferPrice == 0 || _otcMarketInfo.minValidOfferPrice > _otcMarketInfo.maxValidOfferPrice) 
+            { revert CommonEventsAndErrors.InvalidParam(); }
+        if (_otcMarketInfo.offerPrice < _otcMarketInfo.minValidOfferPrice || _otcMarketInfo.offerPrice > _otcMarketInfo.maxValidOfferPrice) 
+            { revert CommonEventsAndErrors.InvalidParam(); }
 
         // check existing hash for token pair
-        bytes32 newHash = _createMarketHash(address(_otcMarketInfo.userBuyToken), address(_otcMarketInfo.userSellToken));
-        if (!_otcMarketIds.add(newHash)) { revert MarketPairExists(); }
+        marketId = _createMarketHash(address(_otcMarketInfo.userBuyToken), address(_otcMarketInfo.userSellToken));
+        if (!_otcMarketIds.add(marketId)) { revert MarketPairExists(); }
         address[] memory tokens = new address[](2);
         tokens[0] = address(_otcMarketInfo.userBuyToken);
         tokens[1] = address(_otcMarketInfo.userSellToken);
-        marketIdToTokens[newHash] = tokens;
-        otcMarketInfo[newHash] = _otcMarketInfo;
+        marketIdToTokens[marketId] = tokens;
+        otcMarketInfo[marketId] = _otcMarketInfo;
 
-        OTCMarketInfo storage marketInfo = otcMarketInfo[newHash];
-        marketInfo.minValidOfferPrice = _minValidOfferPrice;
-        marketInfo.maxValidOfferPrice = _maxValidOfferPrice;
-        marketInfo.offerPrice = _offerPrice;
+        OTCMarketInfo storage marketInfo = otcMarketInfo[marketId];
+        // marketInfo.minValidOfferPrice = _minValidOfferPrice;
+        // marketInfo.maxValidOfferPrice = _maxValidOfferPrice;
+        // marketInfo.offerPrice = _offerPrice;
         uint256 scaleDecimals = marketInfo.offerPricingToken == OfferPricingToken.UserBuyToken
             ? OFFER_PRICE_DECIMALS + _otcMarketInfo.userSellToken.decimals() - _otcMarketInfo.userBuyToken.decimals()
             : OFFER_PRICE_DECIMALS + _otcMarketInfo.userBuyToken.decimals() - _otcMarketInfo.userSellToken.decimals();
         marketInfo.scalar = 10 ** scaleDecimals;
 
-        emit OtcMarketAdded(newHash, address(_otcMarketInfo.userBuyToken), address(_otcMarketInfo.userSellToken));
+        emit OtcMarketAdded(marketId, address(_otcMarketInfo.userBuyToken), address(_otcMarketInfo.userSellToken));
     }
 
     function removeOtcMarket(address userBuyToken, address userSellToken) external override onlyElevatedAccess {
@@ -96,7 +82,6 @@ contract MultiOtcOffer is IMultiOtcOffer, Pausable, TempleElevatedAccess {
 
     function setMarketFundsOwner(address _userBuyToken, address _userSellToken, address _fundsOwner) external override onlyElevatedAccess {
         bytes32 _marketId = _validate(_userBuyToken, _userSellToken);
-        // if (!_otcMarketIds.contains(_marketId)) { revert InvalidMarketId(_marketId); }
         if (_fundsOwner == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
         OTCMarketInfo storage _otcMarketInfo = otcMarketInfo[_marketId]; 
         _otcMarketInfo.fundsOwner = _fundsOwner;
@@ -105,7 +90,6 @@ contract MultiOtcOffer is IMultiOtcOffer, Pausable, TempleElevatedAccess {
 
     function setOfferPrice(address _userBuyToken, address _userSellToken, uint256 _offerPrice) external override onlyElevatedAccess {
         bytes32 _marketId = _validate(_userBuyToken, _userSellToken);
-        // if (!_otcMarketIds.contains(_marketId)) { revert InvalidMarketId(_marketId); }
         OTCMarketInfo storage marketInfo = otcMarketInfo[_marketId];
         if (_offerPrice < marketInfo.minValidOfferPrice || _offerPrice > marketInfo.maxValidOfferPrice) revert OfferPriceNotValid();
         marketInfo.offerPrice = _offerPrice;
@@ -165,8 +149,17 @@ contract MultiOtcOffer is IMultiOtcOffer, Pausable, TempleElevatedAccess {
         buyTokenAmount = _calculateBuyTokenAmount(marketId, sellTokenAmount);
     }
 
+    function quote(
+        address userBuyToken,
+        address userSellToken,
+        uint256 sellTokenAmount
+    ) public override view returns (uint256 buyTokenAmount) {
+        bytes32 marketId = _validate(userBuyToken, userSellToken);
+        buyTokenAmount = _calculateBuyTokenAmount(marketId, sellTokenAmount);
+    }
+
     function _calculateBuyTokenAmount(bytes32 marketId, uint256 sellTokenAmount) private view returns (uint256 buyTokenAmount) {
-        OTCMarketInfo memory marketInfo = otcMarketInfo[marketId];
+        OTCMarketInfo storage marketInfo = otcMarketInfo[marketId];
         buyTokenAmount = marketInfo.offerPricingToken == OfferPricingToken.UserBuyToken
             ? sellTokenAmount * marketInfo.offerPrice / marketInfo.scalar
             : sellTokenAmount * marketInfo.scalar / marketInfo.offerPrice;
@@ -180,7 +173,6 @@ contract MultiOtcOffer is IMultiOtcOffer, Pausable, TempleElevatedAccess {
      */
     function userBuyTokenAvailable(address _userBuyToken, address _userSellToken) external override view returns (uint256) {
         bytes32 _marketId = _validate(_userBuyToken, _userSellToken);
-        // if (!_otcMarketIds.contains(_marketId)) { revert InvalidMarketId(_marketId); }
         OTCMarketInfo memory marketInfo = otcMarketInfo[_marketId];
         address _fundsOwner = marketInfo.fundsOwner;
         uint256 _balance = marketInfo.userBuyToken.balanceOf(_fundsOwner);
@@ -194,8 +186,8 @@ contract MultiOtcOffer is IMultiOtcOffer, Pausable, TempleElevatedAccess {
         return _otcMarketIds.values();
     }
 
-    function getOtcMarketTokens(bytes32 marketId) external view override returns (address[] memory) {
-        return marketIdToTokens[marketId];
+    function getOtcMarketTokens(bytes32 marketId) external view override returns (address[] memory tokens) {
+        tokens = marketIdToTokens[marketId];
     }
 
     function _validate(address userBuyToken, address userSellToken) private view returns (bytes32 marketId) {
@@ -215,5 +207,14 @@ contract MultiOtcOffer is IMultiOtcOffer, Pausable, TempleElevatedAccess {
     function tokenPairExists(address userBuyToken, address userSellToken) external override view returns (bool) {
         bytes32 marketId = _createMarketHash(userBuyToken, userSellToken);
         return _otcMarketIds.contains(marketId);
+    }
+
+    function getOtcMarketInfo(bytes32 marketId) external override view returns (OTCMarketInfo memory) {
+        return otcMarketInfo[marketId];
+    }
+
+    function getOtcMarketInfo(address userBuyToken, address userSellToken) external override view returns (OTCMarketInfo memory) {
+        bytes32 marketId = _createMarketHash(userBuyToken, userSellToken);
+        return otcMarketInfo[marketId];
     }
 }

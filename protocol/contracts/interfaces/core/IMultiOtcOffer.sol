@@ -21,12 +21,21 @@ interface IMultiOtcOffer {
         uint256 offerPrice;
     }
 
+    event OfferPriceSet(bytes32 marketId, uint256 _offerPrice);
+    event OfferPriceRangeSet(bytes32 marketId, uint128 minValidOfferPrice, uint128 maxValidOfferPrice);
+    event Swap(address indexed account, address indexed fundsOwner, uint256 userSellTokenAmount, uint256 userBuyTokenAmount);
+    event FundsOwnerSet(bytes32 marketId, address indexed fundsOwner);
+    event OtcMarketAdded(bytes32 marketId, address userBuyToken, address userSellToken);
+    event OtcMarketRemoved(bytes32 marketId, address userBuyToken, address userSellToken);
+
+    error OfferPriceNotValid();
+    error InvalidTokenPair(address token0, address token1);
+    error MarketPairExists();
+    error InvalidMarketId(bytes32 marketId);
+
     function addOtcMarket(
-        OTCMarketInfo calldata _otcMarketInfo,
-        uint128 _minValidOfferPrice,
-        uint128 _maxValidOfferPrice,
-        uint256 _offerPrice
-    ) external;
+        OTCMarketInfo calldata _otcMarketInfo
+    ) external returns (bytes32);
 
     function removeOtcMarket(address userBuyToken, address userSellToken) external;
     function setMarketFundsOwner(address userBuyToken, address userSellToken, address _fundsOwner) external;
@@ -46,4 +55,11 @@ interface IMultiOtcOffer {
     function tokenPairExists(address token0, address token1) external view returns (bool);
     function getMarketIdByTokens(address userBuyToken, address userSellToken) external view returns (bytes32);
     function getOtcMarketTokens(bytes32 marketId) external view returns (address[] memory);
+    function quote(
+        address userBuyToken,
+        address userSellToken,
+        uint256 sellTokenAmount
+    ) external view returns (uint256);
+    function getOtcMarketInfo(bytes32 marketId) external view returns (OTCMarketInfo memory); 
+    function getOtcMarketInfo(address userBuyToken, address userSellToken) external view returns (OTCMarketInfo memory);
 }
