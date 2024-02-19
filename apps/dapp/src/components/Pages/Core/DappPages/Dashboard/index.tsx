@@ -16,9 +16,9 @@ export const DashboardPage = () => {
         <NavCell>
           <NavLink to={`ramos?${params}`}>RAMOS</NavLink>
         </NavCell>
-        {/* <NavCell> // TODO: Hidden until launch
+        <NavCell>
           <NavLink to={`tlc?${params}`}>TLC</NavLink>
-        </NavCell> */}
+        </NavCell>
         <NavCell>
           <NavLink to={`templebase?${params}`}>TEMPLE BASE</NavLink>
         </NavCell>
@@ -40,8 +40,7 @@ export const DashboardPage = () => {
             element={<DashboardContent selectedDashboard={DashboardType.TREASURY_RESERVES_VAULT} />}
           />
           <Route path="ramos" element={<DashboardContent selectedDashboard={DashboardType.RAMOS} />} />
-          {/* // TODO: Hidden until launch */}
-          {/* <Route path="tlc" element={<DashboardContent selectedDashboard={DashboardType.TLC} />} /> */}
+          <Route path="tlc" element={<DashboardContent selectedDashboard={DashboardType.TLC} />} />
           <Route path="templebase" element={<DashboardContent selectedDashboard={DashboardType.TEMPLE_BASE} />} />
           <Route path="dsrbase" element={<DashboardContent selectedDashboard={DashboardType.DSR_BASE} />} />
           <Route path="templomayor" element={<DashboardContent selectedDashboard={DashboardType.TEMPLO_MAYOR_GNOSIS} />} />
