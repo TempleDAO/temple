@@ -17,7 +17,7 @@ import { IMultiOtcOffer } from "contracts/interfaces/core/IMultiOtcOffer.sol";
  * @notice Temple offers OTC purchases to users on certain tokens - slippage and price impact free.
  * Temple sets the offer price and users can swap tokens for any arbitrary size at this price, up to some
  * max amount of treasury funds (determined by the `fundsOwner` balance and ERC20 approvals). 
- * This contract is set up to take care of multiple OTC markets. Contract owner can add and remove OTC markets.
+ * This contract is set up to take care of multiple OTC markets. Elevated access address can add and remove OTC markets.
  */
 contract MultiOtcOffer is IMultiOtcOffer, Pausable, TempleElevatedAccess {
     using SafeERC20 for IERC20Metadata;
@@ -26,9 +26,11 @@ contract MultiOtcOffer is IMultiOtcOffer, Pausable, TempleElevatedAccess {
     /// @notice The number of decimal places represented by `offerPrice`
     uint8 public constant OFFER_PRICE_DECIMALS = 18;
 
+    /// @notice Mapping of OTC market Ids to details 
     mapping(bytes32 marketId => OTCMarketInfo marketInfo) private otcMarketInfo;
-    
+    /// @notice keep track of all OTC Market Ids
     EnumerableSet.Bytes32Set private _otcMarketIds;
+    /// @notice Reverse map market Ids to buy and sell tokens
     mapping(bytes32 marketId => address[] tokens) private marketIdToTokens;
 
     constructor(
@@ -36,6 +38,11 @@ contract MultiOtcOffer is IMultiOtcOffer, Pausable, TempleElevatedAccess {
         address _initialExecutor
     )  TempleElevatedAccess(_initialRescuer, _initialExecutor) {}
 
+    /**
+     * @notice Add new OTC market.
+     * @param _otcMarketInfo OTC Market details
+     * @return marketId Bytes32 Market Id
+     */
     function addOtcMarket(
         OTCMarketInfo calldata _otcMarketInfo
     ) external override onlyElevatedAccess returns (bytes32 marketId) {
@@ -70,6 +77,11 @@ contract MultiOtcOffer is IMultiOtcOffer, Pausable, TempleElevatedAccess {
         emit OtcMarketAdded(marketId, address(_otcMarketInfo.userBuyToken), address(_otcMarketInfo.userSellToken));
     }
 
+    /**
+     * @notice Remove OTC market.
+     * @param userBuyToken Address of user buy token
+     * @param userSellToken Address of user sell token
+     */
     function removeOtcMarket(address userBuyToken, address userSellToken) external override onlyElevatedAccess {
         bytes32 _marketId = _validate(userBuyToken, userSellToken);
         /// okay to ignore return value because we already checked _marketId exists
@@ -80,6 +92,12 @@ contract MultiOtcOffer is IMultiOtcOffer, Pausable, TempleElevatedAccess {
         emit OtcMarketRemoved(_marketId, userBuyToken, userSellToken);
     }
 
+    /**
+     * @notice Set funds owner of OTC market. Market must already exist.
+     * @param _userBuyToken Address of user buy token
+     * @param _userSellToken Address of user sell token
+     * @param _fundsOwner OWner of the funds to buy
+     */
     function setMarketFundsOwner(address _userBuyToken, address _userSellToken, address _fundsOwner) external override onlyElevatedAccess {
         bytes32 _marketId = _validate(_userBuyToken, _userSellToken);
         if (_fundsOwner == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
@@ -88,6 +106,12 @@ contract MultiOtcOffer is IMultiOtcOffer, Pausable, TempleElevatedAccess {
         emit FundsOwnerSet(_marketId, _fundsOwner);
     }
 
+    /**
+     * @notice Set offer price of OTC market. Market must already exist.
+     * @param _userBuyToken Address of user buy token
+     * @param _userSellToken Address of user sell token
+     * @param _offerPrice The offer price
+     */
     function setOfferPrice(address _userBuyToken, address _userSellToken, uint256 _offerPrice) external override onlyElevatedAccess {
         bytes32 _marketId = _validate(_userBuyToken, _userSellToken);
         OTCMarketInfo storage marketInfo = otcMarketInfo[_marketId];
@@ -96,13 +120,25 @@ contract MultiOtcOffer is IMultiOtcOffer, Pausable, TempleElevatedAccess {
         emit OfferPriceSet(_marketId, _offerPrice);
     }
 
-    function setOfferPriceRange(address _userBuyToken, address _userSellToken, uint128 _minValidOfferPrice, uint128 _maxValidOfferPrice) external override onlyElevatedAccess {
-        bytes32 _marketId = _validate(_userBuyToken, _userSellToken);
-        if (_minValidOfferPrice > _maxValidOfferPrice) revert CommonEventsAndErrors.InvalidParam();
+    /**
+     * @notice Set offer price range of OTC market. Market must already exist.
+     * @param userBuyToken Address of user buy token
+     * @param userSellToken Address of user sell token
+     * @param minValidOfferPrice Minimum valid price of offer
+     * @param maxValidOfferPrice Maximum valid price of offer
+     */
+    function setOfferPriceRange(
+        address userBuyToken,
+        address userSellToken,
+        uint128 minValidOfferPrice,
+        uint128 maxValidOfferPrice
+    ) external override onlyElevatedAccess {
+        bytes32 _marketId = _validate(userBuyToken, userSellToken);
+        if (minValidOfferPrice > maxValidOfferPrice) revert CommonEventsAndErrors.InvalidParam();
         OTCMarketInfo storage marketInfo = otcMarketInfo[_marketId];
-        marketInfo.minValidOfferPrice = _minValidOfferPrice;
-        marketInfo.maxValidOfferPrice = _maxValidOfferPrice;
-        emit OfferPriceRangeSet(_marketId, _minValidOfferPrice, _maxValidOfferPrice);
+        marketInfo.minValidOfferPrice = minValidOfferPrice;
+        marketInfo.maxValidOfferPrice = maxValidOfferPrice;
+        emit OfferPriceRangeSet(_marketId, minValidOfferPrice, maxValidOfferPrice);
     }
 
     /// @notice Owner can pause user swaps from occuring
@@ -115,12 +151,24 @@ contract MultiOtcOffer is IMultiOtcOffer, Pausable, TempleElevatedAccess {
         _unpause();
     }
 
-    /// @notice Swap `userSellToken` for `userBuyToken`, at the `offerPrice`
+    /**
+     * @notice Swap `userSellToken` for `userBuyToken`, at the `offerPrice` 
+     * @param marketId OTC market Id
+     * @param sellTokenAmount Amount of userSellToken to sell
+     * @return buyTokenAmount Amount of `userBuyToken` bought
+     */
     function swap(bytes32 marketId, uint256 sellTokenAmount) external override whenNotPaused returns (uint256) {
         if (!_otcMarketIds.contains(marketId)) { revert InvalidMarketId(marketId); }
         return _swap(marketId, sellTokenAmount);
     }
 
+    /**
+     * @notice Swap `userSellToken` for `userBuyToken`, at the `offerPrice` 
+     * @param userBuyToken Address of user buy token
+     * @param userSellToken Address of user sell token
+     * @param sellTokenAmount Amount of userSellToken to sell
+     * @return buyTokenAmount Amount of `userBuyToken` bought
+     */
     function swap(
         address userBuyToken,
         address userSellToken,
@@ -130,25 +178,24 @@ contract MultiOtcOffer is IMultiOtcOffer, Pausable, TempleElevatedAccess {
         return _swap(_marketId, sellTokenAmount);
     }
 
-    function _swap(bytes32 marketId, uint256 sellTokenAmount) private returns (uint256 buyTokenAmount) {
-        if (sellTokenAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
-        OTCMarketInfo memory marketInfo = otcMarketInfo[marketId];
-        buyTokenAmount = _calculateBuyTokenAmount(marketId, sellTokenAmount);
-        address _fundsOwner = marketInfo.fundsOwner;
-        IERC20Metadata _userSellToken = marketInfo.userSellToken;
-        IERC20Metadata _userBuyToken = marketInfo.userBuyToken;
-        emit Swap(msg.sender, _fundsOwner, sellTokenAmount, buyTokenAmount);
-
-        _userSellToken.safeTransferFrom(msg.sender, _fundsOwner, sellTokenAmount);
-        _userBuyToken.safeTransferFrom(_fundsOwner, msg.sender, buyTokenAmount);
-    }
-
-    /// @notice How many `userBuyToken` you would receive given an amount of `sellTokenAmount`
+    /**
+     * @notice How many `userBuyToken` you would receive given an amount of `sellTokenAmount`` 
+     * @param marketId OTC Market Id
+     * @param sellTokenAmount Amount of userSellToken to sell
+     * @return buyTokenAmount Amount of `userBuyToken` bought
+     */
     function quote(bytes32 marketId, uint256 sellTokenAmount) public override view returns (uint256 buyTokenAmount) {
         if (!_otcMarketIds.contains(marketId)) { revert InvalidMarketId(marketId); }
         buyTokenAmount = _calculateBuyTokenAmount(marketId, sellTokenAmount);
     }
 
+    /** 
+     * @notice How many `userBuyToken` you would receive given an amount of `sellTokenAmount`` 
+     * @param userBuyToken Address of user buy token
+     * @param userSellToken Address of user sell token
+     * @param sellTokenAmount Amount of userSellToken to sell
+     * @return buyTokenAmount Amount of `userBuyToken` bought
+     */
     function quote(
         address userBuyToken,
         address userSellToken,
@@ -158,14 +205,7 @@ contract MultiOtcOffer is IMultiOtcOffer, Pausable, TempleElevatedAccess {
         buyTokenAmount = _calculateBuyTokenAmount(marketId, sellTokenAmount);
     }
 
-    function _calculateBuyTokenAmount(bytes32 marketId, uint256 sellTokenAmount) private view returns (uint256 buyTokenAmount) {
-        OTCMarketInfo storage marketInfo = otcMarketInfo[marketId];
-        buyTokenAmount = marketInfo.offerPricingToken == OfferPricingToken.UserBuyToken
-            ? sellTokenAmount * marketInfo.offerPrice / marketInfo.scalar
-            : sellTokenAmount * marketInfo.scalar / marketInfo.offerPrice;
-    }
-
-     /**
+    /**
      * @notice The available funds for a user swap is goverend by the amount of `userBuyToken` that
      * the `fundsOwner` has available.
      * @dev The minimum of the `fundsOwner` balance of `userBuyToken`, and the spending 
@@ -182,12 +222,62 @@ contract MultiOtcOffer is IMultiOtcOffer, Pausable, TempleElevatedAccess {
             : _allowance;
     }
 
+    /**
+     * @notice Get OTC Market Ids
+     * @return Array of `OTC Market Ids
+     */
     function getOtcMarketIds() external view override returns (bytes32[] memory) {
         return _otcMarketIds.values();
     }
 
+    /**
+     * @notice Get OTC Market Tokens
+     * @param marketId OTC Market Id
+     * @return tokens Array of buy and sell tokens in that order
+     */
     function getOtcMarketTokens(bytes32 marketId) external view override returns (address[] memory tokens) {
         tokens = marketIdToTokens[marketId];
+    }
+
+    /**
+     * @notice Get OTC Market Id from given buy and sell tokens
+     * @param userBuyToken Address of user buy token
+     * @param userSellToken Address of user sell token
+     * @return Bytes32 Id of OTC Market
+     */
+    function getMarketIdByTokens(address userBuyToken, address userSellToken) external override pure returns (bytes32) {
+        return _createMarketHash(userBuyToken, userSellToken);
+    }
+
+    /**
+     * @notice Check if OTC market for buy and sell tokens (in that order) exists
+     * @param userBuyToken Address of user buy token
+     * @param userSellToken Address of user sell token
+     * @return Bool if exists or not
+     */
+    function tokenPairExists(address userBuyToken, address userSellToken) external override view returns (bool) {
+        bytes32 marketId = _createMarketHash(userBuyToken, userSellToken);
+        return _otcMarketIds.contains(marketId);
+    }
+
+    /**
+     * @notice Get OTC Market Information
+     * @param marketId OTC Market Id
+     * @return OTC Market info struct
+     */
+    function getOtcMarketInfo(bytes32 marketId) external override view returns (OTCMarketInfo memory) {
+        return otcMarketInfo[marketId];
+    }
+
+    /**
+     * @notice Get OTC Market Information
+     * @param userBuyToken Address of user buy token
+     * @param userSellToken Address of user sell token
+     * @return OTC Market info struct
+     */
+    function getOtcMarketInfo(address userBuyToken, address userSellToken) external override view returns (OTCMarketInfo memory) {
+        bytes32 marketId = _createMarketHash(userBuyToken, userSellToken);
+        return otcMarketInfo[marketId];
     }
 
     function _validate(address userBuyToken, address userSellToken) private view returns (bytes32 marketId) {
@@ -200,21 +290,23 @@ contract MultiOtcOffer is IMultiOtcOffer, Pausable, TempleElevatedAccess {
         return keccak256(abi.encodePacked(userBuyToken, userSellToken));
     }
 
-    function getMarketIdByTokens(address userBuyToken, address userSellToken) external override pure returns (bytes32) {
-        return _createMarketHash(userBuyToken, userSellToken);
+    function _calculateBuyTokenAmount(bytes32 marketId, uint256 sellTokenAmount) private view returns (uint256 buyTokenAmount) {
+        OTCMarketInfo storage marketInfo = otcMarketInfo[marketId];
+        buyTokenAmount = marketInfo.offerPricingToken == OfferPricingToken.UserBuyToken
+            ? sellTokenAmount * marketInfo.offerPrice / marketInfo.scalar
+            : sellTokenAmount * marketInfo.scalar / marketInfo.offerPrice;
     }
 
-    function tokenPairExists(address userBuyToken, address userSellToken) external override view returns (bool) {
-        bytes32 marketId = _createMarketHash(userBuyToken, userSellToken);
-        return _otcMarketIds.contains(marketId);
-    }
+    function _swap(bytes32 marketId, uint256 sellTokenAmount) private returns (uint256 buyTokenAmount) {
+        if (sellTokenAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
+        OTCMarketInfo memory marketInfo = otcMarketInfo[marketId];
+        buyTokenAmount = _calculateBuyTokenAmount(marketId, sellTokenAmount);
+        address _fundsOwner = marketInfo.fundsOwner;
+        IERC20Metadata _userSellToken = marketInfo.userSellToken;
+        IERC20Metadata _userBuyToken = marketInfo.userBuyToken;
+        emit Swap(msg.sender, _fundsOwner, sellTokenAmount, buyTokenAmount);
 
-    function getOtcMarketInfo(bytes32 marketId) external override view returns (OTCMarketInfo memory) {
-        return otcMarketInfo[marketId];
-    }
-
-    function getOtcMarketInfo(address userBuyToken, address userSellToken) external override view returns (OTCMarketInfo memory) {
-        bytes32 marketId = _createMarketHash(userBuyToken, userSellToken);
-        return otcMarketInfo[marketId];
+        _userSellToken.safeTransferFrom(msg.sender, _fundsOwner, sellTokenAmount);
+        _userBuyToken.safeTransferFrom(_fundsOwner, msg.sender, buyTokenAmount);
     }
 }
