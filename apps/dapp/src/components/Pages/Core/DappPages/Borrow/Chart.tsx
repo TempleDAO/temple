@@ -1,4 +1,4 @@
-import { ChartSupportedTimeInterval, LabeledTimeIntervals, TIME_INTERVAL } from 'utils/time-intervals';
+import { LabeledTimeIntervals, TIME_INTERVAL } from 'utils/time-intervals';
 import type { AxisDomain } from 'recharts/types/util/types';
 import { useEffect, useState } from 'react';
 import styled, { useTheme } from 'styled-components';

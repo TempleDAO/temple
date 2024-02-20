@@ -1,9 +1,15 @@
 import styled from 'styled-components';
 import { useCallback, useEffect, useState } from 'react';
-import { ZERO, fromAtto } from 'utils/bigNumber';
+import { ZERO, fromAtto, toAtto } from 'utils/bigNumber';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { useWallet } from 'providers/WalletProvider';
-import { ERC20__factory, TempleLineOfCredit__factory } from 'types/typechain';
+import {
+  ERC20__factory,
+  LinearWithKinkInterestRateModel__factory,
+  TempleDebtToken__factory,
+  TempleLineOfCredit__factory,
+  TreasuryReservesVault__factory,
+} from 'types/typechain';
 import { ITlcDataTypes } from 'types/typechain/contracts/interfaces/v2/templeLineOfCredit/ITempleLineOfCredit';
 import { fetchGenericSubgraph } from 'utils/subgraph';
 import { BigNumber } from 'ethers';
@@ -85,6 +91,52 @@ export const BorrowPage = () => {
     });
   }, []);
 
+  const getTotalDebtCeiling = useCallback(async () => {
+    if (!signer) return 0;
+    const treasuryReservesVault = new TreasuryReservesVault__factory(signer).attach(
+      env.contracts.treasuryReservesVault
+    );
+    const debtCeiling = await treasuryReservesVault.strategyDebtCeiling(
+      env.contracts.strategies.tlcStrategy,
+      env.contracts.dai
+    );
+
+    return fromAtto(debtCeiling);
+  }, [signer]);
+
+  const getOutstandingLoanBalance = useCallback(async () => {
+    if (!signer) return 0;
+    const templeDebtTokenContract = new TempleDebtToken__factory(signer).attach(env.tokens.templeDebtToken.address);
+    const debt = await templeDebtTokenContract.balanceOf(env.contracts.strategies.tlcStrategy);
+    return fromAtto(debt);
+  }, [signer]);
+
+  const getUtilizationRatio = useCallback(async () => {
+    const debtCeiling = await getTotalDebtCeiling();
+    const outstandingLoanBalance = await getOutstandingLoanBalance();
+    return outstandingLoanBalance / debtCeiling;
+  }, [getOutstandingLoanBalance, getTotalDebtCeiling]);
+
+  const getAvailableToBorrow = useCallback(async () => {
+    // if (!signer) return 0;
+    // const templeDebtTokenContract = new TempleDebtToken__factory(signer).attach(env.tokens.templeDebtToken.address);
+    // const debt = await templeDebtTokenContract.balanceOf(env.contracts.strategies.dsrBaseStrategy);
+
+    // // Some logic? 
+
+    const outstandingLoanBalance = await getOutstandingLoanBalance();
+    const totalDebtCeiling = await getTotalDebtCeiling();
+    return totalDebtCeiling - outstandingLoanBalance;
+  }, [getOutstandingLoanBalance, getTotalDebtCeiling]);
+
+  const getBorrowAPY = useCallback(async () => {
+    if (!signer) return 0;
+    const tlcInterestRateModelContract = new LinearWithKinkInterestRateModel__factory(signer).attach(env.contracts.tlcInterestRateModel);
+    const interestRate = await tlcInterestRateModelContract.calculateInterestRate(toAtto(await getUtilizationRatio()));
+    return fromAtto(interestRate);
+  }, [getUtilizationRatio, signer]);
+
+
   const getTlcInfo = useCallback(async () => {
     const getAccountPosition = async () => {
       if (!signer || !wallet) return;
@@ -112,15 +164,15 @@ export const BorrowPage = () => {
       );
       setTlcInfo({
         minBorrow: data.tlcDailySnapshots[0].minBorrowAmount,
-        borrowRate: data.tlcDailySnapshots[0].interestRate,
+        borrowRate: await getBorrowAPY(),
         liquidationLtv: data.tlcDailySnapshots[0].maxLTVRatio,
-        strategyBalance: data.strategies[0].strategyTokens[0].availableToBorrow,
-        debtCeiling: data.strategies[0].strategyTokens[0].debtCeiling,
+        strategyBalance: await getAvailableToBorrow(),
+        debtCeiling: await getTotalDebtCeiling(),
       });
     } catch (e) {
       console.log(e);
     }
-  }, [signer, wallet]);
+  }, [getBorrowAPY, getTotalDebtCeiling, signer, wallet]);
 
   useEffect(() => {
     const onMount = async () => {
@@ -399,7 +451,6 @@ export const BorrowPage = () => {
                 )}
               </BorrowMetricsCol>
               <MarginTop />
-              {accountPosition?.currentDebt.gt(0) && <Copy>{getLiquidationInfo()}</Copy>}
               <Rule />
               <JustifyEvenlyRow>
                 <TradeButton
