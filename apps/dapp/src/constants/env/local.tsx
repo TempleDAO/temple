@@ -29,6 +29,7 @@ const env: Environment = {
     templeV2FraxPair: '',
     templeV2Router: '',
     tlc: '',
+    tlcInterestRateModel: '',
     treasuryReservesVault: '',
     swap1InchRouter: '',
     treasuryIv: '',
@@ -67,6 +68,12 @@ const env: Environment = {
   },
   etherscan: 'https://sepolia.etherscan.io',
   tokens: {
+    templeDebtToken: {
+      name: 'TempleDebtToken',
+      address: '',
+      decimals: 18,
+      symbol: 'TempleDebtToken',
+    },
     frax: {
       name: 'Frax',
       address: '',
