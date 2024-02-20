@@ -100,7 +100,7 @@ export const Borrow: React.FC<IProps> = ({ accountPosition, state, tlcInfo, liqu
           <p>
             Amount exceeds available DAI.
             <br />
-            Current max borrow: {tlcInfo.strategyBalance.toFixed(4)} DAI
+            Current max borrow: {tlcInfo.strategyBalance ? Number(tlcInfo.strategyBalance).toFixed(4) : 0} DAI
           </p>
         </Warning>
       )}
@@ -150,7 +150,8 @@ export const Borrow: React.FC<IProps> = ({ accountPosition, state, tlcInfo, liqu
             !checkbox ||
             (accountPosition && fromAtto(accountPosition.maxBorrow) < Number(state.borrowValue)) ||
             (tlcInfo && tlcInfo.minBorrow > Number(state.borrowValue)) ||
-            (tlcInfo && tlcInfo.strategyBalance < Number(state.borrowValue))
+            (tlcInfo && tlcInfo.strategyBalance < Number(state.borrowValue)) ||
+            Number(getEstimatedLTV()) > MAX_LTV
           }
         >
           Borrow

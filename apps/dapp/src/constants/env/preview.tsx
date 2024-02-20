@@ -27,6 +27,7 @@ const env: Environment = {
     templeV2FraxPair: '',
     templeV2Router: '',
     tlc: '0xAe0A4a7690F5f308C6615E3738243Ab629DaEAEA',
+    tlcInterestRateModel: '0x78508DDA0b7C3A97ed44a4C2C6F54EABF3F18dba',
     treasuryReservesVault: '0x7f19419488274bcC363d93F70809cDd53C788aF7',
     swap1InchRouter: '',
     treasuryIv: '',
@@ -77,6 +78,12 @@ const env: Environment = {
     ascendQuote: 10_000,
   },
   tokens: {
+    templeDebtToken: {
+      name: 'Temple Debt Token',
+      address: '0x595309143e6716ebC9Ee239B7C6E76e9Dd6b1EB1',
+      decimals: 18,
+      symbol: 'dUSD',
+    },  
     frax: {
       name: 'Frax',
       address: '0x73651AD693531F9937528009cC204a4d9b696a68',
