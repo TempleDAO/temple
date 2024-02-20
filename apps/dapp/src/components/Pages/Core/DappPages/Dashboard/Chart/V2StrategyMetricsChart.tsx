@@ -52,7 +52,7 @@ function transpose(data: V2StrategySnapshot[], metric: V2SnapshotMetric, format:
 
 type MetricFormatter = (v: string) => number;
 
-const parseNumericMetric = (v: string)=> Math.round(parseFloat(v))
+const parseNumericMetric = (v: string) => Math.round(parseFloat(v));
 
 const metricFormatters: { [k in V2SnapshotMetric]: MetricFormatter } = {
   accruedInterestUSD: parseNumericMetric,
@@ -72,14 +72,18 @@ const V2StrategyMetricsChart: React.FC<{
   selectedMetric: V2SnapshotMetric;
   selectedInterval: ChartSupportedTimeInterval;
 }> = ({ dashboardType, selectedMetric, selectedInterval, strategyNames }) => {
+  // uncamel-case the metric names
   const formatMetricName = (name: string) =>
-    `${name
-      // insert a space before all caps
-      .replace(/([A-Z][a-z])/g, ' $1')
-      // uppercase the first character
-      .replace(/^./, (str) => str.toUpperCase())
-      .replace(/USD/, '')}`;
-
+    // format only the selected metric name (the selected metric or all lines in a TRV chart)
+    name === selectedMetric || dashboardType === DashboardType.TREASURY_RESERVES_VAULT
+      ? name
+          // // insert a space before all caps
+          .replace(/([A-Z][a-z])/g, ' $1')
+          // // uppercase the first character
+          .replace(/^./, (str) => str.toUpperCase())
+          .replace(/USD$/, '')
+      : // Individual debt token tickers remain unchanged
+        name;
   const tooltipValuesFormatter = (value: number, name: string) => [
     numberFormatter.format(value),
     formatMetricName(name),
@@ -117,7 +121,7 @@ const V2StrategyMetricsChart: React.FC<{
       // toggle this for inverted Debt
 
       const strategyTokens = Object.fromEntries(
-        m.strategyTokens.map((t) => [`${selectedMetric}: ${t.symbol}`, parseNumericMetric(t[strategyTokenMetric])])
+        m.strategyTokens.map((t) => [`${t.symbol}`, parseNumericMetric(t[strategyTokenMetric])])
       );
       return { ...data, ...strategyTokens };
     }
