@@ -55,6 +55,11 @@ const theme: DefaultTheme = {
       '#876FAC',
       '#AF444A',
       '#24809D',
+      '#9D2498',
+      '#9D4124',
+      '#9D7424',
+      '#588F22',
+      '#26249D',
     ],
     enclave: {
       structure: '#01806C',
