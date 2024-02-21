@@ -3,13 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ZERO, fromAtto, toAtto } from 'utils/bigNumber';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { useWallet } from 'providers/WalletProvider';
-import {
-  ERC20__factory,
-  LinearWithKinkInterestRateModel__factory,
-  TempleDebtToken__factory,
-  TempleLineOfCredit__factory,
-  TreasuryReservesVault__factory,
-} from 'types/typechain';
+import { ERC20__factory, TempleLineOfCredit__factory, TreasuryReservesVault__factory } from 'types/typechain';
 import { ITlcDataTypes } from 'types/typechain/contracts/interfaces/v2/templeLineOfCredit/ITempleLineOfCredit';
 import { fetchGenericSubgraph } from 'utils/subgraph';
 import { BigNumber } from 'ethers';
@@ -91,51 +85,51 @@ export const BorrowPage = () => {
     });
   }, []);
 
-  const getTotalDebtCeiling = useCallback(async () => {
-    if (!signer) return 0;
-    const treasuryReservesVault = new TreasuryReservesVault__factory(signer).attach(
-      env.contracts.treasuryReservesVault
-    );
-    const debtCeiling = await treasuryReservesVault.strategyDebtCeiling(
+  const getTlcInfoFromContracts = useCallback(async () => {
+    if (!signer) return;
+
+    const tlcContract = new TempleLineOfCredit__factory(signer).attach(env.contracts.tlc);
+    const debtPosition = await tlcContract.totalDebtPosition();
+    const totalUserDebt = debtPosition.totalDebt;
+    const utilizationRatio = debtPosition.utilizationRatio;
+
+    // total debt ceiling
+    const debtCeiling = BigNumber.from(totalUserDebt.div(utilizationRatio)).mul(1e18);
+
+    console.debug('debtCeiling', debtCeiling.toString());
+
+    const userAvailableToBorrowFromTlc = debtCeiling.sub(totalUserDebt);
+
+    const trvContract = new TreasuryReservesVault__factory(signer).attach(env.contracts.treasuryReservesVault);
+    const strategyAvailalableToBorrowFromTrv = await trvContract.availableForStrategyToBorrow(
       env.contracts.strategies.tlcStrategy,
       env.contracts.dai
     );
 
-    return fromAtto(debtCeiling);
+    // available to borrow
+    // return the lesser of userAvailableToBorrowFromTlc and strategyAvailalableToBorrowFromTrv
+    const maxAvailableToBorrow = userAvailableToBorrowFromTlc.gte(strategyAvailalableToBorrowFromTrv)
+      ? strategyAvailalableToBorrowFromTrv
+      : userAvailableToBorrowFromTlc;
+
+    console.debug('userAvailableToBorrowFromTlc', userAvailableToBorrowFromTlc.toString());
+    console.debug('strategyAvailalableToBorrowFromTrv', strategyAvailalableToBorrowFromTrv.toString());
+    console.debug('maxAvailableToBorrow', maxAvailableToBorrow.toString());
+
+    // Getting the max borrow LTV and interest rate
+    const [debtTokenConfig, debtTokenData] = await tlcContract.debtTokenDetails();
+    const maxLtv = debtTokenConfig.maxLtvRatio;
+
+    // current borrow apy
+    const currentBorrowInterestRate = debtTokenData.interestRate;
+
+    return {
+      debtCeiling: fromAtto(debtCeiling),
+      strategyBalance: fromAtto(maxAvailableToBorrow),
+      borrowRate: fromAtto(currentBorrowInterestRate),
+      liquidationLtv: fromAtto(maxLtv),
+    };
   }, [signer]);
-
-  const getOutstandingLoanBalance = useCallback(async () => {
-    if (!signer) return 0;
-    const templeDebtTokenContract = new TempleDebtToken__factory(signer).attach(env.tokens.templeDebtToken.address);
-    const debt = await templeDebtTokenContract.balanceOf(env.contracts.strategies.tlcStrategy);
-    return fromAtto(debt);
-  }, [signer]);
-
-  const getUtilizationRatio = useCallback(async () => {
-    const debtCeiling = await getTotalDebtCeiling();
-    const outstandingLoanBalance = await getOutstandingLoanBalance();
-    return outstandingLoanBalance / debtCeiling;
-  }, [getOutstandingLoanBalance, getTotalDebtCeiling]);
-
-  const getAvailableToBorrow = useCallback(async () => {
-    // if (!signer) return 0;
-    // const templeDebtTokenContract = new TempleDebtToken__factory(signer).attach(env.tokens.templeDebtToken.address);
-    // const debt = await templeDebtTokenContract.balanceOf(env.contracts.strategies.dsrBaseStrategy);
-
-    // // Some logic? 
-
-    const outstandingLoanBalance = await getOutstandingLoanBalance();
-    const totalDebtCeiling = await getTotalDebtCeiling();
-    return totalDebtCeiling - outstandingLoanBalance;
-  }, [getOutstandingLoanBalance, getTotalDebtCeiling]);
-
-  const getBorrowAPY = useCallback(async () => {
-    if (!signer) return 0;
-    const tlcInterestRateModelContract = new LinearWithKinkInterestRateModel__factory(signer).attach(env.contracts.tlcInterestRateModel);
-    const interestRate = await tlcInterestRateModelContract.calculateInterestRate(toAtto(await getUtilizationRatio()));
-    return fromAtto(interestRate);
-  }, [getUtilizationRatio, signer]);
-
 
   const getTlcInfo = useCallback(async () => {
     const getAccountPosition = async () => {
@@ -150,29 +144,24 @@ export const BorrowPage = () => {
         env.subgraph.templeV2,
         `{
           tlcDailySnapshots(orderBy: timestamp, orderDirection: desc, first: 1) {
-            interestRate
-            maxLTVRatio
             minBorrowAmount
-          }
-          strategies(where: {name: "TlcStrategy"}) {
-            strategyTokens(where: {symbol: "DAI"}) {
-              availableToBorrow
-              debtCeiling
-            }
           }
         }`
       );
+
+      const tlcInfoFromContracts = await getTlcInfoFromContracts();
+
       setTlcInfo({
         minBorrow: data.tlcDailySnapshots[0].minBorrowAmount,
-        borrowRate: await getBorrowAPY(),
-        liquidationLtv: data.tlcDailySnapshots[0].maxLTVRatio,
-        strategyBalance: await getAvailableToBorrow(),
-        debtCeiling: await getTotalDebtCeiling(),
+        borrowRate: tlcInfoFromContracts?.borrowRate || 0,
+        liquidationLtv: tlcInfoFromContracts?.liquidationLtv || 0,
+        strategyBalance: tlcInfoFromContracts?.strategyBalance || 0,
+        debtCeiling: tlcInfoFromContracts?.debtCeiling || 0,
       });
     } catch (e) {
       console.log(e);
     }
-  }, [getBorrowAPY, getTotalDebtCeiling, signer, wallet]);
+  }, [getTlcInfoFromContracts, signer, wallet]);
 
   useEffect(() => {
     const onMount = async () => {
