@@ -6,7 +6,7 @@ import { useWallet } from 'providers/WalletProvider';
 import { ERC20__factory, TempleLineOfCredit__factory, TreasuryReservesVault__factory } from 'types/typechain';
 import { ITlcDataTypes } from 'types/typechain/contracts/interfaces/v2/templeLineOfCredit/ITempleLineOfCredit';
 import { fetchGenericSubgraph } from 'utils/subgraph';
-import { BigNumber } from 'ethers';
+import { BigNumber, ethers } from 'ethers';
 import daiImg from 'assets/images/newui-images/tokens/dai.png';
 import templeImg from 'assets/images/newui-images/tokens/temple.png';
 import { formatToken } from 'utils/formatter';
@@ -93,10 +93,8 @@ export const BorrowPage = () => {
     const totalUserDebt = debtPosition.totalDebt;
     const utilizationRatio = debtPosition.utilizationRatio;
 
-    // total debt ceiling
-    const debtCeiling = BigNumber.from(totalUserDebt.div(utilizationRatio)).mul(1e18);
-
-    console.debug('debtCeiling', debtCeiling.toString());
+    // NOTE: We are intentionally rounding here to nearest 1e18
+    const debtCeiling = totalUserDebt.div(utilizationRatio).mul(ethers.utils.parseEther('1'));
 
     const userAvailableToBorrowFromTlc = debtCeiling.sub(totalUserDebt);
 
@@ -111,11 +109,7 @@ export const BorrowPage = () => {
     const maxAvailableToBorrow = userAvailableToBorrowFromTlc.gte(strategyAvailalableToBorrowFromTrv)
       ? strategyAvailalableToBorrowFromTrv
       : userAvailableToBorrowFromTlc;
-
-    console.debug('userAvailableToBorrowFromTlc', userAvailableToBorrowFromTlc.toString());
-    console.debug('strategyAvailalableToBorrowFromTrv', strategyAvailalableToBorrowFromTrv.toString());
-    console.debug('maxAvailableToBorrow', maxAvailableToBorrow.toString());
-
+      
     // Getting the max borrow LTV and interest rate
     const [debtTokenConfig, debtTokenData] = await tlcContract.debtTokenDetails();
     const maxLtv = debtTokenConfig.maxLtvRatio;
