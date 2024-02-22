@@ -17,6 +17,7 @@ import {
   Warning,
 } from '../index';
 import { ZERO, fromAtto } from 'utils/bigNumber';
+import { useMemo } from 'react';
 
 interface IProps {
   accountPosition: ITlcDataTypes.AccountPositionStructOutput | undefined;
@@ -27,13 +28,31 @@ interface IProps {
 }
 
 export const Repay: React.FC<IProps> = ({ accountPosition, state, setState, repay, repayAll }) => {
+  // used for the range slider label
+  const maxPossibleLTV = useMemo(() => {
+    if (!accountPosition) return 0;
+
+    const newDebt = fromAtto(accountPosition.currentDebt);
+    const adjustedNewDebt = Math.max(newDebt, 0);
+    const estimatedLTV = ((adjustedNewDebt / fromAtto(accountPosition.collateral)) * 100).toFixed(2);
+
+    return Number(estimatedLTV);
+  }, [accountPosition]);
+
+  // used for the estimated LTV label
   const getEstimatedLTV = (): string => {
-    return accountPosition
-      ? (
-          ((fromAtto(accountPosition.currentDebt) - Number(state.repayValue)) / fromAtto(accountPosition.collateral)) *
-          100
-        ).toFixed(2)
-      : '0.00';
+    if (!accountPosition) return '0.00';
+
+    // Calculate the new debt after repayment.
+    const newDebt = fromAtto(accountPosition.currentDebt) - Number(state.repayValue);
+
+    // Ensure newDebt does not become negative, which could happen with incorrect repayValue.
+    const adjustedNewDebt = Math.max(newDebt, 0);
+
+    // Calculate the estimated LTV after repayment.
+    const estimatedLTV = ((adjustedNewDebt / fromAtto(accountPosition.collateral)) * 100).toFixed(2);
+
+    return estimatedLTV;
   };
 
   return (
@@ -73,25 +92,21 @@ export const Repay: React.FC<IProps> = ({ accountPosition, state, setState, repa
       <RangeSlider
         onChange={(e) => {
           if (!accountPosition) return;
-          let ltvPercent = ((Number(e.target.value) / 100) * MAX_LTV) / 100;
-          // Max LTV is the current LTV
-          const maxLtv = fromAtto(accountPosition.currentDebt) / fromAtto(accountPosition.collateral);
-          if (ltvPercent > maxLtv) ltvPercent = maxLtv;
-          const repayAmount = (
-            -1 * (ltvPercent * fromAtto(accountPosition.collateral)) +
-            fromAtto(accountPosition.currentDebt)
-          ).toFixed(2);
-          console.log(repayAmount);
-          setState({ ...state, repayValue: `${Number(repayAmount) > 0 ? repayAmount : '0'}` });
+
+          const sliderValue = Number(e.target.value); // This is between 0 and 100
+          const maxRepayable = fromAtto(accountPosition.currentDebt); // Maximum that can be repaid
+          const repayAmount = (sliderValue / 100) * maxRepayable; // Direct mapping of slider to repay amount
+
+          setState({ ...state, repayValue: repayAmount.toFixed(2) });
         }}
         min={0}
         max={100}
-        value={(Number(getEstimatedLTV()) / MAX_LTV) * 100}
-        progress={(Number(getEstimatedLTV()) / MAX_LTV) * 100}
+        value={(Number(state.repayValue) / fromAtto(accountPosition ? accountPosition.currentDebt : ZERO)) * 100}
+        progress={(Number(state.repayValue) / fromAtto(accountPosition ? accountPosition.currentDebt : ZERO)) * 100}
       />
       <FlexBetween>
+        <RangeLabel>{maxPossibleLTV}%</RangeLabel>
         <RangeLabel>0%</RangeLabel>
-        <RangeLabel>{MAX_LTV}%</RangeLabel>
       </FlexBetween>
       <FlexColCenter>
         <TradeButton
@@ -104,12 +119,8 @@ export const Repay: React.FC<IProps> = ({ accountPosition, state, setState, repa
               repay();
             }
           }}
-          // Disable if repay amount is lte zero, gt wallet balance, or gt current debt
-          disabled={
-            Number(state.repayValue) <= 0 ||
-            fromAtto(state.outputTokenBalance) < Number(state.repayValue) ||
-            (accountPosition && Number(state.repayValue) >= fromAtto(accountPosition.currentDebt))
-          }
+          // Disable if repay amount is lte zero, or gt wallet balance
+          disabled={Number(state.repayValue) <= 0 || fromAtto(state.outputTokenBalance) < Number(state.repayValue)}
           style={{ width: 'auto' }}
         >
           {state.repayValue === formatToken(accountPosition ? accountPosition.currentDebt : ZERO, state.outputToken)
