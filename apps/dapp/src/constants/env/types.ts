@@ -31,7 +31,6 @@ interface Contracts {
   templeV2Router: string;
   swap1InchRouter: string;
   tlc: string;
-  tlcInterestRateModel: string;
   treasuryReservesVault: string;
   treasuryIv: string;
   vaultOps: string;
@@ -80,7 +79,6 @@ export interface Tokens {
   usdt: Token;
   dai: Token;
   ohm: Token;
-  templeDebtToken: Token;
 }
 
 interface Posthog {
