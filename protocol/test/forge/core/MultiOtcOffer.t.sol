@@ -282,17 +282,15 @@ contract MultiOtcOfferViewTest is MultiOtcOfferTestBase {
     function test_getOtcMarketTokens() public {
         vm.startPrank(executor);
         bytes32 marketId1 = _addOtcMarketOne();
-        address[] memory marketTokens = new address[](2);
+        IMultiOtcOffer.MarketTokens memory marketTokens;
         marketTokens = otcOffer.getOtcMarketTokens(marketId1);
-        assertEq(marketTokens.length, 2);
-        assertEq(marketTokens[0], address(ohmToken));
-        assertEq(marketTokens[1], address(daiToken));
+        assertEq(marketTokens.userBuyToken, address(ohmToken));
+        assertEq(marketTokens.userSellToken, address(daiToken));
 
         bytes32 marketId3 = _addOtcMarketThree();
         marketTokens = otcOffer.getOtcMarketTokens(marketId3);
-        assertEq(marketTokens.length, 2);
-        assertEq(marketTokens[0], address(usdcToken));
-        assertEq(marketTokens[1], address(ohmToken));
+        assertEq(marketTokens.userBuyToken, address(usdcToken));
+        assertEq(marketTokens.userSellToken, address(ohmToken));
     }
 
     function test_getMarketIdByTokens() public {
@@ -383,9 +381,9 @@ contract MultiOtcOfferTest is MultiOtcOfferTestBase {
         /// market IDs to tokens
         bytes32[] memory marketIds = otcOffer.getOtcMarketIds();
         assertEq(marketIds[0], marketId);
-        address[] memory tokens = otcOffer.getOtcMarketTokens(marketId);
-        assertEq(tokens[0], address(usdcToken));
-        assertEq(tokens[1], address(ohmToken));
+        IMultiOtcOffer.MarketTokens memory tokens = otcOffer.getOtcMarketTokens(marketId);
+        assertEq(tokens.userBuyToken, address(usdcToken));
+        assertEq(tokens.userSellToken, address(ohmToken));
         assertEq(otcOffer.tokenPairExists(address(usdcToken), address(ohmToken)), true);
     }
 
@@ -401,9 +399,8 @@ contract MultiOtcOfferTest is MultiOtcOfferTestBase {
 
         bytes32[] memory marketIds = otcOffer.getOtcMarketIds();
         assertEq(marketIds.length, 0);
-        address[] memory tokens = otcOffer.getOtcMarketTokens(marketId);
-        assertEq(tokens.length, 0);
-         assertEq(otcOffer.tokenPairExists(address(usdcToken), address(ohmToken)), false);
+        IMultiOtcOffer.MarketTokens memory tokens = otcOffer.getOtcMarketTokens(marketId);
+        assertEq(otcOffer.tokenPairExists(address(usdcToken), address(ohmToken)), false);
     }
 
     function test_setMarketFundsOwner() public {

@@ -21,6 +21,11 @@ interface IMultiOtcOffer {
         uint256 offerPrice;
     }
 
+    struct MarketTokens {
+        address userBuyToken;
+        address userSellToken;
+    }
+
     event OfferPriceSet(bytes32 marketId, uint256 _offerPrice);
     event OfferPriceRangeSet(bytes32 marketId, uint128 minValidOfferPrice, uint128 maxValidOfferPrice);
     event Swap(address indexed account, address indexed fundsOwner, uint256 userSellTokenAmount, uint256 userBuyTokenAmount);
@@ -142,7 +147,7 @@ interface IMultiOtcOffer {
      * @param marketId OTC Market Id
      * @return Array of buy and sell tokens in that order
      */
-    function getOtcMarketTokens(bytes32 marketId) external view returns (address[] memory);
+    function getOtcMarketTokens(bytes32 marketId) external view returns (MarketTokens memory);
     /**
      * @notice Get OTC Market Information
      * @param marketId OTC Market Id

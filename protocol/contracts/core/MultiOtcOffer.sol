@@ -31,7 +31,7 @@ contract MultiOtcOffer is IMultiOtcOffer, Pausable, TempleElevatedAccess {
     /// @notice keep track of all OTC Market Ids
     EnumerableSet.Bytes32Set private _otcMarketIds;
     /// @notice Reverse map market Ids to buy and sell tokens
-    mapping(bytes32 marketId => address[] tokens) private marketIdToTokens;
+    mapping(bytes32 marketId => MarketTokens) private marketIdToTokens;
 
     constructor(
         address _initialRescuer,
@@ -59,16 +59,12 @@ contract MultiOtcOffer is IMultiOtcOffer, Pausable, TempleElevatedAccess {
         // check existing hash for token pair
         marketId = _createMarketHash(address(_otcMarketInfo.userBuyToken), address(_otcMarketInfo.userSellToken));
         if (!_otcMarketIds.add(marketId)) { revert MarketPairExists(); }
-        address[] memory tokens = new address[](2);
-        tokens[0] = address(_otcMarketInfo.userBuyToken);
-        tokens[1] = address(_otcMarketInfo.userSellToken);
-        marketIdToTokens[marketId] = tokens;
+        MarketTokens storage tokens = marketIdToTokens[marketId];
+        tokens.userBuyToken = address(_otcMarketInfo.userBuyToken);
+        tokens.userSellToken = address(_otcMarketInfo.userSellToken);
         otcMarketInfo[marketId] = _otcMarketInfo;
 
         OTCMarketInfo storage marketInfo = otcMarketInfo[marketId];
-        // marketInfo.minValidOfferPrice = _minValidOfferPrice;
-        // marketInfo.maxValidOfferPrice = _maxValidOfferPrice;
-        // marketInfo.offerPrice = _offerPrice;
         uint256 scaleDecimals = marketInfo.offerPricingToken == OfferPricingToken.UserBuyToken
             ? OFFER_PRICE_DECIMALS + _otcMarketInfo.userSellToken.decimals() - _otcMarketInfo.userBuyToken.decimals()
             : OFFER_PRICE_DECIMALS + _otcMarketInfo.userBuyToken.decimals() - _otcMarketInfo.userSellToken.decimals();
@@ -235,7 +231,7 @@ contract MultiOtcOffer is IMultiOtcOffer, Pausable, TempleElevatedAccess {
      * @param marketId OTC Market Id
      * @return tokens Array of buy and sell tokens in that order
      */
-    function getOtcMarketTokens(bytes32 marketId) external view override returns (address[] memory tokens) {
+    function getOtcMarketTokens(bytes32 marketId) external view override returns (MarketTokens memory tokens) {
         tokens = marketIdToTokens[marketId];
     }
 
