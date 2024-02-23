@@ -17,7 +17,7 @@ import {
   Title,
   Warning,
 } from '../index';
-import { fromAtto } from 'utils/bigNumber';
+import { fromAtto, ZERO } from 'utils/bigNumber';
 
 interface IProps {
   accountPosition: ITlcDataTypes.AccountPositionStructOutput | undefined;
@@ -35,11 +35,14 @@ export const Supply: React.FC<IProps> = ({ accountPosition, state, minBorrow, se
   };
 
   const getEstimatedLTV = (): string => {
-    return accountPosition
-      ? ((fromAtto(accountPosition.currentDebt) / getEstimatedCollateral()) * 100).toFixed(2)
-      : '0.00';
-  };
+    if (!accountPosition) return '0.00';
 
+    const estimatedCollateral = getEstimatedCollateral();
+    const currentDebt = fromAtto(accountPosition.currentDebt);
+
+    const ltv = (currentDebt / estimatedCollateral) * 100;
+    return ltv.toFixed(2);
+  };
   const getEstimatedMaxBorrow = (): number => {
     return getEstimatedCollateral() * (MAX_LTV / 100);
   };
@@ -89,24 +92,19 @@ export const Supply: React.FC<IProps> = ({ accountPosition, state, minBorrow, se
           <RangeSlider
             onChange={(e) => {
               if (!accountPosition) return;
-              let ltvPercent = ((Number(e.target.value) / 100) * MAX_LTV) / 100;
-              // Max LTV is the current LTV
-              const maxLtv = fromAtto(accountPosition.currentDebt) / fromAtto(accountPosition.collateral);
-              if (ltvPercent > maxLtv) ltvPercent = maxLtv;
-              const newSupply = (
-                fromAtto(accountPosition.currentDebt) / ltvPercent -
-                fromAtto(accountPosition.collateral)
-              ).toFixed(2);
-              setState({ ...state, supplyValue: `${Number(newSupply) > 0 ? newSupply : '0'}` });
+              const sliderValue = Number(e.target.value);
+              const newSupply = (sliderValue / 100) * fromAtto(state.inputTokenBalance);
+
+              setState({ ...state, supplyValue: `${newSupply.toFixed(2)}` });
             }}
             min={0}
             max={100}
-            value={(Number(getEstimatedLTV()) / MAX_LTV) * 100}
-            progress={(Number(getEstimatedLTV()) / MAX_LTV) * 100}
+            value={(Number(state.supplyValue) / fromAtto(state.inputTokenBalance)) * 100}
+            progress={(Number(state.supplyValue) / fromAtto(state.inputTokenBalance)) * 100}
           />
           <FlexBetween>
-            <RangeLabel>0%</RangeLabel>
-            <RangeLabel>{MAX_LTV}%</RangeLabel>
+            <RangeLabel>0 TEMPLE</RangeLabel>
+            <RangeLabel>{fromAtto(state.inputTokenBalance)} TEMPLE</RangeLabel>
           </FlexBetween>
         </>
       )}
