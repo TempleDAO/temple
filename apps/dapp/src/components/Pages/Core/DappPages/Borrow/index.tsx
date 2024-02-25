@@ -21,6 +21,7 @@ import { useNotification } from 'providers/NotificationProvider';
 import { TlcChart } from './Chart';
 import env from 'constants/env';
 import { useConnectWallet } from '@web3-onboard/react';
+import { Spinner } from '../../components/LoaderVault/Spinner';
 
 export type State = {
   supplyValue: string;
@@ -64,6 +65,7 @@ export const BorrowPage = () => {
   const [accountPosition, setAccountPosition] = useState<ITlcDataTypes.AccountPositionStructOutput>();
   const [tlcInfo, setTlcInfo] = useState<TlcInfo>();
   const [prices, setPrices] = useState<Prices>({ templePrice: 0, daiPrice: 0, tpi: 0 });
+  const [metricsLoading, setMetricsLoading] = useState(false);
 
   const getPrices = useCallback(async () => {
     const { data } = await fetchGenericSubgraph<any>(
@@ -109,7 +111,7 @@ export const BorrowPage = () => {
     const maxAvailableToBorrow = userAvailableToBorrowFromTlc.gte(strategyAvailalableToBorrowFromTrv)
       ? strategyAvailalableToBorrowFromTrv
       : userAvailableToBorrowFromTlc;
-      
+
     // Getting the max borrow LTV and interest rate
     const [debtTokenConfig, debtTokenData] = await tlcContract.debtTokenDetails();
     const maxLtv = debtTokenConfig.maxLtvRatio;
@@ -126,6 +128,7 @@ export const BorrowPage = () => {
   }, [signer]);
 
   const getTlcInfo = useCallback(async () => {
+    setMetricsLoading(true);
     const getAccountPosition = async () => {
       if (!signer || !wallet) return;
       const tlcContract = new TempleLineOfCredit__factory(signer).attach(env.contracts.tlc);
@@ -145,6 +148,7 @@ export const BorrowPage = () => {
 
       const tlcInfoFromContracts = await getTlcInfoFromContracts();
 
+      setMetricsLoading(false);
       setTlcInfo({
         minBorrow: data.tlcDailySnapshots[0].minBorrowAmount,
         borrowRate: tlcInfoFromContracts?.borrowRate || 0,
@@ -153,6 +157,7 @@ export const BorrowPage = () => {
         debtCeiling: tlcInfoFromContracts?.debtCeiling || 0,
       });
     } catch (e) {
+      setMetricsLoading(false);
       console.log(e);
     }
   }, [getTlcInfoFromContracts, signer, wallet]);
@@ -326,15 +331,19 @@ export const BorrowPage = () => {
         <FlexCol>
           <Metrics>
             <MetricContainer>
-              <LeadMetric>${tlcInfo && Number(tlcInfo.debtCeiling).toLocaleString()}</LeadMetric>
+              <LeadMetric>
+                {metricsLoading ? '...' : tlcInfo && `$${Number(tlcInfo.debtCeiling).toLocaleString()}`}
+              </LeadMetric>
               <BrandParagraph>Total Debt Ceiling</BrandParagraph>
             </MetricContainer>
             <MetricContainer>
-              <LeadMetric>${tlcInfo && Number(tlcInfo.strategyBalance).toLocaleString()}</LeadMetric>
+              <LeadMetric>
+                {metricsLoading ? '...' : tlcInfo && `${Number(tlcInfo.strategyBalance).toLocaleString()}`}
+              </LeadMetric>
               <BrandParagraph>Available to Borrow</BrandParagraph>
             </MetricContainer>
             <MetricContainer>
-              <LeadMetric>{getBorrowRate()}%</LeadMetric>
+              <LeadMetric>{metricsLoading ? '...' : `${getBorrowRate()}%`}</LeadMetric>
               <BrandParagraph>Current Borrow APY</BrandParagraph>
             </MetricContainer>
           </Metrics>
