@@ -1,6 +1,6 @@
 import styled from 'styled-components';
-import { useCallback, useEffect, useState } from 'react';
-import { ZERO, fromAtto, toAtto } from 'utils/bigNumber';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ZERO, fromAtto } from 'utils/bigNumber';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { useWallet } from 'providers/WalletProvider';
 import { ERC20__factory, TempleLineOfCredit__factory, TreasuryReservesVault__factory } from 'types/typechain';
@@ -21,7 +21,6 @@ import { useNotification } from 'providers/NotificationProvider';
 import { TlcChart } from './Chart';
 import env from 'constants/env';
 import { useConnectWallet } from '@web3-onboard/react';
-import { Spinner } from '../../components/LoaderVault/Spinner';
 
 export type State = {
   supplyValue: string;
@@ -325,6 +324,8 @@ export const BorrowPage = () => {
 
   const getBorrowRate = () => (tlcInfo ? (tlcInfo.borrowRate * 100).toFixed(2) : 0);
 
+  const showLoading = useMemo(() => metricsLoading || !wallet, [metricsLoading, wallet]);
+
   return (
     <>
       <PageContainer>
@@ -332,18 +333,18 @@ export const BorrowPage = () => {
           <Metrics>
             <MetricContainer>
               <LeadMetric>
-                {metricsLoading ? '...' : tlcInfo && `$${Number(tlcInfo.debtCeiling).toLocaleString()}`}
+                {showLoading ? '...' : tlcInfo && `$${Number(tlcInfo.debtCeiling).toLocaleString()}`}
               </LeadMetric>
               <BrandParagraph>Total Debt Ceiling</BrandParagraph>
             </MetricContainer>
             <MetricContainer>
               <LeadMetric>
-                {metricsLoading ? '...' : tlcInfo && `${Number(tlcInfo.strategyBalance).toLocaleString()}`}
+                {showLoading ? '...' : tlcInfo && `${Number(tlcInfo.strategyBalance).toLocaleString()}`}
               </LeadMetric>
               <BrandParagraph>Available to Borrow</BrandParagraph>
             </MetricContainer>
             <MetricContainer>
-              <LeadMetric>{metricsLoading ? '...' : `${getBorrowRate()}%`}</LeadMetric>
+              <LeadMetric>{showLoading ? '...' : `${getBorrowRate()}%`}</LeadMetric>
               <BrandParagraph>Current Borrow APY</BrandParagraph>
             </MetricContainer>
           </Metrics>
