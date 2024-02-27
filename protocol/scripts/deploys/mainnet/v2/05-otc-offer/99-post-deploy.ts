@@ -5,21 +5,18 @@ import {
   mine,
 } from "../../../helpers";
 import { connectToContracts, getDeployedContracts } from "../contract-addresses";
-import { getDeployedContracts as getOtcDeployedContracts } from "../../otcOffer/contract-addresses";
 
 
 async function main() {
     ensureExpectedEnvvars();
     const [owner] = await ethers.getSigners();
     const deployedContracts = getDeployedContracts();
-    // const multiOtcOffer = MultiOtcOffer__factory.connect(deployedContracts.CORE.)
     const connectedContracts = connectToContracts(owner);
     const multiOtcOffer = connectedContracts.STRATEGIES.FOHMO_GNOSIS_STRATEGY.OTC_OFFER.MULTI_OTC_OFFER;
     const daiToken = deployedContracts.EXTERNAL.MAKER_DAO.DAI_TOKEN;
     const ohmToken = deployedContracts.EXTERNAL.OLYMPUS.OHM_TOKEN;
     const gOhmToken = deployedContracts.EXTERNAL.OLYMPUS.GOHM_TOKEN;
-    const otcDeployedContracts = getOtcDeployedContracts();
-    const fundsOwner = otcDeployedContracts.OTC_OFFER.FUNDS_OWNER;
+    const fundsOwner = deployedContracts.STRATEGIES.FOHMO_GNOSIS_STRATEGY.UNDERLYING_GNOSIS_SAFE;
 
     /// Add OTC markets
     let otcMarketInfo;
@@ -33,7 +30,7 @@ async function main() {
           minValidOfferPrice: ethers.utils.parseEther("11"), // minOfferPrice
           maxValidOfferPrice: ethers.utils.parseEther("12"), //maxOfferPrice
           scalar: 0, // default scalar
-          offerPrice: ethers.utils.parseEther("11.33") // offerPrice
+          offerPrice: ethers.utils.parseEther("11.8") // offerPrice
       };
       await mine(multiOtcOffer.addOtcMarket(otcMarketInfo));
     }
