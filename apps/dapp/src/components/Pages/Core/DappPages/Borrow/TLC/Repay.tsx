@@ -18,6 +18,7 @@ import {
 } from '../index';
 import { ZERO, fromAtto } from 'utils/bigNumber';
 import { useMemo } from 'react';
+import { formatBigNumber } from 'components/Vault/utils';
 
 interface IProps {
   accountPosition: ITlcDataTypes.AccountPositionStructOutput | undefined;
@@ -54,6 +55,13 @@ export const Repay: React.FC<IProps> = ({ accountPosition, state, setState, repa
 
     return estimatedLTV;
   };
+
+  const shouldShowRepayAll = useMemo(() => {
+    return (
+      parseFloat(state.repayValue) ===
+      parseFloat(formatToken(accountPosition ? accountPosition.currentDebt : ZERO, state.outputToken))
+    );
+  }, [accountPosition, state.outputToken, state.repayValue]);
 
   return (
     <>
@@ -111,21 +119,17 @@ export const Repay: React.FC<IProps> = ({ accountPosition, state, setState, repa
       <FlexColCenter>
         <TradeButton
           onClick={() => {
-            if (
-              state.repayValue === formatToken(accountPosition ? accountPosition.currentDebt : ZERO, state.outputToken)
-            ) {
-              repayAll();
+            if (shouldShowRepayAll) {
+              return repayAll();
             } else {
-              repay();
+              return repay();
             }
           }}
           // Disable if repay amount is lte zero, or gt wallet balance
           disabled={Number(state.repayValue) <= 0 || fromAtto(state.outputTokenBalance) < Number(state.repayValue)}
           style={{ width: 'auto' }}
         >
-          {state.repayValue === formatToken(accountPosition ? accountPosition.currentDebt : ZERO, state.outputToken)
-            ? 'Repay All'
-            : `Repay ${state.repayValue} DAI`}
+          {shouldShowRepayAll ? 'Repay All' : `Repay ${state.repayValue} DAI`}
         </TradeButton>
       </FlexColCenter>
     </>
