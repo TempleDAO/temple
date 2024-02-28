@@ -67,14 +67,14 @@ export async function batchLiquidate(
   let res: AxiosResponse<GetUserResponse> | undefined = undefined;
   const randomUrlFirstAlchemyApi = Math.random() < 0.5;
   try {
-    // try subgraph call with thegraph api endpoint 
+    // try first random subgraph api endpoint
     res = await getTlcUsers(
       ctx,
       randomUrlFirstAlchemyApi ? config.SUBGRAPH_ALCHEMY_URL : config.SUBGRAPH_URL,
       config.SUBGRAPH_RETRY_LIMIT
     );
   } catch (e) {
-    // fallback subgraph call to try with alchemy api endpoint
+    // if first fails, try the second endpoint option
     res = await getTlcUsers(
       ctx,
       randomUrlFirstAlchemyApi ? config.SUBGRAPH_URL : config.SUBGRAPH_ALCHEMY_URL,

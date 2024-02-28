@@ -1,5 +1,5 @@
 {
-  "name": "temple-tasks",
+  "name": "@temple/tasks",
   "version": "0.0.1",
   "description": "temple automation tasks using overlord framework",
   "license": "AGPL-3.0-or-later",
@@ -39,6 +39,6 @@
     ]
   },
   "engines": {
-    "node": "18.x"
+    "node": ">=20.0.0"
   }
 }
