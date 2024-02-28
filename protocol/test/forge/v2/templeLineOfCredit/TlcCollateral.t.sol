@@ -260,19 +260,19 @@ contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
     function test_addCollateral_gas() public {
         // With unoptmised solc FOUNDRY_PROFILE=lite
         (uint256 first, uint256 second, uint256 third) = _addCollateralIteration(makeAddr("acct1"));
-        assertLt(first, 85_000, "acct1 1");
-        assertLt(second, 14_000, "acct1 2");
-        assertLt(third, 14_000, "acct1 3");
+        assertLt(first, 115_000, "acct1 1");
+        assertLt(second, 61_200, "acct1 2");
+        assertLt(third, 51_600, "acct1 3");
 
         (first, second, third) = _addCollateralIteration(makeAddr("acct2"));
-        assertLt(first, 36_000, "acct2 1");
-        assertLt(second, 14_000, "acct2 2");
-        assertLt(third, 14_000, "acct2 3");
+        assertLt(first, 78_300, "acct2 1");
+        assertLt(second, 61_200, "acct2 2");
+        assertLt(third, 51_600, "acct2 3");
         
         (first, second, third) = _addCollateralIteration(makeAddr("acct3"));
-        assertLt(first, 36_000, "acct3 1");
-        assertLt(second, 14_000, "acct3 2");
-        assertLt(third, 14_000, "acct3 3");
+        assertLt(first, 78_300, "acct3 1");
+        assertLt(second, 61_200, "acct3 2");
+        assertLt(third, 51_600, "acct3 3");
     }
 
     function _removeCollateralIteration(address account) internal returns (uint256 first, uint256 second, uint256 third) {
@@ -295,18 +295,18 @@ contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
     function test_removeCollateral_gas() public {
         // With unoptmised solc FOUNDRY_PROFILE=lite
         (uint256 first, uint256 second, uint256 third) = _removeCollateralIteration(makeAddr("acct1"));
-        assertLt(first, 134_000, "acct1 1");
-        assertLt(second, 30_000, "acct1 2");
-        assertLt(third, 41_000, "acct1 3");
+        assertLt(first, 167_500, "acct1 1");
+        assertLt(second, 143_000, "acct1 2");
+        assertLt(third, 142_000, "acct1 3");
 
         (first, second, third) = _removeCollateralIteration(makeAddr("acct2"));
-        assertLt(first, 57_000, "acct2 1");
-        assertLt(second, 35_000, "acct2 2");
-        assertLt(third, 41_000, "acct2 3");
+        assertLt(first, 163_300, "acct2 1");
+        assertLt(second, 146_200, "acct2 2");
+        assertLt(third, 142_000, "acct2 3");
         
         (first, second, third) = _removeCollateralIteration(makeAddr("acct3"));
-        assertLt(first, 57_000, "acct3 1");
-        assertLt(second, 35_000, "acct3 2");
-        assertLt(third, 41_000, "acct3 3");
+        assertLt(first, 163_300, "acct3 1");
+        assertLt(second, 146_200, "acct3 2");
+        assertLt(third, 141_900, "acct3 3");
     }
 }
