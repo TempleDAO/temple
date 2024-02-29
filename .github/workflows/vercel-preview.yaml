@@ -14,6 +14,14 @@ jobs:
         with:
           node-version: '20'
           cache: 'yarn'
+      - uses: actions/cache@v3
+        with:
+          path: './node_modules'
+          key: ${{ runner.os }}-modules-${{ hashFiles('yarn.lock') }}
+      - uses: actions/cache@v3
+        with:
+          path: 'apps/dapp/node_modules'
+          key: ${{ runner.os }}-modules-${{ hashFiles('apps/dapp/yarn.lock') }}
       - run: yarn install
       - name: build
         run: |
