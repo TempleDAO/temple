@@ -12,7 +12,8 @@ jobs:
         uses: actions/checkout@v2
       - name: build
         run: |
-         yarn vercel-build
+         yarn run vercel-build
+        working-directory: apps/dapp
       - name: "deploy"
         id: deploy_step
         uses: amondnet/vercel-action@v20
