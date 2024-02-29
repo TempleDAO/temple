@@ -1,6 +1,5 @@
 {
   "rewrites": [{ "source": "/(.*)", "destination": "/" }],
-  "builds": [{ "src": ".*", "use": "@vercel/static" }],  
   "github": {
     "silent": false,
     "enabled": false,
