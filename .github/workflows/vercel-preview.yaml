@@ -14,6 +14,7 @@ jobs:
         with:
           node-version: '20'
           cache: 'yarn'
+      - run: yarn install
       - name: build
         run: |
          yarn run vercel-build
