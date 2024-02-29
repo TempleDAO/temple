@@ -5,14 +5,14 @@
     "node": ">=20.0.0"
   },
   "scripts": {
-    "prepare": "yarn typechain:compile && yarn typechain:copy",
+    "typechain": "yarn typechain:compile && yarn typechain:copy",
     "typechain:compile": "cd ../../protocol && yarn compile --force",
     "typechain:copy": "cp -r ../../protocol/typechain ./src/types",
     "dev": "vite",
     "compile": "tsc",
     "vite:build": "vite build",
-    "build": "yarn prepare && tsc && vite build",
-    "vercel-build": "yarn prepare && tsc && vite build",
+    "build": "yarn typechain && tsc && vite build",
+    "vercel-build": "yarn typechain && tsc && vite build",
     "serve": "vite preview",
     "version:release": "standard-version",
     "version:prerelease": "standard-version --prerelease beta",
