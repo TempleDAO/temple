@@ -1,6 +1,6 @@
 import styled from 'styled-components';
 import * as breakpoints from 'styles/breakpoints';
-import { DashboardType } from '../DashboardContent';
+import { DashboardData } from '../DashboardConfig';
 import V2StrategyMetricsChart from './V2StrategyMetricsChart';
 import { InputSelect } from 'components/InputSelect/InputSelect';
 import { isV2SnapshotMetric, V2SnapshotMetric } from '../hooks/use-dashboardv2-daily-snapshots';
@@ -11,8 +11,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useMediaQuery } from 'react-responsive';
 
 type DashboardChartProps = {
-  dashboardType: DashboardType;
-  strategyNames: string[];
+  dashboardData: DashboardData;
 };
 
 const metricOptions: { value: V2SnapshotMetric; label: string }[] = [
@@ -28,8 +27,8 @@ const metricOptions: { value: V2SnapshotMetric; label: string }[] = [
 
 const CHART_SELECTOR_QUERY_PARAM = 'chart';
 
-const DashboardChart = ({ dashboardType, strategyNames }: DashboardChartProps) => {
-  console.debug('DashboardChart with dashboardType: ', dashboardType);
+const DashboardChart = ({ dashboardData }: DashboardChartProps) => {
+  console.debug('DashboardChart with name: ', dashboardData.name);
 
   const [searchParams, setSearchParams] = useSearchParams();
   const isDesktop = useMediaQuery({
@@ -66,10 +65,9 @@ const DashboardChart = ({ dashboardType, strategyNames }: DashboardChartProps) =
           </IntervalTogglerContainer>
         </ChartHeader>
         <V2StrategyMetricsChart
-          dashboardType={dashboardType}
+          dashboardData={dashboardData}
           selectedMetric={selectedMetric}
           selectedInterval={selectedInterval}
-          strategyNames={strategyNames}
         />
       </ChartContainer>
     </>

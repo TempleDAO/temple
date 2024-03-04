@@ -9,7 +9,7 @@ import useV2StrategySnapshotData, {
   V2SnapshotMetric,
   V2StrategySnapshot,
 } from '../hooks/use-dashboardv2-daily-snapshots';
-import { DashboardType } from '../DashboardContent';
+import { DashboardData, StrategyKey } from '../DashboardConfig';
 
 type XAxisTickFormatter = (timestamp: number) => string;
 
@@ -67,15 +67,14 @@ const metricFormatters: { [k in V2SnapshotMetric]: MetricFormatter } = {
 const numberFormatter = new Intl.NumberFormat('en', { maximumFractionDigits: 0, style: 'currency', currency: 'USD' });
 
 const V2StrategyMetricsChart: React.FC<{
-  dashboardType: DashboardType;
-  strategyNames: string[];
+  dashboardData: DashboardData;
   selectedMetric: V2SnapshotMetric;
   selectedInterval: ChartSupportedTimeInterval;
-}> = ({ dashboardType, selectedMetric, selectedInterval, strategyNames }) => {
+}> = ({ dashboardData, selectedMetric, selectedInterval }) => {
   // uncamel-case the metric names
   const formatMetricName = (name: string) =>
     // format only the selected metric name (the selected metric or all lines in a TRV chart)
-    name === selectedMetric || dashboardType === DashboardType.TREASURY_RESERVES_VAULT
+    name === selectedMetric || dashboardData.key === StrategyKey.TREASURY_RESERVES_VAULT
       ? name
           // // insert a space before all caps
           .replace(/([A-Z][a-z])/g, ' $1')
@@ -138,24 +137,24 @@ const V2StrategyMetricsChart: React.FC<{
 
   const filteredDaily =
     dailyMetrics
-      ?.filter((m) => strategyNames.includes(m.strategy.name))
+      ?.filter((m) => dashboardData.chartStrategyNames.includes(m.strategy.name))
       .sort((a, b) => parseInt(a.timestamp) - parseInt(b.timestamp)) ?? [];
 
   const filteredHourly =
     hourlyMetrics
-      ?.filter((m) => strategyNames.includes(m.strategy.name))
+      ?.filter((m) => dashboardData.chartStrategyNames.includes(m.strategy.name))
       .sort((a, b) => parseInt(a.timestamp) - parseInt(b.timestamp)) ?? [];
 
   // if we are rendering chart for only one strategy we can use data as is
   // otherwise we have to transpose and show the selected metric for every strategy
 
   const transformedDaily =
-    strategyNames.length === 1
+    dashboardData.chartStrategyNames.length === 1
       ? filteredDaily.map(formatV2StrategySnapshot)
       : transpose(filteredDaily, selectedMetric, formatMetric);
 
   const transformedHourly =
-    strategyNames.length === 1
+    dashboardData.chartStrategyNames.length === 1
       ? filteredHourly.map(formatV2StrategySnapshot)
       : transpose(filteredHourly, selectedMetric, formatMetric);
 
@@ -183,7 +182,7 @@ const V2StrategyMetricsChart: React.FC<{
   // TRV renders selected metric of all strategies as multiline chart
   // other dashboards show the selected metric only (single line)
   const lines =
-    dashboardType === DashboardType.TREASURY_RESERVES_VAULT
+    dashboardData.key === StrategyKey.TREASURY_RESERVES_VAULT
       ? metrics.map((metric, ix) => ({ series: metric, color: colors[ix % colors.length] }))
       : [{ series: selectedMetric, color: colors[0] }];
 
@@ -191,7 +190,7 @@ const V2StrategyMetricsChart: React.FC<{
   // (individual assets that make up the metric)
   // to render as stacked area chart
   const stackedItems =
-    dashboardType !== DashboardType.TREASURY_RESERVES_VAULT
+    dashboardData.key !== StrategyKey.TREASURY_RESERVES_VAULT
       ? // add +1 to skip the first color which is always the selectedMetric
         metrics
           .filter((m) => m !== selectedMetric)
