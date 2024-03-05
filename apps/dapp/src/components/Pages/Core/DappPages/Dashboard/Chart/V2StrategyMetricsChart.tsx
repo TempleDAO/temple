@@ -135,26 +135,35 @@ const V2StrategyMetricsChart: React.FC<{
   // we need all strategies for the TRV dashboard anyway we can just as well reuse
   // what we have and filter client side
 
+  // TRV dashboard shows all defined strategies as single lines
+  // all other dashboards show just the selected strategy key
+  const chartStrategyNames =
+    dashboardData.key === StrategyKey.TREASURY_RESERVES_VAULT
+      ? Object.values(StrategyKey)
+          // techically this is not even needed since `all` and TRV do not really exist in subgraph
+          .filter((name) => name !== StrategyKey.ALL && name !== StrategyKey.TREASURY_RESERVES_VAULT)
+      : [dashboardData.key];
+
   const filteredDaily =
     dailyMetrics
-      ?.filter((m) => dashboardData.chartStrategyNames.includes(m.strategy.name))
+      ?.filter((m) => chartStrategyNames.includes(m.strategy.name))
       .sort((a, b) => parseInt(a.timestamp) - parseInt(b.timestamp)) ?? [];
 
   const filteredHourly =
     hourlyMetrics
-      ?.filter((m) => dashboardData.chartStrategyNames.includes(m.strategy.name))
+      ?.filter((m) => chartStrategyNames.includes(m.strategy.name))
       .sort((a, b) => parseInt(a.timestamp) - parseInt(b.timestamp)) ?? [];
 
   // if we are rendering chart for only one strategy we can use data as is
   // otherwise we have to transpose and show the selected metric for every strategy
 
   const transformedDaily =
-    dashboardData.chartStrategyNames.length === 1
+    chartStrategyNames.length === 1
       ? filteredDaily.map(formatV2StrategySnapshot)
       : transpose(filteredDaily, selectedMetric, formatMetric);
 
   const transformedHourly =
-    dashboardData.chartStrategyNames.length === 1
+    chartStrategyNames.length === 1
       ? filteredHourly.map(formatV2StrategySnapshot)
       : transpose(filteredHourly, selectedMetric, formatMetric);
 
