@@ -135,26 +135,38 @@ const V2StrategyMetricsChart: React.FC<{
   // we need all strategies for the TRV dashboard anyway we can just as well reuse
   // what we have and filter client side
 
+  const chartStrategyNames =
+    dashboardData.key === StrategyKey.TREASURY_RESERVES_VAULT
+      ? [
+          // TODO: add TLC when launched
+          StrategyKey.TEMPLEBASE,
+          StrategyKey.RAMOS,
+          StrategyKey.DSRBASE,
+          StrategyKey.TEMPLO_MAYOR_GNOSIS,
+          StrategyKey.FOHMO_GNOSIS,
+        ]
+      : [dashboardData.key];
+
   const filteredDaily =
     dailyMetrics
-      ?.filter((m) => dashboardData.chartStrategyNames.includes(m.strategy.name))
+      ?.filter((m) => chartStrategyNames.includes(m.strategy.name))
       .sort((a, b) => parseInt(a.timestamp) - parseInt(b.timestamp)) ?? [];
 
   const filteredHourly =
     hourlyMetrics
-      ?.filter((m) => dashboardData.chartStrategyNames.includes(m.strategy.name))
+      ?.filter((m) => chartStrategyNames.includes(m.strategy.name))
       .sort((a, b) => parseInt(a.timestamp) - parseInt(b.timestamp)) ?? [];
 
   // if we are rendering chart for only one strategy we can use data as is
   // otherwise we have to transpose and show the selected metric for every strategy
 
   const transformedDaily =
-    dashboardData.chartStrategyNames.length === 1
+    chartStrategyNames.length === 1
       ? filteredDaily.map(formatV2StrategySnapshot)
       : transpose(filteredDaily, selectedMetric, formatMetric);
 
   const transformedHourly =
-    dashboardData.chartStrategyNames.length === 1
+    chartStrategyNames.length === 1
       ? filteredHourly.map(formatV2StrategySnapshot)
       : transpose(filteredHourly, selectedMetric, formatMetric);
 
