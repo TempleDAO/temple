@@ -135,16 +135,13 @@ const V2StrategyMetricsChart: React.FC<{
   // we need all strategies for the TRV dashboard anyway we can just as well reuse
   // what we have and filter client side
 
+  // TRV dashboard shows all defined strategies as single lines
+  // all other dashboards show just the selected strategy key
   const chartStrategyNames =
     dashboardData.key === StrategyKey.TREASURY_RESERVES_VAULT
-      ? [
-          // TODO: add TLC when launched
-          StrategyKey.TEMPLEBASE,
-          StrategyKey.RAMOS,
-          StrategyKey.DSRBASE,
-          StrategyKey.TEMPLO_MAYOR_GNOSIS,
-          StrategyKey.FOHMO_GNOSIS,
-        ]
+      ? Object.values(StrategyKey)
+          // techically this is not even needed since `all` and TRV do not really exist in subgraph
+          .filter((name) => name !== StrategyKey.ALL && name !== StrategyKey.TREASURY_RESERVES_VAULT)
       : [dashboardData.key];
 
   const filteredDaily =
