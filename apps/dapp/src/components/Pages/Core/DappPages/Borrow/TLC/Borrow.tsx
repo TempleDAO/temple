@@ -34,14 +34,15 @@ interface IProps {
   borrow: () => void;
 }
 
-export const Borrow: React.FC<IProps> = ({ accountPosition, state, tlcInfo, liquidationInfo, setState, borrow }) => {
+export const Borrow: React.FC<IProps> = ({ accountPosition, state, tlcInfo, liquidationInfo, setState, borrow, prices }) => {
   const [checkbox, setCheckbox] = useState(false);
 
   const getEstimatedLTV = (): string => {
+    const tpi = prices.tpi;
     return accountPosition
       ? (
           ((fromAtto(accountPosition.currentDebt) + Number(state.borrowValue)) /
-            fromAtto(accountPosition?.collateral)) *
+            (fromAtto(accountPosition?.collateral) * tpi)) *
           100
         ).toFixed(2)
       : '0.00';

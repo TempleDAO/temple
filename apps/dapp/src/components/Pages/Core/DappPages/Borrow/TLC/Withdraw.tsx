@@ -15,6 +15,7 @@ import {
   State,
   Title,
   Warning,
+  Prices,
 } from '../index';
 import { fromAtto } from 'utils/bigNumber';
 
@@ -23,9 +24,10 @@ interface IProps {
   state: State;
   setState: React.Dispatch<React.SetStateAction<State>>;
   withdraw: () => void;
+  prices: Prices;
 }
 
-export const Withdraw: React.FC<IProps> = ({ accountPosition, state, setState, withdraw }) => {
+export const Withdraw: React.FC<IProps> = ({ accountPosition, state, setState, withdraw, prices }) => {
   const getEstimatedCollateral = (): number => {
     return accountPosition
       ? fromAtto(accountPosition.collateral) - Number(state.withdrawValue)
@@ -33,8 +35,9 @@ export const Withdraw: React.FC<IProps> = ({ accountPosition, state, setState, w
   };
 
   const getEstimatedLTV = (): string => {
+    const tpi = prices.tpi;
     return accountPosition
-      ? ((fromAtto(accountPosition.currentDebt) / getEstimatedCollateral()) * 100).toFixed(2)
+      ? ((fromAtto(accountPosition.currentDebt) / (getEstimatedCollateral() * tpi)) * 100).toFixed(2)
       : '0.00';
   };
 

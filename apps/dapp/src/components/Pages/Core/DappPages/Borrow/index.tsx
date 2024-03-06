@@ -477,7 +477,13 @@ export const BorrowPage = () => {
               supply={supply}
             />
           ) : modal === 'withdraw' ? (
-            <Withdraw accountPosition={accountPosition} state={state} setState={setState} withdraw={withdraw} />
+            <Withdraw
+              accountPosition={accountPosition}
+              state={state}
+              setState={setState}
+              withdraw={withdraw}
+              prices={prices}
+            />
           ) : modal === 'borrow' ? (
             <Borrow
               accountPosition={accountPosition}
