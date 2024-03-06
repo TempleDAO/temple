@@ -35,10 +35,14 @@ export const Withdraw: React.FC<IProps> = ({ accountPosition, state, setState, w
   };
 
   const getEstimatedLTV = (): string => {
+    if (!accountPosition) return '0.00';
     const tpi = prices.tpi;
-    return accountPosition
-      ? ((fromAtto(accountPosition.currentDebt) / (getEstimatedCollateral() * tpi)) * 100).toFixed(2)
-      : '0.00';
+
+    const currentDebt = fromAtto(accountPosition.currentDebt);
+    const estimatedCollateral = getEstimatedCollateral();
+
+    const ltv = (currentDebt / (estimatedCollateral * tpi)) * 100;
+    return ltv.toFixed(2);
   };
 
   const getEstimatedMaxBorrow = (): number => {
@@ -47,7 +51,7 @@ export const Withdraw: React.FC<IProps> = ({ accountPosition, state, setState, w
 
   const getMaxWithdraw = (): number => {
     return accountPosition
-      ? (-1 * fromAtto(accountPosition.currentDebt)) / (MAX_LTV / 100) + fromAtto(accountPosition.collateral)
+      ? fromAtto(accountPosition.collateral) - fromAtto(accountPosition.currentDebt) / (MAX_LTV / 100) / prices.tpi
       : 0;
   };
 
@@ -87,10 +91,11 @@ export const Withdraw: React.FC<IProps> = ({ accountPosition, state, setState, w
               if (!accountPosition) return;
               let ltvPercent = ((Number(e.target.value) / 100) * MAX_LTV) / 100;
               // Min LTV is the current LTV
-              const minLtv = fromAtto(accountPosition.currentDebt) / fromAtto(accountPosition.collateral);
+              const minLtv =
+                fromAtto(accountPosition.currentDebt) / (fromAtto(accountPosition.collateral) * prices.tpi);
               if (ltvPercent < minLtv) ltvPercent = minLtv;
               const withdrawAmount = (
-                (-1 * fromAtto(accountPosition.currentDebt)) / ltvPercent +
+                (-1 * fromAtto(accountPosition.currentDebt)) / ltvPercent / prices.tpi +
                 fromAtto(accountPosition.collateral)
               ).toFixed(2);
               setState({ ...state, withdrawValue: `${Number(withdrawAmount) > 0 ? withdrawAmount : '0'}` });

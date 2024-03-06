@@ -82,7 +82,9 @@ export const BorrowPage = () => {
     setPrices({
       templePrice: data.tokens.filter((t: any) => t.symbol == 'TEMPLE')[0].price,
       daiPrice: data.tokens.filter((t: any) => t.symbol == 'DAI')[0].price,
-      tpi: data.treasuryReservesVaults[0].treasuryPriceIndex,
+      // tpi: data.treasuryReservesVaults[0].treasuryPriceIndex,
+      // TODO: Restore once subgraph is updated (sepolia endpoint)
+      tpi: 1.06,
     });
   }, []);
 
@@ -188,7 +190,7 @@ export const BorrowPage = () => {
     const liquidationDebt = collateral * liquidationLtv;
     return (
       <>
-        Given a {((debt / collateral) * 100).toFixed(2)}% LTV ratio, your collateral will be liquidated if TPI falls to{' '}
+        Given a {((debt / (collateral * prices.tpi)) * 100).toFixed(2)}% LTV ratio, your collateral will be liquidated if TPI falls to{' '}
         <strong>${liquidationTpi.toFixed(3)}</strong> or if your debt rises to{' '}
         <strong>${liquidationDebt.toFixed(2)}</strong>.
       </>
@@ -475,6 +477,7 @@ export const BorrowPage = () => {
               minBorrow={tlcInfo?.minBorrow}
               setState={setState}
               supply={supply}
+              prices={prices}
             />
           ) : modal === 'withdraw' ? (
             <Withdraw
@@ -501,6 +504,7 @@ export const BorrowPage = () => {
               setState={setState}
               repay={repay}
               repayAll={repayAll}
+              prices={prices}
             />
           )}
         </ModalContainer>

@@ -15,10 +15,10 @@ import {
   State,
   Title,
   Warning,
+  Prices,
 } from '../index';
 import { ZERO, fromAtto } from 'utils/bigNumber';
 import { useMemo } from 'react';
-import { formatBigNumber } from 'components/Vault/utils';
 
 interface IProps {
   accountPosition: ITlcDataTypes.AccountPositionStructOutput | undefined;
@@ -26,19 +26,20 @@ interface IProps {
   setState: React.Dispatch<React.SetStateAction<State>>;
   repay: () => void;
   repayAll: () => void;
+  prices: Prices;
 }
 
-export const Repay: React.FC<IProps> = ({ accountPosition, state, setState, repay, repayAll }) => {
+export const Repay: React.FC<IProps> = ({ accountPosition, state, setState, repay, repayAll, prices }) => {
   // used for the range slider label
   const maxPossibleLTV = useMemo(() => {
     if (!accountPosition) return 0;
 
     const newDebt = fromAtto(accountPosition.currentDebt);
     const adjustedNewDebt = Math.max(newDebt, 0);
-    const estimatedLTV = ((adjustedNewDebt / fromAtto(accountPosition.collateral)) * 100).toFixed(2);
+    const estimatedLTV = (adjustedNewDebt / (fromAtto(accountPosition.collateral) * prices.tpi * 100)).toFixed(2);
 
     return Number(estimatedLTV);
-  }, [accountPosition]);
+  }, [prices.tpi, accountPosition]);
 
   // used for the estimated LTV label
   const getEstimatedLTV = (): string => {
@@ -51,7 +52,7 @@ export const Repay: React.FC<IProps> = ({ accountPosition, state, setState, repa
     const adjustedNewDebt = Math.max(newDebt, 0);
 
     // Calculate the estimated LTV after repayment.
-    const estimatedLTV = ((adjustedNewDebt / fromAtto(accountPosition.collateral)) * 100).toFixed(2);
+    const estimatedLTV = ((adjustedNewDebt / (fromAtto(accountPosition.collateral) * prices.tpi)) * 100).toFixed(2);
 
     return estimatedLTV;
   };

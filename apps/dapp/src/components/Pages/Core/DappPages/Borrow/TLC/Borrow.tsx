@@ -34,7 +34,15 @@ interface IProps {
   borrow: () => void;
 }
 
-export const Borrow: React.FC<IProps> = ({ accountPosition, state, tlcInfo, liquidationInfo, setState, borrow, prices }) => {
+export const Borrow: React.FC<IProps> = ({
+  accountPosition,
+  state,
+  tlcInfo,
+  liquidationInfo,
+  setState,
+  borrow,
+  prices,
+}) => {
   const [checkbox, setCheckbox] = useState(false);
 
   const getEstimatedLTV = (): string => {
@@ -66,7 +74,7 @@ export const Borrow: React.FC<IProps> = ({ accountPosition, state, tlcInfo, liqu
             ...state,
             borrowValue: accountPosition
               ? (
-                  fromAtto(accountPosition.collateral) * (MAX_LTV / 100) -
+                  fromAtto(accountPosition.collateral) * prices.tpi * (MAX_LTV / 100) -
                   fromAtto(accountPosition.currentDebt)
                 ).toFixed(2)
               : '0',
@@ -75,9 +83,10 @@ export const Borrow: React.FC<IProps> = ({ accountPosition, state, tlcInfo, liqu
         min={1000}
         hint={`Max: ${
           accountPosition
-            ? (fromAtto(accountPosition.collateral) * (MAX_LTV / 100) - fromAtto(accountPosition.currentDebt)).toFixed(
-                2
-              )
+            ? (
+                fromAtto(accountPosition.collateral) * prices.tpi * (MAX_LTV / 100) -
+                fromAtto(accountPosition.currentDebt)
+              ).toFixed(2)
             : 0
         }`}
         width="100%"
@@ -116,7 +125,7 @@ export const Borrow: React.FC<IProps> = ({ accountPosition, state, tlcInfo, liqu
           if (ltvPercent < minLtv) ltvPercent = minLtv;
           // Compute the DAI value for the input element based on the LTV change
           const daiValue = (
-            fromAtto(accountPosition.collateral) * ltvPercent -
+            fromAtto(accountPosition.collateral) * prices.tpi * ltvPercent -
             fromAtto(accountPosition.currentDebt)
           ).toFixed(2);
           setState({ ...state, borrowValue: `${Number(daiValue) > 0 ? daiValue : '0'}` });

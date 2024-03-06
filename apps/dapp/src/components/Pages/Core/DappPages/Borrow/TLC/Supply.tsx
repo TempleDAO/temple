@@ -16,8 +16,9 @@ import {
   State,
   Title,
   Warning,
+  Prices,
 } from '../index';
-import { fromAtto, ZERO } from 'utils/bigNumber';
+import { fromAtto } from 'utils/bigNumber';
 
 interface IProps {
   accountPosition: ITlcDataTypes.AccountPositionStructOutput | undefined;
@@ -25,9 +26,10 @@ interface IProps {
   minBorrow: number | undefined;
   setState: React.Dispatch<React.SetStateAction<State>>;
   supply: () => void;
+  prices: Prices;
 }
 
-export const Supply: React.FC<IProps> = ({ accountPosition, state, minBorrow, setState, supply }) => {
+export const Supply: React.FC<IProps> = ({ accountPosition, state, minBorrow, setState, supply, prices }) => {
   const getEstimatedCollateral = (): number => {
     return accountPosition
       ? fromAtto(accountPosition.collateral) + Number(state.supplyValue)
@@ -36,15 +38,17 @@ export const Supply: React.FC<IProps> = ({ accountPosition, state, minBorrow, se
 
   const getEstimatedLTV = (): string => {
     if (!accountPosition) return '0.00';
+    const tpi = prices.tpi;
 
     const estimatedCollateral = getEstimatedCollateral();
     const currentDebt = fromAtto(accountPosition.currentDebt);
 
-    const ltv = (currentDebt / estimatedCollateral) * 100;
+    const ltv = (currentDebt / (estimatedCollateral * tpi)) * 100;
     return ltv.toFixed(2);
   };
   const getEstimatedMaxBorrow = (): number => {
-    return getEstimatedCollateral() * (MAX_LTV / 100);
+    const tpi = prices.tpi;
+    return getEstimatedCollateral() * tpi * (MAX_LTV / 100);
   };
 
   const minSupply = minBorrow ? (1 / (MAX_LTV / 100)) * minBorrow : 0;
