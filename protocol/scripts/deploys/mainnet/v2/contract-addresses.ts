@@ -196,7 +196,7 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
                     OHM_DAI: '0xA8a742A05982f853fb5836d040cf3498249041B9',
                     DAI_OHM: '0x687A4B0Ac18Ed3796D55E6A1d747bD75591a8bac',
                     DAI_GOHM: '0x2c4b131BEf9d676877Ae0b5b2B46914b07FB9272',
-                    MULTI_OTC_OFFER: '',
+                    MULTI_OTC_OFFER: '0x522d7dBcc4A351Ac4C3dFFbd06c08e720C32e89b',
                 },
             },
             RAMOS_STRATEGY: {

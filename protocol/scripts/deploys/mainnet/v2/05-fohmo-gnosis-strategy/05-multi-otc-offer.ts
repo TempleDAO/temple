@@ -13,14 +13,13 @@ async function main() {
     const [owner] = await ethers.getSigners();
     const CORE_ADDRESSES = getDeployedContracts();
     const initialRescuer = CORE_ADDRESSES.CORE.RESCUER_MSIG;
-    const initialExecutor = CORE_ADDRESSES.CORE.EXECUTOR_MSIG;
     const factory = new MultiOtcOffer__factory(owner);
     await deployAndMine(
-        'MULTI_OTC_MARKET_OFFER',
+        'STRATEGIES.FOHMO_GNOSIS_STRATEGY.OTC_OFFER.MULTI_OTC_MARKET_OFFER',
         factory,
         factory.deploy,
         initialRescuer,
-        initialExecutor
+        await owner.getAddress(),
     );
 }
 
