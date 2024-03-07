@@ -28,7 +28,7 @@ contract MultiOtcOfferTestBase is TempleTest {
 
     event OfferPriceSet(bytes32 marketId, uint256 _offerPrice);
     event OfferPriceRangeSet(bytes32 marketId, uint128 minValidOfferPrice, uint128 maxValidOfferPrice);
-    event Swap(address indexed account, address indexed fundsOwner, uint256 userSellTokenAmount, uint256 userBuyTokenAmount);
+    event Swap(address indexed account, address indexed fundsOwner, bytes32 marketId, uint256 userSellTokenAmount, uint256 userBuyTokenAmount);
     event FundsOwnerSet(bytes32 marketId, address indexed fundsOwner);
     event OtcMarketAdded(bytes32 marketId, address userBuyToken, address userSellToken);
     event OtcMarketRemoved(bytes32 marketId, address userBuyToken, address userSellToken);
@@ -532,7 +532,7 @@ contract MultiOtcOfferTest is MultiOtcOfferTestBase {
         daiToken.approve(address(otcOffer), sellAmount);
 
         vm.expectEmit(address(otcOffer));
-        emit Swap(alice, fundsOwner, sellAmount, expectedBuyAmount);
+        emit Swap(alice, fundsOwner, marketId, sellAmount, expectedBuyAmount);
         otcOffer.swap(marketId, sellAmount);
 
         assertEq(daiToken.balanceOf(alice), 0);
@@ -554,9 +554,9 @@ contract MultiOtcOfferTest is MultiOtcOfferTestBase {
         deal(address(ohmToken), alice, sellAmount, true);
         vm.startPrank(alice);
         ohmToken.approve(address(otcOffer), sellAmount);
-
+        bytes32 marketId = otcOffer.getMarketIdByTokens(address(daiToken), address(ohmToken));
         vm.expectEmit(address(otcOffer));
-        emit Swap(alice, fundsOwner, sellAmount, expectedBuyAmount);
+        emit Swap(alice, fundsOwner, marketId, sellAmount, expectedBuyAmount);
 
         otcOffer.swap(address(daiToken), address(ohmToken), sellAmount);
 
@@ -580,9 +580,9 @@ contract MultiOtcOfferTest is MultiOtcOfferTestBase {
         deal(address(ohmToken), alice, sellAmount, true);
         vm.startPrank(alice);
         ohmToken.approve(address(otcOffer), sellAmount);
-
+        bytes32 marketId = otcOffer.getMarketIdByTokens(address(usdcToken), address(ohmToken));
         vm.expectEmit(address(otcOffer));
-        emit Swap(alice, fundsOwner, sellAmount, expectedBuyAmount);
+        emit Swap(alice, fundsOwner, marketId, sellAmount, expectedBuyAmount);
 
         otcOffer.swap(address(usdcToken), address(ohmToken), sellAmount);
 
