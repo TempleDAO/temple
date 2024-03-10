@@ -300,7 +300,7 @@ contract MultiOtcOffer is IMultiOtcOffer, Pausable, TempleElevatedAccess {
         address _fundsOwner = marketInfo.fundsOwner;
         IERC20Metadata _userSellToken = marketInfo.userSellToken;
         IERC20Metadata _userBuyToken = marketInfo.userBuyToken;
-        emit Swap(msg.sender, _fundsOwner, sellTokenAmount, buyTokenAmount);
+        emit Swap(msg.sender, _fundsOwner, marketId, sellTokenAmount, buyTokenAmount);
 
         _userSellToken.safeTransferFrom(msg.sender, _fundsOwner, sellTokenAmount);
         _userBuyToken.safeTransferFrom(_fundsOwner, msg.sender, buyTokenAmount);

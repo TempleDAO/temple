@@ -28,7 +28,7 @@ interface IMultiOtcOffer {
 
     event OfferPriceSet(bytes32 marketId, uint256 _offerPrice);
     event OfferPriceRangeSet(bytes32 marketId, uint128 minValidOfferPrice, uint128 maxValidOfferPrice);
-    event Swap(address indexed account, address indexed fundsOwner, uint256 userSellTokenAmount, uint256 userBuyTokenAmount);
+    event Swap(address indexed account, address indexed fundsOwner, bytes32 marketId, uint256 userSellTokenAmount, uint256 userBuyTokenAmount);
     event FundsOwnerSet(bytes32 marketId, address indexed fundsOwner);
     event OtcMarketAdded(bytes32 marketId, address userBuyToken, address userSellToken);
     event OtcMarketRemoved(bytes32 marketId, address userBuyToken, address userSellToken);
