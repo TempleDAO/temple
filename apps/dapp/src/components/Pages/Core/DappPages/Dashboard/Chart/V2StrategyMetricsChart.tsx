@@ -74,20 +74,28 @@ const V2StrategyMetricsChart: React.FC<{
 }> = ({ dashboardType, selectedMetric, selectedInterval, strategyNames }) => {
   // uncamel-case the metric names
   const formatMetricName = (name: string) => {
-
-    // format only the selected metric name (the selected metric or all lines in a TRV chart)
-    if (name === 'debtUSD') return 'Debt (USD)';
-    if (name === 'creditUSD') return 'Credit (USD)';
-    if (name === selectedMetric || dashboardType === DashboardType.TREASURY_RESERVES_VAULT){
-      return name
+    // format only
+    // - the selected metric
+    // - all lines in TRV chart
+    // - netDebt chart components
+    // the remaining cases are individual debt tokens (sUSDe, sDAI, rsETH, ...)
+    // which we keep as is
+    if (
+      name === selectedMetric ||
+      dashboardType === DashboardType.TREASURY_RESERVES_VAULT ||
+      selectedMetric === 'netDebtUSD'
+    ) {
+      return (
+        name
           // // insert a space before all caps
           .replace(/([A-Z][a-z])/g, ' $1')
           // // uppercase the first character
           .replace(/^./, (str) => str.toUpperCase())
           .replace(/USD$/, '')
+      );
     }
-    return name
-  }
+    return name;
+  };
   const tooltipValuesFormatter = (value: number, name: string) => [
     numberFormatter.format(value),
     formatMetricName(name),
