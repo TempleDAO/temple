@@ -529,10 +529,8 @@ export const BorrowPage = () => {
 const PageContainer = styled.div`
   display: flex;
   flex-direction: column;
-  padding: 1rem 0 2rem 2rem;
   align-items: center;
   @media (max-width: 1240px) {
-    gap: 3rem;
     padding: 1rem 0rem;
   }
 `;
@@ -546,9 +544,8 @@ const FlexCol = styled.div`
 
 const ChartContainer = styled.div`
   width: 1150px;
-  // margin-right: 3rem;
-  @media (max-width: 1150px) {
-    width: 500px;
+  @media (max-width: 1350px) {
+    width: 800px;
     margin-right: 0;
   }
   @media (max-width: 768px) {
