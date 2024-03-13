@@ -67,7 +67,7 @@ export const BorrowPage = () => {
 
   const getPrices = useCallback(async () => {
     const { data } = await fetchGenericSubgraph<any>(
-      'https://api.thegraph.com/subgraphs/name/medariox/v2-mainnet',
+      'https://api.thegraph.com/subgraphs/name/templedao/templedao-v2-mainnet',
       `{
         tokens {
           price

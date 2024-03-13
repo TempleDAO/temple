@@ -148,7 +148,7 @@ const env: Environment = {
     balancerV2: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-balancer-v2',
     // TODO: Will be deprecated
     ramos: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-ramos',
-    templeV2: 'https://api.thegraph.com/subgraphs/name/medariox/v2-mainnet',
+    templeV2: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-v2-mainnet',
     // Original Balancer Subgraph
     // balancerV2: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-v2-beta',
   },
