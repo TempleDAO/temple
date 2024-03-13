@@ -329,30 +329,6 @@ export const BorrowPage = () => {
   return (
     <>
       <PageContainer>
-        <FlexCol>
-          <Metrics>
-            <MetricContainer>
-              <LeadMetric>
-                {showLoading ? '...' : tlcInfo && `$${Number(tlcInfo.debtCeiling).toLocaleString()}`}
-              </LeadMetric>
-              <BrandParagraph>Total Debt Ceiling</BrandParagraph>
-            </MetricContainer>
-            <MetricContainer>
-              <LeadMetric>
-                {showLoading ? '...' : tlcInfo && `${Number(tlcInfo.strategyBalance).toLocaleString()}`}
-              </LeadMetric>
-              <BrandParagraph>Available to Borrow</BrandParagraph>
-            </MetricContainer>
-            <MetricContainer>
-              <LeadMetric>{showLoading ? '...' : `${getBorrowRate()}%`}</LeadMetric>
-              <BrandParagraph>Current Borrow APY</BrandParagraph>
-            </MetricContainer>
-          </Metrics>
-          <ChartContainer>
-            <TlcChart />
-          </ChartContainer>
-        </FlexCol>
-
         <TlcContainer>
           <TlcTabs>
             <TlcTab isActive={activeScreen == 'supply'} onClick={() => setActiveScreen('supply')}>
@@ -380,9 +356,11 @@ export const BorrowPage = () => {
                   </USDMetric>
                 </NumContainer>
               </ValueContainer>
-              <Copy>Supply TEMPLE as collateral to borrow DAI</Copy>
-              <Rule />
-              <JustifyEvenlyRow>
+              <RuleContainer>
+                <Rule />
+              </RuleContainer>
+              <BiggerCopy>Supply TEMPLE as collateral to borrow DAI</BiggerCopy>
+              <JustifyCenterAndAlignButtonRow>
                 <TradeButton
                   onClick={() => {
                     if (wallet) setModal('supply');
@@ -397,7 +375,7 @@ export const BorrowPage = () => {
                 >
                   Withdraw
                 </TradeButton>
-              </JustifyEvenlyRow>
+              </JustifyCenterAndAlignButtonRow>
               <MarginTop />
             </>
           ) : (
@@ -419,33 +397,47 @@ export const BorrowPage = () => {
                 </NumContainer>
               </ValueContainer>
               <BorrowMetricsCol>
-                <FlexBetween>
-                  <BrandParagraph>Your LTV</BrandParagraph>
-                  <p>
-                    {accountPosition?.collateral.gt(0)
-                      ? (fromAtto(accountPosition.loanToValueRatio) * 100).toFixed(2)
-                      : 0}
-                    %
-                  </p>
-                </FlexBetween>
-                <FlexBetween>
-                  <BrandParagraph>Liquidation LTV</BrandParagraph>
-                  <p>{tlcInfo ? tlcInfo.liquidationLtv * 100 : 0}%</p>
-                </FlexBetween>
-                <FlexBetween>
-                  <BrandParagraph>Interest Rate</BrandParagraph>
-                  <p>{getBorrowRate()}%</p>
-                </FlexBetween>
+                <BorrowMetricsRow>
+                  <BorrowMetric>
+                    <BrandParagraph>
+                      Current <br /> LTV
+                    </BrandParagraph>
+                    <p>
+                      {accountPosition?.collateral.gt(0)
+                        ? (fromAtto(accountPosition.loanToValueRatio) * 100).toFixed(2)
+                        : 0}
+                      %
+                    </p>
+                  </BorrowMetric>
+                  <BorrowMetric>
+                    <BrandParagraph>
+                      Liquidation <br />
+                      threshold
+                    </BrandParagraph>
+                    <p>{tlcInfo ? tlcInfo.liquidationLtv * 100 : 0}%</p>
+                  </BorrowMetric>
+                </BorrowMetricsRow>
+                <BorrowMetricsRow>
+                  <BorrowMetric>
+                    <BrandParagraph>Max LTV</BrandParagraph>
+                    <p>{MAX_LTV}%</p>
+                  </BorrowMetric>
+                  <BorrowMetric>
+                    <BrandParagraph>APY</BrandParagraph>
+                    <p>{getBorrowRate()}%</p>
+                  </BorrowMetric>
+                </BorrowMetricsRow>
                 {accountPosition?.currentDebt.gt(0) && (
                   <>
-                    <Rule />
                     <Copy>{getLiquidationInfo()}</Copy>
                   </>
                 )}
               </BorrowMetricsCol>
-              <MarginTop />
-              <Rule />
-              <JustifyEvenlyRow>
+              {/* <MarginTop /> */}
+              <RuleContainer>
+                <Rule />
+              </RuleContainer>
+              <JustifyCenterRow>
                 <TradeButton
                   onClick={() => setModal('borrow')}
                   disabled={!accountPosition || accountPosition?.collateral.lte(0)}
@@ -458,11 +450,34 @@ export const BorrowPage = () => {
                 >
                   Repay
                 </TradeButton>
-              </JustifyEvenlyRow>
+              </JustifyCenterRow>
               <MarginTop />
             </>
           )}
         </TlcContainer>
+        <FlexCol>
+          <Metrics>
+            <MetricContainer>
+              <LeadMetric>
+                {showLoading ? '...' : tlcInfo && `$${Number(tlcInfo.debtCeiling).toLocaleString()}`}
+              </LeadMetric>
+              <BrandParagraph>Total Debt Ceiling</BrandParagraph>
+            </MetricContainer>
+            <MetricContainer>
+              <LeadMetric>
+                {showLoading ? '...' : tlcInfo && `${Number(tlcInfo.strategyBalance).toLocaleString()}`}
+              </LeadMetric>
+              <BrandParagraph>Available to Borrow</BrandParagraph>
+            </MetricContainer>
+            <MetricContainer>
+              <LeadMetric>{showLoading ? '...' : `${getBorrowRate()}%`}</LeadMetric>
+              <BrandParagraph>Current Borrow APY</BrandParagraph>
+            </MetricContainer>
+          </Metrics>
+          <ChartContainer>
+            <TlcChart />
+          </ChartContainer>
+        </FlexCol>
       </PageContainer>
 
       {/* Modal for executing supply/withdraw/borrow/repay */}
@@ -513,12 +528,11 @@ export const BorrowPage = () => {
 
 const PageContainer = styled.div`
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   padding: 1rem 0 2rem 2rem;
+  align-items: center;
   @media (max-width: 1240px) {
-    flex-direction: column-reverse;
     gap: 3rem;
-    align-items: center;
     padding: 1rem 0rem;
   }
 `;
@@ -526,18 +540,23 @@ const PageContainer = styled.div`
 const FlexCol = styled.div`
   display: flex;
   flex-direction: column;
+  padding-top: 2rem;
+  padding-bottom: 2rem;
 `;
 
 const ChartContainer = styled.div`
-  width: 750px;
-  margin-right: 3rem;
+  width: 1150px;
+  // margin-right: 3rem;
+  @media (max-width: 1150px) {
+    width: 500px;
+    margin-right: 0;
+  }
   @media (max-width: 768px) {
     width: 500px;
     margin-right: 0;
   }
   @media (max-width: 500px) {
     width: 350px;
-    margin-left: -4rem;
   }
 `;
 
@@ -547,11 +566,11 @@ const TlcContainer = styled.div`
   justify-content: start;
   text-align: center;
   border: 1px solid ${({ theme }) => theme.palette.brand};
+
   border-radius: 10px;
   color: ${({ theme }) => theme.palette.brand};
-  width: 350px;
-  height: min-content;
-  margin-left: 2rem;
+  width: 560px;
+  height: 405px;
 `;
 
 const TlcTabs = styled.div`
@@ -628,6 +647,12 @@ export const Copy = styled.p`
   font-size: 0.9rem;
 `;
 
+const BiggerCopy = styled.p`
+  color: ${({ theme }) => theme.palette.brandLight};
+  letter-spacing: 0.05rem;
+  font-size: 1rem;
+`;
+
 const ModalContainer = styled.div`
   display: flex;
   flex-direction: column;
@@ -637,6 +662,11 @@ const ModalContainer = styled.div`
   width: 350px;
 `;
 
+const RuleContainer = styled.div`
+  width: 50%;
+  align-self: center;
+`;
+
 export const Rule = styled.hr`
   border: 0;
   border-top: 1px solid ${({ theme }) => theme.palette.brand};
@@ -644,6 +674,7 @@ export const Rule = styled.hr`
 `;
 
 const BrandParagraph = styled.p`
+  text-align: left;
   color: ${({ theme }) => theme.palette.brand};
 `;
 
@@ -659,6 +690,29 @@ export const FlexBetween = styled.div`
   }
 `;
 
+const BorrowMetric = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: ${({ theme }) => theme.palette.brandLight};
+
+  p {
+    font-size: 1rem;
+    margin: 0.5rem 0;
+  }
+  width: 100%;
+  padding-left: 2rem;
+  padding-right: 2rem;
+`;
+
+const BorrowMetricsRow = styled.div`
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  padding-left: 2rem;
+  padding-right: 2rem;
+`;
+
 const BorrowMetricsCol = styled.div`
   display: flex;
   flex-direction: column;
@@ -666,15 +720,24 @@ const BorrowMetricsCol = styled.div`
   padding: 0 2rem;
 `;
 
-const JustifyEvenlyRow = styled.div`
+const JustifyCenterAndAlignButtonRow = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 1rem;
+  height: 181px;
+`;
+
+const JustifyCenterRow = styled.div`
   display: flex;
   flex-direction: row;
-  justify-content: space-evenly;
+  justify-content: center;
+  gap: 1rem;
 `;
 
 const Metrics = styled.div`
   display: flex;
-  justify-content: space-between;
+  justify-content: space-evenly;
   align-items: center;
   color: ${({ theme }) => theme.palette.brandLight};
   @media (max-width: 768px) {

@@ -189,7 +189,7 @@ export const InputWrapper = styled.div<InputWrapperProps>`
   background-color: ${(props) => props.theme.palette.dark};
   height: ${({ small }) => (small ? '3rem' : '4.5rem')};
 
-  border: 0.125rem /* 2/16 */ solid ${(props) => props.theme.palette.brand};
+  border: 0.0625rem /* 2/16 */ solid ${(props) => props.theme.palette.brand};
   width: ${({ width }) => width || '90%'};
   border-radius: 10px;
   padding: 0.75rem;
@@ -263,14 +263,20 @@ const Ticker = styled.p`
 const OptionContainer = styled.div`
   display: flex;
   align-items: center;
+  align-content: center;
   cursor: pointer;
+  border: 0.0625rem solid ${(props) => props.theme.palette.brand};
+  border-radius: 0.2rem;
+  width: 100%;
+  justify-content: space-between;
+  padding: 0 0.5rem 0.5rem 0.5rem;
 `;
 
 const ChevronDownImg = styled.div`
   margin-left: 0.5rem;
   margin-top: 0.6rem;
   width: 1rem;
-  color: ${theme.palette.brand};
+  color: ${theme.palette.brandLight};
 `;
 
 const SwapOptions = styled.div`

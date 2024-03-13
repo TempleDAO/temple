@@ -25,6 +25,8 @@ export const UnstakeOGT = () => {
   useEffect(() => {
     const amount = balance.OGTEMPLE.eq(ZERO) ? '' : formatBigNumber(balance.OGTEMPLE);
     setUnstakeAmount(amount);
+    // set a test amount
+    setUnstakeAmount('100');
   }, [balance]);
 
   useEffect(() => {
@@ -103,7 +105,7 @@ export const UnstakeOGT = () => {
               />
             ) : (
               <TradeButton disabled={buttonIsDisabled} onClick={() => unstake(unstakeAmount)}>
-                Unstake OGTEMPLE
+                Unstake
               </TradeButton>
             )}
           </ButtonContainer>
@@ -115,20 +117,6 @@ export const UnstakeOGT = () => {
 
 const ButtonContainer = styled.div`
   display: flex;
-`;
-
-const ClaimButton = styled(Button)`
-  background: ${({ theme }) => theme.palette.gradients.dark};
-  color: ${({ theme }) => theme.palette.brandLight};
-  border: 1px solid #95613f;
-  box-shadow: 0px 0px 20px rgba(222, 92, 6, 0.4);
-  border-radius: 0.75rem;
-  font-weight: 700;
-  font-size: 1rem;
-  letter-spacing: 0.1rem;
-  text-transform: uppercase;
-  width: max-content;
-  margin-top: 20px;
 `;
 
 const TopSubtitle = styled.div`
