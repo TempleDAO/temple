@@ -46,7 +46,7 @@ export const Withdraw: React.FC<IProps> = ({ accountPosition, state, setState, w
   };
 
   const getEstimatedMaxBorrow = (): number => {
-    return getEstimatedCollateral() * (MAX_LTV / 100);
+    return getEstimatedCollateral() * prices.tpi * (MAX_LTV / 100);
   };
 
   const getMaxWithdraw = (): number => {
