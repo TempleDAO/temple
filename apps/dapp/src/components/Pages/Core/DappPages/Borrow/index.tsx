@@ -129,7 +129,10 @@ export const BorrowPage = () => {
   const getTlcInfo = useCallback(async () => {
     setMetricsLoading(true);
     const getAccountPosition = async () => {
-      if (!signer || !wallet) return;
+      if (!signer || !wallet) {
+        setAccountPosition(undefined);
+        return;
+      }
       const tlcContract = new TempleLineOfCredit__factory(signer).attach(env.contracts.tlc);
       const position = await tlcContract.accountPosition(wallet);
       setAccountPosition(position);
@@ -185,7 +188,7 @@ export const BorrowPage = () => {
     const collateral = fromAtto(accountPosition.collateral);
     const debt = fromAtto(accountPosition.currentDebt) + (additionalDebt || 0);
     const liquidationTpi = debt / liquidationLtv / collateral;
-    const liquidationDebt = collateral * liquidationLtv;
+    const liquidationDebt = collateral * prices.tpi * liquidationLtv;
     return (
       <>
         Given a {((debt / (collateral * prices.tpi)) * 100).toFixed(2)}% LTV ratio, your collateral will be liquidated
@@ -356,22 +359,26 @@ export const BorrowPage = () => {
                   </USDMetric>
                 </NumContainer>
               </ValueContainer>
+              <BiggerCopy>Supply TEMPLE as collateral to borrow DAI</BiggerCopy>
+              <FillSpace minHeight='110px' />
               <RuleContainer>
                 <Rule />
               </RuleContainer>
-              <BiggerCopy>Supply TEMPLE as collateral to borrow DAI</BiggerCopy>
               <JustifyCenterAndAlignButtonRow>
                 <TradeButton
+                  disabled={!accountPosition}
                   onClick={() => {
                     if (wallet) setModal('supply');
                     else connect();
                   }}
+                  width="175px"
                 >
                   Supply
                 </TradeButton>
                 <TradeButton
                   onClick={() => setModal('withdraw')}
                   disabled={!accountPosition || accountPosition?.collateral.lte(0)}
+                  width="175px"
                 >
                   Withdraw
                 </TradeButton>
@@ -427,13 +434,14 @@ export const BorrowPage = () => {
                     <p>{getBorrowRate()}%</p>
                   </BorrowMetric>
                 </BorrowMetricsRow>
-                {accountPosition?.currentDebt.gt(0) && (
+                {accountPosition?.currentDebt.gt(0) && wallet ? (
                   <>
                     <Copy>{getLiquidationInfo()}</Copy>
                   </>
+                ) : (
+                  <FillSpace  />
                 )}
               </BorrowMetricsCol>
-              {/* <MarginTop /> */}
               <RuleContainer>
                 <Rule />
               </RuleContainer>
@@ -441,12 +449,14 @@ export const BorrowPage = () => {
                 <TradeButton
                   onClick={() => setModal('borrow')}
                   disabled={!accountPosition || accountPosition?.collateral.lte(0)}
+                  width="175px"
                 >
                   Borrow
                 </TradeButton>
                 <TradeButton
                   onClick={() => setModal('repay')}
                   disabled={!accountPosition || accountPosition?.currentDebt.lte(0)}
+                  width="175px"
                 >
                   Repay
                 </TradeButton>
@@ -525,6 +535,14 @@ export const BorrowPage = () => {
     </>
   );
 };
+
+type FillSpaceProps = {
+  minHeight?: string;
+};
+
+const FillSpace = styled.div<FillSpaceProps>`
+  min-height: ${({ minHeight }) => minHeight || '70px'};
+`;
 
 const PageContainer = styled.div`
   display: flex;
@@ -722,7 +740,6 @@ const JustifyCenterAndAlignButtonRow = styled.div`
   justify-content: center;
   align-items: flex-end;
   gap: 1rem;
-  height: 181px;
 `;
 
 const JustifyCenterRow = styled.div`
