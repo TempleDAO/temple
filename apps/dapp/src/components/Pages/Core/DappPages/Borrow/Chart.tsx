@@ -87,7 +87,7 @@ export const TlcChart = () => {
             { series: 'utilRatio', color: theme.palette.light },
           ]}
           xTickFormatter={tickFormatters[selectedInterval]}
-          yTickFormatter={(val, i) => formatNumberAbbreviated(val).string + '%'}
+          yTickFormatter={(val, i) => formatNumberAbbreviated(val).number.toFixed(2) + '%'}
           tooltipLabelFormatter={tooltipLabelFormatters[selectedInterval]}
           yDomain={yDomain}
           legendFormatter={(name) => (name === 'utilRatio' ? 'Utilization Rate' : 'Interest Rate')}
