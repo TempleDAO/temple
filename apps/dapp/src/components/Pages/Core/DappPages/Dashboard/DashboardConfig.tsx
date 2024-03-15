@@ -1,5 +1,9 @@
 import env from 'constants/env';
 
+/*
+ Note that the StrategyKey matches what's in the contracts
+ https://github.com/TempleDAO/temple/blob/stage/protocol/contracts/interfaces/v2/strategies/ITempleStrategy.sol#L57
+*/
 export enum StrategyKey {
   RAMOS = 'RamosStrategy',
   // TLC = 'TlcStrategy',
@@ -7,13 +11,18 @@ export enum StrategyKey {
   DSRBASE = 'DsrBaseStrategy',
   TEMPLO_MAYOR_GNOSIS = 'TemploMayorStrategy',
   FOHMO_GNOSIS = 'FohmoStrategy',
-  ALL = 'All',
-  // TODO: This probably could be consolidated with ALL
-  TREASURY_RESERVES_VAULT = 'TreasuryReservesVault',
 }
 
+// Except this special case for the Treasury Reserves Vault dashboard
+export const TRV_KEY = 'TreasuryReservesVault';
+export type TrvKey = typeof TRV_KEY;
+
+export const ALL_STRATEGIES = Object.values(StrategyKey);
+
+export const isTRVStrategy = (strategy: StrategyKey | TrvKey) => strategy === TRV_KEY;
+
 export type DashboardData = {
-  key: StrategyKey;
+  key: StrategyKey | TrvKey;
   name: string;
   title: string;
   path: string;
@@ -23,7 +32,7 @@ export type DashboardData = {
 
 export const Dashboards: DashboardData[] = [
   {
-    key: StrategyKey.TREASURY_RESERVES_VAULT,
+    key: TRV_KEY,
     name: 'Treasury Reserves Vault',
     title: 'TRV',
     path: 'treasuryreservesvault',

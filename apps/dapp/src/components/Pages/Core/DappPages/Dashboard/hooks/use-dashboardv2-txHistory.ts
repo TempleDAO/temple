@@ -6,7 +6,7 @@ import { TableHeaders, TxHistoryTableHeader } from '../Table/TxnHistoryTable';
 import { TxType } from '../Table/TxnDataTable';
 import { getQueryKey } from 'utils/react-query-helpers';
 import { useQuery } from '@tanstack/react-query';
-import { DashboardData, StrategyKey } from '../DashboardConfig';
+import { DashboardData, StrategyKey, isTRVStrategy } from '../DashboardConfig';
 
 type Transactions = {
   hash: string;
@@ -113,7 +113,7 @@ const fetchTransactions = async (props: TxHistoryProps): Promise<Transactions> =
   const { dashboardData, blockNumber, offset, limit, txFilter, rowFilter, tableHeaders } = props;
 
   const strategyKey = dashboardData.key;
-  const strategyQuery = strategyKey === StrategyKey.ALL ? `` : `strategy_: {name: "${strategyKey}"}`;
+  const strategyQuery = isTRVStrategy(strategyKey) ? `` : `strategy_: {name: "${strategyKey}"}`;
   const blockNumberQueryParam = blockNumber > 0 ? `block: { number: ${blockNumber} }` : ``;
 
   const paginationQuery = `skip: ${offset} first: ${limit}`;
@@ -174,7 +174,7 @@ const useTxHistoryAvailableRows = (props: TxHistoryAvailableRowsProps) =>
 const fetchTxHistoryAvailableRows = async (props: TxHistoryAvailableRowsProps): Promise<AvailableRows> => {
   const { dashboardData, rowFilter, txFilter } = props;
   const strategyKey = dashboardData.key;
-  const strategyQuery = strategyKey === StrategyKey.ALL ? `` : `strategy_: {name: "${strategyKey}"}`;
+  const strategyQuery = isTRVStrategy(strategyKey) ? `` : `strategy_: {name: "${strategyKey}"}`;
   const dateNowSecs = Math.round(Date.now() / 1000);
   const typeRowFilterQuery = `${rowFilter.type ? 'name_contains_nocase: "' + rowFilter.type + '"' : ''}`;
   const strategyRowFilterQuery = `${
@@ -218,8 +218,7 @@ const fetchTxHistoryAvailableRows = async (props: TxHistoryAvailableRowsProps): 
   if (rowFilter.type) hasRowFilters = rowFilter.type.length > 0;
   if (res) {
     let totalRowCount = 0;
-    // if (props.txFilter === TxHistoryFilterType.all && strategyKey === StrategyKey.ALL && (rowFilters && rowFilters?.length === 0)) {
-    if (props.txFilter === TxHistoryFilterType.all && strategyKey === StrategyKey.ALL && !hasRowFilters) {
+    if (props.txFilter === TxHistoryFilterType.all && isTRVStrategy(strategyKey) && !hasRowFilters) {
       // if user chooses all transactions, sum the txCountTotal of every strategy, we don't use this
       // calc for the last30days or lastweek filters because it could show an incorrect number of totalPages
       totalRowCount = res.metrics[0].strategyTransactionCount;

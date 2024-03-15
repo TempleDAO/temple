@@ -9,7 +9,7 @@ import useV2StrategySnapshotData, {
   V2SnapshotMetric,
   V2StrategySnapshot,
 } from '../hooks/use-dashboardv2-daily-snapshots';
-import { DashboardData, StrategyKey } from '../DashboardConfig';
+import { ALL_STRATEGIES, DashboardData, StrategyKey, isTRVStrategy } from '../DashboardConfig';
 
 type XAxisTickFormatter = (timestamp: number) => string;
 
@@ -74,7 +74,7 @@ const V2StrategyMetricsChart: React.FC<{
   // uncamel-case the metric names
   const formatMetricName = (name: string) =>
     // format only the selected metric name (the selected metric or all lines in a TRV chart)
-    name === selectedMetric || dashboardData.key === StrategyKey.TREASURY_RESERVES_VAULT
+    name === selectedMetric || isTRVStrategy(dashboardData.key)
       ? name
           // // insert a space before all caps
           .replace(/([A-Z][a-z])/g, ' $1')
@@ -137,12 +137,7 @@ const V2StrategyMetricsChart: React.FC<{
 
   // TRV dashboard shows all defined strategies as single lines
   // all other dashboards show just the selected strategy key
-  const chartStrategyNames =
-    dashboardData.key === StrategyKey.TREASURY_RESERVES_VAULT
-      ? Object.values(StrategyKey)
-          // techically this is not even needed since `all` and TRV do not really exist in subgraph
-          .filter((name) => name !== StrategyKey.ALL && name !== StrategyKey.TREASURY_RESERVES_VAULT)
-      : [dashboardData.key];
+  const chartStrategyNames = isTRVStrategy(dashboardData.key) ? ALL_STRATEGIES : [dashboardData.key];
 
   const filteredDaily =
     dailyMetrics
@@ -190,21 +185,19 @@ const V2StrategyMetricsChart: React.FC<{
 
   // TRV renders selected metric of all strategies as multiline chart
   // other dashboards show the selected metric only (single line)
-  const lines =
-    dashboardData.key === StrategyKey.TREASURY_RESERVES_VAULT
-      ? metrics.map((metric, ix) => ({ series: metric, color: colors[ix % colors.length] }))
-      : [{ series: selectedMetric, color: colors[0] }];
+  const lines = isTRVStrategy(dashboardData.key)
+    ? metrics.map((metric, ix) => ({ series: metric, color: colors[ix % colors.length] }))
+    : [{ series: selectedMetric, color: colors[0] }];
 
   // for non trv dashboard, pluck all other metrics
   // (individual assets that make up the metric)
   // to render as stacked area chart
-  const stackedItems =
-    dashboardData.key !== StrategyKey.TREASURY_RESERVES_VAULT
-      ? // add +1 to skip the first color which is always the selectedMetric
-        metrics
-          .filter((m) => m !== selectedMetric)
-          .map((metric, ix) => ({ series: metric, color: colors[(ix + 1) % colors.length], stackId: 'a' }))
-      : undefined;
+  const stackedItems = !isTRVStrategy(dashboardData.key)
+    ? // add +1 to skip the first color which is always the selectedMetric
+      metrics
+        .filter((m) => m !== selectedMetric)
+        .map((metric, ix) => ({ series: metric, color: colors[(ix + 1) % colors.length], stackId: 'a' }))
+    : undefined;
 
   return (
     <LineChart

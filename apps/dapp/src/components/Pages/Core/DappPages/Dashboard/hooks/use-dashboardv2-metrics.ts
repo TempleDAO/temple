@@ -3,7 +3,7 @@ import millify from 'millify';
 import { fetchGenericSubgraph } from 'utils/subgraph';
 import env from 'constants/env';
 import { getQueryKey } from 'utils/react-query-helpers';
-import { DashboardData, StrategyKey } from '../DashboardConfig';
+import { DashboardData, StrategyKey, TrvKey, isTRVStrategy } from '../DashboardConfig';
 
 export enum TokenSymbols {
   DAI = 'DAI',
@@ -48,7 +48,7 @@ export default function useDashboardV2Metrics(dashboardData: DashboardData) {
   const dashboardMetrics = useQuery({
     queryKey: getQueryKey.metricsDashboard(dashboardData.key),
     queryFn: async () => {
-      if (dashboardData.key === StrategyKey.TREASURY_RESERVES_VAULT) {
+      if (isTRVStrategy(dashboardData.key)) {
         return getArrangedTreasuryReservesVaultMetrics(await fetchTreasuryReservesVaultMetrics());
       }
 
@@ -58,7 +58,7 @@ export default function useDashboardV2Metrics(dashboardData: DashboardData) {
     staleTime: CACHE_TTL,
   });
 
-  const fetchStrategyMetrics = async (strategy: StrategyKey): Promise<StrategyMetrics> => {
+  const fetchStrategyMetrics = async (strategy: StrategyKey | TrvKey): Promise<StrategyMetrics> => {
     let metrics = {
       valueOfHoldings: 0,
       benchmarkedEquity: 0,
