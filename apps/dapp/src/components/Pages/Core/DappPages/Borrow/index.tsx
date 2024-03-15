@@ -360,28 +360,40 @@ export const BorrowPage = () => {
                 </NumContainer>
               </ValueContainer>
               <BiggerCopy>Supply TEMPLE as collateral to borrow DAI</BiggerCopy>
-              <FillSpace minHeight='110px' />
+              <FillSpace minHeight="110px" />
               <RuleContainer>
                 <Rule />
               </RuleContainer>
               <JustifyCenterAndAlignButtonRow>
-                <TradeButton
-                  disabled={!accountPosition}
-                  onClick={() => {
-                    if (wallet) setModal('supply');
-                    else connect();
-                  }}
-                  width="175px"
-                >
-                  Supply
-                </TradeButton>
-                <TradeButton
-                  onClick={() => setModal('withdraw')}
-                  disabled={!accountPosition || accountPosition?.collateral.lte(0)}
-                  width="175px"
-                >
-                  Withdraw
-                </TradeButton>
+                {wallet ? (
+                  <>
+                    <TradeButton
+                      disabled={!accountPosition}
+                      onClick={() => {
+                        setModal('supply');
+                      }}
+                      width="175px"
+                    >
+                      Supply
+                    </TradeButton>
+                    <TradeButton
+                      onClick={() => setModal('withdraw')}
+                      disabled={!accountPosition || accountPosition?.collateral.lte(0)}
+                      width="175px"
+                    >
+                      Withdraw
+                    </TradeButton>
+                  </>
+                ) : (
+                  <TradeButton
+                    onClick={() => {
+                      connect();
+                    }}
+                    style={{ whiteSpace: 'nowrap' }}
+                  >
+                    Connect Wallet
+                  </TradeButton>
+                )}
               </JustifyCenterAndAlignButtonRow>
               <MarginTop />
             </>
@@ -439,27 +451,40 @@ export const BorrowPage = () => {
                     <Copy>{getLiquidationInfo()}</Copy>
                   </>
                 ) : (
-                  <FillSpace  />
+                  <FillSpace />
                 )}
               </BorrowMetricsCol>
               <RuleContainer>
                 <Rule />
               </RuleContainer>
               <JustifyCenterRow>
-                <TradeButton
-                  onClick={() => setModal('borrow')}
-                  disabled={!accountPosition || accountPosition?.collateral.lte(0)}
-                  width="175px"
-                >
-                  Borrow
-                </TradeButton>
-                <TradeButton
-                  onClick={() => setModal('repay')}
-                  disabled={!accountPosition || accountPosition?.currentDebt.lte(0)}
-                  width="175px"
-                >
-                  Repay
-                </TradeButton>
+                {wallet ? (
+                  <>
+                    <TradeButton
+                      onClick={() => setModal('borrow')}
+                      disabled={!accountPosition || accountPosition?.collateral.lte(0)}
+                      width="175px"
+                    >
+                      Borrow
+                    </TradeButton>
+                    <TradeButton
+                      onClick={() => setModal('repay')}
+                      disabled={!accountPosition || accountPosition?.currentDebt.lte(0)}
+                      width="175px"
+                    >
+                      Repay
+                    </TradeButton>
+                  </>
+                ) : (
+                  <TradeButton
+                    onClick={() => {
+                      connect();
+                    }}
+                    style={{ whiteSpace: 'nowrap' }}
+                  >
+                    Connect Wallet
+                  </TradeButton>
+                )}
               </JustifyCenterRow>
               <MarginTop />
             </>
@@ -482,6 +507,10 @@ export const BorrowPage = () => {
             <MetricContainer>
               <LeadMetric>{showLoading ? '...' : `${getBorrowRate()}%`}</LeadMetric>
               <BrandParagraph>Current Borrow APY</BrandParagraph>
+            </MetricContainer>
+            <MetricContainer>
+              <LeadMetric>{showLoading ? '...' : prices.tpi}</LeadMetric>
+              <BrandParagraph>Current TPI</BrandParagraph>
             </MetricContainer>
           </Metrics>
           <ChartContainer>
