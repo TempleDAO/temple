@@ -9,7 +9,7 @@ import useV2StrategySnapshotData, {
   V2SnapshotMetric,
   V2StrategySnapshot,
 } from '../hooks/use-dashboardv2-daily-snapshots';
-import { ALL_STRATEGIES, DashboardData, StrategyKey, isTRVStrategy } from '../DashboardConfig';
+import { ALL_STRATEGIES, DashboardData, isTRVDashboard } from '../DashboardConfig';
 
 type XAxisTickFormatter = (timestamp: number) => string;
 
@@ -74,7 +74,7 @@ const V2StrategyMetricsChart: React.FC<{
   // uncamel-case the metric names
   const formatMetricName = (name: string) =>
     // format only the selected metric name (the selected metric or all lines in a TRV chart)
-    name === selectedMetric || isTRVStrategy(dashboardData.key)
+    name === selectedMetric || isTRVDashboard(dashboardData.key)
       ? name
           // // insert a space before all caps
           .replace(/([A-Z][a-z])/g, ' $1')
@@ -137,7 +137,7 @@ const V2StrategyMetricsChart: React.FC<{
 
   // TRV dashboard shows all defined strategies as single lines
   // all other dashboards show just the selected strategy key
-  const chartStrategyNames = isTRVStrategy(dashboardData.key) ? ALL_STRATEGIES : [dashboardData.key];
+  const chartStrategyNames = isTRVDashboard(dashboardData.key) ? ALL_STRATEGIES : [dashboardData.key];
 
   const filteredDaily =
     dailyMetrics
@@ -185,14 +185,14 @@ const V2StrategyMetricsChart: React.FC<{
 
   // TRV renders selected metric of all strategies as multiline chart
   // other dashboards show the selected metric only (single line)
-  const lines = isTRVStrategy(dashboardData.key)
+  const lines = isTRVDashboard(dashboardData.key)
     ? metrics.map((metric, ix) => ({ series: metric, color: colors[ix % colors.length] }))
     : [{ series: selectedMetric, color: colors[0] }];
 
   // for non trv dashboard, pluck all other metrics
   // (individual assets that make up the metric)
   // to render as stacked area chart
-  const stackedItems = !isTRVStrategy(dashboardData.key)
+  const stackedItems = !isTRVDashboard(dashboardData.key)
     ? // add +1 to skip the first color which is always the selectedMetric
       metrics
         .filter((m) => m !== selectedMetric)

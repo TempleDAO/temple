@@ -12,7 +12,7 @@ import { queryMinTablet } from 'styles/breakpoints';
 import env from 'constants/env';
 import linkSvg from 'assets/icons/link.svg?react';
 import { formatNumberWithCommas } from 'utils/formatter';
-import { DashboardData, Dashboards, isTRVStrategy } from '../DashboardConfig';
+import { DashboardData, Dashboards, isTRVDashboard } from '../DashboardConfig';
 
 type Props = {
   dashboardData: DashboardData;
@@ -178,7 +178,7 @@ const TxnHistoryTable = (props: Props) => {
           return {
             ...prevStateHeader,
             orderDesc: undefined,
-            dropdownOptions: isTRVStrategy(selectedStrategy)
+            dropdownOptions: isTRVDashboard(selectedStrategy)
               ? allStrategyDropdowns
               : [{ label: selectedStrategy, checked: true }],
           };
