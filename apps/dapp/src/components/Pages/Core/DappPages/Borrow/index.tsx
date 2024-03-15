@@ -335,10 +335,10 @@ export const BorrowPage = () => {
         <TlcContainer>
           <TlcTabs>
             <TlcTab isActive={activeScreen == 'supply'} onClick={() => setActiveScreen('supply')}>
-              <p>Supplies</p>
+              <p>SUPPLY</p>
             </TlcTab>
             <TlcTab isActive={activeScreen == 'borrow'} onClick={() => setActiveScreen('borrow')}>
-              <p>Borrows</p>
+              <p>BORROW</p>
             </TlcTab>
           </TlcTabs>
           {activeScreen == 'supply' ? (

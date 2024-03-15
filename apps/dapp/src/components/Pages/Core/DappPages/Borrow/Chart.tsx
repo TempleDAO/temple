@@ -37,7 +37,7 @@ const tooltipValuesFormatter = (value: number, name: string) => [
   name,
 ];
 
-const yDomain: AxisDomain = ([dataMin, dataMax]) => [dataMin * 0.5, Number((dataMax * 1.5).toFixed(2))];
+const yDomain: AxisDomain = [0, 100];
 
 export const TlcChart = () => {
   const [selectedInterval, setSelectedInterval] = useState<ChartIntervals>('1M');
