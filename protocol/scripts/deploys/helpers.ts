@@ -115,13 +115,6 @@ export interface DeployedContracts {
   TEMPLE_DAI_AURA_POOL_ID: string;
   TEMPLE_DAI_REWARDS: string;
   TEMPLE_DAI_AURA_STAKING_DEPOSIT_TOKEN: string;
-
-  // NEXUS
-  RELIC: string;
-  SHARD: string;
-  TEMPLE_SACRIFICE: string;
-  NEXUS_COMMON: string;
-  PARTNER_ZERO_SACRIFICE: string;
 }
 
 export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
@@ -196,13 +189,6 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     TEMPLE_DAI_AURA_POOL_ID: '',
     TEMPLE_DAI_REWARDS: '',
     TEMPLE_DAI_AURA_STAKING_DEPOSIT_TOKEN: '',
-
-    // NEXUS
-    RELIC: '',
-    SHARD: '',
-    TEMPLE_SACRIFICE: '',
-    NEXUS_COMMON: '',
-    PARTNER_ZERO_SACRIFICE: ''
   },
   goerli: {
     // No longer active/unused
@@ -282,13 +268,6 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     TEMPLE_DAI_AURA_POOL_ID: '',
     TEMPLE_DAI_REWARDS: '',
     TEMPLE_DAI_AURA_STAKING_DEPOSIT_TOKEN: '',
-
-    // NEXUS
-    RELIC: '',
-    SHARD: '',
-    TEMPLE_SACRIFICE: '',
-    NEXUS_COMMON: '',
-    PARTNER_ZERO_SACRIFICE: ''
   },
   mainnet: {
     // From network/environment
@@ -394,13 +373,6 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     TEMPLE_DAI_REWARDS: '0x13544617b10e1923363c89d902b749bea331ac4e',
     TEMPLE_DAI_AURA_STAKING_DEPOSIT_TOKEN:
       '0x0B7C71d61D960F70d89ecaC55DC2B4c1A7b508ee',
-
-    // NEXUS
-    RELIC: '',
-    SHARD: '',
-    TEMPLE_SACRIFICE: '',
-    NEXUS_COMMON: '',
-    PARTNER_ZERO_SACRIFICE: ''
   },
   localhost: {
     // From network/environment (setup when 00-localhost-env.ts script is run)
@@ -476,13 +448,6 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
 
     MULTISIG: '0x8626f6940e2eb28930efb4cef49b2d1f2c9c1199', // Account #19
     FARM_MULTISIG: '0x8626f6940e2eb28930efb4cef49b2d1f2c9c1199',
-
-    // NEXUS
-    RELIC: '',
-    SHARD: '',
-    TEMPLE_SACRIFICE: '',
-    NEXUS_COMMON: '',
-    PARTNER_ZERO_SACRIFICE: ''
   },
   arbitrumSepolia: {
     // From network/environment (setup when 00-localhost-env.ts script is run)
@@ -556,13 +521,6 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
 
     MULTISIG: '0x8626f6940e2eb28930efb4cef49b2d1f2c9c1199', // Account #19
     FARM_MULTISIG: '0x8626f6940e2eb28930efb4cef49b2d1f2c9c1199',
-
-    // NEXUS
-    RELIC: '0xcbc7cf85dd0AB91Aa2671400E86ebf3AaC6dc658',
-    SHARD: '0x192aA9BfDcA5540406E211950C226C8E0cd5047F',
-    TEMPLE_SACRIFICE: '0x1b274A49fF8Ec84f874B989EcF23840952D7E600',
-    NEXUS_COMMON: '0x98c5E61b1B3731A1f379E8770861164d23118cdc',
-    PARTNER_ZERO_SACRIFICE: '0x2ae6318e34bb97ae3755AFcE75559452aA223A5D'
   }
 };
 
