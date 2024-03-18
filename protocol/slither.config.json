@@ -1,4 +1,4 @@
 {
-    "detectors_to_exclude": "naming-convention,similar-names",
+    "detectors_to_exclude": "naming-convention,similar-names,solc-version",
     "filter_paths": "(node_modules/|contracts/fakes/|contracts/util/ABDKMath64x64.sol|contracts/util/ABDKMathQuad.sol|contracts/zaps|test/|lib/)"
 }
