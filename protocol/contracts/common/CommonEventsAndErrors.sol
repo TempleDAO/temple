@@ -1,4 +1,4 @@
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (common/CommonEventsAndErrors.sol)
 
