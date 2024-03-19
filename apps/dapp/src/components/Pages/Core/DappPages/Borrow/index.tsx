@@ -26,6 +26,7 @@ import { useNotification } from 'providers/NotificationProvider';
 import { TlcChart } from './Chart';
 import env from 'constants/env';
 import { useConnectWallet } from '@web3-onboard/react';
+import Tooltip from 'components/Tooltip/Tooltip';
 
 export type State = {
   supplyValue: string;
@@ -557,11 +558,22 @@ export const BorrowPage = () => {
             </MetricContainer>
             <MetricContainer>
               <LeadMetric>{showLoading ? '...' : tlcInfo && `${availableToBorrow}`}</LeadMetric>
-              <BrandParagraph>Available to Borrow</BrandParagraph>
+              <BrandParagraph>
+                Available to Borrow
+                <Tooltip
+                  content={` The maximum borrow amount is subject to the supplied collateral and the Daily Borrow Limit across all
+            users.`}
+                  inline
+                >
+                  <InfoCircle inline>
+                    <p>i</p>
+                  </InfoCircle>
+                </Tooltip>
+              </BrandParagraph>
             </MetricContainer>
             <MetricContainer>
               <LeadMetric>{showLoading ? '...' : `${getBorrowRate()}%`}</LeadMetric>
-              <BrandParagraph>Current Borrow APY</BrandParagraph>
+              <BrandParagraph>Current Borrow APY </BrandParagraph>
             </MetricContainer>
             <MetricContainer>
               <LeadMetric>{showLoading ? '...' : prices.tpi}</LeadMetric>
@@ -948,10 +960,14 @@ export const Warning = styled.div`
   margin-bottom: -0.5rem;
 `;
 
-export const InfoCircle = styled.div`
+type InfoCircleProps = {
+  inline?: boolean;
+};
+
+export const InfoCircle = styled.div<InfoCircleProps>`
   margin: 0.25rem;
   padding: 0.5rem;
-  display: flex;
+  display: ${({ inline }) => (inline ? 'inline-flex' : 'flex')};
   align-items: center;
   justify-content: center;
   width: 1.25rem;
