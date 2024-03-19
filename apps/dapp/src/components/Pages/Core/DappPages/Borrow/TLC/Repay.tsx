@@ -3,11 +3,9 @@ import { Input } from '../../../NewUI/HomeInput';
 import { formatToken } from 'utils/formatter';
 import { ITlcDataTypes } from 'types/typechain/contracts/interfaces/v2/templeLineOfCredit/ITempleLineOfCredit';
 import {
-  Copy,
   FlexBetween,
   FlexColCenter,
   InfoCircle,
-  MAX_LTV,
   MarginTop,
   RangeLabel,
   RangeSlider,

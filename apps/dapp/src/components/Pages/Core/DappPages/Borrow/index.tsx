@@ -151,6 +151,13 @@ export const BorrowPage = () => {
       const tlcInfoFromContracts = await getTlcInfoFromContracts();
 
       setMetricsLoading(false);
+
+      // prevent showing 0s in UI if we don't have data from contracts
+      if (!tlcInfoFromContracts) {
+        setTlcInfo(undefined);
+        return;
+      }
+
       setTlcInfo({
         minBorrow: data.tlcDailySnapshots[0].minBorrowAmount,
         borrowRate: tlcInfoFromContracts?.borrowRate || 0,
@@ -280,7 +287,7 @@ export const BorrowPage = () => {
       const daiContract = new ERC20__factory(signer).attach(env.contracts.dai);
       await ensureAllowance(TICKER_SYMBOL.DAI, daiContract, env.contracts.tlc, amount);
       // Repay DAI
-      const tx = await tlcContract.repay(amount, wallet, { gasLimit: 250000 });
+      const tx = await tlcContract.repay(amount, wallet, { gasLimit: 400000 });
       const receipt = await tx.wait();
       openNotification({
         title: `Repaid ${state.repayValue} DAI`,
@@ -307,7 +314,7 @@ export const BorrowPage = () => {
       const daiContract = new ERC20__factory(signer).attach(env.contracts.dai);
       await ensureAllowance(TICKER_SYMBOL.DAI, daiContract, env.contracts.tlc, amount);
       // Repay DAI
-      const tx = await tlcContract.repayAll(wallet, { gasLimit: 350000 });
+      const tx = await tlcContract.repayAll(wallet, { gasLimit: 400000 });
       const receipt = await tx.wait();
       openNotification({
         title: `Repaid ${accountPosition ? fromAtto(accountPosition.currentDebt).toFixed(2) : amount} DAI`,
