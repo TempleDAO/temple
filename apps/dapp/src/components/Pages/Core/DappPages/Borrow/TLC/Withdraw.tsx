@@ -16,18 +16,21 @@ import {
   Title,
   Warning,
   Prices,
+  TlcInfo,
 } from '../index';
-import { fromAtto } from 'utils/bigNumber';
+import { fromAtto, toAtto } from 'utils/bigNumber';
+import { useMemo } from 'react';
 
 interface IProps {
   accountPosition: ITlcDataTypes.AccountPositionStructOutput | undefined;
   state: State;
+  tlcInfo: TlcInfo | undefined;
   setState: React.Dispatch<React.SetStateAction<State>>;
   withdraw: () => void;
   prices: Prices;
 }
 
-export const Withdraw: React.FC<IProps> = ({ accountPosition, state, setState, withdraw, prices }) => {
+export const Withdraw: React.FC<IProps> = ({ accountPosition, state, setState, tlcInfo, withdraw, prices }) => {
   const getEstimatedCollateral = (): number => {
     return accountPosition
       ? fromAtto(accountPosition.collateral) - Number(state.withdrawValue)
@@ -49,11 +52,23 @@ export const Withdraw: React.FC<IProps> = ({ accountPosition, state, setState, w
     return getEstimatedCollateral() * prices.tpi * (MAX_LTV / 100);
   };
 
-  const getMaxWithdraw = (): number => {
-    return accountPosition
+  const maxWithdrawWithCircuitBreaker = useMemo((): { value: number; isCircuitBreakerActive: boolean } => {
+    const userMaxWithdraw = accountPosition
       ? fromAtto(accountPosition.collateral) - fromAtto(accountPosition.currentDebt) / (MAX_LTV / 100) / prices.tpi
       : 0;
-  };
+
+    const userMaxWithdrawBigNumber = toAtto(userMaxWithdraw);
+
+    if (!tlcInfo) {
+      return { value: userMaxWithdraw, isCircuitBreakerActive: false };
+    }
+
+    if (tlcInfo.templeCircuitBreakerRemaining.lt(userMaxWithdrawBigNumber)) {
+      return { value: fromAtto(tlcInfo.templeCircuitBreakerRemaining), isCircuitBreakerActive: true };
+    }
+
+    return { value: userMaxWithdraw, isCircuitBreakerActive: false };
+  }, [accountPosition, prices.tpi, tlcInfo]);
 
   return (
     <>
@@ -69,10 +84,10 @@ export const Withdraw: React.FC<IProps> = ({ accountPosition, state, setState, w
         value={state.withdrawValue}
         placeholder="0"
         onHintClick={() => {
-          setState({ ...state, withdrawValue: getMaxWithdraw().toFixed(2) });
+          setState({ ...state, withdrawValue: maxWithdrawWithCircuitBreaker.value.toFixed(2) });
         }}
         min={0}
-        hint={`Max: ${getMaxWithdraw().toFixed(2)}`}
+        hint={`Max: ${maxWithdrawWithCircuitBreaker.value.toFixed(2)}`}
         width="100%"
       />
       {/* Only display if user has borrows */}
@@ -82,7 +97,10 @@ export const Withdraw: React.FC<IProps> = ({ accountPosition, state, setState, w
             <InfoCircle>
               <p>i</p>
             </InfoCircle>
-            <p>MAX represents the amount of supplied TEMPLE that you can withdraw without liquidation.</p>
+            <p>
+              The maximum amount of collateral that can be withdrawn is subject to the LTV limit and the Daily
+              Withdrawal Limits across all users.
+            </p>
           </Warning>
           <MarginTop />
           <RangeLabel>Estimated DAI LTV: {getEstimatedLTV()}%</RangeLabel>
@@ -121,7 +139,9 @@ export const Withdraw: React.FC<IProps> = ({ accountPosition, state, setState, w
         <TradeButton
           onClick={() => withdraw()}
           // Disable if amount is 0 or greater than max withdraw
-          disabled={Number(state.withdrawValue) <= 0 || Number(state.withdrawValue) > getMaxWithdraw()}
+          disabled={
+            Number(state.withdrawValue) <= 0 || Number(state.withdrawValue) > maxWithdrawWithCircuitBreaker.value
+          }
         >
           Withdraw
         </TradeButton>

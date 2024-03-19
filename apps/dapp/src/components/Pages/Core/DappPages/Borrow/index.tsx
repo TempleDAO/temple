@@ -1,9 +1,14 @@
 import styled from 'styled-components';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ZERO, fromAtto } from 'utils/bigNumber';
+import { ZERO, fromAtto, toAtto } from 'utils/bigNumber';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { useWallet } from 'providers/WalletProvider';
-import { ERC20__factory, TempleLineOfCredit__factory, TreasuryReservesVault__factory } from 'types/typechain';
+import {
+  ERC20__factory,
+  TempleCircuitBreakerAllUsersPerPeriod__factory,
+  TempleLineOfCredit__factory,
+  TreasuryReservesVault__factory,
+} from 'types/typechain';
 import { ITlcDataTypes } from 'types/typechain/contracts/interfaces/v2/templeLineOfCredit/ITempleLineOfCredit';
 import { fetchGenericSubgraph } from 'utils/subgraph';
 import { BigNumber, ethers } from 'ethers';
@@ -39,6 +44,8 @@ export type TlcInfo = {
   liquidationLtv: number;
   strategyBalance: number;
   debtCeiling: number;
+  daiCircuitBreakerRemaining: BigNumber;
+  templeCircuitBreakerRemaining: BigNumber;
 };
 
 export const MAX_LTV = 75;
@@ -86,6 +93,31 @@ export const BorrowPage = () => {
     });
   }, []);
 
+  const getCircuitBreakers = useCallback(async () => {
+    if (!signer) return;
+    const daiCircuitBreakerContract = new TempleCircuitBreakerAllUsersPerPeriod__factory(signer).attach(
+      env.contracts.daiCircuitBreaker
+    );
+
+    const templeCircuitBreakerContract = new TempleCircuitBreakerAllUsersPerPeriod__factory(signer).attach(
+      env.contracts.templeCircuitBreaker
+    );
+
+    const daiCircuitBreakerCap = await daiCircuitBreakerContract.cap();
+    const daiCircuitBreakerUtilisation = await daiCircuitBreakerContract.currentUtilisation();
+
+    const templeCircuitBreakerCap = await templeCircuitBreakerContract.cap();
+    const templeCircuitBreakerUtilisation = await templeCircuitBreakerContract.currentUtilisation();
+
+    const daiCircuitBreakerRemaining = daiCircuitBreakerCap.sub(daiCircuitBreakerUtilisation);
+    const templeCircuitBreakerRemaining = templeCircuitBreakerCap.sub(templeCircuitBreakerUtilisation);
+
+    return {
+      daiCircuitBreakerRemaining,
+      templeCircuitBreakerRemaining,
+    };
+  }, [signer]);
+
   const getTlcInfoFromContracts = useCallback(async () => {
     if (!signer) return;
 
@@ -116,15 +148,19 @@ export const BorrowPage = () => {
     const maxLtv = debtTokenConfig.maxLtvRatio;
 
     // current borrow apy
-    const currentBorrowInterestRate = debtTokenData.interestRate;
+    const currentBorrowInterestRate = Math.pow(1 + fromAtto(debtTokenData.interestRate) / 365, 365) - 1;
+
+    const circuitBreakers = await getCircuitBreakers();
 
     return {
       debtCeiling: fromAtto(debtCeiling),
       strategyBalance: fromAtto(maxAvailableToBorrow),
-      borrowRate: fromAtto(currentBorrowInterestRate),
+      borrowRate: currentBorrowInterestRate,
       liquidationLtv: fromAtto(maxLtv),
+      daiCircuitBreakerRemaining: circuitBreakers?.daiCircuitBreakerRemaining,
+      templeCircuitBreakerRemaining: circuitBreakers?.templeCircuitBreakerRemaining,
     };
-  }, [signer]);
+  }, [signer, getCircuitBreakers]);
 
   const getTlcInfo = useCallback(async () => {
     setMetricsLoading(true);
@@ -164,6 +200,8 @@ export const BorrowPage = () => {
         liquidationLtv: tlcInfoFromContracts?.liquidationLtv || 0,
         strategyBalance: tlcInfoFromContracts?.strategyBalance || 0,
         debtCeiling: tlcInfoFromContracts?.debtCeiling || 0,
+        daiCircuitBreakerRemaining: tlcInfoFromContracts?.daiCircuitBreakerRemaining || ZERO,
+        templeCircuitBreakerRemaining: tlcInfoFromContracts?.templeCircuitBreakerRemaining || ZERO,
       });
     } catch (e) {
       setMetricsLoading(false);
@@ -336,6 +374,18 @@ export const BorrowPage = () => {
 
   const showLoading = useMemo(() => metricsLoading || !wallet, [metricsLoading, wallet]);
 
+  const availableToBorrow = useMemo(() => {
+    if (!tlcInfo) return '...';
+
+    const availableAsBigNumber = toAtto(tlcInfo.strategyBalance);
+
+    if (tlcInfo.daiCircuitBreakerRemaining.lt(availableAsBigNumber)) {
+      return `$${Number(fromAtto(tlcInfo.daiCircuitBreakerRemaining)).toLocaleString()}`;
+    }
+
+    return `$${Number(tlcInfo.strategyBalance).toLocaleString()}`;
+  }, [tlcInfo]);
+
   return (
     <>
       <PageContainer>
@@ -506,9 +556,7 @@ export const BorrowPage = () => {
               <BrandParagraph>Total Debt Ceiling</BrandParagraph>
             </MetricContainer>
             <MetricContainer>
-              <LeadMetric>
-                {showLoading ? '...' : tlcInfo && `${Number(tlcInfo.strategyBalance).toLocaleString()}`}
-              </LeadMetric>
+              <LeadMetric>{showLoading ? '...' : tlcInfo && `${availableToBorrow}`}</LeadMetric>
               <BrandParagraph>Available to Borrow</BrandParagraph>
             </MetricContainer>
             <MetricContainer>
@@ -545,6 +593,7 @@ export const BorrowPage = () => {
               setState={setState}
               withdraw={withdraw}
               prices={prices}
+              tlcInfo={tlcInfo}
             />
           ) : modal === 'borrow' ? (
             <Borrow

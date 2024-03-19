@@ -30,7 +30,7 @@ const tooltipLabelFormatters: Record<ChartIntervals, XAxisTickFormatter> = {
   ...tickFormatters,
 };
 
-type Metric = { timestamp: number; utilRatio: number; interestRate: number };
+type Metric = { timestamp: number; utilRatio: number; interestYield: number };
 
 const tooltipValuesFormatter = (value: number, name: string) => [
   `${formatNumberFixedDecimals(value, 4).toString()}%`,
@@ -52,7 +52,7 @@ export const TlcChart = () => {
             tlcDailySnapshots(orderBy: timestamp, orderDirection: desc) {
               timestamp
               utilRatio
-              interestRate
+              interestYield
             }
           }`
       );
@@ -66,7 +66,7 @@ export const TlcChart = () => {
   const formattedData = formatDailyDataPoints(metrics, CHART_INTERVALS, new Date().getTime(), (metric) => ({
     timestamp: metric.timestamp * 1000,
     utilRatio: metric.utilRatio * 100,
-    interestRate: metric.interestRate * 100,
+    interestYield: metric.interestYield * 100,
   }));
 
   return (
@@ -83,7 +83,7 @@ export const TlcChart = () => {
           chartData={formattedData[selectedInterval].reverse()}
           xDataKey="timestamp"
           lines={[
-            { series: 'interestRate', color: theme.palette.brand },
+            { series: 'interestYield', color: theme.palette.brand },
             { series: 'utilRatio', color: theme.palette.light },
           ]}
           xTickFormatter={tickFormatters[selectedInterval]}

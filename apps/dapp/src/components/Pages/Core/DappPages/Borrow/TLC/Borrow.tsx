@@ -20,9 +20,9 @@ import {
   TlcInfo,
   Warning,
 } from '../index';
-import { fromAtto } from 'utils/bigNumber';
+import { fromAtto, toAtto } from 'utils/bigNumber';
 import styled from 'styled-components';
-import { ReactNode, useState } from 'react';
+import { ReactNode, useEffect, useMemo, useState } from 'react';
 
 interface IProps {
   accountPosition: ITlcDataTypes.AccountPositionStructOutput | undefined;
@@ -56,6 +56,24 @@ export const Borrow: React.FC<IProps> = ({
       : '0.00';
   };
 
+  const maxBorrowValueWithCircuitBreaker = useMemo((): { value: number; isCircuitBreakerActive: boolean } => {
+    const userMaxBorrow = accountPosition
+      ? fromAtto(accountPosition.collateral) * prices.tpi * (MAX_LTV / 100) - fromAtto(accountPosition.currentDebt)
+      : 0;
+
+    const userMaxBorrowBigNumber = toAtto(userMaxBorrow);
+
+    if (!tlcInfo) {
+      return { value: userMaxBorrow, isCircuitBreakerActive: false };
+    }
+
+    if (tlcInfo.daiCircuitBreakerRemaining.lt(userMaxBorrowBigNumber)) {
+      return { value: fromAtto(tlcInfo.daiCircuitBreakerRemaining), isCircuitBreakerActive: true };
+    }
+
+    return { value: userMaxBorrow, isCircuitBreakerActive: false };
+  }, [tlcInfo, accountPosition, prices.tpi]);
+
   return (
     <>
       <RemoveMargin />
@@ -72,23 +90,11 @@ export const Borrow: React.FC<IProps> = ({
         onHintClick={() => {
           setState({
             ...state,
-            borrowValue: accountPosition
-              ? (
-                  fromAtto(accountPosition.collateral) * prices.tpi * (MAX_LTV / 100) -
-                  fromAtto(accountPosition.currentDebt)
-                ).toFixed(2)
-              : '0',
+            borrowValue: maxBorrowValueWithCircuitBreaker.value.toFixed(2),
           });
         }}
         min={1000}
-        hint={`Max: ${
-          accountPosition
-            ? (
-                fromAtto(accountPosition.collateral) * prices.tpi * (MAX_LTV / 100) -
-                fromAtto(accountPosition.currentDebt)
-              ).toFixed(2)
-            : 0
-        }`}
+        hint={`Max: ${maxBorrowValueWithCircuitBreaker.value.toFixed(2)}`}
         width="100%"
       />
 
@@ -99,6 +105,17 @@ export const Borrow: React.FC<IProps> = ({
           </InfoCircle>
           <p>
             You must borrow at least {tlcInfo.minBorrow} {state.outputToken}
+          </p>
+        </Warning>
+      )}
+      {tlcInfo && tlcInfo.minBorrow < Number(state.borrowValue) && (
+        <Warning>
+          <InfoCircle>
+            <p>i</p>
+          </InfoCircle>
+          <p>
+            The maximum borrow amount is subject to the supplied collateral and the Daily Borrow Limit for across all
+            users.
           </p>
         </Warning>
       )}
@@ -161,7 +178,9 @@ export const Borrow: React.FC<IProps> = ({
             (accountPosition && fromAtto(accountPosition.maxBorrow) < Number(state.borrowValue)) ||
             (tlcInfo && tlcInfo.minBorrow > Number(state.borrowValue)) ||
             (tlcInfo && tlcInfo.strategyBalance < Number(state.borrowValue)) ||
-            Number(getEstimatedLTV()) > MAX_LTV
+            Number(getEstimatedLTV()) > MAX_LTV ||
+            (maxBorrowValueWithCircuitBreaker.isCircuitBreakerActive &&
+              Number(state.borrowValue) > maxBorrowValueWithCircuitBreaker.value)
           }
         >
           Borrow

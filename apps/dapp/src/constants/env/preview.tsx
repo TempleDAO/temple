@@ -44,6 +44,8 @@ const env: Environment = {
       temploMayorGnosisStrategy: '',
       fohmoGnosisStrategy: '',
     },
+    daiCircuitBreaker: '0x30AC664062f58b6E4DF187713a2352385633B739',
+    templeCircuitBreaker: '0x8f783c4A3d90712A794d5660b632AC67611852aF',
   },
   subgraph: {
     // TODO: These need updated to the templedao organization subgraphs once they are deployed
