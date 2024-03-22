@@ -18,7 +18,8 @@ import {
   Warning,
   Prices,
 } from '../index';
-import { fromAtto } from 'utils/bigNumber';
+import { ZERO, fromAtto } from 'utils/bigNumber';
+import { useMemo } from 'react';
 
 interface IProps {
   accountPosition: ITlcDataTypes.AccountPositionStructOutput | undefined;
@@ -30,32 +31,40 @@ interface IProps {
 }
 
 export const Supply: React.FC<IProps> = ({ accountPosition, state, minBorrow, setState, supply, prices }) => {
-  const getEstimatedCollateral = (): number => {
+  const estimatedCollateral = useMemo(() => {
     return accountPosition
       ? fromAtto(accountPosition.collateral) + Number(state.supplyValue)
       : Number(state.supplyValue);
-  };
+  }, [accountPosition, state.supplyValue]);
 
   const getEstimatedLTV = (): string => {
     if (!accountPosition) return '0.00';
     const tpi = prices.tpi;
 
-    const estimatedCollateral = getEstimatedCollateral();
     const currentDebt = fromAtto(accountPosition.currentDebt);
 
     const ltv = (currentDebt / (estimatedCollateral * tpi)) * 100;
     return ltv.toFixed(2);
   };
-  const getEstimatedMaxBorrow = (): number => {
+
+  const estimatedMaxBorrow = useMemo(() => {
     const tpi = prices.tpi;
-    return getEstimatedCollateral() * tpi * (MAX_LTV / 100);
-  };
+    return estimatedCollateral * tpi * (MAX_LTV / 100);
+  }, [prices.tpi, estimatedCollateral]);
 
   const minSupply = minBorrow ? (1 / (MAX_LTV / 100)) * minBorrow : 0;
   const unusedSupply = accountPosition
     ? fromAtto(accountPosition.collateral) - fromAtto(accountPosition.currentDebt)
     : 0;
   const estimatedUnusedSupply = Number(state.supplyValue) + unusedSupply;
+
+  const supplyMessage = useMemo(() => {
+    const existingDebtInDAI = fromAtto(accountPosition?.currentDebt || ZERO);
+    return `You could borrow up to ${(estimatedMaxBorrow - existingDebtInDAI).toFixed(
+      2
+    )} additional DAI with ${estimatedCollateral.toFixed(2)}
+    total TEMPLE collateral.`;
+  }, [accountPosition?.currentDebt, estimatedMaxBorrow, estimatedCollateral]);
 
   return (
     <>
@@ -113,10 +122,7 @@ export const Supply: React.FC<IProps> = ({ accountPosition, state, minBorrow, se
         </>
       )}
       <GradientContainer>
-        <Copy style={{ textAlign: 'left' }}>
-          You could borrow up to {getEstimatedMaxBorrow().toFixed(2)} DAI with {getEstimatedCollateral().toFixed(2)}{' '}
-          total TEMPLE collateral.
-        </Copy>
+        <Copy style={{ textAlign: 'left' }}>{supplyMessage}</Copy>
       </GradientContainer>
       <FlexColCenter>
         <TradeButton
