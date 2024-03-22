@@ -34,7 +34,7 @@ export const Repay: React.FC<IProps> = ({ accountPosition, state, setState, repa
 
     const newDebt = fromAtto(accountPosition.currentDebt);
     const adjustedNewDebt = Math.max(newDebt, 0);
-    const estimatedLTV = (adjustedNewDebt / (fromAtto(accountPosition.collateral) * prices.tpi * 100)).toFixed(2);
+    const estimatedLTV = ((adjustedNewDebt / (fromAtto(accountPosition.collateral) * prices.tpi)) * 100).toFixed(2);
 
     return Number(estimatedLTV);
   }, [prices.tpi, accountPosition]);
