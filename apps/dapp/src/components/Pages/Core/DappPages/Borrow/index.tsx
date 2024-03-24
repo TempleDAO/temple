@@ -1,12 +1,17 @@
 import styled from 'styled-components';
-import { useCallback, useEffect, useState } from 'react';
-import { ZERO, fromAtto } from 'utils/bigNumber';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ZERO, fromAtto, toAtto } from 'utils/bigNumber';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { useWallet } from 'providers/WalletProvider';
-import { ERC20__factory, TempleLineOfCredit__factory } from 'types/typechain';
+import {
+  ERC20__factory,
+  TempleCircuitBreakerAllUsersPerPeriod__factory,
+  TempleLineOfCredit__factory,
+  TreasuryReservesVault__factory,
+} from 'types/typechain';
 import { ITlcDataTypes } from 'types/typechain/contracts/interfaces/v2/templeLineOfCredit/ITempleLineOfCredit';
 import { fetchGenericSubgraph } from 'utils/subgraph';
-import { BigNumber } from 'ethers';
+import { BigNumber, ethers } from 'ethers';
 import daiImg from 'assets/images/newui-images/tokens/dai.png';
 import templeImg from 'assets/images/newui-images/tokens/temple.png';
 import { formatToken } from 'utils/formatter';
@@ -21,6 +26,7 @@ import { useNotification } from 'providers/NotificationProvider';
 import { TlcChart } from './Chart';
 import env from 'constants/env';
 import { useConnectWallet } from '@web3-onboard/react';
+import Tooltip from 'components/Tooltip/Tooltip';
 
 export type State = {
   supplyValue: string;
@@ -39,6 +45,8 @@ export type TlcInfo = {
   liquidationLtv: number;
   strategyBalance: number;
   debtCeiling: number;
+  daiCircuitBreakerRemaining: BigNumber;
+  templeCircuitBreakerRemaining: BigNumber;
 };
 
 export const MAX_LTV = 75;
@@ -64,10 +72,11 @@ export const BorrowPage = () => {
   const [accountPosition, setAccountPosition] = useState<ITlcDataTypes.AccountPositionStructOutput>();
   const [tlcInfo, setTlcInfo] = useState<TlcInfo>();
   const [prices, setPrices] = useState<Prices>({ templePrice: 0, daiPrice: 0, tpi: 0 });
+  const [metricsLoading, setMetricsLoading] = useState(false);
 
   const getPrices = useCallback(async () => {
     const { data } = await fetchGenericSubgraph<any>(
-      'https://api.thegraph.com/subgraphs/name/medariox/v2-mainnet',
+      env.subgraph.templeV2,
       `{
         tokens {
           price
@@ -85,9 +94,82 @@ export const BorrowPage = () => {
     });
   }, []);
 
+  const getCircuitBreakers = useCallback(async () => {
+    if (!signer) return;
+    const daiCircuitBreakerContract = new TempleCircuitBreakerAllUsersPerPeriod__factory(signer).attach(
+      env.contracts.daiCircuitBreaker
+    );
+
+    const templeCircuitBreakerContract = new TempleCircuitBreakerAllUsersPerPeriod__factory(signer).attach(
+      env.contracts.templeCircuitBreaker
+    );
+
+    const daiCircuitBreakerCap = await daiCircuitBreakerContract.cap();
+    const daiCircuitBreakerUtilisation = await daiCircuitBreakerContract.currentUtilisation();
+
+    const templeCircuitBreakerCap = await templeCircuitBreakerContract.cap();
+    const templeCircuitBreakerUtilisation = await templeCircuitBreakerContract.currentUtilisation();
+
+    const daiCircuitBreakerRemaining = daiCircuitBreakerCap.sub(daiCircuitBreakerUtilisation);
+    const templeCircuitBreakerRemaining = templeCircuitBreakerCap.sub(templeCircuitBreakerUtilisation);
+
+    return {
+      daiCircuitBreakerRemaining,
+      templeCircuitBreakerRemaining,
+    };
+  }, [signer]);
+
+  const getTlcInfoFromContracts = useCallback(async () => {
+    if (!signer) return;
+
+    const tlcContract = new TempleLineOfCredit__factory(signer).attach(env.contracts.tlc);
+    const debtPosition = await tlcContract.totalDebtPosition();
+    const totalUserDebt = debtPosition.totalDebt;
+    const utilizationRatio = debtPosition.utilizationRatio;
+
+    // NOTE: We are intentionally rounding here to nearest 1e18
+    const debtCeiling = totalUserDebt.div(utilizationRatio).mul(ethers.utils.parseEther('1'));
+
+    const userAvailableToBorrowFromTlc = debtCeiling.sub(totalUserDebt);
+
+    const trvContract = new TreasuryReservesVault__factory(signer).attach(env.contracts.treasuryReservesVault);
+    const strategyAvailalableToBorrowFromTrv = await trvContract.availableForStrategyToBorrow(
+      env.contracts.strategies.tlcStrategy,
+      env.contracts.dai
+    );
+
+    // available to borrow
+    // return the lesser of userAvailableToBorrowFromTlc and strategyAvailalableToBorrowFromTrv
+    const maxAvailableToBorrow = userAvailableToBorrowFromTlc.gte(strategyAvailalableToBorrowFromTrv)
+      ? strategyAvailalableToBorrowFromTrv
+      : userAvailableToBorrowFromTlc;
+
+    // Getting the max borrow LTV and interest rate
+    const [debtTokenConfig, debtTokenData] = await tlcContract.debtTokenDetails();
+    const maxLtv = debtTokenConfig.maxLtvRatio;
+
+    // current borrow apy
+    const currentBorrowInterestRate = Math.pow(1 + fromAtto(debtTokenData.interestRate) / 365, 365) - 1;
+
+    const circuitBreakers = await getCircuitBreakers();
+
+    return {
+      debtCeiling: fromAtto(debtCeiling),
+      strategyBalance: fromAtto(maxAvailableToBorrow),
+      borrowRate: currentBorrowInterestRate,
+      liquidationLtv: fromAtto(maxLtv),
+      daiCircuitBreakerRemaining: circuitBreakers?.daiCircuitBreakerRemaining,
+      templeCircuitBreakerRemaining: circuitBreakers?.templeCircuitBreakerRemaining,
+    };
+  }, [signer, getCircuitBreakers]);
+
   const getTlcInfo = useCallback(async () => {
+    setMetricsLoading(true);
     const getAccountPosition = async () => {
-      if (!signer || !wallet) return;
+      if (!signer || !wallet) {
+        setAccountPosition(undefined);
+        return;
+      }
       const tlcContract = new TempleLineOfCredit__factory(signer).attach(env.contracts.tlc);
       const position = await tlcContract.accountPosition(wallet);
       setAccountPosition(position);
@@ -98,29 +180,35 @@ export const BorrowPage = () => {
         env.subgraph.templeV2,
         `{
           tlcDailySnapshots(orderBy: timestamp, orderDirection: desc, first: 1) {
-            interestRate
-            maxLTVRatio
             minBorrowAmount
-          }
-          strategies(where: {name: "TlcStrategy"}) {
-            strategyTokens(where: {symbol: "DAI"}) {
-              availableToBorrow
-              debtCeiling
-            }
           }
         }`
       );
+
+      const tlcInfoFromContracts = await getTlcInfoFromContracts();
+
+      setMetricsLoading(false);
+
+      // prevent showing 0s in UI if we don't have data from contracts
+      if (!tlcInfoFromContracts) {
+        setTlcInfo(undefined);
+        return;
+      }
+
       setTlcInfo({
         minBorrow: data.tlcDailySnapshots[0].minBorrowAmount,
-        borrowRate: data.tlcDailySnapshots[0].interestRate,
-        liquidationLtv: data.tlcDailySnapshots[0].maxLTVRatio,
-        strategyBalance: data.strategies[0].strategyTokens[0].availableToBorrow,
-        debtCeiling: data.strategies[0].strategyTokens[0].debtCeiling,
+        borrowRate: tlcInfoFromContracts?.borrowRate || 0,
+        liquidationLtv: tlcInfoFromContracts?.liquidationLtv || 0,
+        strategyBalance: tlcInfoFromContracts?.strategyBalance || 0,
+        debtCeiling: tlcInfoFromContracts?.debtCeiling || 0,
+        daiCircuitBreakerRemaining: tlcInfoFromContracts?.daiCircuitBreakerRemaining || ZERO,
+        templeCircuitBreakerRemaining: tlcInfoFromContracts?.templeCircuitBreakerRemaining || ZERO,
       });
     } catch (e) {
+      setMetricsLoading(false);
       console.log(e);
     }
-  }, [signer, wallet]);
+  }, [getTlcInfoFromContracts, signer, wallet]);
 
   useEffect(() => {
     const onMount = async () => {
@@ -146,11 +234,11 @@ export const BorrowPage = () => {
     const collateral = fromAtto(accountPosition.collateral);
     const debt = fromAtto(accountPosition.currentDebt) + (additionalDebt || 0);
     const liquidationTpi = debt / liquidationLtv / collateral;
-    const liquidationDebt = collateral * liquidationLtv;
+    const liquidationDebt = collateral * prices.tpi * liquidationLtv;
     return (
       <>
-        Given a {((debt / collateral) * 100).toFixed(2)}% LTV ratio, your collateral will be liquidated if TPI falls to{' '}
-        <strong>${liquidationTpi.toFixed(3)}</strong> or if your debt rises to{' '}
+        Given a {((debt / (collateral * prices.tpi)) * 100).toFixed(2)}% LTV ratio, your collateral will be liquidated
+        if TPI falls to <strong>${liquidationTpi.toFixed(3)}</strong> or if your debt rises to{' '}
         <strong>${liquidationDebt.toFixed(2)}</strong>.
       </>
     );
@@ -238,7 +326,7 @@ export const BorrowPage = () => {
       const daiContract = new ERC20__factory(signer).attach(env.contracts.dai);
       await ensureAllowance(TICKER_SYMBOL.DAI, daiContract, env.contracts.tlc, amount);
       // Repay DAI
-      const tx = await tlcContract.repay(amount, wallet, { gasLimit: 250000 });
+      const tx = await tlcContract.repay(amount, wallet, { gasLimit: 400000 });
       const receipt = await tx.wait();
       openNotification({
         title: `Repaid ${state.repayValue} DAI`,
@@ -265,7 +353,7 @@ export const BorrowPage = () => {
       const daiContract = new ERC20__factory(signer).attach(env.contracts.dai);
       await ensureAllowance(TICKER_SYMBOL.DAI, daiContract, env.contracts.tlc, amount);
       // Repay DAI
-      const tx = await tlcContract.repayAll(wallet, { gasLimit: 350000 });
+      const tx = await tlcContract.repayAll(wallet, { gasLimit: 400000 });
       const receipt = await tx.wait();
       openNotification({
         title: `Repaid ${accountPosition ? fromAtto(accountPosition.currentDebt).toFixed(2) : amount} DAI`,
@@ -285,36 +373,30 @@ export const BorrowPage = () => {
 
   const getBorrowRate = () => (tlcInfo ? (tlcInfo.borrowRate * 100).toFixed(2) : 0);
 
+  const showLoading = useMemo(() => metricsLoading || !wallet, [metricsLoading, wallet]);
+
+  const availableToBorrow = useMemo(() => {
+    if (!tlcInfo) return '...';
+
+    const availableAsBigNumber = toAtto(tlcInfo.strategyBalance);
+
+    if (tlcInfo.daiCircuitBreakerRemaining.lt(availableAsBigNumber)) {
+      return `$${Number(fromAtto(tlcInfo.daiCircuitBreakerRemaining)).toLocaleString()}`;
+    }
+
+    return `$${Number(tlcInfo.strategyBalance).toLocaleString()}`;
+  }, [tlcInfo]);
+
   return (
     <>
       <PageContainer>
-        <FlexCol>
-          <Metrics>
-            <MetricContainer>
-              <LeadMetric>${tlcInfo && Number(tlcInfo.debtCeiling).toLocaleString()}</LeadMetric>
-              <BrandParagraph>Total Debt Ceiling</BrandParagraph>
-            </MetricContainer>
-            <MetricContainer>
-              <LeadMetric>${tlcInfo && Number(tlcInfo.strategyBalance).toLocaleString()}</LeadMetric>
-              <BrandParagraph>Available to Borrow</BrandParagraph>
-            </MetricContainer>
-            <MetricContainer>
-              <LeadMetric>{getBorrowRate()}%</LeadMetric>
-              <BrandParagraph>Current Borrow APY</BrandParagraph>
-            </MetricContainer>
-          </Metrics>
-          <ChartContainer>
-            <TlcChart />
-          </ChartContainer>
-        </FlexCol>
-
         <TlcContainer>
           <TlcTabs>
             <TlcTab isActive={activeScreen == 'supply'} onClick={() => setActiveScreen('supply')}>
-              <p>Supplies</p>
+              <p>SUPPLY</p>
             </TlcTab>
             <TlcTab isActive={activeScreen == 'borrow'} onClick={() => setActiveScreen('borrow')}>
-              <p>Borrows</p>
+              <p>BORROW</p>
             </TlcTab>
           </TlcTabs>
           {activeScreen == 'supply' ? (
@@ -335,24 +417,42 @@ export const BorrowPage = () => {
                   </USDMetric>
                 </NumContainer>
               </ValueContainer>
-              <Copy>Supply TEMPLE as collateral to borrow DAI</Copy>
-              <Rule />
-              <JustifyEvenlyRow>
-                <TradeButton
-                  onClick={() => {
-                    if (wallet) setModal('supply');
-                    else connect();
-                  }}
-                >
-                  Supply
-                </TradeButton>
-                <TradeButton
-                  onClick={() => setModal('withdraw')}
-                  disabled={!accountPosition || accountPosition?.collateral.lte(0)}
-                >
-                  Withdraw
-                </TradeButton>
-              </JustifyEvenlyRow>
+              <BiggerCopy>Supply TEMPLE as collateral to borrow DAI</BiggerCopy>
+              <FillSpace minHeight="110px" />
+              <RuleContainer>
+                <Rule />
+              </RuleContainer>
+              <JustifyCenterAndAlignButtonRow>
+                {wallet ? (
+                  <>
+                    <TradeButton
+                      disabled={!accountPosition}
+                      onClick={() => {
+                        setModal('supply');
+                      }}
+                      width="175px"
+                    >
+                      Supply
+                    </TradeButton>
+                    <TradeButton
+                      onClick={() => setModal('withdraw')}
+                      disabled={!accountPosition || accountPosition?.collateral.lte(0)}
+                      width="175px"
+                    >
+                      Withdraw
+                    </TradeButton>
+                  </>
+                ) : (
+                  <TradeButton
+                    onClick={() => {
+                      connect();
+                    }}
+                    style={{ whiteSpace: 'nowrap' }}
+                  >
+                    Connect Wallet
+                  </TradeButton>
+                )}
+              </JustifyCenterAndAlignButtonRow>
               <MarginTop />
             </>
           ) : (
@@ -374,51 +474,116 @@ export const BorrowPage = () => {
                 </NumContainer>
               </ValueContainer>
               <BorrowMetricsCol>
-                <FlexBetween>
-                  <BrandParagraph>Your LTV</BrandParagraph>
-                  <p>
-                    {accountPosition?.collateral.gt(0)
-                      ? (fromAtto(accountPosition.loanToValueRatio) * 100).toFixed(2)
-                      : 0}
-                    %
-                  </p>
-                </FlexBetween>
-                <FlexBetween>
-                  <BrandParagraph>Liquidation LTV</BrandParagraph>
-                  <p>{tlcInfo ? tlcInfo.liquidationLtv * 100 : 0}%</p>
-                </FlexBetween>
-                <FlexBetween>
-                  <BrandParagraph>Interest Rate</BrandParagraph>
-                  <p>{getBorrowRate()}%</p>
-                </FlexBetween>
-                {accountPosition?.currentDebt.gt(0) && (
+                <BorrowMetricsRow>
+                  <BorrowMetric>
+                    <BrandParagraph>
+                      Current <br /> LTV
+                    </BrandParagraph>
+                    <p>
+                      {accountPosition?.collateral.gt(0)
+                        ? (fromAtto(accountPosition.loanToValueRatio) * 100).toFixed(2)
+                        : 0}
+                      %
+                    </p>
+                  </BorrowMetric>
+                  <BorrowMetric>
+                    <BrandParagraph>
+                      Liquidation <br />
+                      threshold
+                    </BrandParagraph>
+                    <p>{tlcInfo ? tlcInfo.liquidationLtv * 100 : 0}%</p>
+                  </BorrowMetric>
+                </BorrowMetricsRow>
+                <BorrowMetricsRow>
+                  <BorrowMetric>
+                    <BrandParagraph>Max LTV</BrandParagraph>
+                    <p>{MAX_LTV}%</p>
+                  </BorrowMetric>
+                  <BorrowMetric>
+                    <BrandParagraph>APY</BrandParagraph>
+                    <p>{getBorrowRate()}%</p>
+                  </BorrowMetric>
+                </BorrowMetricsRow>
+                {accountPosition?.currentDebt.gt(0) && wallet ? (
                   <>
-                    <Rule />
                     <Copy>{getLiquidationInfo()}</Copy>
                   </>
+                ) : (
+                  <FillSpace />
                 )}
               </BorrowMetricsCol>
-              <MarginTop />
-              {accountPosition?.currentDebt.gt(0) && <Copy>{getLiquidationInfo()}</Copy>}
-              <Rule />
-              <JustifyEvenlyRow>
-                <TradeButton
-                  onClick={() => setModal('borrow')}
-                  disabled={!accountPosition || accountPosition?.collateral.lte(0)}
-                >
-                  Borrow
-                </TradeButton>
-                <TradeButton
-                  onClick={() => setModal('repay')}
-                  disabled={!accountPosition || accountPosition?.currentDebt.lte(0)}
-                >
-                  Repay
-                </TradeButton>
-              </JustifyEvenlyRow>
+              <RuleContainer>
+                <Rule />
+              </RuleContainer>
+              <JustifyCenterRow>
+                {wallet ? (
+                  <>
+                    <TradeButton
+                      onClick={() => setModal('borrow')}
+                      disabled={!accountPosition || accountPosition?.collateral.lte(0)}
+                      width="175px"
+                    >
+                      Borrow
+                    </TradeButton>
+                    <TradeButton
+                      onClick={() => setModal('repay')}
+                      disabled={!accountPosition || accountPosition?.currentDebt.lte(0)}
+                      width="175px"
+                    >
+                      Repay
+                    </TradeButton>
+                  </>
+                ) : (
+                  <TradeButton
+                    onClick={() => {
+                      connect();
+                    }}
+                    style={{ whiteSpace: 'nowrap' }}
+                  >
+                    Connect Wallet
+                  </TradeButton>
+                )}
+              </JustifyCenterRow>
               <MarginTop />
             </>
           )}
         </TlcContainer>
+        <FlexCol>
+          <Metrics>
+            <MetricContainer>
+              <LeadMetric>
+                {showLoading ? '...' : tlcInfo && `$${Number(tlcInfo.debtCeiling).toLocaleString()}`}
+              </LeadMetric>
+              <BrandParagraph>Total Debt Ceiling</BrandParagraph>
+            </MetricContainer>
+            <MetricContainer>
+              <LeadMetric>{showLoading ? '...' : tlcInfo && `${availableToBorrow}`}</LeadMetric>
+              <BrandParagraph>
+                Available to Borrow
+                <Tooltip
+                  content={` The maximum borrow amount is subject to the supplied collateral and the Daily Borrow Limit across all
+            users.`}
+                  inline
+                >
+                  <InfoCircle inline>
+                    <p>i</p>
+                  </InfoCircle>
+                </Tooltip>
+              </BrandParagraph>
+            </MetricContainer>
+            <MetricContainer>
+              <LeadMetric>{showLoading ? '...' : `${getBorrowRate()}%`}</LeadMetric>
+              <BrandParagraph>Current Borrow APY </BrandParagraph>
+            </MetricContainer>
+            <MetricContainer>
+              <LeadMetric>{showLoading ? '...' : prices.tpi}</LeadMetric>
+              <BrandParagraph>Current TPI</BrandParagraph>
+            </MetricContainer>
+          </Metrics>
+          <ChartContainer>
+            <TlcChart />
+          </ChartContainer>
+        </FlexCol>
       </PageContainer>
 
       {/* Modal for executing supply/withdraw/borrow/repay */}
@@ -431,9 +596,17 @@ export const BorrowPage = () => {
               minBorrow={tlcInfo?.minBorrow}
               setState={setState}
               supply={supply}
+              prices={prices}
             />
           ) : modal === 'withdraw' ? (
-            <Withdraw accountPosition={accountPosition} state={state} setState={setState} withdraw={withdraw} />
+            <Withdraw
+              accountPosition={accountPosition}
+              state={state}
+              setState={setState}
+              withdraw={withdraw}
+              prices={prices}
+              tlcInfo={tlcInfo}
+            />
           ) : modal === 'borrow' ? (
             <Borrow
               accountPosition={accountPosition}
@@ -451,6 +624,7 @@ export const BorrowPage = () => {
               setState={setState}
               repay={repay}
               repayAll={repayAll}
+              prices={prices}
             />
           )}
         </ModalContainer>
@@ -459,14 +633,19 @@ export const BorrowPage = () => {
   );
 };
 
+type FillSpaceProps = {
+  minHeight?: string;
+};
+
+const FillSpace = styled.div<FillSpaceProps>`
+  min-height: ${({ minHeight }) => minHeight || '70px'};
+`;
+
 const PageContainer = styled.div`
   display: flex;
-  flex-direction: row;
-  padding: 1rem 0 2rem 2rem;
+  flex-direction: column;
+  align-items: center;
   @media (max-width: 1240px) {
-    flex-direction: column-reverse;
-    gap: 3rem;
-    align-items: center;
     padding: 1rem 0rem;
   }
 `;
@@ -474,18 +653,22 @@ const PageContainer = styled.div`
 const FlexCol = styled.div`
   display: flex;
   flex-direction: column;
+  padding-top: 2rem;
+  padding-bottom: 2rem;
 `;
 
 const ChartContainer = styled.div`
-  width: 750px;
-  margin-right: 3rem;
+  width: 1150px;
+  @media (max-width: 1350px) {
+    width: 800px;
+    margin-right: 0;
+  }
   @media (max-width: 768px) {
     width: 500px;
     margin-right: 0;
   }
   @media (max-width: 500px) {
     width: 350px;
-    margin-left: -4rem;
   }
 `;
 
@@ -495,11 +678,11 @@ const TlcContainer = styled.div`
   justify-content: start;
   text-align: center;
   border: 1px solid ${({ theme }) => theme.palette.brand};
+
   border-radius: 10px;
   color: ${({ theme }) => theme.palette.brand};
-  width: 350px;
-  height: min-content;
-  margin-left: 2rem;
+  width: 560px;
+  height: 405px;
 `;
 
 const TlcTabs = styled.div`
@@ -576,6 +759,12 @@ export const Copy = styled.p`
   font-size: 0.9rem;
 `;
 
+const BiggerCopy = styled.p`
+  color: ${({ theme }) => theme.palette.brandLight};
+  letter-spacing: 0.05rem;
+  font-size: 1rem;
+`;
+
 const ModalContainer = styled.div`
   display: flex;
   flex-direction: column;
@@ -585,6 +774,11 @@ const ModalContainer = styled.div`
   width: 350px;
 `;
 
+const RuleContainer = styled.div`
+  width: 50%;
+  align-self: center;
+`;
+
 export const Rule = styled.hr`
   border: 0;
   border-top: 1px solid ${({ theme }) => theme.palette.brand};
@@ -592,6 +786,7 @@ export const Rule = styled.hr`
 `;
 
 const BrandParagraph = styled.p`
+  text-align: left;
   color: ${({ theme }) => theme.palette.brand};
 `;
 
@@ -607,6 +802,29 @@ export const FlexBetween = styled.div`
   }
 `;
 
+const BorrowMetric = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: ${({ theme }) => theme.palette.brandLight};
+
+  p {
+    font-size: 1rem;
+    margin: 0.5rem 0;
+  }
+  width: 100%;
+  padding-left: 2rem;
+  padding-right: 2rem;
+`;
+
+const BorrowMetricsRow = styled.div`
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  padding-left: 2rem;
+  padding-right: 2rem;
+`;
+
 const BorrowMetricsCol = styled.div`
   display: flex;
   flex-direction: column;
@@ -614,15 +832,23 @@ const BorrowMetricsCol = styled.div`
   padding: 0 2rem;
 `;
 
-const JustifyEvenlyRow = styled.div`
+const JustifyCenterAndAlignButtonRow = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 1rem;
+`;
+
+const JustifyCenterRow = styled.div`
   display: flex;
   flex-direction: row;
-  justify-content: space-evenly;
+  justify-content: center;
+  gap: 1rem;
 `;
 
 const Metrics = styled.div`
   display: flex;
-  justify-content: space-between;
+  justify-content: space-evenly;
   align-items: center;
   color: ${({ theme }) => theme.palette.brandLight};
   @media (max-width: 768px) {
@@ -734,10 +960,14 @@ export const Warning = styled.div`
   margin-bottom: -0.5rem;
 `;
 
-export const InfoCircle = styled.div`
+type InfoCircleProps = {
+  inline?: boolean;
+};
+
+export const InfoCircle = styled.div<InfoCircleProps>`
   margin: 0.25rem;
   padding: 0.5rem;
-  display: flex;
+  display: ${({ inline }) => (inline ? 'inline-flex' : 'flex')};
   align-items: center;
   justify-content: center;
   width: 1.25rem;

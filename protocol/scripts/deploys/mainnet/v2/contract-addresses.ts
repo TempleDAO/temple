@@ -7,6 +7,8 @@ import {
     GnosisStrategy,
     GnosisStrategy__factory,
     LinearWithKinkInterestRateModel, LinearWithKinkInterestRateModel__factory,
+    MultiOtcOffer,
+    MultiOtcOffer__factory,
     OtcOffer,
     OtcOffer__factory,
     Ramos, Ramos__factory,
@@ -91,6 +93,7 @@ export interface ContractAddresses {
                 OHM_DAI: string,
                 DAI_OHM: string,
                 DAI_GOHM: string,
+                MULTI_OTC_OFFER: string,
             },
         },
         RAMOS_STRATEGY: {
@@ -193,6 +196,7 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
                     OHM_DAI: '0xA8a742A05982f853fb5836d040cf3498249041B9',
                     DAI_OHM: '0x687A4B0Ac18Ed3796D55E6A1d747bD75591a8bac',
                     DAI_GOHM: '0x2c4b131BEf9d676877Ae0b5b2B46914b07FB9272',
+                    MULTI_OTC_OFFER: '0x0090F9655a0B0A32cEE0Da5ae45E93EAB4C6d149',
                 },
             },
             RAMOS_STRATEGY: {
@@ -299,6 +303,7 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
                     OHM_DAI: '',
                     DAI_OHM: '',
                     DAI_GOHM: '',
+                    MULTI_OTC_OFFER: '',
                 },
             },
             RAMOS_STRATEGY: {
@@ -407,6 +412,7 @@ export interface ContractInstances {
                 OHM_DAI: OtcOffer,
                 DAI_OHM: OtcOffer,
                 DAI_GOHM: OtcOffer,
+                MULTI_OTC_OFFER: MultiOtcOffer,
             },
         },
     },
@@ -483,6 +489,7 @@ export function connectToContracts(owner: Signer): ContractInstances {
                     OHM_DAI: OtcOffer__factory.connect(TEMPLE_V2_ADDRESSES.STRATEGIES.FOHMO_GNOSIS_STRATEGY.OTC_OFFER.OHM_DAI, owner),
                     DAI_OHM: OtcOffer__factory.connect(TEMPLE_V2_ADDRESSES.STRATEGIES.FOHMO_GNOSIS_STRATEGY.OTC_OFFER.DAI_OHM, owner),
                     DAI_GOHM: OtcOffer__factory.connect(TEMPLE_V2_ADDRESSES.STRATEGIES.FOHMO_GNOSIS_STRATEGY.OTC_OFFER.DAI_GOHM, owner),
+                    MULTI_OTC_OFFER: MultiOtcOffer__factory.connect(TEMPLE_V2_ADDRESSES.STRATEGIES.FOHMO_GNOSIS_STRATEGY.OTC_OFFER.MULTI_OTC_OFFER, owner),
                 },
             },
         },

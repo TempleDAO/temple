@@ -73,6 +73,8 @@ const env: Environment = {
       temploMayorGnosisStrategy: '0xb28FEC0EE90680EE25d42e8101159a72E359be7c',
       fohmoGnosisStrategy: '0xF179C63735690d2C08cfb231d15c0c7ac3A2Bc67',
     },
+    daiCircuitBreaker: '0x02607d6bc3146bb3d3022e991ef54f545988fb7b',
+    templeCircuitBreaker: '0x0745D453A19DfEAd0e5fd350a231D878F5c71b8D',
   },
   gas: {
     swapFraxForTemple: 300000,
@@ -148,7 +150,7 @@ const env: Environment = {
     balancerV2: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-balancer-v2',
     // TODO: Will be deprecated
     ramos: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-ramos',
-    templeV2: 'https://api.thegraph.com/subgraphs/name/medariox/v2-mainnet',
+    templeV2: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-v2-mainnet',
     // Original Balancer Subgraph
     // balancerV2: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-v2-beta',
   },

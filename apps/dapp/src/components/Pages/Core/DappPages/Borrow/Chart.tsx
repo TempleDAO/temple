@@ -1,4 +1,4 @@
-import { ChartSupportedTimeInterval, LabeledTimeIntervals, TIME_INTERVAL } from 'utils/time-intervals';
+import { LabeledTimeIntervals, TIME_INTERVAL } from 'utils/time-intervals';
 import type { AxisDomain } from 'recharts/types/util/types';
 import { useEffect, useState } from 'react';
 import styled, { useTheme } from 'styled-components';
@@ -30,14 +30,14 @@ const tooltipLabelFormatters: Record<ChartIntervals, XAxisTickFormatter> = {
   ...tickFormatters,
 };
 
-type Metric = { timestamp: number; utilRatio: number; interestRate: number };
+type Metric = { timestamp: number; utilRatio: number; interestYield: number };
 
 const tooltipValuesFormatter = (value: number, name: string) => [
   `${formatNumberFixedDecimals(value, 4).toString()}%`,
   name,
 ];
 
-const yDomain: AxisDomain = ([dataMin, dataMax]) => [dataMin * 0.5, Number((dataMax * 1.5).toFixed(2))];
+const yDomain: AxisDomain = [0, 100];
 
 export const TlcChart = () => {
   const [selectedInterval, setSelectedInterval] = useState<ChartIntervals>('1M');
@@ -52,7 +52,7 @@ export const TlcChart = () => {
             tlcDailySnapshots(orderBy: timestamp, orderDirection: desc) {
               timestamp
               utilRatio
-              interestRate
+              interestYield
             }
           }`
       );
@@ -66,7 +66,7 @@ export const TlcChart = () => {
   const formattedData = formatDailyDataPoints(metrics, CHART_INTERVALS, new Date().getTime(), (metric) => ({
     timestamp: metric.timestamp * 1000,
     utilRatio: metric.utilRatio * 100,
-    interestRate: metric.interestRate * 100,
+    interestYield: metric.interestYield * 100,
   }));
 
   return (
@@ -83,11 +83,11 @@ export const TlcChart = () => {
           chartData={formattedData[selectedInterval].reverse()}
           xDataKey="timestamp"
           lines={[
-            { series: 'interestRate', color: theme.palette.brand },
+            { series: 'interestYield', color: theme.palette.brand },
             { series: 'utilRatio', color: theme.palette.light },
           ]}
           xTickFormatter={tickFormatters[selectedInterval]}
-          yTickFormatter={(val, i) => formatNumberAbbreviated(val).string + '%'}
+          yTickFormatter={(val, i) => formatNumberAbbreviated(val).number.toFixed(2) + '%'}
           tooltipLabelFormatter={tooltipLabelFormatters[selectedInterval]}
           yDomain={yDomain}
           legendFormatter={(name) => (name === 'utilRatio' ? 'Utilization Rate' : 'Interest Rate')}

@@ -353,10 +353,11 @@ export const LaunchAppButton = styled(Button)`
   color: ${({ theme }) => theme.palette.brandLight};
 `;
 
+
 export const TradeButton = styled(Button)`
   padding: 0.75rem 1.5rem;
   margin-top: 1.5rem;
-  width: min-content;
+  width: ${(props) => props.width || 'min-content'};
   height: min-content;
   background: ${({ theme }) => theme.palette.gradients.dark};
   border: 1px solid ${({ theme }) => theme.palette.brandDark};

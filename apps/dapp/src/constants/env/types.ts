@@ -47,6 +47,8 @@ interface Contracts {
   };
   ramosPoolHelper: string;
   balancerHelpers: string;
+  daiCircuitBreaker: string;
+  templeCircuitBreaker: string;
 }
 
 interface Gas {

@@ -55,13 +55,12 @@ const V2Layout = () => {
       Logo: Dashboard,
       selected: V2DashboardLocPaths.Trv === loc.pathname,
     },
-    // TODO: Hidden until launch
-    // {
-    //   label: 'Borrow',
-    //   linkTo: V2DashboardLocPaths.Borrow,
-    //   Logo: Payments,
-    //   selected: V2DashboardLocPaths.Borrow === loc.pathname,
-    // },
+    {
+      label: 'Borrow',
+      linkTo: V2DashboardLocPaths.Borrow,
+      Logo: Payments,
+      selected: V2DashboardLocPaths.Borrow === loc.pathname,
+    },
     {
       label: 'Ohmage',
       linkTo: V2DashboardLocPaths.Ohmage,
