@@ -10,7 +10,7 @@ import env from 'constants/env';
 export enum DashboardType {
   TREASURY_RESERVES_VAULT,
   RAMOS,
-  // TLC, TODO: Hidden until launch
+  TLC,
   TEMPLE_BASE,
   DSR_BASE,
   TEMPLO_MAYOR_GNOSIS,
@@ -52,14 +52,13 @@ const DashboardContent = ({ selectedDashboard = DashboardType.TREASURY_RESERVES_
       chartStrategyNames: [StrategyKey.RAMOS],
       link: `${env.etherscan}/address/${env.contracts.strategies.ramosStrategy}`,
     },
-    // TODO: Hidden until launch
-    // [DashboardType.TLC]: {
-    //   title: 'TLC',
-    //   description:
-    //     'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque vehicula tincidunt eleifend. Nam congue magna in mi dignissim, id gravida sem ornare. Sed in nunc fermentum, consectetur ipsum a, varius augue. Nullam finibus velit eget ligula efficitur, in luctus lacus efficitur. Nam egestas tempor gravida. Ut mollis libero ac tincidunt fermentum. Etiam et ante vitae metus ultrices tempus.',
-    //   chartStrategyNames: [StrategyKey.TLC],
-    // link: `${env.etherscan}/address/${env.contracts.strategies.tlcStrategy}`,
-    // },
+    [DashboardType.TLC]: {
+      title: 'TLC',
+      description:
+        'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque vehicula tincidunt eleifend. Nam congue magna in mi dignissim, id gravida sem ornare. Sed in nunc fermentum, consectetur ipsum a, varius augue. Nullam finibus velit eget ligula efficitur, in luctus lacus efficitur. Nam egestas tempor gravida. Ut mollis libero ac tincidunt fermentum. Etiam et ante vitae metus ultrices tempus.',
+      chartStrategyNames: [StrategyKey.TLC],
+    link: `${env.etherscan}/address/${env.contracts.strategies.tlcStrategy}`,
+    },
     [DashboardType.TEMPLE_BASE]: {
       title: 'Temple Base',
       description: 'Temple Base strategy is the source of automated market operations (AMO) TEMPLE tokens in the Treasury framework. The TRV facilitates the withdrawal of newly minted TEMPLE tokens from and the issuance of TEMPLE debt to the Temple Base strategy. These TEMPLE tokens will be borrowed by a Treasury Strategy such as Ramos to generate returns. Once these tokens are repaid to the TRV, they will be deposited to the Temple Base strategy to be burned. From the perspective of the TRV, positive returns will be realized when TEMPLE flows to the Temple Base strategy is net positive.',

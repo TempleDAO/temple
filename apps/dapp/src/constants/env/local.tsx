@@ -45,7 +45,9 @@ const env: Environment = {
       tlcStrategy: '',
       temploMayorGnosisStrategy: '',
       fohmoGnosisStrategy: '',
-    }
+    },
+    daiCircuitBreaker: '',
+    templeCircuitBreaker: '',
   },
   infuraId: '4cd22916292d4fb6be156454978c326b',
   subgraph: {
