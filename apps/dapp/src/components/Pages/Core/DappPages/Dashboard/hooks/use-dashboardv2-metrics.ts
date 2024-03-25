@@ -138,8 +138,8 @@ export default function useDashboardV2Metrics(dashboardType: DashboardType) {
       switch (dashboardType) {
         case DashboardType.TREASURY_RESERVES_VAULT:
           return treasuryReservesVaultMetrics.data && getArrangedTreasuryReservesVaultMetrics(treasuryReservesVaultMetrics.data);
-        // case DashboardType.TLC: // TODO: Hidden until launch
-        //   return tlcMetrics.data && getArrangedStrategyMetrics(tlcMetrics.data);
+        case DashboardType.TLC:
+          return tlcMetrics.data && getArrangedStrategyMetrics(tlcMetrics.data);
         case DashboardType.RAMOS:
           return ramosMetrics.data && getArrangedStrategyMetrics(ramosMetrics.data);
         case DashboardType.TEMPLE_BASE:

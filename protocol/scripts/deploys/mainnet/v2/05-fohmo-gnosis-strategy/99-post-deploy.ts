@@ -92,6 +92,50 @@ async function setup() {
     }
 }
 
+async function setupMultiOtcMarkets() {
+    // dai-ohm. `userBuyToken` is DAI
+    await mine(TEMPLE_V2_INSTANCES.STRATEGIES.FOHMO_GNOSIS_STRATEGY.OTC_OFFER.MULTI_OTC_OFFER.addOtcMarket(
+        {
+            fundsOwner: TEMPLE_V2_ADDRESSES.STRATEGIES.FOHMO_GNOSIS_STRATEGY.UNDERLYING_GNOSIS_SAFE,
+            userBuyToken: TEMPLE_V2_ADDRESSES.EXTERNAL.MAKER_DAO.DAI_TOKEN,
+            userSellToken: TEMPLE_V2_ADDRESSES.EXTERNAL.OLYMPUS.OHM_TOKEN,
+            offerPricingToken: 0, // userBuyToken
+            minValidOfferPrice: ethers.utils.parseEther("11"), // minOfferPrice
+            maxValidOfferPrice: ethers.utils.parseEther("12"), //maxOfferPrice
+            scalar: 0, // default scalar
+            offerPrice: ethers.utils.parseEther("11.8") // offerPrice
+        }
+    ));
+
+    // ohm-dai. `userBuyToken` is OHM
+    await mine(TEMPLE_V2_INSTANCES.STRATEGIES.FOHMO_GNOSIS_STRATEGY.OTC_OFFER.MULTI_OTC_OFFER.addOtcMarket(
+        {
+            fundsOwner: TEMPLE_V2_ADDRESSES.STRATEGIES.FOHMO_GNOSIS_STRATEGY.UNDERLYING_GNOSIS_SAFE,
+            userBuyToken: TEMPLE_V2_ADDRESSES.EXTERNAL.OLYMPUS.OHM_TOKEN,
+            userSellToken: TEMPLE_V2_ADDRESSES.EXTERNAL.MAKER_DAO.DAI_TOKEN,
+            offerPricingToken: 1,
+            minValidOfferPrice: ethers.utils.parseEther("13.75"),
+            maxValidOfferPrice: ethers.utils.parseEther("19"),
+            scalar: 0,
+            offerPrice: ethers.utils.parseEther("13.9"),
+        }
+    ));
+
+    // dai-gohm
+    await mine(TEMPLE_V2_INSTANCES.STRATEGIES.FOHMO_GNOSIS_STRATEGY.OTC_OFFER.MULTI_OTC_OFFER.addOtcMarket(
+        {
+            fundsOwner: TEMPLE_V2_ADDRESSES.STRATEGIES.FOHMO_GNOSIS_STRATEGY.UNDERLYING_GNOSIS_SAFE,
+            userBuyToken: TEMPLE_V2_ADDRESSES.EXTERNAL.MAKER_DAO.DAI_TOKEN,
+            userSellToken: TEMPLE_V2_ADDRESSES.EXTERNAL.OLYMPUS.GOHM_TOKEN,
+            offerPricingToken: 0,
+            minValidOfferPrice: ethers.utils.parseEther("2900"),
+            maxValidOfferPrice: ethers.utils.parseEther("3300"),
+            scalar: 0,
+            offerPrice: ethers.utils.parseEther("3177"),
+        }
+    ));
+}
+
 async function proposeExecutor(contract: TempleElevatedAccess, executor: string) {
     console.log(`proposing executor for contract: ${contract.address} = ${executor}`);
     await mine(contract.proposeNewExecutor(executor));
@@ -110,6 +154,10 @@ async function transferOwnership() {
     // await proposeCore(TEMPLE_V2_INSTANCES.STRATEGIES.FOHMO_GNOSIS_STRATEGY.CIRCUIT_BREAKERS.TEMPLE);
 
     await mine(TEMPLE_V2_INSTANCES.STRATEGIES.FOHMO_GNOSIS_STRATEGY.OTC_OFFER.OHM_DAI.transferOwnership(TEMPLE_V2_ADDRESSES.CORE.EXECUTOR_MSIG));
+    await proposeExecutor(
+        TEMPLE_V2_INSTANCES.STRATEGIES.FOHMO_GNOSIS_STRATEGY.OTC_OFFER.MULTI_OTC_OFFER,
+        TEMPLE_V2_ADDRESSES.CORE.EXECUTOR_MSIG,
+    );
 }
 
 async function main() {
@@ -120,7 +168,9 @@ async function main() {
 
     // await setup();
     // await setupFromExecutorMultisig();
-    await transferOwnership();
+    // await setupMultiOtcMarkets();
+
+    // await transferOwnership();
 }
 
 // We recommend this pattern to be able to use async/await everywhere

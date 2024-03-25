@@ -20,9 +20,9 @@ import {
   TlcInfo,
   Warning,
 } from '../index';
-import { fromAtto } from 'utils/bigNumber';
+import { fromAtto, toAtto } from 'utils/bigNumber';
 import styled from 'styled-components';
-import { ReactNode, useState } from 'react';
+import { ReactNode, useEffect, useMemo, useState } from 'react';
 
 interface IProps {
   accountPosition: ITlcDataTypes.AccountPositionStructOutput | undefined;
@@ -34,18 +34,45 @@ interface IProps {
   borrow: () => void;
 }
 
-export const Borrow: React.FC<IProps> = ({ accountPosition, state, tlcInfo, liquidationInfo, setState, borrow }) => {
+export const Borrow: React.FC<IProps> = ({
+  accountPosition,
+  state,
+  tlcInfo,
+  liquidationInfo,
+  setState,
+  borrow,
+  prices,
+}) => {
   const [checkbox, setCheckbox] = useState(false);
 
   const getEstimatedLTV = (): string => {
+    const tpi = prices.tpi;
     return accountPosition
       ? (
           ((fromAtto(accountPosition.currentDebt) + Number(state.borrowValue)) /
-            fromAtto(accountPosition?.collateral)) *
+            (fromAtto(accountPosition?.collateral) * tpi)) *
           100
         ).toFixed(2)
       : '0.00';
   };
+
+  const maxBorrowValueWithCircuitBreaker = useMemo((): { value: number; isCircuitBreakerActive: boolean } => {
+    const userMaxBorrow = accountPosition
+      ? fromAtto(accountPosition.collateral) * prices.tpi * (MAX_LTV / 100) - fromAtto(accountPosition.currentDebt)
+      : 0;
+
+    const userMaxBorrowBigNumber = toAtto(userMaxBorrow);
+
+    if (!tlcInfo) {
+      return { value: userMaxBorrow, isCircuitBreakerActive: false };
+    }
+
+    if (tlcInfo.daiCircuitBreakerRemaining.lt(userMaxBorrowBigNumber)) {
+      return { value: fromAtto(tlcInfo.daiCircuitBreakerRemaining), isCircuitBreakerActive: true };
+    }
+
+    return { value: userMaxBorrow, isCircuitBreakerActive: false };
+  }, [tlcInfo, accountPosition, prices.tpi]);
 
   return (
     <>
@@ -63,22 +90,11 @@ export const Borrow: React.FC<IProps> = ({ accountPosition, state, tlcInfo, liqu
         onHintClick={() => {
           setState({
             ...state,
-            borrowValue: accountPosition
-              ? (
-                  fromAtto(accountPosition.collateral) * (MAX_LTV / 100) -
-                  fromAtto(accountPosition.currentDebt)
-                ).toFixed(2)
-              : '0',
+            borrowValue: maxBorrowValueWithCircuitBreaker.value.toFixed(2),
           });
         }}
         min={1000}
-        hint={`Max: ${
-          accountPosition
-            ? (fromAtto(accountPosition.collateral) * (MAX_LTV / 100) - fromAtto(accountPosition.currentDebt)).toFixed(
-                2
-              )
-            : 0
-        }`}
+        hint={`Max: ${maxBorrowValueWithCircuitBreaker.value.toFixed(2)}`}
         width="100%"
       />
 
@@ -92,6 +108,17 @@ export const Borrow: React.FC<IProps> = ({ accountPosition, state, tlcInfo, liqu
           </p>
         </Warning>
       )}
+      {tlcInfo && tlcInfo.minBorrow < Number(state.borrowValue) && (
+        <Warning>
+          <InfoCircle>
+            <p>i</p>
+          </InfoCircle>
+          <p>
+            The maximum borrow amount is subject to the supplied collateral and the Daily Borrow Limit for across all
+            users.
+          </p>
+        </Warning>
+      )}
       {tlcInfo && tlcInfo.strategyBalance < Number(state.borrowValue) && (
         <Warning>
           <InfoCircle>
@@ -100,7 +127,7 @@ export const Borrow: React.FC<IProps> = ({ accountPosition, state, tlcInfo, liqu
           <p>
             Amount exceeds available DAI.
             <br />
-            Current max borrow: {tlcInfo.strategyBalance.toFixed(4)} DAI
+            Current max borrow: {tlcInfo.strategyBalance ? Number(tlcInfo.strategyBalance).toFixed(4) : 0} DAI
           </p>
         </Warning>
       )}
@@ -115,7 +142,7 @@ export const Borrow: React.FC<IProps> = ({ accountPosition, state, tlcInfo, liqu
           if (ltvPercent < minLtv) ltvPercent = minLtv;
           // Compute the DAI value for the input element based on the LTV change
           const daiValue = (
-            fromAtto(accountPosition.collateral) * ltvPercent -
+            fromAtto(accountPosition.collateral) * prices.tpi * ltvPercent -
             fromAtto(accountPosition.currentDebt)
           ).toFixed(2);
           setState({ ...state, borrowValue: `${Number(daiValue) > 0 ? daiValue : '0'}` });
@@ -150,7 +177,10 @@ export const Borrow: React.FC<IProps> = ({ accountPosition, state, tlcInfo, liqu
             !checkbox ||
             (accountPosition && fromAtto(accountPosition.maxBorrow) < Number(state.borrowValue)) ||
             (tlcInfo && tlcInfo.minBorrow > Number(state.borrowValue)) ||
-            (tlcInfo && tlcInfo.strategyBalance < Number(state.borrowValue))
+            (tlcInfo && tlcInfo.strategyBalance < Number(state.borrowValue)) ||
+            Number(getEstimatedLTV()) > MAX_LTV ||
+            (maxBorrowValueWithCircuitBreaker.isCircuitBreakerActive &&
+              Number(state.borrowValue) > maxBorrowValueWithCircuitBreaker.value)
           }
         >
           Borrow

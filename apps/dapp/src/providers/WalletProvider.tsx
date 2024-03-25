@@ -1,4 +1,4 @@
-import { createContext, PropsWithChildren, useContext, useEffect, useState } from 'react';
+import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useState } from 'react';
 import { BigNumber, ethers, Signer } from 'ethers';
 import { useConnectWallet } from '@web3-onboard/react';
 
@@ -146,14 +146,14 @@ export const WalletProvider = (props: PropsWithChildren<object>) => {
     };
   };
 
-  const updateBalance = async () => {
+  const updateBalance = useCallback(async () => {
     if (!walletAddress || !signer) {
       return;
     }
 
     const balance = await getBalance(walletAddress, signer);
     setBalanceState(balance);
-  };
+  }, [walletAddress, signer]);
 
   /**
    * Always use this to increase allowance for TOKENS

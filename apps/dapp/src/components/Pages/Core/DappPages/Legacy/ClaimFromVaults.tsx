@@ -6,13 +6,13 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Vault, VaultGroup } from 'components/Vault/types';
 import { BigNumber, ethers } from 'ethers';
 import { useWithdrawFromVault } from 'hooks/core/use-withdraw-from-vault';
-import { VaultButton } from '../../VaultPages/VaultContent';
 import env from 'constants/env';
 import { useConnectWallet } from '@web3-onboard/react';
 import { TradeButton } from '../../NewUI/Home';
 import { ERC20__factory } from 'types/typechain';
 import { useWallet } from 'providers/WalletProvider';
 import { useNotification } from 'providers/NotificationProvider';
+import { VaultButton } from '../../VaultPages/VaultContent';
 
 const EMPTY_CLAIM_STATE = {
   claimSubvaultAddress: '',
@@ -176,6 +176,8 @@ export const ClaimFromVaults = () => {
 
 const ButtonContainer = styled.div`
   display: flex;
+  width: 100%;
+  justify-content: center;
 `;
 
 const ErrorLabel = styled.span`
