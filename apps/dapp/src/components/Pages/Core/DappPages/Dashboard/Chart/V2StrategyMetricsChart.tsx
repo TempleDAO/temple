@@ -73,17 +73,29 @@ const V2StrategyMetricsChart: React.FC<{
   selectedInterval: ChartSupportedTimeInterval;
 }> = ({ dashboardType, selectedMetric, selectedInterval, strategyNames }) => {
   // uncamel-case the metric names
-  const formatMetricName = (name: string) =>
-    // format only the selected metric name (the selected metric or all lines in a TRV chart)
-    name === selectedMetric || dashboardType === DashboardType.TREASURY_RESERVES_VAULT
-      ? name
+  const formatMetricName = (name: string) => {
+    // format only
+    // - the selected metric
+    // - all lines in TRV chart
+    // - netDebt chart components
+    // the remaining cases are individual debt tokens (sUSDe, sDAI, rsETH, ...)
+    // which we keep as is
+    if (
+      name === selectedMetric ||
+      dashboardType === DashboardType.TREASURY_RESERVES_VAULT ||
+      selectedMetric === 'netDebtUSD'
+    ) {
+      return (
+        name
           // // insert a space before all caps
           .replace(/([A-Z][a-z])/g, ' $1')
           // // uppercase the first character
           .replace(/^./, (str) => str.toUpperCase())
           .replace(/USD$/, '')
-      : // Individual debt token tickers remain unchanged
-        name;
+      );
+    }
+    return name;
+  };
   const tooltipValuesFormatter = (value: number, name: string) => [
     numberFormatter.format(value),
     formatMetricName(name),
