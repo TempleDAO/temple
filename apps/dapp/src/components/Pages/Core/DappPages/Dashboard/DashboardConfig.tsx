@@ -6,7 +6,7 @@ import env from 'constants/env';
 */
 export enum StrategyKey {
   RAMOS = 'RamosStrategy',
-  // TLC = 'TlcStrategy',
+  TLC = 'TlcStrategy',
   TEMPLEBASE = 'TempleBaseStrategy',
   DSRBASE = 'DsrBaseStrategy',
   TEMPLO_MAYOR_GNOSIS = 'TemploMayorStrategy',
@@ -49,15 +49,15 @@ export const Dashboards: DashboardData[] = [
       'Ramos is the automated market operations (AMO) manager that supplies liquidity to the TEMPLE/DAI pool on the Balancer Exchange platform. A bot manages the contract to support TEMPLE trading, reduce price volatility, and earn farming rewards.',
     contractLink: `${env.etherscan}/address/${env.contracts.strategies.ramosStrategy}`,
   },
-  //   { // TODO: Hidden until launch
-  // key: DashboardKey.TLC,
-  // name: 'TLC',
-  // title: 'TLC',
-  // path: 'tlc',
-  // description:
-  //   'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque vehicula tincidunt eleifend. Nam congue magna in mi dignissim, id gravida sem ornare. Sed in nunc fermentum, consectetur ipsum a, varius augue. Nullam finibus velit eget ligula efficitur, in luctus lacus efficitur. Nam egestas tempor gravida. Ut mollis libero ac tincidunt fermentum. Etiam et ante vitae metus ultrices tempus.',
-  // contractLink: `${env.etherscan}/address/${env.contracts.strategies.tlcStrategy}`,
-  //   },
+  {
+    key: StrategyKey.TLC,
+    name: 'TLC',
+    title: 'TLC',
+    path: 'tlc',
+    description:
+      'Temple Loving Care (also known as Temple Line of Credit) offers DAI lending for users who supply TEMPLE token as collateral. The value of the collateral is not determined by the current $TEMPLE spot price on the Balancer DEX but by the current Treasury Price Index (TPI). Users may borrow up to 75% loan-to-value (LTV) with the liquidation LTV set to 80%. There are no origination fees and users can withdraw their collateral at any time by repaying the DAI loan. TLC interest rate is a variable APR that is dependent on Debt Ceiling Utilisation. Any accrued interest will increase LTV over time. Borrowers can expect the APR to be set no lower than the prevailing APR for the Treasury DAI Base Strategy. <a target="_blank" href="https://templedao.medium.com/he-who-controls-the-spice-controls-the-universe-bae5fb92bd43">Click here</a> to learn more about Temple Loving Care.',
+    contractLink: `${env.etherscan}/address/${env.contracts.strategies.tlcStrategy}`,
+  },
   {
     key: StrategyKey.TEMPLEBASE,
     name: 'Temple Base',
