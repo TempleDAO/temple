@@ -55,13 +55,14 @@ const DashboardContent = ({ selectedDashboard = DashboardType.TREASURY_RESERVES_
     [DashboardType.TLC]: {
       title: 'TLC',
       description:
-        'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque vehicula tincidunt eleifend. Nam congue magna in mi dignissim, id gravida sem ornare. Sed in nunc fermentum, consectetur ipsum a, varius augue. Nullam finibus velit eget ligula efficitur, in luctus lacus efficitur. Nam egestas tempor gravida. Ut mollis libero ac tincidunt fermentum. Etiam et ante vitae metus ultrices tempus.',
+        'Temple Loving Care (also known as Temple Line of Credit) offers DAI lending for users who supply TEMPLE token as collateral. The value of the collateral is not determined by the current $TEMPLE spot price on the Balancer DEX but by the current Treasury Price Index (TPI). Users may borrow up to 75% loan-to-value (LTV) with the liquidation LTV set to 80%. There are no origination fees and users can withdraw their collateral at any time by repaying the DAI loan. TLC interest rate is a variable APR that is dependent on Debt Ceiling Utilisation. Any accrued interest will increase LTV over time. Borrowers can expect the APR to be set no lower than the prevailing APR for the Treasury DAI Base Strategy. <a target="_blank" href="https://templedao.medium.com/he-who-controls-the-spice-controls-the-universe-bae5fb92bd43">Click here</a> to learn more about Temple Loving Care.',
       chartStrategyNames: [StrategyKey.TLC],
-    link: `${env.etherscan}/address/${env.contracts.strategies.tlcStrategy}`,
+      link: `${env.etherscan}/address/${env.contracts.strategies.tlcStrategy}`,
     },
     [DashboardType.TEMPLE_BASE]: {
       title: 'Temple Base',
-      description: 'Temple Base strategy is the source of automated market operations (AMO) TEMPLE tokens in the Treasury framework. The TRV facilitates the withdrawal of newly minted TEMPLE tokens from and the issuance of TEMPLE debt to the Temple Base strategy. These TEMPLE tokens will be borrowed by a Treasury Strategy such as Ramos to generate returns. Once these tokens are repaid to the TRV, they will be deposited to the Temple Base strategy to be burned. From the perspective of the TRV, positive returns will be realized when TEMPLE flows to the Temple Base strategy is net positive.',
+      description:
+        'Temple Base strategy is the source of automated market operations (AMO) TEMPLE tokens in the Treasury framework. The TRV facilitates the withdrawal of newly minted TEMPLE tokens from and the issuance of TEMPLE debt to the Temple Base strategy. These TEMPLE tokens will be borrowed by a Treasury Strategy such as Ramos to generate returns. Once these tokens are repaid to the TRV, they will be deposited to the Temple Base strategy to be burned. From the perspective of the TRV, positive returns will be realized when TEMPLE flows to the Temple Base strategy is net positive.',
       chartStrategyNames: [StrategyKey.TEMPLEBASE],
       link: `${env.etherscan}/address/${env.contracts.strategies.templeStrategy}`,
     },
@@ -81,8 +82,7 @@ const DashboardContent = ({ selectedDashboard = DashboardType.TREASURY_RESERVES_
     },
     [DashboardType.FOHMO_GNOSIS]: {
       title: 'Fohmo',
-      description:
-        '',
+      description: '',
       chartStrategyNames: [StrategyKey.FOHMO_GNOSIS],
       link: `${env.etherscan}/address/${env.contracts.strategies.fohmoGnosisStrategy}`,
     },
@@ -95,9 +95,9 @@ const DashboardContent = ({ selectedDashboard = DashboardType.TREASURY_RESERVES_
       <Header>
         <HeaderTextContainer>
           <HeaderTitle>{dashboard.title}</HeaderTitle>
-          <LinkIcon onClick={() => window.open(dashboard.link, "_blank")}/>
+          <LinkIcon onClick={() => window.open(dashboard.link, '_blank')} />
         </HeaderTextContainer>
-        <HeaderText>{dashboard.description}</HeaderText>
+        <HeaderText dangerouslySetInnerHTML={{ __html: dashboard.description }} />
       </Header>
       <DashboardChart dashboardType={selectedDashboard} strategyNames={dashboard.chartStrategyNames} />
       <DashboardMetrics dashboardType={selectedDashboard} />
@@ -107,7 +107,7 @@ const DashboardContent = ({ selectedDashboard = DashboardType.TREASURY_RESERVES_
 };
 
 const LinkIcon = styled(linkSvg)`
-  fill:${({theme}) => theme.palette.brand};
+  fill: ${({ theme }) => theme.palette.brand};
   cursor: pointer;
 `;
 
