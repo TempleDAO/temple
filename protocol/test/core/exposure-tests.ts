@@ -43,12 +43,12 @@ describe("Temple Core Exposures", async () => {
 
   it("Only owner can set/change liquidator", async () => {
     await expect(exposure.connect(alan).setLiqidator(NULL_ADDR))
-      .to.revertedWith("Ownable: caller is not the owner");
+      .to.revertedWithCustomError(exposure, "OwnableUnauthorizedAccount").withArgs(await alan.getAddress());
   })
 
   it("Only owner can set/change minter state", async () => {
     await expect(exposure.connect(alan).setMinterState(await ben.getAddress(), true))
-      .to.revertedWith("Ownable: caller is not the owner");
+      .to.revertedWithCustomError(exposure, "OwnableUnauthorizedAccount").withArgs(await alan.getAddress());
 
     expect(await exposure.canMint(await ben.getAddress())).eq(false);
     await exposure.setMinterState(await ben.getAddress(), true)

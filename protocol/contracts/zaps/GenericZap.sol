@@ -37,7 +37,7 @@ contract GenericZap is ZapBase {
 
   constructor (
     address _router
-  ) {
+  ) ZapBase(msg.sender) {
     uniswapV2Router = IUniswapV2Router(_router);
   }
 

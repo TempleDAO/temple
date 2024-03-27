@@ -46,7 +46,7 @@ contract TempleStaking is Ownable {
         IERC20 _TEMPLE,
         IExitQueue _EXIT_QUEUE,
         uint256 _epochSizeSeconds,
-        uint256 _startTimestamp) {
+        uint256 _startTimestamp) Ownable(msg.sender) {
 
         require(_startTimestamp < block.timestamp, "Start timestamp must be in the past");
         require(_startTimestamp > (block.timestamp - (24 * 2 * 60 * 60)), "Start timestamp can't be more than 2 days in the past");

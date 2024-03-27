@@ -39,7 +39,7 @@ contract TempleZaps is ZapBase {
     address _temple,
     address _templeRouter,
     address _zaps
-  ) {
+  ) ZapBase(msg.sender) {
     temple = _temple;
     templeRouter = ITempleStableRouter(_templeRouter);
     zaps = IGenericZaps(_zaps);

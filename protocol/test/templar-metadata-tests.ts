@@ -46,7 +46,7 @@ describe("Templar Metadata", async () => {
     // Ben cannot
     {
       const templarMetadata = TEMPLAR_METADATA.connect(ben);
-      await shouldThrow(templarMetadata.setRole(DISCORD_ID_1, "acolyte"), /AccessControl:/);
+      await shouldThrow(templarMetadata.setRole(DISCORD_ID_1, "acolyte"), /AccessControlUnauthorizedAccount/);
     }
   });
 

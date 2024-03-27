@@ -83,12 +83,16 @@ describe("AMM", async () => {
       uniswapRouter = await new UniswapV2Router02NoEth__factory(owner).deploy(uniswapFactory.address, fraxToken.address);
 
       // Add liquidity to both AMMs
-      await templeToken.increaseAllowance(templeRouter.address, toAtto(10000000));
-      await fraxToken.increaseAllowance(templeRouter.address, toAtto(10000000));
+      await templeToken.approve(templeRouter.address, 0);
+      await templeToken.approve(templeRouter.address, toAtto(10000000));
+      await fraxToken.approve(templeRouter.address, 0);
+      await fraxToken.approve(templeRouter.address, toAtto(10000000));
       await templeRouter.addLiquidity(toAtto(100000), toAtto(1000000), 1, 1, fraxToken.address, await owner.getAddress(), expiryDate());
 
-      await templeToken.increaseAllowance(uniswapRouter.address, toAtto(10000000));
-      await fraxToken.increaseAllowance(uniswapRouter.address, toAtto(10000000));
+      await templeToken.approve(uniswapRouter.address, 0);
+      await templeToken.approve(uniswapRouter.address, toAtto(10000000));
+      await fraxToken.approve(uniswapRouter.address, 0);
+      await fraxToken.approve(uniswapRouter.address, toAtto(10000000));
       await uniswapRouter.addLiquidity(templeToken.address, fraxToken.address, toAtto(100000), toAtto(1000000), 1, 1, await owner.getAddress(), expiryDate());
       uniswapPair = new UniswapV2Pair__factory(owner).attach(await uniswapFactory.getPair(templeToken.address, fraxToken.address));
 
@@ -243,7 +247,8 @@ describe("AMM", async () => {
   describe("Update Treasury", async() => {
 
     it("non-owner reverts", async () => {
-        await shouldThrow(templeRouter.connect(alan).setTreasury(await ben.getAddress()), /Ownable: caller is not the owner/);
+        await shouldThrow(templeRouter.connect(alan).setTreasury(await ben.getAddress()), /OwnableUnauthorizedAccount/);
+        // OwnableUnauthorizedAccount(_msgSender())
     });
 
     it("updates treasury address properly", async () => {
@@ -256,7 +261,7 @@ describe("AMM", async () => {
   describe("Defend stable", async() => {
 
     it("non-owner reverts", async () => {
-        await shouldThrow(templeRouter.connect(alan).setDefendStable(feiToken.address), /Ownable: caller is not the owner/);
+        await shouldThrow(templeRouter.connect(alan).setDefendStable(feiToken.address), /OwnableUnauthorizedAccount/);
     });
 
     it("sets correctly", async () => {
@@ -268,7 +273,7 @@ describe("AMM", async () => {
  describe("Add pair ", async() => {
 
       it("non-owner reverts", async () => {
-          await shouldThrow(templeRouter.connect(alan).addPair(feiToken.address, templeRouter.address), /Ownable: caller is not the owner/);
+          await shouldThrow(templeRouter.connect(alan).addPair(feiToken.address, templeRouter.address), /OwnableUnauthorizedAccount/);
       });
 
       it("sets correctly", async () => {

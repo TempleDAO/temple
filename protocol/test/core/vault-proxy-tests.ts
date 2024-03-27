@@ -122,12 +122,12 @@ describe("Vault Proxy", async () => {
     expect(await TEMPLE.balanceOf(await owner.getAddress())).equals(expectedBal);
 
     expect(VAULT_PROXY.connect(alan).withdraw(TEMPLE.address, await alan.getAddress(), toAtto(100)))
-                .to.be.revertedWith("Ownable: caller is not the owner");
+      .to.be.revertedWithCustomError(VAULT_PROXY, "OwnableUnauthorizedAccount").withArgs(await alan.getAddress());
   })
 
   it("Only owner can toggle if faith claims are enabled/disabled", async () => {
     await expect(VAULT_PROXY.connect(alan).toggleFaithClaimEnabled())
-      .to.be.revertedWith("Ownable: caller is not the owner")
+      .to.be.revertedWithCustomError(VAULT_PROXY, "OwnableUnauthorizedAccount").withArgs(await alan.getAddress());
 
     expect(await VAULT_PROXY.faithClaimEnabled()).is.true;
     await VAULT_PROXY.toggleFaithClaimEnabled()
@@ -143,7 +143,8 @@ describe("Vault Proxy", async () => {
     
     const expectedAmount = await VAULT_PROXY.getFaithMultiplier(faith.usableFaith, alanTempleDeposit);
 
-    await TEMPLE.connect(alan).increaseAllowance(VAULT_PROXY.address, toAtto(10000))
+    await TEMPLE.connect(alan).approve(VAULT_PROXY.address, 0);
+    await TEMPLE.connect(alan).approve(VAULT_PROXY.address, toAtto(10000));
     await VAULT_PROXY.connect(alan).depositTempleWithFaith(alanTempleDeposit, faith.usableFaith,vault.address);
     expect(await vault.balanceOf(alanAddr)).equals(expectedAmount);
     // ensure we've burnt it all
@@ -169,7 +170,8 @@ describe("Vault Proxy", async () => {
       await TEMPLE.mint(await alan.getAddress(), toAtto(data.temple));
       await FAITH.gain(await alan.getAddress(), toAtto(data.faith));
 
-      await TEMPLE.connect(alan).increaseAllowance(VAULT_PROXY.address, toAtto(10000))
+      await TEMPLE.connect(alan).approve(VAULT_PROXY.address, 0);
+      await TEMPLE.connect(alan).approve(VAULT_PROXY.address, toAtto(10000));
       await VAULT_PROXY.connect(alan).depositTempleWithFaith(toAtto(data.temple), toAtto(data.faith), vault.address);
 
       expect(fromAtto(await vault.balanceOf(await alan.getAddress()))).approximately(data.expected, 1e-6);
@@ -182,10 +184,12 @@ describe("Vault Proxy", async () => {
     const alanOgTemple = new OGTemple__factory(alan).attach(OGTEMPLE.address);
     const alanOGTSwap = new VaultProxy__factory(alan).attach(VAULT_PROXY.address);
 
-    await alanTemple.increaseAllowance(STAKING.address, toAtto(100000));
+    await alanTemple.approve(STAKING.address, 0);
+    await alanTemple.approve(STAKING.address, toAtto(100000));
     await alanStake.stake(toAtto(200));
     mineForwardSeconds(40); // 2 epochs
-    await alanOgTemple.increaseAllowance(VAULT_PROXY.address, toAtto(10000))
+    await alanOgTemple.approve(VAULT_PROXY.address, 0);
+    await alanOgTemple.approve(VAULT_PROXY.address, toAtto(10000));
     
     const ogtBal = await OGTEMPLE.balanceOf(await alan.getAddress())
     const amount = await STAKING.balance(ogtBal);
@@ -214,9 +218,11 @@ describe("Vault Proxy", async () => {
     const alanOgTemple = new OGTemple__factory(alan).attach(OGTEMPLE.address);
     const alanOGTSwap = new VaultProxy__factory(alan).attach(VAULT_PROXY.address);
 
-    await alanTemple.increaseAllowance(STAKING.address, toAtto(100000));
+    await alanTemple.approve(STAKING.address, 0);
+    await alanTemple.approve(STAKING.address, toAtto(100000));
     await alanStake.stake(toAtto(200));
-    await alanOgTemple.increaseAllowance(VAULT_PROXY.address, toAtto(10000))
+    await alanOgTemple.approve(VAULT_PROXY.address, 0);
+    await alanOgTemple.approve(VAULT_PROXY.address, toAtto(10000));
     
     const ogtBal = await OGTEMPLE.balanceOf(await alan.getAddress())
     const amount = await STAKING.balance(ogtBal);
@@ -231,7 +237,8 @@ describe("Vault Proxy", async () => {
   })
 
   it("Can proxy deposit for any Vault", async() => {
-    await TEMPLE.connect(alan).increaseAllowance(VAULT_PROXY.address, toAtto(1000));
+    await TEMPLE.connect(alan).approve(VAULT_PROXY.address, 0);
+    await TEMPLE.connect(alan).approve(VAULT_PROXY.address, toAtto(1000));
     await VAULT_PROXY.connect(alan).depositTempleFor(toAtto(100), vault.address);
 
     expect(await vault.balanceOf(await alan.getAddress())).equals(toAtto(100));

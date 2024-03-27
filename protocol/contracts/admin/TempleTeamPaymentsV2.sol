@@ -23,7 +23,7 @@ contract TempleTeamPaymentsV2 is Initializable, OwnableUpgradeable {
     event AllocationSet(address indexed member, uint256 allocation);
 
     function initialize(IERC20 _temple) public initializer {
-        __Ownable_init_unchained();
+        __Ownable_init_unchained(msg.sender);
         temple = _temple;
     }
 

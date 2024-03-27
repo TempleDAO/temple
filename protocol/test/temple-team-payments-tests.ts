@@ -12,7 +12,7 @@ import { blockTimestamp } from './helpers';
 import { PANIC_CODES } from "@nomicfoundation/hardhat-chai-matchers/panic";
 
 const SECONDS_IN_1_MONTH = 2630000;
-const ONLY_OWNER_ERROR = "Ownable: caller is not the owner";
+const ONLY_OWNER_ERROR = "OwnableUnauthorizedAccount";
 
 describe('TempleTeamPayments', function () {
   const SECONDS_IN_10_MONTHS = 26300000;
@@ -75,13 +75,13 @@ describe('TempleTeamPayments', function () {
       const ownerConnect = PAYMENTS.connect(owner);
 
       await expect(member0Connect.setAllocations([member1Address], [1000]))
-        .to.be.revertedWith(ONLY_OWNER_ERROR);
+        .to.be.revertedWithCustomError(PAYMENTS, ONLY_OWNER_ERROR).withArgs(await member0.getAddress());
       await expect(member0Connect.pauseMember(member1Address))
-        .to.be.revertedWith(ONLY_OWNER_ERROR);
+        .to.be.revertedWithCustomError(PAYMENTS, ONLY_OWNER_ERROR).withArgs(await member0.getAddress());
       await expect(member0Connect.adhocPayment(member1Address, 100))
-        .to.be.revertedWith(ONLY_OWNER_ERROR);
+        .to.be.revertedWithCustomError(PAYMENTS, ONLY_OWNER_ERROR).withArgs(await member0.getAddress());
       await expect(member0Connect.withdrawTempleBalance(member1Address, 100))
-        .to.be.revertedWith(ONLY_OWNER_ERROR);
+        .to.be.revertedWithCustomError(PAYMENTS, ONLY_OWNER_ERROR).withArgs(await member0.getAddress());
 
       await ownerConnect.setAllocations([member1Address], [1000]);
       await ownerConnect.pauseMember(member1Address);
@@ -100,7 +100,7 @@ describe('TempleTeamPayments', function () {
       const ownerConnect = PAYMENTS.connect(owner);
       const amount = 1000000;
       await expect(ownerConnect.withdrawTempleBalance(ethers.constants.AddressZero, amount))
-        .to.be.revertedWith("ERC20: transfer to the zero address");
+        .to.be.revertedWithCustomError(TEMPLE, "ERC20InvalidReceiver");
     });
 
     it('should allow owner to make ad hoc payments', async function () {

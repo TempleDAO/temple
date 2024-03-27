@@ -57,7 +57,7 @@ describe("Elder Election", async () => {
   it("nominations work", async () => {
     {
       const election = ELDER_ELECTION.connect(amanda);
-      await shouldThrow(election.nominate(DISCORD_ID_1), /AccessControl:/);
+      await shouldThrow(election.nominate(DISCORD_ID_1), /AccessControlBadConfirmation/);
     }
 
     {
@@ -76,7 +76,7 @@ describe("Elder Election", async () => {
   it("resignations work", async () => {
     {
       const election = ELDER_ELECTION.connect(amanda);
-      await shouldThrow(election.resign(DISCORD_ID_1), /AccessControl:/);
+      await shouldThrow(election.resign(DISCORD_ID_1), /AccessControlBadConfirmation/);
     }
 
     {

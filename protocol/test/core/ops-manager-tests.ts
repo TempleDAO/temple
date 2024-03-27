@@ -180,7 +180,8 @@ describe("Temple Core Ops Manager", async () => {
     expect(await exposure.owner()).equals(opsManager.address);
     
     const vault = new Vault__factory(owner).attach(vault1Addr);
-    await templeToken.increaseAllowance(vault.address, toAtto(10000));
+    await templeToken.approve(vault.address, 0);
+    await templeToken.approve(vault.address, toAtto(10000));
     await vault.deposit(toAtto(1000));
     const ENTER_EXIT_BUFFER = (await vault.ENTER_EXIT_WINDOW_BUFFER()).toNumber();
     await mineForwardSeconds(3600+ENTER_EXIT_BUFFER) 
@@ -208,7 +209,8 @@ describe("Temple Core Ops Manager", async () => {
 
     const noopLiquidator = await new NoopVaultedTempleLiquidator__factory(owner).deploy(templeToken.address, await opsManager.vaultedTemple());
     const exposure = new Exposure__factory(owner).attach(fxsExposureAddr);
-    expect(exposure.setLiqidator(noopLiquidator.address)).to.be.revertedWith("Owner: Caller is not the owner");
+    expect(exposure.setLiqidator(noopLiquidator.address))
+      .to.be.revertedWithCustomError(exposure, "OwnableUnauthorizedAccount").withArgs(await owner.getAddress());
     await opsManager.setExposureLiquidator(fxsToken.address, noopLiquidator.address);
     expect(await exposure.liquidator()).equals(noopLiquidator.address);
   })
@@ -218,7 +220,7 @@ describe("Temple Core Ops Manager", async () => {
 
     templeToken.mint(vaultedTemple.address, toAtto(100));
     await expect(vaultedTemple.connect(alan).withdraw(templeToken.address, await alan.getAddress(), toAtto(100)))
-      .to.revertedWith("Ownable: caller is not the owner")
+      .to.be.revertedWithCustomError(vaultedTemple, "OwnableUnauthorizedAccount").withArgs(await alan.getAddress());
 
     await expect(async () => vaultedTemple.withdraw(templeToken.address, await owner.getAddress(), toAtto(100)))
       .to.changeTokenBalance(templeToken, owner, toAtto(100))
@@ -278,11 +280,13 @@ describe("Temple Core Ops Manager", async () => {
     // Deposit temple into the current open vault
     // Phase 1 - start of day 0
     
-    await templeTokenAlan.increaseAllowance(vault1Alan.address, toAtto(100000));
+    await templeTokenAlan.approve(vault1Alan.address, 0);
+    await templeTokenAlan.approve(vault1Alan.address, toAtto(100000));
     await vault1Alan.deposit(toAtto(75));
     expect(await vault1Alan.balanceOf(alanAddr)).equals(toAtto(75));
 
-    await templeTokenBen.increaseAllowance(vault1Ben.address, toAtto(100000));
+    await templeTokenBen.approve(vault1Ben.address, 0);
+    await templeTokenBen.approve(vault1Ben.address, toAtto(100000));
     await vault1Ben.deposit(toAtto(25));
 
     expect(await vault1Ben.balanceOf(benAddr)).equals(toAtto(25));
@@ -555,10 +559,12 @@ describe("Temple Core Ops Manager", async () => {
   })
 
   async function addDepositToVaults(vault: Vault, amountAlan: BigNumber, amountBen: BigNumber) {
-    await templeToken.connect(alan).increaseAllowance(vault.address, toAtto(100000));
+    await templeToken.connect(alan).approve(vault.address, 0);
+    await templeToken.connect(alan).approve(vault.address, toAtto(100000));
     await vault.connect(alan).deposit(amountAlan);
 
-    await templeToken.connect(ben).increaseAllowance(vault.address, toAtto(1000000));
+    await templeToken.connect(ben).approve(vault.address, 0);
+    await templeToken.connect(ben).approve(vault.address, toAtto(1000000));
     await vault.connect(ben).deposit(amountBen);
   }
 })

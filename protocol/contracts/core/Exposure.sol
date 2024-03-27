@@ -37,7 +37,7 @@ contract Exposure is Ownable, RebasingERC20 {
      * All two of these values are immutable: they can only be set once during
      * construction.
      */
-    constructor(string memory _name, string memory _symbol, IERC20 _revalToken) ERC20(_name, _symbol) {
+    constructor(string memory _name, string memory _symbol, IERC20 _revalToken) ERC20(_name, _symbol) Ownable(msg.sender) {
         revalToken = _revalToken;
     }
 
@@ -85,7 +85,7 @@ contract Exposure is Ownable, RebasingERC20 {
      * a strategy
      */
     function mint(address account, uint256 amount) external onlyMinter {
-        _mint(account, amount);
+        _mintUpdate(account, amount);
         reval += amount;
 
         // no need for event, handled via _mint
@@ -102,7 +102,7 @@ contract Exposure is Ownable, RebasingERC20 {
      * @dev redeem the callers share of this exposure back to temple
      */
     function redeemAmount(uint256 amount, address to) public {
-        _burn(msg.sender, amount);
+        _burnUpdate(msg.sender, amount);
         reval -= amount;
 
         if (address(liquidator) != address(0)) {

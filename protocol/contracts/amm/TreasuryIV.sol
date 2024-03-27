@@ -15,7 +15,7 @@ contract TreasuryIV is Ownable {
     /// @notice intrinsinc value gauranteed by the protocol
     Price public intrinsicValueRatio;
 
-    constructor(uint256 frax, uint256 temple) {
+    constructor(uint256 frax, uint256 temple) Ownable(msg.sender) {
         intrinsicValueRatio.frax = frax;
         intrinsicValueRatio.temple = temple;
     }

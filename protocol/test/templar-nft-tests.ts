@@ -27,7 +27,7 @@ describe("Templar NFT", async () => {
   it("Only owner can grant roles", async () => {    
     await shouldThrow(
       TEMPLAR.connect(amanda).grantRole(TEMPLAR.CAN_ASSIGN(), amanda.getAddress()),
-      /AccessControl:/
+      /AccessControlUnauthorizedAccount/
     );
   });
 
@@ -43,7 +43,7 @@ describe("Templar NFT", async () => {
     const templar = TEMPLAR.connect(amanda);
     await shouldThrow(
       templar.setBaseUri("https://new-base-uri2/"),
-      /AccessControl:/
+      /AccessControlUnauthorizedAccount/
     );
   });
 
@@ -62,7 +62,7 @@ describe("Templar NFT", async () => {
       const templar = TEMPLAR.connect(ben);
       await shouldThrow(
         templar.assign(amandaAddress, 1000),
-        /AccessControl:/
+        /AccessControlBadConfirmation/
       );
     }
   });

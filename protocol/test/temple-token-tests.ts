@@ -24,7 +24,7 @@ describe("Temple ERC20 Token", async () => {
     await shouldThrow(TEMPLE.mint(amandaAddress, 10), /Caller cannot mint/);
 
     // Only admin can add a minter
-    await shouldThrow(TEMPLE.connect(amanda).addMinter(amandaAddress), /Ownable: caller is not the owner/);
+    await shouldThrow(TEMPLE.connect(amanda).addMinter(amandaAddress), /OwnableUnauthorizedAccount/);
     await TEMPLE.addMinter(minterAddress);
 
     // Only minter can, well mint
@@ -33,7 +33,7 @@ describe("Temple ERC20 Token", async () => {
     await shouldThrow(TEMPLE.mint(amandaAddress, 10), /Caller cannot mint/);
 
     // Only admin can remove a minter
-    await shouldThrow(TEMPLE.connect(amanda).removeMinter(minterAddress), /Ownable: caller is not the owner/);
+    await shouldThrow(TEMPLE.connect(amanda).removeMinter(minterAddress), /OwnableUnauthorizedAccount/);
     await TEMPLE.removeMinter(minterAddress);
   });
 });

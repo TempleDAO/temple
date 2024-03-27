@@ -18,6 +18,8 @@ abstract contract ZapBase is Ownable {
 
   event SetContractState(bool paused);
 
+  constructor(address _owner) Ownable(_owner) {}
+
   receive() external payable {
     require(msg.sender != tx.origin, "ZapBase: Do not send ETH directly");
   }

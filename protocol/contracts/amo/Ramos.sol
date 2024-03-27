@@ -4,7 +4,7 @@ pragma solidity 0.8.20;
 
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { Pausable } from "@openzeppelin/contracts/security/Pausable.sol";
+import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
 
 import { IRamos } from "contracts/interfaces/amo/IRamos.sol";
 import { IRamosTokenVault } from "contracts/interfaces/amo/helpers/IRamosTokenVault.sol";
@@ -192,18 +192,18 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
         // Remove allowance from the old vault
         address previousVault = address(tokenVault);
         if (previousVault != address(0)) {
-            protocolToken.safeApprove(previousVault, 0);
-            quoteToken.safeApprove(previousVault, 0);
+            protocolToken.approve(previousVault, 0);
+            quoteToken.approve(previousVault, 0);
         }
 
         tokenVault = IRamosTokenVault(vault);
 
         // Set max allowance on the new TRV
         {
-            protocolToken.safeApprove(vault, 0);
+            protocolToken.approve(vault, 0);
             protocolToken.safeIncreaseAllowance(vault, type(uint256).max);
             
-            quoteToken.safeApprove(vault, 0);
+            quoteToken.approve(vault, 0);
             quoteToken.safeIncreaseAllowance(vault, type(uint256).max);
         }
     }
@@ -488,7 +488,7 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
             protocolToken.safeIncreaseAllowance(address(balancerVault), protocolTokenAmount);
             uint256 quoteTokenAllowance = quoteToken.allowance(address(this), address(balancerVault));
             if (quoteTokenAllowance < quoteTokenAmount) {
-                quoteToken.safeApprove(address(balancerVault), 0);
+                quoteToken.approve(address(balancerVault), 0);
                 quoteToken.safeIncreaseAllowance(address(balancerVault), quoteTokenAmount);
             }
         }

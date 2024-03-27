@@ -2,7 +2,7 @@ pragma solidity 0.8.20;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (core/OtcOffer.sol)
 
-import { Pausable } from "@openzeppelin/contracts/security/Pausable.sol";
+import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -74,7 +74,7 @@ contract OtcOffer is Pausable, Ownable {
         OfferPricingToken _offerPricingToken,
         uint128 _minValidOfferPrice,
         uint128 _maxValidOfferPrice
-    ) {
+    ) Ownable(msg.sender) {
         userSellToken = IERC20Metadata(_userSellToken);
         userBuyToken = IERC20Metadata(_userBuyToken);
         fundsOwner = _fundsOwner;

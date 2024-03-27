@@ -90,8 +90,10 @@ describe("Temple Core Vault", async () => {
     await templeExposure.setMinterState(vault.address, true);
     await templeExposure.setMinterState(await owner.getAddress(), true);
 
-    await templeToken.connect(alan).increaseAllowance(vault.address, toAtto(1000000));
-    await templeToken.connect(ben).increaseAllowance(vault.address, toAtto(1000000));
+    await templeToken.connect(alan).approve(vault.address, 0);
+    await templeToken.connect(alan).approve(vault.address, toAtto(1000000));
+    await templeToken.connect(ben).approve(vault.address, 0);
+    await templeToken.connect(ben).approve(vault.address, toAtto(1000000));
   });
 
   it("Single stakers deposit (only in the entry/exit window)", async () => {
@@ -303,13 +305,13 @@ describe("Temple Core Vault", async () => {
 
   it("only vault owner can redeem an exposure", async () => {
     await expect(vault.connect(alan).redeemExposures([templeExposure.address]))
-      .to.revertedWith("Ownable: caller is not the owner")
+      .to.be.revertedWithCustomError(vault, "OwnableUnauthorizedAccount").withArgs(await alan.getAddress());
   });
 
   it("only owner can withdraw vaulted temple (for DAO leverage)", async () => {
     await expect(vaultedTemple.connect(alan)
       .withdraw(templeToken.address, await alan.getAddress(), 100))
-      .to.revertedWith("Ownable: caller is not the owner")
+      .to.be.revertedWithCustomError(vaultedTemple, "OwnableUnauthorizedAccount").withArgs(await alan.getAddress());
 
     await templeToken.mint(vaultedTemple.address, 100);
 

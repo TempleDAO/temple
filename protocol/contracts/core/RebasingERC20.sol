@@ -47,6 +47,43 @@ abstract contract RebasingERC20 is ERC20 {
     }
 
     /**
+     * @dev See {IERC20-transfer}.
+     *
+     * Requirements:
+     *
+     * - `to` cannot be the zero address.
+     * - the caller must have a balance of at least `value`.
+     */
+    function transfer(address to, uint256 value) public virtual override returns (bool) {
+        address owner = _msgSender();
+        _transferUpdate(owner, to, value);
+        return true;
+    }
+
+    /**
+     * @dev See {IERC20-transferFrom}.
+     *
+     * Emits an {Approval} event indicating the updated allowance. This is not
+     * required by the EIP. See the note at the beginning of {ERC20}.
+     *
+     * NOTE: Does not update the allowance if the current allowance
+     * is the maximum `uint256`.
+     *
+     * Requirements:
+     *
+     * - `from` and `to` cannot be the zero address.
+     * - `from` must have a balance of at least `value`.
+     * - the caller must have allowance for ``from``'s tokens of at least
+     * `value`.
+     */
+    function transferFrom(address from, address to, uint256 value) public virtual override returns (bool) {
+        address spender = _msgSender();
+        _spendAllowance(from, spender, value);
+        _transferUpdate(from, to, value);
+        return true;
+    }
+
+    /**
      * @dev Moves `amount` of tokens from `sender` to `recipient`.
      *
      * This internal function is equivalent to {transfer}, and can be used to
@@ -60,11 +97,11 @@ abstract contract RebasingERC20 is ERC20 {
      * - `recipient` cannot be the zero address.
      * - `sender` must have a balance of at least `amount`.
      */
-    function _transfer(
+    function _transferUpdate(
         address sender,
         address recipient,
         uint256 amount
-    ) internal virtual override {
+    ) internal {
         require(sender != address(0), "ERC20: transfer from the zero address");
         require(recipient != address(0), "ERC20: transfer to the zero address");
 
@@ -89,7 +126,7 @@ abstract contract RebasingERC20 is ERC20 {
      *
      * - `account` cannot be the zero address.
      */
-    function _mint(address account, uint256 amount) internal virtual override {
+    function _mintUpdate(address account, uint256 amount) internal {
         require(account != address(0), "ERC20: mint to the zero address");
 
         uint256 amountShares = toSharesAmount(amount);
@@ -109,7 +146,7 @@ abstract contract RebasingERC20 is ERC20 {
      * - `account` cannot be the zero address.
      * - `account` must have at least `amount` tokens.
      */
-    function _burn(address account, uint256 amount) internal virtual override {
+    function _burnUpdate(address account, uint256 amount) internal {
         require(account != address(0), "ERC20: burn from the zero address");
 
         uint256 accountBalanceShares = shareBalanceOf[account];
