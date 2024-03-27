@@ -3,6 +3,7 @@ import env from 'constants/env';
 import { getQueryKey } from 'utils/react-query-helpers';
 import { SubGraphResponse } from 'hooks/core/types';
 import { fetchGenericSubgraph } from 'utils/subgraph';
+import { StrategyKey } from '../DashboardConfig';
 
 const V2SnapshotMetrics = [
   'totalMarketValueUSD',
@@ -44,7 +45,7 @@ const QUERIED_FIELDS = `
 export type V2StrategySnapshot = {
   timestamp: string;
   timeframe: string;
-  strategy: { name: string };
+  strategy: { name: StrategyKey };
   strategyTokens: { [key in (typeof STRATEGY_TOKEN_FIELDS)[number]]: string }[];
 } & { [key in V2SnapshotMetric]: string };
 
