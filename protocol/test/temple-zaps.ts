@@ -20,8 +20,10 @@ import {
   GenericZap__factory, GenericZap, 
   UniswapV2Pair, UniswapV2Router02NoEth,
   UniswapV2Router02NoEth__factory, UniswapV2Pair__factory,
-  ICurvePool__factory, ICurvePool, IUniswapV2Pair__factory, IBalancerVault__factory, IBalancerVault
+  ICurvePool__factory, ICurvePool, IUniswapV2Pair__factory
 } from "../typechain";
+import { IBalancerVault } from "../typechain/contracts/zaps/interfaces";
+import { IBalancerVault__factory } from "../typechain/factories/contracts/zaps/interfaces";
 
 const { WETH, USDC, UNI, FRAX, ETH, OGT, FEI, BNB, FXS, BAL } = addresses.tokens;
 const { BINANCE_ACCOUNT_8, FRAX_WHALE, FXS_WHALE } = addresses.accounts;
@@ -222,7 +224,8 @@ describe.skip("Temple Stax Core Zaps", async () => {
         await templeExposure.setMinterState(vault.address, true);
         await templeExposure.setMinterState(ownerAddress, true);
       
-        await templeToken.connect(alice).increaseAllowance(vault.address, toAtto(1000000));
+        await templeToken.connect(alice).approve(vault.address, 0);
+        await templeToken.connect(alice).approve(vault.address, toAtto(1000000));
 
         // supported stables
         await templeZaps.setSupportedStables([FRAX, FEI], [true, true]);

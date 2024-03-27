@@ -236,9 +236,7 @@ contract TempleTeamPaymentsFactoryTest is TempleTest {
     function testCannotInitializeTwice() public {
         TempleTeamPaymentsV2 testContract = testDeployPayoutsSingle();
 
-        vm.expectRevert(
-            bytes("Initializable: contract is already initialized")
-        );
+        vm.expectRevert(abi.encodeWithSelector(Initializable.InvalidInitialization.selector));
         testContract.initialize(temple);
     }
 

@@ -6,6 +6,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { Test, StdChains } from "forge-std/Test.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { ITempleElevatedAccess } from "contracts/interfaces/v2/access/ITempleElevatedAccess.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 
 /// @notice A forge test base class which can setup to use a fork, deploy UUPS proxies, etc
 abstract contract TempleTest is Test {
@@ -47,8 +48,7 @@ abstract contract TempleTest is Test {
 
     function expectOnlyOwner() internal {
         vm.startPrank(unauthorizedUser);
-        vm.expectRevert("Ownable: caller is not the owner");
-        vm.stopPrank();
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, unauthorizedUser));
     }
 
     function setExplicitAccess(
