@@ -41,9 +41,6 @@ contract ElderElection is Nonces, AccessControl {
     /// @notice the NFT contract for templars
     Templar public templars;
 
-    /// @notice Nonces used in relayed voting requests
-    // mapping(address => Counters.Counter) public nonces;
-
     /// @notice used for relayed signed requests
     bytes32 immutable DOMAIN_SEPARATOR;
 
@@ -131,15 +128,6 @@ contract ElderElection is Nonces, AccessControl {
 
         _setEndorsements(req.account, req.discordIds);
     }
-
-    /**
-     * "Consume a nonce": return the current value and increment.
-     */
-    // function _useNonce(address _owner) internal returns (uint256 current) {
-    //     Counters.Counter storage nonce = nonces[_owner];
-    //     current = nonce.current();
-    //     nonce.increment();
-    // }
 
     struct EIP712Domain {
         string name;

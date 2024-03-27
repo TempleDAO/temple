@@ -13,8 +13,6 @@ import "./Rational.sol";
 import "./Exposure.sol";
 import "./JoiningFee.sol";
 
-// import "hardhat/console.sol";
-
 /**
  * @title A temple investment vault, allows deposits and withdrawals on a set period (eg. monthly)
  *
@@ -30,9 +28,6 @@ import "./JoiningFee.sol";
  */
 contract Vault is Nonces, EIP712, Ownable, RebasingERC20 {
     uint256 constant public ENTER_EXIT_WINDOW_BUFFER = 60 * 5; // 5 minute buffer
-
-    // using Counters for Counters.Counter;
-    // mapping(address => Counters.Counter) public _nonces;
 
     // solhint-disable-next-line var-name-mixedcase
     bytes32 public immutable WITHDRAW_FOR_TYPEHASH = keccak256("withdrawFor(address owner,address sender,uint256 amount,uint256 deadline,uint256 nonce)");
@@ -165,22 +160,6 @@ contract Vault is Nonces, EIP712, Ownable, RebasingERC20 {
     function DOMAIN_SEPARATOR() external view returns (bytes32) {
         return _domainSeparatorV4();
     }
-
-    /**
-    * Current nonce for an given address
-    */
-    // function nonces(address owner) public view returns (uint256) {
-    //     return _nonces[owner];
-    // }
-
-    /**
-    * "Consume a nonce": return the current value and increment.
-    */
-    // function _useNonce(address owner) internal returns (uint256 current) {
-    //     Counters.Counter storage nonce = _nonces[owner];
-    //     current = nonce.current();
-    //     nonce.increment();
-    // }
 
     /**
     * @notice Deposit temple into a vault
