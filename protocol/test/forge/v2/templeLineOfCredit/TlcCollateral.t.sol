@@ -296,17 +296,17 @@ contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
         // With unoptmised solc FOUNDRY_PROFILE=lite
         (uint256 first, uint256 second, uint256 third) = _removeCollateralIteration(makeAddr("acct1"));
         assertLt(first, 167_500, "acct1 1");
-        assertLt(second, 143_000, "acct1 2");
+        assertLt(second, 150_322, "acct1 2");
         assertLt(third, 142_000, "acct1 3");
 
         (first, second, third) = _removeCollateralIteration(makeAddr("acct2"));
         assertLt(first, 163_300, "acct2 1");
-        assertLt(second, 146_200, "acct2 2");
+        assertLt(second, 150_083, "acct2 2");
         assertLt(third, 142_000, "acct2 3");
         
         (first, second, third) = _removeCollateralIteration(makeAddr("acct3"));
         assertLt(first, 163_300, "acct3 1");
-        assertLt(second, 146_200, "acct3 2");
+        assertLt(second, 150_083, "acct3 2");
         assertLt(third, 141_900, "acct3 3");
     }
 }

@@ -28,7 +28,7 @@ contract OpsManager is Ownable {
     constructor(
         IERC20 _templeToken, 
         JoiningFee _joiningFee
-    ) {
+    ) Ownable(msg.sender) {
         templeToken = _templeToken;
         joiningFee = _joiningFee;
 

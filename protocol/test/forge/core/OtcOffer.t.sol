@@ -5,6 +5,7 @@ import { TempleTest } from "../TempleTest.sol";
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { OtcOffer } from "contracts/core/OtcOffer.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
+import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
 
 contract OtcOfferTestBase is TempleTest {
     // user sells OHM and buys DAI
@@ -120,7 +121,7 @@ contract OtcOfferTestAdmin is OtcOfferTestBase {
         }
 
         vm.prank(alice);
-        vm.expectRevert("Pausable: paused");
+        vm.expectRevert(abi.encodeWithSelector(Pausable.EnforcedPause.selector));
         otcOfferDaiOhm.swap(100e9);
 
         // Unpause

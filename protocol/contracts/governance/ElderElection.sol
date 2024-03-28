@@ -4,7 +4,7 @@ pragma solidity ^0.8.4;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
+import "@openzeppelin/contracts/utils/Nonces.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "./Templar.sol";
 
@@ -21,11 +21,10 @@ import "./Templar.sol";
  *
  * EIP712 structured data signing supports 'gasless voting' via a relay
  */
-contract ElderElection is AccessControl {
+contract ElderElection is Nonces, AccessControl {
 
     bytes32 public constant CAN_NOMINATE = keccak256("CAN_NOMINATE");
 
-    using Counters for Counters.Counter;
     using SafeERC20 for IERC20;
 
     /// @notice The NFT ids (ie discord ids) of the Templars that are candidates for
@@ -40,9 +39,6 @@ contract ElderElection is AccessControl {
 
     /// @notice the NFT contract for templars
     Templar public templars;
-
-    /// @notice Nonces used in relayed voting requests
-    mapping(address => Counters.Counter) public nonces;
 
     /// @notice used for relayed signed requests
     bytes32 immutable DOMAIN_SEPARATOR;
@@ -121,7 +117,7 @@ contract ElderElection is AccessControl {
             hash(req)
         ));
 
-        (address signer, ECDSA.RecoverError err) = ECDSA.tryRecover(digest, signature);
+        (address signer, ECDSA.RecoverError err,) = ECDSA.tryRecover(digest, signature);
         if (err != ECDSA.RecoverError.NoError) {
             revert InvalidSignature(req.account);
         }
@@ -130,15 +126,6 @@ contract ElderElection is AccessControl {
         if (_useNonce(req.account) != req.nonce) revert InvalidNonce(req.account);
 
         _setEndorsements(req.account, req.discordIds);
-    }
-
-    /**
-     * "Consume a nonce": return the current value and increment.
-     */
-    function _useNonce(address _owner) internal returns (uint256 current) {
-        Counters.Counter storage nonce = nonces[_owner];
-        current = nonce.current();
-        nonce.increment();
     }
 
     struct EIP712Domain {

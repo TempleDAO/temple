@@ -8,6 +8,7 @@ import { OtcOffer } from "contracts/core/OtcOffer.sol";
 import { MultiOtcOffer } from "contracts/core/MultiOtcOffer.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { IMultiOtcOffer } from "contracts/interfaces/core/IMultiOtcOffer.sol";
+import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
 
 contract MultiOtcOfferTestBase is TempleTest {
     MultiOtcOffer public otcOffer;
@@ -399,7 +400,6 @@ contract MultiOtcOfferTest is MultiOtcOfferTestBase {
 
         bytes32[] memory marketIds = otcOffer.getOtcMarketIds();
         assertEq(marketIds.length, 0);
-        IMultiOtcOffer.MarketTokens memory tokens = otcOffer.getOtcMarketTokens(marketId);
         assertEq(otcOffer.tokenPairExists(address(usdcToken), address(ohmToken)), false);
     }
 
@@ -470,7 +470,7 @@ contract MultiOtcOfferTest is MultiOtcOfferTestBase {
         }
 
         vm.prank(alice);
-        vm.expectRevert("Pausable: paused");
+        vm.expectRevert(abi.encodeWithSelector(Pausable.EnforcedPause.selector));
         otcOffer.swap(marketId, 100e9);
 
         // Unpause

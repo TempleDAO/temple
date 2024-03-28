@@ -38,7 +38,7 @@ contract TempleStableAMMRouter is Ownable {
             TempleERC20Token _templeToken,
             ITreasuryIV _templeTreasury,
             address  _defendStable
-            ) {
+            ) Ownable(msg.sender) {
 
         templeToken = _templeToken;
         templeTreasury = _templeTreasury;

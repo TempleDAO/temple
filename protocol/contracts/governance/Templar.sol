@@ -49,7 +49,7 @@ contract Templar is ERC721, AccessControl {
     ) external onlyRole(CAN_ASSIGN) {
         if (account == address(0)) revert InvalidAddress(account);
 
-        if (_exists(discordId)) {
+        if (exists(discordId)) {
             if (ownerOf(discordId) != account) {
                 _transfer(ownerOf(discordId), account, discordId);
             }
@@ -59,11 +59,11 @@ contract Templar is ERC721, AccessControl {
     }
 
     function exists(uint256 discordId) public view returns (bool) {
-        return _exists(discordId);
+        return _ownerOf(discordId) != address(0);
     }
 
     function checkExists(uint256 discordId) public view {
-        if (!_exists(discordId)) {
+        if (!exists(discordId)) {
             revert InvalidTemplar(discordId);
         }
     }

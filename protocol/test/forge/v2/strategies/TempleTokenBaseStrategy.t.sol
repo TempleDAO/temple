@@ -13,6 +13,7 @@ import { ITempleStrategy } from "contracts/interfaces/v2/strategies/ITempleStrat
 import { TreasuryPriceIndexOracle } from "contracts/v2/TreasuryPriceIndexOracle.sol";
 import { TempleCircuitBreakerAllUsersPerPeriod } from "contracts/v2/circuitBreaker/TempleCircuitBreakerAllUsersPerPeriod.sol";
 import { TempleCircuitBreakerProxy } from "contracts/v2/circuitBreaker/TempleCircuitBreakerProxy.sol";
+import { IERC20Errors } from "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
 
 /* solhint-disable func-name-mixedcase, not-rely-on-time */
 contract TempleTokenBaseStrategyTestBase is TempleTest {
@@ -198,7 +199,7 @@ contract TempleTokenBaseStrategyTrvWithdraw is TempleTokenBaseStrategyTestBase {
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
         strategy.trvDeposit(0);
 
-        vm.expectRevert("ERC20: burn amount exceeds balance");
+        vm.expectRevert(abi.encodeWithSelector(IERC20Errors.ERC20InsufficientBalance.selector, address(strategy), 0, 100));
         strategy.trvDeposit(100);
 
         uint256 amount = 1e18;
