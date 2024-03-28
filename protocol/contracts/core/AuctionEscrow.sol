@@ -112,27 +112,6 @@ contract AuctionEscrow is IAuctionEscrow, TempleElevatedAccess {
     }
 
     /**
-     * @notice Withdraw bid token from current running auction. User's bid token position will be reduced by `amount`
-     * Can only withdraw bid token for ongoing auction. Cannot if epoch has ended.
-     * @param amount Amount of bid token to withdraw
-     */
-    function withdraw(uint256 amount) external override {
-        uint256 _amount = depositors[msg.sender][_currentEpochId];
-        if (_amount == 0 || _amount < amount) { revert CommonEventsAndErrors.InvalidAmount(address(bidToken), amount); }
-        _withdraw(amount);
-    }
-
-    /**
-     * @notice Withdraw all bid token from current running auction. User's bid token position will be reduced to 0
-     * Can only withdraw bid token for ongoing auction. Cannot if epoch has ended.
-     */
-    function withdrawAll() external {
-        uint256 _amount = depositors[msg.sender][_currentEpochId];
-        if (_amount == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
-        _withdraw(_amount);
-    }
-
-    /**
      * @notice Claim share of Temple Gold for epoch
      * Can only claim for past epochs, not current auction epoch.
      * @param epochId Id of epoch
@@ -144,7 +123,7 @@ contract AuctionEscrow is IAuctionEscrow, TempleElevatedAccess {
         if (infoCached.startTime == 0) { revert InvalidEpoch(); }
         uint256 bidTokenAmount = depositors[msg.sender][epochId];
         if (bidTokenAmount == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
-        bidToken.safeTransfer(fireRitualStrategy, bidTokenAmount);
+        bidToken.safeTransfer(fireRitualStrategy, bidTokenAmount); // change to TRV
 
         delete depositors[msg.sender][epochId];
         uint256 claimAmount = _mulDivRound(bidTokenAmount, infoCached.totalTGoldAmount, infoCached.totalBidTokenAmount, false);

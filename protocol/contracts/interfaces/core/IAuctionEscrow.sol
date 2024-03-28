@@ -39,19 +39,6 @@ interface IAuctionEscrow {
     function deposit(uint256 amount) external;
 
     /**
-     * @notice Withdraw bid token from current running auction. User's bid token position will be reduced by `amount`
-     * Can only withdraw bid token for ongoing auction. Cannot if epoch has ended.
-     * @param amount Amount of bid token to withdraw
-     */
-    function withdraw(uint256 amount) external;
-
-    /**
-     * @notice Withdraw all bid token from current running auction. User's bid token position will be reduced to 0
-     * Can only withdraw bid token for ongoing auction. Cannot if epoch has ended.
-     */
-    function withdrawAll() external;
-
-    /**
      * @notice Claim share of Temple Gold for epoch
      * Can only claim for past epochs, not current auction epoch.
      * @param epochId Id of epoch

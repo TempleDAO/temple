@@ -133,7 +133,8 @@ import { OFT } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/OFT.sol";
         vestingFactor = _factor;
         emit VestingFactorSet(_factor.numerator, _factor.denominator);
     }
-
+    /// TODO change mint so that new mintables are calculated and distributed on claim (in Auction) or staking.
+    /// TODO check and confirm use case for transferring TGLD to other chains for auctions (bc of non-transferrability)
     /**
      * @notice Mint new tokens to be distributed. 
      * Enforces minimum mint amount and uses vestin factor to calculate mint token amount.

@@ -40,6 +40,9 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     uint256 public periodFinish;
     uint256 public lastUpdateTime;
 
+    /// @notice For use when migrating to a new staking contract.
+    address public migrator;
+
     Reward public rewardData;
     /// @notice Staker balances
     mapping(address account => uint256 balance) private _balances;
@@ -70,6 +73,30 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         stakingProxy = ITempleGoldStakingProxy(_stakingProxy);
         emit StakingProxySet(_stakingProxy);
     }
+
+    /**
+     * @notice Set migrator
+     * @param _migrator Migrator
+     */
+    function setMigrator(address _migrator) external override onlyElevatedAccess {
+        migrator = _migrator;
+        emit MigratorSet(_migrator);
+    }
+
+    /**
+      * @notice For migrations to a new staking contract.
+      *         1. Withdraw `staker`s tokens to the new staking contract (the migrator)
+      *         2. Any existing rewards are claimed and sent directly to the `staker`
+      * @dev Called only from the new staking contract (the migrator).
+      *      `setMigrator(new_staking_contract)` needs to be called first
+      * @param staker The staker who is being migrated to a new staking contract.
+      * @param amount The amount to migrate - generally this would be the staker's balance
+      */
+    function migrateWithdraw(address staker, uint256 amount) external onlyMigrator {
+        _withdrawFor(staker, msg.sender, amount, true, staker);
+    }
+
+    // todo migrating Temple GOlD in case contract is upgraded. also migrating if TGLD changes
 
     /**
      * @notice Notify reward amount for next reward distribution period
@@ -288,6 +315,11 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
                 userRewardPerTokenPaid[_account] = uint256(rewardData.rewardPerTokenStored);
             }
         }
+        _;
+    }
+    
+    modifier onlyMigrator() {
+        if (msg.sender != migrator) { revert CommonEventsAndErrors.InvalidAccess(); }
         _;
     }
 }

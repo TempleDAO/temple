@@ -25,6 +25,12 @@ interface ITempleGoldStaking {
     function setStakingProxy(address _stakingProxy) external;
 
     /**
+     * @notice Set migrator
+     * @param _migrator Migrator
+     */
+    function setMigrator(address _migrator) external;
+
+    /**
      * @notice Notify reward amount for next reward distribution period
      * @param amount Amount of Temple Gold to distribute
      * @param duration Duration of reward distribution
