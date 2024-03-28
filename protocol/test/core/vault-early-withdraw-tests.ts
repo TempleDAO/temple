@@ -242,7 +242,7 @@ describe("Temple Core Vault - Early Withdraw", async () => {
 
     // Can withdraw when unpaused (and as expected, fails from lack of vaulted balance as no deposits)
     await expect(vaultEarlyWithdraw.connect(alan).withdraw(vault.address, toAtto(100)))
-      .to.be.revertedWith("ERC20: transfer amount exceeds balance");
+      .to.be.revertedWithCustomError(templeToken, "ERC20InsufficientBalance");
   });
 
   it("owner can recover token", async () => {
