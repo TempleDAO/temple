@@ -12,6 +12,7 @@ import { ITempleStrategy } from "contracts/interfaces/v2/strategies/ITempleStrat
 import { TreasuryPriceIndexOracle } from "contracts/v2/TreasuryPriceIndexOracle.sol";
 import { TempleCircuitBreakerAllUsersPerPeriod } from "contracts/v2/circuitBreaker/TempleCircuitBreakerAllUsersPerPeriod.sol";
 import { TempleCircuitBreakerProxy } from "contracts/v2/circuitBreaker/TempleCircuitBreakerProxy.sol";
+import { IERC20Errors } from "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
 
 /* solhint-disable func-name-mixedcase */
 contract GnosisStrategyTestBase is TempleTest {
@@ -368,7 +369,7 @@ contract GnosisStrategyTestBorrowAndRepay is GnosisStrategyTestBase {
         vm.startPrank(executor);
         strategy.borrow(dai, borrowAmount);
 
-        vm.expectRevert("ERC20: transfer amount exceeds balance");
+        vm.expectRevert(abi.encodeWithSelector(IERC20Errors.ERC20InsufficientBalance.selector, address(strategy), 0, repayAmount));
         strategy.repay(dai, repayAmount);
 
         // The safe needs to send dai to the strategy before repaying.

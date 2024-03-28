@@ -8,6 +8,7 @@ import { ITempleStrategy } from "contracts/interfaces/v2/strategies/ITempleStrat
 import { TreasuryReservesVaultTestBase } from "./TrvBase.t.sol";
 import { stdError } from "forge-std/StdError.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { IERC20Errors } from "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
 
 /* solhint-disable func-name-mixedcase, contract-name-camelcase, not-rely-on-time */
 contract TreasuryReservesVaultTestRepay is TreasuryReservesVaultTestBase {
@@ -85,7 +86,7 @@ contract TreasuryReservesVaultTestRepay is TreasuryReservesVaultTestBase {
         // Payee not funded with DAI
         {
             vm.startPrank(address(strategy));
-            vm.expectRevert("ERC20: transfer amount exceeds balance");
+            vm.expectRevert(abi.encodeWithSelector(IERC20Errors.ERC20InsufficientBalance.selector, address(strategy), 0, 5e18));
             trv.repay(dai, 5e18, address(strategy));
 
             deal(address(dai), address(strategy), 10e18, true);

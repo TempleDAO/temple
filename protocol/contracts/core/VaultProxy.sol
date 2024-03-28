@@ -27,7 +27,7 @@ contract VaultProxy is Ownable {
         IERC20 _temple,
         TempleStaking _templeStaking,
         Faith _faith
-    ) {
+    ) Ownable(msg.sender) {
         ogTemple = _ogTemple;
         temple = _temple;
         templeStaking = _templeStaking;

@@ -2,12 +2,11 @@ import { fetchGenericSubgraph } from 'utils/subgraph';
 import env from 'constants/env';
 import { SubGraphResponse } from 'hooks/core/types';
 import { TxHistoryFilterType } from '../Table';
-import { DashboardType } from '../DashboardContent';
-import { StrategyKey } from './use-dashboardv2-metrics';
 import { TableHeaders, TxHistoryTableHeader } from '../Table/TxnHistoryTable';
 import { TxType } from '../Table/TxnDataTable';
 import { getQueryKey } from 'utils/react-query-helpers';
 import { useQuery } from '@tanstack/react-query';
+import { DashboardData, StrategyKey, isTRVDashboard } from '../DashboardConfig';
 
 type Transactions = {
   hash: string;
@@ -58,7 +57,7 @@ export type RowFilter = {
 };
 
 export type TxHistoryProps = {
-  dashboardType: DashboardType;
+  dashboardData: DashboardData;
   txFilter: TxHistoryFilterType;
   rowFilter: RowFilter;
   offset: number;
@@ -68,10 +67,10 @@ export type TxHistoryProps = {
 };
 
 export type TxHistoryAvailableRowsProps = {
-  dashboardType: DashboardType;
+  dashboardData: DashboardData;
   txFilter: TxHistoryFilterType;
   rowFilter: RowFilter;
-}
+};
 
 const txHistoryFilterTypeToSeconds = (filter: TxHistoryFilterType) => {
   const dateNowSecs = Math.round(Date.now() / 1000);
@@ -83,25 +82,6 @@ const txHistoryFilterTypeToSeconds = (filter: TxHistoryFilterType) => {
       return oneDaySecs * 30;
     case TxHistoryFilterType.lastweek:
       return oneDaySecs * 7;
-  }
-};
-
-export const dashboardTypeToStrategyKey = (dType: DashboardType): StrategyKey => {
-  switch (dType) {
-    // case DashboardType.TLC: // TODO: Removed until launch
-    //   return StrategyKey.TLC;
-    case DashboardType.RAMOS:
-      return StrategyKey.RAMOS;
-    case DashboardType.DSR_BASE:
-      return StrategyKey.DSRBASE;
-    case DashboardType.TEMPLE_BASE:
-      return StrategyKey.TEMPLEBASE;
-    case DashboardType.TEMPLO_MAYOR_GNOSIS:
-      return StrategyKey.TEMPLO_MAYOR_GNOSIS;
-    case DashboardType.FOHMO_GNOSIS:
-      return StrategyKey.FOHMO_GNOSIS;
-    default:
-      return StrategyKey.ALL;
   }
 };
 
@@ -130,20 +110,20 @@ const useTxHistory = (props: TxHistoryProps) =>
   });
 
 const fetchTransactions = async (props: TxHistoryProps): Promise<Transactions> => {
-  const { dashboardType, blockNumber, offset, limit, txFilter, rowFilter, tableHeaders } = props;
+  const { dashboardData, blockNumber, offset, limit, txFilter, rowFilter, tableHeaders } = props;
 
-  const strategyKey = dashboardTypeToStrategyKey(dashboardType);
-  const strategyQuery = strategyKey === StrategyKey.ALL ? `` : `strategy_: {name: "${strategyKey}"}`;
-  const blockNumberQueryParam = blockNumber > 0 ? (`block: { number: ${blockNumber} }`) : ``;
+  const strategyKey = dashboardData.key;
+  const strategyQuery = isTRVDashboard(strategyKey) ? `` : `strategy_: {name: "${strategyKey}"}`;
+  const blockNumberQueryParam = blockNumber > 0 ? `block: { number: ${blockNumber} }` : ``;
 
   const paginationQuery = `skip: ${offset} first: ${limit}`;
 
   const dateNowSecs = Math.round(Date.now() / 1000);
-  const typeRowFilterQuery = `${rowFilter.type ? ('name_contains_nocase: "' + rowFilter.type + '"') : ''}`;
+  const typeRowFilterQuery = `${rowFilter.type ? 'name_contains_nocase: "' + rowFilter.type + '"' : ''}`;
   const strategyRowFilterQuery = `${
-    rowFilter.strategy ? ('strategy_: {name_contains_nocase: "' + rowFilter.strategy + '"}') : ''
+    rowFilter.strategy ? 'strategy_: {name_contains_nocase: "' + rowFilter.strategy + '"}' : ''
   }`;
-  const tokenRowFilterQuery = `${rowFilter.token ? ('token_: {symbol_contains_nocase: "' + rowFilter.token + '"}') : ''}`;
+  const tokenRowFilterQuery = `${rowFilter.token ? 'token_: {symbol_contains_nocase: "' + rowFilter.token + '"}' : ''}`;
   const whereQuery = `
     ${blockNumberQueryParam} 
     where: { 
@@ -188,24 +168,24 @@ const fetchTransactions = async (props: TxHistoryProps): Promise<Transactions> =
 const useTxHistoryAvailableRows = (props: TxHistoryAvailableRowsProps) =>
   useQuery({
     queryKey: getQueryKey.txHistoryAvailableRows(props),
-    queryFn: () => fetchTxHistoryAvailableRows(props)
+    queryFn: () => fetchTxHistoryAvailableRows(props),
   });
 
 const fetchTxHistoryAvailableRows = async (props: TxHistoryAvailableRowsProps): Promise<AvailableRows> => {
-  const {dashboardType, rowFilter, txFilter} = props;
-  const strategyKey = dashboardTypeToStrategyKey(dashboardType);
-  const strategyQuery = strategyKey === StrategyKey.ALL ? `` : `strategy_: {name: "${strategyKey}"}`;
+  const { dashboardData, rowFilter, txFilter } = props;
+  const strategyKey = dashboardData.key;
+  const strategyQuery = isTRVDashboard(strategyKey) ? `` : `strategy_: {name: "${strategyKey}"}`;
   const dateNowSecs = Math.round(Date.now() / 1000);
-  const typeRowFilterQuery = `${rowFilter.type ? ('name_contains_nocase: "' + rowFilter.type + '"') : ''}`;
+  const typeRowFilterQuery = `${rowFilter.type ? 'name_contains_nocase: "' + rowFilter.type + '"' : ''}`;
   const strategyRowFilterQuery = `${
-    rowFilter.strategy ? ('strategy_: {name_contains_nocase: "' + rowFilter.strategy + '"}') : ''
+    rowFilter.strategy ? 'strategy_: {name_contains_nocase: "' + rowFilter.strategy + '"}' : ''
   }`;
-  const tokenRowFilterQuery = `${rowFilter.token ? ('token_: {symbol_contains_nocase: "' + rowFilter.token + '"}') : ''}`;
+  const tokenRowFilterQuery = `${rowFilter.token ? 'token_: {symbol_contains_nocase: "' + rowFilter.token + '"}' : ''}`;
   // get the max allowed 1000 records for a more accurate totalPages calculation
   const whereQuery = `( first: 1000 
     where: { 
       ${strategyQuery} 
-      timestamp_gt: ${ dateNowSecs - txHistoryFilterTypeToSeconds(txFilter) } 
+      timestamp_gt: ${dateNowSecs - txHistoryFilterTypeToSeconds(txFilter)} 
       ${typeRowFilterQuery} 
       ${strategyRowFilterQuery} 
       ${tokenRowFilterQuery}
@@ -238,8 +218,7 @@ const fetchTxHistoryAvailableRows = async (props: TxHistoryAvailableRowsProps): 
   if (rowFilter.type) hasRowFilters = rowFilter.type.length > 0;
   if (res) {
     let totalRowCount = 0;
-    // if (props.txFilter === TxHistoryFilterType.all && strategyKey === StrategyKey.ALL && (rowFilters && rowFilters?.length === 0)) {
-    if (props.txFilter === TxHistoryFilterType.all && strategyKey === StrategyKey.ALL && !hasRowFilters) {
+    if (props.txFilter === TxHistoryFilterType.all && isTRVDashboard(strategyKey) && !hasRowFilters) {
       // if user chooses all transactions, sum the txCountTotal of every strategy, we don't use this
       // calc for the last30days or lastweek filters because it could show an incorrect number of totalPages
       totalRowCount = res.metrics[0].strategyTransactionCount;

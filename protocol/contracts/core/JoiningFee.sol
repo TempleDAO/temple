@@ -17,7 +17,7 @@ contract JoiningFee is Ownable {
     uint256 public defaultHourlyJoiningFee;
     mapping(address => uint256) public hourlyJoiningFeeFor;
 
-    constructor(uint256 _defaultHourlyJoiningFee) {
+    constructor(uint256 _defaultHourlyJoiningFee) Ownable(msg.sender) {
         defaultHourlyJoiningFee = _defaultHourlyJoiningFee;
     }
 

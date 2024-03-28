@@ -19,7 +19,7 @@ contract Faith is Ownable {
     event Gain(address account, uint256 amount);
     event Loose(address account, uint256 amount);
 
-    constructor() {
+    constructor() Ownable(msg.sender) {
         // Seed with a single unit of faith, assigned to this contract itself
         // required as faith bonus are calculated as a % of total supply. Without
         // this we get div by 0 errors until the first faith is allocated

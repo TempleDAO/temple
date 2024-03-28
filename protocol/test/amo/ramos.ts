@@ -500,7 +500,7 @@ describe("RAMOS", async () => {
         it("pause/unpause", async () => {
             await expect(amo.pause()).to.emit(amo, "Paused").withArgs(executorAddress);
             mineForwardSeconds(10_000);
-            await expect(amo.rebalanceDownJoin(100, 1)).to.be.revertedWith("Pausable: paused");
+            await expect(amo.rebalanceDownJoin(100, 1)).to.be.revertedWithCustomError(amo, "EnforcedPause");
 
             // unpause
             await expect(amo.unpause()).to.emit(amo, "Unpaused").withArgs(executorAddress);
@@ -696,7 +696,7 @@ describe("RAMOS", async () => {
             await singleSideDepositQuoteToken(toAtto(10_000));
             await expect(amo.rebalanceUpJoin(ONE_ETH, 1)).to.be.revertedWithCustomError(poolHelper, "NoRebalanceUp");
             await amo.pause();
-            await expect(amo.rebalanceUpJoin(ONE_ETH, 1)).to.be.revertedWith("Pausable: paused");
+            await expect(amo.rebalanceUpJoin(ONE_ETH, 1)).to.be.revertedWithCustomError(amo, "EnforcedPause");
             await amo.unpause();
             // single-side withdraw quoteToken to skew price below TPI
             await singleSideDepositTemple(toAtto(100_000));
@@ -785,7 +785,7 @@ describe("RAMOS", async () => {
             expect(await amo.treasuryPriceIndex()).to.equal(ethers.utils.parseEther("0.97"));
             await expect(amo.rebalanceDownExit(ONE_ETH, 1)).to.be.revertedWithCustomError(poolHelper, "NoRebalanceDown");
             await amo.pause();
-            await expect(amo.rebalanceDownExit(1, 1)).to.be.revertedWith("Pausable: paused");
+            await expect(amo.rebalanceDownExit(1, 1)).to.be.revertedWithCustomError(amo, "EnforcedPause");
             await amo.unpause();
             // skew price above TPI
             await singleSideDepositQuoteToken(toAtto(200_000));
@@ -900,7 +900,7 @@ describe("RAMOS", async () => {
             await expect(amo.rebalanceUpExit(0, 0)).to.be.revertedWithCustomError(amo, "ZeroSwapLimit");
             await expect(amo.rebalanceUpExit(toAtto(1_000), 1)).to.be.revertedWithCustomError(amo, "AboveCappedAmount");
             await amo.pause();
-            await expect(amo.rebalanceUpExit(1, 1)).to.be.revertedWith("Pausable: paused");
+            await expect(amo.rebalanceUpExit(1, 1)).to.be.revertedWithCustomError(amo, "EnforcedPause");
             await amo.unpause();
            
             // add liquidity on-sided to skew price above TPI
@@ -1009,7 +1009,7 @@ describe("RAMOS", async () => {
             await expect(amo.rebalanceDownJoin(0, 0)).to.be.revertedWithCustomError(amo, "ZeroSwapLimit");
             await expect(amo.rebalanceDownJoin(toAtto(1_000), 1)).to.be.revertedWithCustomError(amo, "AboveCappedAmount");
             await amo.pause();
-            await expect(amo.rebalanceDownJoin(1, 1)).to.be.revertedWith("Pausable: paused");
+            await expect(amo.rebalanceDownJoin(1, 1)).to.be.revertedWithCustomError(amo, "EnforcedPause");
             await amo.unpause();
             
             // add single-side liquidity to skew price below TPI

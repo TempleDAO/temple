@@ -16,8 +16,10 @@ import {
   State,
   Title,
   Warning,
+  Prices,
 } from '../index';
-import { fromAtto } from 'utils/bigNumber';
+import { ZERO, fromAtto } from 'utils/bigNumber';
+import { useMemo } from 'react';
 
 interface IProps {
   accountPosition: ITlcDataTypes.AccountPositionStructOutput | undefined;
@@ -25,30 +27,44 @@ interface IProps {
   minBorrow: number | undefined;
   setState: React.Dispatch<React.SetStateAction<State>>;
   supply: () => void;
+  prices: Prices;
 }
 
-export const Supply: React.FC<IProps> = ({ accountPosition, state, minBorrow, setState, supply }) => {
-  const getEstimatedCollateral = (): number => {
+export const Supply: React.FC<IProps> = ({ accountPosition, state, minBorrow, setState, supply, prices }) => {
+  const estimatedCollateral = useMemo(() => {
     return accountPosition
       ? fromAtto(accountPosition.collateral) + Number(state.supplyValue)
       : Number(state.supplyValue);
-  };
+  }, [accountPosition, state.supplyValue]);
 
   const getEstimatedLTV = (): string => {
-    return accountPosition
-      ? ((fromAtto(accountPosition.currentDebt) / getEstimatedCollateral()) * 100).toFixed(2)
-      : '0.00';
+    if (!accountPosition) return '0.00';
+    const tpi = prices.tpi;
+
+    const currentDebt = fromAtto(accountPosition.currentDebt);
+
+    const ltv = (currentDebt / (estimatedCollateral * tpi)) * 100;
+    return ltv.toFixed(2);
   };
 
-  const getEstimatedMaxBorrow = (): number => {
-    return getEstimatedCollateral() * (MAX_LTV / 100);
-  };
+  const estimatedMaxBorrow = useMemo(() => {
+    const tpi = prices.tpi;
+    return estimatedCollateral * tpi * (MAX_LTV / 100);
+  }, [prices.tpi, estimatedCollateral]);
 
   const minSupply = minBorrow ? (1 / (MAX_LTV / 100)) * minBorrow : 0;
   const unusedSupply = accountPosition
     ? fromAtto(accountPosition.collateral) - fromAtto(accountPosition.currentDebt)
     : 0;
   const estimatedUnusedSupply = Number(state.supplyValue) + unusedSupply;
+
+  const supplyMessage = useMemo(() => {
+    const existingDebtInDAI = fromAtto(accountPosition?.currentDebt || ZERO);
+    return `You could borrow up to ${(estimatedMaxBorrow - existingDebtInDAI).toFixed(
+      2
+    )} additional DAI with ${estimatedCollateral.toFixed(2)}
+    total TEMPLE collateral.`;
+  }, [accountPosition?.currentDebt, estimatedMaxBorrow, estimatedCollateral]);
 
   return (
     <>
@@ -89,32 +105,24 @@ export const Supply: React.FC<IProps> = ({ accountPosition, state, minBorrow, se
           <RangeSlider
             onChange={(e) => {
               if (!accountPosition) return;
-              let ltvPercent = ((Number(e.target.value) / 100) * MAX_LTV) / 100;
-              // Max LTV is the current LTV
-              const maxLtv = fromAtto(accountPosition.currentDebt) / fromAtto(accountPosition.collateral);
-              if (ltvPercent > maxLtv) ltvPercent = maxLtv;
-              const newSupply = (
-                fromAtto(accountPosition.currentDebt) / ltvPercent -
-                fromAtto(accountPosition.collateral)
-              ).toFixed(2);
-              setState({ ...state, supplyValue: `${Number(newSupply) > 0 ? newSupply : '0'}` });
+              const sliderValue = Number(e.target.value);
+              const newSupply = (sliderValue / 100) * fromAtto(state.inputTokenBalance);
+
+              setState({ ...state, supplyValue: `${newSupply.toFixed(2)}` });
             }}
             min={0}
             max={100}
-            value={(Number(getEstimatedLTV()) / MAX_LTV) * 100}
-            progress={(Number(getEstimatedLTV()) / MAX_LTV) * 100}
+            value={(Number(state.supplyValue) / fromAtto(state.inputTokenBalance)) * 100}
+            progress={(Number(state.supplyValue) / fromAtto(state.inputTokenBalance)) * 100}
           />
           <FlexBetween>
-            <RangeLabel>0%</RangeLabel>
-            <RangeLabel>{MAX_LTV}%</RangeLabel>
+            <RangeLabel>0 TEMPLE</RangeLabel>
+            <RangeLabel>{fromAtto(state.inputTokenBalance)} TEMPLE</RangeLabel>
           </FlexBetween>
         </>
       )}
       <GradientContainer>
-        <Copy style={{ textAlign: 'left' }}>
-          You could borrow up to {getEstimatedMaxBorrow().toFixed(2)} DAI with {getEstimatedCollateral().toFixed(2)}{' '}
-          total TEMPLE collateral.
-        </Copy>
+        <Copy style={{ textAlign: 'left' }}>{supplyMessage}</Copy>
       </GradientContainer>
       <FlexColCenter>
         <TradeButton

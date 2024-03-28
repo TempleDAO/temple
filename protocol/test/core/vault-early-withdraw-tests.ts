@@ -92,8 +92,8 @@ describe("Temple Core Vault - Early Withdraw", async () => {
     await templeExposure.setMinterState(vault.address, true);
     await templeExposure.setMinterState(await owner.getAddress(), true);
 
-    await templeToken.connect(alan).increaseAllowance(vault.address, toAtto(1000000));
-    await templeToken.connect(ben).increaseAllowance(vault.address, toAtto(1000000));
+    await templeToken.connect(alan).approve(vault.address, toAtto(1000000));
+    await templeToken.connect(ben).approve(vault.address, toAtto(1000000));
 
     vaultEarlyWithdraw = await new VaultEarlyWithdraw__factory(owner).deploy(
       templeToken.address,
@@ -103,8 +103,8 @@ describe("Temple Core Vault - Early Withdraw", async () => {
     );
 
     // Approve the early withdraw contract to pull the vault erc20.
-    await vault.connect(alan).increaseAllowance(vaultEarlyWithdraw.address, toAtto(1000000));
-    await vault.connect(ben).increaseAllowance(vaultEarlyWithdraw.address, toAtto(1000000));
+    await vault.connect(alan).approve(vaultEarlyWithdraw.address, toAtto(1000000));
+    await vault.connect(ben).approve(vaultEarlyWithdraw.address, toAtto(1000000));
 
     // Fund the vaultEarlyWithdraw with temple
     await templeToken.mint(vaultEarlyWithdraw.address, toAtto(1000000));
@@ -112,11 +112,11 @@ describe("Temple Core Vault - Early Withdraw", async () => {
 
   it("only owner can call pause/unpause/recoverToken", async () => {
     await expect(vaultEarlyWithdraw.connect(alan).pause())
-      .to.be.revertedWith("Ownable: caller is not the owner");
+      .to.be.revertedWithCustomError(vaultEarlyWithdraw, "OwnableUnauthorizedAccount").withArgs(await alan.getAddress());
     await expect(vaultEarlyWithdraw.connect(alan).unpause())
-      .to.be.revertedWith("Ownable: caller is not the owner");
+      .to.be.revertedWithCustomError(vaultEarlyWithdraw, "OwnableUnauthorizedAccount").withArgs(await alan.getAddress());
     await expect(vaultEarlyWithdraw.connect(alan).recoverToken(templeToken.address, await owner.getAddress(), toAtto(100)))
-      .to.be.revertedWith("Ownable: caller is not the owner");
+      .to.be.revertedWithCustomError(vaultEarlyWithdraw, "OwnableUnauthorizedAccount").withArgs(await alan.getAddress());
 
     await expect(vaultEarlyWithdraw.connect(owner).pause())
       .to.not.be.reverted;
@@ -150,7 +150,7 @@ describe("Temple Core Vault - Early Withdraw", async () => {
 
   it("owner can update min withdraw amount", async () => {
     await expect(vaultEarlyWithdraw.connect(alan).setMinWithdrawAmount(1))
-      .to.be.revertedWith("Ownable: caller is not the owner");
+      .to.be.revertedWithCustomError(vaultEarlyWithdraw, "OwnableUnauthorizedAccount").withArgs(await alan.getAddress());
 
     await expect(vaultEarlyWithdraw.connect(owner).setMinWithdrawAmount(1))
       .to.emit(vaultEarlyWithdraw, "MinWithdrawAmountSet")
@@ -171,7 +171,7 @@ describe("Temple Core Vault - Early Withdraw", async () => {
 
     // Fails as there's no $TEMPLE left.
     await expect(vaultEarlyWithdraw.connect(alan).withdraw(vault.address, toAtto(1))).
-      to.be.revertedWith("ERC20: transfer amount exceeds balance");
+      to.be.revertedWithCustomError(templeToken, "ERC20InsufficientBalance");
   });
 
   it("deposit and early withdrawal", async () => {
@@ -234,7 +234,7 @@ describe("Temple Core Vault - Early Withdraw", async () => {
 
     // Cannot withdraw when paused
     await expect(vaultEarlyWithdraw.withdraw(vault.address, toAtto(100)))
-      .to.be.revertedWith("Pausable: paused");
+      .to.be.revertedWithCustomError(vaultEarlyWithdraw, "EnforcedPause");
 
     await expect(vaultEarlyWithdraw.unpause())
       .to.emit(vaultEarlyWithdraw, "Unpaused")
@@ -242,7 +242,7 @@ describe("Temple Core Vault - Early Withdraw", async () => {
 
     // Can withdraw when unpaused (and as expected, fails from lack of vaulted balance as no deposits)
     await expect(vaultEarlyWithdraw.connect(alan).withdraw(vault.address, toAtto(100)))
-      .to.be.revertedWith("ERC20: transfer amount exceeds balance");
+      .to.be.revertedWithCustomError(templeToken, "ERC20InsufficientBalance");
   });
 
   it("owner can recover token", async () => {

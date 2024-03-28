@@ -174,7 +174,7 @@ const HeaderText = styled.div`
   margin-top: 10px;
   margin-bottom: 40px;
   ${tabletAndAbove(`
-    margin-left: 40px;
+    margin-left: 20px;
   `)};
 `;
 
@@ -200,5 +200,5 @@ const TradeContainer = styled.div`
   justify-content: center;
   align-items: center;
   color: ${({ theme }) => theme.palette.brand};
-  width: 400px;
+  width: 480px;
 `;

@@ -1,19 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import millify from 'millify';
 import { fetchGenericSubgraph } from 'utils/subgraph';
-import { DashboardType } from '../DashboardContent';
 import env from 'constants/env';
 import { getQueryKey } from 'utils/react-query-helpers';
-
-export enum StrategyKey {
-  RAMOS = 'RamosStrategy',
-  TLC = 'TlcStrategy',
-  TEMPLEBASE = 'TempleBaseStrategy',
-  DSRBASE = 'DsrBaseStrategy',
-  TEMPLO_MAYOR_GNOSIS = 'TemploMayorStrategy',
-  FOHMO_GNOSIS = 'FohmoStrategy',
-  ALL = 'All',
-}
+import { DashboardData, StrategyKey, TrvKey, isTRVDashboard } from '../DashboardConfig';
 
 export enum TokenSymbols {
   DAI = 'DAI',
@@ -54,108 +44,21 @@ export interface StrategyMetrics {
 
 const CACHE_TTL = 1000 * 60;
 
-export default function useDashboardV2Metrics(dashboardType: DashboardType) {
-  // TODO: In the future we can refactor this.
-  // Ideally should not enumerate every strategy but instead do it dynamically
-  // by e.g. iterating over the StrategyKey enum
-  // type MetricsMap = {
-  //   [strategy in StrategyKey]: UseQueryResult<StrategyMetrics>;
-  // };
-
-  const ramosMetrics = useQuery({
-    queryKey: getQueryKey.metrics(StrategyKey.RAMOS),
-    queryFn: async () => {
-      const metrics = await fetchStrategyMetrics(StrategyKey.RAMOS);
-      return metrics;
-    },
-    refetchInterval: CACHE_TTL,
-    staleTime: CACHE_TTL,
-  });
-
-  const tlcMetrics = useQuery({
-    queryKey: getQueryKey.metrics(StrategyKey.TLC),
-    queryFn: async () => {
-      const metrics = await fetchStrategyMetrics(StrategyKey.TLC);
-      return metrics;
-    },
-    refetchInterval: CACHE_TTL,
-    staleTime: CACHE_TTL,
-  });
-
-  const templeBaseMetrics = useQuery({
-    queryKey: getQueryKey.metrics(StrategyKey.TEMPLEBASE),
-    queryFn: async () => {
-      const metrics = await fetchStrategyMetrics(StrategyKey.TEMPLEBASE);
-      return metrics;
-    },
-    refetchInterval: CACHE_TTL,
-    staleTime: CACHE_TTL,
-  });
-
-  const dsrBaseMetrics = useQuery({
-    queryKey: getQueryKey.metrics(StrategyKey.DSRBASE),
-    queryFn: async () => {
-      const metrics = await fetchStrategyMetrics(StrategyKey.DSRBASE);
-      return metrics;
-    },
-    refetchInterval: CACHE_TTL,
-    staleTime: CACHE_TTL,
-  });
-
-  const treasuryReservesVaultMetrics = useQuery({
-    queryKey: getQueryKey.trvMetrics(DashboardType.TREASURY_RESERVES_VAULT),
-    queryFn: async () => {
-      const metrics = await fetchTreasuryReservesVaultMetrics();
-      return metrics;
-    },
-    refetchInterval: CACHE_TTL,
-    staleTime: CACHE_TTL,
-  });
-
-  const temploMayorGnosisMetrics = useQuery({
-    queryKey: getQueryKey.metrics(StrategyKey.TEMPLO_MAYOR_GNOSIS),
-    queryFn: async () => {
-      const metrics = await fetchStrategyMetrics(StrategyKey.TEMPLO_MAYOR_GNOSIS);
-      return metrics;
-    },
-    refetchInterval: CACHE_TTL,
-    staleTime: CACHE_TTL,
-  });
-
-  const fohmoGnosisMetrics = useQuery({
-    queryKey: getQueryKey.metrics(StrategyKey.FOHMO_GNOSIS),
-    queryFn: async () => {
-      const metrics = await fetchStrategyMetrics(StrategyKey.FOHMO_GNOSIS);
-      return metrics;
-    },
-    refetchInterval: CACHE_TTL,
-    staleTime: CACHE_TTL,
-  });
-
+export default function useDashboardV2Metrics(dashboardData: DashboardData) {
   const dashboardMetrics = useQuery({
-    queryKey: getQueryKey.metricsDashboard(dashboardType),
-    queryFn: () => {
-      switch (dashboardType) {
-        case DashboardType.TREASURY_RESERVES_VAULT:
-          return treasuryReservesVaultMetrics.data && getArrangedTreasuryReservesVaultMetrics(treasuryReservesVaultMetrics.data);
-        // case DashboardType.TLC: // TODO: Hidden until launch
-        //   return tlcMetrics.data && getArrangedStrategyMetrics(tlcMetrics.data);
-        case DashboardType.RAMOS:
-          return ramosMetrics.data && getArrangedStrategyMetrics(ramosMetrics.data);
-        case DashboardType.TEMPLE_BASE:
-          return templeBaseMetrics.data && getArrangedStrategyMetrics(templeBaseMetrics.data);
-        case DashboardType.DSR_BASE:
-          return dsrBaseMetrics.data && getArrangedStrategyMetrics(dsrBaseMetrics.data);
-        case DashboardType.TEMPLO_MAYOR_GNOSIS:
-          return temploMayorGnosisMetrics.data && getArrangedStrategyMetrics(temploMayorGnosisMetrics.data);
-        case DashboardType.FOHMO_GNOSIS:
-          return fohmoGnosisMetrics.data && getArrangedStrategyMetrics(fohmoGnosisMetrics.data);
+    queryKey: getQueryKey.metricsDashboard(dashboardData.key),
+    queryFn: async () => {
+      if (isTRVDashboard(dashboardData.key)) {
+        return getArrangedTreasuryReservesVaultMetrics(await fetchTreasuryReservesVaultMetrics());
       }
-    },
-    enabled: !!treasuryReservesVaultMetrics.data && !!tlcMetrics.data && !!ramosMetrics.data && !!templeBaseMetrics.data && !!dsrBaseMetrics.data && !!temploMayorGnosisMetrics.data && !!fohmoGnosisMetrics.data
-  })
 
-  const fetchStrategyMetrics = async (strategy: StrategyKey): Promise<StrategyMetrics> => {
+      return getArrangedStrategyMetrics(await fetchStrategyMetrics(dashboardData.key));
+    },
+    refetchInterval: CACHE_TTL,
+    staleTime: CACHE_TTL,
+  });
+
+  const fetchStrategyMetrics = async (strategy: StrategyKey | TrvKey): Promise<StrategyMetrics> => {
     let metrics = {
       valueOfHoldings: 0,
       benchmarkedEquity: 0,

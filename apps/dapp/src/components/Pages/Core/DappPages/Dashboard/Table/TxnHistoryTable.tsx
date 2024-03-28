@@ -2,26 +2,20 @@ import { useState, useEffect, useMemo } from 'react';
 import type * as CSS from 'csstype';
 import styled from 'styled-components';
 import { TxHistoryFilterType } from '.';
-import { DashboardType } from '../DashboardContent';
 import { format } from 'date-fns';
 import { TableRow, TxType, TxnDataTable } from './TxnDataTable';
 import { PaginationControl } from './PaginationControl';
-import {
-  RowFilter,
-  dashboardTypeToStrategyKey,
-  useTxHistory,
-  useTxHistoryAvailableRows,
-} from '../hooks/use-dashboardv2-txHistory';
-import { StrategyKey } from '../hooks/use-dashboardv2-metrics';
+import { RowFilter, useTxHistory, useTxHistoryAvailableRows } from '../hooks/use-dashboardv2-txHistory';
 import { DropdownCheckOption, DropdownCheckOptions } from './RowFilterDropdown';
 import { useMediaQuery } from 'react-responsive';
 import { queryMinTablet } from 'styles/breakpoints';
 import env from 'constants/env';
 import linkSvg from 'assets/icons/link.svg?react';
 import { formatNumberWithCommas } from 'utils/formatter';
+import { DashboardData, Dashboards, isTRVDashboard } from '../DashboardConfig';
 
 type Props = {
-  dashboardType: DashboardType;
+  dashboardData: DashboardData;
   txFilter: TxHistoryFilterType;
 };
 
@@ -48,7 +42,7 @@ export type TxHistoryTableHeader = {
 };
 
 const TxnHistoryTable = (props: Props) => {
-  const { dashboardType, txFilter } = props;
+  const { dashboardData, txFilter } = props;
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [blockNumber, setBlockNumber] = useState(0);
@@ -56,14 +50,7 @@ const TxnHistoryTable = (props: Props) => {
   const isBiggerThanTablet = useMediaQuery({ query: queryMinTablet });
 
   const allStrategyDropdowns = useMemo(
-    () => [
-      { label: StrategyKey.RAMOS, checked: false },
-      // { label: StrategyKey.TLC, checked: false }, // TODO: Hidden until launch
-      { label: StrategyKey.TEMPLEBASE, checked: false },
-      { label: StrategyKey.DSRBASE, checked: false },
-      { label: StrategyKey.TEMPLO_MAYOR_GNOSIS, checked: false },
-      { label: StrategyKey.FOHMO_GNOSIS, checked: false },
-    ],
+    () => Dashboards.map((dashboard) => ({ label: dashboard.key, checked: false })),
     []
   );
 
@@ -174,7 +161,7 @@ const TxnHistoryTable = (props: Props) => {
   };
 
   useEffect(() => {
-    const selectedStrategy = dashboardTypeToStrategyKey(dashboardType);
+    const selectedStrategy = dashboardData.key;
     setTableHeaders((prevState) => {
       // When user changes dashboard url:
       //  1. reset page
@@ -191,10 +178,9 @@ const TxnHistoryTable = (props: Props) => {
           return {
             ...prevStateHeader,
             orderDesc: undefined,
-            dropdownOptions:
-              selectedStrategy === StrategyKey.ALL
-                ? allStrategyDropdowns
-                : [{ label: selectedStrategy, checked: true }],
+            dropdownOptions: isTRVDashboard(selectedStrategy)
+              ? allStrategyDropdowns
+              : [{ label: selectedStrategy, checked: true }],
           };
         }
         //  3.2 reset all other dropdown values
@@ -211,14 +197,14 @@ const TxnHistoryTable = (props: Props) => {
       });
       return newState;
     });
-  }, [dashboardType, allStrategyDropdowns]);
+  }, [dashboardData.key, allStrategyDropdowns]);
 
   useEffect(() => {
     setCurrentPage(1);
   }, [rowsPerPage]);
 
   const availableRows = useTxHistoryAvailableRows({
-    dashboardType,
+    dashboardData,
     txFilter,
     rowFilter,
   });
@@ -228,7 +214,7 @@ const TxnHistoryTable = (props: Props) => {
   if (blockNumber === 0 && availableRows.data) setBlockNumber(availableRows.data.blockNumber);
 
   const txHistory = useTxHistory({
-    dashboardType,
+    dashboardData,
     txFilter,
     rowFilter,
     offset: (currentPage - 1) * rowsPerPage,
@@ -242,7 +228,11 @@ const TxnHistoryTable = (props: Props) => {
 
   // Fetch strategies tx data
   const dataToTable: TableRow[] | undefined = txHistory.data?.map((tx) => {
-    const amountResponsive = isBiggerThanTablet ? tx.amount : tx.name === TxType.Borrow ? Number(tx.amount) * -1 : tx.amount;
+    const amountResponsive = isBiggerThanTablet
+      ? tx.amount
+      : tx.name === TxType.Borrow
+      ? Number(tx.amount) * -1
+      : tx.amount;
     const amountFmt = formatNumberWithCommas(amountResponsive);
     const datetime = format(new Date(Number(tx.timestamp) * 1000), 'yyyy-MM-dd H:mm:ss O');
     const dateOnly = format(new Date(Number(tx.timestamp) * 1000), 'yyyy-MM-dd');
