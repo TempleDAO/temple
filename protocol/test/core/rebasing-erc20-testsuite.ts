@@ -83,7 +83,7 @@ export const mkRebasingERC20TestSuite = (setup: () => Promise<RebasingERC20TestS
       const [[alan, alanBalance], [ben, ]] = accounts;
 
       await expect(token.connect(alan).transfer(await ben.getAddress(), alanBalance.add(toAtto(100))))
-        .to.be.revertedWith("ERC20: transfer amount exceeds balance")
+        .to.be.revertedWithCustomError(token, "ERC20InsufficientBalance");
     })
 
     it("totalSupply", async () => {

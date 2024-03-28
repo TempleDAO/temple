@@ -183,7 +183,7 @@ contract Vault is Nonces, EIP712, Ownable, RebasingERC20 {
         uint256 amountStaked = _amount - fee;
 
         if (_amount > 0) {
-            _mintUpdate(_account, amountStaked);
+            _mint(_account, amountStaked);
             SafeERC20.safeTransferFrom(templeToken, msg.sender, vaultedTempleAccount, _amount);
             templeExposureToken.mint(address(this), _amount);
         }
@@ -201,7 +201,7 @@ contract Vault is Nonces, EIP712, Ownable, RebasingERC20 {
         require(canExit(), "Vault: Cannot exit vault when outside of enter/exit window");
 
         if (_amount > 0) {
-            _burnUpdate(_account, _amount);
+            _burn(_account, _amount);
         }
 
         templeExposureToken.redeemAmount(_amount, _to);

@@ -85,7 +85,7 @@ contract Exposure is Ownable, RebasingERC20 {
      * a strategy
      */
     function mint(address account, uint256 amount) external onlyMinter {
-        _mintUpdate(account, amount);
+        _mint(account, amount);
         reval += amount;
 
         // no need for event, handled via _mint
@@ -102,7 +102,7 @@ contract Exposure is Ownable, RebasingERC20 {
      * @dev redeem the callers share of this exposure back to temple
      */
     function redeemAmount(uint256 amount, address to) public {
-        _burnUpdate(msg.sender, amount);
+        _burn(msg.sender, amount);
         reval -= amount;
 
         if (address(liquidator) != address(0)) {

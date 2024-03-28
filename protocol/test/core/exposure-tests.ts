@@ -56,8 +56,8 @@ describe("Temple Core Exposures", async () => {
   })
 
   it("Only exposure balance holders can redeem", async () => {
-    await expect(exposure.connect(alan).redeemAmount(1, await alan.getAddress()))
-      .to.revertedWith("ERC20: burn amount exceeds balance")
+    await expect(exposure.connect(alan).redeemAmount(1, await alan.getAddress())).
+      to.be.revertedWithCustomError(exposure, "ERC20InsufficientBalance");
   })
 
   it("No liquidator by default (Event fired and tracked/handled manually)", async () => {
