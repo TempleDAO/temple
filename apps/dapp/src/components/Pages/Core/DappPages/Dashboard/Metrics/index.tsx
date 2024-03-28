@@ -4,15 +4,15 @@ import { useMediaQuery } from 'react-responsive';
 import styled from 'styled-components';
 import * as breakpoints from 'styles/breakpoints';
 import { queryPhone } from 'styles/breakpoints';
-import { DashboardType } from '../DashboardContent';
+import { DashboardData } from '../DashboardConfig';
 import useDashboardV2Metrics, { ArrangedDashboardMetrics } from '../hooks/use-dashboardv2-metrics';
 
 type DashboardMetricsProps = {
-  dashboardType: DashboardType;
+  dashboardData: DashboardData;
 };
 
-const DashboardMetrics = ({ dashboardType }: DashboardMetricsProps) => {
-  const { dashboardMetrics } = useDashboardV2Metrics(dashboardType);
+const DashboardMetrics = ({ dashboardData }: DashboardMetricsProps) => {
+  const { dashboardMetrics } = useDashboardV2Metrics(dashboardData);
 
   const isDesktop = useMediaQuery({
     query: queryPhone,

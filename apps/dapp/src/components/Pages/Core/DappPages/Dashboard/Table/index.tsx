@@ -1,12 +1,11 @@
 import { useState } from 'react';
-import { Button as BaseButton } from 'components/Button/Button';
 import styled from 'styled-components';
 import * as breakpoints from 'styles/breakpoints';
 import TxnHistoryTable from './TxnHistoryTable';
-import { DashboardType } from '../DashboardContent';
+import { DashboardData } from '../DashboardConfig';
 
 type DashboardTransactionHistoryProps = {
-  dashboardType: DashboardType;
+  dashboardData: DashboardData;
 };
 
 export enum TxHistoryFilterType {
@@ -15,7 +14,7 @@ export enum TxHistoryFilterType {
   all = 'all',
   }
 
-const DashboardTransactionHistory = ({ dashboardType }: DashboardTransactionHistoryProps) => {
+const DashboardTransactionHistory = ({ dashboardData }: DashboardTransactionHistoryProps) => {
   
   const [txFilter, setTxFilter] = useState<TxHistoryFilterType>(TxHistoryFilterType.all);
 
@@ -36,7 +35,7 @@ const DashboardTransactionHistory = ({ dashboardType }: DashboardTransactionHist
         </TransactionTimePeriod>
       </TransactionHistoryHeader>
       <TransactionHistoryContent>
-        <TxnHistoryTable dashboardType={dashboardType} txFilter={txFilter} />
+        <TxnHistoryTable dashboardData={dashboardData} txFilter={txFilter} />
       </TransactionHistoryContent>
     </TransactionHistoryContainer>
   );
