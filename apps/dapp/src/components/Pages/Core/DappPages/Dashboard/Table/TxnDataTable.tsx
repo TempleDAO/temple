@@ -3,7 +3,6 @@ import { LoadingText } from 'components/Pages/Core/components/LoaderVault/common
 import env from 'constants/env';
 import styled from 'styled-components';
 import { loading } from 'utils/loading-value';
-import { StrategyKey } from '../hooks/use-dashboardv2-metrics';
 import { ArrowButtonUpDown } from 'components/Pages/Ascend/components/Trade/styles';
 import { TxHistoryTableHeader } from './TxnHistoryTable';
 import { useMediaQuery } from 'react-responsive';
@@ -12,6 +11,7 @@ import { queryMinTablet, queryPhone } from 'styles/breakpoints';
 import dropdownIcon from 'assets/icons/dropdown.svg?react';
 import { RowFilterDropdown, updateRowDropdownCheckbox } from './RowFilterDropdown';
 import { RowFilter } from '../hooks/use-dashboardv2-txHistory';
+import { StrategyKey } from '../DashboardConfig';
 
 export enum TxType {
   Borrow = 'Borrow',
