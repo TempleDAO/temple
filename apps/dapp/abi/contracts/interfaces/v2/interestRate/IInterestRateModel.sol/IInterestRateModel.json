@@ -1,0 +1,30 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "IInterestRateModel",
+  "sourceName": "contracts/interfaces/v2/interestRate/IInterestRateModel.sol",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "utilizationRatio",
+          "type": "uint256"
+        }
+      ],
+      "name": "calculateInterestRate",
+      "outputs": [
+        {
+          "internalType": "uint96",
+          "name": "interestRate",
+          "type": "uint96"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

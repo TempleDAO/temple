@@ -1,0 +1,115 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "AMOCommon",
+  "sourceName": "contracts/amo/helpers/AMOCommon.sol",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "amountIn",
+          "type": "uint256"
+        }
+      ],
+      "name": "AboveCappedAmount",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "HighSlippage",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "InsufficientBPTAmount",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "value",
+          "type": "uint256"
+        }
+      ],
+      "name": "InvalidBPSValue",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidBalancerVaultRequest",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "bptMaxAmount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "stableMaxAmount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "templeMaxAmount",
+          "type": "uint256"
+        }
+      ],
+      "name": "InvalidMaxAmounts",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NoRebalanceDown",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NoRebalanceUp",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NotEnoughCooldown",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NotOperator",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NotOperatorOrOwner",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "OnlyAMO",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "Paused",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ZeroSwapLimit",
+      "type": "error"
+    }
+  ],
+  "bytecode": "0x60566037600b82828239805160001a607314602a57634e487b7160e01b600052600060045260246000fd5b30600052607381538281f3fe73000000000000000000000000000000000000000030146080604052600080fdfea2646970667358221220d90647fd39903eb8f46014450689f72a3f22693222bd6ce975aaba2374d94d8364736f6c63430008130033",
+  "deployedBytecode": "0x73000000000000000000000000000000000000000030146080604052600080fdfea2646970667358221220d90647fd39903eb8f46014450689f72a3f22693222bd6ce975aaba2374d94d8364736f6c63430008130033",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}
