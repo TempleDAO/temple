@@ -200,11 +200,9 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
 
         // Set max allowance on the new TRV
         {
-            protocolToken.approve(vault, 0);
-            protocolToken.safeIncreaseAllowance(vault, type(uint256).max);
+            protocolToken.forceApprove(vault, type(uint256).max);
             
-            quoteToken.approve(vault, 0);
-            quoteToken.safeIncreaseAllowance(vault, type(uint256).max);
+            quoteToken.forceApprove(vault, type(uint256).max);
         }
     }
 

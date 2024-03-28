@@ -247,8 +247,9 @@ describe("AMM", async () => {
   describe("Update Treasury", async() => {
 
     it("non-owner reverts", async () => {
-        await shouldThrow(templeRouter.connect(alan).setTreasury(await ben.getAddress()), /OwnableUnauthorizedAccount/);
-        // OwnableUnauthorizedAccount(_msgSender())
+        await expect(templeRouter.connect(alan).setTreasury(await ben.getAddress()))
+          .to.be.revertedWithCustomError(templeRouter, "OwnableUnauthorizedAccount")
+          .withArgs(await alan.getAddress());
     });
 
     it("updates treasury address properly", async () => {
@@ -261,7 +262,9 @@ describe("AMM", async () => {
   describe("Defend stable", async() => {
 
     it("non-owner reverts", async () => {
-        await shouldThrow(templeRouter.connect(alan).setDefendStable(feiToken.address), /OwnableUnauthorizedAccount/);
+        await expect(templeRouter.connect(alan).setDefendStable(feiToken.address))
+          .to.be.revertedWithCustomError(templeRouter, "OwnableUnauthorizedAccount")
+          .withArgs(await alan.getAddress());
     });
 
     it("sets correctly", async () => {
@@ -273,7 +276,9 @@ describe("AMM", async () => {
  describe("Add pair ", async() => {
 
       it("non-owner reverts", async () => {
-          await shouldThrow(templeRouter.connect(alan).addPair(feiToken.address, templeRouter.address), /OwnableUnauthorizedAccount/);
+          await expect(templeRouter.connect(alan).addPair(feiToken.address, templeRouter.address))
+            .to.be.revertedWithCustomError(templeRouter, "OwnableUnauthorizedAccount")
+            .withArgs(await alan.getAddress());
       });
 
       it("sets correctly", async () => {

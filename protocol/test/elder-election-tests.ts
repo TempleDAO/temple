@@ -9,7 +9,6 @@ import {
   ElderElection, ElderElection__factory,
 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { shouldThrow } from "./helpers";
 
 const DISCORD_ID_1 = 1000;
 const DISCORD_ID_2 = 1001;
@@ -57,7 +56,8 @@ describe("Elder Election", async () => {
   it("nominations work", async () => {
     {
       const election = ELDER_ELECTION.connect(amanda);
-      await shouldThrow(election.nominate(DISCORD_ID_1), /AccessControlBadConfirmation/);
+      await expect(election.nominate(DISCORD_ID_1))
+        .to.be.revertedWithCustomError(ELDER_ELECTION, "AccessControlUnauthorizedAccount");
     }
 
     {
@@ -76,7 +76,8 @@ describe("Elder Election", async () => {
   it("resignations work", async () => {
     {
       const election = ELDER_ELECTION.connect(amanda);
-      await shouldThrow(election.resign(DISCORD_ID_1), /AccessControlBadConfirmation/);
+      await expect(election.resign(DISCORD_ID_1))
+        .to.be.revertedWithCustomError(ELDER_ELECTION, "AccessControlUnauthorizedAccount");
     }
 
     {

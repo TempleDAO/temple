@@ -237,7 +237,6 @@ describe("Vault Proxy", async () => {
   })
 
   it("Can proxy deposit for any Vault", async() => {
-    await TEMPLE.connect(alan).approve(VAULT_PROXY.address, 0);
     await TEMPLE.connect(alan).approve(VAULT_PROXY.address, toAtto(1000));
     await VAULT_PROXY.connect(alan).depositTempleFor(toAtto(100), vault.address);
 

@@ -56,7 +56,7 @@ abstract contract RebasingERC20 is ERC20 {
      */
     function transfer(address to, uint256 value) public virtual override returns (bool) {
         address owner = _msgSender();
-        _transferUpdate(owner, to, value);
+        _update(owner, to, value);
         return true;
     }
 
@@ -79,7 +79,7 @@ abstract contract RebasingERC20 is ERC20 {
     function transferFrom(address from, address to, uint256 value) public virtual override returns (bool) {
         address spender = _msgSender();
         _spendAllowance(from, spender, value);
-        _transferUpdate(from, to, value);
+        _update(from, to, value);
         return true;
     }
 
@@ -97,11 +97,11 @@ abstract contract RebasingERC20 is ERC20 {
      * - `recipient` cannot be the zero address.
      * - `sender` must have a balance of at least `amount`.
      */
-    function _transferUpdate(
+    function _update(
         address sender,
         address recipient,
         uint256 amount
-    ) internal {
+    ) internal virtual override {
         require(sender != address(0), "ERC20: transfer from the zero address");
         require(recipient != address(0), "ERC20: transfer to the zero address");
 

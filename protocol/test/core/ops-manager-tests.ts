@@ -180,7 +180,6 @@ describe("Temple Core Ops Manager", async () => {
     expect(await exposure.owner()).equals(opsManager.address);
     
     const vault = new Vault__factory(owner).attach(vault1Addr);
-    await templeToken.approve(vault.address, 0);
     await templeToken.approve(vault.address, toAtto(10000));
     await vault.deposit(toAtto(1000));
     const ENTER_EXIT_BUFFER = (await vault.ENTER_EXIT_WINDOW_BUFFER()).toNumber();
@@ -280,12 +279,10 @@ describe("Temple Core Ops Manager", async () => {
     // Deposit temple into the current open vault
     // Phase 1 - start of day 0
     
-    await templeTokenAlan.approve(vault1Alan.address, 0);
     await templeTokenAlan.approve(vault1Alan.address, toAtto(100000));
     await vault1Alan.deposit(toAtto(75));
     expect(await vault1Alan.balanceOf(alanAddr)).equals(toAtto(75));
 
-    await templeTokenBen.approve(vault1Ben.address, 0);
     await templeTokenBen.approve(vault1Ben.address, toAtto(100000));
     await vault1Ben.deposit(toAtto(25));
 
@@ -559,11 +556,9 @@ describe("Temple Core Ops Manager", async () => {
   })
 
   async function addDepositToVaults(vault: Vault, amountAlan: BigNumber, amountBen: BigNumber) {
-    await templeToken.connect(alan).approve(vault.address, 0);
     await templeToken.connect(alan).approve(vault.address, toAtto(100000));
     await vault.connect(alan).deposit(amountAlan);
 
-    await templeToken.connect(ben).approve(vault.address, 0);
     await templeToken.connect(ben).approve(vault.address, toAtto(1000000));
     await vault.connect(ben).deposit(amountBen);
   }

@@ -5,7 +5,6 @@ import {
   Templar, Templar__factory, 
   TemplarMetadata, TemplarMetadata__factory,
 } from "../typechain";
-import { shouldThrow } from "./helpers";
 
 const DISCORD_ID_1 = 1000;
 const DISCORD_ID_2 = 1001;
@@ -46,7 +45,8 @@ describe("Templar Metadata", async () => {
     // Ben cannot
     {
       const templarMetadata = TEMPLAR_METADATA.connect(ben);
-      await shouldThrow(templarMetadata.setRole(DISCORD_ID_1, "acolyte"), /AccessControlUnauthorizedAccount/);
+      await expect(templarMetadata.setRole(DISCORD_ID_1, "acolyte"))
+        .to.be.revertedWithCustomError(templarMetadata, "AccessControlUnauthorizedAccount");
     }
   });
 

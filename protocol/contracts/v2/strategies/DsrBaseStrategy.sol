@@ -57,8 +57,7 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
         vat.hope(address(daiJoin));
         vat.hope(address(pot));
         daiToken = IERC20(_daiToken);
-        daiToken.approve(address(daiJoin), 0);
-        daiToken.safeIncreaseAllowance(address(daiJoin), type(uint256).max);
+        daiToken.forceApprove(address(daiJoin), type(uint256).max);
         _updateTrvApprovals(address(0), _treasuryReservesVault);
     }
 

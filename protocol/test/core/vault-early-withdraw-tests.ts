@@ -92,9 +92,7 @@ describe("Temple Core Vault - Early Withdraw", async () => {
     await templeExposure.setMinterState(vault.address, true);
     await templeExposure.setMinterState(await owner.getAddress(), true);
 
-    await templeToken.connect(alan).approve(vault.address, 0);
     await templeToken.connect(alan).approve(vault.address, toAtto(1000000));
-    await templeToken.connect(ben).approve(vault.address, 0);
     await templeToken.connect(ben).approve(vault.address, toAtto(1000000));
 
     vaultEarlyWithdraw = await new VaultEarlyWithdraw__factory(owner).deploy(
@@ -105,9 +103,7 @@ describe("Temple Core Vault - Early Withdraw", async () => {
     );
 
     // Approve the early withdraw contract to pull the vault erc20.
-    await vault.connect(alan).approve(vaultEarlyWithdraw.address,  0);
     await vault.connect(alan).approve(vaultEarlyWithdraw.address, toAtto(1000000));
-    await vault.connect(ben).approve(vaultEarlyWithdraw.address, 0);
     await vault.connect(ben).approve(vaultEarlyWithdraw.address, toAtto(1000000));
 
     // Fund the vaultEarlyWithdraw with temple

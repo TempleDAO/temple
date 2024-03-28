@@ -399,8 +399,7 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
 
         // Set max allowance on the new TRV
         {
-            daiToken.approve(_trv, 0);
-            daiToken.safeIncreaseAllowance(_trv, type(uint256).max);
+            daiToken.forceApprove(_trv, type(uint256).max);
         }
 
         emit TlcStrategySet(newTlcStrategy, _trv);

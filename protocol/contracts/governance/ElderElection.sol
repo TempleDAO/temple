@@ -25,7 +25,6 @@ contract ElderElection is Nonces, AccessControl {
 
     bytes32 public constant CAN_NOMINATE = keccak256("CAN_NOMINATE");
 
-    // using Counters for Counters.Counter;
     using SafeERC20 for IERC20;
 
     /// @notice The NFT ids (ie discord ids) of the Templars that are candidates for
@@ -118,7 +117,7 @@ contract ElderElection is Nonces, AccessControl {
             hash(req)
         ));
 
-        (address signer, ECDSA.RecoverError err, bytes32 sigLength) = ECDSA.tryRecover(digest, signature);
+        (address signer, ECDSA.RecoverError err,) = ECDSA.tryRecover(digest, signature);
         if (err != ECDSA.RecoverError.NoError) {
             revert InvalidSignature(req.account);
         }

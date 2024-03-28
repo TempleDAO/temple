@@ -90,9 +90,7 @@ describe("Temple Core Vault", async () => {
     await templeExposure.setMinterState(vault.address, true);
     await templeExposure.setMinterState(await owner.getAddress(), true);
 
-    await templeToken.connect(alan).approve(vault.address, 0);
     await templeToken.connect(alan).approve(vault.address, toAtto(1000000));
-    await templeToken.connect(ben).approve(vault.address, 0);
     await templeToken.connect(ben).approve(vault.address, toAtto(1000000));
   });
 
