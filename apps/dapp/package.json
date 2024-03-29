@@ -5,9 +5,8 @@
     "node": ">=20.0.0"
   },
   "scripts": {
-    "prepare": "yarn typechain:compile && yarn typechain:copy",
-    "typechain:compile": "cd ../../protocol && yarn compile",
-    "typechain:copy": "cp -r ../../protocol/typechain ./src/types",
+    "prepare": "yarn typechain",
+    "typechain": "typechain --target=ethers-v5 --out-dir src/types/typechain --glob abi/**/*.json",
     "dev": "vite",
     "compile": "tsc",
     "vite:build": "vite build",

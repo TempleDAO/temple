@@ -1,0 +1,713 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "IBalancerPoolHelper",
+  "sourceName": "contracts/interfaces/amo/helpers/IBalancerPoolHelper.sol",
+  "abi": [
+    {
+      "inputs": [],
+      "name": "BPS_PRECISION",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "PRICE_PRECISION",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "amo",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "amountIn",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "slippageBps",
+          "type": "uint256"
+        }
+      ],
+      "name": "applySlippage",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "amountOut",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "balancerHelpers",
+      "outputs": [
+        {
+          "internalType": "contract IBalancerHelpers",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "balancerPoolId",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "balancerVault",
+      "outputs": [
+        {
+          "internalType": "contract IBalancerVault",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "bptToken",
+      "outputs": [
+        {
+          "internalType": "contract IERC20",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "bptAmountIn",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "minAmountOut",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "rebalancePercentageBoundLow",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "rebalancePercentageBoundUp",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "postRebalanceDelta",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "exitTokenIndex",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "treasuryPriceIndex",
+          "type": "uint256"
+        },
+        {
+          "internalType": "contract IERC20",
+          "name": "exitPoolToken",
+          "type": "address"
+        }
+      ],
+      "name": "exitPool",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "amountOut",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getBalances",
+      "outputs": [
+        {
+          "internalType": "uint256[]",
+          "name": "balances",
+          "type": "uint256[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getPairBalances",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "protocolTokenBalance",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "quoteTokenBalance",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "spotPriceBeforeScaled",
+          "type": "uint256"
+        }
+      ],
+      "name": "getSlippage",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getSpotPrice",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "spotPriceScaled",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "treasuryPriceIndex",
+          "type": "uint256"
+        }
+      ],
+      "name": "isSpotPriceAboveTpi",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "slippage",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "treasuryPriceIndex",
+          "type": "uint256"
+        }
+      ],
+      "name": "isSpotPriceAboveTpi",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "rebalancePercentageBoundUp",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "treasuryPriceIndex",
+          "type": "uint256"
+        }
+      ],
+      "name": "isSpotPriceAboveTpiUpperBound",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "slippage",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "treasuryPriceIndex",
+          "type": "uint256"
+        }
+      ],
+      "name": "isSpotPriceBelowTpi",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "treasuryPriceIndex",
+          "type": "uint256"
+        }
+      ],
+      "name": "isSpotPriceBelowTpi",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "rebalancePercentageBoundLow",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "treasuryPriceIndex",
+          "type": "uint256"
+        }
+      ],
+      "name": "isSpotPriceBelowTpiLowerBound",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "amountIn",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "minBptOut",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "rebalancePercentageBoundUp",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "rebalancePercentageBoundLow",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "treasuryPriceIndex",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "postRebalanceDelta",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "joinTokenIndex",
+          "type": "uint256"
+        },
+        {
+          "internalType": "contract IERC20",
+          "name": "joinPoolToken",
+          "type": "address"
+        }
+      ],
+      "name": "joinPool",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "bptIn",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "quoteTokenAmount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "slippageBps",
+          "type": "uint256"
+        }
+      ],
+      "name": "proportionalAddLiquidityQuote",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "protocolTokenAmount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "expectedBptAmount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "minBptAmount",
+          "type": "uint256"
+        },
+        {
+          "components": [
+            {
+              "internalType": "address[]",
+              "name": "assets",
+              "type": "address[]"
+            },
+            {
+              "internalType": "uint256[]",
+              "name": "maxAmountsIn",
+              "type": "uint256[]"
+            },
+            {
+              "internalType": "bytes",
+              "name": "userData",
+              "type": "bytes"
+            },
+            {
+              "internalType": "bool",
+              "name": "fromInternalBalance",
+              "type": "bool"
+            }
+          ],
+          "internalType": "struct IBalancerVault.JoinPoolRequest",
+          "name": "requestData",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "bptAmount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "slippageBps",
+          "type": "uint256"
+        }
+      ],
+      "name": "proportionalRemoveLiquidityQuote",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "expectedProtocolTokenAmount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "expectedQuoteTokenAmount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "minProtocolTokenAmount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "minQuoteTokenAmount",
+          "type": "uint256"
+        },
+        {
+          "components": [
+            {
+              "internalType": "address[]",
+              "name": "assets",
+              "type": "address[]"
+            },
+            {
+              "internalType": "uint256[]",
+              "name": "minAmountsOut",
+              "type": "uint256[]"
+            },
+            {
+              "internalType": "bytes",
+              "name": "userData",
+              "type": "bytes"
+            },
+            {
+              "internalType": "bool",
+              "name": "toInternalBalance",
+              "type": "bool"
+            }
+          ],
+          "internalType": "struct IBalancerVault.ExitPoolRequest",
+          "name": "requestData",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "protocolToken",
+      "outputs": [
+        {
+          "internalType": "contract IERC20",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "protocolTokenIndexInBalancerPool",
+      "outputs": [
+        {
+          "internalType": "uint64",
+          "name": "",
+          "type": "uint64"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "quoteToken",
+      "outputs": [
+        {
+          "internalType": "contract IERC20",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "tokensOut",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "rebalancePercentageBoundUp",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "treasuryPriceIndex",
+          "type": "uint256"
+        }
+      ],
+      "name": "willExitTakePriceAboveTpiUpperBound",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "tokensIn",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "rebalancePercentageBoundLow",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "treasuryPriceIndex",
+          "type": "uint256"
+        }
+      ],
+      "name": "willJoinTakePriceBelowTpiLowerBound",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "tokensOut",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "rebalancePercentageBoundLow",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "treasuryPriceIndex",
+          "type": "uint256"
+        }
+      ],
+      "name": "willQuoteTokenExitTakePriceBelowTpiLowerBound",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "tokensIn",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "rebalancePercentageBoundUp",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "treasuryPriceIndex",
+          "type": "uint256"
+        }
+      ],
+      "name": "willQuoteTokenJoinTakePriceAboveTpiUpperBound",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}
