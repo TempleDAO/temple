@@ -1,0 +1,83 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "AMO__IAuraStashRewards",
+  "sourceName": "contracts/amo/test/external/IStashRewards.sol",
+  "abi": [
+    {
+      "inputs": [],
+      "name": "claimRewards",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_pid",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "_operator",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_staker",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_gauge",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_rewardFactory",
+          "type": "address"
+        }
+      ],
+      "name": "initialize",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "processStash",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "stashRewards",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

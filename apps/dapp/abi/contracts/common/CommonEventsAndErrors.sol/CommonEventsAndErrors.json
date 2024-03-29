@@ -1,0 +1,109 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "CommonEventsAndErrors",
+  "sourceName": "contracts/common/CommonEventsAndErrors.sol",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "AccountBlacklisted",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ExpectedNonZero",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "token",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "required",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "balance",
+          "type": "uint256"
+        }
+      ],
+      "name": "InsufficientBalance",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidAccess",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidAddress",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "token",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "InvalidAmount",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidParam",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "Unimplemented",
+      "type": "error"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "token",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "TokenRecovered",
+      "type": "event"
+    }
+  ],
+  "bytecode": "0x60566037600b82828239805160001a607314602a57634e487b7160e01b600052600060045260246000fd5b30600052607381538281f3fe73000000000000000000000000000000000000000030146080604052600080fdfea2646970667358221220eb77d6e56c55bd974c42b7dc2fd48ae49631e32ed5b05025fa77173fb10b4bcd64736f6c63430008130033",
+  "deployedBytecode": "0x73000000000000000000000000000000000000000030146080604052600080fdfea2646970667358221220eb77d6e56c55bd974c42b7dc2fd48ae49631e32ed5b05025fa77173fb10b4bcd64736f6c63430008130033",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

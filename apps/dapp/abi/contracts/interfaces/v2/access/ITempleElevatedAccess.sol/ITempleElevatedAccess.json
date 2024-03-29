@@ -1,0 +1,283 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "ITempleElevatedAccess",
+  "sourceName": "contracts/interfaces/v2/access/ITempleElevatedAccess.sol",
+  "abi": [
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "bytes4",
+          "name": "fnSelector",
+          "type": "bytes4"
+        },
+        {
+          "indexed": true,
+          "internalType": "bool",
+          "name": "value",
+          "type": "bool"
+        }
+      ],
+      "name": "ExplicitAccessSet",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "oldExecutor",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "newExecutor",
+          "type": "address"
+        }
+      ],
+      "name": "NewExecutorAccepted",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "oldExecutor",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "oldProposedExecutor",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "newProposedExecutor",
+          "type": "address"
+        }
+      ],
+      "name": "NewExecutorProposed",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "oldRescuer",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "newRescuer",
+          "type": "address"
+        }
+      ],
+      "name": "NewRescuerAccepted",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "oldRescuer",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "oldProposedRescuer",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "newProposedRescuer",
+          "type": "address"
+        }
+      ],
+      "name": "NewRescuerProposed",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bool",
+          "name": "value",
+          "type": "bool"
+        }
+      ],
+      "name": "RescueModeSet",
+      "type": "event"
+    },
+    {
+      "inputs": [],
+      "name": "acceptExecutor",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "acceptRescuer",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "executor",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "contractAddr",
+          "type": "address"
+        },
+        {
+          "internalType": "bytes4",
+          "name": "functionSelector",
+          "type": "bytes4"
+        }
+      ],
+      "name": "explicitFunctionAccess",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "inRescueMode",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "proposeNewExecutor",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "proposeNewRescuer",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "rescuer",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "allowedCaller",
+          "type": "address"
+        },
+        {
+          "components": [
+            {
+              "internalType": "bytes4",
+              "name": "fnSelector",
+              "type": "bytes4"
+            },
+            {
+              "internalType": "bool",
+              "name": "allowed",
+              "type": "bool"
+            }
+          ],
+          "internalType": "struct ITempleElevatedAccess.ExplicitAccess[]",
+          "name": "access",
+          "type": "tuple[]"
+        }
+      ],
+      "name": "setExplicitAccess",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bool",
+          "name": "value",
+          "type": "bool"
+        }
+      ],
+      "name": "setRescueMode",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}
