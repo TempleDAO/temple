@@ -9,7 +9,7 @@ import useV2StrategySnapshotData, {
   V2SnapshotMetric,
   V2StrategySnapshot,
 } from '../hooks/use-dashboardv2-daily-snapshots';
-import { DashboardType } from '../DashboardContent';
+import { ALL_STRATEGIES, DashboardData, isTRVDashboard } from '../DashboardConfig';
 
 type XAxisTickFormatter = (timestamp: number) => string;
 
@@ -67,15 +67,14 @@ const metricFormatters: { [k in V2SnapshotMetric]: MetricFormatter } = {
 const numberFormatter = new Intl.NumberFormat('en', { maximumFractionDigits: 0, style: 'currency', currency: 'USD' });
 
 const V2StrategyMetricsChart: React.FC<{
-  dashboardType: DashboardType;
-  strategyNames: string[];
+  dashboardData: DashboardData;
   selectedMetric: V2SnapshotMetric;
   selectedInterval: ChartSupportedTimeInterval;
-}> = ({ dashboardType, selectedMetric, selectedInterval, strategyNames }) => {
+}> = ({ dashboardData, selectedMetric, selectedInterval }) => {
   // uncamel-case the metric names
   const formatMetricName = (name: string) =>
     // format only the selected metric name (the selected metric or all lines in a TRV chart)
-    name === selectedMetric || dashboardType === DashboardType.TREASURY_RESERVES_VAULT
+    name === selectedMetric || isTRVDashboard(dashboardData.key)
       ? name
           // // insert a space before all caps
           .replace(/([A-Z][a-z])/g, ' $1')
@@ -136,26 +135,30 @@ const V2StrategyMetricsChart: React.FC<{
   // we need all strategies for the TRV dashboard anyway we can just as well reuse
   // what we have and filter client side
 
+  // TRV dashboard shows all defined strategies as single lines
+  // all other dashboards show just the selected strategy key
+  const chartStrategyNames = isTRVDashboard(dashboardData.key) ? ALL_STRATEGIES : [dashboardData.key];
+
   const filteredDaily =
     dailyMetrics
-      ?.filter((m) => strategyNames.includes(m.strategy.name))
+      ?.filter((m) => chartStrategyNames.includes(m.strategy.name))
       .sort((a, b) => parseInt(a.timestamp) - parseInt(b.timestamp)) ?? [];
 
   const filteredHourly =
     hourlyMetrics
-      ?.filter((m) => strategyNames.includes(m.strategy.name))
+      ?.filter((m) => chartStrategyNames.includes(m.strategy.name))
       .sort((a, b) => parseInt(a.timestamp) - parseInt(b.timestamp)) ?? [];
 
   // if we are rendering chart for only one strategy we can use data as is
   // otherwise we have to transpose and show the selected metric for every strategy
 
   const transformedDaily =
-    strategyNames.length === 1
+    chartStrategyNames.length === 1
       ? filteredDaily.map(formatV2StrategySnapshot)
       : transpose(filteredDaily, selectedMetric, formatMetric);
 
   const transformedHourly =
-    strategyNames.length === 1
+    chartStrategyNames.length === 1
       ? filteredHourly.map(formatV2StrategySnapshot)
       : transpose(filteredHourly, selectedMetric, formatMetric);
 
@@ -182,21 +185,19 @@ const V2StrategyMetricsChart: React.FC<{
 
   // TRV renders selected metric of all strategies as multiline chart
   // other dashboards show the selected metric only (single line)
-  const lines =
-    dashboardType === DashboardType.TREASURY_RESERVES_VAULT
-      ? metrics.map((metric, ix) => ({ series: metric, color: colors[ix % colors.length] }))
-      : [{ series: selectedMetric, color: colors[0] }];
+  const lines = isTRVDashboard(dashboardData.key)
+    ? metrics.map((metric, ix) => ({ series: metric, color: colors[ix % colors.length] }))
+    : [{ series: selectedMetric, color: colors[0] }];
 
   // for non trv dashboard, pluck all other metrics
   // (individual assets that make up the metric)
   // to render as stacked area chart
-  const stackedItems =
-    dashboardType !== DashboardType.TREASURY_RESERVES_VAULT
-      ? // add +1 to skip the first color which is always the selectedMetric
-        metrics
-          .filter((m) => m !== selectedMetric)
-          .map((metric, ix) => ({ series: metric, color: colors[(ix + 1) % colors.length], stackId: 'a' }))
-      : undefined;
+  const stackedItems = !isTRVDashboard(dashboardData.key)
+    ? // add +1 to skip the first color which is always the selectedMetric
+      metrics
+        .filter((m) => m !== selectedMetric)
+        .map((metric, ix) => ({ series: metric, color: colors[(ix + 1) % colors.length], stackId: 'a' }))
+    : undefined;
 
   return (
     <LineChart

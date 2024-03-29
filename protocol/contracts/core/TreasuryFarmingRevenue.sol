@@ -35,7 +35,7 @@ contract TreasuryFarmingRevenue is Ownable {
     /// @dev factor by which lifetimeAccRevenueScaledByShare is scaled
     uint256 constant SCALING_FACTOR = 1e18;
 
-    constructor(Exposure _exposure) {
+    constructor(Exposure _exposure) Ownable(msg.sender) {
         exposure = _exposure;
     }
 

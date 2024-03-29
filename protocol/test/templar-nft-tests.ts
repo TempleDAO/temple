@@ -5,7 +5,6 @@ import { expect } from "chai";
 import { 
   Templar, Templar__factory, 
 } from "../typechain";
-import { shouldThrow } from "./helpers";
 const DISCORD_ID = 1000;
 
 describe("Templar NFT", async () => {
@@ -25,10 +24,9 @@ describe("Templar NFT", async () => {
   })
 
   it("Only owner can grant roles", async () => {    
-    await shouldThrow(
-      TEMPLAR.connect(amanda).grantRole(TEMPLAR.CAN_ASSIGN(), amanda.getAddress()),
-      /AccessControl:/
-    );
+    await expect(
+      TEMPLAR.connect(amanda).grantRole(TEMPLAR.CAN_ASSIGN(), amanda.getAddress()))
+      .to.be.revertedWithCustomError(TEMPLAR, "AccessControlUnauthorizedAccount");
   });
 
   it("Only owner can setBaseUri", async () => {
@@ -41,10 +39,9 @@ describe("Templar NFT", async () => {
 
     // Amanda cannot
     const templar = TEMPLAR.connect(amanda);
-    await shouldThrow(
-      templar.setBaseUri("https://new-base-uri2/"),
-      /AccessControl:/
-    );
+    await expect(
+      templar.setBaseUri("https://new-base-uri2/"))
+      .to.be.revertedWithCustomError(templar, "AccessControlUnauthorizedAccount");
   });
 
   it("Only configured role can assign", async () => {
@@ -60,10 +57,9 @@ describe("Templar NFT", async () => {
     // Ben cannot
     {
       const templar = TEMPLAR.connect(ben);
-      await shouldThrow(
-        templar.assign(amandaAddress, 1000),
-        /AccessControl:/
-      );
+      await expect(
+        templar.assign(amandaAddress, 1000))
+        .to.be.revertedWithCustomError(templar, "AccessControlUnauthorizedAccount");
     }
   });
 

@@ -1,7 +1,7 @@
 pragma solidity ^0.8.4;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -30,7 +30,7 @@ contract VaultEarlyWithdraw is Pausable, Ownable {
     error InvalidAddress(address _addr);
     error SendFailed();
     
-    constructor(address _templeTokenAddress, address[] memory _validVaults) {
+    constructor(address _templeTokenAddress, address[] memory _validVaults) Ownable(msg.sender) {
         templeToken = IERC20(_templeTokenAddress);
 
         for (uint256 i=0; i<_validVaults.length; ++i) {

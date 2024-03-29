@@ -3,16 +3,15 @@ pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
+import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/utils/Nonces.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "./RebasingERC20.sol";
 import "./Rational.sol";
 import "./Exposure.sol";
 import "./JoiningFee.sol";
-
-// import "hardhat/console.sol";
 
 /**
  * @title A temple investment vault, allows deposits and withdrawals on a set period (eg. monthly)
@@ -27,11 +26,8 @@ import "./JoiningFee.sol";
  * If an account doesn't leave during the join/exit period, their holdings are automaticaly re-invested
  * into the next vault cycle.
  */
-contract Vault is EIP712, Ownable, RebasingERC20 {
+contract Vault is Nonces, EIP712, Ownable, RebasingERC20 {
     uint256 constant public ENTER_EXIT_WINDOW_BUFFER = 60 * 5; // 5 minute buffer
-
-    using Counters for Counters.Counter;
-    mapping(address => Counters.Counter) public _nonces;
 
     // solhint-disable-next-line var-name-mixedcase
     bytes32 public immutable WITHDRAW_FOR_TYPEHASH = keccak256("withdrawFor(address owner,address sender,uint256 amount,uint256 deadline,uint256 nonce)");
@@ -72,7 +68,7 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
         Rational memory _shareBoostFactory,
         JoiningFee _joiningFee,
         uint256 _firstPeriodStartTimestamp
-    ) EIP712(_name, "1") ERC20(_name, _symbol)  {
+    ) EIP712(_name, "1") ERC20(_name, _symbol) Ownable(msg.sender) {
         templeToken = _templeToken;
         templeExposureToken = _templeExposureToken;
         vaultedTempleAccount = _vaultedTempleAccount;
@@ -163,22 +159,6 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
     // solhint-disable-next-line func-name-mixedcase
     function DOMAIN_SEPARATOR() external view returns (bytes32) {
         return _domainSeparatorV4();
-    }
-
-    /**
-    * Current nonce for an given address
-    */
-    function nonces(address owner) public view returns (uint256) {
-        return _nonces[owner].current();
-    }
-
-    /**
-    * "Consume a nonce": return the current value and increment.
-    */
-    function _useNonce(address owner) internal returns (uint256 current) {
-        Counters.Counter storage nonce = _nonces[owner];
-        current = nonce.current();
-        nonce.increment();
     }
 
     /**

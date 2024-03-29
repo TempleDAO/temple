@@ -34,15 +34,15 @@ describe("Temple Core Farming Revenue Allocation", async () => {
 
   it("Only owner can add revenue", async () => {
     await expect(farmingRevenue.connect(alan).addRevenue(toAtto(100)))
-      .to.revertedWith("Ownable: caller is not the owner");
+      .to.be.revertedWithCustomError(farmingRevenue, "OwnableUnauthorizedAccount").withArgs(await alan.getAddress());
   })
 
   it("Only owner can change an accounts share of farming revenue", async () => {
     await expect(farmingRevenue.connect(alan).increaseShares(await alan.getAddress(), toAtto(100)))
-      .to.revertedWith("Ownable: caller is not the owner");
+      .to.be.revertedWithCustomError(farmingRevenue, "OwnableUnauthorizedAccount").withArgs(await alan.getAddress());
 
     await expect(farmingRevenue.connect(alan).decreaseShares(await alan.getAddress(), toAtto(100)))
-      .to.revertedWith("Ownable: caller is not the owner");
+      .to.be.revertedWithCustomError(farmingRevenue, "OwnableUnauthorizedAccount").withArgs(await alan.getAddress());
   })
 
   describe("Revenue is distributed to various accounts by increasing their exposure", async () => {

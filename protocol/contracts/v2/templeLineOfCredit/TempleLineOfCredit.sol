@@ -391,7 +391,7 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
         // Remove allowance from the old TRV
         address previousTrv = address(treasuryReservesVault);
         if (previousTrv != address(0)) {
-            daiToken.safeApprove(previousTrv, 0);
+            daiToken.approve(previousTrv, 0);
         }
 
         address _trv = address(tlcStrategy.treasuryReservesVault());
@@ -399,8 +399,7 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
 
         // Set max allowance on the new TRV
         {
-            daiToken.safeApprove(_trv, 0);
-            daiToken.safeIncreaseAllowance(_trv, type(uint256).max);
+            daiToken.forceApprove(_trv, type(uint256).max);
         }
 
         emit TlcStrategySet(newTlcStrategy, _trv);

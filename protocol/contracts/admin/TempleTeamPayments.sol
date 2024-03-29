@@ -15,7 +15,7 @@ contract TempleTeamPayments is Ownable {
 
     event Claimed(address indexed member, uint256 amount);
 
-    constructor(IERC20 _TEMPLE, uint256 paymentPeriodInSeconds, uint256 startTimestamp) {
+    constructor(IERC20 _TEMPLE, uint256 paymentPeriodInSeconds, uint256 startTimestamp) Ownable(msg.sender) {
         roundStartDate = startTimestamp;
         roundEndDate = startTimestamp + paymentPeriodInSeconds;
         TEMPLE = _TEMPLE;

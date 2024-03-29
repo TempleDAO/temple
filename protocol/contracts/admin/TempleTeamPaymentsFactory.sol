@@ -37,7 +37,7 @@ contract TempleTeamPaymentsFactory is Ownable {
     event ImplementationChanged(address indexed newImplementation);
     event TokenRecovered(address indexed token, uint256 amount);
 
-    constructor(address _implementation, uint16 _lastPaidEpoch) {
+    constructor(address _implementation, uint16 _lastPaidEpoch) Ownable(msg.sender) {
         templeTeamPaymentsImplementation = _implementation;
         lastPaidEpoch = _lastPaidEpoch;
         initialEpoch = _lastPaidEpoch + 1;

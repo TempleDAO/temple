@@ -36,7 +36,7 @@ contract VaultedTemple is ILiquidator, Ownable {
     IERC20 public immutable templeToken;
     address public immutable templeExposure;
 
-    constructor(IERC20 _templeToken, address _templeExposure) {
+    constructor(IERC20 _templeToken, address _templeExposure) Ownable(msg.sender) {
         templeToken = _templeToken;
         templeExposure = _templeExposure;
     }

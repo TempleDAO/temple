@@ -1,0 +1,29 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "ITreasuryIV",
+  "sourceName": "contracts/amm/TempleStableAMMRouter.sol",
+  "abi": [
+    {
+      "inputs": [],
+      "name": "intrinsicValueRatio",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "frax",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "temple",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

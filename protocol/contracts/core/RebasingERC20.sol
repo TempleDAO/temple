@@ -46,82 +46,39 @@ abstract contract RebasingERC20 is ERC20 {
         return toTokenAmount(shareBalanceOf[account]);
     }
 
-    /**
-     * @dev Moves `amount` of tokens from `sender` to `recipient`.
-     *
-     * This internal function is equivalent to {transfer}, and can be used to
-     * e.g. implement automatic token fees, slashing mechanisms, etc.
-     *
-     * Emits a {Transfer} event.
-     *
-     * Requirements:
-     *
-     * - `sender` cannot be the zero address.
-     * - `recipient` cannot be the zero address.
-     * - `sender` must have a balance of at least `amount`.
-     */
-    function _transfer(
-        address sender,
-        address recipient,
-        uint256 amount
-    ) internal virtual override {
-        require(sender != address(0), "ERC20: transfer from the zero address");
-        require(recipient != address(0), "ERC20: transfer to the zero address");
-
-        uint256 senderBalanceShares = shareBalanceOf[sender];
-        uint256 amountShares = toSharesAmount(amount);
-
-        require(senderBalanceShares >= amountShares, "ERC20: transfer amount exceeds balance");
-        unchecked {
-            shareBalanceOf[sender] -= amountShares;
+    function _update(address from, address to, uint256 value) internal virtual override {
+        uint256 shares = toSharesAmount(value);
+        if (from == address(0)) {
+            // MINT
+            // Overflow check required: The rest of the code assumes that totalShares never overflows
+            totalShares += shares;
+        } else {
+            // TRANSFER FROM
+            uint256 fromBalanceShares = shareBalanceOf[from];
+            if (fromBalanceShares < shares) {
+                revert ERC20InsufficientBalance(from, fromBalanceShares, shares);
+            }
+            unchecked {
+                // Overflow not possible: shares <= fromBalanceShares <= totalShares.
+                shareBalanceOf[from] = fromBalanceShares - shares;
+            }
         }
-        shareBalanceOf[recipient] += amountShares;
 
-        emit Transfer(sender, recipient, amount);
-    }
-
-    /** @dev Creates `amount` tokens and assigns them to `account`, increasing
-     * the total supply.
-     *
-     * Emits a {Transfer} event with `from` set to the zero address.
-     *
-     * Requirements:
-     *
-     * - `account` cannot be the zero address.
-     */
-    function _mint(address account, uint256 amount) internal virtual override {
-        require(account != address(0), "ERC20: mint to the zero address");
-
-        uint256 amountShares = toSharesAmount(amount);
-        totalShares += amountShares;
-        shareBalanceOf[account] += amountShares;
-        emit Transfer(address(0), account, amount);
-    }
-
-    /**
-     * @dev Destroys `amount` tokens from `account`, reducing the
-     * total supply.
-     *
-     * Emits a {Transfer} event with `to` set to the zero address.
-     *
-     * Requirements:
-     *
-     * - `account` cannot be the zero address.
-     * - `account` must have at least `amount` tokens.
-     */
-    function _burn(address account, uint256 amount) internal virtual override {
-        require(account != address(0), "ERC20: burn from the zero address");
-
-        uint256 accountBalanceShares = shareBalanceOf[account];
-        uint256 amountShares = toSharesAmount(amount);
-
-        require(accountBalanceShares >= amountShares, "ERC20: burn amount exceeds balance");
-        unchecked {
-            shareBalanceOf[account] = accountBalanceShares - amountShares;
+        if (to == address(0)) {
+            // BURN
+            unchecked {
+                // Overflow not possible: shares <= totalShares or value <= fromBalanceShares <= totalShares.
+                totalShares -= shares;
+            }
+        } else {
+            // TRANSFER TO
+            unchecked {
+                // Overflow not possible: balance + value is at most totalShares, which we know fits into a uint256.
+                shareBalanceOf[to] += shares;
+            }
         }
-        totalShares -= amountShares;
 
-        emit Transfer(account, address(0), amount);
+        emit Transfer(from, to, value);
     }
 
     function toTokenAmount(uint sharesAmount) public view returns (uint256 tokenAmount) {

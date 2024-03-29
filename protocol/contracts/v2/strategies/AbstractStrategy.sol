@@ -198,10 +198,7 @@ abstract contract AbstractStrategy is ITempleStrategy, TempleElevatedAccess {
     function _setTokenAllowance(IERC20 token, address spender, uint256 amount) internal {
         if (amount == token.allowance(address(this), spender)) return;
 
-        token.safeApprove(spender, 0);
-        if (amount > 0) {
-            token.safeIncreaseAllowance(spender, amount);
-        }
+        token.forceApprove(spender, amount);
     }
 
     /**
