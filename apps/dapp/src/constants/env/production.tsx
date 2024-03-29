@@ -50,6 +50,7 @@ const env: Environment = {
       { name: 'Epoch 22c', address: '0x57cE4E4dcA88A5E1f3788D8e47c46687F91B6AfE' },
       { name: 'Epoch 23a', address: '0xC05C4123a4870293521980640ddFE37eb5c32dB6' },
       { name: 'Epoch 23b', address: '0xBd64922E156175972356D4Ef362b22a6806D61Ff' },
+      { name: 'Epoch 23c', address: '0x5e6E4E6Eb6D45e4bC7837e483F106AE25FA52472' },
     ],
     temple: '0x470ebf5f030ed85fc1ed4c2d36b9dd02e77cf1b7',
     templeStaking: '0x4D14b24EDb751221B3Ff08BBB8bd91D4b1c8bc77',
