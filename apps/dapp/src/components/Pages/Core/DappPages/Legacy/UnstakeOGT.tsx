@@ -25,8 +25,6 @@ export const UnstakeOGT = () => {
   useEffect(() => {
     const amount = balance.OGTEMPLE.eq(ZERO) ? '' : formatBigNumber(balance.OGTEMPLE);
     setUnstakeAmount(amount);
-    // set a test amount
-    setUnstakeAmount('100');
   }, [balance]);
 
   useEffect(() => {
