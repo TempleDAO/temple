@@ -1,6 +1,6 @@
 pragma solidity 0.8.20;
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Temple (core/governance/GovTimelockController.sol)
+// Temple (templegold/governance/GovTimelockController.sol)
 
 
 import { TimelockController } from "@openzeppelin/contracts/governance/TimelockController.sol";

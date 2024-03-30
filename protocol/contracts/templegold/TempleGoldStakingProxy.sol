@@ -1,13 +1,13 @@
 pragma solidity 0.8.20;
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Temple (core/TempleGoldStakingProxy.sol)
+// Temple (templegold/TempleGoldStakingProxy.sol)
 
 
 import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { ITempleGoldStaking } from "contracts/interfaces/core/ITempleGoldStaking.sol";
-import {ITempleGoldStakingProxy} from "./../interfaces/core/ITempleGoldStakingProxy.sol";
+import { ITempleGoldStaking } from "contracts/interfaces/templegold/ITempleGoldStaking.sol";
+import {ITempleGoldStakingProxy} from "contracts/interfaces/templegold/ITempleGoldStakingProxy.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 
 
@@ -77,8 +77,7 @@ contract TempleGoldStakingProxy is ITempleGoldStakingProxy, TempleElevatedAccess
      * @notice Approve staking contract to pull tokens
      */
     function approveStaking() public override {
-        templeGold.safeApprove(address(staking), 0);
-        templeGold.safeApprove(address(staking), type(uint).max);
+        templeGold.forceApprove(address(staking), type(uint).max);
     }
 
     /**

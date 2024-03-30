@@ -1,6 +1,6 @@
 pragma solidity 0.8.20;
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Temple (core/governance/TempleGovernor.sol)
+// Temple (templegold/governance/TempleGovernor.sol)
 
 
 import {IGovernor, Governor} from "@openzeppelin/contracts/governance/Governor.sol";
@@ -12,7 +12,6 @@ import {TimelockController} from "@openzeppelin/contracts/governance/TimelockCon
 import {IVotes} from "@openzeppelin/contracts/governance/utils/IVotes.sol";
 import {IERC165} from "@openzeppelin/contracts/interfaces/IERC165.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
-
 
 /** 
  * @title Temple Governor
@@ -27,22 +26,44 @@ import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.so
     GovernorTimelockControl {
     
     /// @notice Delay before voting begins. Allows enough time to prepare. Eg. for stakers to unstake before voting
-    uint256 public constant VOTING_DELAY = 86400; // 1 day
+    uint256 public votingDelaySeconds; //= 86400; // 1 day
     /// @notice Period of voting
-    uint256 public constant VOTING_PERIOD = 604800; // 1 week
+    uint256 public votingPeriodSeconds; // = 604800; // 1 week
+
+    event VotingDelaySet(uint256 oldDelay, uint256 newDelay);
+    event VotingPeriodSet(uint256 oldPeriod, uint256 newPeriod);
+
     constructor(
         IVotes _wTemple,
         TimelockController _timelock,
         uint48 _govVotesQuorumFraction,
+        uint256 _votingDelaySeconds,
+        uint256 _votingPeriodSeconds,
         string memory _name
-    ) Governor(_name) GovernorVotes(_wTemple) GovernorVotesQuorumFraction(_govVotesQuorumFraction) GovernorTimelockControl(_timelock) {}
-
-    function votingDelay() public pure override returns (uint256) {
-        return VOTING_DELAY; // 1 day. clock() uses seconds
+    ) Governor(_name) GovernorVotes(_wTemple) GovernorVotesQuorumFraction(_govVotesQuorumFraction) GovernorTimelockControl(_timelock) {
+        votingDelaySeconds = _votingDelaySeconds;
+        votingPeriodSeconds = _votingPeriodSeconds;
     }
 
-    function votingPeriod() public pure override returns (uint256) {
-        return VOTING_PERIOD; // 1 week. clock() uses seconds, block timestamp
+    function setVotingDelay(uint256 _delay) external onlyGovernance {
+        uint256 oldDelay = votingDelay();
+        votingDelaySeconds = _delay;
+        emit VotingDelaySet(oldDelay, _delay);
+    }
+
+    function setVotingPeriod(uint256 _period) external {
+        if (msg.sender != timelock()) { revert CommonEventsAndErrors.InvalidAccess(); }
+        uint256 oldPeriod = votingPeriod();
+        votingPeriodSeconds = _period;
+        emit VotingPeriodSet(oldPeriod, _period);
+    }
+
+    function votingDelay() public view override returns (uint256) {
+        return votingDelaySeconds; // 1 day. clock() uses seconds
+    }
+
+    function votingPeriod() public view override returns (uint256) {
+        return votingPeriodSeconds; // 1 week. clock() uses seconds, block timestamp
     }
 
     function proposalThreshold() public pure override returns (uint256) {
@@ -92,16 +113,4 @@ import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.so
     function _executor() internal view override(Governor, GovernorTimelockControl) returns (address) {
         return super._executor();
     }
-
-    /**
-     * @dev Public endpoint to update the underlying timelock instance. Restricted to the timelock itself, so updates
-     * must be proposed, scheduled, and executed through governance proposals.
-     *
-     * CAUTION: It is not recommended to change the timelock while there are other queued governance proposals.
-     */
-    function updateTimelock(TimelockController newTimelock) external override onlyGovernance {
-        if (newTimelock == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
-        super.updateTimelock(newTimelock);
-    }
-
- }
+}

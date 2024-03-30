@@ -1,16 +1,17 @@
 pragma solidity 0.8.20;
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Temple (core/TempleGold.sol)
+// Temple (templegold/TempleGold.sol)
 
 
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
-// import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import { Origin } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/interfaces/IOAppReceiver.sol";
 // import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
-import { ITempleGold } from "contracts/interfaces/core/ITempleGold.sol";
-import { IAuctionEscrow } from "contracts/interfaces/core/IAuctionEscrow.sol";
-import { OFT } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/OFT.sol"; 
+import { ITempleGold } from "contracts/interfaces/templegold/ITempleGold.sol";
+import { IAuctionEscrow } from "contracts/interfaces/templegold/IAuctionEscrow.sol";
+import { OFT } from "contracts/templegold/external/layerzero/oft/OFT.sol";
+import { mulDiv } from "@prb/math/src/Common.sol";
 
 /// can use default OAppReceiver and OAppSender
 
@@ -22,7 +23,7 @@ import { OFT } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/OFT.sol";
  * with the same elevated access from v2.
  * @notice 
  */
- contract TempleGold is ITempleGold, OFT, TempleElevatedAccess {
+ contract TempleGold is ITempleGold, OFT {
 
     /// @notice These addresses are mutable to allow change/upgrade.
     /// @notice Staking proxy contract. Staking proxy contract distributes further to Staking contract
@@ -136,11 +137,11 @@ import { OFT } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/OFT.sol";
     /// TODO change mint so that new mintables are calculated and distributed on claim (in Auction) or staking.
     /// TODO check and confirm use case for transferring TGLD to other chains for auctions (bc of non-transferrability)
     /**
-     * @notice Mint new tokens to be distributed. 
-     * Enforces minimum mint amount and uses vestin factor to calculate mint token amount.
+     * @notice Mint new tokens to be distributed. Open to call from any address
+     * Enforces minimum mint amount and uses vesting factor to calculate mint token amount.
      * Minting is only possible on source chain Arbitrum
      */
-    function mint() external override onlyElevatedAccess onlyArbitrum {
+    function mint() external override onlyArbitrum {
         VestingFactor memory vestingFactorCache = vestingFactor;
         DistributionParams memory distributionParamsCache = distributionParams;
         if (vestingFactorCache.numerator == 0 || distributionParamsCache.escrow == 0) { revert ITempleGold.MissingParameter(); }
@@ -148,9 +149,9 @@ import { OFT } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/OFT.sol";
         uint256 mintAmount;
         /// @notice first time mint
         if (lastMintTimestamp == 0) {
-            mintAmount = (block.timestamp * MAX_SUPPLY * vestingFactorCache.denominator) / vestingFactorCache.numerator;
+            mintAmount = _mulDivRound(block.timestamp * MAX_SUPPLY, vestingFactorCache.denominator, vestingFactorCache.numerator, false);
         } else {
-            mintAmount = (lastMintTimestamp - block.timestamp) * (MAX_SUPPLY - totalSupply()) * vestingFactorCache.denominator / vestingFactorCache.numerator;
+            mintAmount = _mulDivRound((lastMintTimestamp - block.timestamp) * (MAX_SUPPLY - totalSupply()), vestingFactorCache.denominator, vestingFactorCache.numerator, false);
         }
         if (mintAmount < MINIMUM_MINT) { revert ITempleGold.InsufficientMintAmount(mintAmount); }
         uint256 newTotalSupply = totalSupply() + mintAmount;
@@ -190,13 +191,30 @@ import { OFT } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/OFT.sol";
         return totalSupply();
     }
 
-    function _beforeTokenTransfer(address from, address to /*uint256 amount*/) internal view {
-        /// @notice can only transfer to or from whitelisted addreess
-        /// this also disables burn
-        if (from != address(0) || to != address(0)) {
-            if (!whitelisted[from] && !whitelisted[to]) { revert ITempleGold.NonTransferrable(from, to); }
+   function isComposeMsgSender(
+        Origin calldata _origin,
+        bytes calldata _message,
+        address _sender
+    ) external view returns (bool isSender) {
+
+    }
+
+     /// @notice mulDiv with an option to round the result up or down to the nearest wei
+    function _mulDivRound(uint256 x, uint256 y, uint256 denominator, bool roundUp) internal pure returns (uint256 result) {
+        result = mulDiv(x, y, denominator);
+        // See OZ Math.sol for the equivalent mulDiv() with rounding.
+        if (roundUp && mulmod(x, y, denominator) > 0) {
+            result += 1;
         }
     }
+
+    // function _beforeTokenTransfer(address from, address to /*uint256 amount*/) internal view {
+    //     /// @notice can only transfer to or from whitelisted addreess
+    //     /// this also disables burn
+    //     if (from != address(0) || to != address(0)) {
+    //         if (!whitelisted[from] && !whitelisted[to]) { revert ITempleGold.NonTransferrable(from, to); }
+    //     }
+    // }
 
     modifier onlyArbitrum() {
         _;

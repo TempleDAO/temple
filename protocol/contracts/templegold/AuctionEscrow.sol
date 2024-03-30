@@ -1,12 +1,12 @@
 pragma solidity 0.8.20;
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Temple (core/AuctionEscrow.sol)
+// Temple (templegold/AuctionEscrow.sol)
 
 
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
-import { IAuctionEscrow } from "contracts/interfaces/core/IAuctionEscrow.sol";
+import { IAuctionEscrow } from "contracts/interfaces/templegold/IAuctionEscrow.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { mulDiv } from "@prb/math/src/Common.sol";
@@ -25,8 +25,8 @@ contract AuctionEscrow is IAuctionEscrow, TempleElevatedAccess {
     IERC20 public immutable templeGold;
     /// @notice Token to bid for temple GOLD
     IERC20 public bidToken;
-    /// @notice Burn address
-    address public immutable fireRitualStrategy;
+    /// @notice Destination address for proceeds of fire ritual
+    address public immutable treasury;
     /// @notice Bool for if bidding is live
     bool public bidLive;
 
@@ -53,13 +53,13 @@ contract AuctionEscrow is IAuctionEscrow, TempleElevatedAccess {
     constructor(
         address _templeGold,
         address _bidToken,
-        address _fireRitualStrategy,
+        address _treasury,
         address _rescuer,
         address _executor
     ) TempleElevatedAccess(_rescuer, _executor) {
         templeGold = IERC20(_templeGold);
         bidToken = IERC20(_bidToken);
-        fireRitualStrategy = _fireRitualStrategy;
+        treasury = _treasury;
     }
 
     /**
@@ -123,7 +123,7 @@ contract AuctionEscrow is IAuctionEscrow, TempleElevatedAccess {
         if (infoCached.startTime == 0) { revert InvalidEpoch(); }
         uint256 bidTokenAmount = depositors[msg.sender][epochId];
         if (bidTokenAmount == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
-        bidToken.safeTransfer(fireRitualStrategy, bidTokenAmount); // change to TRV
+        bidToken.safeTransfer(treasury, bidTokenAmount);
 
         delete depositors[msg.sender][epochId];
         uint256 claimAmount = _mulDivRound(bidTokenAmount, infoCached.totalTGoldAmount, infoCached.totalBidTokenAmount, false);
@@ -184,19 +184,6 @@ contract AuctionEscrow is IAuctionEscrow, TempleElevatedAccess {
      */
     function isCurrentEpochEnded() external view override returns (bool) {
         return _isCurrentEpochEnded();
-    }
-
-    function _withdraw(uint256 amount) private {
-
-        uint256 epochCache = _currentEpochId;
-        EpochInfo storage info = epochs[epochCache];
-        if (_isCurrentEpochEndedStorage(info)) { revert CannotWithdraw(); }
-
-        delete depositors[msg.sender][epochCache];
-        info.totalBidTokenAmount -= amount;
-        bidToken.safeTransfer(msg.sender, amount);
-        
-        emit BidForfeited(msg.sender, epochCache, amount);
     }
 
     function _isCurrentEpochEnded() private view returns (bool){

@@ -1,19 +1,19 @@
 pragma solidity 0.8.20;
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Temple (core/TempleGoldStaking.sol)
+// Temple (templegold/TempleGoldStaking.sol)
 
 
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
-import { ITempleGold } from "contracts/interfaces/core/ITempleGold.sol";
-import { ITempleGoldStaking } from "./../interfaces/core/ITempleGoldStaking.sol";
+import { ITempleGold } from "contracts/interfaces/templegold/ITempleGold.sol";
+import { ITempleGoldStaking } from "contracts/interfaces/templegold/ITempleGoldStaking.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { Pausable } from "@openzeppelin/contracts/security/Pausable.sol";
+import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { ITempleGoldStakingProxy } from "contracts/interfaces/core/ITempleGoldStakingProxy.sol";
-
+import { ITempleGoldStakingProxy } from "contracts/interfaces/templegold/ITempleGoldStakingProxy.sol";
+import { IStakedTempleVoteToken } from "contracts/interfaces/templegold/IStakedTempleVoteToken.sol";
 
 /** 
  * @title Temple Gold Staking
@@ -28,6 +28,8 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     IERC20 public immutable stakingToken;
     /// @notice Reward token. Temple Gold
     IERC20 public immutable rewardToken;
+    /// @notice Vote Token
+    IStakedTempleVoteToken public immutable voteToken;
     /// @notice Staking Proxy contract
     ITempleGoldStakingProxy public stakingProxy;
 
@@ -57,11 +59,13 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         address _executor,
         address _stakingToken,
         address _rewardToken,
-        address _stakingProxy
+        address _stakingProxy,
+        address _voteToken
     ) TempleElevatedAccess(_rescuer, _executor){
         stakingToken = IERC20(_stakingToken);
         rewardToken = IERC20(_rewardToken);
         stakingProxy = ITempleGoldStakingProxy(_stakingProxy);
+        voteToken = IStakedTempleVoteToken(_voteToken);
     }
     
     /**
@@ -139,6 +143,7 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         // pull tokens and apply stake
         stakingToken.safeTransferFrom(msg.sender, address(this), _amount);
         _applyStake(_for, _amount);
+        _mintVoteToken(_for, _amount);
     }
 
     /**
@@ -248,6 +253,14 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         emit Staked(_for, _amount);
     }
 
+    function _mintVoteToken(address _for, uint256 _amount) internal {
+        voteToken.mint(_for, _amount);
+    }
+
+    function _burnVoteToken(address _for, uint256 _amount) internal {
+        voteToken.burn(_for, _amount);
+    }
+
     function _rewardPerToken() internal view returns (uint256) {
         if (totalSupply == 0) {
             return rewardData.rewardPerTokenStored;
@@ -273,6 +286,8 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
 
         totalSupply -= amount;
         _balances[staker] -= amount;
+
+        _burnVoteToken(staker, amount);
 
         stakingToken.safeTransfer(toAddress, amount);
         emit Withdrawn(staker, toAddress, amount);
