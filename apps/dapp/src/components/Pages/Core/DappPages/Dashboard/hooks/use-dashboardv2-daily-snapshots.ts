@@ -82,23 +82,18 @@ async function fetchStrategyHourlySnapshots() {
 async function fetchStrategyDailySnapshots() {
   const now = new Date();
   // the largest value from the chart time range selector 1W | 1M | 1Y
-  let since = Math.floor((now.getTime() - ONE_YEAR_MS) / 1000).toString();
+  const since = Math.floor((now.getTime() - ONE_YEAR_MS) / 1000).toString();
   const result: V2StrategySnapshot[] = [];
-  const itemsPerPage = 1000; // current max page size
+  const MAX_PAGE_SIZE = 1000; // current max page size
+  let skip = 0;
   while (true) {
-    //  we could be missing data with this pagination strategy if
-    //  the dataset contain snapshots for different strats
-    //  created at the exact same timestamp
-    //  and all such snapshots do not fit in the same page
-    //  imho very unlikely, but possible?
-    //  solution would be to use timestamp_GTE: ${since}
-    //  and deduplicate two consecutive pages
     const query = `
             query {
-            strategyDailySnapshots(first: ${itemsPerPage},
+            strategyDailySnapshots(first: ${MAX_PAGE_SIZE},
                                    orderBy: timestamp,
                                    orderDirection: asc,
-                                   where: {timestamp_gt: ${since}}) {
+                                   where: {timestamp_gt: ${since}}
+                                   skip: ${skip}) {
               ${QUERIED_FIELDS}
             }
             }`;
@@ -106,11 +101,9 @@ async function fetchStrategyDailySnapshots() {
     const itemsOnPage = page.data?.strategyDailySnapshots.length ?? 0;
     if (page.data) {
       result.push(...page.data.strategyDailySnapshots);
-      const latestSnapshot = page.data.strategyDailySnapshots.at(-1);
-      if (!latestSnapshot) break;
-      since = latestSnapshot.timestamp;
+      skip += itemsOnPage
     }
-    if (itemsOnPage < itemsPerPage) {
+    if (itemsOnPage < MAX_PAGE_SIZE) {
       break;
     }
   }
