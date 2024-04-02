@@ -82,7 +82,7 @@ async function fetchStrategyHourlySnapshots() {
 async function fetchStrategyDailySnapshots() {
   const now = new Date();
   // the largest value from the chart time range selector 1W | 1M | 1Y
-  const since =  Math.floor((now.getTime() - ONE_YEAR_MS) / 1000).toString();
+  const since = Math.floor((now.getTime() - ONE_YEAR_MS) / 1000).toString();
   const result: V2StrategySnapshot[] = [];
   const MAX_PAGE_SIZE = 1000; // current max page size
   let skip = 0;
