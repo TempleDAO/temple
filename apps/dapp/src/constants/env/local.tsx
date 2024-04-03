@@ -128,14 +128,14 @@ const env: Environment = {
   },
   templeMultisig: '0x3a320fF715dCBbF097e15257B7051dd08fdfb7A2',
   safes: [
-    {
-      name: 'Multisig Temple V2',
-      address: 'sep:0x7d1e9012aA41278349791f29C2cdaa3DF4ceDcEd',
-    },
-    {
-      name: 'Multisig Test Fostrich',
-      address: '0x5CE28cAE5aAb002DcBc076d5A551A473a7C9dF89',
-    },
+    // {
+    //   name: 'Multisig Temple V2',
+    //   address: 'sep:0x7d1e9012aA41278349791f29C2cdaa3DF4ceDcEd',
+    // },
+    // {
+    //   name: 'Multisig Test Fostrich',
+    //   address: '0x5CE28cAE5aAb002DcBc076d5A551A473a7C9dF89',
+    // },
   ]
 };
 
