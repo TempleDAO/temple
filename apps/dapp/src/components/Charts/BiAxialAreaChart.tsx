@@ -100,7 +100,13 @@ export default function BiAxialLineChart<T>(props: React.PropsWithChildren<LineC
             return tooltipValuesFormatter(value, name);
           }}
         />
-        {lines.length > 1 ? <Legend verticalAlign="top" height={20} formatter={legendFormatter} /> : null}
+        {lines.length > 1 ? <
+          Legend
+          wrapperStyle={{ minHeight: '20px', height: 'auto', padding: '1rem' }}
+          verticalAlign="top"
+          height={20}
+          formatter={legendFormatter}
+        /> : null}
       </RechartsChart>
     </ResponsiveContainer>
   );
