@@ -1,4 +1,4 @@
-import { Gnosis_safe as SafeMasterCopy_V1_3_0 } from 'types/typechain/safe/v1.3.0/Gnosis_safe';
+import { Gnosis_safe as SafeMasterCopy_V1_3_0 } from 'types/typechain/@safe-global/safe-deployments/v1.3.0/Gnosis_safe';
 import { BigNumber, Signer, ethers } from 'ethers';
 import {
   copyTransaction,
@@ -31,7 +31,7 @@ export const useSafeSdk = (signer: Nullable<Signer>, safeAddress: string) => {
     }
     const signerAddress = await signer.getAddress();
     const messageArray = ethers.utils.arrayify(safeTxHash);
-  
+
     let tmpSignature = await signer.signMessage(messageArray);
     tmpSignature = adjustVInSignature('eth_sign', tmpSignature, safeTxHash, signerAddress);
     const safeSignature: SafeMultisigConfirmation = {
@@ -62,11 +62,11 @@ export const useSafeSdk = (signer: Nullable<Signer>, safeAddress: string) => {
       safeVersion: DEFAULT_SAFE_VERSION,
       customSafeAddress: safeAddress,
     })) as SafeMasterCopy_V1_3_0;
-  
+
     const transaction = isSafeMultisigTransactionResponse(safeTransaction)
       ? await toSafeTransactionType(safeContract, signer, safeTransaction)
       : safeTransaction;
-  
+
     const signedSafeTransaction = await copyTransaction(safeContract, signer, transaction);
     const txHash = await getTransactionHash(safeContract, signedSafeTransaction);
     const ownersWhoApprovedTx = await getOwnersWhoApprovedTx(safeContract, txHash);
@@ -79,7 +79,7 @@ export const useSafeSdk = (signer: Nullable<Signer>, safeAddress: string) => {
     if (threshold > signedSafeTransaction.signatures.size && signerAddress && owners.includes(signerAddress)) {
       signedSafeTransaction.addSignature(generatePreValidatedSignature(signerAddress));
     }
-  
+
     if (threshold > signedSafeTransaction.signatures.size) {
       const signaturesMissing = threshold - signedSafeTransaction.signatures.size;
       throw new Error(
@@ -88,7 +88,7 @@ export const useSafeSdk = (signer: Nullable<Signer>, safeAddress: string) => {
         } missing`
       );
     }
-  
+
     const value = BigNumber.from(signedSafeTransaction.data.value);
     if (!value.isZero()) {
       const balance = await signer.getBalance();
@@ -96,7 +96,7 @@ export const useSafeSdk = (signer: Nullable<Signer>, safeAddress: string) => {
         throw new Error('Not enough Ether funds');
       }
     }
-  
+
     if (options?.gas && options?.gasLimit) {
       throw new Error('Cannot specify gas and gasLimit together in transaction options');
     }

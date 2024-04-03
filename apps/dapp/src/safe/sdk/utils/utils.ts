@@ -19,7 +19,7 @@ import {
 import { estimateGas } from '../transactions/gas';
 import { DEFAULT_SAFE_VERSION } from '../contracts/config';
 import { EthSafeSignature } from '../signatures/SafeSignature';
-import { Gnosis_safe as Safe_V1_3_0 } from 'types/typechain/safe/v1.3.0/Gnosis_safe';
+import { Gnosis_safe as Safe_V1_3_0 } from 'types/typechain/@safe-global/safe-deployments/v1.3.0/Gnosis_safe';
 import { getMultiSendCallOnlyContract, getMultiSendCallOnlyContractDeploymentDetails, getMultiSendContract, getMultiSendContractDeploymentDetails, getSafeContract } from '../contracts/safeDeploymentContracts';
 
 export const ZERO_ADDRESS = `0x${'0'.repeat(40)}`
@@ -324,7 +324,7 @@ export function standardizeMetaTransactionData(
    *
    */
 export const getEncodedTransaction = async(safeContract: Safe_V1_3_0, safeTransaction: SafeTransaction): Promise<string> => {
-  
+
   const encodedTransaction: string = safeContract.interface.encodeFunctionData('execTransaction', [
     safeTransaction.data.to,
     safeTransaction.data.value,

@@ -17,10 +17,10 @@ import {
   getSafeContractInstance,
   getSimulateTxAccessorContractInstance,
 } from './contractInstancesEthers';
-import { Gnosis_safe as SafeMasterCopy_V1_3_0 } from 'types/typechain/safe/v1.3.0/Gnosis_safe';
-import { Multi_send as MultiSend_V1_3_0 } from 'types/typechain/safe/v1.3.0/Multi_send';
-import { Multi_send_call_only as MultiSendCallOnly_V1_3_0 } from 'types/typechain/safe/v1.3.0/Multi_send_call_only';
-import { Simulate_tx_accessor as SimulateTxAccessor_V1_3_0 } from 'types/typechain/safe/v1.3.0/Simulate_tx_accessor';
+import { Gnosis_safe as SafeMasterCopy_V1_3_0 } from 'types/typechain/@safe-global/safe-deployments/v1.3.0/Gnosis_safe';
+import { Multi_send as MultiSend_V1_3_0 } from 'types/typechain/@safe-global/safe-deployments/v1.3.0/Multi_send';
+import { Multi_send_call_only as MultiSendCallOnly_V1_3_0 } from 'types/typechain/@safe-global/safe-deployments/v1.3.0/Multi_send_call_only';
+import { Simulate_tx_accessor as SimulateTxAccessor_V1_3_0 } from 'types/typechain/@safe-global/safe-deployments/v1.3.0/Simulate_tx_accessor';
 
 interface GetContractInstanceProps {
   signer: Signer;

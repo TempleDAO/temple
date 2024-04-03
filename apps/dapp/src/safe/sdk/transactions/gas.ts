@@ -1,6 +1,6 @@
 import { Signer } from '@ethersproject/abstract-signer';
 import { OperationType, SafeVersion } from '@safe-global/safe-core-sdk-types';
-import { Gnosis_safe as Safe_V1_3_0 } from 'types/typechain/safe/v1.3.0/Gnosis_safe';
+import { Gnosis_safe as Safe_V1_3_0 } from 'types/typechain/@safe-global/safe-deployments/v1.3.0/Gnosis_safe';
 import { getSimulateTxAccessorContract } from '../contracts/safeDeploymentContracts';
 
 export async function estimateGas(

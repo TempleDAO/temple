@@ -6,7 +6,7 @@ import {
   SafeVersion
 } from '@safe-global/safe-core-sdk-types'
 import { AbiItem } from 'web3-utils'
-import { Gnosis_safe as Safe_V1_3_0 } from 'types/typechain/safe/v1.3.0/Gnosis_safe'
+import { Gnosis_safe as Safe_V1_3_0 } from 'types/typechain/@safe-global/safe-deployments/v1.3.0/Gnosis_safe'
 
 export type SafeTransactionOptionalProps = Pick<
   SafeTransactionDataPartial,
@@ -124,7 +124,7 @@ export type ConnectSafeConfig =
   | ConnectSafeConfigWithPredictedSafe
 
 export interface CreateTransactionProps {
-  safeContract: Safe_V1_3_0, 
+  safeContract: Safe_V1_3_0,
   signer: Signer,
   multiSendCallOnlyContractAddress: string,
   multiSendContractAddress: string,
