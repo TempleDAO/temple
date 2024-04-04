@@ -6,7 +6,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 interface ITempleGold is IERC20 {
     struct DistributionParams {
-        uint256 stakingProxy;
+        uint256 staking;
         uint256 escrow;
         uint256 gnosis;
     }
@@ -19,8 +19,8 @@ interface ITempleGold is IERC20 {
     event ContractWhitelisted(address indexed _contract, bool _whitelisted);
     event VestingFactorSet(uint128 numerator, uint128 denominator);
     event DistributionParamsSet(uint256 staking, uint256 escrow, uint256 gnosis);
-    event Distributed(uint256 amount, uint256 totalSupply, uint256 timestamp);
-    event StakingProxySet(address stakingProxy);
+    event Distributed(uint256 stakingAmount, uint256 escrowAmount, uint256 gnosisAmount, uint256 timestamp);
+    event StakingSet(address staking);
     event EscrowSet(address escrow);
     event TeamGnosisSet(address gnosis);
     
@@ -33,9 +33,9 @@ interface ITempleGold is IERC20 {
 
     /**
      * @notice Set staking proxy contract address
-     * @param _stakingProxy Staking proxy contract
+     * @param _staking Staking proxy contract
      */
-    function setStakingProxy(address _stakingProxy) external;
+    function setStaking(address _staking) external;
 
     /**
      * @notice Set auctions escrow contract address
@@ -92,4 +92,6 @@ interface ITempleGold is IERC20 {
      * @return Circulating supply
      */
     function circulatingSupply() external view returns (uint256);
+
+    function canDistribute() external view returns (bool);
 }

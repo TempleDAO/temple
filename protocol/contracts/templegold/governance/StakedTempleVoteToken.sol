@@ -2,10 +2,9 @@ pragma solidity 0.8.20;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (templegold/governance/StakedTempleVoteToken.sol)
 
-import { IERC20, ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { ERC20Permit } from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 import { ERC20Votes } from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
-import { ERC20Wrapper } from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Wrapper.sol";
 import { Nonces } from "@openzeppelin/contracts/utils/Nonces.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
@@ -22,10 +21,6 @@ contract StakedTempleVoteToken is IStakedTempleVoteToken, TempleElevatedAccess, 
 
     /// @notice Staking contract. Mutable if ever staking contract is upgraded.
     address public staking;
-
-    event StakingSet(address staking);
-
-    error NonTransferrable();
     
     constructor(
         address _initialRescuer,
@@ -48,8 +43,24 @@ contract StakedTempleVoteToken is IStakedTempleVoteToken, TempleElevatedAccess, 
         _mint(to, amount);
     }
 
-    function burn(address from, uint256 amount) external onlyStaking {
-        _burn(from, amount);
+    function burn(uint256 /*amount*/) public virtual override(IStakedTempleVoteToken, ERC20Burnable) onlyStaking {
+        /// @dev not implemented
+        revert NotImplemented();
+    }
+
+    /**
+     * @dev Destroys a `value` amount of tokens from `account`, deducting from
+     * the caller's allowance.
+     *
+     * See {ERC20-_burn} and {ERC20-allowance}.
+     *
+     * Requirements:
+     *
+     * - the caller must have allowance for ``accounts``'s tokens of at least
+     * `value`.
+     */
+    function burnFrom(address account, uint256 value) public virtual override(IStakedTempleVoteToken, ERC20Burnable) onlyStaking {
+        _burn(account, value);
     }
 
     // The functions below are overrides required by Solidity.
@@ -58,7 +69,16 @@ contract StakedTempleVoteToken is IStakedTempleVoteToken, TempleElevatedAccess, 
         return super.decimals();
     }
 
+    /**
+     * @dev Transfers a `value` amount of tokens from `from` to `to`, or alternatively mints (or burns) if `from`
+     * (or `to`) is the zero address. All customizations to transfers, mints, and burns should be done by overriding
+     * this function.
+     *
+     * Emits a {Transfer} event.
+     */
     function _update(address from, address to, uint256 amount) internal override(ERC20, ERC20Votes) {
+        /// @notice Non-transferrable. Only by staking
+        if(from != staking && to!= staking) { revert NonTransferrable(); }
         super._update(from, to, amount);
     }
 
@@ -75,27 +95,7 @@ contract StakedTempleVoteToken is IStakedTempleVoteToken, TempleElevatedAccess, 
     // solhint-disable-next-line func-name-mixedcase
     function CLOCK_MODE() public pure override returns (string memory) {
         return "mode=timestamp";
-    }
-
-    /**
-     * @dev Hook that is called before any transfer of tokens. This includes
-     * minting and burning.
-     *
-     * Calling conditions:
-     *
-     * - when `from` and `to` are both non-zero, `amount` of ``from``'s tokens
-     * will be transferred to `to`.
-     * - when `from` is zero, `amount` tokens will be minted for `to`.
-     * - when `to` is zero, `amount` of ``from``'s tokens will be burned.
-     * - `from` and `to` are never both zero.
-     *
-     * To learn more about hooks, head to xref:ROOT:extending-contracts.adoc#using-hooks[Using Hooks].
-     */
-    // function _beforeTokenTransfer(address from, address to, uint256 amount) internal override {
-    //     /// @notice Non-transferrable
-    //     if (from != address(0)) { revert NonTransferrable(); }
-    //     if (to != address(0)) { revert NonTransferrable(); }
-    // }
+    }   
 
     modifier onlyStaking() {
         if (msg.sender != staking) { revert CommonEventsAndErrors.InvalidAccess(); }

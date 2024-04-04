@@ -5,12 +5,12 @@ pragma solidity 0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import { Origin } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/interfaces/IOAppReceiver.sol";
-// import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
 import { ITempleGold } from "contracts/interfaces/templegold/ITempleGold.sol";
-import { IAuctionEscrow } from "contracts/interfaces/templegold/IAuctionEscrow.sol";
+import { IDaiGoldAuction } from "contracts/interfaces/templegold/IDaiGoldAuction.sol";
 import { OFT } from "contracts/templegold/external/layerzero/oft/OFT.sol";
+import { ITempleGoldStaking}  from "./../interfaces/templegold/ITempleGoldStaking.sol";
 import { mulDiv } from "@prb/math/src/Common.sol";
 
 /// can use default OAppReceiver and OAppSender
@@ -26,10 +26,10 @@ import { mulDiv } from "@prb/math/src/Common.sol";
  contract TempleGold is ITempleGold, OFT {
 
     /// @notice These addresses are mutable to allow change/upgrade.
-    /// @notice Staking proxy contract. Staking proxy contract distributes further to Staking contract
-    address public stakingProxy;
+    /// @notice Staking contract
+    ITempleGoldStaking public staking;
     /// @notice Escrow auction contract
-    IAuctionEscrow public escrow;
+    IDaiGoldAuction public escrow;
     /// @notice Multisig gnosis address
     address public teamGnosis;
 
@@ -56,26 +56,26 @@ import { mulDiv } from "@prb/math/src/Common.sol";
     constructor(
         address _rescuer,
         address _executor, // executor is used as delegate in LayerZero Endpoint
-        address _stakingProxy,
+        address _staking,
         address _escrow,
         address _gnosis,
         address _layerZeroEndpoint, // local endpoint address
         string memory _name,
         string memory _symbol
     ) OFT(_name, _symbol, _layerZeroEndpoint, _executor) TempleElevatedAccess(_rescuer, _executor) {
-       stakingProxy = _stakingProxy;
-       escrow = IAuctionEscrow(_escrow);
+       staking = ITempleGoldStaking(_staking);
+       escrow = IDaiGoldAuction(_escrow);
        teamGnosis = _gnosis;
     }
 
     /**
      * @notice Set staking proxy contract address
-     * @param _stakingProxy Staking proxy contract
+     * @param _staking Staking proxy contract
      */
-    function setStakingProxy(address _stakingProxy) external override onlyElevatedAccess {
-        if (_stakingProxy == address(0)) { revert CommonEventsAndErrors.ExpectedNonZero(); }
-        stakingProxy = _stakingProxy;
-        emit StakingProxySet(_stakingProxy);
+    function setStaking(address _staking) external override onlyElevatedAccess {
+        if (_staking == address(0)) { revert CommonEventsAndErrors.ExpectedNonZero(); }
+        staking = ITempleGoldStaking(_staking);
+        emit StakingSet(_staking);
     }
 
     /**
@@ -84,7 +84,7 @@ import { mulDiv } from "@prb/math/src/Common.sol";
      */
     function setEscrow(address _escrow) external override onlyElevatedAccess {
         if (_escrow == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
-        escrow = IAuctionEscrow(_escrow);
+        escrow = IDaiGoldAuction(_escrow);
         emit EscrowSet(_escrow);
     }
 
@@ -114,14 +114,14 @@ import { mulDiv } from "@prb/math/src/Common.sol";
      * @param _params Distribution parameters
      */
     function setDistributionParams(DistributionParams calldata _params) external override onlyElevatedAccess {
-        if (_params.stakingProxy < MINIMUM_DISTRIBUTION_SHARE 
+        if (_params.staking < MINIMUM_DISTRIBUTION_SHARE 
             || _params.escrow < MINIMUM_DISTRIBUTION_SHARE 
             || _params.gnosis < MINIMUM_DISTRIBUTION_SHARE) {
                 revert CommonEventsAndErrors.InvalidParam();
             }
-        if (_params.stakingProxy + _params.gnosis + _params.escrow != DISTRIBUTION_MULTIPLIER) { revert ITempleGold.InvalidTotalShare(); }
+        if (_params.staking + _params.gnosis + _params.escrow != DISTRIBUTION_MULTIPLIER) { revert ITempleGold.InvalidTotalShare(); }
         distributionParams = _params;
-        emit DistributionParamsSet(_params.stakingProxy, _params.escrow, _params.gnosis);
+        emit DistributionParamsSet(_params.staking, _params.escrow, _params.gnosis);
     }
 
     /**
@@ -134,8 +134,7 @@ import { mulDiv } from "@prb/math/src/Common.sol";
         vestingFactor = _factor;
         emit VestingFactorSet(_factor.numerator, _factor.denominator);
     }
-    /// TODO change mint so that new mintables are calculated and distributed on claim (in Auction) or staking.
-    /// TODO check and confirm use case for transferring TGLD to other chains for auctions (bc of non-transferrability)
+    
     /**
      * @notice Mint new tokens to be distributed. Open to call from any address
      * Enforces minimum mint amount and uses vesting factor to calculate mint token amount.
@@ -143,28 +142,44 @@ import { mulDiv } from "@prb/math/src/Common.sol";
      */
     function mint() external override onlyArbitrum {
         VestingFactor memory vestingFactorCache = vestingFactor;
-        DistributionParams memory distributionParamsCache = distributionParams;
+        DistributionParams storage distributionParamsCache = distributionParams;
         if (vestingFactorCache.numerator == 0 || distributionParamsCache.escrow == 0) { revert ITempleGold.MissingParameter(); }
         
-        uint256 mintAmount;
-        /// @notice first time mint
-        if (lastMintTimestamp == 0) {
-            mintAmount = _mulDivRound(block.timestamp * MAX_SUPPLY, vestingFactorCache.denominator, vestingFactorCache.numerator, false);
-        } else {
-            mintAmount = _mulDivRound((lastMintTimestamp - block.timestamp) * (MAX_SUPPLY - totalSupply()), vestingFactorCache.denominator, vestingFactorCache.numerator, false);
-        }
+        uint256 mintAmount = _getMintAmount(vestingFactorCache);
         if (mintAmount < MINIMUM_MINT) { revert ITempleGold.InsufficientMintAmount(mintAmount); }
-        uint256 newTotalSupply = totalSupply() + mintAmount;
-        if (newTotalSupply > MAX_SUPPLY) { revert ITempleGold.MaxSupply(); }
+        uint256 totalSupplyCache = totalSupply();
+        if (totalSupplyCache >= MAX_SUPPLY) { revert MaxSupply(); }
+
+        uint256 newTotalSupply = totalSupplyCache + mintAmount;
+        if (newTotalSupply > MAX_SUPPLY) {
+            mintAmount = MAX_SUPPLY - totalSupplyCache;
+        }
+
         lastMintTimestamp = uint32(block.timestamp);
 
-        _mint(stakingProxy, distributionParamsCache.stakingProxy * mintAmount / DISTRIBUTION_MULTIPLIER);
-        _mint(teamGnosis, distributionParamsCache.gnosis * mintAmount / DISTRIBUTION_MULTIPLIER);
-        uint256 escrowAmount = distributionParamsCache.escrow * mintAmount / DISTRIBUTION_MULTIPLIER;
-        _mint(address(escrow), escrowAmount);
-        escrow.checkpointGold(escrowAmount);
+        _distribute(distributionParamsCache, mintAmount);
+    }
 
-        emit Distributed(mintAmount, newTotalSupply, block.timestamp);
+    function _distribute(DistributionParams storage params, uint256 mintAmount) private {
+        uint256 stakingAmount = _mulDivRound(params.staking, mintAmount, DISTRIBUTION_MULTIPLIER, false);
+        if (stakingAmount > 0) {
+            _mint(address(staking), stakingAmount);
+            staking.notifyDistribution(stakingAmount);
+        }
+
+        uint256 escrowAmount = _mulDivRound(params.escrow, mintAmount, DISTRIBUTION_MULTIPLIER, false);
+        if (escrowAmount > 0) {
+            _mint(address(escrow), escrowAmount);
+            escrow.notifyDistribution(escrowAmount);
+        }
+
+        uint256 gnosisAmount = _mulDivRound(params.gnosis, mintAmount, DISTRIBUTION_MULTIPLIER, false);
+        if (gnosisAmount > 0) {
+            _mint(teamGnosis, gnosisAmount);
+            /// @notice no requirement to notify gnosis because no action has to be taken
+        }
+        
+        emit Distributed(stakingAmount, escrowAmount, gnosisAmount, block.timestamp);
     }
 
     /**
@@ -183,6 +198,21 @@ import { mulDiv } from "@prb/math/src/Common.sol";
         return distributionParams;
     }
 
+    function _getMintAmount(VestingFactor memory vestingFactorCache) private view returns (uint256 mintAmount) {
+        /// @notice first time mint
+        if (lastMintTimestamp == 0) {
+            mintAmount = _mulDivRound(block.timestamp * MAX_SUPPLY, vestingFactorCache.denominator, vestingFactorCache.numerator, false);
+        } else {
+            mintAmount = _mulDivRound((lastMintTimestamp - block.timestamp) * (MAX_SUPPLY - totalSupply()), vestingFactorCache.denominator, vestingFactorCache.numerator, false);
+        }
+    }
+
+    function canDistribute() external view returns (bool) {
+        VestingFactor memory vestingFactorCache = vestingFactor;
+        uint256 mintAmount = _getMintAmount(vestingFactorCache);
+        return mintAmount >= MINIMUM_MINT && totalSupply() < MAX_SUPPLY;
+    }
+
     /**
      * @notice Get circulating supply across chains
      * @return Circulating supply
@@ -199,7 +229,7 @@ import { mulDiv } from "@prb/math/src/Common.sol";
 
     }
 
-     /// @notice mulDiv with an option to round the result up or down to the nearest wei
+    /// @notice mulDiv with an option to round the result up or down to the nearest wei
     function _mulDivRound(uint256 x, uint256 y, uint256 denominator, bool roundUp) internal pure returns (uint256 result) {
         result = mulDiv(x, y, denominator);
         // See OZ Math.sol for the equivalent mulDiv() with rounding.
@@ -208,13 +238,13 @@ import { mulDiv } from "@prb/math/src/Common.sol";
         }
     }
 
-    // function _beforeTokenTransfer(address from, address to /*uint256 amount*/) internal view {
-    //     /// @notice can only transfer to or from whitelisted addreess
-    //     /// this also disables burn
-    //     if (from != address(0) || to != address(0)) {
-    //         if (!whitelisted[from] && !whitelisted[to]) { revert ITempleGold.NonTransferrable(from, to); }
-    //     }
-    // }
+    function _beforeTokenTransfer(address from, address to /*uint256 amount*/) internal view {
+        /// @notice can only transfer to or from whitelisted addreess
+        /// this also disables burn
+        if (from != address(0) || to != address(0)) {
+            if (!whitelisted[from] && !whitelisted[to]) { revert ITempleGold.NonTransferrable(from, to); }
+        }
+    }
 
     modifier onlyArbitrum() {
         _;

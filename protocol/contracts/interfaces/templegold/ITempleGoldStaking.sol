@@ -8,8 +8,11 @@ interface ITempleGoldStaking {
     event RewardPaid(address indexed staker, address toAddress, uint256 reward);
     event MigratorSet(address migrator);
     event Withdrawn(address indexed staker, address to, uint256 amount);
+    event RewardDistributionCoolDownSet(uint160 cooldown);
+    event DistributionStarterSet(address indexed starter);
 
     error OnlyStakingProxy();
+    error CannotDistribute();
 
     struct Reward {
         uint40 periodFinish;
@@ -19,23 +22,10 @@ interface ITempleGoldStaking {
     }
 
     /**
-     * @notice Set staking proxy contract address
-     * @param _stakingProxy Staking proxy contract
-     */
-    function setStakingProxy(address _stakingProxy) external;
-
-    /**
      * @notice Set migrator
      * @param _migrator Migrator
      */
     function setMigrator(address _migrator) external;
-
-    /**
-     * @notice Notify reward amount for next reward distribution period
-     * @param amount Amount of Temple Gold to distribute
-     * @param duration Duration of reward distribution
-     */
-    function notifyRewardAmount(uint256 amount, uint256 duration) external;
 
     /**
      * @notice Stake
@@ -113,4 +103,8 @@ interface ITempleGoldStaking {
      * @param staker Staking account
      */
     function getReward(address staker) external;
+
+    function notifyDistribution(uint256 amount) external;
+
+    function setRewardDistributionCoolDown(uint160 _cooldown) external;
 }

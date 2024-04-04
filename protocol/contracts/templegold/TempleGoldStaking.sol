@@ -12,7 +12,6 @@ import { ITempleGoldStaking } from "contracts/interfaces/templegold/ITempleGoldS
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { ITempleGoldStakingProxy } from "contracts/interfaces/templegold/ITempleGoldStakingProxy.sol";
 import { IStakedTempleVoteToken } from "contracts/interfaces/templegold/IStakedTempleVoteToken.sol";
 
 /** 
@@ -30,8 +29,9 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     IERC20 public immutable rewardToken;
     /// @notice Vote Token
     IStakedTempleVoteToken public immutable voteToken;
-    /// @notice Staking Proxy contract
-    ITempleGoldStakingProxy public stakingProxy;
+
+    /// @notice Distribution starter
+    address public distributionStarter;
 
     /// @notice Rewards stored per token
     uint256 public rewardPerTokenStored;
@@ -41,6 +41,11 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     /// @notice Time tracking
     uint256 public periodFinish;
     uint256 public lastUpdateTime;
+
+    uint256 public nextRewardAmount;
+    uint256 public REWARD_DURATION = 7 days;
+    uint160 public rewardDistributionCoolDown;
+    uint96 public lastRewardNotificationTimestamp;
 
     /// @notice For use when migrating to a new staking contract.
     address public migrator;
@@ -59,23 +64,17 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         address _executor,
         address _stakingToken,
         address _rewardToken,
-        address _stakingProxy,
         address _voteToken
     ) TempleElevatedAccess(_rescuer, _executor){
         stakingToken = IERC20(_stakingToken);
         rewardToken = IERC20(_rewardToken);
-        stakingProxy = ITempleGoldStakingProxy(_stakingProxy);
         voteToken = IStakedTempleVoteToken(_voteToken);
     }
-    
-    /**
-     * @notice Set staking proxy contract address
-     * @param _stakingProxy Staking proxy contract
-     */
-    function setStakingProxy(address _stakingProxy) external override onlyElevatedAccess {
-        if (_stakingProxy == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
-        stakingProxy = ITempleGoldStakingProxy(_stakingProxy);
-        emit StakingProxySet(_stakingProxy);
+
+    function setDistributionStarter(address _starter) external onlyElevatedAccess {
+        /// @notice Starter can be address zerp
+        distributionStarter = _starter;
+        emit DistributionStarterSet(_starter);
     }
 
     /**
@@ -85,6 +84,12 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     function setMigrator(address _migrator) external override onlyElevatedAccess {
         migrator = _migrator;
         emit MigratorSet(_migrator);
+    }
+
+    function setRewardDistributionCoolDown(uint160 _cooldown) external override onlyElevatedAccess {
+        if (_cooldown == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
+        rewardDistributionCoolDown = _cooldown;
+        emit RewardDistributionCoolDownSet(_cooldown);
     }
 
     /**
@@ -100,20 +105,15 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         _withdrawFor(staker, msg.sender, amount, true, staker);
     }
 
-    // todo migrating Temple GOlD in case contract is upgraded. also migrating if TGLD changes
-
-    /**
-     * @notice Notify reward amount for next reward distribution period
-     * @param amount Amount of Temple Gold to distribute
-     * @param duration Duration of reward distribution
-     */
-    function notifyRewardAmount(uint256 amount, uint256 duration) external override {
-        if (msg.sender != address(stakingProxy)) { revert OnlyStakingProxy(); }
-        if (amount == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
-
-        IERC20(rewardToken).safeTransferFrom(msg.sender, address(this), amount);
-        _notifyReward(amount, duration);
-        /// @dev Event is emitted in Staking Proxy
+    function distributeRewards() external {
+        if (distributionStarter != address(0) && msg.sender != distributionStarter) { revert CommonEventsAndErrors.InvalidAccess(); }
+        // Mint and distribute TGLD is no cooldown set
+        if (rewardDistributionCoolDown == 0) { _distributeGold(); }
+        uint256 rewardAmount = nextRewardAmount;
+        if (rewardAmount == 0 ) { revert CommonEventsAndErrors.ExpectedNonZero(); }
+        if (lastRewardNotificationTimestamp + rewardDistributionCoolDown < block.timestamp) { revert CannotDistribute(); }
+        nextRewardAmount = 0;
+        _notifyReward(rewardAmount);
     }
 
     /**
@@ -228,6 +228,17 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         _getReward(staker, staker);
     }
 
+    function distributeGold() public {
+        _distributeGold();
+    }
+
+    function notifyDistribution(uint256 amount) external {
+        if (msg.sender != address(rewardToken)) { revert CommonEventsAndErrors.InvalidAccess(); }
+        /// @notice Temple Gold contract mints TGLD amount to contract before calling `notifyDistribution`
+        nextRewardAmount += amount;
+        lastRewardNotificationTimestamp = uint96(block.timestamp);
+    }
+
     function _getReward(address staker, address rewardsToAddress) internal {
         uint256 amount = claimableRewards[staker];
         if (amount > 0) {
@@ -253,12 +264,12 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         emit Staked(_for, _amount);
     }
 
-    function _mintVoteToken(address _for, uint256 _amount) internal {
+    function _mintVoteToken(address _for, uint256 _amount) private {
         voteToken.mint(_for, _amount);
     }
 
-    function _burnVoteToken(address _for, uint256 _amount) internal {
-        voteToken.burn(_for, _amount);
+    function _burnVoteToken(address _account, uint256 _amount) private {
+        voteToken.burnFrom(_account, _amount);
     }
 
     function _rewardPerToken() internal view returns (uint256) {
@@ -298,19 +309,19 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         }
     }
 
-    function _notifyReward(uint256 amount, uint256 duration) private {
+    function _notifyReward(uint256 amount) private {
         Reward storage rdata = rewardData;
 
         if (block.timestamp >= rdata.periodFinish) {
-            rdata.rewardRate = uint216(amount / duration);
+            rdata.rewardRate = uint216(amount / REWARD_DURATION);
         } else {
             uint256 remaining = uint256(rdata.periodFinish) - block.timestamp;
             uint256 leftover = remaining * rdata.rewardRate;
-            rdata.rewardRate = uint216((amount + leftover) / duration);
+            rdata.rewardRate = uint216((amount + leftover) / REWARD_DURATION);
         }
 
         rdata.lastUpdateTime = uint40(block.timestamp);
-        rdata.periodFinish = uint40(block.timestamp + duration);
+        rdata.periodFinish = uint40(block.timestamp + REWARD_DURATION);
     }
 
     function _lastTimeRewardApplicable(uint256 _finishTime) internal view returns (uint256) {
@@ -318,6 +329,13 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
             return _finishTime;
         }
         return block.timestamp;
+    }
+
+    function _distributeGold() internal {
+        bool canDistribute = ITempleGold(address(rewardToken)).canDistribute();
+        if (canDistribute) {
+            ITempleGold(address(rewardToken)).mint();
+        }
     }
 
     modifier updateReward(address _account) {

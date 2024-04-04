@@ -1,12 +1,14 @@
 pragma solidity 0.8.20;
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Temple (templegold/AuctionEscrow.sol)
+// Temple (templegold/DaiGoldAuction.sol)
 
 
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
-import { IAuctionEscrow } from "contracts/interfaces/templegold/IAuctionEscrow.sol";
+import { IDaiGoldAuction } from "contracts/interfaces/templegold/IDaiGoldAuction.sol";
+import { ITempleGold } from "contracts/interfaces/templegold/ITempleGold.sol";
+import { AuctionBase } from "contracts/templegold/AuctionBase.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { mulDiv } from "@prb/math/src/Common.sol";
@@ -18,7 +20,7 @@ import { mulDiv } from "@prb/math/src/Common.sol";
  *         claim their bid token and can claim their share of Temple Gold for epoch.
  *         Elevated access can change bidding token for future epochs.
  */
-contract AuctionEscrow is IAuctionEscrow, TempleElevatedAccess {
+contract DaiGoldAuction is IDaiGoldAuction, AuctionBase, TempleElevatedAccess {
     using SafeERC20 for IERC20;
     
     /// @notice Temple GOLD address
@@ -27,28 +29,20 @@ contract AuctionEscrow is IAuctionEscrow, TempleElevatedAccess {
     IERC20 public bidToken;
     /// @notice Destination address for proceeds of fire ritual
     address public immutable treasury;
+    /// @notice Address that can trigger start of auction. address(0) means anyone
+    address public auctionStarter;
     /// @notice Bool for if bidding is live
     bool public bidLive;
 
-    /// @notice Current epoch id
-    uint256 private _currentEpochId;
+    /// @notice Keep track of next epoch auction Temple Gold amount
+    uint256 public nextAuctionGoldAmount;
+    uint160 public rewardDistributionCoolDown;
+    uint96 public lastRewardNotificationTimestamp;
 
     /// @notice Auctions run for minimum 1 week
-    uint256 public constant MINIMUM_AUCTION_PERIOD = 604_800;
-    /// @notice Minimum distributed available Temple GOLD for auction
-    uint256 public constant MINIMUM_AUCTION_GOLD_AMOUNT = 1_000;
+    uint32 public constant MINIMUM_AUCTION_PERIOD = 604_800;
 
-    /// @notice Depositor to epoch to amount deposted mapping
-    mapping(address depositor => mapping(uint256 epochId => uint256 amount)) public depositors;
-    /// @notice Keep track of epochs details
-    mapping(uint256 epochId => EpochInfo info) public epochs;
-
-    struct EpochInfo {
-        uint64 startTime;
-        uint64 endTime;
-        uint256 totalBidTokenAmount;
-        uint256 totalTGoldAmount;
-    }
+    AuctionConfig public auctionConfig;
 
     constructor(
         address _templeGold,
@@ -62,6 +56,26 @@ contract AuctionEscrow is IAuctionEscrow, TempleElevatedAccess {
         treasury = _treasury;
     }
 
+    function setAuctionConfig(AuctionConfig calldata _config) external onlyElevatedAccess {
+        if (_config.auctionDuration < MINIMUM_AUCTION_PERIOD) { revert CommonEventsAndErrors.InvalidParam(); }
+        if (_config.auctionMinimumWaitPeriod == 0
+            || _config.auctionStartCooldown == 0
+            || _config.auctionMinimumDistributedGold == 0) 
+        { revert CommonEventsAndErrors.ExpectedNonZero(); }
+        auctionConfig = _config;
+
+        emit AuctionConfigSet(_config);
+    }
+
+    /**
+     * @notice Set address to trigger auction start. Zero address accepted
+     * @param _starter Auction starter
+     */
+    function setAuctionStarter(address _starter) external override onlyElevatedAccess {
+        /// @notice No zero address checks. Zero address is a valid input
+        auctionStarter = _starter; 
+    }
+
     /**
      * @notice Set token used for bidding
      * @param _bidToken Bid token
@@ -73,40 +87,46 @@ contract AuctionEscrow is IAuctionEscrow, TempleElevatedAccess {
     }
 
     /**
-     * @notice Start auctioning of Temple Gold tokens.
-     * Uses up to date distributed Temple Gold tokens since last auction as total Temple Gold for distribution
-     * @param duration Duration of auction
+     * @notice Start auction. Auction start can be triggered by anyone if `auctionStarter` not set
      */
-    function startAuction(uint64 duration) external override onlyElevatedAccess {
-        if (duration < MINIMUM_AUCTION_PERIOD) { revert CommonEventsAndErrors.InvalidParam(); }
-        /// @notice Can only start if current epoch ended
+    function startAuction() external override {
+        if (auctionStarter != address(0) && msg.sender != auctionStarter) { revert CommonEventsAndErrors.InvalidAccess(); }
         if (!_isCurrentEpochEnded()) { revert CannotStartAuction(); }
+       
+        EpochInfo memory prevAuctionInfo = epochs[_currentEpochId];
+        AuctionConfig memory config = auctionConfig;
+        /// @notice last auction end time plus wait period
+        if (prevAuctionInfo.endTime + auctionConfig.auctionMinimumWaitPeriod > block.timestamp) { revert CannotStartAuction(); }
 
+        uint256 totalGoldAmount = nextAuctionGoldAmount;
+        nextAuctionGoldAmount = 0;
         uint256 epochId = _currentEpochId = _currentEpochId + 1;
-        EpochInfo storage info = epochs[epochId];
-        /// @notice cache for gas savings
-        uint256 totalTGoldAmount = info.totalTGoldAmount;
-        if (totalTGoldAmount < MINIMUM_AUCTION_GOLD_AMOUNT) { revert LowGoldDistributed(totalTGoldAmount); }
+        
+        if (totalGoldAmount < config.auctionMinimumDistributedGold) { revert LowGoldDistributed(totalGoldAmount); }
 
-        info.startTime = uint64(block.timestamp);
-        uint64 endTime = info.endTime = uint64(block.timestamp) + duration;
+        EpochInfo storage info = epochs[epochId];
+        info.totalAuctionTokenAmount = totalGoldAmount;
+        info.startTime = uint64(block.timestamp) + config.auctionStartCooldown;
+        uint64 endTime = info.endTime = uint64(block.timestamp) + config.auctionDuration;
         bidLive = true;
-        emit AuctionStart(epochId, uint64(block.timestamp), endTime, totalTGoldAmount);
+        
+        emit AuctionStart(epochId, uint64(block.timestamp), endTime, totalGoldAmount);
     }
 
     /**
      * @notice Deposit bidding token for current running epoch auction
      * @param amount Amount of bid token to deposit
      */
-    function deposit(uint256 amount) external override onlyWhenLive {
-        uint256 epochIdCache = _currentEpochId;
-        EpochInfo storage info = epochs[epochIdCache];
-        if (_isCurrentEpochEndedStorage(info)) { revert CannotDeposit(); }
+    function deposit(uint256 amount) external virtual override onlyWhenLive {
         if (amount == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
+        _distributeGold();
 
         bidToken.safeTransferFrom(msg.sender, address(this), amount);
+
+        uint256 epochIdCache = _currentEpochId;
         depositors[msg.sender][epochIdCache] += amount;
-        
+
+        EpochInfo storage info = epochs[epochIdCache];
         info.totalBidTokenAmount += amount;
         emit Deposit(msg.sender, epochIdCache, amount);
     }
@@ -116,9 +136,10 @@ contract AuctionEscrow is IAuctionEscrow, TempleElevatedAccess {
      * Can only claim for past epochs, not current auction epoch.
      * @param epochId Id of epoch
      */
-    function claim(uint256 epochId) external override {
+    function claim(uint256 epochId) external virtual override {
         /// @notice cannot claim for current live epoch
         if (epochId >= _currentEpochId) { revert CannotClaim(epochId); }
+        _distributeGold();
         EpochInfo memory infoCached = epochs[epochId];
         if (infoCached.startTime == 0) { revert InvalidEpoch(); }
         uint256 bidTokenAmount = depositors[msg.sender][epochId];
@@ -126,7 +147,7 @@ contract AuctionEscrow is IAuctionEscrow, TempleElevatedAccess {
         bidToken.safeTransfer(treasury, bidTokenAmount);
 
         delete depositors[msg.sender][epochId];
-        uint256 claimAmount = _mulDivRound(bidTokenAmount, infoCached.totalTGoldAmount, infoCached.totalBidTokenAmount, false);
+        uint256 claimAmount = _mulDivRound(bidTokenAmount, infoCached.totalAuctionTokenAmount, infoCached.totalBidTokenAmount, false);
         templeGold.safeTransfer(msg.sender, claimAmount);
         emit Claim(msg.sender, epochId, bidTokenAmount, claimAmount);
     }
@@ -136,21 +157,12 @@ contract AuctionEscrow is IAuctionEscrow, TempleElevatedAccess {
      * Can only be called by Temple Gold contract
      * @param amount Amount of Temple Gold to checkpoint
      */
-    function checkpointGold(uint256 amount) external override {
-        if (bidLive) { revert BidLive(); }
-        if (msg.sender !=  address(templeGold)) { revert CommonEventsAndErrors.InvalidAccess(); }
-        EpochInfo storage info = epochs[nextEpoch()];
-        info.totalTGoldAmount += amount;
-    }
-
-    /**
-     * @notice Checkpoint auction state. If auction has ended, bidLive is set to false.
-     */
-    function checkpointAuctionState() external override {
-        if (_isCurrentEpochEnded()) { 
-            bidLive = false; 
-            emit AuctionEnded(_currentEpochId);
-        }
+    function notifyDistribution(uint256 amount) external override {
+        if (msg.sender != address(templeGold)) { revert CommonEventsAndErrors.InvalidAccess(); }
+        /// @notice Temple Gold contract mints TGLD amount to contract before calling `notifyDistribution`
+        nextAuctionGoldAmount += amount;
+        lastRewardNotificationTimestamp = uint96(block.timestamp);
+        emit GoldDistributionNotified(amount, block.timestamp);
     }
     
     /**
@@ -159,7 +171,7 @@ contract AuctionEscrow is IAuctionEscrow, TempleElevatedAccess {
      * @return Temple Gold supply
      */
     function epochGoldSupply(uint256 epochId) external view override returns (uint256) {
-        return epochs[epochId].totalTGoldAmount;
+        return epochs[epochId].totalAuctionTokenAmount;
     }
 
     /**
@@ -186,26 +198,27 @@ contract AuctionEscrow is IAuctionEscrow, TempleElevatedAccess {
         return _isCurrentEpochEnded();
     }
 
-    function _isCurrentEpochEnded() private view returns (bool){
-        EpochInfo memory info = epochs[_currentEpochId];
-        return info.endTime < block.timestamp;
+    /**
+     * @notice Check if current auction epoch is allowing bid deposits
+     * @return Bool if allowing deposit
+     */
+    function canDeposit() external view override returns (bool) {
+        return _canDeposit();
     }
 
-    function _isCurrentEpochEndedStorage(EpochInfo storage info) private view returns (bool) {
-        return info.endTime < block.timestamp;
+    function distributeGold() external {
+        _distributeGold();
     }
-
-    /// @notice mulDiv with an option to round the result up or down to the nearest wei
-    function _mulDivRound(uint256 x, uint256 y, uint256 denominator, bool roundUp) internal pure returns (uint256 result) {
-        result = mulDiv(x, y, denominator);
-        // See OZ Math.sol for the equivalent mulDiv() with rounding.
-        if (roundUp && mulmod(x, y, denominator) > 0) {
-            result += 1;
+    
+    function _distributeGold() private {
+        bool canDistribute = ITempleGold(address(templeGold)).canDistribute();
+        if (canDistribute) {
+            ITempleGold(address(templeGold)).mint();
         }
     }
 
     modifier onlyWhenLive() {
-        if (!bidLive) { revert BidNotLive(); }
+        if (!_canDeposit()) { revert CannotDeposit(); }
         _;
     }
 }
