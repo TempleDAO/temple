@@ -1,4 +1,13 @@
-import { createContext, useContext, useState, FC, useMemo, useRef, useEffect, useCallback } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  FC,
+  useMemo,
+  useRef,
+  useEffect,
+  useCallback,
+} from 'react';
 import { BigNumber } from 'ethers';
 
 import { DecimalBigNumber, DBN_ZERO } from 'utils/DecimalBigNumber';
@@ -124,7 +133,8 @@ export const AuctionContextProvider: FC<Props> = ({ pool, children }) => {
   //   enabled: !!wallet,
   // });
 
-  const [vaultAddress, pausedState = [], tokenWeights = []]: any = poolData || [];
+  const [vaultAddress, pausedState = [], tokenWeights = []]: any =
+    poolData || [];
 
   const vaultData: never[] = [];
   // const { data: vaultData } = useContractReads({
@@ -147,15 +157,15 @@ export const AuctionContextProvider: FC<Props> = ({ pool, children }) => {
       buy: sell,
     }));
 
-    const sellTokenData = {value: BigNumber.from(0), decimals: 0};
-    const refetchSell = noop;
+  const sellTokenData = { value: BigNumber.from(0), decimals: 0 };
+  const refetchSell = noop;
   // const { data: sellTokenData, refetch: refetchSell } = useBalance({
   //   address: wallet,
   //   token: swapState.sell.address as `0x${string}`,
   //   enabled: !!wallet,
   // });
 
-  const buyTokenData = {value: BigNumber.from(0), decimals: 0};
+  const buyTokenData = { value: BigNumber.from(0), decimals: 0 };
   const refetchBuy = noop;
   // const { data: buyTokenData, refetch: refetchBuy } = useBalance({
   //   address: wallet,
@@ -166,7 +176,9 @@ export const AuctionContextProvider: FC<Props> = ({ pool, children }) => {
   const sellTokenBalance = sellTokenData
     ? DecimalBigNumber.fromBN(sellTokenData.value, sellTokenData.decimals)
     : DBN_ZERO;
-  const buyTokenBalance = buyTokenData ? DecimalBigNumber.fromBN(buyTokenData.value, buyTokenData.decimals) : DBN_ZERO;
+  const buyTokenBalance = buyTokenData
+    ? DecimalBigNumber.fromBN(buyTokenData.value, buyTokenData.decimals)
+    : DBN_ZERO;
 
   useEffect(() => {
     if (intervalRef.current) {
@@ -203,8 +215,14 @@ export const AuctionContextProvider: FC<Props> = ({ pool, children }) => {
     }
 
     return {
-      [accrued.address]: DecimalBigNumber.fromBN(weights[accrued.tokenIndex] || ZERO, 18),
-      [base.address]: DecimalBigNumber.fromBN(weights[base.tokenIndex] || ZERO, 18),
+      [accrued.address]: DecimalBigNumber.fromBN(
+        weights[accrued.tokenIndex] || ZERO,
+        18
+      ),
+      [base.address]: DecimalBigNumber.fromBN(
+        weights[base.tokenIndex] || ZERO,
+        18
+      ),
     };
   }, [tokenWeights, accrued, base, wallet]);
 
@@ -215,14 +233,26 @@ export const AuctionContextProvider: FC<Props> = ({ pool, children }) => {
     if (!wallet) {
       // Fallback on pool data if disconnected
       return {
-        [accrued.address]: DecimalBigNumber.fromBN(accrued.balance || ZERO, accrued.decimals),
-        [base.address]: DecimalBigNumber.fromBN(base.balance || ZERO, base.decimals),
+        [accrued.address]: DecimalBigNumber.fromBN(
+          accrued.balance || ZERO,
+          accrued.decimals
+        ),
+        [base.address]: DecimalBigNumber.fromBN(
+          base.balance || ZERO,
+          base.decimals
+        ),
       };
     }
 
     return {
-      [accrued.address]: DecimalBigNumber.fromBN(balances[accrued.tokenIndex] || ZERO, accrued.decimals),
-      [base.address]: DecimalBigNumber.fromBN(balances[base.tokenIndex] || ZERO, base.decimals),
+      [accrued.address]: DecimalBigNumber.fromBN(
+        balances[accrued.tokenIndex] || ZERO,
+        accrued.decimals
+      ),
+      [base.address]: DecimalBigNumber.fromBN(
+        balances[base.tokenIndex] || ZERO,
+        base.decimals
+      ),
     };
   }, [poolTokenBalances, accrued, base, wallet]);
 
@@ -254,4 +284,5 @@ export const AuctionContextProvider: FC<Props> = ({ pool, children }) => {
   );
 };
 
-export const useAuctionContext = () => useContext<AuctionContext>(AuctionContext);
+export const useAuctionContext = () =>
+  useContext<AuctionContext>(AuctionContext);

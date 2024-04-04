@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import { useWallet } from 'providers/WalletProvider';
 import { Button } from 'components/Button/Button';
 
+// eslint-disable-next-line @typescript-eslint/ban-types
 const VaultContent = ({ children }: PropsWithChildren<{}>) => {
   return <Content>{children}</Content>;
 };
@@ -45,6 +46,6 @@ export const VaultButton = (props: ComponentProps<typeof BaseVaultButton>) => {
   }
 
   return <BaseVaultButton {...props} />;
-} 
+};
 
 export default VaultContent;

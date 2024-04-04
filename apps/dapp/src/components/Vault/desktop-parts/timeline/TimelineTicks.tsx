@@ -10,7 +10,9 @@ export const TimelineTicks = ({ vaultGroup }: Props) => {
   const maxAngleTrack = 2;
   const minAngleTick = -80.5;
   const maxAngleTick = 80.5;
-  const percent = vaultGroup.enterExitWindowDurationSeconds / vaultGroup.periodDurationSeconds;
+  const percent =
+    vaultGroup.enterExitWindowDurationSeconds /
+    vaultGroup.periodDurationSeconds;
   const periods = vaultGroup.periods;
 
   const trackAngle = lerp(minAngleTrack, maxAngleTrack, percent);
@@ -57,7 +59,7 @@ export const TimelineTicks = ({ vaultGroup }: Props) => {
         letterSpacing=".15em"
       >
         <tspan x={793.481} y={526.065}>
-         End
+          End
         </tspan>
       </text>
       <g id="track">
@@ -77,7 +79,10 @@ export const TimelineTicks = ({ vaultGroup }: Props) => {
           />
         </mask>
         <g mask="url(#mask0_4015_16261)">
-          <g id="rotation frame-track" transform={`rotate(${trackAngle} 502.066 502.066)`}>
+          <g
+            id="rotation frame-track"
+            transform={`rotate(${trackAngle} 502.066 502.066)`}
+          >
             <path
               id="one-month-progress-bar-outline"
               fillRule="evenodd"

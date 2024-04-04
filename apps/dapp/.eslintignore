@@ -1,1 +1,2 @@
-typechain
+src/types/typechain
+dist

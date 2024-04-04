@@ -1,4 +1,4 @@
-import styled from "styled-components";
+import styled from 'styled-components';
 
 export const RadioCheckbox = styled.input.attrs({ type: 'checkbox' })`
   /* removing default appearance */
@@ -20,9 +20,9 @@ export const RadioCheckbox = styled.input.attrs({ type: 'checkbox' })`
   }
 
   &:before {
-    content: "";
-    width: 0.50em;
-    height: 0.50em;
+    content: '';
+    width: 0.5em;
+    height: 0.5em;
     border-radius: 50%;
     transform: scale(0);
     background-color: ${({ theme }) => `${theme.palette.brand}`};

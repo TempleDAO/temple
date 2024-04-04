@@ -30,14 +30,22 @@ export const useFactoryContract = () => {
     if (!signer || contractInstance) {
       return;
     }
-    
-    setContractInstance(new Contract(LBP_FACTORY_CONTRACT_ADDRESS, liquidityBootstrappingPoolAbi, signer))
+
+    setContractInstance(
+      new Contract(
+        LBP_FACTORY_CONTRACT_ADDRESS,
+        liquidityBootstrappingPoolAbi,
+        signer
+      )
+    );
   }, [signer, contractInstance, setContractInstance]);
 
   const createPool = async (params: CreatePoolParams) => {
     let result;
     try {
-      const swapFeePercentage = parseEther((params.feePercentage / 100).toString());
+      const swapFeePercentage = parseEther(
+        (params.feePercentage / 100).toString()
+      );
 
       result = await contractInstance!.create(
         params.name,
@@ -51,9 +59,9 @@ export const useFactoryContract = () => {
           gasLimit: 5000000,
         }
       );
-      
+
       await result.wait();
-      
+
       openNotification({
         title: `Pool created successfully.`,
         hash: result.hash,
@@ -66,8 +74,11 @@ export const useFactoryContract = () => {
       });
     }
   };
-  
-  const [createPoolHandler, createPoolRequestState] = useRequestState(createPool, { shouldReThrow: true }); 
+
+  const [createPoolHandler, createPoolRequestState] = useRequestState(
+    createPool,
+    { shouldReThrow: true }
+  );
 
   return {
     createPool: {

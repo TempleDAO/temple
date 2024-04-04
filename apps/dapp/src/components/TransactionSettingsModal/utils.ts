@@ -5,7 +5,12 @@ export const limitInput = (input: string): number | '' => {
   return Number(input);
 };
 
-export const handleBlur = (value: number, minValue: number, maxValue: number, defaultValue: number) => {
+export const handleBlur = (
+  value: number,
+  minValue: number,
+  maxValue: number,
+  defaultValue: number
+) => {
   if (value <= 0) return defaultValue;
 
   if (value <= minValue) return minValue;

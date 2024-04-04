@@ -15,4 +15,4 @@ const TruncatedAddress = ({ address }: Props) => {
   );
 };
 
-export default TruncatedAddress
+export default TruncatedAddress;

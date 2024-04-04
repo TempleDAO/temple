@@ -25,7 +25,13 @@ interface FlexContainer {
   alignItems?: LayoutOption;
 }
 
-type Col = 'half' | 'third' | 'quarter' | 'fifth' | 'three-quarter' | 'fullwidth';
+type Col =
+  | 'half'
+  | 'third'
+  | 'quarter'
+  | 'fifth'
+  | 'three-quarter'
+  | 'fullwidth';
 
 interface FlexItem extends Omit<FlexContainer, 'kind'> {
   kind: 'item';

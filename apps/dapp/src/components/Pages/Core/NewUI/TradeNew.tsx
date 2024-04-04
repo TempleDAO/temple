@@ -32,12 +32,20 @@ export const Trade = () => {
 
   const inputCryptoConfig =
     state.mode === SwapMode.Buy
-      ? { ...state.inputConfig, onCryptoChange: handleSelectChange, selected: state.inputToken }
+      ? {
+          ...state.inputConfig,
+          onCryptoChange: handleSelectChange,
+          selected: state.inputToken,
+        }
       : state.inputConfig;
 
   const outputCryptoConfig =
     state.mode === SwapMode.Sell
-      ? { ...state.outputConfig, onCryptoChange: handleSelectChange, selected: state.outputToken }
+      ? {
+          ...state.outputConfig,
+          onCryptoChange: handleSelectChange,
+          selected: state.outputToken,
+        }
       : state.outputConfig;
 
   const formatErrorMessage = (errorMessage: string) => {
@@ -85,13 +93,19 @@ export const Trade = () => {
             placeholder="0"
             onHintClick={handleHintClick}
             min={0}
-            hint={`Balance: ${formatToken(state.inputTokenBalance, state.inputToken)}`}
+            hint={`Balance: ${formatToken(
+              state.inputTokenBalance,
+              state.inputToken
+            )}`}
           />
           <Spacer />
           <Input
             crypto={outputCryptoConfig}
             value={formatToken(state.quote?.returnAmount, state.outputToken)}
-            hint={`Balance: ${formatToken(state.outputTokenBalance, state.outputToken)}`}
+            hint={`Balance: ${formatToken(
+              state.outputTokenBalance,
+              state.outputToken
+            )}`}
             disabled
           />
           <InvertButton onClick={handleChangeMode} />

@@ -12,24 +12,36 @@ export enum TxHistoryFilterType {
   lastweek = 'lastweek',
   last30days = 'last30days',
   all = 'all',
-  }
+}
 
-const DashboardTransactionHistory = ({ dashboardData }: DashboardTransactionHistoryProps) => {
-  
-  const [txFilter, setTxFilter] = useState<TxHistoryFilterType>(TxHistoryFilterType.all);
+const DashboardTransactionHistory = ({
+  dashboardData,
+}: DashboardTransactionHistoryProps) => {
+  const [txFilter, setTxFilter] = useState<TxHistoryFilterType>(
+    TxHistoryFilterType.all
+  );
 
   return (
     <TransactionHistoryContainer>
       <TransactionHistoryHeader>
         <TransactionHistoryTitle>Transaction History</TransactionHistoryTitle>
         <TransactionTimePeriod>
-          <IntervalToggle selected={txFilter === 'lastweek'} onClick={() => setTxFilter(TxHistoryFilterType.lastweek)}>
+          <IntervalToggle
+            selected={txFilter === 'lastweek'}
+            onClick={() => setTxFilter(TxHistoryFilterType.lastweek)}
+          >
             Last week
           </IntervalToggle>
-          <IntervalToggle selected={txFilter === 'last30days'} onClick={() => setTxFilter(TxHistoryFilterType.last30days)}>
+          <IntervalToggle
+            selected={txFilter === 'last30days'}
+            onClick={() => setTxFilter(TxHistoryFilterType.last30days)}
+          >
             Last 30 Days
           </IntervalToggle>
-          <IntervalToggle selected={txFilter === 'all'} onClick={() => setTxFilter(TxHistoryFilterType.all)}>
+          <IntervalToggle
+            selected={txFilter === 'all'}
+            onClick={() => setTxFilter(TxHistoryFilterType.all)}
+          >
             All
           </IntervalToggle>
         </TransactionTimePeriod>
@@ -52,9 +64,10 @@ const IntervalToggle = styled.label<IntervalToggleProps>`
   margin-right: 20px;
   height: 25px;
   border-radius: 5px;
-  ${({ selected }) => (selected && 'text-decoration: underline;')}
-  ${({ selected }) => (selected && 'font-weight: bold;')}
-  color: ${({ selected, theme }) => (selected ? theme.palette.brandLight : theme.palette.brand)};
+  ${({ selected }) => selected && 'text-decoration: underline;'}
+  ${({ selected }) => selected && 'font-weight: bold;'}
+  color: ${({ selected, theme }) =>
+    selected ? theme.palette.brandLight : theme.palette.brand};
   border: 0px;
   white-space: nowrap;
   &:last-child {
@@ -103,5 +116,5 @@ const TransactionHistoryContainer = styled.div`
   display: flex;
   flex-direction: column;
   margin-bottom: 2rem;
-  width: 100%
+  width: 100%;
 `;

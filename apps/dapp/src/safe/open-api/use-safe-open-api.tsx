@@ -1,4 +1,8 @@
-import { AllTransactionsSchema, SafeMultisigTransactionResponse, V1Service } from './client';
+import {
+  AllTransactionsSchema,
+  SafeMultisigTransactionResponse,
+  V1Service,
+} from './client';
 import { UseQueryResult, useQuery } from '@tanstack/react-query';
 
 type SafeApiRes<T> = {
@@ -16,7 +20,13 @@ export const useSafeTxs = (
   refetchInterval?: number | false
 ): UseQueryResult<SafeApiRes<SafeMultisigTransactionResponse[]>> =>
   useQuery({
-    queryKey: ['getSafeTransactions', safeWalletAddress, walletAddress, onlyExecuted, refetchInterval],
+    queryKey: [
+      'getSafeTransactions',
+      safeWalletAddress,
+      walletAddress,
+      onlyExecuted,
+      refetchInterval,
+    ],
     queryFn: () => {
       return V1Service.v1SafesMultisigTransactionsList(
         safeWalletAddress,
@@ -43,13 +53,15 @@ export const useSafeTxs = (
         undefined,
         undefined,
         undefined,
-        orderByNonce ? 'nonce' : undefined, // order asc by nonce, so users see transactions to be executed
+        orderByNonce ? 'nonce' : undefined // order asc by nonce, so users see transactions to be executed
       );
     },
     refetchInterval,
   });
 
-export const useSafeAllTransactions = (safeWalletAddress: string): UseQueryResult<SafeApiRes<AllTransactionsSchema>> =>
+export const useSafeAllTransactions = (
+  safeWalletAddress: string
+): UseQueryResult<SafeApiRes<AllTransactionsSchema>> =>
   useQuery({
     queryKey: ['getAllSafeTransactions', safeWalletAddress],
     queryFn: () => {
@@ -65,6 +77,10 @@ export const useSafeCheckOwner = (
     queryKey: ['checkSafeOwner', safeWalletAddress, ownerAddress],
     queryFn: async () => {
       const safeDetails = await V1Service.v1SafesRead(safeWalletAddress);
-      return safeDetails.owners.filter((o) => o.toLowerCase() === ownerAddress?.toLowerCase()).length > 0;
+      return (
+        safeDetails.owners.filter(
+          (o) => o.toLowerCase() === ownerAddress?.toLowerCase()
+        ).length > 0
+      );
     },
   });

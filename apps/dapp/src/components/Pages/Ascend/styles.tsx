@@ -8,7 +8,7 @@ export const PageWrapper = styled.div`
 
 export const ContractAddress = styled.div`
   color: ${({ theme }) => theme.palette.brandLight};
-  font-size: .75rem;
+  font-size: 0.75rem;
   margin: -1rem 0 1rem;
 `;
 
@@ -33,7 +33,7 @@ export const TradeWrapper = styled.div`
   justify-content: center;
   flex-direction: column;
   border-radius: 1rem;
-  background: #1D1A1A;
+  background: #1d1a1a;
 `;
 
 export const TradeHeader = styled.h3`

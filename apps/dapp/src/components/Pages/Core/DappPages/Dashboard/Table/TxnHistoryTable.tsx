@@ -5,7 +5,11 @@ import { TxHistoryFilterType } from '.';
 import { format } from 'date-fns';
 import { TableRow, TxType, TxnDataTable } from './TxnDataTable';
 import { PaginationControl } from './PaginationControl';
-import { RowFilter, useTxHistory, useTxHistoryAvailableRows } from '../hooks/use-dashboardv2-txHistory';
+import {
+  RowFilter,
+  useTxHistory,
+  useTxHistoryAvailableRows,
+} from '../hooks/use-dashboardv2-txHistory';
 import { DropdownCheckOption, DropdownCheckOptions } from './RowFilterDropdown';
 import { useMediaQuery } from 'react-responsive';
 import { queryMinTablet } from 'styles/breakpoints';
@@ -50,7 +54,8 @@ const TxnHistoryTable = (props: Props) => {
   const isBiggerThanTablet = useMediaQuery({ query: queryMinTablet });
 
   const allStrategyDropdowns = useMemo(
-    () => Dashboards.map((dashboard) => ({ label: dashboard.key, checked: false })),
+    () =>
+      Dashboards.map((dashboard) => ({ label: dashboard.key, checked: false })),
     []
   );
 
@@ -68,7 +73,11 @@ const TxnHistoryTable = (props: Props) => {
           case TableHeaders.Type:
           case TableHeaders.Strategy:
           case TableHeaders.TxHash:
-            return { ...th, width: isBiggerThanTablet ? '128px' : '99px', isHidden: !isBiggerThanTablet };
+            return {
+              ...th,
+              width: isBiggerThanTablet ? '128px' : '99px',
+              isHidden: !isBiggerThanTablet,
+            };
           default:
             return th;
         }
@@ -138,24 +147,32 @@ const TxnHistoryTable = (props: Props) => {
       return newState;
     });
 
-  const updateRowDropdownCheckbox = (clickedHeader: TableHeaders, newOption: DropdownCheckOption) => {
+  const updateRowDropdownCheckbox = (
+    clickedHeader: TableHeaders,
+    newOption: DropdownCheckOption
+  ) => {
     setCurrentPage(1);
     setTableHeaders((prevState) => {
-      const newState: TxHistoryTableHeader[] = prevState.map((prevStateHeader) => {
-        // if table header with no filters, do nothing
-        if (!prevStateHeader.dropdownOptions) return prevStateHeader;
-        // if prevState is not the table header clicked, do nothing
-        if (clickedHeader !== prevStateHeader.name) return prevStateHeader;
-        const newDropdownOptions = prevStateHeader.dropdownOptions.map((prevOp) => {
-          prevOp.checked = false;
-          if (prevOp.label === newOption.label) prevOp.checked = newOption.checked;
-          return { ...prevOp };
-        });
-        return {
-          ...prevStateHeader,
-          dropdownOptions: newDropdownOptions,
-        };
-      });
+      const newState: TxHistoryTableHeader[] = prevState.map(
+        (prevStateHeader) => {
+          // if table header with no filters, do nothing
+          if (!prevStateHeader.dropdownOptions) return prevStateHeader;
+          // if prevState is not the table header clicked, do nothing
+          if (clickedHeader !== prevStateHeader.name) return prevStateHeader;
+          const newDropdownOptions = prevStateHeader.dropdownOptions.map(
+            (prevOp) => {
+              prevOp.checked = false;
+              if (prevOp.label === newOption.label)
+                prevOp.checked = newOption.checked;
+              return { ...prevOp };
+            }
+          );
+          return {
+            ...prevStateHeader,
+            dropdownOptions: newDropdownOptions,
+          };
+        }
+      );
       return newState;
     });
   };
@@ -174,7 +191,8 @@ const TxnHistoryTable = (props: Props) => {
       const newState = prevState.map((prevStateHeader) => {
         //  3.1 set default strategy dropdown depending on selected dashboard
         if (prevStateHeader.name === TableHeaders.Strategy) {
-          if (!prevStateHeader.dropdownOptions) return { ...prevStateHeader, orderDesc: undefined };
+          if (!prevStateHeader.dropdownOptions)
+            return { ...prevStateHeader, orderDesc: undefined };
           return {
             ...prevStateHeader,
             orderDesc: undefined,
@@ -185,13 +203,20 @@ const TxnHistoryTable = (props: Props) => {
         }
         //  3.2 reset all other dropdown values
         if (!prevStateHeader.dropdownOptions)
-          return { ...prevStateHeader, orderDesc: TableHeaders.Date === prevStateHeader.name ? true : undefined };
-        const newDropdownOptions = prevStateHeader.dropdownOptions.map((prevOp) => {
-          return { ...prevOp, checked: false };
-        });
+          return {
+            ...prevStateHeader,
+            orderDesc:
+              TableHeaders.Date === prevStateHeader.name ? true : undefined,
+          };
+        const newDropdownOptions = prevStateHeader.dropdownOptions.map(
+          (prevOp) => {
+            return { ...prevOp, checked: false };
+          }
+        );
         return {
           ...prevStateHeader,
-          orderDesc: TableHeaders.Date === prevStateHeader.name ? true : undefined,
+          orderDesc:
+            TableHeaders.Date === prevStateHeader.name ? true : undefined,
           dropdownOptions: newDropdownOptions,
         };
       });
@@ -211,7 +236,8 @@ const TxnHistoryTable = (props: Props) => {
 
   // Only change the blockNumber when the page is refreshed
   // it ensures consistency in subsequent pagination queries results
-  if (blockNumber === 0 && availableRows.data) setBlockNumber(availableRows.data.blockNumber);
+  if (blockNumber === 0 && availableRows.data)
+    setBlockNumber(availableRows.data.blockNumber);
 
   const txHistory = useTxHistory({
     dashboardData,
@@ -234,8 +260,14 @@ const TxnHistoryTable = (props: Props) => {
       ? Number(tx.amount) * -1
       : tx.amount;
     const amountFmt = formatNumberWithCommas(amountResponsive);
-    const datetime = format(new Date(Number(tx.timestamp) * 1000), 'yyyy-MM-dd H:mm:ss O');
-    const dateOnly = format(new Date(Number(tx.timestamp) * 1000), 'yyyy-MM-dd');
+    const datetime = format(
+      new Date(Number(tx.timestamp) * 1000),
+      'yyyy-MM-dd H:mm:ss O'
+    );
+    const dateOnly = format(
+      new Date(Number(tx.timestamp) * 1000),
+      'yyyy-MM-dd'
+    );
     const timeOnly = format(new Date(Number(tx.timestamp) * 1000), 'H:mm:ss');
     return {
       date: isBiggerThanTablet ? datetime : dateOnly,
@@ -262,7 +294,11 @@ const TxnHistoryTable = (props: Props) => {
                 <ColText lightColor style={{ flexGrow: 1 }}>
                   {tx.name}
                 </ColText>
-                <LinkIcon onClick={() => window.open(`${env.etherscan}/tx/${tx.hash}`, '_blank')} />
+                <LinkIcon
+                  onClick={() =>
+                    window.open(`${env.etherscan}/tx/${tx.hash}`, '_blank')
+                  }
+                />
               </FlexContainer>
             </DataCell>
           </>
@@ -271,7 +307,9 @@ const TxnHistoryTable = (props: Props) => {
     };
   });
 
-  const totalPages = Math.ceil((availableRows.data?.totalRowCount || 0) / rowsPerPage);
+  const totalPages = Math.ceil(
+    (availableRows.data?.totalRowCount || 0) / rowsPerPage
+  );
 
   return (
     <TableContainer>
@@ -326,5 +364,6 @@ const ColText = styled.div<{ lightColor: boolean }>`
   display: flex;
   flex-direction: row;
   padding-top: 5px;
-  color: ${({ theme, lightColor }) => (lightColor ? theme.palette.brandLight : theme.palette.brand)};
+  color: ${({ theme, lightColor }) =>
+    lightColor ? theme.palette.brandLight : theme.palette.brand};
 `;

@@ -42,9 +42,18 @@ const Notification = ({ hash, title, isOpen, isError }: NotificationProps) => {
       </CloseIcon>
       <h5 title={title}>{title}</h5>
       {!isError && (
-        <a href={`${env.etherscan}/tx/${hash}`} target={'_blank'} rel="noreferrer">
+        <a
+          href={`${env.etherscan}/tx/${hash}`}
+          target={'_blank'}
+          rel="noreferrer"
+        >
           View Transaction
-          <Image src={openInNewTabImage} alt={'Open transaction on Etherscan'} width={24} height={24} />
+          <Image
+            src={openInNewTabImage}
+            alt={'Open transaction on Etherscan'}
+            width={24}
+            height={24}
+          />
         </a>
       )}
     </NotificationStyled>

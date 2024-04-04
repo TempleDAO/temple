@@ -39,16 +39,22 @@ export function getSafeContractDeploymentDetails(
   isL1SafeMasterCopy = false
 ): SingletonDeployment {
   const version = safeDeploymentsVersions[safeVersion].safeMasterCopyVersion;
-  const filters: DeploymentFilter = { version, network: chainId.toString(), released: true };
+  const filters: DeploymentFilter = {
+    version,
+    network: chainId.toString(),
+    released: true,
+  };
   if (safeDeploymentsL1ChainIds.includes(chainId) || isL1SafeMasterCopy) {
     const safeSingletonContractDetails = getSafeSingletonDeployment(filters);
     console.debug('using SafeContract L1', safeSingletonContractDetails);
-    if (!safeSingletonContractDetails) throw Error('undefined safeSingletonContractDetails');
+    if (!safeSingletonContractDetails)
+      throw Error('undefined safeSingletonContractDetails');
     return safeSingletonContractDetails;
   }
   const safeL2SingletonContractDetails = getSafeL2SingletonDeployment(filters);
   console.debug('using SafeContract L2', safeL2SingletonContractDetails);
-  if (!safeL2SingletonContractDetails) throw Error('undefined safeL2SingletonContractDetails');
+  if (!safeL2SingletonContractDetails)
+    throw Error('undefined safeL2SingletonContractDetails');
   return safeL2SingletonContractDetails;
 }
 
@@ -57,23 +63,29 @@ export function getMultiSendCallOnlyContractDeploymentDetails(
   chainId: number
 ): SingletonDeployment {
   const version = safeDeploymentsVersions[safeVersion].multiSendCallOnlyVersion;
-  const multiSendCallOnlyContractDeploymentDetails = getMultiSendCallOnlyDeployment({
-    version,
-    network: chainId.toString(),
-    released: true,
-  });
-  if (!multiSendCallOnlyContractDeploymentDetails) throw Error('undefined multiSendCallOnlyContractDeploymentDetails');
+  const multiSendCallOnlyContractDeploymentDetails =
+    getMultiSendCallOnlyDeployment({
+      version,
+      network: chainId.toString(),
+      released: true,
+    });
+  if (!multiSendCallOnlyContractDeploymentDetails)
+    throw Error('undefined multiSendCallOnlyContractDeploymentDetails');
   return multiSendCallOnlyContractDeploymentDetails;
 }
 
-export function getMultiSendContractDeploymentDetails(safeVersion: SafeVersion, chainId: number): SingletonDeployment {
+export function getMultiSendContractDeploymentDetails(
+  safeVersion: SafeVersion,
+  chainId: number
+): SingletonDeployment {
   const version = safeDeploymentsVersions[safeVersion].multiSendVersion;
   const multiSendContractDeploymentDetails = getMultiSendDeployment({
     version,
     network: chainId.toString(),
     released: true,
   });
-  if (!multiSendContractDeploymentDetails) throw Error('multiSendContractDeploymentDetails undefined');
+  if (!multiSendContractDeploymentDetails)
+    throw Error('multiSendContractDeploymentDetails undefined');
   return multiSendContractDeploymentDetails;
 }
 
@@ -87,7 +99,8 @@ export function getSimulateTxAccessorContractDeploymentDetails(
     network: chainId.toString(),
     released: true,
   });
-  if (!simulateTxAccessorDeploymentDetails) throw Error('undefined simulateTxAccessorDeploymentDetails');
+  if (!simulateTxAccessorDeploymentDetails)
+    throw Error('undefined simulateTxAccessorDeploymentDetails');
   return simulateTxAccessorDeploymentDetails;
 }
 
@@ -97,14 +110,22 @@ export async function getSafeContract({
   customSafeAddress,
   customContracts,
 }: GetSafeContractInstanceProps): Promise<SafeMasterCopy_V1_3_0> {
-  const safeContractDeploymentDetails = getSafeContractDeploymentDetails(safeVersion, await signer.getChainId());
+  const safeContractDeploymentDetails = getSafeContractDeploymentDetails(
+    safeVersion,
+    await signer.getChainId()
+  );
   const safeContract = getSafeContractInstance(
-    customSafeAddress ?? customContracts?.safeMasterCopyAddress ?? safeContractDeploymentDetails.defaultAddress,
+    customSafeAddress ??
+      customContracts?.safeMasterCopyAddress ??
+      safeContractDeploymentDetails.defaultAddress,
     signer
   );
-  const isContractDeployed = (await signer.provider?.getCode(safeContract.address)) !== '0x';
+  const isContractDeployed =
+    (await signer.provider?.getCode(safeContract.address)) !== '0x';
   if (!isContractDeployed) {
-    throw new Error('SafeProxy contract is not deployed on the current network');
+    throw new Error(
+      'SafeProxy contract is not deployed on the current network'
+    );
   }
   return safeContract;
 }
@@ -114,17 +135,23 @@ export async function getMultiSendContract({
   safeVersion,
   customContracts,
 }: GetContractInstanceProps): Promise<MultiSend_V1_3_0> {
-  const multiSendContractDeploymentDetails = getMultiSendContractDeploymentDetails(
-    safeVersion,
-    await signer.getChainId()
-  );
+  const multiSendContractDeploymentDetails =
+    getMultiSendContractDeploymentDetails(
+      safeVersion,
+      await signer.getChainId()
+    );
   const multiSendContract = getMultiSendContractInstance(
-    customContracts?.safeMasterCopyAddress ?? multiSendContractDeploymentDetails.defaultAddress,
+    customContracts?.safeMasterCopyAddress ??
+      multiSendContractDeploymentDetails.defaultAddress,
     signer
   );
-  const isContractDeployed = await signer.provider?.getCode(multiSendContract.address);
+  const isContractDeployed = await signer.provider?.getCode(
+    multiSendContract.address
+  );
   if (!isContractDeployed) {
-    throw new Error('MultiSend contract is not deployed on the current network');
+    throw new Error(
+      'MultiSend contract is not deployed on the current network'
+    );
   }
   return multiSendContract;
 }
@@ -134,17 +161,23 @@ export async function getMultiSendCallOnlyContract({
   safeVersion,
   customContracts,
 }: GetContractInstanceProps): Promise<MultiSendCallOnly_V1_3_0> {
-  const multiSendCallOnlyContractDeploymentDetails = getMultiSendCallOnlyContractDeploymentDetails(
-    safeVersion,
-    await signer.getChainId()
-  );
+  const multiSendCallOnlyContractDeploymentDetails =
+    getMultiSendCallOnlyContractDeploymentDetails(
+      safeVersion,
+      await signer.getChainId()
+    );
   const multiSendCallOnlyContract = getMultiSendCallOnlyContractInstance(
-    customContracts?.safeMasterCopyAddress ?? multiSendCallOnlyContractDeploymentDetails.defaultAddress,
+    customContracts?.safeMasterCopyAddress ??
+      multiSendCallOnlyContractDeploymentDetails.defaultAddress,
     signer
   );
-  const isContractDeployed = await signer.provider?.getCode(multiSendCallOnlyContract.address);
+  const isContractDeployed = await signer.provider?.getCode(
+    multiSendCallOnlyContract.address
+  );
   if (!isContractDeployed) {
-    throw new Error('MultiSendCallOnly contract is not deployed on the current network');
+    throw new Error(
+      'MultiSendCallOnly contract is not deployed on the current network'
+    );
   }
   return multiSendCallOnlyContract;
 }
@@ -154,17 +187,23 @@ export async function getSimulateTxAccessorContract({
   safeVersion,
   customContracts,
 }: GetContractInstanceProps): Promise<SimulateTxAccessor_V1_3_0> {
-  const simulateTxAccessorContractDeploymentDetails = getSimulateTxAccessorContractDeploymentDetails(
-    safeVersion,
-    await signer.getChainId()
-  );
+  const simulateTxAccessorContractDeploymentDetails =
+    getSimulateTxAccessorContractDeploymentDetails(
+      safeVersion,
+      await signer.getChainId()
+    );
   const simulateTxAccessorContract = getSimulateTxAccessorContractInstance(
-    customContracts?.safeMasterCopyAddress ?? simulateTxAccessorContractDeploymentDetails.defaultAddress,
+    customContracts?.safeMasterCopyAddress ??
+      simulateTxAccessorContractDeploymentDetails.defaultAddress,
     signer
   );
-  const isContractDeployed = await signer.provider?.getCode(simulateTxAccessorContract.address);
+  const isContractDeployed = await signer.provider?.getCode(
+    simulateTxAccessorContract.address
+  );
   if (!isContractDeployed) {
-    throw new Error('SimulateTxAccessor contract is not deployed on the current network');
+    throw new Error(
+      'SimulateTxAccessor contract is not deployed on the current network'
+    );
   }
   return simulateTxAccessorContract;
 }

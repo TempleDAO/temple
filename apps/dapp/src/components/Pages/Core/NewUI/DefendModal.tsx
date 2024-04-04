@@ -10,7 +10,11 @@ import { Input } from './HomeInput';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { formatToken } from 'utils/formatter';
 import env from 'constants/env';
-import { TempleStableAMMRouter__factory, TreasuryIV__factory, ERC20__factory } from 'types/typechain';
+import {
+  TempleStableAMMRouter__factory,
+  TreasuryIV__factory,
+  ERC20__factory,
+} from 'types/typechain';
 import { useNotification } from 'providers/NotificationProvider';
 import { useDebouncedCallback } from 'use-debounce';
 import { Account } from 'components/Layouts/CoreLayout/Account';
@@ -37,7 +41,9 @@ export const DefendModal: React.FC<IProps> = ({ isOpen, onClose }) => {
   useEffect(() => {
     const getIv = async () => {
       if (!signer) return;
-      const treasuryIv = new TreasuryIV__factory(signer).attach(env.contracts.treasuryIv);
+      const treasuryIv = new TreasuryIV__factory(signer).attach(
+        env.contracts.treasuryIv
+      );
       const { frax, temple } = await treasuryIv.intrinsicValueRatio();
       setIv(frax.mul(10_000).div(temple).toNumber() / 10000); // Parse ratio as float
     };
@@ -58,17 +64,24 @@ export const DefendModal: React.FC<IProps> = ({ isOpen, onClose }) => {
   // Get quote from router
   const fetchQuote = async (input: string): Promise<Quote> => {
     if (!signer) return { amountOut: ZERO, priceBelowIV: true };
-    const router = new TempleStableAMMRouter__factory(signer).attach(env.contracts.templeV2Router);
+    const router = new TempleStableAMMRouter__factory(signer).attach(
+      env.contracts.templeV2Router
+    );
     const amountIn = getBigNumberFromString(input, 18);
     if (amountIn.lte(ZERO)) return { amountOut: ZERO, priceBelowIV: true };
-    return await router.swapExactTempleForStableQuote(env.contracts.templeV2FraxPair, amountIn);
+    return await router.swapExactTempleForStableQuote(
+      env.contracts.templeV2FraxPair,
+      amountIn
+    );
   };
 
   // Sell TEMPLE
   const sell = async () => {
     // Initialize router contract
     if (!signer || !wallet) return;
-    const router = new TempleStableAMMRouter__factory(signer).attach(env.contracts.templeV2Router);
+    const router = new TempleStableAMMRouter__factory(signer).attach(
+      env.contracts.templeV2Router
+    );
 
     // Build swap parameters
     const { amountOut } = await fetchQuote(inputValue);
@@ -82,12 +95,25 @@ export const DefendModal: React.FC<IProps> = ({ isOpen, onClose }) => {
     const minAmountOut = amountOut.mul(10_000).div(slippageBps);
 
     // Ensure router has allowance to spend TEMPLE
-    const tokenContract = new ERC20__factory(signer).attach(env.contracts.temple);
-    await ensureAllowance(TEMPLE_TOKEN, tokenContract, env.contracts.templeV2Router, amountIn);
+    const tokenContract = new ERC20__factory(signer).attach(
+      env.contracts.temple
+    );
+    await ensureAllowance(
+      TEMPLE_TOKEN,
+      tokenContract,
+      env.contracts.templeV2Router,
+      amountIn
+    );
 
     // Execute swap
     try {
-      const tx = await router.swapExactTempleForStable(amountIn, minAmountOut, fraxAddress, wallet, deadlineTimestamp);
+      const tx = await router.swapExactTempleForStable(
+        amountIn,
+        minAmountOut,
+        fraxAddress,
+        wallet,
+        deadlineTimestamp
+      );
       const receipt = await tx.wait();
       openNotification({
         title: `Sacrificed ${formatTemple(amountIn)} TEMPLE`,
@@ -100,20 +126,29 @@ export const DefendModal: React.FC<IProps> = ({ isOpen, onClose }) => {
 
   const outputToken = quote?.priceBelowIV ? DAI : FRAX;
   const isSellButtonDisabled =
-    !signer || Number(inputValue) <= 0 || getBigNumberFromString(inputValue, 18).gt(balance.TEMPLE);
+    !signer ||
+    Number(inputValue) <= 0 ||
+    getBigNumberFromString(inputValue, 18).gt(balance.TEMPLE);
 
   return (
     <>
-      <Popover isOpen={isOpen} onClose={onClose} closeOnClickOutside showCloseButton>
+      <Popover
+        isOpen={isOpen}
+        onClose={onClose}
+        closeOnClickOutside
+        showCloseButton
+      >
         <ModalContainer>
           <Title>Temple Defend</Title>
           <Subtitle>
-            The TEMPLE token has been adversely affected by the recent Euler exploit. Trading may resume once we have
-            clarity on the extent of the damage and how to best move forward.
+            The TEMPLE token has been adversely affected by the recent Euler
+            exploit. Trading may resume once we have clarity on the extent of
+            the damage and how to best move forward.
             <br />
             <br />
-            For those who need urgent liquidity, Temple Defend has been re-activated at a fixed rate of $
-            {iv ? iv.toFixed(2) : '0.80'} per TEMPLE.
+            For those who need urgent liquidity, Temple Defend has been
+            re-activated at a fixed rate of ${iv ? iv.toFixed(2) : '0.80'} per
+            TEMPLE.
           </Subtitle>
           <InputContainer>
             <Input
@@ -125,7 +160,9 @@ export const DefendModal: React.FC<IProps> = ({ isOpen, onClose }) => {
               isNumber
               value={inputValue}
               placeholder="0"
-              onHintClick={() => setInputValue(formatToken(balance.TEMPLE, TEMPLE_TOKEN))}
+              onHintClick={() =>
+                setInputValue(formatToken(balance.TEMPLE, TEMPLE_TOKEN))
+              }
               min={0}
               hint={`Balance: ${formatToken(balance.TEMPLE, TEMPLE_TOKEN)}`}
             />
@@ -135,7 +172,10 @@ export const DefendModal: React.FC<IProps> = ({ isOpen, onClose }) => {
                 value: outputToken,
               }}
               value={formatToken(quote?.amountOut, outputToken)}
-              hint={`Balance: ${formatToken(balance[outputToken], outputToken)}`}
+              hint={`Balance: ${formatToken(
+                balance[outputToken],
+                outputToken
+              )}`}
               disabled
             />
           </InputContainer>

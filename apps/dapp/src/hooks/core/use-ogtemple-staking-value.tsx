@@ -9,7 +9,9 @@ export const useOGTempleStakingValue = () => {
 
   const handler = async (amount: string) => {
     if (!signer || !wallet) {
-      console.error('Attempted to getRewardsForOGT staking value without a signer.');
+      console.error(
+        'Attempted to getRewardsForOGT staking value without a signer.'
+      );
       return;
     }
 

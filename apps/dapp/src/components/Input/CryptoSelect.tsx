@@ -18,7 +18,11 @@ export interface CryptoSelectProps {
   maxMenuItems?: number;
 }
 
-type Props = Omit<ComponentProps<typeof Select>, 'classNamePrefix' | 'menuPlacement' | 'theme' | 'styles'> & CryptoSelectProps;
+type Props = Omit<
+  ComponentProps<typeof Select>,
+  'classNamePrefix' | 'menuPlacement' | 'theme' | 'styles'
+> &
+  CryptoSelectProps;
 
 /**
  * UI component for selecting currency to deposit/stake
@@ -60,14 +64,14 @@ export const CryptoSelect = (props: Props) => {
           minWidth: '12.5rem  /* 120/16 */',
           cursor: 'pointer',
           height: '3rem',
-          zIndex: 2
+          zIndex: 2,
         }),
         menu: (base) => ({
           ...base,
           paddingTop: '1.5rem',
           marginTop: '-1.5rem',
           border: `0.0625rem solid ${theme.palette.brand}`,
-          borderRadius: '0 0 1.25rem 1.25rem'
+          borderRadius: '0 0 1.25rem 1.25rem',
         }),
         menuList: (base) => ({
           ...base,
@@ -88,7 +92,7 @@ export const CryptoSelect = (props: Props) => {
           borderBottom: `0.0625rem solid ${theme.palette.brand}`,
           fontWeight: 'bold',
           color: theme.palette.brandLight,
-          fontSize: '1rem'
+          fontSize: '1rem',
         }),
         indicatorSeparator: () => ({
           display: 'none',

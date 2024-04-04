@@ -64,8 +64,14 @@ ReactDOM.render(
               {/* Redirect everything else to the home page */}
               <Route path="*" element={<Navigate replace to="/" />} />
               <Route path="disclaimer" element={<Disclaimer />} />
-              <Route path="team-payments" element={<LazyPage component={TeamPayments} />} />
-              <Route path="ramos" element={<LazyPage component={RamosAdmin} />} />
+              <Route
+                path="team-payments"
+                element={<LazyPage component={TeamPayments} />}
+              />
+              <Route
+                path="ramos"
+                element={<LazyPage component={RamosAdmin} />}
+              />
               <Route path="safe" element={<LazyPage component={SafeAdmin} />} />
             </Route>
             <Route path="/dapp/*" element={<V2Layout />}>

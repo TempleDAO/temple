@@ -1,6 +1,10 @@
 import styled from 'styled-components';
 import { useVaultContext } from '../../VaultContext';
-import { formatBigNumber, formatTemple, getBigNumberFromString } from 'components/Vault/utils';
+import {
+  formatBigNumber,
+  formatTemple,
+  getBigNumberFromString,
+} from 'components/Vault/utils';
 import { ZERO } from 'utils/bigNumber';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Vault, VaultGroup } from 'components/Vault/types';
@@ -27,13 +31,21 @@ export const ClaimFromVaults = () => {
     vaultGroups: { vaultGroups, isLoading: vaultGroupsIsLoading },
     refreshVaultBalance,
   } = useVaultContext();
-  const { withdrawEarly: earlyWithdrawRequest } = useWithdrawFromVault('', async () => {
-    await refreshVaultBalance(claimState.claimSubvaultAddress);
-    // AnalyticsService.captureEvent(AnalyticsEvent.Vault.Claim, { name: vault.id, amount });
-    setClaimState(EMPTY_CLAIM_STATE);
-  });
-  const [earlyWithdraw, { isLoading: earlyWithdrawIsLoading, error: earlyWithdrawError }] = earlyWithdrawRequest;
-  const [assumedActiveVaultGroup, setAssumedActiveVaultGroup] = useState({} as VaultGroup);
+  const { withdrawEarly: earlyWithdrawRequest } = useWithdrawFromVault(
+    '',
+    async () => {
+      await refreshVaultBalance(claimState.claimSubvaultAddress);
+      // AnalyticsService.captureEvent(AnalyticsEvent.Vault.Claim, { name: vault.id, amount });
+      setClaimState(EMPTY_CLAIM_STATE);
+    }
+  );
+  const [
+    earlyWithdraw,
+    { isLoading: earlyWithdrawIsLoading, error: earlyWithdrawError },
+  ] = earlyWithdrawRequest;
+  const [assumedActiveVaultGroup, setAssumedActiveVaultGroup] = useState(
+    {} as VaultGroup
+  );
   const [allowance, setAllowance] = useState(ZERO);
   const { openNotification } = useNotification();
 
@@ -46,7 +58,9 @@ export const ClaimFromVaults = () => {
       const initialVault = vaultGroup.vaults[0];
       setClaimState({
         claimSubvaultAddress: initialVault.id,
-        claimAmount: formatBigNumber(balances[vaultGroup.id][initialVault.id].balance || ZERO),
+        claimAmount: formatBigNumber(
+          balances[vaultGroup.id][initialVault.id].balance || ZERO
+        ),
       });
     }
   }, [balancesIsLoading, balances, vaultGroupsIsLoading, vaultGroups]);
@@ -55,8 +69,13 @@ export const ClaimFromVaults = () => {
 
   const fetchAllowance = useCallback(async () => {
     if (!signer || !walletAddress) return;
-    const subvaultContract = new ERC20__factory(signer).attach(claimState.claimSubvaultAddress);
-    const allowance = await subvaultContract.allowance(walletAddress, env.contracts.vaultEarlyExit);
+    const subvaultContract = new ERC20__factory(signer).attach(
+      claimState.claimSubvaultAddress
+    );
+    const allowance = await subvaultContract.allowance(
+      walletAddress,
+      env.contracts.vaultEarlyExit
+    );
     setAllowance(allowance);
   }, [signer, walletAddress, claimState.claimSubvaultAddress]);
 
@@ -67,9 +86,14 @@ export const ClaimFromVaults = () => {
   // Approve Early Withdraw to spend Subvault tokens
   const approve = async () => {
     if (!signer || !wallet) return;
-    const subvaultContract = new ERC20__factory(signer).attach(claimState.claimSubvaultAddress);
+    const subvaultContract = new ERC20__factory(signer).attach(
+      claimState.claimSubvaultAddress
+    );
     try {
-      const tx = await subvaultContract.approve(env.contracts.vaultEarlyExit, ethers.constants.MaxUint256);
+      const tx = await subvaultContract.approve(
+        env.contracts.vaultEarlyExit,
+        ethers.constants.MaxUint256
+      );
       const receipt = await tx.wait();
       openNotification({
         title: `Approved Early Withdraw`,
@@ -112,7 +136,9 @@ export const ClaimFromVaults = () => {
             Subvault {vault.label}:{' '}
             <ClaimAmount
               isActive={vault.id == claimState.claimSubvaultAddress}
-              onClick={() => claimAmountHandler(vault.id, vaultBalance.balance || ZERO)}
+              onClick={() =>
+                claimAmountHandler(vault.id, vaultBalance.balance || ZERO)
+              }
             >
               {formatTemple(vaultBalance.balance)} TEMPLE
             </ClaimAmount>
@@ -131,10 +157,15 @@ export const ClaimFromVaults = () => {
     <ClaimContainer>
       <ClaimTitle>Claim from Vaults</ClaimTitle>
       <ClaimSubtitle>Select Vault for Withdrawal</ClaimSubtitle>
-      <SubvaultContainer>{getVaultBalances(assumedActiveVaultGroup?.vaults)}</SubvaultContainer>
+      <SubvaultContainer>
+        {getVaultBalances(assumedActiveVaultGroup?.vaults)}
+      </SubvaultContainer>
 
       {!!earlyWithdrawError && (
-        <ErrorLabel>{formatErrorMessage(earlyWithdrawError.message) || 'Something went wrong'}</ErrorLabel>
+        <ErrorLabel>
+          {formatErrorMessage(earlyWithdrawError.message) ||
+            'Something went wrong'}
+        </ErrorLabel>
       )}
 
       <ButtonContainer>
@@ -150,7 +181,10 @@ export const ClaimFromVaults = () => {
             label={`Nothing to Claim`}
             disabled={true}
             onClick={async () => {
-              await earlyWithdraw(claimState.claimSubvaultAddress, claimState.claimAmount);
+              await earlyWithdraw(
+                claimState.claimSubvaultAddress,
+                claimState.claimAmount
+              );
             }}
           />
         ) : insufficientAllowance ? (
@@ -162,10 +196,15 @@ export const ClaimFromVaults = () => {
           />
         ) : (
           <ClaimButton
-            label={`Redeem ${formatTemple(Number(claimState.claimAmount))} TEMPLE`}
+            label={`Redeem ${formatTemple(
+              Number(claimState.claimAmount)
+            )} TEMPLE`}
             disabled={earlyWithdrawIsLoading || !claimState.claimAmount}
             onClick={async () => {
-              await earlyWithdraw(claimState.claimSubvaultAddress, claimState.claimAmount);
+              await earlyWithdraw(
+                claimState.claimSubvaultAddress,
+                claimState.claimAmount
+              );
             }}
           />
         )}
@@ -188,7 +227,8 @@ const ErrorLabel = styled.span`
 
 const ClaimAmount = styled.span<{ isActive: boolean }>`
   text-decoration: underline;
-  color: ${({ isActive, theme }) => (isActive ? theme.palette.brandLight : theme.palette.brand75)};
+  color: ${({ isActive, theme }) =>
+    isActive ? theme.palette.brandLight : theme.palette.brand75};
   font-weight: ${(props) => (props.isActive ? `bold` : `normal`)};
   cursor: pointer;
   &hover {

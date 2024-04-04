@@ -9,7 +9,9 @@ import { AuctionContextProvider } from 'components/Pages/Ascend/components/Aucti
 
 export const EditLBPPage = () => {
   const { poolAddress } = useParams();
-  const [request, { response, error, isLoading }] = useTemplePool(poolAddress || '');
+  const [request, { response, error, isLoading }] = useTemplePool(
+    poolAddress || ''
+  );
 
   useEffect(() => {
     if (!poolAddress) {

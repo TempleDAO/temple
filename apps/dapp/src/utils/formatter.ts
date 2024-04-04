@@ -18,14 +18,24 @@ export const formatNumberWithCommas = (n: number | string): string => {
     .replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 };
 
-export const formatNumberFixedDecimals = (n: number | string, decimals = 2): number => {
+export const formatNumberFixedDecimals = (
+  n: number | string,
+  decimals = 2
+): number => {
   if (typeof n === 'string') n = Number(n);
   return +Number(n).toFixed(decimals);
 };
 
-export const formatToken = (value: BigNumber | undefined, token: TICKER_SYMBOL, decimals = 2) => {
+export const formatToken = (
+  value: BigNumber | undefined,
+  token: TICKER_SYMBOL,
+  decimals = 2
+) => {
   if (!value) return '0';
-  return `${formatNumberFixedDecimals(formatBigNumber(value, getTokenInfo(token).decimals), decimals)}`;
+  return `${formatNumberFixedDecimals(
+    formatBigNumber(value, getTokenInfo(token).decimals),
+    decimals
+  )}`;
 };
 
 export const formatMillions = (n: number | string): string => {
@@ -38,8 +48,12 @@ export const allocationToIncense = (allocation: number): number => {
   return formatNumberFixedDecimals(allocation / 1000, 0);
 };
 
-export const truncateDecimals = (number: string | number, targetDecimals = 2): string => {
+export const truncateDecimals = (
+  number: string | number,
+  targetDecimals = 2
+): string => {
   const stringNumber = number.toString();
+  // eslint-disable-next-line prefer-const
   let [int, decimals] = (stringNumber || '0').split('.');
 
   if (decimals && decimals.length > targetDecimals) {
@@ -51,7 +65,9 @@ export const truncateDecimals = (number: string | number, targetDecimals = 2): s
 
 export const formatNumberAbbreviated = (number: number) => {
   const stringified = number.toString();
-  const decimalPlaces = stringified.includes('.') ? stringified.split('.')[1].length : 0;
+  const decimalPlaces = stringified.includes('.')
+    ? stringified.split('.')[1].length
+    : 0;
   const abbreviations = ['K', 'M', 'B'];
 
   const localeFormatted =
@@ -68,7 +84,9 @@ export const formatNumberAbbreviated = (number: number) => {
     return {
       number: parseFloat(shortenedString),
       thousandsSuffix: abbreviations[thousandsSeparatorCount - 1],
-      string: shortenedString.replace(',', '.') + abbreviations[thousandsSeparatorCount - 1],
+      string:
+        shortenedString.replace(',', '.') +
+        abbreviations[thousandsSeparatorCount - 1],
     };
   } else {
     return {

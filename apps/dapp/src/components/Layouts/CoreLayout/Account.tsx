@@ -15,7 +15,10 @@ export const Account = () => {
   const [{ wallet, connecting }, connect, disconnect] = useConnectWallet();
   const { walletAddress } = useWallet();
   const [{ connectedChain }] = useSetChain();
-  const currentChainId = useMemo(() => parseInt(connectedChain?.id || '', 16), [connectedChain]);
+  const currentChainId = useMemo(
+    () => parseInt(connectedChain?.id || '', 16),
+    [connectedChain]
+  );
 
   const isSmallDesktop = useMediaQuery({
     query: queryVerySmallDesktop,
@@ -39,7 +42,10 @@ export const Account = () => {
       />
     );
 
-    const explorerUrl = getChainExplorerURL(walletAddress || '', currentChainId);
+    const explorerUrl = getChainExplorerURL(
+      walletAddress || '',
+      currentChainId
+    );
 
     return (
       <>

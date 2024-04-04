@@ -30,7 +30,12 @@ type SwapResponse = SubGraphResponse<{
   }[];
 }>;
 
-const createSwapQuery = (auctionId: string, before: number, first = SWAPS_PER_PAGE, skip = 0) => ({
+const createSwapQuery = (
+  auctionId: string,
+  before: number,
+  first = SWAPS_PER_PAGE,
+  skip = 0
+) => ({
   query: `
     query ($auctionId: String, $first: Int, $skip: Int, $before: Int) {
       swaps(
@@ -69,7 +74,12 @@ const useSwapHistory = (pool: Pool, page = 1) => {
   const auctionEndSeconds = Number(lastUpdate.endTimestamp) / 1000;
   const offset = (page - 1) * SWAPS_PER_PAGE;
 
-  const query = createSwapQuery(pool.id, auctionEndSeconds, SWAPS_PER_PAGE, offset);
+  const query = createSwapQuery(
+    pool.id,
+    auctionEndSeconds,
+    SWAPS_PER_PAGE,
+    offset
+  );
   return useSubgraphRequest<SwapResponse>(env.subgraph.balancerV2, query);
 };
 
@@ -79,7 +89,10 @@ interface Props {
 
 export const SwapHistory = ({ pool }: Props) => {
   const [currentPage, setCurrentPage] = useState(1);
-  const [request, { response, isLoading, error }] = useSwapHistory(pool, currentPage);
+  const [request, { response, isLoading, error }] = useSwapHistory(
+    pool,
+    currentPage
+  );
 
   useEffect(() => {
     request();
@@ -105,50 +118,40 @@ export const SwapHistory = ({ pool }: Props) => {
       <Table>
         <THead>
           <tr>
-            <th>
-              Time
-            </th>
-            <th className="hidden">
-              Type
-            </th>
-            <th className="hidden">
-              Input
-            </th>
-            <th>
-              Output
-            </th>
-            <th>
-              Price
-            </th>
-            <th className="hidden">
-              Transaction
-            </th>
+            <th>Time</th>
+            <th className="hidden">Type</th>
+            <th className="hidden">Input</th>
+            <th>Output</th>
+            <th>Price</th>
+            <th className="hidden">Transaction</th>
           </tr>
         </THead>
         <tbody>
           {swaps.map((swap) => {
             const isSell = swap.tokenIn === mainToken;
-            const price = isSell ? 
-              formatNumberFixedDecimals(Number(swap.tokenAmountOut) / Number(swap.tokenAmountIn), 4) :
-              formatNumberFixedDecimals(Number(swap.tokenAmountIn) / Number(swap.tokenAmountOut), 4);
+            const price = isSell
+              ? formatNumberFixedDecimals(
+                  Number(swap.tokenAmountOut) / Number(swap.tokenAmountIn),
+                  4
+                )
+              : formatNumberFixedDecimals(
+                  Number(swap.tokenAmountIn) / Number(swap.tokenAmountOut),
+                  4
+                );
 
             return (
               <tr key={swap.tx}>
-                <td>
-                  {format(swap.timestamp * 1000, 'LLL d, yyyy h:mm a')}
-                </td>
+                <td>{format(swap.timestamp * 1000, 'LLL d, yyyy h:mm a')}</td>
+                <td className="hidden">{isSell ? 'sell' : 'buy'}</td>
                 <td className="hidden">
-                  {isSell ? 'sell' : 'buy'}
-                </td>
-                <td className="hidden">
-                  {formatNumberFixedDecimals(swap.tokenAmountIn, 4)} {swap.tokenInSym}
+                  {formatNumberFixedDecimals(swap.tokenAmountIn, 4)}{' '}
+                  {swap.tokenInSym}
                 </td>
                 <td>
-                  {formatNumberFixedDecimals(swap.tokenAmountOut, 4)} {swap.tokenOutSym}
+                  {formatNumberFixedDecimals(swap.tokenAmountOut, 4)}{' '}
+                  {swap.tokenOutSym}
                 </td>
-                <td>
-                  {price}
-                </td>
+                <td>{price}</td>
                 <td className="hidden">
                   <Link
                     href={`${env.etherscan}/tx/${swap.tx}`}
@@ -174,7 +177,7 @@ export const SwapHistory = ({ pool }: Props) => {
             Prev Page
           </PagingButton>
           <PagingButton
-            onClick={() =>{
+            onClick={() => {
               setCurrentPage((current) => current + 1);
             }}
             disabled={currentPage === totalPages}
@@ -193,13 +196,14 @@ const Table = styled.table`
   border: 1px solid ${({ theme }) => theme.palette.brand75};
   margin-bottom: 1rem;
 
-  th, td {
+  th,
+  td {
     padding: 0.75rem;
   }
 
   .hidden {
     display: none;
-    
+
     ${tabletAndAbove(`
       display: table-cell;
     `)}
