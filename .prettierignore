@@ -1,3 +1,5 @@
 build
 node_modules
 .github
+apps/dapp/src/types/typechain
+apps/dapp/dist
