@@ -9,7 +9,6 @@
   cache_path = 'cache-foundry'
   gas_reports = ["*"]
   evm_version = "paris"           # See https://www.evmdiff.com/features?name=PUSH0&kind=opcode
-  via_ir = true                   # Intermediate Representation. Enables more powerful optimizations. Inheritance linearization also avoids stack too deep error in constructor at compilation. See https://docs.soliditylang.org/en/latest/ir-breaking-changes.html
 
 [profile.ci]
   fuzz = { runs = 5000, seed = "0x4444" }

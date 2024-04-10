@@ -106,7 +106,7 @@ abstract contract OAppSender is OAppCore {
         if (msg.value != _nativeFee) revert NotEnoughNative(msg.value);
         return _nativeFee;
     }
-
+    
     /**
      * @dev Internal function to pay the LZ token fee associated with the message.
      * @param _lzTokenFee The LZ token fee to be paid.

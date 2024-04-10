@@ -11,7 +11,7 @@ import { IOAppOptionsType3, EnforcedOptionParam } from "@layerzerolabs/lz-evm-oa
  * @dev Abstract contract implementing the IOAppOptionsType3 interface with type 3 options.
  */
 abstract contract OAppOptionsType3 is IOAppOptionsType3, TempleElevatedAccess {
-    uint16 internal constant OPTION_TYPE_3 = 3;
+   uint16 internal constant OPTION_TYPE_3 = 3;
 
     // @dev The "msgType" should be defined in the child contract.
     mapping(uint32 eid => mapping(uint16 msgType => bytes enforcedOption)) public enforcedOptions;

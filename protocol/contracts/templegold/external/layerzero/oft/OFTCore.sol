@@ -4,10 +4,8 @@ pragma solidity 0.8.20;
 // Temple (templegold/external/layerzero/oft/OFTCore.sol)
 
 import { OApp, Origin } from "contracts/templegold/external/layerzero/oapp/OApp.sol";
-// import { OAppOptionsType3 } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/libs/OAppOptionsType3.sol";
 import { OAppOptionsType3 } from "contracts/templegold/external/layerzero/oapp/lib/OAppOptionsType3.sol";
 import { IOAppMsgInspector } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/interfaces/IOAppMsgInspector.sol";
-// import { OAppPreCrimeSimulator } from "@layerzerolabs/lz-evm-oapp-v2/contracts/precrime/OAppPreCrimeSimulator.sol";
 import { OAppPreCrimeSimulator } from "contracts/templegold/external/layerzero/precrime/OAppPreCrimeSimulator.sol";
 import { IOFT, SendParam, OFTLimit, OFTReceipt, OFTFeeDetail, MessagingReceipt, MessagingFee } 
     from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/interfaces/IOFT.sol";
@@ -59,6 +57,20 @@ abstract contract OFTCore is IOFT, OApp, OAppPreCrimeSimulator, OAppOptionsType3
     }
 
     /**
+     * @notice Retrieves interfaceID and the version of the OFT.
+     * @return interfaceId The interface ID.
+     * @return version The version.
+     *
+     * @dev interfaceId: This specific interface ID is '0x02e49c2c'.
+     * @dev version: Indicates a cross-chain compatible msg encoding with other OFTs.
+     * @dev If a new feature is added to the OFT cross-chain msg encoding, the version will be incremented.
+     * ie. localOFT version(x,1) CAN send messages to remoteOFT version(x,1)
+     */
+    function oftVersion() external pure virtual returns (bytes4 interfaceId, uint64 version) {
+        return (type(IOFT).interfaceId, 1);
+    }
+
+    /**
      * @dev Retrieves the shared decimals of the OFT.
      * @return The shared decimals of the OFT.
      *
@@ -79,7 +91,7 @@ abstract contract OFTCore is IOFT, OApp, OAppPreCrimeSimulator, OAppOptionsType3
      * @dev This is an optional contract that can be used to inspect both 'message' and 'options'.
      * @dev Set it to address(0) to disable it, or set it to a contract address to enable it.
      */
-    function setMsgInspector(address _msgInspector) public virtual onlyElevatedAccess {
+     function setMsgInspector(address _msgInspector) public virtual onlyElevatedAccess {
         msgInspector = _msgInspector;
         emit MsgInspectorSet(_msgInspector);
     }
@@ -142,7 +154,6 @@ abstract contract OFTCore is IOFT, OApp, OAppPreCrimeSimulator, OAppOptionsType3
         // @dev Calculates the LayerZero fee for the send() operation.
         return _quote(_sendParam.dstEid, message, options, _payInLzToken);
     }
-
     /**
      * @dev Executes the send operation.
      * @param _sendParam The parameters for the send operation.
@@ -167,6 +178,7 @@ abstract contract OFTCore is IOFT, OApp, OAppPreCrimeSimulator, OAppOptionsType3
         // - amountSentLD is the amount in local decimals that was ACTUALLY sent/debited from the sender.
         // - amountReceivedLD is the amount in local decimals that will be received/credited to the recipient on the remote OFT instance.
         (uint256 amountSentLD, uint256 amountReceivedLD) = _debit(
+            msg.sender,
             _sendParam.amountLD,
             _sendParam.minAmountLD,
             _sendParam.dstEid
@@ -348,9 +360,9 @@ abstract contract OFTCore is IOFT, OApp, OAppPreCrimeSimulator, OAppOptionsType3
             revert SlippageExceeded(amountReceivedLD, _minAmountLD);
         }
     }
-
     /**
      * @dev Internal function to perform a debit operation.
+     * @param _from The address to debit.
      * @param _amountLD The amount to send in local decimals.
      * @param _minAmountLD The minimum amount to send in local decimals.
      * @param _dstEid The destination endpoint ID.
@@ -361,6 +373,7 @@ abstract contract OFTCore is IOFT, OApp, OAppPreCrimeSimulator, OAppOptionsType3
      * @dev Depending on OFT implementation the _amountLD could differ from the amountReceivedLD.
      */
     function _debit(
+        address _from,
         uint256 _amountLD,
         uint256 _minAmountLD,
         uint32 _dstEid

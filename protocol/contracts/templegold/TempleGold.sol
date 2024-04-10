@@ -12,8 +12,10 @@ import { IDaiGoldAuction } from "contracts/interfaces/templegold/IDaiGoldAuction
 import { OFT } from "contracts/templegold/external/layerzero/oft/OFT.sol";
 import { ITempleGoldStaking}  from "./../interfaces/templegold/ITempleGoldStaking.sol";
 import { mulDiv } from "@prb/math/src/Common.sol";
+import { MessagingReceipt, MessagingFee } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/OAppSender.sol";
+import { OFTMsgCodec } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/libs/OFTMsgCodec.sol";
+import { SendParam, OFTReceipt } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/interfaces/IOFT.sol";
 
-/// can use default OAppReceiver and OAppSender
 
 /**
  * @title Temple Gold 
@@ -24,6 +26,8 @@ import { mulDiv } from "@prb/math/src/Common.sol";
  * @notice 
  */
  contract TempleGold is ITempleGold, OFT {
+    using OFTMsgCodec for bytes;
+    using OFTMsgCodec for bytes32;
 
     /// @notice These addresses are mutable to allow change/upgrade.
     /// @notice Staking contract
@@ -51,21 +55,26 @@ import { mulDiv } from "@prb/math/src/Common.sol";
     DistributionParams private distributionParams;
     /// @notice Vesting factor determines rate of mint
     VestingFactor private vestingFactor;
+
+    /// @notice To avoid stack too deep in constructor
+    struct InitArgs {
+        address rescuer;
+        address executor; // executor is also used as delegate in LayerZero Endpoint
+        address staking;
+        address escrow;
+        address gnosis;
+        address layerZeroEndpoint; // local endpoint address
+        string name;
+        string symbol;
+    }
     
 
     constructor(
-        address _rescuer,
-        address _executor, // executor is used as delegate in LayerZero Endpoint
-        address _staking,
-        address _escrow,
-        address _gnosis,
-        address _layerZeroEndpoint, // local endpoint address
-        string memory _name,
-        string memory _symbol
-    ) OFT(_name, _symbol, _layerZeroEndpoint, _executor) TempleElevatedAccess(_rescuer, _executor) {
-       staking = ITempleGoldStaking(_staking);
-       escrow = IDaiGoldAuction(_escrow);
-       teamGnosis = _gnosis;
+        InitArgs memory _initArgs
+    ) OFT(_initArgs.name, _initArgs.symbol, _initArgs.layerZeroEndpoint, _initArgs.executor) TempleElevatedAccess(_initArgs.rescuer, _initArgs.executor) {
+       staking = ITempleGoldStaking(_initArgs.staking);
+       escrow = IDaiGoldAuction(_initArgs.escrow);
+       teamGnosis = _initArgs.gnosis;
     }
 
     /**
@@ -160,6 +169,53 @@ import { mulDiv } from "@prb/math/src/Common.sol";
         _distribute(distributionParamsCache, mintAmount);
     }
 
+    /**
+     * @notice Get vesting factor
+     * @return Vesting factor
+     */
+    function getVestingFactor() external override view returns (VestingFactor memory) {
+        return vestingFactor;
+    }
+
+    /**
+     * @notice Get distribution parameters
+     * @return Distribution parametersr
+     */
+    function getDistributionParameters() external override view returns (DistributionParams memory) {
+        return distributionParams;
+    }
+
+    function canDistribute() external view returns (bool) {
+        VestingFactor memory vestingFactorCache = vestingFactor;
+        uint256 mintAmount = _getMintAmount(vestingFactorCache);
+        return mintAmount >= MINIMUM_MINT && totalSupply() < MAX_SUPPLY;
+    }
+
+    /**
+     * @notice Get circulating supply across chains
+     * @return Circulating supply
+     */
+    function circulatingSupply() public override view returns (uint256) {
+        return totalSupply();
+    }
+
+    /// @notice mulDiv with an option to round the result up or down to the nearest wei
+    function _mulDivRound(uint256 x, uint256 y, uint256 denominator, bool roundUp) internal pure returns (uint256 result) {
+        result = mulDiv(x, y, denominator);
+        // See OZ Math.sol for the equivalent mulDiv() with rounding.
+        if (roundUp && mulmod(x, y, denominator) > 0) {
+            result += 1;
+        }
+    }
+
+    function _beforeTokenTransfer(address from, address to /*uint256 amount*/) internal view {
+        /// @notice can only transfer to or from whitelisted addreess
+        /// this also disables burn
+        if (from != address(0) || to != address(0)) {
+            if (!whitelisted[from] && !whitelisted[to]) { revert ITempleGold.NonTransferrable(from, to); }
+        }
+    }
+
     function _distribute(DistributionParams storage params, uint256 mintAmount) private {
         uint256 stakingAmount = _mulDivRound(params.staking, mintAmount, DISTRIBUTION_MULTIPLIER, false);
         if (stakingAmount > 0) {
@@ -182,22 +238,6 @@ import { mulDiv } from "@prb/math/src/Common.sol";
         emit Distributed(stakingAmount, escrowAmount, gnosisAmount, block.timestamp);
     }
 
-    /**
-     * @notice Get vesting factor
-     * @return Vesting factor
-     */
-    function getVestingFactor() external override view returns (VestingFactor memory) {
-        return vestingFactor;
-    }
-
-    /**
-     * @notice Get distribution parameters
-     * @return Distribution parametersr
-     */
-    function getDistributionParameters() external override view returns (DistributionParams memory) {
-        return distributionParams;
-    }
-
     function _getMintAmount(VestingFactor memory vestingFactorCache) private view returns (uint256 mintAmount) {
         /// @notice first time mint
         if (lastMintTimestamp == 0) {
@@ -207,43 +247,86 @@ import { mulDiv } from "@prb/math/src/Common.sol";
         }
     }
 
-    function canDistribute() external view returns (bool) {
-        VestingFactor memory vestingFactorCache = vestingFactor;
-        uint256 mintAmount = _getMintAmount(vestingFactorCache);
-        return mintAmount >= MINIMUM_MINT && totalSupply() < MAX_SUPPLY;
+    /// @notice Overriden OFT functions
+
+    /**
+     * @dev Executes the send operation.
+     * @param _sendParam The parameters for the send operation.
+     * @param _fee The calculated fee for the send() operation.
+     *      - nativeFee: The native fee.
+     *      - lzTokenFee: The lzToken fee.
+     * @param _refundAddress The address to receive any excess funds.
+     * @return msgReceipt The receipt for the send operation.
+     * @return oftReceipt The OFT receipt information.
+     *
+     * @dev MessagingReceipt: LayerZero msg receipt
+     *  - guid: The unique identifier for the sent message.
+     *  - nonce: The nonce of the sent message.
+     *  - fee: The LayerZero fee incurred for the message.
+     */
+    function send(
+        SendParam calldata _sendParam,
+        MessagingFee calldata _fee,
+        address _refundAddress
+    ) external payable virtual override returns (MessagingReceipt memory msgReceipt, OFTReceipt memory oftReceipt) {
+        /// cast bytes32 to address
+        // address _to = address(_sendParam.to);
+        address _to = address(uint160(uint256(_sendParam.to)));
+        /// @dev user can cross-chain transfer to either whitelisted or self
+        if (!whitelisted[msg.sender] || whitelisted[_to]) {
+            if (msg.sender != _to) {
+                revert ITempleGold.NonTransferrable(msg.sender, _to);
+            }
+        }
+
+        // @dev Applies the token transfers regarding this send() operation.
+        // - amountSentLD is the amount in local decimals that was ACTUALLY sent/debited from the sender.
+        // - amountReceivedLD is the amount in local decimals that will be received/credited to the recipient on the remote OFT instance.
+        (uint256 amountSentLD, uint256 amountReceivedLD) = _debit(
+            msg.sender,
+            _sendParam.amountLD,
+            _sendParam.minAmountLD,
+            _sendParam.dstEid
+        );
+
+        // @dev Builds the options and OFT message to quote in the endpoint.
+        (bytes memory message, bytes memory options) = _buildMsgAndOptions(_sendParam, amountReceivedLD);
+
+        // @dev Sends the message to the LayerZero endpoint and returns the LayerZero msg receipt.
+        msgReceipt = _lzSend(_sendParam.dstEid, message, options, _fee, _refundAddress);
+        // @dev Formulate the OFT receipt.
+        oftReceipt = OFTReceipt(amountSentLD, amountReceivedLD);
+
+        emit OFTSent(msgReceipt.guid, _sendParam.dstEid, msg.sender, amountSentLD, amountReceivedLD);
     }
 
     /**
-     * @notice Get circulating supply across chains
-     * @return Circulating supply
+     * @dev Internal function to handle the receive on the LayerZero endpoint.
+     * @param _origin The origin information.
+     *  - srcEid: The source chain endpoint ID.
+     *  - sender: The sender address from the src chain.
+     *  - nonce: The nonce of the LayerZero message.
+     * @param _guid The unique identifier for the received LayerZero message.
+     * @param _message The encoded message.
+     * @dev _executor The address of the executor.
+     * @dev _extraData Additional data.
      */
-    function circulatingSupply() public override view returns (uint256) {
-        return totalSupply();
-    }
-
-   function isComposeMsgSender(
+    function _lzReceive(
         Origin calldata _origin,
+        bytes32 _guid,
         bytes calldata _message,
-        address _sender
-    ) external view returns (bool isSender) {
+        address /*_executor*/, // @dev unused in the default implementation.
+        bytes calldata /*_extraData*/ // @dev unused in the default implementation.
+    ) internal virtual override {
+        // @dev The src sending chain doesnt know the address length on this chain (potentially non-evm)
+        // Thus everything is bytes32() encoded in flight.
+        address toAddress = _message.sendTo().bytes32ToAddress();
+        // @dev Credit the amountLD to the recipient and return the ACTUAL amount the recipient received in local decimals
+        uint256 amountReceivedLD = _credit(toAddress, _toLD(_message.amountSD()), _origin.srcEid);
 
-    }
+        /// @dev Disallow further execution on destination by ignoring composed message
 
-    /// @notice mulDiv with an option to round the result up or down to the nearest wei
-    function _mulDivRound(uint256 x, uint256 y, uint256 denominator, bool roundUp) internal pure returns (uint256 result) {
-        result = mulDiv(x, y, denominator);
-        // See OZ Math.sol for the equivalent mulDiv() with rounding.
-        if (roundUp && mulmod(x, y, denominator) > 0) {
-            result += 1;
-        }
-    }
-
-    function _beforeTokenTransfer(address from, address to /*uint256 amount*/) internal view {
-        /// @notice can only transfer to or from whitelisted addreess
-        /// this also disables burn
-        if (from != address(0) || to != address(0)) {
-            if (!whitelisted[from] && !whitelisted[to]) { revert ITempleGold.NonTransferrable(from, to); }
-        }
+        emit OFTReceived(_guid, _origin.srcEid, toAddress, amountReceivedLD);
     }
 
     modifier onlyArbitrum() {

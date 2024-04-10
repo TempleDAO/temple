@@ -8,6 +8,7 @@ import '@nomiclabs/hardhat-etherscan';
 import 'hardhat-contract-sizer';
 import 'hardhat-gas-reporter';
 import 'solidity-coverage';
+import { EndpointId } from '@layerzerolabs/lz-definitions'
 
 // NOTE: Any tasks that depend on the generated typechain makes the build flaky.
 //       Favour scripts instead
@@ -72,7 +73,6 @@ module.exports = {
       {
         version: '0.8.20',
         settings: {
-          viaIR: true,
           optimizer: {
             enabled: true,
             runs: 999999,
@@ -182,6 +182,7 @@ module.exports = {
             ? [process.env.SEPOLIA_ADDRESS_PRIVATE_KEY]
             : [],
         gasPrice: parseInt(process.env.SEPOLIA_GAS_IN_GWEI || '0') * 1000000000,
+        eid: EndpointId.SEPOLIA_V2_TESTNET
     },
     anvil: {
         url: "http://127.0.0.1:8545/",
@@ -193,6 +194,7 @@ module.exports = {
         ? [process.env.ARBITRUM_SEPOLIA_ADDRESS_PRIVATE_KEY]
         : [],
       gasPrice: 2000000000,
+      eid: EndpointId.ARBITRUM_V2_TESTNET
     }
   },
   etherscan: {

@@ -66,7 +66,7 @@ abstract contract OAppCore is IOAppCore, TempleElevatedAccess {
      * @notice Sets the delegate address for the OApp.
      * @param _delegate The address of the delegate to be set.
      *
-     * @dev Only the owner/admin of the OApp can call this function.
+     * @dev Only elevated access of the OApp can call this function.
      * @dev Provides the ability for a delegate to set configs, on behalf of the OApp, directly on the Endpoint contract.
      */
     function setDelegate(address _delegate) public onlyElevatedAccess {
