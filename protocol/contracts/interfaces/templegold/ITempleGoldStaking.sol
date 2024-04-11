@@ -10,6 +10,7 @@ interface ITempleGoldStaking {
     event Withdrawn(address indexed staker, address to, uint256 amount);
     event RewardDistributionCoolDownSet(uint160 cooldown);
     event DistributionStarterSet(address indexed starter);
+    event HalfTimeSet(uint256 halfTime);
 
     error OnlyStakingProxy();
     error CannotDistribute();
@@ -107,4 +108,6 @@ interface ITempleGoldStaking {
     function notifyDistribution(uint256 amount) external;
 
     function setRewardDistributionCoolDown(uint160 _cooldown) external;
+
+    function setHalfTime(uint256 halfTime) external;
 }

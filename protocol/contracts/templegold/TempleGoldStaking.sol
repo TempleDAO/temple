@@ -33,10 +33,15 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     /// @notice Distribution starter
     address public distributionStarter;
 
+    uint256 constant public WEEK_LENGTH = 7 days;
+
     /// @notice Rewards stored per token
     uint256 public rewardPerTokenStored;
     /// @notice Total supply of staking token
     uint256 public totalSupply;
+
+    /// @notice The time it takes until half the voting weight is reached for a staker
+    uint256 public halfTime;
 
     /// @notice Time tracking
     uint256 public periodFinish;
@@ -58,6 +63,16 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     /// @notice Staker reward per token paid
     mapping(address account => uint256 amount) public userRewardPerTokenPaid;
 
+    /// @notice Account weights for calculating vote weights
+    mapping(address account => AccountWeightParams weight) private _weights;
+    mapping(address account => AccountWeightParams weight) private _prevWeights;
+
+    struct AccountWeightParams {
+        uint64 weekNumber;
+        uint64 stakeTime;
+        uint64 updateTime;
+        // need for balance?
+    }
 
     constructor(
         address _rescuer,
@@ -90,6 +105,12 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         if (_cooldown == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
         rewardDistributionCoolDown = _cooldown;
         emit RewardDistributionCoolDownSet(_cooldown);
+    }
+
+    function setHalfTime(uint256 _halfTime) external override onlyElevatedAccess {
+        if (_halfTime == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
+        halfTime = _halfTime;
+        emit HalfTimeSet(_halfTime);
     }
 
     /**
@@ -142,8 +163,10 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         
         // pull tokens and apply stake
         stakingToken.safeTransferFrom(msg.sender, address(this), _amount);
+        uint256 _prevBalance = _balances[_for];
         _applyStake(_for, _amount);
         _mintVoteToken(_for, _amount);
+        _updateAccountWeight(_for, _prevBalance, _balances[_for], true);
     }
 
     /**
@@ -228,6 +251,10 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         _getReward(staker, staker);
     }
 
+    function getVoteweight(address account) external view returns (uint256) {
+        return _voteWeight(account);
+    }
+
     function distributeGold() public {
         _distributeGold();
     }
@@ -293,12 +320,15 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         address rewardsToAddress
     ) internal updateReward(staker) {
         if (amount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
-        if (_balances[staker] < amount) revert CommonEventsAndErrors.InsufficientBalance(address(stakingToken), amount, _balances[staker]);
+        uint256 _prevBalance = _balances[staker];
+        if (_prevBalance < amount) revert CommonEventsAndErrors.InsufficientBalance(address(stakingToken), amount, _prevBalance);
 
         totalSupply -= amount;
         _balances[staker] -= amount;
 
         _burnVoteToken(staker, amount);
+
+        _updateAccountWeight(staker, _prevBalance, _balances[staker], false);
 
         stakingToken.safeTransfer(toAddress, amount);
         emit Withdrawn(staker, toAddress, amount);
@@ -336,6 +366,58 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         if (canDistribute) {
             ITempleGold(address(rewardToken)).mint();
         }
+    }
+
+    function _voteWeight(address _account) private view returns (uint256) {
+        /// @dev Vote weights are always evaluated at the end of last week
+        /// Borrowed from st-yETH staking contract (https://etherscan.io/address/0x583019fF0f430721aDa9cfb4fac8F06cA104d0B4#code)
+        uint256 currentWeek = block.timestamp / WEEK_LENGTH - 1;
+        AccountWeightParams memory weight = _weights[_account];
+        uint256 week = uint256(weight.weekNumber);
+        if (week > currentWeek) {
+            weight = _prevWeights[_account];
+        }
+        uint256 t = weight.stakeTime;
+        uint256 updated = weight.updateTime;
+        if (week > 0) {
+            t += block.timestamp / WEEK_LENGTH * WEEK_LENGTH - updated;
+        }
+        return _balances[_account] * t / (t + halfTime);
+    }
+
+    function _updateAccountWeight(address _account, uint256 _prevBalance, uint256 _newBalance, bool _increment) private {
+        uint256 currentWeek = block.timestamp / WEEK_LENGTH;
+        uint256 week = 0;
+        uint256 t = 0;
+        uint256 updated = 0;
+        AccountWeightParams storage weight = _weights[_account];
+        (week, t, updated) = _unpackWeight(_account);
+        if (week > 0 && currentWeek > week) {
+            _prevWeights[_account] = weight;
+        }
+        if (_newBalance == 0) {
+            t = 0;
+            _prevBalance = 0;
+        }
+        if (_prevBalance > 0) {
+            t += block.timestamp - updated;
+            if (_increment) {
+                // amount has increased, calculate effective time that results in same weight
+                uint256 _halfTime = halfTime;
+                t = _prevBalance * t * _halfTime / (_newBalance * (t + _halfTime) - _prevBalance * t);
+            }
+        }
+        // update weight
+        weight.weekNumber = uint64(currentWeek);
+        weight.stakeTime = uint64(t);
+        weight.updateTime = uint64(block.timestamp);
+    }
+
+    function _unpackWeight(address _account) private view returns (uint256 week, uint256 t, uint256 updated) {
+        AccountWeightParams memory params = _weights[_account];
+        week = params.weekNumber;
+        t = params.stakeTime;
+        updated = params.updateTime;
     }
 
     modifier updateReward(address _account) {
