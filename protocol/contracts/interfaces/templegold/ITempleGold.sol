@@ -3,8 +3,11 @@ pragma solidity 0.8.20;
 // Temple (interface/core/ITempleGold.sol)
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { IOFT } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/OFTCore.sol";
+import { IOAppCore } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/interfaces/IOAppCore.sol";
+import { IOAppOptionsType3, EnforcedOptionParam } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/interfaces/IOAppOptionsType3.sol";
 
-interface ITempleGold is IERC20 {
+interface ITempleGold is IOFT, IOAppCore, IOAppOptionsType3, IERC20 {
     struct DistributionParams {
         uint256 staking;
         uint256 escrow;
@@ -93,5 +96,10 @@ interface ITempleGold is IERC20 {
      */
     function circulatingSupply() external view returns (uint256);
 
+    /**
+     * @notice If minted TGLD can be distributed
+     * @return If can distribute supply
+     */
     function canDistribute() external view returns (bool);
+
 }

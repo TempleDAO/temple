@@ -16,7 +16,6 @@ import { IStakedTempleVoteToken } from "contracts/interfaces/templegold/IStakedT
  * @title Staked Temple Vote Token
  * @notice Non-transferrable ERC20 token issued by Temple Gold Staking contract. StakedTempleVoteToken gives governance power to holders by enabling voting
  */
-
 contract StakedTempleVoteToken is IStakedTempleVoteToken, TempleElevatedAccess, ERC20, ERC20Burnable, ERC20Permit, ERC20Votes {
 
     /// @notice Staking contract. Mutable if ever staking contract is upgraded.

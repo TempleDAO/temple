@@ -6,11 +6,12 @@ pragma solidity 0.8.20;
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import { Origin } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/interfaces/IOAppReceiver.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
-import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
+import { IOFT, OFTCore } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/OFTCore.sol";
 import { ITempleGold } from "contracts/interfaces/templegold/ITempleGold.sol";
 import { IDaiGoldAuction } from "contracts/interfaces/templegold/IDaiGoldAuction.sol";
-import { OFT } from "contracts/templegold/external/layerzero/oft/OFT.sol";
-import { ITempleGoldStaking}  from "./../interfaces/templegold/ITempleGoldStaking.sol";
+import { OFT } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/OFT.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { ITempleGoldStaking}  from "contracts/interfaces/templegold/ITempleGoldStaking.sol";
 import { mulDiv } from "@prb/math/src/Common.sol";
 import { MessagingReceipt, MessagingFee } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/OAppSender.sol";
 import { OFTMsgCodec } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/libs/OFTMsgCodec.sol";
@@ -58,7 +59,7 @@ import { SendParam, OFTReceipt } from "@layerzerolabs/lz-evm-oapp-v2/contracts/o
 
     /// @notice To avoid stack too deep in constructor
     struct InitArgs {
-        address rescuer;
+        // address rescuer;
         address executor; // executor is also used as delegate in LayerZero Endpoint
         address staking;
         address escrow;
@@ -71,7 +72,7 @@ import { SendParam, OFTReceipt } from "@layerzerolabs/lz-evm-oapp-v2/contracts/o
 
     constructor(
         InitArgs memory _initArgs
-    ) OFT(_initArgs.name, _initArgs.symbol, _initArgs.layerZeroEndpoint, _initArgs.executor) TempleElevatedAccess(_initArgs.rescuer, _initArgs.executor) {
+    ) OFT(_initArgs.name, _initArgs.symbol, _initArgs.layerZeroEndpoint, _initArgs.executor) Ownable(_initArgs.executor){
        staking = ITempleGoldStaking(_initArgs.staking);
        escrow = IDaiGoldAuction(_initArgs.escrow);
        teamGnosis = _initArgs.gnosis;
@@ -81,7 +82,7 @@ import { SendParam, OFTReceipt } from "@layerzerolabs/lz-evm-oapp-v2/contracts/o
      * @notice Set staking proxy contract address
      * @param _staking Staking proxy contract
      */
-    function setStaking(address _staking) external override onlyElevatedAccess {
+    function setStaking(address _staking) external override onlyOwner {
         if (_staking == address(0)) { revert CommonEventsAndErrors.ExpectedNonZero(); }
         staking = ITempleGoldStaking(_staking);
         emit StakingSet(_staking);
@@ -91,7 +92,7 @@ import { SendParam, OFTReceipt } from "@layerzerolabs/lz-evm-oapp-v2/contracts/o
      * @notice Set auctions escrow contract address
      * @param _escrow Auctions escrow contract address
      */
-    function setEscrow(address _escrow) external override onlyElevatedAccess {
+    function setEscrow(address _escrow) external override onlyOwner {
         if (_escrow == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
         escrow = IDaiGoldAuction(_escrow);
         emit EscrowSet(_escrow);
@@ -101,7 +102,7 @@ import { SendParam, OFTReceipt } from "@layerzerolabs/lz-evm-oapp-v2/contracts/o
      * @notice Set team gnosis address
      * @param _gnosis Team gnosis address
      */
-    function setTeamGnosis(address _gnosis) external override onlyElevatedAccess {
+    function setTeamGnosis(address _gnosis) external override onlyOwner {
         if (_gnosis == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
         teamGnosis = _gnosis;
         emit TeamGnosisSet(_gnosis);
@@ -112,7 +113,7 @@ import { SendParam, OFTReceipt } from "@layerzerolabs/lz-evm-oapp-v2/contracts/o
      * @param _contract Contract address to whitelist
      * @param _whitelist Boolean whitelist state
      */
-    function whitelistContract(address _contract, bool _whitelist) external override onlyElevatedAccess {
+    function whitelistContract(address _contract, bool _whitelist) external override onlyOwner {
         if (_contract == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
         whitelisted[_contract] = _whitelist;
         emit ContractWhitelisted(_contract, _whitelist);
@@ -122,7 +123,7 @@ import { SendParam, OFTReceipt } from "@layerzerolabs/lz-evm-oapp-v2/contracts/o
      * @notice Set distribution percentages of newly minted Temple Gold
      * @param _params Distribution parameters
      */
-    function setDistributionParams(DistributionParams calldata _params) external override onlyElevatedAccess {
+    function setDistributionParams(DistributionParams calldata _params) external override onlyOwner {
         if (_params.staking < MINIMUM_DISTRIBUTION_SHARE 
             || _params.escrow < MINIMUM_DISTRIBUTION_SHARE 
             || _params.gnosis < MINIMUM_DISTRIBUTION_SHARE) {
@@ -137,7 +138,7 @@ import { SendParam, OFTReceipt } from "@layerzerolabs/lz-evm-oapp-v2/contracts/o
      * @notice Set vesting factor
      * @param _factor Vesting factor
      */
-    function setVestingFactor(VestingFactor calldata _factor) external override onlyElevatedAccess {
+    function setVestingFactor(VestingFactor calldata _factor) external override onlyOwner {
         if (_factor.numerator == 0 || _factor.denominator == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
         if (_factor.numerator > _factor.denominator) { revert CommonEventsAndErrors.InvalidParam(); }
         vestingFactor = _factor;
@@ -268,7 +269,7 @@ import { SendParam, OFTReceipt } from "@layerzerolabs/lz-evm-oapp-v2/contracts/o
         SendParam calldata _sendParam,
         MessagingFee calldata _fee,
         address _refundAddress
-    ) external payable virtual override returns (MessagingReceipt memory msgReceipt, OFTReceipt memory oftReceipt) {
+    ) external payable virtual override(IOFT, OFTCore) returns (MessagingReceipt memory msgReceipt, OFTReceipt memory oftReceipt) {
         /// cast bytes32 to address
         // address _to = address(_sendParam.to);
         address _to = address(uint160(uint256(_sendParam.to)));
