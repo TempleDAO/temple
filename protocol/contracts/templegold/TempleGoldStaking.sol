@@ -71,7 +71,6 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         uint64 weekNumber;
         uint64 stakeTime;
         uint64 updateTime;
-        // need for balance?
     }
 
     constructor(
