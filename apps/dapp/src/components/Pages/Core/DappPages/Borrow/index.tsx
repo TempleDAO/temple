@@ -299,7 +299,7 @@ export const BorrowPage = () => {
     const tlcContract = new TempleLineOfCredit__factory(signer).attach(env.contracts.tlc);
     const amount = getBigNumberFromString(state.borrowValue, getTokenInfo(state.outputToken).decimals);
     try {
-      const tx = await tlcContract.borrow(amount, wallet, { gasLimit: 350000 });
+      const tx = await tlcContract.borrow(amount, wallet, { gasLimit: 500000 });
       const receipt = await tx.wait();
       openNotification({
         title: `Borrowed ${state.borrowValue} DAI`,
