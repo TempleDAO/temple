@@ -2,7 +2,16 @@ import type { DataKey } from 'recharts/types/util/types';
 
 import React from 'react';
 import { useTheme } from 'styled-components';
-import { ResponsiveContainer, AreaChart as RechartsChart, Area, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from 'recharts';
+import {
+  ResponsiveContainer,
+  AreaChart as RechartsChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  CartesianGrid,
+} from 'recharts';
 import { formatNumberAbbreviated, formatNumberFixedDecimals } from 'utils/formatter';
 import { useMediaQuery } from 'react-responsive';
 import { queryPhone } from 'styles/breakpoints';
@@ -37,7 +46,7 @@ export default function BiAxialLineChart<T>(props: React.PropsWithChildren<LineC
   return (
     <ResponsiveContainer minHeight={200} minWidth={320} height={400}>
       <RechartsChart data={chartData}>
-        <CartesianGrid horizontal={true} vertical={false} stroke={theme.palette.brandDarker}/>
+        <CartesianGrid horizontal={true} vertical={false} stroke={theme.palette.brandDarker} />
         {lines.map((line) => (
           <Area
             key={line.series.toString()}
@@ -100,7 +109,14 @@ export default function BiAxialLineChart<T>(props: React.PropsWithChildren<LineC
             return tooltipValuesFormatter(value, name);
           }}
         />
-        {lines.length > 1 ? <Legend verticalAlign="top" height={20} formatter={legendFormatter} /> : null}
+        {lines.length > 1 ? (
+          <Legend
+            wrapperStyle={{ minHeight: '20px', height: 'auto', padding: '1rem' }}
+            verticalAlign="top"
+            height={20}
+            formatter={legendFormatter}
+          />
+        ) : null}
       </RechartsChart>
     </ResponsiveContainer>
   );
