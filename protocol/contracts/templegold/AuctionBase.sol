@@ -14,8 +14,15 @@ abstract contract AuctionBase is IAuctionBase {
     mapping(uint256 epochId => EpochInfo info) public epochs;
     /// @notice Keep track of depositors for each epoch
     mapping(address depositor => mapping(uint256 epochId => uint256 amount)) public depositors;
-
+    /**
+     * @notice Deposit token to pledge for auction token in return
+     * @param amount Amount of sell token to pledge
+     */
     function deposit(uint256 amount) external virtual {}
+    /**
+     * @notice Claim auction tokens for an epoch
+     * @param epochId Epoch ID
+     */
     function claim(uint256 epochId) external virtual {}
 
     function _canDeposit() internal view returns (bool) {

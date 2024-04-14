@@ -18,8 +18,8 @@ contract SpiceAuction is ISpiceAuction, AuctionBase {
     /// @notice uint(TOKEN_A) < uint(TOKEN_B)
     address public immutable tokenA;
     address public immutable tokenB;
-    /// @notice Timelock to execute configurations update
-    address public immutable timelock;
+    /// @notice DAO contract to execute configurations update
+    address public immutable daoExecutor;
 
     /// @notice Auctions run for minimum 1 week
     uint32 public constant MINIMUM_AUCTION_PERIOD = 604_800;
@@ -39,19 +39,19 @@ contract SpiceAuction is ISpiceAuction, AuctionBase {
     constructor(
         address _tokenA,
         address _tokenB,
-        address _timelock,
+        address _daoExecutor,
         string memory _name
     ) {
         tokenA = _tokenA < _tokenB ? _tokenA : _tokenB;
         tokenB = _tokenA < _tokenB ? _tokenB : _tokenA;
-        timelock = _timelock;
+        daoExecutor = _daoExecutor;
         name = _name;
         _deoloyTimestamp = block.timestamp;
     }
 
     /// @notice Set config for an epoch. This enable dynamic and multiple auctions especially for vested scenarios
     /// Must be set before epoch auction starts
-    function setAuctionConfig(SpiceAuctionConfig calldata _config) external onlyTimelock {
+    function setAuctionConfig(SpiceAuctionConfig calldata _config) external onlyDAOExecutor {
         /// @dev epoch Id is only updated when auction starts. 
         uint256 currentEpochIdCache = _currentEpochId;
         EpochInfo memory info = epochs[currentEpochIdCache];
@@ -68,8 +68,8 @@ contract SpiceAuction is ISpiceAuction, AuctionBase {
         emit AuctionConfigSet(currentEpochIdCache, _config);
     }
 
-    /// @notice Remove config set for 
-    function removeAuctionConfig() external override onlyTimelock {
+    /// @notice Remove config set for last epoch
+    function removeAuctionConfig() external override onlyDAOExecutor {
         uint256 epochId = _currentEpochId;
         if (epochId == 0) { revert NoConfig(); }
         // Cannot reset an ongoing auction
@@ -181,8 +181,8 @@ contract SpiceAuction is ISpiceAuction, AuctionBase {
         return config.auctionToken == AuctionToken.TOKEN_A ? tokenA: tokenB;
     }
 
-    modifier onlyTimelock() {
-        if (msg.sender != timelock) { revert CommonEventsAndErrors.InvalidAccess(); }
+    modifier onlyDAOExecutor() {
+        if (msg.sender != daoExecutor) { revert CommonEventsAndErrors.InvalidAccess(); }
         _;
     }
 }

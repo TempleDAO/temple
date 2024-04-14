@@ -50,7 +50,10 @@ import { SendParam, OFTReceipt } from "@layerzerolabs/lz-evm-oapp-v2/contracts/o
     /// @notice Minimum Temple Gold minted per call to mint
     uint256 public constant MINIMUM_MINT = 1_000;
 
-    /// @notice Whitelisted addresses
+    /// @notice 
+    uint256 private constant _ARBITRUM_ONE_CHAIN_ID = 42161;
+
+    /// @notice Whitelisted addresses for transferrability
     mapping(address => bool) public whitelisted;
     /// @notice Distribution parameters. Minted share percentages for staking, escrow and gnosis. Adds up to 100%
     DistributionParams private distributionParams;
@@ -331,6 +334,7 @@ import { SendParam, OFTReceipt } from "@layerzerolabs/lz-evm-oapp-v2/contracts/o
     }
 
     modifier onlyArbitrum() {
+        if (block.chainid != _ARBITRUM_ONE_CHAIN_ID) { revert ArbitrumOnly(); }
         _;
     }
  }

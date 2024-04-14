@@ -3,8 +3,6 @@ pragma solidity 0.8.20;
 // Temple (interfaces/core/IDaiGoldAuction.sol)
 
 interface IDaiGoldAuction {
-    // event Deposit(address indexed sender, uint256 epochId, uint256 templeAmount);
-    // event Claim(address indexed sender, uint256 epochId, uint256 templeAmount, uint256 claimAmount);
     event AuctionStart(uint256 epochId, uint64 timestamp, uint64 endTime, uint256 totalTGoldAmount);
     event BidTokenSet(address bidToken);
     event BidForfeited(address indexed sender, uint256 epochId, uint256 amount);
@@ -34,6 +32,12 @@ interface IDaiGoldAuction {
         /// @notice Minimum Gold distributed to enable auction start
         uint160 auctionMinimumDistributedGold;
     }
+
+    /**
+     * @notice Set auction configuration
+     * @param _config Auction configuration
+     */
+    function setAuctionConfig(AuctionConfig calldata _config) external;
 
     /**
      * @notice Set token used for bidding
@@ -78,4 +82,9 @@ interface IDaiGoldAuction {
      * @return Bool if allowing deposit
      */
     function canDeposit() external view returns (bool);
+
+    /**
+     * @notice Mint and distribute TGLD 
+     */
+    function distributeGold() external;
 }

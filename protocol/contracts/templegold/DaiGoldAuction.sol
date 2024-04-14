@@ -3,7 +3,6 @@ pragma solidity 0.8.20;
 // Temple (templegold/DaiGoldAuction.sol)
 
 
-import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
 import { IDaiGoldAuction } from "contracts/interfaces/templegold/IDaiGoldAuction.sol";
@@ -11,7 +10,6 @@ import { ITempleGold } from "contracts/interfaces/templegold/ITempleGold.sol";
 import { AuctionBase } from "contracts/templegold/AuctionBase.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { mulDiv } from "@prb/math/src/Common.sol";
 
 /** 
  * @title AuctionEscrow
@@ -56,7 +54,11 @@ contract DaiGoldAuction is IDaiGoldAuction, AuctionBase, TempleElevatedAccess {
         treasury = _treasury;
     }
 
-    function setAuctionConfig(AuctionConfig calldata _config) external onlyElevatedAccess {
+    /**
+     * @notice Set auction configuration
+     * @param _config Auction configuration
+     */
+    function setAuctionConfig(AuctionConfig calldata _config) external override onlyElevatedAccess {
         if (_config.auctionDuration < MINIMUM_AUCTION_PERIOD) { revert CommonEventsAndErrors.InvalidParam(); }
         if (_config.auctionMinimumWaitPeriod == 0
             || _config.auctionStartCooldown == 0
@@ -206,6 +208,9 @@ contract DaiGoldAuction is IDaiGoldAuction, AuctionBase, TempleElevatedAccess {
         return _canDeposit();
     }
 
+    /**
+     * @notice Mint and distribute TGLD 
+     */
     function distributeGold() external {
         _distributeGold();
     }

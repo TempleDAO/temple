@@ -14,7 +14,9 @@ import { IOAppPreCrimeSimulator } from "@layerzerolabs/lz-evm-oapp-v2/contracts/
 import { IOFT } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/OFTCore.sol";
 
 contract TempleGoldProxy is ITempleGoldProxy, TempleElevatedAccess {
+    /// @notice Temple Gold
     ITempleGold public templeGold;
+    
     constructor(address _rescuer, address _executor, address _templeGold) TempleElevatedAccess(_rescuer, _executor) {
         templeGold = ITempleGold(_templeGold);
     }
@@ -125,5 +127,4 @@ contract TempleGoldProxy is ITempleGoldProxy, TempleElevatedAccess {
     function setEnforcedOptions(EnforcedOptionParam[] calldata _enforcedOptions) public virtual onlyElevatedAccess {
         IOAppOptionsType3(address(templeGold)).setEnforcedOptions(_enforcedOptions);
     }
-
 }

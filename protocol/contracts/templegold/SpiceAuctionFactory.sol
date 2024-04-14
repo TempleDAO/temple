@@ -6,29 +6,42 @@ pragma solidity 0.8.20;
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
 import { SpiceAuction } from "contracts/templegold/SpiceAuction.sol";
+import { ISpiceAuctionFactory } from "contracts/interfaces/templegold/ISpiceAuctionFactory.sol";
 
-contract SpiceAuctionFactory is TempleElevatedAccess {
-
-    address public immutable timelock;
+contract SpiceAuctionFactory is ISpiceAuctionFactory, TempleElevatedAccess {
+    /// @notice Dao executing contract
+    address public immutable daoExecutor;
+    /// @notice Keep track of deployed spice auctions
     mapping(bytes32 id => address auction) public deployedAuctions;
 
-    event AuctionCreated(bytes32 id, address auction);
     constructor(
         address _rescuer,
         address _executor,
-        address _timelock
+        address _daoExecutor
     ) TempleElevatedAccess(_rescuer, _executor) {
-        timelock = _timelock;
+        daoExecutor = _daoExecutor;
     }
 
+    /**
+     * @notice Create Spice Auction contract
+     * @param token0 Token0
+     * @param token1 Token1
+     * @param name Name of spice auction contract
+     */
     function createAuction(address token0, address token1, string memory name) external {
         if (token0 == address(0) || token1 == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
-        SpiceAuction spiceAuction = new SpiceAuction(token0, token1, timelock, name);
+        SpiceAuction spiceAuction = new SpiceAuction(token0, token1, daoExecutor, name);
         bytes32 pairId = _getPairHash(token0, token1);
         deployedAuctions[pairId] = address(spiceAuction);
         emit AuctionCreated(pairId, address(spiceAuction));
     }
 
+    /**
+     * @notice Given a pair of tokens, retrieve spice auction contract
+     * @param token0 Token0
+     * @param token1 Token1
+     * @return Address of auction contract
+     */
     function findAuctionForPair(address token0, address token1) external view returns (address) {
         bytes32 pairId = _getPairHash(token0, token1);
         return deployedAuctions[pairId];

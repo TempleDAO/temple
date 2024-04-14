@@ -9,8 +9,11 @@ import { IOAppOptionsType3, EnforcedOptionParam } from "@layerzerolabs/lz-evm-oa
 
 interface ITempleGold is IOFT, IOAppCore, IOAppOptionsType3, IERC20 {
     struct DistributionParams {
+        /// @notice staking contract
         uint256 staking;
+        /// @notice DAI_TGLD auction contract
         uint256 escrow;
+        /// @notice Team gnosis
         uint256 gnosis;
     }
 
@@ -32,6 +35,7 @@ interface ITempleGold is IOFT, IOAppCore, IOAppOptionsType3, IERC20 {
     error InsufficientMintAmount(uint256 amount);
     error NonTransferrable(address from, address to);
     error MaxSupply();
+    error ArbitrumOnly();
     
 
     /**

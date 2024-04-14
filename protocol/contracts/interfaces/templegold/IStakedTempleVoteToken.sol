@@ -11,7 +11,6 @@ interface IStakedTempleVoteToken is IERC20 {
     error NonTransferrable();
     error NotImplemented();
 
-    function mint(address to, uint256 amount) external;
     /**
      * @dev Destroys a `value` amount of tokens from the caller.
      *
@@ -31,6 +30,34 @@ interface IStakedTempleVoteToken is IERC20 {
      * `value`.
      */
     function burnFrom(address account, uint256 value) external;
+
+    /**  
+     * @notice Set authorized contract
+     * @dev Aucthorized contract is allowed to transfer/burn vote token
+     * @param _authority Contract
+     * @param _authorized Bool if authorized
+     */
+    function setAuthorized(address _authority, bool _authorized) external;
+
+    /**  
+     * @notice Set staking contract
+     * @param _staking Staking contract
+     */
+    function setStaking(address _staking) external;
+
+    /**  
+     * @notice Mint vote token
+     * @dev Only authorized can mint
+     * @param to Recipient
+     * @param amount Amount to mint
+     */
+    function mint(address to, uint256 amount) external;
+
+    /**  
+     * @notice Get vote weight of an account
+     * @param account Account
+     */
+    function getVoteweight(address account) external view returns (uint256);
 
     function pause() external;
 

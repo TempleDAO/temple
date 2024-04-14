@@ -85,8 +85,15 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         voteToken = IStakedTempleVoteToken(_voteToken);
     }
 
+    /**
+     * @notice Set starter of rewards distribution for the next epoch
+     * @dev If starter is address zero, anyone can call `distributeRewards` to apply and 
+     *      distribute
+      rewards for next 7 days
+     * @param _starter Starter address
+     */
     function setDistributionStarter(address _starter) external onlyElevatedAccess {
-        /// @notice Starter can be address zerp
+        /// @notice Starter can be address zer0
         distributionStarter = _starter;
         emit DistributionStarterSet(_starter);
     }
@@ -100,12 +107,22 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         emit MigratorSet(_migrator);
     }
 
+    /**
+     * @notice Set reward distribution cooldown
+     * @param _cooldown Cooldown in seconds
+     */
     function setRewardDistributionCoolDown(uint160 _cooldown) external override onlyElevatedAccess {
         if (_cooldown == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
         rewardDistributionCoolDown = _cooldown;
         emit RewardDistributionCoolDownSet(_cooldown);
     }
 
+    /**
+     * @notice Set half time parameter for calculating vote weight.
+     * @dev The voting half-time variable determines the time it takes until half the voting weight is reached for a stake.
+     *      Formular from st-yETH https://docs.yearn.fi/getting-started/products/yeth/overview
+     * @param _halfTime Cooldown in seconds
+     */
     function setHalfTime(uint256 _halfTime) external override onlyElevatedAccess {
         if (_halfTime == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
         halfTime = _halfTime;
@@ -124,7 +141,11 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     function migrateWithdraw(address staker, uint256 amount) external onlyMigrator {
         _withdrawFor(staker, msg.sender, amount, true, staker);
     }
-
+    
+    /**
+     * @notice Distributed TGLD rewards minted to this contract to stakers
+     * @dev This starts another 7-day rewards distribution. Calculates new `rewardRate` from any left over rewards up until now
+     */
     function distributeRewards() external {
         if (distributionStarter != address(0) && msg.sender != distributionStarter) { revert CommonEventsAndErrors.InvalidAccess(); }
         // Mint and distribute TGLD is no cooldown set
@@ -250,14 +271,25 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         _getReward(staker, staker);
     }
 
+    /**  
+     * @notice Get vote weight of an account
+     * @param account Account
+     */
     function getVoteweight(address account) external view returns (uint256) {
         return _voteWeight(account);
     }
 
-    function distributeGold() public {
+    /**  
+     * @notice Mint and distribute Temple Gold rewards 
+     */
+    function distributeGold() external {
         _distributeGold();
     }
 
+    /**  
+     * @notice Notify rewards distribution. Called by TempleGold contract after successful mint
+     * @param amount Amount minted to this contract
+     */
     function notifyDistribution(uint256 amount) external {
         if (msg.sender != address(rewardToken)) { revert CommonEventsAndErrors.InvalidAccess(); }
         /// @notice Temple Gold contract mints TGLD amount to contract before calling `notifyDistribution`

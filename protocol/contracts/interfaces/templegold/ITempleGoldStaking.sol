@@ -105,9 +105,34 @@ interface ITempleGoldStaking {
      */
     function getReward(address staker) external;
 
+    /**  
+     * @notice Notify rewards distribution. Called by TempleGold contract after successful mint
+     * @param amount Amount minted to this contract
+     */
     function notifyDistribution(uint256 amount) external;
 
+    /**
+     * @notice Set reward distribution cooldown
+     * @param _cooldown Cooldown in seconds
+     */
     function setRewardDistributionCoolDown(uint160 _cooldown) external;
 
-    function setHalfTime(uint256 halfTime) external;
+    /**
+     * @notice Set half time parameter for calculating vote weight.
+     * @dev The voting half-time variable determines the time it takes until half the voting weight is reached for a stake.
+     *      Formular from st-yETH https://docs.yearn.fi/getting-started/products/yeth/overview
+     * @param _halfTime Cooldown in seconds
+     */
+    function setHalfTime(uint256 _halfTime) external;
+
+    /**
+     * @notice Mint and distribute TGLD 
+     */
+    function distributeGold() external;
+
+    /**  
+     * @notice Get vote weight of an account
+     * @param account Account
+     */
+    function getVoteweight(address account) external view returns (uint256);
 }

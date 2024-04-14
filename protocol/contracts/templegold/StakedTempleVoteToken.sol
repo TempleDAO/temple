@@ -9,6 +9,7 @@ import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
 import { IStakedTempleVoteToken } from "contracts/interfaces/templegold/IStakedTempleVoteToken.sol";
+import { ITempleGoldStaking } from "contracts/interfaces/templegold/ITempleGoldStaking.sol";
 
 
 /** 
@@ -33,22 +34,39 @@ contract StakedTempleVoteTokenOld is IStakedTempleVoteToken, TempleElevatedAcces
         emit StakingSet(_staking);
     }
 
-    function setStaking(address _staking) external onlyElevatedAccess {
+    /**  
+     * @notice Set staking contract
+     * @param _staking Staking contract
+     */
+    function setStaking(address _staking) external override onlyElevatedAccess {
         if (_staking == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
         staking = _staking;
         emit StakingSet(_staking);
     }
 
-    function setAuthorized(address _authority, bool _authorized) external onlyElevatedAccess {
+    /**  
+     * @notice Set authorized contract
+     * @dev Aucthorized contract is allowed to transfer/burn vote token
+     * @param _authority Contract
+     * @param _authorized Bool if authorized
+     */
+    function setAuthorized(address _authority, bool _authorized) external override onlyElevatedAccess {
         if (_authority == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
         authorized[_authority] = _authorized;
         emit AuthoritySet(_authority, _authorized);
     }
 
-    function mint(address to, uint256 amount) external onlyAuthorized whenNotPaused {
+    /**  
+     * @notice Mint vote token
+     * @dev Only authorized can mint
+     * @param to Recipient
+     * @param amount Amount to mint
+     */
+    function mint(address to, uint256 amount) external override onlyAuthorized whenNotPaused {
         _mint(to, amount);
     }
 
+    /// @notice override to stop holders burning vote tokens themselves
     function burn(uint256 /*amount*/) public virtual override(IStakedTempleVoteToken, ERC20Burnable) onlyAuthorized whenNotPaused {
         /// @dev not implemented
         revert NotImplemented();
@@ -115,27 +133,57 @@ contract StakedTempleVoteTokenOld is IStakedTempleVoteToken, TempleElevatedAcces
         return super.approve(spender, value);
     }
 
+    /**  
+     * @notice Get vote weight of an account
+     * @param account Account
+     */
+    function getVoteweight(address account) external view returns (uint256) {
+        return ITempleGoldStaking(staking).getVoteweight(account);
+    }
+
+    /**  
+     * @notice Pause contract
+     */
     function pause() external onlyElevatedAccess {
         _pause();
     }
 
+    /**  
+     * @notice Unpause contract
+     */
     function unpause() external onlyElevatedAccess {
         _unpause();
     }
 
-    function push(address dst, uint256 wad) external {
-        transferFrom(msg.sender, dst, wad);
+    /**  
+     * @notice Move tokens from caller to dst, specific to Chief DAO contract. src is `msg.sender`
+     * @param dst Recipient
+     * @param amount Amount
+     */
+    function push(address dst, uint256 amount) external {
+        transferFrom(msg.sender, dst, amount);
     }
 
-    function pull(address src, uint256 wad) external {
-        transferFrom(src, msg.sender, wad);
+    /**  
+     * @notice Pull tokens to caller, specific to Chief DAO contract. recipient is `msg.sender`
+     * @param src Source
+     * @param amount Amount
+     */
+    function pull(address src, uint256 amount) external {
+        transferFrom(src, msg.sender, amount);
     }
 
+    /**  
+     * @notice Move tokens from src to dst, specific to Chief DAO contract
+     * @param src Source
+     * @param dst Destination
+     * @param amount Amount
+     */
     function move(address src, address dst, uint256 amount) external {
         transferFrom(src, dst, amount);
     }
 
-    // The functions below are overrides required by Solidity.
+    /// The functions below are overrides required by Solidity.
 
     function decimals() public view override returns (uint8) {
         return super.decimals();
@@ -150,7 +198,6 @@ contract StakedTempleVoteTokenOld is IStakedTempleVoteToken, TempleElevatedAcces
      */
     function _update(address from, address to, uint256 amount) internal override {
         /// @notice Non-transferrable. Only by staking
-        // todo: check for Chief too
         if(!authorized[from] && !authorized[to]) { revert NonTransferrable(); }
         super._update(from, to, amount);
     }
