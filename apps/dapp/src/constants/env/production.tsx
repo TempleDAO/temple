@@ -163,6 +163,28 @@ const env: Environment = {
     api_host: 'https://app.posthog.com',
   },
   templeMultisig: '0xe2Bb722DA825eBfFa1E368De244bdF08ed68B5c4',
+  safes: [
+    // {
+    //   name: 'Ethereum Mainnet Treasury',
+    //   address: '0xb1BD5762fAf7D6F86f965a3fF324BD81bB746d00',
+    // },
+    // {
+    //   name: 'DAO Runway',
+    //   address: '0x4D6175d58C5AceEf30F546C0d5A557efFa53A950',
+    // },
+    // {
+    //   name: 'OLB:',
+    //   address: '0x5C8898f8E0F9468D4A677887bC03EE2659321012',
+    // },
+    // {
+    //   name: 'Temple Executors',
+    //   address: '0x94b62A27a2f23CBdc0220826a8452fB5055cF273',
+    // },
+    // {
+    //   name: 'Temple Rescuers',
+    //   address: '0x9f90430179D9b67341BFa50559bc7B8E35629f1b',
+    // },
+  ],
 };
 
 export default env;

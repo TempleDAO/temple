@@ -88,6 +88,11 @@ interface Posthog {
   api_host: string;
 }
 
+export interface SafeWallet {
+  name: string;
+  address: string;
+}
+
 export interface Environment {
   alchemyId: string;
   rpcUrl: string;
@@ -108,4 +113,5 @@ export interface Environment {
   featureFlags: {
     enableAscend: boolean;
   };
+  safes: SafeWallet[];
 }
