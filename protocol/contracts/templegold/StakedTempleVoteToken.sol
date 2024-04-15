@@ -1,6 +1,6 @@
 pragma solidity 0.8.20;
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Temple (templegold/governance/StakedTempleVoteToken.sol)
+// Temple (templegold/StakedTempleVoteToken.sol)
 
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -16,7 +16,7 @@ import { ITempleGoldStaking } from "contracts/interfaces/templegold/ITempleGoldS
  * @title Staked Temple Vote Token
  * @notice Non-transferrable ERC20 token issued by Temple Gold Staking contract. StakedTempleVoteToken gives governance power to holders by enabling voting
  */
-contract StakedTempleVoteTokenOld is IStakedTempleVoteToken, TempleElevatedAccess, ERC20, ERC20Burnable, Pausable {
+contract StakedTempleVoteToken is IStakedTempleVoteToken, TempleElevatedAccess, ERC20, ERC20Burnable, Pausable {
 
     /// @notice Staking contract. Mutable if ever staking contract is upgraded.
     address public staking;

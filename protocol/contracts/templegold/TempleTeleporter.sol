@@ -4,7 +4,6 @@ pragma solidity 0.8.20;
 
 
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
-import { IERC20 } from  "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ITempleERC20Token } from "contracts/interfaces/core/ITempleERC20Token.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { OApp } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/OApp.sol";

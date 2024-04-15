@@ -3,11 +3,9 @@ pragma solidity 0.8.20;
 // Temple (templegold/TempleGoldProxy.sol)
 
 
-import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
 import { ITempleGold } from "contracts/interfaces/templegold/ITempleGold.sol";
 import { ITempleGoldProxy, IOFTCore } from "contracts/interfaces/templegold/ITempleGoldProxy.sol";
-import { EnforcedOptionParam } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/interfaces/IOAppOptionsType3.sol";
 import { IOAppOptionsType3, EnforcedOptionParam } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/interfaces/IOAppOptionsType3.sol";
 import { IOAppCore } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/interfaces/IOAppCore.sol";
 import { IOAppPreCrimeSimulator } from "@layerzerolabs/lz-evm-oapp-v2/contracts/precrime/interfaces/IOAppPreCrimeSimulator.sol";

@@ -3,7 +3,6 @@ pragma solidity 0.8.20;
 // Temple (templegold/TempleGold.sol)
 
 
-import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import { Origin } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/interfaces/IOAppReceiver.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { IOFT, OFTCore } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/OFTCore.sol";
@@ -50,7 +49,7 @@ import { SendParam, OFTReceipt } from "@layerzerolabs/lz-evm-oapp-v2/contracts/o
     /// @notice Minimum Temple Gold minted per call to mint
     uint256 public constant MINIMUM_MINT = 1_000;
 
-    /// @notice 
+    /// @notice Arbitrum One chain id
     uint256 private constant _ARBITRUM_ONE_CHAIN_ID = 42161;
 
     /// @notice Whitelisted addresses for transferrability
