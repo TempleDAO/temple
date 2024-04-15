@@ -46,14 +46,19 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     uint256 public periodFinish;
     uint256 public lastUpdateTime;
 
+    /// @notice Store next reward amount for next epoch
     uint256 public nextRewardAmount;
+    /// @notice Duration for rewards distribution
     uint256 public REWARD_DURATION = 7 days;
+    /// @notice Cooldown time before next distribution of rewards
+    /// @dev If set to zero, rewards distribution is callable any time 
     uint160 public rewardDistributionCoolDown;
+    /// @notice Timestamp for last reward notification
     uint96 public lastRewardNotificationTimestamp;
 
-    /// @notice For use when migrating to a new staking contract.
+    /// @notice For use when migrating to a new staking contract if TGLD changes.
     address public migrator;
-
+    /// @notice Data struct for rewards
     Reward public rewardData;
     /// @notice Staker balances
     mapping(address account => uint256 balance) private _balances;
@@ -62,7 +67,7 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     /// @notice Staker reward per token paid
     mapping(address account => uint256 amount) public userRewardPerTokenPaid;
 
-    /// @notice Account weights for calculating vote weights
+    /// @notice Staker weights for calculating vote weights
     mapping(address account => AccountWeightParams weight) private _weights;
     mapping(address account => AccountWeightParams weight) private _prevWeights;
 
@@ -129,7 +134,7 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     }
 
     /**
-      * @notice For migrations to a new staking contract.
+      * @notice For migrations to a new staking contract if TGLD changes
       *         1. Withdraw `staker`s tokens to the new staking contract (the migrator)
       *         2. Any existing rewards are claimed and sent directly to the `staker`
       * @dev Called only from the new staking contract (the migrator).
@@ -137,7 +142,7 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
       * @param staker The staker who is being migrated to a new staking contract.
       * @param amount The amount to migrate - generally this would be the staker's balance
       */
-    function migrateWithdraw(address staker, uint256 amount) external onlyMigrator {
+    function migrateWithdraw(address staker, uint256 amount) external override onlyMigrator {
         _withdrawFor(staker, msg.sender, amount, true, staker);
     }
     

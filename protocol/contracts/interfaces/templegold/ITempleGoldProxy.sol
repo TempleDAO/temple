@@ -41,7 +41,7 @@ interface ITempleGoldProxy {
      * @param _contract Contract address to whitelist
      * @param _whitelist Boolean whitelist state
      */
-    function whitelistContract(address _contract, bool _whitelist) external; 
+    function authorizeContract(address _contract, bool _whitelist) external; 
 
     /**
      * @notice Set distribution percentages of newly minted Temple Gold

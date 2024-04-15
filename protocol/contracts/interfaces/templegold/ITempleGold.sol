@@ -22,7 +22,7 @@ interface ITempleGold is IOFT, IOAppCore, IOAppOptionsType3, IERC20 {
         uint128 denominator;
     }
 
-    event ContractWhitelisted(address indexed _contract, bool _whitelisted);
+    event ContractAuthorizationSet(address indexed _contract, bool _whitelisted);
     event VestingFactorSet(uint128 numerator, uint128 denominator);
     event DistributionParamsSet(uint256 staking, uint256 escrow, uint256 gnosis);
     event Distributed(uint256 stakingAmount, uint256 escrowAmount, uint256 gnosisAmount, uint256 timestamp);
@@ -61,7 +61,7 @@ interface ITempleGold is IOFT, IOAppCore, IOAppOptionsType3, IERC20 {
      * @param _contract Contract address to whitelist
      * @param _whitelist Boolean whitelist state
      */
-    function whitelistContract(address _contract, bool _whitelist) external;
+    function authorizeContract(address _contract, bool _whitelist) external;
 
     /**
      * @notice Set distribution percentages of newly minted Temple Gold

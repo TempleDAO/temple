@@ -53,7 +53,7 @@ import { SendParam, OFTReceipt } from "@layerzerolabs/lz-evm-oapp-v2/contracts/o
     uint256 private constant _ARBITRUM_ONE_CHAIN_ID = 42161;
 
     /// @notice Whitelisted addresses for transferrability
-    mapping(address => bool) public whitelisted;
+    mapping(address => bool) public authorized;
     /// @notice Distribution parameters. Minted share percentages for staking, escrow and gnosis. Adds up to 100%
     DistributionParams private distributionParams;
     /// @notice Vesting factor determines rate of mint
@@ -115,10 +115,10 @@ import { SendParam, OFTReceipt } from "@layerzerolabs/lz-evm-oapp-v2/contracts/o
      * @param _contract Contract address to whitelist
      * @param _whitelist Boolean whitelist state
      */
-    function whitelistContract(address _contract, bool _whitelist) external override onlyOwner {
+    function authorizeContract(address _contract, bool _whitelist) external override onlyOwner {
         if (_contract == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
-        whitelisted[_contract] = _whitelist;
-        emit ContractWhitelisted(_contract, _whitelist);
+        authorized[_contract] = _whitelist;
+        emit ContractAuthorizationSet(_contract, _whitelist);
     } 
 
     /**
@@ -215,7 +215,7 @@ import { SendParam, OFTReceipt } from "@layerzerolabs/lz-evm-oapp-v2/contracts/o
         /// @notice can only transfer to or from whitelisted addreess
         /// this also disables burn
         if (from != address(0) || to != address(0)) {
-            if (!whitelisted[from] && !whitelisted[to]) { revert ITempleGold.NonTransferrable(from, to); }
+            if (!authorized[from] && !authorized[to]) { revert ITempleGold.NonTransferrable(from, to); }
         }
     }
 
@@ -276,7 +276,7 @@ import { SendParam, OFTReceipt } from "@layerzerolabs/lz-evm-oapp-v2/contracts/o
         // address _to = address(_sendParam.to);
         address _to = address(uint160(uint256(_sendParam.to)));
         /// @dev user can cross-chain transfer to either whitelisted or self
-        if (!whitelisted[msg.sender] || whitelisted[_to]) {
+        if (!authorized[msg.sender] || authorized[_to]) {
             if (msg.sender != _to) {
                 revert ITempleGold.NonTransferrable(msg.sender, _to);
             }

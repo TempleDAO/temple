@@ -135,4 +135,15 @@ interface ITempleGoldStaking {
      * @param account Account
      */
     function getVoteweight(address account) external view returns (uint256);
+
+    /**
+      * @notice For migrations to a new staking contract if TGLD changes
+      *         1. Withdraw `staker`s tokens to the new staking contract (the migrator)
+      *         2. Any existing rewards are claimed and sent directly to the `staker`
+      * @dev Called only from the new staking contract (the migrator).
+      *      `setMigrator(new_staking_contract)` needs to be called first
+      * @param staker The staker who is being migrated to a new staking contract.
+      * @param amount The amount to migrate - generally this would be the staker's balance
+      */
+    function migrateWithdraw(address staker, uint256 amount) external;
 }

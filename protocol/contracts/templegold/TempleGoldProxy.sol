@@ -9,7 +9,6 @@ import { ITempleGoldProxy, IOFTCore } from "contracts/interfaces/templegold/ITem
 import { IOAppOptionsType3, EnforcedOptionParam } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/interfaces/IOAppOptionsType3.sol";
 import { IOAppCore } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/interfaces/IOAppCore.sol";
 import { IOAppPreCrimeSimulator } from "@layerzerolabs/lz-evm-oapp-v2/contracts/precrime/interfaces/IOAppPreCrimeSimulator.sol";
-import { IOFT } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/OFTCore.sol";
 
 contract TempleGoldProxy is ITempleGoldProxy, TempleElevatedAccess {
     /// @notice Temple Gold
@@ -48,8 +47,8 @@ contract TempleGoldProxy is ITempleGoldProxy, TempleElevatedAccess {
      * @param _contract Contract address to whitelist
      * @param _whitelist Boolean whitelist state
      */
-    function whitelistContract(address _contract, bool _whitelist) external override onlyElevatedAccess {
-        templeGold.whitelistContract(_contract, _whitelist);
+    function authorizeContract(address _contract, bool _whitelist) external override onlyElevatedAccess {
+        templeGold.authorizeContract(_contract, _whitelist);
     } 
 
     /**
