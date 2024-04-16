@@ -9,11 +9,23 @@ export const LegacyPage = () => {
   return (
     <LegacyContainer>
       <LegacyHeader>
-        <LegacyLinkCell selected={!showUnstakeOGT} onClick={() => setShowUnstakeOGT(false)}>Claim From Vaults</LegacyLinkCell>
-        <LegacyLinkCell selected={!!showUnstakeOGT} onClick={() => setShowUnstakeOGT(true)}>Unlock OGT</LegacyLinkCell>
+        <LegacyLinkCell
+          selected={!showUnstakeOGT}
+          onClick={() => setShowUnstakeOGT(false)}
+        >
+          Claim From Vaults
+        </LegacyLinkCell>
+        <LegacyLinkCell
+          selected={!!showUnstakeOGT}
+          onClick={() => setShowUnstakeOGT(true)}
+        >
+          Unlock OGT
+        </LegacyLinkCell>
       </LegacyHeader>
       <LegacySeparator />
-      <LegacyContent>{showUnstakeOGT ? <UnstakeOGT /> : <ClaimFromVaults />}</LegacyContent>
+      <LegacyContent>
+        {showUnstakeOGT ? <UnstakeOGT /> : <ClaimFromVaults />}
+      </LegacyContent>
     </LegacyContainer>
   );
 };
@@ -24,14 +36,14 @@ const LegacySeparator = styled.div`
 
 type LegacyLinkCellProps = {
   selected: boolean;
-}
+};
 
 const LegacyLinkCell = styled.div<LegacyLinkCellProps>`
   padding: 0 40px 0 0;
   cursor: pointer;
   color: ${({ theme }) => theme.palette.brand};
-  font-weight: ${({ selected }) => selected ? 'bold' : 'normal'};
-  text-decoration: ${({ selected }) => selected ? 'underline' : 'none'};
+  font-weight: ${({ selected }) => (selected ? 'bold' : 'normal')};
+  text-decoration: ${({ selected }) => (selected ? 'underline' : 'none')};
 `;
 
 const LegacyContent = styled.div`

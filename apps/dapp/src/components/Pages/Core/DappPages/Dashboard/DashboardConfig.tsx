@@ -19,7 +19,8 @@ export type TrvKey = typeof TRV_KEY;
 
 export const ALL_STRATEGIES = Object.values(StrategyKey);
 
-export const isTRVDashboard = (strategy: StrategyKey | TrvKey) => strategy === TRV_KEY;
+export const isTRVDashboard = (strategy: StrategyKey | TrvKey) =>
+  strategy === TRV_KEY;
 
 export type DashboardData = {
   key: StrategyKey | TrvKey;

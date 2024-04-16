@@ -10,9 +10,15 @@ export const DepositStable: React.FC<IProps> = ({ amounts }) => {
   return (
     <InputArea>
       <h3>DepositStable</h3>
-      <p>To apply, create a RAMOS.depositStable() transaction with parameters</p>
-      <RequestArea>stableAmountIn: {amounts?.amountIn.toString() ?? <EllipsisLoader />}</RequestArea>
-      <RequestArea>minBptOut: {amounts?.bptOut.toString() ?? <EllipsisLoader />}</RequestArea>
+      <p>
+        To apply, create a RAMOS.depositStable() transaction with parameters
+      </p>
+      <RequestArea>
+        stableAmountIn: {amounts?.amountIn.toString() ?? <EllipsisLoader />}
+      </RequestArea>
+      <RequestArea>
+        minBptOut: {amounts?.bptOut.toString() ?? <EllipsisLoader />}
+      </RequestArea>
     </InputArea>
   );
 };

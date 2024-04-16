@@ -39,7 +39,7 @@ export type VaultGroup = {
   periodDurationSeconds: number;
   periods: number;
   cycleStart: Date; // Date of this cycle's start
-  cycleEnd: Date;   // Date of current cycle's
+  cycleEnd: Date; // Date of current cycle's
 };
 
 export type VaultProps = {

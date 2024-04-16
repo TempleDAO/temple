@@ -1,5 +1,5 @@
 import { FC } from 'react';
-import './theme.css'
+import './theme.css';
 
 import { Theme } from '@web3-onboard/core';
 import injectedModule from '@web3-onboard/injected-wallets';
@@ -16,7 +16,12 @@ const wcV2InitOptions = {
 
 const walletConnect = walletConnectModule(wcV2InitOptions);
 
-const wallets = [injectedModule(), walletConnect, coinbaseModule(), gnosisModule()];
+const wallets = [
+  injectedModule(),
+  walletConnect,
+  coinbaseModule(),
+  gnosisModule(),
+];
 
 const customTheme: Theme = {
   '--w3o-background-color': '#0C0B0B',
@@ -68,7 +73,8 @@ const web3Onboard = init({
       </g>
     </g>
   </svg>`,
-    description: 'A wrapped treasury token with steady price growth in all conditions.',
+    description:
+      'A wrapped treasury token with steady price growth in all conditions.',
     recommendedInjectedWallets: [
       { name: 'MetaMask', url: 'https://metamask.io' },
       { name: 'Coinbase', url: 'https://wallet.coinbase.com/' },
@@ -83,7 +89,8 @@ const web3Onboard = init({
       connect: {
         selectingWallet: {
           agreement: {
-            agree: 'I agree to have read and comply with the terms laid out in the',
+            agree:
+              'I agree to have read and comply with the terms laid out in the',
             terms: 'Temple Terms of Service',
           },
         },
@@ -93,5 +100,7 @@ const web3Onboard = init({
 });
 
 export const Web3OnboardInitProvider: FC = ({ children }) => (
-  <Web3OnboardProvider web3Onboard={web3Onboard}>{children}</Web3OnboardProvider>
+  <Web3OnboardProvider web3Onboard={web3Onboard}>
+    {children}
+  </Web3OnboardProvider>
 );

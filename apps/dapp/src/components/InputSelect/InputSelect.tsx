@@ -76,7 +76,9 @@ export const InputSelect = (props: SelectTempleDaoProps) => {
           base,
           padding: 0,
           color: theme.palette.light,
-          maxHeight: props.maxMenuItems ? `calc(${props.maxMenuItems} * ${selectHeight})` : 'none',
+          maxHeight: props.maxMenuItems
+            ? `calc(${props.maxMenuItems} * ${selectHeight})`
+            : 'none',
           overflowY: 'auto',
         }),
         option: (base, state) => ({
@@ -97,7 +99,7 @@ export const InputSelect = (props: SelectTempleDaoProps) => {
           ...base,
           opacity: state.isDisabled ? 0.5 : 1,
           transition: 'opacity 300ms',
-          textAlign: props.textAlign ??  'center',
+          textAlign: props.textAlign ?? 'center',
           width: '100%',
           fontWeight: 'bold',
           fontSize: props.fontSize ?? '1.25rem',
@@ -108,7 +110,9 @@ export const InputSelect = (props: SelectTempleDaoProps) => {
           padding: 0,
         }),
         dropdownIndicator: (base, state) => ({
-          color: state.isFocused ? theme.palette.brandLight : theme.palette.brand,
+          color: state.isFocused
+            ? theme.palette.brandLight
+            : theme.palette.brand,
           display: 'flex',
           transform: state.isFocused ? 'rotateX(180deg)' : 'none',
           transition: 'transform 250ms linear',

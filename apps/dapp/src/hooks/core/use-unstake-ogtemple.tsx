@@ -15,16 +15,25 @@ export const useUnstakeOGTemple = (onSuccess?: Callback) => {
 
   const unstakeRequest = async (amount: string) => {
     if (!wallet || !signer) {
-      console.error('Missing wallet or signer when trying to unstake OGTemple.');
+      console.error(
+        'Missing wallet or signer when trying to unstake OGTemple.'
+      );
       return;
     }
 
-    const templeStaking = new TempleStaking__factory(signer).attach(env.contracts.templeStaking);
+    const templeStaking = new TempleStaking__factory(signer).attach(
+      env.contracts.templeStaking
+    );
     const ogTempleAddress = await templeStaking.OG_TEMPLE();
     const ogTempleToken = new OGTemple__factory(signer).attach(ogTempleAddress);
     const bigAmount = getBigNumberFromString(amount);
 
-    await ensureAllowance(TICKER_SYMBOL.OG_TEMPLE_TOKEN, ogTempleToken, env.contracts.templeStaking, bigAmount);
+    await ensureAllowance(
+      TICKER_SYMBOL.OG_TEMPLE_TOKEN,
+      ogTempleToken,
+      env.contracts.templeStaking,
+      bigAmount
+    );
 
     await unstake(bigAmount);
 

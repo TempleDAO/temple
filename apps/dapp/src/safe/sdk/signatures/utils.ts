@@ -3,7 +3,9 @@ import { bufferToHex, ecrecover, pubToAddress } from 'ethereumjs-util';
 import { EthSafeSignature } from './SafeSignature';
 import { sameString } from '../utils/utils';
 
-export function generatePreValidatedSignature(ownerAddress: string): SafeSignature {
+export function generatePreValidatedSignature(
+  ownerAddress: string
+): SafeSignature {
   const signature =
     '0x000000000000000000000000' +
     ownerAddress.slice(2) +
@@ -13,7 +15,11 @@ export function generatePreValidatedSignature(ownerAddress: string): SafeSignatu
   return new EthSafeSignature(ownerAddress, signature);
 }
 
-export function isTxHashSignedWithPrefix(txHash: string, signature: string, ownerAddress: string): boolean {
+export function isTxHashSignedWithPrefix(
+  txHash: string,
+  signature: string,
+  ownerAddress: string
+): boolean {
   let hasPrefix;
   try {
     const rsvSig = {
@@ -21,7 +27,12 @@ export function isTxHashSignedWithPrefix(txHash: string, signature: string, owne
       s: Buffer.from(signature.slice(66, 130), 'hex'),
       v: parseInt(signature.slice(130, 132), 16),
     };
-    const recoveredData = ecrecover(Buffer.from(txHash.slice(2), 'hex'), rsvSig.v, rsvSig.r, rsvSig.s);
+    const recoveredData = ecrecover(
+      Buffer.from(txHash.slice(2), 'hex'),
+      rsvSig.v,
+      rsvSig.r,
+      rsvSig.s
+    );
     const recoveredAddress = bufferToHex(pubToAddress(recoveredData));
     hasPrefix = !sameString(recoveredAddress, ownerAddress);
   } catch (e) {
@@ -32,7 +43,12 @@ export function isTxHashSignedWithPrefix(txHash: string, signature: string, owne
 
 type AdjustVOverload = {
   (signingMethod: 'eth_signTypedData', signature: string): string;
-  (signingMethod: 'eth_sign', signature: string, safeTxHash: string, sender: string): string;
+  (
+    signingMethod: 'eth_sign',
+    signature: string,
+    safeTxHash: string,
+    sender: string
+  ): string;
 };
 
 export const adjustVInSignature: AdjustVOverload = (

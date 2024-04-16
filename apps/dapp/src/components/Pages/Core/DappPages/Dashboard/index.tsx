@@ -1,4 +1,10 @@
-import { Route, Routes, NavLink as BaseNavLink, Navigate, useSearchParams } from 'react-router-dom';
+import {
+  Route,
+  Routes,
+  NavLink as BaseNavLink,
+  Navigate,
+  useSearchParams,
+} from 'react-router-dom';
 import * as breakpoints from 'styles/breakpoints';
 import styled from 'styled-components';
 import DashboardContent from './DashboardContent';
@@ -13,13 +19,18 @@ export const DashboardPage = () => {
       <DashboardHeaderNav>
         {Dashboards.map((dashboard) => (
           <NavCell key={dashboard.key}>
-            <NavLink to={`${dashboard.path}?${params}`}>{dashboard.title}</NavLink>
+            <NavLink to={`${dashboard.path}?${params}`}>
+              {dashboard.title}
+            </NavLink>
           </NavCell>
         ))}
       </DashboardHeaderNav>
       <DashboardContentContainer>
         <Routes>
-          <Route path="*" element={<Navigate replace to="treasuryreservesvault" />} />
+          <Route
+            path="*"
+            element={<Navigate replace to="treasuryreservesvault" />}
+          />
           {Dashboards.map((dashboard) => (
             <Route
               key={dashboard.key}

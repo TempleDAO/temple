@@ -46,9 +46,12 @@ export const useAnalytics = () => {
     fullyDilutedTempleSupply: 0,
   });
 
-  const [request, { response, error }] = useSubgraphRequest<IAnalyticsResponse>(env.subgraph.protocolMetrics, {
-    query: QUERY,
-  });
+  const [request, { response, error }] = useSubgraphRequest<IAnalyticsResponse>(
+    env.subgraph.protocolMetrics,
+    {
+      query: QUERY,
+    }
+  );
 
   useEffect(() => {
     const requestProtocolData = async () => {
@@ -64,8 +67,10 @@ export const useAnalytics = () => {
       const protocolData = response.data.protocolMetrics[0];
       setAnalytics({
         treasuryValue: protocolData.totalValueLocked,
-        circulatingMarketCap: protocolData.templeCirculatingSupply * protocolData.templePrice,
-        fullyDilutedValuation: protocolData.templeSupply * protocolData.templePrice,
+        circulatingMarketCap:
+          protocolData.templeCirculatingSupply * protocolData.templePrice,
+        fullyDilutedValuation:
+          protocolData.templeSupply * protocolData.templePrice,
         fullyDilutedTempleSupply: protocolData.templeSupply,
         circulatingTempleSupply: protocolData.templeCirculatingSupply,
       });

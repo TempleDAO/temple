@@ -12,17 +12,21 @@ export async function estimateGas(
   data: string,
   operation: OperationType
 ) {
-  const simulateTxAccessorContract = await getSimulateTxAccessorContract({ signer, safeVersion });
-  const transactionDataToEstimate = simulateTxAccessorContract.interface.encodeFunctionData('simulate', [
-    to,
-    valueInWei,
-    data,
-    operation,
-  ]);
-  const safeFunctionToEstimate = safeContract.interface.encodeFunctionData('simulateAndRevert', [
-    await simulateTxAccessorContract.address,
-    transactionDataToEstimate,
-  ]);
+  const simulateTxAccessorContract = await getSimulateTxAccessorContract({
+    signer,
+    safeVersion,
+  });
+  const transactionDataToEstimate =
+    simulateTxAccessorContract.interface.encodeFunctionData('simulate', [
+      to,
+      valueInWei,
+      data,
+      operation,
+    ]);
+  const safeFunctionToEstimate = safeContract.interface.encodeFunctionData(
+    'simulateAndRevert',
+    [await simulateTxAccessorContract.address, transactionDataToEstimate]
+  );
   const safeAddress = safeContract.address;
   const transactionToEstimateGas = {
     to: safeAddress,

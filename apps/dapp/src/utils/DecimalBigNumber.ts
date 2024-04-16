@@ -21,12 +21,13 @@ export class DecimalBigNumber {
    * Create by parsing the floating point string using ethers.utils.parseUnits
    */
   static parseUnits(value: string, totalDecimals: number): DecimalBigNumber {
+    // eslint-disable-next-line prefer-const
     let [int, safeDecimals] = value.split('.');
 
     if (safeDecimals && safeDecimals.length > totalDecimals) {
       safeDecimals = safeDecimals.substring(0, totalDecimals);
     }
-    
+
     const safeValue = safeDecimals ? `${int}.${safeDecimals}` : int;
     const bnIn = ethers.utils.parseUnits(safeValue, totalDecimals);
     return DecimalBigNumber.fromBN(bnIn, totalDecimals);
@@ -160,7 +161,10 @@ export class DecimalBigNumber {
 
 export const DBN_ZERO = DecimalBigNumber.fromBN(BigNumber.from(0), 0);
 export const DBN_ONE_HUNDRED = DecimalBigNumber.fromBN(BigNumber.from(100), 0);
-export const DBN_TEN_THOUSAND = DecimalBigNumber.fromBN(BigNumber.from(10000), 0);
+export const DBN_TEN_THOUSAND = DecimalBigNumber.fromBN(
+  BigNumber.from(10000),
+  0
+);
 
 export function minDBN(
   v1: DecimalBigNumber,

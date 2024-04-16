@@ -35,7 +35,11 @@ import {
   WeightedPoolExitKind,
 } from './helpers';
 import { ZERO } from 'utils/bigNumber';
-import { DBN_TEN_THOUSAND, DBN_ZERO, DecimalBigNumber } from 'utils/DecimalBigNumber';
+import {
+  DBN_TEN_THOUSAND,
+  DBN_ZERO,
+  DecimalBigNumber,
+} from 'utils/DecimalBigNumber';
 
 interface ContractInstances {
   ramos: Ramos;
@@ -71,15 +75,27 @@ async function connectToContracts(signer: Signer): Promise<ContractInstances> {
   } = environmentConfig.contracts;
 
   const ramos = Ramos__factory.connect(RAMOS_ADDRESS, signer);
-  const ramosPoolHelper = BalancerPoolHelper__factory.connect(RAMOS_POOL_HELPER_ADDRESS, signer);
-  const ramosStrategy = RamosStrategy__factory.connect(STRATEGIES.ramosStrategy, signer);
-  const balancerHelpers = IBalancerHelpers__factory.connect(BALANCER_HELPERS_ADDRESS, signer);
+  const ramosPoolHelper = BalancerPoolHelper__factory.connect(
+    RAMOS_POOL_HELPER_ADDRESS,
+    signer
+  );
+  const ramosStrategy = RamosStrategy__factory.connect(
+    STRATEGIES.ramosStrategy,
+    signer
+  );
+  const balancerHelpers = IBalancerHelpers__factory.connect(
+    BALANCER_HELPERS_ADDRESS,
+    signer
+  );
   const trv = TreasuryReservesVault__factory.connect(TRV_ADDRESS, signer);
 
   const balancerVaultAddress = await ramos.balancerVault();
   const bptTokenAddress = await ramos.bptToken();
   const bptToken = ERC20__factory.connect(bptTokenAddress, signer);
-  const balancerVault = IBalancerVault__factory.connect(balancerVaultAddress, signer);
+  const balancerVault = IBalancerVault__factory.connect(
+    balancerVaultAddress,
+    signer
+  );
 
   return {
     balancerHelpers,
@@ -101,32 +117,66 @@ export function useRamosAdmin() {
   };
 
   const [slippageTolerance, setSlippageTolerance] = useState(0.1);
-  const [rebalanceUpAmounts, setRebalanceUpAmounts] = useState<{ bptIn: BigNumber; amountOut: BigNumber }>();
-  const [rebalanceDownAmounts, setRebalanceDownAmounts] = useState<{ amountIn: BigNumber; bptOut: BigNumber }>();
-  const [depositStableAmounts, setDepositStableAmounts] = useState<{ amountIn: BigNumber; bptOut: BigNumber }>();
-  const [withdrawStableAmounts, setWithdrawStableAmounts] = useState<{ amountOut: BigNumber; bptIn: BigNumber }>();
+  const [rebalanceUpAmounts, setRebalanceUpAmounts] = useState<{
+    bptIn: BigNumber;
+    amountOut: BigNumber;
+  }>();
+  const [rebalanceDownAmounts, setRebalanceDownAmounts] = useState<{
+    amountIn: BigNumber;
+    bptOut: BigNumber;
+  }>();
+  const [depositStableAmounts, setDepositStableAmounts] = useState<{
+    amountIn: BigNumber;
+    bptOut: BigNumber;
+  }>();
+  const [withdrawStableAmounts, setWithdrawStableAmounts] = useState<{
+    amountOut: BigNumber;
+    bptIn: BigNumber;
+  }>();
 
-  async function loadRamosAdmin(contracts: ContractInstances, signer: Signer): Promise<RamosAdmin> {
+  async function loadRamosAdmin(
+    contracts: ContractInstances,
+    signer: Signer
+  ): Promise<RamosAdmin> {
     const poolId = await contracts.ramos.balancerPoolId();
-    const [tokenAddresses, balances] = await contracts.balancerVault.getPoolTokens(poolId);
-    const tpf = DecimalBigNumber.fromBN(await contracts.ramos.treasuryPriceIndex(), 18); // should be tpf, not tpi
+    const [tokenAddresses, balances] =
+      await contracts.balancerVault.getPoolTokens(poolId);
+    const tpf = DecimalBigNumber.fromBN(
+      await contracts.ramos.treasuryPriceIndex(),
+      18
+    ); // should be tpf, not tpi
     const maxRebalanceAmounts = await contracts.ramos.maxRebalanceAmounts();
-    const percentageBoundDown = await contracts.ramos.rebalancePercentageBoundLow();
-    const percentageBoundUp = await contracts.ramos.rebalancePercentageBoundUp();
-    const protIndexBal = await contracts.ramosPoolHelper.protocolTokenIndexInBalancerPool();
+    const percentageBoundDown =
+      await contracts.ramos.rebalancePercentageBoundLow();
+    const percentageBoundUp =
+      await contracts.ramos.rebalancePercentageBoundUp();
+    const protIndexBal =
+      await contracts.ramosPoolHelper.protocolTokenIndexInBalancerPool();
     const percentageBounds = {
       down: DecimalBigNumber.fromBN(percentageBoundDown, 0),
       up: DecimalBigNumber.fromBN(percentageBoundUp, 0),
     };
-    const maxRebalanceAmountsTemple = DecimalBigNumber.fromBN(maxRebalanceAmounts.protocolToken, 18);
-    const maxRebalanceAmountsStable = DecimalBigNumber.fromBN(maxRebalanceAmounts.quoteToken, 18);
+    const maxRebalanceAmountsTemple = DecimalBigNumber.fromBN(
+      maxRebalanceAmounts.protocolToken,
+      18
+    );
+    const maxRebalanceAmountsStable = DecimalBigNumber.fromBN(
+      maxRebalanceAmounts.quoteToken,
+      18
+    );
     const percentageOfGapToClose = 100;
 
     tokenAddresses.forEach((tokenAddr, index) => {
       if (isTemple(tokenAddr)) {
-        tokens.temple = { address: tokenAddr, balance: DecimalBigNumber.fromBN(balances[index], 18) };
+        tokens.temple = {
+          address: tokenAddr,
+          balance: DecimalBigNumber.fromBN(balances[index], 18),
+        };
       } else {
-        tokens.stable = { address: tokenAddr, balance: DecimalBigNumber.fromBN(balances[index], 18) };
+        tokens.stable = {
+          address: tokenAddr,
+          balance: DecimalBigNumber.fromBN(balances[index], 18),
+        };
       }
     });
 
@@ -173,13 +223,17 @@ export function useRamosAdmin() {
     initialCalcs();
   }, [ramosAdmin]);
 
-  const createJoinPoolRequest = async (templeAmount: BigNumber, stableAmount: BigNumber) => {
+  const createJoinPoolRequest = async (
+    templeAmount: BigNumber,
+    stableAmount: BigNumber
+  ) => {
     if (!ramosAdmin) return;
     const { contracts } = ramosAdmin;
-    const proportionalAddLiquidityQuote = await contracts.ramosStrategy.callStatic.proportionalAddLiquidityQuote(
-      stableAmount,
-      slippageTolerance * 100
-    );
+    const proportionalAddLiquidityQuote =
+      await contracts.ramosStrategy.callStatic.proportionalAddLiquidityQuote(
+        stableAmount,
+        slippageTolerance * 100
+      );
     const reqDataQuote = proportionalAddLiquidityQuote.requestData;
     const { bptOut } = decodeUserData(reqDataQuote.userData);
     return {
@@ -190,12 +244,27 @@ export function useRamosAdmin() {
 
   const calculateRebalanceUp = async (bps: DecimalBigNumber) => {
     if (bps.lt(DBN_ZERO) || !ramosAdmin) return;
-    const { contracts, templePrice, percentageOfGapToClose, balPooltokensOrdered, poolId, maxRebalanceAmountsTemple } =
-      ramosAdmin;
-    const targetPrice = await calculateTargetPriceUp(templePrice, bps, contracts.ramos, percentageOfGapToClose);
-    const templeBalanceAtTargetPrice = tokens.stable.balance.div(targetPrice, targetPrice.getDecimals());
+    const {
+      contracts,
+      templePrice,
+      percentageOfGapToClose,
+      balPooltokensOrdered,
+      poolId,
+      maxRebalanceAmountsTemple,
+    } = ramosAdmin;
+    const targetPrice = await calculateTargetPriceUp(
+      templePrice,
+      bps,
+      contracts.ramos,
+      percentageOfGapToClose
+    );
+    const templeBalanceAtTargetPrice = tokens.stable.balance.div(
+      targetPrice,
+      targetPrice.getDecimals()
+    );
     let templeAmountOut = tokens.temple.balance.sub(templeBalanceAtTargetPrice);
-    if (templeAmountOut.gt(maxRebalanceAmountsTemple)) templeAmountOut = maxRebalanceAmountsTemple;
+    if (templeAmountOut.gt(maxRebalanceAmountsTemple))
+      templeAmountOut = maxRebalanceAmountsTemple;
 
     const amountsOut = [templeAmountOut.toBN(18), ZERO];
     const exitRequest = makeExitRequest(
@@ -216,13 +285,25 @@ export function useRamosAdmin() {
 
   const calculateDepositStable = async (bps: DecimalBigNumber) => {
     if (bps.lt(DBN_ZERO) || !ramosAdmin) return;
-    const { contracts, templePrice, percentageOfGapToClose, balPooltokensOrdered, poolId, maxRebalanceAmountsStable } =
-      ramosAdmin;
-    const targetPrice = await calculateTargetPriceUp(templePrice, bps, contracts.ramos, percentageOfGapToClose);
+    const {
+      contracts,
+      templePrice,
+      percentageOfGapToClose,
+      balPooltokensOrdered,
+      poolId,
+      maxRebalanceAmountsStable,
+    } = ramosAdmin;
+    const targetPrice = await calculateTargetPriceUp(
+      templePrice,
+      bps,
+      contracts.ramos,
+      percentageOfGapToClose
+    );
     const stableAmountAtTargetPrice = tokens.temple.balance.mul(targetPrice);
     let stableAmount = stableAmountAtTargetPrice.sub(tokens.stable.balance);
 
-    if (stableAmount.gt(maxRebalanceAmountsStable)) stableAmount = maxRebalanceAmountsStable;
+    if (stableAmount.gt(maxRebalanceAmountsStable))
+      stableAmount = maxRebalanceAmountsStable;
     const amountsIn = [ZERO, stableAmount.toBN(18)];
     const joinPoolRequest = makeJoinRequest(balPooltokensOrdered, amountsIn);
     const amounts = await contracts.balancerHelpers.queryJoin(
@@ -239,14 +320,32 @@ export function useRamosAdmin() {
 
   const calculateRebalanceDown = async (bps: DecimalBigNumber) => {
     if (!ramosAdmin) return;
-    const { contracts, templePrice, percentageOfGapToClose, balPooltokensOrdered, poolId, maxRebalanceAmountsTemple } =
-      ramosAdmin;
-    const targetPrice = await calculateTargetPriceDown(templePrice, bps, contracts.ramos, percentageOfGapToClose);
-    const templeBalanceAtTargetPrice = tokens.stable.balance.div(targetPrice, 18);
+    const {
+      contracts,
+      templePrice,
+      percentageOfGapToClose,
+      balPooltokensOrdered,
+      poolId,
+      maxRebalanceAmountsTemple,
+    } = ramosAdmin;
+    const targetPrice = await calculateTargetPriceDown(
+      templePrice,
+      bps,
+      contracts.ramos,
+      percentageOfGapToClose
+    );
+    const templeBalanceAtTargetPrice = tokens.stable.balance.div(
+      targetPrice,
+      18
+    );
     let templeAmount = templeBalanceAtTargetPrice.sub(tokens.temple.balance);
-    if (templeAmount.gt(maxRebalanceAmountsTemple)) templeAmount = maxRebalanceAmountsTemple;
+    if (templeAmount.gt(maxRebalanceAmountsTemple))
+      templeAmount = maxRebalanceAmountsTemple;
     const initAmountsIn: BigNumber[] = [templeAmount.toBN(18), ZERO];
-    const joinPoolRequest = makeJoinRequest(balPooltokensOrdered, initAmountsIn);
+    const joinPoolRequest = makeJoinRequest(
+      balPooltokensOrdered,
+      initAmountsIn
+    );
     const { amountsIn, bptOut } = await contracts.balancerHelpers.queryJoin(
       poolId,
       contracts.ramos.address,
@@ -262,13 +361,25 @@ export function useRamosAdmin() {
 
   const calculateWithdrawStable = async (bps: DecimalBigNumber) => {
     if (!ramosAdmin) return;
-    const { contracts, templePrice, percentageOfGapToClose, balPooltokensOrdered, poolId, maxRebalanceAmountsStable } =
-      ramosAdmin;
-    const targetPrice = await calculateTargetPriceDown(templePrice, bps, contracts.ramos, percentageOfGapToClose);
+    const {
+      contracts,
+      templePrice,
+      percentageOfGapToClose,
+      balPooltokensOrdered,
+      poolId,
+      maxRebalanceAmountsStable,
+    } = ramosAdmin;
+    const targetPrice = await calculateTargetPriceDown(
+      templePrice,
+      bps,
+      contracts.ramos,
+      percentageOfGapToClose
+    );
     const stableBalanceAtTargetPrice = tokens.temple.balance.mul(targetPrice);
     let stableAmount = tokens.stable.balance.sub(stableBalanceAtTargetPrice);
 
-    if (stableAmount.gt(maxRebalanceAmountsStable)) stableAmount = maxRebalanceAmountsStable;
+    if (stableAmount.gt(maxRebalanceAmountsStable))
+      stableAmount = maxRebalanceAmountsStable;
 
     const amountsOut = [ZERO, stableAmount.toBN(18)];
     const exitRequest = makeExitRequest(
@@ -297,9 +408,14 @@ export function useRamosAdmin() {
       setRebalanceUpAmounts({ amountOut: ZERO, bptIn: ZERO });
       setDepositStableAmounts({ amountIn: ZERO, bptOut: ZERO });
       // account for percentage bounds
-      const tpfRangeAdjusted = tpf.add(tpf.mul(percentageBounds.up).div(DBN_TEN_THOUSAND, tpf.getDecimals()));
+      const tpfRangeAdjusted = tpf.add(
+        tpf.mul(percentageBounds.up).div(DBN_TEN_THOUSAND, tpf.getDecimals())
+      );
       if (templePrice.gt(tpfRangeAdjusted)) {
-        const basisPointsDiff = getBpsPercentageFromTpf(tpfRangeAdjusted, templePrice);
+        const basisPointsDiff = getBpsPercentageFromTpf(
+          tpfRangeAdjusted,
+          templePrice
+        );
         const withdrawStable = await calculateWithdrawStable(basisPointsDiff);
         const rebalanceDown = await calculateRebalanceDown(basisPointsDiff);
         withdrawStable && setWithdrawStableAmounts(withdrawStable);
@@ -312,9 +428,14 @@ export function useRamosAdmin() {
       setWithdrawStableAmounts({ amountOut: ZERO, bptIn: ZERO });
       setRebalanceDownAmounts({ amountIn: ZERO, bptOut: ZERO });
       // account for percentage bounds
-      const tpfRangeAdjusted = tpf.sub(tpf.mul(percentageBounds.down).div(DBN_TEN_THOUSAND, tpf.getDecimals()));
+      const tpfRangeAdjusted = tpf.sub(
+        tpf.mul(percentageBounds.down).div(DBN_TEN_THOUSAND, tpf.getDecimals())
+      );
       if (tpfRangeAdjusted.gt(templePrice)) {
-        const basisPointsDiff = getBpsPercentageFromTpf(tpfRangeAdjusted, templePrice);
+        const basisPointsDiff = getBpsPercentageFromTpf(
+          tpfRangeAdjusted,
+          templePrice
+        );
         const rebalanceUp = await calculateRebalanceUp(basisPointsDiff);
         const depositStable = await calculateDepositStable(basisPointsDiff);
 
@@ -329,7 +450,7 @@ export function useRamosAdmin() {
 
   const handleAddLiquidityInput = async (stableAmount: DecimalBigNumber) => {
     let templeAmount = DBN_ZERO;
-    if (ramosAdmin){
+    if (ramosAdmin) {
       const { templePrice } = ramosAdmin;
       templeAmount = stableAmount.div(templePrice, stableAmount.getDecimals());
     }
@@ -339,18 +460,23 @@ export function useRamosAdmin() {
   const createExitPoolRequest = async (exitAmountBpt: BigNumber) => {
     if (!ramosAdmin) return;
     const { contracts } = ramosAdmin;
-    const proportionalRemoveLiquidityQuote = await contracts.ramosStrategy.callStatic.proportionalRemoveLiquidityQuote(
-      exitAmountBpt,
-      slippageTolerance * 100
-    );
+    const proportionalRemoveLiquidityQuote =
+      await contracts.ramosStrategy.callStatic.proportionalRemoveLiquidityQuote(
+        exitAmountBpt,
+        slippageTolerance * 100
+      );
     const reqDataQuote = proportionalRemoveLiquidityQuote.requestData;
     return formatExitRequestTuple(reqDataQuote);
   };
 
-  const createDepositAndStakeRequest = async (bptAmountIn: DecimalBigNumber) => {
+  const createDepositAndStakeRequest = async (
+    bptAmountIn: DecimalBigNumber
+  ) => {
     if (!ramosAdmin) return;
     const { contracts } = ramosAdmin;
-    const amountInContract = await contracts.bptToken.balanceOf(contracts.ramos.address);
+    const amountInContract = await contracts.bptToken.balanceOf(
+      contracts.ramos.address
+    );
     const bnAmount = bptAmountIn.toBN(bptAmountIn.getDecimals());
     return {
       bptAmountIn: bnAmount,

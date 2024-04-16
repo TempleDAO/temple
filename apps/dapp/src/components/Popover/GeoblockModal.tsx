@@ -11,13 +11,19 @@ interface IProps {
 export const GeoblockModal: React.FC<IProps> = ({ isOpen, onClose }) => {
   return (
     <>
-      <Popover isOpen={isOpen} onClose={onClose} closeOnClickOutside showCloseButton>
+      <Popover
+        isOpen={isOpen}
+        onClose={onClose}
+        closeOnClickOutside
+        showCloseButton
+      >
         <ModalContainer>
           <Title>Access Restricted</Title>
           <Subtitle>
-            You are accessing the website from a prohibited jurisdiction in violation of our{' '}
-            <Link to="/disclaimer">Terms and Conditions</Link>. The dApp will only permit you to exit your legacy TEMPLE
-            position where applicable.
+            You are accessing the website from a prohibited jurisdiction in
+            violation of our <Link to="/disclaimer">Terms and Conditions</Link>.
+            The dApp will only permit you to exit your legacy TEMPLE position
+            where applicable.
           </Subtitle>
           <ConsentButton onClick={onClose}>I Understand</ConsentButton>
         </ModalContainer>

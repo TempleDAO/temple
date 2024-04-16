@@ -33,14 +33,14 @@ const CoreLayout = () => {
       </Main>
     </>
   );
-}
+};
 
 export default CoreLayout;
 
 const Main = styled.main`
   margin: 0 auto;
   padding: 0px;
-  
+
   ${phoneAndAbove(`
     max-width: ${theme.metrics.desktop.maxWidth};
   `)}

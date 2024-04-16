@@ -10,7 +10,7 @@ export interface ButtonProps
     HTMLProps<HTMLButtonElement> {
   type?: 'submit' | 'reset' | 'button' | undefined;
   label?: string;
-  loading?: boolean; 
+  loading?: boolean;
 
   onClick?(e?: MouseEvent): Promise<void> | void;
 }
@@ -84,7 +84,14 @@ export const Button = ({
         <Loader iconSize={32} />
       ) : (
         <>
-          {leadingIcon && <ButtonLeadingIcon src={leadingIcon} alt={''} width={24} height={24} />}
+          {leadingIcon && (
+            <ButtonLeadingIcon
+              src={leadingIcon}
+              alt={''}
+              width={24}
+              height={24}
+            />
+          )}
           <ButtonLabel isUppercase={isUppercase} isSmall={isSmall}>
             {buttonContent}
           </ButtonLabel>
@@ -107,7 +114,7 @@ interface ButtonStyledProps {
 
 const ButtonLeadingIcon = styled(Image)`
   margin: 0 0.3rem 0;
-`
+`;
 
 export const ButtonStyled = styled.button<ButtonStyledProps>`
   // common

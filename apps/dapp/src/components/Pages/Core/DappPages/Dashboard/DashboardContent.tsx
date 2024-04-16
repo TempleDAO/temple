@@ -4,7 +4,7 @@ import DashboardChart from './Chart';
 import DashboardMetrics from './Metrics';
 import DashboardTransactionHistory from './Table';
 import linkSvg from 'assets/icons/link.svg?react';
-import {DashboardData, Dashboards} from './DashboardConfig';
+import { DashboardData, Dashboards } from './DashboardConfig';
 
 type DashboardContentProps = {
   selectedDashboard?: DashboardData;
@@ -12,16 +12,23 @@ type DashboardContentProps = {
 
 const DEFAULT_DASHBOARD = Dashboards[0];
 
-const DashboardContent = ({ selectedDashboard = DEFAULT_DASHBOARD }: DashboardContentProps) => {
-
+const DashboardContent = ({
+  selectedDashboard = DEFAULT_DASHBOARD,
+}: DashboardContentProps) => {
   return (
     <DashboardContentContainer>
       <Header>
         <HeaderTextContainer>
           <HeaderTitle>{selectedDashboard.title}</HeaderTitle>
-          <LinkIcon onClick={() => window.open(selectedDashboard.contractLink, '_blank')} />
+          <LinkIcon
+            onClick={() =>
+              window.open(selectedDashboard.contractLink, '_blank')
+            }
+          />
         </HeaderTextContainer>
-        <HeaderText dangerouslySetInnerHTML={{ __html: selectedDashboard.description }} />
+        <HeaderText
+          dangerouslySetInnerHTML={{ __html: selectedDashboard.description }}
+        />
       </Header>
       <DashboardChart dashboardData={selectedDashboard} />
       <DashboardMetrics dashboardData={selectedDashboard} />

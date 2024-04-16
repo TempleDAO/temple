@@ -6,7 +6,7 @@ import { NoWalletAddressError } from 'providers/errors';
 import { asyncNoop } from 'utils/helpers';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import env from 'constants/env';
-import { StakingService, JoinQueueData, ExitQueueData, LockedEntry } from 'providers/types';
+import { StakingService, ExitQueueData, LockedEntry } from 'providers/types';
 import {
   OGTemple__factory,
   TempleERC20Token__factory,
@@ -34,10 +34,15 @@ const INITIAL_STATE: StakingService = {
 
 const StakingContext = createContext<StakingService>(INITIAL_STATE);
 
+// eslint-disable-next-line @typescript-eslint/ban-types
 export const StakingProvider = (props: PropsWithChildren<{}>) => {
   const [apy, setApy] = useState(0);
-  const [exitQueueData, setExitQueueData] = useState<ExitQueueData>(INITIAL_STATE.exitQueueData);
-  const [lockedEntries, setLockedEntries] = useState<Array<LockedEntry>>(INITIAL_STATE.lockedEntries);
+  const [exitQueueData, setExitQueueData] = useState<ExitQueueData>(
+    INITIAL_STATE.exitQueueData
+  );
+  const [lockedEntries, setLockedEntries] = useState<Array<LockedEntry>>(
+    INITIAL_STATE.lockedEntries
+  );
 
   const { wallet, signer, getBalance, ensureAllowance } = useWallet();
   const { openNotification } = useNotification();
@@ -46,28 +51,41 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
     if (!walletAddress) {
       throw new NoWalletAddressError();
     }
-    const TEMPLE_STAKING = new TempleStaking__factory(signerState).attach(env.contracts.templeStaking);
+    const TEMPLE_STAKING = new TempleStaking__factory(signerState).attach(
+      env.contracts.templeStaking
+    );
     const SCALE_FACTOR = 10000;
     const epy = (await TEMPLE_STAKING.getEpy(SCALE_FACTOR)).toNumber();
     return Math.trunc((Math.pow(epy / SCALE_FACTOR + 1, 365.25) - 1) * 100);
   };
 
-  const getRewardsForOGTemple = async (walletAddress: string, signerState: Signer, ogtAmount: BigNumber) => {
+  const getRewardsForOGTemple = async (
+    walletAddress: string,
+    signerState: Signer,
+    ogtAmount: BigNumber
+  ) => {
     if (!walletAddress) {
       throw new NoWalletAddressError();
     }
     if (!env.contracts.templeStaking) return ZERO;
-    const STAKING = new TempleStaking__factory(signerState).attach(env.contracts.templeStaking);
+    const STAKING = new TempleStaking__factory(signerState).attach(
+      env.contracts.templeStaking
+    );
     return await STAKING.balance(ogtAmount);
   };
 
-  const getLockedEntries = async (walletAddress: string, signerState: Signer) => {
+  const getLockedEntries = async (
+    walletAddress: string,
+    signerState: Signer
+  ) => {
     if (!walletAddress) {
       throw new NoWalletAddressError();
     }
     if (!env.contracts.lockedOgTemple) return [];
 
-    const ogLockedTemple = new LockedOGTemple__factory(signerState).attach(env.contracts.lockedOgTemple);
+    const ogLockedTemple = new LockedOGTemple__factory(signerState).attach(
+      env.contracts.lockedOgTemple
+    );
 
     const lockedNum = (await ogLockedTemple.numLocks(walletAddress)).toNumber();
     const lockedEntriesPromises = [];
@@ -76,14 +94,16 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
     }
 
     const lockedEntries = await Promise.all(lockedEntriesPromises);
-    const lockedEntriesVals: Array<LockedEntry> = lockedEntries.map((entry, index) => {
-      return {
-        // chain timestamp is in second => we need milli
-        lockedUntilTimestamp: entry.LockedUntilTimestamp.toNumber() * 1000,
-        balanceOGTemple: entry.BalanceOGTemple,
-        index,
-      };
-    });
+    const lockedEntriesVals: Array<LockedEntry> = lockedEntries.map(
+      (entry, index) => {
+        return {
+          // chain timestamp is in second => we need milli
+          lockedUntilTimestamp: entry.LockedUntilTimestamp.toNumber() * 1000,
+          balanceOGTemple: entry.BalanceOGTemple,
+          index,
+        };
+      }
+    );
 
     return lockedEntriesVals;
   };
@@ -106,13 +126,24 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
 
   const stake = async (amountToStake: BigNumber) => {
     if (wallet && signer) {
-      const TEMPLE_STAKING = new TempleStaking__factory(signer).attach(env.contracts.templeStaking);
-      const TEMPLE = new TempleERC20Token__factory(signer).attach(env.contracts.temple);
+      const TEMPLE_STAKING = new TempleStaking__factory(signer).attach(
+        env.contracts.templeStaking
+      );
+      const TEMPLE = new TempleERC20Token__factory(signer).attach(
+        env.contracts.temple
+      );
 
-      await ensureAllowance(TICKER_SYMBOL.TEMPLE_TOKEN, TEMPLE, env.contracts.templeStaking, amountToStake);
+      await ensureAllowance(
+        TICKER_SYMBOL.TEMPLE_TOKEN,
+        TEMPLE,
+        env.contracts.templeStaking,
+        amountToStake
+      );
 
       const balance = await TEMPLE.balanceOf(wallet);
-      const verifiedAmountToStake = amountToStake.lt(balance) ? amountToStake : balance;
+      const verifiedAmountToStake = amountToStake.lt(balance)
+        ? amountToStake
+        : balance;
 
       const stakeTXN = await TEMPLE_STAKING.stake(verifiedAmountToStake, {
         gasLimit: env.gas?.stake || 150000,
@@ -129,9 +160,13 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
 
   const unstake = async (amount: BigNumber) => {
     if (wallet && signer) {
-      const TEMPLE_STAKING = new TempleStaking__factory(signer).attach(env.contracts.templeStaking);
+      const TEMPLE_STAKING = new TempleStaking__factory(signer).attach(
+        env.contracts.templeStaking
+      );
 
-      const OGTContract = new OGTemple__factory(signer).attach(env.contracts.ogTemple);
+      const OGTContract = new OGTemple__factory(signer).attach(
+        env.contracts.ogTemple
+      );
 
       try {
         const ogTempleBalance: BigNumber = await OGTContract.balanceOf(wallet);
@@ -165,11 +200,16 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
 
   const claimOgTemple = async (lockedEntryIndex: number) => {
     if (wallet && signer) {
-      const lockedOGTempleContract = new LockedOGTemple__factory(signer).attach(env.contracts.lockedOgTemple);
+      const lockedOGTempleContract = new LockedOGTemple__factory(signer).attach(
+        env.contracts.lockedOgTemple
+      );
 
-      const withdrawTXN = await lockedOGTempleContract.withdraw(lockedEntryIndex, {
-        gasLimit: env.gas?.claimOgTemple || 100000,
-      });
+      const withdrawTXN = await lockedOGTempleContract.withdraw(
+        lockedEntryIndex,
+        {
+          gasLimit: env.gas?.claimOgTemple || 100000,
+        }
+      );
 
       await withdrawTXN.wait();
 

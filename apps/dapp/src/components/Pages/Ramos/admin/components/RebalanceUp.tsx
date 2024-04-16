@@ -11,8 +11,12 @@ export const RebalanceUp: React.FC<IProps> = ({ amounts }) => {
     <InputArea>
       <h3>RebalanceUp</h3>
       <p>To apply, create a RAMOS.rebalanceUp() transaction with parameters</p>
-      <RequestArea>bptAmountIn: {amounts?.bptIn.toString() ?? <EllipsisLoader />}</RequestArea>
-      <RequestArea>minAmountOut: {amounts?.amountOut.toString() ?? <EllipsisLoader />}</RequestArea>
+      <RequestArea>
+        bptAmountIn: {amounts?.bptIn.toString() ?? <EllipsisLoader />}
+      </RequestArea>
+      <RequestArea>
+        minAmountOut: {amounts?.amountOut.toString() ?? <EllipsisLoader />}
+      </RequestArea>
     </InputArea>
   );
 };

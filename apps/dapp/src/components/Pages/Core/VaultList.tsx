@@ -41,14 +41,18 @@ const VaultListPage = () => {
   }
 
   if (vaultGroups.length === 1) {
-    return <Navigate replace to={`/dapp/vaults/${vaultGroups[0].id}/summary`} />;
+    return (
+      <Navigate replace to={`/dapp/vaults/${vaultGroups[0].id}/summary`} />
+    );
   }
 
   return (
     <CenterScreenWrapper>
       {vaultGroups.map((vaultGroup) => (
         <li key={vaultGroup.id}>
-          <Link to={`/dapp/vaults/${vaultGroup.id}/summary`}>{vaultGroup.id}</Link>
+          <Link to={`/dapp/vaults/${vaultGroup.id}/summary`}>
+            {vaultGroup.id}
+          </Link>
         </li>
       ))}
     </CenterScreenWrapper>

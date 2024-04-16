@@ -17,13 +17,14 @@ import {
   TransactionOptions,
   TransactionResult,
 } from '@safe-global/safe-core-sdk-types';
-import { adjustVInSignature, generatePreValidatedSignature } from './signatures/utils';
+import {
+  adjustVInSignature,
+  generatePreValidatedSignature,
+} from './signatures/utils';
 import { getSafeContract } from './contracts/safeDeploymentContracts';
 import { DEFAULT_SAFE_VERSION } from './contracts/config';
 
-
 export const useSafeSdk = (signer: Nullable<Signer>, safeAddress: string) => {
-
   const signSafeTx = async (safeTxHash: string) => {
     if (!signer) {
       console.error('signer undefined');
@@ -33,11 +34,19 @@ export const useSafeSdk = (signer: Nullable<Signer>, safeAddress: string) => {
     const messageArray = ethers.utils.arrayify(safeTxHash);
 
     let tmpSignature = await signer.signMessage(messageArray);
-    tmpSignature = adjustVInSignature('eth_sign', tmpSignature, safeTxHash, signerAddress);
+    tmpSignature = adjustVInSignature(
+      'eth_sign',
+      tmpSignature,
+      safeTxHash,
+      signerAddress
+    );
     const safeSignature: SafeMultisigConfirmation = {
       signature: tmpSignature,
     };
-    await V1Service.v1MultisigTransactionsConfirmationsCreate(safeTxHash, safeSignature);
+    await V1Service.v1MultisigTransactionsConfirmationsCreate(
+      safeTxHash,
+      safeSignature
+    );
   };
 
   const executeSafeTx = async (
@@ -67,23 +76,42 @@ export const useSafeSdk = (signer: Nullable<Signer>, safeAddress: string) => {
       ? await toSafeTransactionType(safeContract, signer, safeTransaction)
       : safeTransaction;
 
-    const signedSafeTransaction = await copyTransaction(safeContract, signer, transaction);
-    const txHash = await getTransactionHash(safeContract, signedSafeTransaction);
-    const ownersWhoApprovedTx = await getOwnersWhoApprovedTx(safeContract, txHash);
+    const signedSafeTransaction = await copyTransaction(
+      safeContract,
+      signer,
+      transaction
+    );
+    const txHash = await getTransactionHash(
+      safeContract,
+      signedSafeTransaction
+    );
+    const ownersWhoApprovedTx = await getOwnersWhoApprovedTx(
+      safeContract,
+      txHash
+    );
     for (const owner of ownersWhoApprovedTx) {
       signedSafeTransaction.addSignature(generatePreValidatedSignature(owner));
     }
     const owners = await getOwners(safeContract);
     const threshold = await getThreshold(safeContract);
     const signerAddress = await signer.getAddress();
-    if (threshold > signedSafeTransaction.signatures.size && signerAddress && owners.includes(signerAddress)) {
-      signedSafeTransaction.addSignature(generatePreValidatedSignature(signerAddress));
+    if (
+      threshold > signedSafeTransaction.signatures.size &&
+      signerAddress &&
+      owners.includes(signerAddress)
+    ) {
+      signedSafeTransaction.addSignature(
+        generatePreValidatedSignature(signerAddress)
+      );
     }
 
     if (threshold > signedSafeTransaction.signatures.size) {
-      const signaturesMissing = threshold - signedSafeTransaction.signatures.size;
+      const signaturesMissing =
+        threshold - signedSafeTransaction.signatures.size;
       throw new Error(
-        `There ${signaturesMissing > 1 ? 'are' : 'is'} ${signaturesMissing} signature${
+        `There ${
+          signaturesMissing > 1 ? 'are' : 'is'
+        } ${signaturesMissing} signature${
           signaturesMissing > 1 ? 's' : ''
         } missing`
       );
@@ -98,12 +126,17 @@ export const useSafeSdk = (signer: Nullable<Signer>, safeAddress: string) => {
     }
 
     if (options?.gas && options?.gasLimit) {
-      throw new Error('Cannot specify gas and gasLimit together in transaction options');
+      throw new Error(
+        'Cannot specify gas and gasLimit together in transaction options'
+      );
     }
     const sst = signedSafeTransaction.data;
     try {
       // Use this encoded data to test on tenderly for a simulated tx e.g. https://dashboard.tenderly.co/public/safe/safe-apps/simulator/8aa753dc-43fa-4cf6-b37b-f0da7b499f18
-      const encodedTx = await getEncodedTransaction(safeContract, signedSafeTransaction);
+      const encodedTx = await getEncodedTransaction(
+        safeContract,
+        signedSafeTransaction
+      );
       console.debug('encodedTx', encodedTx);
       const txResponse = await safeContract.execTransaction(
         sst.to,
@@ -129,6 +162,6 @@ export const useSafeSdk = (signer: Nullable<Signer>, safeAddress: string) => {
 
   return {
     signSafeTx,
-    executeSafeTx
-  }
-}
+    executeSafeTx,
+  };
+};

@@ -57,7 +57,9 @@ const StatsCard = ({
           isSquare={isSquare}
           height={height}
         >
-          {isLoading ? <Loader /> : (
+          {isLoading ? (
+            <Loader />
+          ) : (
             <>
               <div>
                 {statDelta && <Pill fontColor={fontColor}>{deltaLabel}</Pill>}
@@ -120,7 +122,7 @@ const CardStyled = styled.div<CardWrapperProps>`
 const SquareWrapper = styled.div<{ isSquare: boolean; height: string }>`
   position: relative;
   width: 100%;
-  height: ${({ height }) =>  height};
+  height: ${({ height }) => height};
   ${({ isSquare }) =>
     isSquare &&
     css`

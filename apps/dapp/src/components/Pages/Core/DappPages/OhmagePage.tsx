@@ -14,11 +14,13 @@ import { BigNumber, ethers } from 'ethers';
 import { useConnectWallet } from '@web3-onboard/react';
 
 const OHM = TICKER_SYMBOL.OHM;
-const ohmToNum = (amount: BigNumber) => Number(ethers.utils.formatUnits(amount, getTokenInfo(OHM).decimals));
+const ohmToNum = (amount: BigNumber) =>
+  Number(ethers.utils.formatUnits(amount, getTokenInfo(OHM).decimals));
 
 export const OhmagePage = () => {
   const [{}, connect] = useConnectWallet();
-  const { balance, wallet, updateBalance, signer, ensureAllowance } = useWallet();
+  const { balance, wallet, updateBalance, signer, ensureAllowance } =
+    useWallet();
   const [input, setInput] = useState('');
   const [output, setOutput] = useState(0);
   const [availableDai, setAvailableDai] = useState(0);
@@ -28,8 +30,13 @@ export const OhmagePage = () => {
   // Fetch the allowance for OtcOffer to spend OHM
   const checkAllowance = useCallback(async () => {
     if (!signer || !wallet) return;
-    const ohmContract = new ERC20__factory(signer).attach(env.contracts.olympus);
-    const allowance = await ohmContract.allowance(wallet, env.contracts.otcOffer);
+    const ohmContract = new ERC20__factory(signer).attach(
+      env.contracts.olympus
+    );
+    const allowance = await ohmContract.allowance(
+      wallet,
+      env.contracts.otcOffer
+    );
     setAllowance(ohmToNum(allowance));
   }, [signer, wallet]);
 
@@ -37,7 +44,9 @@ export const OhmagePage = () => {
     // Fetch the remaining DAI available for OTC
     const getAvailableDai = async () => {
       if (!signer) return;
-      const otcContract = new OtcOffer__factory(signer).attach(env.contracts.otcOffer);
+      const otcContract = new OtcOffer__factory(signer).attach(
+        env.contracts.otcOffer
+      );
       const available = await otcContract.userBuyTokenAvailable();
       setAvailableDai(fromAtto(available));
     };
@@ -49,7 +58,9 @@ export const OhmagePage = () => {
   useEffect(() => {
     const getQuote = async () => {
       if (!signer) return;
-      const otcContract = new OtcOffer__factory(signer).attach(env.contracts.otcOffer);
+      const otcContract = new OtcOffer__factory(signer).attach(
+        env.contracts.otcOffer
+      );
       const amount = getBigNumberFromString(input, getTokenInfo(OHM).decimals);
       const quote = await otcContract.quote(amount);
       setOutput(fromAtto(quote));
@@ -61,9 +72,14 @@ export const OhmagePage = () => {
   // Approve OtcOffer to spend OHM
   const approve = async () => {
     if (!signer || !wallet) return;
-    const ohmContract = new ERC20__factory(signer).attach(env.contracts.olympus);
+    const ohmContract = new ERC20__factory(signer).attach(
+      env.contracts.olympus
+    );
     try {
-      const tx = await ohmContract.approve(env.contracts.otcOffer, ethers.constants.MaxUint256);
+      const tx = await ohmContract.approve(
+        env.contracts.otcOffer,
+        ethers.constants.MaxUint256
+      );
       const receipt = await tx.wait();
       openNotification({
         title: `Approved OtcOffer to spend OHM`,
@@ -82,11 +98,15 @@ export const OhmagePage = () => {
   // Swap OHM for DAI
   const swap = async () => {
     if (!signer || !wallet) return;
-    const otcContract = new OtcOffer__factory(signer).attach(env.contracts.otcOffer);
+    const otcContract = new OtcOffer__factory(signer).attach(
+      env.contracts.otcOffer
+    );
     const amount = getBigNumberFromString(input, getTokenInfo(OHM).decimals);
     try {
       // Ensure allowance for OtcOffer to spend OHM
-      const ohmContract = new ERC20__factory(signer).attach(env.contracts.olympus);
+      const ohmContract = new ERC20__factory(signer).attach(
+        env.contracts.olympus
+      );
       await ensureAllowance(OHM, ohmContract, env.contracts.otcOffer, amount);
       // Swap
       const tx = await otcContract.swap(amount);
@@ -140,10 +160,19 @@ export const OhmagePage = () => {
               if (insufficientAllowance) approve();
               else swap();
             }}
-            disabled={!signer || insufficientBalance || insufficientDaiAvailable || balance.OHM.isZero()}
+            disabled={
+              !signer ||
+              insufficientBalance ||
+              insufficientDaiAvailable ||
+              balance.OHM.isZero()
+            }
             style={{ margin: 'auto', whiteSpace: 'nowrap' }}
           >
-            {insufficientBalance ? 'Insufficient balance' : insufficientAllowance ? 'Approve allowance' : 'Swap'}
+            {insufficientBalance
+              ? 'Insufficient balance'
+              : insufficientAllowance
+              ? 'Approve allowance'
+              : 'Swap'}
           </TradeButton>
         ) : (
           <TradeButton
