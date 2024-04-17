@@ -1,6 +1,6 @@
 pragma solidity 0.8.20;
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Temple (interfaces/core/ITempleTeleporter.sol)
+// Temple (interfaces/templegold/ITempleTeleporter.sol)
 
 import { MessagingReceipt } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/OAppSender.sol";
 

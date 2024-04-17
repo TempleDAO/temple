@@ -7,6 +7,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 interface IStakedTempleVoteToken is IERC20 {
     event StakingSet(address staking);
     event AuthoritySet(address indexed authority, bool authorized);
+    event DelegateSet(address indexed from, address prevDelegate, address currentDelegate);
 
     error NonTransferrable();
     error NotImplemented();
@@ -59,13 +60,35 @@ interface IStakedTempleVoteToken is IERC20 {
      */
     function getVoteweight(address account) external view returns (uint256);
 
+    /**  
+     * @notice Pause contract
+     */
     function pause() external;
 
+    /**  
+     * @notice Unpause contract
+     */
     function unpause() external;
 
-    function push(address dst, uint256 wad) external;
+    /**  
+     * @notice Move tokens from caller to dst, specific to Chief DAO contract. src is `msg.sender`
+     * @param dst Recipient
+     * @param amount Amount
+     */
+    function push(address dst, uint256 amount) external;
 
-    function pull(address src, uint256 wad) external;
+    /**  
+     * @notice Pull tokens to caller, specific to Chief DAO contract. recipient is `msg.sender`
+     * @param src Source
+     * @param amount Amount
+     */
+    function pull(address src, uint256 amount) external;
 
+    /**    
+     * @notice Move tokens from src to dst, specific to Chief DAO contract
+     * @param src Source
+     * @param dst Destination
+     * @param amount Amount
+     */
     function move(address src, address dst, uint256 amount) external;
 }

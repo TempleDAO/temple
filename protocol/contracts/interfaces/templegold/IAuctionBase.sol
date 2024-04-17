@@ -1,6 +1,6 @@
 pragma solidity 0.8.20;
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Temple (interfaces/core/IAuctionBase.sol)
+// Temple (interfaces/templegold/IAuctionBase.sol)
 
 interface IAuctionBase {
     event Deposit(address indexed depositor, uint256 epochId, uint256 amount);

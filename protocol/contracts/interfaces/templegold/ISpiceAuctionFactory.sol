@@ -1,6 +1,6 @@
 pragma solidity 0.8.20;
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Temple (interface/core/ISpiceAuctionFactory.sol)
+// Temple (interface/templegold/ISpiceAuctionFactory.sol)
 
 interface ISpiceAuctionFactory {
     event AuctionCreated(bytes32 id, address auction);

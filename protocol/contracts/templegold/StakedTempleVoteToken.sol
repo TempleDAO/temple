@@ -137,7 +137,7 @@ contract StakedTempleVoteToken is IStakedTempleVoteToken, TempleElevatedAccess, 
      * @notice Get vote weight of an account
      * @param account Account
      */
-    function getVoteweight(address account) external view returns (uint256) {
+    function getVoteweight(address account) external override view returns (uint256) {
         return ITempleGoldStaking(staking).getVoteweight(account);
     }
 
@@ -160,7 +160,7 @@ contract StakedTempleVoteToken is IStakedTempleVoteToken, TempleElevatedAccess, 
      * @param dst Recipient
      * @param amount Amount
      */
-    function push(address dst, uint256 amount) external {
+    function push(address dst, uint256 amount) external override{
         transferFrom(msg.sender, dst, amount);
     }
 
@@ -169,7 +169,7 @@ contract StakedTempleVoteToken is IStakedTempleVoteToken, TempleElevatedAccess, 
      * @param src Source
      * @param amount Amount
      */
-    function pull(address src, uint256 amount) external {
+    function pull(address src, uint256 amount) external override {
         transferFrom(src, msg.sender, amount);
     }
 
@@ -179,7 +179,7 @@ contract StakedTempleVoteToken is IStakedTempleVoteToken, TempleElevatedAccess, 
      * @param dst Destination
      * @param amount Amount
      */
-    function move(address src, address dst, uint256 amount) external {
+    function move(address src, address dst, uint256 amount) external override {
         transferFrom(src, dst, amount);
     }
 

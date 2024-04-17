@@ -1,6 +1,6 @@
 pragma solidity 0.8.20;
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Temple (interfaces/core/IDaiGoldAuction.sol)
+// Temple (interfaces/templegold/IDaiGoldAuction.sol)
 
 interface IDaiGoldAuction {
     event AuctionStart(uint256 epochId, uint64 timestamp, uint64 endTime, uint256 totalTGoldAmount);
