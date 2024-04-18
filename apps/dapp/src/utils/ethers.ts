@@ -2,6 +2,14 @@ import { ContractTransaction, PopulatedTransaction, Signer } from 'ethers';
 
 const GAS_ESTIMATE_BUFFER_PERCENT = 25;
 
+async function estimateAndMine(
+  signer: Signer,
+  populatedTransaction: PopulatedTransaction
+) {
+  const txn = await estimateAndSubmit(signer, populatedTransaction);
+  return txn.wait();
+}
+
 async function estimateAndSubmit(
   signer: Signer,
   populatedTransaction: PopulatedTransaction
@@ -18,4 +26,4 @@ async function estimateAndSubmit(
   return signer.sendTransaction(populatedTransaction);
 }
 
-export { estimateAndSubmit };
+export { estimateAndMine };

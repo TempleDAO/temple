@@ -27,7 +27,7 @@ import { TlcChart } from './Chart';
 import env from 'constants/env';
 import { useConnectWallet } from '@web3-onboard/react';
 import Tooltip from 'components/Tooltip/Tooltip';
-import { estimateAndSubmit } from 'utils/ethers';
+import { estimateAndMine } from 'utils/ethers';
 
 export type State = {
   supplyValue: string;
@@ -304,8 +304,7 @@ export const BorrowPage = () => {
 
       const populatedTransaction =
         await tlcContract.populateTransaction.addCollateral(amount, wallet);
-      const txn = await estimateAndSubmit(signer, populatedTransaction);
-      const receipt = await txn.wait();
+      const receipt = await estimateAndMine(signer, populatedTransaction);
 
       openNotification({
         title: `Supplied ${state.supplyValue} TEMPLE`,
@@ -335,8 +334,7 @@ export const BorrowPage = () => {
     try {
       const populatedTransaction =
         await tlcContract.populateTransaction.removeCollateral(amount, wallet);
-      const txn = await estimateAndSubmit(signer, populatedTransaction);
-      const receipt = await txn.wait();
+      const receipt = await estimateAndMine(signer, populatedTransaction);
 
       openNotification({
         title: `Withdrew ${state.withdrawValue} TEMPLE`,
@@ -368,8 +366,7 @@ export const BorrowPage = () => {
         amount,
         wallet
       );
-      const txn = await estimateAndSubmit(signer, preparedTransaction);
-      const receipt = await txn.wait();
+      const receipt = await estimateAndMine(signer, preparedTransaction);
 
       openNotification({
         title: `Borrowed ${state.borrowValue} DAI`,
@@ -411,8 +408,7 @@ export const BorrowPage = () => {
         amount,
         wallet
       );
-      const txn = await estimateAndSubmit(signer, preparedTransaction);
-      const receipt = await txn.wait();
+      const receipt = await estimateAndMine(signer, preparedTransaction);
 
       openNotification({
         title: `Repaid ${state.repayValue} DAI`,
@@ -452,8 +448,7 @@ export const BorrowPage = () => {
       // Note RepayAll vs Repay
       const populatedTransaction =
         await tlcContract.populateTransaction.repayAll(wallet);
-      const txn = await estimateAndSubmit(signer, populatedTransaction);
-      const receipt = await txn.wait();
+      const receipt = await estimateAndMine(signer, populatedTransaction);
 
       openNotification({
         title: `Repaid ${
