@@ -1,4 +1,4 @@
-import { HTMLProps, useState } from 'react';
+import { HTMLProps, MouseEvent, useState } from 'react';
 import Image from 'components/Image/Image';
 import styled, { css } from 'styled-components';
 
@@ -10,9 +10,9 @@ export interface ButtonProps
     HTMLProps<HTMLButtonElement> {
   type?: 'submit' | 'reset' | 'button' | undefined;
   label?: string;
-  loading?: boolean; 
+  loading?: boolean;
 
-  onClick?(): Promise<void> | void;
+  onClick?(e?: MouseEvent): Promise<void> | void;
 }
 
 /**
@@ -37,7 +37,7 @@ export const Button = ({
    * Click handler which shows a spinner while the action is in progress.
    * If button is already in progress then callback is not called.
    */
-  const onClickHandler = async () => {
+  const onClickHandler = async (e: MouseEvent) => {
     if (isLoading) {
       return;
     }
@@ -47,7 +47,7 @@ export const Button = ({
 
     setIsLoading(true);
     try {
-      await onClick();
+      await onClick(e);
     } catch (err) {
       /* TODO: Handle JSON-RPC errors better */
       // @ts-ignore
@@ -84,7 +84,14 @@ export const Button = ({
         <Loader iconSize={32} />
       ) : (
         <>
-          {leadingIcon && <ButtonLeadingIcon src={leadingIcon} alt={''} width={24} height={24} />}
+          {leadingIcon && (
+            <ButtonLeadingIcon
+              src={leadingIcon}
+              alt={''}
+              width={24}
+              height={24}
+            />
+          )}
           <ButtonLabel isUppercase={isUppercase} isSmall={isSmall}>
             {buttonContent}
           </ButtonLabel>
@@ -107,7 +114,7 @@ interface ButtonStyledProps {
 
 const ButtonLeadingIcon = styled(Image)`
   margin: 0 0.3rem 0;
-`
+`;
 
 export const ButtonStyled = styled.button<ButtonStyledProps>`
   // common

@@ -10,44 +10,47 @@ import { Nav } from './mobile-parts/Nav';
 import { Timeline } from './mobile-parts/Timeline';
 import { VaultProps, VaultRef } from './types';
 
-export const VaultMobile = forwardRef<VaultRef, VaultProps>(({ selectedNav, children }, ref) => {
-  const { vaultGroup } = useVaultContext();
-  const svgRef = useRef<SVGSVGElement>(null);
-  const popupRef = useRef(null);
+// eslint-disable-next-line react/display-name
+export const VaultMobile = forwardRef<VaultRef, VaultProps>(
+  ({ selectedNav, children }, ref) => {
+    const { vaultGroup } = useVaultContext();
+    const svgRef = useRef<SVGSVGElement>(null);
+    const popupRef = useRef(null);
 
-  useImperativeHandle(ref, () => ({
-    get svgRef() {
-      return svgRef.current;
-    },
-    get popupRef() {
-      return popupRef.current;
-    },
-  }));
-  const navigate = useNavigate();
+    useImperativeHandle(ref, () => ({
+      get svgRef() {
+        return svgRef.current;
+      },
+      get popupRef() {
+        return popupRef.current;
+      },
+    }));
+    const navigate = useNavigate();
 
-  return (
-    <BoundingBox>
-      <div>
-        <svg width="100%" viewBox="0 50 320 129" fill="none">
-          <Nav
-            selected={selectedNav}
-            onClickButton={(page) => {
-              navigate(`/dapp/vaults/${vaultGroup!.id}/${page}`);
-            }}
-          />
-          <Header />
-          <Definitions />
-        </svg>
-      </div>
-      <Content>{children}</Content>
-      <div>
-        <svg width="100%" viewBox="1 503 320 65" fill="none">
-          <Timeline />
-        </svg>
-      </div>
-    </BoundingBox>
-  );
-});
+    return (
+      <BoundingBox>
+        <div>
+          <svg width="100%" viewBox="0 50 320 129" fill="none">
+            <Nav
+              selected={selectedNav}
+              onClickButton={(page) => {
+                navigate(`/dapp/vaults/${vaultGroup!.id}/${page}`);
+              }}
+            />
+            <Header />
+            <Definitions />
+          </svg>
+        </div>
+        <Content>{children}</Content>
+        <div>
+          <svg width="100%" viewBox="1 503 320 65" fill="none">
+            <Timeline />
+          </svg>
+        </div>
+      </BoundingBox>
+    );
+  }
+);
 
 const BoundingBox = styled.div`
   width: 100vw;
@@ -63,5 +66,7 @@ const Content = styled.div`
   flex-grow: 1;
   overflow: hidden;
   justify-content: center;
-  margin-top: ${pixelsToRems(-20)}rem; // This should make titles appear inside the curve a little
+  margin-top: ${pixelsToRems(
+    -20
+  )}rem; // This should make titles appear inside the curve a little
 `;

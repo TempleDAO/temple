@@ -46,18 +46,29 @@ export const TransactionSettingsModal: React.FC<IProps> = ({
   const tooltipContent = (
     <TooltipContent>
       <h5>Slippage Tolerance</h5>
-      <p>Your transaction will revert if the price changes more than this percentage value.</p>
+      <p>
+        Your transaction will revert if the price changes more than this
+        percentage value.
+      </p>
       {hasDeadline && (
         <>
           <h5>Deadline</h5>
-          <p>Your transaction will revert if it remains pending longer than this time.</p>
+          <p>
+            Your transaction will revert if it remains pending longer than this
+            time.
+          </p>
         </>
       )}
     </TooltipContent>
   );
 
   return (
-    <Popover isOpen={isOpen} onClose={onClose} closeOnClickOutside={closeOnClickOutside} showCloseButton>
+    <Popover
+      isOpen={isOpen}
+      onClose={onClose}
+      closeOnClickOutside={closeOnClickOutside}
+      showCloseButton
+    >
       <Header>
         <h4>Transaction Settings</h4>
         <Tooltip content={tooltipContent}>
@@ -87,7 +98,12 @@ export const TransactionSettingsModal: React.FC<IProps> = ({
           setSlippage(value);
         }}
         onBlur={() => {
-          const value = handleBlur(Number(slippage), minSlippage, maxSlippage, defaultSlippage);
+          const value = handleBlur(
+            Number(slippage),
+            minSlippage,
+            maxSlippage,
+            defaultSlippage
+          );
           setSlippage(value);
           onChange({
             slippageTolerance: value,
@@ -119,7 +135,12 @@ export const TransactionSettingsModal: React.FC<IProps> = ({
               setDeadline(value);
             }}
             onBlur={() => {
-              const value = handleBlur(Number(deadline), minDeadline, maxDeadline, defaultDeadline);
+              const value = handleBlur(
+                Number(deadline),
+                minDeadline,
+                maxDeadline,
+                defaultDeadline
+              );
               setDeadline(value);
               onChange({
                 slippageTolerance: Number(slippage),

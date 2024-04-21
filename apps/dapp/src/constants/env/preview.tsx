@@ -3,7 +3,8 @@ import { Environment } from './types';
 
 const env: Environment = {
   alchemyId: 'AorwfDdHDsEjIX4HPwS70zkVjWqjv5vZ',
-  rpcUrl: 'https://eth-mainnet.g.alchemy.com/v2/AorwfDdHDsEjIX4HPwS70zkVjWqjv5vZ',
+  rpcUrl:
+    'https://eth-mainnet.g.alchemy.com/v2/AorwfDdHDsEjIX4HPwS70zkVjWqjv5vZ',
   backendUrl: 'https://backend-stage.templedao.link',
   contracts: {
     balancerVault: '',
@@ -49,10 +50,14 @@ const env: Environment = {
   },
   subgraph: {
     // TODO: These need updated to the templedao organization subgraphs once they are deployed
-    templeCore: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-core-goerli',
-    protocolMetrics: 'https://api.thegraph.com/subgraphs/name/medariox/temple-metrics',
-    protocolMetricsArbitrum: 'https://api.thegraph.com/subgraphs/name/medariox/temple-metrics-arbitrum',
-    balancerV2: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-balancer-v2',
+    templeCore:
+      'https://api.thegraph.com/subgraphs/name/templedao/templedao-core-goerli',
+    protocolMetrics:
+      'https://api.thegraph.com/subgraphs/name/medariox/temple-metrics',
+    protocolMetricsArbitrum:
+      'https://api.thegraph.com/subgraphs/name/medariox/temple-metrics-arbitrum',
+    balancerV2:
+      'https://api.thegraph.com/subgraphs/name/templedao/templedao-balancer-v2',
     // TODO: Will be deprecated
     ramos: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-ramos',
     templeV2: 'https://api.thegraph.com/subgraphs/name/medariox/v2-testnet',
@@ -135,6 +140,16 @@ const env: Environment = {
     enableAscend: true,
   },
   templeMultisig: '0x3a320fF715dCBbF097e15257B7051dd08fdfb7A2',
+  safes: [
+    // {
+    //   name: 'Multisig Temple V2',
+    //   address: '0x7d1e9012aA41278349791f29C2cdaa3DF4ceDcEd',
+    // },
+    // {
+    //   name: 'Multisig Test Fostrich',
+    //   address: '0x5CE28cAE5aAb002DcBc076d5A551A473a7C9dF89',
+    // },
+  ],
 };
 
 export default env;

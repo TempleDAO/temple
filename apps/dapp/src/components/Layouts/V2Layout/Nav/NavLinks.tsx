@@ -17,7 +17,12 @@ type NavLinksProps = {
 };
 
 const NavLinks = (props: NavLinksProps) => {
-  const { menuNavItems, onSelectMenuNavItems, isNavCollapsed = false, onClickHandler } = props;
+  const {
+    menuNavItems,
+    onSelectMenuNavItems,
+    isNavCollapsed = false,
+    onClickHandler,
+  } = props;
 
   const onMenuClick = async (mi: MenuNavItem) => {
     await onSelectMenuNavItems(mi);
@@ -34,15 +39,25 @@ const NavLinks = (props: NavLinksProps) => {
           <NavLinkContainer key={mi.label} lightcolor={mi.selected}>
             <NavLink to={mi.linkTo} onClick={() => onMenuClick(mi)}>
               <NavLinkCell lightcolor={mi.selected}>
-                <mi.Logo id={mi.label} fill={mi.selected ? theme.palette.brandLight : theme.palette.brand} />
-                {!isNavCollapsed && <NavLinkText lightcolor={mi.selected}>{mi.label}</NavLinkText>}
+                <mi.Logo
+                  id={mi.label}
+                  fill={
+                    mi.selected ? theme.palette.brandLight : theme.palette.brand
+                  }
+                />
+                {!isNavCollapsed && (
+                  <NavLinkText lightcolor={mi.selected}>{mi.label}</NavLinkText>
+                )}
               </NavLinkCell>
             </NavLink>
           </NavLinkContainer>
         ))}
       </VertNavContainer>
       <Separator />
-      <WalletNav isNavCollapsed={isNavCollapsed} onClickHandler={onClickHandler}/>
+      <WalletNav
+        isNavCollapsed={isNavCollapsed}
+        onClickHandler={onClickHandler}
+      />
     </>
   );
 };
@@ -86,7 +101,8 @@ const VertNavContainer = styled.div`
 const NavLinkText = styled.span<NavLinkProps>`
   margin-left: 0.5rem;
   font-weight: 700;
-  color: ${({ theme, lightcolor }) => (lightcolor ? theme.palette.brandLight : theme.palette.brand)};
+  color: ${({ theme, lightcolor }) =>
+    lightcolor ? theme.palette.brandLight : theme.palette.brand};
   vertical-align: middle;
   &:hover {
     text-decoration: underline;
@@ -100,13 +116,15 @@ const NavLinkCell = styled.div<NavLinkProps>`
   cursor: pointer;
   white-space: nowrap;
   border-radius: 5px;
-  fill: ${({ lightcolor, theme }) => (lightcolor ? theme.palette.brandLight : 'current')};
+  fill: ${({ lightcolor, theme }) =>
+    lightcolor ? theme.palette.brandLight : 'current'};
 `;
 
 const NavLinkContainer = styled.div<NavLinkProps>`
   height: 56px;
   padding: 16px 40px 16px 30px;
-  background: ${({ lightcolor, theme }) => (lightcolor ? theme.palette.gradients.greyVertical : 'none')};
+  background: ${({ lightcolor, theme }) =>
+    lightcolor ? theme.palette.gradients.greyVertical : 'none'};
   &:hover {
     background-color: ${({ theme }) => theme.palette.brand25};
   }

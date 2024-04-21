@@ -27,14 +27,24 @@ interface IProps {
   prices: Prices;
 }
 
-export const Repay: React.FC<IProps> = ({ accountPosition, state, setState, repay, repayAll, prices }) => {
+export const Repay: React.FC<IProps> = ({
+  accountPosition,
+  state,
+  setState,
+  repay,
+  repayAll,
+  prices,
+}) => {
   // used for the range slider label
   const maxPossibleLTV = useMemo(() => {
     if (!accountPosition) return 0;
 
     const newDebt = fromAtto(accountPosition.currentDebt);
     const adjustedNewDebt = Math.max(newDebt, 0);
-    const estimatedLTV = ((adjustedNewDebt / (fromAtto(accountPosition.collateral) * prices.tpi)) * 100).toFixed(2);
+    const estimatedLTV = (
+      (adjustedNewDebt / (fromAtto(accountPosition.collateral) * prices.tpi)) *
+      100
+    ).toFixed(2);
 
     return Number(estimatedLTV);
   }, [prices.tpi, accountPosition]);
@@ -44,13 +54,17 @@ export const Repay: React.FC<IProps> = ({ accountPosition, state, setState, repa
     if (!accountPosition) return '0.00';
 
     // Calculate the new debt after repayment.
-    const newDebt = fromAtto(accountPosition.currentDebt) - Number(state.repayValue);
+    const newDebt =
+      fromAtto(accountPosition.currentDebt) - Number(state.repayValue);
 
     // Ensure newDebt does not become negative, which could happen with incorrect repayValue.
     const adjustedNewDebt = Math.max(newDebt, 0);
 
     // Calculate the estimated LTV after repayment.
-    const estimatedLTV = ((adjustedNewDebt / (fromAtto(accountPosition.collateral) * prices.tpi)) * 100).toFixed(2);
+    const estimatedLTV = (
+      (adjustedNewDebt / (fromAtto(accountPosition.collateral) * prices.tpi)) *
+      100
+    ).toFixed(2);
 
     return estimatedLTV;
   };
@@ -58,7 +72,12 @@ export const Repay: React.FC<IProps> = ({ accountPosition, state, setState, repa
   const shouldShowRepayAll = useMemo(() => {
     return (
       parseFloat(state.repayValue) ===
-      parseFloat(formatToken(accountPosition ? accountPosition.currentDebt : ZERO, state.outputToken))
+      parseFloat(
+        formatToken(
+          accountPosition ? accountPosition.currentDebt : ZERO,
+          state.outputToken
+        )
+      )
     );
   }, [accountPosition, state.outputToken, state.repayValue]);
 
@@ -71,19 +90,26 @@ export const Repay: React.FC<IProps> = ({ accountPosition, state, setState, repa
           kind: 'value',
           value: 'DAI',
         }}
-        handleChange={(value: string) => setState({ ...state, repayValue: value })}
+        handleChange={(value: string) =>
+          setState({ ...state, repayValue: value })
+        }
         isNumber
         value={state.repayValue}
         placeholder="0"
         onHintClick={() => {
           setState({
             ...state,
-            repayValue: accountPosition ? formatToken(accountPosition.currentDebt, state.outputToken) : '0',
+            repayValue: accountPosition
+              ? formatToken(accountPosition.currentDebt, state.outputToken)
+              : '0',
           });
         }}
         min={0}
         // Max is total debt
-        hint={`Max: ${formatToken(accountPosition ? accountPosition.currentDebt : ZERO, state.outputToken)}`}
+        hint={`Max: ${formatToken(
+          accountPosition ? accountPosition.currentDebt : ZERO,
+          state.outputToken
+        )}`}
         width="100%"
       />
       {fromAtto(state.outputTokenBalance) < Number(state.repayValue) && (
@@ -91,7 +117,10 @@ export const Repay: React.FC<IProps> = ({ accountPosition, state, setState, repa
           <InfoCircle>
             <p>i</p>
           </InfoCircle>
-          <p>Amount exceeds your wallet balance of {formatToken(state.outputTokenBalance, state.outputToken)} DAI</p>
+          <p>
+            Amount exceeds your wallet balance of{' '}
+            {formatToken(state.outputTokenBalance, state.outputToken)} DAI
+          </p>
         </Warning>
       )}
       <MarginTop />
@@ -108,8 +137,16 @@ export const Repay: React.FC<IProps> = ({ accountPosition, state, setState, repa
         }}
         min={0}
         max={100}
-        value={(Number(state.repayValue) / fromAtto(accountPosition ? accountPosition.currentDebt : ZERO)) * 100}
-        progress={(Number(state.repayValue) / fromAtto(accountPosition ? accountPosition.currentDebt : ZERO)) * 100}
+        value={
+          (Number(state.repayValue) /
+            fromAtto(accountPosition ? accountPosition.currentDebt : ZERO)) *
+          100
+        }
+        progress={
+          (Number(state.repayValue) /
+            fromAtto(accountPosition ? accountPosition.currentDebt : ZERO)) *
+          100
+        }
       />
       <FlexBetween>
         <RangeLabel>{maxPossibleLTV}%</RangeLabel>
@@ -125,7 +162,10 @@ export const Repay: React.FC<IProps> = ({ accountPosition, state, setState, repa
             }
           }}
           // Disable if repay amount is lte zero, or gt wallet balance
-          disabled={Number(state.repayValue) <= 0 || fromAtto(state.outputTokenBalance) < Number(state.repayValue)}
+          disabled={
+            Number(state.repayValue) <= 0 ||
+            fromAtto(state.outputTokenBalance) < Number(state.repayValue)
+          }
           style={{ width: 'auto' }}
         >
           {shouldShowRepayAll ? 'Repay All' : `Repay ${state.repayValue} DAI`}

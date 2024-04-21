@@ -5,7 +5,11 @@ import { useWallet } from 'providers/WalletProvider';
 import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
 import { useEffect, useState } from 'react';
 import { useUnstakeOGTemple } from 'hooks/core/use-unstake-ogtemple';
-import { formatBigNumber, formatTemple, getBigNumberFromString } from 'components/Vault/utils';
+import {
+  formatBigNumber,
+  formatTemple,
+  getBigNumberFromString,
+} from 'components/Vault/utils';
 import { ZERO } from 'utils/bigNumber';
 import { useStaking } from 'providers/StakingProvider';
 import { BigNumber } from 'ethers';
@@ -26,7 +30,9 @@ export const UnstakeOgtModal: React.FC<IProps> = ({ isOpen, onClose }) => {
   });
 
   useEffect(() => {
-    const amount = balance.OGTEMPLE.eq(ZERO) ? '' : formatBigNumber(balance.OGTEMPLE);
+    const amount = balance.OGTEMPLE.eq(ZERO)
+      ? ''
+      : formatBigNumber(balance.OGTEMPLE);
     setUnstakeAmount(amount);
   }, [balance]);
 
@@ -39,7 +45,10 @@ export const UnstakeOgtModal: React.FC<IProps> = ({ isOpen, onClose }) => {
 
   const bigAmount = getBigNumberFromString(unstakeAmount || '0');
   const buttonIsDisabled =
-    unstakeLoading || !unstakeAmount || balance.OGTEMPLE.lte(ZERO) || bigAmount.gt(balance.OGTEMPLE);
+    unstakeLoading ||
+    !unstakeAmount ||
+    balance.OGTEMPLE.lte(ZERO) ||
+    bigAmount.gt(balance.OGTEMPLE);
 
   const handleUnlockOGT = async () => {
     try {
@@ -55,38 +64,53 @@ export const UnstakeOgtModal: React.FC<IProps> = ({ isOpen, onClose }) => {
 
   return (
     <>
-      <Popover isOpen={isOpen} onClose={onClose} closeOnClickOutside showCloseButton>
+      <Popover
+        isOpen={isOpen}
+        onClose={onClose}
+        closeOnClickOutside
+        showCloseButton
+      >
         <ModalContainer>
           <Title>Unstake OGTemple</Title>
           {/* Display Unlock if they have lockedOGT, then display Unstake */}
           {lockedEntries.length > 0 ? (
             <>
-              <Subtitle>You can claim locked OGTemple from the Opening Ceremony:</Subtitle>
+              <Subtitle>
+                You can claim locked OGTemple from the Opening Ceremony:
+              </Subtitle>
               <ClaimButton
                 isSmall
                 onClick={() => handleUnlockOGT()}
                 disabled={Date.now() < lockedEntries[0].lockedUntilTimestamp}
               >
                 Claim{' '}
-                {formatTemple(lockedEntries.reduce((sum, cur) => sum.add(cur.balanceOGTemple), BigNumber.from('0')))}{' '}
+                {formatTemple(
+                  lockedEntries.reduce(
+                    (sum, cur) => sum.add(cur.balanceOGTemple),
+                    BigNumber.from('0')
+                  )
+                )}{' '}
                 OGTemple
               </ClaimButton>
               <Subtitle>
                 {lockedEntries.length > 1 && (
                   <span>
-                    You will have {lockedEntries.length} transactions to claim your locked OGTemple.
+                    You will have {lockedEntries.length} transactions to claim
+                    your locked OGTemple.
                     <br />
                     <br />
                   </span>
                 )}
-                After unlocking OGT, you will be able to convert it to TEMPLE on this same screen.
+                After unlocking OGT, you will be able to convert it to TEMPLE on
+                this same screen.
               </Subtitle>
             </>
           ) : (
             <>
               <Subtitle>
-                You have {balance.OGTEMPLE ? formatTemple(balance.OGTEMPLE) : '0.00'} OGT you can unstake and convert to
-                TEMPLE.
+                You have{' '}
+                {balance.OGTEMPLE ? formatTemple(balance.OGTEMPLE) : '0.00'} OGT
+                you can unstake and convert to TEMPLE.
               </Subtitle>
               <ClaimButton
                 isSmall

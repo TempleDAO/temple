@@ -2,15 +2,31 @@ import type { DataKey } from 'recharts/types/util/types';
 
 import React from 'react';
 import { useTheme } from 'styled-components';
-import { ResponsiveContainer, AreaChart as RechartsChart, Area, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from 'recharts';
-import { formatNumberAbbreviated, formatNumberFixedDecimals } from 'utils/formatter';
+import {
+  ResponsiveContainer,
+  AreaChart as RechartsChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  CartesianGrid,
+} from 'recharts';
+import {
+  formatNumberAbbreviated,
+  formatNumberFixedDecimals,
+} from 'utils/formatter';
 import { useMediaQuery } from 'react-responsive';
 import { queryPhone } from 'styles/breakpoints';
 
 type LineChartProps<T> = {
   chartData: T[];
   xDataKey: DataKey<keyof T>;
-  lines: { series: DataKey<keyof T>; color: string; yAxisId: 'left' | 'right' }[];
+  lines: {
+    series: DataKey<keyof T>;
+    color: string;
+    yAxisId: 'left' | 'right';
+  }[];
   xTickFormatter: (xValue: any, index: number) => string;
   tooltipLabelFormatter: (value: any) => string;
   tooltipValuesFormatter?: (value: number, name: string) => string[];
@@ -18,7 +34,9 @@ type LineChartProps<T> = {
   xLabel?: string;
 };
 
-export default function BiAxialLineChart<T>(props: React.PropsWithChildren<LineChartProps<T>>) {
+export default function BiAxialLineChart<T>(
+  props: React.PropsWithChildren<LineChartProps<T>>
+) {
   const {
     chartData,
     xDataKey,
@@ -37,7 +55,11 @@ export default function BiAxialLineChart<T>(props: React.PropsWithChildren<LineC
   return (
     <ResponsiveContainer minHeight={200} minWidth={320} height={400}>
       <RechartsChart data={chartData}>
-        <CartesianGrid horizontal={true} vertical={false} stroke={theme.palette.brandDarker}/>
+        <CartesianGrid
+          horizontal={true}
+          vertical={false}
+          stroke={theme.palette.brandDarker}
+        />
         {lines.map((line) => (
           <Area
             key={line.series.toString()}
@@ -56,7 +78,12 @@ export default function BiAxialLineChart<T>(props: React.PropsWithChildren<LineC
           axisLine={false}
           tickLine={false}
           dataKey={xDataKey}
-          label={{ value: xLabel, position: 'bottom', fill: theme.palette.brandLight, offset: -15 }}
+          label={{
+            value: xLabel,
+            position: 'bottom',
+            fill: theme.palette.brandLight,
+            offset: -15,
+          }}
           tickFormatter={xTickFormatter}
           tick={{ stroke: theme.palette.brandLight }}
           height={50}
@@ -67,7 +94,9 @@ export default function BiAxialLineChart<T>(props: React.PropsWithChildren<LineC
           yAxisId="right"
           orientation="right"
           tickFormatter={formatTicker}
-          tick={{ stroke: lines.find((line) => line.yAxisId === 'right')?.color }}
+          tick={{
+            stroke: lines.find((line) => line.yAxisId === 'right')?.color,
+          }}
           stroke={lines.find((line) => line.yAxisId === 'right')?.color}
         />
         <YAxis
@@ -76,7 +105,9 @@ export default function BiAxialLineChart<T>(props: React.PropsWithChildren<LineC
           yAxisId="left"
           orientation="left"
           tickFormatter={formatTicker}
-          tick={{ stroke: lines.find((line) => line.yAxisId === 'left')?.color }}
+          tick={{
+            stroke: lines.find((line) => line.yAxisId === 'left')?.color,
+          }}
           stroke={lines.find((line) => line.yAxisId === 'left')?.color}
         />
         <Tooltip
@@ -93,14 +124,28 @@ export default function BiAxialLineChart<T>(props: React.PropsWithChildren<LineC
             color: theme.palette.brandLight,
             whiteSpace: 'pre',
           }}
-          labelStyle={{ backgroundColor: theme.palette.dark, fontWeight: 'bold' }}
+          labelStyle={{
+            backgroundColor: theme.palette.dark,
+            fontWeight: 'bold',
+          }}
           labelFormatter={tooltipLabelFormatter}
           formatter={(value, name, _props) => {
             //@ts-ignore
             return tooltipValuesFormatter(value, name);
           }}
         />
-        {lines.length > 1 ? <Legend verticalAlign="top" height={20} formatter={legendFormatter} /> : null}
+        {lines.length > 1 ? (
+          <Legend
+            wrapperStyle={{
+              minHeight: '20px',
+              height: 'auto',
+              padding: '1rem',
+            }}
+            verticalAlign="top"
+            height={20}
+            formatter={legendFormatter}
+          />
+        ) : null}
       </RechartsChart>
     </ResponsiveContainer>
   );
@@ -108,5 +153,9 @@ export default function BiAxialLineChart<T>(props: React.PropsWithChildren<LineC
 
 function formatTicker(ticker: any) {
   const abbreviated = formatNumberAbbreviated(ticker);
-  return formatNumberFixedDecimals(abbreviated.number, 1) + ' ' + abbreviated.thousandsSuffix;
+  return (
+    formatNumberFixedDecimals(abbreviated.number, 1) +
+    ' ' +
+    abbreviated.thousandsSuffix
+  );
 }

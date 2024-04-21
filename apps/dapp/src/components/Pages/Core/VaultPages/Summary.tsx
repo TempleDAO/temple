@@ -25,12 +25,24 @@ export const Summary = () => {
   return (
     <VaultContent>
       <Title>1 MONTH</Title>
-      <Text2 light as="a" href={`/dapp/vaults/${vaultGroup!.id}/strategy`} onClick={onClickLink}>
+      <Text2
+        light
+        as="a"
+        href={`/dapp/vaults/${vaultGroup!.id}/strategy`}
+        onClick={onClickLink}
+      >
         1 Month Vault
       </Text2>
       <Text3>
         <>
-          TVL: <>{isLoading || !tvl ? <EllipsisLoader /> : `$${formatNumberWithCommas(tvl)}`}</>{' '}
+          TVL:{' '}
+          <>
+            {isLoading || !tvl ? (
+              <EllipsisLoader />
+            ) : (
+              `$${formatNumberWithCommas(tvl)}`
+            )}
+          </>{' '}
           {!!tvl && (
             <Tooltip content="Total Value Locked for this vault" inline={true}>
               ⓘ
@@ -68,7 +80,8 @@ const Text2 = styled.p<{ light?: boolean }>`
   font-size: 1.5rem;
   text-align: center;
   letter-spacing: 0.05em;
-  color: ${({ theme, light }) => (light ? theme.palette.brandLight : theme.palette.brand)};
+  color: ${({ theme, light }) =>
+    light ? theme.palette.brandLight : theme.palette.brand};
   text-shadow: ${COLOR_PERCENTAGE_TEXT_SHADOW};
 `;
 
@@ -79,5 +92,6 @@ const Text3 = styled.div<{ light?: boolean }>`
 
   font-size: 1.5rem;
   text-shadow: ${COLOR_PERCENTAGE_TEXT_SHADOW};
-  color: ${({ theme, light }) => (light ? theme.palette.brandLight : theme.palette.brand)};
+  color: ${({ theme, light }) =>
+    light ? theme.palette.brandLight : theme.palette.brand};
 `;

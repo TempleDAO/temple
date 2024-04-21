@@ -1,4 +1,11 @@
-import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useState } from 'react';
+import {
+  createContext,
+  PropsWithChildren,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from 'react';
 import { BigNumber, ethers, Signer } from 'ethers';
 import { useConnectWallet } from '@web3-onboard/react';
 
@@ -72,7 +79,9 @@ export const WalletProvider = (props: PropsWithChildren<object>) => {
 
   const { openNotification } = useNotification();
 
-  const [balanceState, setBalanceState] = useState<Balance>(INITIAL_STATE.balance);
+  const [balanceState, setBalanceState] = useState<Balance>(
+    INITIAL_STATE.balance
+  );
 
   const getBalance = async (walletAddress: string, signer: Signer) => {
     if (!walletAddress || !signer) {
@@ -92,20 +101,32 @@ export const WalletProvider = (props: PropsWithChildren<object>) => {
     };
 
     if (env.contracts.frax) {
-      const fraxContract = new ERC20__factory(signer).attach(env.contracts.frax);
-      const fraxBalance: BigNumber = await fraxContract.balanceOf(walletAddress);
+      const fraxContract = new ERC20__factory(signer).attach(
+        env.contracts.frax
+      );
+      const fraxBalance: BigNumber = await fraxContract.balanceOf(
+        walletAddress
+      );
       response = { ...response, FRAX: fraxBalance };
     }
 
     if (env.contracts.usdc) {
-      const usdcContract = new ERC20__factory(signer).attach(env.contracts.usdc);
-      const usdcBalance: BigNumber = await usdcContract.balanceOf(walletAddress);
+      const usdcContract = new ERC20__factory(signer).attach(
+        env.contracts.usdc
+      );
+      const usdcBalance: BigNumber = await usdcContract.balanceOf(
+        walletAddress
+      );
       response = { ...response, USDC: usdcBalance };
     }
 
     if (env.contracts.usdt) {
-      const usdtContract = new ERC20__factory(signer).attach(env.contracts.usdt);
-      const usdtBalance: BigNumber = await usdtContract.balanceOf(walletAddress);
+      const usdtContract = new ERC20__factory(signer).attach(
+        env.contracts.usdt
+      );
+      const usdtBalance: BigNumber = await usdtContract.balanceOf(
+        walletAddress
+      );
       response = { ...response, USDT: usdtBalance };
     }
 
@@ -116,26 +137,38 @@ export const WalletProvider = (props: PropsWithChildren<object>) => {
     }
 
     if (env.contracts.weth) {
-      const wethContract = new ERC20__factory(signer).attach(env.contracts.weth);
-      const wethBalance: BigNumber = await wethContract.balanceOf(walletAddress);
+      const wethContract = new ERC20__factory(signer).attach(
+        env.contracts.weth
+      );
+      const wethBalance: BigNumber = await wethContract.balanceOf(
+        walletAddress
+      );
       response = { ...response, WETH: wethBalance };
     }
 
     if (env.contracts.olympus) {
-      const ohmContract = new ERC20__factory(signer).attach(env.contracts.olympus);
+      const ohmContract = new ERC20__factory(signer).attach(
+        env.contracts.olympus
+      );
       const ohmBalance: BigNumber = await ohmContract.balanceOf(walletAddress);
       response = { ...response, OHM: ohmBalance };
     }
 
     if (env.contracts.templeStaking) {
-      const templeStakingContract = new TempleStaking__factory(signer).attach(env.contracts.templeStaking);
-      const OG_TEMPLE_CONTRACT = new OGTemple__factory(signer).attach(await templeStakingContract.OG_TEMPLE());
+      const templeStakingContract = new TempleStaking__factory(signer).attach(
+        env.contracts.templeStaking
+      );
+      const OG_TEMPLE_CONTRACT = new OGTemple__factory(signer).attach(
+        await templeStakingContract.OG_TEMPLE()
+      );
       const ogTempleBalance = await OG_TEMPLE_CONTRACT.balanceOf(walletAddress);
       response = { ...response, OGTEMPLE: ogTempleBalance };
     }
 
     if (env.contracts.temple) {
-      const templeContract = new TempleERC20Token__factory(signer).attach(env.contracts.temple);
+      const templeContract = new TempleERC20Token__factory(signer).attach(
+        env.contracts.temple
+      );
       const templeBalance = await templeContract.balanceOf(walletAddress);
       response = { ...response, TEMPLE: templeBalance };
     }
@@ -179,7 +212,9 @@ export const WalletProvider = (props: PropsWithChildren<object>) => {
 
     if (allowance.lt(minAllowance)) {
       // increase allowance
-      const approveTXN = await token.approve(spender, DEFAULT_ALLOWANCE, { gasLimit: 50000 });
+      const approveTXN = await token.approve(spender, DEFAULT_ALLOWANCE, {
+        gasLimit: 50000,
+      });
       await approveTXN.wait();
 
       // Show feedback to user
@@ -193,13 +228,17 @@ export const WalletProvider = (props: PropsWithChildren<object>) => {
   const collectTempleTeamPayment = async (epoch: number) => {
     if (walletAddress && signer && env.contracts.teamPayments) {
       const contractAddress = env.contracts.teamPayments[epoch].address;
-      const teamPaymentContract = new TempleTeamPayments__factory(signer).attach(contractAddress);
+      const teamPaymentContract = new TempleTeamPayments__factory(
+        signer
+      ).attach(contractAddress);
 
       const collectTxn = await teamPaymentContract.claim();
       const txnReceipt = await collectTxn.wait();
 
       openNotification({
-        title: `${epoch <= 14 ? TICKER_SYMBOL.TEMPLE_TOKEN : TICKER_SYMBOL.DAI} claimed`,
+        title: `${
+          epoch <= 14 ? TICKER_SYMBOL.TEMPLE_TOKEN : TICKER_SYMBOL.DAI
+        } claimed`,
         hash: collectTxn.hash,
       });
 

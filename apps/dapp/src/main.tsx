@@ -11,7 +11,6 @@ import Loader from 'components/Loader/Loader';
 import Disclaimer from 'components/Pages/Disclaimer';
 import Home from 'components/Pages/Core/NewUI/Home';
 
-import env from 'constants/env';
 import { AnalyticsService } from 'services/AnalyticsService';
 import { DashboardPage } from 'components/Pages/Core/DappPages/Dashboard';
 import { TradePage } from './components/Pages/Core/DappPages/TradePage';
@@ -23,6 +22,7 @@ import { OhmagePage } from 'components/Pages/Core/DappPages/OhmagePage';
 // Separate Chunks
 const TeamPayments = React.lazy(() => import('components/Pages/TeamPayments'));
 const RamosAdmin = React.lazy(() => import('components/Pages/Ramos/admin'));
+const SafeAdmin = React.lazy(() => import('components/Pages/Safe/admin'));
 
 const LoaderWrapper = styled.div`
   display: flex;
@@ -64,8 +64,15 @@ ReactDOM.render(
               {/* Redirect everything else to the home page */}
               <Route path="*" element={<Navigate replace to="/" />} />
               <Route path="disclaimer" element={<Disclaimer />} />
-              <Route path="team-payments" element={<LazyPage component={TeamPayments} />} />
-              <Route path="ramos" element={<LazyPage component={RamosAdmin} />} />
+              <Route
+                path="team-payments"
+                element={<LazyPage component={TeamPayments} />}
+              />
+              <Route
+                path="ramos"
+                element={<LazyPage component={RamosAdmin} />}
+              />
+              <Route path="safe" element={<LazyPage component={SafeAdmin} />} />
             </Route>
             <Route path="/dapp/*" element={<V2Layout />}>
               <Route path="dashboard/*" element={<DashboardPage />} />

@@ -62,20 +62,23 @@ export const InputSelect = (props: SelectTempleDaoProps) => {
           cursor: 'pointer',
           height: selectHeight,
           zIndex: props.zIndex ? Number(props.zIndex) + 1 : 2, // place it above the menu 👇
-          width: props.width,
+          width: props.width ?? '100%',
         }),
         menu: (base, state) => ({
           ...base,
           paddingTop: '1.5rem',
           marginTop: '-1.5rem',
           border: `0.0625rem solid ${theme.palette.brand}`,
+          width: props.width ?? '100%',
           zIndex: props.zIndex ?? 1,
         }),
         menuList: (base, state) => ({
           base,
           padding: 0,
           color: theme.palette.light,
-          maxHeight: props.maxMenuItems ? `calc(${props.maxMenuItems} * ${selectHeight})` : 'none',
+          maxHeight: props.maxMenuItems
+            ? `calc(${props.maxMenuItems} * ${selectHeight})`
+            : 'none',
           overflowY: 'auto',
         }),
         option: (base, state) => ({
@@ -96,7 +99,7 @@ export const InputSelect = (props: SelectTempleDaoProps) => {
           ...base,
           opacity: state.isDisabled ? 0.5 : 1,
           transition: 'opacity 300ms',
-          textAlign: props.textAlign ??  'center',
+          textAlign: props.textAlign ?? 'center',
           width: '100%',
           fontWeight: 'bold',
           fontSize: props.fontSize ?? '1.25rem',
@@ -107,7 +110,9 @@ export const InputSelect = (props: SelectTempleDaoProps) => {
           padding: 0,
         }),
         dropdownIndicator: (base, state) => ({
-          color: state.isFocused ? theme.palette.brandLight : theme.palette.brand,
+          color: state.isFocused
+            ? theme.palette.brandLight
+            : theme.palette.brand,
           display: 'flex',
           transform: state.isFocused ? 'rotateX(180deg)' : 'none',
           transition: 'transform 250ms linear',

@@ -1,5 +1,8 @@
 import type { FC, Dispatch, SetStateAction, MouseEventHandler } from 'react';
-import type { ChartSupportedTimeInterval, LabeledTimeIntervals } from 'utils/time-intervals';
+import type {
+  ChartSupportedTimeInterval,
+  LabeledTimeIntervals,
+} from 'utils/time-intervals';
 import styled from 'styled-components';
 import { DEFAULT_CHART_INTERVALS } from 'utils/time-intervals';
 
@@ -17,7 +20,11 @@ const IntervalToggler: FC<IntervalTogglerProps> = ({
   return (
     <TogglerContainer>
       {intervals.map(({ label }) => (
-        <Toggle key={label} onClick={() => setSelectedInterval(label)} selected={label === selectedInterval}>
+        <Toggle
+          key={label}
+          onClick={() => setSelectedInterval(label)}
+          selected={label === selectedInterval}
+        >
           {label}
         </Toggle>
       ))}
@@ -44,11 +51,12 @@ const Toggle = styled.span<ToggleProps>`
   display: inline-block;
   user-select: none;
   cursor: pointer;
-  color: ${({ selected, theme }) => (selected ? theme.palette.brandLight : theme.palette.brand)};
+  color: ${({ selected, theme }) =>
+    selected ? theme.palette.brandLight : theme.palette.brand};
   &:hover {
     color: white;
   }
   font-size: 1rem;
-  text-decoration: ${({selected}) => (selected ? 'underline': 'none')};
+  text-decoration: ${({ selected }) => (selected ? 'underline' : 'none')};
   font-weight: ${({ selected }) => (selected ? 'bold' : '')};
 `;

@@ -5,7 +5,10 @@ import { PillMenu } from 'components/Layouts/Ascend/PillMenu';
 
 import { pixelsToRems } from 'styles/mixins';
 import { tabletAndAbove } from 'styles/breakpoints';
-import { NAV_MOBILE_HEIGHT_PIXELS, NAV_DESKTOP_HEIGHT_PIXELS } from 'components/Layouts/CoreLayout/Header';
+import {
+  NAV_MOBILE_HEIGHT_PIXELS,
+  NAV_DESKTOP_HEIGHT_PIXELS,
+} from 'components/Layouts/CoreLayout/Header';
 
 export const AscendLayout = () => {
   const isAdmin = false;

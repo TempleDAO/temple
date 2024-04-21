@@ -55,9 +55,12 @@ export type Prices = { templePrice: number; daiPrice: number; tpi: number };
 
 export const BorrowPage = () => {
   const [{}, connect] = useConnectWallet();
-  const { balance, wallet, updateBalance, signer, ensureAllowance } = useWallet();
+  const { balance, wallet, updateBalance, signer, ensureAllowance } =
+    useWallet();
   const { openNotification } = useNotification();
-  const [modal, setModal] = useState<'closed' | 'supply' | 'withdraw' | 'borrow' | 'repay'>('closed');
+  const [modal, setModal] = useState<
+    'closed' | 'supply' | 'withdraw' | 'borrow' | 'repay'
+  >('closed');
   const [state, setState] = useState<State>({
     supplyValue: '',
     withdrawValue: '',
@@ -68,10 +71,17 @@ export const BorrowPage = () => {
     inputTokenBalance: ZERO,
     outputTokenBalance: ZERO,
   });
-  const [activeScreen, setActiveScreen] = useState<'supply' | 'borrow'>('supply');
-  const [accountPosition, setAccountPosition] = useState<ITlcDataTypes.AccountPositionStructOutput>();
+  const [activeScreen, setActiveScreen] = useState<'supply' | 'borrow'>(
+    'supply'
+  );
+  const [accountPosition, setAccountPosition] =
+    useState<ITlcDataTypes.AccountPositionStructOutput>();
   const [tlcInfo, setTlcInfo] = useState<TlcInfo>();
-  const [prices, setPrices] = useState<Prices>({ templePrice: 0, daiPrice: 0, tpi: 0 });
+  const [prices, setPrices] = useState<Prices>({
+    templePrice: 0,
+    daiPrice: 0,
+    tpi: 0,
+  });
   const [metricsLoading, setMetricsLoading] = useState(false);
 
   const getPrices = useCallback(async () => {
@@ -88,7 +98,8 @@ export const BorrowPage = () => {
       }`
     );
     setPrices({
-      templePrice: data.tokens.filter((t: any) => t.symbol == 'TEMPLE')[0].price,
+      templePrice: data.tokens.filter((t: any) => t.symbol == 'TEMPLE')[0]
+        .price,
       daiPrice: data.tokens.filter((t: any) => t.symbol == 'DAI')[0].price,
       tpi: data.treasuryReservesVaults[0].treasuryPriceIndex,
     });
@@ -96,22 +107,30 @@ export const BorrowPage = () => {
 
   const getCircuitBreakers = useCallback(async () => {
     if (!signer) return;
-    const daiCircuitBreakerContract = new TempleCircuitBreakerAllUsersPerPeriod__factory(signer).attach(
-      env.contracts.daiCircuitBreaker
-    );
+    const daiCircuitBreakerContract =
+      new TempleCircuitBreakerAllUsersPerPeriod__factory(signer).attach(
+        env.contracts.daiCircuitBreaker
+      );
 
-    const templeCircuitBreakerContract = new TempleCircuitBreakerAllUsersPerPeriod__factory(signer).attach(
-      env.contracts.templeCircuitBreaker
-    );
+    const templeCircuitBreakerContract =
+      new TempleCircuitBreakerAllUsersPerPeriod__factory(signer).attach(
+        env.contracts.templeCircuitBreaker
+      );
 
     const daiCircuitBreakerCap = await daiCircuitBreakerContract.cap();
-    const daiCircuitBreakerUtilisation = await daiCircuitBreakerContract.currentUtilisation();
+    const daiCircuitBreakerUtilisation =
+      await daiCircuitBreakerContract.currentUtilisation();
 
     const templeCircuitBreakerCap = await templeCircuitBreakerContract.cap();
-    const templeCircuitBreakerUtilisation = await templeCircuitBreakerContract.currentUtilisation();
+    const templeCircuitBreakerUtilisation =
+      await templeCircuitBreakerContract.currentUtilisation();
 
-    const daiCircuitBreakerRemaining = daiCircuitBreakerCap.sub(daiCircuitBreakerUtilisation);
-    const templeCircuitBreakerRemaining = templeCircuitBreakerCap.sub(templeCircuitBreakerUtilisation);
+    const daiCircuitBreakerRemaining = daiCircuitBreakerCap.sub(
+      daiCircuitBreakerUtilisation
+    );
+    const templeCircuitBreakerRemaining = templeCircuitBreakerCap.sub(
+      templeCircuitBreakerUtilisation
+    );
 
     return {
       daiCircuitBreakerRemaining,
@@ -122,34 +141,45 @@ export const BorrowPage = () => {
   const getTlcInfoFromContracts = useCallback(async () => {
     if (!signer) return;
 
-    const tlcContract = new TempleLineOfCredit__factory(signer).attach(env.contracts.tlc);
+    const tlcContract = new TempleLineOfCredit__factory(signer).attach(
+      env.contracts.tlc
+    );
     const debtPosition = await tlcContract.totalDebtPosition();
     const totalUserDebt = debtPosition.totalDebt;
     const utilizationRatio = debtPosition.utilizationRatio;
 
     // NOTE: We are intentionally rounding here to nearest 1e18
-    const debtCeiling = totalUserDebt.div(utilizationRatio).mul(ethers.utils.parseEther('1'));
+    const debtCeiling = totalUserDebt
+      .div(utilizationRatio)
+      .mul(ethers.utils.parseEther('1'));
 
     const userAvailableToBorrowFromTlc = debtCeiling.sub(totalUserDebt);
 
-    const trvContract = new TreasuryReservesVault__factory(signer).attach(env.contracts.treasuryReservesVault);
-    const strategyAvailalableToBorrowFromTrv = await trvContract.availableForStrategyToBorrow(
-      env.contracts.strategies.tlcStrategy,
-      env.contracts.dai
+    const trvContract = new TreasuryReservesVault__factory(signer).attach(
+      env.contracts.treasuryReservesVault
     );
+    const strategyAvailalableToBorrowFromTrv =
+      await trvContract.availableForStrategyToBorrow(
+        env.contracts.strategies.tlcStrategy,
+        env.contracts.dai
+      );
 
     // available to borrow
     // return the lesser of userAvailableToBorrowFromTlc and strategyAvailalableToBorrowFromTrv
-    const maxAvailableToBorrow = userAvailableToBorrowFromTlc.gte(strategyAvailalableToBorrowFromTrv)
+    const maxAvailableToBorrow = userAvailableToBorrowFromTlc.gte(
+      strategyAvailalableToBorrowFromTrv
+    )
       ? strategyAvailalableToBorrowFromTrv
       : userAvailableToBorrowFromTlc;
 
     // Getting the max borrow LTV and interest rate
-    const [debtTokenConfig, debtTokenData] = await tlcContract.debtTokenDetails();
+    const [debtTokenConfig, debtTokenData] =
+      await tlcContract.debtTokenDetails();
     const maxLtv = debtTokenConfig.maxLtvRatio;
 
     // current borrow apy
-    const currentBorrowInterestRate = Math.pow(1 + fromAtto(debtTokenData.interestRate) / 365, 365) - 1;
+    const currentBorrowInterestRate =
+      Math.pow(1 + fromAtto(debtTokenData.interestRate) / 365, 365) - 1;
 
     const circuitBreakers = await getCircuitBreakers();
 
@@ -159,7 +189,8 @@ export const BorrowPage = () => {
       borrowRate: currentBorrowInterestRate,
       liquidationLtv: fromAtto(maxLtv),
       daiCircuitBreakerRemaining: circuitBreakers?.daiCircuitBreakerRemaining,
-      templeCircuitBreakerRemaining: circuitBreakers?.templeCircuitBreakerRemaining,
+      templeCircuitBreakerRemaining:
+        circuitBreakers?.templeCircuitBreakerRemaining,
     };
   }, [signer, getCircuitBreakers]);
 
@@ -170,7 +201,9 @@ export const BorrowPage = () => {
         setAccountPosition(undefined);
         return;
       }
-      const tlcContract = new TempleLineOfCredit__factory(signer).attach(env.contracts.tlc);
+      const tlcContract = new TempleLineOfCredit__factory(signer).attach(
+        env.contracts.tlc
+      );
       const position = await tlcContract.accountPosition(wallet);
       setAccountPosition(position);
     };
@@ -201,8 +234,10 @@ export const BorrowPage = () => {
         liquidationLtv: tlcInfoFromContracts?.liquidationLtv || 0,
         strategyBalance: tlcInfoFromContracts?.strategyBalance || 0,
         debtCeiling: tlcInfoFromContracts?.debtCeiling || 0,
-        daiCircuitBreakerRemaining: tlcInfoFromContracts?.daiCircuitBreakerRemaining || ZERO,
-        templeCircuitBreakerRemaining: tlcInfoFromContracts?.templeCircuitBreakerRemaining || ZERO,
+        daiCircuitBreakerRemaining:
+          tlcInfoFromContracts?.daiCircuitBreakerRemaining || ZERO,
+        templeCircuitBreakerRemaining:
+          tlcInfoFromContracts?.templeCircuitBreakerRemaining || ZERO,
       });
     } catch (e) {
       setMetricsLoading(false);
@@ -237,8 +272,9 @@ export const BorrowPage = () => {
     const liquidationDebt = collateral * prices.tpi * liquidationLtv;
     return (
       <>
-        Given a {((debt / (collateral * prices.tpi)) * 100).toFixed(2)}% LTV ratio, your collateral will be liquidated
-        if TPI falls to <strong>${liquidationTpi.toFixed(3)}</strong> or if your debt rises to{' '}
+        Given a {((debt / (collateral * prices.tpi)) * 100).toFixed(2)}% LTV
+        ratio, your collateral will be liquidated if TPI falls to{' '}
+        <strong>${liquidationTpi.toFixed(3)}</strong> or if your debt rises to{' '}
         <strong>${liquidationDebt.toFixed(2)}</strong>.
       </>
     );
@@ -246,12 +282,24 @@ export const BorrowPage = () => {
 
   const supply = async () => {
     if (!signer || !wallet) return;
-    const tlcContract = new TempleLineOfCredit__factory(signer).attach(env.contracts.tlc);
-    const amount = getBigNumberFromString(state.supplyValue, getTokenInfo(state.inputToken).decimals);
+    const tlcContract = new TempleLineOfCredit__factory(signer).attach(
+      env.contracts.tlc
+    );
+    const amount = getBigNumberFromString(
+      state.supplyValue,
+      getTokenInfo(state.inputToken).decimals
+    );
     try {
       // Ensure allowance for TLC to spend TEMPLE
-      const templeContract = new ERC20__factory(signer).attach(env.contracts.temple);
-      await ensureAllowance(TICKER_SYMBOL.TEMPLE_TOKEN, templeContract, env.contracts.tlc, amount);
+      const templeContract = new ERC20__factory(signer).attach(
+        env.contracts.temple
+      );
+      await ensureAllowance(
+        TICKER_SYMBOL.TEMPLE_TOKEN,
+        templeContract,
+        env.contracts.tlc,
+        amount
+      );
       // Add collateral
       const tx = await tlcContract.addCollateral(amount, wallet);
       const receipt = await tx.wait();
@@ -273,10 +321,17 @@ export const BorrowPage = () => {
 
   const withdraw = async () => {
     if (!signer || !wallet) return;
-    const tlcContract = new TempleLineOfCredit__factory(signer).attach(env.contracts.tlc);
-    const amount = getBigNumberFromString(state.withdrawValue, getTokenInfo(state.inputToken).decimals);
+    const tlcContract = new TempleLineOfCredit__factory(signer).attach(
+      env.contracts.tlc
+    );
+    const amount = getBigNumberFromString(
+      state.withdrawValue,
+      getTokenInfo(state.inputToken).decimals
+    );
     try {
-      const tx = await tlcContract.removeCollateral(amount, wallet, { gasLimit: 160000 });
+      const tx = await tlcContract.removeCollateral(amount, wallet, {
+        gasLimit: 160000,
+      });
       const receipt = await tx.wait();
       openNotification({
         title: `Withdrew ${state.withdrawValue} TEMPLE`,
@@ -296,10 +351,15 @@ export const BorrowPage = () => {
 
   const borrow = async () => {
     if (!signer || !wallet) return;
-    const tlcContract = new TempleLineOfCredit__factory(signer).attach(env.contracts.tlc);
-    const amount = getBigNumberFromString(state.borrowValue, getTokenInfo(state.outputToken).decimals);
+    const tlcContract = new TempleLineOfCredit__factory(signer).attach(
+      env.contracts.tlc
+    );
+    const amount = getBigNumberFromString(
+      state.borrowValue,
+      getTokenInfo(state.outputToken).decimals
+    );
     try {
-      const tx = await tlcContract.borrow(amount, wallet, { gasLimit: 350000 });
+      const tx = await tlcContract.borrow(amount, wallet, { gasLimit: 500000 });
       const receipt = await tx.wait();
       openNotification({
         title: `Borrowed ${state.borrowValue} DAI`,
@@ -319,12 +379,22 @@ export const BorrowPage = () => {
 
   const repay = async () => {
     if (!signer || !wallet) return;
-    const tlcContract = new TempleLineOfCredit__factory(signer).attach(env.contracts.tlc);
-    const amount = getBigNumberFromString(state.repayValue, getTokenInfo(state.outputToken).decimals);
+    const tlcContract = new TempleLineOfCredit__factory(signer).attach(
+      env.contracts.tlc
+    );
+    const amount = getBigNumberFromString(
+      state.repayValue,
+      getTokenInfo(state.outputToken).decimals
+    );
     try {
       // Ensure allowance for TLC to spend DAI
       const daiContract = new ERC20__factory(signer).attach(env.contracts.dai);
-      await ensureAllowance(TICKER_SYMBOL.DAI, daiContract, env.contracts.tlc, amount);
+      await ensureAllowance(
+        TICKER_SYMBOL.DAI,
+        daiContract,
+        env.contracts.tlc,
+        amount
+      );
       // Repay DAI
       const tx = await tlcContract.repay(amount, wallet, { gasLimit: 400000 });
       const receipt = await tx.wait();
@@ -346,17 +416,31 @@ export const BorrowPage = () => {
 
   const repayAll = async () => {
     if (!signer || !wallet) return;
-    const tlcContract = new TempleLineOfCredit__factory(signer).attach(env.contracts.tlc);
-    const amount = getBigNumberFromString(state.repayValue, getTokenInfo(state.outputToken).decimals);
+    const tlcContract = new TempleLineOfCredit__factory(signer).attach(
+      env.contracts.tlc
+    );
+    const amount = getBigNumberFromString(
+      state.repayValue,
+      getTokenInfo(state.outputToken).decimals
+    );
     try {
       // Ensure allowance for TLC to spend DAI
       const daiContract = new ERC20__factory(signer).attach(env.contracts.dai);
-      await ensureAllowance(TICKER_SYMBOL.DAI, daiContract, env.contracts.tlc, amount);
+      await ensureAllowance(
+        TICKER_SYMBOL.DAI,
+        daiContract,
+        env.contracts.tlc,
+        amount
+      );
       // Repay DAI
       const tx = await tlcContract.repayAll(wallet, { gasLimit: 400000 });
       const receipt = await tx.wait();
       openNotification({
-        title: `Repaid ${accountPosition ? fromAtto(accountPosition.currentDebt).toFixed(2) : amount} DAI`,
+        title: `Repaid ${
+          accountPosition
+            ? fromAtto(accountPosition.currentDebt).toFixed(2)
+            : amount
+        } DAI`,
         hash: receipt.transactionHash,
       });
       updateBalance();
@@ -371,9 +455,13 @@ export const BorrowPage = () => {
     }
   };
 
-  const getBorrowRate = () => (tlcInfo ? (tlcInfo.borrowRate * 100).toFixed(2) : 0);
+  const getBorrowRate = () =>
+    tlcInfo ? (tlcInfo.borrowRate * 100).toFixed(2) : 0;
 
-  const showLoading = useMemo(() => metricsLoading || !wallet, [metricsLoading, wallet]);
+  const showLoading = useMemo(
+    () => metricsLoading || !wallet,
+    [metricsLoading, wallet]
+  );
 
   const availableToBorrow = useMemo(() => {
     if (!tlcInfo) return '...';
@@ -381,7 +469,9 @@ export const BorrowPage = () => {
     const availableAsBigNumber = toAtto(tlcInfo.strategyBalance);
 
     if (tlcInfo.daiCircuitBreakerRemaining.lt(availableAsBigNumber)) {
-      return `$${Number(fromAtto(tlcInfo.daiCircuitBreakerRemaining)).toLocaleString()}`;
+      return `$${Number(
+        fromAtto(tlcInfo.daiCircuitBreakerRemaining)
+      ).toLocaleString()}`;
     }
 
     return `$${Number(tlcInfo.strategyBalance).toLocaleString()}`;
@@ -392,10 +482,16 @@ export const BorrowPage = () => {
       <PageContainer>
         <TlcContainer>
           <TlcTabs>
-            <TlcTab isActive={activeScreen == 'supply'} onClick={() => setActiveScreen('supply')}>
+            <TlcTab
+              isActive={activeScreen == 'supply'}
+              onClick={() => setActiveScreen('supply')}
+            >
               <p>SUPPLY</p>
             </TlcTab>
-            <TlcTab isActive={activeScreen == 'borrow'} onClick={() => setActiveScreen('borrow')}>
+            <TlcTab
+              isActive={activeScreen == 'borrow'}
+              onClick={() => setActiveScreen('borrow')}
+            >
               <p>BORROW</p>
             </TlcTab>
           </TlcTabs>
@@ -405,13 +501,21 @@ export const BorrowPage = () => {
                 <TokenImg src={templeImg} />
                 <NumContainer>
                   <LeadMetric>
-                    {accountPosition?.collateral ? formatToken(accountPosition?.collateral, state.inputToken) : 0}{' '}
+                    {accountPosition?.collateral
+                      ? formatToken(
+                          accountPosition?.collateral,
+                          state.inputToken
+                        )
+                      : 0}{' '}
                     TEMPLE
                   </LeadMetric>
                   <USDMetric>
                     $
                     {accountPosition?.collateral
-                      ? (fromAtto(accountPosition.collateral) * prices.templePrice).toLocaleString('en')
+                      ? (
+                          fromAtto(accountPosition.collateral) *
+                          prices.templePrice
+                        ).toLocaleString('en')
                       : 0}{' '}
                     USD
                   </USDMetric>
@@ -436,7 +540,9 @@ export const BorrowPage = () => {
                     </TradeButton>
                     <TradeButton
                       onClick={() => setModal('withdraw')}
-                      disabled={!accountPosition || accountPosition?.collateral.lte(0)}
+                      disabled={
+                        !accountPosition || accountPosition?.collateral.lte(0)
+                      }
                       width="175px"
                     >
                       Withdraw
@@ -461,13 +567,21 @@ export const BorrowPage = () => {
                 <TokenImg src={daiImg} />
                 <NumContainer>
                   <LeadMetric>
-                    {accountPosition?.currentDebt ? formatToken(accountPosition?.currentDebt, state.outputToken) : 0}{' '}
+                    {accountPosition?.currentDebt
+                      ? formatToken(
+                          accountPosition?.currentDebt,
+                          state.outputToken
+                        )
+                      : 0}{' '}
                     DAI
                   </LeadMetric>
                   <USDMetric>
                     $
                     {accountPosition?.currentDebt
-                      ? (fromAtto(accountPosition.currentDebt) * prices.daiPrice).toLocaleString('en')
+                      ? (
+                          fromAtto(accountPosition.currentDebt) *
+                          prices.daiPrice
+                        ).toLocaleString('en')
                       : 0}{' '}
                     USD
                   </USDMetric>
@@ -481,7 +595,9 @@ export const BorrowPage = () => {
                     </BrandParagraph>
                     <p>
                       {accountPosition?.collateral.gt(0)
-                        ? (fromAtto(accountPosition.loanToValueRatio) * 100).toFixed(2)
+                        ? (
+                            fromAtto(accountPosition.loanToValueRatio) * 100
+                          ).toFixed(2)
                         : 0}
                       %
                     </p>
@@ -520,14 +636,18 @@ export const BorrowPage = () => {
                   <>
                     <TradeButton
                       onClick={() => setModal('borrow')}
-                      disabled={!accountPosition || accountPosition?.collateral.lte(0)}
+                      disabled={
+                        !accountPosition || accountPosition?.collateral.lte(0)
+                      }
                       width="175px"
                     >
                       Borrow
                     </TradeButton>
                     <TradeButton
                       onClick={() => setModal('repay')}
-                      disabled={!accountPosition || accountPosition?.currentDebt.lte(0)}
+                      disabled={
+                        !accountPosition || accountPosition?.currentDebt.lte(0)
+                      }
                       width="175px"
                     >
                       Repay
@@ -552,12 +672,17 @@ export const BorrowPage = () => {
           <Metrics>
             <MetricContainer>
               <LeadMetric>
-                {showLoading ? '...' : tlcInfo && `$${Number(tlcInfo.debtCeiling).toLocaleString()}`}
+                {showLoading
+                  ? '...'
+                  : tlcInfo &&
+                    `$${Number(tlcInfo.debtCeiling).toLocaleString()}`}
               </LeadMetric>
               <BrandParagraph>Total Debt Ceiling</BrandParagraph>
             </MetricContainer>
             <MetricContainer>
-              <LeadMetric>{showLoading ? '...' : tlcInfo && `${availableToBorrow}`}</LeadMetric>
+              <LeadMetric>
+                {showLoading ? '...' : tlcInfo && `${availableToBorrow}`}
+              </LeadMetric>
               <BrandParagraph>
                 Available to Borrow
                 <Tooltip
@@ -572,7 +697,9 @@ export const BorrowPage = () => {
               </BrandParagraph>
             </MetricContainer>
             <MetricContainer>
-              <LeadMetric>{showLoading ? '...' : `${getBorrowRate()}%`}</LeadMetric>
+              <LeadMetric>
+                {showLoading ? '...' : `${getBorrowRate()}%`}
+              </LeadMetric>
               <BrandParagraph>Current Borrow APY </BrandParagraph>
             </MetricContainer>
             <MetricContainer>
@@ -587,7 +714,12 @@ export const BorrowPage = () => {
       </PageContainer>
 
       {/* Modal for executing supply/withdraw/borrow/repay */}
-      <Popover isOpen={modal != 'closed'} onClose={() => setModal('closed')} closeOnClickOutside showCloseButton>
+      <Popover
+        isOpen={modal != 'closed'}
+        onClose={() => setModal('closed')}
+        closeOnClickOutside
+        showCloseButton
+      >
         <ModalContainer>
           {modal === 'supply' ? (
             <Supply
@@ -715,7 +847,8 @@ const TlcTab = styled.div<{ isActive: boolean }>`
   cursor: pointer;
   font-weight: bold;
   letter-spacing: 1px;
-  background: ${({ isActive, theme }) => (isActive ? theme.palette.gradients.dark : 'transparent')};
+  background: ${({ isActive, theme }) =>
+    isActive ? theme.palette.gradients.dark : 'transparent'};
 `;
 
 const ValueContainer = styled.div`
@@ -898,7 +1031,9 @@ export const RangeLabel = styled.div`
   color: ${({ theme }) => theme.palette.brandLight};
 `;
 
-export const RangeSlider = styled.input.attrs({ type: 'range' })<{ progress: number }>`
+export const RangeSlider = styled.input.attrs({ type: 'range' })<{
+  progress: number;
+}>`
   -webkit-appearance: none;
   width: 100%;
   height: 0.5rem;

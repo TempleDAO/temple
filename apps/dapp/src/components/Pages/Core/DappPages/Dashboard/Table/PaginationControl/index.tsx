@@ -1,7 +1,11 @@
 import { Dispatch, SetStateAction } from 'react';
 import styled from 'styled-components';
 import { PageRangeSelector } from './PageRangeSelector';
-import { InputSelect, SelectTempleDaoOptions, Option } from 'components/InputSelect/InputSelect';
+import {
+  InputSelect,
+  SelectTempleDaoOptions,
+  Option,
+} from 'components/InputSelect/InputSelect';
 
 type PaginationControlProps = {
   currentPage: number;
@@ -20,21 +24,40 @@ const dropdownOptions: SelectTempleDaoOptions = [
 ];
 
 export const PaginationControl = (props: PaginationControlProps) => {
-  const { totalPages, currentPage, rowsPerPage, setCurrentPage, setRowsPerPage } = props;
+  const {
+    totalPages,
+    currentPage,
+    rowsPerPage,
+    setCurrentPage,
+    setRowsPerPage,
+  } = props;
 
   return (
     <PaginationContainer>
-      <PageRangeSelector currentPage={currentPage} setCurrentPage={setCurrentPage} totalPages={totalPages} />
+      <PageRangeSelector
+        currentPage={currentPage}
+        setCurrentPage={setCurrentPage}
+        totalPages={totalPages}
+      />
       <PageLink onClick={() => setCurrentPage(1)} disabled={currentPage === 1}>
         First
       </PageLink>
-      <PageLink onClick={() => setCurrentPage((prev) => prev - 1)} disabled={currentPage === 1}>
+      <PageLink
+        onClick={() => setCurrentPage((prev) => prev - 1)}
+        disabled={currentPage === 1}
+      >
         Prev
       </PageLink>
-      <PageLink onClick={() => setCurrentPage((prev) => prev + 1)} disabled={currentPage === totalPages}>
+      <PageLink
+        onClick={() => setCurrentPage((prev) => prev + 1)}
+        disabled={currentPage === totalPages}
+      >
         Next
       </PageLink>
-      <PageLink onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages}>
+      <PageLink
+        onClick={() => setCurrentPage(totalPages)}
+        disabled={currentPage === totalPages}
+      >
         Last
       </PageLink>
       <InputSelect
@@ -64,7 +87,11 @@ type PageLinkProps = {
 export const PageLink = styled.button<PageLinkProps>`
   margin: 0 5px;
   color: ${({ selected, disabled, theme }) =>
-    disabled ? theme.palette.brand50 : selected ? theme.palette.brandLight : theme.palette.brand};
+    disabled
+      ? theme.palette.brand50
+      : selected
+      ? theme.palette.brandLight
+      : theme.palette.brand};
   border: none;
   padding: 0;
   cursor: ${({ disabled }) => (disabled ? 'not-allowed' : 'pointer')};

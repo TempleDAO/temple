@@ -17,9 +17,15 @@ export const useGetZappedAssetValue = () => {
   } = useFaith();
   const [getStakingValue] = useOGTempleStakingValue();
 
-  const handler = async (ticker: TICKER_SYMBOL, amount: string, withFaith = false) => {
+  const handler = async (
+    ticker: TICKER_SYMBOL,
+    amount: string,
+    withFaith = false
+  ) => {
     if (!signer) {
-      console.error('Attempted to get faithDepositMultiplier without a signer.');
+      console.error(
+        'Attempted to get faithDepositMultiplier without a signer.'
+      );
       return;
     }
 
@@ -30,7 +36,9 @@ export const useGetZappedAssetValue = () => {
       const stakingValue = await getStakingValue(amount);
       bigTempleAmount = stakingValue!;
     } else {
-      throw new Error(`Programming Error: Attempted to get zapped asset value for unsupported token ${ticker}`);
+      throw new Error(
+        `Programming Error: Attempted to get zapped asset value for unsupported token ${ticker}`
+      );
     }
 
     // The wallet needs to have usableFaith to get any multiplier. If there is no usableFaith
@@ -43,11 +51,16 @@ export const useGetZappedAssetValue = () => {
       };
     }
 
-    const vaultProxy = new VaultProxy__factory(signer).attach(env.contracts.vaultProxy);
+    const vaultProxy = new VaultProxy__factory(signer).attach(
+      env.contracts.vaultProxy
+    );
 
     // If the user is depositing with FAITH, the will get a boosted amount of TEMPLE deposited.
     // we need to calculate the deposit amount plus the amount of TEMPLE the FAITH converts to.
-    const templeWithFaithAmount = await vaultProxy.getFaithMultiplier(usableFaith, bigTempleAmount);
+    const templeWithFaithAmount = await vaultProxy.getFaithMultiplier(
+      usableFaith,
+      bigTempleAmount
+    );
     return {
       temple: bigTempleAmount,
       bonus: templeWithFaithAmount.sub(bigTempleAmount),

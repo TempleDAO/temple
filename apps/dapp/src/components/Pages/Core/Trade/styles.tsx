@@ -1,7 +1,10 @@
 import styled from 'styled-components';
 
 import { VaultButton } from '../VaultPages/VaultContent';
-import { NAV_MOBILE_HEIGHT_PIXELS, NAV_DESKTOP_HEIGHT_PIXELS } from 'components/Layouts/CoreLayout/Header';
+import {
+  NAV_MOBILE_HEIGHT_PIXELS,
+  NAV_DESKTOP_HEIGHT_PIXELS,
+} from 'components/Layouts/CoreLayout/Header';
 
 import arrow from 'assets/icons/amm-arrow.svg';
 import Gear from 'assets/icons/gear.svg';

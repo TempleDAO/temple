@@ -5,7 +5,8 @@ const ENV = import.meta.env;
 
 const env: Environment = {
   alchemyId: '-nNWThz_YpX1cGffGiz-lbSMu7dmp4GK',
-  rpcUrl: 'https://eth-mainnet.g.alchemy.com/v2/AorwfDdHDsEjIX4HPwS70zkVjWqjv5vZ',
+  rpcUrl:
+    'https://eth-mainnet.g.alchemy.com/v2/AorwfDdHDsEjIX4HPwS70zkVjWqjv5vZ',
   backendUrl: 'http://localhost:3001',
   contracts: {
     balancerVault: '',
@@ -53,13 +54,17 @@ const env: Environment = {
   subgraph: {
     // TODO: These need updated to the templedao organization subgraphs once they are deployed
     templeCore: 'http://localhost:8000/subgraphs/name/templedao-core',
-    protocolMetrics: 'https://api.thegraph.com/subgraphs/name/medariox/temple-metrics',
-    protocolMetricsArbitrum: 'https://api.thegraph.com/subgraphs/name/medariox/temple-metrics-arbitrum',
-    balancerV2: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-balancer-v2',
+    protocolMetrics:
+      'https://api.thegraph.com/subgraphs/name/medariox/temple-metrics',
+    protocolMetricsArbitrum:
+      'https://api.thegraph.com/subgraphs/name/medariox/temple-metrics-arbitrum',
+    balancerV2:
+      'https://api.thegraph.com/subgraphs/name/templedao/templedao-balancer-v2',
     // TODO: Will be deprecated
     ramos: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-ramos',
     // templeV2: 'https://api.studio.thegraph.com/query/520/v2-sepolia/version/latest',
-    templeV2: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-v2-mainnet'
+    templeV2:
+      'https://api.thegraph.com/subgraphs/name/templedao/templedao-v2-mainnet',
     // Original Balancer Subgraph
     // balancerV2: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-goerli-v2',
   },
@@ -127,6 +132,16 @@ const env: Environment = {
     enableAscend: true,
   },
   templeMultisig: '0x3a320fF715dCBbF097e15257B7051dd08fdfb7A2',
+  safes: [
+    // {
+    //   name: 'Multisig Temple V2',
+    //   address: 'sep:0x7d1e9012aA41278349791f29C2cdaa3DF4ceDcEd',
+    // },
+    // {
+    //   name: 'Multisig Test Fostrich',
+    //   address: '0x5CE28cAE5aAb002DcBc076d5A551A473a7C9dF89',
+    // },
+  ],
 };
 
 export default env;

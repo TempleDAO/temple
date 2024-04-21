@@ -5,7 +5,10 @@ import styled, { useTheme } from 'styled-components';
 import { format } from 'date-fns';
 import { LineChart } from 'components/Charts';
 import Loader from 'components/Loader/Loader';
-import { formatNumberAbbreviated, formatNumberFixedDecimals } from 'utils/formatter';
+import {
+  formatNumberAbbreviated,
+  formatNumberFixedDecimals,
+} from 'utils/formatter';
 import { formatDailyDataPoints } from 'utils/charts';
 import { fetchGenericSubgraph } from 'utils/subgraph';
 import IntervalToggler from 'components/Charts/IntervalToggler';
@@ -40,7 +43,8 @@ const tooltipValuesFormatter = (value: number, name: string) => [
 const yDomain: AxisDomain = [0, 100];
 
 export const TlcChart = () => {
-  const [selectedInterval, setSelectedInterval] = useState<ChartIntervals>('1M');
+  const [selectedInterval, setSelectedInterval] =
+    useState<ChartIntervals>('1M');
   const theme = useTheme();
   const [metrics, setMetrics] = useState<Metric[]>();
 
@@ -63,11 +67,16 @@ export const TlcChart = () => {
 
   if (!metrics) return <Loader />;
 
-  const formattedData = formatDailyDataPoints(metrics, CHART_INTERVALS, new Date().getTime(), (metric) => ({
-    timestamp: metric.timestamp * 1000,
-    utilRatio: metric.utilRatio * 100,
-    interestYield: metric.interestYield * 100,
-  }));
+  const formattedData = formatDailyDataPoints(
+    metrics,
+    CHART_INTERVALS,
+    new Date().getTime(),
+    (metric) => ({
+      timestamp: metric.timestamp * 1000,
+      utilRatio: metric.utilRatio * 100,
+      interestYield: metric.interestYield * 100,
+    })
+  );
 
   return (
     <>
@@ -87,12 +96,19 @@ export const TlcChart = () => {
             { series: 'utilRatio', color: theme.palette.light },
           ]}
           xTickFormatter={tickFormatters[selectedInterval]}
-          yTickFormatter={(val, i) => formatNumberAbbreviated(val).number.toFixed(2) + '%'}
+          yTickFormatter={(val, i) =>
+            formatNumberAbbreviated(val).number.toFixed(2) + '%'
+          }
           tooltipLabelFormatter={tooltipLabelFormatters[selectedInterval]}
           yDomain={yDomain}
-          legendFormatter={(name) => (name === 'utilRatio' ? 'Utilization Rate' : 'Interest Rate')}
+          legendFormatter={(name) =>
+            name === 'utilRatio' ? 'Utilization Rate' : 'Interest Rate'
+          }
           tooltipValuesFormatter={(value, name) =>
-            tooltipValuesFormatter(value, name === 'utilRatio' ? 'Utilization Rate' : 'Interest Rate')
+            tooltipValuesFormatter(
+              value,
+              name === 'utilRatio' ? 'Utilization Rate' : 'Interest Rate'
+            )
           }
         />
       }

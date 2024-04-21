@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 import styled from 'styled-components';
 import { Popover } from 'components/Popover';
 import { formatNumberFixedDecimals, formatToken } from 'utils/formatter';
@@ -15,11 +16,21 @@ interface IProps {
   handleTransaction: () => Promise<boolean>;
 }
 
-export const TransactionPreviewModal: React.FC<IProps> = ({ isOpen, onClose, state, handleTransaction }) => {
+export const TransactionPreviewModal: React.FC<IProps> = ({
+  isOpen,
+  onClose,
+  state,
+  handleTransaction,
+}) => {
   // Check if swap should be disabled
-  const bigInputValue = getBigNumberFromString(state.inputValue || '0', getTokenInfo(state.inputToken).decimals);
+  const bigInputValue = getBigNumberFromString(
+    state.inputValue || '0',
+    getTokenInfo(state.inputToken).decimals
+  );
   const isButtonDisabled =
-    state.isTransactionPending || state.inputTokenBalance.eq(ZERO) || bigInputValue.gt(state.inputTokenBalance);
+    state.isTransactionPending ||
+    state.inputTokenBalance.eq(ZERO) ||
+    bigInputValue.gt(state.inputTokenBalance);
 
   // TODO: Display error message if input value is greater than input token balance
 
@@ -32,7 +43,13 @@ export const TransactionPreviewModal: React.FC<IProps> = ({ isOpen, onClose, sta
   if (state.quote === null) return null;
 
   return (
-    <Popover isOpen={isOpen} onClose={onClose} closeOnClickOutside={true} showCloseButton header="Preview Swap">
+    <Popover
+      isOpen={isOpen}
+      onClose={onClose}
+      closeOnClickOutside={true}
+      showCloseButton
+      header="Preview Swap"
+    >
       <PriceContainer>
         <div>
           <span>
@@ -50,8 +67,12 @@ export const TransactionPreviewModal: React.FC<IProps> = ({ isOpen, onClose, sta
       <PriceMarker>
         1 {state.inputToken} ={' '}
         {(
-          Number(ethers.utils.formatUnits(state.quote.returnAmount, getTokenInfo(state.outputToken).decimals)) /
-          Number(state.inputValue)
+          Number(
+            ethers.utils.formatUnits(
+              state.quote.returnAmount,
+              getTokenInfo(state.outputToken).decimals
+            )
+          ) / Number(state.inputValue)
         ).toFixed(4)}{' '}
         {state.outputToken}
       </PriceMarker>
@@ -60,11 +81,14 @@ export const TransactionPreviewModal: React.FC<IProps> = ({ isOpen, onClose, sta
         <AmountAfterFees>
           <span>Total expected after fees:</span>
           <NoWrapSpan>
-            {formatToken(state.quote.returnAmount, state.outputToken, 4)} {state.outputToken}
+            {formatToken(state.quote.returnAmount, state.outputToken, 4)}{' '}
+            {state.outputToken}
           </NoWrapSpan>
         </AmountAfterFees>
         <div>
-          <span>The least you'll get at {state.slippageTolerance}% slippage:</span>
+          <span>
+            The least you'll get at {state.slippageTolerance}% slippage:
+          </span>
           <NoWrapSpan>
             {formatToken(
               state.quote.returnAmount

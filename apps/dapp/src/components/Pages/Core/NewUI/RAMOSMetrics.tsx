@@ -6,23 +6,40 @@ import { format, differenceInDays } from 'date-fns';
 import { BiAxialAreaChart } from 'components/Charts';
 import Loader from 'components/Loader/Loader';
 import { formatTimestampedChartData } from 'utils/charts';
-import { formatNumberAbbreviated, formatNumberWithCommas } from 'utils/formatter';
+import {
+  formatNumberAbbreviated,
+  formatNumberWithCommas,
+} from 'utils/formatter';
 import * as breakpoints from 'styles/breakpoints';
-import useRefreshableRamosMetrics, { RamosMetrics } from 'hooks/use-refreshable-ramos-metrics';
+import useRefreshableRamosMetrics, {
+  RamosMetrics,
+} from 'hooks/use-refreshable-ramos-metrics';
 
 type XAxisTickFormatter = (timestamp: number) => string;
 
 const RAMOS_LAUNCH_DATE = new Date(1671058907000);
 
-const tooltipLabelFormatters: Record<ChartSupportedTimeInterval, XAxisTickFormatter> = {
+const tooltipLabelFormatters: Record<
+  ChartSupportedTimeInterval,
+  XAxisTickFormatter
+> = {
   '1D': (timestamp) =>
-    `Day ${differenceInDays(timestamp, RAMOS_LAUNCH_DATE).toString()}, ${format(timestamp, 'h aaa')}`,
-  '1W': (timestamp) => `Day ${differenceInDays(timestamp, RAMOS_LAUNCH_DATE).toString()}`,
-  '1M': (timestamp) => `Day ${differenceInDays(timestamp, RAMOS_LAUNCH_DATE).toString()}`,
-  '1Y': (timestamp) => `Day ${differenceInDays(timestamp, RAMOS_LAUNCH_DATE).toString()}`,
+    `Day ${differenceInDays(timestamp, RAMOS_LAUNCH_DATE).toString()}, ${format(
+      timestamp,
+      'h aaa'
+    )}`,
+  '1W': (timestamp) =>
+    `Day ${differenceInDays(timestamp, RAMOS_LAUNCH_DATE).toString()}`,
+  '1M': (timestamp) =>
+    `Day ${differenceInDays(timestamp, RAMOS_LAUNCH_DATE).toString()}`,
+  '1Y': (timestamp) =>
+    `Day ${differenceInDays(timestamp, RAMOS_LAUNCH_DATE).toString()}`,
 };
 
-const tooltipValuesFormatter = (value: number, name: string) => [formatNumberWithCommas(value), name];
+const tooltipValuesFormatter = (value: number, name: string) => [
+  formatNumberWithCommas(value),
+  name,
+];
 
 const tooltipValueNames = {
   templeBurned: 'TEMPLE burned',
@@ -50,7 +67,11 @@ export const RAMOSMetrics: FC = () => {
     };
   }
 
-  const formattedData = formatTimestampedChartData(dailyMetrics, hourlyMetrics, formatData);
+  const formattedData = formatTimestampedChartData(
+    dailyMetrics,
+    hourlyMetrics,
+    formatData
+  );
 
   if (formattedData === null) {
     console.error('Empty formatted dataset for RAMOS metrics');
@@ -84,19 +105,31 @@ export const RAMOSMetrics: FC = () => {
           xDataKey={'timestamp'}
           xLabel="Days since launch"
           lines={[
-            { series: 'templeBurned', color: theme.palette.brand, yAxisId: 'left' },
-            { series: 'totalProfitUSD', color: theme.palette.light, yAxisId: 'right' },
+            {
+              series: 'templeBurned',
+              color: theme.palette.brand,
+              yAxisId: 'left',
+            },
+            {
+              series: 'totalProfitUSD',
+              color: theme.palette.light,
+              yAxisId: 'right',
+            },
           ]}
           xTickFormatter={xTickFormatter}
           tooltipLabelFormatter={tooltipLabelFormatters[CHART_INTERVAL]}
           tooltipValuesFormatter={(value, name) =>
             tooltipValuesFormatter(
               value,
-              name === 'templeBurned' ? tooltipValueNames.templeBurned : tooltipValueNames.totalProfitUSD
+              name === 'templeBurned'
+                ? tooltipValueNames.templeBurned
+                : tooltipValueNames.totalProfitUSD
             )
           }
           legendFormatter={(name) =>
-            name === 'templeBurned' ? tooltipValueNames.templeBurned : tooltipValueNames.totalProfitUSD
+            name === 'templeBurned'
+              ? tooltipValueNames.templeBurned
+              : tooltipValueNames.totalProfitUSD
           }
         />
       </ChartContainer>
