@@ -37,9 +37,6 @@ interface IDaiGoldAuction is IAuctionBase {
 
     /// @notice Keep track of next epoch auction Temple Gold amount
     function nextAuctionGoldAmount() external view returns (uint256);
-
-    /// @notice Cool down in seconds for rewards distribution
-    function rewardDistributionCoolDown() external view returns (uint160);
     
     /// @notice Timestamp for last reward notification
     function lastRewardNotificationTimestamp() external view returns (uint96);

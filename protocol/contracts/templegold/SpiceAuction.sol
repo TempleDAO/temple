@@ -28,7 +28,7 @@ contract SpiceAuction is ISpiceAuction, AuctionBase {
     string public override name;
 
     /// @notice Last time auction was started. For zero auctions, it is the contract deploy timestamp
-    uint256 private _deoloyTimestamp;
+    uint256 private immutable _deoloyTimestamp;
 
     /// @notice Keep track of the different configurations for each auction
     mapping(uint256 auctionId => SpiceAuctionConfig config) public auctionConfigs;

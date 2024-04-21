@@ -207,12 +207,17 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
         return totalSupply();
     }
 
-    function _beforeTokenTransfer(address from, address to /*uint256 amount*/) internal view {
+    /**
+     * @dev Transfers a `value` amount of tokens from `from` to `to`, or alternatively mints (or burns) if `from`
+     * (or `to`) is the zero address. All customizations to transfers, mints, and burns should be done by overriding
+     * this function.
+     *
+     * Emits a {Transfer} event.
+     */
+    function _update(address from, address to, uint256 value) internal override {
         /// @notice can only transfer to or from whitelisted addreess
-        /// this also disables burn
-        if (from != address(0) || to != address(0)) {
-            if (!authorized[from] && !authorized[to]) { revert ITempleGold.NonTransferrable(from, to); }
-        }
+        if (!authorized[from] && !authorized[to]) { revert ITempleGold.NonTransferrable(from, to); }
+        super._update(from, to, value);
     }
 
     function _distribute(DistributionParams storage params, uint256 mintAmount) private {

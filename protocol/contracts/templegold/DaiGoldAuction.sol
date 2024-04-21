@@ -35,7 +35,6 @@ contract DaiGoldAuction is IDaiGoldAuction, AuctionBase, TempleElevatedAccess {
 
     /// @notice Keep track of next epoch auction Temple Gold amount
     uint256 public override nextAuctionGoldAmount;
-    uint160 public override rewardDistributionCoolDown;
     uint96 public override lastRewardNotificationTimestamp;
 
     /// @notice Auctions run for minimum 1 week
