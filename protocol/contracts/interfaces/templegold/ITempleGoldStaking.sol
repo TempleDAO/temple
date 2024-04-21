@@ -2,6 +2,9 @@ pragma solidity 0.8.20;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (interfaces/templegold/ITempleGoldStaking.sol)
 
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IStakedTempleVoteToken} from "contracts/interfaces/templegold/IStakedTempleVoteToken.sol";
+
 interface ITempleGoldStaking {
     event StakingProxySet(address stakingProxy);
     event Staked(address indexed staker, uint256 amount);
@@ -21,6 +24,44 @@ interface ITempleGoldStaking {
         uint40 lastUpdateTime;
         uint216 rewardPerTokenStored;
     }
+
+    /// @notice The staking token. Temple
+    function stakingToken() external view returns (IERC20);
+    /// @notice Reward token. Temple Gold
+    function rewardToken() external view returns (IERC20);
+    /// @notice Vote Token
+    function voteToken() external view returns (IStakedTempleVoteToken);
+
+    /// @notice Distribution starter
+    function distributionStarter() external view returns (address);
+
+    /// @notice Rewards stored per token
+    function rewardPerTokenStored() external view returns (uint256);
+    /// @notice Total supply of staking token
+    function totalSupply() external view returns (uint256);
+
+    /// @notice The time it takes until half the voting weight is reached for a staker
+    function halfTime() external view returns (uint256);
+
+    /// @notice Time tracking
+    function periodFinish() external view returns (uint256);
+    function lastUpdateTime() external view returns (uint256);
+
+    /// @notice Store next reward amount for next epoch
+    function nextRewardAmount() external view returns (uint256);
+    /// @notice Cooldown time before next distribution of rewards
+    /// @dev If set to zero, rewards distribution is callable any time 
+    function rewardDistributionCoolDown() external view returns (uint160);
+    /// @notice Timestamp for last reward notification
+    function lastRewardNotificationTimestamp() external view returns (uint96);
+
+    /// @notice For use when migrating to a new staking contract if TGLD changes.
+    function migrator() external view returns (address);
+
+    /// @notice Stakers claimable rewards
+    function claimableRewards(address account) external view returns (uint256);
+    /// @notice Staker reward per token paid
+    function userRewardPerTokenPaid(address account) external view returns (uint256);
 
     /**
      * @notice Set migrator
@@ -135,6 +176,8 @@ interface ITempleGoldStaking {
      * @param account Account
      */
     function getVoteweight(address account) external view returns (uint256);
+
+    function getRewardData() external view returns (Reward memory);
 
     /**
       * @notice For migrations to a new staking contract if TGLD changes

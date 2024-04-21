@@ -3,9 +3,13 @@ pragma solidity 0.8.20;
 // Temple (interfaces/templegold/ITempleTeleporter.sol)
 
 import { MessagingReceipt } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/OAppSender.sol";
+import { ITempleERC20Token } from "contracts/interfaces/core/ITempleERC20Token.sol";
 
 interface ITempleTeleporter {
     event TempleTeleported(uint32 dstEid, address indexed sender, address indexed recipient, uint256 amount);
+
+     /// @notice Temple token
+    function temple() external view returns (ITempleERC20Token);
 
     /**
      * @notice Teleport temple tokens cross chain

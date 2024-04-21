@@ -10,6 +10,7 @@ import { ITempleGold } from "contracts/interfaces/templegold/ITempleGold.sol";
 import { AuctionBase } from "contracts/templegold/AuctionBase.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { TempleMath } from "contracts/common/TempleMath.sol";
 
 /** 
  * @title AuctionEscrow
@@ -19,28 +20,31 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  *         Elevated access can change bidding token for future epochs.
  */
 contract DaiGoldAuction is IDaiGoldAuction, AuctionBase, TempleElevatedAccess {
+    using SafeERC20 for ITempleGold;
     using SafeERC20 for IERC20;
+    using TempleMath for uint256;
     
     /// @notice Temple GOLD address
-    IERC20 public immutable templeGold;
+    ITempleGold public immutable override templeGold;
     /// @notice Token to bid for temple GOLD
-    IERC20 public bidToken;
+    IERC20 public override bidToken;
     /// @notice Destination address for proceeds of fire ritual
-    address public immutable treasury;
+    address public immutable override treasury;
     /// @notice Address that can trigger start of auction. address(0) means anyone
-    address public auctionStarter;
-    /// @notice Bool for if bidding is live
-    bool public bidLive;
+    address public override auctionStarter;
 
     /// @notice Keep track of next epoch auction Temple Gold amount
-    uint256 public nextAuctionGoldAmount;
-    uint160 public rewardDistributionCoolDown;
-    uint96 public lastRewardNotificationTimestamp;
+    uint256 public override nextAuctionGoldAmount;
+    uint160 public override rewardDistributionCoolDown;
+    uint96 public override lastRewardNotificationTimestamp;
 
     /// @notice Auctions run for minimum 1 week
-    uint32 public constant MINIMUM_AUCTION_PERIOD = 604_800;
+    // uint32 public constant MINIMUM_AUCTION_PERIOD = 1 weeks;
 
-    AuctionConfig public auctionConfig;
+    /// @notice Auction duration
+    uint64 public constant AUCTION_DURATION = 1 weeks;
+
+    AuctionConfig private auctionConfig;
 
     constructor(
         address _templeGold,
@@ -49,7 +53,7 @@ contract DaiGoldAuction is IDaiGoldAuction, AuctionBase, TempleElevatedAccess {
         address _rescuer,
         address _executor
     ) TempleElevatedAccess(_rescuer, _executor) {
-        templeGold = IERC20(_templeGold);
+        templeGold = ITempleGold(_templeGold);
         bidToken = IERC20(_bidToken);
         treasury = _treasury;
     }
@@ -59,14 +63,14 @@ contract DaiGoldAuction is IDaiGoldAuction, AuctionBase, TempleElevatedAccess {
      * @param _config Auction configuration
      */
     function setAuctionConfig(AuctionConfig calldata _config) external override onlyElevatedAccess {
-        if (_config.auctionDuration < MINIMUM_AUCTION_PERIOD) { revert CommonEventsAndErrors.InvalidParam(); }
-        if (_config.auctionMinimumWaitPeriod == 0
-            || _config.auctionStartCooldown == 0
-            || _config.auctionMinimumDistributedGold == 0) 
-        { revert CommonEventsAndErrors.ExpectedNonZero(); }
+        // if (_config.auctionDuration < MINIMUM_AUCTION_PERIOD) { revert CommonEventsAndErrors.InvalidParam(); }
+        if (_config.auctionStartCooldown == 0
+                || _config.auctionMinimumDistributedGold == 0
+                || _config.auctionsTimeDiff == 0) 
+            { revert CommonEventsAndErrors.ExpectedNonZero(); }
         auctionConfig = _config;
 
-        emit AuctionConfigSet(_config);
+        emit AuctionConfigSet(_currentEpochId, _config);
     }
 
     /**
@@ -76,6 +80,7 @@ contract DaiGoldAuction is IDaiGoldAuction, AuctionBase, TempleElevatedAccess {
     function setAuctionStarter(address _starter) external override onlyElevatedAccess {
         /// @notice No zero address checks. Zero address is a valid input
         auctionStarter = _starter; 
+        emit AuctionStarterSet(_starter);
     }
 
     /**
@@ -95,10 +100,10 @@ contract DaiGoldAuction is IDaiGoldAuction, AuctionBase, TempleElevatedAccess {
         if (auctionStarter != address(0) && msg.sender != auctionStarter) { revert CommonEventsAndErrors.InvalidAccess(); }
         if (!_isCurrentEpochEnded()) { revert CannotStartAuction(); }
        
-        EpochInfo memory prevAuctionInfo = epochs[_currentEpochId];
-        AuctionConfig memory config = auctionConfig;
+        EpochInfo storage prevAuctionInfo = epochs[_currentEpochId];
+        AuctionConfig storage config = auctionConfig;
         /// @notice last auction end time plus wait period
-        if (prevAuctionInfo.endTime + auctionConfig.auctionMinimumWaitPeriod > block.timestamp) { revert CannotStartAuction(); }
+        if (prevAuctionInfo.endTime + config.auctionsTimeDiff > block.timestamp) { revert CannotStartAuction(); }
 
         uint256 totalGoldAmount = nextAuctionGoldAmount;
         nextAuctionGoldAmount = 0;
@@ -108,18 +113,17 @@ contract DaiGoldAuction is IDaiGoldAuction, AuctionBase, TempleElevatedAccess {
 
         EpochInfo storage info = epochs[epochId];
         info.totalAuctionTokenAmount = totalGoldAmount;
-        info.startTime = uint64(block.timestamp) + config.auctionStartCooldown;
-        uint64 endTime = info.endTime = uint64(block.timestamp) + config.auctionDuration;
-        bidLive = true;
-        
-        emit AuctionStart(epochId, uint64(block.timestamp), endTime, totalGoldAmount);
+        uint64 startTime = info.startTime = uint64(block.timestamp) + config.auctionStartCooldown;
+        uint64 endTime = info.endTime = startTime + AUCTION_DURATION;
+
+        emit AuctionStarted(epochId, msg.sender, startTime, endTime, totalGoldAmount);
     }
 
     /**
      * @notice Deposit bidding token for current running epoch auction
      * @param amount Amount of bid token to deposit
      */
-    function deposit(uint256 amount) external virtual override onlyWhenLive {
+    function bid(uint256 amount) external virtual override onlyWhenLive {
         if (amount == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
         _distributeGold();
 
@@ -149,7 +153,7 @@ contract DaiGoldAuction is IDaiGoldAuction, AuctionBase, TempleElevatedAccess {
         bidToken.safeTransfer(treasury, bidTokenAmount);
 
         delete depositors[msg.sender][epochId];
-        uint256 claimAmount = _mulDivRound(bidTokenAmount, infoCached.totalAuctionTokenAmount, infoCached.totalBidTokenAmount, false);
+        uint256 claimAmount = bidTokenAmount.mulDivRound(infoCached.totalAuctionTokenAmount, infoCached.totalBidTokenAmount, false);
         templeGold.safeTransfer(msg.sender, claimAmount);
         emit Claim(msg.sender, epochId, bidTokenAmount, claimAmount);
     }
@@ -209,6 +213,14 @@ contract DaiGoldAuction is IDaiGoldAuction, AuctionBase, TempleElevatedAccess {
     }
 
     /**
+     * @notice Get auction configuration
+     * @return Auction configuration
+     */
+    function getAuctionConfig() external override view returns (AuctionConfig memory) {
+        return auctionConfig;
+    }
+
+    /**
      * @notice Mint and distribute TGLD 
      */
     function distributeGold() external {
@@ -216,10 +228,8 @@ contract DaiGoldAuction is IDaiGoldAuction, AuctionBase, TempleElevatedAccess {
     }
     
     function _distributeGold() private {
-        bool canDistribute = ITempleGold(address(templeGold)).canDistribute();
-        if (canDistribute) {
-            ITempleGold(address(templeGold)).mint();
-        }
+        /// @dev no op silent fail if nothing to distribute
+        templeGold.mint();
     }
 
     modifier onlyWhenLive() {

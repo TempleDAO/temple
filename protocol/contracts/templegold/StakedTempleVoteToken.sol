@@ -19,9 +19,9 @@ import { ITempleGoldStaking } from "contracts/interfaces/templegold/ITempleGoldS
 contract StakedTempleVoteToken is IStakedTempleVoteToken, TempleElevatedAccess, ERC20, ERC20Burnable, Pausable {
 
     /// @notice Staking contract. Mutable if ever staking contract is upgraded.
-    address public staking;
+    address public override staking;
     /// @notice Authorized contracts that can burn/mint
-    mapping(address authority => bool authorized) public authorized;
+    mapping(address authority => bool authorized) public override authorized;
     
     constructor(
         address _initialRescuer,

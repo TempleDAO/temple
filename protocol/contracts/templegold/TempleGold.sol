@@ -11,11 +11,10 @@ import { IDaiGoldAuction } from "contracts/interfaces/templegold/IDaiGoldAuction
 import { OFT } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/OFT.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { ITempleGoldStaking}  from "contracts/interfaces/templegold/ITempleGoldStaking.sol";
-import { mulDiv } from "@prb/math/src/Common.sol";
 import { MessagingReceipt, MessagingFee } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/OAppSender.sol";
 import { OFTMsgCodec } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/libs/OFTMsgCodec.sol";
 import { SendParam, OFTReceipt } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/interfaces/IOFT.sol";
-
+import { TempleMath } from "contracts/common/TempleMath.sol";
 
 /**
  * @title Temple Gold 
@@ -31,14 +30,14 @@ import { SendParam, OFTReceipt } from "@layerzerolabs/lz-evm-oapp-v2/contracts/o
 
     /// @notice These addresses are mutable to allow change/upgrade.
     /// @notice Staking contract
-    ITempleGoldStaking public staking;
+    ITempleGoldStaking public override staking;
     /// @notice Escrow auction contract
-    IDaiGoldAuction public escrow;
+    IDaiGoldAuction public override escrow;
     /// @notice Multisig gnosis address
-    address public teamGnosis;
+    address public override teamGnosis;
 
     /// @notice Last block timestamp Temple Gold was minted
-    uint32 public lastMintTimestamp;
+    uint32 public override lastMintTimestamp;
 
     //// @notice Distribution as a percentage of 100
     uint256 public constant DISTRIBUTION_MULTIPLIER = 100 ether;
@@ -49,11 +48,11 @@ import { SendParam, OFTReceipt } from "@layerzerolabs/lz-evm-oapp-v2/contracts/o
     /// @notice Minimum Temple Gold minted per call to mint
     uint256 public constant MINIMUM_MINT = 1_000;
 
-    /// @notice Arbitrum One chain id
-    uint256 private constant _ARBITRUM_ONE_CHAIN_ID = 42161;
+    /// @notice Mint chain id
+    uint256 private immutable mintChainId;
 
     /// @notice Whitelisted addresses for transferrability
-    mapping(address => bool) public authorized;
+    mapping(address => bool) public override authorized;
     /// @notice Distribution parameters. Minted share percentages for staking, escrow and gnosis. Adds up to 100%
     DistributionParams private distributionParams;
     /// @notice Vesting factor determines rate of mint
@@ -67,6 +66,7 @@ import { SendParam, OFTReceipt } from "@layerzerolabs/lz-evm-oapp-v2/contracts/o
         address escrow;
         address gnosis;
         address layerZeroEndpoint; // local endpoint address
+        uint256 mintChainId;
         string name;
         string symbol;
     }
@@ -78,6 +78,7 @@ import { SendParam, OFTReceipt } from "@layerzerolabs/lz-evm-oapp-v2/contracts/o
        staking = ITempleGoldStaking(_initArgs.staking);
        escrow = IDaiGoldAuction(_initArgs.escrow);
        teamGnosis = _initArgs.gnosis;
+       mintChainId = _initArgs.mintChainId;
     }
 
     /**
@@ -156,11 +157,11 @@ import { SendParam, OFTReceipt } from "@layerzerolabs/lz-evm-oapp-v2/contracts/o
         VestingFactor memory vestingFactorCache = vestingFactor;
         DistributionParams storage distributionParamsCache = distributionParams;
         if (vestingFactorCache.numerator == 0 || distributionParamsCache.escrow == 0) { revert ITempleGold.MissingParameter(); }
-        
+        /// @dev no op silently
+        if (!_canDistribute(vestingFactorCache)) { return; }
+
         uint256 mintAmount = _getMintAmount(vestingFactorCache);
-        if (mintAmount < MINIMUM_MINT) { revert ITempleGold.InsufficientMintAmount(mintAmount); }
         uint256 totalSupplyCache = totalSupply();
-        if (totalSupplyCache >= MAX_SUPPLY) { revert MaxSupply(); }
 
         uint256 newTotalSupply = totalSupplyCache + mintAmount;
         if (newTotalSupply > MAX_SUPPLY) {
@@ -190,6 +191,10 @@ import { SendParam, OFTReceipt } from "@layerzerolabs/lz-evm-oapp-v2/contracts/o
 
     function canDistribute() external view returns (bool) {
         VestingFactor memory vestingFactorCache = vestingFactor;
+       return _canDistribute(vestingFactorCache);
+    }
+
+    function _canDistribute(VestingFactor memory vestingFactorCache) private view returns (bool) {
         uint256 mintAmount = _getMintAmount(vestingFactorCache);
         return mintAmount >= MINIMUM_MINT && totalSupply() < MAX_SUPPLY;
     }
@@ -202,15 +207,6 @@ import { SendParam, OFTReceipt } from "@layerzerolabs/lz-evm-oapp-v2/contracts/o
         return totalSupply();
     }
 
-    /// @notice mulDiv with an option to round the result up or down to the nearest wei
-    function _mulDivRound(uint256 x, uint256 y, uint256 denominator, bool roundUp) internal pure returns (uint256 result) {
-        result = mulDiv(x, y, denominator);
-        // See OZ Math.sol for the equivalent mulDiv() with rounding.
-        if (roundUp && mulmod(x, y, denominator) > 0) {
-            result += 1;
-        }
-    }
-
     function _beforeTokenTransfer(address from, address to /*uint256 amount*/) internal view {
         /// @notice can only transfer to or from whitelisted addreess
         /// this also disables burn
@@ -220,19 +216,19 @@ import { SendParam, OFTReceipt } from "@layerzerolabs/lz-evm-oapp-v2/contracts/o
     }
 
     function _distribute(DistributionParams storage params, uint256 mintAmount) private {
-        uint256 stakingAmount = _mulDivRound(params.staking, mintAmount, DISTRIBUTION_MULTIPLIER, false);
+        uint256 stakingAmount = TempleMath.mulDivRound(params.staking, mintAmount, DISTRIBUTION_MULTIPLIER, false);
         if (stakingAmount > 0) {
             _mint(address(staking), stakingAmount);
             staking.notifyDistribution(stakingAmount);
         }
 
-        uint256 escrowAmount = _mulDivRound(params.escrow, mintAmount, DISTRIBUTION_MULTIPLIER, false);
+        uint256 escrowAmount = TempleMath.mulDivRound(params.escrow, mintAmount, DISTRIBUTION_MULTIPLIER, false);
         if (escrowAmount > 0) {
             _mint(address(escrow), escrowAmount);
             escrow.notifyDistribution(escrowAmount);
         }
 
-        uint256 gnosisAmount = _mulDivRound(params.gnosis, mintAmount, DISTRIBUTION_MULTIPLIER, false);
+        uint256 gnosisAmount = TempleMath.mulDivRound(params.gnosis, mintAmount, DISTRIBUTION_MULTIPLIER, false);
         if (gnosisAmount > 0) {
             _mint(teamGnosis, gnosisAmount);
             /// @notice no requirement to notify gnosis because no action has to be taken
@@ -244,9 +240,9 @@ import { SendParam, OFTReceipt } from "@layerzerolabs/lz-evm-oapp-v2/contracts/o
     function _getMintAmount(VestingFactor memory vestingFactorCache) private view returns (uint256 mintAmount) {
         /// @notice first time mint
         if (lastMintTimestamp == 0) {
-            mintAmount = _mulDivRound(block.timestamp * MAX_SUPPLY, vestingFactorCache.denominator, vestingFactorCache.numerator, false);
+            mintAmount = TempleMath.mulDivRound(block.timestamp * MAX_SUPPLY, vestingFactorCache.denominator, vestingFactorCache.numerator, false);
         } else {
-            mintAmount = _mulDivRound((lastMintTimestamp - block.timestamp) * (MAX_SUPPLY - totalSupply()), vestingFactorCache.denominator, vestingFactorCache.numerator, false);
+            mintAmount = TempleMath.mulDivRound((lastMintTimestamp - block.timestamp) * (MAX_SUPPLY - totalSupply()), vestingFactorCache.denominator, vestingFactorCache.numerator, false);
         }
     }
 
@@ -333,7 +329,7 @@ import { SendParam, OFTReceipt } from "@layerzerolabs/lz-evm-oapp-v2/contracts/o
     }
 
     modifier onlyArbitrum() {
-        if (block.chainid != _ARBITRUM_ONE_CHAIN_ID) { revert ArbitrumOnly(); }
+        if (block.chainid != mintChainId) { revert ArbitrumOnly(); }
         _;
     }
  }

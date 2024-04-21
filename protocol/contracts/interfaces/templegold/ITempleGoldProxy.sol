@@ -17,7 +17,9 @@ interface IOFTCore {
     function setMsgInspector(address _msgInspector) external;
 }
 interface ITempleGoldProxy {
-
+    /// @notice Temple Gold
+    function templeGold() external view returns (ITempleGold);
+    
     /**
      * @notice Set staking proxy contract address
      * @param _staking Staking proxy contract

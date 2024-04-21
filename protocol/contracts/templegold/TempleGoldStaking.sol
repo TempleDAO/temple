@@ -23,49 +23,49 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     using SafeERC20 for IERC20;
 
     /// @notice The staking token. Temple
-    IERC20 public immutable stakingToken;
+    IERC20 public immutable override stakingToken;
     /// @notice Reward token. Temple Gold
-    IERC20 public immutable rewardToken;
+    IERC20 public immutable override rewardToken;
     /// @notice Vote Token
-    IStakedTempleVoteToken public immutable voteToken;
+    IStakedTempleVoteToken public immutable override voteToken;
 
     /// @notice Distribution starter
-    address public distributionStarter;
+    address public override distributionStarter;
 
     uint256 constant public WEEK_LENGTH = 7 days;
 
     /// @notice Rewards stored per token
-    uint256 public rewardPerTokenStored;
+    uint256 public override rewardPerTokenStored;
     /// @notice Total supply of staking token
-    uint256 public totalSupply;
+    uint256 public override totalSupply;
 
     /// @notice The time it takes until half the voting weight is reached for a staker
-    uint256 public halfTime;
+    uint256 public override halfTime;
 
     /// @notice Time tracking
-    uint256 public periodFinish;
-    uint256 public lastUpdateTime;
+    uint256 public override periodFinish;
+    uint256 public override lastUpdateTime;
 
     /// @notice Store next reward amount for next epoch
-    uint256 public nextRewardAmount;
+    uint256 public override nextRewardAmount;
     /// @notice Duration for rewards distribution
-    uint256 public REWARD_DURATION = 7 days;
+    uint256 public constant REWARD_DURATION = 7 days;
     /// @notice Cooldown time before next distribution of rewards
     /// @dev If set to zero, rewards distribution is callable any time 
-    uint160 public rewardDistributionCoolDown;
+    uint160 public override rewardDistributionCoolDown;
     /// @notice Timestamp for last reward notification
-    uint96 public lastRewardNotificationTimestamp;
+    uint96 public override lastRewardNotificationTimestamp;
 
     /// @notice For use when migrating to a new staking contract if TGLD changes.
-    address public migrator;
+    address public override migrator;
     /// @notice Data struct for rewards
-    Reward public rewardData;
+    Reward internal rewardData;
     /// @notice Staker balances
     mapping(address account => uint256 balance) private _balances;
     /// @notice Stakers claimable rewards
-    mapping(address account => uint256 amount) public claimableRewards;
+    mapping(address account => uint256 amount) public override claimableRewards;
     /// @notice Staker reward per token paid
-    mapping(address account => uint256 amount) public userRewardPerTokenPaid;
+    mapping(address account => uint256 amount) public override userRewardPerTokenPaid;
 
     /// @notice Staker weights for calculating vote weights
     mapping(address account => AccountWeightParams weight) private _weights;
@@ -299,6 +299,10 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         /// @notice Temple Gold contract mints TGLD amount to contract before calling `notifyDistribution`
         nextRewardAmount += amount;
         lastRewardNotificationTimestamp = uint96(block.timestamp);
+    }
+
+    function getRewardData() external override view returns (Reward memory) {
+        return rewardData;
     }
 
     function _getReward(address staker, address rewardsToAddress) internal {

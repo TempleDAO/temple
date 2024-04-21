@@ -5,7 +5,9 @@ pragma solidity 0.8.20;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IOFT } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/OFTCore.sol";
 import { IOAppCore } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/interfaces/IOAppCore.sol";
-import { IOAppOptionsType3, EnforcedOptionParam } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/interfaces/IOAppOptionsType3.sol";
+import { IOAppOptionsType3 } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/interfaces/IOAppOptionsType3.sol";
+import { ITempleGoldStaking } from "contracts/interfaces/templegold/ITempleGoldStaking.sol";
+import { IDaiGoldAuction } from "contracts/interfaces/templegold/IDaiGoldAuction.sol";
 
 interface ITempleGold is IOFT, IOAppCore, IOAppOptionsType3, IERC20 {
     struct DistributionParams {
@@ -36,7 +38,22 @@ interface ITempleGold is IOFT, IOAppCore, IOAppOptionsType3, IERC20 {
     error NonTransferrable(address from, address to);
     error MaxSupply();
     error ArbitrumOnly();
-    
+
+    /// @notice These addresses are mutable to allow change/upgrade.
+    /// @notice Staking contract
+    function staking() external view returns (ITempleGoldStaking);
+
+    /// @notice Escrow auction contract
+    function escrow() external view returns (IDaiGoldAuction);
+
+    /// @notice Multisig gnosis address
+    function teamGnosis() external view returns (address);
+
+    /// @notice Last block timestamp Temple Gold was minted
+    function lastMintTimestamp() external view returns (uint32);
+
+    /// @notice Whitelisted addresses for transferrability
+    function authorized(address who) external view returns (bool);
 
     /**
      * @notice Set staking proxy contract address

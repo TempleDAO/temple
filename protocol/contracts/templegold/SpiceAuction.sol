@@ -9,22 +9,23 @@ import { ISpiceAuction } from "contracts/interfaces/templegold/ISpiceAuction.sol
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { ISpiceAuction } from "contracts/interfaces/templegold/ISpiceAuction.sol";
 import { AuctionBase } from "contracts/templegold//AuctionBase.sol";
-import { mulDiv } from "@prb/math/src/Common.sol";
+import { TempleMath } from "contracts/common/TempleMath.sol";
 
 contract SpiceAuction is ISpiceAuction, AuctionBase {
     using SafeERC20 for IERC20;
+    using TempleMath for uint256;
 
     /// @notice Spice auction contracts are set up for 2 tokens. Either can be bid or sell token for a given auction
     /// @notice uint(TOKEN_A) < uint(TOKEN_B)
-    address public immutable tokenA;
-    address public immutable tokenB;
+    address public immutable override tokenA;
+    address public immutable override tokenB;
     /// @notice DAO contract to execute configurations update
-    address public immutable daoExecutor;
+    address public immutable override daoExecutor;
 
     /// @notice Auctions run for minimum 1 week
     uint32 public constant MINIMUM_AUCTION_PERIOD = 604_800;
     /// @notice Name of this Spice Bazaar auction
-    string public name;
+    string public override name;
 
     /// @notice Last time auction was started. For zero auctions, it is the contract deploy timestamp
     uint256 private _deoloyTimestamp;
@@ -116,10 +117,11 @@ contract SpiceAuction is ISpiceAuction, AuctionBase {
         // Keep track of total allocation auction tokens per epoch
         _totalAuctionTokenAllocation[auctionToken] = totalAuctionTokenAllocation + epochAuctionTokenAmount;
 
-        emit AuctionStarted(epochId, msg.sender, startTime, endTime);
+        emit AuctionStarted(epochId, msg.sender, startTime, endTime, epochAuctionTokenAmount);
+    
     }
 
-    function deposit(uint256 amount) external virtual override {
+    function bid(uint256 amount) external virtual override {
         if(!_canDeposit()) { revert CannotDeposit(); }
         if (amount == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
 
@@ -147,7 +149,7 @@ contract SpiceAuction is ISpiceAuction, AuctionBase {
         IERC20(bidToken).safeTransfer(config.recipient, bidTokenAmount);
 
         EpochInfo memory info = epochs[epochId];
-        uint256 claimAmount = _mulDivRound(bidTokenAmount, info.totalAuctionTokenAmount, info.totalBidTokenAmount, false);
+        uint256 claimAmount = bidTokenAmount.mulDivRound(info.totalAuctionTokenAmount, info.totalBidTokenAmount, false);
         IERC20(auctionToken).safeTransfer(msg.sender, claimAmount);
         emit Claim(msg.sender, epochId, bidTokenAmount, claimAmount);
 
@@ -155,8 +157,13 @@ contract SpiceAuction is ISpiceAuction, AuctionBase {
         _claimedAuctionTokens[auctionToken] += claimAmount;
     }
 
-    function NAME() external view returns (string memory) {
-        return name;
+    function getAuctionConfigs(uint256 auctionId) external view override returns (SpiceAuctionConfig memory) {
+        return auctionConfigs[auctionId];
+    }
+
+    function getAuctionTokenForCurrentEpoch() external override view returns (address) {
+        SpiceAuctionConfig memory config = auctionConfigs[_currentEpochId];
+        return config.auctionToken == AuctionToken.TOKEN_A ? tokenA: tokenB;
     }
 
     /**

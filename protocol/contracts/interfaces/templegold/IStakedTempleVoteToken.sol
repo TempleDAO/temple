@@ -12,6 +12,11 @@ interface IStakedTempleVoteToken is IERC20 {
     error NonTransferrable();
     error NotImplemented();
 
+    // @notice Staking contract. Mutable if ever staking contract is upgraded.
+    function staking() external view returns (address);
+    /// @notice Authorized contracts that can burn/mint
+    function authorized(address authority) external view returns (bool);
+
     /**
      * @dev Destroys a `value` amount of tokens from the caller.
      *

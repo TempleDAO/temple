@@ -14,7 +14,7 @@ import { ITempleTeleporter } from "contracts/interfaces/templegold/ITempleTelepo
 contract TempleTeleporter is ITempleTeleporter, OApp {
 
     /// @notice Temple token
-    ITempleERC20Token public immutable temple;
+    ITempleERC20Token public immutable override temple;
 
     constructor(
         address _executor,

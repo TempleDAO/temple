@@ -5,6 +5,11 @@ pragma solidity 0.8.20;
 interface IAuctionBase {
     event Deposit(address indexed depositor, uint256 epochId, uint256 amount);
     event Claim(address indexed user, uint256 epochId, uint256 bidTokenAmount, uint256 auctionTokenAmount);
+    event AuctionStarted(uint256 epochId, address indexed starter, uint64 startTime, uint64 endTime, uint256 auctionTokenAmount);
+    
+    error CannotDeposit();
+    error CannotClaim(uint256 epochId);
+    error CannotStartAuction();
 
     struct EpochInfo {
         /// @notice Start time for epoch
@@ -17,11 +22,16 @@ interface IAuctionBase {
         uint256 totalAuctionTokenAmount;
     }
 
+    /// @notice Keep track of epochs details
+    function getEpochInfo(uint256 epochId) external returns (EpochInfo memory);
+    /// @notice Keep track of depositors for each epoch
+    function depositors(address depositor, uint256 epochId) external returns (uint256);
+
     /**
      * @notice Deposit bidding token for current running epoch auction
      * @param amount Amount of bid token to deposit
      */
-    function deposit(uint256 amount) external;
+    function bid(uint256 amount) external;
 
     /**
      * @notice Claim share of Temple Gold for epoch

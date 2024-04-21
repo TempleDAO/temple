@@ -10,9 +10,9 @@ import { ISpiceAuctionFactory } from "contracts/interfaces/templegold/ISpiceAuct
 
 contract SpiceAuctionFactory is ISpiceAuctionFactory, TempleElevatedAccess {
     /// @notice Dao executing contract
-    address public immutable daoExecutor;
+    address public immutable override daoExecutor;
     /// @notice Keep track of deployed spice auctions
-    mapping(bytes32 id => address auction) public deployedAuctions;
+    mapping(bytes32 id => address auction) public override deployedAuctions;
 
     constructor(
         address _rescuer,

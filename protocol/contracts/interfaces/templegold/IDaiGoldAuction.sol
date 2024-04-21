@@ -2,36 +2,53 @@ pragma solidity 0.8.20;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (interfaces/templegold/IDaiGoldAuction.sol)
 
-interface IDaiGoldAuction {
-    event AuctionStart(uint256 epochId, uint64 timestamp, uint64 endTime, uint256 totalTGoldAmount);
+import { IAuctionBase } from "contracts/interfaces/templegold/IAuctionBase.sol";
+import { ITempleGold } from "contracts/interfaces/templegold/ITempleGold.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+interface IDaiGoldAuction is IAuctionBase {
     event BidTokenSet(address bidToken);
-    event BidForfeited(address indexed sender, uint256 epochId, uint256 amount);
-    event AuctionEnded(uint256 epochId);
-    event AuctionStartCooldownSet(uint256 cooldown);
-    event AuctionMinimumDistributedGoldSet(uint256 minGold);
-    event AuctionMinimumWaitPeriodSet(uint256 watPeriod);
     event GoldDistributionNotified(uint256 amount, uint256 timestamp);
-    event AuctionConfigSet(AuctionConfig config);
+    event AuctionConfigSet(uint256 epochId, AuctionConfig config);
+    event AuctionStarterSet(address indexed starter);
 
-    error BidNotLive();
-    error BidLive();
     error InvalidEpoch();
-    error CannotClaim(uint256 epochId);
-    error CannotStartAuction();
-    error CannotDeposit();
-    error CannotWithdraw();
     error LowGoldDistributed(uint256 epochGoldAmount);
 
     struct AuctionConfig {
-        /// @notice Duration of auction
-        uint32 auctionDuration; // todo make deterministic. same time to start and end, bi weekly and lasts for 1 week each auction
-        /// @notice Minimum time between successive auctions
-        uint32 auctionMinimumWaitPeriod; // todo should be a regular occurence eg. every week, etc
+        /// @notice Time diff between two auctions. Usually 2 weeks
+        uint32 auctionsTimeDiff;
         /// @notice Cooldown after auction start is triggered, to allow deposits
         uint32 auctionStartCooldown;
         /// @notice Minimum Gold distributed to enable auction start
-        uint160 auctionMinimumDistributedGold;
+        uint192 auctionMinimumDistributedGold;
     }
+
+    /// @notice Temple Gold address
+    function templeGold() external view returns (ITempleGold);
+
+    /// @notice Token to bid for Temple GOLD
+    function bidToken() external view returns (IERC20);
+
+    /// @notice Destination address for proceeds of fire ritual
+    function treasury() external view returns (address);
+
+    /// @notice Address that can trigger start of auction. address(0) means anyone
+    function auctionStarter() external view returns (address);
+
+    /// @notice Keep track of next epoch auction Temple Gold amount
+    function nextAuctionGoldAmount() external view returns (uint256);
+
+    /// @notice Cool down in seconds for rewards distribution
+    function rewardDistributionCoolDown() external view returns (uint160);
+    
+    /// @notice Timestamp for last reward notification
+    function lastRewardNotificationTimestamp() external view returns (uint96);
+
+    /**
+     * @notice Get auction configuration
+     * @return Auction configuration
+     */
+    function getAuctionConfig() external view returns (AuctionConfig memory);
 
     /**
      * @notice Set auction configuration

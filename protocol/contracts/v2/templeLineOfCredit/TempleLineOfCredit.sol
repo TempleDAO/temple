@@ -11,7 +11,7 @@ import { ITempleLineOfCredit } from "contracts/interfaces/v2/templeLineOfCredit/
 import { ITlcStrategy } from "contracts/interfaces/v2/strategies/ITlcStrategy.sol";
 import { CompoundedInterest } from "contracts/v2/interestRate/CompoundedInterest.sol";
 import { ITempleCircuitBreakerProxy } from "contracts/interfaces/v2/circuitBreaker/ITempleCircuitBreakerProxy.sol";
-
+import { TempleMath } from "contracts/common/TempleMath.sol";
 import { SafeCast } from "contracts/common/SafeCast.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
@@ -796,17 +796,6 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
             ? 0
             : mulDiv(_cache.totalDebt, PRECISION, _cache.trvDebtCeiling);
     }
-    
-    /**
-     * @dev mulDiv with an option to round the result up or down to the nearest wei
-     */
-    function _mulDivRound(uint256 x, uint256 y, uint256 denominator, bool roundUp) internal pure returns (uint256 result) {
-        result = mulDiv(x, y, denominator);
-        // See OZ Math.sol for the equivalent mulDiv() with rounding.
-        if (roundUp && mulmod(x, y, denominator) > 0) {
-            result += 1;
-        }
-    }
 
     /**
      * @dev Calculate the latest debt for a given account & token.
@@ -820,7 +809,7 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
     ) internal pure returns (uint128 result) {
         return (_accountDebtCheckpoint == 0) 
             ? 0
-            : _mulDivRound(
+            : TempleMath.mulDivRound(
                 _accountDebtCheckpoint, 
                 _cache.interestAccumulator, 
                 _accountInterestAccumulator, 

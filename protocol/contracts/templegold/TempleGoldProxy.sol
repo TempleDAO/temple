@@ -12,7 +12,7 @@ import { IOAppPreCrimeSimulator } from "@layerzerolabs/lz-evm-oapp-v2/contracts/
 
 contract TempleGoldProxy is ITempleGoldProxy, TempleElevatedAccess {
     /// @notice Temple Gold
-    ITempleGold public templeGold;
+    ITempleGold public override templeGold;
     
     constructor(address _rescuer, address _executor, address _templeGold) TempleElevatedAccess(_rescuer, _executor) {
         templeGold = ITempleGold(_templeGold);

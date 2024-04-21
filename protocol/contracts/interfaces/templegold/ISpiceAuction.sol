@@ -2,17 +2,13 @@ pragma solidity 0.8.20;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (interface/templegold/ISpiceAuction.sol)
 
-
-interface ISpiceAuction {
+import { IAuctionBase } from "contracts/interfaces/templegold/IAuctionBase.sol";
+interface ISpiceAuction is IAuctionBase {
     event AuctionConfigSet(uint256 epoch, SpiceAuctionConfig config);
-    event AuctionStarted(uint256 epochId, address indexed starter, uint64 startTime, uint64 endTime);
     event AuctionConfigRemoved(uint256 epochId);
 
-    error InvalidConfigOperation(); 
+    error InvalidConfigOperation();
     error NotEnoughAuctionTokens();
-    error CannotStartAuction();
-    error CannotDeposit();
-    error CannotClaim(uint256 epochId);
     error MissingAuctionTokenConfig();
     error NoConfig();
 
@@ -48,11 +44,25 @@ interface ISpiceAuction {
         USER_FIRST_BID
     }
 
+    /// @notice Spice auction contracts are set up for 2 tokens. Either can be bid or sell token for a given auction
+    /// @notice uint(TOKEN_A) < uint(TOKEN_B)
+    function tokenA() external view returns (address);
+    function tokenB() external view returns (address);
+    /// @notice DAO contract to execute configurations update
+    function daoExecutor() external view returns (address);
+
+    /// @notice Name of this Spice Bazaar auction
+    function name() external view returns (string memory);
+
     /// @notice Set config for an epoch. This enable dynamic and multiple auctions especially for vested scenarios
     /// Must be set before epoch auction starts
     function setAuctionConfig(SpiceAuctionConfig calldata _config) external;
     /// @notice Returns name of Spice Auction contract
-    function NAME() external view returns (string memory);
+    // function NAME() external view returns (string memory);
     /// @notice Remove config set for 
     function removeAuctionConfig() external;
+
+    function getAuctionTokenForCurrentEpoch() external view returns (address);
+
+    function getAuctionConfigs(uint256 auctionId) external view returns (SpiceAuctionConfig memory);
 }
