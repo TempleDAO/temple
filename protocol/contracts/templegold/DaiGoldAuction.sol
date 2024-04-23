@@ -102,7 +102,9 @@ contract DaiGoldAuction is IDaiGoldAuction, AuctionBase, TempleElevatedAccess {
         EpochInfo storage prevAuctionInfo = epochs[_currentEpochId];
         AuctionConfig storage config = auctionConfig;
         /// @notice last auction end time plus wait period
-        if (prevAuctionInfo.endTime + config.auctionsTimeDiff > block.timestamp) { revert CannotStartAuction(); }
+        if (_currentEpochId > 0 && (prevAuctionInfo.endTime + config.auctionsTimeDiff > block.timestamp)) {
+            revert CannotStartAuction();
+        }
 
         uint256 totalGoldAmount = nextAuctionGoldAmount;
         nextAuctionGoldAmount = 0;
@@ -142,11 +144,13 @@ contract DaiGoldAuction is IDaiGoldAuction, AuctionBase, TempleElevatedAccess {
      * @param epochId Id of epoch
      */
     function claim(uint256 epochId) external virtual override {
+        // if (epochId >= _currentEpochId) { revert CannotClaim(epochId); }
         /// @notice cannot claim for current live epoch
-        if (epochId >= _currentEpochId) { revert CannotClaim(epochId); }
-        _distributeGold();
         EpochInfo memory infoCached = epochs[epochId];
+        if (infoCached.endTime >= block.timestamp) { revert CannotClaim(epochId); }
         if (infoCached.startTime == 0) { revert InvalidEpoch(); }
+
+        _distributeGold();
         uint256 bidTokenAmount = depositors[msg.sender][epochId];
         if (bidTokenAmount == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
         bidToken.safeTransfer(treasury, bidTokenAmount);
@@ -217,6 +221,30 @@ contract DaiGoldAuction is IDaiGoldAuction, AuctionBase, TempleElevatedAccess {
      */
     function getAuctionConfig() external override view returns (AuctionConfig memory) {
         return auctionConfig;
+    }
+
+    /**
+     * @notice Get claimable amount for an epoch
+     * @dev For current epoch, function will return claimable at current time. This can change with more user deposits
+     * @param depositor Address to check amount for
+     * @return Claimable amount
+     */
+    function getClaimbaleAtCurrentTimestamp(address depositor) external override view returns (uint256) {
+        return getClaimableAtCurrentTimestamp(depositor, _currentEpochId);
+    }
+
+    /**
+     * @notice Get claimable amount for an epoch
+     * @dev For current epoch, function will return claimable at current time. This can change with more user deposits
+     * @param depositor Address to check amount for
+     * @param epochId Epoch id
+     * @return Claimable amount
+     */
+    function getClaimableAtCurrentTimestamp(address depositor, uint256 epochId) public override view returns (uint256) {
+        uint256 bidTokenAmount = depositors[depositor][epochId];
+        if (bidTokenAmount == 0 || epochId > _currentEpochId) { return 0; }
+        EpochInfo memory info = epochs[epochId];
+        return bidTokenAmount.mulDivRound(info.totalAuctionTokenAmount, info.totalBidTokenAmount, false);
     }
 
     /**

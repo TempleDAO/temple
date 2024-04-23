@@ -44,7 +44,7 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
     /// @notice Minimum percentage of minted Temple Gold to distribute. 1 ether means 1%
     uint256 public constant MINIMUM_DISTRIBUTION_SHARE = 1 ether;
     /// @notice 1B max supply
-    uint256 public constant MAX_SUPPLY = 1_000_000_000;
+    uint256 public constant MAX_SUPPLY = 1_000_000_000 ether; // 1B
     /// @notice Minimum Temple Gold minted per call to mint
     uint256 public constant MINIMUM_MINT = 1_000;
 
@@ -57,20 +57,6 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
     DistributionParams private distributionParams;
     /// @notice Vesting factor determines rate of mint
     VestingFactor private vestingFactor;
-
-    /// @notice To avoid stack too deep in constructor
-    struct InitArgs {
-        // address rescuer;
-        address executor; // executor is also used as delegate in LayerZero Endpoint
-        address staking;
-        address escrow;
-        address gnosis;
-        address layerZeroEndpoint; // local endpoint address
-        uint256 mintChainId;
-        string name;
-        string symbol;
-    }
-    
 
     constructor(
         InitArgs memory _initArgs
@@ -191,7 +177,7 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
 
     function canDistribute() external view returns (bool) {
         VestingFactor memory vestingFactorCache = vestingFactor;
-       return _canDistribute(vestingFactorCache);
+        return _canDistribute(vestingFactorCache);
     }
 
     function _canDistribute(VestingFactor memory vestingFactorCache) private view returns (bool) {
@@ -205,6 +191,15 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
      */
     function circulatingSupply() public override view returns (uint256) {
         return totalSupply();
+    }
+
+    /**
+     * @notice Get amount of TGLD tokens that will mint if `mint()` called
+     * @return Mint amount
+     */
+    function getMintAmount() external override view returns (uint256) {
+        VestingFactor memory vestingFactorCache = vestingFactor;
+        return _getMintAmount(vestingFactorCache);
     }
 
     /**
@@ -245,9 +240,9 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
     function _getMintAmount(VestingFactor memory vestingFactorCache) private view returns (uint256 mintAmount) {
         /// @notice first time mint
         if (lastMintTimestamp == 0) {
-            mintAmount = TempleMath.mulDivRound(block.timestamp * MAX_SUPPLY, vestingFactorCache.denominator, vestingFactorCache.numerator, false);
+            mintAmount = TempleMath.mulDivRound(MAX_SUPPLY, vestingFactorCache.numerator, vestingFactorCache.denominator, false);
         } else {
-            mintAmount = TempleMath.mulDivRound((lastMintTimestamp - block.timestamp) * (MAX_SUPPLY - totalSupply()), vestingFactorCache.denominator, vestingFactorCache.numerator, false);
+            mintAmount = TempleMath.mulDivRound((block.timestamp - lastMintTimestamp) * (MAX_SUPPLY - totalSupply()), vestingFactorCache.numerator, vestingFactorCache.denominator, false);
         }
     }
 

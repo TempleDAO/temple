@@ -24,6 +24,19 @@ interface ITempleGold is IOFT, IOAppCore, IOAppOptionsType3, IERC20 {
         uint128 denominator;
     }
 
+    /// @notice To avoid stack too deep in constructor
+    struct InitArgs {
+        // address rescuer;
+        address executor; // executor is also used as delegate in LayerZero Endpoint
+        address staking;
+        address escrow;
+        address gnosis;
+        address layerZeroEndpoint; // local endpoint address
+        uint256 mintChainId;
+        string name;
+        string symbol;
+    }
+
     event ContractAuthorizationSet(address indexed _contract, bool _whitelisted);
     event VestingFactorSet(uint128 numerator, uint128 denominator);
     event DistributionParamsSet(uint256 staking, uint256 escrow, uint256 gnosis);
@@ -123,4 +136,9 @@ interface ITempleGold is IOFT, IOAppCore, IOAppOptionsType3, IERC20 {
      */
     function canDistribute() external view returns (bool);
 
+    /**
+     * @notice Get amount of TGLD tokens that will mint if `mint()` called
+     * @return Mint amount
+     */
+    function getMintAmount() external view returns (uint256);
 }

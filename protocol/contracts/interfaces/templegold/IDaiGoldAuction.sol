@@ -101,4 +101,21 @@ interface IDaiGoldAuction is IAuctionBase {
      * @notice Mint and distribute TGLD 
      */
     function distributeGold() external;
+
+     /**
+     * @notice Get claimable amount for an epoch
+     * @dev For current epoch, function will return claimable at current time. This can change with more user deposits
+     * @param depositor Address to check amount for
+     * @return Claimable amount
+     */
+    function getClaimbaleAtCurrentTimestamp(address depositor) external view returns (uint256);
+
+    /**
+     * @notice Get claimable amount for an epoch
+     * @dev For current epoch, function will return claimable at current time. This can change with more user deposits
+     * @param depositor Address to check amount for
+     * @param epochId Epoch id
+     * @return Claimable amount
+     */
+    function getClaimableAtCurrentTimestamp(address depositor, uint256 epochId) external view returns (uint256);
 }

@@ -1,0 +1,449 @@
+pragma solidity 0.8.20;
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// (tests/forge/core/DaiGoldAuction.t.sol)
+
+import { TempleTest } from "../TempleTest.sol";
+import { ITempleGold } from "contracts/interfaces/templegold/ITempleGold.sol";
+import { TempleGold } from "contracts/templegold/TempleGold.sol";
+import { IDaiGoldAuction } from "contracts/interfaces/templegold/IDaiGoldAuction.sol";
+import { IAuctionBase } from "contracts/interfaces/templegold/IAuctionBase.sol";
+import { DaiGoldAuction } from "contracts/templegold/DaiGoldAuction.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
+import { ITempleERC20Token } from "contracts/interfaces/core/ITempleERC20Token.sol";
+import { TempleGoldStaking } from "contracts/templegold/TempleGoldStaking.sol";
+// import { console } from "forge-std/console.sol";
+
+contract DaiGoldAuctionTestBase is TempleTest {
+    event AuctionStarted(uint256 epochId, address indexed starter, uint64 startTime, uint64 endTime, uint256 auctionTokenAmount);
+    event BidTokenSet(address bidToken);
+    event GoldDistributionNotified(uint256 amount, uint256 timestamp);
+    event AuctionConfigSet(uint256 epochId, IDaiGoldAuction.AuctionConfig config);
+    event AuctionStarterSet(address indexed starter);
+    event Deposit(address indexed depositor, uint256 epochId, uint256 amount);
+    event Claim(address indexed user, uint256 epochId, uint256 bidTokenAmount, uint256 auctionTokenAmount);
+
+    /// @notice Auction duration
+    uint64 public constant AUCTION_DURATION = 1 weeks;
+    uint32 public constant AUCTIONS_TIME_DIFF_ONE = 2 weeks;
+    uint32 public constant AUCTIONS_START_COOLDOWN_ONE = 1 hours;
+    uint192 public constant AUCTION_MIN_DISTRIBUTED_GOLD_ONE = 1_000;
+
+    address public treasury = makeAddr("treasury");
+    address public teamGnosis = makeAddr("teamGnosis");
+    address public layerZeroEndpointArbitrumOne = 0x1a44076050125825900e736c501f859c50fE728c;
+    uint256 public layerZeroEndpointArbitrumId = 30110;
+
+    address public usdcToken = 0xaf88d065e77c8cC2239327C5EDb3A432268e5831; // arb USDC
+    address public daiToken = 0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1; //arb DAI
+    address public templeToken = 0x470EBf5f030Ed85Fc1ed4C2d36B9DD02e77CF1b7;
+    // address public arbDaiWhale = 0xEa55D6319B04b4B6Ce8d03F3db84e432219eFCaA;
+    
+    TempleGold public templeGold;
+    IERC20 public bidToken;
+    IERC20 public bidToken2;
+    ITempleERC20Token public temple;
+    DaiGoldAuction public daiGoldAuction;
+    TempleGoldStaking public goldStaking;
+
+    uint256 public mintChainId = 1;
+    uint256 public arbitrumOneChainId = 42161;
+
+    string public constant TEMPLE_GOLD_NAME = "TEMPLE GOLD";
+    string public constant TEMPLE_GOLD_SYMBOL = "TGLD";
+
+    function setUp() public {
+        /// @dev forking for layerzero endpoint to execute code
+        fork("arbitrum_one", 204026954);
+
+        ITempleGold.InitArgs memory initArgs;
+        initArgs.executor = executor;
+        initArgs.staking = address(0);
+        initArgs.escrow = address(0);
+        initArgs.gnosis = teamGnosis;
+        initArgs.layerZeroEndpoint = layerZeroEndpointArbitrumOne;
+        initArgs.mintChainId = arbitrumOneChainId;
+        initArgs.name = TEMPLE_GOLD_NAME;
+        initArgs.symbol = TEMPLE_GOLD_SYMBOL;
+
+        templeGold = new TempleGold(initArgs);
+        daiGoldAuction = new DaiGoldAuction(
+            address(templeGold),
+            address(bidToken),
+            treasury,
+            rescuer,
+            executor
+        );
+        goldStaking = new TempleGoldStaking(
+            rescuer, 
+            executor,
+            templeToken,
+            address(templeGold),
+            usdcToken
+        );
+        bidToken = IERC20(daiToken); // dai
+        bidToken2 = IERC20(usdcToken); //usdc
+        temple = ITempleERC20Token(templeToken);
+
+        vm.startPrank(executor);
+        _initialize();
+        _configureTempleGold();
+        deal(address(bidToken), executor, 100 ether, false);
+        deal(address(bidToken), alice, 100 ether, false);
+
+        vm.stopPrank();
+    }
+
+    function _initialize() private {
+        templeGold.setEscrow(address(daiGoldAuction));
+        daiGoldAuction.setBidToken(address(bidToken));
+    }
+
+    function _configureTempleGold() private {
+        ITempleGold.DistributionParams memory params;
+        params.escrow = 60 ether;
+        params.gnosis = 10 ether;
+        params.staking = 30 ether;
+        templeGold.setDistributionParams(params);
+        ITempleGold.VestingFactor memory factor;
+        factor.numerator = 2 ether;
+        factor.denominator = 1000 ether;
+        templeGold.setVestingFactor(factor);
+        templeGold.setStaking(address(goldStaking));
+        // whitelist
+        templeGold.authorizeContract(address(daiGoldAuction), true);
+        templeGold.authorizeContract(address(goldStaking), true);
+        templeGold.authorizeContract(teamGnosis, true);
+    }
+
+    function test_initialization() public {
+        assertEq(address(templeGold), address(daiGoldAuction.templeGold()));
+        assertEq(rescuer, daiGoldAuction.rescuer());
+        assertEq(executor, daiGoldAuction.executor());
+        assertEq(treasury, daiGoldAuction.treasury());
+        assertEq(address(bidToken), address(daiGoldAuction.bidToken()));
+    }
+
+    function _getAuctionConfig() internal view returns (IDaiGoldAuction.AuctionConfig memory config) {
+        config.auctionsTimeDiff = AUCTIONS_TIME_DIFF_ONE;
+        config.auctionStartCooldown = AUCTIONS_START_COOLDOWN_ONE;
+        config.auctionMinimumDistributedGold = AUCTION_MIN_DISTRIBUTED_GOLD_ONE;
+    }
+
+    function _startAuction() internal {
+        uint256 currentEpoch = daiGoldAuction.currentEpoch();
+        if (currentEpoch == 0) {
+            vm.warp(block.timestamp + 3 weeks);
+        } else {
+            IAuctionBase.EpochInfo memory info = daiGoldAuction.getEpochInfo(currentEpoch);
+            vm.warp(info.endTime + 3 weeks);
+        }
+        templeGold.mint();
+        daiGoldAuction.setAuctionStarter(address(0));
+        daiGoldAuction.startAuction();
+    }
+}
+
+contract DaiGoldAuctionTestAccess is DaiGoldAuctionTestBase {
+
+    function test_access_setAuctionConfigFail() public {
+        vm.startPrank(unauthorizedUser);
+        IDaiGoldAuction.AuctionConfig memory config = _getAuctionConfig();
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
+        daiGoldAuction.setAuctionConfig(config);
+    }
+
+    // function test_access_fuzz_setAuctionConfigFail(address caller) public {
+    //     vm.assume(caller != rescuer && caller != executor);
+    //     vm.startPrank(caller);
+    //     IDaiGoldAuction.AuctionConfig memory config = _getAuctionConfig();
+    //     vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
+    //     daiGoldAuction.setAuctionConfig(config);
+    // }
+
+    function test_access_setAuctionStarterFail() public {
+        vm.startPrank(unauthorizedUser);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
+        daiGoldAuction.setAuctionStarter(unauthorizedUser);
+    }
+
+    // function test_access_fuzz_setAuctionStarterFail(address caller) public {
+    //     vm.assume(caller != rescuer && caller != executor);
+    //     vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
+    //     daiGoldAuction.setAuctionStarter(unauthorizedUser);
+    // }
+
+    function test_access_setBidTokenFail(address caller) public {
+        vm.startPrank(unauthorizedUser);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
+        daiGoldAuction.setBidToken(address(templeGold));
+    }
+
+    function test_access_setAuctionConfigSuccess() public {
+        vm.startPrank(executor);
+        IDaiGoldAuction.AuctionConfig memory config = _getAuctionConfig();
+        daiGoldAuction.setAuctionConfig(config);
+    }
+
+    function test_access_setAuctionStarterSuccess() public {
+        vm.startPrank(executor);
+        daiGoldAuction.setAuctionStarter(alice);
+    }
+
+    function test_access_setBidTokenSuccess() public {
+        vm.startPrank(executor);
+        daiGoldAuction.setBidToken(address(bidToken));
+    }
+}
+
+contract DaiGoldAuctionTestSetters is DaiGoldAuctionTestBase {
+
+    function test_setAuctionConfig() public {
+        vm.startPrank(executor);
+        IDaiGoldAuction.AuctionConfig memory fakeConfig;
+        // config.auctionStartCooldown = 0 error
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
+        daiGoldAuction.setAuctionConfig(fakeConfig);
+        fakeConfig.auctionStartCooldown = 100;
+        // config.auctionMinimumDistributedGold = 0 error
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
+        daiGoldAuction.setAuctionConfig(fakeConfig);
+        fakeConfig.auctionMinimumDistributedGold = 1000;
+        // config.auctionsTimeDiff = 0 error
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
+        daiGoldAuction.setAuctionConfig(fakeConfig);
+        fakeConfig.auctionsTimeDiff = 1;
+        vm.expectEmit(address(daiGoldAuction));
+        uint256 currentEpochId = daiGoldAuction.currentEpoch();
+        emit AuctionConfigSet(currentEpochId, fakeConfig);
+        daiGoldAuction.setAuctionConfig(fakeConfig);
+
+        IDaiGoldAuction.AuctionConfig memory config = daiGoldAuction.getAuctionConfig();
+        assertEq(config.auctionsTimeDiff, 1);
+        assertEq(config.auctionStartCooldown, 100);
+        assertEq(config.auctionMinimumDistributedGold, 1000);
+        
+        vm.stopPrank();
+    }
+
+    function test_setAuctionStarter() public {
+        vm.startPrank(executor);
+        // address zero error
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
+        daiGoldAuction.setBidToken(address(0));
+
+        vm.expectEmit(address(daiGoldAuction));
+        emit AuctionStarterSet(alice);
+        daiGoldAuction.setAuctionStarter(alice);
+
+        assertEq(daiGoldAuction.auctionStarter(), alice);
+    }
+
+     function test_setBidToken() public {
+        vm.startPrank(executor);
+
+        vm.expectEmit(address(daiGoldAuction));
+        emit BidTokenSet(usdcToken);
+        daiGoldAuction.setBidToken(usdcToken);
+
+        assertEq(address(daiGoldAuction.bidToken()), usdcToken);
+    }
+}
+
+contract DaiGoldAuctionTest is DaiGoldAuctionTestBase {
+
+    function test_startAuction() public {
+        vm.startPrank(executor);
+        daiGoldAuction.setAuctionStarter(alice);
+        // auction starter != adderss(0) and caller is not auction starter
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
+        daiGoldAuction.startAuction();
+
+        // auctionStarter == address(0). anyone can call
+        vm.startPrank(executor);
+        daiGoldAuction.setAuctionStarter(address(0));
+        IDaiGoldAuction.AuctionConfig memory _config = _getAuctionConfig();
+        daiGoldAuction.setAuctionConfig(_config);
+
+        // low TGLD distribution error
+        vm.expectRevert(abi.encodeWithSelector(IDaiGoldAuction.LowGoldDistributed.selector, 0));
+        daiGoldAuction.startAuction();
+
+        // distribute some TGLD
+        vm.warp(block.timestamp + 1 weeks);
+        templeGold.mint();
+        
+        uint64 startTime = uint64(block.timestamp + _config.auctionStartCooldown);
+        uint64 endTime = startTime + uint64(1 weeks);
+        uint256 goldAmount = daiGoldAuction.nextAuctionGoldAmount();
+        vm.expectEmit(address(daiGoldAuction));
+        emit AuctionStarted(1, executor, startTime, endTime, goldAmount);
+        daiGoldAuction.startAuction();
+
+        IDaiGoldAuction.EpochInfo memory epochInfo = daiGoldAuction.getEpochInfo(1);
+        assertEq(daiGoldAuction.currentEpoch(), 1);
+        assertEq(epochInfo.startTime, startTime);
+        assertEq(epochInfo.endTime, endTime);
+        assertEq(epochInfo.totalBidTokenAmount, 0);
+        assertEq(epochInfo.totalAuctionTokenAmount, goldAmount);
+
+        // test is current epoch ended
+        vm.expectRevert(abi.encodeWithSelector(IAuctionBase.CannotStartAuction.selector));
+        daiGoldAuction.startAuction();
+
+        // test CannotStartAuction
+        // warp to auction end time
+        vm.warp(epochInfo.endTime+_config.auctionsTimeDiff-1);
+        vm.expectRevert(abi.encodeWithSelector(IAuctionBase.CannotStartAuction.selector));
+        daiGoldAuction.startAuction();
+
+        vm.warp(epochInfo.endTime+_config.auctionsTimeDiff);
+        // LowGoldDistributed
+        vm.expectRevert(abi.encodeWithSelector(IDaiGoldAuction.LowGoldDistributed.selector, 0));
+        daiGoldAuction.startAuction();
+
+        // distribute gold and start second auction
+        templeGold.mint();
+        startTime = uint64(block.timestamp + _config.auctionStartCooldown);
+        endTime = startTime + uint64(1 weeks);
+        goldAmount = daiGoldAuction.nextAuctionGoldAmount();
+        vm.expectEmit(address(daiGoldAuction));
+        emit AuctionStarted(2, executor, startTime, endTime, goldAmount);
+        daiGoldAuction.startAuction();
+
+        epochInfo = daiGoldAuction.getEpochInfo(2);
+        assertEq(daiGoldAuction.currentEpoch(), 2);
+        assertEq(epochInfo.startTime, startTime);
+        assertEq(epochInfo.endTime, endTime);
+        assertEq(epochInfo.totalBidTokenAmount, 0);
+        assertEq(epochInfo.totalAuctionTokenAmount, goldAmount);
+    }
+
+    function test_bid() public {
+        // onlyt when live error. 
+        vm.startPrank(executor);
+        vm.expectRevert(abi.encodeWithSelector(IAuctionBase.CannotDeposit.selector));
+        daiGoldAuction.bid(0);
+
+        _startAuction();
+        // vm.startPrank(alice);
+        // zero amount error
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
+        daiGoldAuction.bid(0);
+
+        uint256 goldBalanceBefore = templeGold.balanceOf(address(daiGoldAuction));
+        vm.warp(block.timestamp + 3600);
+        
+        uint256 currentEpoch = daiGoldAuction.currentEpoch();
+        bidToken.approve(address(daiGoldAuction), type(uint).max);
+        vm.expectEmit(address(daiGoldAuction));
+        emit Deposit(executor, currentEpoch, 100 ether);
+        daiGoldAuction.bid(100 ether);
+
+        IAuctionBase.EpochInfo memory epochInfo = daiGoldAuction.getEpochInfo(currentEpoch);
+        assertEq(daiGoldAuction.depositors(executor, currentEpoch), 100 ether);
+        assertEq(epochInfo.totalBidTokenAmount, 100 ether);
+        assertEq(bidToken.balanceOf(address(daiGoldAuction)), 100 ether);
+
+        // mints and distributes
+        uint256 goldBalanceAfter = templeGold.balanceOf(address(daiGoldAuction));
+        assertGt(goldBalanceAfter, goldBalanceBefore);
+
+        // second deposits
+        vm.startPrank(alice);
+        bidToken.approve(address(daiGoldAuction), type(uint).max);
+        vm.expectEmit(address(daiGoldAuction));
+        emit Deposit(alice, currentEpoch, 50 ether);
+        daiGoldAuction.bid(50 ether);
+
+        epochInfo = daiGoldAuction.getEpochInfo(currentEpoch);
+        assertEq(daiGoldAuction.depositors(alice, currentEpoch), 50 ether);
+        assertEq(epochInfo.totalBidTokenAmount, 150 ether);
+        assertEq(bidToken.balanceOf(address(daiGoldAuction)), 150 ether);
+    }
+
+    function test_claim() public {
+        vm.startPrank(executor);
+        _startAuction();
+
+        // warp and distribute
+        uint256 goldBalanceBefore = templeGold.balanceOf(address(daiGoldAuction));
+        vm.warp(block.timestamp + 5 days);
+        // call to claim /deposit calls templeGold.mint() and distributes
+
+        // deposits
+        vm.startPrank(alice);
+        bidToken.approve(address(daiGoldAuction), type(uint).max);
+        daiGoldAuction.bid(50 ether);
+        vm.startPrank(executor);
+        bidToken.approve(address(daiGoldAuction), type(uint).max);
+        daiGoldAuction.bid(100 ether);
+
+        // cannot claim for current epoch
+        uint256 currentEpoch = daiGoldAuction.currentEpoch();
+        vm.expectRevert(abi.encodeWithSelector(IAuctionBase.CannotClaim.selector, currentEpoch));
+        daiGoldAuction.claim(currentEpoch);
+        vm.warp(block.timestamp + 3 days);
+        // invalid epoch error
+        vm.expectRevert(abi.encodeWithSelector(IDaiGoldAuction.InvalidEpoch.selector));
+        daiGoldAuction.claim(currentEpoch+1);
+        // bob cannot claim for 0 deposits
+        vm.startPrank(bob);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
+        daiGoldAuction.claim(currentEpoch);
+
+        // valid claims
+        uint256 aliceRewardBalanceBefore = templeGold.balanceOf(alice);
+        uint256 executorRewardBalanceBefore = templeGold.balanceOf(executor);
+        uint256 executorClaimable = daiGoldAuction.getClaimbaleAtCurrentTimestamp(executor);
+        uint256 aliceClaimable = daiGoldAuction.getClaimbaleAtCurrentTimestamp(alice);
+        vm.startPrank(alice);
+        vm.expectEmit(address(daiGoldAuction));
+        emit Claim(alice, currentEpoch, 50 ether, aliceClaimable);
+        daiGoldAuction.claim(currentEpoch);
+        vm.startPrank(executor);
+        vm.expectEmit(address(daiGoldAuction));
+        emit Claim(executor, currentEpoch, 100 ether, executorClaimable);
+        daiGoldAuction.claim(currentEpoch);
+
+        uint256 aliceRewardBalanceAfter= templeGold.balanceOf(alice);
+        uint256 executorRewardBalanceAfter = templeGold.balanceOf(executor);
+        IAuctionBase.EpochInfo memory epochInfo = daiGoldAuction.getEpochInfo(currentEpoch);
+        assertEq(executorClaimable+aliceClaimable, epochInfo.totalAuctionTokenAmount);
+        assertEq(aliceRewardBalanceAfter, aliceRewardBalanceBefore+aliceClaimable);
+        assertEq(executorRewardBalanceAfter, executorRewardBalanceBefore+executorClaimable);
+
+        // start another auction but check claimable diffs when another user deposits additionally
+        _startAuction();
+        deal(address(bidToken), alice, 100 ether, false);
+        deal(address(bidToken), executor, 100 ether, false);
+        vm.startPrank(alice);
+        bidToken.approve(address(daiGoldAuction), type(uint).max);
+        daiGoldAuction.bid(100 ether);
+        vm.startPrank(executor);
+        bidToken.approve(address(daiGoldAuction), type(uint).max);
+        daiGoldAuction.bid(100 ether);
+        executorClaimable = daiGoldAuction.getClaimbaleAtCurrentTimestamp(executor);
+        aliceClaimable = daiGoldAuction.getClaimbaleAtCurrentTimestamp(alice);
+        deal(address(bidToken), bob, 100 ether, false);
+        vm.startPrank(bob);
+        bidToken.approve(address(daiGoldAuction), type(uint).max);
+        daiGoldAuction.bid(100 ether);
+        assertGt(aliceClaimable, daiGoldAuction.getClaimbaleAtCurrentTimestamp(alice));
+        assertGt(executorClaimable, daiGoldAuction.getClaimbaleAtCurrentTimestamp(executor));
+    }
+
+    function test_notifyDistribution() public {
+        vm.startPrank(alice);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
+        daiGoldAuction.notifyDistribution(100 ether);
+
+        uint256 nextGoldAmount = daiGoldAuction.nextAuctionGoldAmount();
+        vm.warp(block.timestamp + 1 weeks);
+        uint256 mintAmount = templeGold.getMintAmount();
+        ITempleGold.DistributionParams memory dp = templeGold.getDistributionParameters();
+        uint256 auctionAmount = dp.escrow * mintAmount / 100 ether;
+        templeGold.mint();
+        assertEq(daiGoldAuction.nextAuctionGoldAmount(), nextGoldAmount+auctionAmount);
+    }
+}
