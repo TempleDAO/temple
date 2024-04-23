@@ -362,11 +362,11 @@ export const BorrowPage = () => {
       getTokenInfo(state.outputToken).decimals
     );
     try {
-      const preparedTransaction = await tlcContract.populateTransaction.borrow(
+      const populatedTransaction = await tlcContract.populateTransaction.borrow(
         amount,
         wallet
       );
-      const receipt = await estimateAndMine(signer, preparedTransaction);
+      const receipt = await estimateAndMine(signer, populatedTransaction);
 
       openNotification({
         title: `Borrowed ${state.borrowValue} DAI`,
@@ -404,11 +404,11 @@ export const BorrowPage = () => {
       );
 
       // Note Repay vs RepayAll
-      const preparedTransaction = await tlcContract.populateTransaction.repay(
+      const populatedTransaction = await tlcContract.populateTransaction.repay(
         amount,
         wallet
       );
-      const receipt = await estimateAndMine(signer, preparedTransaction);
+      const receipt = await estimateAndMine(signer, populatedTransaction);
 
       openNotification({
         title: `Repaid ${state.repayValue} DAI`,
