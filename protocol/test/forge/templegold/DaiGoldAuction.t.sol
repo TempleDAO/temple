@@ -250,6 +250,57 @@ contract DaiGoldAuctionTestSetters is DaiGoldAuctionTestBase {
     }
 }
 
+contract DaiGoldAuctionTestView is DaiGoldAuctionTestBase {
+    function test_getClaimableAtCurrentTimestamp() public {
+        vm.startPrank(executor);
+        vm.warp(block.timestamp + 3 weeks);
+        _startAuction();
+
+        templeGold.mint();
+
+        vm.startPrank(alice);
+        bidToken.approve(address(daiGoldAuction), type(uint).max);
+        daiGoldAuction.bid(50 ether);
+        vm.startPrank(executor);
+        bidToken.approve(address(daiGoldAuction), type(uint).max);
+        daiGoldAuction.bid(100 ether);
+        uint256 currentEpoch = daiGoldAuction.currentEpoch();
+        IAuctionBase.EpochInfo memory info = daiGoldAuction.getEpochInfo(currentEpoch);
+        uint256 totalRewards = info.totalAuctionTokenAmount;
+        uint256 aliceClaimable = (50 ether * totalRewards) / 150 ether;
+        uint256 executorClaimable = (100 ether * totalRewards) / 150 ether;
+        
+        assertEq(daiGoldAuction.getClaimableAtCurrentTimestamp(alice, currentEpoch), aliceClaimable);
+        assertEq(daiGoldAuction.getClaimableAtCurrentTimestamp(executor, currentEpoch), executorClaimable);
+        assertEq(totalRewards, executorClaimable+aliceClaimable);
+    }
+
+    function test_getAuctionConfig() public {
+        /// @dev See test_setAuctionConfig()
+    }
+
+    function test_isCurrentEpochEnded() public {
+        vm.startPrank(executor);
+        _startAuction();
+        vm.warp(block.timestamp + 6 days);
+        assertEq(daiGoldAuction.isCurrentEpochEnded(), false);
+        vm.warp(block.timestamp + 1 days + 1 seconds);
+        assertEq(daiGoldAuction.isCurrentEpochEnded(), true);
+    }
+
+    function test_canDeposit() public {
+        vm.startPrank(executor);
+        _startAuction();
+        IAuctionBase.EpochInfo memory info = daiGoldAuction.getEpochInfo(daiGoldAuction.currentEpoch());
+        vm.warp(info.endTime - 1);
+        assertEq(daiGoldAuction.canDeposit(), true);
+        vm.warp(info.endTime);
+        assertEq(daiGoldAuction.canDeposit(), false);
+        vm.warp(info.endTime+1);
+        assertEq(daiGoldAuction.canDeposit(), false);
+    }
+}
+
 contract DaiGoldAuctionTest is DaiGoldAuctionTestBase {
 
     function test_startAuction() public {
@@ -264,10 +315,6 @@ contract DaiGoldAuctionTest is DaiGoldAuctionTestBase {
         daiGoldAuction.setAuctionStarter(address(0));
         IDaiGoldAuction.AuctionConfig memory _config = _getAuctionConfig();
         daiGoldAuction.setAuctionConfig(_config);
-
-        // low TGLD distribution error
-        vm.expectRevert(abi.encodeWithSelector(IDaiGoldAuction.LowGoldDistributed.selector, 0));
-        daiGoldAuction.startAuction();
 
         // distribute some TGLD
         vm.warp(block.timestamp + 1 weeks);
@@ -298,9 +345,6 @@ contract DaiGoldAuctionTest is DaiGoldAuctionTestBase {
         daiGoldAuction.startAuction();
 
         vm.warp(epochInfo.endTime+_config.auctionsTimeDiff);
-        // LowGoldDistributed
-        vm.expectRevert(abi.encodeWithSelector(IDaiGoldAuction.LowGoldDistributed.selector, 0));
-        daiGoldAuction.startAuction();
 
         // distribute gold and start second auction
         templeGold.mint();
@@ -317,6 +361,13 @@ contract DaiGoldAuctionTest is DaiGoldAuctionTestBase {
         assertEq(epochInfo.endTime, endTime);
         assertEq(epochInfo.totalBidTokenAmount, 0);
         assertEq(epochInfo.totalAuctionTokenAmount, goldAmount);
+
+        // low TGLD distribution error
+        vm.warp(block.timestamp + 4 weeks);
+        daiGoldAuction.isCurrentEpochEnded();
+        vm.expectRevert(abi.encodeWithSelector(IDaiGoldAuction.LowGoldDistributed.selector, 0));
+        daiGoldAuction.startAuction();
+
     }
 
     function test_bid() public {
@@ -445,5 +496,11 @@ contract DaiGoldAuctionTest is DaiGoldAuctionTestBase {
         uint256 auctionAmount = dp.escrow * mintAmount / 100 ether;
         templeGold.mint();
         assertEq(daiGoldAuction.nextAuctionGoldAmount(), nextGoldAmount+auctionAmount);
+    }
+
+    function test_distributeGold() public {
+        uint256 goldBalance = templeGold.balanceOf(address(daiGoldAuction));
+        daiGoldAuction.distributeGold();
+        assertGt(templeGold.balanceOf(address(daiGoldAuction)), goldBalance);
     }
 }

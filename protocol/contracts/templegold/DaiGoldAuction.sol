@@ -62,7 +62,6 @@ contract DaiGoldAuction is IDaiGoldAuction, AuctionBase, TempleElevatedAccess {
      * @param _config Auction configuration
      */
     function setAuctionConfig(AuctionConfig calldata _config) external override onlyElevatedAccess {
-        // if (_config.auctionDuration < MINIMUM_AUCTION_PERIOD) { revert CommonEventsAndErrors.InvalidParam(); }
         if (_config.auctionStartCooldown == 0
                 || _config.auctionMinimumDistributedGold == 0
                 || _config.auctionsTimeDiff == 0) 
@@ -105,7 +104,7 @@ contract DaiGoldAuction is IDaiGoldAuction, AuctionBase, TempleElevatedAccess {
         if (_currentEpochId > 0 && (prevAuctionInfo.endTime + config.auctionsTimeDiff > block.timestamp)) {
             revert CannotStartAuction();
         }
-
+        _distributeGold();
         uint256 totalGoldAmount = nextAuctionGoldAmount;
         nextAuctionGoldAmount = 0;
         uint256 epochId = _currentEpochId = _currentEpochId + 1;
@@ -144,7 +143,6 @@ contract DaiGoldAuction is IDaiGoldAuction, AuctionBase, TempleElevatedAccess {
      * @param epochId Id of epoch
      */
     function claim(uint256 epochId) external virtual override {
-        // if (epochId >= _currentEpochId) { revert CannotClaim(epochId); }
         /// @notice cannot claim for current live epoch
         EpochInfo memory infoCached = epochs[epochId];
         if (infoCached.endTime >= block.timestamp) { revert CannotClaim(epochId); }
