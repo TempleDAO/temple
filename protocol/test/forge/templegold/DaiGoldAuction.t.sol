@@ -1,6 +1,6 @@
 pragma solidity 0.8.20;
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// (tests/forge/core/DaiGoldAuction.t.sol)
+// (tests/forge/templegold/DaiGoldAuction.t.sol)
 
 import { TempleTest } from "../TempleTest.sol";
 import { ITempleGold } from "contracts/interfaces/templegold/ITempleGold.sol";
@@ -152,26 +152,11 @@ contract DaiGoldAuctionTestAccess is DaiGoldAuctionTestBase {
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         daiGoldAuction.setAuctionConfig(config);
     }
-
-    // function test_access_fuzz_setAuctionConfigFail(address caller) public {
-    //     vm.assume(caller != rescuer && caller != executor);
-    //     vm.startPrank(caller);
-    //     IDaiGoldAuction.AuctionConfig memory config = _getAuctionConfig();
-    //     vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
-    //     daiGoldAuction.setAuctionConfig(config);
-    // }
-
     function test_access_setAuctionStarterFail() public {
         vm.startPrank(unauthorizedUser);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         daiGoldAuction.setAuctionStarter(unauthorizedUser);
     }
-
-    // function test_access_fuzz_setAuctionStarterFail(address caller) public {
-    //     vm.assume(caller != rescuer && caller != executor);
-    //     vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
-    //     daiGoldAuction.setAuctionStarter(unauthorizedUser);
-    // }
 
     function test_access_setBidTokenFail(address caller) public {
         vm.startPrank(unauthorizedUser);
@@ -418,7 +403,6 @@ contract DaiGoldAuctionTest is DaiGoldAuctionTestBase {
         _startAuction();
 
         // warp and distribute
-        uint256 goldBalanceBefore = templeGold.balanceOf(address(daiGoldAuction));
         vm.warp(block.timestamp + 5 days);
         // call to claim /deposit calls templeGold.mint() and distributes
 

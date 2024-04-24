@@ -5,6 +5,8 @@ pragma solidity 0.8.20;
 interface ISpiceAuctionFactory {
     event AuctionCreated(bytes32 id, address auction);
 
+    error PairExists(address token0, address token1);
+
     /// @notice Dao executing contract
     function daoExecutor() external view returns (address);
     /// @notice Keep track of deployed spice auctions
@@ -16,7 +18,7 @@ interface ISpiceAuctionFactory {
      * @param token1 Token1
      * @param name Name of spice auction contract
      */
-    function createAuction(address token0, address token1, string memory name) external;
+    function createAuction(address token0, address token1, string memory name) external returns (address);
 
     /**
      * @notice Given a pair of tokens, retrieve spice auction contract
@@ -25,4 +27,12 @@ interface ISpiceAuctionFactory {
      * @return Address of auction contract
      */
     function findAuctionForPair(address token0, address token1) external view returns (address);
+
+    /**
+     * @notice Given a pair of tokens, retrieve pair hash Id
+     * @param token0 Token0
+     * @param token1 Token1
+     * @return Id of token pair
+     */
+    function getPairId(address token0, address token1) external view returns (bytes32);
 }

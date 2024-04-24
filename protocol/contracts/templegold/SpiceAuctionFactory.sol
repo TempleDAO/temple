@@ -28,12 +28,14 @@ contract SpiceAuctionFactory is ISpiceAuctionFactory, TempleElevatedAccess {
      * @param token1 Token1
      * @param name Name of spice auction contract
      */
-    function createAuction(address token0, address token1, string memory name) external {
+    function createAuction(address token0, address token1, string memory name) external override onlyElevatedAccess returns (address) {
         if (token0 == address(0) || token1 == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
         SpiceAuction spiceAuction = new SpiceAuction(token0, token1, daoExecutor, name);
         bytes32 pairId = _getPairHash(token0, token1);
+        if (deployedAuctions[pairId] != address(0)) { revert PairExists(token0, token1); }
         deployedAuctions[pairId] = address(spiceAuction);
         emit AuctionCreated(pairId, address(spiceAuction));
+        return address(spiceAuction);
     }
 
     /**
@@ -42,9 +44,19 @@ contract SpiceAuctionFactory is ISpiceAuctionFactory, TempleElevatedAccess {
      * @param token1 Token1
      * @return Address of auction contract
      */
-    function findAuctionForPair(address token0, address token1) external view returns (address) {
+    function findAuctionForPair(address token0, address token1) external override view returns (address) {
         bytes32 pairId = _getPairHash(token0, token1);
         return deployedAuctions[pairId];
+    }
+
+    /**
+     * @notice Given a pair of tokens, retrieve pair hash Id
+     * @param token0 Token0
+     * @param token1 Token1
+     * @return Id of token pair
+     */
+    function getPairId(address token0, address token1) external override view returns (bytes32) {
+        return _getPairHash(token0, token1);
     }
 
     function _getPairHash(address _token0, address _token1) private pure returns (bytes32 pairId) {
