@@ -7,6 +7,8 @@ interface ISpiceAuctionFactory {
 
     error PairExists(address token0, address token1);
 
+    /// @notice Temple Gold
+    function templeGold() external view returns (address);
     /// @notice Dao executing contract
     function daoExecutor() external view returns (address);
     /// @notice Keep track of deployed spice auctions
@@ -14,25 +16,22 @@ interface ISpiceAuctionFactory {
 
     /**
      * @notice Create Spice Auction contract
-     * @param token0 Token0
-     * @param token1 Token1
+     * @param spiceToken Spice token
      * @param name Name of spice auction contract
      */
-    function createAuction(address token0, address token1, string memory name) external returns (address);
+    function createAuction(address spiceToken, string memory name) external returns (address);
 
     /**
      * @notice Given a pair of tokens, retrieve spice auction contract
-     * @param token0 Token0
-     * @param token1 Token1
+     * @param spiceToken Spice token
      * @return Address of auction contract
      */
-    function findAuctionForPair(address token0, address token1) external view returns (address);
+    function findAuctionForSpiceToken(address spiceToken) external view returns (address);
 
     /**
      * @notice Given a pair of tokens, retrieve pair hash Id
-     * @param token0 Token0
-     * @param token1 Token1
+     * @param spiceToken  Spice token
      * @return Id of token pair
      */
-    function getPairId(address token0, address token1) external view returns (bytes32);
+    function getPairId(address spiceToken) external view returns (bytes32);
 }

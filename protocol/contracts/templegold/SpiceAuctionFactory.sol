@@ -9,6 +9,8 @@ import { SpiceAuction } from "contracts/templegold/SpiceAuction.sol";
 import { ISpiceAuctionFactory } from "contracts/interfaces/templegold/ISpiceAuctionFactory.sol";
 
 contract SpiceAuctionFactory is ISpiceAuctionFactory, TempleElevatedAccess {
+    /// @notice Temple Gold
+    address public immutable override templeGold;
     /// @notice Dao executing contract
     address public immutable override daoExecutor;
     /// @notice Keep track of deployed spice auctions
@@ -17,22 +19,23 @@ contract SpiceAuctionFactory is ISpiceAuctionFactory, TempleElevatedAccess {
     constructor(
         address _rescuer,
         address _executor,
-        address _daoExecutor
+        address _daoExecutor,
+        address _templeGold
     ) TempleElevatedAccess(_rescuer, _executor) {
         daoExecutor = _daoExecutor;
+        templeGold = _templeGold;
     }
 
     /**
      * @notice Create Spice Auction contract
-     * @param token0 Token0
-     * @param token1 Token1
+     * @param spiceToken Spice token
      * @param name Name of spice auction contract
      */
-    function createAuction(address token0, address token1, string memory name) external override onlyElevatedAccess returns (address) {
-        if (token0 == address(0) || token1 == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
-        SpiceAuction spiceAuction = new SpiceAuction(token0, token1, daoExecutor, name);
-        bytes32 pairId = _getPairHash(token0, token1);
-        if (deployedAuctions[pairId] != address(0)) { revert PairExists(token0, token1); }
+    function createAuction(address spiceToken, string memory name) external override onlyElevatedAccess returns (address) {
+        if (spiceToken == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
+        SpiceAuction spiceAuction = new SpiceAuction(templeGold, spiceToken, daoExecutor, name);
+        bytes32 pairId = _getPairHash(spiceToken);
+        if (deployedAuctions[pairId] != address(0)) { revert PairExists(templeGold, spiceToken); }
         deployedAuctions[pairId] = address(spiceAuction);
         emit AuctionCreated(pairId, address(spiceAuction));
         return address(spiceAuction);
@@ -40,30 +43,30 @@ contract SpiceAuctionFactory is ISpiceAuctionFactory, TempleElevatedAccess {
 
     /**
      * @notice Given a pair of tokens, retrieve spice auction contract
-     * @param token0 Token0
-     * @param token1 Token1
+     * @param spiceToken Spice Token
      * @return Address of auction contract
      */
-    function findAuctionForPair(address token0, address token1) external override view returns (address) {
-        bytes32 pairId = _getPairHash(token0, token1);
+    function findAuctionForSpiceToken(address spiceToken) external override view returns (address) {
+        bytes32 pairId = _getPairHash(spiceToken);
         return deployedAuctions[pairId];
     }
 
     /**
      * @notice Given a pair of tokens, retrieve pair hash Id
-     * @param token0 Token0
-     * @param token1 Token1
+     * @param spiceToken Spice token
      * @return Id of token pair
      */
-    function getPairId(address token0, address token1) external override view returns (bytes32) {
-        return _getPairHash(token0, token1);
+    function getPairId(address spiceToken) external override view returns (bytes32) {
+        return _getPairHash(spiceToken);
     }
 
-    function _getPairHash(address _token0, address _token1) private pure returns (bytes32 pairId) {
-        if (_token0 < _token1) {
-            pairId = keccak256(abi.encodePacked(_token0, _token1));
+    function _getPairHash(address _spiceToken) private view returns (bytes32 pairId) {
+        // cache
+        address _templeGold = templeGold;
+        if (_templeGold < _spiceToken) {
+            pairId = keccak256(abi.encodePacked(_templeGold, _spiceToken));
         } else {
-            pairId = keccak256(abi.encodePacked(_token1, _token0));
+            pairId = keccak256(abi.encodePacked(_spiceToken, _templeGold));
         }
     }
 }

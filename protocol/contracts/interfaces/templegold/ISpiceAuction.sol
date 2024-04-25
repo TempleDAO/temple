@@ -23,18 +23,12 @@ interface ISpiceAuction is IAuctionBase {
         uint160 minimumDistributedAuctionToken;
         /// @notice Address to start next auction when all criteria are met. Address zero means anyone can trigger start
         address starter;
-        /// @notice Which token is the bid token
-        AuctionToken auctionToken;
+        /// @notice Is Temple Gold auction token
+        bool isTempleGoldAuctionToken;
         /// @notice Mode of auction activation
         ActivationMode activationMode;
         /// @notice Auction proceeds recipient
         address recipient;
-    }
-
-    /// @notice uint(TOKEN_A) < uint(TOKEN_B)
-    enum AuctionToken {
-        TOKEN_A,
-        TOKEN_B
     }
 
     enum ActivationMode {
@@ -45,9 +39,8 @@ interface ISpiceAuction is IAuctionBase {
     }
 
     /// @notice Spice auction contracts are set up for 2 tokens. Either can be bid or sell token for a given auction
-    /// @notice uint(TOKEN_A) < uint(TOKEN_B)
-    function tokenA() external view returns (address);
-    function tokenB() external view returns (address);
+    function templeGold() external view returns (address);
+    function spiceToken() external view returns (address);
     /// @notice DAO contract to execute configurations update
     function daoExecutor() external view returns (address);
 
@@ -57,12 +50,11 @@ interface ISpiceAuction is IAuctionBase {
     /// @notice Set config for an epoch. This enable dynamic and multiple auctions especially for vested scenarios
     /// Must be set before epoch auction starts
     function setAuctionConfig(SpiceAuctionConfig calldata _config) external;
-    /// @notice Returns name of Spice Auction contract
-    // function NAME() external view returns (string memory);
+
     /// @notice Remove config set for 
     function removeAuctionConfig() external;
 
     function getAuctionTokenForCurrentEpoch() external view returns (address);
 
-    function getAuctionConfigs(uint256 auctionId) external view returns (SpiceAuctionConfig memory);
+    function getAuctionConfig(uint256 auctionId) external view returns (SpiceAuctionConfig memory);
 }
