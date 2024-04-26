@@ -3,7 +3,8 @@ import { Environment } from './types';
 
 const env: Environment = {
   alchemyId: 'AorwfDdHDsEjIX4HPwS70zkVjWqjv5vZ',
-  rpcUrl: 'https://eth-mainnet.g.alchemy.com/v2/AorwfDdHDsEjIX4HPwS70zkVjWqjv5vZ',
+  rpcUrl:
+    'https://eth-mainnet.g.alchemy.com/v2/AorwfDdHDsEjIX4HPwS70zkVjWqjv5vZ',
   backendUrl: 'https://backend-stage.templedao.link',
   contracts: {
     balancerVault: '',
@@ -49,10 +50,14 @@ const env: Environment = {
   },
   subgraph: {
     // TODO: These need updated to the templedao organization subgraphs once they are deployed
-    templeCore: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-core-goerli',
-    protocolMetrics: 'https://api.thegraph.com/subgraphs/name/medariox/temple-metrics',
-    protocolMetricsArbitrum: 'https://api.thegraph.com/subgraphs/name/medariox/temple-metrics-arbitrum',
-    balancerV2: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-balancer-v2',
+    templeCore:
+      'https://api.thegraph.com/subgraphs/name/templedao/templedao-core-goerli',
+    protocolMetrics:
+      'https://api.thegraph.com/subgraphs/name/medariox/temple-metrics',
+    protocolMetricsArbitrum:
+      'https://api.thegraph.com/subgraphs/name/medariox/temple-metrics-arbitrum',
+    balancerV2:
+      'https://api.thegraph.com/subgraphs/name/templedao/templedao-balancer-v2',
     // TODO: Will be deprecated
     ramos: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-ramos',
     templeV2: 'https://api.thegraph.com/subgraphs/name/medariox/v2-testnet',

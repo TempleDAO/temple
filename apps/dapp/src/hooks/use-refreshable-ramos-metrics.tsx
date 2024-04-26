@@ -62,8 +62,14 @@ export default function useRefreshableRamosMetrics(intervalMinutes = 20) {
       }),
     });
 
-    const [hourlyResult, dailyResult] = await Promise.all([hourlyRequest, dailyRequest]);
-    const [hourlyMetrics, dailyMetrics] = await Promise.all([hourlyResult.json(), dailyResult.json()]);
+    const [hourlyResult, dailyResult] = await Promise.all([
+      hourlyRequest,
+      dailyRequest,
+    ]);
+    const [hourlyMetrics, dailyMetrics] = await Promise.all([
+      hourlyResult.json(),
+      dailyResult.json(),
+    ]);
 
     setHourlyMetrics(hourlyMetrics?.data?.metricHourlySnapshots ?? []);
     setDailyMetrics(dailyMetrics?.data?.metricDailySnapshots ?? []);

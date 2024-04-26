@@ -1,4 +1,4 @@
-import { PropsWithChildren, useState, useCallback, useContext, createContext } from 'react';
+import { PropsWithChildren, useContext, createContext } from 'react';
 import { ThemeProvider } from 'styled-components';
 import { theme } from 'styles/theme';
 import { NotificationProvider } from 'providers/NotificationProvider';
@@ -13,12 +13,14 @@ import { WrongNetworkPopover } from 'components/Layouts/CoreLayout/WrongNetworkP
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
 interface AppProviderState {}
 
 export const INITIAL_STATE: AppProviderState = {};
 
 export const AppContext = createContext<AppProviderState>(INITIAL_STATE);
 
+// eslint-disable-next-line @typescript-eslint/ban-types
 export const AppProvider = (props: PropsWithChildren<{}>) => {
   const queryClient = new QueryClient();
 

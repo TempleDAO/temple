@@ -1,6 +1,6 @@
 import React from 'react';
 import { format, isDate } from 'date-fns';
-import styled from 'styled-components'
+import styled from 'styled-components';
 
 import { Body, Cell, Head, Row, Table } from 'components/Table/Table';
 import type { VaultGroup } from 'components/Vault/types';
@@ -17,7 +17,11 @@ interface IProps {
   vaultGroupBalances: { [groupId: string]: VaultGroupBalances };
 }
 
-export const ProfileVaults: React.FC<IProps> = ({ isLoading, vaultGroups, vaultGroupBalances }) => {
+export const ProfileVaults: React.FC<IProps> = ({
+  isLoading,
+  vaultGroups,
+  vaultGroupBalances,
+}) => {
   if (isLoading) {
     return (
       <Container>
@@ -53,7 +57,9 @@ export const ProfileVaults: React.FC<IProps> = ({ isLoading, vaultGroups, vaultG
               <Body>
                 {vaultGroup.vaults.map((vault) => {
                   const vaultGroupBalance = vaultGroupBalances[vaultGroup.id];
-                  const unlockValue = isDate(vault.unlockDate) ? format(vault.unlockDate as Date, 'MMM do') : 'now';
+                  const unlockValue = isDate(vault.unlockDate)
+                    ? format(vault.unlockDate as Date, 'MMM do')
+                    : 'now';
                   const vaultBalance = vaultGroupBalance[vault.id] || {};
                   return (
                     <Row key={vault.id}>

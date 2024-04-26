@@ -3,6 +3,7 @@ import posthog from 'posthog-js';
 import { isDevelopmentEnv } from 'utils/helpers';
 
 export class AnalyticsService {
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
   private constructor() {}
 
   public static init(): void {
@@ -14,6 +15,7 @@ export class AnalyticsService {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/ban-types
   public static captureEvent(eventKey: string, eventProperties: Object): void {
     if (!isDevelopmentEnv()) {
       posthog.capture(eventKey, eventProperties);

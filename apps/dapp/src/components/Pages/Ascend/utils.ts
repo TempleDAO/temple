@@ -1,7 +1,10 @@
 import { BigNumber } from 'ethers';
 import { formatDuration, intervalToDuration } from 'date-fns';
 
-import { formatBigNumber, getBigNumberFromString } from 'components/Vault/utils';
+import {
+  formatBigNumber,
+  getBigNumberFromString,
+} from 'components/Vault/utils';
 import { Pool } from 'components/Layouts/Ascend/types';
 import { DecimalBigNumber } from 'utils/DecimalBigNumber';
 import { ZERO } from 'utils/bigNumber';
@@ -31,7 +34,7 @@ export const getSpotPrice = (
   balanceBuy: DecimalBigNumber,
   weightSell: DecimalBigNumber,
   weightBuy: DecimalBigNumber,
-  swapFee: BigNumber,
+  swapFee: BigNumber
 ): BigNumber => {
   const bs = parseFloat(balanceSell.formatUnits());
   const bb = parseFloat(balanceBuy.formatUnits());
@@ -43,9 +46,9 @@ export const getSpotPrice = (
     return ZERO;
   }
 
-  const price = (bs / ws) / (bb / wb);
+  const price = bs / ws / (bb / wb);
 
-  const fee = (1 / (1 - parseFloat(formatBigNumber(swapFee))));
+  const fee = 1 / (1 - parseFloat(formatBigNumber(swapFee)));
   const spot = getBigNumberFromString(`${price * fee}`);
 
   return spot;

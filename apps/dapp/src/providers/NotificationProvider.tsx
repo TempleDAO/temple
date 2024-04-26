@@ -1,4 +1,9 @@
-import React, { createContext, PropsWithChildren, useContext, useState } from 'react';
+import React, {
+  createContext,
+  PropsWithChildren,
+  useContext,
+  useState,
+} from 'react';
 import { NotificationProps } from 'components/Notification/Notification';
 import { noop } from 'utils/helpers';
 
@@ -16,13 +21,17 @@ export const INITIAL_STATE: NotificationProviderState = {
   closeNotification: noop,
 };
 
-export const NotificationContext = createContext<NotificationProviderState>(INITIAL_STATE);
+export const NotificationContext =
+  createContext<NotificationProviderState>(INITIAL_STATE);
 
 /**
  * NotificationProvider controls the active notifications on the app
  */
+// eslint-disable-next-line @typescript-eslint/ban-types
 export const NotificationProvider = (props: PropsWithChildren<{}>) => {
-  const [notifications, setNotifications] = useState<Array<NotificationProps>>(INITIAL_STATE.notifications);
+  const [notifications, setNotifications] = useState<Array<NotificationProps>>(
+    INITIAL_STATE.notifications
+  );
   const { children } = props;
 
   /**

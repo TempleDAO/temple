@@ -8,11 +8,16 @@ import { InputArea, RequestArea } from '../styles';
 interface IProps {
   calculateFunc?: (
     bptAmountIn: DecimalBigNumber
-  ) => Promise<{ bptAmountIn: BigNumber; useContractBalance: boolean } | undefined>;
+  ) => Promise<
+    { bptAmountIn: BigNumber; useContractBalance: boolean } | undefined
+  >;
 }
 
 export const DepositAndStakeBpt: React.FC<IProps> = ({ calculateFunc }) => {
-  const [stakeParams, setStakeParams] = useState<{ bptAmountIn: BigNumber; useContractBalance: boolean }>();
+  const [stakeParams, setStakeParams] = useState<{
+    bptAmountIn: BigNumber;
+    useContractBalance: boolean;
+  }>();
   const [amount, setAmount] = useState<DecimalBigNumber>();
 
   return (
@@ -33,7 +38,7 @@ export const DepositAndStakeBpt: React.FC<IProps> = ({ calculateFunc }) => {
         label="CREATE REQUEST PARAMS"
         onClick={async () => {
           if (amount) {
-            if(!calculateFunc) return;
+            if (!calculateFunc) return;
             const amounts = await calculateFunc(amount);
             if (amounts) setStakeParams(amounts);
           }
@@ -41,9 +46,16 @@ export const DepositAndStakeBpt: React.FC<IProps> = ({ calculateFunc }) => {
       />
       {stakeParams && (
         <>
-          <p>To apply, create a RAMOS.depositAndStakeBpt() transaction with parameters</p>
-          <RequestArea>amountIn: {stakeParams.bptAmountIn.toString()}</RequestArea>
-          <RequestArea>useContractBalance: {`${stakeParams.useContractBalance}`}</RequestArea>
+          <p>
+            To apply, create a RAMOS.depositAndStakeBpt() transaction with
+            parameters
+          </p>
+          <RequestArea>
+            amountIn: {stakeParams.bptAmountIn.toString()}
+          </RequestArea>
+          <RequestArea>
+            useContractBalance: {`${stakeParams.useContractBalance}`}
+          </RequestArea>
         </>
       )}
     </InputArea>

@@ -1,5 +1,12 @@
 import { FC } from 'react';
-import { Route, Routes, Link as BaseLink, useResolvedPath, useMatch, Navigate } from 'react-router-dom';
+import {
+  Route,
+  Routes,
+  Link as BaseLink,
+  useResolvedPath,
+  useMatch,
+  Navigate,
+} from 'react-router-dom';
 import styled from 'styled-components';
 
 import BaseImage from 'components/Image/Image';
@@ -87,7 +94,8 @@ const Link = styled(BaseLink)<{ $isActive: boolean }>`
   padding: 0.5rem 1rem;
   border-radius: 0.5rem;
   display: block;
-  background: ${({ $isActive, theme }) => ($isActive ? '#1D1A1A' : 'transparent')};
+  background: ${({ $isActive, theme }) =>
+    $isActive ? '#1D1A1A' : 'transparent'};
 `;
 
 const AddTokenButton = styled.button`

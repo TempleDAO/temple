@@ -32,7 +32,7 @@ export const Nav = ({ selected, onClickButton }: Props) => {
   };
 
   const transform = `rotate(${angle} ${center.x} ${center.y})`;
-  
+
   return (
     <g id="nav">
       <g id="background_2" stroke="#BD7B4F">

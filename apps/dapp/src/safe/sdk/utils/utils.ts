@@ -20,14 +20,23 @@ import { estimateGas } from '../transactions/gas';
 import { DEFAULT_SAFE_VERSION } from '../contracts/config';
 import { EthSafeSignature } from '../signatures/SafeSignature';
 import { Gnosis_safe as Safe_V1_3_0 } from 'types/typechain/@safe-global/safe-deployments/v1.3.0/Gnosis_safe';
-import { getMultiSendCallOnlyContract, getMultiSendCallOnlyContractDeploymentDetails, getMultiSendContract, getMultiSendContractDeploymentDetails, getSafeContract } from '../contracts/safeDeploymentContracts';
+import {
+  getMultiSendCallOnlyContract,
+  getMultiSendCallOnlyContractDeploymentDetails,
+  getMultiSendContract,
+  getMultiSendContractDeploymentDetails,
+  getSafeContract,
+} from '../contracts/safeDeploymentContracts';
 
-export const ZERO_ADDRESS = `0x${'0'.repeat(40)}`
+export const ZERO_ADDRESS = `0x${'0'.repeat(40)}`;
 
 export function isSafeMultisigTransactionResponse(
   safeTransaction: SafeTransaction | SafeMultisigTransactionResponse
 ): safeTransaction is SafeMultisigTransactionResponse {
-  return (safeTransaction as SafeMultisigTransactionResponse).isExecuted !== undefined;
+  return (
+    (safeTransaction as SafeMultisigTransactionResponse).isExecuted !==
+    undefined
+  );
 }
 
 /**
@@ -54,17 +63,29 @@ export const toSafeTransactionType = async (
     nonce: serviceTransactionResponse.nonce,
   };
   const safeVersion = (await safeContract.VERSION()) as SafeVersion;
-  const multiSendDeploymentDetails = await getMultiSendContractDeploymentDetails(safeVersion, await signer.getChainId());
-  const multiSendCallOnlyDeploymentDetails = await getMultiSendCallOnlyContractDeploymentDetails(safeVersion, await signer.getChainId());
+  const multiSendDeploymentDetails =
+    await getMultiSendContractDeploymentDetails(
+      safeVersion,
+      await signer.getChainId()
+    );
+  const multiSendCallOnlyDeploymentDetails =
+    await getMultiSendCallOnlyContractDeploymentDetails(
+      safeVersion,
+      await signer.getChainId()
+    );
   const safeTransaction = await createTransaction({
     safeContract,
     signer,
     multiSendContractAddress: multiSendDeploymentDetails.defaultAddress,
-    multiSendCallOnlyContractAddress: multiSendCallOnlyDeploymentDetails.defaultAddress,
+    multiSendCallOnlyContractAddress:
+      multiSendCallOnlyDeploymentDetails.defaultAddress,
     safeTransactionData,
   });
   serviceTransactionResponse.confirmations?.map((confirmation) => {
-    const signature = new EthSafeSignature(confirmation.owner, confirmation.signature);
+    const signature = new EthSafeSignature(
+      confirmation.owner,
+      confirmation.signature
+    );
     safeTransaction.addSignature(signature);
   });
   return safeTransaction;
@@ -86,26 +107,42 @@ const createTransaction = async ({
 }: CreateTransactionProps): Promise<SafeTransaction> => {
   const safeVersion = await safeContract.VERSION();
   if (!hasSafeFeature(SAFE_FEATURES.ACCOUNT_ABSTRACTION, safeVersion)) {
-    throw new Error('Account Abstraction functionality is not available for Safes with version lower than v1.3.0');
+    throw new Error(
+      'Account Abstraction functionality is not available for Safes with version lower than v1.3.0'
+    );
   }
 
-  if (isMetaTransactionArray(safeTransactionData) && safeTransactionData.length === 0) {
+  if (
+    isMetaTransactionArray(safeTransactionData) &&
+    safeTransactionData.length === 0
+  ) {
     throw new Error('Invalid empty array of transactions');
   }
 
   let newTransaction: SafeTransactionDataPartial;
-  if (isMetaTransactionArray(safeTransactionData) && safeTransactionData.length > 1) {
+  if (
+    isMetaTransactionArray(safeTransactionData) &&
+    safeTransactionData.length > 1
+  ) {
     const multiSendContract = onlyCalls
-      ? getMultiSendCallOnlyContract({signer, safeVersion: DEFAULT_SAFE_VERSION})
-      : getMultiSendContract({signer, safeVersion: DEFAULT_SAFE_VERSION});
+      ? getMultiSendCallOnlyContract({
+          signer,
+          safeVersion: DEFAULT_SAFE_VERSION,
+        })
+      : getMultiSendContract({ signer, safeVersion: DEFAULT_SAFE_VERSION });
 
-    const multiSendData = encodeMultiSendData(safeTransactionData.map(standardizeMetaTransactionData));
+    const multiSendData = encodeMultiSendData(
+      safeTransactionData.map(standardizeMetaTransactionData)
+    );
 
     const multiSendTransaction = {
       ...options,
       to: (await multiSendContract).address,
       value: '0',
-      data: (await multiSendContract).interface.encodeFunctionData('multiSend', [multiSendData]),
+      data: (await multiSendContract).interface.encodeFunctionData(
+        'multiSend',
+        [multiSendData]
+      ),
       operation: OperationType.DelegateCall,
     };
     newTransaction = multiSendTransaction;
@@ -139,13 +176,22 @@ export const copyTransaction = async (
   safeTransaction: SafeTransaction
 ): Promise<SafeTransaction> => {
   const safeVersion = (await safeContract.VERSION()) as SafeVersion;
-  const multiSendDeploymentDetails = await getMultiSendContractDeploymentDetails(safeVersion, await signer.getChainId());
-  const multiSendCallOnlyDeploymentDetails = await getMultiSendCallOnlyContractDeploymentDetails(safeVersion, await signer.getChainId());
+  const multiSendDeploymentDetails =
+    await getMultiSendContractDeploymentDetails(
+      safeVersion,
+      await signer.getChainId()
+    );
+  const multiSendCallOnlyDeploymentDetails =
+    await getMultiSendCallOnlyContractDeploymentDetails(
+      safeVersion,
+      await signer.getChainId()
+    );
   const signedSafeTransaction = await createTransaction({
     safeContract,
     signer,
     multiSendContractAddress: multiSendDeploymentDetails.defaultAddress,
-    multiSendCallOnlyContractAddress: multiSendCallOnlyDeploymentDetails.defaultAddress,
+    multiSendCallOnlyContractAddress:
+      multiSendCallOnlyDeploymentDetails.defaultAddress,
     safeTransactionData: safeTransaction.data,
   });
   safeTransaction.signatures.forEach((signature) => {
@@ -213,7 +259,9 @@ export const getOwnersWhoApprovedTx = async (
  *
  * @returns The list of owners
  */
-export const getOwners = async (safeContract: Safe_V1_3_0): Promise<string[]> => {
+export const getOwners = async (
+  safeContract: Safe_V1_3_0
+): Promise<string[]> => {
   if (!safeContract) {
     throw new Error('Safe is not deployed');
   }
@@ -226,7 +274,9 @@ export const getOwners = async (safeContract: Safe_V1_3_0): Promise<string[]> =>
  *
  * @returns The Safe threshold
  */
-export const getThreshold = async (safeContract: Safe_V1_3_0): Promise<number> => {
+export const getThreshold = async (
+  safeContract: Safe_V1_3_0
+): Promise<number> => {
   if (!safeContract) {
     throw new Error('Safe is not deployed');
   }
@@ -266,7 +316,8 @@ export async function standardizeSafeTransactionData({
     gasPrice: tx.gasPrice ?? '0',
     gasToken: tx.gasToken || ZERO_ADDRESS,
     refundReceiver: tx.refundReceiver || ZERO_ADDRESS,
-    nonce: tx.nonce ?? (safeContract ? (await safeContract.nonce()).toNumber() : 0),
+    nonce:
+      tx.nonce ?? (safeContract ? (await safeContract.nonce()).toNumber() : 0),
   };
 
   if (typeof tx.safeTxGas !== 'undefined') {
@@ -304,39 +355,43 @@ export function sameString(str1: string, str2: string): boolean {
   return str1.toLowerCase() === str2.toLowerCase();
 }
 
-
 export function standardizeMetaTransactionData(
   tx: SafeTransactionDataPartial
 ): MetaTransactionData {
   const standardizedTxs: MetaTransactionData = {
     ...tx,
-    operation: tx.operation ?? OperationType.Call
-  }
-  return standardizedTxs
+    operation: tx.operation ?? OperationType.Call,
+  };
+  return standardizedTxs;
 }
 
 /**
-   * Returns the Safe Transaction encoded
-   *
-   * @async
-   * @param {SafeTransaction} safeTransaction - The Safe transaction to be encoded.
-   * @returns {Promise<string>} The encoded transaction
-   *
-   */
-export const getEncodedTransaction = async(safeContract: Safe_V1_3_0, safeTransaction: SafeTransaction): Promise<string> => {
+ * Returns the Safe Transaction encoded
+ *
+ * @async
+ * @param {SafeTransaction} safeTransaction - The Safe transaction to be encoded.
+ * @returns {Promise<string>} The encoded transaction
+ *
+ */
+export const getEncodedTransaction = async (
+  safeContract: Safe_V1_3_0,
+  safeTransaction: SafeTransaction
+): Promise<string> => {
+  const encodedTransaction: string = safeContract.interface.encodeFunctionData(
+    'execTransaction',
+    [
+      safeTransaction.data.to,
+      safeTransaction.data.value,
+      safeTransaction.data.data,
+      safeTransaction.data.operation,
+      safeTransaction.data.safeTxGas,
+      safeTransaction.data.baseGas,
+      safeTransaction.data.gasPrice,
+      safeTransaction.data.gasToken,
+      safeTransaction.data.refundReceiver,
+      safeTransaction.encodedSignatures(),
+    ]
+  ) as string;
 
-  const encodedTransaction: string = safeContract.interface.encodeFunctionData('execTransaction', [
-    safeTransaction.data.to,
-    safeTransaction.data.value,
-    safeTransaction.data.data,
-    safeTransaction.data.operation,
-    safeTransaction.data.safeTxGas,
-    safeTransaction.data.baseGas,
-    safeTransaction.data.gasPrice,
-    safeTransaction.data.gasToken,
-    safeTransaction.data.refundReceiver,
-    safeTransaction.encodedSignatures()
-  ]) as string
-
-  return encodedTransaction
-}
+  return encodedTransaction;
+};

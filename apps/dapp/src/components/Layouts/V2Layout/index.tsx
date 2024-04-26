@@ -20,7 +20,9 @@ import GeoblockModal from 'components/Popover/GeoblockModal';
 export type MenuNavItem = {
   label: string;
   linkTo: string;
-  Logo: FunctionComponent<SVGProps<SVGSVGElement> & { title?: string | undefined }>;
+  Logo: FunctionComponent<
+    SVGProps<SVGSVGElement> & { title?: string | undefined }
+  >;
   selected: boolean;
 };
 
@@ -96,12 +98,14 @@ const V2Layout = () => {
 
   const onSelectMenuNavItems = async (selectedMenuItem: MenuNavItem) => {
     await setMenuNavItems((prevSelectedMenuNavItems) => {
-      const newSelectedMenuNavItems = prevSelectedMenuNavItems.map((prevMenuItem) => {
-        if (prevMenuItem == selectedMenuItem) {
-          return { ...prevMenuItem, selected: true };
+      const newSelectedMenuNavItems = prevSelectedMenuNavItems.map(
+        (prevMenuItem) => {
+          if (prevMenuItem == selectedMenuItem) {
+            return { ...prevMenuItem, selected: true };
+          }
+          return { ...prevMenuItem, selected: false };
         }
-        return { ...prevMenuItem, selected: false };
-      });
+      );
       return newSelectedMenuNavItems;
     });
   };
@@ -110,12 +114,21 @@ const V2Layout = () => {
     <ParentContainer>
       <MainContainer>
         {isTabletOrAbove ? (
-          <LeftNav menuNavItems={menuNavItems} onSelectMenuNavItems={onSelectMenuNavItems} />
+          <LeftNav
+            menuNavItems={menuNavItems}
+            onSelectMenuNavItems={onSelectMenuNavItems}
+          />
         ) : (
-          <MobileNav menuNavItems={menuNavItems} onSelectMenuNavItems={onSelectMenuNavItems} />
+          <MobileNav
+            menuNavItems={menuNavItems}
+            onSelectMenuNavItems={onSelectMenuNavItems}
+          />
         )}
         <Content>
-          <GeoblockModal isOpen={geoblockModalOpen} onClose={() => setGeoblockModalOpen(false)} />
+          <GeoblockModal
+            isOpen={geoblockModalOpen}
+            onClose={() => setGeoblockModalOpen(false)}
+          />
           <Outlet />
         </Content>
       </MainContainer>

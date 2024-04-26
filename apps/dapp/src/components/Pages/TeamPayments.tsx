@@ -1,4 +1,10 @@
-import React, { useEffect, useState, useReducer, useRef, SetStateAction } from 'react';
+import React, {
+  useEffect,
+  useState,
+  useReducer,
+  useRef,
+  SetStateAction,
+} from 'react';
 import styled from 'styled-components';
 
 import { TempleTeamPayments__factory } from 'types/typechain';
@@ -100,8 +106,11 @@ const TeamPayments = () => {
           </EyeArea>
         </div>
 
-        <TotalAllocation title={`Total epoch allocation: ${allocationFixed} ${PAYMENT_TOKEN}`}>
-          Total epoch allocation: {allocationFixed.toLocaleString()} {PAYMENT_TOKEN}
+        <TotalAllocation
+          title={`Total epoch allocation: ${allocationFixed} ${PAYMENT_TOKEN}`}
+        >
+          Total epoch allocation: {allocationFixed.toLocaleString()}{' '}
+          {PAYMENT_TOKEN}
         </TotalAllocation>
 
         <ButtonArea>
@@ -114,8 +123,11 @@ const TeamPayments = () => {
             <label title={`Collectable: ${claimableFixed} ${PAYMENT_TOKEN}`}>
               Collectable: {claimableFixed.toLocaleString()} {PAYMENT_TOKEN}
             </label>
-            <label title={`Vested: ${remainingAllocationFixed} ${PAYMENT_TOKEN}`}>
-              Vested: {remainingAllocationFixed.toLocaleString()} {PAYMENT_TOKEN}
+            <label
+              title={`Vested: ${remainingAllocationFixed} ${PAYMENT_TOKEN}`}
+            >
+              Vested: {remainingAllocationFixed.toLocaleString()}{' '}
+              {PAYMENT_TOKEN}
             </label>
           </CollectionValues>
           <Button
@@ -189,19 +201,23 @@ function useTempleTeamPayments(): TeamPaymentsState {
     const getAllocationAndClaimableAmounts = async () => {
       if (wallet && signer && selectedEpoch && env.contracts.teamPayments) {
         // Retrieve fixed allocation & claimable amounts
-        const fixedTeamPayments = new TempleTeamPayments__factory(signer).attach(
-          env.contracts.teamPayments[selectedEpoch].address
-        );
+        const fixedTeamPayments = new TempleTeamPayments__factory(
+          signer
+        ).attach(env.contracts.teamPayments[selectedEpoch].address);
 
         const fixedAllocation = await fixedTeamPayments.allocation(wallet);
         const fixedClaimedAmount = await fixedTeamPayments.claimed(wallet);
         const convertedFixedAlloc = fromAtto(fixedAllocation);
-        setRemainingAllocationFixed(fromAtto(fixedAllocation.sub(fixedClaimedAmount)));
+        setRemainingAllocationFixed(
+          fromAtto(fixedAllocation.sub(fixedClaimedAmount))
+        );
 
         setAllocationFixed(convertedFixedAlloc);
 
         if (convertedFixedAlloc > 0) {
-          const fixedClaimable = await fixedTeamPayments.calculateClaimable(wallet);
+          const fixedClaimable = await fixedTeamPayments.calculateClaimable(
+            wallet
+          );
           const convertedFixedClaimable = fromAtto(fixedClaimable);
 
           convertedFixedClaimable > 0 && dispatch({ type: 'default-fixed' });
@@ -240,12 +256,20 @@ function useTempleTeamPayments(): TeamPaymentsState {
   };
 }
 
-function getPupilTransform(imageRef: React.RefObject<HTMLDivElement>, cursorCoords: number[]) {
+function getPupilTransform(
+  imageRef: React.RefObject<HTMLDivElement>,
+  cursorCoords: number[]
+) {
   const headerHeight = 80;
 
   if (imageRef.current) {
     const x = 0 - window.innerWidth / 2 + cursorCoords[0];
-    const y = 0 - window.innerHeight / 2 + imageRef.current.offsetTop + cursorCoords[1] - headerHeight;
+    const y =
+      0 -
+      window.innerHeight / 2 +
+      imageRef.current.offsetTop +
+      cursorCoords[1] -
+      headerHeight;
 
     const values = normalizeTransform(x, y);
     return `translate(${values[0]}px, ${values[1]}px)`;

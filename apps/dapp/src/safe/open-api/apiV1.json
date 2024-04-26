@@ -2422,7 +2422,14 @@
       }
     },
     "MasterCopyResponse": {
-      "required": ["address", "version", "deployer", "deployedBlockNumber", "lastIndexedBlockNumber", "l2"],
+      "required": [
+        "address",
+        "version",
+        "deployer",
+        "deployedBlockNumber",
+        "lastIndexedBlockNumber",
+        "l2"
+      ],
       "type": "object",
       "properties": {
         "address": {
@@ -2479,7 +2486,13 @@
       }
     },
     "Contract": {
-      "required": ["address", "name", "displayName", "contractAbi", "trustedForDelegateCall"],
+      "required": [
+        "address",
+        "name",
+        "displayName",
+        "contractAbi",
+        "trustedForDelegateCall"
+      ],
       "type": "object",
       "properties": {
         "address": {
@@ -2598,7 +2611,15 @@
       }
     },
     "SafeMessageResponse": {
-      "required": ["created", "modified", "safe", "messageHash", "message", "proposedBy", "safeAppId"],
+      "required": [
+        "created",
+        "modified",
+        "safe",
+        "messageHash",
+        "message",
+        "proposedBy",
+        "safeAppId"
+      ],
       "type": "object",
       "properties": {
         "created": {
@@ -2654,7 +2675,15 @@
       }
     },
     "SafeModuleTransactionResponse": {
-      "required": ["executionDate", "safe", "module", "to", "value", "data", "operation"],
+      "required": [
+        "executionDate",
+        "safe",
+        "module",
+        "to",
+        "value",
+        "data",
+        "operation"
+      ],
       "type": "object",
       "properties": {
         "created": {
@@ -2957,7 +2986,14 @@
       }
     },
     "FirebaseDevice": {
-      "required": ["safes", "cloudMessagingToken", "buildNumber", "bundle", "deviceType", "version"],
+      "required": [
+        "safes",
+        "cloudMessagingToken",
+        "buildNumber",
+        "bundle",
+        "deviceType",
+        "version"
+      ],
       "type": "object",
       "properties": {
         "uuid": {
@@ -3198,7 +3234,16 @@
       }
     },
     "TransferWithTokenInfoResponse": {
-      "required": ["executionDate", "blockNumber", "transactionHash", "to", "value", "tokenId", "tokenInfo", "from"],
+      "required": [
+        "executionDate",
+        "blockNumber",
+        "transactionHash",
+        "to",
+        "value",
+        "tokenId",
+        "tokenInfo",
+        "from"
+      ],
       "type": "object",
       "properties": {
         "type": {
@@ -3256,7 +3301,16 @@
       }
     },
     "SafeModuleTransactionWithTransfersResponse": {
-      "required": ["executionDate", "safe", "module", "to", "value", "data", "operation", "transfers"],
+      "required": [
+        "executionDate",
+        "safe",
+        "module",
+        "to",
+        "value",
+        "data",
+        "operation",
+        "transfers"
+      ],
       "type": "object",
       "properties": {
         "created": {
@@ -3526,7 +3580,14 @@
       }
     },
     "EthereumTxWithTransfersResponse": {
-      "required": ["executionDate", "to", "data", "txHash", "transfers", "from"],
+      "required": [
+        "executionDate",
+        "to",
+        "data",
+        "txHash",
+        "transfers",
+        "from"
+      ],
       "type": "object",
       "properties": {
         "executionDate": {
@@ -3682,7 +3743,14 @@
       }
     },
     "SafeCreationInfoResponse": {
-      "required": ["created", "creator", "transactionHash", "factoryAddress", "masterCopy", "setupData"],
+      "required": [
+        "created",
+        "creator",
+        "transactionHash",
+        "factoryAddress",
+        "masterCopy",
+        "setupData"
+      ],
       "type": "object",
       "properties": {
         "created": {

@@ -4,7 +4,10 @@ import { INITIAL_STATE } from './constants';
 import { SwapMode, SwapReducerAction, SwapReducerState } from './types';
 import { buildSelectConfig, buildValueConfig } from './utils';
 
-export function swapReducer(state: SwapReducerState, action: SwapReducerAction): SwapReducerState {
+export function swapReducer(
+  state: SwapReducerState,
+  action: SwapReducerAction
+): SwapReducerState {
   switch (action.type) {
     case 'changeMode': {
       return action.value === SwapMode.Buy

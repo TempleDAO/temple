@@ -1,4 +1,11 @@
-import { ReactNode, useState, useEffect, useRef, SetStateAction, Fragment } from 'react';
+import {
+  ReactNode,
+  useState,
+  useEffect,
+  useRef,
+  SetStateAction,
+  Fragment,
+} from 'react';
 import { LoadingText } from 'components/Pages/Core/components/LoaderVault/commons/LoadingText';
 import env from 'constants/env';
 import styled from 'styled-components';
@@ -9,7 +16,10 @@ import { useMediaQuery } from 'react-responsive';
 import * as breakpoints from 'styles/breakpoints';
 import { queryMinTablet, queryPhone } from 'styles/breakpoints';
 import dropdownIcon from 'assets/icons/dropdown.svg?react';
-import { RowFilterDropdown, updateRowDropdownCheckbox } from './RowFilterDropdown';
+import {
+  RowFilterDropdown,
+  updateRowDropdownCheckbox,
+} from './RowFilterDropdown';
 import { RowFilter } from '../hooks/use-dashboardv2-txHistory';
 import { StrategyKey } from '../DashboardConfig';
 
@@ -67,7 +77,10 @@ export const TxnDataTable = (props: Props) => {
       prevRows?.map((r) => {
         const emv = r.expRowMobView;
         if (r == row) {
-          return { ...r, expRowMobView: { isOpen: !emv.isOpen, component: emv.component } };
+          return {
+            ...r,
+            expRowMobView: { isOpen: !emv.isOpen, component: emv.component },
+          };
         }
         return r;
       })
@@ -81,10 +94,16 @@ export const TxnDataTable = (props: Props) => {
             <TableHeader
               key={h.name}
               isHidden={h.isHidden}
-              style={isBiggerThanPhone ? { width: h.width } : { minWidth: h.width }}
+              style={
+                isBiggerThanPhone ? { width: h.width } : { minWidth: h.width }
+              }
             >
               <InnerDataRow>
-                <HeaderTitleContainer onClick={() => updateTableHeadersOrder(h)}>{h.name}</HeaderTitleContainer>
+                <HeaderTitleContainer
+                  onClick={() => updateTableHeadersOrder(h)}
+                >
+                  {h.name}
+                </HeaderTitleContainer>
                 {h.dropdownOptions && (
                   <RowFilterDropdown
                     name={h.name}
@@ -94,7 +113,10 @@ export const TxnDataTable = (props: Props) => {
                   />
                 )}
                 {h.orderDesc !== undefined ? (
-                  <ArrowButtonUpDown clicked={h.orderDesc} onClick={() => updateTableHeadersOrder(h)} />
+                  <ArrowButtonUpDown
+                    clicked={h.orderDesc}
+                    onClick={() => updateTableHeadersOrder(h)}
+                  />
                 ) : (
                   <EmptySpace />
                 )}
@@ -105,14 +127,21 @@ export const TxnDataTable = (props: Props) => {
       </thead>
       <tbody>
         {dataLoading ? (
-          loadSkeletonRows(1, tableHeaders.filter((h) => h.isHidden === false).length)
+          loadSkeletonRows(
+            1,
+            tableHeaders.filter((h) => h.isHidden === false).length
+          )
         ) : !tableRows || tableRows.length === 0 ? (
           <DataRow hasBorderBotton>
             <DataCell>No data available</DataCell>
           </DataRow>
         ) : (
           <>
-            {dataRefetching && loadSkeletonRows(1, tableHeaders.filter((h) => h.isHidden === false).length)}
+            {dataRefetching &&
+              loadSkeletonRows(
+                1,
+                tableHeaders.filter((h) => h.isHidden === false).length
+              )}
             {tableRows.map((row) => {
               // deconstruct so we can remove expRowMobView, and then use rowData as key of the Fragment
               const { expRowMobView, ...rowData } = row;
@@ -124,23 +153,42 @@ export const TxnDataTable = (props: Props) => {
                     key={row.token + row.txHash}
                     onClick={() => clickTableRow(row)}
                   >
-                    <DataCell isHidden={tableHeaders[0].isHidden}>{row.date}</DataCell>
-                    <DataCell isHidden={tableHeaders[1].isHidden}>{row.type}</DataCell>
-                    <DataCell isHidden={tableHeaders[2].isHidden}>{row.strategy}</DataCell>
-                    <DataCell isHidden={tableHeaders[3].isHidden}>{row.token}</DataCell>
+                    <DataCell isHidden={tableHeaders[0].isHidden}>
+                      {row.date}
+                    </DataCell>
+                    <DataCell isHidden={tableHeaders[1].isHidden}>
+                      {row.type}
+                    </DataCell>
+                    <DataCell isHidden={tableHeaders[2].isHidden}>
+                      {row.strategy}
+                    </DataCell>
+                    <DataCell isHidden={tableHeaders[3].isHidden}>
+                      {row.token}
+                    </DataCell>
                     <DataCell isHidden={tableHeaders[4].isHidden}>
                       <FlexContainer>
-                        {row.amount} {!isBiggerThanTablet && (row.expRowMobView.isOpen ? <ArrowUp /> : <ArrowDown />)}
+                        {row.amount}{' '}
+                        {!isBiggerThanTablet &&
+                          (row.expRowMobView.isOpen ? (
+                            <ArrowUp />
+                          ) : (
+                            <ArrowDown />
+                          ))}
                       </FlexContainer>
                     </DataCell>
                     <DataCell isHidden={tableHeaders[5].isHidden}>
-                      <LinkStyled href={`${env.etherscan}/tx/${row.txHash}`} target="_blank">
+                      <LinkStyled
+                        href={`${env.etherscan}/tx/${row.txHash}`}
+                        target="_blank"
+                      >
                         {row.txHash.slice(0, 12) + '...'}
                       </LinkStyled>
                     </DataCell>
                   </DataRow>
                   <DataRow hasBorderBotton onClick={() => clickTableRow(row)}>
-                    {row.expRowMobView.isOpen && !isBiggerThanTablet && row.expRowMobView.component}
+                    {row.expRowMobView.isOpen &&
+                      !isBiggerThanTablet &&
+                      row.expRowMobView.component}
                   </DataRow>
                 </Fragment>
               );
@@ -152,7 +200,10 @@ export const TxnDataTable = (props: Props) => {
   );
 };
 
-const loadSkeletonRows = (skeletonRowsNo: number, skeletonColumnsNo: number) => {
+const loadSkeletonRows = (
+  skeletonRowsNo: number,
+  skeletonColumnsNo: number
+) => {
   return [...Array(skeletonRowsNo)].map((_, index) => (
     <DataRow hasBorderBotton key={index}>
       {[...Array(skeletonColumnsNo)].map(
@@ -212,7 +263,8 @@ const EmptySpace = styled.p`
 const DataTable = styled.table<{ isBiggerThanTablet: boolean }>`
   margin-top: 5px;
   border-collapse: collapse;
-  table-layout: ${({ isBiggerThanTablet }) => (isBiggerThanTablet ? 'fixed' : '')};
+  table-layout: ${({ isBiggerThanTablet }) =>
+    isBiggerThanTablet ? 'fixed' : ''};
   width: 100%;
   color: ${({ theme }) => theme.palette.brand};
 `;
@@ -222,7 +274,9 @@ const DataRow = styled.tr<{ hasBorderBotton: boolean }>`
   white-space: nowrap;
   border-top: 1px solid ${({ theme }) => theme.palette.brand};
   ${({ hasBorderBotton, theme }) =>
-    `border-bottom: 1px solid ${hasBorderBotton ? theme.palette.brand : theme.palette.dark};`}
+    `border-bottom: 1px solid ${
+      hasBorderBotton ? theme.palette.brand : theme.palette.dark
+    };`}
 `;
 
 const DataCell = styled.td<{ isHidden?: boolean }>`

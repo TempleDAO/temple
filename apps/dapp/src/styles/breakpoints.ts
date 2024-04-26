@@ -1,12 +1,18 @@
 import { toQuery } from 'react-responsive';
-import { css, FlattenInterpolation, ThemeProps, DefaultTheme } from 'styled-components';
+import {
+  css,
+  FlattenInterpolation,
+  ThemeProps,
+  DefaultTheme,
+} from 'styled-components';
 import { theme } from 'styles/theme';
 
 type Css = FlattenInterpolation<ThemeProps<DefaultTheme>>;
 
 export const tabletAndAbove = (styles: string | Css) => {
   return css`
-    @media screen and (min-width: ${({ theme }) => theme.metrics.devices.tablet}) {
+    @media screen and (min-width: ${({ theme }) =>
+        theme.metrics.devices.tablet}) {
       ${styles}
     }
   `;
@@ -14,7 +20,8 @@ export const tabletAndAbove = (styles: string | Css) => {
 
 export const phoneAndAbove = (styles: string | Css) => {
   return css`
-    @media screen and (min-width: ${({ theme }) => theme.metrics.devices.phone}) {
+    @media screen and (min-width: ${({ theme }) =>
+        theme.metrics.devices.phone}) {
       ${styles}
     }
   `;
@@ -70,7 +77,8 @@ export const minTablet = (styles: string | Css) => {
 
 export const phone = (styles: string | Css) => {
   return css`
-    @media screen and (max-width: ${({ theme }) => theme.metrics.devices.phone}) {
+    @media screen and (max-width: ${({ theme }) =>
+        theme.metrics.devices.phone}) {
       ${styles}
     }
   `;

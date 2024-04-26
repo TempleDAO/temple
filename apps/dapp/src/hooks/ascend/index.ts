@@ -115,7 +115,10 @@ const createLBPQuery = (poolAddress: string) => {
 };
 
 export const useTemplePool = (poolAddress = '') => {
-  return useSubgraphRequest<GraphResponse>(env.subgraph.balancerV2, createLBPQuery(poolAddress));
+  return useSubgraphRequest<GraphResponse>(
+    env.subgraph.balancerV2,
+    createLBPQuery(poolAddress)
+  );
 };
 
 export const usePoolTokenValues = (pool: Pool) => {
@@ -135,8 +138,15 @@ export const usePoolTokenValues = (pool: Pool) => {
     const request = async () => {
       try {
         const oneTemple = DecimalBigNumber.parseUnits('1', accrued.decimals);
-        const quotes = await getSwapQuoteRequest(oneTemple, accrued.address as any, base.address as any);
-        const quote = DecimalBigNumber.fromBN(quotes[base.tokenIndex].abs(), accrued.decimals);
+        const quotes = await getSwapQuoteRequest(
+          oneTemple,
+          accrued.address as any,
+          base.address as any
+        );
+        const quote = DecimalBigNumber.fromBN(
+          quotes[base.tokenIndex].abs(),
+          accrued.decimals
+        );
         setSpotPrice(quote.formatUnits());
       } catch (err) {
         console.error('err', err);

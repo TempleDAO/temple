@@ -11,7 +11,7 @@ import { useAuctionContext } from '../../AuctionContext';
 import { getBalancerErrorMessage } from 'utils/balancer';
 import env from 'constants/env';
 
-type Action<A extends ActionType, P extends any> = { type: A; payload: P };
+type Action<A extends ActionType, P> = { type: A; payload: P };
 
 enum ActionType {
   SetSellValue,
@@ -31,7 +31,10 @@ type Actions =
   | Action<ActionType.SetSellValue, string>
   | Action<ActionType.SetSwapQuoteRequest, TokenValue>
   | Action<ActionType.SetSwapQuoteStart, TokenValue>
-  | Action<ActionType.SetSwapQuoteSuccess, TokenValue & { quote: DecimalBigNumber }>
+  | Action<
+      ActionType.SetSwapQuoteSuccess,
+      TokenValue & { quote: DecimalBigNumber }
+    >
   | Action<ActionType.SetSwapQuoteError, TokenValue & { error: string }>
   | Action<ActionType.SetTransactionSettings, TradeState['transactionSettings']>
   | Action<ActionType.ResetQuoteState, null>
@@ -56,7 +59,10 @@ interface TradeState {
   };
 }
 
-const shouldUpdateQuoteState = (state: TradeState, actionPayload: TokenValue) => {
+const shouldUpdateQuoteState = (
+  state: TradeState,
+  actionPayload: TokenValue
+) => {
   const { value: incomingDbnValue, token: incomingToken } = actionPayload;
   const { request: currentRequest } = state.quote;
   // Safe guard against race conditions for wrong query
@@ -65,7 +71,10 @@ const shouldUpdateQuoteState = (state: TradeState, actionPayload: TokenValue) =>
     return false;
   }
   // values should match as well
-  if (currentRequest.value && !incomingDbnValue.value.eq(currentRequest.value.value)) {
+  if (
+    currentRequest.value &&
+    !incomingDbnValue.value.eq(currentRequest.value.value)
+  ) {
     return false;
   }
 
@@ -135,7 +144,10 @@ const reducer = (state: TradeState, action: Actions): TradeState => {
           ...state.quote,
           isLoading: false,
           estimate: action.payload.quote,
-          estimateWithSlippage: getSwapLimit(action.payload.quote, state.transactionSettings.slippageTolerance),
+          estimateWithSlippage: getSwapLimit(
+            action.payload.quote,
+            state.transactionSettings.slippageTolerance
+          ),
           error: null,
         },
       };
@@ -161,7 +173,10 @@ const reducer = (state: TradeState, action: Actions): TradeState => {
         ...state,
         quote: {
           ...state.quote,
-          estimateWithSlippage: getSwapLimit(state.quote.estimate, action.payload.slippageTolerance),
+          estimateWithSlippage: getSwapLimit(
+            state.quote.estimate,
+            action.payload.slippageTolerance
+          ),
         },
         transactionSettings: {
           ...action.payload,
@@ -189,7 +204,10 @@ export type VaultTradeSuccessCallback = (
   poolId: string
 ) => Promise<void>;
 
-export const useVaultTradeState = (pool: Pool, onSuccess?: VaultTradeSuccessCallback) => {
+export const useVaultTradeState = (
+  pool: Pool,
+  onSuccess?: VaultTradeSuccessCallback
+) => {
   const {
     swapState: { sell, buy },
     vaultAddress,
@@ -246,14 +264,27 @@ export const useVaultTradeState = (pool: Pool, onSuccess?: VaultTradeSuccessCall
     }
 
     const token = sell.address;
-    dispatch({ type: ActionType.SetSwapQuoteRequest, payload: { value, token } as any });
+    dispatch({
+      type: ActionType.SetSwapQuoteRequest,
+      payload: { value, token } as any,
+    });
 
     const fetchQuote = async () => {
-      dispatch({ type: ActionType.SetSwapQuoteStart, payload: { value, token } as any });
+      dispatch({
+        type: ActionType.SetSwapQuoteStart,
+        payload: { value, token } as any,
+      });
 
       try {
-        const quotes = await vaultContract.getSwapQuote.request(value, token as any, buy.address as any);
-        const quote = DecimalBigNumber.fromBN(quotes[buy.tokenIndex].abs(), value.getDecimals());
+        const quotes = await vaultContract.getSwapQuote.request(
+          value,
+          token as any,
+          buy.address as any
+        );
+        const quote = DecimalBigNumber.fromBN(
+          quotes[buy.tokenIndex].abs(),
+          value.getDecimals()
+        );
 
         dispatch({
           type: ActionType.SetSwapQuoteSuccess,
@@ -271,7 +302,10 @@ export const useVaultTradeState = (pool: Pool, onSuccess?: VaultTradeSuccessCall
 
     // Fetch quote and begin polling
     fetchQuote();
-    intervalRef.current = window.setInterval(fetchQuote, env.intervals.ascendQuote);
+    intervalRef.current = window.setInterval(
+      fetchQuote,
+      env.intervals.ascendQuote
+    );
   };
 
   const swap = async () => {
@@ -282,11 +316,16 @@ export const useVaultTradeState = (pool: Pool, onSuccess?: VaultTradeSuccessCall
       return;
     }
 
-    dispatch({ type: ActionType.UpdateSwapState, payload: { isLoading: true, error: '' } });
+    dispatch({
+      type: ActionType.UpdateSwapState,
+      payload: { isLoading: true, error: '' },
+    });
 
     try {
       const amount = DecimalBigNumber.parseUnits(inputValue, sell.decimals);
-      const deadline = getSwapDeadline(state.transactionSettings.deadlineMinutes);
+      const deadline = getSwapDeadline(
+        state.transactionSettings.deadlineMinutes
+      );
       const transaction = await vaultContract.swap(
         amount,
         sell.address as any,
@@ -297,7 +336,10 @@ export const useVaultTradeState = (pool: Pool, onSuccess?: VaultTradeSuccessCall
 
       await transaction.wait();
 
-      dispatch({ type: ActionType.UpdateSwapState, payload: { isLoading: false, error: '' } });
+      dispatch({
+        type: ActionType.UpdateSwapState,
+        payload: { isLoading: false, error: '' },
+      });
       dispatch({ type: ActionType.ResetQuoteState, payload: null });
 
       openNotification({
@@ -312,7 +354,10 @@ export const useVaultTradeState = (pool: Pool, onSuccess?: VaultTradeSuccessCall
       }
     } catch (err) {
       const error = getBalancerErrorMessage((err as Error).message);
-      dispatch({ type: ActionType.UpdateSwapState, payload: { isLoading: false, error } });
+      dispatch({
+        type: ActionType.UpdateSwapState,
+        payload: { isLoading: false, error },
+      });
     }
   };
 

@@ -32,13 +32,21 @@ export const ClaimModal: React.FC<IProps> = ({ isOpen, onClose }) => {
     vaultGroups: { vaultGroups, isLoading: vaultGroupsIsLoading },
     refreshVaultBalance,
   } = useVaultContext();
-  const { withdrawEarly: earlyWithdrawRequest } = useWithdrawFromVault('', async () => {
-    await refreshVaultBalance(claimState.claimSubvaultAddress);
-    // AnalyticsService.captureEvent(AnalyticsEvent.Vault.Claim, { name: vault.id, amount });
-    setClaimState(EMPTY_CLAIM_STATE);
-  });
-  const [earlyWithdraw, { isLoading: earlyWithdrawIsLoading, error: earlyWithdrawError }] = earlyWithdrawRequest;
-  const [assumedActiveVaultGroup, setAssumedActiveVaultGroup] = useState({} as VaultGroup);
+  const { withdrawEarly: earlyWithdrawRequest } = useWithdrawFromVault(
+    '',
+    async () => {
+      await refreshVaultBalance(claimState.claimSubvaultAddress);
+      // AnalyticsService.captureEvent(AnalyticsEvent.Vault.Claim, { name: vault.id, amount });
+      setClaimState(EMPTY_CLAIM_STATE);
+    }
+  );
+  const [
+    earlyWithdraw,
+    { isLoading: earlyWithdrawIsLoading, error: earlyWithdrawError },
+  ] = earlyWithdrawRequest;
+  const [assumedActiveVaultGroup, setAssumedActiveVaultGroup] = useState(
+    {} as VaultGroup
+  );
 
   // Initialize assumedActiveVaultGroup, claimState, zeroVaultBalance
   useEffect(() => {
@@ -49,7 +57,9 @@ export const ClaimModal: React.FC<IProps> = ({ isOpen, onClose }) => {
       const initialVault = vaultGroup.vaults[0];
       setClaimState({
         claimSubvaultAddress: initialVault.id,
-        claimAmount: formatBigNumber(balances[vaultGroup.id][initialVault.id].balance || ZERO),
+        claimAmount: formatBigNumber(
+          balances[vaultGroup.id][initialVault.id].balance || ZERO
+        ),
       });
     }
   }, [balancesIsLoading, balances, vaultGroupsIsLoading, vaultGroups]);
@@ -65,7 +75,10 @@ export const ClaimModal: React.FC<IProps> = ({ isOpen, onClose }) => {
 
   // Early withdraw allowance hook
   const [
-    { allowance: earlyWithdrawAllowance, isLoading: earlyWithdrawAllowanceIsLoading },
+    {
+      allowance: earlyWithdrawAllowance,
+      isLoading: earlyWithdrawAllowanceIsLoading,
+    },
     increaseEarlyWithdrawAllowance,
   ] = useTokenContractAllowance(
     { address: claimState.claimSubvaultAddress, name: 'vault ERC20' },
@@ -91,7 +104,9 @@ export const ClaimModal: React.FC<IProps> = ({ isOpen, onClose }) => {
             Subvault {vault.label}:{' '}
             <ClaimAmount
               isActive={vault.id == claimState.claimSubvaultAddress}
-              onClick={() => claimAmountHandler(vault.id, vaultBalance.balance || ZERO)}
+              onClick={() =>
+                claimAmountHandler(vault.id, vaultBalance.balance || ZERO)
+              }
             >
               {formatTemple(vaultBalance.balance)} TEMPLE
             </ClaimAmount>
@@ -103,21 +118,30 @@ export const ClaimModal: React.FC<IProps> = ({ isOpen, onClose }) => {
 
   return (
     <>
-      <Popover isOpen={isOpen} onClose={onClose} closeOnClickOutside showCloseButton>
+      <Popover
+        isOpen={isOpen}
+        onClose={onClose}
+        closeOnClickOutside
+        showCloseButton
+      >
         <ClaimContainer>
           <ClaimTitle>Claim from Vaults</ClaimTitle>
           <ClaimSubtitle>Select Vault for Withdrawal</ClaimSubtitle>
-          <SubvaultContainer>{getVaultBalances(assumedActiveVaultGroup?.vaults)}</SubvaultContainer>
+          <SubvaultContainer>
+            {getVaultBalances(assumedActiveVaultGroup?.vaults)}
+          </SubvaultContainer>
 
           {!!earlyWithdrawError && (
-            <ErrorLabel>{formatErrorMessage(earlyWithdrawError.message) || 'Something went wrong'}</ErrorLabel>
+            <ErrorLabel>
+              {formatErrorMessage(earlyWithdrawError.message) ||
+                'Something went wrong'}
+            </ErrorLabel>
           )}
 
-          {getBigNumberFromString(claimState.claimAmount).lt(MIN_WITHDRAWAL_AMOUNT) ? (
-            <ClaimButton
-              label={`Nothing to Claim`}
-              disabled={true}
-            />
+          {getBigNumberFromString(claimState.claimAmount).lt(
+            MIN_WITHDRAWAL_AMOUNT
+          ) ? (
+            <ClaimButton label={`Nothing to Claim`} disabled={true} />
           ) : earlyWithdrawAllowance === 0 ? (
             <ClaimButton
               label={'Approve Early Withdraw'}
@@ -128,10 +152,15 @@ export const ClaimModal: React.FC<IProps> = ({ isOpen, onClose }) => {
             />
           ) : (
             <ClaimButton
-              label={`Redeem ${formatTemple(Number(claimState.claimAmount))} TEMPLE`}
+              label={`Redeem ${formatTemple(
+                Number(claimState.claimAmount)
+              )} TEMPLE`}
               disabled={earlyWithdrawIsLoading || !claimState.claimAmount}
               onClick={async () => {
-                await earlyWithdraw(claimState.claimSubvaultAddress, claimState.claimAmount);
+                await earlyWithdraw(
+                  claimState.claimSubvaultAddress,
+                  claimState.claimAmount
+                );
               }}
             />
           )}
@@ -149,7 +178,8 @@ const ErrorLabel = styled.span`
 
 const ClaimAmount = styled.span<{ isActive: boolean }>`
   text-decoration: underline;
-  color: ${({ isActive, theme }) => (isActive ? theme.palette.brandLight : theme.palette.brand75)};
+  color: ${({ isActive, theme }) =>
+    isActive ? theme.palette.brandLight : theme.palette.brand75};
   font-weight: ${(props) => (props.isActive ? `bold` : `normal`)};
   cursor: pointer;
   &hover {

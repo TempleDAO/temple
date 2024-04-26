@@ -3,7 +3,8 @@ import { Environment } from './types';
 
 const env: Environment = {
   alchemyId: 'XiIZxWykHU5AOFBwxKgxseXWN984Mp8F',
-  rpcUrl: 'https://eth-mainnet.g.alchemy.com/v2/AorwfDdHDsEjIX4HPwS70zkVjWqjv5vZ',
+  rpcUrl:
+    'https://eth-mainnet.g.alchemy.com/v2/AorwfDdHDsEjIX4HPwS70zkVjWqjv5vZ',
   backendUrl: 'https://backend.templedao.link',
   contracts: {
     balancerVault: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
@@ -24,33 +25,118 @@ const env: Environment = {
     otcOffer: '0x687A4B0Ac18Ed3796D55E6A1d747bD75591a8bac',
     // Preserve the order of this array: array index == epoch number. Append only.
     teamPayments: [
-      { name: 'Epoch 1', address: '0xF7b10A0C780a3906D9A9F3d706EcD2624B6ED84e' },
-      { name: 'Epoch 2', address: '0xe0Aafcf26576a53Cbec99481607FB53384909C36' },
-      { name: 'Epoch 3', address: '0xf86C2dbD16F05E86bFf72cE89B3C2915812E92D0' },
-      { name: 'Epoch 4', address: '0x07888e0a8929eb922Aee5930f7B0894BaB5D8120' },
-      { name: 'Epoch 5', address: '0xc52101f2e278a316c70cc233486bce1863606920' },
-      { name: 'Epoch 6', address: '0x91ad65e053ae98b4fbab84fc38b7bddd17c32cda' },
-      { name: 'Epoch 7', address: '0x8cded928006feb238617fa5f7b04abeefcde36bf' },
-      { name: 'Epoch 8', address: '0x008eCB3E53024628a5A8BbE0b142329791ad6f51' },
-      { name: 'Epoch 9', address: '0x5461d7Cd3eEB184a83c5a1678335D72ccaf04818' },
-      { name: 'Epoch 10', address: '0xdace5aa4D8E1E2678a2F2F6E96F31eBD599503DB' },
-      { name: 'Epoch 11', address: '0x49fb6dbe198f61d8962cb069ca1bc7f2daff4de6' },
-      { name: 'Epoch 12', address: '0x465451535c4518d805cbead0b95e1a1a677ddeae' },
-      { name: 'Epoch 13', address: '0x8C45f988fD3A2657d2B32Ff5340D858370D408Ef' },
-      { name: 'Epoch 14', address: '0x476Cba8D051f8F375D7E0aEFb09F74D13c777f23' },
-      { name: 'Epoch 15', address: '0xc3B8080cB0b9bAeEc1c2Ca8B50BF80edf4f94eA9' },
-      { name: 'Epoch 16', address: '0xb1a91c8f0a54cb0a2970423f83ec11bf9e414038' },
-      { name: 'Epoch 17', address: '0xbA81DDf3152234d8BB47Fba24b371B70B629C276' },
-      { name: 'Epoch 18', address: '0x71cA8E6da254582cDF1fA105c26bfa806913CE70' },
-      { name: 'Epoch 19', address: '0x1931c748E8824205FacEB2AC069badacEd0AF4fc' },
-      { name: 'Epoch 20', address: '0x215B8c5225fb43864ECfc15B7ac97fc78AE8f621' },
-      { name: 'Epoch 21', address: '0xD50e540F9D4Da820eecA7428b5b5cECd2227727a' },
-      { name: 'Epoch 22a', address: '0xDDbea74f5c53063e6c489d3a424e95c3c2BfB2cb' },
-      { name: 'Epoch 22b', address: '0x9516E1ad540573a6704f2b7fbA165bC05821e552' },
-      { name: 'Epoch 22c', address: '0x57cE4E4dcA88A5E1f3788D8e47c46687F91B6AfE' },
-      { name: 'Epoch 23a', address: '0xC05C4123a4870293521980640ddFE37eb5c32dB6' },
-      { name: 'Epoch 23b', address: '0xBd64922E156175972356D4Ef362b22a6806D61Ff' },
-      { name: 'Epoch 23c', address: '0x5e6E4E6Eb6D45e4bC7837e483F106AE25FA52472' },
+      {
+        name: 'Epoch 1',
+        address: '0xF7b10A0C780a3906D9A9F3d706EcD2624B6ED84e',
+      },
+      {
+        name: 'Epoch 2',
+        address: '0xe0Aafcf26576a53Cbec99481607FB53384909C36',
+      },
+      {
+        name: 'Epoch 3',
+        address: '0xf86C2dbD16F05E86bFf72cE89B3C2915812E92D0',
+      },
+      {
+        name: 'Epoch 4',
+        address: '0x07888e0a8929eb922Aee5930f7B0894BaB5D8120',
+      },
+      {
+        name: 'Epoch 5',
+        address: '0xc52101f2e278a316c70cc233486bce1863606920',
+      },
+      {
+        name: 'Epoch 6',
+        address: '0x91ad65e053ae98b4fbab84fc38b7bddd17c32cda',
+      },
+      {
+        name: 'Epoch 7',
+        address: '0x8cded928006feb238617fa5f7b04abeefcde36bf',
+      },
+      {
+        name: 'Epoch 8',
+        address: '0x008eCB3E53024628a5A8BbE0b142329791ad6f51',
+      },
+      {
+        name: 'Epoch 9',
+        address: '0x5461d7Cd3eEB184a83c5a1678335D72ccaf04818',
+      },
+      {
+        name: 'Epoch 10',
+        address: '0xdace5aa4D8E1E2678a2F2F6E96F31eBD599503DB',
+      },
+      {
+        name: 'Epoch 11',
+        address: '0x49fb6dbe198f61d8962cb069ca1bc7f2daff4de6',
+      },
+      {
+        name: 'Epoch 12',
+        address: '0x465451535c4518d805cbead0b95e1a1a677ddeae',
+      },
+      {
+        name: 'Epoch 13',
+        address: '0x8C45f988fD3A2657d2B32Ff5340D858370D408Ef',
+      },
+      {
+        name: 'Epoch 14',
+        address: '0x476Cba8D051f8F375D7E0aEFb09F74D13c777f23',
+      },
+      {
+        name: 'Epoch 15',
+        address: '0xc3B8080cB0b9bAeEc1c2Ca8B50BF80edf4f94eA9',
+      },
+      {
+        name: 'Epoch 16',
+        address: '0xb1a91c8f0a54cb0a2970423f83ec11bf9e414038',
+      },
+      {
+        name: 'Epoch 17',
+        address: '0xbA81DDf3152234d8BB47Fba24b371B70B629C276',
+      },
+      {
+        name: 'Epoch 18',
+        address: '0x71cA8E6da254582cDF1fA105c26bfa806913CE70',
+      },
+      {
+        name: 'Epoch 19',
+        address: '0x1931c748E8824205FacEB2AC069badacEd0AF4fc',
+      },
+      {
+        name: 'Epoch 20',
+        address: '0x215B8c5225fb43864ECfc15B7ac97fc78AE8f621',
+      },
+      {
+        name: 'Epoch 21',
+        address: '0xD50e540F9D4Da820eecA7428b5b5cECd2227727a',
+      },
+      {
+        name: 'Epoch 22a',
+        address: '0xDDbea74f5c53063e6c489d3a424e95c3c2BfB2cb',
+      },
+      {
+        name: 'Epoch 22b',
+        address: '0x9516E1ad540573a6704f2b7fbA165bC05821e552',
+      },
+      {
+        name: 'Epoch 22c',
+        address: '0x57cE4E4dcA88A5E1f3788D8e47c46687F91B6AfE',
+      },
+      {
+        name: 'Epoch 23a',
+        address: '0xC05C4123a4870293521980640ddFE37eb5c32dB6',
+      },
+      {
+        name: 'Epoch 23b',
+        address: '0xBd64922E156175972356D4Ef362b22a6806D61Ff',
+      },
+      {
+        name: 'Epoch 23c',
+        address: '0x5e6E4E6Eb6D45e4bC7837e483F106AE25FA52472',
+      },
+      {
+        name: 'Epoch 24a',
+        address: '0x85dFEC13117e3f7594e4e391F300E781f5609881',
+      },
     ],
     temple: '0x470ebf5f030ed85fc1ed4c2d36b9dd02e77cf1b7',
     templeStaking: '0x4D14b24EDb751221B3Ff08BBB8bd91D4b1c8bc77',
@@ -145,13 +231,18 @@ const env: Environment = {
   etherscan: 'https://etherscan.io',
   subgraph: {
     // TODO: These need updated to the templedao organization subgraphs once they are deployed
-    templeCore: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-core',
-    protocolMetrics: 'https://api.thegraph.com/subgraphs/name/medariox/temple-metrics',
-    protocolMetricsArbitrum: 'https://api.thegraph.com/subgraphs/name/medariox/temple-metrics-arbitrum',
-    balancerV2: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-balancer-v2',
+    templeCore:
+      'https://api.thegraph.com/subgraphs/name/templedao/templedao-core',
+    protocolMetrics:
+      'https://api.thegraph.com/subgraphs/name/medariox/temple-metrics',
+    protocolMetricsArbitrum:
+      'https://api.thegraph.com/subgraphs/name/medariox/temple-metrics-arbitrum',
+    balancerV2:
+      'https://api.thegraph.com/subgraphs/name/templedao/templedao-balancer-v2',
     // TODO: Will be deprecated
     ramos: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-ramos',
-    templeV2: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-v2-mainnet',
+    templeV2:
+      'https://api.thegraph.com/subgraphs/name/templedao/templedao-v2-mainnet',
     // Original Balancer Subgraph
     // balancerV2: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-v2-beta',
   },

@@ -38,20 +38,28 @@ const Content = styled.div`
 const RamosAdmin = () => {
   const ramosAdmin = useRamosAdmin();
   const [isTxSettingsOpen, setIsTxSettingsOpen] = useState(false);
-  
+
   const tpfFormatted = ramosAdmin && ramosAdmin.tpf?.formatUnits(5);
-  const templePriceFormatted = ramosAdmin && ramosAdmin.templePrice?.formatUnits(5);
-  const totalAvailableDaiTrvFormatted = ramosAdmin && ramosAdmin.totalAvailableDaiTrv?.formatUnits(5);
-  const totalAvailableTempleTrvFormatted = ramosAdmin && ramosAdmin.totalAvailableTempleTrv?.formatUnits(5);
+  const templePriceFormatted =
+    ramosAdmin && ramosAdmin.templePrice?.formatUnits(5);
+  const totalAvailableDaiTrvFormatted =
+    ramosAdmin && ramosAdmin.totalAvailableDaiTrv?.formatUnits(5);
+  const totalAvailableTempleTrvFormatted =
+    ramosAdmin && ramosAdmin.totalAvailableTempleTrv?.formatUnits(5);
 
   const tabs = [
     {
       label: 'Liquidity',
       content: (
         <Container>
-          <AddLiquidity calculateFunc={ramosAdmin.createJoinPoolRequest} handleInput={ramosAdmin.handleAddLiquidityInput} />
+          <AddLiquidity
+            calculateFunc={ramosAdmin.createJoinPoolRequest}
+            handleInput={ramosAdmin.handleAddLiquidityInput}
+          />
           <RemoveLiquidity calculateFunc={ramosAdmin.createExitPoolRequest} />
-          <DepositAndStakeBpt calculateFunc={ramosAdmin.createDepositAndStakeRequest} />
+          <DepositAndStakeBpt
+            calculateFunc={ramosAdmin.createDepositAndStakeRequest}
+          />
         </Container>
       ),
     },
@@ -61,7 +69,11 @@ const RamosAdmin = () => {
         <Container>
           <RebalanceUp amounts={ramosAdmin.rebalanceUpAmounts} />
           <RebalanceDown amounts={ramosAdmin.rebalanceDownAmounts} />
-          <Button isSmall onClick={ramosAdmin.calculateRecommendedAmounts} label="RECALCULATE" />
+          <Button
+            isSmall
+            onClick={ramosAdmin.calculateRecommendedAmounts}
+            label="RECALCULATE"
+          />
         </Container>
       ),
     },
@@ -71,7 +83,11 @@ const RamosAdmin = () => {
         <Container>
           <DepositStable amounts={ramosAdmin.depositStableAmounts} />
           <WithdrawStable amounts={ramosAdmin.withdrawStableAmounts} />
-          <Button isSmall onClick={ramosAdmin.calculateRecommendedAmounts} label="RECALCULATE" />
+          <Button
+            isSmall
+            onClick={ramosAdmin.calculateRecommendedAmounts}
+            label="RECALCULATE"
+          />
         </Container>
       ),
     },
@@ -105,10 +121,12 @@ const RamosAdmin = () => {
           additionalDetails={
             <>
               <p>
-                Current Spot Price: <strong>{templePriceFormatted ?? <EllipsisLoader /> }</strong>
+                Current Spot Price:{' '}
+                <strong>{templePriceFormatted ?? <EllipsisLoader />}</strong>
               </p>
               <p>
-                Current Treasury Price Index: <strong>{tpfFormatted ?? <EllipsisLoader /> }</strong>
+                Current Treasury Price Index:{' '}
+                <strong>{tpfFormatted ?? <EllipsisLoader />}</strong>
               </p>
             </>
           }
@@ -119,10 +137,16 @@ const RamosAdmin = () => {
           additionalDetails={
             <>
               <p>
-                Total Available Dai: <strong>{ totalAvailableDaiTrvFormatted ?? <EllipsisLoader /> }</strong>
+                Total Available Dai:{' '}
+                <strong>
+                  {totalAvailableDaiTrvFormatted ?? <EllipsisLoader />}
+                </strong>
               </p>
               <p>
-                Total Available Temple: <strong>{ totalAvailableTempleTrvFormatted ?? <EllipsisLoader /> }</strong>
+                Total Available Temple:{' '}
+                <strong>
+                  {totalAvailableTempleTrvFormatted ?? <EllipsisLoader />}
+                </strong>
               </p>
             </>
           }
@@ -132,14 +156,25 @@ const RamosAdmin = () => {
           contractAddress={STRATEGIES.ramosStrategy}
           additionalDetails={
             <p>
-              Version: <strong>{ ramosAdmin ? ramosAdmin.ramosStrategyVersion : <EllipsisLoader /> }</strong>
+              Version:{' '}
+              <strong>
+                {ramosAdmin ? (
+                  ramosAdmin.ramosStrategyVersion
+                ) : (
+                  <EllipsisLoader />
+                )}
+              </strong>
             </p>
           }
         />
       </Container>
       <Container>
         <Content>
-          <Button isSmall onClick={() => setIsTxSettingsOpen(true)} label="TRANSACTION SETTINGS" />
+          <Button
+            isSmall
+            onClick={() => setIsTxSettingsOpen(true)}
+            label="TRANSACTION SETTINGS"
+          />
         </Content>
       </Container>
       <br />
@@ -159,7 +194,11 @@ const Header = (props: Props) => {
     <div>
       <p>
         {alias + ' '}
-        <a href={`https://etherscan.io/address/${contractAddress}`} target="_blank" rel="noreferrer">
+        <a
+          href={`https://etherscan.io/address/${contractAddress}`}
+          target="_blank"
+          rel="noreferrer"
+        >
           {contractAddress.slice(0, 6) + '.....' + contractAddress.slice(-6)}
         </a>
       </p>

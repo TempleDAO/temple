@@ -36,7 +36,9 @@ export interface CryptoValue {
   value: string;
 }
 
-export interface InputProps extends SizeProps, InputHTMLAttributes<HTMLInputElement> {
+export interface InputProps
+  extends SizeProps,
+    InputHTMLAttributes<HTMLInputElement> {
   // extra information for the input
   hint?: string;
   // options for the crypto in the input
@@ -97,11 +99,20 @@ export const Input = ({
                 strokeWidth="1.5"
                 stroke="currentColor"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M19.5 8.25l-7.5 7.5-7.5-7.5"
+                />
               </svg>
             </ChevronDownImg>
           </OptionContainer>
-          <Popover isOpen={isOpen} onClose={() => setIsOpen(false)} closeOnClickOutside={true} showCloseButton={false}>
+          <Popover
+            isOpen={isOpen}
+            onClose={() => setIsOpen(false)}
+            closeOnClickOutside={true}
+            showCloseButton={false}
+          >
             <SwapOptions>
               {crypto.cryptoOptions.map((option) => (
                 <TokenOption

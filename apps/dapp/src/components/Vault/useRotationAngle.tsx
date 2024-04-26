@@ -11,7 +11,7 @@ const TIMING: Record<number, number> = {
 
 type HookReturnType = [number, number, number, RefObject<SVGAnimationElement>];
 
-const getPageAngle = (page?: VaultPage, isMobile: boolean = false) => {
+const getPageAngle = (page?: VaultPage, isMobile = false) => {
   switch (page) {
     case 'claim':
       return isMobile ? -10 : -72.5;
@@ -26,11 +26,14 @@ const getPageAngle = (page?: VaultPage, isMobile: boolean = false) => {
     default:
       return 0;
   }
-}
+};
 
 // used in the animation for the selector nub and glow
 // when user clicks different vault nav buttons
-export const useRotationAngle = (selected?: VaultPage, isMobile: boolean = false): HookReturnType => {
+export const useRotationAngle = (
+  selected?: VaultPage,
+  isMobile = false
+): HookReturnType => {
   const ref = useRef<SVGAnimationElement>(null);
   const [prevSelected, setPrevSelected] = useState(selected);
   const initialPageAngle = getPageAngle(selected, isMobile);

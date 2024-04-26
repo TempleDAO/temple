@@ -4,7 +4,11 @@ import env from 'constants/env';
 import styled from 'styled-components';
 import { loading } from 'utils/loading-value';
 import { Button } from 'components/Button/Button';
-import { SafeStatus, SafeTransactionCategory, useSafeTransactions } from 'safe/safeContext';
+import {
+  SafeStatus,
+  SafeTransactionCategory,
+  useSafeTransactions,
+} from 'safe/safeContext';
 import dropdownIcon from 'assets/icons/dropdown.svg?react';
 import { Copy } from 'components/Copy/Copy';
 
@@ -41,7 +45,10 @@ export const SafeTxsDataTable = (props: Props) => {
 
   useEffect(() => {
     async function loadDataSubset() {
-      const dataSubset = await safeTransactions.tableRows(safeTxCategory, updateSafeTableRow);
+      const dataSubset = await safeTransactions.tableRows(
+        safeTxCategory,
+        updateSafeTableRow
+      );
       if (!dataSubset) return;
       setSafeTableRows(dataSubset);
     }
@@ -92,7 +99,10 @@ export const SafeTxsDataTable = (props: Props) => {
                     key={row.txHash}
                     cursorPointer
                     onClick={() => {
-                      updateSafeTableRow(row.safeTxHash, { ...row, isExpanded: !row.isExpanded });
+                      updateSafeTableRow(row.safeTxHash, {
+                        ...row,
+                        isExpanded: !row.isExpanded,
+                      });
                     }}
                   >
                     <DataCell>
@@ -102,7 +112,10 @@ export const SafeTxsDataTable = (props: Props) => {
                         label={row.button.label}
                         onClick={(e: MouseEvent) => {
                           e.stopPropagation(); // avoid parent component onClick
-                          updateSafeTableRow(row.safeTxHash, { ...row, status: 'loading' });
+                          updateSafeTableRow(row.safeTxHash, {
+                            ...row,
+                            status: 'loading',
+                          });
                           row.action();
                         }}
                         loading={row.status === 'loading'}
@@ -130,11 +143,21 @@ export const SafeTxsDataTable = (props: Props) => {
                             externalLink={`${env.etherscan}/tx/${row.txHash}`}
                           />
                         )}
-                        <ExpandedDataRow label="SafeTx" value={row.safeTxHash} />
+                        <ExpandedDataRow
+                          label="SafeTx"
+                          value={row.safeTxHash}
+                        />
                         {row.dataRaw && (
                           <>
-                            <ExpandedDataRow label="DataDecode" value={row.dataDecode} sliceValue={false} />
-                            <ExpandedDataRow label="DataRaw" value={row.dataRaw} />
+                            <ExpandedDataRow
+                              label="DataDecode"
+                              value={row.dataDecode}
+                              sliceValue={false}
+                            />
+                            <ExpandedDataRow
+                              label="DataRaw"
+                              value={row.dataRaw}
+                            />
                           </>
                         )}
                       </DataCell>
@@ -150,7 +173,10 @@ export const SafeTxsDataTable = (props: Props) => {
   );
 };
 
-const loadSkeletonRows = (skeletonRowsNo: number, skeletonColumnsNo: number) => {
+const loadSkeletonRows = (
+  skeletonRowsNo: number,
+  skeletonColumnsNo: number
+) => {
   return [...Array(skeletonRowsNo)].map((_, index) => (
     <DataRow hasBorderBotton key={index}>
       {[...Array(skeletonColumnsNo)].map(
@@ -174,7 +200,12 @@ type ExpandedDataRowProps = {
   externalLink?: string;
 };
 
-const ExpandedDataRow = ({ label, value, externalLink, sliceValue = true }: ExpandedDataRowProps) => {
+const ExpandedDataRow = ({
+  label,
+  value,
+  externalLink,
+  sliceValue = true,
+}: ExpandedDataRowProps) => {
   const ExpandedContainer = styled.div`
     display: flex;
     flex-direction: row;
@@ -195,11 +226,19 @@ const ExpandedDataRow = ({ label, value, externalLink, sliceValue = true }: Expa
       <Copy value={value} />
       <Label>{label}:</Label>
       {externalLink ? (
-        <LinkStyled style={{ fontSize: 'smaller' }} href={externalLink} target="_blank">
+        <LinkStyled
+          style={{ fontSize: 'smaller' }}
+          href={externalLink}
+          target="_blank"
+        >
           {value}
         </LinkStyled>
       ) : (
-        <Pre>{value.length > 70 && sliceValue ? value?.slice(0, 65) + '...' : value}</Pre>
+        <Pre>
+          {value.length > 70 && sliceValue
+            ? value?.slice(0, 65) + '...'
+            : value}
+        </Pre>
       )}
     </ExpandedContainer>
   );
@@ -231,13 +270,18 @@ const DataTable = styled.table`
   color: ${({ theme }) => theme.palette.brand};
 `;
 
-const DataRow = styled.tr<{ hasBorderBotton: boolean; cursorPointer?: boolean }>`
+const DataRow = styled.tr<{
+  hasBorderBotton: boolean;
+  cursorPointer?: boolean;
+}>`
   overflow: hidden;
   white-space: nowrap;
   border-top: 1px solid ${({ theme }) => theme.palette.brand};
   cursor: ${({ cursorPointer }) => (cursorPointer ? 'pointer' : 'unset')};
   ${({ hasBorderBotton, theme }) =>
-    `border-bottom: 1px solid ${hasBorderBotton ? theme.palette.brand : theme.palette.dark};`}
+    `border-bottom: 1px solid ${
+      hasBorderBotton ? theme.palette.brand : theme.palette.dark
+    };`}
 `;
 
 const DataCell = styled.td<{ isHidden?: boolean }>`

@@ -109,21 +109,42 @@ const useTxHistory = (props: TxHistoryProps) =>
     queryFn: () => fetchTransactions(props),
   });
 
-const fetchTransactions = async (props: TxHistoryProps): Promise<Transactions> => {
-  const { dashboardData, blockNumber, offset, limit, txFilter, rowFilter, tableHeaders } = props;
+const fetchTransactions = async (
+  props: TxHistoryProps
+): Promise<Transactions> => {
+  const {
+    dashboardData,
+    blockNumber,
+    offset,
+    limit,
+    txFilter,
+    rowFilter,
+    tableHeaders,
+  } = props;
 
   const strategyKey = dashboardData.key;
-  const strategyQuery = isTRVDashboard(strategyKey) ? `` : `strategy_: {name: "${strategyKey}"}`;
-  const blockNumberQueryParam = blockNumber > 0 ? `block: { number: ${blockNumber} }` : ``;
+  const strategyQuery = isTRVDashboard(strategyKey)
+    ? ``
+    : `strategy_: {name: "${strategyKey}"}`;
+  const blockNumberQueryParam =
+    blockNumber > 0 ? `block: { number: ${blockNumber} }` : ``;
 
   const paginationQuery = `skip: ${offset} first: ${limit}`;
 
   const dateNowSecs = Math.round(Date.now() / 1000);
-  const typeRowFilterQuery = `${rowFilter.type ? 'name_contains_nocase: "' + rowFilter.type + '"' : ''}`;
-  const strategyRowFilterQuery = `${
-    rowFilter.strategy ? 'strategy_: {name_contains_nocase: "' + rowFilter.strategy + '"}' : ''
+  const typeRowFilterQuery = `${
+    rowFilter.type ? 'name_contains_nocase: "' + rowFilter.type + '"' : ''
   }`;
-  const tokenRowFilterQuery = `${rowFilter.token ? 'token_: {symbol_contains_nocase: "' + rowFilter.token + '"}' : ''}`;
+  const strategyRowFilterQuery = `${
+    rowFilter.strategy
+      ? 'strategy_: {name_contains_nocase: "' + rowFilter.strategy + '"}'
+      : ''
+  }`;
+  const tokenRowFilterQuery = `${
+    rowFilter.token
+      ? 'token_: {symbol_contains_nocase: "' + rowFilter.token + '"}'
+      : ''
+  }`;
   const whereQuery = `
     ${blockNumberQueryParam} 
     where: { 
@@ -136,8 +157,14 @@ const fetchTransactions = async (props: TxHistoryProps): Promise<Transactions> =
   const orderHeader = tableHeaders.find((h) => h.orderDesc !== undefined);
 
   // set default ordering
-  const orderBy = getTableHeaderOrderByType(tableHeaders.find((h) => h.orderDesc !== undefined));
-  const orderType = orderHeader ? (orderHeader.orderDesc ? 'desc' : 'asc') : 'desc';
+  const orderBy = getTableHeaderOrderByType(
+    tableHeaders.find((h) => h.orderDesc !== undefined)
+  );
+  const orderType = orderHeader
+    ? orderHeader.orderDesc
+      ? 'desc'
+      : 'asc'
+    : 'desc';
 
   const subgraphQuery = `{
     strategyTransactions(orderBy: ${orderBy}, orderDirection: ${orderType} ${paginationQuery} ${whereQuery}) {
@@ -160,7 +187,10 @@ const fetchTransactions = async (props: TxHistoryProps): Promise<Transactions> =
     }
   }`;
 
-  const { data: res } = await fetchGenericSubgraph<FetchTxnsResponse>(env.subgraph.templeV2, subgraphQuery);
+  const { data: res } = await fetchGenericSubgraph<FetchTxnsResponse>(
+    env.subgraph.templeV2,
+    subgraphQuery
+  );
   if (!res) return [];
   return res.strategyTransactions;
 };
@@ -171,16 +201,28 @@ const useTxHistoryAvailableRows = (props: TxHistoryAvailableRowsProps) =>
     queryFn: () => fetchTxHistoryAvailableRows(props),
   });
 
-const fetchTxHistoryAvailableRows = async (props: TxHistoryAvailableRowsProps): Promise<AvailableRows> => {
+const fetchTxHistoryAvailableRows = async (
+  props: TxHistoryAvailableRowsProps
+): Promise<AvailableRows> => {
   const { dashboardData, rowFilter, txFilter } = props;
   const strategyKey = dashboardData.key;
-  const strategyQuery = isTRVDashboard(strategyKey) ? `` : `strategy_: {name: "${strategyKey}"}`;
+  const strategyQuery = isTRVDashboard(strategyKey)
+    ? ``
+    : `strategy_: {name: "${strategyKey}"}`;
   const dateNowSecs = Math.round(Date.now() / 1000);
-  const typeRowFilterQuery = `${rowFilter.type ? 'name_contains_nocase: "' + rowFilter.type + '"' : ''}`;
-  const strategyRowFilterQuery = `${
-    rowFilter.strategy ? 'strategy_: {name_contains_nocase: "' + rowFilter.strategy + '"}' : ''
+  const typeRowFilterQuery = `${
+    rowFilter.type ? 'name_contains_nocase: "' + rowFilter.type + '"' : ''
   }`;
-  const tokenRowFilterQuery = `${rowFilter.token ? 'token_: {symbol_contains_nocase: "' + rowFilter.token + '"}' : ''}`;
+  const strategyRowFilterQuery = `${
+    rowFilter.strategy
+      ? 'strategy_: {name_contains_nocase: "' + rowFilter.strategy + '"}'
+      : ''
+  }`;
+  const tokenRowFilterQuery = `${
+    rowFilter.token
+      ? 'token_: {symbol_contains_nocase: "' + rowFilter.token + '"}'
+      : ''
+  }`;
   // get the max allowed 1000 records for a more accurate totalPages calculation
   const whereQuery = `( first: 1000 
     where: { 
@@ -204,7 +246,10 @@ const fetchTxHistoryAvailableRows = async (props: TxHistoryAvailableRowsProps): 
       }
     }
   }`;
-  const { data: res } = await fetchGenericSubgraph<FetchTxnsResponse>(env.subgraph.templeV2, subgraphQuery);
+  const { data: res } = await fetchGenericSubgraph<FetchTxnsResponse>(
+    env.subgraph.templeV2,
+    subgraphQuery
+  );
 
   let result: AvailableRows = {
     totalRowCount: 0,
@@ -218,7 +263,11 @@ const fetchTxHistoryAvailableRows = async (props: TxHistoryAvailableRowsProps): 
   if (rowFilter.type) hasRowFilters = rowFilter.type.length > 0;
   if (res) {
     let totalRowCount = 0;
-    if (props.txFilter === TxHistoryFilterType.all && isTRVDashboard(strategyKey) && !hasRowFilters) {
+    if (
+      props.txFilter === TxHistoryFilterType.all &&
+      isTRVDashboard(strategyKey) &&
+      !hasRowFilters
+    ) {
       // if user chooses all transactions, sum the txCountTotal of every strategy, we don't use this
       // calc for the last30days or lastweek filters because it could show an incorrect number of totalPages
       totalRowCount = res.metrics[0].strategyTransactionCount;

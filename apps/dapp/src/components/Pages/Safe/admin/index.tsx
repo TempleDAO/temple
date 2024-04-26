@@ -5,12 +5,18 @@ import { InputSelect, Option } from 'components/InputSelect/InputSelect';
 import { SafeTxsDataTable } from './SafeTxDataTable';
 import { queryPhone } from 'styles/breakpoints';
 import { useMediaQuery } from 'react-responsive';
-import { SafeTransactionCategory, SafeTransactionsContextProvider, useSafeTransactions } from 'safe/safeContext';
+import {
+  SafeTransactionCategory,
+  SafeTransactionsContextProvider,
+  useSafeTransactions,
+} from 'safe/safeContext';
 import LinkIcon from 'assets/icons/link.svg?react';
 import { Copy } from 'components/Copy/Copy';
 
 const SafeAdminWithContext = () => {
-  const [safeWalletAddress, setSafeWalletAddress] = useState<string>(env.safes[0].address);
+  const [safeWalletAddress, setSafeWalletAddress] = useState<string>(
+    env.safes[0].address
+  );
   return (
     <SafeTransactionsContextProvider safeAddress={safeWalletAddress}>
       <SafeAdmin setSafeWalletAddress={setSafeWalletAddress} />
@@ -54,16 +60,38 @@ const SafeAdmin = ({ setSafeWalletAddress }: SafeAdminProps) => {
             </FlexContainer>
           </Section>
         </div>
-        <Section label="Queued Transactions" safeTxCategoryLink="queue" overflowX>
+        <Section
+          label="Queued Transactions"
+          safeTxCategoryLink="queue"
+          overflowX
+        >
           <SafeTxsDataTable
             safeTxCategory="queue"
-            tableHeaders={['Action', 'Nonce', 'Status', 'Type', 'Confirmations', 'Date']}
+            tableHeaders={[
+              'Action',
+              'Nonce',
+              'Status',
+              'Type',
+              'Confirmations',
+              'Date',
+            ]}
           />
         </Section>
-        <Section label="History Transactions" safeTxCategoryLink="history" overflowX>
+        <Section
+          label="History Transactions"
+          safeTxCategoryLink="history"
+          overflowX
+        >
           <SafeTxsDataTable
             safeTxCategory="history"
-            tableHeaders={['Action', 'Nonce', 'Status', 'Type', 'Confirmations', 'Date']}
+            tableHeaders={[
+              'Action',
+              'Nonce',
+              'Status',
+              'Type',
+              'Confirmations',
+              'Date',
+            ]}
           />
         </Section>
       </AreaDelimiter>

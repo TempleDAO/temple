@@ -42,10 +42,12 @@ const MarketingContent = [
     header: 'Growth that Transcends Volatility',
     text: (
       <>
-        Enjoy the top stable yields in DeFi without worrying about actively managing any positions.
+        Enjoy the top stable yields in DeFi without worrying about actively
+        managing any positions.
         <br />
         <br />
-        TPI rises over time as the Temple Treasury generates revenue and grows in value.
+        TPI rises over time as the Temple Treasury generates revenue and grows
+        in value.
       </>
     ),
   },
@@ -95,7 +97,11 @@ const FooterContent = [
 ];
 
 const Home = ({ tlc }: { tlc?: boolean }) => {
-  const [metrics, setMetrics] = useState<Metrics>({ price: 0, tpi: 0, treasury: 0 });
+  const [metrics, setMetrics] = useState<Metrics>({
+    price: 0,
+    tpi: 0,
+    treasury: 0,
+  });
 
   useEffect(() => {
     const fetchMetrics = async () => {
@@ -152,8 +158,14 @@ const Home = ({ tlc }: { tlc?: boolean }) => {
           <ContentContainer>
             <>
               <NewTempleText>The New Temple</NewTempleText>
-              <TradeDetailText>A wrapped treasury token with steady price growth in all conditions</TradeDetailText>
-              <LearnMoreLink href="https://docs.templedao.link/" target={'_blank'}>
+              <TradeDetailText>
+                A wrapped treasury token with steady price growth in all
+                conditions
+              </TradeDetailText>
+              <LearnMoreLink
+                href="https://docs.templedao.link/"
+                target={'_blank'}
+              >
                 Learn More
               </LearnMoreLink>
               <ButtonContainer>
@@ -176,7 +188,9 @@ const Home = ({ tlc }: { tlc?: boolean }) => {
             <MetricTitle>Treasury Price Index</MetricTitle>
           </Metric>
           <Metric>
-            <MetricValue>${(metrics.treasury / 1000000).toFixed(2)}M</MetricValue>
+            <MetricValue>
+              ${(metrics.treasury / 1000000).toFixed(2)}M
+            </MetricValue>
             <MetricTitle>Treasury Value</MetricTitle>
           </Metric>
         </MetricsRow>
@@ -206,7 +220,11 @@ const Home = ({ tlc }: { tlc?: boolean }) => {
         ))}
         <LaunchAppWrapper>
           <Link to="/dapp/dashboard">
-            <LaunchAppButton isUppercase={false} label={'Launch App'} role="button" />
+            <LaunchAppButton
+              isUppercase={false}
+              label={'Launch App'}
+              role="button"
+            />
           </Link>
         </LaunchAppWrapper>
       </MainContainer>
@@ -238,7 +256,9 @@ const Home = ({ tlc }: { tlc?: boolean }) => {
             </ul>
           </Links>
         </LinkRow>
-        <CopyrightRow>© {new Date().getFullYear()} TempleDAO. All rights reserved.</CopyrightRow>
+        <CopyrightRow>
+          © {new Date().getFullYear()} TempleDAO. All rights reserved.
+        </CopyrightRow>
       </FooterContainer>
     </>
   );
@@ -353,7 +373,6 @@ export const LaunchAppButton = styled(Button)`
   color: ${({ theme }) => theme.palette.brandLight};
 `;
 
-
 export const TradeButton = styled(Button)`
   padding: 0.75rem 1.5rem;
   margin-top: 1.5rem;
@@ -463,7 +482,8 @@ const MarketingRow = styled.div.attrs((props: { index: number }) => props)`
   gap: 2rem;
   margin-top: -3rem;
   flex-direction: row;
-  ${(props) => props.index % 2 === 1 && `flex-direction: row-reverse; text-align: right;`}
+  ${(props) =>
+    props.index % 2 === 1 && `flex-direction: row-reverse; text-align: right;`}
 
   @media (max-width: 768px) {
     flex-direction: column;

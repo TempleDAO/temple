@@ -23,7 +23,8 @@ export const AdminCryptoInput = ({
   token,
   vaultAddress,
 }: Props) => {
-  const [{ allowance, isLoading }, increaseAllowance] = useTokenContractAllowance(token, vaultAddress);
+  const [{ allowance, isLoading }, increaseAllowance] =
+    useTokenContractAllowance(token, vaultAddress);
   return (
     <>
       <Input
@@ -35,7 +36,8 @@ export const AdminCryptoInput = ({
         disabled={allowance === 0}
         handleChange={(value) => {
           const stringValue = value.toString();
-          const isZero = !stringValue.startsWith('.') && Number(stringValue) === 0;
+          const isZero =
+            !stringValue.startsWith('.') && Number(stringValue) === 0;
           handleChange(isZero ? '' : stringValue);
         }}
       />

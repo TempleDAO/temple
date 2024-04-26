@@ -11,11 +11,17 @@ import { Nullable } from 'types/util';
 
 const DEFAULT_ALLOWANCE = toAtto(100000000);
 
-export const createTokenFactoryInstance = async (ticker: TICKER_SYMBOL | string, signer: Signer) => {
+export const createTokenFactoryInstance = async (
+  ticker: TICKER_SYMBOL | string,
+  signer: Signer
+) => {
   return new ERC20__factory(signer).attach(ticker);
 };
 
-type HookReturnType = [{ allowance: Nullable<number>; isLoading: boolean }, () => Promise<void>];
+type HookReturnType = [
+  { allowance: Nullable<number>; isLoading: boolean },
+  () => Promise<void>
+];
 
 export const useTokenContractAllowance = (
   tokenInfo: { address: string; name: string; ticker?: string },
@@ -26,7 +32,9 @@ export const useTokenContractAllowance = (
 
   const getTokenAllowance = async () => {
     if (!signer || !wallet) {
-      console.error(`Programming Error: Missing signer or wallet address when trying to get token allowance.`);
+      console.error(
+        `Programming Error: Missing signer or wallet address when trying to get token allowance.`
+      );
       return;
     }
 
@@ -35,17 +43,23 @@ export const useTokenContractAllowance = (
     return allowance;
   };
 
-  const [getAllowanceRequest, { isLoading: getAllowanceLoading, response: allowance }] =
-    useRequestState(getTokenAllowance);
+  const [
+    getAllowanceRequest,
+    { isLoading: getAllowanceLoading, response: allowance },
+  ] = useRequestState(getTokenAllowance);
 
   const increaseAllowance = async () => {
     if (!signer || !wallet) {
-      console.error(`Programming Error: Missing signer or wallet address when trying to increase allowance.`);
+      console.error(
+        `Programming Error: Missing signer or wallet address when trying to increase allowance.`
+      );
       return;
     }
 
     const token = new ERC20__factory(signer).attach(tokenInfo.address);
-    const approveTXN = await token.approve(contractAddress, DEFAULT_ALLOWANCE, { gasLimit: 50000 });
+    const approveTXN = await token.approve(contractAddress, DEFAULT_ALLOWANCE, {
+      gasLimit: 50000,
+    });
     await approveTXN.wait();
 
     openNotification({
@@ -56,7 +70,8 @@ export const useTokenContractAllowance = (
     await getAllowanceRequest();
   };
 
-  const [increaseAllowanceRequest, { isLoading: increaseAllowanceLoading }] = useRequestState(increaseAllowance);
+  const [increaseAllowanceRequest, { isLoading: increaseAllowanceLoading }] =
+    useRequestState(increaseAllowance);
 
   useEffect(() => {
     if (!isConnected || !contractAddress) {

@@ -23,7 +23,10 @@ interface BackgroundImageOptions {
   color?: string;
 }
 
-export const backgroundImage = (imageUrl: string, options?: BackgroundImageOptions) => css`
+export const backgroundImage = (
+  imageUrl: string,
+  options?: BackgroundImageOptions
+) => css`
   background-image: url(${imageUrl});
   background-color: ${options?.color || 'transparent'};
   background-size: ${options?.size || 'contain'};

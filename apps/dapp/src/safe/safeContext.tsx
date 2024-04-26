@@ -7,7 +7,13 @@ import { useSafeSdk } from './sdk/use-safe-sdk';
 
 export type SafeTransactionCategory = 'queue' | 'history';
 type SafeTransactionCategoryAction = 'return' | 'add' | 'clear';
-export type SafeStatus = 'unknown' | 'awaiting_signing' | 'awaiting_execution' | 'loading' | 'successful' | 'error';
+export type SafeStatus =
+  | 'unknown'
+  | 'awaiting_signing'
+  | 'awaiting_execution'
+  | 'loading'
+  | 'successful'
+  | 'error';
 interface ISafeTransactionsContext {
   safeAddress: string;
   isLoading: () => boolean;
@@ -16,7 +22,9 @@ interface ISafeTransactionsContext {
     updateSafeTableRow: (safeTxHash: string, newValue?: SafeTableRow) => void
   ) => Promise<SafeTableRow[]>;
 }
-const SafeTransactionsContext = createContext<ISafeTransactionsContext | undefined>(undefined);
+const SafeTransactionsContext = createContext<
+  ISafeTransactionsContext | undefined
+>(undefined);
 
 type SafeTransactionsContextProviderProps = {
   safeAddress: string;
@@ -31,25 +39,48 @@ export function SafeTransactionsContextProvider({
   const { data: isSafeOwner } = useSafeCheckOwner(safeAddress, walletAddress);
   const { signSafeTx, executeSafeTx } = useSafeSdk(signer, safeAddress);
 
-  const safeQueuedTransactions = useSafeTxs(safeAddress, walletAddress, false, true, 5000);
-  const safeExecutedTransactions = useSafeTxs(safeAddress, walletAddress, true, false, 5000);
+  const safeQueuedTransactions = useSafeTxs(
+    safeAddress,
+    walletAddress,
+    false,
+    true,
+    5000
+  );
+  const safeExecutedTransactions = useSafeTxs(
+    safeAddress,
+    walletAddress,
+    true,
+    false,
+    5000
+  );
 
   const getQueuedTransactions = (safeTxCategory: SafeTransactionCategory) => {
-    if (safeTxCategory === 'queue') return safeQueuedTransactions.data?.results ?? [];
-    if (safeTxCategory === 'history') return safeExecutedTransactions.data?.results ?? [];
+    if (safeTxCategory === 'queue')
+      return safeQueuedTransactions.data?.results ?? [];
+    if (safeTxCategory === 'history')
+      return safeExecutedTransactions.data?.results ?? [];
   };
 
-  const getprevSafeTableRow = (safeTxCategory: SafeTransactionCategory, safeTransactionHash: string) => {
+  const getprevSafeTableRow = (
+    safeTxCategory: SafeTransactionCategory,
+    safeTransactionHash: string
+  ) => {
     switch (safeTxCategory) {
       case 'queue':
-        return safeQueuedTableRows.find((str) => str.safeTxHash === safeTransactionHash);
+        return safeQueuedTableRows.find(
+          (str) => str.safeTxHash === safeTransactionHash
+        );
       case 'history':
-        return safeHistoryTableRows.find((str) => str.safeTxHash === safeTransactionHash);
+        return safeHistoryTableRows.find(
+          (str) => str.safeTxHash === safeTransactionHash
+        );
     }
   };
 
   const isLoading = () => {
-    return safeQueuedTransactions.isLoading || safeExecutedTransactions.isLoading;
+    return (
+      safeQueuedTransactions.isLoading || safeExecutedTransactions.isLoading
+    );
   };
 
   const tableRows = async (
@@ -59,11 +90,16 @@ export function SafeTransactionsContextProvider({
     safeTxCategoryAction('clear', safeTxCategory);
     await getQueuedTransactions(safeTxCategory)?.map(async (tx) => {
       const txConfirmations = tx.confirmations ?? [];
-      const thresholdReached = txConfirmations.length >= tx.confirmationsRequired;
+      const thresholdReached =
+        txConfirmations.length >= tx.confirmationsRequired;
       const alreadySigned =
-        txConfirmations.filter((conf) => conf.owner.toLowerCase() === walletAddress?.toLowerCase()).length > 0;
+        txConfirmations.filter(
+          (conf) => conf.owner.toLowerCase() === walletAddress?.toLowerCase()
+        ).length > 0;
       const isOwner = isSafeOwner ?? false;
-      let status: SafeStatus = thresholdReached ? 'awaiting_execution' : 'awaiting_signing';
+      let status: SafeStatus = thresholdReached
+        ? 'awaiting_execution'
+        : 'awaiting_signing';
       if (tx.isSuccessful && tx.isExecuted) {
         status = 'successful';
       } else if (!tx.isSuccessful && tx.isExecuted) {
@@ -93,29 +129,43 @@ export function SafeTransactionsContextProvider({
         },
         confirmations: `${txConfirmations.length}/${tx.confirmationsRequired}`,
         alreadySigned,
-        type: tx.dataDecoded?.method ?? (tx.value.length > 1 ? 'transfer' : undefined),
+        type:
+          tx.dataDecoded?.method ??
+          (tx.value.length > 1 ? 'transfer' : undefined),
         isOwner,
         nonce: tx.nonce,
         isExpanded: false,
         dataRaw: tx.data,
         dataDecode: JSON.stringify(tx.dataDecoded, null, 2),
         action: async () => {
-          const prevSafeTableRow = getprevSafeTableRow(safeTxCategory, tx.safeTxHash);
+          const prevSafeTableRow = getprevSafeTableRow(
+            safeTxCategory,
+            tx.safeTxHash
+          );
           try {
             if (!prevSafeTableRow) throw 'prevSafeTableRow undefined';
             switch (status) {
               case 'awaiting_signing':
                 await signSafeTx(tx.safeTxHash);
-                updateSafeTableRow(prevSafeTableRow.safeTxHash, { ...prevSafeTableRow, status: 'loading' });
+                updateSafeTableRow(prevSafeTableRow.safeTxHash, {
+                  ...prevSafeTableRow,
+                  status: 'loading',
+                });
                 return;
               case 'awaiting_execution':
                 await executeSafeTx(tx.safeTxHash);
-                updateSafeTableRow(prevSafeTableRow.safeTxHash, { ...prevSafeTableRow, status: 'loading' });
+                updateSafeTableRow(prevSafeTableRow.safeTxHash, {
+                  ...prevSafeTableRow,
+                  status: 'loading',
+                });
                 return;
             }
           } catch (e) {
             if (!prevSafeTableRow) throw 'prevSafeTableRow undefined';
-            updateSafeTableRow(prevSafeTableRow.safeTxHash, { ...prevSafeTableRow, status: 'error' });
+            updateSafeTableRow(prevSafeTableRow.safeTxHash, {
+              ...prevSafeTableRow,
+              status: 'error',
+            });
           }
         },
       };
@@ -135,12 +185,16 @@ export function SafeTransactionsContextProvider({
         if (safeTxCategory === 'history') return safeHistoryTableRows;
         break;
       case 'add':
-        if (safeTxCategory === 'queue') selectedSafeRow && safeQueuedTableRows.push(selectedSafeRow);
-        if (safeTxCategory === 'history') selectedSafeRow && safeHistoryTableRows.push(selectedSafeRow);
+        if (safeTxCategory === 'queue')
+          selectedSafeRow && safeQueuedTableRows.push(selectedSafeRow);
+        if (safeTxCategory === 'history')
+          selectedSafeRow && safeHistoryTableRows.push(selectedSafeRow);
         break;
       case 'clear':
-        if (safeTxCategory === 'queue') safeQueuedTableRows.splice(0, safeQueuedTableRows.length);
-        if (safeTxCategory === 'history') safeHistoryTableRows.splice(0, safeHistoryTableRows.length);
+        if (safeTxCategory === 'queue')
+          safeQueuedTableRows.splice(0, safeQueuedTableRows.length);
+        if (safeTxCategory === 'history')
+          safeHistoryTableRows.splice(0, safeHistoryTableRows.length);
         break;
     }
   };
@@ -151,14 +205,20 @@ export function SafeTransactionsContextProvider({
     isLoading,
   };
 
-  return <SafeTransactionsContext.Provider value={context}>{children}</SafeTransactionsContext.Provider>;
+  return (
+    <SafeTransactionsContext.Provider value={context}>
+      {children}
+    </SafeTransactionsContext.Provider>
+  );
 }
 
 export const useSafeTransactions = () => {
   const context = useContext(SafeTransactionsContext);
 
   if (context === undefined) {
-    throw new Error('useSafeTransactions must be used within SafeTransactionsContext');
+    throw new Error(
+      'useSafeTransactions must be used within SafeTransactionsContext'
+    );
   }
 
   return context;

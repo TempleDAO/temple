@@ -58,7 +58,9 @@ export const WalletNav = (props: WalletNavProps) => {
       {connecting && <Loader iconSize={24} />}
       {!connecting && wallet ? (
         <FlexColumnContainer>
-          <WalletConnectedContainer onClick={() => setIsWalletDropdownOpen(!isWalletDropdownOpen)}>
+          <WalletConnectedContainer
+            onClick={() => setIsWalletDropdownOpen(!isWalletDropdownOpen)}
+          >
             <WalletIcon />
             {!isNavCollapsed && (
               <>
@@ -71,13 +73,22 @@ export const WalletNav = (props: WalletNavProps) => {
           </WalletConnectedContainer>
           {isWalletDropdownOpen && (
             <WalletDropdownContainer>
-              <DropdownLabel borderBottom onClick={() => window.open(explorerUrl, '_blank', 'noreferrer noopener')}>
+              <DropdownLabel
+                borderBottom
+                onClick={() =>
+                  window.open(explorerUrl, '_blank', 'noreferrer noopener')
+                }
+              >
                 Wallet
                 <LinkIcon fill={theme.palette.brand} height={16} width={16} />
               </DropdownLabel>
               <DropdownLabel onClick={disconnectWallet}>
                 Disconnect
-                <DisconnectIcon fill={theme.palette.brand} height={16} width={16} />
+                <DisconnectIcon
+                  fill={theme.palette.brand}
+                  height={16}
+                  width={16}
+                />
               </DropdownLabel>
             </WalletDropdownContainer>
           )}
@@ -85,7 +96,9 @@ export const WalletNav = (props: WalletNavProps) => {
       ) : (
         <div onClick={connectWallet}>
           <WalletIcon fill={theme.palette.light} />
-          {!isNavCollapsed && <NavLinkText style={{ cursor: 'pointer' }}>Connect</NavLinkText>}
+          {!isNavCollapsed && (
+            <NavLinkText style={{ cursor: 'pointer' }}>Connect</NavLinkText>
+          )}
         </div>
       )}
     </WalletContainer>
@@ -119,7 +132,8 @@ const DropdownLabel = styled.label<{ borderBottom?: boolean }>`
   font-weight: 700;
   align-items: center;
   align-self: stretch;
-  ${({ theme, borderBottom }) => borderBottom && `border-bottom: 1px solid ${theme.palette.brand}`};
+  ${({ theme, borderBottom }) =>
+    borderBottom && `border-bottom: 1px solid ${theme.palette.brand}`};
   cursor: pointer;
   background: ${({ theme }) => theme.palette.black};
   &:hover {
@@ -157,7 +171,8 @@ const WalletIcon = styled(walletIcon)`
   fill: ${({ fill, theme }) => fill ?? theme.palette.brand};
   stroke: ${({ stroke, theme }) => stroke ?? theme.palette.brand50};
   &:hover {
-    stroke: ${({ fill, theme }) => (fill ? transparentize(0.75, fill) : theme.palette.brand75)};
+    stroke: ${({ fill, theme }) =>
+      fill ? transparentize(0.75, fill) : theme.palette.brand75};
   }
 `;
 
@@ -169,7 +184,8 @@ type NavLinkProps = {
 const NavLinkText = styled.span<NavLinkProps>`
   margin-left: 0.5rem;
   font-weight: 700;
-  color: ${({ theme, lightcolor }) => (lightcolor ? theme.palette.brandLight : theme.palette.brand)};
+  color: ${({ theme, lightcolor }) =>
+    lightcolor ? theme.palette.brandLight : theme.palette.brand};
   vertical-align: middle;
   &:hover {
     text-decoration: underline;
@@ -179,7 +195,8 @@ const NavLinkText = styled.span<NavLinkProps>`
 
 const UserAddress = styled.span<NavLinkProps>`
   font-weight: 700;
-  color: ${({ theme, lightcolor }) => (lightcolor ? theme.palette.brandLight : theme.palette.brand)};
+  color: ${({ theme, lightcolor }) =>
+    lightcolor ? theme.palette.brandLight : theme.palette.brand};
   vertical-align: middle;
   font-size: ${(props) => (props.small ? '0.75rem' : '1rem')};
 `;
