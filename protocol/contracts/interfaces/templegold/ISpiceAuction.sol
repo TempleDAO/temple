@@ -43,7 +43,6 @@ interface ISpiceAuction is IAuctionBase {
     function spiceToken() external view returns (address);
     /// @notice DAO contract to execute configurations update
     function daoExecutor() external view returns (address);
-    function treasury() external view returns (address);
 
     /// @notice Name of this Spice Bazaar auction
     function name() external view returns (string memory);

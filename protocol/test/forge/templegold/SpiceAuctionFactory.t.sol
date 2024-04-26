@@ -29,7 +29,7 @@ contract SpiceAuctionFactoryTestBase is TempleGoldCommon {
         initArgs.symbol = TEMPLE_GOLD_SYMBOL;
 
         templeGold = new TempleGold(initArgs);
-        factory = new SpiceAuctionFactory(rescuer, executor, executor, treasury, address(templeGold));
+        factory = new SpiceAuctionFactory(rescuer, executor, executor, address(templeGold));
     }
 
     function test_initialization() public {
@@ -37,7 +37,6 @@ contract SpiceAuctionFactoryTestBase is TempleGoldCommon {
         assertEq(factory.rescuer(), rescuer);
         assertEq(factory.daoExecutor(), executor);
         assertEq(factory.templeGold(), address(templeGold));
-        assertEq(factory.treasury(), address(treasury));
     }
 }
 

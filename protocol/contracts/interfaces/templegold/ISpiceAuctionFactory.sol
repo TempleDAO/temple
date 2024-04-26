@@ -11,7 +11,6 @@ interface ISpiceAuctionFactory {
     function templeGold() external view returns (address);
     /// @notice Dao executing contract
     function daoExecutor() external view returns (address);
-    function treasury() external view returns (address);
     /// @notice Keep track of deployed spice auctions
     function deployedAuctions(bytes32 id) external view returns (address);
 

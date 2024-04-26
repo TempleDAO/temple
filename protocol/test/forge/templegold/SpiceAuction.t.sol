@@ -12,6 +12,7 @@ import { IAuctionBase } from "contracts/interfaces/templegold/IAuctionBase.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
 contract SpiceAuctionTestBase is TempleGoldCommon {
+    event Claim(address indexed user, uint256 epochId, uint256 bidTokenAmount, uint256 auctionTokenAmount);
     event Deposit(address indexed depositor, uint256 epochId, uint256 amount);
     event AuctionConfigSet(uint256 epoch, ISpiceAuction.SpiceAuctionConfig config);
     event AuctionConfigRemoved(uint256 epochId);
@@ -40,9 +41,10 @@ contract SpiceAuctionTestBase is TempleGoldCommon {
         initArgs.symbol = TEMPLE_GOLD_SYMBOL;
 
         templeGold = new TempleGold(initArgs);
-        factory = new SpiceAuctionFactory(rescuer, executor, daoExecutor, treasury, address(templeGold));
+        factory = new SpiceAuctionFactory(rescuer, executor, daoExecutor, address(templeGold));
         vm.startPrank(executor);
         spice = ISpiceAuction(factory.createAuction(daiToken, NAME_ONE));
+        templeGold.authorizeContract(address(spice), true);
         vm.stopPrank();
     }
 
@@ -54,21 +56,6 @@ contract SpiceAuctionTestBase is TempleGoldCommon {
     }
 
     function _getAuctionConfig() internal view returns (ISpiceAuction.SpiceAuctionConfig memory config) {
-        // uint32 duration;
-        // /// @notice Minimum time between successive auctions
-        // uint32 waitPeriod;
-        // /// @notice Cooldown after auction start is triggered, to allow deposits
-        // uint32 startCooldown;
-        // /// @notice Minimum Gold distributed to enable auction start
-        // uint160 minimumDistributedAuctionToken;
-        // /// @notice Address to start next auction when all criteria are met. Address zero means anyone can trigger start
-        // address starter;
-        // /// @notice Which token is the bid token
-        // AuctionToken auctionToken;
-        // /// @notice Mode of auction activation
-        // ActivationMode activationMode;
-        // /// @notice Auction proceeds recipient
-        // address recipient;
         config.duration = 7 days;
         config.waitPeriod = 2 weeks;
         config.minimumDistributedAuctionToken = 1 ether;
@@ -78,8 +65,6 @@ contract SpiceAuctionTestBase is TempleGoldCommon {
         ISpiceAuction.ActivationMode mode = ISpiceAuction.ActivationMode.AUCTION_TOKEN_BALANCE;
         config.activationMode = mode;
         config.recipient = treasury;
-        // ISpiceAuction.AuctionToken auctionToken = ISpiceAuction.SpiceAuctionToken.TOKEN_A;
-        // config.auctionToken = 
     }
 
     function _setAuctionConfig() private returns ( ISpiceAuction.SpiceAuctionConfig memory config){
@@ -132,6 +117,22 @@ contract SpiceAuctionAccessTest is SpiceAuctionTestBase {
         vm.startPrank(daoExecutor);
         spice.setAuctionConfig(_getAuctionConfig());
         spice.removeAuctionConfig();
+    }
+}
+
+contract SpiceAuctionViewTest is SpiceAuctionTestBase {
+    function test_getAuctionTokenForCurrentEpoch() public {
+        ISpiceAuction.SpiceAuctionConfig memory _config = _startAuction(true, true);
+        address auctionToken = _config.isTempleGoldAuctionToken ? address(templeGold) : spice.spiceToken();
+        assertEq(auctionToken, spice.getAuctionTokenForCurrentEpoch());
+    }
+
+    function test_getClaimableAtCurrentTimestamp() public {
+        /// @dev see claim and bid tests
+    }
+
+    function test_currentEpoch() public {
+        /// @dev see claim and bid tests
     }
 }
 
@@ -305,7 +306,7 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         spice.bid(10 ether);
         
         // start auction
-        ISpiceAuction.SpiceAuctionConfig memory _config = _startAuction(true, true);
+        ISpiceAuction.SpiceAuctionConfig memory _config =  _startAuction(true, true);
         uint256 epoch = spice.currentEpoch();
         IAuctionBase.EpochInfo memory epochInfo = spice.getEpochInfo(epoch);
         vm.warp(epochInfo.startTime);
@@ -319,7 +320,7 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         spice.bid(aliceBidAmount);
 
         assertEq(IERC20(daiToken).balanceOf(alice), 100 ether-aliceBidAmount);
-        assertEq(IERC20(daiToken).balanceOf(treasury), aliceBidAmount);
+        assertEq(IERC20(daiToken).balanceOf(_config.recipient), aliceBidAmount);
         epochInfo = spice.getEpochInfo(epoch);
         assertEq(epochInfo.totalBidTokenAmount, aliceBidAmount);
         assertEq(epochInfo.totalAuctionTokenAmount, 100 ether);
@@ -334,7 +335,7 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         spice.bid(bobBidAmount);
 
         assertEq(IERC20(daiToken).balanceOf(alice), 100 ether-aliceBidAmount);
-        assertEq(IERC20(daiToken).balanceOf(treasury), aliceBidAmount+bobBidAmount);
+        assertEq(IERC20(daiToken).balanceOf(_config.recipient), aliceBidAmount+bobBidAmount);
         epochInfo = spice.getEpochInfo(epoch);
         assertEq(epochInfo.totalBidTokenAmount, aliceBidAmount+bobBidAmount);
         assertEq(epochInfo.totalAuctionTokenAmount, 100 ether);
@@ -354,5 +355,61 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         assertEq(spice.depositors(bob, epoch), bobBidAmount+50 ether);
         assertEq(spice.getClaimableAtCurrentTimestamp(alice, epoch), 100 ether * 20/100);
         assertEq(spice.getClaimableAtCurrentTimestamp(bob, epoch), 100 ether * 80/100);
+    }
+
+    function test_claimSpiceAuction() public {
+        vm.expectRevert(abi.encodeWithSelector(IAuctionBase.InvalidEpoch.selector));
+        spice.claim(1);
+        ISpiceAuction.SpiceAuctionConfig memory _config = _startAuction(true, true);
+        uint256 epoch = spice.currentEpoch();
+        IAuctionBase.EpochInfo memory epochInfo = spice.getEpochInfo(epoch);
+        vm.warp(epochInfo.startTime);
+        vm.expectRevert(abi.encodeWithSelector(IAuctionBase.CannotClaim.selector, 1));
+        spice.claim(1);
+        vm.warp(epochInfo.endTime+_config.waitPeriod);
+
+        _config = _startAuction(true, true);
+        epoch = spice.currentEpoch();
+        epochInfo = spice.getEpochInfo(epoch);
+        vm.warp(epochInfo.startTime+_config.startCooldown);
+
+        vm.startPrank(alice);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
+        spice.claim(1);
+
+        deal(daiToken, alice, 100 ether);
+        deal(daiToken, bob, 100 ether);
+        uint256 aliceBidAmount = 20 ether;
+        uint256 bobBidAmount = 30 ether;
+
+        IERC20(daiToken).approve(address(spice), type(uint).max);
+        spice.bid(aliceBidAmount);
+
+        vm.startPrank(bob);
+        IERC20(daiToken).approve(address(spice), type(uint).max);
+        spice.bid(bobBidAmount);
+
+        // still cannot claim because auction is not ended
+        epoch = spice.currentEpoch();
+        vm.expectRevert(abi.encodeWithSelector(IAuctionBase.CannotClaim.selector, epoch));
+        spice.claim(epoch);
+        epochInfo = spice.getEpochInfo(epoch);
+        vm.warp(epochInfo.endTime+_config.waitPeriod);
+        uint256 bobTGoldBalance = templeGold.balanceOf(bob);
+        uint256 aliceTGoldBalance = templeGold.balanceOf(alice);
+        uint256 bobClaimAmount = spice.getClaimableAtCurrentTimestamp(bob, epoch);
+        uint256 aliceClaimAmount = spice.getClaimableAtCurrentTimestamp(alice, epoch);
+        vm.expectEmit(address(spice));
+        emit Claim(bob, epoch, bobBidAmount, bobClaimAmount);
+        spice.claim(epoch);
+        assertEq(templeGold.balanceOf(bob), bobTGoldBalance+bobClaimAmount);
+        assertEq(bobClaimAmount, 100 ether * 30/50);
+
+        vm.startPrank(alice);
+        vm.expectEmit(address(spice));
+        emit Claim(alice, epoch, aliceBidAmount, aliceClaimAmount);
+        spice.claim(epoch);
+        assertEq(templeGold.balanceOf(alice), aliceTGoldBalance+aliceClaimAmount);
+        assertEq(aliceClaimAmount, 100 ether * 20/50);
     }
 }

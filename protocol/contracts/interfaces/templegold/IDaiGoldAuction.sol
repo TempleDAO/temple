@@ -11,7 +11,6 @@ interface IDaiGoldAuction is IAuctionBase {
     event AuctionConfigSet(uint256 epochId, AuctionConfig config);
     event AuctionStarterSet(address indexed starter);
 
-    error InvalidEpoch();
     error LowGoldDistributed(uint256 epochGoldAmount);
 
     struct AuctionConfig {

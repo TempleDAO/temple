@@ -420,7 +420,7 @@ contract DaiGoldAuctionTest is DaiGoldAuctionTestBase {
         daiGoldAuction.claim(currentEpoch);
         vm.warp(block.timestamp + 3 days);
         // invalid epoch error
-        vm.expectRevert(abi.encodeWithSelector(IDaiGoldAuction.InvalidEpoch.selector));
+        vm.expectRevert(abi.encodeWithSelector(IAuctionBase.InvalidEpoch.selector));
         daiGoldAuction.claim(currentEpoch+1);
         // bob cannot claim for 0 deposits
         vm.startPrank(bob);
