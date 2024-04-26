@@ -13,6 +13,7 @@ contract SpiceAuctionFactory is ISpiceAuctionFactory, TempleElevatedAccess {
     address public immutable override templeGold;
     /// @notice Dao executing contract
     address public immutable override daoExecutor;
+    address public immutable override treasury;
     /// @notice Keep track of deployed spice auctions
     mapping(bytes32 id => address auction) public override deployedAuctions;
 
@@ -20,10 +21,12 @@ contract SpiceAuctionFactory is ISpiceAuctionFactory, TempleElevatedAccess {
         address _rescuer,
         address _executor,
         address _daoExecutor,
+        address _treasury,
         address _templeGold
     ) TempleElevatedAccess(_rescuer, _executor) {
         daoExecutor = _daoExecutor;
         templeGold = _templeGold;
+        treasury = _treasury;
     }
 
     /**
@@ -33,7 +36,7 @@ contract SpiceAuctionFactory is ISpiceAuctionFactory, TempleElevatedAccess {
      */
     function createAuction(address spiceToken, string memory name) external override onlyElevatedAccess returns (address) {
         if (spiceToken == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
-        SpiceAuction spiceAuction = new SpiceAuction(templeGold, spiceToken, daoExecutor, name);
+        SpiceAuction spiceAuction = new SpiceAuction(templeGold, spiceToken, daoExecutor, treasury, name);
         bytes32 pairId = _getPairHash(spiceToken);
         if (deployedAuctions[pairId] != address(0)) { revert PairExists(templeGold, spiceToken); }
         deployedAuctions[pairId] = address(spiceAuction);

@@ -5,6 +5,7 @@ pragma solidity 0.8.20;
 import { TempleTest } from "../TempleTest.sol";
 
 contract TempleGoldCommon is TempleTest {
+    address public treasury = makeAddr("treasury");
     address public teamGnosis = makeAddr("teamGnosis");
     address public layerZeroEndpointArbitrumOne = 0x1a44076050125825900e736c501f859c50fE728c;
     uint256 public layerZeroEndpointArbitrumId = 30110;
@@ -18,4 +19,7 @@ contract TempleGoldCommon is TempleTest {
     uint256 public arbitrumOneChainId = 42161;
 
     uint256 public constant forkBlockNumber = 204026954;
+
+    string public constant NAME_ONE = "SPICE_AUCTION_TGLD_USDC";
+    string public constant NAME_TWO = "SPICE_AUCTION_TGLD_DAI";
 }

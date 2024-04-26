@@ -21,6 +21,8 @@ contract SpiceAuction is ISpiceAuction, AuctionBase {
     address public immutable override templeGold;
     /// @notice DAO contract to execute configurations update
     address public immutable override daoExecutor;
+    /// @notice Recipient of auction bid tokens
+    address public immutable treasury;
 
     /// @notice Auctions run for minimum 1 week
     uint32 public constant MINIMUM_AUCTION_PERIOD = 604_800;
@@ -41,11 +43,13 @@ contract SpiceAuction is ISpiceAuction, AuctionBase {
         address _templeGold,
         address _spiceToken,
         address _daoExecutor,
+        address _treasury,
         string memory _name
     ) {
         spiceToken = _spiceToken;
         daoExecutor = _daoExecutor;
         templeGold = _templeGold;
+        treasury = _treasury;
         name = _name;
         _deployTimestamp = block.timestamp;
     }
@@ -112,8 +116,8 @@ contract SpiceAuction is ISpiceAuction, AuctionBase {
         uint256 epochAuctionTokenAmount = balance - (totalAuctionTokenAllocation - _claimedAuctionTokens[auctionToken]);
         if (config.activationMode == ActivationMode.AUCTION_TOKEN_BALANCE) {
             if (config.minimumDistributedAuctionToken == 0) { revert MissingAuctionTokenConfig(); }
-            if (epochAuctionTokenAmount < config.minimumDistributedAuctionToken) { revert NotEnoughAuctionTokens(); }
         }
+        if (epochAuctionTokenAmount < config.minimumDistributedAuctionToken) { revert NotEnoughAuctionTokens(); }
         // epoch start settings
         // now update currentEpochId
         epochId = _currentEpochId = _currentEpochId + 1;
@@ -137,7 +141,7 @@ contract SpiceAuction is ISpiceAuction, AuctionBase {
         uint256 epochId = _currentEpochId;
         (address bidToken,) = _getBidAndAuctionTokens();
 
-        IERC20(bidToken).safeTransferFrom(msg.sender, address(this), amount);
+        IERC20(bidToken).safeTransferFrom(msg.sender, treasury, amount);
         depositors[msg.sender][epochId] += amount;
 
         EpochInfo storage info = epochs[epochId];
@@ -180,6 +184,20 @@ contract SpiceAuction is ISpiceAuction, AuctionBase {
      */
     function currentEpoch() external view override returns (uint256) {
         return _currentEpochId;
+    }
+
+    /**
+     * @notice Get claimable amount for an epoch
+     * @dev For current epoch, function will return claimable at current time. This can change with more user deposits
+     * @param depositor Address to check amount for
+     * @param epochId Epoch id
+     * @return Claimable amount
+     */
+    function getClaimableAtCurrentTimestamp(address depositor, uint256 epochId) external override view returns (uint256) {
+        uint256 bidTokenAmount = depositors[depositor][epochId];
+        if (bidTokenAmount == 0 || epochId > _currentEpochId) { return 0; }
+        EpochInfo memory info = epochs[epochId];
+        return bidTokenAmount.mulDivRound(info.totalAuctionTokenAmount, info.totalBidTokenAmount, false);
     }
 
     function _getBidAndAuctionTokens() private view returns (address bidToken, address auctionToken) {

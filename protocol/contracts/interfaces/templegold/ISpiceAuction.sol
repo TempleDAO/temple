@@ -43,6 +43,7 @@ interface ISpiceAuction is IAuctionBase {
     function spiceToken() external view returns (address);
     /// @notice DAO contract to execute configurations update
     function daoExecutor() external view returns (address);
+    function treasury() external view returns (address);
 
     /// @notice Name of this Spice Bazaar auction
     function name() external view returns (string memory);
@@ -57,4 +58,13 @@ interface ISpiceAuction is IAuctionBase {
     function getAuctionTokenForCurrentEpoch() external view returns (address);
 
     function getAuctionConfig(uint256 auctionId) external view returns (SpiceAuctionConfig memory);
+
+    /**
+     * @notice Get claimable amount for an epoch
+     * @dev For current epoch, function will return claimable at current time. This can change with more user deposits
+     * @param depositor Address to check amount for
+     * @param epochId Epoch id
+     * @return Claimable amount
+     */
+    function getClaimableAtCurrentTimestamp(address depositor, uint256 epochId) external view returns (uint256);
 }
