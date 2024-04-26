@@ -1,4 +1,4 @@
-import { FC } from 'react';
+import { FC, ReactNode } from 'react';
 import {
   Route,
   Routes,
@@ -59,7 +59,7 @@ const TradeRoutes = () => {
   );
 };
 
-const TradeLink: FC<{ to: string }> = (props) => {
+const TradeLink: FC<{ children: ReactNode; to: string }> = (props) => {
   const resolved = useResolvedPath(props.to);
   const match = useMatch({ path: resolved.pathname, end: true });
   return <Link {...props} $isActive={!!match} />;
