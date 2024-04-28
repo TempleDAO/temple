@@ -7,7 +7,6 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 interface IStakedTempleVoteToken is IERC20 {
     event StakingSet(address staking);
     event AuthoritySet(address indexed authority, bool authorized);
-    event DelegateSet(address indexed from, address prevDelegate, address currentDelegate);
 
     error NonTransferrable();
     error NotImplemented();

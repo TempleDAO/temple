@@ -67,7 +67,7 @@ contract StakedTempleVoteToken is IStakedTempleVoteToken, TempleElevatedAccess, 
     }
 
     /// @notice override to stop holders burning vote tokens themselves
-    function burn(uint256 /*amount*/) public virtual override(IStakedTempleVoteToken, ERC20Burnable) onlyAuthorized whenNotPaused {
+    function burn(uint256 /*amount*/) public virtual override(IStakedTempleVoteToken, ERC20Burnable) {
         /// @dev not implemented
         revert NotImplemented();
     }
@@ -83,7 +83,7 @@ contract StakedTempleVoteToken is IStakedTempleVoteToken, TempleElevatedAccess, 
      * - the caller must have allowance for ``accounts``'s tokens of at least
      * `value`.
      */
-    function burnFrom(address account, uint256 value) public virtual override(IStakedTempleVoteToken, ERC20Burnable) onlyAuthorized {
+    function burnFrom(address account, uint256 value) public virtual override(IStakedTempleVoteToken, ERC20Burnable) onlyAuthorized whenNotPaused {
         _burn(account, value);
     }
 
@@ -198,7 +198,9 @@ contract StakedTempleVoteToken is IStakedTempleVoteToken, TempleElevatedAccess, 
      */
     function _update(address from, address to, uint256 amount) internal override {
         /// @notice Non-transferrable. Only by staking
-        if(!authorized[from] && !authorized[to]) { revert NonTransferrable(); }
+        if (from != address(0) && to != address(0)) {
+            if(!authorized[from] && !authorized[to]) { revert NonTransferrable(); }
+        }
         super._update(from, to, amount);
     }
 
