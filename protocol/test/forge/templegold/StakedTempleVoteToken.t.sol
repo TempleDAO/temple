@@ -43,8 +43,12 @@ contract StakedTempleVoteTokenTestBase is TempleGoldCommon {
 
         templeGold = new TempleGold(initArgs);
         templeToken = new FakeERC20("Temple Token", "TEMPLE", executor, 1000 ether);
-        staking = new TempleGoldStaking(rescuer, executor, address(templeToken), address(templeGold), address(0));
-        voteToken = new StakedTempleVoteToken(rescuer, executor,address(staking), NAME, SYMBOL);
+        voteToken = new StakedTempleVoteToken(rescuer, executor,address(0), NAME, SYMBOL);
+        staking = new TempleGoldStaking(rescuer, executor, address(templeToken), address(templeGold), address(voteToken));
+        vm.startPrank(executor);
+        voteToken.setStaking(address(staking));
+        vm.stopPrank();
+        
     }
 
     function test_initialization() public {
@@ -185,5 +189,9 @@ contract StakedTempleVoteTokenTest is StakedTempleVoteTokenTestBase {
         vm.expectEmit(address(voteToken));
         emit Unpaused(executor);
         voteToken.unpause();
+    }
+
+    function test_getVoteweight_voteToken() public {
+        /// @dev see TempleGoldStaking.t.sol
     }
 }

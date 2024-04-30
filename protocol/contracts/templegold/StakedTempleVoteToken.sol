@@ -183,12 +183,6 @@ contract StakedTempleVoteToken is IStakedTempleVoteToken, TempleElevatedAccess, 
         transferFrom(src, dst, amount);
     }
 
-    /// The functions below are overrides required by Solidity.
-
-    function decimals() public view override returns (uint8) {
-        return super.decimals();
-    }
-
     /**
      * @dev Transfers a `value` amount of tokens from `from` to `to`, or alternatively mints (or burns) if `from`
      * (or `to`) is the zero address. All customizations to transfers, mints, and burns should be done by overriding

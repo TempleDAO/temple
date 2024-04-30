@@ -107,6 +107,7 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
      * @param _migrator Migrator
      */
     function setMigrator(address _migrator) external override onlyElevatedAccess {
+        if (_migrator == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
         migrator = _migrator;
         emit MigratorSet(_migrator);
     }
@@ -116,7 +117,7 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
      * @param _cooldown Cooldown in seconds
      */
     function setRewardDistributionCoolDown(uint160 _cooldown) external override onlyElevatedAccess {
-        if (_cooldown == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
+        /// @dev zero cooldown is allowed
         rewardDistributionCoolDown = _cooldown;
         emit RewardDistributionCoolDownSet(_cooldown);
     }
@@ -152,11 +153,14 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
      */
     function distributeRewards() external {
         if (distributionStarter != address(0) && msg.sender != distributionStarter) { revert CommonEventsAndErrors.InvalidAccess(); }
-        // Mint and distribute TGLD is no cooldown set
-        if (rewardDistributionCoolDown == 0) { _distributeGold(); }
+        // Mint and distribute TGLD if no cooldown set
+        // if (rewardDistributionCoolDown == 0) { _distributeGold(); }
+        if (lastRewardNotificationTimestamp > 0 && 
+            lastRewardNotificationTimestamp + rewardDistributionCoolDown < block.timestamp) 
+                { revert CannotDistribute(); }
+        _distributeGold();
         uint256 rewardAmount = nextRewardAmount;
         if (rewardAmount == 0 ) { revert CommonEventsAndErrors.ExpectedNonZero(); }
-        if (lastRewardNotificationTimestamp + rewardDistributionCoolDown < block.timestamp) { revert CannotDistribute(); }
         nextRewardAmount = 0;
         _notifyReward(rewardAmount);
     }
@@ -299,6 +303,7 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         /// @notice Temple Gold contract mints TGLD amount to contract before calling `notifyDistribution`
         nextRewardAmount += amount;
         lastRewardNotificationTimestamp = uint96(block.timestamp);
+        emit GoldDistributionNotified(amount, block.timestamp);
     }
 
     function getRewardData() external override view returns (Reward memory) {
@@ -401,10 +406,8 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     }
 
     function _distributeGold() internal {
-        bool canDistribute = ITempleGold(address(rewardToken)).canDistribute();
-        if (canDistribute) {
-            ITempleGold(address(rewardToken)).mint();
-        }
+        /// @dev no op silent fail if nothing to distribute
+        ITempleGold(address(rewardToken)).mint();
     }
 
     function _voteWeight(address _account) private view returns (uint256) {

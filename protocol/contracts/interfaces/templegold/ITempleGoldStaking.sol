@@ -7,6 +7,7 @@ import {IStakedTempleVoteToken} from "contracts/interfaces/templegold/IStakedTem
 
 interface ITempleGoldStaking {
     event StakingProxySet(address stakingProxy);
+    event GoldDistributionNotified(uint256 amount, uint256 timestamp);
     event Staked(address indexed staker, uint256 amount);
     event RewardPaid(address indexed staker, address toAddress, uint256 reward);
     event MigratorSet(address migrator);

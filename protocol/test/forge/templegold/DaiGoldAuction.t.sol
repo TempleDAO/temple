@@ -2,7 +2,7 @@ pragma solidity 0.8.20;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // (tests/forge/templegold/DaiGoldAuction.t.sol)
 
-import { TempleTest } from "../TempleTest.sol";
+import { TempleGoldCommon } from "./TempleGoldCommon.t.sol";
 import { ITempleGold } from "contracts/interfaces/templegold/ITempleGold.sol";
 import { TempleGold } from "contracts/templegold/TempleGold.sol";
 import { IDaiGoldAuction } from "contracts/interfaces/templegold/IDaiGoldAuction.sol";
@@ -14,7 +14,7 @@ import { ITempleERC20Token } from "contracts/interfaces/core/ITempleERC20Token.s
 import { TempleGoldStaking } from "contracts/templegold/TempleGoldStaking.sol";
 // import { console } from "forge-std/console.sol";
 
-contract DaiGoldAuctionTestBase is TempleTest {
+contract DaiGoldAuctionTestBase is TempleGoldCommon {
     event AuctionStarted(uint256 epochId, address indexed starter, uint64 startTime, uint64 endTime, uint256 auctionTokenAmount);
     event BidTokenSet(address bidToken);
     event GoldDistributionNotified(uint256 amount, uint256 timestamp);
@@ -28,14 +28,7 @@ contract DaiGoldAuctionTestBase is TempleTest {
     uint32 public constant AUCTIONS_TIME_DIFF_ONE = 2 weeks;
     uint32 public constant AUCTIONS_START_COOLDOWN_ONE = 1 hours;
     uint192 public constant AUCTION_MIN_DISTRIBUTED_GOLD_ONE = 1_000;
-
-    address public treasury = makeAddr("treasury");
-    address public teamGnosis = makeAddr("teamGnosis");
-    address public layerZeroEndpointArbitrumOne = 0x1a44076050125825900e736c501f859c50fE728c;
-    uint256 public layerZeroEndpointArbitrumId = 30110;
-
-    address public usdcToken = 0xaf88d065e77c8cC2239327C5EDb3A432268e5831; // arb USDC
-    address public daiToken = 0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1; //arb DAI
+    
     address public templeToken = 0x470EBf5f030Ed85Fc1ed4C2d36B9DD02e77CF1b7;
     // address public arbDaiWhale = 0xEa55D6319B04b4B6Ce8d03F3db84e432219eFCaA;
     
@@ -45,12 +38,6 @@ contract DaiGoldAuctionTestBase is TempleTest {
     ITempleERC20Token public temple;
     DaiGoldAuction public daiGoldAuction;
     TempleGoldStaking public goldStaking;
-
-    uint256 public mintChainId = 1;
-    uint256 public arbitrumOneChainId = 42161;
-
-    string public constant TEMPLE_GOLD_NAME = "TEMPLE GOLD";
-    string public constant TEMPLE_GOLD_SYMBOL = "TGLD";
 
     function setUp() public {
         /// @dev forking for layerzero endpoint to execute code

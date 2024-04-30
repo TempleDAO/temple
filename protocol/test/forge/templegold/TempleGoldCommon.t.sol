@@ -3,6 +3,7 @@ pragma solidity 0.8.20;
 // (tests/forge/templegold/TempleGoldCommon.t.sol)
 
 import { TempleTest } from "../TempleTest.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
 contract TempleGoldCommon is TempleTest {
     address public treasury = makeAddr("treasury");
@@ -22,4 +23,8 @@ contract TempleGoldCommon is TempleTest {
 
     string public constant NAME_ONE = "SPICE_AUCTION_TGLD_USDC";
     string public constant NAME_TWO = "SPICE_AUCTION_TGLD_DAI";
+
+    function _approve(address _token, address _spender, uint256 _amount) internal {
+        IERC20(_token).approve(_spender, _amount);
+    }
 }
