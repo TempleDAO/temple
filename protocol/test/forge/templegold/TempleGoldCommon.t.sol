@@ -20,6 +20,7 @@ contract TempleGoldCommon is TempleTest {
     uint256 public arbitrumOneChainId = 42161;
 
     uint256 public constant forkBlockNumber = 204026954;
+    uint256 public constant WEEK_LENGTH = 7 days;
 
     string public constant NAME_ONE = "SPICE_AUCTION_TGLD_USDC";
     string public constant NAME_TWO = "SPICE_AUCTION_TGLD_DAI";

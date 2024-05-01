@@ -26,6 +26,12 @@ interface ITempleGoldStaking {
         uint216 rewardPerTokenStored;
     }
 
+    struct AccountWeightParams {
+        uint64 weekNumber;
+        uint64 stakeTime;
+        uint64 updateTime;
+    }
+
     /// @notice The staking token. Temple
     function stakingToken() external view returns (IERC20);
     /// @notice Reward token. Temple Gold
