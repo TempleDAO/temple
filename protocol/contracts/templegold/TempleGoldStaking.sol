@@ -12,7 +12,6 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IStakedTempleVoteToken } from "contracts/interfaces/templegold/IStakedTempleVoteToken.sol";
-import { console } from "forge-std/console.sol";
 
 /** 
  * @title Temple Gold Staking
@@ -415,38 +414,24 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         uint256 currentWeek = (block.timestamp / WEEK_LENGTH) - 1;
         AccountWeightParams storage weight = _weights[_account];
         uint256 week = uint256(weight.weekNumber);
-        console.logString("Week vote weight");
-        console.logUint(week);
-        console.logUint(currentWeek);
         if (week > currentWeek) {
             weight = _prevWeights[_account];
         }
         uint256 t = weight.stakeTime;
         uint256 updated = weight.updateTime;
-        console.logUint(t);
-        console.logUint(updated);
-        console.logUint(halfTime);
         if (week > 0) {
             t += (block.timestamp / WEEK_LENGTH * WEEK_LENGTH) - updated;
-            console.logUint(t);
-            console.logUint(_balances[_account] * t / (t + halfTime));
         }
         return _balances[_account] * t / (t + halfTime);
     }
 
     function _updateAccountWeight(address _account, uint256 _prevBalance, uint256 _newBalance, bool _increment) private {
         uint256 currentWeek = block.timestamp / WEEK_LENGTH;
-        console.logUint(currentWeek);
         uint256 week = 0;
         uint256 t = 0;
         uint256 updated = 0;
         AccountWeightParams storage weight = _weights[_account];
         (week, t, updated) = _unpackWeight(_account);
-        // if (t == 0) { t = block.timestamp; }
-        console.logString("first TTTTT");
-        console.logUint(t);
-        console.logUint(week);
-        console.logUint(updated);
         uint256 _lastShares = _prevBalance;
         if (week > 0 && currentWeek > week) {
             _prevWeights[_account] = weight;
@@ -455,30 +440,17 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
             t = 0;
             _lastShares = 0;
         }
-        console.logString("TTTTT");
-        console.logUint(t);
         if (_lastShares > 0) {
-            console.logString("last shares > 0");
-            console.logUint(t);
             t = t + block.timestamp - updated;
-            console.logUint(t);
-            console.logUint(updated);
             if (_increment) {
                 // amount has increased, calculate effective time that results in same weight
                 uint256 _halfTime = halfTime;
                 t = _prevBalance * t * _halfTime / (_newBalance * (t + _halfTime) - _prevBalance * t);
-                console.logString("t inside increment");
-                console.logUint(t);
-                console.logUint(_halfTime);
-                console.logString("prevBal");
-                console.logUint(_prevBalance * t * _halfTime);
-                console.logUint((_newBalance * (t + _halfTime) - (_prevBalance * t)));
             }
         }
-        console.logUint(t);
         // update weight
         weight.weekNumber = uint64(currentWeek);
-        weight.stakeTime = uint64(t); //t == 0 ? uint64(block.timestamp) : uint64(t);
+        weight.stakeTime = uint64(t);
         weight.updateTime = uint64(block.timestamp);
     }
 
