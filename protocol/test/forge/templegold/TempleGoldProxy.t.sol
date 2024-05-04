@@ -14,6 +14,7 @@ import { ITempleGold } from "contracts/interfaces/templegold/ITempleGold.sol";
 import { TempleGoldProxy } from "contracts/templegold/TempleGoldProxy.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { EnforcedOptionParam } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/interfaces/IOAppOptionsType3.sol";
+import { IOAppOptionsType3 } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/interfaces/IOAppOptionsType3.sol";
 
 contract TempleGoldProxyTestBase is TempleGoldCommon {
     event ContractAuthorizationSet(address indexed _contract, bool _whitelisted);
@@ -234,6 +235,44 @@ contract TempleGoldProxyTest is TempleGoldProxyTestBase {
         assertEq(_p.staking, _params.staking);
     }
 
-   
+    function test_setMsgInspector_tgldProxy() public {
+        vm.startPrank(executor);
+        templeGoldProxy.setMsgInspector(alice);
+        assertEq(templeGold.msgInspector(), alice);
+        // msgInspector
+    }
 
+    function test_setPreCrime_tgldProxy() public {
+        vm.startPrank(executor);
+        templeGoldProxy.setPreCrime(alice);
+        assertEq(templeGold.preCrime(), alice);
+    }
+
+    function test_setDelegate_tgldProxy() public {
+        vm.startPrank(executor);
+        templeGoldProxy.setDelegate(alice);
+        // ILayerZeroEndpointV2 does not provide an interface for this variable getter
+        (, bytes memory data) = layerZeroEndpointArbitrumOne.call{value: 0}(abi.encodeWithSignature("delegates(address)", address(templeGold)));
+        address delegate = abi.decode(data, (address));
+        assertEq(delegate, alice);
+    }
+
+    function test_setPeer_tgldProxy() public {
+        vm.startPrank(executor);
+        bytes32 peerAsBytes32 = bytes32(uint256(uint160(alice)));
+        templeGoldProxy.setPeer(MAINNET_LZ_EID, peerAsBytes32);
+        assertEq(templeGold.isPeer(MAINNET_LZ_EID, peerAsBytes32), true);
+    }
+
+    function test_setEnforcedOptions_tgldProxy() public {
+        vm.startPrank(executor);
+        EnforcedOptionParam[] memory enforcedOptions = new EnforcedOptionParam[](1);
+        enforcedOptions[0] = EnforcedOptionParam(MAINNET_LZ_EID, 1, hex"0004"); // not type 3
+        vm.expectRevert(abi.encodeWithSelector(IOAppOptionsType3.InvalidOptions.selector, hex"0004"));
+        templeGoldProxy.setEnforcedOptions(enforcedOptions);
+
+        enforcedOptions[0] = EnforcedOptionParam(MAINNET_LZ_EID, 1, hex"0003"); // type 3
+        templeGoldProxy.setEnforcedOptions(enforcedOptions);
+        assertEq(templeGold.enforcedOptions(MAINNET_LZ_EID, 1), hex"0003");
+    }
 }
