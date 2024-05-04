@@ -36,24 +36,14 @@ contract TempleGoldStakingTestBase is TempleGoldCommon {
     TempleGoldStaking public staking;
     TempleGold public templeGold;
 
-    string public constant NAME = "Staked Temple Vote Token";
-    string public constant SYMBOL = "stTemple";
     function setUp() public {
         fork("arbitrum_one", forkBlockNumber);
 
-        ITempleGold.InitArgs memory initArgs;
-        initArgs.executor = executor;
-        initArgs.staking = address(0);
-        initArgs.escrow = address(0);
-        initArgs.gnosis = teamGnosis;
-        initArgs.layerZeroEndpoint = layerZeroEndpointArbitrumOne;
-        initArgs.mintChainId = arbitrumOneChainId;
-        initArgs.name = TEMPLE_GOLD_NAME;
-        initArgs.symbol = TEMPLE_GOLD_SYMBOL;
+        ITempleGold.InitArgs memory initArgs = _getTempleGoldInitArgs();
 
         templeGold = new TempleGold(initArgs);
         templeToken = new FakeERC20("Temple Token", "TEMPLE", executor, 1000 ether);
-        voteToken = new StakedTempleVoteToken(rescuer, executor,address(0), NAME, SYMBOL);
+        voteToken = new StakedTempleVoteToken(rescuer, executor,address(0), VOTE_TOKEN_NAME, VOTE_TOKEN_SYMBOL);
         staking = new TempleGoldStaking(rescuer, executor, address(templeToken), address(templeGold), address(voteToken));
         vm.startPrank(executor);
         voteToken.setStaking(address(staking));

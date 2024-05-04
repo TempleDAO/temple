@@ -14,7 +14,11 @@ contract TempleGoldProxy is ITempleGoldProxy, TempleElevatedAccess {
     /// @notice Temple Gold
     ITempleGold public immutable override templeGold;
     
-    constructor(address _rescuer, address _executor, address _templeGold) TempleElevatedAccess(_rescuer, _executor) {
+    constructor(
+        address _rescuer,
+        address _executor,
+        address _templeGold
+    ) TempleElevatedAccess(_rescuer, _executor) {
         templeGold = ITempleGold(_templeGold);
     }
 

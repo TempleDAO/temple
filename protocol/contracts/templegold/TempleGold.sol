@@ -72,7 +72,7 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
      * @param _staking Staking proxy contract
      */
     function setStaking(address _staking) external override onlyOwner {
-        if (_staking == address(0)) { revert CommonEventsAndErrors.ExpectedNonZero(); }
+        if (_staking == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
         staking = ITempleGoldStaking(_staking);
         emit StakingSet(_staking);
     }
@@ -147,12 +147,7 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
         if (!_canDistribute(vestingFactorCache)) { return; }
 
         uint256 mintAmount = _getMintAmount(vestingFactorCache);
-        uint256 totalSupplyCache = totalSupply();
-
-        uint256 newTotalSupply = totalSupplyCache + mintAmount;
-        if (newTotalSupply > MAX_SUPPLY) {
-            mintAmount = MAX_SUPPLY - totalSupplyCache;
-        }
+        if (mintAmount == 0) { return; }
 
         lastMintTimestamp = uint32(block.timestamp);
 
@@ -244,6 +239,10 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
         } else {
             mintAmount = TempleMath.mulDivRound((block.timestamp - lastMintTimestamp) * (MAX_SUPPLY - totalSupply()), vestingFactorCache.numerator, vestingFactorCache.denominator, false);
         }
+        uint256 totalSupplyCache = totalSupply();
+        if (totalSupplyCache + mintAmount > MAX_SUPPLY) {
+            mintAmount = MAX_SUPPLY - totalSupplyCache;
+        }
     }
 
     /// @notice Overriden OFT functions
@@ -269,7 +268,6 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
         address _refundAddress
     ) external payable virtual override(IOFT, OFTCore) returns (MessagingReceipt memory msgReceipt, OFTReceipt memory oftReceipt) {
         /// cast bytes32 to address
-        // address _to = address(_sendParam.to);
         address _to = address(uint160(uint256(_sendParam.to)));
         /// @dev user can cross-chain transfer to either whitelisted or self
         if (!authorized[msg.sender] || authorized[_to]) {

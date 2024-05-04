@@ -4,6 +4,7 @@ pragma solidity 0.8.20;
 
 import { TempleTest } from "../TempleTest.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import { ITempleGold } from "contracts/interfaces/templegold/ITempleGold.sol";
 
 contract TempleGoldCommon is TempleTest {
     address public treasury = makeAddr("treasury");
@@ -18,14 +19,42 @@ contract TempleGoldCommon is TempleTest {
 
     uint256 public mintChainId = 1;
     uint256 public arbitrumOneChainId = 42161;
+    uint32 public constant MAINNET_LZ_EID = 30101;
+    uint32 public constant ARBITRUM_ONE_LZ_EID = 30110;
 
     uint256 public constant forkBlockNumber = 204026954;
+    uint256 public constant mainnetForkBlockNumber = 19782784;
     uint256 public constant WEEK_LENGTH = 7 days;
 
     string public constant NAME_ONE = "SPICE_AUCTION_TGLD_USDC";
     string public constant NAME_TWO = "SPICE_AUCTION_TGLD_DAI";
 
+    string public constant VOTE_TOKEN_NAME = "Staked Temple Vote Token";
+    string public constant VOTE_TOKEN_SYMBOL = "stTemple";
+
     function _approve(address _token, address _spender, uint256 _amount) internal {
         IERC20(_token).approve(_spender, _amount);
+    }
+
+    function _getTempleGoldInitArgs() internal view returns (ITempleGold.InitArgs memory initArgs) {
+        initArgs.executor = executor;
+        initArgs.staking = address(0);
+        initArgs.escrow = address(0);
+        initArgs.gnosis = teamGnosis;
+        initArgs.layerZeroEndpoint = layerZeroEndpointArbitrumOne;
+        initArgs.mintChainId = arbitrumOneChainId;
+        initArgs.name = TEMPLE_GOLD_NAME;
+        initArgs.symbol = TEMPLE_GOLD_SYMBOL;
+    }
+
+    function _getDistributionParameters() internal view returns (ITempleGold.DistributionParams memory _params) {
+        _params.staking = 40 ether;
+        _params.escrow = 50 ether;
+        _params.gnosis = 10 ether;
+    }
+
+    function _getVestingFactor() internal view returns (ITempleGold.VestingFactor memory _factor) {
+        _factor.numerator = 10 ether;
+        _factor.denominator = 100 ether;
     }
 }
