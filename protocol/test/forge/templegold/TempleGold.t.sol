@@ -11,13 +11,15 @@ import { FakeERC20 } from "contracts/fakes/FakeERC20.sol";
 import { ITempleGold } from "contracts/interfaces/templegold/ITempleGold.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
-import { IERC20Errors } from "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
-import { IERC20 } from "@openzeppelin/contracts/interfaces/IERC20.sol";
-import { SendParam, OFTReceipt } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/interfaces/IOFT.sol";
-import { MessagingReceipt, MessagingFee } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/OAppSender.sol";
-import { MessagingParams, MessagingFee, MessagingReceipt, ILayerZeroEndpointV2 } from "@layerzerolabs/lz-evm-protocol-v2/contracts/interfaces/ILayerZeroEndpointV2.sol";
+import { SendParam } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/interfaces/IOFT.sol";
+import { MessagingFee, MessagingReceipt } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/OAppSender.sol";
+import { OptionsBuilder } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/libs/OptionsBuilder.sol";
+import { Origin, ILayerZeroEndpointV2 } from "@layerzerolabs/lz-evm-protocol-v2/contracts/interfaces/ILayerZeroEndpointV2.sol";
+// import { EndpointV2 } from "@layerzerolabs/lz-evm-protocol-v2/contracts/EndpointV2.sol";
 
 contract TempleGoldTestBase is TempleGoldCommon {
+    using OptionsBuilder for bytes;
+
     event Transfer(address indexed from, address indexed to, uint256 value);
     event ContractAuthorizationSet(address indexed _contract, bool _whitelisted);
     event VestingFactorSet(uint128 numerator, uint128 denominator);
@@ -61,6 +63,8 @@ contract TempleGoldTestBase is TempleGoldCommon {
         voteToken.setAuthorized(address(staking), true);
         templeGold.setEscrow(address(daiGoldAuction)); 
         _configureTempleGold();
+        vm.deal(alice, 100 ether);
+        vm.deal(bob, 100 ether);
         vm.stopPrank();
     }
 
@@ -93,7 +97,7 @@ contract TempleGoldTestBase is TempleGoldCommon {
         fork("mainnet", mainnetForkBlockNumber);
         mainnetForkId = forkId;
         ITempleGold.InitArgs memory initArgs = _getTempleGoldInitArgs();
-        initArgs.layerZeroEndpoint = 0x1a44076050125825900e736c501f859c50fE728c;
+        initArgs.layerZeroEndpoint = layerZeroEndpointEthereum;
         templeGoldMainnet = new TempleGold(initArgs);
         return templeGoldMainnet;
     }
@@ -102,9 +106,9 @@ contract TempleGoldTestBase is TempleGoldCommon {
         templeGoldMainnet = _deployContractsOnMainnet();
         vm.startPrank(executor);
         vm.selectFork(mainnetForkId);
-        templeGoldMainnet.setPeer(ARBITRUM_ONE_LZ_EID, bytes32(uint256(uint160(address(templeGold)))));
+        templeGoldMainnet.setPeer(ARBITRUM_ONE_LZ_EID, _addressToBytes32(address(templeGold)));
         vm.selectFork(arbitrumOneForkId);
-        templeGold.setPeer(MAINNET_LZ_EID, bytes32(uint256(uint160(address(templeGoldMainnet)))));
+        templeGold.setPeer(MAINNET_LZ_EID, _addressToBytes32(address(templeGoldMainnet)));
         vm.stopPrank();
     }
 }
@@ -148,6 +152,12 @@ contract TempleGoldAccessTest is TempleGoldTestBase {
 }
 
 contract TempleGoldViewTest is TempleGoldTestBase {
+    function test_oftVersion_tgld() public {
+        (bytes4 interfaceId, ) = templeGold.oftVersion();
+        bytes4 expectedId = 0x02e49c2c;
+        assertEq(interfaceId, expectedId);
+    }
+
     function test_getVestingFactor_tgld() public {
         ITempleGold.VestingFactor memory _factor = _getVestingFactor();
         vm.startPrank(executor);
@@ -216,6 +226,63 @@ contract TempleGoldViewTest is TempleGoldTestBase {
 }
 
 contract TempleGoldTest is TempleGoldTestBase {
+    using OptionsBuilder for bytes;
+    function test_send_oft() public {
+        // templeGoldMainnet = _deployContractsOnMainnet();
+        _setupPeers();
+        // vm.selectFork(arbitrumOneForkId);
+        // get some TGOLDgld from staking
+        vm.warp(block.timestamp+3 days);
+        templeGold.mint();
+        uint256 stakingBalance = templeGold.balanceOf(address(staking));
+        staking.distributeRewards();
+        vm.startPrank(alice);
+        deal(address(templeToken), alice, 1000 ether, true);
+        _approve(address(templeToken), address(staking), type(uint).max);
+        staking.stake(100 ether);
+        vm.warp(block.timestamp+ 5 days);
+        staking.getReward(alice);
+        uint256 aliceTgldBalance = templeGold.balanceOf(alice);
+       
+        uint256 tokensToSend = 1 ether;
+        bytes memory options = OptionsBuilder.newOptions().addExecutorLzReceiveOption(200000, 0);
+        SendParam memory sendParam = SendParam(
+            MAINNET_LZ_EID,
+            _addressToBytes32(alice),
+            tokensToSend,
+            tokensToSend,
+            options,
+            "",
+            ""
+        );
+        MessagingFee memory fee = templeGold.quoteSend(sendParam, false);
+
+        // assertEq(aOFT.balanceOf(userA), initialBalance);
+        // assertEq(bOFT.balanceOf(userB), initialBalance);
+
+        vm.startPrank(alice);
+        vm.selectFork(arbitrumOneForkId);
+        MessagingReceipt memory _receipt;
+        (_receipt,) = templeGold.send{ value: fee.nativeFee }(sendParam, fee, payable(address(this)));
+        templeGold.balanceOf(alice);
+        Origin memory origin = Origin(ARBITRUM_ONE_LZ_EID, _addressToBytes32(address(templeGold)), 1); // srcEid, sender, nonce
+        // EndpointV2 endpoint = EndpointV2(layerZeroEndpointEthereum); // destination endpoint
+        ILayerZeroEndpointV2 endpoint = ILayerZeroEndpointV2(layerZeroEndpointEthereum);
+        bytes memory _msg = abi.encodePacked(_addressToBytes32(alice), uint64(tokensToSend));
+        vm.selectFork(mainnetForkId);
+        vm.deal(address(this), 1000 ether);
+        // vm.deal(layerZeroEndpointEthereum, 1000 ether);
+        // vm.startPrank(layerZeroEndpointEthereum);
+        // endpoint.lzReceive{value: 10 ether, gas: 1500000}(origin, address(templeGoldMainnet), _receipt.guid, _msg, bytes(""));
+        // _verifyPackets(MAINNET_LZ_EID, _addressToBytes32(address(templeGoldMainnet)));
+        // vm.selectFork(mainnetForkId);
+        // assertEq(templeGoldMainnet.balanceOf(alice), aliceTgldBalance);
+        // assertEq(aOFT.balanceOf(userA), initialBalance - tokensToSend);
+        // assertEq(bOFT.balanceOf(userB), initialBalance + tokensToSend);
+        // emit PacketSent(encodedPayload: 0x0100000000000000010000759e0000000000000000000000005615deb798bb3e4dfa0139dfa1b3d433cc23b72f00007595000000000000000000000000a0cb889707d426a7a386870a03bc70d1b069759884ed493bd0a19c91a23045b2807beda78bca4c251db9581614867213d59d3c46000000000000000000000000328809bc894f92807417d2dad6b7c998c1afdac600000000000f4240,
+        //     options: 0x00030100110100000000000000000000000000030d40, sendLibrary: 0x975bcD720be66659e3EB3C0e4F1866a3020E493A)
+    }
+
     function test_setStaking_tgld() public {
         vm.startPrank(executor);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));

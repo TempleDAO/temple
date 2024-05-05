@@ -2954,6 +2954,11 @@
   dependencies:
     tiny-invariant "^1.3.1"
 
+"@layerzerolabs/lz-evm-messagelib-v2@^2.3.5":
+  version "2.3.5"
+  resolved "https://registry.yarnpkg.com/@layerzerolabs/lz-evm-messagelib-v2/-/lz-evm-messagelib-v2-2.3.5.tgz#22cceefa55be0524f269fa73d48718ca06419e73"
+  integrity sha512-YbJBq+Ugt8rbWWXIw5QlLVSXSjv9wHo/40Bcn8bJyHtC2uoVYTxBmqwa5sODcl6whAGaOK4hzrd3jQv3ROanCg==
+
 "@layerzerolabs/lz-evm-oapp-v2@^2.1.24":
   version "2.2.1"
   resolved "https://registry.yarnpkg.com/@layerzerolabs/lz-evm-oapp-v2/-/lz-evm-oapp-v2-2.2.1.tgz#ec488a28a111b4d2a5ba4f5efbaed0679bebe433"
@@ -3016,6 +3021,11 @@
   version "0.3.5"
   resolved "https://registry.yarnpkg.com/@layerzerolabs/protocol-devtools/-/protocol-devtools-0.3.5.tgz#0922f25a3b3f6d813621d243156d145e61dd3481"
   integrity sha512-dpxULb9L3RxzNS0/ZDtKernd3OFQHpwsXNYd5s+ezakuQGDoSLpSbsYagJMsMgdAIvVH4n5fxKlf45Y4KyOW4g==
+
+"@layerzerolabs/test-devtools-evm-foundry@^0.2.3":
+  version "0.2.3"
+  resolved "https://registry.yarnpkg.com/@layerzerolabs/test-devtools-evm-foundry/-/test-devtools-evm-foundry-0.2.3.tgz#0c1cbb30309fad7f75ef967af9ff92f91a789dba"
+  integrity sha512-KJg9LkxwazkqwCcgKTgx46pxnNwTlLgu/ATdbHn2cTCQM6trxu6kqQyF9PY/SG3Al2xikUD5+wLrflmYt6VUfw==
 
 "@layerzerolabs/test-devtools-evm-hardhat@~0.2.2":
   version "0.2.2"
@@ -3717,25 +3727,7 @@
     "@safe-global/safe-gateway-typescript-sdk" "^3.5.3"
     viem "^1.0.0"
 
-"@safe-global/safe-core-sdk-types@2.3.0":
-  version "2.3.0"
-  resolved "https://registry.yarnpkg.com/@safe-global/safe-core-sdk-types/-/safe-core-sdk-types-2.3.0.tgz#e3be109e58a2d224d1b89052563b04f3efed4bec"
-  integrity sha512-dU0KkDV1KJNf11ajbUjWiSi4ygdyWfhk1M50lTJWUdCn1/2Bsb/hICM8LoEk6DCoFumxaoCet02SmYakXsW2CA==
-  dependencies:
-    "@ethersproject/bignumber" "^5.7.0"
-    "@ethersproject/contracts" "^5.7.0"
-    "@safe-global/safe-deployments" "^1.26.0"
-    web3-core "^1.8.1"
-    web3-utils "^1.8.1"
-
-"@safe-global/safe-deployments@^1.26.0":
-  version "1.29.0"
-  resolved "https://registry.yarnpkg.com/@safe-global/safe-deployments/-/safe-deployments-1.29.0.tgz#72091773dccdea67d4a0066eeaaa816613b43cca"
-  integrity sha512-rXTktZblfklQyPe2JLK7GtXW/jH8htE6oP9MQHpVU5K/98OLkR4ApLAzlJscQEcyCaK+XOQunOk/gQYK1M2IpQ==
-  dependencies:
-    semver "^7.3.7"
-
-"@safe-global/safe-core-sdk-types@^2.3.0":
+"@safe-global/safe-core-sdk-types@2.3.0", "@safe-global/safe-core-sdk-types@^2.3.0":
   version "2.3.0"
   resolved "https://registry.yarnpkg.com/@safe-global/safe-core-sdk-types/-/safe-core-sdk-types-2.3.0.tgz#e3be109e58a2d224d1b89052563b04f3efed4bec"
   integrity sha512-dU0KkDV1KJNf11ajbUjWiSi4ygdyWfhk1M50lTJWUdCn1/2Bsb/hICM8LoEk6DCoFumxaoCet02SmYakXsW2CA==
@@ -4889,7 +4881,7 @@
   dependencies:
     "@types/react" "*"
 
-"@types/react@*", "@types/react@17.0.40", "@types/react@^17", "@types/react@^17.0.0":
+"@types/react@*", "@types/react@^17", "@types/react@^17.0.0":
   version "17.0.40"
   resolved "https://registry.yarnpkg.com/@types/react/-/react-17.0.40.tgz#dc010cee6254d5239a138083f3799a16638e6bad"
   integrity sha512-UrXhD/JyLH+W70nNSufXqMZNuUD2cXHu6UjCllC6pmOQgBX4SGXOH8fjRka0O0Ee0HrFxapDD8Bwn81Kmiz6jQ==
@@ -9931,6 +9923,10 @@ drbg.js@^1.0.1:
     create-hash "^1.1.2"
     create-hmac "^1.1.4"
 
+"ds-test@github:dapphub/ds-test":
+  version "1.0.0"
+  resolved "https://codeload.github.com/dapphub/ds-test/tar.gz/e282159d5170298eb2455a6c05280ab5a73a4ef0"
+
 duplexer2@^0.1.2, duplexer2@~0.1.0, duplexer2@~0.1.2:
   version "0.1.4"
   resolved "https://registry.yarnpkg.com/duplexer2/-/duplexer2-0.1.4.tgz#8b12dab878c0d69e3e7891051662a32fc6bddcc1"
@@ -12402,6 +12398,11 @@ forever-agent@~0.6.1:
   version "0.6.1"
   resolved "https://registry.yarnpkg.com/forever-agent/-/forever-agent-0.6.1.tgz#fbc71f0c41adeb37f96c577ad1ed42d8fdacca91"
   integrity sha512-j0KLYPhm6zeac4lz3oJ3o65qvgQCcPubiyotZrXqEaG4hNagNYO8qdlUrX5vwqv9ohqeT/Z3j6+yW067yWWdUw==
+
+forge-std@^1.1.2:
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/forge-std/-/forge-std-1.1.2.tgz#f4a0eda103538d56f9c563f3cd1fa2fd01bd9378"
+  integrity sha512-Wfb0iAS9PcfjMKtGpWQw9mXzJxrWD62kJCUqqLcyuI0+VRtJ3j20XembjF3kS20qELYdXft1vD/SPFVWVKMFOw==
 
 form-data-encoder@1.7.1:
   version "1.7.1"
@@ -19315,6 +19316,14 @@ solc@^0.4.20:
     semver "^5.3.0"
     yargs "^4.7.1"
 
+solidity-bytes-utils@^0.8.2:
+  version "0.8.2"
+  resolved "https://registry.yarnpkg.com/solidity-bytes-utils/-/solidity-bytes-utils-0.8.2.tgz#763d6a02fd093e93b3a97b742e97d540e66c29bd"
+  integrity sha512-cqXPYAV2auhpdKSTPuqji0CwpSceZDu95CzqSM/9tDJ2MoMaMsdHTpOIWtVw31BIqqGPNmIChCswzbw0tHaMTw==
+  dependencies:
+    ds-test "github:dapphub/ds-test"
+    forge-std "^1.1.2"
+
 solidity-coverage@^0.8.4:
   version "0.8.4"
   resolved "https://registry.yarnpkg.com/solidity-coverage/-/solidity-coverage-0.8.4.tgz#c57a21979f5e86859c5198de9fbae2d3bc6324a5"
@@ -21517,7 +21526,7 @@ web3-core@1.10.0:
     web3-core-requestmanager "1.10.0"
     web3-utils "1.10.0"
 
-web3-core@1.10.4, web3-core@^1.8.1:
+web3-core@1.10.4:
   version "1.10.4"
   resolved "https://registry.yarnpkg.com/web3-core/-/web3-core-1.10.4.tgz#639de68b8b9871d2dc8892e0dd4e380cb1361a98"
   integrity sha512-B6elffYm81MYZDTrat7aEhnhdtVE3lDBUZft16Z8awYMZYJDbnykEbJVS+l3mnA7AQTnSDr/1MjWofGDLBJPww==
@@ -22093,7 +22102,7 @@ web3-utils@1.10.2, web3-utils@^1.0.0-beta.31, web3-utils@^1.2.1, web3-utils@^1.3
     randombytes "^2.1.0"
     utf8 "3.0.0"
 
-web3-utils@1.10.3, web3-utils@^1.8.1:
+web3-utils@1.10.3:
   version "1.10.3"
   resolved "https://registry.yarnpkg.com/web3-utils/-/web3-utils-1.10.3.tgz#f1db99c82549c7d9f8348f04ffe4e0188b449714"
   integrity sha512-OqcUrEE16fDBbGoQtZXWdavsPzbGIDc5v3VrRTZ0XrIpefC/viZ1ZU9bGEemazyS0catk/3rkOOxpzTfY+XsyQ==
@@ -22757,13 +22766,6 @@ yocto-queue@^0.1.0:
   resolved "https://registry.yarnpkg.com/yocto-queue/-/yocto-queue-0.1.0.tgz#0294eb3dee05028d31ee1a5fa2c556a6aaf10a1b"
   integrity sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==
 
-zksync-web3@^0.17.1:
-  version "0.17.1"
-  resolved "https://registry.yarnpkg.com/zksync-web3/-/zksync-web3-0.17.1.tgz#809c3b31295c29aae924ec2fe47f87701b539012"
-  integrity sha512-jMV4gfAQyehkIbNs81i4uvccHLe+XBu/tNPFb0Rm38pXccWY5VXzVE6XWS0dBiHlMfjdfUGn/sxwzJbWZDGYGQ==
-  dependencies:
-    ethers "~5.7.0"
-
 yoga-layout-prebuilt@^1.10.0, yoga-layout-prebuilt@^1.9.6:
   version "1.10.0"
   resolved "https://registry.yarnpkg.com/yoga-layout-prebuilt/-/yoga-layout-prebuilt-1.10.0.tgz#2936fbaf4b3628ee0b3e3b1df44936d6c146faa6"
@@ -22775,6 +22777,13 @@ zksync-web3@^0.14.3:
   version "0.14.4"
   resolved "https://registry.yarnpkg.com/zksync-web3/-/zksync-web3-0.14.4.tgz#0b70a7e1a9d45cc57c0971736079185746d46b1f"
   integrity sha512-kYehMD/S6Uhe1g434UnaMN+sBr9nQm23Ywn0EUP5BfQCsbjcr3ORuS68PosZw8xUTu3pac7G6YMSnNHk+fwzvg==
+
+zksync-web3@^0.17.1:
+  version "0.17.1"
+  resolved "https://registry.yarnpkg.com/zksync-web3/-/zksync-web3-0.17.1.tgz#809c3b31295c29aae924ec2fe47f87701b539012"
+  integrity sha512-jMV4gfAQyehkIbNs81i4uvccHLe+XBu/tNPFb0Rm38pXccWY5VXzVE6XWS0dBiHlMfjdfUGn/sxwzJbWZDGYGQ==
+  dependencies:
+    ethers "~5.7.0"
 
 zod@^3.22.4:
   version "3.22.4"

@@ -205,8 +205,11 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
      * Emits a {Transfer} event.
      */
     function _update(address from, address to, uint256 value) internal override {
-        /// @notice can only transfer to or from whitelisted addreess
-        if (!authorized[from] && !authorized[to]) { revert ITempleGold.NonTransferrable(from, to); }
+        /// can only transfer to or from whitelisted addreess
+        /// @dev skip check on mint and burn. function `send` checks from == to
+        // if (from != address(0) && to != address(0)) {
+        //     if (!authorized[from] && !authorized[to]) { revert ITempleGold.NonTransferrable(from, to); }
+        // }
         super._update(from, to, value);
     }
 
@@ -268,13 +271,16 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
         address _refundAddress
     ) external payable virtual override(IOFT, OFTCore) returns (MessagingReceipt memory msgReceipt, OFTReceipt memory oftReceipt) {
         /// cast bytes32 to address
-        address _to = address(uint160(uint256(_sendParam.to)));
+        // address _to = address(uint160(uint256(_sendParam.to)));
+        address _to = _sendParam.to.bytes32ToAddress();
         /// @dev user can cross-chain transfer to either whitelisted or self
-        if (!authorized[msg.sender] || authorized[_to]) {
-            if (msg.sender != _to) {
-                revert ITempleGold.NonTransferrable(msg.sender, _to);
-            }
-        }
+        // if (!authorized[msg.sender] || authorized[_to]) {
+        //     if (msg.sender != _to) {
+        //         revert ITempleGold.NonTransferrable(msg.sender, _to);
+        //     }
+        // }
+        // if (!authorized[msg.sender] && !authorized[_to]) { revert ITempleGold.NonTransferrable(msg.sender, _to); }
+        // if (msg.sender != _to) { revert ITempleGold.NonTransferrable(msg.sender, _to); }
 
         // @dev Applies the token transfers regarding this send() operation.
         // - amountSentLD is the amount in local decimals that was ACTUALLY sent/debited from the sender.
