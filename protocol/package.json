@@ -13,7 +13,7 @@
     "@layerzerolabs/lz-evm-messagelib-v2": "^2.3.5",
     "@layerzerolabs/lz-evm-oapp-v2": "^2.1.24",
     "@layerzerolabs/lz-evm-protocol-v2": "^2.1.24",
-    "@layerzerolabs/test-devtools-evm-foundry": "^0.2.3",
+    "@layerzerolabs/lz-evm-v1-0.7": "^2.3.5",
     "@layerzerolabs/toolbox-hardhat": "^0.2.12",
     "@nomicfoundation/hardhat-chai-matchers": "^1.0.4",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.6",

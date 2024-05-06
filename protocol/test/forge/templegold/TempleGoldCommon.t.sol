@@ -64,47 +64,4 @@ contract TempleGoldCommon is TempleTest {
     function _addressToBytes32(address _addr) internal pure returns (bytes32) {
         return bytes32(uint256(uint160(_addr)));
     }
-
-    // function _verifyPackets(uint32 _dstEid, bytes32 _dstAddress) public {
-    //     verifyPackets(_dstEid, _dstAddress, 0, address(0x0));
-    // } 
-
-    // function _verifyPackets(uint32 _dstEid, address _dstAddress) public {
-    //     _verifyPackets(_dstEid, bytes32(uint256(uint160(_dstAddress))), 0, address(0x0));
-    // }
-
-    function _verifyPackets(uint32 _dstEid, bytes32 _dstAddress, uint256 _packetAmount, address _composer) public {
-        // require(endpoints[_dstEid] != address(0), "endpoint not yet registered");
-
-        // DoubleEndedQueue.Bytes32Deque storage queue = packetsQueue[_dstEid][_dstAddress];
-        // uint256 pendingPacketsSize = queue.length();
-        // uint256 numberOfPackets;
-        // if (_packetAmount == 0) {
-        //     numberOfPackets = queue.length();
-        // } else {
-        //     numberOfPackets = pendingPacketsSize > _packetAmount ? _packetAmount : pendingPacketsSize;
-        // }
-        // while (numberOfPackets > 0) {
-        //     numberOfPackets--;
-        //     // front in, back out
-        //     bytes32 guid = queue.popBack();
-        //     bytes memory packetBytes = packets[guid];
-        //     this.assertGuid(packetBytes, guid);
-        //     this.validatePacket(packetBytes);
-
-        //     bytes memory options = optionsLookup[guid];
-        //     if (_executorOptionExists(options, ExecutorOptions.OPTION_TYPE_NATIVE_DROP)) {
-        //         (uint256 amount, bytes32 receiver) = _parseExecutorNativeDropOption(options);
-        //         address to = address(uint160(uint256(receiver)));
-        //         (bool sent, ) = to.call{ value: amount }("");
-        //         require(sent, "Failed to send Ether");
-        //     }
-        //     if (_executorOptionExists(options, ExecutorOptions.OPTION_TYPE_LZRECEIVE)) {
-        //         this.lzReceive(packetBytes, options);
-        //     }
-        //     if (_composer != address(0) && _executorOptionExists(options, ExecutorOptions.OPTION_TYPE_LZCOMPOSE)) {
-        //         this.lzCompose(packetBytes, options, guid, _composer);
-        //     }
-        // }
-    }
 }

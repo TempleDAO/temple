@@ -2995,6 +2995,11 @@
     "@layerzerolabs/evm-sdks-core" "^2.1.27"
     ethers "^5.7.2"
 
+"@layerzerolabs/lz-evm-v1-0.7@^2.3.5":
+  version "2.3.5"
+  resolved "https://registry.yarnpkg.com/@layerzerolabs/lz-evm-v1-0.7/-/lz-evm-v1-0.7-2.3.5.tgz#6567b7a9562b24cf8181e547119b6b87d37a32d0"
+  integrity sha512-zaUReMDW5t9PFSXmzvlyhEoJnbicc/K/EOuQjzRNMNPDwIMHqBzAmm/Ezh8FN4OEw6t/rKEa6XDEYvKkXKz5ZA==
+
 "@layerzerolabs/lz-v2-utilities@~2.1.27":
   version "2.1.27"
   resolved "https://registry.yarnpkg.com/@layerzerolabs/lz-v2-utilities/-/lz-v2-utilities-2.1.27.tgz#96c00a4640fa727e9438973b5c00b4650c3241e4"
@@ -3021,11 +3026,6 @@
   version "0.3.5"
   resolved "https://registry.yarnpkg.com/@layerzerolabs/protocol-devtools/-/protocol-devtools-0.3.5.tgz#0922f25a3b3f6d813621d243156d145e61dd3481"
   integrity sha512-dpxULb9L3RxzNS0/ZDtKernd3OFQHpwsXNYd5s+ezakuQGDoSLpSbsYagJMsMgdAIvVH4n5fxKlf45Y4KyOW4g==
-
-"@layerzerolabs/test-devtools-evm-foundry@^0.2.3":
-  version "0.2.3"
-  resolved "https://registry.yarnpkg.com/@layerzerolabs/test-devtools-evm-foundry/-/test-devtools-evm-foundry-0.2.3.tgz#0c1cbb30309fad7f75ef967af9ff92f91a789dba"
-  integrity sha512-KJg9LkxwazkqwCcgKTgx46pxnNwTlLgu/ATdbHn2cTCQM6trxu6kqQyF9PY/SG3Al2xikUD5+wLrflmYt6VUfw==
 
 "@layerzerolabs/test-devtools-evm-hardhat@~0.2.2":
   version "0.2.2"
@@ -4881,7 +4881,7 @@
   dependencies:
     "@types/react" "*"
 
-"@types/react@*", "@types/react@^17", "@types/react@^17.0.0":
+"@types/react@*", "@types/react@17.0.40", "@types/react@^17", "@types/react@^17.0.0":
   version "17.0.40"
   resolved "https://registry.yarnpkg.com/@types/react/-/react-17.0.40.tgz#dc010cee6254d5239a138083f3799a16638e6bad"
   integrity sha512-UrXhD/JyLH+W70nNSufXqMZNuUD2cXHu6UjCllC6pmOQgBX4SGXOH8fjRka0O0Ee0HrFxapDD8Bwn81Kmiz6jQ==

@@ -15,7 +15,7 @@ import { SendParam } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/interface
 import { MessagingFee, MessagingReceipt } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/OAppSender.sol";
 import { OptionsBuilder } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/libs/OptionsBuilder.sol";
 import { Origin, ILayerZeroEndpointV2 } from "@layerzerolabs/lz-evm-protocol-v2/contracts/interfaces/ILayerZeroEndpointV2.sol";
-// import { EndpointV2 } from "@layerzerolabs/lz-evm-protocol-v2/contracts/EndpointV2.sol";
+import { IERC20Errors } from "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
 
 contract TempleGoldTestBase is TempleGoldCommon {
     using OptionsBuilder for bytes;
@@ -228,9 +228,7 @@ contract TempleGoldViewTest is TempleGoldTestBase {
 contract TempleGoldTest is TempleGoldTestBase {
     using OptionsBuilder for bytes;
     function test_send_oft() public {
-        // templeGoldMainnet = _deployContractsOnMainnet();
         _setupPeers();
-        // vm.selectFork(arbitrumOneForkId);
         // get some TGOLDgld from staking
         vm.warp(block.timestamp+3 days);
         templeGold.mint();
@@ -257,30 +255,10 @@ contract TempleGoldTest is TempleGoldTestBase {
         );
         MessagingFee memory fee = templeGold.quoteSend(sendParam, false);
 
-        // assertEq(aOFT.balanceOf(userA), initialBalance);
-        // assertEq(bOFT.balanceOf(userB), initialBalance);
-
         vm.startPrank(alice);
         vm.selectFork(arbitrumOneForkId);
         MessagingReceipt memory _receipt;
         (_receipt,) = templeGold.send{ value: fee.nativeFee }(sendParam, fee, payable(address(this)));
-        templeGold.balanceOf(alice);
-        Origin memory origin = Origin(ARBITRUM_ONE_LZ_EID, _addressToBytes32(address(templeGold)), 1); // srcEid, sender, nonce
-        // EndpointV2 endpoint = EndpointV2(layerZeroEndpointEthereum); // destination endpoint
-        ILayerZeroEndpointV2 endpoint = ILayerZeroEndpointV2(layerZeroEndpointEthereum);
-        bytes memory _msg = abi.encodePacked(_addressToBytes32(alice), uint64(tokensToSend));
-        vm.selectFork(mainnetForkId);
-        vm.deal(address(this), 1000 ether);
-        // vm.deal(layerZeroEndpointEthereum, 1000 ether);
-        // vm.startPrank(layerZeroEndpointEthereum);
-        // endpoint.lzReceive{value: 10 ether, gas: 1500000}(origin, address(templeGoldMainnet), _receipt.guid, _msg, bytes(""));
-        // _verifyPackets(MAINNET_LZ_EID, _addressToBytes32(address(templeGoldMainnet)));
-        // vm.selectFork(mainnetForkId);
-        // assertEq(templeGoldMainnet.balanceOf(alice), aliceTgldBalance);
-        // assertEq(aOFT.balanceOf(userA), initialBalance - tokensToSend);
-        // assertEq(bOFT.balanceOf(userB), initialBalance + tokensToSend);
-        // emit PacketSent(encodedPayload: 0x0100000000000000010000759e0000000000000000000000005615deb798bb3e4dfa0139dfa1b3d433cc23b72f00007595000000000000000000000000a0cb889707d426a7a386870a03bc70d1b069759884ed493bd0a19c91a23045b2807beda78bca4c251db9581614867213d59d3c46000000000000000000000000328809bc894f92807417d2dad6b7c998c1afdac600000000000f4240,
-        //     options: 0x00030100110100000000000000000000000000030d40, sendLibrary: 0x975bcD720be66659e3EB3C0e4F1866a3020E493A)
     }
 
     function test_setStaking_tgld() public {
@@ -399,50 +377,52 @@ contract TempleGoldTest is TempleGoldTestBase {
         assertEq(_p.staking, _params.staking);
     }
 
-    // function test_mint_tgld() public {
-    //     // cannot mint on different chain
-    //     templeGoldMainnet = _deployContractsOnMainnet();
-    //     vm.expectRevert(abi.encodeWithSelector(ITempleGold.ArbitrumOnly.selector));
-    //     templeGoldMainnet.mint();
+    function test_mint_tgld_revert() public {
+        // cannot mint on different chain
+        templeGoldMainnet = _deployContractsOnMainnet();
+        vm.expectRevert(abi.encodeWithSelector(ITempleGold.ArbitrumOnly.selector));
+        templeGoldMainnet.mint();
+    }
 
-    //     vm.selectFork(arbitrumOneForkId);
-    //     // minting when params and vesting factor not set
-    //     fork("arbitrum_one", ARBITRUM_ONE_BLOCKNUMBER_B);
+    function test_mint_tgld() public {
+        vm.selectFork(arbitrumOneForkId);
+        // minting when params and vesting factor not set
+        fork("arbitrum_one", ARBITRUM_ONE_BLOCKNUMBER_B);
 
-    //     TempleGold _templeGold = new TempleGold(_getTempleGoldInitArgs());
-    //     vm.startPrank(executor);
-    //     vm.expectRevert(abi.encodeWithSelector(ITempleGold.MissingParameter.selector));
-    //     _templeGold.mint();
-    //     _templeGold.setVestingFactor(_getVestingFactor());
-    //     // distribution params not set
-    //     vm.expectRevert(abi.encodeWithSelector(ITempleGold.MissingParameter.selector));
-    //     _templeGold.mint();
-    //     _templeGold.setDistributionParams(_getDistributionParameters());
-    //     // invalid receiver. staking and escrow not set
-    //     vm.expectRevert(abi.encodeWithSelector(IERC20Errors.ERC20InvalidReceiver.selector, address(0)));
-    //     _templeGold.mint();
+        TempleGold _templeGold = new TempleGold(_getTempleGoldInitArgs());
+        vm.startPrank(executor);
+        vm.expectRevert(abi.encodeWithSelector(ITempleGold.MissingParameter.selector));
+        _templeGold.mint();
+        _templeGold.setVestingFactor(_getVestingFactor());
+        // distribution params not set
+        vm.expectRevert(abi.encodeWithSelector(ITempleGold.MissingParameter.selector));
+        _templeGold.mint();
+        _templeGold.setDistributionParams(_getDistributionParameters());
+        // invalid receiver. staking and escrow not set
+        vm.expectRevert(abi.encodeWithSelector(IERC20Errors.ERC20InvalidReceiver.selector, address(0)));
+        _templeGold.mint();
 
-    //     vm.selectFork(arbitrumOneForkId);
-    //     uint256 totalSupply = templeGold.totalSupply();
-    //     uint256 mintAmount = templeGold.getMintAmount();
-    //     ITempleGold.DistributionParams memory _params = templeGold.getDistributionParameters();
-    //     uint256 stakingAmount = _params.staking * mintAmount / 100 ether;
-    //     uint256 gnosisAmount = _params.gnosis * mintAmount / 100 ether;
-    //     uint256 escrowAmount = _params.escrow * mintAmount / 100 ether;
-    //     vm.expectEmit(address(templeGold));
-    //     emit Transfer(address(0), address(staking), stakingAmount);
-    //     vm.expectEmit(address(templeGold));
-    //     emit Transfer(address(0), address(daiGoldAuction), escrowAmount);
-    //     vm.expectEmit(address(templeGold));
-    //     emit Transfer(address(0), teamGnosis, gnosisAmount);
-    //     vm.expectEmit(address(templeGold));
-    //     emit Distributed(stakingAmount, escrowAmount, gnosisAmount, block.timestamp);
-    //     templeGold.mint();
-    //     assertEq(templeGold.totalSupply(), totalSupply+mintAmount);
-    //     assertEq(templeGold.balanceOf(address(staking)), stakingAmount);
-    //     assertEq(templeGold.balanceOf(address(daiGoldAuction)), escrowAmount);
-    //     assertEq(templeGold.balanceOf(teamGnosis), gnosisAmount);
-    // }
+        vm.selectFork(arbitrumOneForkId);
+        uint256 totalSupply = templeGold.totalSupply();
+        uint256 mintAmount = templeGold.getMintAmount();
+        ITempleGold.DistributionParams memory _params = templeGold.getDistributionParameters();
+        uint256 stakingAmount = _params.staking * mintAmount / 100 ether;
+        uint256 gnosisAmount = _params.gnosis * mintAmount / 100 ether;
+        uint256 escrowAmount = _params.escrow * mintAmount / 100 ether;
+        vm.expectEmit(address(templeGold));
+        emit Transfer(address(0), address(staking), stakingAmount);
+        vm.expectEmit(address(templeGold));
+        emit Transfer(address(0), address(daiGoldAuction), escrowAmount);
+        vm.expectEmit(address(templeGold));
+        emit Transfer(address(0), teamGnosis, gnosisAmount);
+        vm.expectEmit(address(templeGold));
+        emit Distributed(stakingAmount, escrowAmount, gnosisAmount, block.timestamp);
+        templeGold.mint();
+        assertEq(templeGold.totalSupply(), totalSupply+mintAmount);
+        assertEq(templeGold.balanceOf(address(staking)), stakingAmount);
+        assertEq(templeGold.balanceOf(address(daiGoldAuction)), escrowAmount);
+        assertEq(templeGold.balanceOf(teamGnosis), gnosisAmount);
+    }
 
     function test_mint_max_supply_tgld() public {
         templeGold.mint();
@@ -473,55 +453,4 @@ contract TempleGoldTest is TempleGoldTestBase {
         templeGold.mint();
         assertEq(templeGold.totalSupply(), _totalSupply);
     }
-
-    // function test_cross_chain_send_tgld() public {
-    //     // get some TGOLD from staking
-    //     vm.warp(block.timestamp+3 days);
-    //     templeGold.mint();
-    //     uint256 stakingBalance = templeGold.balanceOf(address(staking));
-    //     staking.distributeRewards();
-    //     vm.startPrank(alice);
-    //     deal(address(templeToken), alice, 1000 ether, true);
-    //     _approve(address(templeToken), address(staking), type(uint).max);
-    //     staking.stake(100 ether);
-    //     vm.warp(block.timestamp+ 5 days);
-    //     staking.getReward(alice);
-    //     uint256 aliceTgldBalance = templeGold.balanceOf(alice);
-
-    //     // send from arbitrum one to mainnet
-    //     // struct SendParam {
-    //         // uint32 dstEid; // Destination endpoint ID.
-    //         // bytes32 to; // Recipient address.
-    //         // uint256 amountLD; // Amount to send in local decimals.
-    //         // uint256 minAmountLD; // Minimum amount to send in local decimals.
-    //         // bytes extraOptions; // Additional options supplied by the caller to be used in the LayerZero message.
-    //         // bytes composeMsg; // The composed message for the send() operation.
-    //         // bytes oftCmd; // The OFT command to be executed, unused in default OFT implementations.
-    //     // }
-    //     uint256 sendAmount = aliceTgldBalance / 2;
-    //     SendParam memory _sendParam;
-    //     _sendParam.dstEid = MAINNET_LZ_EID;
-    //     _sendParam.to = bytes32(uint256(uint160(alice)));
-    //     _sendParam.amountLD = sendAmount;
-    //     _sendParam.minAmountLD = sendAmount * 99 / 100;
-    //     // _sendParam.extraOptions = bytes(0);
-    //     // _sendParam.composeMsg = new bytes(0);
-    //     // _sendParam.oftCmd = new bytes(0);
-
-    //     // struct MessagingFee {
-    //     //     uint256 nativeFee;
-    //     //     uint256 lzTokenFee;
-    //     // }
-    //     // MessagingFee memory _msgFee;
-    //     // _msgFee.nativeFee = 0;
-    //     // _msgFee.lzTokenFee = 0;
-    //     _setupPeers();
-    //     address senderLibrary = ILayerZeroEndpointV2(layerZeroEndpointArbitrumOne).getSendLibrary(address(templeGold), MAINNET_LZ_EID);
-    //     // ILayerZeroEndpointV2(layerZeroEndpointArbitrumOne).getExecutorConfig(address(templeGold), MAINNET_LZ_EID);
-    //     templeGold.quoteSend(_sendParam, false);
-    //     // deal(address(0), alice, 1000 ether, true);
-    //     // templeGold.send()
-
-
-    // }
 }
