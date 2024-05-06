@@ -8,6 +8,11 @@ import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.s
 import { SpiceAuction } from "contracts/templegold/SpiceAuction.sol";
 import { ISpiceAuctionFactory } from "contracts/interfaces/templegold/ISpiceAuctionFactory.sol";
 
+
+/** 
+ * @title SpiceAuctionFactory
+ * @notice Factory to create and keep track of spice auction contracts
+ */
 contract SpiceAuctionFactory is ISpiceAuctionFactory, TempleElevatedAccess {
     /// @notice Temple Gold
     address public immutable override templeGold;

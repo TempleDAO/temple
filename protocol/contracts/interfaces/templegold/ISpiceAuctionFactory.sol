@@ -9,8 +9,10 @@ interface ISpiceAuctionFactory {
 
     /// @notice Temple Gold
     function templeGold() external view returns (address);
+
     /// @notice Dao executing contract
     function daoExecutor() external view returns (address);
+    
     /// @notice Keep track of deployed spice auctions
     function deployedAuctions(bytes32 id) external view returns (address);
 
@@ -30,7 +32,7 @@ interface ISpiceAuctionFactory {
 
     /**
      * @notice Given a pair of tokens, retrieve pair hash Id
-     * @param spiceToken  Spice token
+     * @param spiceToken Spice token
      * @return Id of token pair
      */
     function getPairId(address spiceToken) external view returns (bytes32);

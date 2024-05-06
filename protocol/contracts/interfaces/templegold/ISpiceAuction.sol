@@ -39,23 +39,38 @@ interface ISpiceAuction is IAuctionBase {
     }
 
     /// @notice Spice auction contracts are set up for 2 tokens. Either can be bid or sell token for a given auction
+    /// @notice Temple GOLD
     function templeGold() external view returns (address);
+
+    /// @notice Spice Token
     function spiceToken() external view returns (address);
+
     /// @notice DAO contract to execute configurations update
     function daoExecutor() external view returns (address);
 
     /// @notice Name of this Spice Bazaar auction
     function name() external view returns (string memory);
 
-    /// @notice Set config for an epoch. This enable dynamic and multiple auctions especially for vested scenarios
-    /// Must be set before epoch auction starts
+    /**
+     * @notice Set config for an epoch. This enables dynamic and multiple auctions especially for vested scenarios
+     * @dev Must be set before epoch auction starts
+     * @param _config Config to set
+     */
     function setAuctionConfig(SpiceAuctionConfig calldata _config) external;
 
-    /// @notice Remove config set for 
+    /// @notice Remove auction config set for last epoch
     function removeAuctionConfig() external;
 
+    /**
+     * @notice Get auction token for current epoch
+     * @return Auction token
+     */
     function getAuctionTokenForCurrentEpoch() external view returns (address);
 
+    /**
+     * @notice Get spice auction config for an auction
+     * @param auctionId Id of auction
+     */
     function getAuctionConfig(uint256 auctionId) external view returns (SpiceAuctionConfig memory);
 
     /**

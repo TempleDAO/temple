@@ -35,10 +35,8 @@ contract DaiGoldAuction is IDaiGoldAuction, AuctionBase, TempleElevatedAccess {
 
     /// @notice Keep track of next epoch auction Temple Gold amount
     uint256 public override nextAuctionGoldAmount;
+    /// @notice last time rewards was notified
     uint96 public override lastRewardNotificationTimestamp;
-
-    /// @notice Auctions run for minimum 1 week
-    // uint32 public constant MINIMUM_AUCTION_PERIOD = 1 weeks;
 
     /// @notice Auction duration
     uint64 public constant AUCTION_DURATION = 1 weeks;
@@ -246,7 +244,7 @@ contract DaiGoldAuction is IDaiGoldAuction, AuctionBase, TempleElevatedAccess {
     }
 
     /**
-     * @notice Mint and distribute TGLD 
+     * @notice Mint and distribute TGOLD 
      */
     function distributeGold() external {
         _distributeGold();

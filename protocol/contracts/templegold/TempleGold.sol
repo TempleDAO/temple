@@ -21,8 +21,7 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
  * @notice Temple Gold is a non-transferrable ERC20 token with LayerZero integration for cross-chain transfer.
  * Temple Gold can be only transferred to or from whitelisted addresses. On mint, Temple Gold is distributed between Staking, Auction and Gnosis Safe 
  * addresses using distribution share percentages set at `DistributionParams`. LayerZero's OFT token standard is modified to allow changing delegates
- * with the same elevated access from v2.
- * @notice 
+ * with the same elevated access from v2. 
  */
  contract TempleGold is ITempleGold, OFT {
     using OFTMsgCodec for bytes;
@@ -207,9 +206,9 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
     function _update(address from, address to, uint256 value) internal override {
         /// can only transfer to or from whitelisted addreess
         /// @dev skip check on mint and burn. function `send` checks from == to
-        // if (from != address(0) && to != address(0)) {
-        //     if (!authorized[from] && !authorized[to]) { revert ITempleGold.NonTransferrable(from, to); }
-        // }
+        if (from != address(0) && to != address(0)) {
+            if (!authorized[from] && !authorized[to]) { revert ITempleGold.NonTransferrable(from, to); }
+        }
         super._update(from, to, value);
     }
 
@@ -271,16 +270,9 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
         address _refundAddress
     ) external payable virtual override(IOFT, OFTCore) returns (MessagingReceipt memory msgReceipt, OFTReceipt memory oftReceipt) {
         /// cast bytes32 to address
-        // address _to = address(uint160(uint256(_sendParam.to)));
         address _to = _sendParam.to.bytes32ToAddress();
         /// @dev user can cross-chain transfer to either whitelisted or self
-        // if (!authorized[msg.sender] || authorized[_to]) {
-        //     if (msg.sender != _to) {
-        //         revert ITempleGold.NonTransferrable(msg.sender, _to);
-        //     }
-        // }
-        // if (!authorized[msg.sender] && !authorized[_to]) { revert ITempleGold.NonTransferrable(msg.sender, _to); }
-        // if (msg.sender != _to) { revert ITempleGold.NonTransferrable(msg.sender, _to); }
+        if (msg.sender != _to) { revert ITempleGold.NonTransferrable(msg.sender, _to); }
 
         // @dev Applies the token transfers regarding this send() operation.
         // - amountSentLD is the amount in local decimals that was ACTUALLY sent/debited from the sender.

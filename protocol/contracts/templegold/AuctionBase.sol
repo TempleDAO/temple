@@ -22,6 +22,10 @@ abstract contract AuctionBase is IAuctionBase {
         return info.endTime <= block.timestamp;
     }
 
+    /**
+     * @notice Get info on epoch
+     * @param epochId Id of epoch
+     */
     function getEpochInfo(uint256 epochId) external override view returns (EpochInfo memory) {
         return epochs[epochId];
     }

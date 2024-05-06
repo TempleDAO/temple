@@ -29,7 +29,7 @@ interface IAuctionBase {
     function depositors(address depositor, uint256 epochId) external returns (uint256);
 
     /**
-     * @notice Deposit bidding token for current running epoch auction
+     * @notice Deposit bid token for current running epoch auction
      * @param amount Amount of bid token to deposit
      */
     function bid(uint256 amount) external;

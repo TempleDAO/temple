@@ -10,8 +10,10 @@ import { OApp } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/OApp.sol";
 import { MessagingReceipt, MessagingFee } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/OAppSender.sol";
 import { Origin } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/interfaces/IOAppReceiver.sol";
 import { ITempleTeleporter } from "contracts/interfaces/templegold/ITempleTeleporter.sol";
+import { OFTMsgCodec } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/libs/OFTMsgCodec.sol";
 
 contract TempleTeleporter is ITempleTeleporter, OApp {
+    using OFTMsgCodec for address;
 
     /// @notice Temple token
     ITempleERC20Token public immutable override temple;
@@ -41,12 +43,52 @@ contract TempleTeleporter is ITempleTeleporter, OApp {
         if (amount == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
         if (to == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
         // Encodes the message before invoking _lzSend.
-        bytes memory _payload = abi.encodePacked(to, amount);
+        bytes memory _payload = abi.encodePacked(to.addressToBytes32(), amount);
         // debit
         temple.burnFrom(msg.sender, amount);
         emit TempleTeleported(dstEid, msg.sender, to, amount);
 
         receipt = _lzSend(dstEid, _payload, options, MessagingFee(msg.value, 0), payable(msg.sender));
+    }
+
+    /**
+     * @dev Internal function to interact with the LayerZero EndpointV2.quote() for fee calculation.
+     * @param _dstEid The destination endpoint ID.
+     * @param _message The message payload.
+     * @param _options Additional options for the message.
+     * @param _payInLzToken Flag indicating whether to pay the fee in LZ tokens.
+     * @return fee The calculated MessagingFee for the message.
+     *      - nativeFee: The native fee for the message.
+     *      - lzTokenFee: The LZ token fee for the message.
+     */
+    function quote(
+        uint32 _dstEid,
+        bytes memory _message,
+        bytes memory _options,
+        bool _payInLzToken
+    ) external view returns (MessagingFee memory fee) {
+        return _quote(_dstEid, _message, _options, _payInLzToken);
+    }
+
+    /**
+     * @dev Internal function to interact with the LayerZero EndpointV2.quote() for fee calculation.
+     * @param _dstEid The destination endpoint ID.
+     * @param _to Recipient
+     * @param _amount Amount to send
+     * @param _options Additional options for the message.
+     * @param _payInLzToken Flag indicating whether to pay the fee in LZ tokens.
+     * @return fee The calculated MessagingFee for the message.
+     *      - nativeFee: The native fee for the message.
+     *      - lzTokenFee: The LZ token fee for the message.
+     */
+    function quote(
+        uint32 _dstEid,
+        address _to,
+        uint256 _amount,
+        bytes memory _options,
+        bool _payInLzToken
+    ) external view returns (MessagingFee memory fee) {
+        return _quote(_dstEid, abi.encodePacked(_to, _amount), _options, _payInLzToken);
     }
 
     /// @dev Called when data is received from the protocol. It overrides the equivalent function in the parent contract.

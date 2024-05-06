@@ -10,6 +10,13 @@ import { IOAppOptionsType3, EnforcedOptionParam } from "@layerzerolabs/lz-evm-oa
 import { IOAppCore } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/interfaces/IOAppCore.sol";
 import { IOAppPreCrimeSimulator } from "@layerzerolabs/lz-evm-oapp-v2/contracts/precrime/interfaces/IOAppPreCrimeSimulator.sol";
 
+
+/**
+ * @title Temple Gold Proxy
+ * @notice Temple Gold Proxy is a proxy to Temple Gold contract. 
+ * From the setup of layerzero, `Ownable` is used for admin executions. 
+ * Avoids a manual import to change `Ownable` to `ElevatedAccess` by using a proxy for admin executions
+ */
 contract TempleGoldProxy is ITempleGoldProxy, TempleElevatedAccess {
     /// @notice Temple Gold
     ITempleGold public immutable override templeGold;

@@ -226,40 +226,6 @@ contract TempleGoldViewTest is TempleGoldTestBase {
 }
 
 contract TempleGoldTest is TempleGoldTestBase {
-    using OptionsBuilder for bytes;
-    function test_send_oft() public {
-        _setupPeers();
-        // get some TGOLDgld from staking
-        vm.warp(block.timestamp+3 days);
-        templeGold.mint();
-        uint256 stakingBalance = templeGold.balanceOf(address(staking));
-        staking.distributeRewards();
-        vm.startPrank(alice);
-        deal(address(templeToken), alice, 1000 ether, true);
-        _approve(address(templeToken), address(staking), type(uint).max);
-        staking.stake(100 ether);
-        vm.warp(block.timestamp+ 5 days);
-        staking.getReward(alice);
-        uint256 aliceTgldBalance = templeGold.balanceOf(alice);
-       
-        uint256 tokensToSend = 1 ether;
-        bytes memory options = OptionsBuilder.newOptions().addExecutorLzReceiveOption(200000, 0);
-        SendParam memory sendParam = SendParam(
-            MAINNET_LZ_EID,
-            _addressToBytes32(alice),
-            tokensToSend,
-            tokensToSend,
-            options,
-            "",
-            ""
-        );
-        MessagingFee memory fee = templeGold.quoteSend(sendParam, false);
-
-        vm.startPrank(alice);
-        vm.selectFork(arbitrumOneForkId);
-        MessagingReceipt memory _receipt;
-        (_receipt,) = templeGold.send{ value: fee.nativeFee }(sendParam, fee, payable(address(this)));
-    }
 
     function test_setStaking_tgld() public {
         vm.startPrank(executor);

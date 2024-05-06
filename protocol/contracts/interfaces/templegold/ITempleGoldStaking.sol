@@ -184,7 +184,18 @@ interface ITempleGoldStaking {
      */
     function getVoteweight(address account) external view returns (uint256);
 
+    /**  
+     * @notice Get reward data
+     * @return Reward data
+     */
     function getRewardData() external view returns (Reward memory);
+
+    /**  
+     * @notice Get weights used for measuring vote weight for an account
+     * @param _account Account
+     * @return weight AccountWeightParams
+     */
+    function getAccountWeights(address _account) external view returns (AccountWeightParams memory weight);
 
     /**
       * @notice For migrations to a new staking contract if TGLD changes

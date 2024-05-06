@@ -16,8 +16,8 @@ import { IStakedTempleVoteToken } from "contracts/interfaces/templegold/IStakedT
 /** 
  * @title Temple Gold Staking
  * @notice Temple Gold Staking contract. Stakers deposit Temple and claim rewards in Temple Gold. 
- * Temple Gold is distributed for stakers on mint. Minted Temple Gold are sent directly to Staking Proxy first.
- * Elevated access starts a new staking period using Staking Proxy. Minimum duration for distributing staking rewards is 7 days.
+ * Temple Gold is distributed to staking contract for stakers on mint. Minted Temple Gold are sent directly to Staking contract.
+ * A non-transferrable vote token is minted 1;1 to stakers on the amount they staked. Duration for distributing staking rewards is 7 days.
  */
 contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable {
     using SafeERC20 for IERC20;
@@ -299,12 +299,21 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         lastRewardNotificationTimestamp = uint96(block.timestamp);
         emit GoldDistributionNotified(amount, block.timestamp);
     }
-
+    
+    /**  
+     * @notice Get reward data
+     * @return Reward data
+     */
     function getRewardData() external override view returns (Reward memory) {
         return rewardData;
     }
 
-    function getAccountWeights(address _account) external view returns (AccountWeightParams memory weight) {
+    /**  
+     * @notice Get weights used for measuring vote weight for an account
+     * @param _account Account
+     * @return weight AccountWeightParams
+     */
+    function getAccountWeights(address _account) external override view returns (AccountWeightParams memory weight) {
         weight = _weights[_account];
     }
 
