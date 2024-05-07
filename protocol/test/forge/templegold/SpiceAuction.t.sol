@@ -205,7 +205,7 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         spice.setAuctionConfig(_getAuctionConfig());
         epoch = spice.currentEpoch();
         vm.expectEmit(address(spice));
-        emit AuctionConfigRemoved(epoch);
+        emit AuctionConfigRemoved(epoch+1);
         spice.removeAuctionConfig();
     }
 

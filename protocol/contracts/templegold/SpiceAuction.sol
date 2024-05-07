@@ -87,16 +87,17 @@ contract SpiceAuction is ISpiceAuction, AuctionBase {
     /// @notice Remove auction config set for last epoch
     function removeAuctionConfig() external override onlyDAOExecutor {
         /// only delete latest epoch if auction is not started
-        uint256 epochId = _currentEpochId;
+        uint256 id = _currentEpochId;
         // Cannot reset an ongoing auction
-        EpochInfo storage info = epochs[epochId];
+        EpochInfo storage info = epochs[id];
         if (info.startTime <= block.timestamp && block.timestamp < info.endTime) { revert InvalidConfigOperation(); }
-        // use `epochId+1` for config of auction not started
-        SpiceAuctionConfig storage config = auctionConfigs[epochId+1];
+        // use `epochId+1` for config of auction which has not started
+        id += 1;
+        SpiceAuctionConfig storage config = auctionConfigs[id];
         if (config.duration == 0) { revert InvalidConfigOperation(); }
-        delete auctionConfigs[epochId];
+        delete auctionConfigs[id];
         /// @dev `_currentEpochId` is only updated when auction starts
-        emit AuctionConfigRemoved(epochId);
+        emit AuctionConfigRemoved(id);
     }
 
     /**

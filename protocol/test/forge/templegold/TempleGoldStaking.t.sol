@@ -257,29 +257,47 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         assertEq(rewardData.lastUpdateTime, block.timestamp);
         assertEq(rewardData.periodFinish, block.timestamp + 7 days);
 
-
         // reward distribution cooldown is not zero
         vm.startPrank(executor);
-        staking.setRewardDistributionCoolDown(1 days);
-        assertEq(staking.rewardDistributionCoolDown(), 1 days);
+        uint160 cooldown = 1 days;
+        staking.setRewardDistributionCoolDown(cooldown);
+        assertEq(staking.rewardDistributionCoolDown(), cooldown);
         // anyone can call
         staking.setDistributionStarter(address(0));
-        // zero minted, so no reward notification from TGLD
-        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
-        staking.distributeRewards();
-
-        vm.warp(block.timestamp + 10 days);
         vm.expectRevert(abi.encodeWithSelector(ITempleGoldStaking.CannotDistribute.selector));
         staking.distributeRewards();
 
+        vm.warp(block.timestamp + cooldown + 1);
+        staking.setRewardDistributionCoolDown(0);
+
+        // mint so there's nothing for next transaction
+        ITempleGold.VestingFactor memory _factor = _getVestingFactor();
+        _factor.numerator = 99 ether;
+        _factor.denominator = 100 ether;
+        templeGold.setVestingFactor(_factor);
+        vm.warp(block.timestamp + 10 days);
+        templeGold.mint();
+        // there is still old rewards to distribute
+        assertGt(staking.nextRewardAmount(), 0);
+        staking.distributeRewards();
+        assertEq(staking.nextRewardAmount(), 0);
+        // zero rewards minted, so no reward notification from TGLD. this is also for TempleGold max supply case.
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
+        staking.distributeRewards();
     }
 
-    function test_distributeGold() public {
+    function test_distributeGold_staking() public {
         vm.warp(block.timestamp + 3 days);
         uint256 mintAmount = templeGold.getMintAmount();
         uint256 stakingAmount = 30 * mintAmount / 100;
         staking.distributeGold();
         assertEq(templeGold.balanceOf(address(staking)), stakingAmount);
+        vm.warp(block.timestamp + 103 days);
+        mintAmount = templeGold.getMintAmount();
+        uint256 stakingAmount2 = 30 * mintAmount / 100;
+        staking.distributeGold();
+        assertGt(stakingAmount2, stakingAmount);
+        assertEq(templeGold.balanceOf(address(staking)), stakingAmount2+stakingAmount);
     }
 
     function test_notifyDistribution_revert() public {
@@ -361,6 +379,7 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         vm.warp(block.timestamp + 3 days);
         templeGold.mint();
         uint256 stakingBalance = templeGold.balanceOf(address(staking));
+        vm.warp(staking.lastRewardNotificationTimestamp() + staking.rewardDistributionCoolDown() + 1);
         staking.distributeRewards();
         
         vm.startPrank(alice);
@@ -420,7 +439,6 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
 
         vm.warp(block.timestamp + 1 days);
         uint256 rewardPerToken2 = staking.rewardPerToken();
-        // uint256 rewardPerTokenPaid = staking.userRewardPerTokenPaid(alice);
         aliceEarned = (100 ether * (rewardPerToken2 - rewardPerToken)) / 1 ether + aliceEarned;
         assertEq(staking.earned(alice), aliceEarned);
 
@@ -442,6 +460,29 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         assertEq(staking.earned(bob), bobEarned);
         assertEq(staking.earned(alice), aliceEarned);
         assertApproxEqAbs(stakingGoldBalance, bobEarned+aliceEarned, 1e6);
+
+        staking.getReward(alice);
+        staking.getReward(bob);
+        assertEq(templeGold.balanceOf(alice), aliceEarned);
+        assertEq(templeGold.balanceOf(bob), bobEarned);
+
+        vm.warp(block.timestamp + 3 days);
+        staking.distributeGold();
+        ITempleGoldStaking.Reward memory rdata = staking.getRewardData();
+
+        vm.startPrank(executor);
+        staking.setRewardDistributionCoolDown(1 hours);
+        vm.warp(block.timestamp + 1 days);
+        uint256 balanceBefore = templeGold.balanceOf(address(staking));
+        staking.distributeRewards();
+        uint256 balanceAfter = templeGold.balanceOf(address(staking));
+
+        rdata = staking.getRewardData();
+        uint256 remaining = uint256(rdata.periodFinish) - block.timestamp;
+        uint256 leftover = remaining * rdata.rewardRate;
+        uint256 rewardRate = uint216((balanceAfter - balanceBefore + leftover) / 7 days);
+        rdata = staking.getRewardData();
+        assertEq(rdata.rewardRate, rewardRate);
     }
 
     function test_vote_weight() public {
@@ -500,7 +541,6 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         vm.warp(ts + WEEK_LENGTH);
         uint256 lowVoteWeight = staking.getVoteweight(alice);
 
-        // vm.warp(ts + WEEK_LENGTH);
         uint256 highVoteWeight = staking.getVoteweight(bob);
 
         // unauthorizedUser stakes second time middle of the week
