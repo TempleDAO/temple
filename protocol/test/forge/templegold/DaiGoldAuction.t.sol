@@ -251,6 +251,11 @@ contract DaiGoldAuctionTestView is DaiGoldAuctionTestBase {
         /// @dev See test_setAuctionConfig()
     }
 
+    function test_nextEpoch() public {
+        uint256 currentEpoch = daiGoldAuction.currentEpoch();
+        assertEq(daiGoldAuction.nextEpoch(), currentEpoch+1);
+    }
+
     function test_isCurrentEpochEnded() public {
         vm.startPrank(executor);
         _startAuction();
@@ -333,6 +338,7 @@ contract DaiGoldAuctionTest is DaiGoldAuctionTestBase {
         assertEq(epochInfo.endTime, endTime);
         assertEq(epochInfo.totalBidTokenAmount, 0);
         assertEq(epochInfo.totalAuctionTokenAmount, goldAmount);
+        assertEq(daiGoldAuction.epochGoldSupply(2), epochInfo.totalAuctionTokenAmount);
 
         // low TGLD distribution error
         vm.warp(block.timestamp + 4 weeks);
@@ -383,6 +389,11 @@ contract DaiGoldAuctionTest is DaiGoldAuctionTestBase {
         assertEq(daiGoldAuction.depositors(alice, currentEpoch), 50 ether);
         assertEq(epochInfo.totalBidTokenAmount, 150 ether);
         assertEq(bidToken.balanceOf(address(daiGoldAuction)), 150 ether);
+
+        // bidToken amount = 0
+        assertEq(daiGoldAuction.getClaimableAtCurrentTimestamp(unauthorizedUser, currentEpoch), 0);
+        // invalid epoch
+        assertEq(daiGoldAuction.getClaimableAtCurrentTimestamp(unauthorizedUser, currentEpoch+1), 0);
     }
 
     function test_claim() public {

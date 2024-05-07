@@ -239,6 +239,7 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         assertEq(rewardDataBefore.rewardRate, 0);
         assertEq(rewardDataBefore.lastUpdateTime, 0);
         assertEq(rewardDataBefore.periodFinish, 0);
+        assertEq(staking.rewardPeriodFinish(), 0);
         ITempleGold.DistributionParams memory params = templeGold.getDistributionParameters();
         uint256 mintAmount = templeGold.getMintAmount();
         // amount for staking 
@@ -267,11 +268,44 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
         staking.distributeRewards();
 
-        // forward to mint something
-        // vm.warp(block.timestamp + 1000 seconds);
-        // // not enough cooldown
-        // vm.expectRevert(abi.encodeWithSelector(ITempleGoldStaking.CannotDistribute.selector));
-        // staking.distributeRewards();
+        vm.warp(block.timestamp + 10 days);
+        vm.expectRevert(abi.encodeWithSelector(ITempleGoldStaking.CannotDistribute.selector));
+        staking.distributeRewards();
+
+    }
+
+    function test_distributeGold() public {
+        vm.warp(block.timestamp + 3 days);
+        uint256 mintAmount = templeGold.getMintAmount();
+        uint256 stakingAmount = 30 * mintAmount / 100;
+        staking.distributeGold();
+        assertEq(templeGold.balanceOf(address(staking)), stakingAmount);
+    }
+
+    function test_notifyDistribution_revert() public {
+        vm.startPrank(alice);
+        uint256 amount = 1000 ether;
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
+        staking.notifyDistribution(amount);
+    }
+
+    function test_recoverToken_tgld_staking() public {
+        uint256 amount = 100 ether;
+        deal(daiToken, address(staking), amount, true);
+
+        vm.startPrank(executor);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
+        staking.recoverToken(address(templeGold), alice, amount);
+
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
+        staking.recoverToken(address(templeToken), alice, amount);
+
+        vm.expectEmit();
+        emit CommonEventsAndErrors.TokenRecovered(alice, daiToken, amount);
+
+        staking.recoverToken(daiToken, alice, amount);
+        assertEq(IERC20(daiToken).balanceOf(alice), amount);
+        assertEq(IERC20(daiToken).balanceOf(address(staking)), 0);
     }
 
     function test_stake_tgldStaking() public {
@@ -313,6 +347,32 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         weight = 11 ether * t / (t + 1 days);
         assertGt(staking.getVoteweight(alice), 1 ether);
         assertApproxEqAbs(staking.getVoteweight(alice), weight, 3e15);
+
+        // stake all
+        vm.startPrank(alice);
+        uint256 aliceTempleBalance = templeToken.balanceOf(alice);
+        uint256 aliceStakedBalance = staking.balanceOf(alice);
+        staking.stakeAll();
+        assertEq(staking.balanceOf(alice), aliceStakedBalance + aliceTempleBalance);
+        assertEq(voteToken.balanceOf(alice), staking.balanceOf(alice));
+    }
+
+    function test_getReward_tgldStaking() public {
+        vm.warp(block.timestamp + 3 days);
+        templeGold.mint();
+        uint256 stakingBalance = templeGold.balanceOf(address(staking));
+        staking.distributeRewards();
+        
+        vm.startPrank(alice);
+        uint256 amount = 10 ether;
+        deal(address(templeToken), alice, 100 ether, true);
+        _approve(address(templeToken), address(staking), type(uint).max);
+        staking.stake(amount);
+
+        uint256 aliceTempleGoldBalance = templeGold.balanceOf(alice);
+        uint256 claimable = staking.earned(alice);
+        staking.getReward(alice);
+        assertEq(templeGold.balanceOf(alice), aliceTempleGoldBalance + claimable);
     }
 
     function test_withdraw_tgldStaking() public {
@@ -338,6 +398,8 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         assertEq(voteToken.balanceOf(alice), 0);
         assertEq(staking.totalSupply(), 0);
         assertEq(staking.getVoteweight(alice), 0);
+        ITempleGoldStaking.AccountWeightParams memory _weight = staking.getAccountWeights(alice);
+        assertEq(_weight.updateTime, block.timestamp);
     }
 
     function test_earned_getReward_tgldStaking() public {

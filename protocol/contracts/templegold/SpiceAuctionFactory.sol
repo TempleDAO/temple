@@ -38,6 +38,7 @@ contract SpiceAuctionFactory is ISpiceAuctionFactory, TempleElevatedAccess {
      */
     function createAuction(address spiceToken, string memory name) external override onlyElevatedAccess returns (address) {
         if (spiceToken == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
+        if (spiceToken == templeGold) { revert CommonEventsAndErrors.InvalidParam(); }
         SpiceAuction spiceAuction = new SpiceAuction(templeGold, spiceToken, daoExecutor, name);
         bytes32 pairId = _getPairHash(spiceToken);
         if (deployedAuctions[pairId] != address(0)) { revert PairExists(templeGold, spiceToken); }

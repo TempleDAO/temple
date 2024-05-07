@@ -12,6 +12,7 @@ import { ISpiceAuctionFactory } from "contracts/interfaces/templegold/ISpiceAuct
 contract SpiceAuctionFactoryTestBase is TempleGoldCommon {
     event AuctionCreated(bytes32 id, address auction);
 
+    address public fakeToken = makeAddr("fakeToken");
     SpiceAuctionFactory public factory;
     TempleGold public templeGold;
     
@@ -54,6 +55,9 @@ contract SpiceAuctionFactoryTest is SpiceAuctionFactoryTestBase {
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
         factory.createAuction(address(0), NAME_ONE);
 
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
+        factory.createAuction(address(templeGold), NAME_ONE);
+
         address auction = factory.createAuction(usdcToken, NAME_ONE);
         bytes32 id = factory.getPairId(usdcToken);
         assertEq(auction, factory.findAuctionForSpiceToken(usdcToken));
@@ -61,5 +65,21 @@ contract SpiceAuctionFactoryTest is SpiceAuctionFactoryTestBase {
 
         vm.expectRevert(abi.encodeWithSelector(ISpiceAuctionFactory.PairExists.selector, address(templeGold), usdcToken));
         factory.createAuction(usdcToken, NAME_ONE);
+    }
+
+    function test_getPairId() public {
+        vm.startPrank(executor);
+        address auction = factory.createAuction(usdcToken, NAME_ONE);
+        bytes32 id = factory.getPairId(usdcToken);
+        assertEq(auction, factory.findAuctionForSpiceToken(usdcToken));
+        assertEq(factory.deployedAuctions(id), auction);
+        
+        auction = factory.createAuction(daiToken, NAME_ONE);
+        id = factory.getPairId(daiToken);
+        assertEq(auction, factory.findAuctionForSpiceToken(daiToken));
+        assertEq(factory.deployedAuctions(id), auction);
+
+        // get id of token < templeGold. test coverage
+        id = factory.getPairId(fakeToken);
     }
 }

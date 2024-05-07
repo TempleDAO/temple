@@ -11,7 +11,6 @@ import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.s
 import { IStakedTempleVoteToken } from "contracts/interfaces/templegold/IStakedTempleVoteToken.sol";
 import { ITempleGoldStaking } from "contracts/interfaces/templegold/ITempleGoldStaking.sol";
 
-
 /** 
  * @title Staked Temple Vote Token
  * @notice Non-transferrable ERC20 token issued by Temple Gold Staking contract. 
@@ -32,7 +31,6 @@ contract StakedTempleVoteToken is IStakedTempleVoteToken, TempleElevatedAccess, 
         string memory _symbol
     ) ERC20(_name, _symbol) TempleElevatedAccess(_initialRescuer, _initialExecutor) {
         staking = _staking;
-        emit StakingSet(_staking);
     }
 
     /**  
@@ -161,8 +159,8 @@ contract StakedTempleVoteToken is IStakedTempleVoteToken, TempleElevatedAccess, 
      * @param dst Recipient
      * @param amount Amount
      */
-    function push(address dst, uint256 amount) external override{
-        transferFrom(msg.sender, dst, amount);
+    function push(address dst, uint256 amount) external override onlyAuthorized {
+        transfer(dst, amount);
     }
 
     /**  
@@ -170,7 +168,7 @@ contract StakedTempleVoteToken is IStakedTempleVoteToken, TempleElevatedAccess, 
      * @param src Source
      * @param amount Amount
      */
-    function pull(address src, uint256 amount) external override {
+    function pull(address src, uint256 amount) external override onlyAuthorized {
         transferFrom(src, msg.sender, amount);
     }
 
@@ -180,7 +178,7 @@ contract StakedTempleVoteToken is IStakedTempleVoteToken, TempleElevatedAccess, 
      * @param dst Destination
      * @param amount Amount
      */
-    function move(address src, address dst, uint256 amount) external override {
+    function move(address src, address dst, uint256 amount) external override onlyAuthorized {
         transferFrom(src, dst, amount);
     }
 

@@ -411,5 +411,8 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         spice.claim(epoch);
         assertEq(templeGold.balanceOf(alice), aliceTGoldBalance+aliceClaimAmount);
         assertEq(aliceClaimAmount, 100 ether * 20/50);
+
+        assertEq(spice.getClaimableAtCurrentTimestamp(alice, epoch), 0);
+        assertEq(spice.getClaimableAtCurrentTimestamp(alice, epoch+1), 0);
     }
 }

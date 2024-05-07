@@ -332,6 +332,10 @@ contract TempleGoldTest is TempleGoldTestBase {
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
         templeGold.setDistributionParams(_params);
 
+        _params.gnosis = share + 1;
+        vm.expectRevert(abi.encodeWithSelector(ITempleGold.InvalidTotalShare.selector));
+        templeGold.setDistributionParams(_params);
+
         _params.gnosis = share;
         vm.expectEmit(address(templeGold));
         emit DistributionParamsSet(_params.staking, _params.escrow, _params.gnosis);
@@ -348,6 +352,18 @@ contract TempleGoldTest is TempleGoldTestBase {
         templeGoldMainnet = _deployContractsOnMainnet();
         vm.expectRevert(abi.encodeWithSelector(ITempleGold.ArbitrumOnly.selector));
         templeGoldMainnet.mint();
+    }
+
+    function test_nontransferrable_tgld() public {
+        vm.startPrank(executor);
+        templeGold.authorizeContract(teamGnosis, false);
+        vm.warp(block.timestamp + 2 days);
+        templeGold.mint();
+        vm.startPrank(teamGnosis);
+        uint256 balance = templeGold.balanceOf(teamGnosis);
+        vm.expectRevert(abi.encodeWithSelector(ITempleGold.NonTransferrable.selector, teamGnosis, alice));
+        templeGold.transfer(alice, balance);
+
     }
 
     function test_mint_tgld() public {
@@ -388,6 +404,17 @@ contract TempleGoldTest is TempleGoldTestBase {
         assertEq(templeGold.balanceOf(address(staking)), stakingAmount);
         assertEq(templeGold.balanceOf(address(daiGoldAuction)), escrowAmount);
         assertEq(templeGold.balanceOf(teamGnosis), gnosisAmount);
+        // test mint amount = 0
+        vm.startPrank(executor);
+        ITempleGold.VestingFactor memory _factor = _getVestingFactor();
+        _factor.numerator = 99 ether;
+        _factor.denominator = 100 ether;
+        templeGold.setVestingFactor(_factor);
+        vm.warp(block.timestamp + 10 days);
+        templeGold.mint();
+        assertEq(templeGold.getMintAmount(), 0);
+        // test coverage mintAmount = 0
+        templeGold.mint();
     }
 
     function test_mint_max_supply_tgld() public {
@@ -418,5 +445,6 @@ contract TempleGoldTest is TempleGoldTestBase {
         assertEq(templeGold.totalSupply(), _totalSupply);
         templeGold.mint();
         assertEq(templeGold.totalSupply(), _totalSupply);
+        assertEq(templeGold.getMintAmount(), 0);
     }
 }

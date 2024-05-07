@@ -191,6 +191,53 @@ contract StakedTempleVoteTokenTest is StakedTempleVoteTokenTestBase {
         voteToken.unpause();
     }
 
+    function test_push_voteToken() public {
+        vm.startPrank(executor);
+        voteToken.setAuthorized(executor, true);
+        uint256 aliceBalance = voteToken.balanceOf(alice);
+        uint256 executorBalance = voteToken.balanceOf(executor);
+        voteToken.mint(executor, 5 ether);
+        voteToken.mint(alice, 5 ether);
+        assertEq(voteToken.balanceOf(executor), executorBalance + 5 ether);
+        assertEq(voteToken.balanceOf(alice), aliceBalance + 5 ether);
+
+        vm.startPrank(alice);
+        voteToken.approve(executor, type(uint).max);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
+        voteToken.push(bob, 1 ether);
+
+        vm.startPrank(executor);
+        aliceBalance = voteToken.balanceOf(alice);
+        executorBalance = voteToken.balanceOf(executor);
+        voteToken.push(alice, 1 ether);
+        assertEq(voteToken.balanceOf(alice), aliceBalance + 1 ether);
+        assertEq(voteToken.balanceOf(executor), executorBalance - 1 ether);
+        
+        vm.startPrank(alice);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
+        voteToken.pull(executor, 1 ether);
+
+        vm.startPrank(executor);
+        aliceBalance = voteToken.balanceOf(alice);
+        executorBalance = voteToken.balanceOf(executor);
+        voteToken.pull(alice, 1 ether);
+        assertEq(voteToken.balanceOf(alice), aliceBalance - 1 ether);
+        assertEq(voteToken.balanceOf(executor), executorBalance + 1 ether);
+
+        vm.startPrank(alice);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
+        voteToken.move(alice, bob, 1 ether);
+
+        aliceBalance = voteToken.balanceOf(alice);
+        executorBalance = voteToken.balanceOf(executor);
+        vm.startPrank(executor);
+        vm.expectRevert(abi.encodeWithSelector(IStakedTempleVoteToken.NonTransferrable.selector));
+        voteToken.move(alice, bob, 1 ether);
+        voteToken.move(alice, executor, 1 ether);
+        assertEq(voteToken.balanceOf(alice), aliceBalance - 1 ether);
+        assertEq(voteToken.balanceOf(executor), executorBalance + 1 ether);
+    }
+
     function test_getVoteweight_voteToken() public {
         /// @dev see TempleGoldStaking.t.sol
     }
