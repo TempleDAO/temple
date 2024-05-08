@@ -261,6 +261,8 @@ contract DaiGoldAuctionTestView is DaiGoldAuctionTestBase {
         _startAuction();
         vm.warp(block.timestamp + 6 days);
         assertEq(daiGoldAuction.isCurrentEpochEnded(), false);
+        vm.warp(block.timestamp + 1 days);
+        assertEq(daiGoldAuction.isCurrentEpochEnded(), true);
         vm.warp(block.timestamp + 1 days + 1 seconds);
         assertEq(daiGoldAuction.isCurrentEpochEnded(), true);
     }
@@ -345,7 +347,6 @@ contract DaiGoldAuctionTest is DaiGoldAuctionTestBase {
         daiGoldAuction.isCurrentEpochEnded();
         vm.expectRevert(abi.encodeWithSelector(IDaiGoldAuction.LowGoldDistributed.selector, 0));
         daiGoldAuction.startAuction();
-
     }
 
     function test_bid() public {
@@ -389,6 +390,18 @@ contract DaiGoldAuctionTest is DaiGoldAuctionTestBase {
         assertEq(daiGoldAuction.depositors(alice, currentEpoch), 50 ether);
         assertEq(epochInfo.totalBidTokenAmount, 150 ether);
         assertEq(bidToken.balanceOf(address(daiGoldAuction)), 150 ether);
+
+        // users can bid multiple times
+        vm.expectEmit(address(daiGoldAuction));
+        emit Deposit(alice, currentEpoch, 50 ether);
+        daiGoldAuction.bid(50 ether);
+
+        assertEq(daiGoldAuction.depositors(alice, currentEpoch), 100 ether);
+        assertEq(epochInfo.totalBidTokenAmount, 200 ether);
+        assertEq(bidToken.balanceOf(address(daiGoldAuction)), 200 ether);
+
+        // check claimable amount
+        assertEq(daiGoldAuction.getClaimableAtCurrentTimestamp(executor, currentEpoch), daiGoldAuction.getClaimableAtCurrentTimestamp(alice, currentEpoch));
 
         // bidToken amount = 0
         assertEq(daiGoldAuction.getClaimableAtCurrentTimestamp(unauthorizedUser, currentEpoch), 0);
@@ -437,6 +450,20 @@ contract DaiGoldAuctionTest is DaiGoldAuctionTestBase {
         vm.startPrank(executor);
         vm.expectEmit(address(daiGoldAuction));
         emit Claim(executor, currentEpoch, 100 ether, executorClaimable);
+        daiGoldAuction.claim(currentEpoch);
+
+        // check bid amount
+        uint aliceDeposit = daiGoldAuction.depositors(alice, currentEpoch);
+        uint executorDeposit = daiGoldAuction.depositors(executor, currentEpoch);
+        assertEq(aliceDeposit, 0);
+        assertEq(executorDeposit, 0);
+
+        // alice and exector can not claim again
+        vm.startPrank(alice);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
+        daiGoldAuction.claim(currentEpoch);
+        vm.startPrank(executor);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
         daiGoldAuction.claim(currentEpoch);
 
         uint256 aliceRewardBalanceAfter= templeGold.balanceOf(alice);

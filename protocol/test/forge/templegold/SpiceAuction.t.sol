@@ -197,6 +197,7 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         vm.expectRevert(abi.encodeWithSelector(ISpiceAuction.InvalidConfigOperation.selector));
         spice.removeAuctionConfig();
 
+        // complete current auction
         uint256 epoch = spice.currentEpoch();
         IAuctionBase.EpochInfo memory epochInfo = spice.getEpochInfo(epoch);
         vm.warp(epochInfo.endTime+1);
@@ -207,6 +208,12 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         vm.expectEmit(address(spice));
         emit AuctionConfigRemoved(epoch+1);
         spice.removeAuctionConfig();
+
+        // check epoch1 and epoch2 config - only epoch2 config should be removed
+        ISpiceAuction.SpiceAuctionConfig memory epoch1Config = spice.auctionConfigs(epoch);
+        assertEq(epoch1Config.duration, _config.duration);
+        ISpiceAuction.SpiceAuctionConfig memory epoch2Config = spice.auctionConfigs(epoch + 1);
+        assertEq(epoch1Config.duration, 0);
     }
 
     function test_startSpiceAuction() public {
@@ -414,5 +421,19 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
 
         assertEq(spice.getClaimableAtCurrentTimestamp(alice, epoch), 0);
         assertEq(spice.getClaimableAtCurrentTimestamp(alice, epoch+1), 0);
+
+        // check depositors state after claim
+        uint aliceDeposit = spice.depositors(alice, epoch);
+        uint bobDeposit = spice.depositors(alice, epoch);
+        assertEq(aliceDeposit, 0);
+        assertEq(bobDeposit, 0);
+
+        // alice and bob can not claim again
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
+        spice.claim(epoch);
+
+        vm.prank(bob);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
+        spice.claim(epoch);
     }
 }
