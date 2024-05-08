@@ -27,6 +27,7 @@ import { TlcChart } from './Chart';
 import env from 'constants/env';
 import { useConnectWallet } from '@web3-onboard/react';
 import Tooltip from 'components/Tooltip/Tooltip';
+import { estimateAndMine } from 'utils/ethers';
 
 export type State = {
   supplyValue: string;
@@ -300,9 +301,11 @@ export const BorrowPage = () => {
         env.contracts.tlc,
         amount
       );
-      // Add collateral
-      const tx = await tlcContract.addCollateral(amount, wallet);
-      const receipt = await tx.wait();
+
+      const populatedTransaction =
+        await tlcContract.populateTransaction.addCollateral(amount, wallet);
+      const receipt = await estimateAndMine(signer, populatedTransaction);
+
       openNotification({
         title: `Supplied ${state.supplyValue} TEMPLE`,
         hash: receipt.transactionHash,
@@ -329,10 +332,10 @@ export const BorrowPage = () => {
       getTokenInfo(state.inputToken).decimals
     );
     try {
-      const tx = await tlcContract.removeCollateral(amount, wallet, {
-        gasLimit: 160000,
-      });
-      const receipt = await tx.wait();
+      const populatedTransaction =
+        await tlcContract.populateTransaction.removeCollateral(amount, wallet);
+      const receipt = await estimateAndMine(signer, populatedTransaction);
+
       openNotification({
         title: `Withdrew ${state.withdrawValue} TEMPLE`,
         hash: receipt.transactionHash,
@@ -359,8 +362,12 @@ export const BorrowPage = () => {
       getTokenInfo(state.outputToken).decimals
     );
     try {
-      const tx = await tlcContract.borrow(amount, wallet, { gasLimit: 500000 });
-      const receipt = await tx.wait();
+      const populatedTransaction = await tlcContract.populateTransaction.borrow(
+        amount,
+        wallet
+      );
+      const receipt = await estimateAndMine(signer, populatedTransaction);
+
       openNotification({
         title: `Borrowed ${state.borrowValue} DAI`,
         hash: receipt.transactionHash,
@@ -395,9 +402,14 @@ export const BorrowPage = () => {
         env.contracts.tlc,
         amount
       );
-      // Repay DAI
-      const tx = await tlcContract.repay(amount, wallet, { gasLimit: 400000 });
-      const receipt = await tx.wait();
+
+      // Note Repay vs RepayAll
+      const populatedTransaction = await tlcContract.populateTransaction.repay(
+        amount,
+        wallet
+      );
+      const receipt = await estimateAndMine(signer, populatedTransaction);
+
       openNotification({
         title: `Repaid ${state.repayValue} DAI`,
         hash: receipt.transactionHash,
@@ -432,9 +444,12 @@ export const BorrowPage = () => {
         env.contracts.tlc,
         amount
       );
-      // Repay DAI
-      const tx = await tlcContract.repayAll(wallet, { gasLimit: 400000 });
-      const receipt = await tx.wait();
+
+      // Note RepayAll vs Repay
+      const populatedTransaction =
+        await tlcContract.populateTransaction.repayAll(wallet);
+      const receipt = await estimateAndMine(signer, populatedTransaction);
+
       openNotification({
         title: `Repaid ${
           accountPosition
