@@ -364,7 +364,7 @@ contract TempleGoldTest is TempleGoldTestBase {
     function test_mint_tgld_recipient_params_revert() public {
         vm.selectFork(arbitrumOneForkId);
         // minting when params and vesting factor not set
-        fork("arbitrum_one", ARBITRUM_ONE_BLOCKNUMBER_B);
+        fork("arbitrum_one");
 
         TempleGold _templeGold = new TempleGold(_getTempleGoldInitArgs());
         vm.startPrank(executor);
