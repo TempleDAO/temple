@@ -419,7 +419,6 @@ contract TempleGoldTest is TempleGoldTestBase {
 
     function test_mint_max_supply_tgld() public {
         templeGold.mint();
-        uint256 _amount = templeGold.getMintAmount();
         // set vesting factor high to speed max supply mint time
         vm.startPrank(executor);
         ITempleGold.VestingFactor memory _factor = _getVestingFactor();

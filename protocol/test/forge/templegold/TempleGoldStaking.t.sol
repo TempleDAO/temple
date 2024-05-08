@@ -1,6 +1,6 @@
-pragma solidity 0.8.20;
+pragma solidity ^0.8.20;
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// (tests/forge/templegold/StakedTempleVoteToken.t.sol)
+// (tests/forge/templegold/TempleGoldStaking.t.sol)
 
 
 import { TempleGoldCommon } from "./TempleGoldCommon.t.sol";
@@ -378,7 +378,6 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
     function test_getReward_tgldStaking() public {
         vm.warp(block.timestamp + 3 days);
         templeGold.mint();
-        uint256 stakingBalance = templeGold.balanceOf(address(staking));
         vm.warp(staking.lastRewardNotificationTimestamp() + staking.rewardDistributionCoolDown() + 1);
         staking.distributeRewards();
         

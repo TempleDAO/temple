@@ -50,13 +50,13 @@ contract TempleGoldCommon is TempleTest {
         initArgs.symbol = TEMPLE_GOLD_SYMBOL;
     }
 
-    function _getDistributionParameters() internal view returns (ITempleGold.DistributionParams memory _params) {
+    function _getDistributionParameters() internal pure returns (ITempleGold.DistributionParams memory _params) {
         _params.staking = 40 ether;
         _params.escrow = 50 ether;
         _params.gnosis = 10 ether;
     }
 
-    function _getVestingFactor() internal view returns (ITempleGold.VestingFactor memory _factor) {
+    function _getVestingFactor() internal pure returns (ITempleGold.VestingFactor memory _factor) {
         _factor.numerator = 10 ether;
         _factor.denominator = 100 ether;
     }

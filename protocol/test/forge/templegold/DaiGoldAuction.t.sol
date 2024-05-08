@@ -145,7 +145,7 @@ contract DaiGoldAuctionTestAccess is DaiGoldAuctionTestBase {
         daiGoldAuction.setAuctionStarter(unauthorizedUser);
     }
 
-    function test_access_setBidTokenFail(address caller) public {
+    function test_access_setBidTokenFail() public {
         vm.startPrank(unauthorizedUser);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         daiGoldAuction.setBidToken(address(templeGold));
