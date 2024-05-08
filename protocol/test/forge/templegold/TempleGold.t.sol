@@ -11,10 +11,7 @@ import { FakeERC20 } from "contracts/fakes/FakeERC20.sol";
 import { ITempleGold } from "contracts/interfaces/templegold/ITempleGold.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
-import { SendParam } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/interfaces/IOFT.sol";
-import { MessagingFee, MessagingReceipt } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/OAppSender.sol";
 import { OptionsBuilder } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/libs/OptionsBuilder.sol";
-import { Origin, ILayerZeroEndpointV2 } from "@layerzerolabs/lz-evm-protocol-v2/contracts/interfaces/ILayerZeroEndpointV2.sol";
 import { IERC20Errors } from "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
 
 contract TempleGoldTestBase is TempleGoldCommon {
@@ -43,8 +40,7 @@ contract TempleGoldTestBase is TempleGoldCommon {
     uint256 public mainnetForkId;
 
     function setUp() public {
-        fork("arbitrum_one", forkBlockNumber);
-        arbitrumOneForkId = forkId;
+        arbitrumOneForkId = fork("arbitrum_one");
 
         ITempleGold.InitArgs memory initArgs = _getTempleGoldInitArgs();
         templeGold = new TempleGold(initArgs);
@@ -94,8 +90,7 @@ contract TempleGoldTestBase is TempleGoldCommon {
     }
 
     function _deployContractsOnMainnet() internal returns (TempleGold){
-        fork("mainnet", mainnetForkBlockNumber);
-        mainnetForkId = forkId;
+        mainnetForkId = fork("mainnet");
         ITempleGold.InitArgs memory initArgs = _getTempleGoldInitArgs();
         initArgs.layerZeroEndpoint = layerZeroEndpointEthereum;
         templeGoldMainnet = new TempleGold(initArgs);
@@ -366,7 +361,7 @@ contract TempleGoldTest is TempleGoldTestBase {
 
     }
 
-    function test_mint_tgld() public {
+    function test_mint_tgld_recipient_params_revert() public {
         vm.selectFork(arbitrumOneForkId);
         // minting when params and vesting factor not set
         fork("arbitrum_one", ARBITRUM_ONE_BLOCKNUMBER_B);
@@ -383,7 +378,9 @@ contract TempleGoldTest is TempleGoldTestBase {
         // invalid receiver. staking and escrow not set
         vm.expectRevert(abi.encodeWithSelector(IERC20Errors.ERC20InvalidReceiver.selector, address(0)));
         _templeGold.mint();
+    }
 
+    function test_mint_tgld() public {
         vm.selectFork(arbitrumOneForkId);
         uint256 totalSupply = templeGold.totalSupply();
         uint256 mintAmount = templeGold.getMintAmount();
