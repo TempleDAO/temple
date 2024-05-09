@@ -5,6 +5,7 @@ interface Subgraphs {
   balancerV2: string;
   ramos: string;
   templeV2: string;
+  templeV2Balances: string;
 }
 
 interface Contracts {
