@@ -5,6 +5,12 @@ interface Subgraphs {
   balancerV2: string;
   ramos: string;
   templeV2: string;
+  // @dariox
+  // the v2 contracts don't provide the means to query external balances
+  // so when we have third party deposits we can't display them properly atm
+  // and I don't want to add the "external balances" code to the current subgraph
+  // because that data will be very volatile
+  // includes tokens priced in external
   templeV2Balances: string;
 }
 
