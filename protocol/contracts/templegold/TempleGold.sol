@@ -18,10 +18,13 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
 
 /**
  * @title Temple Gold 
- * @notice Temple Gold is a non-transferrable ERC20 token with LayerZero integration for cross-chain transfer.
- * Temple Gold can be only transferred to or from whitelisted addresses. On mint, Temple Gold is distributed between Staking, Auction and Gnosis Safe 
- * addresses using distribution share percentages set at `DistributionParams`. LayerZero's OFT token standard is modified to allow changing delegates
+ * @notice Temple Gold is a non-transferrable ERC20 token with LayerZero integration for cross-chain transfer for holders between chains.
+ * On mint, Temple Gold is distributed to DaiGoldAuction, Staking contracts and team multisig using distribution share parameters percentages set at `DistributionParams`. 
+ * Users can get Temple Gold by staking Temple for Temple Gold rewards on the staking contract.
+ * Holders can transfer their Temple Gold to same holder address across chains.
  * with the same elevated access from v2. 
+ * The intended owner of Temple Gold is the TempleGoldAdmin contract for admin functions. 
+ * This was done to avoid manually importing lz contracts and overriding `Ownable` with `TempleElevatedAccess`
  */
  contract TempleGold is ITempleGold, OFT {
     using OFTMsgCodec for bytes;
@@ -39,13 +42,11 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
     uint32 public override lastMintTimestamp;
 
     //// @notice Distribution as a percentage of 100
-    uint256 public constant DISTRIBUTION_MULTIPLIER = 100 ether;
-    /// @notice Minimum percentage of minted Temple Gold to distribute. 1 ether means 1%
-    uint256 public constant MINIMUM_DISTRIBUTION_SHARE = 1 ether;
+    uint256 public constant DISTRIBUTION_DIVISOR = 100 ether;
     /// @notice 1B max supply
     uint256 public constant MAX_SUPPLY = 1_000_000_000 ether; // 1B
     /// @notice Minimum Temple Gold minted per call to mint
-    uint256 public constant MINIMUM_MINT = 1_000;
+    uint256 public constant MINIMUM_MINT = 10_000 ether;
 
     /// @notice Mint chain id
     uint256 private immutable mintChainId;
@@ -112,12 +113,7 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
      * @param _params Distribution parameters
      */
     function setDistributionParams(DistributionParams calldata _params) external override onlyOwner {
-        if (_params.staking < MINIMUM_DISTRIBUTION_SHARE 
-            || _params.escrow < MINIMUM_DISTRIBUTION_SHARE 
-            || _params.gnosis < MINIMUM_DISTRIBUTION_SHARE) {
-                revert CommonEventsAndErrors.InvalidParam();
-            }
-        if (_params.staking + _params.gnosis + _params.escrow != DISTRIBUTION_MULTIPLIER) { revert ITempleGold.InvalidTotalShare(); }
+        if (_params.staking + _params.gnosis + _params.escrow != DISTRIBUTION_DIVISOR) { revert ITempleGold.InvalidTotalShare(); }
         distributionParams = _params;
         emit DistributionParamsSet(_params.staking, _params.escrow, _params.gnosis);
     }
@@ -142,11 +138,10 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
         VestingFactor memory vestingFactorCache = vestingFactor;
         DistributionParams storage distributionParamsCache = distributionParams;
         if (vestingFactorCache.numerator == 0 || distributionParamsCache.escrow == 0) { revert ITempleGold.MissingParameter(); }
-        /// @dev no op silently
-        if (!_canDistribute(vestingFactorCache)) { return; }
 
         uint256 mintAmount = _getMintAmount(vestingFactorCache);
-        if (mintAmount == 0) { return; }
+        /// @dev no op silently
+        if (!_canDistribute(mintAmount)) { return; }
 
         lastMintTimestamp = uint32(block.timestamp);
 
@@ -179,8 +174,12 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
         return mintAmount >= MINIMUM_MINT && totalSupply() < MAX_SUPPLY;
     }
 
+    function _canDistribute(uint256 mintAmount) private view returns (bool) {
+        return mintAmount >= MINIMUM_MINT && totalSupply() < MAX_SUPPLY;
+    }
+
     /**
-     * @notice Get circulating supply across chains
+     * @notice Get circulating supply on this chain
      * @return Circulating supply
      */
     function circulatingSupply() public override view returns (uint256) {
@@ -213,19 +212,19 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
     }
 
     function _distribute(DistributionParams storage params, uint256 mintAmount) private {
-        uint256 stakingAmount = TempleMath.mulDivRound(params.staking, mintAmount, DISTRIBUTION_MULTIPLIER, false);
+        uint256 stakingAmount = TempleMath.mulDivRound(params.staking, mintAmount, DISTRIBUTION_DIVISOR, false);
         if (stakingAmount > 0) {
             _mint(address(staking), stakingAmount);
             staking.notifyDistribution(stakingAmount);
         }
 
-        uint256 escrowAmount = TempleMath.mulDivRound(params.escrow, mintAmount, DISTRIBUTION_MULTIPLIER, false);
+        uint256 escrowAmount = TempleMath.mulDivRound(params.escrow, mintAmount, DISTRIBUTION_DIVISOR, false);
         if (escrowAmount > 0) {
             _mint(address(escrow), escrowAmount);
             escrow.notifyDistribution(escrowAmount);
         }
 
-        uint256 gnosisAmount = TempleMath.mulDivRound(params.gnosis, mintAmount, DISTRIBUTION_MULTIPLIER, false);
+        uint256 gnosisAmount = mintAmount - stakingAmount - escrowAmount;
         if (gnosisAmount > 0) {
             _mint(teamGnosis, gnosisAmount);
             /// @notice no requirement to notify gnosis because no action has to be taken
@@ -235,15 +234,19 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
     }
 
     function _getMintAmount(VestingFactor memory vestingFactorCache) private view returns (uint256 mintAmount) {
+        uint32 _lastMintTimestamp = lastMintTimestamp;
+        uint256 totalSupplyCache = totalSupply();
         /// @notice first time mint
-        if (lastMintTimestamp == 0) {
+        if (_lastMintTimestamp == 0) {
             mintAmount = TempleMath.mulDivRound(MAX_SUPPLY, vestingFactorCache.numerator, vestingFactorCache.denominator, false);
         } else {
-            mintAmount = TempleMath.mulDivRound((block.timestamp - lastMintTimestamp) * (MAX_SUPPLY - totalSupply()), vestingFactorCache.numerator, vestingFactorCache.denominator, false);
+            mintAmount = TempleMath.mulDivRound((block.timestamp - _lastMintTimestamp) * (MAX_SUPPLY - totalSupplyCache), vestingFactorCache.numerator, vestingFactorCache.denominator, false);
         }
-        uint256 totalSupplyCache = totalSupply();
+       
         if (totalSupplyCache + mintAmount > MAX_SUPPLY) {
-            mintAmount = MAX_SUPPLY - totalSupplyCache;
+            unchecked {
+                mintAmount = MAX_SUPPLY - totalSupplyCache;
+            }
         }
     }
 
@@ -263,6 +266,8 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
      *  - guid: The unique identifier for the sent message.
      *  - nonce: The nonce of the sent message.
      *  - fee: The LayerZero fee incurred for the message.
+     * @dev overriden to check user only transfers cross-chain
+     * Not using super.send() because virtual overwritten function is external and not internal/public
      */
     function send(
         SendParam calldata _sendParam,
@@ -271,7 +276,7 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
     ) external payable virtual override(IOFT, OFTCore) returns (MessagingReceipt memory msgReceipt, OFTReceipt memory oftReceipt) {
         /// cast bytes32 to address
         address _to = _sendParam.to.bytes32ToAddress();
-        /// @dev user can cross-chain transfer to either whitelisted or self
+        /// @dev user can cross-chain transfer to self
         if (msg.sender != _to) { revert ITempleGold.NonTransferrable(msg.sender, _to); }
 
         // @dev Applies the token transfers regarding this send() operation.
@@ -320,12 +325,13 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
         uint256 amountReceivedLD = _credit(toAddress, _toLD(_message.amountSD()), _origin.srcEid);
 
         /// @dev Disallow further execution on destination by ignoring composed message
+        if (_message.isComposed()) { revert CannotCompose(); }
 
         emit OFTReceived(_guid, _origin.srcEid, toAddress, amountReceivedLD);
     }
 
     modifier onlyArbitrum() {
-        if (block.chainid != mintChainId) { revert ArbitrumOnly(); }
+        if (block.chainid != mintChainId) { revert WrongChain(); }
         _;
     }
  }

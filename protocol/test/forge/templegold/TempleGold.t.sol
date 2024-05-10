@@ -310,28 +310,12 @@ contract TempleGoldTest is TempleGoldTestBase {
     function test_setDistributionParameters_tgld() public {
         vm.startPrank(executor);
         ITempleGold.DistributionParams memory _params = _getDistributionParameters();
-        uint256 share = _params.staking;
-        _params.staking = MINIMUM_DISTRIBUTION_SHARE - 1;
-        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
-        templeGold.setDistributionParams(_params);
 
-        _params.staking = share;
-        share = _params.escrow;
-        _params.escrow = MINIMUM_DISTRIBUTION_SHARE - 1;
-        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
-        templeGold.setDistributionParams(_params);
-
-        _params.escrow = share;
-        share = _params.gnosis;
-        _params.gnosis = MINIMUM_DISTRIBUTION_SHARE - 1;
-        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
-        templeGold.setDistributionParams(_params);
-
-        _params.gnosis = share + 1;
+        _params.gnosis = _params.gnosis + 1;
         vm.expectRevert(abi.encodeWithSelector(ITempleGold.InvalidTotalShare.selector));
         templeGold.setDistributionParams(_params);
 
-        _params.gnosis = share;
+        _params.gnosis = _params.gnosis - 1;
         vm.expectEmit(address(templeGold));
         emit DistributionParamsSet(_params.staking, _params.escrow, _params.gnosis);
         templeGold.setDistributionParams(_params);
@@ -345,7 +329,7 @@ contract TempleGoldTest is TempleGoldTestBase {
     function test_mint_tgld_revert() public {
         // cannot mint on different chain
         templeGoldMainnet = _deployContractsOnMainnet();
-        vm.expectRevert(abi.encodeWithSelector(ITempleGold.ArbitrumOnly.selector));
+        vm.expectRevert(abi.encodeWithSelector(ITempleGold.WrongChain.selector));
         templeGoldMainnet.mint();
     }
 

@@ -11,6 +11,7 @@ interface IAuctionBase {
     error CannotClaim(uint256 epochId);
     error CannotStartAuction();
     error InvalidEpoch();
+    error InvalidOperation();
 
     struct EpochInfo {
         /// @notice Start time for epoch

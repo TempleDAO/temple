@@ -26,7 +26,6 @@ interface ITempleGold is IOFT, IOAppCore, IOAppOptionsType3, IERC20 {
 
     /// @notice To avoid stack too deep in constructor
     struct InitArgs {
-        // address rescuer;
         address executor; // executor is also used as delegate in LayerZero Endpoint
         address staking;
         address escrow;
@@ -47,10 +46,10 @@ interface ITempleGold is IOFT, IOAppCore, IOAppOptionsType3, IERC20 {
     
     error InvalidTotalShare();
     error MissingParameter();
-    error InsufficientMintAmount(uint256 amount);
     error NonTransferrable(address from, address to);
     error MaxSupply();
-    error ArbitrumOnly();
+    error WrongChain();
+    error CannotCompose();
 
     /// @notice These addresses are mutable to allow change/upgrade.
     /// @notice Staking contract

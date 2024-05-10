@@ -89,6 +89,9 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
      *      distribute
       rewards for next 7 days
      * @param _starter Starter address
+     * @dev could be:
+     * - a bot (if set to non zero address) that checks requirements are met before starting auction
+     * - or anyone if set to zero address
      */
     function setDistributionStarter(address _starter) external onlyElevatedAccess {
         /// @notice Starter can be address zer0
@@ -145,7 +148,7 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
      * @notice Distributed TGLD rewards minted to this contract to stakers
      * @dev This starts another 7-day rewards distribution. Calculates new `rewardRate` from any left over rewards up until now
      */
-    function distributeRewards() external {
+    function distributeRewards() updateReward(address(0)) external {
         if (distributionStarter != address(0) && msg.sender != distributionStarter) { revert CommonEventsAndErrors.InvalidAccess(); }
         // Mint and distribute TGLD if no cooldown set
         if (lastRewardNotificationTimestamp > 0 && 
@@ -164,14 +167,6 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
      */
     function stake(uint256 amount) external override {
         stakeFor(msg.sender, amount);
-    }
-
-    /**
-     * @notice Stake all balance of staker
-     */
-    function stakeAll() external override {
-        uint256 balance = stakingToken.balanceOf(msg.sender);
-        stakeFor(msg.sender, balance);
     }
 
     /**
@@ -276,7 +271,7 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
      * @notice Get vote weight of an account
      * @param account Account
      */
-    function getVoteweight(address account) external view returns (uint256) {
+    function getVoteWeight(address account) external view returns (uint256) {
         return _voteWeight(account);
     }
 
@@ -390,18 +385,16 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     }
 
     function _notifyReward(uint256 amount) private {
-        Reward storage rdata = rewardData;
-
-        if (block.timestamp >= rdata.periodFinish) {
-            rdata.rewardRate = uint216(amount / REWARD_DURATION);
+        if (block.timestamp >= rewardData.periodFinish) {
+            rewardData.rewardRate = uint216(amount / REWARD_DURATION);
         } else {
-            uint256 remaining = uint256(rdata.periodFinish) - block.timestamp;
-            uint256 leftover = remaining * rdata.rewardRate;
-            rdata.rewardRate = uint216((amount + leftover) / REWARD_DURATION);
+            uint256 remaining = uint256(rewardData.periodFinish) - block.timestamp;
+            uint256 leftover = remaining * rewardData.rewardRate;
+            rewardData.rewardRate = uint216((amount + leftover) / REWARD_DURATION);
         }
 
-        rdata.lastUpdateTime = uint40(block.timestamp);
-        rdata.periodFinish = uint40(block.timestamp + REWARD_DURATION);
+        rewardData.lastUpdateTime = uint40(block.timestamp);
+        rewardData.periodFinish = uint40(block.timestamp + REWARD_DURATION);
     }
 
     function _lastTimeRewardApplicable(uint256 _finishTime) internal view returns (uint256) {
@@ -435,11 +428,8 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
 
     function _updateAccountWeight(address _account, uint256 _prevBalance, uint256 _newBalance, bool _increment) private {
         uint256 currentWeek = block.timestamp / WEEK_LENGTH;
-        uint256 week = 0;
-        uint256 t = 0;
-        uint256 updated = 0;
         AccountWeightParams storage weight = _weights[_account];
-        (week, t, updated) = _unpackWeight(_account);
+        (uint256 week, uint256 t, uint256 updated) = _unpackWeight(_account);
         uint256 _lastShares = _prevBalance;
         if (week > 0 && currentWeek > week) {
             _prevWeights[_account] = weight;

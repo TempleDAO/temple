@@ -5,19 +5,19 @@ pragma solidity ^0.8.20;
 
 import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
 import { ITempleGold } from "contracts/interfaces/templegold/ITempleGold.sol";
-import { ITempleGoldProxy, IOFTCore } from "contracts/interfaces/templegold/ITempleGoldProxy.sol";
+import { ITempleGoldAdmin, IOFTCore } from "contracts/interfaces/templegold/ITempleGoldAdmin.sol";
 import { IOAppOptionsType3, EnforcedOptionParam } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/interfaces/IOAppOptionsType3.sol";
 import { IOAppCore } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/interfaces/IOAppCore.sol";
 import { IOAppPreCrimeSimulator } from "@layerzerolabs/lz-evm-oapp-v2/contracts/precrime/interfaces/IOAppPreCrimeSimulator.sol";
 
 
 /**
- * @title Temple Gold Proxy
- * @notice Temple Gold Proxy is a proxy to Temple Gold contract. 
+ * @title Temple Gold Admin
+ * @notice Temple Gold Admin is a proxy to Temple Gold contract. 
  * From the setup of layerzero, `Ownable` is used for admin executions. 
  * Avoids a manual import to change `Ownable` to `ElevatedAccess` by using a proxy for admin executions
  */
-contract TempleGoldProxy is ITempleGoldProxy, TempleElevatedAccess {
+contract TempleGoldAdmin is ITempleGoldAdmin, TempleElevatedAccess {
     /// @notice Temple Gold
     ITempleGold public immutable override templeGold;
     

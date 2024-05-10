@@ -66,7 +66,7 @@ contract TempleTeleporterTest is TestHelperOz5 {
     function test_teleport() public {
         uint256 tokensToSend = 1 ether;
         bytes memory options = OptionsBuilder.newOptions().addExecutorLzReceiveOption(200000, 0);
-        MessagingFee memory fee = aTT.quote(bEid, abi.encode(userB, tokensToSend), options, false);
+        MessagingFee memory fee = aTT.quote(bEid, abi.encode(userB, tokensToSend), options);
         vm.startPrank(userA);
         aTemple.approve(address(aTT), type(uint).max);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
@@ -82,7 +82,7 @@ contract TempleTeleporterTest is TestHelperOz5 {
         assertEq(aTemple.balanceOf(userA), initialBalance - tokensToSend);
 
         // using quoteRaw gives same fee
-        MessagingFee memory feeRaw = aTT.quote(bEid, userB, tokensToSend, options, false);
+        MessagingFee memory feeRaw = aTT.quote(bEid, userB, tokensToSend, options);
         assertEq(feeRaw.lzTokenFee, fee.lzTokenFee);
         assertApproxEqAbs(feeRaw.nativeFee, fee.nativeFee, 20);
 

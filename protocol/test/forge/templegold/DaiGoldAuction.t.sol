@@ -30,7 +30,6 @@ contract DaiGoldAuctionTestBase is TempleGoldCommon {
     uint192 public constant AUCTION_MIN_DISTRIBUTED_GOLD_ONE = 1_000;
     
     address public templeToken = 0x470EBf5f030Ed85Fc1ed4C2d36B9DD02e77CF1b7;
-    // address public arbDaiWhale = 0xEa55D6319B04b4B6Ce8d03F3db84e432219eFCaA;
     
     TempleGold public templeGold;
     IERC20 public bidToken;
@@ -194,8 +193,11 @@ contract DaiGoldAuctionTestSetters is DaiGoldAuctionTestBase {
         assertEq(config.auctionsTimeDiff, 1);
         assertEq(config.auctionStartCooldown, 100);
         assertEq(config.auctionMinimumDistributedGold, 1000);
-        
-        vm.stopPrank();
+
+        // auction started
+        _startAuction();
+        vm.expectRevert(abi.encodeWithSelector(IAuctionBase.InvalidOperation.selector));
+        daiGoldAuction.setBidToken(alice);
     }
 
     function test_setAuctionStarter() public {
@@ -209,6 +211,11 @@ contract DaiGoldAuctionTestSetters is DaiGoldAuctionTestBase {
         daiGoldAuction.setAuctionStarter(alice);
 
         assertEq(daiGoldAuction.auctionStarter(), alice);
+
+        // auction started
+        _startAuction();
+        vm.expectRevert(abi.encodeWithSelector(IAuctionBase.InvalidOperation.selector));
+        daiGoldAuction.setBidToken(alice);
     }
 
      function test_setBidToken() public {
@@ -219,6 +226,11 @@ contract DaiGoldAuctionTestSetters is DaiGoldAuctionTestBase {
         daiGoldAuction.setBidToken(usdcToken);
 
         assertEq(address(daiGoldAuction.bidToken()), usdcToken);
+
+        // auction started
+        _startAuction();
+        vm.expectRevert(abi.encodeWithSelector(IAuctionBase.InvalidOperation.selector));
+        daiGoldAuction.setBidToken(alice);
     }
 }
 

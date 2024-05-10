@@ -64,6 +64,7 @@ contract DaiGoldAuction is IDaiGoldAuction, AuctionBase, TempleElevatedAccess {
                 || _config.auctionMinimumDistributedGold == 0
                 || _config.auctionsTimeDiff == 0) 
             { revert CommonEventsAndErrors.ExpectedNonZero(); }
+        if (!_isCurrentEpochEnded()) { revert InvalidOperation(); }
         auctionConfig = _config;
 
         emit AuctionConfigSet(_currentEpochId, _config);
@@ -75,7 +76,8 @@ contract DaiGoldAuction is IDaiGoldAuction, AuctionBase, TempleElevatedAccess {
      */
     function setAuctionStarter(address _starter) external override onlyElevatedAccess {
         /// @notice No zero address checks. Zero address is a valid input
-        auctionStarter = _starter; 
+        auctionStarter = _starter;
+        if (!_isCurrentEpochEnded()) { revert InvalidOperation(); }
         emit AuctionStarterSet(_starter);
     }
 
@@ -85,6 +87,7 @@ contract DaiGoldAuction is IDaiGoldAuction, AuctionBase, TempleElevatedAccess {
      */
     function setBidToken(address _bidToken) external override onlyElevatedAccess {
         if (_bidToken == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
+        if (!_isCurrentEpochEnded()) { revert InvalidOperation(); }
         bidToken = IERC20(_bidToken);
         emit BidTokenSet(_bidToken);
     }

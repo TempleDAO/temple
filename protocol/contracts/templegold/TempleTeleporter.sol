@@ -28,6 +28,8 @@ contract TempleTeleporter is ITempleTeleporter, OApp {
 
     /**
      * @notice Teleport temple tokens cross chain
+     * Enough msg.value needs to be sent through to cover completing execution and the transfer by endpoint and on the destination chain. 
+     * This value can be estimated via the `quote()` function.
      * @dev Temple tokens are burned from source chain and minted on destination chain
      * @param dstEid Destination chain id
      * @param to Recipient
@@ -52,11 +54,10 @@ contract TempleTeleporter is ITempleTeleporter, OApp {
     }
 
     /**
-     * @dev Internal function to interact with the LayerZero EndpointV2.quote() for fee calculation.
+     * @dev External function to interact with the LayerZero EndpointV2.quote() for fee calculation.
      * @param _dstEid The destination endpoint ID.
      * @param _message The message payload.
      * @param _options Additional options for the message.
-     * @param _payInLzToken Flag indicating whether to pay the fee in LZ tokens.
      * @return fee The calculated MessagingFee for the message.
      *      - nativeFee: The native fee for the message.
      *      - lzTokenFee: The LZ token fee for the message.
@@ -64,19 +65,17 @@ contract TempleTeleporter is ITempleTeleporter, OApp {
     function quote(
         uint32 _dstEid,
         bytes memory _message,
-        bytes memory _options,
-        bool _payInLzToken
+        bytes memory _options
     ) external view returns (MessagingFee memory fee) {
-        return _quote(_dstEid, _message, _options, _payInLzToken);
+        return _quote(_dstEid, _message, _options, false);
     }
 
     /**
-     * @dev Internal function to interact with the LayerZero EndpointV2.quote() for fee calculation.
+     * @dev External function to interact with the LayerZero EndpointV2.quote() for fee calculation.
      * @param _dstEid The destination endpoint ID.
      * @param _to Recipient
      * @param _amount Amount to send
      * @param _options Additional options for the message.
-     * @param _payInLzToken Flag indicating whether to pay the fee in LZ tokens.
      * @return fee The calculated MessagingFee for the message.
      *      - nativeFee: The native fee for the message.
      *      - lzTokenFee: The LZ token fee for the message.
@@ -85,10 +84,9 @@ contract TempleTeleporter is ITempleTeleporter, OApp {
         uint32 _dstEid,
         address _to,
         uint256 _amount,
-        bytes memory _options,
-        bool _payInLzToken
+        bytes memory _options
     ) external view returns (MessagingFee memory fee) {
-        return _quote(_dstEid, abi.encodePacked(_to, _amount), _options, _payInLzToken);
+        return _quote(_dstEid, abi.encodePacked(_to, _amount), _options, false);
     }
 
     /// @dev Called when data is received from the protocol. It overrides the equivalent function in the parent contract.

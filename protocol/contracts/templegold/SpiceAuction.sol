@@ -32,7 +32,7 @@ contract SpiceAuction is ISpiceAuction, AuctionBase {
     address public immutable override daoExecutor;
 
     /// @notice Auctions run for minimum 1 week
-    uint32 public constant MINIMUM_AUCTION_PERIOD = 604_800;
+    uint32 public constant MINIMUM_AUCTION_PERIOD = 1 weeks;
     /// @notice Name of this Spice Bazaar auction
     string public override name;
 

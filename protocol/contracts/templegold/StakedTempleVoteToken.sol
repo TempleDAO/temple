@@ -136,8 +136,8 @@ contract StakedTempleVoteToken is IStakedTempleVoteToken, TempleElevatedAccess, 
      * @notice Get vote weight of an account
      * @param account Account
      */
-    function getVoteweight(address account) external override view returns (uint256) {
-        return ITempleGoldStaking(staking).getVoteweight(account);
+    function getVoteWeight(address account) external override view returns (uint256) {
+        return ITempleGoldStaking(staking).getVoteWeight(account);
     }
 
     /**  

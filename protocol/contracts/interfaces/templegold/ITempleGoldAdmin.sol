@@ -1,6 +1,6 @@
 pragma solidity ^0.8.20;
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Temple (interfaces/templegold/ITempleGoldProxy.sol)
+// Temple (interfaces/templegold/ITempleGoldAdmin.sol)
 
 
 import { EnforcedOptionParam } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/interfaces/IOAppOptionsType3.sol";
@@ -16,13 +16,13 @@ interface IOFTCore {
      */
     function setMsgInspector(address _msgInspector) external;
 }
-interface ITempleGoldProxy {
+interface ITempleGoldAdmin {
     /// @notice Temple Gold
     function templeGold() external view returns (ITempleGold);
     
     /**
-     * @notice Set staking proxy contract address
-     * @param _staking Staking proxy contract
+     * @notice Set staking contract address
+     * @param _staking Staking contract
      */
     function setStaking(address _staking) external;
 

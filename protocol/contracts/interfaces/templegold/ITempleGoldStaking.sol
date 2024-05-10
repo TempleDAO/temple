@@ -6,7 +6,6 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IStakedTempleVoteToken} from "contracts/interfaces/templegold/IStakedTempleVoteToken.sol";
 
 interface ITempleGoldStaking {
-    event StakingProxySet(address stakingProxy);
     event GoldDistributionNotified(uint256 amount, uint256 timestamp);
     event Staked(address indexed staker, uint256 amount);
     event RewardPaid(address indexed staker, address toAddress, uint256 reward);
@@ -16,7 +15,6 @@ interface ITempleGoldStaking {
     event DistributionStarterSet(address indexed starter);
     event HalfTimeSet(uint256 halfTime);
 
-    error OnlyStakingProxy();
     error CannotDistribute();
 
     struct Reward {
@@ -81,11 +79,6 @@ interface ITempleGoldStaking {
      * @param amount Amount of staking token
      */
     function stake(uint256 amount) external;
-
-    /**
-     * @notice Stake all balance of staker
-     */
-    function stakeAll() external;
 
     /**
      * @notice Stake for account when contract is not paused.
@@ -182,7 +175,7 @@ interface ITempleGoldStaking {
      * @notice Get vote weight of an account
      * @param account Account
      */
-    function getVoteweight(address account) external view returns (uint256);
+    function getVoteWeight(address account) external view returns (uint256);
 
     /**  
      * @notice Get reward data

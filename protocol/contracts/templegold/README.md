@@ -11,12 +11,12 @@ Minting is only done on the source chain Arbitrum One.
 
 
 ## Staking
-Templars stake Temple tokens for Temple Gold rewards. An IOU is issued to stakers at an equal amount of staked Temple amount at a 1:1 ratio. The IOU token is `StakedVoteToken`. This token can be locked and used for participation in governance voting. Stakers can also delegate their votes to deleagates using the `VoteDelegate` contract.
+Templars stake Temple tokens for Temple Gold rewards. An IOU is issued to stakers at an equal amount of staked Temple amount at a 1:1 ratio. The IOU token is `StakedTempleVoteToken`, which is NonTransferrable. This token can be locked and used for participation in governance voting. Stakers can also delegate their votes to deleagates using the `VoteDelegate` contract. All governance contracts except for `StakedTempleVoteToken` can be found in the [governance](https://github.com/TempleDAO/temple-gov) repo.
 
 ## Auctions
 
 ### DaiGold Auctions
-In DaiGold auctions, anyone can bid DAI in exchange for Temple Gold. This Temple Gold tokens are distributed prior to auction starting. Tokens distributed for the epoch are distributed after auction per Dai token deposited.
+In DaiGold auctions, anyone can bid DAI in exchange for Temple Gold when an auction is active. These Temple Gold tokens available for each auction are sent to `DaiGoldAuction` contract prior to auction starting. `TempleGold.mint()` distributes TGOLD tokens on mint to DaiGoldAuction, Staking contracts and team multisig using distribution share parameters percentages set at `DistributionParams`. Temple Gold reward tokens for each auction are shared amongst DAI bidders/depositors after the auction has ended. DAI depositors can claim their share of the TGOLD rewards after auction and also retroactively.
 
 ### Spice Auctions
 In a spice auction, a volatile token is bid for Temple Gold or vice versa.

@@ -27,11 +27,10 @@ interface ITempleTeleporter {
     ) external payable returns(MessagingReceipt memory receipt);
 
     /**
-     * @dev Internal function to interact with the LayerZero EndpointV2.quote() for fee calculation.
+     * @dev External function to interact with the LayerZero EndpointV2.quote() for fee calculation.
      * @param _dstEid The destination endpoint ID.
      * @param _message The message payload.
      * @param _options Additional options for the message.
-     * @param _payInLzToken Flag indicating whether to pay the fee in LZ tokens.
      * @return fee The calculated MessagingFee for the message.
      *      - nativeFee: The native fee for the message.
      *      - lzTokenFee: The LZ token fee for the message.
@@ -39,17 +38,15 @@ interface ITempleTeleporter {
     function quote(
         uint32 _dstEid,
         bytes memory _message,
-        bytes memory _options,
-        bool _payInLzToken
+        bytes memory _options
     ) external view returns (MessagingFee memory fee);
 
     /**
-     * @dev Internal function to interact with the LayerZero EndpointV2.quote() for fee calculation.
+     * @dev External function to interact with the LayerZero EndpointV2.quote() for fee calculation.
      * @param _dstEid The destination endpoint ID.
      * @param _to Recipient
      * @param _amount Amount to send
      * @param _options Additional options for the message.
-     * @param _payInLzToken Flag indicating whether to pay the fee in LZ tokens.
      * @return fee The calculated MessagingFee for the message.
      *      - nativeFee: The native fee for the message.
      *      - lzTokenFee: The LZ token fee for the message.
@@ -58,7 +55,6 @@ interface ITempleTeleporter {
         uint32 _dstEid,
         address _to,
         uint256 _amount,
-        bytes memory _options,
-        bool _payInLzToken
+        bytes memory _options
     ) external view returns (MessagingFee memory fee);
 }

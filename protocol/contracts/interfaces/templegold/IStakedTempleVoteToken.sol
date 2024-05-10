@@ -62,7 +62,7 @@ interface IStakedTempleVoteToken is IERC20 {
      * @notice Get vote weight of an account
      * @param account Account
      */
-    function getVoteweight(address account) external view returns (uint256);
+    function getVoteWeight(address account) external view returns (uint256);
 
     /**  
      * @notice Pause contract

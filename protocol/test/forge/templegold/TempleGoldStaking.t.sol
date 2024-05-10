@@ -13,6 +13,7 @@ import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.so
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { DaiGoldAuction } from "contracts/templegold/DaiGoldAuction.sol";
 import { ITempleGoldStaking } from "contracts/interfaces/templegold/ITempleGoldStaking.sol";
+import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
 
 contract TempleGoldStakingTestBase is TempleGoldCommon {
     event Paused(address account);
@@ -346,14 +347,20 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         uint256 t = ts / 7 days * 7 days;
         uint256 weight = 1 ether * t / (t + 1 days);
         /// @dev Vote weights are always evaluated at the end of last week
-        assertLt(staking.getVoteweight(alice), 1 ether);
-        assertEq(staking.getVoteweight(alice), weight);
+        assertLt(staking.getVoteWeight(alice), 1 ether);
+        assertEq(staking.getVoteWeight(alice), weight);
         /// @dev see test_getVoteWeight_tgldStaking for more tests on vote weight
 
         // can stake for others
         vm.startPrank(bob);
         deal(address(templeToken), bob, 100 ether, true);
         _approve(address(templeToken), address(staking), type(uint).max);
+        vm.startPrank(executor);
+        staking.pause();
+        vm.expectRevert(abi.encodeWithSelector(Pausable.EnforcedPause.selector));
+        staking.stakeFor(alice, 10 ether);
+        staking.unpause();
+        vm.startPrank(bob);
         vm.expectEmit(address(staking));
         emit Staked(alice, 10 ether);
         vm.expectEmit(address(voteToken));
@@ -363,16 +370,8 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         assertEq(voteToken.balanceOf(alice), 11 ether);
         t += block.timestamp / 7 days * 7 days;
         weight = 11 ether * t / (t + 1 days);
-        assertGt(staking.getVoteweight(alice), 1 ether);
-        assertApproxEqAbs(staking.getVoteweight(alice), weight, 3e15);
-
-        // stake all
-        vm.startPrank(alice);
-        uint256 aliceTempleBalance = templeToken.balanceOf(alice);
-        uint256 aliceStakedBalance = staking.balanceOf(alice);
-        staking.stakeAll();
-        assertEq(staking.balanceOf(alice), aliceStakedBalance + aliceTempleBalance);
-        assertEq(voteToken.balanceOf(alice), staking.balanceOf(alice));
+        assertGt(staking.getVoteWeight(alice), 1 ether);
+        assertApproxEqAbs(staking.getVoteWeight(alice), weight, 3e15);
     }
 
     function test_getReward_tgldStaking() public {
@@ -415,7 +414,7 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         assertEq(templeToken.balanceOf(alice), 1000 ether);
         assertEq(voteToken.balanceOf(alice), 0);
         assertEq(staking.totalSupply(), 0);
-        assertEq(staking.getVoteweight(alice), 0);
+        assertEq(staking.getVoteWeight(alice), 0);
         ITempleGoldStaking.AccountWeightParams memory _weight = staking.getAccountWeights(alice);
         assertEq(_weight.updateTime, block.timestamp);
     }
@@ -500,17 +499,17 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         staking.stake(amount);
         ts += 2 * half_time;
         vm.warp(ts);
-        assertEq(staking.getVoteweight(alice), amount / 2);
+        assertEq(staking.getVoteWeight(alice), amount / 2);
 
         // voting power doesnt change during the week
         ts += half_time;
         vm.warp(ts);
-        assertEq(staking.getVoteweight(alice), amount / 2);
+        assertEq(staking.getVoteWeight(alice), amount / 2);
 
         // but is increased the week after, `t = half_time+week = 5*half_time`
         ts += WEEK_LENGTH;
         vm.warp(ts);
-        assertEq(staking.getVoteweight(alice), amount * 5 / 6);
+        assertEq(staking.getVoteWeight(alice), amount * 5 / 6);
     }
 
     function test_vote_weight_multistake() public {
@@ -538,9 +537,9 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         _approve(address(templeToken), address(staking), type(uint).max);
         staking.stake(2 * amount);
         vm.warp(ts + WEEK_LENGTH);
-        uint256 lowVoteWeight = staking.getVoteweight(alice);
+        uint256 lowVoteWeight = staking.getVoteWeight(alice);
 
-        uint256 highVoteWeight = staking.getVoteweight(bob);
+        uint256 highVoteWeight = staking.getVoteWeight(bob);
 
         // unauthorizedUser stakes second time middle of the week
         vm.warp(ts + WEEK_LENGTH / 2);
@@ -548,7 +547,7 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         staking.stake(amount);
 
         vm.warp(ts + WEEK_LENGTH);
-        uint256 midVoteWeight = staking.getVoteweight(unauthorizedUser);
+        uint256 midVoteWeight = staking.getVoteWeight(unauthorizedUser);
         assertLt(lowVoteWeight, midVoteWeight);
         assertLt(lowVoteWeight, highVoteWeight);
     }
