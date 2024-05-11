@@ -6,7 +6,6 @@ import { TempleGoldCommon } from "./TempleGoldCommon.t.sol";
 import { DaiGoldAuction } from "contracts/templegold/DaiGoldAuction.sol";
 import { TempleGold } from "contracts/templegold/TempleGold.sol";
 import { TempleGoldStaking } from "contracts/templegold/TempleGoldStaking.sol";
-import { StakedTempleVoteToken } from "contracts/templegold/StakedTempleVoteToken.sol";
 import { FakeERC20 } from "contracts/fakes/FakeERC20.sol";
 import { ITempleGold } from "contracts/interfaces/templegold/ITempleGold.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
@@ -31,7 +30,6 @@ contract TempleGoldTestBase is TempleGoldCommon {
     TempleGold public templeGold;
     TempleGold public templeGoldMainnet;
     FakeERC20 public templeToken;
-    StakedTempleVoteToken public voteToken;
 
     uint256 public constant MINIMUM_DISTRIBUTION_SHARE = 1 ether;
     uint256 public constant ARBITRUM_ONE_BLOCKNUMBER_B = 207201713;
@@ -45,8 +43,7 @@ contract TempleGoldTestBase is TempleGoldCommon {
         ITempleGold.InitArgs memory initArgs = _getTempleGoldInitArgs();
         templeGold = new TempleGold(initArgs);
         templeToken = new FakeERC20("Temple Token", "TEMPLE", executor, 1000 ether);
-        voteToken = new StakedTempleVoteToken(rescuer, executor,address(0), VOTE_TOKEN_NAME, VOTE_TOKEN_SYMBOL);
-        staking = new TempleGoldStaking(rescuer, executor, address(templeToken), address(templeGold), address(voteToken));
+        staking = new TempleGoldStaking(rescuer, executor, address(templeToken), address(templeGold));
         daiGoldAuction = new DaiGoldAuction(
             address(templeGold),
             daiToken,
@@ -55,8 +52,6 @@ contract TempleGoldTestBase is TempleGoldCommon {
             executor
         );
         vm.startPrank(executor);
-        voteToken.setStaking(address(staking));
-        voteToken.setAuthorized(address(staking), true);
         templeGold.setEscrow(address(daiGoldAuction)); 
         _configureTempleGold();
         vm.deal(alice, 100 ether);

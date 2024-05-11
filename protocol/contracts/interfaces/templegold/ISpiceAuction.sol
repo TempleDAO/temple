@@ -6,6 +6,7 @@ import { IAuctionBase } from "contracts/interfaces/templegold/IAuctionBase.sol";
 interface ISpiceAuction is IAuctionBase {
     event AuctionConfigSet(uint256 epoch, SpiceAuctionConfig config);
     event AuctionConfigRemoved(uint256 epochId);
+    event DaoExecutorSet(address daoExecutor);
 
     error InvalidConfigOperation();
     error NotEnoughAuctionTokens();
@@ -75,10 +76,16 @@ interface ISpiceAuction is IAuctionBase {
 
     /**
      * @notice Get claimable amount for an epoch
-     * @dev For current epoch, function will return claimable at current time. This can change with more user deposits
+     * @dev function will return claimable for epoch. This can change with more user deposits
      * @param depositor Address to check amount for
      * @param epochId Epoch id
      * @return Claimable amount
      */
-    function getClaimableAtCurrentTimestamp(address depositor, uint256 epochId) external view returns (uint256);
+    function getClaimableForEpoch(address depositor, uint256 epochId) external view returns (uint256);
+
+    /**
+     * @notice Set DAO executor for DAO actions
+     * @param _daoExecutor New dao executor
+     */
+    function setDaoExecutor(address _daoExecutor) external;
 }

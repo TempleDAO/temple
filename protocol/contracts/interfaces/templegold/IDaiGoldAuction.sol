@@ -28,7 +28,7 @@ interface IDaiGoldAuction is IAuctionBase {
     /// @notice Token to bid for Temple GOLD
     function bidToken() external view returns (IERC20);
 
-    /// @notice Destination address for proceeds of fire ritual
+    /// @notice Destination address for proceeds of auctions
     function treasury() external view returns (address);
 
     /// @notice Address that can trigger start of auction. address(0) means anyone
@@ -36,9 +36,6 @@ interface IDaiGoldAuction is IAuctionBase {
 
     /// @notice Keep track of next epoch auction Temple Gold amount
     function nextAuctionGoldAmount() external view returns (uint256);
-    
-    /// @notice Timestamp for last reward notification
-    function lastRewardNotificationTimestamp() external view returns (uint96);
 
     /**
      * @notice Get auction configuration
@@ -101,13 +98,13 @@ interface IDaiGoldAuction is IAuctionBase {
      */
     function distributeGold() external;
 
-     /**
-     * @notice Get claimable amount for an epoch
+    /**
+     * @notice Get claimable amount for current epoch
      * @dev For current epoch, function will return claimable at current time. This can change with more user deposits
      * @param depositor Address to check amount for
      * @return Claimable amount
      */
-    function getClaimbaleAtCurrentTimestamp(address depositor) external view returns (uint256);
+    function getClaimableAtCurrentEpoch(address depositor) external view returns (uint256);
 
     /**
      * @notice Get claimable amount for an epoch
@@ -116,5 +113,5 @@ interface IDaiGoldAuction is IAuctionBase {
      * @param epochId Epoch id
      * @return Claimable amount
      */
-    function getClaimableAtCurrentTimestamp(address depositor, uint256 epochId) external view returns (uint256);
+    function getClaimableAtEpoch(address depositor, uint256 epochId) external view returns (uint256);
 }

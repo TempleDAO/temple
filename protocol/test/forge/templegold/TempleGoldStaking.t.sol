@@ -4,7 +4,6 @@ pragma solidity ^0.8.20;
 
 
 import { TempleGoldCommon } from "./TempleGoldCommon.t.sol";
-import { StakedTempleVoteToken } from "contracts/templegold/StakedTempleVoteToken.sol";
 import { FakeERC20 } from "contracts/fakes/FakeERC20.sol";
 import { TempleGold } from "contracts/templegold/TempleGold.sol";
 import { TempleGoldStaking } from "contracts/templegold/TempleGoldStaking.sol";
@@ -33,7 +32,6 @@ contract TempleGoldStakingTestBase is TempleGoldCommon {
     IERC20 public bidToken2;
     DaiGoldAuction public daiGoldAuction;
     FakeERC20 public templeToken;
-    StakedTempleVoteToken public voteToken;
     TempleGoldStaking public staking;
     TempleGold public templeGold;
 
@@ -44,12 +42,9 @@ contract TempleGoldStakingTestBase is TempleGoldCommon {
 
         templeGold = new TempleGold(initArgs);
         templeToken = new FakeERC20("Temple Token", "TEMPLE", executor, 1000 ether);
-        voteToken = new StakedTempleVoteToken(rescuer, executor,address(0), VOTE_TOKEN_NAME, VOTE_TOKEN_SYMBOL);
-        staking = new TempleGoldStaking(rescuer, executor, address(templeToken), address(templeGold), address(voteToken));
+        staking = new TempleGoldStaking(rescuer, executor, address(templeToken), address(templeGold));
         vm.startPrank(executor);
-        voteToken.setStaking(address(staking));
         templeGold.authorizeContract(address(staking), true);
-        voteToken.setAuthorized(address(staking), true);
         bidToken = IERC20(daiToken);
         bidToken2 = IERC20(usdcToken);
         daiGoldAuction = new DaiGoldAuction(
@@ -337,11 +332,8 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         _approve(address(templeToken), address(staking), type(uint).max);
         vm.expectEmit(address(staking));
         emit Staked(alice, 1 ether);
-        vm.expectEmit(address(voteToken));
-        emit Transfer(address(0), alice, 1 ether);
         staking.stake(1 ether);
         assertEq(staking.balanceOf(alice), 1 ether);
-        assertEq(voteToken.balanceOf(alice), 1 ether);
 
         uint256 ts = block.timestamp ;
         uint256 t = ts / 7 days * 7 days;
@@ -363,11 +355,8 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         vm.startPrank(bob);
         vm.expectEmit(address(staking));
         emit Staked(alice, 10 ether);
-        vm.expectEmit(address(voteToken));
-        emit Transfer(address(0), alice, 10 ether);
         staking.stakeFor(alice, 10 ether);
         assertEq(staking.balanceOf(alice), 11 ether);
-        assertEq(voteToken.balanceOf(alice), 11 ether);
         t += block.timestamp / 7 days * 7 days;
         weight = 11 ether * t / (t + 1 days);
         assertGt(staking.getVoteWeight(alice), 1 ether);
@@ -406,13 +395,11 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         emit Withdrawn(alice, alice, 40 ether);
         staking.withdraw(40 ether, false);
         assertEq(templeToken.balanceOf(alice), 940 ether);
-        assertEq(voteToken.balanceOf(alice), 60 ether);
         assertEq(staking.totalSupply(), 60 ether);
         vm.expectEmit(address(staking));
         emit Withdrawn(alice, alice, 60 ether);
         staking.withdrawAll(false);
         assertEq(templeToken.balanceOf(alice), 1000 ether);
-        assertEq(voteToken.balanceOf(alice), 0);
         assertEq(staking.totalSupply(), 0);
         assertEq(staking.getVoteWeight(alice), 0);
         ITempleGoldStaking.AccountWeightParams memory _weight = staking.getAccountWeights(alice);

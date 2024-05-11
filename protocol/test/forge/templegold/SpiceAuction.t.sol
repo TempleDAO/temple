@@ -16,7 +16,8 @@ contract SpiceAuctionTestBase is TempleGoldCommon {
     event Deposit(address indexed depositor, uint256 epochId, uint256 amount);
     event AuctionConfigSet(uint256 epoch, ISpiceAuction.SpiceAuctionConfig config);
     event AuctionConfigRemoved(uint256 epochId);
-    event AuctionStarted(uint256 epochId, address indexed starter, uint64 startTime, uint64 endTime, uint256 auctionTokenAmount);
+    event AuctionStarted(uint256 epochId, address indexed starter, uint128 startTime, uint128 endTime, uint256 auctionTokenAmount);
+    event DaoExecutorSet(address daoExecutor);
 
     address public daoExecutor = makeAddr("daoExecutor");
 
@@ -102,6 +103,12 @@ contract SpiceAuctionAccessTest is SpiceAuctionTestBase {
         spice.setAuctionConfig(_getAuctionConfig());
     }
 
+     function test_access_setDaoExecutorFail() public {
+        vm.startPrank(unauthorizedUser);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
+        spice.setDaoExecutor(alice);
+    }
+
     function test_access_removeSpiceAuctionConfigFail() public {
         vm.startPrank(unauthorizedUser);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
@@ -127,7 +134,7 @@ contract SpiceAuctionViewTest is SpiceAuctionTestBase {
         assertEq(auctionToken, spice.getAuctionTokenForCurrentEpoch());
     }
 
-    function test_getClaimableAtCurrentTimestamp() public {
+    function test_getClaimableForEpoch() public {
         /// @dev see claim and bid tests
     }
 
@@ -137,6 +144,16 @@ contract SpiceAuctionViewTest is SpiceAuctionTestBase {
 }
 
 contract SpiceAuctionTest is SpiceAuctionTestBase {
+    function test_setDaoExecutor() public {
+        vm.startPrank(daoExecutor);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
+        spice.setDaoExecutor(address(0));
+
+        vm.expectEmit(address(spice));
+        emit DaoExecutorSet(alice);
+        spice.setDaoExecutor(alice);
+        assertEq(spice.daoExecutor(), alice);
+    }
 
     function test_setSpiceAuctionConfig() public {
         ISpiceAuction.SpiceAuctionConfig memory config = _getAuctionConfig();
@@ -243,8 +260,8 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         
         IAuctionBase.EpochInfo memory epochInfo = spice.getEpochInfo(epoch+1);
         assertEq(spice.currentEpoch(), epoch+1);
-        assertEq(epochInfo.startTime, uint64(block.timestamp+_config.startCooldown));
-        assertEq(epochInfo.endTime, uint64(block.timestamp+_config.duration));
+        assertEq(epochInfo.startTime, uint128(block.timestamp+_config.startCooldown));
+        assertEq(epochInfo.endTime, uint128(block.timestamp+_config.duration));
         assertEq(epochInfo.totalAuctionTokenAmount, 100 ether);
         assertEq(epochInfo.totalBidTokenAmount, 0);
         assertEq(auctionToken.balanceOf(address(spice)), 100 ether);
@@ -288,7 +305,7 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
 
         deal(daiToken, address(spice), 30 ether, true);
         vm.expectEmit(address(spice));
-        emit AuctionStarted(epoch+1, daoExecutor, uint64(block.timestamp+_config.startCooldown), uint64(block.timestamp+_config.duration), 30 ether);
+        emit AuctionStarted(epoch+1, daoExecutor, uint128(block.timestamp+_config.startCooldown), uint128(block.timestamp+_config.duration), 30 ether);
         spice.startAuction();
 
         assertEq(IERC20(daiToken).balanceOf(address(spice)), 30 ether);
@@ -325,7 +342,7 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         assertEq(epochInfo.totalBidTokenAmount, aliceBidAmount);
         assertEq(epochInfo.totalAuctionTokenAmount, 100 ether);
         assertEq(spice.depositors(alice, epoch), aliceBidAmount);
-        assertEq(spice.getClaimableAtCurrentTimestamp(alice, epoch), 100 ether);
+        assertEq(spice.getClaimableForEpoch(alice, epoch), 100 ether);
 
         // bob bidding
         vm.startPrank(bob);
@@ -341,8 +358,8 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         assertEq(epochInfo.totalAuctionTokenAmount, 100 ether);
         assertEq(spice.depositors(alice, epoch), aliceBidAmount);
         assertEq(spice.depositors(bob, epoch), bobBidAmount);
-        assertEq(spice.getClaimableAtCurrentTimestamp(alice, epoch), 40 ether);
-        assertEq(spice.getClaimableAtCurrentTimestamp(bob, epoch), 60 ether);
+        assertEq(spice.getClaimableForEpoch(alice, epoch), 40 ether);
+        assertEq(spice.getClaimableForEpoch(bob, epoch), 60 ether);
 
         // bob bids more
         spice.bid(50 ether);
@@ -353,8 +370,8 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         assertEq(epochInfo.totalAuctionTokenAmount, 100 ether);
         assertEq(spice.depositors(alice, epoch), aliceBidAmount);
         assertEq(spice.depositors(bob, epoch), bobBidAmount+50 ether);
-        assertEq(spice.getClaimableAtCurrentTimestamp(alice, epoch), 100 ether * 20/100);
-        assertEq(spice.getClaimableAtCurrentTimestamp(bob, epoch), 100 ether * 80/100);
+        assertEq(spice.getClaimableForEpoch(alice, epoch), 100 ether * 20/100);
+        assertEq(spice.getClaimableForEpoch(bob, epoch), 100 ether * 80/100);
     }
 
     function test_claimSpiceAuction() public {
@@ -397,8 +414,8 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         vm.warp(epochInfo.endTime+_config.waitPeriod);
         uint256 bobTGoldBalance = templeGold.balanceOf(bob);
         uint256 aliceTGoldBalance = templeGold.balanceOf(alice);
-        uint256 bobClaimAmount = spice.getClaimableAtCurrentTimestamp(bob, epoch);
-        uint256 aliceClaimAmount = spice.getClaimableAtCurrentTimestamp(alice, epoch);
+        uint256 bobClaimAmount = spice.getClaimableForEpoch(bob, epoch);
+        uint256 aliceClaimAmount = spice.getClaimableForEpoch(alice, epoch);
         vm.expectEmit(address(spice));
         emit Claim(bob, epoch, bobBidAmount, bobClaimAmount);
         spice.claim(epoch);
@@ -412,7 +429,7 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         assertEq(templeGold.balanceOf(alice), aliceTGoldBalance+aliceClaimAmount);
         assertEq(aliceClaimAmount, 100 ether * 20/50);
 
-        assertEq(spice.getClaimableAtCurrentTimestamp(alice, epoch), 0);
-        assertEq(spice.getClaimableAtCurrentTimestamp(alice, epoch+1), 0);
+        assertEq(spice.getClaimableForEpoch(alice, epoch), 0);
+        assertEq(spice.getClaimableForEpoch(alice, epoch+1), 0);
     }
 }

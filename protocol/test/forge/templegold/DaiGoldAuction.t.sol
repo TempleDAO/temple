@@ -15,7 +15,7 @@ import { TempleGoldStaking } from "contracts/templegold/TempleGoldStaking.sol";
 // import { console } from "forge-std/console.sol";
 
 contract DaiGoldAuctionTestBase is TempleGoldCommon {
-    event AuctionStarted(uint256 epochId, address indexed starter, uint64 startTime, uint64 endTime, uint256 auctionTokenAmount);
+    event AuctionStarted(uint256 epochId, address indexed starter, uint128 startTime, uint128 endTime, uint256 auctionTokenAmount);
     event BidTokenSet(address bidToken);
     event GoldDistributionNotified(uint256 amount, uint256 timestamp);
     event AuctionConfigSet(uint256 epochId, IDaiGoldAuction.AuctionConfig config);
@@ -64,8 +64,7 @@ contract DaiGoldAuctionTestBase is TempleGoldCommon {
             rescuer, 
             executor,
             templeToken,
-            address(templeGold),
-            usdcToken
+            address(templeGold)
         );
         bidToken = IERC20(daiToken); // dai
         bidToken2 = IERC20(usdcToken); //usdc
@@ -235,7 +234,7 @@ contract DaiGoldAuctionTestSetters is DaiGoldAuctionTestBase {
 }
 
 contract DaiGoldAuctionTestView is DaiGoldAuctionTestBase {
-    function test_getClaimableAtCurrentTimestamp() public {
+    function test_getClaimableAtEpoch() public {
         vm.startPrank(executor);
         vm.warp(block.timestamp + 3 weeks);
         _startAuction();
@@ -254,8 +253,8 @@ contract DaiGoldAuctionTestView is DaiGoldAuctionTestBase {
         uint256 aliceClaimable = (50 ether * totalRewards) / 150 ether;
         uint256 executorClaimable = (100 ether * totalRewards) / 150 ether;
         
-        assertEq(daiGoldAuction.getClaimableAtCurrentTimestamp(alice, currentEpoch), aliceClaimable);
-        assertEq(daiGoldAuction.getClaimableAtCurrentTimestamp(executor, currentEpoch), executorClaimable);
+        assertEq(daiGoldAuction.getClaimableAtEpoch(alice, currentEpoch), aliceClaimable);
+        assertEq(daiGoldAuction.getClaimableAtEpoch(executor, currentEpoch), executorClaimable);
         assertEq(totalRewards, executorClaimable+aliceClaimable);
     }
 
@@ -309,8 +308,8 @@ contract DaiGoldAuctionTest is DaiGoldAuctionTestBase {
         vm.warp(block.timestamp + 1 weeks);
         templeGold.mint();
         
-        uint64 startTime = uint64(block.timestamp + _config.auctionStartCooldown);
-        uint64 endTime = startTime + uint64(1 weeks);
+        uint128 startTime = uint128(block.timestamp + _config.auctionStartCooldown);
+        uint128 endTime = startTime + uint128(1 weeks);
         uint256 goldAmount = daiGoldAuction.nextAuctionGoldAmount();
         vm.expectEmit(address(daiGoldAuction));
         emit AuctionStarted(1, executor, startTime, endTime, goldAmount);
@@ -337,8 +336,8 @@ contract DaiGoldAuctionTest is DaiGoldAuctionTestBase {
 
         // distribute gold and start second auction
         templeGold.mint();
-        startTime = uint64(block.timestamp + _config.auctionStartCooldown);
-        endTime = startTime + uint64(1 weeks);
+        startTime = uint128(block.timestamp + _config.auctionStartCooldown);
+        endTime = startTime + uint128(1 weeks);
         goldAmount = daiGoldAuction.nextAuctionGoldAmount();
         vm.expectEmit(address(daiGoldAuction));
         emit AuctionStarted(2, executor, startTime, endTime, goldAmount);
@@ -386,9 +385,8 @@ contract DaiGoldAuctionTest is DaiGoldAuctionTestBase {
         assertEq(epochInfo.totalBidTokenAmount, 100 ether);
         assertEq(bidToken.balanceOf(address(daiGoldAuction)), 100 ether);
 
-        // mints and distributes
         uint256 goldBalanceAfter = templeGold.balanceOf(address(daiGoldAuction));
-        assertGt(goldBalanceAfter, goldBalanceBefore);
+        assertEq(goldBalanceAfter, goldBalanceBefore);
 
         // second deposits
         vm.startPrank(alice);
@@ -403,9 +401,9 @@ contract DaiGoldAuctionTest is DaiGoldAuctionTestBase {
         assertEq(bidToken.balanceOf(address(daiGoldAuction)), 150 ether);
 
         // bidToken amount = 0
-        assertEq(daiGoldAuction.getClaimableAtCurrentTimestamp(unauthorizedUser, currentEpoch), 0);
+        assertEq(daiGoldAuction.getClaimableAtEpoch(unauthorizedUser, currentEpoch), 0);
         // invalid epoch
-        assertEq(daiGoldAuction.getClaimableAtCurrentTimestamp(unauthorizedUser, currentEpoch+1), 0);
+        assertEq(daiGoldAuction.getClaimableAtEpoch(unauthorizedUser, currentEpoch+1), 0);
     }
 
     function test_claim() public {
@@ -440,8 +438,8 @@ contract DaiGoldAuctionTest is DaiGoldAuctionTestBase {
         // valid claims
         uint256 aliceRewardBalanceBefore = templeGold.balanceOf(alice);
         uint256 executorRewardBalanceBefore = templeGold.balanceOf(executor);
-        uint256 executorClaimable = daiGoldAuction.getClaimbaleAtCurrentTimestamp(executor);
-        uint256 aliceClaimable = daiGoldAuction.getClaimbaleAtCurrentTimestamp(alice);
+        uint256 executorClaimable = daiGoldAuction.getClaimableAtCurrentEpoch(executor);
+        uint256 aliceClaimable = daiGoldAuction.getClaimableAtCurrentEpoch(alice);
         vm.startPrank(alice);
         vm.expectEmit(address(daiGoldAuction));
         emit Claim(alice, currentEpoch, 50 ether, aliceClaimable);
@@ -468,14 +466,14 @@ contract DaiGoldAuctionTest is DaiGoldAuctionTestBase {
         vm.startPrank(executor);
         bidToken.approve(address(daiGoldAuction), type(uint).max);
         daiGoldAuction.bid(100 ether);
-        executorClaimable = daiGoldAuction.getClaimbaleAtCurrentTimestamp(executor);
-        aliceClaimable = daiGoldAuction.getClaimbaleAtCurrentTimestamp(alice);
+        executorClaimable = daiGoldAuction.getClaimableAtCurrentEpoch(executor);
+        aliceClaimable = daiGoldAuction.getClaimableAtCurrentEpoch(alice);
         deal(address(bidToken), bob, 100 ether, false);
         vm.startPrank(bob);
         bidToken.approve(address(daiGoldAuction), type(uint).max);
         daiGoldAuction.bid(100 ether);
-        assertGt(aliceClaimable, daiGoldAuction.getClaimbaleAtCurrentTimestamp(alice));
-        assertGt(executorClaimable, daiGoldAuction.getClaimbaleAtCurrentTimestamp(executor));
+        assertGt(aliceClaimable, daiGoldAuction.getClaimableAtCurrentEpoch(alice));
+        assertGt(executorClaimable, daiGoldAuction.getClaimableAtCurrentEpoch(executor));
     }
 
     function test_notifyDistribution() public {

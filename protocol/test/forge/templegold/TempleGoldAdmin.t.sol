@@ -8,7 +8,6 @@ import { TempleGoldCommon } from "./TempleGoldCommon.t.sol";
 import { DaiGoldAuction } from "contracts/templegold/DaiGoldAuction.sol";
 import { TempleGold } from "contracts/templegold/TempleGold.sol";
 import { TempleGoldStaking } from "contracts/templegold/TempleGoldStaking.sol";
-import { StakedTempleVoteToken } from "contracts/templegold/StakedTempleVoteToken.sol";
 import { FakeERC20 } from "contracts/fakes/FakeERC20.sol";
 import { ITempleGold } from "contracts/interfaces/templegold/ITempleGold.sol";
 import { TempleGoldAdmin } from "contracts/templegold/TempleGoldAdmin.sol";
@@ -29,7 +28,6 @@ contract TempleGoldAdminTestBase is TempleGoldCommon {
     TempleGold public templeGold;
     TempleGold public templeGoldMainnet;
     FakeERC20 public templeToken;
-    StakedTempleVoteToken public voteToken;
     TempleGoldAdmin public templeGoldAdmin;
 
     uint256 public constant MINIMUM_DISTRIBUTION_SHARE = 1 ether;
@@ -45,8 +43,7 @@ contract TempleGoldAdminTestBase is TempleGoldCommon {
         ITempleGold.InitArgs memory initArgs = _getTempleGoldInitArgs();
         templeGold = new TempleGold(initArgs);
         templeToken = new FakeERC20("Temple Token", "TEMPLE", executor, 1000 ether);
-        voteToken = new StakedTempleVoteToken(rescuer, executor,address(0), VOTE_TOKEN_NAME, VOTE_TOKEN_SYMBOL);
-        staking = new TempleGoldStaking(rescuer, executor, address(templeToken), address(templeGold), address(voteToken));
+        staking = new TempleGoldStaking(rescuer, executor, address(templeToken), address(templeGold));
         daiGoldAuction = new DaiGoldAuction(
             address(templeGold),
             daiToken,
@@ -56,8 +53,6 @@ contract TempleGoldAdminTestBase is TempleGoldCommon {
         );
         templeGoldAdmin = new TempleGoldAdmin(rescuer, executor, address(templeGold));
         vm.startPrank(executor);
-        voteToken.setStaking(address(staking));
-        voteToken.setAuthorized(address(staking), true);
         templeGold.setEscrow(address(daiGoldAuction)); 
         _configureTempleGold();
         templeGold.transferOwnership(address(templeGoldAdmin));

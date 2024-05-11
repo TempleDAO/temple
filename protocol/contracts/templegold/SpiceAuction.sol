@@ -9,6 +9,8 @@ import { ISpiceAuction } from "contracts/interfaces/templegold/ISpiceAuction.sol
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { AuctionBase } from "contracts/templegold//AuctionBase.sol";
 import { TempleMath } from "contracts/common/TempleMath.sol";
+import { EpochLib } from "contracts/templegold/EpochLib.sol";
+import { IAuctionBase } from "contracts/interfaces/templegold/IAuctionBase.sol";
 
 /** 
  * @title SpiceAuction
@@ -22,6 +24,7 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
 contract SpiceAuction is ISpiceAuction, AuctionBase {
     using SafeERC20 for IERC20;
     using TempleMath for uint256;
+    using EpochLib for IAuctionBase.EpochInfo;
 
     /// @notice Spice auction contracts are set up for 2 tokens. Either can be bid or sell token for a given auction
     /// @notice uint(TOKEN_A) < uint(TOKEN_B)
@@ -29,7 +32,7 @@ contract SpiceAuction is ISpiceAuction, AuctionBase {
     /// @notice Temple GOLD
     address public immutable override templeGold;
     /// @notice DAO contract to execute configurations update
-    address public immutable override daoExecutor;
+    address public override daoExecutor;
 
     /// @notice Auctions run for minimum 1 week
     uint32 public constant MINIMUM_AUCTION_PERIOD = 1 weeks;
@@ -60,6 +63,16 @@ contract SpiceAuction is ISpiceAuction, AuctionBase {
     }
 
     /**
+     * @notice Set DAO executor for DAO actions
+     * @param _daoExecutor New dao executor
+     */
+    function setDaoExecutor(address _daoExecutor) external onlyDAOExecutor {
+        if (_daoExecutor == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
+        daoExecutor = _daoExecutor;
+        emit DaoExecutorSet(_daoExecutor);
+    }
+
+    /**
      * @notice Set config for an epoch. This enables dynamic and multiple auctions especially for vested scenarios
      * @dev Must be set before epoch auction starts
      * @param _config Config to set
@@ -69,7 +82,7 @@ contract SpiceAuction is ISpiceAuction, AuctionBase {
         /// @dev cannot set config for past or ongoing auction
         uint256 currentEpochIdCache = _currentEpochId;
         if (currentEpochIdCache > 0) {
-            EpochInfo memory info = epochs[currentEpochIdCache];
+            EpochInfo storage info = epochs[currentEpochIdCache];
             /// Cannot set config for ongoing auction
             if (info.startTime <= block.timestamp && block.timestamp < info.endTime) { revert InvalidConfigOperation(); }
         }
@@ -134,8 +147,8 @@ contract SpiceAuction is ISpiceAuction, AuctionBase {
         // now update currentEpochId
         epochId = _currentEpochId = _currentEpochId + 1;
         EpochInfo storage info = epochs[epochId];
-        uint64 startTime = info.startTime = uint64(block.timestamp) + config.startCooldown;
-        uint64 endTime = info.endTime = uint64(block.timestamp) + config.duration;
+        uint128 startTime = info.startTime = uint128(block.timestamp) + config.startCooldown;
+        uint128 endTime = info.endTime = uint128(block.timestamp) + config.duration;
         info.totalAuctionTokenAmount = epochAuctionTokenAmount;
 
         // Keep track of total allocation auction tokens per epoch
@@ -146,20 +159,23 @@ contract SpiceAuction is ISpiceAuction, AuctionBase {
 
     /**
      * @notice Bid using `bidToken` for `auctionToken`
+     * Once a bid is placed for an auction, user cannot withdraw or cancel bid.
      * @param amount Amount of `bidToken` to bid
      */
     function bid(uint256 amount) external virtual override {
-        if(!_canDeposit()) { revert CannotDeposit(); }
-        if (amount == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
-
         /// @dev Cache, gas savings
         uint256 epochId = _currentEpochId;
-        (address bidToken,) = _getBidAndAuctionTokens();
-        address _recipient = auctionConfigs[epochId].recipient;
+        EpochInfo storage info = epochs[epochId];
+
+        if(!info.isActive()) { revert CannotDeposit(); }
+        if (amount == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
+
+        SpiceAuctionConfig storage config = auctionConfigs[epochId];
+        (address bidToken,) = _getBidAndAuctionTokens(config);
+        address _recipient = config.recipient;
         IERC20(bidToken).safeTransferFrom(msg.sender, _recipient, amount);
         depositors[msg.sender][epochId] += amount;
 
-        EpochInfo storage info = epochs[epochId];
         info.totalBidTokenAmount += amount;
         emit Deposit(msg.sender, epochId, amount);
     }
@@ -214,21 +230,16 @@ contract SpiceAuction is ISpiceAuction, AuctionBase {
 
     /**
      * @notice Get claimable amount for an epoch
-     * @dev For current epoch, function will return claimable at current time. This can change with more user deposits
+     * @dev function will return claimable for epoch. This can change with more user deposits
      * @param depositor Address to check amount for
      * @param epochId Epoch id
      * @return Claimable amount
      */
-    function getClaimableAtCurrentTimestamp(address depositor, uint256 epochId) external override view returns (uint256) {
+    function getClaimableForEpoch(address depositor, uint256 epochId) external override view returns (uint256) {
         uint256 bidTokenAmount = depositors[depositor][epochId];
         if (bidTokenAmount == 0 || epochId > _currentEpochId) { return 0; }
         EpochInfo memory info = epochs[epochId];
         return bidTokenAmount.mulDivRound(info.totalAuctionTokenAmount, info.totalBidTokenAmount, false);
-    }
-
-    function _getBidAndAuctionTokens() private view returns (address bidToken, address auctionToken) {
-        auctionToken = _getAuctionTokenForCurrentEpoch();
-        bidToken = auctionToken == spiceToken ? templeGold : spiceToken;
     }
 
     function _getBidAndAuctionTokens(SpiceAuctionConfig storage _config) private view returns (address bidToken, address auctionToken) {
@@ -237,11 +248,6 @@ contract SpiceAuction is ISpiceAuction, AuctionBase {
     }
 
     function _getAuctionTokenForEpochStorage(SpiceAuctionConfig storage config) private view returns (address) {
-        return config.isTempleGoldAuctionToken ? templeGold : spiceToken;
-    }
-
-    function _getAuctionTokenForCurrentEpoch() private view returns (address) {
-        SpiceAuctionConfig memory config = auctionConfigs[_currentEpochId];
         return config.isTempleGoldAuctionToken ? templeGold : spiceToken;
     }
 

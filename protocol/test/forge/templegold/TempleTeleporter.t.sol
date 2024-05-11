@@ -10,7 +10,7 @@ import { OptionsBuilder } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/lib
 
 // Temple Gold imports
 import { TempleTeleporter } from "contracts/templegold/TempleTeleporter.sol";
-import { TempleTokenMock } from "contracts/fakes/templegold/TempleTokenMock.sol";
+import { TempleERC20Token } from "contracts/core/TempleERC20Token.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 
 // DevTools imports
@@ -24,8 +24,8 @@ contract TempleTeleporterTest is TestHelperOz5 {
 
     TempleTeleporter public aTT;
     TempleTeleporter public bTT;
-    TempleTokenMock public aTemple;
-    TempleTokenMock public bTemple;
+    TempleERC20Token public aTemple;
+    TempleERC20Token public bTemple;
 
 
     address public userA = address(0x1);
@@ -33,8 +33,8 @@ contract TempleTeleporterTest is TestHelperOz5 {
     uint256 public initialBalance = 100 ether;
 
     function setUp() public virtual override {
-        aTemple = new TempleTokenMock();
-        bTemple = new TempleTokenMock();
+        aTemple = new TempleERC20Token();
+        bTemple = new TempleERC20Token();
 
         vm.deal(userA, 1000 ether);
         vm.deal(userB, 1000 ether);

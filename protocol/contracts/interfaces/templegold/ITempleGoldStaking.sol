@@ -3,7 +3,6 @@ pragma solidity ^0.8.20;
 // Temple (interfaces/templegold/ITempleGoldStaking.sol)
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IStakedTempleVoteToken} from "contracts/interfaces/templegold/IStakedTempleVoteToken.sol";
 
 interface ITempleGoldStaking {
     event GoldDistributionNotified(uint256 amount, uint256 timestamp);
@@ -34,8 +33,6 @@ interface ITempleGoldStaking {
     function stakingToken() external view returns (IERC20);
     /// @notice Reward token. Temple Gold
     function rewardToken() external view returns (IERC20);
-    /// @notice Vote Token
-    function voteToken() external view returns (IStakedTempleVoteToken);
 
     /// @notice Distribution starter
     function distributionStarter() external view returns (address);

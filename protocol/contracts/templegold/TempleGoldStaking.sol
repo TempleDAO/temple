@@ -11,7 +11,6 @@ import { ITempleGoldStaking } from "contracts/interfaces/templegold/ITempleGoldS
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { IStakedTempleVoteToken } from "contracts/interfaces/templegold/IStakedTempleVoteToken.sol";
 
 /** 
  * @title Temple Gold Staking
@@ -26,8 +25,6 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     IERC20 public immutable override stakingToken;
     /// @notice Reward token. Temple Gold
     IERC20 public immutable override rewardToken;
-    /// @notice Vote Token
-    IStakedTempleVoteToken public immutable override voteToken;
 
     /// @notice Distribution starter
     address public override distributionStarter;
@@ -75,12 +72,10 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         address _rescuer,
         address _executor,
         address _stakingToken,
-        address _rewardToken,
-        address _voteToken
+        address _rewardToken
     ) TempleElevatedAccess(_rescuer, _executor){
         stakingToken = IERC20(_stakingToken);
         rewardToken = IERC20(_rewardToken);
-        voteToken = IStakedTempleVoteToken(_voteToken);
     }
 
     /**
@@ -181,7 +176,6 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         stakingToken.safeTransferFrom(msg.sender, address(this), _amount);
         uint256 _prevBalance = _balances[_for];
         _applyStake(_for, _amount);
-        _mintVoteToken(_for, _amount);
         _updateAccountWeight(_for, _prevBalance, _balances[_for], true);
     }
 
@@ -336,14 +330,6 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         emit Staked(_for, _amount);
     }
 
-    function _mintVoteToken(address _for, uint256 _amount) private {
-        voteToken.mint(_for, _amount);
-    }
-
-    function _burnVoteToken(address _account, uint256 _amount) private {
-        voteToken.burnFrom(_account, _amount);
-    }
-
     function _rewardPerToken() internal view returns (uint256) {
         if (totalSupply == 0) {
             return rewardData.rewardPerTokenStored;
@@ -370,8 +356,6 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
 
         totalSupply -= amount;
         _balances[staker] = _prevBalance - amount;
-
-        _burnVoteToken(staker, amount);
 
         _updateAccountWeight(staker, _prevBalance, _balances[staker], false);
 
