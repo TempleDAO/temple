@@ -243,6 +243,8 @@ const env: Environment = {
     ramos: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-ramos',
     templeV2:
       'https://api.thegraph.com/subgraphs/name/templedao/templedao-v2-mainnet',
+    templeV2Balances:
+      'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-v2-balances/api',
     // Original Balancer Subgraph
     // balancerV2: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-v2-beta',
   },

@@ -65,6 +65,9 @@ const env: Environment = {
     // templeV2: 'https://api.studio.thegraph.com/query/520/v2-sepolia/version/latest',
     templeV2:
       'https://api.thegraph.com/subgraphs/name/templedao/templedao-v2-mainnet',
+    templeV2Balances:
+      'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-v2-balances/api',
+
     // Original Balancer Subgraph
     // balancerV2: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-goerli-v2',
   },
