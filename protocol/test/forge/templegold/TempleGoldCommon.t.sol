@@ -5,6 +5,7 @@ pragma solidity 0.8.20;
 import { TempleTest } from "../TempleTest.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { ITempleGold } from "contracts/interfaces/templegold/ITempleGold.sol";
+import { FakeERC20 } from "contracts/fakes/FakeERC20.sol";
 
 contract TempleGoldCommon is TempleTest {
     address public treasury = makeAddr("treasury");
@@ -32,6 +33,8 @@ contract TempleGoldCommon is TempleTest {
 
     string public constant VOTE_TOKEN_NAME = "Staked Temple Vote Token";
     string public constant VOTE_TOKEN_SYMBOL = "stTemple";
+
+    FakeERC20 public fakeERC20;
 
     receive() external payable {}
 

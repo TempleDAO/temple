@@ -12,7 +12,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { ITempleERC20Token } from "contracts/interfaces/core/ITempleERC20Token.sol";
 import { TempleGoldStaking } from "contracts/templegold/TempleGoldStaking.sol";
-// import { console } from "forge-std/console.sol";
+import { console } from "forge-std/console.sol";
 
 contract DaiGoldAuctionTestBase is TempleGoldCommon {
     event AuctionStarted(uint256 epochId, address indexed starter, uint128 startTime, uint128 endTime, uint256 auctionTokenAmount);
@@ -22,6 +22,7 @@ contract DaiGoldAuctionTestBase is TempleGoldCommon {
     event AuctionStarterSet(address indexed starter);
     event Deposit(address indexed depositor, uint256 epochId, uint256 amount);
     event Claim(address indexed user, uint256 epochId, uint256 bidTokenAmount, uint256 auctionTokenAmount);
+    event TokenRecovered(address indexed to, address indexed token, uint256 amount);
 
     /// @notice Auction duration
     uint64 public constant AUCTION_DURATION = 1 weeks;
@@ -196,7 +197,7 @@ contract DaiGoldAuctionTestSetters is DaiGoldAuctionTestBase {
         // auction started
         _startAuction();
         vm.expectRevert(abi.encodeWithSelector(IAuctionBase.InvalidOperation.selector));
-        daiGoldAuction.setBidToken(alice);
+        daiGoldAuction.setAuctionConfig(config);
     }
 
     function test_setAuctionStarter() public {
@@ -359,14 +360,13 @@ contract DaiGoldAuctionTest is DaiGoldAuctionTestBase {
 
     }
 
-    function test_bid() public {
+    function test_bid_daiGold() public {
         // onlyt when live error. 
         vm.startPrank(executor);
         vm.expectRevert(abi.encodeWithSelector(IAuctionBase.CannotDeposit.selector));
         daiGoldAuction.bid(0);
 
         _startAuction();
-        // vm.startPrank(alice);
         // zero amount error
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
         daiGoldAuction.bid(0);
@@ -383,7 +383,7 @@ contract DaiGoldAuctionTest is DaiGoldAuctionTestBase {
         IAuctionBase.EpochInfo memory epochInfo = daiGoldAuction.getEpochInfo(currentEpoch);
         assertEq(daiGoldAuction.depositors(executor, currentEpoch), 100 ether);
         assertEq(epochInfo.totalBidTokenAmount, 100 ether);
-        assertEq(bidToken.balanceOf(address(daiGoldAuction)), 100 ether);
+        assertEq(bidToken.balanceOf(treasury), 100 ether);
 
         uint256 goldBalanceAfter = templeGold.balanceOf(address(daiGoldAuction));
         assertEq(goldBalanceAfter, goldBalanceBefore);
@@ -398,7 +398,7 @@ contract DaiGoldAuctionTest is DaiGoldAuctionTestBase {
         epochInfo = daiGoldAuction.getEpochInfo(currentEpoch);
         assertEq(daiGoldAuction.depositors(alice, currentEpoch), 50 ether);
         assertEq(epochInfo.totalBidTokenAmount, 150 ether);
-        assertEq(bidToken.balanceOf(address(daiGoldAuction)), 150 ether);
+        assertEq(bidToken.balanceOf(treasury), 150 ether);
 
         // bidToken amount = 0
         assertEq(daiGoldAuction.getClaimableAtEpoch(unauthorizedUser, currentEpoch), 0);
@@ -406,7 +406,7 @@ contract DaiGoldAuctionTest is DaiGoldAuctionTestBase {
         assertEq(daiGoldAuction.getClaimableAtEpoch(unauthorizedUser, currentEpoch+1), 0);
     }
 
-    function test_claim() public {
+    function test_claim_daiGold() public {
         vm.startPrank(executor);
         _startAuction();
 
@@ -494,5 +494,47 @@ contract DaiGoldAuctionTest is DaiGoldAuctionTestBase {
         uint256 goldBalance = templeGold.balanceOf(address(daiGoldAuction));
         daiGoldAuction.distributeGold();
         assertGt(templeGold.balanceOf(address(daiGoldAuction)), goldBalance);
+    }
+
+    function test_recoverToken_daiGold() public {
+        vm.startPrank(executor);
+        // revert, invalid params
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
+        daiGoldAuction.recoverToken(address(temple), address(0), 0);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
+        daiGoldAuction.recoverToken(address(temple), alice, 0);
+
+        uint256 sendAmount = 50 ether;
+        deal(address(bidToken), address(daiGoldAuction), sendAmount, false);
+
+        uint256 aliceBalance = bidToken.balanceOf(alice);
+        vm.expectEmit(address(daiGoldAuction));
+        emit TokenRecovered(alice, address(bidToken), sendAmount);
+        daiGoldAuction.recoverToken(address(bidToken), alice, sendAmount);
+        assertEq(bidToken.balanceOf(alice), aliceBalance+sendAmount);
+
+        // currentEpochId = 0
+        templeGold.mint();
+        uint256 mintAmount = templeGold.balanceOf(address(daiGoldAuction));
+        vm.expectRevert(abi.encodeWithSelector(IAuctionBase.InvalidOperation.selector));
+        daiGoldAuction.recoverToken(address(templeGold), alice, mintAmount);
+
+        _startAuction();
+        IAuctionBase.EpochInfo memory info = daiGoldAuction.getEpochInfo(1);
+        vm.expectRevert(abi.encodeWithSelector(IAuctionBase.AuctionActive.selector));
+        daiGoldAuction.recoverToken(address(templeGold), alice, mintAmount);
+
+        vm.warp(info.endTime);
+        templeGold.mint();
+        mintAmount = templeGold.balanceOf(address(daiGoldAuction));
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAmount.selector, address(templeGold), mintAmount+1));
+        daiGoldAuction.recoverToken(address(templeGold), alice, mintAmount+1);
+
+        vm.warp(info.startTime - 10 seconds);
+        aliceBalance = templeGold.balanceOf(alice);
+        vm.expectEmit(address(daiGoldAuction));
+        emit TokenRecovered(alice, address(templeGold), mintAmount);
+        daiGoldAuction.recoverToken(address(templeGold), alice, mintAmount);
+        assertEq(templeGold.balanceOf(alice), aliceBalance+mintAmount);
     }
 }

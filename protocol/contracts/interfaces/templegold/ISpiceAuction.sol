@@ -5,13 +5,14 @@ pragma solidity ^0.8.20;
 import { IAuctionBase } from "contracts/interfaces/templegold/IAuctionBase.sol";
 interface ISpiceAuction is IAuctionBase {
     event AuctionConfigSet(uint256 epoch, SpiceAuctionConfig config);
-    event AuctionConfigRemoved(uint256 epochId);
     event DaoExecutorSet(address daoExecutor);
+    event AuctionConfigRemoved(uint256 configId, uint256 epochId);
 
     error InvalidConfigOperation();
     error NotEnoughAuctionTokens();
     error MissingAuctionTokenConfig();
     error NoConfig();
+    error RemoveAuctionConfig();
 
     struct SpiceAuctionConfig {
         /// @notice Duration of auction

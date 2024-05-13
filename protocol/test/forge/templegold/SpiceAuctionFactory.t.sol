@@ -7,7 +7,6 @@ import { TempleGoldCommon } from "./TempleGoldCommon.t.sol";
 import { SpiceAuctionFactory } from "contracts/templegold/SpiceAuctionFactory.sol";
 import { TempleGold } from "contracts/templegold/TempleGold.sol";
 import { ITempleGold } from "contracts/interfaces/templegold/ITempleGold.sol";
-import { ISpiceAuctionFactory } from "contracts/interfaces/templegold/ISpiceAuctionFactory.sol";
 
 contract SpiceAuctionFactoryTestBase is TempleGoldCommon {
     event AuctionCreated(bytes32 id, address auction);
@@ -62,9 +61,6 @@ contract SpiceAuctionFactoryTest is SpiceAuctionFactoryTestBase {
         bytes32 id = factory.getPairId(usdcToken);
         assertEq(auction, factory.findAuctionForSpiceToken(usdcToken));
         assertEq(factory.deployedAuctions(id), auction);
-
-        vm.expectRevert(abi.encodeWithSelector(ISpiceAuctionFactory.PairExists.selector, address(templeGold), usdcToken));
-        factory.createAuction(usdcToken, NAME_ONE);
     }
 
     function test_getPairId() public {

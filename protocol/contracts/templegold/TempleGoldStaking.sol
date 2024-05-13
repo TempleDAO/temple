@@ -144,10 +144,10 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
      * @dev This starts another 7-day rewards distribution. Calculates new `rewardRate` from any left over rewards up until now
      */
     function distributeRewards() updateReward(address(0)) external {
-        if (distributionStarter != address(0) && msg.sender != distributionStarter) { revert CommonEventsAndErrors.InvalidAccess(); }
+        if (distributionStarter != address(0) && msg.sender != distributionStarter) 
+            { revert CommonEventsAndErrors.InvalidAccess(); }
         // Mint and distribute TGLD if no cooldown set
-        if (lastRewardNotificationTimestamp > 0 && 
-            lastRewardNotificationTimestamp + rewardDistributionCoolDown > block.timestamp) 
+        if (lastRewardNotificationTimestamp + rewardDistributionCoolDown > block.timestamp) 
                 { revert CannotDistribute(); }
         _distributeGold();
         uint256 rewardAmount = nextRewardAmount;

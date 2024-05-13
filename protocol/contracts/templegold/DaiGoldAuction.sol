@@ -132,7 +132,7 @@ contract DaiGoldAuction is IDaiGoldAuction, AuctionBase, TempleElevatedAccess {
     function bid(uint256 amount) external virtual override onlyWhenLive {
         if (amount == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
 
-        bidToken.safeTransferFrom(msg.sender, address(this), amount);
+        bidToken.safeTransferFrom(msg.sender, treasury, amount);
 
         uint256 epochIdCache = _currentEpochId;
         depositors[msg.sender][epochIdCache] += amount;
@@ -156,7 +156,6 @@ contract DaiGoldAuction is IDaiGoldAuction, AuctionBase, TempleElevatedAccess {
 
         uint256 bidTokenAmount = depositors[msg.sender][epochId];
         if (bidTokenAmount == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
-        bidToken.safeTransfer(treasury, bidTokenAmount);
 
         delete depositors[msg.sender][epochId];
         uint256 claimAmount = bidTokenAmount.mulDivRound(info.totalAuctionTokenAmount, info.totalBidTokenAmount, false);
@@ -247,6 +246,38 @@ contract DaiGoldAuction is IDaiGoldAuction, AuctionBase, TempleElevatedAccess {
         if (bidTokenAmount == 0 || epochId > _currentEpochId) { return 0; }
         EpochInfo memory info = epochs[epochId];
         return bidTokenAmount.mulDivRound(info.totalAuctionTokenAmount, info.totalBidTokenAmount, false);
+    }
+
+    /**
+     * @notice Recover auction tokens for last but not started auction
+     * @param token Token to recover
+     * @param to Recipient
+     * @param amount Amount to auction tokens
+     */
+    function recoverToken(
+        address token,
+        address to,
+        uint256 amount
+    ) external override onlyElevatedAccess {
+        if (to == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
+        if (amount == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
+
+        if (token != address(templeGold)) {
+            emit CommonEventsAndErrors.TokenRecovered(to, token, amount);
+            IERC20(token).safeTransfer(to, amount);
+            return;
+        }
+
+        // auction started but cooldown pending
+        uint256 epochId = _currentEpochId;
+        EpochInfo storage info = epochs[epochId];
+        if (info.startTime == 0) { revert InvalidOperation(); }
+        if (info.isActive()) { revert AuctionActive(); }
+        if (amount > info.totalAuctionTokenAmount) { revert CommonEventsAndErrors.InvalidAmount(token, amount); }
+        delete epochs[epochId];
+
+        emit CommonEventsAndErrors.TokenRecovered(to, token, amount);
+        templeGold.safeTransfer(to, amount);
     }
 
     /**

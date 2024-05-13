@@ -51,6 +51,9 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
     /// @notice Mint chain id
     uint256 private immutable mintChainId;
 
+    /// @notice Total distribtued to track total supply
+    uint256 private _totalDistributed;
+
     /// @notice Whitelisted addresses for transferrability
     mapping(address => bool) public override authorized;
     /// @notice Distribution parameters. Minted share percentages for staking, escrow and gnosis. Adds up to 100%
@@ -171,11 +174,11 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
 
     function _canDistribute(VestingFactor memory vestingFactorCache) private view returns (bool) {
         uint256 mintAmount = _getMintAmount(vestingFactorCache);
-        return mintAmount >= MINIMUM_MINT && totalSupply() < MAX_SUPPLY;
+        return mintAmount >= MINIMUM_MINT && _totalDistributed < MAX_SUPPLY;
     }
 
     function _canDistribute(uint256 mintAmount) private view returns (bool) {
-        return mintAmount >= MINIMUM_MINT && totalSupply() < MAX_SUPPLY;
+        return mintAmount >= MINIMUM_MINT && _totalDistributed < MAX_SUPPLY;
     }
 
     /**
@@ -183,7 +186,7 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
      * @return Circulating supply
      */
     function circulatingSupply() public override view returns (uint256) {
-        return totalSupply();
+        return _totalDistributed;
     }
 
     /**
@@ -229,13 +232,13 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
             _mint(teamGnosis, gnosisAmount);
             /// @notice no requirement to notify gnosis because no action has to be taken
         }
-        
+        _totalDistributed += mintAmount;
         emit Distributed(stakingAmount, escrowAmount, gnosisAmount, block.timestamp);
     }
 
     function _getMintAmount(VestingFactor memory vestingFactorCache) private view returns (uint256 mintAmount) {
         uint32 _lastMintTimestamp = lastMintTimestamp;
-        uint256 totalSupplyCache = totalSupply();
+        uint256 totalSupplyCache = _totalDistributed;
         /// @notice first time mint
         if (_lastMintTimestamp == 0) {
             mintAmount = TempleMath.mulDivRound(MAX_SUPPLY, vestingFactorCache.numerator, vestingFactorCache.denominator, false);

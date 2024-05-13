@@ -229,6 +229,7 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         staking.setDistributionStarter(alice);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         staking.distributeRewards();
+        
         vm.startPrank(alice);
         uint256 rewardAmount = staking.nextRewardAmount();
         ITempleGoldStaking.Reward memory rewardDataBefore = staking.getRewardData();

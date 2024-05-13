@@ -41,7 +41,7 @@ contract SpiceAuctionFactory is ISpiceAuctionFactory, TempleElevatedAccess {
         if (spiceToken == templeGold) { revert CommonEventsAndErrors.InvalidParam(); }
         SpiceAuction spiceAuction = new SpiceAuction(templeGold, spiceToken, daoExecutor, name);
         bytes32 pairId = _getPairHash(spiceToken);
-        if (deployedAuctions[pairId] != address(0)) { revert PairExists(templeGold, spiceToken); }
+        /// @dev not checking pair address exists to allow overwrite in case of a migration
         deployedAuctions[pairId] = address(spiceAuction);
         emit AuctionCreated(pairId, address(spiceAuction));
         return address(spiceAuction);
@@ -67,12 +67,10 @@ contract SpiceAuctionFactory is ISpiceAuctionFactory, TempleElevatedAccess {
     }
 
     function _getPairHash(address _spiceToken) private view returns (bytes32 pairId) {
-        // cache
-        address _templeGold = templeGold;
-        if (_templeGold < _spiceToken) {
-            pairId = keccak256(abi.encodePacked(_templeGold, _spiceToken));
+        if (templeGold < _spiceToken) {
+            pairId = keccak256(abi.encodePacked(templeGold, _spiceToken));
         } else {
-            pairId = keccak256(abi.encodePacked(_spiceToken, _templeGold));
+            pairId = keccak256(abi.encodePacked(_spiceToken, templeGold));
         }
     }
 }

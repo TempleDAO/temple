@@ -12,6 +12,7 @@ interface IAuctionBase {
     error CannotClaim(uint256 epochId);
     error CannotStartAuction();
     error InvalidEpoch();
+    error AuctionActive();
     error InvalidOperation();
 
     struct EpochInfo {
@@ -54,4 +55,12 @@ interface IAuctionBase {
      * @return Epoch Id
      */
     function currentEpoch() external view returns (uint256);
+
+    /**
+     * @notice Recover auction tokens for last but not started auction
+     * @param token Token to recover
+     * @param to Recipient
+     * @param amount Amount to auction tokens
+     */
+    function recoverToken(address token, address to, uint256 amount) external;
 }

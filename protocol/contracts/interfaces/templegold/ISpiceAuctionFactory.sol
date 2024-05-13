@@ -5,8 +5,6 @@ pragma solidity ^0.8.20;
 interface ISpiceAuctionFactory {
     event AuctionCreated(bytes32 id, address auction);
 
-    error PairExists(address token0, address token1);
-
     /// @notice Temple Gold
     function templeGold() external view returns (address);
 
