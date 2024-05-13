@@ -10,7 +10,8 @@ interface Subgraphs {
   // so when we have third party deposits we can't display them properly atm
   // and I don't want to add the "external balances" code to the current subgraph
   // because that data will be very volatile
-  // includes tokens priced in external
+  // basically this subgraph contains a subset of the above templeV2 with some
+  // metric including the externally priced assets
   templeV2Balances: string;
 }
 
