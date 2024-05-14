@@ -47,7 +47,6 @@ interface ITempleGold is IOFT, IOAppCore, IOAppOptionsType3, IERC20 {
     error InvalidTotalShare();
     error MissingParameter();
     error NonTransferrable(address from, address to);
-    error MaxSupply();
     error WrongChain();
     error CannotCompose();
 

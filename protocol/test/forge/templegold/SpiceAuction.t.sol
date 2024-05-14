@@ -268,6 +268,27 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         assertEq(uint8(_emptyConfig.activationMode), uint8(ISpiceAuction.ActivationMode.AUCTION_TOKEN_BALANCE));
         assertEq(_emptyConfig.recipient, address(0));
         assertEq(spice.currentEpoch(), 1);
+        vm.warp(info.endTime+_config.waitPeriod);
+        
+        // some more auction and try to delete old ended auction
+        _config = _startAuction(true, true);
+        vm.startPrank(daoExecutor);
+        uint256 currentEpoch = spice.currentEpoch();
+        info = spice.getEpochInfo(currentEpoch);
+        vm.warp(info.endTime + _config.waitPeriod);
+        _config = _startAuction(true, true);
+        vm.startPrank(daoExecutor);
+        currentEpoch = spice.currentEpoch();
+        info = spice.getEpochInfo(currentEpoch);
+        vm.warp(info.endTime + _config.waitPeriod);
+        _config = _startAuction(true, true);
+        vm.startPrank(daoExecutor);
+        currentEpoch = spice.currentEpoch();
+        info = spice.getEpochInfo(currentEpoch);
+        // auction ended
+        vm.warp(info.endTime);
+        vm.expectRevert(abi.encodeWithSelector(ISpiceAuction.AuctionEnded.selector));
+        spice.removeAuctionConfig();
     }
 
     function test_recoverToken_spice() public {

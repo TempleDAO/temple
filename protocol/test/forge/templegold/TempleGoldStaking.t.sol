@@ -13,6 +13,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Met
 import { DaiGoldAuction } from "contracts/templegold/DaiGoldAuction.sol";
 import { ITempleGoldStaking } from "contracts/interfaces/templegold/ITempleGoldStaking.sol";
 import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
+import { TempleGoldStakingMock } from "contracts/fakes/templegold/TempleGoldStakingMock.sol";
 
 contract TempleGoldStakingTestBase is TempleGoldCommon {
     event Paused(address account);
@@ -33,6 +34,7 @@ contract TempleGoldStakingTestBase is TempleGoldCommon {
     DaiGoldAuction public daiGoldAuction;
     FakeERC20 public templeToken;
     TempleGoldStaking public staking;
+    TempleGoldStakingMock public mockStaking;
     TempleGold public templeGold;
 
     function setUp() public {
@@ -43,6 +45,7 @@ contract TempleGoldStakingTestBase is TempleGoldCommon {
         templeGold = new TempleGold(initArgs);
         templeToken = new FakeERC20("Temple Token", "TEMPLE", executor, 1000 ether);
         staking = new TempleGoldStaking(rescuer, executor, address(templeToken), address(templeGold));
+        mockStaking = new TempleGoldStakingMock(rescuer, executor, address(templeToken), address(templeGold), address(staking));
         vm.startPrank(executor);
         templeGold.authorizeContract(address(staking), true);
         bidToken = IERC20(daiToken);
@@ -209,7 +212,7 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         // invalid access
         vm.startPrank(unauthorizedUser);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
-        staking.migrateWithdraw(bob, 100 ether);
+        staking.migrateWithdraw(bob);
         uint256 aliceTempleBalance = templeToken.balanceOf(alice);
         uint256 bobGoldBalance = templeGold.balanceOf(bob);
         // distribute rewards to earn
@@ -217,11 +220,60 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         staking.distributeRewards();
         uint256 bobEarned = staking.earned(bob);
         vm.startPrank(alice);
+        // invalid staker
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
+        staking.migrateWithdraw(address(0));
+        // zero stake
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
+        staking.migrateWithdraw(unauthorizedUser);
+
         vm.expectEmit(address(staking));
         emit Withdrawn(bob, alice, 100 ether);
-        staking.migrateWithdraw(bob, 100 ether);
+        staking.migrateWithdraw(bob);
         assertEq(templeToken.balanceOf(alice), aliceTempleBalance + 100 ether);
         assertEq(templeGold.balanceOf(bob), bobGoldBalance + bobEarned);
+    }
+
+    function test_migrateWithdraw_end_to_end() public {
+        vm.startPrank(executor);
+        staking.setMigrator(address(mockStaking));
+
+        // some stakes
+        uint256 stakeAmount = 100 ether;
+        deal(address(templeToken), bob, 1000 ether, true);
+        deal(address(templeToken), alice, 1000 ether, true);
+        vm.startPrank(bob);
+        _approve(address(templeToken), address(staking), type(uint).max);
+        staking.stake(stakeAmount);
+        vm.startPrank(alice);
+        _approve(address(templeToken), address(staking), type(uint).max);
+        staking.stake(stakeAmount);
+        assertEq(staking.balanceOf(alice), stakeAmount);
+        assertEq(staking.balanceOf(bob), stakeAmount);
+        assertEq(templeToken.balanceOf(address(staking)), 2*stakeAmount);
+
+        // distribute rewards
+        uint256 aliceTempleBalance = templeToken.balanceOf(alice);
+        uint256 bobGoldBalance = templeGold.balanceOf(bob);
+        vm.warp(block.timestamp + 2 days);
+        staking.distributeRewards();
+        vm.warp(block.timestamp + 2 days);
+        uint256 bobEarned = staking.earned(bob);
+        uint256 aliceEarned = staking.earned(alice);
+
+        // migrate withdraw
+        mockStaking.migrateFromPreviousStaking();
+        assertEq(staking.balanceOf(alice), 0);
+        assertEq(staking.earned(alice), 0);
+        assertEq(mockStaking.balanceOf(alice), stakeAmount);
+        assertEq(templeGold.balanceOf(alice), aliceEarned);
+
+        vm.startPrank(bob);
+        mockStaking.migrateFromPreviousStaking();
+        assertEq(staking.balanceOf(bob), 0);
+        assertEq(staking.earned(bob), 0);
+        assertEq(mockStaking.balanceOf(bob), stakeAmount);
+        assertEq(templeGold.balanceOf(bob), bobEarned);
     }
 
     function test_distributeRewards() public {

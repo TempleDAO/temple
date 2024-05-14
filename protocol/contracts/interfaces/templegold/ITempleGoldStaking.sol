@@ -194,7 +194,6 @@ interface ITempleGoldStaking {
       * @dev Called only from the new staking contract (the migrator).
       *      `setMigrator(new_staking_contract)` needs to be called first
       * @param staker The staker who is being migrated to a new staking contract.
-      * @param amount The amount to migrate - generally this would be the staker's balance
       */
-    function migrateWithdraw(address staker, uint256 amount) external;
+    function migrateWithdraw(address staker) external returns (uint256);
 }

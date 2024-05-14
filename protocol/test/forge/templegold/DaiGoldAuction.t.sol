@@ -12,7 +12,6 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { ITempleERC20Token } from "contracts/interfaces/core/ITempleERC20Token.sol";
 import { TempleGoldStaking } from "contracts/templegold/TempleGoldStaking.sol";
-import { console } from "forge-std/console.sol";
 
 contract DaiGoldAuctionTestBase is TempleGoldCommon {
     event AuctionStarted(uint256 epochId, address indexed starter, uint128 startTime, uint128 endTime, uint256 auctionTokenAmount);
@@ -110,7 +109,7 @@ contract DaiGoldAuctionTestBase is TempleGoldCommon {
         assertEq(address(bidToken), address(daiGoldAuction.bidToken()));
     }
 
-    function _getAuctionConfig() internal view returns (IDaiGoldAuction.AuctionConfig memory config) {
+    function _getAuctionConfig() internal pure returns (IDaiGoldAuction.AuctionConfig memory config) {
         config.auctionsTimeDiff = AUCTIONS_TIME_DIFF_ONE;
         config.auctionStartCooldown = AUCTIONS_START_COOLDOWN_ONE;
         config.auctionMinimumDistributedGold = AUCTION_MIN_DISTRIBUTED_GOLD_ONE;

@@ -174,11 +174,11 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
 
     function _canDistribute(VestingFactor memory vestingFactorCache) private view returns (bool) {
         uint256 mintAmount = _getMintAmount(vestingFactorCache);
-        return mintAmount >= MINIMUM_MINT && _totalDistributed < MAX_SUPPLY;
+        return _canDistribute(mintAmount);
     }
 
     function _canDistribute(uint256 mintAmount) private view returns (bool) {
-        return mintAmount >= MINIMUM_MINT && _totalDistributed < MAX_SUPPLY;
+        return mintAmount != 0 && _totalDistributed + mintAmount == MAX_SUPPLY ? true : mintAmount >= MINIMUM_MINT;
     }
 
     /**

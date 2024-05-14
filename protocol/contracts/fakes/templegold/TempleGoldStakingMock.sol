@@ -1,6 +1,6 @@
 pragma solidity ^0.8.20;
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Temple (templegold/TempleGoldStaking.sol)
+// Temple (templegold/TempleGoldStakingMock.sol)
 
 
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -18,13 +18,15 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  * Temple Gold is distributed to staking contract for stakers on mint. Minted Temple Gold are sent directly to Staking contract.
  * A non-transferrable vote token is minted 1;1 to stakers on the amount they staked. Duration for distributing staking rewards is 7 days.
  */
-contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable {
+contract TempleGoldStakingMock is ITempleGoldStaking, TempleElevatedAccess, Pausable {
     using SafeERC20 for IERC20;
 
     /// @notice The staking token. Temple
     IERC20 public immutable override stakingToken;
     /// @notice Reward token. Temple Gold
     IERC20 public immutable override rewardToken;
+
+    ITempleGoldStaking public immutable previousStaking;
 
     /// @notice Distribution starter
     address public override distributionStarter;
@@ -72,10 +74,12 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         address _rescuer,
         address _executor,
         address _stakingToken,
-        address _rewardToken
+        address _rewardToken,
+        address _previousStaking
     ) TempleElevatedAccess(_rescuer, _executor){
         stakingToken = IERC20(_stakingToken);
         rewardToken = IERC20(_rewardToken);
+        previousStaking = ITempleGoldStaking(_previousStaking);
     }
 
     /**
@@ -135,10 +139,15 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
       * @param staker The staker who is being migrated to a new staking contract.
       */
     function migrateWithdraw(address staker) external override onlyMigrator returns (uint256) {
-        if (staker == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
-        uint256 stakerBalance = _balances[staker];
-        _withdrawFor(staker, msg.sender, stakerBalance, true, staker);
-        return stakerBalance;
+        revert CommonEventsAndErrors.Unimplemented();
+    }
+
+    function migrateFromPreviousStaking() external {
+        uint256 amount = previousStaking.migrateWithdraw(msg.sender);
+        // stakeFor(msg.sender, amount);
+        uint256 _prevBalance = _balances[msg.sender];
+        _applyStake(msg.sender, amount);
+        _updateAccountWeight(msg.sender, _prevBalance, _balances[msg.sender], true);
     }
     
     /**

@@ -13,6 +13,7 @@ interface ISpiceAuction is IAuctionBase {
     error MissingAuctionTokenConfig();
     error NoConfig();
     error RemoveAuctionConfig();
+    error AuctionEnded();
 
     struct SpiceAuctionConfig {
         /// @notice Duration of auction
