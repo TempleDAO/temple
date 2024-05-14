@@ -28,6 +28,8 @@ contract TempleGoldStakingTestBase is TempleGoldCommon {
     event DistributionStarterSet(address indexed starter);
     event HalfTimeSet(uint256 halfTime);
     event Transfer(address indexed from, address indexed to, uint256 value);
+    event VoteDelegateSet(address _delegate, bool _approved);
+    event UserDelegateSet(address indexed user, address _delegate);
 
     IERC20 public bidToken;
     IERC20 public bidToken2;
@@ -94,7 +96,6 @@ contract TempleGoldStakingTestBase is TempleGoldCommon {
 }
 
 contract TempleGoldStakingAccessTest is TempleGoldStakingTestBase {
-    
     function test_access_setDistributionStarter() public {
         vm.startPrank(unauthorizedUser);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
@@ -129,6 +130,12 @@ contract TempleGoldStakingAccessTest is TempleGoldStakingTestBase {
         vm.startPrank(unauthorizedUser);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         staking.unpause();
+    }
+
+    function test_access_setVoteDelegate() public {
+        vm.startPrank(unauthorizedUser);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
+        staking.setVoteDelegate(alice, true);
     }
 }
 
@@ -394,7 +401,7 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         /// @dev Vote weights are always evaluated at the end of last week
         assertLt(staking.getVoteWeight(alice), 1 ether);
         assertEq(staking.getVoteWeight(alice), weight);
-        /// @dev see test_getVoteWeight_tgldStaking for more tests on vote weight
+        /// @dev see test_vote_weight for more tests on vote weight
 
         // can stake for others
         vm.startPrank(bob);
@@ -590,5 +597,194 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         uint256 midVoteWeight = staking.getVoteWeight(unauthorizedUser);
         assertLt(lowVoteWeight, midVoteWeight);
         assertLt(lowVoteWeight, highVoteWeight);
+    }
+
+    function test_setVoteDelegate() public {
+        vm.startPrank(executor);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
+        staking.setVoteDelegate(address(0), true);
+
+        vm.expectEmit(address(staking));
+        emit VoteDelegateSet(alice, true);
+        staking.setVoteDelegate(alice, true);
+        assertEq(staking.delegates(alice), true);
+
+        vm.expectEmit(address(staking));
+        emit VoteDelegateSet(alice, false);
+        staking.setVoteDelegate(alice, false);
+        assertEq(staking.delegates(alice), false);
+
+        /// @dev see test_stake_delegate_vote_weight for more 
+    }
+
+    function test_getDelegatedVoteWeight() public {
+
+    }
+
+    function test_setUserVoteDelegate() public {
+        vm.startPrank(alice);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
+        staking.setUserVoteDelegate(address(0));
+
+        vm.expectRevert(abi.encodeWithSelector(ITempleGoldStaking.InvalidDelegate.selector));
+        staking.setUserVoteDelegate(bob);
+
+        vm.startPrank(executor);
+        staking.setVoteDelegate(bob, true);
+        staking.setVoteDelegate(mike, true);
+
+        vm.startPrank(alice);
+        vm.expectEmit(address(staking));
+        emit UserDelegateSet(alice, bob);
+        staking.setUserVoteDelegate(bob);
+
+        assertEq(staking.userDelegated(alice, bob), true);
+        assertEq(staking.userDelegates(alice), bob);
+
+        /// @dev see test_stake_delegate_vote_weight for more
+
+        // set to another delegate
+        vm.expectEmit(address(staking));
+        emit UserDelegateSet(alice, mike);
+        staking.setUserVoteDelegate(mike);
+        assertEq(staking.userDelegated(alice, bob), false);
+        assertEq(staking.userDelegated(alice, mike), true);
+        assertEq(staking.userDelegates(alice), mike);
+    }
+
+    function test_stake_delegate_vote_weight() public {
+        vm.startPrank(executor);
+        staking.setVoteDelegate(bob, true);
+        staking.setVoteDelegate(executor, true);
+        uint256 halfTime = WEEK_LENGTH / 4;
+        staking.setHalfTime(halfTime);
+        // set time to `half_time` before end of a week
+        uint256 ts = (block.timestamp / WEEK_LENGTH + 2) * WEEK_LENGTH - halfTime;
+        vm.warp(ts);
+
+        vm.startPrank(alice);
+        // set delegate
+        staking.setUserVoteDelegate(bob);
+        vm.startPrank(mike);
+        staking.setUserVoteDelegate(bob);
+        uint256 stakeAmount = 3 ether;
+        // stake
+        deal(address(templeToken), alice, 100 ether, true);
+        deal(address(templeToken), mike, 100 ether, true);
+        _approve(address(templeToken), address(staking), type(uint).max);
+        staking.stake(stakeAmount);
+        vm.startPrank(alice);
+        _approve(address(templeToken), address(staking), type(uint).max);
+        staking.stake(stakeAmount);
+
+        ts += 2 * halfTime;
+        vm.warp(ts);
+        assertEq(staking.getVoteWeight(alice), stakeAmount / 2);
+        // delegate weight is 2x (alice + mike)
+        assertEq(staking.getDelegatedVoteWeight(bob), stakeAmount);
+        assertEq(staking.getVoteWeight(bob), 0);
+
+        // voting power doesnt change during the week
+        ts += halfTime;
+        vm.warp(ts);
+        assertEq(staking.getVoteWeight(alice), stakeAmount / 2);
+        assertEq(staking.getDelegatedVoteWeight(bob), stakeAmount);
+        assertEq(staking.getVoteWeight(bob), 0);
+
+        // but is increased the week after, `t = half_time+week = 5*half_time`
+        ts += WEEK_LENGTH;
+        vm.warp(ts);
+        assertEq(staking.getVoteWeight(alice), stakeAmount * 5 / 6);
+        assertEq(staking.getDelegatedVoteWeight(bob), stakeAmount * 5 / 3);
+        assertEq(staking.getVoteWeight(bob), 0);
+
+        // alice change delegate and check vote weight of old delegate
+        staking.setUserVoteDelegate(executor);
+        // vote weight now of delegate is just from mike
+        assertEq(staking.getDelegatedVoteWeight(bob), stakeAmount * 5 / 6);
+
+        // set delegate to false
+        vm.startPrank(executor);
+        staking.setVoteDelegate(bob, false);
+        assertEq(staking.getDelegatedVoteWeight(bob), 0);
+        assertEq(staking.getVoteWeight(alice), stakeAmount * 5 / 6);
+    }
+
+    function test_withdraw_delegate_vote_weight() public {
+        vm.startPrank(executor);
+        staking.setVoteDelegate(bob, true);
+        staking.setVoteDelegate(executor, true);
+        uint256 halfTime = WEEK_LENGTH / 4;
+        staking.setHalfTime(halfTime);
+        // set time to `half_time` before end of a week
+        uint256 ts = (block.timestamp / WEEK_LENGTH + 2) * WEEK_LENGTH - halfTime;
+        vm.warp(ts);
+
+        vm.startPrank(alice);
+        // set delegate
+        staking.setUserVoteDelegate(bob);
+        vm.startPrank(mike);
+        staking.setUserVoteDelegate(bob);
+        uint256 stakeAmount = 3 ether;
+        // stake
+        deal(address(templeToken), alice, 100 ether, true);
+        deal(address(templeToken), mike, 100 ether, true);
+        _approve(address(templeToken), address(staking), type(uint).max);
+        staking.stake(stakeAmount);
+        vm.startPrank(alice);
+        _approve(address(templeToken), address(staking), type(uint).max);
+        staking.stake(stakeAmount);
+
+        ts += 2 * halfTime;
+        vm.warp(ts);
+        assertEq(staking.getVoteWeight(alice), stakeAmount / 2);
+        // delegate weight is 2x (alice + mike)
+        assertEq(staking.getDelegatedVoteWeight(bob), stakeAmount);
+
+        // alice withdraws
+        staking.withdraw(stakeAmount, true);
+        assertEq(staking.getDelegatedVoteWeight(bob), stakeAmount / 2);
+        assertEq(staking.getVoteWeight(alice), 0);
+        // mike withdraws
+        vm.startPrank(mike);
+        staking.withdraw(stakeAmount, true);
+        assertEq(staking.getDelegatedVoteWeight(bob), 0);
+        assertEq(staking.getVoteWeight(mike), 0);
+    }
+
+    function test_unsetUserVoteDelegate() public {
+        vm.startPrank(executor);
+        staking.setVoteDelegate(bob, true);
+        vm.startPrank(alice);
+        vm.expectRevert(abi.encodeWithSelector(ITempleGoldStaking.InvalidDelegate.selector));
+        staking.unsetUserVoteDelegate();
+
+        staking.setUserVoteDelegate(bob);
+        assertEq(staking.userDelegates(alice), bob);
+        vm.expectEmit(address(staking));
+        emit UserDelegateSet(alice, address(0));
+        staking.unsetUserVoteDelegate();
+
+        vm.startPrank(executor);
+        uint256 halfTime = WEEK_LENGTH / 4;
+        staking.setHalfTime(halfTime);
+        vm.startPrank(alice);
+        // set time to `half_time` before end of a week
+        uint256 ts = (block.timestamp / WEEK_LENGTH + 2) * WEEK_LENGTH - halfTime;
+        vm.warp(ts);
+        uint256 stakeAmount = 3 ether;
+        // stake
+        deal(address(templeToken), alice, 100 ether, true);
+        _approve(address(templeToken), address(staking), type(uint).max);
+        staking.stake(stakeAmount);
+        staking.setUserVoteDelegate(bob);
+
+        ts += 2 * halfTime;
+        vm.warp(ts);
+        assertEq(staking.getVoteWeight(alice), stakeAmount / 2);
+        assertEq(staking.getDelegatedVoteWeight(bob), stakeAmount / 2);
+
+        staking.unsetUserVoteDelegate();
+        assertEq(staking.getDelegatedVoteWeight(bob), 0);
     }
 }

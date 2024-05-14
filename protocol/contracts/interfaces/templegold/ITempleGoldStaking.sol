@@ -13,7 +13,10 @@ interface ITempleGoldStaking {
     event RewardDistributionCoolDownSet(uint160 cooldown);
     event DistributionStarterSet(address indexed starter);
     event HalfTimeSet(uint256 halfTime);
+    event VoteDelegateSet(address _delegate, bool _approved);
+    event UserDelegateSet(address indexed user, address _delegate);
 
+    error InvalidDelegate();
     error CannotDistribute();
 
     struct Reward {
@@ -196,4 +199,44 @@ interface ITempleGoldStaking {
       * @param staker The staker who is being migrated to a new staking contract.
       */
     function migrateWithdraw(address staker) external returns (uint256);
+
+    /**  
+     * @notice Check if user is delegated to delegate
+     * @param _user User
+     * @param _delegate Delegate
+     * @return Bool if user is delegated to delegate
+     */
+    function userDelegated(address _user, address _delegate) external view returns (bool);
+
+    /**  
+     * @notice Set vote delegate
+     * @param _delegate Delegate to approve or not
+     * @param _approved If delegate approved
+     */
+    function setVoteDelegate(address _delegate, bool _approved) external;
+
+    /**  
+     * @notice Unset delegate for a user
+     */
+    function unsetUserVoteDelegate() external;
+
+    /**  
+     * @notice Get all accounts delegated to delegate
+     * @param _delegate Delegate
+     * @return users Array of accounts
+     */
+    function getDelegateUsers(address _delegate) external view returns (address[] memory users);
+
+    /**  
+     * @notice Set vote delegate for a user
+     * @param _delegate Delegate
+     */
+    function setUserVoteDelegate(address _delegate) external;
+
+    /**  
+     * @notice Get vote weight of delegate
+     * @param _delegate Delegate
+     * @return Vote weight
+     */
+    function getDelegatedVoteWeight(address _delegate) external view returns (uint256);
 }

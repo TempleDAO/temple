@@ -129,8 +129,8 @@ interface ITempleGold is IOFT, IOAppCore, IOAppOptionsType3, IERC20 {
     function circulatingSupply() external view returns (uint256);
 
     /**
-     * @notice If minted TGLD can be distributed
-     * @return If can distribute supply
+     * @notice Check if TGOLD can be distributed
+     * @return True if can distribtue
      */
     function canDistribute() external view returns (bool);
 

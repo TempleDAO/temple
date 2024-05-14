@@ -7,10 +7,10 @@ import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
 import { ITempleGold } from "contracts/interfaces/templegold/ITempleGold.sol";
-import { ITempleGoldStaking } from "contracts/interfaces/templegold/ITempleGoldStaking.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { ITempleGoldStaking } from "contracts/interfaces/templegold/ITempleGoldStaking.sol";
 
 /** 
  * @title Temple Gold Staking
@@ -18,57 +18,84 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  * Temple Gold is distributed to staking contract for stakers on mint. Minted Temple Gold are sent directly to Staking contract.
  * A non-transferrable vote token is minted 1;1 to stakers on the amount they staked. Duration for distributing staking rewards is 7 days.
  */
-contract TempleGoldStakingMock is ITempleGoldStaking, TempleElevatedAccess, Pausable {
+contract TempleGoldStakingMock is TempleElevatedAccess, Pausable {
     using SafeERC20 for IERC20;
 
     /// @notice The staking token. Temple
-    IERC20 public immutable override stakingToken;
+    IERC20 public immutable stakingToken;
     /// @notice Reward token. Temple Gold
-    IERC20 public immutable override rewardToken;
+    IERC20 public immutable rewardToken;
 
     ITempleGoldStaking public immutable previousStaking;
 
     /// @notice Distribution starter
-    address public override distributionStarter;
+    address public distributionStarter;
 
     uint256 constant public WEEK_LENGTH = 7 days;
 
     /// @notice Rewards stored per token
-    uint256 public override rewardPerTokenStored;
+    uint256 public rewardPerTokenStored;
     /// @notice Total supply of staking token
-    uint256 public override totalSupply;
+    uint256 public totalSupply;
 
     /// @notice The time it takes until half the voting weight is reached for a staker
-    uint256 public override halfTime;
+    uint256 public halfTime;
 
     /// @notice Time tracking
-    uint256 public override periodFinish;
-    uint256 public override lastUpdateTime;
+    uint256 public periodFinish;
+    uint256 public lastUpdateTime;
 
     /// @notice Store next reward amount for next epoch
-    uint256 public override nextRewardAmount;
+    uint256 public nextRewardAmount;
     /// @notice Duration for rewards distribution
     uint256 public constant REWARD_DURATION = 7 days;
     /// @notice Cooldown time before next distribution of rewards
     /// @dev If set to zero, rewards distribution is callable any time 
-    uint160 public override rewardDistributionCoolDown;
+    uint160 public rewardDistributionCoolDown;
     /// @notice Timestamp for last reward notification
-    uint96 public override lastRewardNotificationTimestamp;
+    uint96 public lastRewardNotificationTimestamp;
 
     /// @notice For use when migrating to a new staking contract if TGLD changes.
-    address public override migrator;
+    address public migrator;
     /// @notice Data struct for rewards
     Reward internal rewardData;
     /// @notice Staker balances
     mapping(address account => uint256 balance) private _balances;
     /// @notice Stakers claimable rewards
-    mapping(address account => uint256 amount) public override claimableRewards;
+    mapping(address account => uint256 amount) public claimableRewards;
     /// @notice Staker reward per token paid
-    mapping(address account => uint256 amount) public override userRewardPerTokenPaid;
+    mapping(address account => uint256 amount) public userRewardPerTokenPaid;
 
     /// @notice Staker weights for calculating vote weights
     mapping(address account => AccountWeightParams weight) private _weights;
     mapping(address account => AccountWeightParams weight) private _prevWeights;
+
+    event GoldDistributionNotified(uint256 amount, uint256 timestamp);
+    event Staked(address indexed staker, uint256 amount);
+    event RewardPaid(address indexed staker, address toAddress, uint256 reward);
+    event MigratorSet(address migrator);
+    event Withdrawn(address indexed staker, address to, uint256 amount);
+    event RewardDistributionCoolDownSet(uint160 cooldown);
+    event DistributionStarterSet(address indexed starter);
+    event HalfTimeSet(uint256 halfTime);
+    event VoteDelegateSet(address _delegate, bool _approved);
+    event UserDelegateSet(address indexed user, address _delegate);
+
+    error InvalidDelegate();
+    error CannotDistribute();
+
+    struct Reward {
+        uint40 periodFinish;
+        uint216 rewardRate;  // The reward amount (1e18) per total reward duration
+        uint40 lastUpdateTime;
+        uint216 rewardPerTokenStored;
+    }
+
+    struct AccountWeightParams {
+        uint64 weekNumber;
+        uint64 stakeTime;
+        uint64 updateTime;
+    }
 
     constructor(
         address _rescuer,
@@ -102,7 +129,7 @@ contract TempleGoldStakingMock is ITempleGoldStaking, TempleElevatedAccess, Paus
      * @notice Set migrator
      * @param _migrator Migrator
      */
-    function setMigrator(address _migrator) external override onlyElevatedAccess {
+    function setMigrator(address _migrator) external onlyElevatedAccess {
         if (_migrator == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
         migrator = _migrator;
         emit MigratorSet(_migrator);
@@ -112,7 +139,7 @@ contract TempleGoldStakingMock is ITempleGoldStaking, TempleElevatedAccess, Paus
      * @notice Set reward distribution cooldown
      * @param _cooldown Cooldown in seconds
      */
-    function setRewardDistributionCoolDown(uint160 _cooldown) external override onlyElevatedAccess {
+    function setRewardDistributionCoolDown(uint160 _cooldown) external onlyElevatedAccess {
         /// @dev zero cooldown is allowed
         rewardDistributionCoolDown = _cooldown;
         emit RewardDistributionCoolDownSet(_cooldown);
@@ -124,7 +151,7 @@ contract TempleGoldStakingMock is ITempleGoldStaking, TempleElevatedAccess, Paus
      *      Formular from st-yETH https://docs.yearn.fi/getting-started/products/yeth/overview
      * @param _halfTime Cooldown in seconds
      */
-    function setHalfTime(uint256 _halfTime) external override onlyElevatedAccess {
+    function setHalfTime(uint256 _halfTime) external onlyElevatedAccess {
         if (_halfTime == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
         halfTime = _halfTime;
         emit HalfTimeSet(_halfTime);
@@ -138,7 +165,7 @@ contract TempleGoldStakingMock is ITempleGoldStaking, TempleElevatedAccess, Paus
       *      `setMigrator(new_staking_contract)` needs to be called first
       * @param staker The staker who is being migrated to a new staking contract.
       */
-    function migrateWithdraw(address staker) external override onlyMigrator returns (uint256) {
+    function migrateWithdraw(address staker) external onlyMigrator returns (uint256) {
         revert CommonEventsAndErrors.Unimplemented();
     }
 
@@ -171,7 +198,7 @@ contract TempleGoldStakingMock is ITempleGoldStaking, TempleElevatedAccess, Paus
      * @notice Stake
      * @param amount Amount of staking token
      */
-    function stake(uint256 amount) external override {
+    function stake(uint256 amount) external {
         stakeFor(msg.sender, amount);
     }
 
@@ -180,7 +207,7 @@ contract TempleGoldStakingMock is ITempleGoldStaking, TempleElevatedAccess, Paus
      * @param _for Account to stake for
      * @param _amount Amount of staking token
      */
-    function stakeFor(address _for, uint256 _amount) public override whenNotPaused {
+    function stakeFor(address _for, uint256 _amount) public whenNotPaused {
         if (_amount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
         
         // pull tokens and apply stake
@@ -195,7 +222,7 @@ contract TempleGoldStakingMock is ITempleGoldStaking, TempleElevatedAccess, Paus
      * @param amount Amount to withdraw
      * @param claim Boolean if to claim rewards
      */
-    function withdraw(uint256 amount, bool claim) external override {
+    function withdraw(uint256 amount, bool claim) external {
         _withdrawFor(msg.sender, msg.sender, amount, claim, msg.sender);
     }
 
@@ -203,17 +230,17 @@ contract TempleGoldStakingMock is ITempleGoldStaking, TempleElevatedAccess, Paus
      * @notice Withdraw all staked tokens
      * @param claim Boolean if to claim rewards
      */
-    function withdrawAll(bool claim) external override {
+    function withdrawAll(bool claim) external {
         _withdrawFor(msg.sender, msg.sender, _balances[msg.sender], claim, msg.sender);
     }
 
     /// @notice Owner can pause user swaps from occuring
-    function pause() external override onlyElevatedAccess {
+    function pause() external onlyElevatedAccess {
         _pause();
     }
 
     /// @notice Owner can unpause so user swaps can occur
-    function unpause() external override onlyElevatedAccess {
+    function unpause() external onlyElevatedAccess {
         _unpause();
     }
 
@@ -222,7 +249,7 @@ contract TempleGoldStakingMock is ITempleGoldStaking, TempleElevatedAccess, Paus
      * @param account Account
      * @return Staked balance of account
      */
-    function balanceOf(address account) public override view returns (uint256) {
+    function balanceOf(address account) public view returns (uint256) {
         return _balances[account];
     }
 
@@ -231,7 +258,7 @@ contract TempleGoldStakingMock is ITempleGoldStaking, TempleElevatedAccess, Paus
      * @param account Account
      * @return Earned rewards of account
      */
-    function earned(address account) external override view returns (uint256) {
+    function earned(address account) external view returns (uint256) {
         return _earned(account, _balances[account]);
     }
 
@@ -239,7 +266,7 @@ contract TempleGoldStakingMock is ITempleGoldStaking, TempleElevatedAccess, Paus
      * @notice Get Temple Gold reward per token of Temple 
      * @return Reward per token
      */
-    function rewardPerToken() external override view returns (uint256) {
+    function rewardPerToken() external view returns (uint256) {
         return _rewardPerToken();
     }
 
@@ -257,7 +284,7 @@ contract TempleGoldStakingMock is ITempleGoldStaking, TempleElevatedAccess, Paus
      * @param _to Recipient
      * @param _amount Amount of tokens
      */
-    function recoverToken(address _token, address _to, uint256 _amount) external override onlyElevatedAccess {
+    function recoverToken(address _token, address _to, uint256 _amount) external onlyElevatedAccess {
         if (_token == address(stakingToken) || _token == address(rewardToken )) { revert CommonEventsAndErrors.InvalidAddress(); }
 
         IERC20(_token).safeTransfer(_to, _amount);
@@ -268,7 +295,7 @@ contract TempleGoldStakingMock is ITempleGoldStaking, TempleElevatedAccess, Paus
      * @notice Get rewards
      * @param staker Staking account
      */
-    function getReward(address staker) external override updateReward(staker) {
+    function getReward(address staker) external updateReward(staker) {
         _getReward(staker, staker);
     }
 
@@ -303,7 +330,7 @@ contract TempleGoldStakingMock is ITempleGoldStaking, TempleElevatedAccess, Paus
      * @notice Get reward data
      * @return Reward data
      */
-    function getRewardData() external override view returns (Reward memory) {
+    function getRewardData() external view returns (Reward memory) {
         return rewardData;
     }
 
@@ -312,7 +339,7 @@ contract TempleGoldStakingMock is ITempleGoldStaking, TempleElevatedAccess, Paus
      * @param _account Account
      * @return weight AccountWeightParams
      */
-    function getAccountWeights(address _account) external override view returns (AccountWeightParams memory weight) {
+    function getAccountWeights(address _account) external view returns (AccountWeightParams memory weight) {
         weight = _weights[_account];
     }
 

@@ -10,6 +10,7 @@ import { FakeERC20 } from "contracts/fakes/FakeERC20.sol";
 contract TempleGoldCommon is TempleTest {
     address public treasury = makeAddr("treasury");
     address public teamGnosis = makeAddr("teamGnosis");
+    address public mike = makeAddr("mike");
     address public layerZeroEndpointArbitrumOne = 0x1a44076050125825900e736c501f859c50fE728c;
     address public layerZeroEndpointEthereum = 0x1a44076050125825900e736c501f859c50fE728c;
     uint256 public layerZeroEndpointArbitrumId = 30110;

@@ -167,6 +167,10 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
         return distributionParams;
     }
 
+    /**
+     * @notice Check if TGOLD can be distributed
+     * @return True if can distribtue
+     */
     function canDistribute() external view returns (bool) {
         VestingFactor memory vestingFactorCache = vestingFactor;
         return _canDistribute(vestingFactorCache);
@@ -183,6 +187,7 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
 
     /**
      * @notice Get circulating supply on this chain
+     * @dev When this function is called on source chain (arbitrum), you get the real circulating supply across chains
      * @return Circulating supply
      */
     function circulatingSupply() public override view returns (uint256) {
