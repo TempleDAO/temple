@@ -1,4 +1,4 @@
-import { FC, ReactNode } from 'react';
+import React, { FC, ReactNode } from 'react';
 import { Link as BaseLink, useResolvedPath, useMatch } from 'react-router-dom';
 import styled from 'styled-components';
 
@@ -26,7 +26,11 @@ export const PillMenu = ({ links }: Props) => {
   );
 };
 
-const MenuLink: FC<{ to: string; onClick?: () => void }> = (props) => {
+const MenuLink: FC<{
+  children: ReactNode;
+  to: string;
+  onClick?: () => void;
+}> = (props) => {
   const resolved = useResolvedPath(props.to);
   const match = useMatch({ path: resolved.pathname, end: true });
   return <Link {...props} $isActive={!!match} />;
