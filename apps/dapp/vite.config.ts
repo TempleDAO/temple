@@ -67,6 +67,9 @@ export default defineConfig({
         },
       },
     },
+    commonjsOptions: {
+      transformMixedEsModules: true,
+    },
     // https://github.com/vitejs/vite/issues/15378
     assetsInlineLimit: (file) => {
       return !file.endsWith('.svg');
