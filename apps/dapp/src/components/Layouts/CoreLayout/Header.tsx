@@ -5,6 +5,7 @@ import {
   useCallback,
   useLayoutEffect,
   SyntheticEvent,
+  ReactNode,
 } from 'react';
 import { Link, useResolvedPath, useMatch } from 'react-router-dom';
 import styled from 'styled-components';
@@ -109,6 +110,7 @@ interface MenuItemProps {
   strictMatch?: boolean;
   onMenuItemActive: (offsetX: number) => void;
   onClick?: (event: SyntheticEvent) => void;
+  children: ReactNode;
 }
 
 const MenuItem: FC<MenuItemProps> = ({
