@@ -53,6 +53,7 @@ export default defineConfig({
     target: 'es2020',
     sourcemap: shouldBuildSourceMap,
     rollupOptions: {
+      external: ['@walletconnect/sign-client'],
       // https://github.com/TanStack/query/issues/5175
       onwarn(warning, warn) {
         if (warning.code === 'MODULE_LEVEL_DIRECTIVE') {
@@ -68,7 +69,6 @@ export default defineConfig({
         },
       },
     },
-    commonjsOptions: { transformMixedEsModules: true },
     // https://github.com/vitejs/vite/issues/15378
     assetsInlineLimit: (file) => {
       return !file.endsWith('.svg');
