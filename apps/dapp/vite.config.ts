@@ -68,6 +68,7 @@ export default defineConfig({
         },
       },
     },
+    commonjsOptions: { include: [] },
     // https://github.com/vitejs/vite/issues/15378
     assetsInlineLimit: (file) => {
       return !file.endsWith('.svg');
