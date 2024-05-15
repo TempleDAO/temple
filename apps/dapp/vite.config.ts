@@ -33,7 +33,9 @@ const plugins = [
     },
   }),
   svgr(),
-  legacy(),
+  legacy({
+    renderLegacyChunks: false,
+  }),
 ];
 
 const VITE_ENV = process.env.VITE_ENV;
