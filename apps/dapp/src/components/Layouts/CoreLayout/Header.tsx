@@ -19,13 +19,11 @@ import {
 import { UnstyledList } from 'styles/common';
 import { theme } from 'styles/theme';
 import { phoneAndAbove, verySmallDesktop } from 'styles/breakpoints';
-import { Lottie } from 'components/Layouts/CoreLayout/Lottie';
 
 import env from 'constants/env';
 import selectorIcon from 'assets/icons/nav-selector-icon.svg';
 import hamburger from 'assets/icons/core-hamburger.svg';
 import hamburgerX from 'assets/icons/core-x-hamburger.svg';
-import animationData from 'assets/animations/logo-animation.json';
 import mobileBackgoundImage from 'assets/images/mobile-background-geometry.svg';
 import { Account } from './Account';
 
@@ -45,7 +43,8 @@ const Header = () => {
             onClick={() => setIsNavOpen((isOpen) => !isOpen)}
           />
           <Logo to="/core">
-            <Lottie animationData={animationData} height={36} width={36} />
+            {/* <Lottie animationData={animationData} height={36} width={36} /> */}
+            <div>Logo</div>
           </Logo>
         </MobileNavLeft>
         <Navigation

@@ -62,7 +62,10 @@ export default function LineChart<T>(
     ),
   });
 
-  const toggleLineVisibility = (key: string) => {
+  const toggleLineVisibility = (key: string | undefined) => {
+    if (!key) {
+      return;
+    }
     //there must be always at least one visible line
     // otherwise the chart breaks
     const nextState = {
@@ -181,7 +184,7 @@ export default function LineChart<T>(
             }}
             height={20}
             formatter={legendFormatter}
-            onClick={(e) => toggleLineVisibility(e.dataKey)}
+            onClick={(e) => toggleLineVisibility(e.dataKey?.toString())}
           />
         ) : null}
       </ComposedChart>
