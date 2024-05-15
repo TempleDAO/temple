@@ -443,7 +443,7 @@ export const LBPForm = ({ pool }: Props) => {
           onClick={saveForm}
         />
       )}
-      {createPool.error && <ErrorMessage>{`${createPool.error}`}</ErrorMessage>}
+      {createPool.error && <ErrorMessage>{createPool.error}</ErrorMessage>}
     </Form>
   );
 };

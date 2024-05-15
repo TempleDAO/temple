@@ -114,11 +114,7 @@ export const useCrosshairs = (data: Point[][]) => {
   });
 
   const onNearestX = useCallback(
-    (
-      value: { x: number },
-      { index }: { index: number },
-      lineSeriesId: 'current' | 'predicted'
-    ) => {
+    (value, { index }, lineSeriesId: 'current' | 'predicted') => {
       const rangeIndex = ranges.findIndex((range) => {
         return value.x >= range[0] && value.x <= range[1];
       });

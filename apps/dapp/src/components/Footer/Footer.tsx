@@ -151,7 +151,7 @@ const CopyrightStyled = styled.strong`
 const FooterStyled = styled.footer`
   padding: 1.75rem /* 28/16 */;
   margin-top: 2rem;
-  background: url('${footerBg}');
+  background: url(${footerBg});
 `;
 
 const FooterGrid = styled.div`

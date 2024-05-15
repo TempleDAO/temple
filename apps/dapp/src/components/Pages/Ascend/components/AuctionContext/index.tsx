@@ -95,7 +95,6 @@ interface AuctionToken {
 
 interface Props {
   pool: Pool;
-  children: React.ReactNode;
 }
 
 export const AuctionContextProvider: FC<Props> = ({ pool, children }) => {

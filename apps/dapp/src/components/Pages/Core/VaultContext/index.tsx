@@ -1,11 +1,4 @@
-import {
-  createContext,
-  FC,
-  useEffect,
-  useContext,
-  useMemo,
-  ReactNode,
-} from 'react';
+import { createContext, FC, useEffect, useContext, useMemo } from 'react';
 import { BigNumber } from 'ethers';
 import { useParams } from 'react-router-dom';
 
@@ -57,9 +50,7 @@ export const VaultContext = createContext<VaultContextType>({
   optimisticallyUpdateVaultStaked: noop,
 });
 
-export const VaultContextProvider: FC<{ children: ReactNode }> = ({
-  children,
-}) => {
+export const VaultContextProvider: FC = ({ children }) => {
   const {
     vaultGroups,
     isLoading: vaultsLoading,

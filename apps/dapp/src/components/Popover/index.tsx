@@ -11,7 +11,6 @@ interface Props {
   closeOnEscape?: boolean;
   showCloseButton?: boolean;
   header?: ReactNode;
-  children?: React.ReactNode;
 }
 
 export const Popover: FC<Props> = ({

@@ -1,5 +1,5 @@
 import React, { Suspense } from 'react';
-import { createRoot } from 'react-dom/client';
+import ReactDOM from 'react-dom';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import styled from 'styled-components';
 
@@ -51,9 +51,7 @@ const LazyPage = ({ component: Component }: LazyPageProps) => (
 
 AnalyticsService.init();
 
-const root = createRoot(document.getElementById('root')!);
-
-root.render(
+ReactDOM.render(
   <React.StrictMode>
     <AppProvider>
       <GlobalStyle />
@@ -88,5 +86,6 @@ root.render(
       </BrowserRouter>
       <NotificationManager />
     </AppProvider>
-  </React.StrictMode>
+  </React.StrictMode>,
+  document.getElementById('root')
 );

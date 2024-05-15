@@ -1,4 +1,4 @@
-import { useRef, FC, ReactNode } from 'react';
+import { useRef, FC } from 'react';
 
 import { VaultRef } from './types';
 import { useMediaQuery } from 'react-responsive';
@@ -7,7 +7,7 @@ import { VaultMobile } from './VaultMobile';
 import { useSelectedPage } from './useSelectedPage';
 import { queryPhone } from 'styles/breakpoints';
 
-export const VaultSVG: FC<{ children: ReactNode }> = ({ children }) => {
+export const VaultSVG: FC = ({ children }) => {
   const selectedNav = useSelectedPage();
   const vaultRef = useRef<VaultRef>(null);
 

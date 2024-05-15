@@ -51,13 +51,6 @@ export default defineConfig({
     target: 'es2020',
     sourcemap: shouldBuildSourceMap,
     rollupOptions: {
-      // https://github.com/TanStack/query/issues/5175
-      onwarn(warning, warn) {
-        if (warning.code === 'MODULE_LEVEL_DIRECTIVE') {
-          return;
-        }
-        warn(warning);
-      },
       output: {
         manualChunks: {
           vendor: Array.from(VENDOR_CHUNKS),
@@ -65,10 +58,6 @@ export default defineConfig({
           ...renderChunks(dependencies),
         },
       },
-    },
-    // https://github.com/vitejs/vite/issues/15378
-    assetsInlineLimit: (file) => {
-      return !file.endsWith('.svg');
     },
   },
   define: {
@@ -96,7 +85,4 @@ export default defineConfig({
     },
   },
   envPrefix: 'VITE',
-  server: {
-    port: 3000,
-  },
 });
