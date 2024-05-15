@@ -51,7 +51,7 @@ export default defineConfig({
     target: 'es2020',
     sourcemap: shouldBuildSourceMap,
     rollupOptions: {
-      external: ['@web3-onboard/*'],
+      external: ['@web3-onboard/*', '@wallet-connect/*'],
       // https://github.com/TanStack/query/issues/5175
       onwarn(warning, warn) {
         if (warning.code === 'MODULE_LEVEL_DIRECTIVE') {
