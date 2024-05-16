@@ -423,6 +423,121 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         assertApproxEqAbs(staking.getVoteWeight(alice), weight, 3e15);
     }
 
+    // mike's delegated weight === alice weight + bob weight
+    function _checkDelegatedWeight(uint256 aliceExpectedWeight, uint256 bobExpectedWeight) private {
+        assertEq(staking.getVoteWeight(alice), aliceExpectedWeight);
+        assertEq(staking.getDelegatedVoteWeight(alice), aliceExpectedWeight);
+
+        assertEq(staking.getVoteWeight(bob), bobExpectedWeight);
+        assertEq(staking.getDelegatedVoteWeight(bob), bobExpectedWeight);
+
+        assertEq(staking.getVoteWeight(mike), 0);
+        assertApproxEqAbs(
+            staking.getDelegatedVoteWeight(mike), 
+            aliceExpectedWeight + bobExpectedWeight, 
+            1 // Might be slight rounding (+-1)
+        );
+    }
+
+    function test_voteWeight_overTime() public {
+        // From https://docs.yearn.fi/getting-started/products/yeth/overview#st-yeth-user-vote-weight
+        // > The voting half-time variable determines the time it takes until half the voting weight
+        // > is reached for a staker... Thus the wait to get to half of your st-yETH voting power is X days.
+        //
+        // So if we set this to 8 weeks, it should have half the voting power at 8 weeks
+        _setHalftime(8 weeks);
+
+        // Set right on the week boundry to get exact 
+        vm.warp(block.timestamp / WEEK_LENGTH * WEEK_LENGTH);
+
+        // Alice stakes 100
+        vm.startPrank(alice);
+        deal(address(templeToken), alice, 100 ether, true);
+        _approve(address(templeToken), address(staking), type(uint).max);
+        staking.stake(100 ether);
+
+        // Immediately, Alice's voting power is... 100?
+        // @todo @princetonbishop This looks wrong - shouldn't have a 100% voting power
+        assertEq(staking.getVoteWeight(alice), 99.718409010911650827e18);
+
+        // At the end of the first week
+        skip(1 weeks);
+        assertEq(staking.getVoteWeight(alice), 11.111111111111111111e18);
+
+        // At the exact half time, it should be about half the voting power
+        skip(7 weeks);
+        assertEq(staking.getVoteWeight(alice), 50e18);
+
+        // After another 8 weeks it's another half-life amount
+        skip(8 weeks);
+        assertEq(staking.getVoteWeight(alice), 66.666666666666666666e18);
+
+        // And again
+        skip(8 weeks);
+        assertEq(staking.getVoteWeight(alice), 75e18);
+    }
+
+    function test_multiDelegate() public {
+        _setHalftime(8 weeks);
+
+        // Set right on the week boundry to get exact 
+        vm.warp(block.timestamp / WEEK_LENGTH * WEEK_LENGTH);
+
+        vm.startPrank(executor);
+        staking.setVoteDelegate(mike, true);
+
+        // Alice stakes 100 and delegates to Mike
+        {
+            vm.startPrank(alice);
+            deal(address(templeToken), alice, 100 ether, true);
+            _approve(address(templeToken), address(staking), type(uint).max);
+            staking.stake(100 ether);
+            staking.setUserVoteDelegate(mike);
+        }
+
+        // Bob stakes 100 and delegates to Mike
+        {
+            vm.startPrank(bob);
+            deal(address(templeToken), bob, 100 ether, true);
+            _approve(address(templeToken), address(staking), type(uint).max);
+            staking.stake(100 ether);
+            staking.setUserVoteDelegate(mike);
+        }
+
+        // Mike's delegated weight = alice's weight + bob's weight
+        // @todo @princetonbishop This looks wrong - shouldn't have a 100% voting power
+        _checkDelegatedWeight(99.718409010911650827e18, 99.718409010911650827e18);
+
+        skip(1 weeks);
+        _checkDelegatedWeight(11.111111111111111111e18, 11.111111111111111111e18);
+
+        skip(7 weeks);
+        _checkDelegatedWeight(50e18, 50e18);
+
+        skip(16 weeks);
+        _checkDelegatedWeight(75e18, 75e18);
+
+        // Bob stakes another 50 (so his voting power increases by 50%)
+        {
+            vm.startPrank(bob);
+            deal(address(templeToken), bob, 50 ether, true);
+            staking.stake(50 ether);
+            _checkDelegatedWeight(75e18, 75e18 * 150/100);
+        }
+
+        // Alice withdraws 25 (so her voting power decreases by 25%)
+        {
+            vm.startPrank(alice);
+            staking.withdraw(25e18, false);
+            _checkDelegatedWeight(75e18 * 3/4, 75e18 * 150/100);
+        }
+
+        // Skip another half life
+        // @todo @princetonbishop The invariant no longer holds
+        skip(8 weeks);
+        _checkDelegatedWeight(60e18, 100e18);
+    }
+
     function test_getReward_tgldStaking() public {
         vm.warp(block.timestamp + 3 days);
         templeGold.mint();
