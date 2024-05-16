@@ -59,6 +59,8 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
     /// @notice Distribution parameters. Minted share percentages for staking, escrow and gnosis. Adds up to 100%
     DistributionParams private distributionParams;
     /// @notice Vesting factor determines rate of mint
+    // This represents the fraction of MAX_SUPPLY to mint every second
+    // if set to `1/ 3 years`, MAX_SUPPLY will be minted in 3 years. It is possible but not likely vesting factor might be changed in future
     VestingFactor private vestingFactor;
 
     constructor(
@@ -248,7 +250,7 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
         if (_lastMintTimestamp == 0) {
             mintAmount = TempleMath.mulDivRound(MAX_SUPPLY, vestingFactorCache.numerator, vestingFactorCache.denominator, false);
         } else {
-            mintAmount = TempleMath.mulDivRound((block.timestamp - _lastMintTimestamp) * (MAX_SUPPLY - totalSupplyCache), vestingFactorCache.numerator, vestingFactorCache.denominator, false);
+            mintAmount = TempleMath.mulDivRound((block.timestamp - _lastMintTimestamp) * (MAX_SUPPLY), vestingFactorCache.numerator, vestingFactorCache.denominator, false);
         }
        
         if (totalSupplyCache + mintAmount > MAX_SUPPLY) {

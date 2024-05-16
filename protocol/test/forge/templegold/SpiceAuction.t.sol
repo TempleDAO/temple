@@ -313,7 +313,7 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         vm.expectRevert(abi.encodeWithSelector(ISpiceAuction.InvalidConfigOperation.selector));
         spice.recoverToken(_spiceToken, alice, recoverAmount);
 
-        ISpiceAuction.SpiceAuctionConfig memory _config = _startAuction(true, true);
+        _startAuction(true, true);
         IAuctionBase.EpochInfo memory info = spice.getEpochInfo(1);
         vm.startPrank(daoExecutor);
         // cooldown still pending
@@ -542,6 +542,10 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         ISpiceAuction.SpiceAuctionConfig memory _config = _startAuction(true, true);
         uint256 epoch = spice.currentEpoch();
         IAuctionBase.EpochInfo memory epochInfo = spice.getEpochInfo(epoch);
+        // cannot claim before active auction
+        vm.warp(epochInfo.startTime - 1);
+        vm.expectRevert(abi.encodeWithSelector(IAuctionBase.CannotClaim.selector, 1));
+        spice.claim(1);
         vm.warp(epochInfo.startTime);
         vm.expectRevert(abi.encodeWithSelector(IAuctionBase.CannotClaim.selector, 1));
         spice.claim(1);

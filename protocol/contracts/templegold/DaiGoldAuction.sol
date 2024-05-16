@@ -150,7 +150,7 @@ contract DaiGoldAuction is IDaiGoldAuction, AuctionBase, TempleElevatedAccess {
     function claim(uint256 epochId) external virtual override {
         /// @notice cannot claim for current live epoch
         EpochInfo storage info = epochs[epochId];
-        if (info.isActive()) { revert CannotClaim(epochId); }
+        if (!info.hasEnded()) { revert CannotClaim(epochId); }
         /// @dev epochId could be invalid. eg epochId > _currentEpochId
         if (info.startTime == 0) { revert InvalidEpoch(); }
 

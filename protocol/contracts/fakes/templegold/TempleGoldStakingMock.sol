@@ -163,9 +163,8 @@ contract TempleGoldStakingMock is TempleElevatedAccess, Pausable {
       *         2. Any existing rewards are claimed and sent directly to the `staker`
       * @dev Called only from the new staking contract (the migrator).
       *      `setMigrator(new_staking_contract)` needs to be called first
-      * @param staker The staker who is being migrated to a new staking contract.
       */
-    function migrateWithdraw(address staker) external onlyMigrator returns (uint256) {
+    function migrateWithdraw() external view onlyMigrator {
         revert CommonEventsAndErrors.Unimplemented();
     }
 

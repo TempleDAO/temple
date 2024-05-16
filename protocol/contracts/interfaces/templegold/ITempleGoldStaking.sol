@@ -209,11 +209,10 @@ interface ITempleGoldStaking {
     function userDelegated(address _user, address _delegate) external view returns (bool);
 
     /**  
-     * @notice Set vote delegate
-     * @param _delegate Delegate to approve or not
-     * @param _approved If delegate approved
+     * @notice Set self as vote delegate. If false all users delegated to `msg.sendeer` have to select new delegates
+     * @param _approve If delegate approved
      */
-    function setVoteDelegate(address _delegate, bool _approved) external;
+    function setSelfAsDelegate(bool _approve) external;
 
     /**  
      * @notice Unset delegate for a user
@@ -239,4 +238,9 @@ interface ITempleGoldStaking {
      * @return Vote weight
      */
     function getDelegatedVoteWeight(address _delegate) external view returns (uint256);
+
+    /// @notice Delegates
+    function delegates(address _delegate) external view returns (bool);
+    /// @notice Keep track of users and their delegates
+    function userDelegates(address _account) external view returns (address);
 }

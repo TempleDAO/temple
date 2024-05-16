@@ -118,10 +118,10 @@ contract DaiGoldAuctionTestBase is TempleGoldCommon {
     function _startAuction() internal {
         uint256 currentEpoch = daiGoldAuction.currentEpoch();
         if (currentEpoch == 0) {
-            vm.warp(block.timestamp + 3 weeks);
+            vm.warp(block.timestamp + 1 weeks);
         } else {
             IAuctionBase.EpochInfo memory info = daiGoldAuction.getEpochInfo(currentEpoch);
-            vm.warp(info.endTime + 3 weeks);
+            vm.warp(info.endTime + 1 weeks);
         }
         templeGold.mint();
         daiGoldAuction.setAuctionStarter(address(0));
@@ -370,16 +370,23 @@ contract DaiGoldAuctionTest is DaiGoldAuctionTestBase {
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
         daiGoldAuction.bid(0);
 
-        uint256 goldBalanceBefore = templeGold.balanceOf(address(daiGoldAuction));
-        vm.warp(block.timestamp + 3600);
-        
+        // if auction ended
         uint256 currentEpoch = daiGoldAuction.currentEpoch();
+        IAuctionBase.EpochInfo memory epochInfo = daiGoldAuction.getEpochInfo(currentEpoch);
+        vm.warp(epochInfo.endTime);
+        vm.expectRevert(abi.encodeWithSelector(IAuctionBase.CannotDeposit.selector));
+        daiGoldAuction.bid(100 ether);
+
+        uint256 goldBalanceBefore = templeGold.balanceOf(address(daiGoldAuction));
+         vm.warp(epochInfo.startTime);
+        
+        currentEpoch = daiGoldAuction.currentEpoch();
         bidToken.approve(address(daiGoldAuction), type(uint).max);
         vm.expectEmit(address(daiGoldAuction));
         emit Deposit(executor, currentEpoch, 100 ether);
         daiGoldAuction.bid(100 ether);
 
-        IAuctionBase.EpochInfo memory epochInfo = daiGoldAuction.getEpochInfo(currentEpoch);
+        epochInfo = daiGoldAuction.getEpochInfo(currentEpoch);
         assertEq(daiGoldAuction.depositors(executor, currentEpoch), 100 ether);
         assertEq(epochInfo.totalBidTokenAmount, 100 ether);
         assertEq(bidToken.balanceOf(treasury), 100 ether);
@@ -409,10 +416,6 @@ contract DaiGoldAuctionTest is DaiGoldAuctionTestBase {
         vm.startPrank(executor);
         _startAuction();
 
-        // warp and distribute
-        vm.warp(block.timestamp + 5 days);
-        // call to claim /deposit calls templeGold.mint() and distributes
-
         // deposits
         vm.startPrank(alice);
         bidToken.approve(address(daiGoldAuction), type(uint).max);
@@ -423,12 +426,22 @@ contract DaiGoldAuctionTest is DaiGoldAuctionTestBase {
 
         // cannot claim for current epoch
         uint256 currentEpoch = daiGoldAuction.currentEpoch();
+        IAuctionBase.EpochInfo memory info = daiGoldAuction.getEpochInfo(currentEpoch);
         vm.expectRevert(abi.encodeWithSelector(IAuctionBase.CannotClaim.selector, currentEpoch));
         daiGoldAuction.claim(currentEpoch);
-        vm.warp(block.timestamp + 3 days);
+        // cannot claim for not started (cooldown time)
+        vm.warp(info.startTime - 1 seconds);
+        vm.expectRevert(abi.encodeWithSelector(IAuctionBase.CannotClaim.selector, currentEpoch));
+        daiGoldAuction.claim(currentEpoch);
+        // cannot claim when active
+        vm.warp(info.startTime);
+        vm.expectRevert(abi.encodeWithSelector(IAuctionBase.CannotClaim.selector, currentEpoch));
+        daiGoldAuction.claim(currentEpoch);
         // invalid epoch error
         vm.expectRevert(abi.encodeWithSelector(IAuctionBase.InvalidEpoch.selector));
         daiGoldAuction.claim(currentEpoch+1);
+
+        vm.warp(info.endTime);
         // bob cannot claim for 0 deposits
         vm.startPrank(bob);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
@@ -457,6 +470,9 @@ contract DaiGoldAuctionTest is DaiGoldAuctionTestBase {
 
         // start another auction but check claimable diffs when another user deposits additionally
         _startAuction();
+        currentEpoch = daiGoldAuction.currentEpoch();
+        info = daiGoldAuction.getEpochInfo(currentEpoch);
+        vm.warp(info.startTime);
         deal(address(bidToken), alice, 100 ether, false);
         deal(address(bidToken), executor, 100 ether, false);
         vm.startPrank(alice);

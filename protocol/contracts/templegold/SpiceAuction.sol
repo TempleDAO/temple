@@ -207,9 +207,9 @@ contract SpiceAuction is ISpiceAuction, AuctionBase {
      */
     function claim(uint256 epochId) external virtual override {
         /// @notice cannot claim for current live epoch
-        EpochInfo memory info = epochs[epochId];
+        EpochInfo storage info = epochs[epochId];
         if (info.startTime == 0) { revert InvalidEpoch(); }
-        if (info.endTime > block.timestamp) { revert CannotClaim(epochId); }
+        if (!info.hasEnded()) { revert CannotClaim(epochId); }
 
         uint256 bidTokenAmount = depositors[msg.sender][epochId];
         if (bidTokenAmount == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }

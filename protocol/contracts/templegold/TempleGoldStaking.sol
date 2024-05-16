@@ -11,7 +11,7 @@ import { ITempleGoldStaking } from "contracts/interfaces/templegold/ITempleGoldS
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import { ClearableEnumerableSet } from "contracts/templegold/ClearableEnumerableSet.sol";
 
 /** 
  * @title Temple Gold Staking
@@ -21,7 +21,7 @@ import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableS
  */
 contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable {
     using SafeERC20 for IERC20;
-    using EnumerableSet for EnumerableSet.AddressSet;
+    using ClearableEnumerableSet for ClearableEnumerableSet.ClearableAddressSet;
 
     /// @notice The staking token. Temple
     IERC20 public immutable override stakingToken;
@@ -71,13 +71,13 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     mapping(address account => AccountWeightParams weight) private _prevWeights;
     
     /// @notice Delegates
-    mapping(address delegate => bool isDelegate) public delegates;
+    mapping(address delegate => bool isDelegate) public override delegates;
     /// @notice Use as alias for delegate "balances" for easier vote weight calculation
     mapping(address delegate => uint256 balance) private _delegateBalances;
     /// @notice Keep track of users and their delegates
-    mapping(address account => address delegate) public userDelegates;
+    mapping(address account => address delegate) public override userDelegates;
     /// @notice Keep track of delegates and users delegated to them
-    mapping(address delegate => EnumerableSet.AddressSet) private delegateUsersSet;
+    mapping(address delegate => ClearableEnumerableSet.ClearableAddressSet) private _delegateUsersSet;
 
     constructor(
         address _rescuer,
@@ -116,7 +116,7 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     }
 
     /**  
-     * @notice Set vote delegate for a user
+     * @notice Set vote delegate for a user. User can delegate to self
      * @param _delegate Delegate
      */
     function setUserVoteDelegate(address _delegate) external override {
@@ -125,53 +125,60 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
 
         // remove old delegate if any
         address _userDelegate = userDelegates[msg.sender];
-        EnumerableSet.AddressSet storage prevDelegateUsersSet = delegateUsersSet[_userDelegate];
+        if (_userDelegate == _delegate) { return; }
+        ClearableEnumerableSet.ClearableAddressSet storage prevDelegateUsersSet = _delegateUsersSet[_userDelegate];
         uint256 userBalance = _balances[msg.sender];
 
+        /// @dev for a previous delegate who is no longer a valid delegate
+        /// _delegateUsersSet[_delegate] was cleared so `remove = false`
         bool removed = prevDelegateUsersSet.remove(msg.sender);
-        // update vote weight and _delegateBalance
+        // update vote weight and _delegateBalances
         if (userBalance > 0) {
             uint256 _prevBalance;
             uint256 _newDelegateBalance;
             if (removed) {
                 // update vote weight of old delegate
                 _prevBalance = _delegateBalances[_userDelegate];
-                _newDelegateBalance = _delegateBalances[_userDelegate] = _prevBalance - userBalance;
-                _updateAccountWeight(_userDelegate, _prevBalance, _newDelegateBalance, false);
+                /// @dev skip for a previous delegate with 0 users delegated and 0 own vote weight
+                if (_prevBalance > 0) {
+                    /// @dev `_prevBalance > 0` because when a user sets delegate, vote weight and `_delegateBalance` are updated for delegate
+                    _newDelegateBalance = _delegateBalances[_userDelegate] = _prevBalance - userBalance;
+                    _updateAccountWeight(_userDelegate, _prevBalance, _newDelegateBalance, false);
+                }
             }
-            /// @dev Reuse variables
-            _prevBalance = _delegateBalances[_delegate];
-            /// @dev `_prevBalance >= 0` because when a user sets delegate, vote wieght and `_delegateBalance` are updated for delegate
-            _newDelegateBalance = _delegateBalances[_delegate] = _prevBalance + userBalance;
-            _updateAccountWeight(_delegate, _prevBalance, _newDelegateBalance, true);
+            if (msg.sender != _delegate) {
+                /// @dev Reuse variables
+                _prevBalance = _delegateBalances[_delegate];
+                _newDelegateBalance = _delegateBalances[_delegate] = _prevBalance + userBalance;
+                _updateAccountWeight(_delegate, _prevBalance, _newDelegateBalance, true);
+            }
         }
         userDelegates[msg.sender] = _delegate;
-        delegateUsersSet[_delegate].add(msg.sender);
+        _delegateUsersSet[_delegate].add(msg.sender);
 
         emit UserDelegateSet(msg.sender, _delegate);
     }
 
     /**  
-     * @notice Set vote delegate
-     * @param _delegate Delegate to approve or not
-     * @param _approved If delegate approved
+     * @notice Set self as vote delegate. If false all users delegated to `msg.sendeer` have to select new delegates
+     * @param _approve If delegate approved
      */
-    function setVoteDelegate(address _delegate, bool _approved) external override onlyElevatedAccess {
-        if (_delegate == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
-        delegates[_delegate] = _approved;
-        emit VoteDelegateSet(_delegate, _approved);
+    function setSelfAsDelegate(bool _approve) external override {
+        bool prevStatusTrue = delegates[msg.sender];
+        delegates[msg.sender] = _approve;
+        emit VoteDelegateSet(msg.sender, _approve);
         // remove delegate vote and reset delegateBalance
-        if (!_approved) {
-            uint256 delegateBalance = _delegateBalances[_delegate];
-            _delegateBalances[_delegate] = 0;
+        if (!_approve && prevStatusTrue) {
+            uint256 delegateBalance = _delegateBalances[msg.sender];
+            _delegateBalances[msg.sender] = 0;
             /// @dev if no user delegated to delegate
             /// delegate vote weight will default to vote weight as a user
             if (delegateBalance > 0) {
-                _updateAccountWeight(_delegate, delegateBalance, 0, false);
+                _updateAccountWeight(msg.sender, delegateBalance, 0, false);
             }
+
+            _delegateUsersSet[msg.sender].clear();
         }
-        /// @dev not removing delegate users to allow users to redelegate
-        /// default user weight will be used for vote weight instead
     }
 
     /**  
@@ -181,7 +188,7 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         address _delegate = userDelegates[msg.sender];
         if (_delegate == address(0)) { revert InvalidDelegate(); }
 
-        delegateUsersSet[_delegate].remove(msg.sender);
+        _delegateUsersSet[_delegate].remove(msg.sender);
         delete userDelegates[msg.sender];
 
         uint256 userBalance = _balances[msg.sender];
@@ -272,7 +279,7 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         _updateAccountWeight(_for, _prevBalance, _balances[_for], true);
         // update delegate weight
         /// @dev this avoids using iteration to get voteWeight for all users delegated to delegate
-        if (userDelegates[_for] != address(0)) {
+        if (userDelegates[_for] != address(0) && userDelegates[_for] != _for) {
             address delegate = userDelegates[_for];
             /// @dev Reuse variable
             _prevBalance = _delegateBalances[delegate];
@@ -399,7 +406,8 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     function getDelegatedVoteWeight(address _delegate) external view returns (uint256) {
         // check address is delegate
         uint256 ownVoteWeight = _voteWeight(_delegate, _balances[_delegate]);
-        if (!delegates[_delegate]) { return ownVoteWeight; }
+        address callerDelegate = userDelegates[_delegate];
+        if (!delegates[_delegate] || callerDelegate == msg.sender) { return ownVoteWeight; }
         return ownVoteWeight + _voteWeight(_delegate, _delegateBalances[_delegate]);
     }
 
@@ -409,7 +417,7 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
      * @return users Array of accounts
      */
     function getDelegateUsers(address _delegate) external override view returns (address[] memory users) {
-        return delegateUsersSet[_delegate].values();
+        return _delegateUsersSet[_delegate].values();
     }
 
     /**  
@@ -419,7 +427,7 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
      * @return Bool if user is delegated to delegate
      */
     function userDelegated(address _user, address _delegate) external override view returns (bool) {
-        return delegateUsersSet[_delegate].contains(_user);
+        return _delegateUsersSet[_delegate].contains(_user);
     }
     
     /**  
@@ -495,11 +503,11 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         /// @dev update account weight as a fallback if delegate for account(if any) is removed in future or user changes delegates
         _updateAccountWeight(staker, _prevBalance, _balances[staker], false);
         /// @dev this avoids using iteration to get voteWeight for all users delegated to delegate
-        if (userDelegates[staker] != address(0)) {
+        if (userDelegates[staker] != address(0) && userDelegates[staker] != staker) {
             address delegate = userDelegates[staker];
             /// @dev Reuse variable
             _prevBalance = _delegateBalances[delegate];
-            /// @dev `_prevBalance >= 0` because when a user sets delegate, vote wieght and `_delegateBalance` are updated for delegate
+            /// @dev `_prevBalance > 0` because when a user sets delegate, vote wieght and `_delegateBalance` are updated for delegate
             uint256 _newDelegateBalance = _delegateBalances[delegate] = _prevBalance - amount;
             _updateAccountWeight(delegate, _prevBalance, _newDelegateBalance, false);
         }
@@ -554,7 +562,8 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         }
         return _balance * t / (t + halfTime);
     }
-
+    /// @dev Vote weight is the same immediately before and immediately after a deposit.
+    /// A withdrawal reduces the vote weight proportionally
     function _updateAccountWeight(
         address _account,
         uint256 _prevBalance,
