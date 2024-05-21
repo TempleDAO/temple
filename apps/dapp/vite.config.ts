@@ -52,7 +52,7 @@ export default defineConfig({
     sourcemap: shouldBuildSourceMap,
     rollupOptions: {
       // fixes flaky vercel build
-      external: ['@walletconnect/sign-client'],
+      external: ['/.*walletconnect.*/'],
       // https://github.com/TanStack/query/issues/5175
       onwarn(warning, warn) {
         if (warning.code === 'MODULE_LEVEL_DIRECTIVE') {
