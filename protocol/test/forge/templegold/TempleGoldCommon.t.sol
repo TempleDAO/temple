@@ -6,6 +6,7 @@ import { TempleTest } from "../TempleTest.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { ITempleGold } from "contracts/interfaces/templegold/ITempleGold.sol";
 import { FakeERC20 } from "contracts/fakes/FakeERC20.sol";
+import { TempleGold } from "contracts/templegold/TempleGold.sol";
 
 contract TempleGoldCommon is TempleTest {
     address public treasury = makeAddr("treasury");
@@ -67,5 +68,14 @@ contract TempleGoldCommon is TempleTest {
 
     function _addressToBytes32(address _addr) internal pure returns (bytes32) {
         return bytes32(uint256(uint160(_addr)));
+    }
+
+    function _setVestingFactor(TempleGold templeGold) internal {
+        vm.startPrank(executor);
+        ITempleGold.VestingFactor memory factor;
+        factor.numerator = 1 seconds;
+        factor.denominator = 100 days;
+        templeGold.setVestingFactor(factor);
+        vm.stopPrank();
     }
 }

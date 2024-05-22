@@ -28,7 +28,7 @@ contract TempleGoldLayerZeroTest is TestHelperOz5 {
     address public userA = address(0x1);
     address public userB = address(0x2);
     uint256 public initialBalance = 100 ether;
-    function setUp() public {
+    function setUp() public virtual override {
         vm.deal(userA, 1000 ether);
         vm.deal(userB, 1000 ether);
         

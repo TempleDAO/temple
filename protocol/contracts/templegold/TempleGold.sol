@@ -41,6 +41,9 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
     /// @notice Last block timestamp Temple Gold was minted
     uint32 public override lastMintTimestamp;
 
+    /// @notice Deploy time for first mint amount calculation 
+    uint32 private immutable _deployTime;
+
     //// @notice Distribution as a percentage of 100
     uint256 public constant DISTRIBUTION_DIVISOR = 100 ether;
     /// @notice 1B max supply
@@ -49,7 +52,7 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
     uint256 public constant MINIMUM_MINT = 10_000 ether;
 
     /// @notice Mint chain id
-    uint256 private immutable mintChainId;
+    uint256 private immutable _mintChainId;
 
     /// @notice Total distribtued to track total supply
     uint256 private _totalDistributed;
@@ -69,7 +72,8 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
        staking = ITempleGoldStaking(_initArgs.staking);
        escrow = IDaiGoldAuction(_initArgs.escrow);
        teamGnosis = _initArgs.gnosis;
-       mintChainId = _initArgs.mintChainId;
+       _mintChainId = _initArgs.mintChainId;
+       _deployTime = uint32(block.timestamp);
     }
 
     /**
@@ -248,7 +252,8 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
         uint256 totalSupplyCache = _totalDistributed;
         /// @notice first time mint
         if (_lastMintTimestamp == 0) {
-            mintAmount = TempleMath.mulDivRound(MAX_SUPPLY, vestingFactorCache.numerator, vestingFactorCache.denominator, false);
+            /// @dev use deployTime for time difference. avoid getting stuck where _lastMintTimestamp is always 0 because mintAmount < 10_000
+            mintAmount = TempleMath.mulDivRound((block.timestamp - _deployTime) * MAX_SUPPLY, vestingFactorCache.numerator, vestingFactorCache.denominator, false);
         } else {
             mintAmount = TempleMath.mulDivRound((block.timestamp - _lastMintTimestamp) * (MAX_SUPPLY), vestingFactorCache.numerator, vestingFactorCache.denominator, false);
         }
@@ -341,7 +346,7 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
     }
 
     modifier onlyArbitrum() {
-        if (block.chainid != mintChainId) { revert WrongChain(); }
+        if (block.chainid != _mintChainId) { revert WrongChain(); }
         _;
     }
  }

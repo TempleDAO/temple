@@ -276,6 +276,8 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
     }
 
     function test_distributeRewards() public {
+        _setVestingFactor(templeGold);
+        skip(1 days);
         vm.startPrank(executor);
         staking.setDistributionStarter(alice);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
@@ -335,7 +337,8 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
     }
 
     function test_distributeGold_staking() public {
-        vm.warp(block.timestamp + 3 days);
+        _setVestingFactor(templeGold);
+        skip(1 days);
         uint256 mintAmount = templeGold.getMintAmount();
         uint256 stakingAmount = 30 * mintAmount / 100;
         staking.distributeGold();
@@ -473,22 +476,24 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
     }
 
     function test_earned_getReward_tgldStaking() public {
+        _setVestingFactor(templeGold);
+        skip(1 days);
         vm.startPrank(alice);
         deal(address(templeToken), alice, 1000 ether, true);
         _approve(address(templeToken), address(staking), type(uint).max);
         staking.stake(100 ether);
 
-        vm.warp(block.timestamp + 1 days);
+        skip(1 days);
         staking.distributeRewards();
         uint256 stakingGoldBalance = templeGold.balanceOf(address(staking));
         assertEq(staking.earned(alice), 0);
 
-        vm.warp(block.timestamp + 1 days);
+        skip(1 days);
         uint256 rewardPerToken = staking.rewardPerToken();
         uint256 aliceEarned = (100 ether * rewardPerToken) / 1 ether;
         assertEq(staking.earned(alice), aliceEarned);
 
-        vm.warp(block.timestamp + 1 days);
+        skip(1 days);
         uint256 rewardPerToken2 = staking.rewardPerToken();
         aliceEarned = (100 ether * (rewardPerToken2 - rewardPerToken)) / 1 ether + aliceEarned;
         assertEq(staking.earned(alice), aliceEarned);
@@ -498,13 +503,13 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         _approve(address(templeToken), address(staking), type(uint).max);
         staking.stake(100 ether);
 
-        vm.warp(block.timestamp + 1 days);
+        skip(1 days);
         uint256 rewardPerToken3 = staking.rewardPerToken();
         uint256 bobEarned = (100 ether * (rewardPerToken3-rewardPerToken2)) / 1 ether;
         assertEq(staking.earned(bob), bobEarned);
 
         // after 7 days all rewards should be distributed to stakers
-        vm.warp(block.timestamp + 4 days);
+        skip(4 days);
         uint256 rewardPerToken4 = staking.rewardPerToken();
         bobEarned = (100 ether * (rewardPerToken4-rewardPerToken3)) / 1 ether + bobEarned;
         aliceEarned = (100 ether * (rewardPerToken4-rewardPerToken2)) / 1 ether + aliceEarned;
@@ -517,21 +522,29 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         assertEq(templeGold.balanceOf(alice), aliceEarned);
         assertEq(templeGold.balanceOf(bob), bobEarned);
 
-        vm.warp(block.timestamp + 3 days);
-        staking.distributeGold();
-        ITempleGoldStaking.Reward memory rdata = staking.getRewardData();
-
         vm.startPrank(executor);
         staking.setRewardDistributionCoolDown(1 hours);
-        vm.warp(block.timestamp + 1 days);
-        uint256 balanceBefore = templeGold.balanceOf(address(staking));
-        staking.distributeRewards();
-        uint256 balanceAfter = templeGold.balanceOf(address(staking));
 
+        ITempleGoldStaking.Reward memory rdata = staking.getRewardData();
+        uint256 balanceBefore = templeGold.balanceOf(address(staking));
         rdata = staking.getRewardData();
+        staking.distributeRewards();
         uint256 remaining = uint256(rdata.periodFinish) - block.timestamp;
         uint256 leftover = remaining * rdata.rewardRate;
-        uint256 rewardRate = uint216((balanceAfter - balanceBefore + leftover) / 7 days);
+        // 0 leftover
+        uint256 balanceAfter = templeGold.balanceOf(address(staking));
+        uint256 rewardRate = uint216((balanceAfter - balanceBefore) / 7 days);
+        rdata = staking.getRewardData();
+        assertEq(rdata.rewardRate, rewardRate);
+
+        // there's some leftover rewards. periodFinish not reached yet
+        skip(1 days);
+        remaining = uint256(rdata.periodFinish) - block.timestamp;
+        leftover = remaining * rdata.rewardRate;
+        balanceBefore = templeGold.balanceOf(address(staking));
+        staking.distributeRewards();
+        balanceAfter = templeGold.balanceOf(address(staking));
+        rewardRate = uint216((balanceAfter - balanceBefore + leftover) / 7 days);
         rdata = staking.getRewardData();
         assertEq(rdata.rewardRate, rewardRate);
     }
