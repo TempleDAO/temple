@@ -13,8 +13,8 @@ import { TempleTeleporter } from "contracts/templegold/TempleTeleporter.sol";
 import { TempleERC20Token } from "contracts/core/TempleERC20Token.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 
-// DevTools imports
-import { TestHelperOz5 } from "@layerzerolabs/test-devtools-evm-foundry/contracts/TestHelperOz5.sol";
+// DevTools imports -- needs to use the local version to avoid stack too deep
+import { TestHelperOz5 } from "test/forge/lz-devtools/TestHelperOz5.sol";
 
 contract TempleTeleporterTest is TestHelperOz5 {
     using OptionsBuilder for bytes;
