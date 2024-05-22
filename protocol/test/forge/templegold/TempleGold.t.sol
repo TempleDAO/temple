@@ -350,9 +350,6 @@ contract TempleGoldTest is TempleGoldTestBase {
         vm.expectRevert(abi.encodeWithSelector(ITempleGold.MissingParameter.selector));
         _templeGold.mint();
         _templeGold.setVestingFactor(_getVestingFactor());
-        // distribution params not set
-        vm.expectRevert(abi.encodeWithSelector(ITempleGold.MissingParameter.selector));
-        _templeGold.mint();
         _templeGold.setDistributionParams(_getDistributionParameters());
         // invalid receiver. staking and escrow not set
         vm.expectRevert(abi.encodeWithSelector(IERC20Errors.ERC20InvalidReceiver.selector, address(0)));
@@ -392,6 +389,90 @@ contract TempleGoldTest is TempleGoldTestBase {
         // test coverage mintAmount = 0
         templeGold.mint();
     }
+
+    function test_mint_tgld_distribution() public {
+        vm.selectFork(arbitrumOneForkId);
+        vm.startPrank(executor);
+        ITempleGold.VestingFactor memory _factor;
+        _factor.numerator = 1 days;
+        _factor.denominator = 90 days;
+        templeGold.setVestingFactor(_factor);
+        ITempleGold.DistributionParams memory _params = _getDistributionParameters();
+        _params.gnosis = 0;
+        _params.staking = 30 ether;
+        _params.escrow = 70 ether;
+        skip(30 days);
+        uint256 totalSupply = templeGold.totalSupply();
+        uint256 mintAmount = templeGold.getMintAmount();
+        templeGold.setDistributionParams(_params);
+        uint256 stakingAmount = _params.staking * mintAmount / 100 ether;
+        uint256 gnosisAmount = 0;
+        uint256 escrowAmount = _params.escrow * mintAmount / 100 ether;
+        templeGold.mint();
+        assertEq(templeGold.totalSupply(), totalSupply+mintAmount);
+        assertEq(templeGold.balanceOf(address(staking)), stakingAmount);
+        assertEq(templeGold.balanceOf(address(daiGoldAuction)), escrowAmount);
+        assertApproxEqAbs(templeGold.balanceOf(teamGnosis), gnosisAmount, 1);
+
+        // staking = 0
+        _params.gnosis = 10 ether;
+        _params.staking = 0;
+        _params.escrow = 90 ether;
+        templeGold.setDistributionParams(_params);
+        skip(30 days);
+        mintAmount = templeGold.getMintAmount();
+        totalSupply = templeGold.totalSupply();
+        stakingAmount = 0;
+        gnosisAmount = _params.gnosis * mintAmount / 100 ether;
+        escrowAmount = _params.escrow * mintAmount / 100 ether;
+        uint256 stakingBalance = templeGold.balanceOf(address(staking));
+        uint256 daiGoldBalance = templeGold.balanceOf(address(daiGoldAuction));
+        uint256 gnosisBalance = templeGold.balanceOf(teamGnosis);
+        templeGold.mint();
+        assertEq(templeGold.totalSupply(), totalSupply+mintAmount);
+        assertEq(templeGold.balanceOf(address(staking)), stakingBalance+stakingAmount);
+        assertEq(templeGold.balanceOf(address(daiGoldAuction)), daiGoldBalance+escrowAmount);
+        assertApproxEqAbs(templeGold.balanceOf(teamGnosis), gnosisBalance+gnosisAmount, 1);
+
+        // dai gold auction = 0
+        _params.gnosis = 10 ether;
+        _params.staking = 90 ether;
+        _params.escrow = 0;
+        templeGold.setDistributionParams(_params);
+        skip(30 days);
+        mintAmount = templeGold.getMintAmount();
+        totalSupply = templeGold.totalSupply();
+        stakingAmount = _params.staking * mintAmount / 100 ether;
+        gnosisAmount = _params.gnosis * mintAmount / 100 ether;
+        escrowAmount = 0;
+        stakingBalance = templeGold.balanceOf(address(staking));
+        daiGoldBalance = templeGold.balanceOf(address(daiGoldAuction));
+        gnosisBalance = templeGold.balanceOf(teamGnosis);
+        templeGold.mint();
+        assertEq(templeGold.totalSupply(), totalSupply+mintAmount);
+        assertEq(templeGold.balanceOf(address(staking)), stakingBalance+stakingAmount);
+        assertEq(templeGold.balanceOf(address(daiGoldAuction)), daiGoldBalance+escrowAmount);
+        assertApproxEqAbs(templeGold.balanceOf(teamGnosis), gnosisBalance+gnosisAmount, 1);
+    }
+
+    // function test_mint_according_to_vesting_factor() public {
+    //     vm.selectFork(arbitrumOneForkId);
+    //     vm.startPrank(executor);
+    //     ITempleGold.VestingFactor memory _factor;
+    //     _factor.numerator = 1 days;
+    //     _factor.denominator = 3 * 365 days;
+    //     templeGold.setVestingFactor(_factor);
+
+    //     skip(365 days);
+    //     templeGold.mint();
+    //     assertEq(templeGold.totalSupply(), templeGold.MAX_SUPPLY() / 3);
+    //     skip(365 days);
+    //     templeGold.mint();
+    //     assertEq(templeGold.totalSupply(), templeGold.MAX_SUPPLY() * 2 / 3);
+    //     skip(365 days);
+    //     templeGold.mint();
+    //     assertEq(templeGold.totalSupply(), templeGold.MAX_SUPPLY());
+    // }
 
     function test_mint_max_supply_tgld() public {
         templeGold.mint();

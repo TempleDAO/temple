@@ -142,7 +142,7 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
     function mint() external override onlyArbitrum {
         VestingFactor memory vestingFactorCache = vestingFactor;
         DistributionParams storage distributionParamsCache = distributionParams;
-        if (vestingFactorCache.numerator == 0 || distributionParamsCache.escrow == 0) { revert ITempleGold.MissingParameter(); }
+        if (vestingFactorCache.numerator == 0) { revert ITempleGold.MissingParameter(); }
 
         uint256 mintAmount = _getMintAmount(vestingFactorCache);
         /// @dev no op silently

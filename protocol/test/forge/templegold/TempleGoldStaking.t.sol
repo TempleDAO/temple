@@ -355,6 +355,20 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         staking.notifyDistribution(amount);
     }
 
+    function test_getDelegateUsers() public {
+        vm.startPrank(mike);
+        staking.setSelfAsDelegate(true);
+        vm.startPrank(alice);
+        staking.setUserVoteDelegate(mike);
+        address[] memory users = staking.getDelegateUsers(mike);
+        assertEq(users[0], alice);
+        vm.startPrank(bob);
+        staking.setUserVoteDelegate(mike);
+        users = staking.getDelegateUsers(mike);
+        assertEq(users[0], alice);
+        assertEq(users[1], bob);
+    }
+
     function test_recoverToken_tgld_staking() public {
         uint256 amount = 100 ether;
         deal(daiToken, address(staking), amount, true);
@@ -659,6 +673,10 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         staking.setUserVoteDelegate(bob);
 
         assertEq(staking.userDelegated(alice, bob), true);
+        assertEq(staking.userDelegates(alice), bob);
+
+        // nothing happens. same delegate
+        staking.setUserVoteDelegate(bob);
         assertEq(staking.userDelegates(alice), bob);
 
         /// @dev see test_stake_delegate_vote_weight for more

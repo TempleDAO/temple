@@ -28,11 +28,12 @@ contract TempleGoldLayerZeroTest is TestHelperOz5 {
     address public userA = address(0x1);
     address public userB = address(0x2);
     uint256 public initialBalance = 100 ether;
-    function setUp() public virtual override {
+    function setUp() public {
         vm.deal(userA, 1000 ether);
         vm.deal(userB, 1000 ether);
-
+        
         super.setUp();
+       
         setUpEndpoints(2, LibraryType.UltraLightNode);
         aTempleGold = TempleGoldMock(
             _deployOApp(type(TempleGoldMock).creationCode, abi.encode(address(endpoints[aEid]), address(this), "aTempleGold", "aTGOLD"))

@@ -139,6 +139,17 @@ contract SpiceAuctionViewTest is SpiceAuctionTestBase {
     }
 
     function test_getClaimableForEpoch() public {
+        // bid token == 0
+        uint256 claimabale = spice.getClaimableForEpoch(alice, 0);
+        assertEq(claimabale, 0);
+
+        _startAuction(true, true);
+        vm.startPrank(alice);
+        deal(daiToken, alice, 100 ether);
+        IERC20(daiToken).approve(address(spice), type(uint).max);
+        // epoch > 1
+        claimabale = spice.getClaimableForEpoch(alice, 2);
+        assertEq(claimabale, 0);
         /// @dev see claim and bid tests
     }
 
