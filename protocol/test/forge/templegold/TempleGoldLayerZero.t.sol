@@ -13,8 +13,8 @@ import { MessagingFee } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/OFTCor
 import { TempleGoldMock } from "contracts/fakes/templegold/TempleGoldMock.sol";
 import { ITempleGold } from "contracts/interfaces/templegold/ITempleGold.sol";
 
-// DevTools imports
-import { TestHelperOz5 } from "@layerzerolabs/test-devtools-evm-foundry/contracts/TestHelperOz5.sol";
+// DevTools imports -- needs to use the local version to avoid stack too deep
+import { TestHelperOz5 } from "test/forge/lz-devtools/TestHelperOz5.sol";
 
 contract TempleGoldLayerZeroTest is TestHelperOz5 {
     using OptionsBuilder for bytes;
