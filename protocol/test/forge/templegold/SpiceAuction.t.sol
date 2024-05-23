@@ -298,7 +298,7 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         info = spice.getEpochInfo(currentEpoch);
         // auction ended
         vm.warp(info.endTime);
-        vm.expectRevert(abi.encodeWithSelector(ISpiceAuction.AuctionEnded.selector));
+        vm.expectRevert(abi.encodeWithSelector(IAuctionBase.AuctionEnded.selector));
         spice.removeAuctionConfig();
     }
 
