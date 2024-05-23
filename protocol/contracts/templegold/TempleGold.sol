@@ -289,6 +289,7 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
         MessagingFee calldata _fee,
         address _refundAddress
     ) external payable virtual override(IOFT, OFTCore) returns (MessagingReceipt memory msgReceipt, OFTReceipt memory oftReceipt) {
+        if (_sendParam.composeMsg.length > 0) { revert CannotCompose(); }
         /// cast bytes32 to address
         address _to = _sendParam.to.bytes32ToAddress();
         /// @dev user can cross-chain transfer to self
