@@ -31,7 +31,7 @@ contract TempleGoldTestBase is TempleGoldCommon {
     TempleGold public templeGoldMainnet;
     FakeERC20 public templeToken;
 
-    uint32 internal _deployTime;
+    uint32 internal _setVestingFactorTime;
 
     uint256 public constant MINIMUM_DISTRIBUTION_SHARE = 1 ether;
     uint256 public constant ARBITRUM_ONE_BLOCKNUMBER_B = 207201713;
@@ -44,7 +44,6 @@ contract TempleGoldTestBase is TempleGoldCommon {
 
         ITempleGold.InitArgs memory initArgs = _getTempleGoldInitArgs();
         templeGold = new TempleGold(initArgs);
-        _deployTime = uint32(block.timestamp);
         templeToken = new FakeERC20("Temple Token", "TEMPLE", executor, 1000 ether);
         staking = new TempleGoldStaking(rescuer, executor, address(templeToken), address(templeGold));
         daiGoldAuction = new DaiGoldAuction(
@@ -80,6 +79,7 @@ contract TempleGoldTestBase is TempleGoldCommon {
         factor.numerator = 2 ether;
         factor.denominator = 1000 ether;
         templeGold.setVestingFactor(factor);
+        _setVestingFactorTime = uint32(block.timestamp);
         templeGold.setStaking(address(staking));
         // whitelist
         templeGold.authorizeContract(address(daiGoldAuction), true);
@@ -203,7 +203,7 @@ contract TempleGoldViewTest is TempleGoldTestBase {
         vm.startPrank(executor);
         templeGold.setVestingFactor(_factor);
         uint256 _maxSupply = templeGold.MAX_SUPPLY();
-        uint256 _amount = _maxSupply * (block.timestamp - _deployTime) * _factor.numerator / _factor.denominator;
+        uint256 _amount = _maxSupply * (block.timestamp - _setVestingFactorTime) * _factor.numerator / _factor.denominator;
         assertEq(_amount, templeGold.getMintAmount());
         templeGold.mint();
         uint256 _lastMint = block.timestamp;
@@ -296,12 +296,14 @@ contract TempleGoldTest is TempleGoldTestBase {
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
         templeGold.setVestingFactor(_factor);
         _factor.denominator = temp;
+        assertEq(templeGold.lastMintTimestamp(), 0);
         vm.expectEmit(address(templeGold));
         emit VestingFactorSet(_factor.numerator, _factor.denominator);
         templeGold.setVestingFactor(_factor);
         ITempleGold.VestingFactor memory _vf = templeGold.getVestingFactor();
         assertEq(_vf.numerator, 10 ether);
         assertEq(_vf.denominator, 100 ether);
+        assertEq(templeGold.lastMintTimestamp(), uint32(block.timestamp));
     }
 
     function test_setDistributionParameters_tgld() public {
