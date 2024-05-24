@@ -170,7 +170,7 @@ contract SpiceAuction is ISpiceAuction, AuctionBase {
         epochId = _currentEpochId = _currentEpochId + 1;
         EpochInfo storage info = epochs[epochId];
         uint128 startTime = info.startTime = uint128(block.timestamp) + config.startCooldown;
-        uint128 endTime = info.endTime = uint128(block.timestamp) + config.duration;
+        uint128 endTime = info.endTime = startTime + config.duration;
         info.totalAuctionTokenAmount = epochAuctionTokenAmount;
         // Keep track of total allocation auction tokens per epoch
         _totalAuctionTokenAllocation[auctionToken] = totalAuctionTokenAllocation + epochAuctionTokenAmount;
