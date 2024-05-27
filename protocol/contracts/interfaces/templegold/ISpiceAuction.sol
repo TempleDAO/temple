@@ -90,4 +90,11 @@ interface ISpiceAuction is IAuctionBase {
      * @param _daoExecutor New dao executor
      */
     function setDaoExecutor(address _daoExecutor) external;
+
+    /**
+     * @notice Recover auction tokens for epoch with zero bids
+     * @param epochId Epoch Id
+     * @param to Recipient
+     */
+    function recoverAuctionTokenForZeroBidAuction(uint256 epochId, address to) external;
 }

@@ -267,6 +267,30 @@ contract SpiceAuction is ISpiceAuction, AuctionBase {
     }
 
     /**
+     * @notice Recover auction tokens for epoch with zero bids
+     * @param epochId Epoch Id
+     * @param to Recipient
+     */
+    function recoverAuctionTokenForZeroBidAuction(uint256 epochId, address to) external override onlyDAOExecutor {
+        if (to == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
+        // has to be valid epoch
+        if (epochId > _currentEpochId) { revert InvalidEpoch(); }
+        // epoch has to be ended
+        EpochInfo storage epochInfo = epochs[epochId];
+        if (!epochInfo.hasEnded()) { revert AuctionActive(); }
+        // bid token amount for epoch has to be 0
+        if (epochInfo.totalBidTokenAmount > 0) { revert InvalidOperation(); }
+
+        SpiceAuctionConfig storage config = auctionConfigs[epochId];
+        (, address auctionToken) = _getBidAndAuctionTokens(config);
+        uint256 amount = epochInfo.totalAuctionTokenAmount;
+        _totalAuctionTokenAllocation[auctionToken] -= amount;
+
+        emit CommonEventsAndErrors.TokenRecovered(to, auctionToken, amount);
+        IERC20(auctionToken).safeTransfer(to, amount);
+    }
+
+    /**
      * @notice Get spice auction config for an auction
      * @param auctionId Id of auction
      */
