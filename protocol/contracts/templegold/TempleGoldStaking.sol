@@ -188,11 +188,11 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         address _delegate = userDelegates[msg.sender];
         if (_delegate == address(0)) { revert InvalidDelegate(); }
 
-        _delegateUsersSet[_delegate].remove(msg.sender);
+        bool removed = _delegateUsersSet[_delegate].remove(msg.sender);
         delete userDelegates[msg.sender];
 
         uint256 userBalance = _balances[msg.sender];
-        if (userBalance > 0) {
+        if (userBalance > 0 && removed) {
             // update vote weight of old delegate
             uint256 _prevBalance = _delegateBalances[_delegate];
             uint256 _newDelegateBalance = _delegateBalances[_delegate] = _prevBalance - userBalance;
