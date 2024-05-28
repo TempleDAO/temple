@@ -18,6 +18,7 @@ interface ITempleGoldStaking {
 
     error InvalidDelegate();
     error CannotDistribute();
+    error NoStaker();
 
     struct Reward {
         uint40 periodFinish;

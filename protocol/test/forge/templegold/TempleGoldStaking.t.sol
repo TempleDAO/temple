@@ -284,6 +284,15 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         staking.distributeRewards();
         
         vm.startPrank(alice);
+        vm.expectRevert(abi.encodeWithSelector(ITempleGoldStaking.NoStaker.selector));
+        staking.distributeRewards();
+
+        deal(address(templeToken), bob, 1000 ether, true);
+        vm.startPrank(bob);
+        _approve(address(templeToken), address(staking), type(uint).max);
+        staking.stake(1 ether);
+
+        vm.startPrank(alice);
         uint256 rewardAmount = staking.nextRewardAmount();
         ITempleGoldStaking.Reward memory rewardDataBefore = staking.getRewardData();
         assertEq(rewardDataBefore.rewardRate, 0);
@@ -435,14 +444,15 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
     function test_getReward_tgldStaking() public {
         vm.warp(block.timestamp + 3 days);
         templeGold.mint();
-        vm.warp(staking.lastRewardNotificationTimestamp() + staking.rewardDistributionCoolDown() + 1);
-        staking.distributeRewards();
         
         vm.startPrank(alice);
         uint256 amount = 10 ether;
         deal(address(templeToken), alice, 100 ether, true);
         _approve(address(templeToken), address(staking), type(uint).max);
         staking.stake(amount);
+
+        vm.warp(staking.lastRewardNotificationTimestamp() + staking.rewardDistributionCoolDown() + 1);
+        staking.distributeRewards();
 
         uint256 aliceTempleGoldBalance = templeGold.balanceOf(alice);
         uint256 claimable = staking.earned(alice);
