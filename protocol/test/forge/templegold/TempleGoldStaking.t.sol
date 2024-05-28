@@ -655,12 +655,21 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         staking.setUserVoteDelegate(mike);
         assertEq(staking.userDelegates(bob), mike);
 
-        // bob can assign to another delegate where previoud delegate is still valid
+        // bob can assign to another delegate where previous delegate is still valid
         vm.startPrank(executor);
         staking.setSelfAsDelegate(true);
         vm.startPrank(bob);
         staking.setUserVoteDelegate(executor);
         assertEq(staking.userDelegates(bob), executor);
+        // bob can stake. old delegate not affected
+        staking.stake(stakeAmount);
+        skip(1 weeks);
+        assertEq(staking.getDelegatedVoteWeight(mike), 0);
+        assertGt(staking.getDelegatedVoteWeight(executor), 0);
+        // bob can withdraw
+        staking.withdrawAll(false);
+        assertEq(staking.getDelegatedVoteWeight(mike), 0);
+        assertEq(staking.getDelegatedVoteWeight(executor), 0);
     }
 
     function test_unsetUserVoteDelegate_remove_delegate_after_self_set_false() public {

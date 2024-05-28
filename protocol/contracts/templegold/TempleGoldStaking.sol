@@ -279,8 +279,8 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         _updateAccountWeight(_for, _prevBalance, _balances[_for], true);
         // update delegate weight
         /// @dev this avoids using iteration to get voteWeight for all users delegated to delegate
-        if (userDelegates[_for] != address(0) && userDelegates[_for] != _for) {
-            address delegate = userDelegates[_for];
+        address delegate = userDelegates[_for];
+        if (delegate != address(0) && delegate != _for && delegates[delegate]) {
             /// @dev Reuse variable
             _prevBalance = _delegateBalances[delegate];
             uint256 _newDelegateBalance = _delegateBalances[delegate] = _prevBalance + _amount;
@@ -503,8 +503,8 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         /// @dev update account weight as a fallback if delegate for account(if any) is removed in future or user changes delegates
         _updateAccountWeight(staker, _prevBalance, _balances[staker], false);
         /// @dev this avoids using iteration to get voteWeight for all users delegated to delegate
-        if (userDelegates[staker] != address(0) && userDelegates[staker] != staker) {
-            address delegate = userDelegates[staker];
+        address delegate = userDelegates[staker];
+        if (delegate != address(0) && delegate != staker && delegates[delegate]) {
             /// @dev Reuse variable
             _prevBalance = _delegateBalances[delegate];
             /// @dev `_prevBalance > 0` because when a user sets delegate, vote wieght and `_delegateBalance` are updated for delegate
