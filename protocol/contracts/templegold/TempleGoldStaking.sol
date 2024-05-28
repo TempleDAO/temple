@@ -140,7 +140,7 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
                 // update vote weight of old delegate
                 _prevBalance = _delegateBalances[_userDelegate];
                 /// @dev skip for a previous delegate with 0 users delegated and 0 own vote weight
-                if (_prevBalance > 0) {
+                if (_prevBalance > 0 && _userDelegate != msg.sender) {
                     /// @dev `_prevBalance > 0` because when a user sets delegate, vote weight and `_delegateBalance` are updated for delegate
                     _newDelegateBalance = _delegateBalances[_userDelegate] = _prevBalance - userBalance;
                     _updateAccountWeight(_userDelegate, _prevBalance, _newDelegateBalance, false);
