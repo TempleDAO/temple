@@ -399,8 +399,6 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         staking.stake(0);
 
         uint256 ts = block.timestamp;
-        // set close to middle of week
-        // uint256 t = (ts / WEEK_LENGTH + 1) * WEEK_LENGTH - halfTime/2;
         // beginning of week
         uint256 t = ts / WEEK_LENGTH * WEEK_LENGTH;
         vm.warp(t);
