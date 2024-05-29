@@ -170,7 +170,6 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         bool prevStatusTrue = delegates[msg.sender];
         delegates[msg.sender] = _approve;
         emit VoteDelegateSet(msg.sender, _approve);
-        // todo if user sets self as delegate, should they be automatically delegated to self?
         // unset old delegate
         if (_approve && userDelegates[msg.sender] != address(0)) { unsetUserVoteDelegate(); }
         // remove delegate vote and reset delegateBalance
