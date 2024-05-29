@@ -18,6 +18,7 @@ interface ITempleGoldStaking {
 
     error InvalidDelegate();
     error CannotDistribute();
+    error CannotDelegate();
 
     struct Reward {
         uint40 periodFinish;
@@ -30,6 +31,11 @@ interface ITempleGoldStaking {
         uint64 weekNumber;
         uint64 stakeTime;
         uint64 updateTime;
+    }
+
+    struct AccountPreviousWeightParams {
+        AccountWeightParams weight;
+        uint256 balance;
     }
 
     /// @notice The staking token. Temple
