@@ -910,8 +910,8 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         _setHalftime(_halfTime);
         vm.startPrank(bob);
         staking.setSelfAsDelegate(true);
-        vm.startPrank(mike);
-        staking.setUserVoteDelegate(bob);
+        // vm.startPrank(mike);
+        // staking.setUserVoteDelegate(bob);
         vm.startPrank(alice);
         staking.setUserVoteDelegate(bob);
         uint256 ts = block.timestamp / WEEK_LENGTH * WEEK_LENGTH;
@@ -927,13 +927,29 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         assertEq(staking.getDelegatedVoteWeight(bob), 133333333333333333333);
         vm.startPrank(mike);
         _approve(address(templeToken), address(staking), type(uint).max);
+        ITempleGoldStaking.AccountWeightParams memory _weight = staking.getAccountWeights(bob);
+        assertEq(_weight.stakeTime, 0);
         staking.stake(100 ether);
+        // stake time is 0 after stake
+        _weight = staking.getAccountWeights(bob);
+        assertEq(_weight.stakeTime, 0);
+        // delegate to bob after stake
+        staking.setUserVoteDelegate(bob);
+        // stake time incrases after delegation
+        _weight = staking.getAccountWeights(bob);
+        assertEq(_weight.stakeTime, 483840);
         assertEq(staking.getDelegatedVoteWeight(bob), 133333333333333333333);
-        staking.withdraw(100 ether, false);
+        staking.unsetUserVoteDelegate();
+        // staking.withdraw(100 ether, false);
+        // bob stake time remains the same after reset delegation from mike
+        _weight = staking.getAccountWeights(bob);
+        assertEq(_weight.stakeTime, 483840);
         // same week
         assertEq(staking.getDelegatedVoteWeight(bob), 133333333333333333333);
         t += WEEK_LENGTH;
         vm.warp(t);
+        _weight = staking.getAccountWeights(bob);
+        assertEq(_weight.stakeTime, 483840);
         // vote power reduces by 4761904761904761905 (4.7619e18) which is 3.57% of previous vote power
         // even after withdrawing 100 ether, which is 33% of total delegated votes
         assertEq(staking.getDelegatedVoteWeight(bob), 128571428571428571428);
@@ -941,6 +957,31 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         vm.warp(t);
         // increases because it's following week
         assertEq(staking.getDelegatedVoteWeight(bob), 147368421052631578947);
+        _weight = staking.getAccountWeights(bob);
+        assertEq(_weight.stakeTime, 483840);
+        // delegate and undelegate a couple of time to check if stakeTime reduces
+        staking.setUserVoteDelegate(bob);
+        // stake time for bob increases after delegation
+        _weight = staking.getAccountWeights(bob);
+        assertEq(_weight.stakeTime, 583944);
+        staking.unsetUserVoteDelegate();
+        _weight = staking.getAccountWeights(bob);
+        assertEq(_weight.stakeTime, 583944);
+        assertEq(staking.getDelegatedVoteWeight(bob), 147368421052631578947);
+
+        staking.setUserVoteDelegate(bob);
+        // stake time reduced after delegation
+        _weight = staking.getAccountWeights(bob);
+        assertEq(_weight.stakeTime, 294510);
+        staking.unsetUserVoteDelegate();
+        assertEq(staking.getDelegatedVoteWeight(bob), 147368421052631578947);
+        _weight = staking.getAccountWeights(bob);
+        assertEq(_weight.stakeTime, 294510);
+        t += WEEK_LENGTH;
+        vm.warp(t);
+        assertEq(staking.getDelegatedVoteWeight(bob), 119580349841434469553);
+        _weight = staking.getAccountWeights(bob);
+        assertEq(_weight.stakeTime, 294510);
     }
 
     function test_stake_delegate_vote_weight() public {
