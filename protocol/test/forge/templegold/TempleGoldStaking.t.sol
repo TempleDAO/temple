@@ -456,7 +456,6 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         vm.warp(t);
         // after 4 weeks (halfTime), vote weight is half of initial stake amount
         assertEq(staking.getVoteWeight(alice), stakeAmount / 2);
-        // assertEq(staking.getVoteWeight(alice), weight);
         /// @dev see test_vote_weight for more tests on vote weight
 
         // can stake for others
@@ -821,9 +820,14 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
     function test_setUserVoteDelegate_unsetUserVoteDelegate_delegationPeriod() public {
         uint64 _halfTime = 4 weeks;
         _setHalftime(_halfTime);
-        _setMinimumDelegationPeriod(8 weeks);
+        uint32 _delegationPeriod = 8 weeks;
+        _setMinimumDelegationPeriod(_delegationPeriod);
         vm.startPrank(bob);
         staking.setSelfAsDelegate(true);
+        vm.startPrank(executor);
+        staking.setSelfAsDelegate(true);
+        vm.startPrank(mike);
+        staking.setUserVoteDelegate(bob);
         vm.startPrank(alice);
         staking.setUserVoteDelegate(bob);
 
@@ -831,9 +835,74 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         uint256 t = ts;
         vm.warp(t);
 
-        deal(address(templeToken), alice, 100 ether, true);
+        deal(address(templeToken), alice, 500 ether, true);
         _approve(address(templeToken), address(staking), type(uint).max);
-        // todo
+        staking.stake(200 ether);
+        uint32 withdrawTime = uint32(block.timestamp + _delegationPeriod);
+        assertEq(staking.userWithdrawTimes(alice), withdrawTime);
+
+        // change delegate after stake
+        vm.expectRevert(abi.encodeWithSelector(ITempleGoldStaking.CannotDelegate.selector));
+        staking.setUserVoteDelegate(executor);
+        // withdraw after stake
+        vm.expectRevert(abi.encodeWithSelector(ITempleGoldStaking.MinimumStakePeriod.selector));
+        staking.withdrawAll(false);
+        t += 5 weeks;
+        vm.warp(t);
+        uint256 nextWithdrawTime = withdrawTime + (_delegationPeriod / 3);
+        staking.stake(100 ether);
+        assertGt(staking.userWithdrawTimes(alice), withdrawTime);
+        assertEq(staking.userWithdrawTimes(alice), nextWithdrawTime);
+        // set to first withdraw time 
+        t = withdrawTime;
+        vm.warp(t);
+        // can't withdraw at old withdraw time
+        vm.expectRevert(abi.encodeWithSelector(ITempleGoldStaking.MinimumStakePeriod.selector));
+        staking.withdrawAll(false);
+        t = nextWithdrawTime;
+        vm.warp(t);
+        uint256 balanceBefore = templeToken.balanceOf(alice);
+        staking.withdrawAll(false);
+        assertEq(templeToken.balanceOf(alice), balanceBefore+300 ether);
+        assertEq(staking.userWithdrawTimes(alice), 0);
+        staking.unsetUserVoteDelegate();
+        
+        // no delegate before stake
+        staking.stake(100 ether);
+        assertEq(staking.userWithdrawTimes(alice), 0);
+        staking.withdrawAll(false);
+        
+        // set delegate before stake
+        staking.setUserVoteDelegate(executor);
+        staking.stake(100 ether);
+        withdrawTime = uint32(block.timestamp + _delegationPeriod);
+        assertEq(staking.userWithdrawTimes(alice), withdrawTime);
+        t = withdrawTime - 1;
+        vm.warp(t);
+        vm.expectRevert(abi.encodeWithSelector(ITempleGoldStaking.MinimumStakePeriod.selector));
+        staking.withdrawAll(false);
+        // set to withdraw time but don't withdraw and set another delegate
+        t += 1;
+        vm.warp(t);
+        staking.setUserVoteDelegate(bob);
+        assertEq(staking.userWithdrawTimes(alice), withdrawTime+_delegationPeriod);
+        t = withdrawTime + _delegationPeriod;
+        vm.warp(t);
+        staking.withdrawAll(false);
+        staking.unsetUserVoteDelegate();
+
+        // stake a few times
+        staking.stake(100 ether);
+        staking.stake(100 ether);
+        // set and unset
+        staking.setUserVoteDelegate(executor);
+        vm.expectRevert(abi.encodeWithSelector(ITempleGoldStaking.InvalidOperation.selector));
+        staking.unsetUserVoteDelegate();
+        vm.expectRevert(abi.encodeWithSelector(ITempleGoldStaking.MinimumStakePeriod.selector));
+        staking.withdrawAll(false);
+        t = staking.userWithdrawTimes(alice);
+        vm.warp(t);
+        staking.withdrawAll(false);
     }
 
     function test_check_finding_15() public {

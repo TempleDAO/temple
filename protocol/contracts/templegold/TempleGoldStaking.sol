@@ -81,6 +81,8 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     mapping(address account => address delegate) public override userDelegates;
     /// @notice Keep track of delegates and users delegated to them
     mapping(address delegate => ClearableEnumerableSet.ClearableAddressSet) private _delegateUsersSet;
+    /// @notice keep track of user withdraw times
+    mapping(address user => uint256 withdrawTime) public userWithdrawTimes;
 
     constructor(
         address _rescuer,
@@ -126,6 +128,8 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         if (_delegate == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
         if (!delegates[_delegate]) {  revert InvalidDelegate(); }
 
+        if (userWithdrawTimes[msg.sender] > block.timestamp) { revert CannotDelegate(); }
+
         // remove old delegate if any
         address _userDelegate = userDelegates[msg.sender];
         // any delegatee should not be allowed to delegate
@@ -153,6 +157,8 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
                 }
             }
             if (msg.sender != _delegate) {
+                // setting a new delegate always increases withdraw time by delegation period
+                userWithdrawTimes[msg.sender] = block.timestamp + minimumDelegationPeriod;
                 /// @dev Reuse variables
                 _prevBalance = _delegateBalances[_delegate];
                 _newDelegateBalance = _delegateBalances[_delegate] = _prevBalance + userBalance;
@@ -204,6 +210,8 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         bool removed = _delegateUsersSet[_delegate].remove(msg.sender);
         delete userDelegates[msg.sender];
 
+        if (userWithdrawTimes[msg.sender] > block.timestamp) { revert InvalidOperation(); }
+        userWithdrawTimes[msg.sender] = 0;
         uint256 userBalance = _balances[msg.sender];
         if (userBalance > 0 && removed) {
             // update vote weight of old delegate
@@ -304,6 +312,7 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         /// @dev this avoids using iteration to get voteWeight for all users delegated to delegate
         address delegate = userDelegates[_for];
         if (delegate != address(0) && delegate != _for && delegates[delegate]) {
+            _updateAccountWithdrawTime(_for, _amount, _balances[_for]);
             /// @dev Reuse variable
             _prevBalance = _delegateBalances[delegate];
             uint256 _newDelegateBalance = _delegateBalances[delegate] = _prevBalance + _amount;
@@ -515,9 +524,12 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         uint256 _prevBalance = _balances[staker];
         if (_prevBalance < amount) 
             { revert CommonEventsAndErrors.InsufficientBalance(address(stakingToken), amount, _prevBalance); }
+        if (!_canWithdraw(staker)) { revert MinimumStakePeriod(); }
 
         totalSupply -= amount;
-        _balances[staker] = _prevBalance - amount;
+        uint256 stakeBalance = _prevBalance - amount;
+        _balances[staker] = stakeBalance;
+        if (stakeBalance == 0) { delete userWithdrawTimes[staker]; }
 
         /// @dev update account weight as a fallback if delegate for account(if any) is removed in future or user changes delegates
         _updateAccountWeight(staker, _prevBalance, _balances[staker], false);
@@ -642,6 +654,18 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         t = params.weight.stakeTime;
         updated = params.weight.updateTime;
         balance = params.balance;
+    }
+
+    function _updateAccountWithdrawTime(address _account, uint256 _amount, uint256 _newBalance) private {
+        if (userWithdrawTimes[_account] == 0) {
+            userWithdrawTimes[_account] = block.timestamp + minimumDelegationPeriod;
+        } else {
+            userWithdrawTimes[_account] = userWithdrawTimes[_account] + minimumDelegationPeriod * _amount/ _newBalance;
+        }
+    }
+
+    function _canWithdraw(address _account) private view returns (bool) {
+        return userWithdrawTimes[_account] <= block.timestamp;
     }
 
     modifier updateReward(address _account) {
