@@ -940,7 +940,6 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         assertEq(_weight.stakeTime, 483840);
         assertEq(staking.getDelegatedVoteWeight(bob), 133333333333333333333);
         staking.unsetUserVoteDelegate();
-        // staking.withdraw(100 ether, false);
         // bob stake time remains the same after reset delegation from mike
         _weight = staking.getAccountWeights(bob);
         assertEq(_weight.stakeTime, 483840);
