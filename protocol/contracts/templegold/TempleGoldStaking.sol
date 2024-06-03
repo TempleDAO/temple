@@ -171,13 +171,14 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         if (!_approve && prevStatusTrue) {
             uint256 delegateBalance = _delegateBalances[msg.sender];
             _delegateBalances[msg.sender] = 0;
-            /// @dev if no user delegated to delegate
-            /// delegate vote weight will default to vote weight as a user
-            uint256 stakeBalance = _balances[msg.sender];
-        
-            if (delegateBalance > 0 && delegateBalance > stakeBalance) {
-                _updateAccountWeight(msg.sender, delegateBalance, stakeBalance, false);
-                /// @dev Do nothing if stakeBalance is larger or same as delegate balance
+            /// @dev If no user delegated to delegate, `getDelegatedVoteWeight()` will default to 0
+            if (delegateBalance > 0) {
+                uint256 stakeBalance = _balances[msg.sender];
+                if (delegateBalance > stakeBalance) {
+                    _updateAccountWeight(msg.sender, delegateBalance, stakeBalance, false);
+                } else if (delegateBalance < stakeBalance) {
+                    _updateAccountWeight(msg.sender, delegateBalance, stakeBalance, true);
+                }
             }
 
             _delegateUsersSet[msg.sender].clear();
