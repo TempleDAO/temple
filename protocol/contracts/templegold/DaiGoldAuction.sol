@@ -249,7 +249,10 @@ contract DaiGoldAuction is IDaiGoldAuction, AuctionBase, TempleElevatedAccess {
     }
 
     /**
-     * @notice Recover auction tokens for last but not started auction
+     * @notice Recover auction tokens for last but not started auction. 
+     * Any other token which is not Temple Gold can be recovered too at any time
+     * @dev For recovering Temple Gold, Epoch data is deleted and leftover amount is addedd to nextAuctionGoldAmount.
+     * so admin should recover total auction amount for epoch if that's the requirement
      * @param token Token to recover
      * @param to Recipient
      * @param amount Amount to auction tokens
@@ -273,8 +276,18 @@ contract DaiGoldAuction is IDaiGoldAuction, AuctionBase, TempleElevatedAccess {
         EpochInfo storage info = epochs[epochId];
         if (info.startTime == 0) { revert InvalidOperation(); }
         if (info.isActive()) { revert AuctionActive(); }
-        if (amount > info.totalAuctionTokenAmount) { revert CommonEventsAndErrors.InvalidAmount(token, amount); }
+        if (info.hasEnded()) { revert AuctionEnded(); }
+        uint256 _totalAuctionTokenAmount = info.totalAuctionTokenAmount;
+        if (amount > _totalAuctionTokenAmount) { revert CommonEventsAndErrors.InvalidAmount(token, amount); }
+        /// @dev Epoch data is deleted and leftover amount is addedd to nextAuctionGoldAmount.
+        /// so admin should recover total auction amount for epoch if that's the requirement
         delete epochs[epochId];
+        /// @dev `nextAuctionGoldAmount` is set to 0 in `startAuction`.
+        /// `nextAuctionGoldAmount > 0` if there was a distribution after `auctionStart` called
+        /// epoch is deleted. so if amount < totalAuctionTokenAmount for epoch, add leftover to next auction amount
+        unchecked {
+            nextAuctionGoldAmount += _totalAuctionTokenAmount - amount;
+        }
 
         emit CommonEventsAndErrors.TokenRecovered(to, token, amount);
         templeGold.safeTransfer(to, amount);
