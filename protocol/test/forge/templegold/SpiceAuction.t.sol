@@ -418,7 +418,6 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         vm.startPrank(alice);
         vm.expectRevert(abi.encodeWithSelector(IAuctionBase.CannotStartAuction.selector));
         spice.startAuction();
-
         vm.warp(block.timestamp + _config.waitPeriod);
         // not enough auction tokens to bid. type AUCTION_TOKEN_BALANCE
         vm.expectRevert(abi.encodeWithSelector(ISpiceAuction.NotEnoughAuctionTokens.selector));
@@ -427,17 +426,21 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         IERC20 auctionToken = IERC20(_getAuctionToken(_config.isTempleGoldAuctionToken, daiToken));
         dealAdditional(auctionToken, address(spice), 100 ether);
         uint256 epoch = spice.currentEpoch();
+        IAuctionBase.EpochInfo memory epochInfo = spice.getEpochInfo(epoch);
+        uint64 startTime = uint64(block.timestamp + _config.startCooldown);
+        uint64 endTime = uint64(startTime+_config.duration);
         vm.expectEmit(address(spice));
-        emit AuctionStarted(epoch+1, alice, uint64(block.timestamp+_config.startCooldown), uint64(block.timestamp+_config.duration), 100 ether);
+        emit AuctionStarted(epoch+1, alice, startTime, endTime, 100 ether);
         spice.startAuction();
         
-        IAuctionBase.EpochInfo memory epochInfo = spice.getEpochInfo(epoch+1);
+        epochInfo = spice.getEpochInfo(epoch+1);
         assertEq(spice.currentEpoch(), epoch+1);
         assertEq(epochInfo.startTime, uint128(block.timestamp+_config.startCooldown));
-        assertEq(epochInfo.endTime, uint128(block.timestamp+_config.duration));
+        assertEq(epochInfo.endTime, uint128(epochInfo.startTime+_config.duration));
         assertEq(epochInfo.totalAuctionTokenAmount, 100 ether);
         assertEq(epochInfo.totalBidTokenAmount, 0);
         assertEq(auctionToken.balanceOf(address(spice)), 100 ether);
+        assertEq(epochInfo.endTime - epochInfo.startTime, _config.duration);
 
         // warp to end and start second auction
         vm.warp(epochInfo.endTime);
@@ -459,8 +462,10 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
 
         dealAdditional(IERC20(_getAuctionToken(_config.isTempleGoldAuctionToken, daiToken)), address(spice), 50 ether);
         epoch = spice.currentEpoch();
+        startTime = uint64(block.timestamp+_config.startCooldown);
+        endTime = uint64(startTime+_config.duration);
         vm.expectEmit(address(spice));
-        emit AuctionStarted(epoch+1, daoExecutor, uint64(block.timestamp+_config.startCooldown), uint64(block.timestamp+_config.duration), 50 ether);
+        emit AuctionStarted(epoch+1, daoExecutor, startTime, endTime, 50 ether);
         spice.startAuction();
 
         // another auction , another auction token, user action to start auction . type USER_FIRST_BID
@@ -476,10 +481,16 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         vm.expectRevert(abi.encodeWithSelector(ISpiceAuction.NotEnoughAuctionTokens.selector));
         spice.startAuction();
 
+        startTime = uint64(block.timestamp + _config.startCooldown);
+        endTime = uint64(startTime+_config.duration);
         deal(daiToken, address(spice), 30 ether, true);
         vm.expectEmit(address(spice));
-        emit AuctionStarted(epoch+1, daoExecutor, uint128(block.timestamp+_config.startCooldown), uint128(block.timestamp+_config.duration), 30 ether);
+        emit AuctionStarted(epoch+1, daoExecutor, startTime, endTime, 30 ether);
         spice.startAuction();
+        epoch = spice.currentEpoch();
+        epochInfo = spice.getEpochInfo(epoch);
+        assertEq(epochInfo.startTime, startTime);
+        assertEq(epochInfo.endTime, endTime);
 
         assertEq(IERC20(daiToken).balanceOf(address(spice)), 30 ether);
         assertEq(templeGold.balanceOf(address(spice)), 150 ether);
