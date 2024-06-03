@@ -116,7 +116,6 @@ contract SpiceAuction is ISpiceAuction, AuctionBase {
         if (info.isActive()) { revert InvalidConfigOperation(); }
         /// @dev could be that `auctionStart` is triggered but there's cooldown, which is not reached (so can delete epochInfo for _currentEpochId)
         // or `auctionStart` is not triggered but `auctionConfig` is set (where _currentEpochId is not updated yet)
-        SpiceAuctionConfig storage config = auctionConfigs[id];
         bool configSetButAuctionStartNotCalled = auctionConfigs[id+1].duration > 0;
         if (!configSetButAuctionStartNotCalled) {
             /// @dev unlikely because this is a DAO execution, but avoid deleting old ended auctions
@@ -129,7 +128,6 @@ contract SpiceAuction is ISpiceAuction, AuctionBase {
         } else {
             // `auctionStart` is not triggered but `auctionConfig` is set
             id += 1;
-            config = auctionConfigs[id];
             delete auctionConfigs[id];
             emit AuctionConfigRemoved(id, 0);
         }
@@ -170,7 +168,7 @@ contract SpiceAuction is ISpiceAuction, AuctionBase {
         epochId = _currentEpochId = _currentEpochId + 1;
         EpochInfo storage info = epochs[epochId];
         uint128 startTime = info.startTime = uint128(block.timestamp) + config.startCooldown;
-        uint128 endTime = info.endTime = uint128(block.timestamp) + config.duration;
+        uint128 endTime = info.endTime = startTime + config.duration;
         info.totalAuctionTokenAmount = epochAuctionTokenAmount;
         // Keep track of total allocation auction tokens per epoch
         _totalAuctionTokenAllocation[auctionToken] = totalAuctionTokenAllocation + epochAuctionTokenAmount;
