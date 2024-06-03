@@ -58,7 +58,7 @@ interface ITempleGoldStaking {
     /// @dev If set to zero, rewards distribution is callable any time 
     function rewardDistributionCoolDown() external view returns (uint160);
     /// @notice Timestamp for last reward notification
-    function lastRewardNotificationTimestamp() external view returns (uint96);
+    function lastRewardDistributionTimestamp() external view returns (uint96);
 
     /// @notice For use when migrating to a new staking contract if TGLD changes.
     function migrator() external view returns (address);
