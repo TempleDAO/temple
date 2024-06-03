@@ -299,7 +299,7 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         staking.distributeRewards();
         uint256 rewardBalance = templeGold.balanceOf(address(staking));
         assertGt(rewardBalance, rewardAmount);
-        assertEq(staking.lastRewardNotificationTimestamp(), block.timestamp);
+        assertEq(staking.lastRewardDistributionTimestamp(), block.timestamp);
         // reward params were set
         uint256 rewardRate = rewardBalance / 7 days;
         ITempleGoldStaking.Reward memory rewardData = staking.getRewardData();
@@ -433,9 +433,8 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
     }
 
     function test_getReward_tgldStaking() public {
-        vm.warp(block.timestamp + 3 days);
-        templeGold.mint();
-        vm.warp(staking.lastRewardNotificationTimestamp() + staking.rewardDistributionCoolDown() + 1);
+        _setVestingFactor(templeGold);
+        skip(1 days);
         staking.distributeRewards();
         
         vm.startPrank(alice);

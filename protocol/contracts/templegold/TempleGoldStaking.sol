@@ -53,7 +53,7 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     /// @dev If set to zero, rewards distribution is callable any time 
     uint160 public override rewardDistributionCoolDown;
     /// @notice Timestamp for last reward notification
-    uint96 public override lastRewardNotificationTimestamp;
+    uint96 public override lastRewardDistributionTimestamp;
 
     /// @notice For use when migrating to a new staking contract if TGLD changes.
     address public override migrator;
@@ -246,13 +246,14 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         if (distributionStarter != address(0) && msg.sender != distributionStarter) 
             { revert CommonEventsAndErrors.InvalidAccess(); }
         // Mint and distribute TGLD if no cooldown set
-        if (lastRewardNotificationTimestamp + rewardDistributionCoolDown > block.timestamp) 
+        if (lastRewardDistributionTimestamp + rewardDistributionCoolDown > block.timestamp) 
                 { revert CannotDistribute(); }
         _distributeGold();
         uint256 rewardAmount = nextRewardAmount;
         if (rewardAmount == 0 ) { revert CommonEventsAndErrors.ExpectedNonZero(); }
         nextRewardAmount = 0;
         _notifyReward(rewardAmount);
+        lastRewardDistributionTimestamp = uint32(block.timestamp);
     }
 
     /**
@@ -394,7 +395,6 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         if (msg.sender != address(rewardToken)) { revert CommonEventsAndErrors.InvalidAccess(); }
         /// @notice Temple Gold contract mints TGLD amount to contract before calling `notifyDistribution`
         nextRewardAmount += amount;
-        lastRewardNotificationTimestamp = uint96(block.timestamp);
         emit GoldDistributionNotified(amount, block.timestamp);
     }
 
