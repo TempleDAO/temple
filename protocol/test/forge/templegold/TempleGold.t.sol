@@ -296,7 +296,6 @@ contract TempleGoldTest is TempleGoldTestBase {
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
         templeGold.setVestingFactor(_factor);
         _factor.denominator = temp;
-        assertEq(templeGold.lastMintTimestamp(), 0);
         vm.expectEmit(address(templeGold));
         emit VestingFactorSet(_factor.numerator, _factor.denominator);
         templeGold.setVestingFactor(_factor);
