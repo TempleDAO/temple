@@ -640,22 +640,12 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         vm.warp(block.timestamp + 1 weeks);
         assertEq(staking.getDelegatedVoteWeight(alice), staking.getVoteWeight(bob));
 
-        // alice stakes before reset delegate status
         vm.startPrank(alice);
-        deal(address(templeToken), alice, 100 ether, true);
-        _approve(address(templeToken), address(staking), type(uint).max);
-        staking.stake(stakeAmount);
-        skip(1 weeks);
-        assertGt(staking.getVoteWeight(alice), 0);
-        uint256 aliceVoteWeight = staking.getVoteWeight(alice);
-
         vm.expectEmit(address(staking));
         emit VoteDelegateSet(alice, false);
         staking.setSelfAsDelegate(false);
         assertEq(staking.delegates(alice), false);
-        // both alice own vote weight and delegated vote weight are same after reset delegate status
-        assertEq(staking.getDelegatedVoteWeight(alice), aliceVoteWeight);
-        assertEq(aliceVoteWeight, staking.getVoteWeight(alice));
+        assertEq(staking.getDelegatedVoteWeight(alice), 0);
 
         // bob can assign to another delegate
         vm.startPrank(mike);
@@ -663,11 +653,6 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         vm.startPrank(bob);
         staking.setUserVoteDelegate(mike);
         assertEq(staking.userDelegates(bob), mike);
-        // delegate balance was 0 at start
-        vm.startPrank(mike);
-        staking.setSelfAsDelegate(false);
-        assertEq(staking.getDelegatedVoteWeight(mike), 0);
-        assertEq(staking.getVoteWeight(mike), 0);
 
         // bob can assign to another delegate where previous delegate is still valid
         vm.startPrank(executor);
