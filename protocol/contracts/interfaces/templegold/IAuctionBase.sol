@@ -14,6 +14,7 @@ interface IAuctionBase {
     error InvalidEpoch();
     error AuctionActive();
     error InvalidOperation();
+    error AuctionEnded();
 
     struct EpochInfo {
         /// @notice Start time for epoch
