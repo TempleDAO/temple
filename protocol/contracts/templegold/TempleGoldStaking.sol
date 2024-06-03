@@ -275,6 +275,7 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     function distributeRewards() updateReward(address(0)) external {
         if (distributionStarter != address(0) && msg.sender != distributionStarter) 
             { revert CommonEventsAndErrors.InvalidAccess(); }
+        if (totalSupply == 0) { revert NoStaker(); }
         // Mint and distribute TGLD if no cooldown set
         if (lastRewardNotificationTimestamp + rewardDistributionCoolDown > block.timestamp) 
                 { revert CannotDistribute(); }
