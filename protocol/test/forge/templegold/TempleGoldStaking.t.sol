@@ -667,28 +667,6 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         /// @dev see test_stake_delegate_vote_weight and test_withdraw_delegate_vote_weight
     }
 
-    /// @dev commented out. breaks because of wrong getDelegatedVoteWeight(). fixed in other PR
-    // function test_setUserVoteDelegate_from_self_to_other() public {
-    //     _setHalftime(8 weeks);
-    //     deal(address(templeToken), alice, 1000 ether, true);
-    //     vm.startPrank(bob);
-    //     staking.setSelfAsDelegate(true);
-    //     vm.startPrank(alice);
-    //     staking.setSelfAsDelegate(true);
-    //     staking.setUserVoteDelegate(alice);
-    //     vm.warp(block.timestamp * WEEK_LENGTH/ WEEK_LENGTH);
-    //     vm.startPrank(alice);
-    //     _approve(address(templeToken), address(staking), type(uint).max);
-    //     staking.stake(10 ether);
-    //     skip(8 weeks); // still not start of 9th week
-    //     uint256 voteWeight = staking.getDelegatedVoteWeight(alice);
-    //     // changing vote delegate from self(alice) to another user (bob)
-    //     // _delegateBalances should not be decreased
-    //     staking.setUserVoteDelegate(bob);
-    //     skip(1 weeks);
-    //     assertEq(staking.getDelegatedVoteWeight(alice), 0);
-    // }
-
     function test_setUserVoteDelegate() public {
         vm.startPrank(alice);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
