@@ -55,7 +55,7 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     /// @notice Timestamp for last reward notification
     uint96 public override lastRewardNotificationTimestamp;
 
-    /// @notice Minimum time of delegation before reset
+    /// @notice Time of delegation before reset
     uint32 public override delegationPeriod;
 
     /// @notice For use when migrating to a new staking contract if TGLD changes.
@@ -136,6 +136,9 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
 
         // remove old delegate if any
         address _userDelegate = userDelegates[msg.sender];
+        // any delegatee should not be allowed to delegate
+        // if you are self delegated as a delegate, you are not allowed to set delegate until reset
+        if (_userDelegate == msg.sender) { revert CannotDelegate(); }
         if (_userDelegate == _delegate) { return; }
         ClearableEnumerableSet.ClearableAddressSet storage prevDelegateUsersSet = _delegateUsersSet[_userDelegate];
         uint256 userBalance = _balances[msg.sender];
@@ -184,8 +187,7 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         if (!_approve && prevStatusTrue) {
             uint256 delegateBalance = _delegateBalances[msg.sender];
             _delegateBalances[msg.sender] = 0;
-            /// @dev if no user delegated to delegate
-            /// delegate vote weight will default to vote weight as a user
+            /// @dev If no user delegated to delegate, `getDelegatedVoteWeight()` will default to 0
             if (delegateBalance > 0) {
                 uint256 stakeBalance = _balances[msg.sender];
                 if (delegateBalance > stakeBalance) {
@@ -245,7 +247,7 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
 
     /**
      * @notice Set minimum time before undelegation. This is also used to check before withdrawal after stake if account is delegated
-     * @param _period Minimum delegation time
+     * @param _period Delegation period
      */
     function setDelegationPeriod(uint32 _period) external override onlyElevatedAccess {
         if (_period == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
@@ -275,6 +277,7 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     function distributeRewards() updateReward(address(0)) external {
         if (distributionStarter != address(0) && msg.sender != distributionStarter) 
             { revert CommonEventsAndErrors.InvalidAccess(); }
+        if (totalSupply == 0) { revert NoStaker(); }
         // Mint and distribute TGLD if no cooldown set
         if (lastRewardNotificationTimestamp + rewardDistributionCoolDown > block.timestamp) 
                 { revert CannotDistribute(); }
@@ -633,16 +636,6 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         week = params.weekNumber;
         t = params.stakeTime;
         updated = params.updateTime;
-    }
-
-    function _packPreviousWeight(AccountWeightParams storage _weight, address _account, uint256 _balance) private {
-        AccountPreviousWeightParams storage _prevWeight = _prevWeights[_account];
-        _prevWeight.weight = AccountWeightParams(
-            _weight.weekNumber,
-            _weight.stakeTime,
-            _weight.updateTime
-        );
-        _prevWeight.balance = _balance;
     }
 
     function _unpackPreviousWeight(

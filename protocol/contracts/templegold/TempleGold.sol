@@ -41,9 +41,6 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
     /// @notice Last block timestamp Temple Gold was minted
     uint32 public override lastMintTimestamp;
 
-    /// @notice Deploy time for first mint amount calculation 
-    uint32 private immutable _deployTime;
-
     //// @notice Distribution as a percentage of 100
     uint256 public constant DISTRIBUTION_DIVISOR = 100 ether;
     /// @notice 1B max supply
@@ -73,7 +70,6 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
        escrow = IDaiGoldAuction(_initArgs.escrow);
        teamGnosis = _initArgs.gnosis;
        _mintChainId = _initArgs.mintChainId;
-       _deployTime = uint32(block.timestamp);
     }
 
     /**
@@ -135,6 +131,8 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
         if (_factor.numerator == 0 || _factor.denominator == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
         if (_factor.numerator > _factor.denominator) { revert CommonEventsAndErrors.InvalidParam(); }
         vestingFactor = _factor;
+        /// @dev initialize
+        if (lastMintTimestamp == 0) { lastMintTimestamp = uint32(block.timestamp); }
         emit VestingFactorSet(_factor.numerator, _factor.denominator);
     }
     
@@ -250,13 +248,9 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
     function _getMintAmount(VestingFactor memory vestingFactorCache) private view returns (uint256 mintAmount) {
         uint32 _lastMintTimestamp = lastMintTimestamp;
         uint256 totalSupplyCache = _totalDistributed;
-        /// @notice first time mint
-        if (_lastMintTimestamp == 0) {
-            /// @dev use deployTime for time difference. avoid getting stuck where _lastMintTimestamp is always 0 because mintAmount < 10_000
-            mintAmount = TempleMath.mulDivRound((block.timestamp - _deployTime) * MAX_SUPPLY, vestingFactorCache.numerator, vestingFactorCache.denominator, false);
-        } else {
-            mintAmount = TempleMath.mulDivRound((block.timestamp - _lastMintTimestamp) * (MAX_SUPPLY), vestingFactorCache.numerator, vestingFactorCache.denominator, false);
-        }
+        /// @dev if vesting factor is not set, return 0. `_lastMintTimestamp` is set when vesting factor is set
+        if (_lastMintTimestamp == 0) { return 0; }
+        mintAmount = TempleMath.mulDivRound((block.timestamp - _lastMintTimestamp) * (MAX_SUPPLY), vestingFactorCache.numerator, vestingFactorCache.denominator, false);
        
         if (totalSupplyCache + mintAmount > MAX_SUPPLY) {
             unchecked {
@@ -289,6 +283,7 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
         MessagingFee calldata _fee,
         address _refundAddress
     ) external payable virtual override(IOFT, OFTCore) returns (MessagingReceipt memory msgReceipt, OFTReceipt memory oftReceipt) {
+        if (_sendParam.composeMsg.length > 0) { revert CannotCompose(); }
         /// cast bytes32 to address
         address _to = _sendParam.to.bytes32ToAddress();
         /// @dev user can cross-chain transfer to self

@@ -22,6 +22,7 @@ interface ITempleGoldStaking {
     error CannotDelegate();
     error MinimumStakePeriod();
     error InvalidOperation();
+    error NoStaker();
 
     struct Reward {
         uint40 periodFinish;

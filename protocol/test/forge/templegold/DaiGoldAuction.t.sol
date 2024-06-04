@@ -542,6 +542,7 @@ contract DaiGoldAuctionTest is DaiGoldAuctionTestBase {
         emit TokenRecovered(alice, address(bidToken), sendAmount);
         daiGoldAuction.recoverToken(address(bidToken), alice, sendAmount);
         assertEq(bidToken.balanceOf(alice), aliceBalance+sendAmount);
+        assertEq(daiGoldAuction.nextAuctionGoldAmount(), 0);
 
         // currentEpochId = 0
         templeGold.mint();
@@ -549,23 +550,55 @@ contract DaiGoldAuctionTest is DaiGoldAuctionTestBase {
         vm.expectRevert(abi.encodeWithSelector(IAuctionBase.InvalidOperation.selector));
         daiGoldAuction.recoverToken(address(templeGold), alice, mintAmount);
 
+        IDaiGoldAuction.AuctionConfig memory _config = _getAuctionConfig();
+        daiGoldAuction.setAuctionConfig(_config);
         _startAuction();
         IAuctionBase.EpochInfo memory info = daiGoldAuction.getEpochInfo(1);
+        vm.warp(info.startTime);
         vm.expectRevert(abi.encodeWithSelector(IAuctionBase.AuctionActive.selector));
         daiGoldAuction.recoverToken(address(templeGold), alice, mintAmount);
 
         vm.warp(info.endTime);
         templeGold.mint();
+        vm.expectRevert(abi.encodeWithSelector(IAuctionBase.AuctionEnded.selector));
+        daiGoldAuction.recoverToken(address(templeGold), alice, mintAmount);
+
+        vm.warp(info.startTime - 10 seconds);
         mintAmount = templeGold.balanceOf(address(daiGoldAuction));
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAmount.selector, address(templeGold), mintAmount+1));
         daiGoldAuction.recoverToken(address(templeGold), alice, mintAmount+1);
 
-        vm.warp(info.startTime - 10 seconds);
+        // there was distribution after calling `templeGold.mint()`. nextAuctionGoldAmount > 0
+        // recover half of total auction amount
         aliceBalance = templeGold.balanceOf(alice);
-        uint256 recoverAmount = info.totalAuctionTokenAmount;
+        uint256 recoverAmount = info.totalAuctionTokenAmount / 2;
+        uint256 nextAuctionGoldAmount = daiGoldAuction.nextAuctionGoldAmount();
         vm.expectEmit(address(daiGoldAuction));
         emit TokenRecovered(alice, address(templeGold), recoverAmount);
         daiGoldAuction.recoverToken(address(templeGold), alice, recoverAmount);
         assertEq(templeGold.balanceOf(alice), aliceBalance+recoverAmount);
+        // plus the half of total auction amount that was not recovered
+        assertEq(nextAuctionGoldAmount + recoverAmount, daiGoldAuction.nextAuctionGoldAmount());
+        // epoch deleted, cannot recover
+        vm.expectRevert(abi.encodeWithSelector(IAuctionBase.InvalidOperation.selector));
+        daiGoldAuction.recoverToken(address(templeGold), alice, mintAmount);
+
+        // can also recover full amount of TGLD
+        vm.warp(info.endTime + _config.auctionsTimeDiff);
+        daiGoldAuction.startAuction();
+        info = daiGoldAuction.getEpochInfo(daiGoldAuction.currentEpoch());
+        // cooldown time
+        vm.warp(info.startTime - 10 seconds);
+        // distribute so nextAuctionGoldAmount > 0
+        templeGold.mint();
+        aliceBalance = templeGold.balanceOf(alice);
+        recoverAmount = info.totalAuctionTokenAmount;
+        nextAuctionGoldAmount = daiGoldAuction.nextAuctionGoldAmount();
+        vm.expectEmit(address(daiGoldAuction));
+        emit TokenRecovered(alice, address(templeGold), recoverAmount);
+        daiGoldAuction.recoverToken(address(templeGold), alice, recoverAmount);
+        assertEq(templeGold.balanceOf(alice), aliceBalance+recoverAmount);
+        assertGt(nextAuctionGoldAmount, 0);
+        assertEq(nextAuctionGoldAmount, daiGoldAuction.nextAuctionGoldAmount());
     }
 }
