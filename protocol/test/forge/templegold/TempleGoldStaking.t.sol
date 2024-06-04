@@ -718,7 +718,7 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         staking.setUserVoteDelegate(mike);
         assertEq(staking.userDelegates(bob), mike);
 
-        // bob can assign to another delegate where previous delegate is still valid
+         // bob can assign to another delegate where previous delegate is still valid
         vm.startPrank(executor);
         staking.setSelfAsDelegate(true);
         vm.startPrank(bob);
@@ -815,41 +815,75 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
     }
 
     function test_setUserVoteDelegate() public {
-        vm.startPrank(alice);
-        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
-        staking.setUserVoteDelegate(address(0));
+        vm.startPrank(executor);
+        uint256 halfTime = 1 weeks;
+        staking.setHalfTime(halfTime);
+        uint256 ts = (block.timestamp / WEEK_LENGTH + 1) * WEEK_LENGTH - halfTime; 
 
-        vm.expectRevert(abi.encodeWithSelector(ITempleGoldStaking.InvalidDelegate.selector));
-        staking.setUserVoteDelegate(bob);
-
-        vm.startPrank(bob);
-        staking.setSelfAsDelegate(true);
         vm.startPrank(alice);
-        staking.setSelfAsDelegate(true);
-        // todo check CannotDelegate() error
         vm.expectEmit(address(staking));
-        emit UserDelegateSet(alice, bob);
-        staking.setUserVoteDelegate(bob);
+        emit VoteDelegateSet(alice, true);
+        staking.setSelfAsDelegate(true);
+        assertEq(staking.delegates(alice), true);
 
-        assertEq(staking.userDelegated(alice, bob), true);
-        assertEq(staking.userDelegates(alice), bob);
+        // bob assigns alice as delegate
+        vm.startPrank(bob);
+        staking.setUserVoteDelegate(alice);
+        // stake
+        uint256 stakeAmount = 1 ether;
+        deal(address(templeToken), bob, 100 ether, true);
+        _approve(address(templeToken), address(staking), type(uint).max);
+        staking.stake(stakeAmount);
+        // warp to get some vote weight
+        ts += halfTime;
+        vm.warp(ts);
+        uint256 aliceDelegatedVoteWeight = staking.getDelegatedVoteWeight(alice);
+        assertEq(aliceDelegatedVoteWeight, staking.getVoteWeight(bob));
+        vm.startPrank(alice);
+        vm.expectEmit(address(staking));
+        emit VoteDelegateSet(alice, false);
+        staking.setSelfAsDelegate(false);
+        assertEq(staking.delegates(alice), false);
+        /// @dev vote weights are calculated from previous week
+        assertEq(staking.getDelegatedVoteWeight(alice), aliceDelegatedVoteWeight);
+        ts += WEEK_LENGTH; // following week
+        vm.warp(ts);
+        assertEq(staking.getDelegatedVoteWeight(alice), 0);
 
-        // nothing happens. same delegate
-        staking.setUserVoteDelegate(bob);
-        assertEq(staking.userDelegates(alice), bob);
-
-        /// @dev see test_stake_delegate_vote_weight for more
-
-        // set to another delegate
+        // bob can assign to another delegate
         vm.startPrank(mike);
         staking.setSelfAsDelegate(true);
-        vm.startPrank(alice);
-        vm.expectEmit(address(staking));
-        emit UserDelegateSet(alice, mike);
+        vm.startPrank(bob);
         staking.setUserVoteDelegate(mike);
-        assertEq(staking.userDelegated(alice, bob), false);
-        assertEq(staking.userDelegated(alice, mike), true);
-        assertEq(staking.userDelegates(alice), mike);
+        assertEq(staking.userDelegates(bob), mike);
+
+        // bob can assign to another delegate where previous delegate is still valid
+        vm.startPrank(executor);
+        staking.setSelfAsDelegate(true);
+        vm.startPrank(bob);
+        staking.setUserVoteDelegate(executor);
+        assertEq(staking.userDelegates(bob), executor);
+        assertEq(staking.getDelegatedVoteWeight(executor), 0);
+        // bob can stake. old delegate not affected
+        staking.stake(stakeAmount);
+        // has not started accumulating
+        assertEq(staking.getDelegatedVoteWeight(executor), 0);
+        skip(1 weeks);
+        uint256 bobVoteWeight = staking.getVoteWeight(bob);
+        assertEq(staking.getDelegatedVoteWeight(mike), 0);
+        // bob own vote weight greater (started accumulating already)
+        assertGt(bobVoteWeight, staking.getDelegatedVoteWeight(executor));
+        // bob total stake is 2 * stakeAmount = 2 ether. After 1 week, executor vote weight is half
+        assertEq(staking.getDelegatedVoteWeight(executor), stakeAmount);
+        // bob can withdraw
+        staking.withdrawAll(false);
+        assertEq(staking.getDelegatedVoteWeight(mike), 0);
+        // bob vote weight the same. same week
+        assertEq(staking.getVoteWeight(bob), bobVoteWeight);
+        assertEq(staking.getDelegatedVoteWeight(executor), stakeAmount);
+        skip(1 weeks);
+        assertEq(staking.getDelegatedVoteWeight(executor), 0);
+        assertEq(staking.getVoteWeight(bob), 0);
     }
 
     function test_setUserVoteDelegate_unsetUserVoteDelegate_delegationPeriod() public {
