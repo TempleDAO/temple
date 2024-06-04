@@ -636,19 +636,6 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         updated = params.updateTime;
     }
 
-<<<<<<< HEAD
-    function _packPreviousWeight(AccountWeightParams storage _weight, address _account, uint256 _balance) private {
-        AccountPreviousWeightParams storage _prevWeight = _prevWeights[_account];
-        _prevWeight.weight = AccountWeightParams(
-            _weight.weekNumber,
-            _weight.stakeTime,
-            _weight.updateTime
-        );
-        _prevWeight.balance = _balance;
-    }
-
-=======
->>>>>>> templegold
     function _unpackPreviousWeight(
         address _account
     ) private view returns (uint256 week, uint256 t, uint256 updated, uint256 balance) {
