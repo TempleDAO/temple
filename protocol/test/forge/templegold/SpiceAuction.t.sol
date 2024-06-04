@@ -302,6 +302,57 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         spice.removeAuctionConfig();
     }
 
+    function test_recoverAuctionTokenForZeroBidAuction() public {
+        vm.startPrank(daoExecutor);
+        // revert, zero address
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
+        spice.recoverAuctionTokenForZeroBidAuction(0, address(0));
+        // invalid epoch
+        vm.expectRevert(abi.encodeWithSelector(IAuctionBase.InvalidEpoch.selector));
+        spice.recoverAuctionTokenForZeroBidAuction(1, alice);
+
+        _startAuction(true, true);
+        IAuctionBase.EpochInfo memory info = spice.getEpochInfo(1);
+        vm.startPrank(daoExecutor);
+        vm.warp(info.startTime);
+        vm.expectRevert(abi.encodeWithSelector(IAuctionBase.AuctionActive.selector));
+        spice.recoverAuctionTokenForZeroBidAuction(1, alice);
+        vm.startPrank(bob);
+        uint256 bidAmount = 10 ether;
+        deal(daiToken, bob, bidAmount);
+        IERC20(daiToken).approve(address(spice), type(uint).max);
+        spice.bid(bidAmount);
+        uint256 epochOneTotalAuctionTokenAmount = info.totalAuctionTokenAmount;
+        ISpiceAuction.SpiceAuctionConfig memory _config = spice.getAuctionConfig(1);
+        vm.warp(info.endTime + _config.waitPeriod);
+        // fail for epoch with bid
+        vm.startPrank(daoExecutor);
+        vm.expectRevert(abi.encodeWithSelector(IAuctionBase.InvalidOperation.selector));
+        spice.recoverAuctionTokenForZeroBidAuction(1, alice);
+
+        _startAuction(true, true);
+        info = spice.getEpochInfo(2);
+        _config = spice.getAuctionConfig(2);
+        vm.warp(info.endTime + _config.waitPeriod);
+        address auctionToken = spice.getAuctionTokenForCurrentEpoch();
+        uint256 auctionTokenBalance = IERC20(auctionToken).balanceOf(address(spice));
+        uint256 auctionTokenAmount = info.totalAuctionTokenAmount;
+        uint256 aliceBalance = IERC20(auctionToken).balanceOf(alice);
+        vm.startPrank(daoExecutor);
+
+        vm.expectEmit(address(spice));
+        emit TokenRecovered(alice, auctionToken, auctionTokenAmount);
+        spice.recoverAuctionTokenForZeroBidAuction(2, alice);
+        assertEq(IERC20(auctionToken).balanceOf(address(spice)), auctionTokenBalance - auctionTokenAmount);
+        assertEq(IERC20(auctionToken).balanceOf(alice), aliceBalance + auctionTokenAmount);
+
+        // bidders from previous auction can claim
+        vm.startPrank(bob);
+        uint256 bobBalance = IERC20(auctionToken).balanceOf(bob);
+        spice.claim(1);
+        assertEq(IERC20(auctionToken).balanceOf(bob), bobBalance + epochOneTotalAuctionTokenAmount);
+    }
+
     function test_recoverToken_spice() public {
         vm.startPrank(daoExecutor);
         address _fakeErc20TokenAddress = address(fakeERC20);
