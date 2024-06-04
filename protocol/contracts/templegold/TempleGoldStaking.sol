@@ -312,7 +312,10 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         /// @dev this avoids using iteration to get voteWeight for all users delegated to delegate
         address delegate = userDelegates[_for];
         if (delegate != address(0) && delegate != _for && delegates[delegate]) {
+<<<<<<< HEAD
             _updateAccountWithdrawTime(_for, _amount, _balances[_for]);
+=======
+>>>>>>> efaa9be36e1a94f5b8a9b14066b6e6d1dd621c1e
             /// @dev Reuse variable
             _prevBalance = _delegateBalances[delegate];
             uint256 _newDelegateBalance = _delegateBalances[delegate] = _prevBalance + _amount;
@@ -636,6 +639,19 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         updated = params.updateTime;
     }
 
+<<<<<<< HEAD
+=======
+    function _packPreviousWeight(AccountWeightParams storage _weight, address _account, uint256 _balance) private {
+        AccountPreviousWeightParams storage _prevWeight = _prevWeights[_account];
+        _prevWeight.weight = AccountWeightParams(
+            _weight.weekNumber,
+            _weight.stakeTime,
+            _weight.updateTime
+        );
+        _prevWeight.balance = _balance;
+    }
+
+>>>>>>> efaa9be36e1a94f5b8a9b14066b6e6d1dd621c1e
     function _unpackPreviousWeight(
         address _account
     ) private view returns (uint256 week, uint256 t, uint256 updated, uint256 balance) {
@@ -646,6 +662,7 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         balance = params.balance;
     }
 
+<<<<<<< HEAD
     function _updateAccountWithdrawTime(address _account, uint256 _amount, uint256 _newBalance) private {
         if (userWithdrawTimes[_account] == 0) {
             userWithdrawTimes[_account] = block.timestamp + minimumDelegationPeriod;
@@ -658,6 +675,8 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         return userWithdrawTimes[_account] <= block.timestamp;
     }
 
+=======
+>>>>>>> efaa9be36e1a94f5b8a9b14066b6e6d1dd621c1e
     modifier updateReward(address _account) {
         {
             // stack too deep
