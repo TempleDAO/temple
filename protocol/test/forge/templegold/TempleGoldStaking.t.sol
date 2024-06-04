@@ -30,6 +30,7 @@ contract TempleGoldStakingTestBase is TempleGoldCommon {
     event Transfer(address indexed from, address indexed to, uint256 value);
     event VoteDelegateSet(address _delegate, bool _approved);
     event UserDelegateSet(address indexed user, address _delegate);
+    event MinimumDelegationPeriodSet(uint32 _minimumPeriod);
 
     IERC20 public bidToken;
     IERC20 public bidToken2;
@@ -93,6 +94,12 @@ contract TempleGoldStakingTestBase is TempleGoldCommon {
         staking.setHalfTime(_halfTime);
         vm.stopPrank();
     }
+    
+    function _setMinimumDelegationPeriod(uint32 _period) internal {
+        vm.startPrank(executor);
+        staking.setDelegationMinimumPeriod(_period);
+        vm.stopPrank();
+    }
 }
 
 contract TempleGoldStakingAccessTest is TempleGoldStakingTestBase {
@@ -130,6 +137,12 @@ contract TempleGoldStakingAccessTest is TempleGoldStakingTestBase {
         vm.startPrank(unauthorizedUser);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         staking.unpause();
+    }
+
+    function test_access_setDelegationMinimumPeriod() public {
+        vm.startPrank(unauthorizedUser);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
+        staking.setDelegationMinimumPeriod(10 seconds);
     }
 }
 
@@ -198,6 +211,18 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         emit HalfTimeSet(4 days);
         staking.setHalfTime(4 days);
         assertEq(staking.halfTime(), 4 days);
+    }
+
+    function test_setDelegationMinimumPeriod() public {
+        vm.startPrank(executor);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
+        staking.setDelegationMinimumPeriod(0);
+
+        uint32 _minimumPeriod = 90 days;
+        vm.expectEmit(address(staking));
+        emit MinimumDelegationPeriodSet(_minimumPeriod); 
+        staking.setDelegationMinimumPeriod(_minimumPeriod);
+        assertEq(staking.minimumDelegationPeriod(), _minimumPeriod);
     }
 
     function test_migrateWithdraw_tgldStaking() public {
@@ -283,6 +308,15 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         staking.distributeRewards();
         
+        vm.startPrank(alice);
+        vm.expectRevert(abi.encodeWithSelector(ITempleGoldStaking.NoStaker.selector));
+        staking.distributeRewards();
+
+        deal(address(templeToken), bob, 1000 ether, true);
+        vm.startPrank(bob);
+        _approve(address(templeToken), address(staking), type(uint).max);
+        staking.stake(1 ether);
+
         vm.startPrank(alice);
         uint256 rewardAmount = staking.nextRewardAmount();
         ITempleGoldStaking.Reward memory rewardDataBefore = staking.getRewardData();
@@ -392,57 +426,76 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
     }
 
     function test_stake_tgldStaking() public {
-        _setHalftime(1 days);
+        uint64 halfTime = 4 weeks;
+        _setHalftime(halfTime);
         vm.startPrank(alice);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
         staking.stake(0);
 
+        uint256 ts = block.timestamp;
+        // beginning of week
+        uint256 t = ts / WEEK_LENGTH * WEEK_LENGTH;
+        vm.warp(t);
+        uint256 stakeAmount = 1 ether;
         deal(address(templeToken), alice, 100 ether, true);
         _approve(address(templeToken), address(staking), type(uint).max);
         vm.expectEmit(address(staking));
-        emit Staked(alice, 1 ether);
-        staking.stake(1 ether);
-        assertEq(staking.balanceOf(alice), 1 ether);
+        emit Staked(alice, stakeAmount);
+        staking.stake(stakeAmount);
 
-        uint256 ts = block.timestamp ;
-        uint256 t = ts / 7 days * 7 days;
-        uint256 weight = 1 ether * t / (t + 1 days);
+        assertEq(staking.balanceOf(alice), stakeAmount);
+        // uint256 weight = stakeAmount * t / (t + halfTime);
         /// @dev Vote weights are always evaluated at the end of last week
-        assertLt(staking.getVoteWeight(alice), 1 ether);
-        assertEq(staking.getVoteWeight(alice), weight);
+        assertEq(staking.getVoteWeight(alice), 0);
+        // middle of the week. still 0 vote weight. 
+        // reuse variable
+        ts = t + WEEK_LENGTH /2;
+        vm.warp(t);
+        assertEq(staking.getVoteWeight(alice), 0);
+        // beginning of next week
+        t += WEEK_LENGTH;
+        vm.warp(t);
+        assertEq(staking.getVoteWeight(alice), stakeAmount / 5);
+        t += WEEK_LENGTH;
+        vm.warp(t);
+        assertEq(staking.getVoteWeight(alice), stakeAmount / 3);
+        t += WEEK_LENGTH;
+        vm.warp(t);
+        t += WEEK_LENGTH;
+        vm.warp(t);
+        // after 4 weeks (halfTime), vote weight is half of initial stake amount
+        assertEq(staking.getVoteWeight(alice), stakeAmount / 2);
         /// @dev see test_vote_weight for more tests on vote weight
 
         // can stake for others
         vm.startPrank(bob);
         deal(address(templeToken), bob, 100 ether, true);
         _approve(address(templeToken), address(staking), type(uint).max);
+        uint256 newStakeAmount = 10 ether;
         vm.startPrank(executor);
         staking.pause();
         vm.expectRevert(abi.encodeWithSelector(Pausable.EnforcedPause.selector));
-        staking.stakeFor(alice, 10 ether);
+        staking.stakeFor(alice, newStakeAmount);
         staking.unpause();
         vm.startPrank(bob);
         vm.expectEmit(address(staking));
-        emit Staked(alice, 10 ether);
-        staking.stakeFor(alice, 10 ether);
-        assertEq(staking.balanceOf(alice), 11 ether);
-        t += block.timestamp / 7 days * 7 days;
-        weight = 11 ether * t / (t + 1 days);
-        assertGt(staking.getVoteWeight(alice), 1 ether);
-        assertApproxEqAbs(staking.getVoteWeight(alice), weight, 3e15);
+        emit Staked(alice, newStakeAmount);
+        staking.stakeFor(alice, newStakeAmount);
+        assertEq(staking.balanceOf(alice), newStakeAmount+stakeAmount);
     }
 
     function test_getReward_tgldStaking() public {
         vm.warp(block.timestamp + 3 days);
         templeGold.mint();
-        vm.warp(staking.lastRewardNotificationTimestamp() + staking.rewardDistributionCoolDown() + 1);
-        staking.distributeRewards();
         
         vm.startPrank(alice);
         uint256 amount = 10 ether;
         deal(address(templeToken), alice, 100 ether, true);
         _approve(address(templeToken), address(staking), type(uint).max);
         staking.stake(amount);
+
+        vm.warp(staking.lastRewardNotificationTimestamp() + staking.rewardDistributionCoolDown() + 1);
+        staking.distributeRewards();
 
         uint256 aliceTempleGoldBalance = templeGold.balanceOf(alice);
         uint256 claimable = staking.earned(alice);
@@ -451,6 +504,8 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
     }
 
     function test_withdraw_tgldStaking() public {
+        uint64 halfTime = 4 weeks;
+        _setHalftime(halfTime);
         vm.startPrank(alice);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
         staking.withdraw(0, true);
@@ -473,6 +528,7 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         assertEq(staking.getVoteWeight(alice), 0);
         ITempleGoldStaking.AccountWeightParams memory _weight = staking.getAccountWeights(alice);
         assertEq(_weight.updateTime, block.timestamp);
+        assertEq(_weight.stakeTime, 0);
     }
 
     function test_earned_getReward_tgldStaking() public {
@@ -620,8 +676,9 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
 
     function test_setSelfAsDelegate() public {
         vm.startPrank(executor);
-        uint256 halfTime = WEEK_LENGTH / 4;
+        uint256 halfTime = 1 weeks;
         staking.setHalfTime(halfTime);
+        uint256 ts = (block.timestamp / WEEK_LENGTH + 1) * WEEK_LENGTH - halfTime; 
 
         vm.startPrank(alice);
         vm.expectEmit(address(staking));
@@ -638,14 +695,20 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         _approve(address(templeToken), address(staking), type(uint).max);
         staking.stake(stakeAmount);
         // warp to get some vote weight
-        vm.warp(block.timestamp + 1 weeks);
-        assertEq(staking.getDelegatedVoteWeight(alice), staking.getVoteWeight(bob));
+        ts += halfTime;
+        vm.warp(ts);
+        uint256 aliceDelegatedVoteWeight = staking.getDelegatedVoteWeight(alice);
+        assertEq(aliceDelegatedVoteWeight, staking.getVoteWeight(bob));
 
         vm.startPrank(alice);
         vm.expectEmit(address(staking));
         emit VoteDelegateSet(alice, false);
         staking.setSelfAsDelegate(false);
         assertEq(staking.delegates(alice), false);
+        /// @dev vote weights are calculated from previous week
+        assertEq(staking.getDelegatedVoteWeight(alice), aliceDelegatedVoteWeight);
+        ts += WEEK_LENGTH; // following week
+        vm.warp(ts);
         assertEq(staking.getDelegatedVoteWeight(alice), 0);
 
         // bob can assign to another delegate
@@ -655,12 +718,96 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         staking.setUserVoteDelegate(mike);
         assertEq(staking.userDelegates(bob), mike);
 
-        // bob can assign to another delegate where previoud delegate is still valid
+        // bob can assign to another delegate where previous delegate is still valid
         vm.startPrank(executor);
         staking.setSelfAsDelegate(true);
         vm.startPrank(bob);
         staking.setUserVoteDelegate(executor);
         assertEq(staking.userDelegates(bob), executor);
+        assertEq(staking.getDelegatedVoteWeight(executor), 0);
+        // bob can stake. old delegate not affected
+        staking.stake(stakeAmount);
+        // has not started accumulating
+        assertEq(staking.getDelegatedVoteWeight(executor), 0);
+        skip(1 weeks);
+        uint256 bobVoteWeight = staking.getVoteWeight(bob);
+        assertEq(staking.getDelegatedVoteWeight(mike), 0);
+        // bob own vote weight greater (started accumulating already)
+        assertGt(bobVoteWeight, staking.getDelegatedVoteWeight(executor));
+        // bob total stake is 2 * stakeAmount = 2 ether. After 1 week, executor vote weight is half
+        assertEq(staking.getDelegatedVoteWeight(executor), stakeAmount);
+        // bob can withdraw
+        staking.withdrawAll(false);
+        assertEq(staking.getDelegatedVoteWeight(mike), 0);
+        // bob vote weight the same. same week
+        assertEq(staking.getVoteWeight(bob), bobVoteWeight);
+        assertEq(staking.getDelegatedVoteWeight(executor), stakeAmount);
+        skip(1 weeks);
+        assertEq(staking.getDelegatedVoteWeight(executor), 0);
+        assertEq(staking.getVoteWeight(bob), 0);
+    }
+
+    function test_setSelfAsDelegate_user_weight_same_after_resetDelegation() public {
+        uint64 _halfTime = 4 weeks;
+        _setHalftime(_halfTime);
+        uint256 ts = block.timestamp / WEEK_LENGTH * WEEK_LENGTH;
+        vm.warp(ts);
+        vm.startPrank(alice);
+        deal(address(templeToken), alice, 100 ether, true);
+        deal(address(templeToken), mike, 100 ether, true);
+        _approve(address(templeToken), address(staking), type(uint).max);
+        uint256 stakeAmount = 1 ether;
+        staking.stake(stakeAmount);
+        staking.setSelfAsDelegate(true);
+        vm.startPrank(mike);
+        _approve(address(templeToken), address(staking), type(uint).max);
+        staking.setUserVoteDelegate(alice);
+        staking.stake(stakeAmount);
+        ts += 4 weeks;
+        vm.warp(ts);
+        uint256 aliceVoteWeight = staking.getVoteWeight(alice);
+        assertEq(aliceVoteWeight, staking.getDelegatedVoteWeight(alice));
+        // reset delegation but own vote weight is not affected
+        vm.startPrank(alice);
+        staking.setSelfAsDelegate(false);
+        assertEq(staking.getVoteWeight(alice), aliceVoteWeight);
+        assertEq(staking.getDelegatedVoteWeight(alice), 0);
+    }
+
+    function test_unsetUserVoteDelegate_remove_delegate_after_self_set_false() public {
+        vm.startPrank(executor);
+        uint256 halfTime = WEEK_LENGTH / 4;
+        staking.setHalfTime(halfTime);
+
+        vm.startPrank(alice);
+        staking.setSelfAsDelegate(true);
+
+        // bob assigns alice as delegate
+        vm.startPrank(bob);
+        staking.setUserVoteDelegate(alice);
+        // stake
+        uint256 stakeAmount = 1 ether;
+        deal(address(templeToken), bob, 100 ether, true);
+        _approve(address(templeToken), address(staking), type(uint).max);
+        staking.stake(stakeAmount);
+        // warp to get some vote weight
+        skip(1 weeks);
+        uint256 ownVoteWeight = staking.getVoteWeight(bob);
+        assertEq(staking.getVoteWeight(bob), ownVoteWeight);
+        assertEq(staking.getDelegatedVoteWeight(bob), 0);
+        // reset self as delegate
+        vm.startPrank(alice);
+        staking.setSelfAsDelegate(false);
+        assertEq(staking.getVoteWeight(bob), ownVoteWeight);
+        assertEq(staking.getDelegatedVoteWeight(bob), 0);
+
+        // bob unsets delegate
+        vm.startPrank(bob);
+        staking.unsetUserVoteDelegate();
+        assertEq(staking.userDelegated(bob, alice), false);
+        assertEq(staking.userDelegates(bob), address(0));
+        // can withdraw
+        staking.withdrawAll(true);
     }
 
     function test_getDelegatedVoteWeight() public {
@@ -675,12 +822,11 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         vm.expectRevert(abi.encodeWithSelector(ITempleGoldStaking.InvalidDelegate.selector));
         staking.setUserVoteDelegate(bob);
 
-        // vm.startPrank(executor);
         vm.startPrank(bob);
         staking.setSelfAsDelegate(true);
         vm.startPrank(alice);
         staking.setSelfAsDelegate(true);
-
+        // todo check CannotDelegate() error
         vm.expectEmit(address(staking));
         emit UserDelegateSet(alice, bob);
         staking.setUserVoteDelegate(bob);
@@ -704,6 +850,172 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         assertEq(staking.userDelegated(alice, bob), false);
         assertEq(staking.userDelegated(alice, mike), true);
         assertEq(staking.userDelegates(alice), mike);
+    }
+
+    function test_setUserVoteDelegate_unsetUserVoteDelegate_delegationPeriod() public {
+        uint64 _halfTime = 4 weeks;
+        _setHalftime(_halfTime);
+        uint32 _delegationPeriod = 8 weeks;
+        _setMinimumDelegationPeriod(_delegationPeriod);
+        vm.startPrank(bob);
+        staking.setSelfAsDelegate(true);
+        vm.startPrank(executor);
+        staking.setSelfAsDelegate(true);
+        vm.startPrank(mike);
+        staking.setUserVoteDelegate(bob);
+        vm.startPrank(alice);
+        staking.setUserVoteDelegate(bob);
+
+        uint256 ts = block.timestamp / WEEK_LENGTH * WEEK_LENGTH;
+        uint256 t = ts;
+        vm.warp(t);
+
+        deal(address(templeToken), alice, 500 ether, true);
+        _approve(address(templeToken), address(staking), type(uint).max);
+        staking.stake(200 ether);
+        uint32 withdrawTime = uint32(block.timestamp + _delegationPeriod);
+        assertEq(staking.userWithdrawTimes(alice), withdrawTime);
+
+        // change delegate after stake
+        vm.expectRevert(abi.encodeWithSelector(ITempleGoldStaking.CannotDelegate.selector));
+        staking.setUserVoteDelegate(executor);
+        // withdraw after stake
+        vm.expectRevert(abi.encodeWithSelector(ITempleGoldStaking.MinimumStakePeriod.selector));
+        staking.withdrawAll(false);
+        t += 5 weeks;
+        vm.warp(t);
+        uint256 nextWithdrawTime = withdrawTime + (_delegationPeriod / 3);
+        staking.stake(100 ether);
+        assertGt(staking.userWithdrawTimes(alice), withdrawTime);
+        assertEq(staking.userWithdrawTimes(alice), nextWithdrawTime);
+        // set to first withdraw time 
+        t = withdrawTime;
+        vm.warp(t);
+        // can't withdraw at old withdraw time
+        vm.expectRevert(abi.encodeWithSelector(ITempleGoldStaking.MinimumStakePeriod.selector));
+        staking.withdrawAll(false);
+        t = nextWithdrawTime;
+        vm.warp(t);
+        uint256 balanceBefore = templeToken.balanceOf(alice);
+        staking.withdrawAll(false);
+        assertEq(templeToken.balanceOf(alice), balanceBefore+300 ether);
+        assertEq(staking.userWithdrawTimes(alice), 0);
+        staking.unsetUserVoteDelegate();
+        
+        // no delegate before stake
+        staking.stake(100 ether);
+        assertEq(staking.userWithdrawTimes(alice), 0);
+        staking.withdrawAll(false);
+        
+        // set delegate before stake
+        staking.setUserVoteDelegate(executor);
+        staking.stake(100 ether);
+        withdrawTime = uint32(block.timestamp + _delegationPeriod);
+        assertEq(staking.userWithdrawTimes(alice), withdrawTime);
+        t = withdrawTime - 1;
+        vm.warp(t);
+        vm.expectRevert(abi.encodeWithSelector(ITempleGoldStaking.MinimumStakePeriod.selector));
+        staking.withdrawAll(false);
+        // set to withdraw time but don't withdraw and set another delegate
+        t += 1;
+        vm.warp(t);
+        staking.setUserVoteDelegate(bob);
+        assertEq(staking.userWithdrawTimes(alice), withdrawTime+_delegationPeriod);
+        t = withdrawTime + _delegationPeriod;
+        vm.warp(t);
+        staking.withdrawAll(false);
+        staking.unsetUserVoteDelegate();
+
+        // stake a few times
+        staking.stake(100 ether);
+        staking.stake(100 ether);
+        // set and unset
+        staking.setUserVoteDelegate(executor);
+        vm.expectRevert(abi.encodeWithSelector(ITempleGoldStaking.InvalidOperation.selector));
+        staking.unsetUserVoteDelegate();
+        vm.expectRevert(abi.encodeWithSelector(ITempleGoldStaking.MinimumStakePeriod.selector));
+        staking.withdrawAll(false);
+        t = staking.userWithdrawTimes(alice);
+        vm.warp(t);
+        staking.withdrawAll(false);
+    }
+
+    function test_check_finding_15() public {
+        uint64 _halfTime = 7 days;
+        _setHalftime(_halfTime);
+        vm.startPrank(bob);
+        staking.setSelfAsDelegate(true);
+        // vm.startPrank(mike);
+        // staking.setUserVoteDelegate(bob);
+        vm.startPrank(alice);
+        staking.setUserVoteDelegate(bob);
+        uint256 ts = block.timestamp / WEEK_LENGTH * WEEK_LENGTH;
+        uint256 t = ts;
+        vm.warp(t);
+        deal(address(templeToken), alice, 200 ether, true);
+        deal(address(templeToken), mike, 200 ether, true);
+        _approve(address(templeToken), address(staking), type(uint).max);
+        staking.stake(200 ether);
+
+        t += 2 * WEEK_LENGTH;
+        vm.warp(t);
+        assertEq(staking.getDelegatedVoteWeight(bob), 133333333333333333333);
+        vm.startPrank(mike);
+        _approve(address(templeToken), address(staking), type(uint).max);
+        ITempleGoldStaking.AccountWeightParams memory _weight = staking.getAccountWeights(bob);
+        assertEq(_weight.stakeTime, 0);
+        staking.stake(100 ether);
+        // stake time is 0 after stake
+        _weight = staking.getAccountWeights(bob);
+        assertEq(_weight.stakeTime, 0);
+        // delegate to bob after stake
+        staking.setUserVoteDelegate(bob);
+        // stake time incrases after delegation
+        _weight = staking.getAccountWeights(bob);
+        assertEq(_weight.stakeTime, 483840);
+        assertEq(staking.getDelegatedVoteWeight(bob), 133333333333333333333);
+        staking.unsetUserVoteDelegate();
+        // bob stake time remains the same after reset delegation from mike
+        _weight = staking.getAccountWeights(bob);
+        assertEq(_weight.stakeTime, 483840);
+        // same week
+        assertEq(staking.getDelegatedVoteWeight(bob), 133333333333333333333);
+        t += WEEK_LENGTH;
+        vm.warp(t);
+        _weight = staking.getAccountWeights(bob);
+        assertEq(_weight.stakeTime, 483840);
+        // vote power reduces by 4761904761904761905 (4.7619e18) which is 3.57% of previous vote power
+        // even after withdrawing 100 ether, which is 33% of total delegated votes
+        assertEq(staking.getDelegatedVoteWeight(bob), 128571428571428571428);
+        t += WEEK_LENGTH;
+        vm.warp(t);
+        // increases because it's following week
+        assertEq(staking.getDelegatedVoteWeight(bob), 147368421052631578947);
+        _weight = staking.getAccountWeights(bob);
+        assertEq(_weight.stakeTime, 483840);
+        // delegate and undelegate a couple of time to check if stakeTime reduces
+        staking.setUserVoteDelegate(bob);
+        // stake time for bob increases after delegation
+        _weight = staking.getAccountWeights(bob);
+        assertEq(_weight.stakeTime, 583944);
+        staking.unsetUserVoteDelegate();
+        _weight = staking.getAccountWeights(bob);
+        assertEq(_weight.stakeTime, 583944);
+        assertEq(staking.getDelegatedVoteWeight(bob), 147368421052631578947);
+
+        staking.setUserVoteDelegate(bob);
+        // stake time reduced after delegation
+        _weight = staking.getAccountWeights(bob);
+        assertEq(_weight.stakeTime, 294510);
+        staking.unsetUserVoteDelegate();
+        assertEq(staking.getDelegatedVoteWeight(bob), 147368421052631578947);
+        _weight = staking.getAccountWeights(bob);
+        assertEq(_weight.stakeTime, 294510);
+        t += WEEK_LENGTH;
+        vm.warp(t);
+        assertEq(staking.getDelegatedVoteWeight(bob), 119580349841434469553);
+        _weight = staking.getAccountWeights(bob);
+        assertEq(_weight.stakeTime, 294510);
     }
 
     function test_stake_delegate_vote_weight() public {
@@ -756,33 +1068,37 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         // alice change delegate and check vote weight of old delegate
         staking.setUserVoteDelegate(executor);
         // vote weight now of delegate is just from mike
-        assertEq(staking.getDelegatedVoteWeight(bob), stakeAmount * 5 / 6);
+        ts += WEEK_LENGTH;
+        vm.warp(ts);
+        assertEq(staking.getDelegatedVoteWeight(bob), stakeAmount * 9 / 10);
+        assertEq(staking.getVoteWeight(mike), stakeAmount * 9 / 10);
 
         // set delegate to false
-        // vm.startPrank(executor);
         vm.startPrank(bob);
         staking.setSelfAsDelegate(false);
-        assertEq(staking.getDelegatedVoteWeight(bob), 0);
-        assertEq(staking.getVoteWeight(alice), stakeAmount * 5 / 6);
+        // same week. using previous week vote weight
+        assertEq(staking.getDelegatedVoteWeight(bob), stakeAmount * 9 / 10);
+        // alice vote weight same increase with increased time
+        assertEq(staking.getVoteWeight(alice), stakeAmount * 9 / 10);
 
         // alice self delegates and vote weight is not double
         vm.startPrank(alice);
         staking.setSelfAsDelegate(true);
         staking.setUserVoteDelegate(alice);
         assertEq(staking.userDelegates(alice), alice);
-        assertEq(staking.getDelegatedVoteWeight(alice), stakeAmount * 5 / 6);
-        assertEq(staking.getVoteWeight(alice), stakeAmount * 5 / 6);
+        // no delegatees 
+        assertEq(staking.getDelegatedVoteWeight(alice), 0);
+        assertEq(staking.getVoteWeight(alice), stakeAmount * 9 / 10);
     }
 
     function test_withdraw_delegate_vote_weight() public {
+        uint64 halfTime = 4 weeks;
+        _setHalftime(halfTime);
+        uint256 ts = block.timestamp / WEEK_LENGTH * WEEK_LENGTH;
         vm.startPrank(bob);
         staking.setSelfAsDelegate(true);
         vm.startPrank(executor);
         staking.setSelfAsDelegate(true);
-        uint256 halfTime = WEEK_LENGTH / 4;
-        staking.setHalfTime(halfTime);
-        // set time to `half_time` before end of a week
-        uint256 ts = (block.timestamp / WEEK_LENGTH + 2) * WEEK_LENGTH - halfTime;
         vm.warp(ts);
 
         vm.startPrank(alice);
@@ -791,7 +1107,8 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         vm.startPrank(mike);
         staking.setUserVoteDelegate(bob);
         uint256 stakeAmount = 3 ether;
-        // stake
+
+         // stake
         deal(address(templeToken), alice, 100 ether, true);
         deal(address(templeToken), mike, 100 ether, true);
         _approve(address(templeToken), address(staking), type(uint).max);
@@ -800,24 +1117,36 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         _approve(address(templeToken), address(staking), type(uint).max);
         staking.stake(stakeAmount);
 
-        ts += 2 * halfTime;
+        // warp to halftime
+        ts += WEEK_LENGTH * 4;
         vm.warp(ts);
         assertEq(staking.getVoteWeight(alice), stakeAmount / 2);
-        // delegate weight is 2x (alice + mike)
+        // 2 * stakeAmount is total
         assertEq(staking.getDelegatedVoteWeight(bob), stakeAmount);
 
         // alice withdraws
         staking.withdraw(stakeAmount, true);
-        assertEq(staking.getDelegatedVoteWeight(bob), stakeAmount / 2);
+        // still same week
+        assertEq(staking.getDelegatedVoteWeight(bob), stakeAmount);
+        ts += WEEK_LENGTH;
+        vm.warp(ts);
+        // minus withdraw amount plus 7 days extra vote weights
+        assertEq(staking.getDelegatedVoteWeight(bob), stakeAmount * 5 / 9);
         assertEq(staking.getVoteWeight(alice), 0);
+
         // mike withdraws
         vm.startPrank(mike);
         staking.withdraw(stakeAmount, true);
+        // same week
+        assertEq(staking.getDelegatedVoteWeight(bob), stakeAmount * 5 / 9);
+        assertEq(staking.getVoteWeight(mike), stakeAmount * 5 / 9);
+        ts += WEEK_LENGTH;
+        vm.warp(ts);
         assertEq(staking.getDelegatedVoteWeight(bob), 0);
         assertEq(staking.getVoteWeight(mike), 0);
     }
 
-    function test_unsetUserVoteDelegate() public {
+    function test_unsetUserVoteDelegate_staking() public {
         vm.startPrank(bob);
         staking.setSelfAsDelegate(true);
         vm.startPrank(alice);
@@ -829,6 +1158,7 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         vm.expectEmit(address(staking));
         emit UserDelegateSet(alice, address(0));
         staking.unsetUserVoteDelegate();
+        assertEq(staking.userDelegates(alice), address(0));
 
         vm.startPrank(executor);
         uint256 halfTime = WEEK_LENGTH / 4;
@@ -850,6 +1180,11 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         assertEq(staking.getDelegatedVoteWeight(bob), stakeAmount / 2);
 
         staking.unsetUserVoteDelegate();
+        assertEq(staking.userDelegates(alice), address(0));
+        // still same week
+        assertEq(staking.getDelegatedVoteWeight(bob), stakeAmount / 2);
+        ts += WEEK_LENGTH;
+        vm.warp(ts);
         assertEq(staking.getDelegatedVoteWeight(bob), 0);
     }
 }
