@@ -62,16 +62,21 @@ contract TempleGoldLayerZeroTest is TestHelperOz5 {
             tokensToSend,
             tokensToSend,
             options,
-            "",
+            bytes("something"), // compose message
             ""
         );
         MessagingFee memory fee = aTempleGold.quoteSend(sendParam, false);
 
         vm.startPrank(userA);
+        vm.expectRevert(abi.encodeWithSelector(ITempleGold.CannotCompose.selector));
+        aTempleGold.send{ value: fee.nativeFee }(sendParam, fee, payable(address(this)));
+        sendParam.composeMsg = "";
+        
         vm.expectRevert(abi.encodeWithSelector(ITempleGold.NonTransferrable.selector, userA, userB));
         aTempleGold.send{ value: fee.nativeFee }(sendParam, fee, payable(address(this)));
-        
+
         sendParam.to = addressToBytes32(userA);
+
         vm.startPrank(userA);
         aTempleGold.send{ value: fee.nativeFee }(sendParam, fee, payable(address(this)));
         verifyPackets(bEid, addressToBytes32(address(bTempleGold)));

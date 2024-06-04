@@ -185,8 +185,7 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         if (!_approve && prevStatusTrue) {
             uint256 delegateBalance = _delegateBalances[msg.sender];
             _delegateBalances[msg.sender] = 0;
-            /// @dev if no user delegated to delegate
-            /// delegate vote weight will default to vote weight as a user
+            /// @dev If no user delegated to delegate, `getDelegatedVoteWeight()` will default to 0
             if (delegateBalance > 0) {
                 uint256 stakeBalance = _balances[msg.sender];
                 if (delegateBalance > stakeBalance) {
@@ -276,6 +275,7 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     function distributeRewards() updateReward(address(0)) external {
         if (distributionStarter != address(0) && msg.sender != distributionStarter) 
             { revert CommonEventsAndErrors.InvalidAccess(); }
+        if (totalSupply == 0) { revert NoStaker(); }
         // Mint and distribute TGLD if no cooldown set
         if (lastRewardNotificationTimestamp + rewardDistributionCoolDown > block.timestamp) 
                 { revert CannotDistribute(); }
@@ -636,6 +636,7 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         updated = params.updateTime;
     }
 
+<<<<<<< HEAD
     function _packPreviousWeight(AccountWeightParams storage _weight, address _account, uint256 _balance) private {
         AccountPreviousWeightParams storage _prevWeight = _prevWeights[_account];
         _prevWeight.weight = AccountWeightParams(
@@ -646,6 +647,8 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         _prevWeight.balance = _balance;
     }
 
+=======
+>>>>>>> templegold
     function _unpackPreviousWeight(
         address _account
     ) private view returns (uint256 week, uint256 t, uint256 updated, uint256 balance) {

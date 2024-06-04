@@ -41,6 +41,7 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
     mapping(address => bool) public authorized;
 
     event ContractAuthorizationSet(address _contract, bool _whitelist);
+    error CannotCompose();
 
     constructor(
         address _layerZeroEndpoint,
@@ -115,8 +116,8 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
         MessagingFee calldata _fee,
         address _refundAddress
     ) external payable virtual override returns (MessagingReceipt memory msgReceipt, OFTReceipt memory oftReceipt) {
+        if (_sendParam.composeMsg.length > 0) { revert CannotCompose(); }
         /// cast bytes32 to address
-        // address _to = address(uint160(uint256(_sendParam.to)));
         address _to = _sendParam.to.bytes32ToAddress();
         /// @dev user can cross-chain transfer to either whitelisted or self
         if (msg.sender != _to) { revert ITempleGold.NonTransferrable(msg.sender, _to); }
@@ -167,6 +168,7 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
         uint256 amountReceivedLD = _credit(toAddress, _toLD(_message.amountSD()), _origin.srcEid);
 
         /// @dev Disallow further execution on destination by ignoring composed message
+        if (_message.isComposed()) { revert CannotCompose(); }
 
         emit OFTReceived(_guid, _origin.srcEid, toAddress, amountReceivedLD);
     }
