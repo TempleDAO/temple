@@ -15,9 +15,13 @@ interface ITempleGoldStaking {
     event HalfTimeSet(uint256 halfTime);
     event VoteDelegateSet(address _delegate, bool _approved);
     event UserDelegateSet(address indexed user, address _delegate);
+    event MinimumDelegationPeriodSet(uint32 _minimumPeriod);
 
     error InvalidDelegate();
     error CannotDistribute();
+    error CannotDelegate();
+    error MinimumStakePeriod();
+    error InvalidOperation();
 
     struct Reward {
         uint40 periodFinish;
@@ -30,6 +34,11 @@ interface ITempleGoldStaking {
         uint64 weekNumber;
         uint64 stakeTime;
         uint64 updateTime;
+    }
+
+    struct AccountPreviousWeightParams {
+        AccountWeightParams weight;
+        uint256 balance;
     }
 
     /// @notice The staking token. Temple
@@ -243,4 +252,14 @@ interface ITempleGoldStaking {
     function delegates(address _delegate) external view returns (bool);
     /// @notice Keep track of users and their delegates
     function userDelegates(address _account) external view returns (address);
+
+    /// @notice Minimum time of delegation before reset
+    function minimumDelegationPeriod() external view returns (uint32);
+
+    /**
+     * @notice Set minimum time before undelegation. This is also used to check before withdrawal after stake if account is delegated
+     * @param _minimumPeriod Minimum delegation time
+     */
+    function setDelegationMinimumPeriod(uint32 _minimumPeriod) external;
+
 }
