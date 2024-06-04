@@ -15,7 +15,7 @@ interface ITempleGoldStaking {
     event HalfTimeSet(uint256 halfTime);
     event VoteDelegateSet(address _delegate, bool _approved);
     event UserDelegateSet(address indexed user, address _delegate);
-    event MinimumDelegationPeriodSet(uint32 _minimumPeriod);
+    event DelegationPeriodSet(uint32 _minimumPeriod);
 
     error InvalidDelegate();
     error CannotDistribute();
@@ -255,12 +255,12 @@ interface ITempleGoldStaking {
     function userDelegates(address _account) external view returns (address);
 
     /// @notice Minimum time of delegation before reset
-    function minimumDelegationPeriod() external view returns (uint32);
+    function delegationPeriod() external view returns (uint32);
 
     /**
      * @notice Set minimum time before undelegation. This is also used to check before withdrawal after stake if account is delegated
-     * @param _minimumPeriod Minimum delegation time
+     * @param _period Minimum delegation time
      */
-    function setDelegationMinimumPeriod(uint32 _minimumPeriod) external;
+    function setDelegationPeriod(uint32 _period) external;
 
 }

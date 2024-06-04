@@ -55,8 +55,8 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     /// @notice Timestamp for last reward notification
     uint96 public override lastRewardNotificationTimestamp;
 
-    /// @notice Minimum time of delegation before reset
-    uint32 public override minimumDelegationPeriod;
+    /// @notice Time of delegation before reset
+    uint32 public override delegationPeriod;
 
     /// @notice For use when migrating to a new staking contract if TGLD changes.
     address public override migrator;
@@ -127,6 +127,10 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     function setUserVoteDelegate(address _delegate) external override {
         if (_delegate == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
         if (!delegates[_delegate]) {  revert InvalidDelegate(); }
+        // delegates not allowed to delgate
+        // if you are self delegated as a delegate, you are not allowed to set delegate until reset
+        // total vote counted from governance contracts with own vote weight and delegated vote weight
+        if (delegates[msg.sender]) { revert CannotDelegate(); }
 
         if (userWithdrawTimes[msg.sender] > block.timestamp) { revert CannotDelegate(); }
 
@@ -156,14 +160,12 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
                     _updateAccountWeight(_userDelegate, _prevBalance, _newDelegateBalance, false);
                 }
             }
-            if (msg.sender != _delegate) {
-                // setting a new delegate always increases withdraw time by delegation period
-                userWithdrawTimes[msg.sender] = block.timestamp + minimumDelegationPeriod;
-                /// @dev Reuse variables
-                _prevBalance = _delegateBalances[_delegate];
-                _newDelegateBalance = _delegateBalances[_delegate] = _prevBalance + userBalance;
-                _updateAccountWeight(_delegate, _prevBalance, _newDelegateBalance, true);
-            }
+            // setting a new delegate always increases withdraw time by delegation period
+            userWithdrawTimes[msg.sender] = block.timestamp + delegationPeriod;
+            /// @dev Reuse variables
+            _prevBalance = _delegateBalances[_delegate];
+            _newDelegateBalance = _delegateBalances[_delegate] = _prevBalance + userBalance;
+            _updateAccountWeight(_delegate, _prevBalance, _newDelegateBalance, true);
         }
         userDelegates[msg.sender] = _delegate;
         _delegateUsersSet[_delegate].add(msg.sender);
@@ -245,12 +247,12 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
 
     /**
      * @notice Set minimum time before undelegation. This is also used to check before withdrawal after stake if account is delegated
-     * @param _minimumPeriod Minimum delegation time
+     * @param _period Delegation period
      */
-    function setDelegationMinimumPeriod(uint32 _minimumPeriod) external override onlyElevatedAccess {
-        if (_minimumPeriod == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
-        minimumDelegationPeriod = _minimumPeriod;
-        emit MinimumDelegationPeriodSet(_minimumPeriod);
+    function setDelegationPeriod(uint32 _period) external override onlyElevatedAccess {
+        if (_period == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
+        delegationPeriod = _period;
+        emit DelegationPeriodSet(_period);
     }
 
     /**
@@ -648,9 +650,9 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
 
     function _updateAccountWithdrawTime(address _account, uint256 _amount, uint256 _newBalance) private {
         if (userWithdrawTimes[_account] == 0) {
-            userWithdrawTimes[_account] = block.timestamp + minimumDelegationPeriod;
+            userWithdrawTimes[_account] = block.timestamp + delegationPeriod;
         } else {
-            userWithdrawTimes[_account] = userWithdrawTimes[_account] + minimumDelegationPeriod * _amount/ _newBalance;
+            userWithdrawTimes[_account] = userWithdrawTimes[_account] + delegationPeriod * _amount/ _newBalance;
         }
     }
 
