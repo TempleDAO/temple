@@ -12,7 +12,7 @@ export const fetchSubgraph = async <R extends SubGraphResponse<object>>(
   query: string
 ) => {
   return fetchGenericSubgraph<R>(
-    'https://api.thegraph.com/subgraphs/name/templedao/templedao-metrics',
+    'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-metrics/api',
     query
   );
 };
