@@ -184,14 +184,22 @@ export default function useDashboardV2Metrics(dashboardData: DashboardData) {
           fetchGenericSubgraph<any>(
             env.subgraph.templeV2,
             `{
-          treasuryReservesVaults {
-            totalMarketValueUSD
-            treasuryPriceIndex
-            principalUSD
-            accruedInterestUSD
-            benchmarkedEquityUSD
-          }
-      }`
+              treasuryReservesVaults {
+                treasuryPriceIndex
+                principalUSD
+                accruedInterestUSD
+              }
+            }`
+          ),
+          // includes the external balances so has to come from the second subgraph
+          fetchGenericSubgraph<any>(
+            env.subgraph.templeV2Balances,
+            `{
+              treasuryReservesVaults {
+                totalMarketValueUSD
+                benchmarkedEquityUSD
+              }
+            }`
           ),
           getBenchmarkRate(),
           getTempleCirculatingSupply(),
