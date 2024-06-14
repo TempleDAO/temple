@@ -21,7 +21,6 @@ contract TempleGoldStakingTestBase is TempleGoldCommon {
     event Unpaused(address account);
     event StakingProxySet(address stakingProxy);
     event Staked(address indexed staker, uint256 amount);
-    event RewardPaid(address indexed staker, address toAddress, uint256 reward);
     event MigratorSet(address migrator);
     event Withdrawn(address indexed staker, address to, uint256 stakeIndex, uint256 amount);
     event RewardDistributionCoolDownSet(uint160 cooldown);
@@ -34,7 +33,7 @@ contract TempleGoldStakingTestBase is TempleGoldCommon {
     event DelegateChanged(address indexed delegator, address indexed fromDelegate, address indexed toDelegate);
     event DelegateVotesChanged(address indexed delegate, uint256 previousBalance, uint256 newBalance);
     event VestingPeriodSet(uint32 _period);
-    event RewardPaidIndex(address indexed staker, address toAddress, uint256 index, uint256 reward);
+    event RewardPaid(address indexed staker, address toAddress, uint256 index, uint256 reward);
     event RewardDurationSet(uint256 duration);
 
     IERC20 public bidToken;
@@ -1032,7 +1031,7 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         assertEq(earned, staking.earned(alice, 1));
         uint256 aliceBalanceBefore = templeGold.balanceOf(alice);
         vm.expectEmit(address(staking));
-        emit RewardPaidIndex(alice, alice, 1, earned);
+        emit RewardPaid(alice, alice, 1, earned);
         staking.getReward(alice, 1);
         uint256 aliceBalanceAfter = templeGold.balanceOf(alice);
         assertEq(aliceBalanceAfter - aliceBalanceBefore, earned);
@@ -1140,7 +1139,7 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
             assertEq(earned, staking.earned(alice, 1));
             aliceBalanceBefore = templeGold.balanceOf(alice);
             vm.expectEmit(address(staking));
-            emit RewardPaidIndex(alice, alice, 1, earned);
+            emit RewardPaid(alice, alice, 1, earned);
             staking.getReward(alice, 1);
             aliceBalanceAfter = templeGold.balanceOf(alice);
             assertEq(aliceBalanceAfter - aliceBalanceBefore, earned);

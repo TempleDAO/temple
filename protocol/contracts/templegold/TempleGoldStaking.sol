@@ -38,9 +38,6 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     /// @notice Total supply of staking token
     uint256 public override totalSupply;
 
-    /// @notice The time it takes until half the voting weight is reached for a staker
-    uint256 public override halfTime;
-
     /// @notice Time tracking
     uint256 public override periodFinish;
     /// @notice Last rewards update time
@@ -63,8 +60,6 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     /// @notice Staker balances
     mapping(address account => uint256 balance) private _balances;
     
-    /// @notice Use as alias for delegate "balances" for easier vote weight calculation
-    mapping(address delegate => uint256 balance) private _delegateBalances;
     /// @notice Account vote delegates
     mapping(address account => address delegate) public delegates;
 
@@ -428,7 +423,7 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         if (amount > 0) {
             claimableRewards[staker][index] = 0;
             rewardToken.safeTransfer(rewardsToAddress, amount);
-            emit RewardPaidIndex(staker, rewardsToAddress, index, amount);
+            emit RewardPaid(staker, rewardsToAddress, index, amount);
         }
     }
 

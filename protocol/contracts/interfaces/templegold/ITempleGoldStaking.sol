@@ -7,18 +7,16 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 interface ITempleGoldStaking {
     event GoldDistributionNotified(uint256 amount, uint256 timestamp);
     event Staked(address indexed staker, uint256 amount);
-    event RewardPaid(address indexed staker, address toAddress, uint256 reward);
     event MigratorSet(address migrator);
     event Withdrawn(address indexed staker, address to, uint256 stakeIndex, uint256 amount);
     event RewardDistributionCoolDownSet(uint160 cooldown);
     event DistributionStarterSet(address indexed starter);
-    event HalfTimeSet(uint256 halfTime);
     event VoteDelegateSet(address _delegate, bool _approved);
     event UserDelegateSet(address indexed user, address _delegate);
     event VestingPeriodSet(uint32 _period);
     event DelegateChanged(address indexed delegator, address indexed fromDelegate, address indexed toDelegate);
     event DelegateVotesChanged(address indexed delegate, uint256 previousBalance, uint256 newBalance);
-    event RewardPaidIndex(address indexed staker, address toAddress, uint256 index, uint256 reward);
+    event RewardPaid(address indexed staker, address toAddress, uint256 index, uint256 reward);
     event RewardDurationSet(uint256 duration);
 
     error InvalidDelegate();
@@ -71,9 +69,6 @@ interface ITempleGoldStaking {
     function rewardPerTokenStored() external view returns (uint256);
     /// @notice Total supply of staking token
     function totalSupply() external view returns (uint256);
-
-    /// @notice The time it takes until half the voting weight is reached for a staker
-    function halfTime() external view returns (uint256);
 
     /// @notice Time tracking
     function periodFinish() external view returns (uint256);
