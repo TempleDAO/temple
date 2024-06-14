@@ -19,17 +19,11 @@ contract TempleGoldStakingTestBase is TempleGoldCommon {
     event Paused(address account);
     event GoldDistributionNotified(uint256 amount, uint256 timestamp);
     event Unpaused(address account);
-    event StakingProxySet(address stakingProxy);
     event Staked(address indexed staker, uint256 amount);
     event MigratorSet(address migrator);
     event Withdrawn(address indexed staker, address to, uint256 stakeIndex, uint256 amount);
     event RewardDistributionCoolDownSet(uint160 cooldown);
     event DistributionStarterSet(address indexed starter);
-    event HalfTimeSet(uint256 halfTime);
-    event Transfer(address indexed from, address indexed to, uint256 value);
-    event VoteDelegateSet(address _delegate, bool _approved);
-    event UserDelegateSet(address indexed user, address _delegate);
-    event DelegationPeriodSet(uint32 _minimumPeriod);
     event DelegateChanged(address indexed delegator, address indexed fromDelegate, address indexed toDelegate);
     event DelegateVotesChanged(address indexed delegate, uint256 previousBalance, uint256 newBalance);
     event VestingPeriodSet(uint32 _period);

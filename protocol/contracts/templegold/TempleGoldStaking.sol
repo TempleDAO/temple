@@ -30,6 +30,8 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
 
     /// @notice Distribution starter
     address public override distributionStarter;
+    /// @notice Vesting period
+    uint32 public override vestingPeriod;
     /// @notice Week length
     uint256 constant public WEEK_LENGTH = 7 days;
 
@@ -74,8 +76,6 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     /// @notice Track voting
     mapping(address account => mapping(uint256 epoch => Checkpoint)) private _checkpoints;
     mapping(address account => uint256 number) public override numCheckpoints;
-
-    uint32 public vestingPeriod;
 
     constructor(
         address _rescuer,

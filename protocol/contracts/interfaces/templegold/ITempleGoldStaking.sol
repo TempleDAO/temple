@@ -11,18 +11,14 @@ interface ITempleGoldStaking {
     event Withdrawn(address indexed staker, address to, uint256 stakeIndex, uint256 amount);
     event RewardDistributionCoolDownSet(uint160 cooldown);
     event DistributionStarterSet(address indexed starter);
-    event VoteDelegateSet(address _delegate, bool _approved);
-    event UserDelegateSet(address indexed user, address _delegate);
     event VestingPeriodSet(uint32 _period);
     event DelegateChanged(address indexed delegator, address indexed fromDelegate, address indexed toDelegate);
     event DelegateVotesChanged(address indexed delegate, uint256 previousBalance, uint256 newBalance);
     event RewardPaid(address indexed staker, address toAddress, uint256 index, uint256 reward);
     event RewardDurationSet(uint256 duration);
 
-    error InvalidDelegate();
     error CannotDistribute();
     error CannotDelegate();
-    error MinimumStakePeriod();
     error InvalidOperation();
     error InvalidBlockNumber();
     error NoStaker();
@@ -136,6 +132,12 @@ interface ITempleGoldStaking {
      * @return Staked balance of account
      */
     function balanceOf(address account) external view returns (uint256);
+
+    /**
+     * @notice Get staker vesting period
+     * @return Vesting period
+     */
+    function vestingPeriod() external view returns (uint32);
 
     /**
      * @notice Get earned rewards of account
