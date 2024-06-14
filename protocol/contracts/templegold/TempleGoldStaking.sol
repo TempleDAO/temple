@@ -190,6 +190,7 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         if (rewardAmount < rewardDuration ) { revert CommonEventsAndErrors.ExpectedNonZero(); }
         nextRewardAmount = 0;
         _notifyReward(rewardAmount);
+        lastRewardNotificationTimestamp = uint32(block.timestamp);
     }
 
     /**
@@ -408,7 +409,6 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         if (msg.sender != address(rewardToken)) { revert CommonEventsAndErrors.InvalidAccess(); }
         /// @notice Temple Gold contract mints TGLD amount to contract before calling `notifyDistribution`
         nextRewardAmount += amount;
-        lastRewardNotificationTimestamp = uint96(block.timestamp);
         emit GoldDistributionNotified(amount, block.timestamp);
     }
     
