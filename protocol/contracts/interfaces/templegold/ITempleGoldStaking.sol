@@ -9,19 +9,24 @@ interface ITempleGoldStaking {
     event Staked(address indexed staker, uint256 amount);
     event RewardPaid(address indexed staker, address toAddress, uint256 reward);
     event MigratorSet(address migrator);
-    event Withdrawn(address indexed staker, address to, uint256 amount);
+    event Withdrawn(address indexed staker, address to, uint256 stakeIndex, uint256 amount);
     event RewardDistributionCoolDownSet(uint160 cooldown);
     event DistributionStarterSet(address indexed starter);
     event HalfTimeSet(uint256 halfTime);
     event VoteDelegateSet(address _delegate, bool _approved);
     event UserDelegateSet(address indexed user, address _delegate);
-    event DelegationPeriodSet(uint32 _minimumPeriod);
+    event VestingPeriodSet(uint32 _period);
+    event DelegateChanged(address indexed delegator, address indexed fromDelegate, address indexed toDelegate);
+    event DelegateVotesChanged(address indexed delegate, uint256 previousBalance, uint256 newBalance);
+    event RewardPaidIndex(address indexed staker, address toAddress, uint256 index, uint256 reward);
+    event RewardDurationSet(uint256 duration);
 
     error InvalidDelegate();
     error CannotDistribute();
     error CannotDelegate();
     error MinimumStakePeriod();
     error InvalidOperation();
+    error InvalidBlockNumber();
     error NoStaker();
 
     struct Reward {
@@ -40,6 +45,18 @@ interface ITempleGoldStaking {
     struct AccountPreviousWeightParams {
         AccountWeightParams weight;
         uint256 balance;
+    }
+
+    /// @notice A checkpoint for marking number of votes from a given block
+    struct Checkpoint {
+        uint256 fromBlock;
+        uint256 votes;
+    }
+
+    struct StakeInfo {
+        uint64 stakeTime;
+        uint64 fullyVestedAt; // store, if vesting period changes
+        uint256 amount;
     }
 
     /// @notice The staking token. Temple
@@ -73,10 +90,10 @@ interface ITempleGoldStaking {
     /// @notice For use when migrating to a new staking contract if TGLD changes.
     function migrator() external view returns (address);
 
-    /// @notice Stakers claimable rewards
-    function claimableRewards(address account) external view returns (uint256);
-    /// @notice Staker reward per token paid
-    function userRewardPerTokenPaid(address account) external view returns (uint256);
+    /// @notice Stakers claimable rewards at stake index
+    function claimableRewards(address account, uint256 stakeIndex) external view returns (uint256);
+    /// @notice Staker reward per token paid at stake index
+    function userRewardPerTokenPaid(address account, uint256 stakeIndex) external view returns (uint256);
 
     /**
      * @notice Set migrator
@@ -100,15 +117,17 @@ interface ITempleGoldStaking {
     /**
      * @notice Withdraw staked tokens
      * @param amount Amount to withdraw
+     * @param stakeIndex Stake index
      * @param claim Boolean if to claim rewards
      */
-    function withdraw(uint256 amount, bool claim) external;
+    function withdraw(uint256 amount, uint256 stakeIndex, bool claim) external;
 
     /**
      * @notice Withdraw all staked tokens
+     * @param stakeIndex Stake index
      * @param claim Boolean if to claim rewards
      */
-    function withdrawAll(bool claim) external;
+    function withdrawAll(uint256 stakeIndex, bool claim) external;
 
     /// @notice Owner can pause user swaps from occuring
     function pause() external;
@@ -126,9 +145,10 @@ interface ITempleGoldStaking {
     /**
      * @notice Get earned rewards of account
      * @param _account Account
+     * @param _index Index
      * @return Earned rewards of account
      */
-    function earned(address _account) external view returns (uint256);
+    function earned(address _account, uint256 _index) external view returns (uint256);
 
     /**
      * @notice Get Temple Gold reward per token of Temple 
@@ -153,8 +173,9 @@ interface ITempleGoldStaking {
     /**  
      * @notice Get rewards
      * @param staker Staking account
+     * @param index Index
      */
-    function getReward(address staker) external;
+    function getReward(address staker, uint256 index) external;
 
     /**  
      * @notice Notify rewards distribution. Called by TempleGold contract after successful mint
@@ -169,36 +190,15 @@ interface ITempleGoldStaking {
     function setRewardDistributionCoolDown(uint160 _cooldown) external;
 
     /**
-     * @notice Set half time parameter for calculating vote weight.
-     * @dev The voting half-time variable determines the time it takes until half the voting weight is reached for a stake.
-     *      Formular from st-yETH https://docs.yearn.fi/getting-started/products/yeth/overview
-     * @param _halfTime Cooldown in seconds
-     */
-    function setHalfTime(uint256 _halfTime) external;
-
-    /**
      * @notice Mint and distribute TGLD 
      */
     function distributeGold() external;
-
-    /**  
-     * @notice Get vote weight of an account
-     * @param account Account
-     */
-    function getVoteWeight(address account) external view returns (uint256);
 
     /**  
      * @notice Get reward data
      * @return Reward data
      */
     function getRewardData() external view returns (Reward memory);
-
-    /**  
-     * @notice Get weights used for measuring vote weight for an account
-     * @param _account Account
-     * @return weight AccountWeightParams
-     */
-    function getAccountWeights(address _account) external view returns (AccountWeightParams memory weight);
 
     /**
       * @notice For migrations to a new staking contract if TGLD changes
@@ -207,60 +207,78 @@ interface ITempleGoldStaking {
       * @dev Called only from the new staking contract (the migrator).
       *      `setMigrator(new_staking_contract)` needs to be called first
       * @param staker The staker who is being migrated to a new staking contract.
+      * @param index Index of staker
       */
-    function migrateWithdraw(address staker) external returns (uint256);
-
-    /**  
-     * @notice Check if user is delegated to delegate
-     * @param _user User
-     * @param _delegate Delegate
-     * @return Bool if user is delegated to delegate
-     */
-    function userDelegated(address _user, address _delegate) external view returns (bool);
-
-    /**  
-     * @notice Set self as vote delegate. If false all users delegated to `msg.sendeer` have to select new delegates
-     * @param _approve If delegate approved
-     */
-    function setSelfAsDelegate(bool _approve) external;
-
-    /**  
-     * @notice Unset delegate for a user
-     */
-    function unsetUserVoteDelegate() external;
-
-    /**  
-     * @notice Get all accounts delegated to delegate
-     * @param _delegate Delegate
-     * @return users Array of accounts
-     */
-    function getDelegateUsers(address _delegate) external view returns (address[] memory users);
-
-    /**  
-     * @notice Set vote delegate for a user
-     * @param _delegate Delegate
-     */
-    function setUserVoteDelegate(address _delegate) external;
-
-    /**  
-     * @notice Get vote weight of delegate
-     * @param _delegate Delegate
-     * @return Vote weight
-     */
-    function getDelegatedVoteWeight(address _delegate) external view returns (uint256);
-
-    /// @notice Delegates
-    function delegates(address _delegate) external view returns (bool);
-    /// @notice Keep track of users and their delegates
-    function userDelegates(address _account) external view returns (address);
-
-    /// @notice Minimum time of delegation before reset
-    function delegationPeriod() external view returns (uint32);
+    function migrateWithdraw(address staker, uint256 index) external returns (uint256);
 
     /**
-     * @notice Set minimum time before undelegation. This is also used to check before withdrawal after stake if account is delegated
-     * @param _period Minimum delegation time
+     * @notice Get account checkpoint data 
+     * @param account Account
+     * @param epoch Epoch
+     * @return Checkpoint data
      */
-    function setDelegationPeriod(uint32 _period) external;
+    function getCheckpoint(address account, uint256 epoch) external view returns (Checkpoint memory);
 
+    /**
+     * @notice Get account number of checkpoints
+     * @param account Account
+     * @return Number of checkpoints
+     */
+    function numCheckpoints(address account) external view returns (uint256);
+
+    /**
+     * @notice Set vesting period for stakers
+     * @param _period Vesting period
+     */
+    function setVestingPeriod(uint32 _period) external;
+
+    /**
+     * @notice Set reward duration
+     * @param _duration Reward duration
+     */
+    function setRewardDuration(uint256 _duration) external;
+
+    /**
+     * @notice Delegate votes from `msg.sender` to `delegatee`
+     * @param delegatee The address to delegate votes to
+     */
+    function delegate(address delegatee) external;
+
+    /**   
+     * @notice Gets the current votes balance for `account`
+     * @param account The address to get votes balance
+     * @return The number of current votes for `account`
+     */
+    function getCurrentVotes(address account) external view returns (uint256);
+
+    /**
+     * @notice Determine the prior number of votes for an account as of a block number
+     * @dev Block number must be a finalized block or else this function will revert to prevent misinformation.
+     * @param account The address of the account to check
+     * @param blockNumber The block number to get the vote balance at
+     * @return The number of votes the account had as of the given block
+     */
+    function getPriorVotes(address account, uint256 blockNumber) external view returns (uint256);
+
+    /**
+     * @notice Get last stake index for account
+     * @param account Account
+     * @return Last stake index
+     */
+    function getAccountLastStakeIndex(address account) external view returns (uint256);
+
+    /**
+     * @notice Get account stake info
+     * @param account Account
+     * @return Stake info
+     */
+    function getAccountStakeInfo(address account, uint256 index) external view returns (StakeInfo memory);
+
+    /**
+     * @notice Get account staked balance
+     * @param account Account
+     * @param stakeIndex Staked index
+     * @return Staked balance of account
+     */
+    function stakeBalanceOf(address account, uint256 stakeIndex) external view returns (uint256);
 }

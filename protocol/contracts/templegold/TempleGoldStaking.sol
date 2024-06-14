@@ -11,7 +11,7 @@ import { ITempleGoldStaking } from "contracts/interfaces/templegold/ITempleGoldS
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { ClearableEnumerableSet } from "contracts/templegold/ClearableEnumerableSet.sol";
+import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 /** 
  * @title Temple Gold Staking
@@ -21,7 +21,7 @@ import { ClearableEnumerableSet } from "contracts/templegold/ClearableEnumerable
  */
 contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable {
     using SafeERC20 for IERC20;
-    using ClearableEnumerableSet for ClearableEnumerableSet.ClearableAddressSet;
+    using EnumerableSet for EnumerableSet.UintSet;
 
     /// @notice The staking token. Temple
     IERC20 public immutable override stakingToken;
@@ -30,7 +30,7 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
 
     /// @notice Distribution starter
     address public override distributionStarter;
-
+    /// @notice Week length
     uint256 constant public WEEK_LENGTH = 7 days;
 
     /// @notice Rewards stored per token
@@ -43,20 +43,18 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
 
     /// @notice Time tracking
     uint256 public override periodFinish;
+    /// @notice Last rewards update time
     uint256 public override lastUpdateTime;
 
     /// @notice Store next reward amount for next epoch
     uint256 public override nextRewardAmount;
     /// @notice Duration for rewards distribution
-    uint256 public constant REWARD_DURATION = 7 days;
+    uint256 public rewardDuration;
     /// @notice Cooldown time before next distribution of rewards
     /// @dev If set to zero, rewards distribution is callable any time 
     uint160 public override rewardDistributionCoolDown;
     /// @notice Timestamp for last reward notification
     uint96 public override lastRewardNotificationTimestamp;
-
-    /// @notice Time of delegation before reset
-    uint32 public override delegationPeriod;
 
     /// @notice For use when migrating to a new staking contract if TGLD changes.
     address public override migrator;
@@ -64,25 +62,25 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     Reward internal rewardData;
     /// @notice Staker balances
     mapping(address account => uint256 balance) private _balances;
-    /// @notice Stakers claimable rewards
-    mapping(address account => uint256 amount) public override claimableRewards;
-    /// @notice Staker reward per token paid
-    mapping(address account => uint256 amount) public override userRewardPerTokenPaid;
-
-    /// @notice Staker weights for calculating vote weights
-    mapping(address account => AccountWeightParams weight) private _weights;
-    mapping(address account => AccountPreviousWeightParams weight) private _prevWeights;
     
-    /// @notice Delegates
-    mapping(address delegate => bool isDelegate) public override delegates;
     /// @notice Use as alias for delegate "balances" for easier vote weight calculation
     mapping(address delegate => uint256 balance) private _delegateBalances;
-    /// @notice Keep track of users and their delegates
-    mapping(address account => address delegate) public override userDelegates;
-    /// @notice Keep track of delegates and users delegated to them
-    mapping(address delegate => ClearableEnumerableSet.ClearableAddressSet) private _delegateUsersSet;
-    /// @notice keep track of user withdraw times
-    mapping(address user => uint256 withdrawTime) public userWithdrawTimes;
+    /// @notice Account vote delegates
+    mapping(address account => address delegate) public delegates;
+
+    /// @notice Track account stakes
+    mapping(address account => mapping(uint256 index => StakeInfo)) private _stakeInfos;
+    /// @notice Track account stake index
+    mapping(address account => uint256 lastIndex) private _accountLastStakeIndex;
+    /// @notice Stakers claimable rewards
+    mapping(address account => mapping(uint256 index => uint256 amount)) public override claimableRewards;
+    /// @notice Staker reward per token paid
+    mapping(address account => mapping(uint256 index => uint256 amount)) public override userRewardPerTokenPaid;
+    /// @notice Track voting
+    mapping(address account => mapping(uint256 epoch => Checkpoint)) private _checkpoints;
+    mapping(address account => uint256 number) public override numCheckpoints;
+
+    uint32 public vestingPeriod;
 
     constructor(
         address _rescuer,
@@ -92,6 +90,29 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     ) TempleElevatedAccess(_rescuer, _executor){
         stakingToken = IERC20(_stakingToken);
         rewardToken = IERC20(_rewardToken);
+    }
+    
+    /**
+     * @notice Set vesting period for stakers
+     * @param _period Vesting period
+     */
+    function setVestingPeriod(uint32 _period) external override onlyElevatedAccess {
+        if (_period < WEEK_LENGTH) { revert CommonEventsAndErrors.InvalidParam(); }
+        vestingPeriod = _period;
+        emit VestingPeriodSet(_period);
+    }
+
+    /**
+     * @notice Set reward duration
+     * @param _duration Reward duration
+     */
+    function setRewardDuration(uint256 _duration) external override onlyElevatedAccess {
+        // minimum reward duration
+        if (_duration < WEEK_LENGTH) { revert CommonEventsAndErrors.InvalidParam(); }
+        // only change after reward epoch ends
+        if (rewardData.periodFinish >= block.timestamp) { revert InvalidOperation(); }
+        rewardDuration = _duration;
+        emit RewardDurationSet(_duration);
     }
 
     /**
@@ -120,107 +141,12 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         emit MigratorSet(_migrator);
     }
 
-    /**  
-     * @notice Set vote delegate for a user. User can delegate to self
-     * @param _delegate Delegate
+    /**
+     * @notice Delegate votes from `msg.sender` to `delegatee`
+     * @param delegatee The address to delegate votes to
      */
-    function setUserVoteDelegate(address _delegate) external override {
-        if (_delegate == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
-        if (!delegates[_delegate]) {  revert InvalidDelegate(); }
-        // delegates not allowed to delgate
-        // if you are self delegated as a delegate, you are not allowed to set delegate until reset
-        // total vote counted from governance contracts with own vote weight and delegated vote weight
-        if (delegates[msg.sender]) { revert CannotDelegate(); }
-
-        if (userWithdrawTimes[msg.sender] > block.timestamp) { revert CannotDelegate(); }
-
-        // remove old delegate if any
-        address _userDelegate = userDelegates[msg.sender];
-        // any delegatee should not be allowed to delegate
-        // if you are self delegated as a delegate, you are not allowed to set delegate until reset
-        if (_userDelegate == msg.sender) { revert CannotDelegate(); }
-        if (_userDelegate == _delegate) { return; }
-        ClearableEnumerableSet.ClearableAddressSet storage prevDelegateUsersSet = _delegateUsersSet[_userDelegate];
-        uint256 userBalance = _balances[msg.sender];
-
-        /// @dev for a previous delegate who is no longer a valid delegate
-        /// _delegateUsersSet[_delegate] was cleared so `remove = false`
-        bool removed = prevDelegateUsersSet.remove(msg.sender);
-        // update vote weight and _delegateBalances
-        if (userBalance > 0) {
-            uint256 _prevBalance;
-            uint256 _newDelegateBalance;
-            if (removed) {
-                // update vote weight of old delegate
-                _prevBalance = _delegateBalances[_userDelegate];
-                /// @dev skip for a previous delegate with 0 users delegated and 0 own vote weight
-                if (_prevBalance > 0 && _userDelegate != msg.sender) {
-                    /// @dev `_prevBalance > 0` because when a user sets delegate, vote weight and `_delegateBalance` are updated for delegate
-                    _newDelegateBalance = _delegateBalances[_userDelegate] = _prevBalance - userBalance;
-                    _updateAccountWeight(_userDelegate, _prevBalance, _newDelegateBalance, false);
-                }
-            }
-            // setting a new delegate always increases withdraw time by delegation period
-            userWithdrawTimes[msg.sender] = block.timestamp + delegationPeriod;
-            /// @dev Reuse variables
-            _prevBalance = _delegateBalances[_delegate];
-            _newDelegateBalance = _delegateBalances[_delegate] = _prevBalance + userBalance;
-            _updateAccountWeight(_delegate, _prevBalance, _newDelegateBalance, true);
-        }
-        userDelegates[msg.sender] = _delegate;
-        _delegateUsersSet[_delegate].add(msg.sender);
-
-        emit UserDelegateSet(msg.sender, _delegate);
-    }
-
-    /**  
-     * @notice Set self as vote delegate. If false all users delegated to `msg.sendeer` have to select new delegates
-     * @param _approve If delegate approved
-     */
-    function setSelfAsDelegate(bool _approve) external override {
-        bool prevStatusTrue = delegates[msg.sender];
-        delegates[msg.sender] = _approve;
-        emit VoteDelegateSet(msg.sender, _approve);
-        // unset old delegate
-        if (_approve && userDelegates[msg.sender] != address(0)) { unsetUserVoteDelegate(); }
-        // remove delegate vote and reset delegateBalance
-        if (!_approve && prevStatusTrue) {
-            uint256 delegateBalance = _delegateBalances[msg.sender];
-            _delegateBalances[msg.sender] = 0;
-            /// @dev If no user delegated to delegate, `getDelegatedVoteWeight()` will default to 0
-            if (delegateBalance > 0) {
-                uint256 stakeBalance = _balances[msg.sender];
-                if (delegateBalance > stakeBalance) {
-                    _updateAccountWeight(msg.sender, delegateBalance, stakeBalance, false);
-                } else if (delegateBalance < stakeBalance) {
-                    _updateAccountWeight(msg.sender, delegateBalance, stakeBalance, true);
-                }
-            }
-
-            _delegateUsersSet[msg.sender].clear();
-        }
-    }
-
-    /**  
-     * @notice Unset delegate for a user
-     */
-    function unsetUserVoteDelegate() public override {
-        address _delegate = userDelegates[msg.sender];
-        if (_delegate == address(0)) { revert InvalidDelegate(); }
-
-        bool removed = _delegateUsersSet[_delegate].remove(msg.sender);
-        delete userDelegates[msg.sender];
-
-        if (userWithdrawTimes[msg.sender] > block.timestamp) { revert InvalidOperation(); }
-        userWithdrawTimes[msg.sender] = 0;
-        uint256 userBalance = _balances[msg.sender];
-        if (userBalance > 0 && removed) {
-            // update vote weight of old delegate
-            uint256 _prevBalance = _delegateBalances[_delegate];
-            uint256 _newDelegateBalance = _delegateBalances[_delegate] = _prevBalance - userBalance;
-            _updateAccountWeight(_delegate, _prevBalance, _newDelegateBalance, false);
-        }
-        emit UserDelegateSet(msg.sender, address(0));
+    function delegate(address delegatee) external override {
+        return _delegate(msg.sender, delegatee);
     }
 
     /**
@@ -234,39 +160,19 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     }
 
     /**
-     * @notice Set half time parameter for calculating vote weight.
-     * @dev The voting half-time variable determines the time it takes until half the voting weight is reached for a stake.
-     *      Formular from st-yETH https://docs.yearn.fi/getting-started/products/yeth/overview
-     * @param _halfTime Cooldown in seconds
-     */
-    function setHalfTime(uint256 _halfTime) external override onlyElevatedAccess {
-        if (_halfTime == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
-        halfTime = _halfTime;
-        emit HalfTimeSet(_halfTime);
-    }
-
-    /**
-     * @notice Set minimum time before undelegation. This is also used to check before withdrawal after stake if account is delegated
-     * @param _period Delegation period
-     */
-    function setDelegationPeriod(uint32 _period) external override onlyElevatedAccess {
-        if (_period == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
-        delegationPeriod = _period;
-        emit DelegationPeriodSet(_period);
-    }
-
-    /**
       * @notice For migrations to a new staking contract if TGLD changes
       *         1. Withdraw `staker`s tokens to the new staking contract (the migrator)
       *         2. Any existing rewards are claimed and sent directly to the `staker`
       * @dev Called only from the new staking contract (the migrator).
       *      `setMigrator(new_staking_contract)` needs to be called first
       * @param staker The staker who is being migrated to a new staking contract.
+      * @param index Index of stake to withdraw
       */
-    function migrateWithdraw(address staker) external override onlyMigrator returns (uint256) {
+    function migrateWithdraw(address staker, uint256 index) external override onlyMigrator returns (uint256) {
         if (staker == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
-        uint256 stakerBalance = _balances[staker];
-        _withdrawFor(staker, msg.sender, stakerBalance, true, staker);
+        StakeInfo storage _stakeInfo = _stakeInfos[staker][index];
+        uint256 stakerBalance = _stakeInfo.amount;
+        _withdrawFor(_stakeInfo, staker, msg.sender, index, _stakeInfo.amount, true, staker);
         return stakerBalance;
     }
     
@@ -274,7 +180,7 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
      * @notice Distributed TGLD rewards minted to this contract to stakers
      * @dev This starts another 7-day rewards distribution. Calculates new `rewardRate` from any left over rewards up until now
      */
-    function distributeRewards() updateReward(address(0)) external {
+    function distributeRewards() updateReward(address(0), 0) external {
         if (distributionStarter != address(0) && msg.sender != distributionStarter) 
             { revert CommonEventsAndErrors.InvalidAccess(); }
         if (totalSupply == 0) { revert NoStaker(); }
@@ -283,9 +189,61 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
                 { revert CannotDistribute(); }
         _distributeGold();
         uint256 rewardAmount = nextRewardAmount;
-        if (rewardAmount == 0 ) { revert CommonEventsAndErrors.ExpectedNonZero(); }
+        // revert if next reward is 0 or less than reward duration (final dust amounts)
+        if (rewardAmount < rewardDuration ) { revert CommonEventsAndErrors.ExpectedNonZero(); }
         nextRewardAmount = 0;
         _notifyReward(rewardAmount);
+    }
+
+    /**
+     * @notice Gets the current votes balance for `account`
+     * @param account The address to get votes balance
+     * @return The number of current votes for `account`
+     */
+    function getCurrentVotes(address account) external override view returns (uint256) {
+        uint256 nCheckpoints = numCheckpoints[account];
+        return nCheckpoints > 0 ? _checkpoints[account][nCheckpoints - 1].votes : 0;
+    }
+
+    /**
+     * @notice Determine the prior number of votes for an account as of a block number
+     * @dev Block number must be a finalized block or else this function will revert to prevent misinformation.
+     * @param account The address of the account to check
+     * @param blockNumber The block number to get the vote balance at
+     * @return The number of votes the account had as of the given block
+     */
+    function getPriorVotes(address account, uint256 blockNumber) external override view returns (uint256) {
+        if (blockNumber >= block.number) { revert InvalidBlockNumber(); }
+
+        uint256 nCheckpoints = numCheckpoints[account];
+        if (nCheckpoints == 0) {
+            return 0;
+        }
+
+        // First check most recent balance
+        if (_checkpoints[account][nCheckpoints - 1].fromBlock <= blockNumber) {
+            return _checkpoints[account][nCheckpoints - 1].votes;
+        }
+
+        // Next check implicit zero balance
+        if (_checkpoints[account][0].fromBlock > blockNumber) {
+            return 0;
+        }
+
+        uint256 lower = 0;
+        uint256 upper = nCheckpoints - 1;
+        while (upper > lower) {
+            uint256 center = upper - (upper - lower) / 2; // ceil, avoiding overflow
+            Checkpoint memory cp = _checkpoints[account][center];
+            if (cp.fromBlock == blockNumber) {
+                return cp.votes;
+            } else if (cp.fromBlock < blockNumber) {
+                lower = center;
+            } else {
+                upper = center - 1;
+            }
+        }
+        return _checkpoints[account][lower].votes;
     }
 
     /**
@@ -301,25 +259,15 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
      * @param _for Account to stake for
      * @param _amount Amount of staking token
      */
-    function stakeFor(address _for, uint256 _amount) public override whenNotPaused {
+    function stakeFor(address _for, uint256 _amount) public whenNotPaused {
         if (_amount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
         
         // pull tokens and apply stake
         stakingToken.safeTransferFrom(msg.sender, address(this), _amount);
-        uint256 _prevBalance = _balances[_for];
-        _applyStake(_for, _amount);
-        /// @dev set account weight as a fallback if delegate for account is removed in future or user changes delegates
-        _updateAccountWeight(_for, _prevBalance, _balances[_for], true);
-        // update delegate weight
-        /// @dev this avoids using iteration to get voteWeight for all users delegated to delegate
-        address delegate = userDelegates[_for];
-        if (delegate != address(0) && delegate != _for && delegates[delegate]) {
-            _updateAccountWithdrawTime(_for, _amount, _balances[_for]);
-            /// @dev Reuse variable
-            _prevBalance = _delegateBalances[delegate];
-            uint256 _newDelegateBalance = _delegateBalances[delegate] = _prevBalance + _amount;
-            _updateAccountWeight(delegate, _prevBalance, _newDelegateBalance, true);
-        }
+        uint256 _lastIndex = _accountLastStakeIndex[_for];
+        _accountLastStakeIndex[_for] = ++_lastIndex;
+        _applyStake(_for, _amount, _lastIndex);
+        _moveDelegates(address(0), delegates[_for], _amount);
     }
 
     /**
@@ -327,16 +275,18 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
      * @param amount Amount to withdraw
      * @param claim Boolean if to claim rewards
      */
-    function withdraw(uint256 amount, bool claim) external override {
-        _withdrawFor(msg.sender, msg.sender, amount, claim, msg.sender);
+    function withdraw(uint256 amount, uint256 index, bool claim) external override {
+        StakeInfo storage _stakeInfo = _stakeInfos[msg.sender][index];
+        _withdrawFor(_stakeInfo, msg.sender, msg.sender, index, amount, claim, msg.sender);
     }
 
     /**
      * @notice Withdraw all staked tokens
      * @param claim Boolean if to claim rewards
      */
-    function withdrawAll(bool claim) external override {
-        _withdrawFor(msg.sender, msg.sender, _balances[msg.sender], claim, msg.sender);
+    function withdrawAll(uint256 stakeIndex, bool claim) external override {
+        StakeInfo storage _stakeInfo = _stakeInfos[msg.sender][stakeIndex];
+        _withdrawFor(_stakeInfo, msg.sender, msg.sender, stakeIndex, _stakeInfo.amount, claim, msg.sender);
     }
 
     /// @notice Owner can pause user swaps from occuring
@@ -350,6 +300,34 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     }
 
     /**
+     * @notice Get last stake index for account
+     * @param account Account
+     * @return Last stake index
+     */
+    function getAccountLastStakeIndex(address account) external override view returns (uint256) {
+        return _accountLastStakeIndex[account];
+    }
+
+    /**
+     * @notice Get account stake info
+     * @param account Account
+     * @return Stake info
+     */
+    function getAccountStakeInfo(address account, uint256 index) external override view returns (StakeInfo memory) {
+        return _stakeInfos[account][index];
+    }
+
+    /**
+     * @notice Get account checkpoint data 
+     * @param account Account
+     * @param epoch Epoch
+     * @return Checkpoint data
+     */
+    function getCheckpoint(address account, uint256 epoch) external override view returns (Checkpoint memory) {
+        return _checkpoints[account][epoch];
+    }
+
+    /**
      * @notice Get account staked balance
      * @param account Account
      * @return Staked balance of account
@@ -359,12 +337,24 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     }
 
     /**
+     * @notice Get account staked balance
+     * @param account Account
+     * @param stakeIndex Staked index
+     * @return Staked balance of account
+     */
+    function stakeBalanceOf(address account, uint256 stakeIndex) external override view returns (uint256) {
+        StakeInfo storage stakeInfo = _stakeInfos[account][stakeIndex];
+        return stakeInfo.amount;
+    }
+
+    /**
      * @notice Get earned rewards of account
      * @param account Account
+     * @param index Index
      * @return Earned rewards of account
      */
-    function earned(address account) external override view returns (uint256) {
-        return _earned(account, _balances[account]);
+    function earned(address account, uint256 index) external override view returns (uint256) {
+        return _earned(account, index, _stakeInfos[account][index].amount);
     }
 
     /**
@@ -400,17 +390,10 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     /**  
      * @notice Get rewards
      * @param staker Staking account
+     * @param index Index
      */
-    function getReward(address staker) external override updateReward(staker) {
-        _getReward(staker, staker);
-    }
-
-    /**  
-     * @notice Get vote weight of an account
-     * @param account Account
-     */
-    function getVoteWeight(address account) external view returns (uint256) {
-        return _voteWeight(account, _balances[account]);
+    function getReward(address staker, uint256 index) external override updateReward(staker, index) {
+        _getReward(staker, staker, index);
     }
 
     /**  
@@ -431,34 +414,6 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         lastRewardNotificationTimestamp = uint96(block.timestamp);
         emit GoldDistributionNotified(amount, block.timestamp);
     }
-
-    /**  
-     * @notice Get vote weight of delegate
-     * @param _delegate Delegate
-     * @return Vote weight
-     */
-    function getDelegatedVoteWeight(address _delegate) external view returns (uint256) {
-        return _voteWeight(_delegate, _delegateBalances[_delegate]);
-    }
-
-    /**  
-     * @notice Get all accounts delegated to delegate
-     * @param _delegate Delegate
-     * @return users Array of accounts
-     */
-    function getDelegateUsers(address _delegate) external override view returns (address[] memory users) {
-        return _delegateUsersSet[_delegate].values();
-    }
-
-    /**  
-     * @notice Check if user is delegated to delegate
-     * @param _user User
-     * @param _delegate Delegate
-     * @return Bool if user is delegated to delegate
-     */
-    function userDelegated(address _user, address _delegate) external override view returns (bool) {
-        return _delegateUsersSet[_delegate].contains(_user);
-    }
     
     /**  
      * @notice Get reward data
@@ -468,37 +423,88 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         return rewardData;
     }
 
-    /**  
-     * @notice Get weights used for measuring vote weight for an account
-     * @param _account Account
-     * @return weight AccountWeightParams
-     */
-    function getAccountWeights(address _account) external override view returns (AccountWeightParams memory weight) {
-        weight = _weights[_account];
+    function _getReward(address staker, address rewardsToAddress, uint256 index) internal {
+        uint256 amount = claimableRewards[staker][index];
+        if (amount > 0) {
+            claimableRewards[staker][index] = 0;
+            rewardToken.safeTransfer(rewardsToAddress, amount);
+            emit RewardPaidIndex(staker, rewardsToAddress, index, amount);
+        }
     }
 
-    function _getReward(address staker, address rewardsToAddress) internal {
-        uint256 amount = claimableRewards[staker];
-        if (amount > 0) {
-            claimableRewards[staker] = 0;
-            rewardToken.safeTransfer(rewardsToAddress, amount);
+    function _withdrawFor(
+        StakeInfo storage stakeInfo,
+        address staker,
+        address toAddress,
+        uint256 stakeIndex,
+        uint256 amount,
+        bool claimRewards,
+        address rewardsToAddress
+    ) internal updateReward(staker, stakeIndex) {
+        if (amount == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
+        uint256 _stakeAmount = stakeInfo.amount;
+        if (_stakeAmount < amount) 
+            { revert CommonEventsAndErrors.InsufficientBalance(address(stakingToken), amount, _stakeAmount); }
 
-            emit RewardPaid(staker, rewardsToAddress, amount);
+        unchecked {
+            stakeInfo.amount = _stakeAmount - amount;
+        }
+        _balances[staker] -= amount;
+        totalSupply -= amount;
+        _moveDelegates(delegates[staker], address(0), amount);
+
+        stakingToken.safeTransfer(toAddress, amount);
+        emit Withdrawn(staker, toAddress, stakeIndex, amount);
+
+        if (claimRewards) {
+            // can call internal because user reward already updated
+            _getReward(staker, rewardsToAddress, stakeIndex);
         }
     }
 
     function _earned(
         address _account,
+        uint256 _index,
         uint256 _balance
     ) internal view returns (uint256) {
+        StakeInfo storage _stakeInfo = _stakeInfos[_account][_index];
+        if (_stakeInfo.stakeTime == 0) {
+            return 0;
+        }
+
+        uint256 vestingRate;
+        if (block.timestamp > _stakeInfo.fullyVestedAt) {
+            vestingRate = 1e18;
+        } else {
+            vestingRate = (block.timestamp - _stakeInfo.stakeTime) * 1e18 / vestingPeriod;
+        }
+        uint256 _perTokenReward;
+        if (vestingRate == 1e18) { 
+            _perTokenReward = _rewardPerToken(); 
+        } else { 
+            _perTokenReward = _rewardPerToken() * vestingRate / 1e18;
+        }
+        
         return
-            (_balance * (_rewardPerToken() - userRewardPerTokenPaid[_account])) / 1e18 +
-            claimableRewards[_account];
+            (_balance * (_perTokenReward - userRewardPerTokenPaid[_account][_index])) / 1e18 +
+            claimableRewards[_account][_index];
     }
 
-    function _applyStake(address _for, uint256 _amount) internal updateReward(_for) {
+    function _getVestingRate(StakeInfo storage _stakeInfo) internal view returns (uint256 vestingRate) {
+        if (_stakeInfo.stakeTime == 0) {
+            return 0;
+        }
+        if (block.timestamp > _stakeInfo.fullyVestedAt) {
+            vestingRate = 1e18;
+        } else {
+            vestingRate = (block.timestamp - _stakeInfo.stakeTime) * 1e18 / vestingPeriod;
+        }
+    }
+
+    function _applyStake(address _for, uint256 _amount, uint256 _index) internal updateReward(_for, _index) {
         totalSupply += _amount;
         _balances[_for] += _amount;
+        _stakeInfos[_for][_index] = StakeInfo(uint64(block.timestamp), uint64(block.timestamp + vestingPeriod), _amount);
         emit Staked(_for, _amount);
     }
 
@@ -515,56 +521,20 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
                 / totalSupply);
     }
 
-    function _withdrawFor(
-        address staker,
-        address toAddress,
-        uint256 amount,
-        bool claimRewards,
-        address rewardsToAddress
-    ) internal updateReward(staker) {
-        if (amount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
-        uint256 _prevBalance = _balances[staker];
-        if (_prevBalance < amount) 
-            { revert CommonEventsAndErrors.InsufficientBalance(address(stakingToken), amount, _prevBalance); }
-        if (!_canWithdraw(staker)) { revert MinimumStakePeriod(); }
-
-        totalSupply -= amount;
-        uint256 stakeBalance = _prevBalance - amount;
-        _balances[staker] = stakeBalance;
-        if (stakeBalance == 0) { delete userWithdrawTimes[staker]; }
-
-        /// @dev update account weight as a fallback if delegate for account(if any) is removed in future or user changes delegates
-        _updateAccountWeight(staker, _prevBalance, _balances[staker], false);
-        /// @dev this avoids using iteration to get voteWeight for all users delegated to delegate
-        address delegate = userDelegates[staker];
-        if (delegate != address(0) && delegate != staker && delegates[delegate]) {
-            /// @dev Reuse variable
-            _prevBalance = _delegateBalances[delegate];
-            /// @dev `_prevBalance > 0` because when a user sets delegate, vote wieght and `_delegateBalance` are updated for delegate
-            uint256 _newDelegateBalance = _delegateBalances[delegate] = _prevBalance - amount;
-            _updateAccountWeight(delegate, _prevBalance, _newDelegateBalance, false);
-        }
-
-        stakingToken.safeTransfer(toAddress, amount);
-        emit Withdrawn(staker, toAddress, amount);
-     
-        if (claimRewards) {
-            // can call internal because user reward already updated
-            _getReward(staker, rewardsToAddress);
-        }
-    }
-
     function _notifyReward(uint256 amount) private {
         if (block.timestamp >= rewardData.periodFinish) {
-            rewardData.rewardRate = uint216(amount / REWARD_DURATION);
+            rewardData.rewardRate = uint216(amount / rewardDuration);
+            // collect dust
+            nextRewardAmount = amount - (rewardData.rewardRate * rewardDuration);
         } else {
             uint256 remaining = uint256(rewardData.periodFinish) - block.timestamp;
             uint256 leftover = remaining * rewardData.rewardRate;
-            rewardData.rewardRate = uint216((amount + leftover) / REWARD_DURATION);
+            rewardData.rewardRate = uint216((amount + leftover) / rewardDuration);
+            // collect dust
+            nextRewardAmount = (amount + leftover) - (rewardData.rewardRate * rewardDuration);
         }
-
         rewardData.lastUpdateTime = uint40(block.timestamp);
-        rewardData.periodFinish = uint40(block.timestamp + REWARD_DURATION);
+        rewardData.periodFinish = uint40(block.timestamp + rewardDuration);
     }
 
     function _lastTimeRewardApplicable(uint256 _finishTime) internal view returns (uint256) {
@@ -579,95 +549,63 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         ITempleGold(address(rewardToken)).mint();
     }
 
-    function _voteWeight(address _account, uint256 _balance) private view returns (uint256) {
-        /// @dev Vote weights are always evaluated at the end of last week
-        /// Borrowed from st-yETH staking contract (https://etherscan.io/address/0x583019fF0f430721aDa9cfb4fac8F06cA104d0B4#code)
-        uint256 currentWeek = (block.timestamp / WEEK_LENGTH) - 1;
-        (uint256 week, uint256 t, uint256 updated) = _unpackWeight(_account);
-        if (week > currentWeek) {
-            (week, t, updated, _balance) = _unpackPreviousWeight(_account);
-        }
-        if (week > 0) {
-            t += (block.timestamp / WEEK_LENGTH * WEEK_LENGTH) - updated;
-        }
-        return _balance * t / (t + halfTime);
+    function _delegate(address delegator, address delegatee) internal {
+        address currentDelegate = delegates[delegator];
+        uint256 delegatorBalance = _balances[delegator];
+        delegates[delegator] = delegatee;
+
+        emit DelegateChanged(delegator, currentDelegate, delegatee);
+        _moveDelegates(currentDelegate, delegatee, delegatorBalance);
     }
-    /// @dev Vote weight is the same immediately before and immediately after a deposit.
-    /// A withdrawal reduces the vote weight proportionally
-    function _updateAccountWeight(
-        address _account,
-        uint256 _prevBalance,
-        uint256 _newBalance,
-        bool _increment
-    ) private {
-        uint256 currentWeek = block.timestamp / WEEK_LENGTH;
-        AccountWeightParams storage weight = _weights[_account];
-        (uint256 week, uint256 t, uint256 updated) = _unpackWeight(_account);
-        uint256 _lastShares = _prevBalance;
-        if (week > 0 && currentWeek > week) {
-            AccountPreviousWeightParams storage _prevWeight = _prevWeights[_account];
-            _prevWeight.weight = AccountWeightParams(
-                uint64(week),
-                uint64(t),
-                uint64(updated)
-            );
-            _prevWeight.balance = _prevBalance;
-        }
-        if (_newBalance == 0) {
-            t = 0;
-            _lastShares = 0;
-        }
-        if (_lastShares > 0) {
-            t = t + block.timestamp - updated;
-            if (_increment) {
-                // amount has increased, calculate effective time that results in same weight
-                uint256 _halfTime = halfTime;
-                t = _prevBalance * t * _halfTime / (_newBalance * (t + _halfTime) - _prevBalance * t);
+
+    function _moveDelegates(
+        address srcRep,
+        address dstRep,
+        uint256 amount
+    ) internal {
+        if (srcRep != dstRep && amount > 0) {
+            if (srcRep != address(0)) {
+                uint256 srcRepNum = numCheckpoints[srcRep];
+                uint256 srcRepOld = srcRepNum > 0 ? _checkpoints[srcRep][srcRepNum - 1].votes : 0;
+                uint256 srcRepNew = srcRepOld - amount;
+                _writeCheckpoint(srcRep, srcRepNum, srcRepOld, srcRepNew);
+            }
+
+            if (dstRep != address(0)) {
+                uint256 dstRepNum = numCheckpoints[dstRep];
+                uint256 dstRepOld = dstRepNum > 0 ? _checkpoints[dstRep][dstRepNum - 1].votes : 0;
+                uint256 dstRepNew = dstRepOld + amount;
+                _writeCheckpoint(dstRep, dstRepNum, dstRepOld, dstRepNew);
             }
         }
-        // update weight
-        weight.weekNumber = uint64(currentWeek);
-        weight.stakeTime = uint64(t);
-        weight.updateTime = uint64(block.timestamp);
     }
 
-    function _unpackWeight(address _account) private view returns (uint256 week, uint256 t, uint256 updated) {
-        AccountWeightParams memory params = _weights[_account];
-        week = params.weekNumber;
-        t = params.stakeTime;
-        updated = params.updateTime;
-    }
-
-    function _unpackPreviousWeight(
-        address _account
-    ) private view returns (uint256 week, uint256 t, uint256 updated, uint256 balance) {
-        AccountPreviousWeightParams memory params = _prevWeights[_account];
-        week = params.weight.weekNumber;
-        t = params.weight.stakeTime;
-        updated = params.weight.updateTime;
-        balance = params.balance;
-    }
-
-    function _updateAccountWithdrawTime(address _account, uint256 _amount, uint256 _newBalance) private {
-        if (userWithdrawTimes[_account] == 0) {
-            userWithdrawTimes[_account] = block.timestamp + delegationPeriod;
+    function _writeCheckpoint(
+        address delegatee,
+        uint256 nCheckpoints,
+        uint256 oldVotes,
+        uint256 newVotes
+    ) internal {
+        if (nCheckpoints > 0 && _checkpoints[delegatee][nCheckpoints - 1].fromBlock == block.number) {
+            _checkpoints[delegatee][nCheckpoints - 1].votes = newVotes;
         } else {
-            userWithdrawTimes[_account] = userWithdrawTimes[_account] + delegationPeriod * _amount/ _newBalance;
-        }
+            _checkpoints[delegatee][nCheckpoints] = Checkpoint(block.number, newVotes);
+            numCheckpoints[delegatee] = nCheckpoints + 1;
+        } 
+        emit DelegateVotesChanged(delegatee, oldVotes, newVotes);
     }
 
-    function _canWithdraw(address _account) private view returns (bool) {
-        return userWithdrawTimes[_account] <= block.timestamp;
-    }
-
-    modifier updateReward(address _account) {
+    modifier updateReward(address _account, uint256 _index) {
         {
             // stack too deep
             rewardData.rewardPerTokenStored = uint216(_rewardPerToken());
             rewardData.lastUpdateTime = uint40(_lastTimeRewardApplicable(rewardData.periodFinish));
             if (_account != address(0)) {
-                claimableRewards[_account] = _earned(_account, _balances[_account]);
-                userRewardPerTokenPaid[_account] = uint256(rewardData.rewardPerTokenStored);
+                StakeInfo storage _stakeInfo = _stakeInfos[_account][_index];
+                uint256 vestingRate = _getVestingRate(_stakeInfo);
+                claimableRewards[_account][_index] = _earned(_account, _index, _stakeInfo.amount);
+                vestingRate = _getVestingRate(_stakeInfo);
+                userRewardPerTokenPaid[_account][_index] = vestingRate * uint256(rewardData.rewardPerTokenStored) / 1e18;
             }
         }
         _;
