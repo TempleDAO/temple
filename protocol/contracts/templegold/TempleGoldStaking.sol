@@ -93,6 +93,8 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
      */
     function setVestingPeriod(uint32 _period) external override onlyElevatedAccess {
         if (_period < WEEK_LENGTH) { revert CommonEventsAndErrors.InvalidParam(); }
+        // only change after reward epoch ends
+        if (rewardData.periodFinish >= block.timestamp) { revert InvalidOperation(); }
         vestingPeriod = _period;
         emit VestingPeriodSet(_period);
     }

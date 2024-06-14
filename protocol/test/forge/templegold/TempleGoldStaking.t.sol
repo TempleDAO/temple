@@ -253,6 +253,20 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
 
         staking.setVestingPeriod(period+1);
         assertEq(staking.vestingPeriod(), period+1);
+
+        // distribute and test change
+        skip(3 days);
+        _setVestingPeriod(period);
+        _setRewardDuration(uint256(period));
+        _setVestingFactor(templeGold);
+        deal(address(templeToken), bob, 1000 ether, true);
+        vm.startPrank(bob);
+        _approve(address(templeToken), address(staking), type(uint).max);
+        staking.stake(100 ether);
+        staking.distributeRewards();
+        vm.expectRevert(abi.encodeWithSelector(ITempleGoldStaking.InvalidOperation.selector));
+        vm.startPrank(executor);
+        staking.setVestingPeriod(period);
     }
 
     function test_migrateWithdraw_tgldStaking() public {
