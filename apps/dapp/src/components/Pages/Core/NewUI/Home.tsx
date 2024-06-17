@@ -111,6 +111,7 @@ const Home = ({ tlc }: { tlc?: boolean }) => {
            treasuryReservesVaults {
              principalUSD
              benchmarkedEquityUSD
+             treasuryPriceIndex
            }
          }`
       );
@@ -123,22 +124,13 @@ const Home = ({ tlc }: { tlc?: boolean }) => {
         }`
       );
 
-      const { data: tpiData } = await fetchGenericSubgraph<any>(
-        env.subgraph.templeV2,
-        `{
-          tpiOracles {
-            currentTpi
-          }
-        }`
-      );
+      const treasuryMetrics = treasuryData.treasuryReservesVaults[0];
       setMetrics({
         price: parseFloat(ramosData.metrics[0].spotPrice),
-        tpi: parseFloat(tpiData.tpiOracles[0].currentTpi),
+        tpi: parseFloat(treasuryMetrics.treasuryPriceIndex),
         treasury:
-          parseFloat(treasuryData.treasuryReservesVaults[0].principalUSD) +
-          parseFloat(
-            treasuryData.treasuryReservesVaults[0].benchmarkedEquityUSD
-          ),
+          parseFloat(treasuryMetrics.principalUSD) +
+          parseFloat(treasuryMetrics.benchmarkedEquityUSD),
       });
     };
     fetchMetrics();
