@@ -55,16 +55,20 @@ const env: Environment = {
     // TODO: These need updated to the templedao organization subgraphs once they are deployed
     templeCore: 'http://localhost:8000/subgraphs/name/templedao-core',
     protocolMetrics:
-      'https://api.thegraph.com/subgraphs/name/medariox/temple-metrics',
+      'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-metrics/api',
     protocolMetricsArbitrum:
-      'https://api.thegraph.com/subgraphs/name/medariox/temple-metrics-arbitrum',
+      'https://api.studio.thegraph.com/query/76011/temple-metrics-arbitrum/version/latest',
+    // TODO: This is not used anymore and should be removed
     balancerV2:
       'https://api.thegraph.com/subgraphs/name/templedao/templedao-balancer-v2',
     // TODO: Will be deprecated
-    ramos: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-ramos',
+    ramos: 'https://api.studio.thegraph.com/query/76011/temple-ramos/version/latest',
     // templeV2: 'https://api.studio.thegraph.com/query/520/v2-sepolia/version/latest',
     templeV2:
-      'https://api.thegraph.com/subgraphs/name/templedao/templedao-v2-mainnet',
+      'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-v2-mainnet/api',
+    templeV2Balances:
+      'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-v2-balances/api',
+
     // Original Balancer Subgraph
     // balancerV2: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-goerli-v2',
   },

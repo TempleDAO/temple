@@ -137,6 +137,10 @@ const env: Environment = {
         name: 'Epoch 24a',
         address: '0x85dFEC13117e3f7594e4e391F300E781f5609881',
       },
+      {
+        name: 'Epoch 24b',
+        address: '0xc6E01D796C39CBbA16278a8C29e7C1267DC48A8f',
+      },
     ],
     temple: '0x470ebf5f030ed85fc1ed4c2d36b9dd02e77cf1b7',
     templeStaking: '0x4D14b24EDb751221B3Ff08BBB8bd91D4b1c8bc77',
@@ -232,17 +236,20 @@ const env: Environment = {
   subgraph: {
     // TODO: These need updated to the templedao organization subgraphs once they are deployed
     templeCore:
-      'https://api.thegraph.com/subgraphs/name/templedao/templedao-core',
+      'https://api.studio.thegraph.com/query/76011/temple-core/version/latest',
     protocolMetrics:
-      'https://api.thegraph.com/subgraphs/name/medariox/temple-metrics',
+      'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-metrics/api',
     protocolMetricsArbitrum:
-      'https://api.thegraph.com/subgraphs/name/medariox/temple-metrics-arbitrum',
+      'https://api.studio.thegraph.com/query/76011/temple-metrics-arbitrum/version/latest',
+    // TODO: This is not used anymore and should be removed
     balancerV2:
       'https://api.thegraph.com/subgraphs/name/templedao/templedao-balancer-v2',
     // TODO: Will be deprecated
-    ramos: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-ramos',
+    ramos: 'https://api.studio.thegraph.com/query/76011/temple-ramos/version/latest',
     templeV2:
-      'https://api.thegraph.com/subgraphs/name/templedao/templedao-v2-mainnet',
+      'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-v2-mainnet/api',
+    templeV2Balances:
+      'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-v2-balances/api',
     // Original Balancer Subgraph
     // balancerV2: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-v2-beta',
   },

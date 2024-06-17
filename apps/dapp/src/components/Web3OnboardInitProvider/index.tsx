@@ -1,4 +1,4 @@
-import { FC } from 'react';
+import { FC, ReactNode } from 'react';
 import './theme.css';
 
 import { Theme } from '@web3-onboard/core';
@@ -15,13 +15,7 @@ const wcV2InitOptions = {
 };
 
 const walletConnect = walletConnectModule(wcV2InitOptions);
-
-const wallets = [
-  injectedModule(),
-  walletConnect,
-  coinbaseModule(),
-  gnosisModule(),
-];
+const injected = injectedModule();
 
 const customTheme: Theme = {
   '--w3o-background-color': '#0C0B0B',
@@ -33,6 +27,7 @@ const customTheme: Theme = {
 };
 
 const web3Onboard = init({
+  wallets: [injected, walletConnect, coinbaseModule(), gnosisModule()],
   theme: customTheme,
   accountCenter: {
     desktop: {
@@ -42,7 +37,6 @@ const web3Onboard = init({
       enabled: false,
     },
   },
-  wallets,
   chains: APP_CHAINS_FOR_WEB3_INIT,
   connect: {
     removeWhereIsMyWalletWarning: true,
@@ -99,7 +93,9 @@ const web3Onboard = init({
   },
 });
 
-export const Web3OnboardInitProvider: FC = ({ children }) => (
+export const Web3OnboardInitProvider: FC<{ children: ReactNode }> = ({
+  children,
+}) => (
   <Web3OnboardProvider web3Onboard={web3Onboard}>
     {children}
   </Web3OnboardProvider>
