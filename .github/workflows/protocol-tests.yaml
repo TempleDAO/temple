@@ -50,6 +50,7 @@ jobs:
         working-directory: protocol
         env:
           TESTS_MAINNET_RPC_URL: ${{ secrets.TESTS_MAINNET_RPC_URL }}
+          ARBITRUM_ONE_RPC_URL: ${{ secrets.TESTS_ARBITRUM_ONE_RPC_URL }}
 
   foundryTests:
     name: Foundry Tests
@@ -106,6 +107,7 @@ jobs:
         env:
           FOUNDRY_PROFILE: ci
           MAINNET_RPC_URL: ${{ secrets.TESTS_MAINNET_RPC_URL }}
+          ARBITRUM_ONE_RPC_URL: ${{ secrets.TESTS_ARBITRUM_ONE_RPC_URL }}
 
   slither:
     name: Slither

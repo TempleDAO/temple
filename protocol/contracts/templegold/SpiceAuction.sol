@@ -192,7 +192,11 @@ contract SpiceAuction is ISpiceAuction, AuctionBase {
         SpiceAuctionConfig storage config = auctionConfigs[epochId];
         (address bidToken,) = _getBidAndAuctionTokens(config);
         address _recipient = config.recipient;
+        uint256 _bidTokenAmountBefore = IERC20(bidToken).balanceOf(_recipient);
         IERC20(bidToken).safeTransferFrom(msg.sender, _recipient, amount);
+        uint256 _bidTokenAmountAfter = IERC20(bidToken).balanceOf(_recipient);
+        // fee on transfer tokens
+        if (amount != _bidTokenAmountAfter - _bidTokenAmountBefore) { revert CommonEventsAndErrors.InvalidParam(); }
         depositors[msg.sender][epochId] += amount;
 
         info.totalBidTokenAmount += amount;
