@@ -106,20 +106,13 @@ const Home = ({ tlc }: { tlc?: boolean }) => {
   useEffect(() => {
     const fetchMetrics = async () => {
       const { data: treasuryData } = await fetchGenericSubgraph<any>(
-        env.subgraph.protocolMetrics,
+        env.subgraph.templeV2Balances,
         `{
-          metrics {
-            treasuryValueUSD
-          }
-        }`
-      );
-      const { data: arbitrumTreasuryData } = await fetchGenericSubgraph<any>(
-        env.subgraph.protocolMetricsArbitrum,
-        `{
-          metrics {
-            treasuryValueUSD
-          }
-        }`
+           treasuryReservesVaults {
+             principalUSD
+             benchmarkedEquityUSD
+           }
+         }`
       );
       const { data: ramosData } = await fetchGenericSubgraph<any>(
         env.subgraph.ramos,
@@ -142,8 +135,10 @@ const Home = ({ tlc }: { tlc?: boolean }) => {
         price: parseFloat(ramosData.metrics[0].spotPrice),
         tpi: parseFloat(tpiData.tpiOracles[0].currentTpi),
         treasury:
-          parseFloat(treasuryData.metrics[0].treasuryValueUSD) +
-          parseFloat(arbitrumTreasuryData.metrics[0].treasuryValueUSD),
+          parseFloat(treasuryData.treasuryReservesVaults[0].principalUSD) +
+          parseFloat(
+            treasuryData.treasuryReservesVaults[0].benchmarkedEquityUSD
+          ),
       });
     };
     fetchMetrics();
