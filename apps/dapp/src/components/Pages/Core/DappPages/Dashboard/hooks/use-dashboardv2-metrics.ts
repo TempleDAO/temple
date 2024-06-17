@@ -91,8 +91,6 @@ export default function useDashboardV2Metrics(dashboardData: DashboardData) {
               name
               isShutdown
               id
-              totalMarketValueUSD
-              benchmarkedEquityUSD
               strategyTokens {
                 symbol
                 rate
@@ -107,9 +105,24 @@ export default function useDashboardV2Metrics(dashboardData: DashboardData) {
             }
       }`
         ),
+        // includes the external balances so has to come from the second subgraph
+        fetchGenericSubgraph<any>(
+          env.subgraph.templeV2Balances,
+          `{
+            strategies {
+              name
+              isShutdown
+              id
+              benchmarkedEquityUSD
+              totalMarketValueUSD
+            }
+           }`
+        ),
       ];
 
-      const [responses] = await Promise.all(allMetricsPromises);
+      const [responses, responseExternalBalances] = await Promise.all(
+        allMetricsPromises
+      );
 
       const subgraphData = responses?.data?.strategies.find(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -117,14 +130,23 @@ export default function useDashboardV2Metrics(dashboardData: DashboardData) {
           _strategy.name === strategy && _strategy.isShutdown === false
       );
 
+      const externalBalancesData =
+        responseExternalBalances?.data?.strategies.find(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (_strategy: any) =>
+            _strategy.name === strategy && _strategy.isShutdown === false
+        );
+
       const daiStrategyTokenData = subgraphData?.strategyTokens.find(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (_strategyToken: any) => _strategyToken.symbol === TokenSymbols.DAI
       );
 
       metrics = {
-        valueOfHoldings: parseFloat(subgraphData.totalMarketValueUSD),
-        benchmarkedEquity: parseFloat(subgraphData.benchmarkedEquityUSD),
+        valueOfHoldings: parseFloat(externalBalancesData.totalMarketValueUSD),
+        benchmarkedEquity: parseFloat(
+          externalBalancesData.benchmarkedEquityUSD
+        ),
         interestRate:
           parseFloat(daiStrategyTokenData.rate) +
           parseFloat(daiStrategyTokenData.premiumRate),

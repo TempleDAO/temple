@@ -85,7 +85,7 @@ async function fetchStrategyHourlySnapshots() {
             }`;
   const resp =
     await fetchGenericSubgraph<FetchV2StrategyHourlySnapshotResponse>(
-      env.subgraph.templeV2,
+      env.subgraph.templeV2Balances,
       query
     );
   return resp?.data?.strategyHourlySnapshots ?? [];
@@ -111,7 +111,7 @@ async function fetchStrategyDailySnapshots() {
             }`;
     const page =
       await fetchGenericSubgraph<FetchV2StrategyDailySnapshotResponse>(
-        env.subgraph.templeV2,
+        env.subgraph.templeV2Balances,
         query
       );
     const itemsOnPage = page.data?.strategyDailySnapshots.length ?? 0;
