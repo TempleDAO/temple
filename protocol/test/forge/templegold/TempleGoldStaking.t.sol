@@ -1003,9 +1003,11 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         staking.getReward(alice, 1);
         aliceBalanceAfter = templeGold.balanceOf(alice);
         assertEq(aliceBalanceAfter - aliceBalanceBefore, earned);
+        skip(8 weeks);
         staking.earned(alice, 1);
         staking.getReward(alice, 1);
         templeGold.balanceOf(address(staking));
+        staking.rewardPerToken();
         // dust amount + alice staking before reward distribution
         assertApproxEqAbs(goldRewardsAmount, aliceBalanceAfter, 6e6);
     }
@@ -1171,8 +1173,8 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
             vm.startPrank(bob);
             _approve(address(templeToken), address(staking), type(uint).max);
             staking.stake(stakeAmount);
-            assertEq(0, staking.userRewardPerTokenPaid(bob, 1));
             rewardPerToken = staking.rewardPerToken();
+            assertEq(0, staking.userRewardPerTokenPaid(bob, 1));
             userRewardPerTokenPaid = staking.userRewardPerTokenPaid(bob, 1);
             vestingRate = _getVestingRate(bob, 1);
             earned = _getEarned(stakeAmount, rewardPerToken, userRewardPerTokenPaid, vestingRate);
@@ -1258,7 +1260,6 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         uint256 blockNumber = block.number;
         staking.stakeFor(alice, stakeAmount);
         ITempleGoldStaking.Checkpoint memory _checkpoint = staking.getCheckpoint(mike, 0);
-        // (uint256 fromBlock, uint256 votes) = 
         assertEq(_checkpoint.fromBlock, blockNumber);
         assertEq(_checkpoint.votes, stakeAmount);
         assertEq(staking.numCheckpoints(mike), 1);

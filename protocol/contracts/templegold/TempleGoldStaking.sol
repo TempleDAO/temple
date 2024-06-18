@@ -352,7 +352,8 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
      * @return Earned rewards of account
      */
     function earned(address account, uint256 index) external override view returns (uint256) {
-        return _earned(account, index, _stakeInfos[account][index].amount);
+        StakeInfo memory _stakeInfo =  _stakeInfos[account][index];
+        return _earned(_stakeInfo, account, index);
     }
 
     /**
@@ -460,34 +461,27 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     }
 
     function _earned(
+        StakeInfo memory _stakeInfo,
         address _account,
-        uint256 _index,
-        uint256 _balance
+        uint256 _index
     ) internal view returns (uint256) {
-        StakeInfo storage _stakeInfo = _stakeInfos[_account][_index];
-        if (_stakeInfo.stakeTime == 0) {
+        uint256 vestingRate = _getVestingRate(_stakeInfo);
+        if (vestingRate == 0) {
             return 0;
-        }
-
-        uint256 vestingRate;
-        if (block.timestamp > _stakeInfo.fullyVestedAt) {
-            vestingRate = 1e18;
-        } else {
-            vestingRate = (block.timestamp - _stakeInfo.stakeTime) * 1e18 / vestingPeriod;
         }
         uint256 _perTokenReward;
         if (vestingRate == 1e18) { 
-            _perTokenReward = _rewardPerToken(); 
+            _perTokenReward = _rewardPerToken();
         } else { 
             _perTokenReward = _rewardPerToken() * vestingRate / 1e18;
         }
         
         return
-            (_balance * (_perTokenReward - userRewardPerTokenPaid[_account][_index])) / 1e18 +
+            (_stakeInfo.amount * (_perTokenReward - userRewardPerTokenPaid[_account][_index])) / 1e18 +
             claimableRewards[_account][_index];
     }
 
-    function _getVestingRate(StakeInfo storage _stakeInfo) internal view returns (uint256 vestingRate) {
+    function _getVestingRate(StakeInfo memory _stakeInfo) internal view returns (uint256 vestingRate) {
         if (_stakeInfo.stakeTime == 0) {
             return 0;
         }
@@ -598,10 +592,9 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
             rewardData.rewardPerTokenStored = uint216(_rewardPerToken());
             rewardData.lastUpdateTime = uint40(_lastTimeRewardApplicable(rewardData.periodFinish));
             if (_account != address(0)) {
-                StakeInfo storage _stakeInfo = _stakeInfos[_account][_index];
+                StakeInfo memory _stakeInfo = _stakeInfos[_account][_index];
                 uint256 vestingRate = _getVestingRate(_stakeInfo);
-                claimableRewards[_account][_index] = _earned(_account, _index, _stakeInfo.amount);
-                vestingRate = _getVestingRate(_stakeInfo);
+                claimableRewards[_account][_index] = _earned(_stakeInfo, _account, _index);
                 userRewardPerTokenPaid[_account][_index] = vestingRate * uint256(rewardData.rewardPerTokenStored) / 1e18;
             }
         }
