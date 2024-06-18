@@ -25,9 +25,9 @@ export const PageRangeSelector = (props: Props) => {
 
   return (
     <>
-      {paginationRange.map((pageNumber, i) => {
+      {paginationRange.map((pageNumber) => {
         if (pageNumber === -1)
-          return <DotsContainer key={i + 'dots'}>...</DotsContainer>;
+          return <DotsContainer key={pageNumber}>...</DotsContainer>;
         return (
           <PageLink
             key={pageNumber}

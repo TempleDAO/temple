@@ -90,7 +90,7 @@ export const TxnDataTable = (props: Props) => {
     <DataTable isBiggerThanTablet={isBiggerThanPhone}>
       <thead>
         <HeaderRow>
-          {tableHeaders.map((h, i) => (
+          {tableHeaders.map((h) => (
             <TableHeader
               key={h.name}
               isHidden={h.isHidden}
@@ -205,12 +205,14 @@ const loadSkeletonRows = (
   skeletonColumnsNo: number
 ) => {
   return [...Array(skeletonRowsNo)].map((_, index) => (
+    // eslint-disable-next-line react/no-array-index-key
     <DataRow hasBorderBotton key={index}>
       {[...Array(skeletonColumnsNo)].map(
         (
           _,
           i // Adds x no of loading cells, same as no of table headers
         ) => (
+          // eslint-disable-next-line react/no-array-index-key
           <DataCell key={i}>
             <LoadingText value={loading()} />
           </DataCell>

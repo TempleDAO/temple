@@ -24,9 +24,10 @@ const DashboardMetrics = ({ dashboardData }: DashboardMetricsProps) => {
     <>
       <MobileMetricsContainer>
         {sourceData.metrics.map((row, idx) => (
+          // eslint-disable-next-line react/no-array-index-key
           <Fragment key={idx}>
-            {row.map((metric, idx) => (
-              <MobileMetricRow key={idx}>
+            {row.map((metric) => (
+              <MobileMetricRow key={metric.title}>
                 <MobileMetricTitle>{metric.title}</MobileMetricTitle>
                 <MobileMetricValue>{metric.value}</MobileMetricValue>
               </MobileMetricRow>
@@ -37,9 +38,10 @@ const DashboardMetrics = ({ dashboardData }: DashboardMetricsProps) => {
       <MobileMetricsContainer small>
         {sourceData.smallMetrics.map((row, idx) => (
           // TODO: The MobileMetricsContainer for small should be .. smaller
+          // eslint-disable-next-line react/no-array-index-key
           <Fragment key={idx}>
-            {row.map((metric, idx) => (
-              <MobileMetricRow key={idx}>
+            {row.map((metric) => (
+              <MobileMetricRow key={metric.title}>
                 <MobileMetricTitle>{metric.title}</MobileMetricTitle>
                 <MobileMetricValue>{metric.value}</MobileMetricValue>
               </MobileMetricRow>
