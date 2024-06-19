@@ -12,9 +12,7 @@ The mint source chain of Temple Gold is `Arbitrum One`. With layer zero integrat
 
 
 ## High level design
-[Design](https://private-user-images.githubusercontent.com/92975084/330947270-46939a7c-9476-4039-a179-336b6ed9d1dc.jpeg?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MTU4MDQ0MDAsIm5iZiI6MTcxNTgwNDEwMCwicGF0aCI6Ii85Mjk3NTA4NC8zMzA5NDcyNzAtNDY5MzlhN2MtOTQ3Ni00MDM5LWExNzktMzM2YjZlZDlkMWRjLmpwZWc_WC1BbXotQWxnb3JpdGhtPUFXUzQtSE1BQy1TSEEyNTYmWC1BbXotQ3JlZGVudGlhbD1BS0lBVkNPRFlMU0E1M1BRSzRaQSUyRjIwMjQwNTE1JTJGdXMtZWFzdC0xJTJGczMlMkZhd3M0X3JlcXVlc3QmWC1BbXotRGF0ZT0yMDI0MDUxNVQyMDE1MDBaJlgtQW16LUV4cGlyZXM9MzAwJlgtQW16LVNpZ25hdHVyZT1lYTYxNDQxMzY4OTY4ZDg5M2U0ODNmMWVmYzM0MzUyMjA1MTMxYmQ5OWI1YjQyMjBiYWMyMGU5OTQxMGU0NjVmJlgtQW16LVNpZ25lZEhlYWRlcnM9aG9zdCZhY3Rvcl9pZD0wJmtleV9pZD0wJnJlcG9faWQ9MCJ9.AgmExK8Mj1Jx1wY6aTrQASiJSMX2ZeOjbaG9wZmjrG4)
-
-
+![High level design](docs/high-level.jpeg)
 
 ## Temple Gold Token (TGLD)
 
@@ -43,11 +41,10 @@ uint256 public constant MINIMUM_MINT = 10_000 ether;
 Amount of tokens to mint are accrued per second depending on a vesting schedule. The vesting schedule (factor) is set using function `setVestingFactor(VestingFactor calldata _factor)`. 
 
 `mint()` is a public function when called, tokens  are distributed according to the vesting factor, if accrued tokens at current time are more than `MINIMUM_MINT`.
-Some actions on staking and auctions contracts trigger a call to `mint()`.
+`distributeGold()` in TempleGoldStaking and DaiGoldAuction contracts also call `mint()`.
 
 Minting is only done on the source chain Arbitrum One.
 Minted tokens are distributed to staking, DaiGold auction contract and team gnosis depending on the set distribution parameters. Distribution parameters are set with `setDistributionParameters()` by admin.
-
 
 
 ## Staking
@@ -55,20 +52,18 @@ Minted tokens are distributed to staking, DaiGold auction contract and team gnos
 Templars stake Temple tokens for Temple Gold rewards.
 Temple can be transferred cross-chain to Arbitrum One using the `TempleTeleporter` contract. Temple tokens are burned on mainnet and same amount of tokens are minted on arbitrum one.
 
-Staking contract has voting capabilities built in. 
-When a user stakes, their vote weight is updated.
-Vote weights are calculated using [Yearn's st-yETH user vote weight half-time model](https://docs.yearn.fi/getting-started/products/yeth/overview). 
-Stakers can also delegate their votes to approved delegates using `setUserVoteDelegate()`. Stakers can reset their delegates using `unsetUserVoteDelegate()`. Default vote weight of a staker without a delegate is calculated from `getVoteWeight()`. `getDelegatedVoteWeight()` is for stakers with delegates.
+Staking contract has voting capabilities built in.
+When a user stakes or withdraws, their delegate's vote is updated. A staker participating in governance must set delegate to either own address or another address using `delegate()`. Setting delegate to address zero means no participation in governance(default).
 
-Migration is built in, if there is ever an upgrade to staking. First, `setMigrator()` is called. Migrator is the next staking contract. Migrator calls `migrateWithdraw()` to withdraw and migrate staker's stake amount and optionally claim rewards.
+Migration is built in, if there is an upgrade to staking contract. First, `setMigrator()` is called. Migrator is the next staking contract. Migrator calls `migrateWithdraw()` to withdraw and migrate staker's stake amount and optionally claim rewards.
 Rewards can be claimed after migration.
 
-Staking contract will also be deployed also to Arbitrum One chain.
+Staking contract will also be deployed to Arbitrum One chain.
 
 ## Auctions
 
 ### DaiGold Auctions
-In DaiGold auctions, anyone can bid DAI in exchange for Temple Gold when an auction is active. These Temple Gold tokens available for each auction are sent to `DaiGoldAuction` contract prior to auction starting. 
+In DaiGold auctions, bidders bid DAI in exchange for Temple Gold when an auction is active. These Temple Gold tokens available for each auction are sent to `DaiGoldAuction` contract prior to auction starting. 
 
 `TempleGold.mint()` distributes TGLD tokens on mint to DaiGoldAuction, Staking contracts and team multisig using distribution share parameters percentages set at `DistributionParams`. 
 Temple Gold reward tokens for each auction are shared amongst DAI bidders/depositors after the auction has ended. DAI depositors can claim their share of the TGOLD rewards after auction and also retroactively.
@@ -85,7 +80,7 @@ A `DaiGold` auction has the following configuration options.
     }
 ```
 
-Bid token can be updated later using `setBidToken`. It can be assumed that the bid token has no funky internal taxes or fees, callbacks or complex functionalities beyond the usual general ERC20 tokens.
+Bid token can be updated later using `setBidToken`. It can be assumed that the bid token has no funky internal taxes or fees, callbacks or complex functionalities beyond the usual OZ ERC20 functions.
 
 Each auction lasts for 1 week. Proceeds from auctions are sent directly to treasury.
 
@@ -121,7 +116,7 @@ struct SpiceAuctionConfig {
 }
 
 ```
-Spice auction configuration are set and controlled by the DAO executor contract (part of the governance process).
+Spice auction configuration are set and controlled by the DAO executor (part of the governance process).
 Each spice auction contract is configured with one spice token and templegold. Spice auction contracts are deployed via `SpiceAuctionFactory`.
 
 The Layer Zero integration allows Temple Gold (TGLD) usage in spice bazaar auctions cross-chain.
