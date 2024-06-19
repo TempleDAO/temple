@@ -16,8 +16,9 @@ import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableS
 /** 
  * @title Temple Gold Staking
  * @notice Temple Gold Staking contract. Stakers deposit Temple and claim rewards in Temple Gold. 
- * Temple Gold is distributed to staking contract for stakers on mint. Minted Temple Gold are sent directly to Staking contract.
- * A non-transferrable vote token is minted 1;1 to stakers on the amount they staked. Duration for distributing staking rewards is 7 days.
+ * Temple Gold is distributed to staking contract for stakers on mint.
+ * Duration for distributing staking rewards is set with `setRewardDuration`. A vesting period is used
+ * to encourage longer staking times.
  */
 contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable {
     using SafeERC20 for IERC20;
@@ -115,15 +116,14 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     /**
      * @notice Set starter of rewards distribution for the next epoch
      * @dev If starter is address zero, anyone can call `distributeRewards` to apply and 
-     *      distribute
-      rewards for next 7 days
+     * distribute rewards for next reward duration
      * @param _starter Starter address
      * @dev could be:
-     * - a bot (if set to non zero address) that checks requirements are met before starting auction
-     * - or anyone if set to zero address
+     * 1. a bot (if set to non zero address) that checks requirements are met before starting auction
+     * 2. or anyone if set to zero address
      */
     function setDistributionStarter(address _starter) external onlyElevatedAccess {
-        /// @notice Starter can be address zer0
+        /// @notice Starter can be address zero
         distributionStarter = _starter;
         emit DistributionStarterSet(_starter);
     }
@@ -157,7 +157,7 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     }
 
     /**
-      * @notice For migrations to a new staking contract if TGLD changes
+      * @notice For migrations to a new staking contract
       *         1. Withdraw `staker`s tokens to the new staking contract (the migrator)
       *         2. Any existing rewards are claimed and sent directly to the `staker`
       * @dev Called only from the new staking contract (the migrator).
@@ -175,7 +175,7 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     
     /**
      * @notice Distributed TGLD rewards minted to this contract to stakers
-     * @dev This starts another 7-day rewards distribution. Calculates new `rewardRate` from any left over rewards up until now
+     * @dev This starts another epoch of rewards distribution. Calculates new `rewardRate` from any left over rewards up until now
      */
     function distributeRewards() updateReward(address(0), 0) external {
         if (distributionStarter != address(0) && msg.sender != distributionStarter) 

@@ -8,7 +8,7 @@ Temple Gold (TGLD) is non-transferrable ERC-20 token that serves as “points”
 - Team Gnosis
 - Spice Bazaar Auctions Contract(s)
 Which means TGLD tokens can be sent to staking and auction contracts as staking rewards and as auction rewards.
-The mint source chain of Temple Gold is `Arbitrum One`. With layer zero integration, Temple Gold can be transferred croos-chain. A holder can only transfer cross-chain to their own address.
+The mint source chain of Temple Gold is `Arbitrum One`. With layer zero integration, Temple Gold can be transferred cross-chain. A holder can only transfer cross-chain to their own address.
 
 
 ## High level design

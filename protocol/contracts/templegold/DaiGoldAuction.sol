@@ -17,9 +17,9 @@ import { IAuctionBase } from "contracts/interfaces/templegold/IAuctionBase.sol";
 /** 
  * @title AuctionEscrow
  * @notice Bidding token is deposited into this contract to bid on a share of distributed Temple Gold for an epoch.
- *         Temple Gold acquired in past epochs can always be claimed. Once bidding for an epoch has ended, users cannot
- *         claim their bid token and can claim their share of Temple Gold for epoch.
- *         Elevated access can change bidding token for future epochs.
+ * Temple Gold acquired in past epochs can always be claimed. Once bid, users cannot
+ * withdraw their bid token and can claim their share of Temple Gold for epoch after auction finishes.
+ * Elevated access can change bidding token for future epochs.
  */
 contract DaiGoldAuction is IDaiGoldAuction, AuctionBase, TempleElevatedAccess {
     using SafeERC20 for ITempleGold;

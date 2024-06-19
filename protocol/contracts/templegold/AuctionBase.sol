@@ -4,6 +4,10 @@ pragma solidity ^0.8.20;
 
 import { IAuctionBase } from "contracts/interfaces/templegold/IAuctionBase.sol";
 
+/**
+ * @title AuctionBase 
+ * @notice Base auction contract. Inherited by `DaiGoldAuction.sol` and `SpiceAuction.sol`
+ */
 abstract contract AuctionBase is IAuctionBase {
     /// @notice Current epoch id
     uint256 internal _currentEpochId;

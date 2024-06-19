@@ -15,7 +15,7 @@ import { IOAppPreCrimeSimulator } from "@layerzerolabs/lz-evm-oapp-v2/contracts/
  * @title Temple Gold Admin
  * @notice Temple Gold Admin is a proxy to Temple Gold contract. 
  * From the setup of layerzero, `Ownable` is used for admin executions. 
- * Avoids a manual import to change `Ownable` to `ElevatedAccess` by using a proxy for admin executions
+ * Avoids a manual import to change `Ownable` to `ElevatedAccess` by using this contract for admin executions
  */
 contract TempleGoldAdmin is ITempleGoldAdmin, TempleElevatedAccess {
     /// @notice Temple Gold

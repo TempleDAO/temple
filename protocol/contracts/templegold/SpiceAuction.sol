@@ -15,19 +15,18 @@ import { IAuctionBase } from "contracts/interfaces/templegold/IAuctionBase.sol";
 /** 
  * @title SpiceAuction
  * @notice Temple Gold is deposited into this contract to bid on a share of distributed Spice token, 
- *         or the other way round, for an epoch. So Temple Gold can be the bid or auction token at any auction epoch.
- *         Reward tokens acquired in past epochs can always be claimed. Once bidding for an epoch has ended, users cannot
- *         claim their bid token and can only claim their share of reward token for epoch.
- *         Bid and auction tokens could change per auction. These are set in `AuctionConfig`. 
- *         Config is set before the next auction starts.
+ * or vice versa, for an epoch. Temple Gold can be the bid or auction token at any auction epoch.
+ * Reward tokens acquired in past epochs can always be claimed. Once bid, users cannot
+ * claim their bid token and can only claim their share of reward token for epoch after epoch finishes.
+ * Bid and auction tokens could change per auction. These are set in `AuctionConfig`. 
+ * Config is set before the next auction starts using `setAuctionConfig` by DAO execution.
  */
 contract SpiceAuction is ISpiceAuction, AuctionBase {
     using SafeERC20 for IERC20;
     using TempleMath for uint256;
     using EpochLib for IAuctionBase.EpochInfo;
 
-    /// @notice Spice auction contracts are set up for 2 tokens. Either can be bid or sell token for a given auction
-    /// @notice uint(TOKEN_A) < uint(TOKEN_B)
+    /// @notice Spice auction contracts are set up for 2 tokens. Either token can be bid or sell token for a given auction
     address public immutable override spiceToken;
     /// @notice Temple GOLD
     address public immutable override templeGold;

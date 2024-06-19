@@ -12,6 +12,10 @@ import { Origin } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/interfaces/
 import { ITempleTeleporter } from "contracts/interfaces/templegold/ITempleTeleporter.sol";
 import { OFTMsgCodec } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/libs/OFTMsgCodec.sol";
 
+/** 
+ * @title Temple Teleporter
+ * @notice Temple Teleporter transfers Temple token cross-chain with layer zero integration.
+ */
 contract TempleTeleporter is ITempleTeleporter, OApp {
     using OFTMsgCodec for address;
 

@@ -18,13 +18,13 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
 
 /**
  * @title Temple Gold 
- * @notice Temple Gold is a non-transferrable ERC20 token with LayerZero integration for cross-chain transfer for holders between chains.
+ * @notice Temple Gold is a non-transferrable ERC20 token with LayerZero integration for cross-chain transfer for holders.
  * On mint, Temple Gold is distributed to DaiGoldAuction, Staking contracts and team multisig using distribution share parameters percentages set at `DistributionParams`. 
- * Users can get Temple Gold by staking Temple for Temple Gold rewards on the staking contract.
+ * Users can get Temple Gold by staking Temple for Temple Gold rewards on the staking contract or in auctions.
  * Holders can transfer their Temple Gold to same holder address across chains.
  * with the same elevated access from v2. 
  * The intended owner of Temple Gold is the TempleGoldAdmin contract for admin functions. 
- * This was done to avoid manually importing lz contracts and overriding `Ownable` with `TempleElevatedAccess`
+ * This is done to avoid manually importing lz contracts and overriding `Ownable` with `TempleElevatedAccess`
  */
  contract TempleGold is ITempleGold, OFT {
     using OFTMsgCodec for bytes;
@@ -60,7 +60,7 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
     DistributionParams private distributionParams;
     /// @notice Vesting factor determines rate of mint
     // This represents the fraction of MAX_SUPPLY to mint every second
-    // if set to `1/ 3 years`, MAX_SUPPLY will be minted in 3 years. It is possible but not likely vesting factor might be changed in future
+    // if set to `1/ 3 years`, MAX_SUPPLY will be minted in 3 years. It is possible but unlikely vesting factor is changed in future
     VestingFactor private vestingFactor;
 
     constructor(
