@@ -53,7 +53,6 @@ contract TempleGoldAdminTestBase is TempleGoldCommon {
         );
         templeGoldAdmin = new TempleGoldAdmin(rescuer, executor, address(templeGold));
         vm.startPrank(executor);
-        templeGold.setEscrow(address(daiGoldAuction)); 
         _configureTempleGold();
         templeGold.transferOwnership(address(templeGoldAdmin));
         vm.stopPrank();
@@ -67,6 +66,7 @@ contract TempleGoldAdminTestBase is TempleGoldCommon {
     }
 
     function _configureTempleGold() private {
+        templeGold.setEscrow(address(daiGoldAuction)); 
         ITempleGold.DistributionParams memory params;
         params.escrow = 60 ether;
         params.gnosis = 10 ether;
@@ -77,6 +77,7 @@ contract TempleGoldAdminTestBase is TempleGoldCommon {
         factor.denominator = 1000 ether;
         templeGold.setVestingFactor(factor);
         templeGold.setStaking(address(staking));
+        templeGold.setTeamGnosis(address(teamGnosis));
         // whitelist
         templeGold.authorizeContract(address(daiGoldAuction), true);
         templeGold.authorizeContract(address(staking), true);

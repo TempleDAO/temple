@@ -33,15 +33,7 @@ contract SpiceAuctionTestBase is TempleGoldCommon {
     function setUp() public {
         fork("arbitrum_one", forkBlockNumber);
 
-        ITempleGold.InitArgs memory initArgs;
-        initArgs.executor = executor;
-        initArgs.staking = address(0);
-        initArgs.escrow = address(0);
-        initArgs.gnosis = teamGnosis;
-        initArgs.layerZeroEndpoint = layerZeroEndpointArbitrumOne;
-        initArgs.mintChainId = arbitrumOneChainId;
-        initArgs.name = TEMPLE_GOLD_NAME;
-        initArgs.symbol = TEMPLE_GOLD_SYMBOL;
+        ITempleGold.InitArgs memory initArgs = _getTempleGoldInitArgs();
 
         templeGold = new TempleGold(initArgs);
         factory = new SpiceAuctionFactory(rescuer, executor, daoExecutor, address(templeGold));

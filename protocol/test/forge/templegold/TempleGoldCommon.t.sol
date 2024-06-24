@@ -46,9 +46,6 @@ contract TempleGoldCommon is TempleTest {
 
     function _getTempleGoldInitArgs() internal view returns (ITempleGold.InitArgs memory initArgs) {
         initArgs.executor = executor;
-        initArgs.staking = address(0);
-        initArgs.escrow = address(0);
-        initArgs.gnosis = teamGnosis;
         initArgs.layerZeroEndpoint = layerZeroEndpointArbitrumOne;
         initArgs.mintChainId = arbitrumOneChainId;
         initArgs.name = TEMPLE_GOLD_NAME;

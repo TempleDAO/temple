@@ -27,9 +27,6 @@ interface ITempleGold is IOFT, IOAppCore, IOAppOptionsType3, IERC20 {
     /// @notice To avoid stack too deep in constructor
     struct InitArgs {
         address executor; // executor is also used as delegate in LayerZero Endpoint
-        address staking;
-        address escrow;
-        address gnosis;
         address layerZeroEndpoint; // local endpoint address
         uint256 mintChainId;
         string name;

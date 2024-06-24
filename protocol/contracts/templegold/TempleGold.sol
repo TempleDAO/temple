@@ -22,7 +22,6 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
  * On mint, Temple Gold is distributed to DaiGoldAuction, Staking contracts and team multisig using distribution share parameters percentages set at `DistributionParams`. 
  * Users can get Temple Gold by staking Temple for Temple Gold rewards on the staking contract or in auctions.
  * Holders can transfer their Temple Gold to same holder address across chains.
- * with the same elevated access from v2. 
  * The intended owner of Temple Gold is the TempleGoldAdmin contract for admin functions. 
  * This is done to avoid manually importing lz contracts and overriding `Ownable` with `TempleElevatedAccess`
  */
@@ -60,15 +59,12 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
     DistributionParams private distributionParams;
     /// @notice Vesting factor determines rate of mint
     // This represents the fraction of MAX_SUPPLY to mint every second
-    // if set to `1/ 3 years`, MAX_SUPPLY will be minted in 3 years. It is possible but unlikely vesting factor is changed in future
+    // if set to `1 second/ 3 years`, MAX_SUPPLY will be minted in 3 years. It is possible but unlikely vesting factor is changed in future
     VestingFactor private vestingFactor;
 
     constructor(
         InitArgs memory _initArgs
     ) OFT(_initArgs.name, _initArgs.symbol, _initArgs.layerZeroEndpoint, _initArgs.executor) Ownable(_initArgs.executor){
-       staking = ITempleGoldStaking(_initArgs.staking);
-       escrow = IDaiGoldAuction(_initArgs.escrow);
-       teamGnosis = _initArgs.gnosis;
        _mintChainId = _initArgs.mintChainId;
     }
 

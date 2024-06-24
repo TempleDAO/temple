@@ -42,15 +42,7 @@ contract DaiGoldAuctionTestBase is TempleGoldCommon {
         /// @dev forking for layerzero endpoint to execute code
         fork("arbitrum_one", 204026954);
 
-        ITempleGold.InitArgs memory initArgs;
-        initArgs.executor = executor;
-        initArgs.staking = address(0);
-        initArgs.escrow = address(0);
-        initArgs.gnosis = teamGnosis;
-        initArgs.layerZeroEndpoint = layerZeroEndpointArbitrumOne;
-        initArgs.mintChainId = arbitrumOneChainId;
-        initArgs.name = TEMPLE_GOLD_NAME;
-        initArgs.symbol = TEMPLE_GOLD_SYMBOL;
+        ITempleGold.InitArgs memory initArgs = _getTempleGoldInitArgs();
 
         templeGold = new TempleGold(initArgs);
         daiGoldAuction = new DaiGoldAuction(
@@ -71,7 +63,6 @@ contract DaiGoldAuctionTestBase is TempleGoldCommon {
         temple = ITempleERC20Token(templeToken);
 
         vm.startPrank(executor);
-        _initialize();
         _configureTempleGold();
         deal(address(bidToken), executor, 100 ether, false);
         deal(address(bidToken), alice, 100 ether, false);
@@ -79,12 +70,9 @@ contract DaiGoldAuctionTestBase is TempleGoldCommon {
         vm.stopPrank();
     }
 
-    function _initialize() private {
+    function _configureTempleGold() private {
         templeGold.setEscrow(address(daiGoldAuction));
         daiGoldAuction.setBidToken(address(bidToken));
-    }
-
-    function _configureTempleGold() private {
         ITempleGold.DistributionParams memory params;
         params.escrow = 60 ether;
         params.gnosis = 10 ether;
@@ -95,6 +83,7 @@ contract DaiGoldAuctionTestBase is TempleGoldCommon {
         factor.denominator = 1000 ether;
         templeGold.setVestingFactor(factor);
         templeGold.setStaking(address(goldStaking));
+        templeGold.setTeamGnosis(address(teamGnosis));
         // whitelist
         templeGold.authorizeContract(address(daiGoldAuction), true);
         templeGold.authorizeContract(address(goldStaking), true);

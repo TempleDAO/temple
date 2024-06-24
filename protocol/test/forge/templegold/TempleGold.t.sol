@@ -53,8 +53,7 @@ contract TempleGoldTestBase is TempleGoldCommon {
             rescuer,
             executor
         );
-        vm.startPrank(executor);
-        templeGold.setEscrow(address(daiGoldAuction)); 
+        vm.startPrank(executor); 
         _configureTempleGold();
         vm.deal(alice, 100 ether);
         vm.deal(bob, 100 ether);
@@ -70,6 +69,7 @@ contract TempleGoldTestBase is TempleGoldCommon {
     }
 
     function _configureTempleGold() private {
+        templeGold.setEscrow(address(daiGoldAuction));
         ITempleGold.DistributionParams memory params;
         params.escrow = 60 ether;
         params.gnosis = 10 ether;
@@ -81,6 +81,7 @@ contract TempleGoldTestBase is TempleGoldCommon {
         templeGold.setVestingFactor(factor);
         _setVestingFactorTime = uint32(block.timestamp);
         templeGold.setStaking(address(staking));
+        templeGold.setTeamGnosis(address(teamGnosis));
         // whitelist
         templeGold.authorizeContract(address(daiGoldAuction), true);
         templeGold.authorizeContract(address(staking), true);
