@@ -197,7 +197,7 @@ const Home = ({ tlc }: { tlc?: boolean }) => {
         {/* Marketing content */}
         <Header>How Does It Work?</Header>
         {MarketingContent.map((content, index) => (
-          <MarketingRow index={index} key={index}>
+          <MarketingRow index={index} key={content.header}>
             <MarketingImage src={content.image} />
             <MarketingTextWrapper>
               <MarketingHeader>{content.header}</MarketingHeader>
@@ -220,11 +220,11 @@ const Home = ({ tlc }: { tlc?: boolean }) => {
       <FooterContainer>
         <LinkRow>
           {FooterContent.map((col, i) => (
-            <Links key={i}>
+            <Links key={col.header}>
               <h4>{col.header}</h4>
               <ul>
                 {col.links.map((link, j) => (
-                  <li key={j}>
+                  <li key={link.text}>
                     <a href={link.link} target="_blank" rel="noreferrer">
                       <FooterImage src={link.image} alt={link.text} />
                       <strong>{link.text}</strong>

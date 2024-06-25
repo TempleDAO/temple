@@ -51,12 +51,12 @@ const Footer: React.FC = () => {
   return (
     <FooterContainer>
       <LinkRow>
-        {FooterContent.map((col, i) => (
-          <Links key={i}>
+        {FooterContent.map((col) => (
+          <Links key={col.header}>
             <h4>{col.header}</h4>
             <ul>
-              {col.links.map((link, j) => (
-                <li key={j}>
+              {col.links.map((link) => (
+                <li key={link.text}>
                   <a href={link.link} target="_blank" rel="noreferrer">
                     <FooterImage src={link.image} alt={link.text} />
                     <strong>{link.text}</strong>
