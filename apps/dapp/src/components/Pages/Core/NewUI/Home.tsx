@@ -106,20 +106,14 @@ const Home = ({ tlc }: { tlc?: boolean }) => {
   useEffect(() => {
     const fetchMetrics = async () => {
       const { data: treasuryData } = await fetchGenericSubgraph<any>(
-        env.subgraph.protocolMetrics,
+        env.subgraph.templeV2Balances,
         `{
-          metrics {
-            treasuryValueUSD
-          }
-        }`
-      );
-      const { data: arbitrumTreasuryData } = await fetchGenericSubgraph<any>(
-        env.subgraph.protocolMetricsArbitrum,
-        `{
-          metrics {
-            treasuryValueUSD
-          }
-        }`
+           treasuryReservesVaults {
+             principalUSD
+             benchmarkedEquityUSD
+             treasuryPriceIndex
+           }
+         }`
       );
       const { data: ramosData } = await fetchGenericSubgraph<any>(
         env.subgraph.ramos,
@@ -130,20 +124,13 @@ const Home = ({ tlc }: { tlc?: boolean }) => {
         }`
       );
 
-      const { data: tpiData } = await fetchGenericSubgraph<any>(
-        env.subgraph.templeV2,
-        `{
-          tpiOracles {
-            currentTpi
-          }
-        }`
-      );
+      const treasuryMetrics = treasuryData.treasuryReservesVaults[0];
       setMetrics({
         price: parseFloat(ramosData.metrics[0].spotPrice),
-        tpi: parseFloat(tpiData.tpiOracles[0].currentTpi),
+        tpi: parseFloat(treasuryMetrics.treasuryPriceIndex),
         treasury:
-          parseFloat(treasuryData.metrics[0].treasuryValueUSD) +
-          parseFloat(arbitrumTreasuryData.metrics[0].treasuryValueUSD),
+          parseFloat(treasuryMetrics.principalUSD) +
+          parseFloat(treasuryMetrics.benchmarkedEquityUSD),
       });
     };
     fetchMetrics();
