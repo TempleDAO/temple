@@ -184,14 +184,22 @@ export default function useDashboardV2Metrics(dashboardData: DashboardData) {
           fetchGenericSubgraph<any>(
             env.subgraph.templeV2,
             `{
-          treasuryReservesVaults {
-            totalMarketValueUSD
-            treasuryPriceIndex
-            principalUSD
-            accruedInterestUSD
-            benchmarkedEquityUSD
-          }
-      }`
+              treasuryReservesVaults {
+                treasuryPriceIndex
+                principalUSD
+                accruedInterestUSD
+              }
+            }`
+          ),
+          // includes the external balances so has to come from the second subgraph
+          fetchGenericSubgraph<any>(
+            env.subgraph.templeV2Balances,
+            `{
+              treasuryReservesVaults {
+                totalMarketValueUSD
+                benchmarkedEquityUSD
+              }
+            }`
           ),
           getBenchmarkRate(),
           getTempleCirculatingSupply(),
@@ -200,6 +208,7 @@ export default function useDashboardV2Metrics(dashboardData: DashboardData) {
 
         const [
           trvSubgraphResponse,
+          responseExternalBalances,
           benchmarkRate,
           templeCirculatingSupply,
           templeSpotPrice,
@@ -208,15 +217,18 @@ export default function useDashboardV2Metrics(dashboardData: DashboardData) {
         const trvSubgraphData =
           trvSubgraphResponse?.data?.treasuryReservesVaults[0];
 
+        const externalBalancesData =
+          responseExternalBalances?.data?.treasuryReservesVaults[0];
+
         metrics = {
-          totalMarketValue: parseFloat(trvSubgraphData.totalMarketValueUSD),
+          totalMarketValue: parseFloat(externalBalancesData.totalMarketValueUSD),
           spotPrice: parseFloat(templeSpotPrice),
           treasuryPriceIndex: parseFloat(trvSubgraphData.treasuryPriceIndex),
           circulatingSupply: parseFloat(templeCirculatingSupply),
           benchmarkRate: parseFloat(benchmarkRate),
           principal: parseFloat(trvSubgraphData.principalUSD),
           accruedInterest: parseFloat(trvSubgraphData.accruedInterestUSD),
-          benchmarkedEquity: parseFloat(trvSubgraphData.benchmarkedEquityUSD),
+          benchmarkedEquity: parseFloat(externalBalancesData.benchmarkedEquityUSD),
         };
       } catch (error) {
         console.info(error);

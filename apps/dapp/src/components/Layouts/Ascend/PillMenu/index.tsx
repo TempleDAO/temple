@@ -16,8 +16,8 @@ export const PillMenu = ({ links }: Props) => {
   return (
     <MenuWrapper>
       <Menu>
-        {links.map(({ to, label, onClick }, i) => (
-          <MenuLink key={i} to={!!onClick ? '#' : to} onClick={onClick}>
+        {links.map(({ to, label, onClick }) => (
+          <MenuLink key={to} to={!!onClick ? '#' : to} onClick={onClick}>
             {label}
           </MenuLink>
         ))}

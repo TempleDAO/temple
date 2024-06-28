@@ -6,6 +6,7 @@
   },
   "scripts": {
     "typechain": "typechain --target=ethers-v5 --out-dir src/types/typechain --glob abi/**/*.json",
+    "lint": "eslint ./src",
     "prepare": "yarn typechain && yarn codegen:safe-api-v1",
     "dev": "vite",
     "compile": "tsc",

@@ -38,8 +38,8 @@ export const RowFilterDropdown = (props: Props) => {
       <FilterButton onClick={() => setDropdownOpened(!dropdownOpened)} />
       {dropdownOpened && (
         <DropdownOptionsContainer ref={ref}>
-          {dropdownOptions.map((op, idx) => (
-            <DropdownOption key={idx} isChecked={op.checked}>
+          {dropdownOptions.map((op) => (
+            <DropdownOption key={op.label} isChecked={op.checked}>
               <RadioCheckbox
                 id={op.label}
                 defaultChecked={op.checked}
