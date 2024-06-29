@@ -3,8 +3,7 @@ import { Environment } from './types';
 
 const env: Environment = {
   alchemyId: 'XiIZxWykHU5AOFBwxKgxseXWN984Mp8F',
-  rpcUrl:
-    'https://eth-mainnet.g.alchemy.com/v2/AorwfDdHDsEjIX4HPwS70zkVjWqjv5vZ',
+  rpcUrl: 'https://eth.llamarpc.com',
   backendUrl: 'https://backend.templedao.link',
   contracts: {
     balancerVault: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
@@ -249,7 +248,8 @@ const env: Environment = {
     balancerV2:
       'https://api.thegraph.com/subgraphs/name/templedao/templedao-balancer-v2',
     // TODO: Will be deprecated
-    ramos: 'https://api.studio.thegraph.com/query/76011/temple-ramos/version/latest',
+    ramos:
+      'https://api.studio.thegraph.com/query/76011/temple-ramos/version/latest',
     templeV2:
       'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-v2-mainnet/api',
     templeV2Balances:
