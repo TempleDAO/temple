@@ -10,7 +10,7 @@ import { LoadingText } from 'components/Pages/Core/components/LoaderVault/common
 import env from 'constants/env';
 import styled from 'styled-components';
 import { loading } from 'utils/loading-value';
-import { ArrowButtonUpDown } from 'components/Pages/Ascend/components/Trade/styles';
+import { ArrowButtonUpDown } from 'styles/common';
 import { TxHistoryTableHeader } from './TxnHistoryTable';
 import { useMediaQuery } from 'react-responsive';
 import * as breakpoints from 'styles/breakpoints';
