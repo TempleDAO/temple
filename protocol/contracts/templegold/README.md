@@ -53,7 +53,7 @@ Templars stake Temple tokens for Temple Gold rewards.
 Temple can be transferred cross-chain to Arbitrum One using the `TempleTeleporter` contract. Temple tokens are burned on mainnet and same amount of tokens are minted on arbitrum one.
 
 Staking contract has voting capabilities built in.
-When a user stakes or withdraws, their delegate's vote is updated. A staker participating in governance must set delegate to either own address or another address using `delegate()`. Setting delegate to address zero means no participation in governance(default).
+When a user stakes or withdraws, their delegate's vote is updated. A staker participating in governance must set delegate to either own address or another address using `delegate()`. Setting delegate to address zero means no participation in governance(default). A user can set delegate (to self or another address) before or after staking. The plan for UI flow is to let stakers set delegate first if they want to do governance voting.
 
 Migration is built in, if there is an upgrade to staking contract. First, `setMigrator()` is called. Migrator is the next staking contract. Migrator calls `migrateWithdraw()` to withdraw and migrate staker's stake amount and optionally claim rewards.
 Rewards can be claimed after migration.
