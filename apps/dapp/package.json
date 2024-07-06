@@ -20,7 +20,7 @@
     "codegen:safe-api-v1": "yarn safe-api-v1-host && openapi --input ./src/safe/open-api/apiV1.json --output ./src/safe/open-api/client"
   },
   "dependencies": {
-    "@balancer-labs/sdk": "^1.0.4",
+    "@balancer-labs/sdk": "1.1.6-beta.23",
     "@safe-global/safe-apps-provider": "^0.18.0",
     "@safe-global/safe-apps-sdk": "^8.1.0",
     "@safe-global/safe-core-sdk-types": "2.3.0",

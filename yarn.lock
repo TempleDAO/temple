@@ -1224,7 +1224,29 @@
     "@babel/helper-validator-identifier" "^7.22.20"
     to-fast-properties "^2.0.0"
 
-"@balancer-labs/sdk@^1.0.4", "@balancer-labs/sdk@^1.1.2":
+"@balancer-labs/sdk@1.1.6-beta.23":
+  version "1.1.6-beta.23"
+  resolved "https://registry.yarnpkg.com/@balancer-labs/sdk/-/sdk-1.1.6-beta.23.tgz#c87a7e31dca2477231c24117b0544040aba10ec0"
+  integrity sha512-wcFMU0O2wqdnUUhe7jOM5ikr6ipYP7vmqygiDKB2lSlN3hgd/AOTgsw4E7tMuwlf7xUpLC5hRNi4WiRivrZHBQ==
+  dependencies:
+    "@balancer-labs/sor" "^4.1.1-beta.17"
+    "@ethersproject/abi" "^5.4.0"
+    "@ethersproject/abstract-signer" "^5.4.0"
+    "@ethersproject/address" "^5.4.0"
+    "@ethersproject/base64" "5.5.0"
+    "@ethersproject/bignumber" "^5.4.0"
+    "@ethersproject/bytes" "^5.4.0"
+    "@ethersproject/constants" "^5.4.0"
+    "@ethersproject/contracts" "^5.4.0"
+    "@ethersproject/providers" "^5.4.5"
+    axios "^0.24.0"
+    ethers "^5"
+    graphql "^15.6.1"
+    graphql-request "^3.5.0"
+    json-to-graphql-query "^2.2.4"
+    lodash "^4.17.21"
+
+"@balancer-labs/sdk@^1.1.2":
   version "1.1.4"
   resolved "https://registry.yarnpkg.com/@balancer-labs/sdk/-/sdk-1.1.4.tgz#d5ed27bb0688ba90f79897c64616e67c9d392f9c"
   integrity sha512-MW8KAKFl3IRcA0rJHLhoeUHPtIOo3joW8nWju6TGaOCEodvYuFzeEd0CUQa9txWRmaKBJX0KRa6txAdmqV49Pw==
@@ -1245,10 +1267,10 @@
     json-to-graphql-query "^2.2.4"
     lodash "^4.17.21"
 
-"@balancer-labs/sor@^4.1.1-beta.16":
-  version "4.1.1-beta.16"
-  resolved "https://registry.yarnpkg.com/@balancer-labs/sor/-/sor-4.1.1-beta.16.tgz#bee2a863c751ca10320090b4831db26492b1959f"
-  integrity sha512-EKS7J78r5jKDsGqOs2gzIyhOqYyDAmrwp/nY2bSsfymNXSTr7g3YS418UJl1hSQMBEeN4N2MnH0neM1oJxHHoQ==
+"@balancer-labs/sor@^4.1.1-beta.16", "@balancer-labs/sor@^4.1.1-beta.17":
+  version "4.1.1-beta.17"
+  resolved "https://registry.yarnpkg.com/@balancer-labs/sor/-/sor-4.1.1-beta.17.tgz#8c404a86174003cccf2bb87d49221cfdcf083246"
+  integrity sha512-JcX/HeppyoIs+Sa3Z/pdZhqMOBAGajOwVkBkFA8rehd1K2qaU/k/a3OkbIidXjs4lQI9sJE1WO8RauCLtuLQfg==
   dependencies:
     isomorphic-fetch "^2.2.1"
 
@@ -5045,7 +5067,7 @@
   dependencies:
     "@types/react" "*"
 
-"@types/react@*", "@types/react@^18.0.0", "@types/react@^18.2.79":
+"@types/react@*", "@types/react@^18.2.79":
   version "18.2.79"
   resolved "https://registry.yarnpkg.com/@types/react/-/react-18.2.79.tgz#c40efb4f255711f554d47b449f796d1c7756d865"
   integrity sha512-RwGAGXPl9kSXwdNTafkOEuFrTBD5SA2B3iEB96xi8+xu5ddUa/cpvyVCSNn+asgLCTHkb5ZxN8gbuibYJi4s1w==
@@ -11987,7 +12009,7 @@ ethers@^4.0.32, ethers@^4.0.40, ethers@^4.0.45:
     uuid "2.0.1"
     xmlhttprequest "1.8.0"
 
-ethers@^5.0.13, ethers@^5.7.1, ethers@^5.7.2, ethers@~5.7.0:
+ethers@^5, ethers@^5.0.13, ethers@^5.7.1, ethers@^5.7.2, ethers@~5.7.0:
   version "5.7.2"
   resolved "https://registry.yarnpkg.com/ethers/-/ethers-5.7.2.tgz#3a7deeabbb8c030d4126b24f84e525466145872e"
   integrity sha512-wswUsmWo1aOK8rR7DIKiWSw9DbLWe6x98Jrn8wcTflTVvaXhAMaB5zGAXy0GYQEQp9iO1iSHWVyARQm11zUtyg==
@@ -12610,10 +12632,15 @@ follow-redirects@1.5.10:
   dependencies:
     debug "=3.1.0"
 
-follow-redirects@^1.12.1, follow-redirects@^1.14.0, follow-redirects@^1.14.4, follow-redirects@^1.14.8, follow-redirects@^1.14.9:
+follow-redirects@^1.12.1, follow-redirects@^1.14.0, follow-redirects@^1.14.8, follow-redirects@^1.14.9:
   version "1.15.2"
   resolved "https://registry.yarnpkg.com/follow-redirects/-/follow-redirects-1.15.2.tgz#b460864144ba63f2681096f274c4e57026da2c13"
   integrity sha512-VQLG33o04KaQ8uYi2tVNbdrWp1QWxNNea+nmIB4EVM28v0hmP17z7aG1+wAkNzVq4KeXTq3221ye5qTJP91JwA==
+
+follow-redirects@^1.14.4:
+  version "1.15.6"
+  resolved "https://registry.yarnpkg.com/follow-redirects/-/follow-redirects-1.15.6.tgz#7f815c0cda4249c74ff09e95ef97c23b5fd0399b"
+  integrity sha512-wWN62YITEaOpSK584EZXJafH1AGpO8RVgElfkuXbTOrPX4fIfOyEpW/CsiNd8JdYrAoOvafRTOEnvsO++qCqFA==
 
 for-each@^0.3.3, for-each@~0.3.3:
   version "0.3.3"
@@ -13357,9 +13384,9 @@ graphql-request@^3.5.0:
     form-data "^3.0.0"
 
 graphql@^15.6.1:
-  version "15.8.0"
-  resolved "https://registry.yarnpkg.com/graphql/-/graphql-15.8.0.tgz#33410e96b012fa3bdb1091cc99a94769db212b38"
-  integrity sha512-5gghUc24tP9HRznNpV2+FIoq3xKkj5dTQqf4v0CpdPbFVwFkWoxOM+o+2OC9ZSvjEMTjfmG9QT+gcvggTwW1zw==
+  version "15.9.0"
+  resolved "https://registry.yarnpkg.com/graphql/-/graphql-15.9.0.tgz#4e8ca830cfd30b03d44d3edd9cac2b0690304b53"
+  integrity sha512-GCOQdvm7XxV1S4U4CGrsdlEN37245eC8P9zaYCMr6K1BG0IPGy5lUwmJsEOGyl1GD6HXjOtl2keCP9asRBwNvA==
 
 growl@1.10.5:
   version "1.10.5"
@@ -22480,15 +22507,20 @@ websocket@^1.0.31, websocket@^1.0.32:
     utf-8-validate "^5.0.2"
     yaeti "^0.0.6"
 
-whatwg-fetch@>=0.10.0, whatwg-fetch@^3.0.0:
-  version "3.6.18"
-  resolved "https://registry.yarnpkg.com/whatwg-fetch/-/whatwg-fetch-3.6.18.tgz#2f640cdee315abced7daeaed2309abd1e44e62d4"
-  integrity sha512-ltN7j66EneWn5TFDO4L9inYC1D+Czsxlrw2SalgjMmEMkLfA5SIZxEFdE6QtHFiiM6Q7WL32c7AkI3w6yxM84Q==
+whatwg-fetch@>=0.10.0:
+  version "3.6.20"
+  resolved "https://registry.yarnpkg.com/whatwg-fetch/-/whatwg-fetch-3.6.20.tgz#580ce6d791facec91d37c72890995a0b48d31c70"
+  integrity sha512-EqhiFU6daOA8kpjOWTL0olhVOF3i7OrFzSYiGsEMB8GcXS+RrzauAERX65xMeNWVqxA6HXH2m69Z9LaKKdisfg==
 
 whatwg-fetch@^2.0.4:
   version "2.0.4"
   resolved "https://registry.yarnpkg.com/whatwg-fetch/-/whatwg-fetch-2.0.4.tgz#dde6a5df315f9d39991aa17621853d720b85566f"
   integrity sha512-dcQ1GWpOD/eEQ97k66aiEVpNnapVj90/+R+SXTPYGHpYBBypfKJEQjLrvMZ7YXbKm21gXd4NcuxUTjiv1YtLng==
+
+whatwg-fetch@^3.0.0:
+  version "3.6.18"
+  resolved "https://registry.yarnpkg.com/whatwg-fetch/-/whatwg-fetch-3.6.18.tgz#2f640cdee315abced7daeaed2309abd1e44e62d4"
+  integrity sha512-ltN7j66EneWn5TFDO4L9inYC1D+Czsxlrw2SalgjMmEMkLfA5SIZxEFdE6QtHFiiM6Q7WL32c7AkI3w6yxM84Q==
 
 whatwg-url@^5.0.0:
   version "5.0.0"
