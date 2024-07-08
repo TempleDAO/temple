@@ -746,7 +746,6 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         deal(address(templeToken), bob, 100 ether, true);
         _approve(address(templeToken), address(staking), type(uint).max);
 
-        uint256 blockNumber = block.number;
         uint256 ts = block.timestamp;
         vm.expectEmit(address(staking));
         emit Staked(alice, stakeAmount);
@@ -785,10 +784,8 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         deal(address(templeToken), alice, 1000 ether, true);
         _approve(address(templeToken), address(staking), type(uint).max);
         staking.stake(100 ether);
-        uint64 stakeTime = uint64(block.timestamp);
         skip(1 days);
         staking.distributeRewards();
-        uint256 stakingGoldBalance = templeGold.balanceOf(address(staking));
         assertEq(staking.earned(alice, 1), 0);
 
         skip(1 days);
@@ -804,10 +801,7 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         assertEq(staking.earned(alice, 1), aliceEarned);
         
         // fast forward to 1 month
-        uint256 aliceStakeTime = staking.getAccountStakeInfo(alice, 1).stakeTime;
-        uint256 aliceFullyVestedAt = staking.getAccountStakeInfo(alice, 1).fullyVestedAt;
         skip(3 weeks);
-        ITempleGoldStaking.Reward memory rewardData = staking.getRewardData();
         rewardPerToken = staking.rewardPerToken();
         _vestingRate = _getVestingRate(alice, 1);
         aliceEarned = _getEarned(100 ether, rewardPerToken, 0, _vestingRate);
@@ -819,7 +813,6 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
 
         staking.distributeRewards();
         staking.stake(50 ether);
-        uint64 stakeTimeTwo = uint64(block.timestamp);
         skip(2 weeks);
         rewardPerToken = staking.rewardPerToken();
         uint256 userRewardPerTokenPaid = staking.userRewardPerTokenPaid(alice, 2);
@@ -940,7 +933,7 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         uint256 _rewardPerToken,
         uint256 _rewardPerTokenPaid,
         uint256 _vestingRate
-    ) private view returns (uint256 earned) {
+    ) private pure returns (uint256 earned) {
         earned = (_amount * ((_rewardPerToken * _vestingRate / 1e18) - _rewardPerTokenPaid) / 1e18);
     }
 
@@ -970,13 +963,11 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         _approve(address(templeToken), address(staking), type(uint).max);
         uint256 stakeAmount = 100 ether;
         staking.stake(stakeAmount);
-        uint256 stakeTime = block.timestamp;
         uint256 goldBalanceBefore = templeGold.balanceOf(address(staking));
         staking.distributeRewards();
         uint256 goldRewardsAmount = templeGold.balanceOf(address(staking)) - goldBalanceBefore;
         
         skip(1 weeks);
-        ITempleGoldStaking.Reward memory rewardData = staking.getRewardData();
         uint256 earned = staking.earned(alice, 1);
         uint256 aliceBalanceBefore = templeGold.balanceOf(alice);
         staking.getReward(alice, 1);
@@ -1030,7 +1021,6 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         uint256 stakeTime = block.timestamp;
         templeGold.balanceOf(address(staking));
         staking.distributeRewards();
-        uint256 goldRewardsAmount = templeGold.balanceOf(address(staking));
         assertEq(staking.earned(alice, 1), 0);
         ITempleGoldStaking.Reward memory rewardData = staking.getRewardData();
 
@@ -1096,7 +1086,6 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         staking.getReward(alice, 1);
         staking.getReward(alice, 2);
         aliceBalanceAfter = templeGold.balanceOf(alice);
-        ITempleGoldStaking.StakeInfo memory _stakeInfo = staking.getAccountStakeInfo(alice, 1);
         rewardData = staking.getRewardData();
         vm.warp(rewardData.periodFinish);
         staking.getReward(alice, 1);
