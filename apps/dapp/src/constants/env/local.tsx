@@ -5,7 +5,7 @@ const ENV = import.meta.env;
 
 const env: Environment = {
   alchemyId: '-nNWThz_YpX1cGffGiz-lbSMu7dmp4GK',
-  rpcUrl: 'https://eth.llamarpc.com',
+  rpcUrl: 'https://rpc.ankr.com/eth',
   backendUrl: 'http://localhost:3001',
   contracts: {
     balancerVault: '',
