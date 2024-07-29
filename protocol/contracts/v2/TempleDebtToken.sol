@@ -1,16 +1,16 @@
-pragma solidity 0.8.20;
+pragma solidity ^0.8.20;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (v2/TempleBaseDebtToken.sol)
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { mulDiv } from "@prb/math/src/Common.sol";
 
 import { ITempleDebtToken } from "contracts/interfaces/v2/ITempleDebtToken.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { CompoundedInterest } from "contracts/v2/interestRate/CompoundedInterest.sol";
 import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
 import { SafeCast } from "contracts/common/SafeCast.sol";
+import { TempleMath } from "contracts/common/TempleMath.sol";
 
 /* solhint-disable not-rely-on-time */
 
@@ -556,7 +556,7 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
 
     function _debtToShares(uint128 _debt, uint128 _totalDebt, uint128 _totalShares, bool roundUp) internal pure returns (uint128) {
         return _totalDebt > 0 
-            ? _mulDivRound(_debt, _totalShares, _totalDebt, roundUp).encodeUInt128()
+            ? TempleMath.mulDivRound(_debt, _totalShares, _totalDebt, roundUp).encodeUInt128()
             : _debt;
     }
 
@@ -571,7 +571,7 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
 
     function _sharesToDebt(uint128 _shares, uint128 _totalDebt, uint128 _totalShares, bool roundUp) internal pure returns (uint128) {
         return _totalShares > 0 
-            ? _mulDivRound(_shares, _totalDebt, _totalShares, roundUp).encodeUInt128()
+            ? TempleMath.mulDivRound(_shares, _totalDebt, _totalShares, roundUp).encodeUInt128()
             : _shares;
     }
 
@@ -750,15 +750,6 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
         DebtorCache memory debtorCache
     ) {
         _initDebtorCache(_baseCache, _debtor, debtorCache, _roundUp);
-    }
-
-    /// @notice mulDiv with an option to round the result up or down to the nearest wei
-    function _mulDivRound(uint256 x, uint256 y, uint256 denominator, bool roundUp) internal pure returns (uint256 result) {
-        result = mulDiv(x, y, denominator);
-        // See OZ Math.sol for the equivalent mulDiv() with rounding.
-        if (roundUp && mulmod(x, y, denominator) > 0) {
-            result += 1;
-        }
     }
 
     /// @dev The difference between `a - b`, floored at zero (will not revert) for two uint128 variables

@@ -28,6 +28,12 @@ abstract contract TempleTest is Test {
         forkId = vm.createSelectFork(chain.rpcUrl, _blockNumber);
     }
 
+    // Fork using .env $<CHAIN_ALIAS>_RPC_URL (or the default RPC URL), at latest blockNumber. Returns fork id
+    function fork(string memory chainAlias) internal returns (uint256) {
+        chain = getChain(chainAlias);
+        return vm.createSelectFork(chain.rpcUrl);
+    }
+
     function dealAdditional(IERC20 token, address to, uint256 additionalAmount) internal {
         deal(address(token), to, token.balanceOf(to) + additionalAmount, true);
     }
