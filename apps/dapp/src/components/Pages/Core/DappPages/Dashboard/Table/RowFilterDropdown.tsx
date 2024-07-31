@@ -1,6 +1,6 @@
 import { Dispatch, SetStateAction, useRef, useState } from 'react';
 import styled from 'styled-components';
-import { FilterButton } from 'components/Pages/Ascend/components/Trade/styles';
+import { FilterButton } from 'styles/common';
 import { RowFilter } from '../hooks/use-dashboardv2-txHistory';
 import { TableHeaders } from './TxnHistoryTable';
 import { RadioCheckbox } from 'components/Checkbox/RadioCheckbox';
