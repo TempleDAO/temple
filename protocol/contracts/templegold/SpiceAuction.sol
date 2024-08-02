@@ -11,6 +11,10 @@ import { AuctionBase } from "contracts/templegold//AuctionBase.sol";
 import { TempleMath } from "contracts/common/TempleMath.sol";
 import { EpochLib } from "contracts/templegold/EpochLib.sol";
 import { IAuctionBase } from "contracts/interfaces/templegold/IAuctionBase.sol";
+import { ITempleGold } from "contracts/interfaces/templegold/ITempleGold.sol";
+import { SendParam } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/interfaces/IOFT.sol";
+import { MessagingFee } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/OFTCore.sol";
+import { OptionsBuilder } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/libs/OptionsBuilder.sol";
 
 /** 
  * @title SpiceAuction
@@ -25,6 +29,7 @@ contract SpiceAuction is ISpiceAuction, AuctionBase {
     using SafeERC20 for IERC20;
     using TempleMath for uint256;
     using EpochLib for IAuctionBase.EpochInfo;
+    using OptionsBuilder for bytes;
 
     /// @notice Spice auction contracts are set up for 2 tokens. Either token can be bid or sell token for a given auction
     address public immutable override spiceToken;
@@ -32,6 +37,8 @@ contract SpiceAuction is ISpiceAuction, AuctionBase {
     address public immutable override templeGold;
     /// @notice DAO contract to execute configurations update
     address public override daoExecutor;
+    /// @notice Address to notify of TGLD redemptions
+    address public override redemptionNotifier;
 
     /// @notice Auctions run for minimum 1 week
     uint32 public constant MINIMUM_AUCTION_PERIOD = 1 weeks;
@@ -39,6 +46,11 @@ contract SpiceAuction is ISpiceAuction, AuctionBase {
     uint32 public constant MAXIMUM_AUCTION_WAIT_PERIOD = 90 days;
     /// @notice Maximum auction duration
     uint32 public constant MAXIMUM_AUCTION_DURATION = 30 days;
+    uint32 private immutable _arbitrumOneLzEid;
+    uint32 private immutable _mintChainId;
+
+    /// @notice If true, let first claim for an auction notify total TGLD redeemed
+    bool public override claimShouldNotifyTotalRedeemed;
 
     /// @notice Name of this Spice Bazaar auction
     string public override name;
@@ -52,18 +64,48 @@ contract SpiceAuction is ISpiceAuction, AuctionBase {
     mapping(address token => uint256 amount) private _claimedAuctionTokens;
     /// @notice Keep track of total allocation per auction token
     mapping(address token => uint256 amount) private _totalAuctionTokenAllocation;
+    /// @notice Keep track of redeemed and notified epochs
+    mapping(uint256 epochId => bool redeemed) public redeemedEpochs;
+
+    event RedeemedTempleGoldBurned(uint256 epochId, uint256 amount);
+    event RedemptionNotifierSet(address indexed notifier);
 
     constructor(
         address _templeGold,
         address _spiceToken,
         address _daoExecutor,
+        address _notifier,
+        uint32 _arbEid,
+        uint32 mintChainId_,
         string memory _name
     ) {
         spiceToken = _spiceToken;
         daoExecutor = _daoExecutor;
         templeGold = _templeGold;
+        redemptionNotifier = _notifier;
+        _arbitrumOneLzEid = _arbEid;
+        _mintChainId = mintChainId_;
         name = _name;
         _deployTimestamp = block.timestamp;
+    }
+
+    /**
+     * @notice Set redemption notifier
+     * @param _notifier Redemption notifier
+     */
+    function setRedemptionNotifier(address _notifier) external override onlyDAOExecutor {
+        if (_notifier == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
+        redemptionNotifier = _notifier;
+        emit RedemptionNotifierSet(_notifier);
+    }
+    
+    /**
+     * @notice Set if claim should notify total TGLD redeemed for an auction epoch
+     * @param _notify Boolean if to notify when user claims
+     */
+    function setClaimShouldNotifyTotalRedeemed(bool _notify) external override onlyDAOExecutor {
+        claimShouldNotifyTotalRedeemed = _notify;
+        emit ClaimShouldNotifyTotalRedeemedSet(_notify);
     }
 
     /**
@@ -206,23 +248,47 @@ contract SpiceAuction is ISpiceAuction, AuctionBase {
      * @notice Claim (retro) rewards for an epoch . Cannot claim for a live epoch auction
      * @param epochId Epoch to claim for
      */
-    function claim(uint256 epochId) external virtual override {
+    function claim(uint256 epochId) external payable virtual override {
         /// @notice cannot claim for current live epoch
         EpochInfo storage info = epochs[epochId];
         if (info.startTime == 0) { revert InvalidEpoch(); }
         if (!info.hasEnded()) { revert CannotClaim(epochId); }
 
+        if (claimed[msg.sender][epochId]) { revert AlreadyClaimed(); }
         uint256 bidTokenAmount = depositors[msg.sender][epochId];
         if (bidTokenAmount == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
-        delete depositors[msg.sender][epochId];
+        claimed[msg.sender][epochId] = true;
+        // delete depositors[msg.sender][epochId];
         SpiceAuctionConfig storage config = auctionConfigs[epochId];
-        (, address auctionToken) = _getBidAndAuctionTokens(config);
+        (address bidToken, address auctionToken) = _getBidAndAuctionTokens(config);
+
+        // notify total redeemed
+        if (bidToken == templeGold && claimShouldNotifyTotalRedeemed && !redeemedEpochs[epochId]) {
+            // ITempleGold(templeGold).burn(bidTokenAmount);
+            /// @dev send TGLD to redemption notifier. Notifier will burn and handle messaging
+            // ITempleGold(templeGold).send
+            emit RedeemedTempleGoldBurned(epochId, info.totalBidTokenAmount);
+            redeemedEpochs[epochId] = true;
+            _burnAndNotify(info.totalBidTokenAmount, true);
+        }
 
         uint256 claimAmount = bidTokenAmount.mulDivRound(info.totalAuctionTokenAmount, info.totalBidTokenAmount, false);
+        claimedAmount[msg.sender][epochId] = claimAmount;
         /// checkpoint claim for auction token
         _claimedAuctionTokens[auctionToken] += claimAmount;
         IERC20(auctionToken).safeTransfer(msg.sender, claimAmount);
         emit Claim(msg.sender, epochId, bidTokenAmount, claimAmount);
+    }
+
+    /**
+     * @notice Check total bid token amount for epoch auction
+     * @param epochId Epoch to check for
+     */
+    function checkAuctionRedeemedAmount(uint256 epochId) external override view returns (uint256) {
+        EpochInfo storage info = epochs[epochId];
+        // silent
+        if (info.endTime > block.timestamp) { return 0; }
+        return info.totalBidTokenAmount;
     }
 
     /**
@@ -291,6 +357,26 @@ contract SpiceAuction is ISpiceAuction, AuctionBase {
         IERC20(auctionToken).safeTransfer(to, amount);
     }
 
+    /// @notice withdraw ETH used for layer zero sends
+    function withdrawEth(address payable _to, uint256 _amount) external onlyDAOExecutor() {
+        (bool success, ) = _to.call{ value: _amount }("");
+        if (!success) { revert WithdrawFailed(_amount); }
+    }
+
+    // manual burn and notify
+    function burnAndNotify(uint256 epochId, bool useContractEth) external payable onlyNotifier {
+        if (redeemedEpochs[epochId]) { revert CommonEventsAndErrors.InvalidParam(); }
+        EpochInfo storage epochInfo = epochs[epochId];
+        if (epochInfo.startTime == 0) { revert InvalidEpoch(); }
+        if (!epochInfo.hasEnded()) { revert AuctionActive(); }
+        uint256 amount = epochInfo.totalBidTokenAmount;
+        if (amount == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
+        
+        emit RedeemedTempleGoldBurned(epochId, amount);
+        redeemedEpochs[epochId] = true;
+        _burnAndNotify(amount, useContractEth);
+    }
+
     /**
      * @notice Get spice auction config for an auction
      * @param auctionId Id of auction
@@ -324,6 +410,7 @@ contract SpiceAuction is ISpiceAuction, AuctionBase {
      * @return Claimable amount
      */
     function getClaimableForEpoch(address depositor, uint256 epochId) external override view returns (uint256) {
+        if (claimed[depositor][epochId]) { return 0; }
         uint256 bidTokenAmount = depositors[depositor][epochId];
         if (bidTokenAmount == 0 || epochId > _currentEpochId) { return 0; }
         EpochInfo memory info = epochs[epochId];
@@ -338,9 +425,47 @@ contract SpiceAuction is ISpiceAuction, AuctionBase {
             : (templeGold, spiceToken);
     }
 
+    function _burnAndNotify(uint256 amount, bool useContractEth) private {
+        // burn directly and call TempleGold to update circulating supply
+        if (block.chainid == _mintChainId) {
+            ITempleGold(templeGold).burn(amount);
+            return;
+        }
+        bytes memory options = OptionsBuilder.newOptions().addExecutorLzReceiveOption(200000, 0);
+        SendParam memory sendParam = SendParam(
+            _arbitrumOneLzEid, //<ARB_EID>,
+            bytes32(uint256(uint160(address(0)))), // bytes32(address(0)) to burn
+            amount,
+            0,
+            options,
+            bytes(""), // compose message
+            ""
+        );
+        MessagingFee memory fee = ITempleGold(templeGold).quoteSend(sendParam, false);
+        if (useContractEth && address(this).balance < fee.nativeFee) {
+            revert CommonEventsAndErrors.InsufficientBalance(address(0), fee.nativeFee, address(this).balance);
+        } else if (msg.value < fee.nativeFee) { 
+            revert CommonEventsAndErrors.InsufficientBalance(address(0), fee.nativeFee, msg.value); 
+        }
+
+        if (useContractEth) {
+            ITempleGold(templeGold).send{ value: fee.nativeFee }(sendParam, fee, payable(address(this)));
+        } else {
+            ITempleGold(templeGold).send{ value: fee.nativeFee }(sendParam, fee, payable(msg.sender));
+        }
+    }
+
     /// @notice modifier to allow execution by only DAO executor
     modifier onlyDAOExecutor() {
         if (msg.sender != daoExecutor) { revert CommonEventsAndErrors.InvalidAccess(); }
         _;
     }
+
+    modifier onlyNotifier() {
+        if (msg.sender != redemptionNotifier) { revert CommonEventsAndErrors.InvalidAccess(); }
+        _;
+    }
+
+    // allow this contract to receive ether
+    receive() external payable {}
 }

@@ -15,6 +15,7 @@ interface IAuctionBase {
     error AuctionActive();
     error InvalidOperation();
     error AuctionEnded();
+    error AlreadyClaimed();
 
     struct EpochInfo {
         /// @notice Start time for epoch
@@ -31,19 +32,16 @@ interface IAuctionBase {
     function getEpochInfo(uint256 epochId) external returns (EpochInfo memory);
     /// @notice Keep track of depositors for each epoch
     function depositors(address depositor, uint256 epochId) external returns (uint256);
+    /// @notice Keep track of claimed accounts per epoch
+    function claimed(address depositor, uint256 epochId) external returns (bool);
+    /// @notice claimed amounts
+    function claimedAmount(address depositor, uint256 epochId) external returns (uint256);
 
     /**
      * @notice Deposit bid token for current running epoch auction
      * @param amount Amount of bid token to deposit
      */
     function bid(uint256 amount) external;
-
-    /**
-     * @notice Claim share of Temple Gold for epoch
-     * Can only claim for past epochs, not current auction epoch.
-     * @param epochId Id of epoch
-     */
-    function claim(uint256 epochId) external;
 
     /**
      * @notice Start auction. Auction start can be triggered by anyone if `auctionStarter` not set

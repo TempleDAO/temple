@@ -49,6 +49,7 @@ contract TempleGoldAdminTestBase is TempleGoldCommon {
             daiToken,
             treasury,
             rescuer,
+            executor,
             executor
         );
         templeGoldAdmin = new TempleGoldAdmin(rescuer, executor, address(templeGold));

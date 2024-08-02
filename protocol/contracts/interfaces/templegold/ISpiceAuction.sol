@@ -7,12 +7,14 @@ interface ISpiceAuction is IAuctionBase {
     event AuctionConfigSet(uint256 epoch, SpiceAuctionConfig config);
     event DaoExecutorSet(address daoExecutor);
     event AuctionConfigRemoved(uint256 configId, uint256 epochId);
+    event ClaimShouldNotifyTotalRedeemedSet(bool notify);
 
     error InvalidConfigOperation();
     error NotEnoughAuctionTokens();
     error MissingAuctionTokenConfig();
     error NoConfig();
     error RemoveAuctionConfig();
+    error WithdrawFailed(uint256 amount);
 
     struct SpiceAuctionConfig {
         /// @notice Duration of auction
@@ -96,4 +98,33 @@ interface ISpiceAuction is IAuctionBase {
      * @param to Recipient
      */
     function recoverAuctionTokenForZeroBidAuction(uint256 epochId, address to) external;
+
+    /**
+     * @notice Set if claim should notify total TGLD redeemed for an auction epoch
+     * @param _notify Boolean if to notify when user claims
+     */
+    function setClaimShouldNotifyTotalRedeemed(bool _notify) external;
+
+    function claimShouldNotifyTotalRedeemed() external view returns (bool);
+
+    /**
+     * @notice Check total bid token amount for epoch auction
+     * @param epochId Epoch to check for
+     */
+    function checkAuctionRedeemedAmount(uint256 epochId) external view returns (uint256);
+
+    function redemptionNotifier() external view returns (address);
+
+    /**
+     * @notice Set redemption notifier
+     * @param _notifier Redemption notifier
+     */
+    function setRedemptionNotifier(address _notifier) external;
+
+    /**
+     * @notice Claim share of Temple Gold for epoch
+     * Can only claim for past epochs, not current auction epoch.
+     * @param epochId Id of epoch
+     */
+    function claim(uint256 epochId) external payable;
 }

@@ -50,11 +50,14 @@ contract DaiGoldAuction is IDaiGoldAuction, AuctionBase, TempleElevatedAccess {
         address _bidToken,
         address _treasury,
         address _rescuer,
-        address _executor
+        address _executor,
+        address _auctionStarter
     ) TempleElevatedAccess(_rescuer, _executor) {
         templeGold = ITempleGold(_templeGold);
         bidToken = IERC20(_bidToken);
         treasury = _treasury;
+        auctionStarter = _auctionStarter;
+        emit AuctionStarterSet(_auctionStarter);
     }
 
     /**
@@ -153,12 +156,14 @@ contract DaiGoldAuction is IDaiGoldAuction, AuctionBase, TempleElevatedAccess {
         if (!info.hasEnded()) { revert CannotClaim(epochId); }
         /// @dev epochId could be invalid. eg epochId > _currentEpochId
         if (info.startTime == 0) { revert InvalidEpoch(); }
+        if (claimed[msg.sender][epochId]) { revert AlreadyClaimed(); }
 
         uint256 bidTokenAmount = depositors[msg.sender][epochId];
         if (bidTokenAmount == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
-
-        delete depositors[msg.sender][epochId];
+        claimed[msg.sender][epochId] = true;
+        // delete depositors[msg.sender][epochId];
         uint256 claimAmount = bidTokenAmount.mulDivRound(info.totalAuctionTokenAmount, info.totalBidTokenAmount, false);
+        claimedAmount[msg.sender][epochId] = claimAmount;
         templeGold.safeTransfer(msg.sender, claimAmount);
         emit Claim(msg.sender, epochId, bidTokenAmount, claimAmount);
     }
@@ -242,12 +247,13 @@ contract DaiGoldAuction is IDaiGoldAuction, AuctionBase, TempleElevatedAccess {
      * @return Claimable amount
      */
     function getClaimableAtEpoch(address depositor, uint256 epochId) public override view returns (uint256) {
+        if (claimed[depositor][epochId]) { return 0; }
         uint256 bidTokenAmount = depositors[depositor][epochId];
         if (bidTokenAmount == 0 || epochId > _currentEpochId) { return 0; }
         EpochInfo memory info = epochs[epochId];
         return bidTokenAmount.mulDivRound(info.totalAuctionTokenAmount, info.totalBidTokenAmount, false);
     }
-
+    
     /**
      * @notice Recover auction tokens for last but not started auction. 
      * Any other token which is not Temple Gold can be recovered too at any time

@@ -34,12 +34,12 @@ contract SpiceAuctionTestBase is TempleGoldCommon {
         fork("arbitrum_one", forkBlockNumber);
 
         ITempleGold.InitArgs memory initArgs = _getTempleGoldInitArgs();
-
+        
         templeGold = new TempleGold(initArgs);
-        factory = new SpiceAuctionFactory(rescuer, executor, daoExecutor, address(templeGold));
+        factory = new SpiceAuctionFactory(rescuer, executor, daoExecutor, address(templeGold), ARBITRUM_ONE_LZ_EID, uint32(arbitrumOneChainId));
         fakeERC20 = new FakeERC20("FAKE TOKEN", "FAKE", executor, 1000 ether);
         vm.startPrank(executor);
-        spice = ISpiceAuction(factory.createAuction(daiToken, NAME_ONE));
+        spice = ISpiceAuction(factory.createAuction(daiToken, executor, NAME_ONE));
         templeGold.authorizeContract(address(spice), true);
         vm.stopPrank();
     }
@@ -662,5 +662,11 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
 
         assertEq(spice.getClaimableForEpoch(alice, epoch), 0);
         assertEq(spice.getClaimableForEpoch(alice, epoch+1), 0);
+        assertEq(spice.claimedAmount(alice, epoch), aliceClaimAmount);
+        assertEq(spice.claimed(alice, epoch), true);
+
+        // try to claim and fail
+        vm.expectRevert(abi.encodeWithSelector(IAuctionBase.AlreadyClaimed.selector));
+        spice.claim(epoch);
     }
 }
