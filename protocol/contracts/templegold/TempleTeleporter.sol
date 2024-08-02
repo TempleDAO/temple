@@ -90,7 +90,7 @@ contract TempleTeleporter is ITempleTeleporter, OApp {
         uint256 _amount,
         bytes memory _options
     ) external view returns (MessagingFee memory fee) {
-        return _quote(_dstEid, abi.encodePacked(_to, _amount), _options, false);
+        return _quote(_dstEid, abi.encodePacked(_to.addressToBytes32(), _amount), _options, false);
     }
 
     /// @dev Called when data is received from the protocol. It overrides the equivalent function in the parent contract.
