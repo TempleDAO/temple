@@ -28,7 +28,8 @@ interface ITempleGold is IOFT, IOAppCore, IOAppOptionsType3, IERC20 {
     struct InitArgs {
         address executor; // executor is also used as delegate in LayerZero Endpoint
         address layerZeroEndpoint; // local endpoint address
-        uint256 mintChainId;
+        uint128 mintChainId;
+        uint128 mintChainLzEid; // source arb one chain Eid for layerzero
         string name;
         string symbol;
     }
@@ -136,4 +137,6 @@ interface ITempleGold is IOFT, IOAppCore, IOAppOptionsType3, IERC20 {
      * @return Mint amount
      */
     function getMintAmount() external view returns (uint256);
+
+    function burn(uint256 amount) external;
 }

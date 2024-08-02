@@ -114,4 +114,11 @@ interface IDaiGoldAuction is IAuctionBase {
      * @return Claimable amount
      */
     function getClaimableAtEpoch(address depositor, uint256 epochId) external view returns (uint256);
+
+    /**
+     * @notice Claim share of Temple Gold for epoch
+     * Can only claim for past epochs, not current auction epoch.
+     * @param epochId Id of epoch
+     */
+    function claim(uint256 epochId) external;
 }

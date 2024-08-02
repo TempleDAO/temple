@@ -21,7 +21,7 @@ contract SpiceAuctionFactoryTestBase is TempleGoldCommon {
         ITempleGold.InitArgs memory initArgs = _getTempleGoldInitArgs();
 
         templeGold = new TempleGold(initArgs);
-        factory = new SpiceAuctionFactory(rescuer, executor, executor, address(templeGold));
+        factory = new SpiceAuctionFactory(rescuer, executor, executor, address(templeGold), ARBITRUM_ONE_LZ_EID, uint32(arbitrumOneChainId));
     }
 
     function test_initialization() public {
@@ -36,7 +36,7 @@ contract SpiceAuctionFactoryTestAccess is SpiceAuctionFactoryTestBase {
     function test_access_createAuction() public {
         vm.startPrank(unauthorizedUser);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
-        factory.createAuction(usdcToken, NAME_ONE);
+        factory.createAuction(usdcToken, executor, NAME_ONE);
     }
 }
 
@@ -44,12 +44,12 @@ contract SpiceAuctionFactoryTest is SpiceAuctionFactoryTestBase {
     function test_createAuction() public {
         vm.startPrank(executor);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
-        factory.createAuction(address(0), NAME_ONE);
+        factory.createAuction(address(0), executor, NAME_ONE);
 
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
-        factory.createAuction(address(templeGold), NAME_ONE);
+        factory.createAuction(address(templeGold), executor, NAME_ONE);
 
-        address auction = factory.createAuction(usdcToken, NAME_ONE);
+        address auction = factory.createAuction(usdcToken, executor, NAME_ONE);
         bytes32 id = factory.getPairId(usdcToken);
         assertEq(auction, factory.findAuctionForSpiceToken(usdcToken));
         assertEq(factory.deployedAuctions(id), auction);
@@ -57,12 +57,12 @@ contract SpiceAuctionFactoryTest is SpiceAuctionFactoryTestBase {
 
     function test_getPairId() public {
         vm.startPrank(executor);
-        address auction = factory.createAuction(usdcToken, NAME_ONE);
+        address auction = factory.createAuction(usdcToken, executor, NAME_ONE);
         bytes32 id = factory.getPairId(usdcToken);
         assertEq(auction, factory.findAuctionForSpiceToken(usdcToken));
         assertEq(factory.deployedAuctions(id), auction);
         
-        auction = factory.createAuction(daiToken, NAME_ONE);
+        auction = factory.createAuction(daiToken, executor, NAME_ONE);
         id = factory.getPairId(daiToken);
         assertEq(auction, factory.findAuctionForSpiceToken(daiToken));
         assertEq(factory.deployedAuctions(id), auction);

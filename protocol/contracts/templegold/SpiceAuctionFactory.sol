@@ -18,6 +18,8 @@ contract SpiceAuctionFactory is ISpiceAuctionFactory, TempleElevatedAccess {
     address public immutable override templeGold;
     /// @notice Dao executing contract
     address public immutable override daoExecutor;
+    uint32 private immutable _arbitrumLzEid;
+    uint32 private immutable _mintChainId;
     /// @notice Keep track of deployed spice auctions
     mapping(bytes32 id => address auction) public override deployedAuctions;
 
@@ -25,21 +27,30 @@ contract SpiceAuctionFactory is ISpiceAuctionFactory, TempleElevatedAccess {
         address _rescuer,
         address _executor,
         address _daoExecutor,
-        address _templeGold
+        address _templeGold,
+        uint32 _arbLzEid,
+        uint32 mintChainId_
     ) TempleElevatedAccess(_rescuer, _executor) {
         daoExecutor = _daoExecutor;
         templeGold = _templeGold;
+        _arbitrumLzEid = _arbLzEid;
+        _mintChainId = mintChainId_;
     }
 
     /**
      * @notice Create Spice Auction contract
      * @param spiceToken Spice token
+     * @param redemptionNotifier Address to notify about total TGLD redeemed
      * @param name Name of spice auction contract
      */
-    function createAuction(address spiceToken, string memory name) external override onlyElevatedAccess returns (address) {
-        if (spiceToken == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
+    function createAuction(
+        address spiceToken,
+        address redemptionNotifier,
+        string memory name
+    ) external override onlyElevatedAccess returns (address) {
+        if (spiceToken == address(0) || redemptionNotifier == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
         if (spiceToken == templeGold) { revert CommonEventsAndErrors.InvalidParam(); }
-        SpiceAuction spiceAuction = new SpiceAuction(templeGold, spiceToken, daoExecutor, name);
+        SpiceAuction spiceAuction = new SpiceAuction(templeGold, spiceToken, daoExecutor, redemptionNotifier, _arbitrumLzEid, _mintChainId, name);
         bytes32 pairId = _getPairHash(spiceToken);
         /// @dev not checking pair address exists to allow overwrite in case of a migration
         deployedAuctions[pairId] = address(spiceAuction);

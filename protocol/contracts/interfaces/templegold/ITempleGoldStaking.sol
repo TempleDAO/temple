@@ -16,6 +16,7 @@ interface ITempleGoldStaking {
     event DelegateVotesChanged(address indexed delegate, uint256 previousBalance, uint256 newBalance);
     event RewardPaid(address indexed staker, address toAddress, uint256 index, uint256 reward);
     event RewardDurationSet(uint256 duration);
+    event UnvestedRewardsAdded(address indexed staker, uint256 unvestedRewards, uint256 nextRewardAmount);
 
     error CannotDistribute();
     error CannotDelegate();
@@ -28,17 +29,6 @@ interface ITempleGoldStaking {
         uint216 rewardRate;  // The reward amount (1e18) per total reward duration
         uint40 lastUpdateTime;
         uint216 rewardPerTokenStored;
-    }
-
-    struct AccountWeightParams {
-        uint64 weekNumber;
-        uint64 stakeTime;
-        uint64 updateTime;
-    }
-
-    struct AccountPreviousWeightParams {
-        AccountWeightParams weight;
-        uint256 balance;
     }
 
     /// @notice A checkpoint for marking number of votes from a given block
@@ -107,18 +97,9 @@ interface ITempleGoldStaking {
 
     /**
      * @notice Withdraw staked tokens
-     * @param amount Amount to withdraw
      * @param stakeIndex Stake index
-     * @param claim Boolean if to claim rewards
      */
-    function withdraw(uint256 amount, uint256 stakeIndex, bool claim) external;
-
-    /**
-     * @notice Withdraw all staked tokens
-     * @param stakeIndex Stake index
-     * @param claim Boolean if to claim rewards
-     */
-    function withdrawAll(uint256 stakeIndex, bool claim) external;
+    function withdraw(uint256 stakeIndex) external;
 
     /// @notice Owner can pause user swaps from occuring
     function pause() external;

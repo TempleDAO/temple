@@ -50,6 +50,7 @@ contract DaiGoldAuctionTestBase is TempleGoldCommon {
             address(bidToken),
             treasury,
             rescuer,
+            executor,
             executor
         );
         goldStaking = new TempleGoldStaking(
@@ -183,6 +184,12 @@ contract DaiGoldAuctionTestSetters is DaiGoldAuctionTestBase {
         assertEq(config.auctionMinimumDistributedGold, 1000);
 
         // auction started
+        ITempleGold.VestingFactor memory _factor;
+        _factor.numerator = 35;
+        _factor.denominator = 1 weeks;
+        templeGold.setVestingFactor(_factor);
+        skip(3 days);
+        templeGold.mint();
         _startAuction();
         vm.expectRevert(abi.encodeWithSelector(IAuctionBase.InvalidOperation.selector));
         daiGoldAuction.setAuctionConfig(config);
@@ -466,7 +473,19 @@ contract DaiGoldAuctionTest is DaiGoldAuctionTestBase {
         assertEq(executorClaimable+aliceClaimable, epochInfo.totalAuctionTokenAmount);
         assertEq(aliceRewardBalanceAfter, aliceRewardBalanceBefore+aliceClaimable);
         assertEq(executorRewardBalanceAfter, executorRewardBalanceBefore+executorClaimable);
+        assertEq(daiGoldAuction.claimedAmount(alice, currentEpoch), aliceClaimable);
+        assertEq(daiGoldAuction.claimedAmount(executor, currentEpoch), executorClaimable);
+        assertEq(daiGoldAuction.claimed(alice, currentEpoch), true);
+        assertEq(daiGoldAuction.claimed(executor, currentEpoch), true);
 
+        // try to claim again
+        vm.expectRevert(abi.encodeWithSelector(IAuctionBase.AlreadyClaimed.selector));
+        daiGoldAuction.claim(currentEpoch);
+        vm.startPrank(alice);
+        vm.expectRevert(abi.encodeWithSelector(IAuctionBase.AlreadyClaimed.selector));
+        daiGoldAuction.claim(currentEpoch);
+        vm.startPrank(executor);
+        
         // start another auction but check claimable diffs when another user deposits additionally
         skip(1 days);
         _startAuction();

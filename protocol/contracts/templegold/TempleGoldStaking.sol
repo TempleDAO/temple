@@ -74,6 +74,12 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     mapping(address account => mapping(uint256 index => uint256 amount)) public override claimableRewards;
     /// @notice Staker reward per token paid
     mapping(address account => mapping(uint256 index => uint256 amount)) public override userRewardPerTokenPaid;
+    /// @notice Leftover rewards from vesting
+    mapping(address account => mapping(uint256 index => uint256 amount)) public leftoverRewards;
+    mapping(address account => mapping(uint256 index => uint256 amount)) public totalClaimedRewards;
+    mapping(address account => mapping(uint256 index => uint256 amount)) public rewardPerTokenAtStakeTime;
+    /// @notice WHen staker withdraws, checkpoint rewards to use for `maxRewardNow` calculation`
+    mapping(address account => mapping(uint256 index => uint256 reward)) public rewardCheckpoint;
     /// @notice Track voting
     mapping(address account => mapping(uint256 epoch => Checkpoint)) private _checkpoints;
     mapping(address account => uint256 number) public override numCheckpoints;
@@ -177,7 +183,7 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
      * @notice Distributed TGLD rewards minted to this contract to stakers
      * @dev This starts another epoch of rewards distribution. Calculates new `rewardRate` from any left over rewards up until now
      */
-    function distributeRewards() updateReward(address(0), 0) external {
+    function distributeRewards() external updateReward(address(0), 0) {
         if (distributionStarter != address(0) && msg.sender != distributionStarter) 
             { revert CommonEventsAndErrors.InvalidAccess(); }
         if (totalSupply == 0) { revert NoStaker(); }
@@ -265,26 +271,17 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         uint256 _lastIndex = _accountLastStakeIndex[_for];
         _accountLastStakeIndex[_for] = ++_lastIndex;
         _applyStake(_for, _amount, _lastIndex);
+        rewardPerTokenAtStakeTime[_for][_lastIndex] = _rewardPerToken();
         _moveDelegates(address(0), delegates[_for], _amount);
     }
 
     /**
      * @notice Withdraw staked tokens
-     * @param amount Amount to withdraw
-     * @param claim Boolean if to claim rewards
+     * @param index Index of stake
      */
-    function withdraw(uint256 amount, uint256 index, bool claim) external override {
+    function withdraw(uint256 index) external override {
         StakeInfo storage _stakeInfo = _stakeInfos[msg.sender][index];
-        _withdrawFor(_stakeInfo, msg.sender, msg.sender, index, amount, claim, msg.sender);
-    }
-
-    /**
-     * @notice Withdraw all staked tokens
-     * @param claim Boolean if to claim rewards
-     */
-    function withdrawAll(uint256 stakeIndex, bool claim) external override {
-        StakeInfo storage _stakeInfo = _stakeInfos[msg.sender][stakeIndex];
-        _withdrawFor(_stakeInfo, msg.sender, msg.sender, stakeIndex, _stakeInfo.amount, claim, msg.sender);
+        _withdrawFor(_stakeInfo, msg.sender, msg.sender, index, _stakeInfo.amount, true, msg.sender);
     }
 
     /// @notice Owner can pause user swaps from occuring
@@ -391,7 +388,10 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
      * @param staker Staking account
      * @param index Index
      */
-    function getReward(address staker, uint256 index) external override updateReward(staker, index) {
+    function getReward(
+        address staker,
+        uint256 index
+    ) external override updateReward(staker, index) {
         _getReward(staker, staker, index);
     }
 
@@ -424,12 +424,13 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     function _getReward(address staker, address rewardsToAddress, uint256 index) internal {
         uint256 amount = claimableRewards[staker][index];
         if (amount > 0) {
+            /// @dev if staker is not fully vested, it meeans staker gets partial reward so add leftover reward for next reward claim
             claimableRewards[staker][index] = 0;
+            totalClaimedRewards[staker][index] += amount;
             rewardToken.safeTransfer(rewardsToAddress, amount);
             emit RewardPaid(staker, rewardsToAddress, index, amount);
         }
     }
-
     function _withdrawFor(
         StakeInfo storage stakeInfo,
         address staker,
@@ -457,7 +458,32 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         if (claimRewards) {
             // can call internal because user reward already updated
             _getReward(staker, rewardsToAddress, stakeIndex);
+            rewardCheckpoint[staker][stakeIndex] = totalClaimedRewards[staker][stakeIndex];
+            rewardPerTokenAtStakeTime[staker][stakeIndex] = _rewardPerToken();
         }
+        // add unvested rewards to next reward amount
+        uint256 _unvestedRewards = _getUnvestedRewards(staker, stakeIndex, amount);
+        if (_unvestedRewards > 0) {
+            nextRewardAmount += _unvestedRewards;
+            emit UnvestedRewardsAdded(staker, _unvestedRewards, nextRewardAmount);
+        }
+    }
+
+    function _earned(
+        StakeInfo memory _stakeInfo,
+        address _account,
+        uint256 _index,
+        uint256 _leftoverRewardPerToken
+    ) internal view returns (uint256) {
+        uint256 vestingRate = _getVestingRate(_stakeInfo);
+        if (vestingRate == 0) {
+            return 0;
+        }
+        return
+            (_stakeInfo.amount * vestingRate * 
+            (_rewardPerToken() - userRewardPerTokenPaid[_account][_index] + _leftoverRewardPerToken))
+            / 1e36 +
+            claimableRewards[_account][_index];
     }
 
     function _earned(
@@ -469,16 +495,34 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         if (vestingRate == 0) {
             return 0;
         }
-        uint256 _perTokenReward;
-        if (vestingRate == 1e18) { 
-            _perTokenReward = _rewardPerToken();
-        } else { 
-            _perTokenReward = _rewardPerToken() * vestingRate / 1e18;
+        uint256 earnedReward = 
+            _stakeInfo.amount * vestingRate * 
+            (_rewardPerToken() - userRewardPerTokenPaid[_account][_index])
+            / 1e36 + claimableRewards[_account][_index];
+        uint256 checkpointReward = _stakeInfo.amount == 0 ? 0 : rewardCheckpoint[_account][_index];
+        uint256 maxTotalRewardsNow = 
+            _stakeInfo.amount * vestingRate * 
+            (_rewardPerToken() - rewardPerTokenAtStakeTime[_account][_index])
+            / 1e36 + claimableRewards[_account][_index] + checkpointReward;
+
+        uint256 maxClaimableNow = maxTotalRewardsNow == 0 ? 0 : maxTotalRewardsNow - totalClaimedRewards[_account][_index];
+        if (earnedReward == 0) {
+            return 0;
         }
-        
-        return
-            (_stakeInfo.amount * (_perTokenReward - userRewardPerTokenPaid[_account][_index])) / 1e18 +
-            claimableRewards[_account][_index];
+        if (earnedReward < maxClaimableNow) { earnedReward = maxClaimableNow; }
+        return earnedReward;
+    }
+
+    function _getUnvestedRewards(
+        address _staker,
+        uint256 _index,
+        uint256 _amount
+    ) private view returns (uint256) {
+        uint256 maxTotalRewards = 
+            _amount * 
+            (_rewardPerToken() - rewardPerTokenAtStakeTime[_staker][_index])
+            / 1e18 + claimableRewards[_staker][_index] + rewardCheckpoint[_staker][_index];
+        return maxTotalRewards - totalClaimedRewards[_staker][_index];
     }
 
     function _getVestingRate(StakeInfo memory _stakeInfo) internal view returns (uint256 vestingRate) {
@@ -593,9 +637,9 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
             rewardData.lastUpdateTime = uint40(_lastTimeRewardApplicable(rewardData.periodFinish));
             if (_account != address(0)) {
                 StakeInfo memory _stakeInfo = _stakeInfos[_account][_index];
-                uint256 vestingRate = _getVestingRate(_stakeInfo);
-                claimableRewards[_account][_index] = _earned(_stakeInfo, _account, _index);
-                userRewardPerTokenPaid[_account][_index] = vestingRate * uint256(rewardData.rewardPerTokenStored) / 1e18;
+                uint256 earnedReward = _earned(_stakeInfo, _account, _index);
+                claimableRewards[_account][_index] = earnedReward;
+                userRewardPerTokenPaid[_account][_index] = uint256(rewardData.rewardPerTokenStored);
             }
         }
         _;

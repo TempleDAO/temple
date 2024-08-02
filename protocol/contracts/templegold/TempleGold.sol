@@ -37,35 +37,47 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
     /// @notice Multisig gnosis address
     address public override teamGnosis;
 
+    address public notifier;
+
     /// @notice Last block timestamp Temple Gold was minted
     uint32 public override lastMintTimestamp;
 
     //// @notice Distribution as a percentage of 100
     uint256 public constant DISTRIBUTION_DIVISOR = 100 ether;
     /// @notice 1B max supply
-    uint256 public constant MAX_SUPPLY = 1_000_000_000 ether; // 1B
+    // uint256 public constant MAX_SUPPLY = 1_000_000_000 ether; // 1B
+    /// @notice 1B max circulating supply
+    uint256 public constant MAX_CIRCULATING_SUPPLY = 1_000_000_000 ether; // 1B
     /// @notice Minimum Temple Gold minted per call to mint
     uint256 public constant MINIMUM_MINT = 10_000 ether;
 
     /// @notice Mint chain id
-    uint256 private immutable _mintChainId;
+    uint128 private immutable _mintChainId;
+    uint128 private immutable _mintChainLzEid;
 
     /// @notice Total distribtued to track total supply
     uint256 private _totalDistributed;
+    /// @notice Total TGLD burned from all spice auctions
+    uint256 private _totalBurnedFromSpiceAuctions;
+    uint256 private _circulatingSupply;
 
     /// @notice Whitelisted addresses for transferrability
     mapping(address => bool) public override authorized;
     /// @notice Distribution parameters. Minted share percentages for staking, escrow and gnosis. Adds up to 100%
     DistributionParams private distributionParams;
     /// @notice Vesting factor determines rate of mint
-    // This represents the fraction of MAX_SUPPLY to mint every second
-    // if set to `1 second/ 3 years`, MAX_SUPPLY will be minted in 3 years. It is possible but unlikely vesting factor is changed in future
+    // This represents the vesting factor
+    // If mint every 1 second instead of 1 week, vestingFactor == 35 / 604,800. It is possible but unlikely vesting factor is changed in future
     VestingFactor private vestingFactor;
+
+    event CirculatingSupplyUpdated(address indexed sender, uint256 amount, uint256 circulatingSuppply, uint256 totalBurned);
+    event NotifierSet(address indexed notifier);
 
     constructor(
         InitArgs memory _initArgs
     ) OFT(_initArgs.name, _initArgs.symbol, _initArgs.layerZeroEndpoint, _initArgs.executor) Ownable(_initArgs.executor){
        _mintChainId = _initArgs.mintChainId;
+       _mintChainLzEid = _initArgs.mintChainLzEid;
     }
 
     /**
@@ -131,6 +143,12 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
         if (lastMintTimestamp == 0) { lastMintTimestamp = uint32(block.timestamp); }
         emit VestingFactorSet(_factor.numerator, _factor.denominator);
     }
+
+    function setNotifier(address _notifier) external onlyOwner {
+        if (_notifier == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
+        notifier = _notifier;
+        emit NotifierSet(_notifier);
+    }
     
     /**
      * @notice Mint new tokens to be distributed. Open to call from any address
@@ -182,7 +200,7 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
     }
 
     function _canDistribute(uint256 mintAmount) private view returns (bool) {
-        return mintAmount != 0 && _totalDistributed + mintAmount == MAX_SUPPLY ? true : mintAmount >= MINIMUM_MINT;
+        return mintAmount != 0 && _totalDistributed + mintAmount == MAX_CIRCULATING_SUPPLY ? true : mintAmount >= MINIMUM_MINT;
     }
 
     /**
@@ -191,6 +209,11 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
      * @return Circulating supply
      */
     function circulatingSupply() public override view returns (uint256) {
+        // return _totalDistributed;
+        return _circulatingSupply;
+    }
+
+    function totalDistributed() public view returns (uint256) {
         return _totalDistributed;
     }
 
@@ -238,19 +261,24 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
             /// @notice no requirement to notify gnosis because no action has to be taken
         }
         _totalDistributed += mintAmount;
+        _circulatingSupply += mintAmount;
         emit Distributed(stakingAmount, escrowAmount, gnosisAmount, block.timestamp);
     }
 
     function _getMintAmount(VestingFactor memory vestingFactorCache) private view returns (uint256 mintAmount) {
         uint32 _lastMintTimestamp = lastMintTimestamp;
-        uint256 totalSupplyCache = _totalDistributed;
+        // uint256 totalSupplyCache = _totalDistributed;
         /// @dev if vesting factor is not set, return 0. `_lastMintTimestamp` is set when vesting factor is set
         if (_lastMintTimestamp == 0) { return 0; }
-        mintAmount = TempleMath.mulDivRound((block.timestamp - _lastMintTimestamp) * (MAX_SUPPLY), vestingFactorCache.numerator, vestingFactorCache.denominator, false);
-       
-        if (totalSupplyCache + mintAmount > MAX_SUPPLY) {
+
+        /// @dev curernt supply = totalDistributed - totalBurnedInSpiceAuctions
+
+        uint256 circulatingSupplyCache = _circulatingSupply;
+        mintAmount = (TempleMath.mulDivRound((block.timestamp - _lastMintTimestamp), (MAX_CIRCULATING_SUPPLY - circulatingSupplyCache),
+            vestingFactorCache.numerator, false))/ vestingFactorCache.denominator;
+        if (circulatingSupplyCache + mintAmount > MAX_CIRCULATING_SUPPLY) {
             unchecked {
-                mintAmount = MAX_SUPPLY - totalSupplyCache;
+                mintAmount = MAX_CIRCULATING_SUPPLY - circulatingSupplyCache;
             }
         }
     }
@@ -283,7 +311,11 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
         /// cast bytes32 to address
         address _to = _sendParam.to.bytes32ToAddress();
         /// @dev user can cross-chain transfer to self
-        if (msg.sender != _to) { revert ITempleGold.NonTransferrable(msg.sender, _to); }
+        // if (msg.sender != _to) { revert ITempleGold.NonTransferrable(msg.sender, _to); }
+        /// @dev whitelisted address like spice auctions can burn by setting `_to` to address(0)
+        // only burn TGLD on source chain
+        if (_to == address(0) && _sendParam.dstEid != _mintChainLzEid) { revert CommonEventsAndErrors.InvalidParam(); }
+        if (_to != address(0) && msg.sender != _to) { revert ITempleGold.NonTransferrable(msg.sender, _to); }
 
         // @dev Applies the token transfers regarding this send() operation.
         // - amountSentLD is the amount in local decimals that was ACTUALLY sent/debited from the sender.
@@ -306,6 +338,12 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
         emit OFTSent(msgReceipt.guid, _sendParam.dstEid, msg.sender, amountSentLD, amountReceivedLD);
     }
 
+    function burn(uint256 amount) external onlyArbitrum {
+        if (!authorized[msg.sender]) { revert CommonEventsAndErrors.InvalidAccess(); }
+        _burn(msg.sender, amount);
+        _updateCirculatingSupply(msg.sender, amount);
+    }
+
     /**
      * @dev Internal function to handle the receive on the LayerZero endpoint.
      * @param _origin The origin information.
@@ -324,20 +362,39 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
         address /*_executor*/, // @dev unused in the default implementation.
         bytes calldata /*_extraData*/ // @dev unused in the default implementation.
     ) internal virtual override {
-        // @dev The src sending chain doesnt know the address length on this chain (potentially non-evm)
-        // Thus everything is bytes32() encoded in flight.
-        address toAddress = _message.sendTo().bytes32ToAddress();
-        // @dev Credit the amountLD to the recipient and return the ACTUAL amount the recipient received in local decimals
-        uint256 amountReceivedLD = _credit(toAddress, _toLD(_message.amountSD()), _origin.srcEid);
-
         /// @dev Disallow further execution on destination by ignoring composed message
         if (_message.isComposed()) { revert CannotCompose(); }
 
-        emit OFTReceived(_guid, _origin.srcEid, toAddress, amountReceivedLD);
+        if (_message.sendTo().bytes32ToAddress() == address(0)) {
+            /// @dev no need to burn, that happened in source chain
+            // already checked destination Eid for burn case in `send`
+            // update circulating supply
+            // _origin.sender is spice auction
+            _updateCirculatingSupply(_origin.sender.bytes32ToAddress(), _message.amountSD());
+        } else {
+            // @dev The src sending chain doesnt know the address length on this chain (potentially non-evm)
+            // Thus everything is bytes32() encoded in flight.
+            address toAddress = _message.sendTo().bytes32ToAddress();
+            // @dev Credit the amountLD to the recipient and return the ACTUAL amount the recipient received in local decimals
+            uint256 amountReceivedLD = _credit(toAddress, _toLD(_message.amountSD()), _origin.srcEid);
+
+            emit OFTReceived(_guid, _origin.srcEid, toAddress, amountReceivedLD);
+        }
+    }
+
+    function _updateCirculatingSupply(address sender, uint256 amount) private {
+        uint256 _totalBurnedCache = _totalBurnedFromSpiceAuctions = _totalBurnedFromSpiceAuctions + amount;
+        uint256 _circulatingSuppplyCache = _circulatingSupply = _circulatingSupply - amount;
+        emit CirculatingSupplyUpdated(sender, amount, _circulatingSuppplyCache, _totalBurnedCache);
     }
 
     modifier onlyArbitrum() {
         if (block.chainid != _mintChainId) { revert WrongChain(); }
+        _;
+    }
+
+    modifier onlyNotifier() {
+        if (msg.sender != notifier) { revert CommonEventsAndErrors.InvalidAccess(); }
         _;
     }
  }
