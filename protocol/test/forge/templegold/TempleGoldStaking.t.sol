@@ -169,6 +169,72 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         staking.unpause();
     }
 
+    function test_revert_withdraw_when_paused() public {
+        vm.startPrank(alice);
+        deal(address(templeToken), alice, 1 ether, true);
+        _approve(address(templeToken), address(staking), type(uint).max);
+        staking.stake(1 ether);
+        _setVestingFactor();
+
+        vm.startPrank(executor);
+        vm.expectEmit(address(staking));
+        emit Paused(executor);
+        staking.pause();
+
+        vm.expectRevert(abi.encodeWithSelector(Pausable.EnforcedPause.selector));
+        staking.withdraw(1);
+
+        staking.unpause();
+        vm.startPrank(alice);
+        staking.withdraw(1);
+    }
+
+    function test_revert_distribute_when_paused() public {
+        _setVestingFactor();
+        vm.startPrank(alice);
+        deal(address(templeToken), alice, 1 ether, true);
+        _approve(address(templeToken), address(staking), type(uint).max);
+        staking.stake(1 ether);
+
+        vm.startPrank(executor);
+        vm.expectEmit(address(staking));
+        emit Paused(executor);
+        staking.pause();
+
+        skip(3 days);
+        vm.expectRevert(abi.encodeWithSelector(Pausable.EnforcedPause.selector));
+        staking.distributeRewards();
+ 
+        vm.expectRevert(abi.encodeWithSelector(Pausable.EnforcedPause.selector));
+        staking.distributeGold();
+
+        staking.unpause();
+        staking.distributeGold();
+        staking.distributeRewards();
+    }
+
+    function test_revert_get_reward_when_paused() public {
+        _setVestingFactor();
+        vm.startPrank(alice);
+        deal(address(templeToken), alice, 1 ether, true);
+        _approve(address(templeToken), address(staking), type(uint).max);
+        staking.stake(1 ether);
+
+        vm.startPrank(executor);
+        vm.expectEmit(address(staking));
+        emit Paused(executor);
+        staking.pause();
+
+        skip(3 days);
+        vm.startPrank(alice);
+        vm.expectRevert(abi.encodeWithSelector(Pausable.EnforcedPause.selector));
+        staking.getReward(alice, 1);
+
+        vm.startPrank(executor);
+        staking.unpause();
+        staking.getReward(alice, 1);
+    }
+
     function test_stake_when_paused() public  {
         vm.startPrank(executor);
         vm.expectEmit(address(staking));

@@ -183,7 +183,7 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
      * @notice Distributed TGLD rewards minted to this contract to stakers
      * @dev This starts another epoch of rewards distribution. Calculates new `rewardRate` from any left over rewards up until now
      */
-    function distributeRewards() external updateReward(address(0), 0) {
+    function distributeRewards() external whenNotPaused updateReward(address(0), 0) {
         if (distributionStarter != address(0) && msg.sender != distributionStarter) 
             { revert CommonEventsAndErrors.InvalidAccess(); }
         if (totalSupply == 0) { revert NoStaker(); }
@@ -279,7 +279,7 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
      * @notice Withdraw staked tokens
      * @param index Index of stake
      */
-    function withdraw(uint256 index) external override {
+    function withdraw(uint256 index) external override whenNotPaused {
         StakeInfo storage _stakeInfo = _stakeInfos[msg.sender][index];
         _withdrawFor(_stakeInfo, msg.sender, msg.sender, index, _stakeInfo.amount, true, msg.sender);
     }
@@ -391,14 +391,14 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     function getReward(
         address staker,
         uint256 index
-    ) external override updateReward(staker, index) {
+    ) external override whenNotPaused updateReward(staker, index) {
         _getReward(staker, staker, index);
     }
 
     /**  
      * @notice Mint and distribute Temple Gold rewards 
      */
-    function distributeGold() external {
+    function distributeGold() external whenNotPaused {
         _distributeGold();
     }
 
