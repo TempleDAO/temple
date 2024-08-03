@@ -38,6 +38,13 @@ interface IDaiGoldAuction is IAuctionBase {
     function nextAuctionGoldAmount() external view returns (uint256);
 
     /**
+     * @notice Recover auction tokens for epoch with zero bids
+     * @param epochId Epoch Id
+     * @param to Recipient
+     */
+    function recoverTempleGoldForZeroBidAuction(uint256 epochId, address to) external;
+
+    /**
      * @notice Get auction configuration
      * @return Auction configuration
      */

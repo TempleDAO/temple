@@ -300,6 +300,26 @@ contract DaiGoldAuction is IDaiGoldAuction, AuctionBase, TempleElevatedAccess {
     }
 
     /**
+     * @notice Recover auction tokens for epoch with zero bids
+     * @param epochId Epoch Id
+     * @param to Recipient
+     */
+    function recoverTempleGoldForZeroBidAuction(uint256 epochId, address to) external override onlyElevatedAccess {
+        if (to == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
+        // has to be valid epoch
+        if (epochId > _currentEpochId) { revert InvalidEpoch(); }
+        // epoch has to be ended
+        EpochInfo storage epochInfo = epochs[epochId];
+        if (!epochInfo.hasEnded()) { revert AuctionActive(); }
+        // bid token amount for epoch has to be 0
+        if (epochInfo.totalBidTokenAmount > 0) { revert InvalidOperation(); }
+
+        uint256 amount = epochInfo.totalAuctionTokenAmount;
+        emit CommonEventsAndErrors.TokenRecovered(to, address(templeGold), amount);
+        templeGold.safeTransfer(to, amount);
+    }
+
+    /**
      * @notice Mint and distribute TGOLD 
      */
     function distributeGold() external {

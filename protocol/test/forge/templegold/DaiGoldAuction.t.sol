@@ -609,4 +609,44 @@ contract DaiGoldAuctionTest is DaiGoldAuctionTestBase {
         assertGt(nextAuctionGoldAmount, 0);
         assertEq(nextAuctionGoldAmount, daiGoldAuction.nextAuctionGoldAmount());
     }
+
+    function test_recoverTempleGoldForZeroBidAuction_daiGold() public {
+        vm.startPrank(executor);
+        ITempleGold.VestingFactor memory _factor;
+        _factor.numerator = 35;
+        _factor.denominator = 1 weeks;
+        templeGold.setVestingFactor(_factor);
+        _startAuction();
+        uint256 balance = templeGold.balanceOf(address(daiGoldAuction));
+        IAuctionBase.EpochInfo memory info = daiGoldAuction.getEpochInfo(1);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
+        daiGoldAuction.recoverTempleGoldForZeroBidAuction(1, address(0));
+
+        vm.expectRevert(abi.encodeWithSelector(IAuctionBase.InvalidEpoch.selector));
+        daiGoldAuction.recoverTempleGoldForZeroBidAuction(2, executor);
+
+        vm.warp(info.endTime-1);
+        vm.expectRevert(abi.encodeWithSelector(IAuctionBase.AuctionActive.selector));
+        daiGoldAuction.recoverTempleGoldForZeroBidAuction(1, executor);
+
+        // bid to invalidate
+        vm.startPrank(alice);
+        uint256 amount = 1 ether;
+        deal(address(bidToken), alice, amount, false);
+        bidToken.approve(address(daiGoldAuction), type(uint).max);
+        daiGoldAuction.bid(amount);
+
+        vm.warp(info.endTime);
+        vm.startPrank(executor);
+        vm.expectRevert(abi.encodeWithSelector(IAuctionBase.InvalidOperation.selector));
+        daiGoldAuction.recoverTempleGoldForZeroBidAuction(1, executor);
+
+        // start anotheer auction and recover
+        _startAuction();
+        info = daiGoldAuction.getEpochInfo(2);
+        vm.warp(info.endTime);
+        vm.expectEmit(address(daiGoldAuction));
+        emit TokenRecovered(executor, address(templeGold), info.totalAuctionTokenAmount);
+        daiGoldAuction.recoverTempleGoldForZeroBidAuction(2, executor);
+    }
 }
