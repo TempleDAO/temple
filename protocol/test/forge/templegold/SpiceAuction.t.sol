@@ -364,8 +364,17 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         address _templeGold = address(templeGold);
         uint256 recoverAmount = 1 ether;
         // _currentEpochId = 0
-        vm.expectRevert(abi.encodeWithSelector(ISpiceAuction.InvalidConfigOperation.selector));
-        spice.recoverToken(_spiceToken, alice, recoverAmount);
+        // recover bid token, wrong amount
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
+        spice.recoverToken(_spiceToken, alice, recoverAmount+1);
+        
+        uint256 daoDaiBalanceBefore = IERC20(daiToken).balanceOf(daoExecutor);
+        deal(address(daiToken), address(spice), recoverAmount, true);
+        vm.expectEmit(address(spice));
+        emit TokenRecovered(daoExecutor, daiToken, recoverAmount);
+        vm.startPrank(daoExecutor);
+        spice.recoverToken(_spiceToken, address(daoExecutor), recoverAmount);
+        assertEq(recoverAmount+daoDaiBalanceBefore, IERC20(daiToken).balanceOf(daoExecutor));
 
         _startAuction(true, true);
         IAuctionBase.EpochInfo memory info = spice.getEpochInfo(1);

@@ -314,9 +314,10 @@ contract SpiceAuction is ISpiceAuction, AuctionBase {
         uint256 epochId = _currentEpochId;
         EpochInfo storage info = epochs[epochId];
         /// @dev use `removeAuctionConfig` for case where `auctionStart` is called and cooldown is still pending
-        if (info.startTime == 0) { revert InvalidConfigOperation(); }
-        if (!info.hasEnded() && auctionConfigs[epochId+1].duration == 0) { revert RemoveAuctionConfig(); }
-        
+        if (epochId != 0) {
+            if (info.startTime == 0) { revert InvalidConfigOperation(); }
+            if (!info.hasEnded() && auctionConfigs[epochId+1].duration == 0) { revert RemoveAuctionConfig(); }
+        }
 
         /// @dev Now `auctionStart` is not triggered but `auctionConfig` is set (where _currentEpochId is not updated yet)
     
