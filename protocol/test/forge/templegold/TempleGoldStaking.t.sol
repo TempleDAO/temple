@@ -179,12 +179,13 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
     }
 
     function test_revert_withdraw_when_paused() public {
+        _setVestingFactor();
+        _setVestingPeriod(16 weeks);
         vm.startPrank(alice);
         deal(address(templeToken), alice, 1 ether, true);
         _approve(address(templeToken), address(staking), type(uint).max);
         staking.stake(1 ether);
-        _setVestingFactor();
-
+        
         vm.startPrank(executor);
         vm.expectEmit(address(staking));
         emit Paused(executor);
@@ -245,6 +246,8 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
     }
 
     function test_stake_when_paused() public  {
+        _setVestingFactor();
+        _setVestingPeriod(16 weeks);
         vm.startPrank(executor);
         vm.expectEmit(address(staking));
         emit Paused(executor);
@@ -841,6 +844,8 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
     }
 
     function test_check_votes_tgld_staking() public {
+        _setVestingFactor();
+        _setVestingPeriod(16 weeks);
         vm.startPrank(alice);
         staking.delegate(alice);
 
@@ -889,6 +894,8 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
     }
 
     function test_delegate_tgld_staking() public {
+        _setVestingFactor();
+        _setVestingPeriod(16 weeks);
         vm.startPrank(alice);
         assertEq(staking.delegates(alice), address(0));
         vm.expectEmit(address(staking));
@@ -2007,6 +2014,8 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
     }
 
     function test_stake_checkpoints() public {
+        _setVestingFactor();
+        _setVestingPeriod(16 weeks);
         vm.startPrank(alice);
         staking.delegate(mike);
         uint256 stakeAmount = 1 ether;

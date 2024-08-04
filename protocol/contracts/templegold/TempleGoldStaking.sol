@@ -471,23 +471,6 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     function _earned(
         StakeInfo memory _stakeInfo,
         address _account,
-        uint256 _index,
-        uint256 _leftoverRewardPerToken
-    ) internal view returns (uint256) {
-        uint256 vestingRate = _getVestingRate(_stakeInfo);
-        if (vestingRate == 0) {
-            return 0;
-        }
-        return
-            (_stakeInfo.amount * vestingRate * 
-            (_rewardPerToken() - userRewardPerTokenPaid[_account][_index] + _leftoverRewardPerToken))
-            / 1e36 +
-            claimableRewards[_account][_index];
-    }
-
-    function _earned(
-        StakeInfo memory _stakeInfo,
-        address _account,
         uint256 _index
     ) internal view returns (uint256) {
         uint256 vestingRate = _getVestingRate(_stakeInfo);
@@ -531,13 +514,14 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         if (block.timestamp > _stakeInfo.fullyVestedAt) {
             vestingRate = 1e18;
         } else {
-            vestingRate = (block.timestamp - _stakeInfo.stakeTime) * 1e18 / vestingPeriod;
+            vestingRate = (block.timestamp - _stakeInfo.stakeTime) * 1e18 / (_stakeInfo.fullyVestedAt - _stakeInfo.stakeTime);
         }
     }
 
     function _applyStake(address _for, uint256 _amount, uint256 _index) internal updateReward(_for, _index) {
         totalSupply += _amount;
         _balances[_for] += _amount;
+        if (vestingPeriod == 0) { revert CommonEventsAndErrors.InvalidParam(); }
         _stakeInfos[_for][_index] = StakeInfo(uint64(block.timestamp), uint64(block.timestamp + vestingPeriod), _amount);
         emit Staked(_for, _amount);
     }
