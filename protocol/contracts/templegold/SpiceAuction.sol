@@ -161,6 +161,9 @@ contract SpiceAuction is ISpiceAuction, AuctionBase {
         if (!configSetButAuctionStartNotCalled) {
             /// @dev unlikely because this is a DAO execution, but avoid deleting old ended auctions
             if (info.hasEnded()) { revert AuctionEnded(); }
+            SpiceAuctionConfig storage config = auctionConfigs[id];
+            (,address auctionToken) = _getBidAndAuctionTokens(config);
+            _totalAuctionTokenAllocation[auctionToken] -= info.totalAuctionTokenAmount;
             /// auction was started but cooldown has not passed yet
             delete auctionConfigs[id];
             delete epochs[id];
