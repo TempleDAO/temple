@@ -24,6 +24,8 @@ contract TempleGoldTestBase is TempleGoldCommon {
     event StakingSet(address staking);
     event EscrowSet(address escrow);
     event TeamGnosisSet(address gnosis);
+    event CirculatingSupplyUpdated(address indexed sender, uint256 amount, uint256 circulatingSuppply, uint256 totalBurned);
+    event NotifierSet(address indexed notifier);
 
     DaiGoldAuction public daiGoldAuction;
     TempleGoldStaking public staking;

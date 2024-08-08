@@ -8,6 +8,9 @@ interface ISpiceAuction is IAuctionBase {
     event DaoExecutorSet(address daoExecutor);
     event AuctionConfigRemoved(uint256 configId, uint256 epochId);
     event ClaimShouldNotifyTotalRedeemedSet(bool notify);
+    event LzReceiveExecutorGasSet(uint32 gas);
+    event RedeemedTempleGoldBurned(uint256 epochId, uint256 amount);
+    event RedemptionNotifierSet(address indexed notifier);
 
     error InvalidConfigOperation();
     error NotEnoughAuctionTokens();
@@ -127,4 +130,22 @@ interface ISpiceAuction is IAuctionBase {
      * @param epochId Id of epoch
      */
     function claim(uint256 epochId) external payable;
+
+    /**
+     * @notice Set lzReceive gas used by executor
+     * @param _gas Redemption notifier
+     */
+    function setLzReceiveExecutorGas(uint32 _gas) external;
+
+    /// @notice Get executor gas used for calling `lzReceive`
+    function lzReceiveExecutorGas() external view returns (uint32);
+
+    function redeemedEpochs(uint256 epochId) external view returns (bool);
+
+    /**
+     * @notice Burn redeemd TGLD and notify circulating supply
+     * @param epochId Epoch Id
+     * @param useContractEth If to use contract eth for layerzero send
+     */
+    function burnAndNotify(uint256 epochId, bool useContractEth) external payable;
 }

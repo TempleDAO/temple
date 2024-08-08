@@ -70,9 +70,6 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
     // If mint every 1 second instead of 1 week, vestingFactor == 35 / 604,800. It is possible but unlikely vesting factor is changed in future
     VestingFactor private vestingFactor;
 
-    event CirculatingSupplyUpdated(address indexed sender, uint256 amount, uint256 circulatingSuppply, uint256 totalBurned);
-    event NotifierSet(address indexed notifier);
-
     constructor(
         InitArgs memory _initArgs
     ) OFT(_initArgs.name, _initArgs.symbol, _initArgs.layerZeroEndpoint, _initArgs.executor) Ownable(_initArgs.executor){

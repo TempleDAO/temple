@@ -48,6 +48,7 @@ contract SpiceAuction is ISpiceAuction, AuctionBase {
     uint32 public constant MAXIMUM_AUCTION_DURATION = 30 days;
     uint32 private immutable _arbitrumOneLzEid;
     uint32 private immutable _mintChainId;
+    uint32 public override lzReceiveExecutorGas;
 
     /// @notice If true, let first claim for an auction notify total TGLD redeemed
     bool public override claimShouldNotifyTotalRedeemed;
@@ -65,10 +66,7 @@ contract SpiceAuction is ISpiceAuction, AuctionBase {
     /// @notice Keep track of total allocation per auction token
     mapping(address token => uint256 amount) private _totalAuctionTokenAllocation;
     /// @notice Keep track of redeemed and notified epochs
-    mapping(uint256 epochId => bool redeemed) public redeemedEpochs;
-
-    event RedeemedTempleGoldBurned(uint256 epochId, uint256 amount);
-    event RedemptionNotifierSet(address indexed notifier);
+    mapping(uint256 epochId => bool redeemed) public override redeemedEpochs;
 
     constructor(
         address _templeGold,
@@ -87,6 +85,17 @@ contract SpiceAuction is ISpiceAuction, AuctionBase {
         _mintChainId = mintChainId_;
         name = _name;
         _deployTimestamp = block.timestamp;
+        lzReceiveExecutorGas = 85_412;
+    }
+
+    /**
+     * @notice Set lzReceive gas used by executor
+     * @param _gas Redemption notifier
+     */
+    function setLzReceiveExecutorGas(uint32 _gas) external override onlyDAOExecutor {
+        if (_gas == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
+        lzReceiveExecutorGas = _gas;
+        emit LzReceiveExecutorGasSet(_gas);
     }
 
     /**
@@ -367,8 +376,12 @@ contract SpiceAuction is ISpiceAuction, AuctionBase {
         if (!success) { revert WithdrawFailed(_amount); }
     }
 
-    // manual burn and notify
-    function burnAndNotify(uint256 epochId, bool useContractEth) external payable onlyNotifier {
+    /**
+     * @notice Burn redeemd TGLD and notify circulating supply
+     * @param epochId Epoch Id
+     * @param useContractEth If to use contract eth for layerzero send
+     */
+    function burnAndNotify(uint256 epochId, bool useContractEth) external payable override onlyNotifier {
         if (redeemedEpochs[epochId]) { revert CommonEventsAndErrors.InvalidParam(); }
         EpochInfo storage epochInfo = epochs[epochId];
         if (epochInfo.startTime == 0) { revert InvalidEpoch(); }
@@ -435,7 +448,7 @@ contract SpiceAuction is ISpiceAuction, AuctionBase {
             ITempleGold(templeGold).burn(amount);
             return;
         }
-        bytes memory options = OptionsBuilder.newOptions().addExecutorLzReceiveOption(200000, 0);
+        bytes memory options = OptionsBuilder.newOptions().addExecutorLzReceiveOption(lzReceiveExecutorGas, 0);
         SendParam memory sendParam = SendParam(
             _arbitrumOneLzEid, //<ARB_EID>,
             bytes32(uint256(uint160(address(0)))), // bytes32(address(0)) to burn
