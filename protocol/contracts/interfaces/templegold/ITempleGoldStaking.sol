@@ -8,21 +8,22 @@ interface ITempleGoldStaking {
     event GoldDistributionNotified(uint256 amount, uint256 timestamp);
     event Staked(address indexed staker, uint256 amount);
     event MigratorSet(address migrator);
-    event Withdrawn(address indexed staker, address to, uint256 stakeIndex, uint256 amount);
+    event Withdrawn(address indexed staker, address to, uint256 amount);
     event RewardDistributionCoolDownSet(uint160 cooldown);
     event DistributionStarterSet(address indexed starter);
-    event VestingPeriodSet(uint32 _period);
     event DelegateChanged(address indexed delegator, address indexed fromDelegate, address indexed toDelegate);
     event DelegateVotesChanged(address indexed delegate, uint256 previousBalance, uint256 newBalance);
-    event RewardPaid(address indexed staker, address toAddress, uint256 index, uint256 reward);
+    event RewardPaid(address indexed staker, address toAddress, uint256 reward);
     event RewardDurationSet(uint256 duration);
-    event UnvestedRewardsAdded(address indexed staker, uint256 unvestedRewards, uint256 nextRewardAmount);
+    event UnstakeCooldownSet(uint32 period);
 
     error CannotDistribute();
     error CannotDelegate();
     error InvalidOperation();
     error InvalidBlockNumber();
     error NoStaker();
+    error UnstakeCooldown(uint256 timestampnow, uint256 unstakeTime);
+    error CannotStake();
 
     struct Reward {
         uint40 periodFinish;
@@ -37,12 +38,6 @@ interface ITempleGoldStaking {
         uint256 votes;
     }
 
-    struct StakeInfo {
-        uint64 stakeTime;
-        uint64 fullyVestedAt; // store, if vesting period changes
-        uint256 amount;
-    }
-
     /// @notice The staking token. Temple
     function stakingToken() external view returns (IERC20);
     /// @notice Reward token. Temple Gold
@@ -51,8 +46,6 @@ interface ITempleGoldStaking {
     /// @notice Distribution starter
     function distributionStarter() external view returns (address);
 
-    /// @notice Rewards stored per token
-    function rewardPerTokenStored() external view returns (uint256);
     /// @notice Total supply of staking token
     function totalSupply() external view returns (uint256);
 
@@ -72,9 +65,9 @@ interface ITempleGoldStaking {
     function migrator() external view returns (address);
 
     /// @notice Stakers claimable rewards at stake index
-    function claimableRewards(address account, uint256 stakeIndex) external view returns (uint256);
+    function claimableRewards(address account) external view returns (uint256);
     /// @notice Staker reward per token paid at stake index
-    function userRewardPerTokenPaid(address account, uint256 stakeIndex) external view returns (uint256);
+    function userRewardPerTokenPaid(address account) external view returns (uint256);
 
     /**
      * @notice Set migrator
@@ -97,9 +90,10 @@ interface ITempleGoldStaking {
 
     /**
      * @notice Withdraw staked tokens
-     * @param stakeIndex Stake index
+     * @param amount Amount to withdraw
+     * @param claimRewards Whether to claim rewards
      */
-    function withdraw(uint256 stakeIndex) external;
+    function withdraw(uint256 amount, bool claimRewards) external;
 
     /// @notice Owner can pause user swaps from occuring
     function pause() external;
@@ -115,18 +109,11 @@ interface ITempleGoldStaking {
     function balanceOf(address account) external view returns (uint256);
 
     /**
-     * @notice Get staker vesting period
-     * @return Vesting period
-     */
-    function vestingPeriod() external view returns (uint32);
-
-    /**
      * @notice Get earned rewards of account
      * @param _account Account
-     * @param _index Index
      * @return Earned rewards of account
      */
-    function earned(address _account, uint256 _index) external view returns (uint256);
+    function earned(address _account) external view returns (uint256);
 
     /**
      * @notice Get Temple Gold reward per token of Temple 
@@ -151,9 +138,8 @@ interface ITempleGoldStaking {
     /**  
      * @notice Get rewards
      * @param staker Staking account
-     * @param index Index
      */
-    function getReward(address staker, uint256 index) external;
+    function getReward(address staker) external;
 
     /**  
      * @notice Notify rewards distribution. Called by TempleGold contract after successful mint
@@ -179,15 +165,21 @@ interface ITempleGoldStaking {
     function getRewardData() external view returns (Reward memory);
 
     /**
-      * @notice For migrations to a new staking contract if TGLD changes
+      * @notice For migrations to a new staking contract
       *         1. Withdraw `staker`s tokens to the new staking contract (the migrator)
       *         2. Any existing rewards are claimed and sent directly to the `staker`
       * @dev Called only from the new staking contract (the migrator).
       *      `setMigrator(new_staking_contract)` needs to be called first
       * @param staker The staker who is being migrated to a new staking contract.
-      * @param index Index of staker
+      * @return Staker balance
       */
-    function migrateWithdraw(address staker, uint256 index) external returns (uint256);
+    function migrateWithdraw(address staker) external returns (uint256);
+
+    /**
+     * @notice Distributed TGLD rewards minted to this contract to stakers
+     * @dev This starts another epoch of rewards distribution. Calculates new `rewardRate` from any left over rewards up until now
+     */
+    function distributeRewards() external;
 
     /**
      * @notice Get account checkpoint data 
@@ -203,12 +195,6 @@ interface ITempleGoldStaking {
      * @return Number of checkpoints
      */
     function numCheckpoints(address account) external view returns (uint256);
-
-    /**
-     * @notice Set vesting period for stakers
-     * @param _period Vesting period
-     */
-    function setVestingPeriod(uint32 _period) external;
 
     /**
      * @notice Set reward duration
@@ -237,26 +223,14 @@ interface ITempleGoldStaking {
      * @return The number of votes the account had as of the given block
      */
     function getPriorVotes(address account, uint256 blockNumber) external view returns (uint256);
+    /// @notice Time staker can unstake
+    function unstakeTimes(address account) external view returns (uint256);
+    /// @notice unstake cooldown
+    function unstakeCooldown() external view returns (uint32);
 
     /**
-     * @notice Get last stake index for account
-     * @param account Account
-     * @return Last stake index
+     * @notice Set unstake cooldown
+     * @param _period Cooldown period
      */
-    function getAccountLastStakeIndex(address account) external view returns (uint256);
-
-    /**
-     * @notice Get account stake info
-     * @param account Account
-     * @return Stake info
-     */
-    function getAccountStakeInfo(address account, uint256 index) external view returns (StakeInfo memory);
-
-    /**
-     * @notice Get account staked balance
-     * @param account Account
-     * @param stakeIndex Staked index
-     * @return Staked balance of account
-     */
-    function stakeBalanceOf(address account, uint256 stakeIndex) external view returns (uint256);
+    function setUnstakeCooldown(uint32 _period) external;
 }
