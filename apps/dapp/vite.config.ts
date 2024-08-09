@@ -13,10 +13,12 @@ const VENDOR_CHUNKS = new Set([
   'polished',
 ]);
 
+const VISUALIZATION_CHUNKS = new Set(['d3-shape', 'react-vis']);
+
 const renderChunks = (deps: Record<string, string>) => {
   const chunks: Record<string, string[]> = {};
   Object.keys(deps).forEach((dep) => {
-    if (VENDOR_CHUNKS.has(dep)) {
+    if (VENDOR_CHUNKS.has(dep) || VISUALIZATION_CHUNKS.has(dep)) {
       return;
     }
     chunks[dep] = [dep];
@@ -61,6 +63,7 @@ export default defineConfig({
       output: {
         manualChunks: {
           vendor: Array.from(VENDOR_CHUNKS),
+          visualizations: Array.from(VISUALIZATION_CHUNKS),
           ...renderChunks(dependencies),
         },
       },
