@@ -10,7 +10,6 @@ const TLC_BATCH_LIQUIDATE_CONFIG: TlcBatchLiquidateConfig = {
   MIN_ETH_BALANCE_WARNING: parseEther('0.1'),
   GAS_LIMIT: 1_000_000n,
   SUBGRAPH_URL: 'https://thegraph.com/hosted-service/subgraph/medariox/tlc-liquidations-sepolia',
-  SUBGRAPH_ALCHEMY_URL: '',
   SUBGRAPH_RETRY_LIMIT: 3,
 };
 

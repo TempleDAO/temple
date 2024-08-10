@@ -1,4 +1,5 @@
-import { Logger, TaskContext, TaskException } from '@mountainpath9/overlord';
+import { ERROR_INTERFACES } from '@/utils/ethers-exceptions';
+import { Logger, TaskContext, TaskException, logTaskException, mapParsedEthersException } from '@mountainpath9/overlord';
 import { WebhookClient, MessageCreateOptions } from 'discord.js';
 
 interface DiscordChannel {
@@ -32,12 +33,18 @@ export function decodeWebhookUrl(url: string): { id: string; token: string } {
   return { id: m[1], token: m[2] };
 }
 
-export async function discordNotifyTaskException(ctx: TaskContext, te: TaskException) {
+export async function discordNotifyTaskException(ctx: TaskContext, te0: TaskException) {
+  // Map custom errors for our contracts to be human readable
+  const te = { ...te0, exception: mapParsedEthersException(te0.exception, ERROR_INTERFACES) };
+
+  // Log failure to overlord
+  await logTaskException(ctx, te);
+
   const content = [
     `**TEMPLE Task Failed**`,
     `task label: ${te.label}`,
     `task id: ${te.taskId}`,
-    `task phase: ${te.phase}`,
+    `task exception: ${te.exception}`,
   ];
 
   if (te.exception instanceof Error) {
