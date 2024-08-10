@@ -19,7 +19,6 @@ import { subgraphRequest } from '@/subgraph/subgraph-request';
 import { GetUserResponse } from '@/subgraph/types';
 import { matchAndDecodeEvent } from '@/common/filters';
 import { backOff } from 'exponential-backoff';
-import { AxiosResponse } from 'axios';
 
 export interface TlcBatchLiquidateConfig {
   CHAIN: Chain;
