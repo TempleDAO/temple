@@ -10,7 +10,6 @@ interface ISpiceAuction is IAuctionBase {
     event ClaimShouldNotifyTotalRedeemedSet(bool notify);
     event LzReceiveExecutorGasSet(uint32 gas);
     event RedeemedTempleGoldBurned(uint256 epochId, uint256 amount);
-    event RedemptionNotifierSet(address indexed notifier);
 
     error InvalidConfigOperation();
     error NotEnoughAuctionTokens();
@@ -32,17 +31,8 @@ interface ISpiceAuction is IAuctionBase {
         address starter;
         /// @notice Is Temple Gold auction token
         bool isTempleGoldAuctionToken;
-        /// @notice Mode of auction activation
-        ActivationMode activationMode;
         /// @notice Auction proceeds recipient
         address recipient;
-    }
-
-    enum ActivationMode {
-        /// @notice Auction is enabled and awaiting start if amount of auction token is sent to contract
-        AUCTION_TOKEN_BALANCE,
-        /// @notice Enable auction when user bids for other volatile token
-        USER_FIRST_BID
     }
 
     /// @notice Spice auction contracts are set up for 2 tokens. Either can be bid or sell token for a given auction
@@ -115,14 +105,6 @@ interface ISpiceAuction is IAuctionBase {
      * @param epochId Epoch to check for
      */
     function checkAuctionRedeemedAmount(uint256 epochId) external view returns (uint256);
-
-    function redemptionNotifier() external view returns (address);
-
-    /**
-     * @notice Set redemption notifier
-     * @param _notifier Redemption notifier
-     */
-    function setRedemptionNotifier(address _notifier) external;
 
     /**
      * @notice Claim share of Temple Gold for epoch

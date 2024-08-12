@@ -17,10 +17,9 @@ interface ISpiceAuctionFactory {
     /**
      * @notice Create Spice Auction contract
      * @param spiceToken Spice token
-     * @param redemptionNotifier Address to notify about total TGLD redeemed
      * @param name Name of spice auction contract
      */
-    function createAuction(address spiceToken, address redemptionNotifier, string memory name) external returns (address);
+    function createAuction(address spiceToken, string memory name) external returns (address);
 
     /**
      * @notice Given a pair of tokens, retrieve spice auction contract

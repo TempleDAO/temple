@@ -645,8 +645,13 @@ contract DaiGoldAuctionTest is DaiGoldAuctionTestBase {
         _startAuction();
         info = daiGoldAuction.getEpochInfo(2);
         vm.warp(info.endTime);
+        assertEq(daiGoldAuction.epochsWithoutBidsRecovered(2), false);
         vm.expectEmit(address(daiGoldAuction));
         emit TokenRecovered(executor, address(templeGold), info.totalAuctionTokenAmount);
+        daiGoldAuction.recoverTempleGoldForZeroBidAuction(2, executor);
+        assertEq(daiGoldAuction.epochsWithoutBidsRecovered(2), true);
+
+        vm.expectRevert(abi.encodeWithSelector(IAuctionBase.AlreadyRecovered.selector));
         daiGoldAuction.recoverTempleGoldForZeroBidAuction(2, executor);
     }
 }

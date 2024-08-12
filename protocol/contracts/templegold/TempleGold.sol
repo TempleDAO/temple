@@ -138,6 +138,7 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
         vestingFactor = _factor;
         /// @dev initialize
         if (lastMintTimestamp == 0) { lastMintTimestamp = uint32(block.timestamp); }
+        else { mint(); }
         emit VestingFactorSet(_factor.numerator, _factor.denominator);
     }
 
@@ -152,7 +153,7 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
      * Enforces minimum mint amount and uses vesting factor to calculate mint token amount.
      * Minting is only possible on source chain Arbitrum
      */
-    function mint() external override onlyArbitrum {
+    function mint() public override onlyArbitrum {
         VestingFactor memory vestingFactorCache = vestingFactor;
         DistributionParams storage distributionParamsCache = distributionParams;
         if (vestingFactorCache.numerator == 0) { revert ITempleGold.MissingParameter(); }
@@ -206,7 +207,6 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
      * @return Circulating supply
      */
     function circulatingSupply() public override view returns (uint256) {
-        // return _totalDistributed;
         return _circulatingSupply;
     }
 
@@ -308,7 +308,6 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
         /// cast bytes32 to address
         address _to = _sendParam.to.bytes32ToAddress();
         /// @dev user can cross-chain transfer to self
-        // if (msg.sender != _to) { revert ITempleGold.NonTransferrable(msg.sender, _to); }
         /// @dev whitelisted address like spice auctions can burn by setting `_to` to address(0)
         // only burn TGLD on source chain
         if (_to == address(0) && _sendParam.dstEid != _mintChainLzEid) { revert CommonEventsAndErrors.InvalidParam(); }
