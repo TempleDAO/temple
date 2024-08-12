@@ -11,7 +11,6 @@ import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { MessagingReceipt, MessagingFee } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/OAppSender.sol";
 import { OFTMsgCodec } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/libs/OFTMsgCodec.sol";
 import { SendParam, OFTReceipt } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/interfaces/IOFT.sol";
-import { console } from "forge-std/console.sol";
 
 /**
  * @title Temple Gold 
@@ -113,7 +112,6 @@ import { console } from "forge-std/console.sol";
         /// cast bytes32 to address
         address _to = _sendParam.to.bytes32ToAddress();
         /// @dev user can cross-chain transfer to self
-        // if (msg.sender != _to) { revert ITempleGold.NonTransferrable(msg.sender, _to); }
         /// @dev whitelisted address like spice auctions can burn by setting `_to` to address(0)
         // only burn TGLD on source chain
         // if (_to == address(0) && _sendParam.dstEid != _mintChainLzEid) { revert CommonEventsAndErrors.InvalidParam(); }
@@ -128,11 +126,6 @@ import { console } from "forge-std/console.sol";
             _sendParam.minAmountLD,
             _sendParam.dstEid
         );
-        console.logString("after debit");
-        console.logUint(amountSentLD);
-        console.logUint(amountReceivedLD);
-        console.logString("in send. msg.value");
-        console.logUint(msg.value);
 
         // @dev Builds the options and OFT message to quote in the endpoint.
         (bytes memory message, bytes memory options) = _buildMsgAndOptions(_sendParam, amountReceivedLD);
@@ -165,17 +158,11 @@ import { console } from "forge-std/console.sol";
     ) internal virtual override {
         /// @dev Disallow further execution on destination by ignoring composed message
         if (_message.isComposed()) { revert CannotCompose(); }
-        console.logString("Lz receive");
-        console.logAddress(_message.sendTo().bytes32ToAddress());
-        console.logUint(_toLD(_message.amountSD()));
         if (_message.sendTo().bytes32ToAddress() == address(0)) {
             /// @dev no need to burn, that happened in source chain
             // already checked destination Eid for burn case in `send`
             // update circulating supply
             // _origin.sender is spice auction
-            // _debit(); // todo
-            console.logUint(_toLD(_message.amountSD()));
-            console.logUint(_message.amountSD());
             _updateCirculatingSupply(_origin.sender.bytes32ToAddress(), _toLD(_message.amountSD()));
         } else {
             // @dev The src sending chain doesnt know the address length on this chain (potentially non-evm)
@@ -193,83 +180,4 @@ import { console } from "forge-std/console.sol";
         uint256 _circulatingSuppplyCache = _circulatingSupply = _circulatingSupply - amount;
         emit CirculatingSupplyUpdated(sender, amount, _circulatingSuppplyCache, _totalBurnedCache);
     }
-
-    /// @notice Overriden OFT functions
-
-    // /**
-    //  * @dev Executes the send operation.
-    //  * @param _sendParam The parameters for the send operation.
-    //  * @param _fee The calculated fee for the send() operation.
-    //  *      - nativeFee: The native fee.
-    //  *      - lzTokenFee: The lzToken fee.
-    //  * @param _refundAddress The address to receive any excess funds.
-    //  * @return msgReceipt The receipt for the send operation.
-    //  * @return oftReceipt The OFT receipt information.
-    //  *
-    //  * @dev MessagingReceipt: LayerZero msg receipt
-    //  *  - guid: The unique identifier for the sent message.
-    //  *  - nonce: The nonce of the sent message.
-    //  *  - fee: The LayerZero fee incurred for the message.
-    //  */
-    // function send(
-    //     SendParam calldata _sendParam,
-    //     MessagingFee calldata _fee,
-    //     address _refundAddress
-    // ) external payable virtual override returns (MessagingReceipt memory msgReceipt, OFTReceipt memory oftReceipt) {
-    //     if (_sendParam.composeMsg.length > 0) { revert CannotCompose(); }
-    //     /// cast bytes32 to address
-    //     address _to = _sendParam.to.bytes32ToAddress();
-    //     /// @dev user can cross-chain transfer to either whitelisted or self
-    //     if (msg.sender != _to) { revert ITempleGold.NonTransferrable(msg.sender, _to); }
-
-    //     // @dev Applies the token transfers regarding this send() operation.
-    //     // - amountSentLD is the amount in local decimals that was ACTUALLY sent/debited from the sender.
-    //     // - amountReceivedLD is the amount in local decimals that will be received/credited to the recipient on the remote OFT instance.
-    //     (uint256 amountSentLD, uint256 amountReceivedLD) = _debit(
-    //         msg.sender,
-    //         _sendParam.amountLD,
-    //         _sendParam.minAmountLD,
-    //         _sendParam.dstEid
-    //     );
-
-    //     // @dev Builds the options and OFT message to quote in the endpoint.
-    //     (bytes memory message, bytes memory options) = _buildMsgAndOptions(_sendParam, amountReceivedLD);
-
-    //     // @dev Sends the message to the LayerZero endpoint and returns the LayerZero msg receipt.
-    //     msgReceipt = _lzSend(_sendParam.dstEid, message, options, _fee, _refundAddress);
-    //     // @dev Formulate the OFT receipt.
-    //     oftReceipt = OFTReceipt(amountSentLD, amountReceivedLD);
-
-    //     emit OFTSent(msgReceipt.guid, _sendParam.dstEid, msg.sender, amountSentLD, amountReceivedLD);
-    // }
-
-    // /**
-    //  * @dev Internal function to handle the receive on the LayerZero endpoint.
-    //  * @param _origin The origin information.
-    //  *  - srcEid: The source chain endpoint ID.
-    //  *  - sender: The sender address from the src chain.
-    //  *  - nonce: The nonce of the LayerZero message.
-    //  * @param _guid The unique identifier for the received LayerZero message.
-    //  * @param _message The encoded message.
-    //  * @dev _executor The address of the executor.
-    //  * @dev _extraData Additional data.
-    //  */
-    // function _lzReceive(
-    //     Origin calldata _origin,
-    //     bytes32 _guid,
-    //     bytes calldata _message,
-    //     address /*_executor*/, // @dev unused in the default implementation.
-    //     bytes calldata /*_extraData*/ // @dev unused in the default implementation.
-    // ) internal virtual override {
-    //     // @dev The src sending chain doesnt know the address length on this chain (potentially non-evm)
-    //     // Thus everything is bytes32() encoded in flight.
-    //     address toAddress = _message.sendTo().bytes32ToAddress();
-    //     // @dev Credit the amountLD to the recipient and return the ACTUAL amount the recipient received in local decimals
-    //     uint256 amountReceivedLD = _credit(toAddress, _toLD(_message.amountSD()), _origin.srcEid);
-
-    //     /// @dev Disallow further execution on destination by ignoring composed message
-    //     if (_message.isComposed()) { revert CannotCompose(); }
-
-    //     emit OFTReceived(_guid, _origin.srcEid, toAddress, amountReceivedLD);
-    // }
  }
