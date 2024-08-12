@@ -1113,7 +1113,7 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
             skip(8 weeks);
             emit log_string("goldbalancebefore");
             emit log_uint(templeGold.balanceOf(address(staking)));
-            uint256 aliceBalanceBefore = templeGold.balanceOf(alice);
+            aliceBalanceBefore = templeGold.balanceOf(alice);
             bobBalanceBefore = templeGold.balanceOf(bob);
             earned = staking.earned(alice);
             staking.getReward(alice);

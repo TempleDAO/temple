@@ -45,6 +45,8 @@ contract DaiGoldAuction is IDaiGoldAuction, AuctionBase, TempleElevatedAccess {
 
     AuctionConfig private auctionConfig;
 
+    // mapping(uint256 epochId => bool recovered) public override epochsWithoutBidsRecovered;
+
     constructor(
         address _templeGold,
         address _bidToken,
@@ -257,7 +259,7 @@ contract DaiGoldAuction is IDaiGoldAuction, AuctionBase, TempleElevatedAccess {
     /**
      * @notice Recover auction tokens for last but not started auction. 
      * Any other token which is not Temple Gold can be recovered too at any time
-     * @dev For recovering Temple Gold, Epoch data is deleted and leftover amount is addedd to nextAuctionGoldAmount.
+     * @dev For recovering Temple Gold, Epoch data is deleted and leftover amount is added to nextAuctionGoldAmount.
      * so admin should recover total auction amount for epoch if that's the requirement
      * @param token Token to recover
      * @param to Recipient
@@ -285,7 +287,7 @@ contract DaiGoldAuction is IDaiGoldAuction, AuctionBase, TempleElevatedAccess {
         if (info.hasEnded()) { revert AuctionEnded(); }
         uint256 _totalAuctionTokenAmount = info.totalAuctionTokenAmount;
         if (amount > _totalAuctionTokenAmount) { revert CommonEventsAndErrors.InvalidAmount(token, amount); }
-        /// @dev Epoch data is deleted and leftover amount is addedd to nextAuctionGoldAmount.
+        /// @dev Epoch data is deleted and leftover amount is added to nextAuctionGoldAmount.
         /// so admin should recover total auction amount for epoch if that's the requirement
         delete epochs[epochId];
         /// @dev `nextAuctionGoldAmount` is set to 0 in `startAuction`.
@@ -308,12 +310,14 @@ contract DaiGoldAuction is IDaiGoldAuction, AuctionBase, TempleElevatedAccess {
         if (to == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
         // has to be valid epoch
         if (epochId > _currentEpochId) { revert InvalidEpoch(); }
+        if (epochsWithoutBidsRecovered[epochId]) { revert AlreadyRecovered(); }
         // epoch has to be ended
         EpochInfo storage epochInfo = epochs[epochId];
         if (!epochInfo.hasEnded()) { revert AuctionActive(); }
         // bid token amount for epoch has to be 0
         if (epochInfo.totalBidTokenAmount > 0) { revert InvalidOperation(); }
 
+        epochsWithoutBidsRecovered[epochId] = true;
         uint256 amount = epochInfo.totalAuctionTokenAmount;
         emit CommonEventsAndErrors.TokenRecovered(to, address(templeGold), amount);
         templeGold.safeTransfer(to, amount);

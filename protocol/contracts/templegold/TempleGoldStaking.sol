@@ -16,7 +16,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  * @title Temple Gold Staking
  * @notice Temple Gold Staking contract. Stakers deposit Temple and claim rewards in Temple Gold. 
  * Temple Gold is distributed to staking contract for stakers on mint.
- * Duration for distributing staking rewards is set with `setRewardDuration`. A vesting period is used
+ * Duration for distributing staking rewards is set with `setRewardDuration`. An unstake period is used
  * to encourage longer staking times.
  */
 contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable {

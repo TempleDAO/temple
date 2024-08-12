@@ -40,17 +40,15 @@ contract SpiceAuctionFactory is ISpiceAuctionFactory, TempleElevatedAccess {
     /**
      * @notice Create Spice Auction contract
      * @param spiceToken Spice token
-     * @param redemptionNotifier Address to notify about total TGLD redeemed
      * @param name Name of spice auction contract
      */
     function createAuction(
         address spiceToken,
-        address redemptionNotifier,
         string memory name
     ) external override onlyElevatedAccess returns (address) {
-        if (spiceToken == address(0) || redemptionNotifier == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
+        if (spiceToken == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
         if (spiceToken == templeGold) { revert CommonEventsAndErrors.InvalidParam(); }
-        SpiceAuction spiceAuction = new SpiceAuction(templeGold, spiceToken, daoExecutor, redemptionNotifier, _arbitrumLzEid, _mintChainId, name);
+        SpiceAuction spiceAuction = new SpiceAuction(templeGold, spiceToken, daoExecutor, _arbitrumLzEid, _mintChainId, name);
         bytes32 pairId = _getPairHash(spiceToken);
         /// @dev not checking pair address exists to allow overwrite in case of a migration
         deployedAuctions[pairId] = address(spiceAuction);

@@ -16,6 +16,7 @@ interface IAuctionBase {
     error InvalidOperation();
     error AuctionEnded();
     error AlreadyClaimed();
+    error AlreadyRecovered();
 
     struct EpochInfo {
         /// @notice Start time for epoch
@@ -62,4 +63,7 @@ interface IAuctionBase {
      * @param amount Amount to auction tokens
      */
     function recoverToken(address token, address to, uint256 amount) external;
+
+    /// @notice Check if TGLD for epoch without bid is recovered
+    function epochsWithoutBidsRecovered(uint256 epochId) external view returns (bool);
 }

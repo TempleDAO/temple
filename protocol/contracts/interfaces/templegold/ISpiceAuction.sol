@@ -8,6 +8,8 @@ interface ISpiceAuction is IAuctionBase {
     event DaoExecutorSet(address daoExecutor);
     event AuctionConfigRemoved(uint256 configId, uint256 epochId);
     event ClaimShouldNotifyTotalRedeemedSet(bool notify);
+    event LzReceiveExecutorGasSet(uint32 gas);
+    event RedeemedTempleGoldBurned(uint256 epochId, uint256 amount);
 
     error InvalidConfigOperation();
     error NotEnoughAuctionTokens();
@@ -29,17 +31,8 @@ interface ISpiceAuction is IAuctionBase {
         address starter;
         /// @notice Is Temple Gold auction token
         bool isTempleGoldAuctionToken;
-        /// @notice Mode of auction activation
-        ActivationMode activationMode;
         /// @notice Auction proceeds recipient
         address recipient;
-    }
-
-    enum ActivationMode {
-        /// @notice Auction is enabled and awaiting start if amount of auction token is sent to contract
-        AUCTION_TOKEN_BALANCE,
-        /// @notice Enable auction when user bids for other volatile token
-        USER_FIRST_BID
     }
 
     /// @notice Spice auction contracts are set up for 2 tokens. Either can be bid or sell token for a given auction
@@ -113,18 +106,28 @@ interface ISpiceAuction is IAuctionBase {
      */
     function checkAuctionRedeemedAmount(uint256 epochId) external view returns (uint256);
 
-    function redemptionNotifier() external view returns (address);
-
-    /**
-     * @notice Set redemption notifier
-     * @param _notifier Redemption notifier
-     */
-    function setRedemptionNotifier(address _notifier) external;
-
     /**
      * @notice Claim share of Temple Gold for epoch
      * Can only claim for past epochs, not current auction epoch.
      * @param epochId Id of epoch
      */
     function claim(uint256 epochId) external payable;
+
+    /**
+     * @notice Set lzReceive gas used by executor
+     * @param _gas Redemption notifier
+     */
+    function setLzReceiveExecutorGas(uint32 _gas) external;
+
+    /// @notice Get executor gas used for calling `lzReceive`
+    function lzReceiveExecutorGas() external view returns (uint32);
+
+    function redeemedEpochs(uint256 epochId) external view returns (bool);
+
+    /**
+     * @notice Burn redeemd TGLD and notify circulating supply
+     * @param epochId Epoch Id
+     * @param useContractEth If to use contract eth for layerzero send
+     */
+    function burnAndNotify(uint256 epochId, bool useContractEth) external payable;
 }
