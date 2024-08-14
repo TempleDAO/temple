@@ -20,8 +20,8 @@ interface ITempleGold is IOFT, IOAppCore, IOAppOptionsType3, IERC20 {
     }
 
     struct VestingFactor {
-        uint128 numerator;
-        uint128 denominator;
+        uint128 value;
+        uint128 weekMultiplier;
     }
 
     /// @notice To avoid stack too deep in constructor
@@ -140,5 +140,17 @@ interface ITempleGold is IOFT, IOAppCore, IOAppOptionsType3, IERC20 {
      */
     function getMintAmount() external view returns (uint256);
 
+    /**
+     * @notice Burn and update circulating supply on source chain
+     * @dev Caller must be authorized. eg. spice auction
+     * @param amount Amount to burn
+     */
     function burn(uint256 amount) external;
+
+    /**
+     * @notice Get total distributed Temple Gold. This value has no spice auction redemptions subtracted
+     * @dev When this function is called on source chain (arbitrum), you get the actual total distributed
+     * @return Total distributed
+     */
+    function totalDistributed() external view returns (uint256);
 }

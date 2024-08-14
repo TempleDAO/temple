@@ -17,7 +17,7 @@ import { IOAppOptionsType3 } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/
 
 contract TempleGoldAdminTestBase is TempleGoldCommon {
     event ContractAuthorizationSet(address indexed _contract, bool _whitelisted);
-    event VestingFactorSet(uint128 numerator, uint128 denominator);
+    event VestingFactorSet(uint128 value, uint128 weekMultiplier);
     event DistributionParamsSet(uint256 staking, uint256 escrow, uint256 gnosis);
     event StakingSet(address staking);
     event EscrowSet(address escrow);
@@ -74,8 +74,8 @@ contract TempleGoldAdminTestBase is TempleGoldCommon {
         params.staking = 30 ether;
         templeGold.setDistributionParams(params);
         ITempleGold.VestingFactor memory factor;
-        factor.numerator = 2 ether;
-        factor.denominator = 1000 ether;
+        factor.value = 2 ether;
+        factor.weekMultiplier = 1000 ether;
         templeGold.setVestingFactor(factor);
         templeGold.setStaking(address(staking));
         templeGold.setTeamGnosis(address(teamGnosis));
@@ -212,11 +212,11 @@ contract TempleGoldAdminTest is TempleGoldAdminTestBase {
         vm.startPrank(executor);
         ITempleGold.VestingFactor memory _factor = _getVestingFactor();
         vm.expectEmit(address(templeGold));
-        emit VestingFactorSet(_factor.numerator, _factor.denominator);
+        emit VestingFactorSet(_factor.value, _factor.weekMultiplier);
         templeGoldAdmin.setVestingFactor(_factor);
         ITempleGold.VestingFactor memory _vf = templeGold.getVestingFactor();
-        assertEq(_vf.numerator, 10 ether);
-        assertEq(_vf.denominator, 100 ether);
+        assertEq(_vf.value, 10 ether);
+        assertEq(_vf.weekMultiplier, 100 ether);
     }
 
     function test_setDistributionParameters_tgldAdmin() public {

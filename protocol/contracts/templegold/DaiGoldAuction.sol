@@ -163,7 +163,6 @@ contract DaiGoldAuction is IDaiGoldAuction, AuctionBase, TempleElevatedAccess {
         uint256 bidTokenAmount = depositors[msg.sender][epochId];
         if (bidTokenAmount == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
         claimed[msg.sender][epochId] = true;
-        // delete depositors[msg.sender][epochId];
         uint256 claimAmount = bidTokenAmount.mulDivRound(info.totalAuctionTokenAmount, info.totalBidTokenAmount, false);
         claimedAmount[msg.sender][epochId] = claimAmount;
         templeGold.safeTransfer(msg.sender, claimAmount);

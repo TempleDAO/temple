@@ -112,8 +112,8 @@ contract SpiceAuctionTestBase is TempleGoldCommon {
 
     function _setVestingFactor() internal {
         ITempleGold.VestingFactor memory _factor = _getVestingFactor();
-        _factor.numerator = 35;
-        _factor.denominator = 1 weeks;
+        _factor.value = 35;
+        _factor.weekMultiplier = 1 weeks;
         vm.startPrank(executor);
         templeGold.setVestingFactor(_factor);
     }
@@ -906,6 +906,7 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         
         // test burn and notify errors
         vm.startPrank(mike);
+        // already redeemed epoch
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
         spice.burnAndNotify(2, false);
         vm.expectRevert(abi.encodeWithSelector(IAuctionBase.InvalidEpoch.selector));
@@ -914,6 +915,7 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         vm.expectEmit(address(spice));
         emit RedeemedTempleGoldBurned(currentEpoch, totalTgldBid);
         spice.burnAndNotify(currentEpoch, false);
+        assertEq(spice.redeemedEpochs(currentEpoch), true);
 
         // error for 0 bid using burnAndNotify
         {  

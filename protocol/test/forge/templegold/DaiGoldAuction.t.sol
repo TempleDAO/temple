@@ -80,8 +80,8 @@ contract DaiGoldAuctionTestBase is TempleGoldCommon {
         params.staking = 30 ether;
         templeGold.setDistributionParams(params);
         ITempleGold.VestingFactor memory factor;
-        factor.numerator = 2 ether;
-        factor.denominator = 1000 ether;
+        factor.value = 2 ether;
+        factor.weekMultiplier = 1000 ether;
         templeGold.setVestingFactor(factor);
         templeGold.setStaking(address(goldStaking));
         templeGold.setTeamGnosis(address(teamGnosis));
@@ -185,8 +185,8 @@ contract DaiGoldAuctionTestSetters is DaiGoldAuctionTestBase {
 
         // auction started
         ITempleGold.VestingFactor memory _factor;
-        _factor.numerator = 35;
-        _factor.denominator = 1 weeks;
+        _factor.value = 35;
+        _factor.weekMultiplier = 1 weeks;
         templeGold.setVestingFactor(_factor);
         skip(3 days);
         templeGold.mint();
@@ -586,7 +586,8 @@ contract DaiGoldAuctionTest is DaiGoldAuctionTestBase {
         daiGoldAuction.recoverToken(address(templeGold), alice, recoverAmount);
         assertEq(templeGold.balanceOf(alice), aliceBalance+recoverAmount);
         // plus the half of total auction amount that was not recovered
-        assertEq(nextAuctionGoldAmount + recoverAmount, daiGoldAuction.nextAuctionGoldAmount());
+        // delta of 1 because of rounding
+        assertApproxEqAbs(nextAuctionGoldAmount + recoverAmount, daiGoldAuction.nextAuctionGoldAmount(), 1);
         // epoch deleted, cannot recover
         vm.expectRevert(abi.encodeWithSelector(IAuctionBase.InvalidOperation.selector));
         daiGoldAuction.recoverToken(address(templeGold), alice, mintAmount);
@@ -613,11 +614,10 @@ contract DaiGoldAuctionTest is DaiGoldAuctionTestBase {
     function test_recoverTempleGoldForZeroBidAuction_daiGold() public {
         vm.startPrank(executor);
         ITempleGold.VestingFactor memory _factor;
-        _factor.numerator = 35;
-        _factor.denominator = 1 weeks;
+        _factor.value = 35;
+        _factor.weekMultiplier = 1 weeks;
         templeGold.setVestingFactor(_factor);
         _startAuction();
-        uint256 balance = templeGold.balanceOf(address(daiGoldAuction));
         IAuctionBase.EpochInfo memory info = daiGoldAuction.getEpochInfo(1);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
         daiGoldAuction.recoverTempleGoldForZeroBidAuction(1, address(0));

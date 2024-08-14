@@ -17,7 +17,7 @@ abstract contract AuctionBase is IAuctionBase {
     mapping(address depositor => mapping(uint256 epochId => uint256 amount)) public override depositors;
     /// @notice Keep track of claimed accounts per epoch
     mapping(address depositor => mapping(uint256 epochId => bool claimed)) public override claimed;
-    // @notice claimed amounts
+    /// @notice claimed amounts
     mapping(address depositor => mapping(uint256 epochId => uint256 claimedAmount)) public override claimedAmount;
     /// @notice For epochs without bids that are recovered
     mapping(uint256 epochId => bool recovered) public override epochsWithoutBidsRecovered;

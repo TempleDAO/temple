@@ -18,7 +18,7 @@ contract TempleGoldTestBase is TempleGoldCommon {
 
     event Transfer(address indexed from, address indexed to, uint256 value);
     event ContractAuthorizationSet(address indexed _contract, bool _whitelisted);
-    event VestingFactorSet(uint128 numerator, uint128 denominator);
+    event VestingFactorSet(uint128 value, uint128 weekMultiplier);
     event DistributionParamsSet(uint256 staking, uint256 escrow, uint256 gnosis);
     event Distributed(uint256 stakingAmount, uint256 escrowAmount, uint256 gnosisAmount, uint256 timestamp);
     event StakingSet(address staking);
@@ -80,8 +80,8 @@ contract TempleGoldTestBase is TempleGoldCommon {
         params.staking = 30 ether;
         templeGold.setDistributionParams(params);
         ITempleGold.VestingFactor memory factor;
-        factor.numerator = 2 ether;
-        factor.denominator = 1000 ether;
+        factor.value = 2 ether;
+        factor.weekMultiplier = 1000 ether;
         templeGold.setVestingFactor(factor);
         _setVestingFactorTime = uint32(block.timestamp);
         templeGold.setStaking(address(staking));
@@ -161,13 +161,13 @@ contract TempleGoldViewTest is TempleGoldTestBase {
         vm.startPrank(executor);
         templeGold.setVestingFactor(_factor);
         _factor = templeGold.getVestingFactor();
-        assertEq(_factor.numerator, 10 ether);
-        assertEq(_factor.denominator, 100 ether);
-        _factor.numerator = 3 ether;
+        assertEq(_factor.value, 10 ether);
+        assertEq(_factor.weekMultiplier, 100 ether);
+        _factor.value = 3 ether;
         templeGold.setVestingFactor(_factor);
         _factor = templeGold.getVestingFactor();
-        assertEq(_factor.numerator, 3 ether);
-        assertEq(_factor.denominator, 100 ether);
+        assertEq(_factor.value, 3 ether);
+        assertEq(_factor.weekMultiplier, 100 ether);
     }
 
     function test_getDistributionParameters_tgld() public {
@@ -203,17 +203,17 @@ contract TempleGoldViewTest is TempleGoldTestBase {
     function test_getMintAmount_tgld() public {
         // first mint
         ITempleGold.VestingFactor memory _factor = templeGold.getVestingFactor();
-        _factor.numerator = 1 seconds;
-        _factor.denominator = 100 days;
+        _factor.value = 1 seconds;
+        _factor.weekMultiplier = 100 days;
         vm.startPrank(executor);
         templeGold.setVestingFactor(_factor);
         uint256 _maxSupply = templeGold.MAX_CIRCULATING_SUPPLY();
-        uint256 _amount = _maxSupply * (block.timestamp - _setVestingFactorTime) * _factor.numerator / _factor.denominator;
+        uint256 _amount = _maxSupply * (block.timestamp - _setVestingFactorTime) * _factor.value / _factor.weekMultiplier;
         assertEq(_amount, templeGold.getMintAmount());
         templeGold.mint();
         uint256 _lastMint = block.timestamp;
         skip(10 days);
-        _amount = (block.timestamp - _lastMint) * _maxSupply * _factor.numerator / _factor.denominator;
+        _amount = (block.timestamp - _lastMint) * _maxSupply * _factor.value / _factor.weekMultiplier;
         assertEq(_amount, templeGold.getMintAmount());
         assertEq(templeGold.circulatingSupply(), templeGold.totalSupply());
         uint256 _circulating =  _amount + templeGold.totalSupply();
@@ -288,25 +288,25 @@ contract TempleGoldTest is TempleGoldTestBase {
     function test_setVestingFactor_tgld() public {
         vm.startPrank(executor);
         ITempleGold.VestingFactor memory _factor = _getVestingFactor();
-        uint128 temp = _factor.numerator;
-        _factor.numerator = 0;
+        uint128 temp = _factor.value;
+        _factor.value = 0;
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
         templeGold.setVestingFactor(_factor);
-        _factor.numerator = temp;
-        temp = _factor.denominator;
-        _factor.denominator = 0;
+        _factor.value = temp;
+        temp = _factor.weekMultiplier;
+        _factor.weekMultiplier = 0;
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
         templeGold.setVestingFactor(_factor);
-        _factor.denominator = _factor.numerator - 1;
+        _factor.weekMultiplier = _factor.value - 1;
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
         templeGold.setVestingFactor(_factor);
-        _factor.denominator = temp;
+        _factor.weekMultiplier = temp;
         vm.expectEmit(address(templeGold));
-        emit VestingFactorSet(_factor.numerator, _factor.denominator);
+        emit VestingFactorSet(_factor.value, _factor.weekMultiplier);
         templeGold.setVestingFactor(_factor);
         ITempleGold.VestingFactor memory _vf = templeGold.getVestingFactor();
-        assertEq(_vf.numerator, 10 ether);
-        assertEq(_vf.denominator, 100 ether);
+        assertEq(_vf.value, 10 ether);
+        assertEq(_vf.weekMultiplier, 100 ether);
         assertEq(templeGold.lastMintTimestamp(), uint32(block.timestamp));
     }
 
@@ -358,8 +358,8 @@ contract TempleGoldTest is TempleGoldTestBase {
         vm.expectRevert(abi.encodeWithSelector(ITempleGold.MissingParameter.selector));
         _templeGold.mint();
         ITempleGold.VestingFactor memory _factor;
-        _factor.numerator = 35;
-        _factor.denominator = 1 weeks;
+        _factor.value = 35;
+        _factor.weekMultiplier = 1 weeks;
         _templeGold.setVestingFactor(_factor);
         _templeGold.setDistributionParams(_getDistributionParameters());
         skip(1 days);
@@ -371,8 +371,8 @@ contract TempleGoldTest is TempleGoldTestBase {
     function test_mint_with_vesting_factor_one_year() public {
         vm.selectFork(arbitrumOneForkId);
         ITempleGold.VestingFactor memory _factor = _getVestingFactor();
-        _factor.numerator = 35;
-        _factor.denominator = 1 weeks;
+        _factor.value = 35;
+        _factor.weekMultiplier = 1 weeks;
         vm.startPrank(executor);
         templeGold.setVestingFactor(_factor);
         uint256 mintAmount = templeGold.getMintAmount();
@@ -380,7 +380,7 @@ contract TempleGoldTest is TempleGoldTestBase {
 
         // week 1
         uint256 timeDifference = 1 weeks;
-        uint256 emission = (timeDifference * MAXIMUM_CIRCULATING_SUPPLY / _factor.numerator) / _factor.denominator;
+        uint256 emission = (timeDifference * MAXIMUM_CIRCULATING_SUPPLY / _factor.value) / _factor.weekMultiplier;
         skip(1 weeks);
         mintAmount = templeGold.getMintAmount();
         templeGold.mint();
@@ -391,7 +391,7 @@ contract TempleGoldTest is TempleGoldTestBase {
         uint256 totalEmissions = emission;
         // week 2
         skip(1 weeks);
-        emission = (timeDifference * (MAXIMUM_CIRCULATING_SUPPLY - totalEmissions) / _factor.numerator) / _factor.denominator;
+        emission = (timeDifference * (MAXIMUM_CIRCULATING_SUPPLY - totalEmissions) / _factor.value) / _factor.weekMultiplier;
         mintAmount = templeGold.getMintAmount();
         totalEmissions += emission;
         templeGold.mint();
@@ -403,7 +403,7 @@ contract TempleGoldTest is TempleGoldTestBase {
 
         // week 3
         skip(1 weeks);
-        emission = (timeDifference * (MAXIMUM_CIRCULATING_SUPPLY - totalEmissions) / _factor.numerator) / _factor.denominator;
+        emission = (timeDifference * (MAXIMUM_CIRCULATING_SUPPLY - totalEmissions) / _factor.value) / _factor.weekMultiplier;
         mintAmount = templeGold.getMintAmount();
         totalEmissions += emission;
         templeGold.mint();
@@ -415,7 +415,7 @@ contract TempleGoldTest is TempleGoldTestBase {
 
         // week 4
         skip(1 weeks);
-        emission = (timeDifference * (MAXIMUM_CIRCULATING_SUPPLY - totalEmissions) / _factor.numerator) / _factor.denominator;
+        emission = (timeDifference * (MAXIMUM_CIRCULATING_SUPPLY - totalEmissions) / _factor.value) / _factor.weekMultiplier;
         mintAmount = templeGold.getMintAmount();
         totalEmissions += emission;
         templeGold.mint();
@@ -427,7 +427,7 @@ contract TempleGoldTest is TempleGoldTestBase {
 
         // // week 5
         skip(1 weeks);
-        emission = (timeDifference * (MAXIMUM_CIRCULATING_SUPPLY - totalEmissions) / _factor.numerator) / _factor.denominator;
+        emission = (timeDifference * (MAXIMUM_CIRCULATING_SUPPLY - totalEmissions) / _factor.value) / _factor.weekMultiplier;
         mintAmount = templeGold.getMintAmount();
         totalEmissions += emission;
         templeGold.mint();
@@ -439,7 +439,7 @@ contract TempleGoldTest is TempleGoldTestBase {
 
         // week 6
         skip(1 weeks);
-        emission = (timeDifference * (MAXIMUM_CIRCULATING_SUPPLY - totalEmissions) / _factor.numerator) / _factor.denominator;
+        emission = (timeDifference * (MAXIMUM_CIRCULATING_SUPPLY - totalEmissions) / _factor.value) / _factor.weekMultiplier;
         mintAmount = templeGold.getMintAmount();
         totalEmissions += emission;
         templeGold.mint();
@@ -450,16 +450,18 @@ contract TempleGoldTest is TempleGoldTestBase {
         assertEq(totalEmissions, templeGold.circulatingSupply());
     }
 
-    function test_mint_tgld() public {
+    function test_mint_tgld_share() public {
         vm.selectFork(arbitrumOneForkId);
         uint256 totalSupply = templeGold.totalSupply();
         _setVestingFactor(templeGold);
+
         skip(1 days);
         uint256 mintAmount = templeGold.getMintAmount();
         ITempleGold.DistributionParams memory _params = templeGold.getDistributionParameters();
         uint256 stakingAmount = _params.staking * mintAmount / 100 ether;
-        uint256 gnosisAmount = _params.gnosis * mintAmount / 100 ether;
         uint256 escrowAmount = _params.escrow * mintAmount / 100 ether;
+        uint256 gnosisAmount = mintAmount - (stakingAmount + escrowAmount);
+        
         vm.expectEmit(address(templeGold));
         emit Transfer(address(0), address(staking), stakingAmount);
         vm.expectEmit(address(templeGold));
@@ -477,14 +479,22 @@ contract TempleGoldTest is TempleGoldTestBase {
         totalSupply = templeGold.totalSupply();
         skip(99 days);
         mintAmount = templeGold.getMintAmount();
-        stakingAmount += _params.staking * mintAmount / 100 ether;
-        gnosisAmount += _params.gnosis * mintAmount / 100 ether;
-        escrowAmount += _params.escrow * mintAmount / 100 ether;
+        stakingAmount = _params.staking * mintAmount / 100 ether;
+        escrowAmount = _params.escrow * mintAmount / 100 ether;
+        gnosisAmount = mintAmount - (stakingAmount + escrowAmount);
+
+        uint256 stakingBalanceBefore = templeGold.balanceOf(address(staking));
+        uint256 escrowBalanceBefore = templeGold.balanceOf(address(daiGoldAuction));
+        uint256 gnosisBalanceBefore = templeGold.balanceOf(teamGnosis);
         templeGold.mint();
+        emit log_string("balances 2");
+        emit log_uint(templeGold.balanceOf(address(staking)));
+        emit log_uint(templeGold.balanceOf(address(daiGoldAuction)));
+        emit log_uint(mintAmount);
         assertEq(templeGold.totalSupply(), totalSupply+mintAmount);
-        assertEq(templeGold.balanceOf(address(staking)), stakingAmount);
-        assertEq(templeGold.balanceOf(address(daiGoldAuction)), escrowAmount);
-        assertEq(templeGold.balanceOf(teamGnosis), gnosisAmount);
+        assertEq(templeGold.balanceOf(address(staking)), stakingBalanceBefore+stakingAmount);
+        assertEq(templeGold.balanceOf(address(daiGoldAuction)), escrowBalanceBefore+escrowAmount);
+        assertEq(templeGold.balanceOf(teamGnosis), gnosisBalanceBefore+gnosisAmount);
         // test mint amount = 0
         assertEq(templeGold.getMintAmount(), 0);
         // test coverage mintAmount = 0
@@ -495,8 +505,8 @@ contract TempleGoldTest is TempleGoldTestBase {
         vm.selectFork(arbitrumOneForkId);
         vm.startPrank(executor);
         ITempleGold.VestingFactor memory _factor;
-        _factor.numerator = 35;
-        _factor.denominator = 1 weeks;
+        _factor.value = 35;
+        _factor.weekMultiplier = 1 weeks;
         templeGold.setVestingFactor(_factor);
         ITempleGold.DistributionParams memory _params = _getDistributionParameters();
         _params.gnosis = 0;
@@ -562,8 +572,8 @@ contract TempleGoldTest is TempleGoldTestBase {
         // set vesting factor high to speed max supply mint time
         vm.startPrank(executor);
         ITempleGold.VestingFactor memory _factor = _getVestingFactor();
-        _factor.numerator = 35;
-        _factor.denominator = 35;
+        _factor.value = 35;
+        _factor.weekMultiplier = 35;
         templeGold.setVestingFactor(_factor);
         skip(5 days);
         uint256 _expectedAmount = templeGold.getMintAmount();

@@ -60,8 +60,8 @@ contract TempleGoldCommon is TempleTest {
     }
 
     function _getVestingFactor() internal pure returns (ITempleGold.VestingFactor memory _factor) {
-        _factor.numerator = 10 ether;
-        _factor.denominator = 100 ether;
+        _factor.value = 10 ether;
+        _factor.weekMultiplier = 100 ether;
     }
 
     function _addressToBytes32(address _addr) internal pure returns (bytes32) {
@@ -71,8 +71,8 @@ contract TempleGoldCommon is TempleTest {
     function _setVestingFactor(TempleGold templeGold) internal {
         vm.startPrank(executor);
         ITempleGold.VestingFactor memory factor;
-        factor.numerator = 1 seconds;
-        factor.denominator = 100 days;
+        factor.value = 35;
+        factor.weekMultiplier = 1 weeks;
         templeGold.setVestingFactor(factor);
         vm.stopPrank();
     }

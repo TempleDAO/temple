@@ -44,8 +44,6 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
 
     //// @notice Distribution as a percentage of 100
     uint256 public constant DISTRIBUTION_DIVISOR = 100 ether;
-    /// @notice 1B max supply
-    // uint256 public constant MAX_SUPPLY = 1_000_000_000 ether; // 1B
     /// @notice 1B max circulating supply
     uint256 public constant MAX_CIRCULATING_SUPPLY = 1_000_000_000 ether; // 1B
     /// @notice Minimum Temple Gold minted per call to mint
@@ -133,13 +131,13 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
      * @param _factor Vesting factor
      */
     function setVestingFactor(VestingFactor calldata _factor) external override onlyOwner {
-        if (_factor.numerator == 0 || _factor.denominator == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
-        if (_factor.numerator > _factor.denominator) { revert CommonEventsAndErrors.InvalidParam(); }
+        if (_factor.value == 0 || _factor.weekMultiplier == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
+        if (_factor.value > _factor.weekMultiplier) { revert CommonEventsAndErrors.InvalidParam(); }
         vestingFactor = _factor;
         /// @dev initialize
         if (lastMintTimestamp == 0) { lastMintTimestamp = uint32(block.timestamp); }
         else { mint(); }
-        emit VestingFactorSet(_factor.numerator, _factor.denominator);
+        emit VestingFactorSet(_factor.value, _factor.weekMultiplier);
     }
 
     function setNotifier(address _notifier) external onlyOwner {
@@ -156,7 +154,7 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
     function mint() public override onlyArbitrum {
         VestingFactor memory vestingFactorCache = vestingFactor;
         DistributionParams storage distributionParamsCache = distributionParams;
-        if (vestingFactorCache.numerator == 0) { revert ITempleGold.MissingParameter(); }
+        if (vestingFactorCache.value == 0) { revert ITempleGold.MissingParameter(); }
 
         uint256 mintAmount = _getMintAmount(vestingFactorCache);
         /// @dev no op silently
@@ -202,7 +200,7 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
     }
 
     /**
-     * @notice Get circulating supply on this chain
+     * @notice Get circulating supply on this chain. This value has spice auction redemptions subtracted
      * @dev When this function is called on source chain (arbitrum), you get the real circulating supply across chains
      * @return Circulating supply
      */
@@ -210,7 +208,12 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
         return _circulatingSupply;
     }
 
-    function totalDistributed() public view returns (uint256) {
+    /**
+     * @notice Get total distributed Temple Gold. This value has no spice auction redemptions subtracted
+     * @dev When this function is called on source chain (arbitrum), you get the actual total distributed
+     * @return Total distributed
+     */
+    function totalDistributed() public override view returns (uint256) {
         return _totalDistributed;
     }
 
@@ -264,7 +267,6 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
 
     function _getMintAmount(VestingFactor memory vestingFactorCache) private view returns (uint256 mintAmount) {
         uint32 _lastMintTimestamp = lastMintTimestamp;
-        // uint256 totalSupplyCache = _totalDistributed;
         /// @dev if vesting factor is not set, return 0. `_lastMintTimestamp` is set when vesting factor is set
         if (_lastMintTimestamp == 0) { return 0; }
 
@@ -272,7 +274,7 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
 
         uint256 circulatingSupplyCache = _circulatingSupply;
         mintAmount = (TempleMath.mulDivRound((block.timestamp - _lastMintTimestamp), (MAX_CIRCULATING_SUPPLY - circulatingSupplyCache),
-            vestingFactorCache.numerator, false))/ vestingFactorCache.denominator;
+            vestingFactorCache.value, false))/ vestingFactorCache.weekMultiplier;
         if (circulatingSupplyCache + mintAmount > MAX_CIRCULATING_SUPPLY) {
             unchecked {
                 mintAmount = MAX_CIRCULATING_SUPPLY - circulatingSupplyCache;
@@ -334,6 +336,11 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
         emit OFTSent(msgReceipt.guid, _sendParam.dstEid, msg.sender, amountSentLD, amountReceivedLD);
     }
 
+    /**
+     * @notice Burn and update circulating supply on source chain
+     * @dev Caller must be authorized. eg. spice auction
+     * @param amount Amount to burn
+     */
     function burn(uint256 amount) external onlyArbitrum {
         if (!authorized[msg.sender]) { revert CommonEventsAndErrors.InvalidAccess(); }
         _burn(msg.sender, amount);

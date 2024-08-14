@@ -15,6 +15,7 @@ import { ITempleGold } from "contracts/interfaces/templegold/ITempleGold.sol";
 import { SendParam } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/interfaces/IOFT.sol";
 import { MessagingFee } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/OFTCore.sol";
 import { OptionsBuilder } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/libs/OptionsBuilder.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /** 
  * @title SpiceAuction
@@ -25,7 +26,7 @@ import { OptionsBuilder } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/lib
  * Bid and auction tokens could change per auction. These are set in `AuctionConfig`. 
  * Config is set before the next auction starts using `setAuctionConfig` by DAO execution.
  */
-contract SpiceAuction is ISpiceAuction, AuctionBase {
+contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
     using SafeERC20 for IERC20;
     using TempleMath for uint256;
     using EpochLib for IAuctionBase.EpochInfo;
@@ -260,9 +261,6 @@ contract SpiceAuction is ISpiceAuction, AuctionBase {
 
         // notify total redeemed
         if (bidToken == templeGold && claimShouldNotifyTotalRedeemed && !redeemedEpochs[epochId]) {
-            // ITempleGold(templeGold).burn(bidTokenAmount);
-            /// @dev send TGLD to redemption notifier. Notifier will burn and handle messaging
-            // ITempleGold(templeGold).send
             emit RedeemedTempleGoldBurned(epochId, info.totalBidTokenAmount);
             redeemedEpochs[epochId] = true;
             _burnAndNotify(info.totalBidTokenAmount, true);
@@ -283,7 +281,7 @@ contract SpiceAuction is ISpiceAuction, AuctionBase {
     function checkAuctionRedeemedAmount(uint256 epochId) external override view returns (uint256) {
         EpochInfo storage info = epochs[epochId];
         // silent
-        if (info.endTime > block.timestamp) { return 0; }
+        if (!info.hasEnded()) { return 0; }
         return info.totalBidTokenAmount;
     }
 
@@ -428,7 +426,7 @@ contract SpiceAuction is ISpiceAuction, AuctionBase {
             : (templeGold, spiceToken);
     }
 
-    function _burnAndNotify(uint256 amount, bool useContractEth) private {
+    function _burnAndNotify(uint256 amount, bool useContractEth) private nonReentrant {
         // burn directly and call TempleGold to update circulating supply
         if (block.chainid == _mintChainId) {
             ITempleGold(templeGold).burn(amount);

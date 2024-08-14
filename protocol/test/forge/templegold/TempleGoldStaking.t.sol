@@ -80,8 +80,8 @@ contract TempleGoldStakingTestBase is TempleGoldCommon {
         params.staking = 30 ether;
         templeGold.setDistributionParams(params);
         ITempleGold.VestingFactor memory factor;
-        factor.numerator = 35;
-        factor.denominator = 1 weeks;
+        factor.value = 35;
+        factor.weekMultiplier = 1 weeks;
         templeGold.setVestingFactor(factor);
         templeGold.setStaking(address(staking));
         templeGold.setTeamGnosis(teamGnosis);
@@ -101,8 +101,8 @@ contract TempleGoldStakingTestBase is TempleGoldCommon {
         uint32 _rewardDuration = 1 weeks;
         _setRewardDuration(_rewardDuration);
         ITempleGold.VestingFactor memory _factor = _getVestingFactor();
-        _factor.numerator = 35;
-        _factor.denominator = 1 weeks;
+        _factor.value = 35;
+        _factor.weekMultiplier = 1 weeks;
         vm.startPrank(executor);
         templeGold.setVestingFactor(_factor);
     }
@@ -324,8 +324,8 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
 
         // distribute and test change
         ITempleGold.VestingFactor memory _factor = _getVestingFactor();
-        _factor.numerator = 35;
-        _factor.denominator = 1 weeks;
+        _factor.value = 35;
+        _factor.weekMultiplier = 1 weeks;
         vm.startPrank(executor);
         templeGold.setVestingFactor(_factor);
 
@@ -427,8 +427,8 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
 
     function test_distributeRewards() public {
         ITempleGold.VestingFactor memory _factor = _getVestingFactor();
-        _factor.numerator = 35;
-        _factor.denominator = 1 weeks;
+        _factor.value = 35;
+        _factor.weekMultiplier = 1 weeks;
         vm.startPrank(executor);
         templeGold.setVestingFactor(_factor);
 
@@ -512,8 +512,8 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         {
             // mint so there's nothing for next transaction
             _factor = _getVestingFactor();
-            _factor.numerator = 99 ether;
-            _factor.denominator = 100 ether;
+            _factor.value = 99 ether;
+            _factor.weekMultiplier = 100 ether;
             templeGold.setVestingFactor(_factor);
 
             // zero rewards minted, so no reward notification from TGLD. this is also for TempleGold max supply case.
