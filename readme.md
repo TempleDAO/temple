@@ -53,7 +53,7 @@ yarn local-deploy
 The protocol test suite can be run without deploying to a local-node by running
 
 ```
-# Run tests, no deployment neccessary
+# Run tests, no deployment necessary
 yarn test
 ```
 
