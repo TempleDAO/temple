@@ -73,9 +73,9 @@ contract TempleGoldStakingTestBase is TempleGoldCommon {
     }
 
     function _configureTempleGold() private {
-        templeGold.setEscrow(address(daiGoldAuction));
+        templeGold.setDaiGoldAuction(address(daiGoldAuction));
         ITempleGold.DistributionParams memory params;
-        params.escrow = 60 ether;
+        params.daiGoldAuction = 60 ether;
         params.gnosis = 10 ether;
         params.staking = 30 ether;
         templeGold.setDistributionParams(params);

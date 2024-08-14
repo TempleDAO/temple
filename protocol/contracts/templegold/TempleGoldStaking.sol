@@ -42,7 +42,7 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     /// @notice Store next reward amount for next epoch
     uint256 public override nextRewardAmount;
     /// @notice Duration for rewards distribution
-    uint256 public rewardDuration;
+    uint256 public override rewardDuration;
     /// @notice Cooldown time before next distribution of rewards
     /// @dev If set to zero, rewards distribution is callable any time 
     uint160 public override rewardDistributionCoolDown;

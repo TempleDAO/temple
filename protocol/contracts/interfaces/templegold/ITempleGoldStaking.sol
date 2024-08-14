@@ -227,4 +227,6 @@ interface ITempleGoldStaking {
      * @param _period Cooldown period
      */
     function setUnstakeCooldown(uint32 _period) external;
+
+    function rewardDuration() external view returns (uint256);
 }

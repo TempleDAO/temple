@@ -13,6 +13,8 @@ async function main() {
   const [owner] = await ethers.getSigners();
   const TEMPLEGOLD_ADDRESSES = getDeployedTempleGoldContracts();
   const CORE_ADDRESSES = getDeployedContracts(); 
+  const ARBITRUM_ONE_CHAIN_ID = 42161;
+  const ARBITRUM_ONE_LZ_EID = 30110;
 
   const factory = new SpiceAuctionFactory__factory(owner);
   await deployAndMine(
@@ -22,7 +24,9 @@ async function main() {
     CORE_ADDRESSES.CORE.RESCUER_MSIG,
     CORE_ADDRESSES.CORE.EXECUTOR_MSIG,
     CORE_ADDRESSES.CORE.EXECUTOR_MSIG, // dao executor, placeholder
-    TEMPLEGOLD_ADDRESSES.TEMPLE_GOLD.TEMPLE_GOLD
+    TEMPLEGOLD_ADDRESSES.TEMPLE_GOLD.TEMPLE_GOLD,
+    ARBITRUM_ONE_LZ_EID,
+    ARBITRUM_ONE_CHAIN_ID
   );
 }
 

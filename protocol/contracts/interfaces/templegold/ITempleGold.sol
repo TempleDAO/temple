@@ -14,7 +14,7 @@ interface ITempleGold is IOFT, IOAppCore, IOAppOptionsType3, IERC20 {
         /// @notice staking contract
         uint256 staking;
         /// @notice DAI_TGLD auction contract
-        uint256 escrow;
+        uint256 daiGoldAuction;
         /// @notice Team gnosis
         uint256 gnosis;
     }
@@ -36,10 +36,10 @@ interface ITempleGold is IOFT, IOAppCore, IOAppOptionsType3, IERC20 {
 
     event ContractAuthorizationSet(address indexed _contract, bool _whitelisted);
     event VestingFactorSet(uint128 numerator, uint128 denominator);
-    event DistributionParamsSet(uint256 staking, uint256 escrow, uint256 gnosis);
-    event Distributed(uint256 stakingAmount, uint256 escrowAmount, uint256 gnosisAmount, uint256 timestamp);
+    event DistributionParamsSet(uint256 staking, uint256 daiGoldAuction, uint256 gnosis);
+    event Distributed(uint256 stakingAmount, uint256 daiGoldAuctionAmount, uint256 gnosisAmount, uint256 timestamp);
     event StakingSet(address staking);
-    event EscrowSet(address escrow);
+    event DaiGoldAuctionSet(address daiGoldAuction);
     event TeamGnosisSet(address gnosis);
     event CirculatingSupplyUpdated(address indexed sender, uint256 amount, uint256 circulatingSuppply, uint256 totalBurned);
     event NotifierSet(address indexed notifier);
@@ -54,8 +54,8 @@ interface ITempleGold is IOFT, IOAppCore, IOAppOptionsType3, IERC20 {
     /// @notice Staking contract
     function staking() external view returns (ITempleGoldStaking);
 
-    /// @notice Escrow auction contract
-    function escrow() external view returns (IDaiGoldAuction);
+    /// @notice Dai Gold auction contract
+    function daiGoldAuction() external view returns (IDaiGoldAuction);
 
     /// @notice Multisig gnosis address
     function teamGnosis() external view returns (address);
@@ -73,10 +73,10 @@ interface ITempleGold is IOFT, IOAppCore, IOAppOptionsType3, IERC20 {
     function setStaking(address _staking) external;
 
     /**
-     * @notice Set auctions escrow contract address
-     * @param _escrow Auctions escrow contract address
+     * @notice Set auctions dai gold auction contract address
+     * @param _daiGoldAuction contract address
      */
-    function setEscrow(address _escrow) external;
+    function setDaiGoldAuction(address _daiGoldAuction) external;
 
     /**
      * @notice Set team gnosis address

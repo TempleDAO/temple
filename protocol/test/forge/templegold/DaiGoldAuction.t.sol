@@ -72,10 +72,10 @@ contract DaiGoldAuctionTestBase is TempleGoldCommon {
     }
 
     function _configureTempleGold() private {
-        templeGold.setEscrow(address(daiGoldAuction));
+        templeGold.setDaiGoldAuction(address(daiGoldAuction));
         daiGoldAuction.setBidToken(address(bidToken));
         ITempleGold.DistributionParams memory params;
-        params.escrow = 60 ether;
+        params.daiGoldAuction = 60 ether;
         params.gnosis = 10 ether;
         params.staking = 30 ether;
         templeGold.setDistributionParams(params);
@@ -351,7 +351,7 @@ contract DaiGoldAuctionTest is DaiGoldAuctionTestBase {
         // low TGLD distribution error
         vm.startPrank(executor);
         ITempleGold.DistributionParams memory _params = _getDistributionParameters();
-        _params.escrow = 0;
+        _params.daiGoldAuction = 0;
         _params.staking = 80 ether;
         _params.gnosis = 20 ether;
         // update so dai gold auction gets nothing
@@ -519,7 +519,7 @@ contract DaiGoldAuctionTest is DaiGoldAuctionTestBase {
         vm.warp(block.timestamp + 1 weeks);
         uint256 mintAmount = templeGold.getMintAmount();
         ITempleGold.DistributionParams memory dp = templeGold.getDistributionParameters();
-        uint256 auctionAmount = dp.escrow * mintAmount / 100 ether;
+        uint256 auctionAmount = dp.daiGoldAuction * mintAmount / 100 ether;
         templeGold.mint();
         assertEq(daiGoldAuction.nextAuctionGoldAmount(), nextGoldAmount+auctionAmount);
     }

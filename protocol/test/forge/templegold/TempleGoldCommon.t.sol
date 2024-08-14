@@ -55,7 +55,7 @@ contract TempleGoldCommon is TempleTest {
 
     function _getDistributionParameters() internal pure returns (ITempleGold.DistributionParams memory _params) {
         _params.staking = 40 ether;
-        _params.escrow = 50 ether;
+        _params.daiGoldAuction = 50 ether;
         _params.gnosis = 10 ether;
     }
 

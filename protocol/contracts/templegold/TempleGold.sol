@@ -32,8 +32,8 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
     /// @notice These addresses are mutable to allow change/upgrade.
     /// @notice Staking contract
     ITempleGoldStaking public override staking;
-    /// @notice Escrow auction contract
-    IDaiGoldAuction public override escrow;
+    /// @notice Dai Gold auction contract
+    IDaiGoldAuction public override daiGoldAuction;
     /// @notice Multisig gnosis address
     address public override teamGnosis;
 
@@ -61,7 +61,7 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
 
     /// @notice Whitelisted addresses for transferrability
     mapping(address => bool) public override authorized;
-    /// @notice Distribution parameters. Minted share percentages for staking, escrow and gnosis. Adds up to 100%
+    /// @notice Distribution parameters. Minted share percentages for staking, dai gold auction and gnosis. Adds up to 100%
     DistributionParams private distributionParams;
     /// @notice Vesting factor determines rate of mint
     // This represents the vesting factor
@@ -86,13 +86,13 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
     }
 
     /**
-     * @notice Set auctions escrow contract address
-     * @param _escrow Auctions escrow contract address
+     * @notice Set dai gold auction contract address
+     * @param _daiGoldAuction  contract address
      */
-    function setEscrow(address _escrow) external override onlyOwner {
-        if (_escrow == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
-        escrow = IDaiGoldAuction(_escrow);
-        emit EscrowSet(_escrow);
+    function setDaiGoldAuction(address _daiGoldAuction) external override onlyOwner {
+        if (_daiGoldAuction == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
+        daiGoldAuction = IDaiGoldAuction(_daiGoldAuction);
+        emit DaiGoldAuctionSet(_daiGoldAuction);
     }
 
     /**
@@ -121,9 +121,9 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
      * @param _params Distribution parameters
      */
     function setDistributionParams(DistributionParams calldata _params) external override onlyOwner {
-        if (_params.staking + _params.gnosis + _params.escrow != DISTRIBUTION_DIVISOR) { revert ITempleGold.InvalidTotalShare(); }
+        if (_params.staking + _params.gnosis + _params.daiGoldAuction != DISTRIBUTION_DIVISOR) { revert ITempleGold.InvalidTotalShare(); }
         distributionParams = _params;
-        emit DistributionParamsSet(_params.staking, _params.escrow, _params.gnosis);
+        emit DistributionParamsSet(_params.staking, _params.daiGoldAuction, _params.gnosis);
     }
 
     /**
@@ -132,7 +132,6 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
      */
     function setVestingFactor(VestingFactor calldata _factor) external override onlyOwner {
         if (_factor.value == 0 || _factor.weekMultiplier == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
-        if (_factor.value > _factor.weekMultiplier) { revert CommonEventsAndErrors.InvalidParam(); }
         vestingFactor = _factor;
         /// @dev initialize
         if (lastMintTimestamp == 0) { lastMintTimestamp = uint32(block.timestamp); }
@@ -249,20 +248,20 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
             staking.notifyDistribution(stakingAmount);
         }
 
-        uint256 escrowAmount = TempleMath.mulDivRound(params.escrow, mintAmount, DISTRIBUTION_DIVISOR, false);
-        if (escrowAmount > 0) {
-            _mint(address(escrow), escrowAmount);
-            escrow.notifyDistribution(escrowAmount);
+        uint256 daiGoldAuctionAmount = TempleMath.mulDivRound(params.daiGoldAuction, mintAmount, DISTRIBUTION_DIVISOR, false);
+        if (daiGoldAuctionAmount > 0) {
+            _mint(address(daiGoldAuction), daiGoldAuctionAmount);
+            daiGoldAuction.notifyDistribution(daiGoldAuctionAmount);
         }
 
-        uint256 gnosisAmount = mintAmount - stakingAmount - escrowAmount;
+        uint256 gnosisAmount = mintAmount - stakingAmount - daiGoldAuctionAmount;
         if (gnosisAmount > 0) {
             _mint(teamGnosis, gnosisAmount);
             /// @notice no requirement to notify gnosis because no action has to be taken
         }
         _totalDistributed += mintAmount;
         _circulatingSupply += mintAmount;
-        emit Distributed(stakingAmount, escrowAmount, gnosisAmount, block.timestamp);
+        emit Distributed(stakingAmount, daiGoldAuctionAmount, gnosisAmount, block.timestamp);
     }
 
     function _getMintAmount(VestingFactor memory vestingFactorCache) private view returns (uint256 mintAmount) {

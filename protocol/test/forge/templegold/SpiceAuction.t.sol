@@ -62,7 +62,7 @@ contract SpiceAuctionTestBase is TempleGoldCommon {
         templeGold.authorizeContract(address(spice), true);
         templeGold.setStaking(address(staking));
         templeGold.setTeamGnosis(mike);
-        templeGold.setEscrow(address(daiGoldAuction));
+        templeGold.setDaiGoldAuction(address(daiGoldAuction));
         vm.stopPrank();
     }
 
