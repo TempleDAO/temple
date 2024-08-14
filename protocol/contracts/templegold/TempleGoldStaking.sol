@@ -48,7 +48,7 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     uint160 public override rewardDistributionCoolDown;
     /// @notice Timestamp for last reward notification
     uint96 public override lastRewardNotificationTimestamp;
-
+    /// @notice Cooldown time before unstake
     uint32 public override unstakeCooldown;
 
     /// @notice For use when migrating to a new staking contract if TGLD changes.
@@ -63,9 +63,11 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     mapping(address account => uint256 amount) public override claimableRewards;
     /// @notice Staker reward per token paid
     mapping(address account => uint256 amount) public override userRewardPerTokenPaid;
-    /// @notice Track voting
+    /// @notice Track voting checkpoints
     mapping(address account => mapping(uint256 epoch => Checkpoint)) private _checkpoints;
+    /// @notice Track number of checkpoint for account
     mapping(address account => uint256 number) public override numCheckpoints;
+    /// @notice Track unstake times for accounts
     mapping(address account => uint256 cooldownEnd) public override unstakeTimes;
     
     constructor(
@@ -80,10 +82,9 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
 
     /**
      * @notice Set unstake cooldown
-     * @param _period Cooldown period
+     * @param _period Cooldown period. Zero value accepted to disable cooldown feature
      */
     function setUnstakeCooldown(uint32 _period) external override onlyElevatedAccess {
-        if (_period== 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
         unstakeCooldown = _period;
         emit UnstakeCooldownSet(_period);
     }
@@ -228,20 +229,19 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     }
 
     /**
-     * @notice Stake
+     * @notice Stake for an account when contract is not paused
      * @param amount Amount of staking token
      */
-    function stake(uint256 amount) external override {
-        if (unstakeCooldown == 0) { revert CannotStake(); }
-        stakeFor(msg.sender, amount);
+    function stake(uint256 amount) external override whenNotPaused {
+        _stake(msg.sender, amount);
     }
 
     /**
-     * @notice Stake for account when contract is not paused.
-     * @param _for Account to stake for
+     * @notice Private stake function.
+     * @param _for Staking account
      * @param _amount Amount of staking token
      */
-    function stakeFor(address _for, uint256 _amount) public whenNotPaused {
+    function _stake(address _for, uint256 _amount) private  {
         if (_amount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
         
         // pull tokens and apply stake

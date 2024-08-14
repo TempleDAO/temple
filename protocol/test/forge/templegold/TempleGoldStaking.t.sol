@@ -203,16 +203,6 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         staking.withdraw(1, false);
     }
 
-    function test_revert_when_unstake_cooldown_not_set() public {
-        _setVestingFactor();
-        vm.startPrank(alice);
-        deal(address(templeToken), alice, 1 ether, true);
-        _approve(address(templeToken), address(staking), type(uint).max);
-        assertEq(staking.unstakeCooldown(), 0);
-        vm.expectRevert(abi.encodeWithSelector(ITempleGoldStaking.CannotStake.selector));
-        staking.stake(1 ether);
-    }
-
     function test_revert_distribute_when_paused() public {
         _setVestingFactor();
         _setUnstakeCooldown();
@@ -270,12 +260,12 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         staking.pause();
 
         vm.expectRevert(abi.encodeWithSelector(Pausable.EnforcedPause.selector));
-        staking.stakeFor(alice, 1 ether);
+        staking.stake(1 ether);
 
         staking.unpause();
         deal(address(templeToken), executor, 1000 ether, true);
         _approve(address(templeToken), address(staking), type(uint).max);
-        staking.stakeFor(alice, 1 ether);
+        staking.stake(1 ether);
     }
 
     function test_setDistributionStarter() public {
@@ -556,8 +546,6 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
 
     function test_setUnstakeCooldown() public {
         vm.startPrank(executor);
-        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
-        staking.setUnstakeCooldown(0);
 
         vm.expectEmit(address(staking));
         emit UnstakeCooldownSet(1 weeks);
@@ -1006,11 +994,13 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         _setVestingFactor();
         _setUnstakeCooldown();
 
+        uint256 unstakeCooldown = staking.unstakeCooldown();
         vm.startPrank(alice);
         deal(address(templeToken), alice, 1000 ether, true);
         _approve(address(templeToken), address(staking), type(uint).max);
         uint256 stakeAmount = 100 ether;
         staking.stake(stakeAmount);
+        assertEq(staking.unstakeTimes(alice), block.timestamp+unstakeCooldown);
         skip(1 days);
         _distributeRewards(alice);
         uint256 tgldRewardAmount = templeGold.balanceOf(address(staking));
@@ -1186,7 +1176,7 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         vm.startPrank(bob);
         _approve(address(templeToken), address(staking), type(uint).max);
         blockNumber = block.number;
-        staking.stakeFor(bob, stakeAmount);
+        staking.stake(stakeAmount);
         staking.delegate(mike);
         assertEq(staking.balanceOf(bob), stakeAmount);
         assertEq(staking.numCheckpoints(mike), 1);
@@ -1228,7 +1218,7 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         deal(address(templeToken), alice, 1000 ether, true);
         _approve(address(templeToken), address(staking), type(uint).max);
         uint256 blockNumber = block.number;
-        staking.stakeFor(alice, stakeAmount);
+        staking.stake(stakeAmount);
         ITempleGoldStaking.Checkpoint memory _checkpoint = staking.getCheckpoint(mike, 0);
         assertEq(_checkpoint.fromBlock, blockNumber);
         assertEq(_checkpoint.votes, stakeAmount);

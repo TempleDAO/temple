@@ -270,19 +270,19 @@ contract TempleGoldStakingMock is TempleElevatedAccess, Pausable {
     }
 
     /**
-     * @notice Stake
+     * @notice Stake for account when contract is not paused
      * @param amount Amount of staking token
      */
-    function stake(uint256 amount) external {
-        stakeFor(msg.sender, amount);
+    function stake(uint256 amount) external whenNotPaused {
+        _stake(msg.sender, amount);
     }
 
     /**
-     * @notice Stake for account when contract is not paused.
-     * @param _for Account to stake for
+     * @notice Private staking function.
+     * @param _for Staking account
      * @param _amount Amount of staking token
      */
-    function stakeFor(address _for, uint256 _amount) public whenNotPaused {
+    function _stake(address _for, uint256 _amount) private {
         if (_amount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
         
         // pull tokens and apply stake
