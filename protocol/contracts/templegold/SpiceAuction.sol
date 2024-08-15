@@ -45,12 +45,12 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
     uint32 public constant MAXIMUM_AUCTION_WAIT_PERIOD = 90 days;
     /// @notice Maximum auction duration
     uint32 public constant MAXIMUM_AUCTION_DURATION = 30 days;
+    /// @notice Arbitrum One layer zero EID
     uint32 private immutable _arbitrumOneLzEid;
+    /// @notice Arbitrum One chain ID
     uint32 private immutable _mintChainId;
+    /// @notice Max gas limit for use by executor in calling `lzReceive`
     uint32 public override lzReceiveExecutorGas;
-
-    /// @notice If true, let first claim for an auction notify total TGLD redeemed
-    bool public override claimShouldNotifyTotalRedeemed;
 
     /// @notice Name of this Spice Bazaar auction
     string public override name;
@@ -93,15 +93,6 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
         if (_gas == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
         lzReceiveExecutorGas = _gas;
         emit LzReceiveExecutorGasSet(_gas);
-    }
-    
-    /**
-     * @notice Set if claim should notify total TGLD redeemed for an auction epoch
-     * @param _notify Boolean if to notify when user claims
-     */
-    function setClaimShouldNotifyTotalRedeemed(bool _notify) external override onlyDAOExecutor {
-        claimShouldNotifyTotalRedeemed = _notify;
-        emit ClaimShouldNotifyTotalRedeemedSet(_notify);
     }
 
     /**
@@ -147,7 +138,7 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
         uint256 id = _currentEpochId;
         
         EpochInfo storage info = epochs[id];
-        // _currentEpochId = 0
+        // if _currentEpochId = 0
         if (info.startTime == 0) { revert InvalidConfigOperation(); }
         // Cannot reset an ongoing auction
         if (info.isActive()) { revert InvalidConfigOperation(); }
@@ -245,7 +236,7 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
      * @notice Claim (retro) rewards for an epoch . Cannot claim for a live epoch auction
      * @param epochId Epoch to claim for
      */
-    function claim(uint256 epochId) external payable virtual override {
+    function claim(uint256 epochId) external virtual override {
         /// @notice cannot claim for current live epoch
         EpochInfo storage info = epochs[epochId];
         if (info.startTime == 0) { revert InvalidEpoch(); }
@@ -255,16 +246,8 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
         uint256 bidTokenAmount = depositors[msg.sender][epochId];
         if (bidTokenAmount == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
         claimed[msg.sender][epochId] = true;
-        // delete depositors[msg.sender][epochId];
         SpiceAuctionConfig storage config = auctionConfigs[epochId];
-        (address bidToken, address auctionToken) = _getBidAndAuctionTokens(config);
-
-        // notify total redeemed
-        if (bidToken == templeGold && claimShouldNotifyTotalRedeemed && !redeemedEpochs[epochId]) {
-            emit RedeemedTempleGoldBurned(epochId, info.totalBidTokenAmount);
-            redeemedEpochs[epochId] = true;
-            _burnAndNotify(info.totalBidTokenAmount, true);
-        }
+        (, address auctionToken) = _getBidAndAuctionTokens(config);
 
         uint256 claimAmount = bidTokenAmount.mulDivRound(info.totalAuctionTokenAmount, info.totalBidTokenAmount, false);
         claimedAmount[msg.sender][epochId] = claimAmount;
