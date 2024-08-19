@@ -7,7 +7,7 @@
   "scripts": {
     "typechain": "typechain --target=ethers-v5 --out-dir src/types/typechain --glob abi/**/*.json",
     "lint": "eslint ./src",
-    "prepare": "yarn typechain && yarn codegen:safe-api-v1",
+    "prepare": "yarn typechain && yarn codegen:safe-api-v1 && cd ../.. && husky apps/dapp/.husky",
     "dev": "vite",
     "compile": "tsc",
     "vite:build": "vite build",
@@ -80,6 +80,9 @@
     "babel-plugin-macros": "^3.1.0",
     "babel-plugin-styled-components": "^2.1.4",
     "env-cmd": "^10.1.0",
+    "eslint-plugin-react": "^7.35.0",
+    "eslint-plugin-react-hooks": "^4.6.2",
+    "husky": "^9.1.4",
     "lint-staged": ">=10",
     "openapi-typescript-codegen": "^0.25.0",
     "prettier": "^2.5.0",
