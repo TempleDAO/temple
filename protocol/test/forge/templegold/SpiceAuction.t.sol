@@ -25,7 +25,7 @@ contract SpiceAuctionTestBase is TempleGoldCommon {
     event CirculatingSupplyUpdated(address indexed sender, uint256 amount, uint256 circulatingSuppply, uint256 totalBurned);
     event NotifierSet(address indexed notifier);
     event RedeemedTempleGoldBurned(uint256 epochId, uint256 amount);
-    // event ClaimShouldNotifyTotalRedeemedSet(bool shouldNotify);
+    event OperatorSet(address indexed operator);
 
     address public daoExecutor = makeAddr("daoExecutor");
     FakeERC20 public templeToken;
@@ -47,7 +47,7 @@ contract SpiceAuctionTestBase is TempleGoldCommon {
         templeGold = new TempleGold(initArgs);
         templeToken = new FakeERC20("Temple Token", "TEMPLE", executor, 1000 ether);
         staking = new TempleGoldStaking(rescuer, executor, address(templeToken), address(templeGold));
-        factory = new SpiceAuctionFactory(rescuer, executor, daoExecutor, address(templeGold), ARBITRUM_ONE_LZ_EID, uint32(arbitrumOneChainId));
+        factory = new SpiceAuctionFactory(rescuer, executor, daoExecutor, mike, address(templeGold), ARBITRUM_ONE_LZ_EID, uint32(arbitrumOneChainId));
         fakeERC20 = new FakeERC20("FAKE TOKEN", "FAKE", executor, 1000 ether);
         daiGoldAuction = new DaiGoldAuction(
             address(templeGold),
@@ -71,6 +71,7 @@ contract SpiceAuctionTestBase is TempleGoldCommon {
         assertEq(spice.templeGold(), address(templeGold));
         assertEq(spice.spiceToken(), daiToken);
         assertEq(spice.daoExecutor(), daoExecutor);
+        assertEq(spice.operator(), mike);
     }
 
     function _getAuctionConfig() internal view returns (ISpiceAuction.SpiceAuctionConfig memory config) {
@@ -551,7 +552,7 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         emit AuctionStarted(epoch+1, daoExecutor, startTime, endTime, 50 ether);
         spice.startAuction();
 
-        // another auction , another auction token, user action to start auction . type USER_FIRST_BID
+        // another auction , another auction token, user action to start auction
         _config = _getAuctionConfig();
         _config.isTempleGoldAuctionToken = false;
         _config.starter = address(0);
@@ -602,10 +603,13 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         emit Deposit(alice, epoch, aliceBidAmount);
         spice.bid(aliceBidAmount);
 
+        assertEq(spice.getAuctionBidAmount(1), aliceBidAmount);
+        assertEq(spice.getAuctionTokenAmount(1), 100 ether);
         assertEq(IERC20(daiToken).balanceOf(alice), 100 ether-aliceBidAmount);
         assertEq(IERC20(daiToken).balanceOf(_config.recipient), aliceBidAmount);
         epochInfo = spice.getEpochInfo(epoch);
         assertEq(epochInfo.totalBidTokenAmount, aliceBidAmount);
+        assertEq(spice.getAuctionBidAmount(1), epochInfo.totalBidTokenAmount);
         assertEq(epochInfo.totalAuctionTokenAmount, 100 ether);
         assertEq(spice.depositors(alice, epoch), aliceBidAmount);
         assertEq(spice.getClaimableForEpoch(alice, epoch), 100 ether);
@@ -617,6 +621,8 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         emit Deposit(bob, epoch, bobBidAmount);
         spice.bid(bobBidAmount);
 
+        assertEq(spice.getAuctionBidAmount(1), aliceBidAmount+bobBidAmount);
+        assertEq(spice.getAuctionTokenAmount(1), 100 ether);
         assertEq(IERC20(daiToken).balanceOf(alice), 100 ether-aliceBidAmount);
         assertEq(IERC20(daiToken).balanceOf(_config.recipient), aliceBidAmount+bobBidAmount);
         epochInfo = spice.getEpochInfo(epoch);
@@ -629,6 +635,8 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
 
         // bob bids more
         spice.bid(50 ether);
+        assertEq(spice.getAuctionBidAmount(1), 50 ether+aliceBidAmount+bobBidAmount);
+        assertEq(spice.getAuctionTokenAmount(1), 100 ether);
         assertEq(IERC20(daiToken).balanceOf(alice), 100 ether-aliceBidAmount);
         assertEq(IERC20(daiToken).balanceOf(treasury), aliceBidAmount+bobBidAmount+50 ether);
         epochInfo = spice.getEpochInfo(epoch);
@@ -639,7 +647,6 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         assertEq(spice.getClaimableForEpoch(alice, epoch), 100 ether * 20/100);
         assertEq(spice.getClaimableForEpoch(bob, epoch), 100 ether * 80/100);
     }
-    //todo test where TGLD is bid token
 
     function test_claimSpiceAuction() public {
         vm.expectRevert(abi.encodeWithSelector(IAuctionBase.InvalidEpoch.selector));
@@ -794,5 +801,53 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         emit Claim(bob, currentEpoch, bobBidAmount, claimAmount);
         spice.claim(currentEpoch);
         assertEq(IERC20(daiToken).balanceOf(bob), balanceBefore+claimAmount);
+    }
+
+    function test_withdrawEth_spice() public {
+        vm.startPrank(daoExecutor);
+        spice.setOperator(mike);
+        // access
+        vm.startPrank(unauthorizedUser);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
+        spice.withdrawEth(payable(alice), 1 ether);
+
+        vm.startPrank(daoExecutor);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
+        spice.withdrawEth(payable(address(0)), 1 ether);
+
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
+        spice.withdrawEth(payable(alice), 0);
+
+        vm.deal(address(spice), 2 ether);
+        // operator withdraw
+        vm.startPrank(mike);
+        uint256 balanceBefore = address(alice).balance;
+        spice.withdrawEth(payable(alice), 1 ether);
+        assertEq(alice.balance, balanceBefore+1 ether);
+
+        // dao executor withdraw
+        vm.startPrank(daoExecutor);
+        balanceBefore = address(daoExecutor).balance;
+        spice.withdrawEth(payable(daoExecutor), 1 ether);
+        assertEq(daoExecutor.balance, balanceBefore+1 ether);
+        assertEq(address(spice).balance, 0);
+
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InsufficientBalance.selector, address(0), 1 ether, 0));
+        spice.withdrawEth(payable(alice), 1 ether);
+    }
+
+    function test_setOperator() public {
+        // access
+        vm.startPrank(unauthorizedUser);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
+        spice.setOperator(alice);
+
+        vm.startPrank(daoExecutor);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
+        spice.setOperator(address(0));
+
+        vm.expectEmit(address(spice));
+        emit OperatorSet(alice);
+        spice.setOperator(alice);
     }
 }

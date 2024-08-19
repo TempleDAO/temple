@@ -18,7 +18,11 @@ contract SpiceAuctionFactory is ISpiceAuctionFactory, TempleElevatedAccess {
     address public immutable override templeGold;
     /// @notice Dao executing contract
     address public immutable override daoExecutor;
+    /// @notice Operator
+    address public immutable override operator;
+    /// @notice Arbitrum One layer zero EID
     uint32 private immutable _arbitrumLzEid;
+    /// @notice Arbitrum One chain ID
     uint32 private immutable _mintChainId;
     /// @notice Keep track of deployed spice auctions
     mapping(bytes32 id => address auction) public override deployedAuctions;
@@ -27,11 +31,13 @@ contract SpiceAuctionFactory is ISpiceAuctionFactory, TempleElevatedAccess {
         address _rescuer,
         address _executor,
         address _daoExecutor,
+        address _operator,
         address _templeGold,
         uint32 _arbLzEid,
         uint32 mintChainId_
     ) TempleElevatedAccess(_rescuer, _executor) {
         daoExecutor = _daoExecutor;
+        operator = _operator;
         templeGold = _templeGold;
         _arbitrumLzEid = _arbLzEid;
         _mintChainId = mintChainId_;
@@ -48,7 +54,7 @@ contract SpiceAuctionFactory is ISpiceAuctionFactory, TempleElevatedAccess {
     ) external override onlyElevatedAccess returns (address) {
         if (spiceToken == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
         if (spiceToken == templeGold) { revert CommonEventsAndErrors.InvalidParam(); }
-        SpiceAuction spiceAuction = new SpiceAuction(templeGold, spiceToken, daoExecutor, _arbitrumLzEid, _mintChainId, name);
+        SpiceAuction spiceAuction = new SpiceAuction(templeGold, spiceToken, daoExecutor, operator, _arbitrumLzEid, _mintChainId, name);
         bytes32 pairId = _getPairHash(spiceToken);
         /// @dev not checking pair address exists to allow overwrite in case of a migration
         deployedAuctions[pairId] = address(spiceAuction);

@@ -314,7 +314,7 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
         if (_to == address(0) && _sendParam.dstEid != _mintChainLzEid) { revert CommonEventsAndErrors.InvalidParam(); }
         if (_to != address(0) && msg.sender != _to) { revert ITempleGold.NonTransferrable(msg.sender, _to); }
 
-        // @dev Applies the token transfers regarding this send() operation.
+        /// @dev Applies the token transfers regarding this send() operation.
         // - amountSentLD is the amount in local decimals that was ACTUALLY sent/debited from the sender.
         // - amountReceivedLD is the amount in local decimals that will be received/credited to the recipient on the remote OFT instance.
         (uint256 amountSentLD, uint256 amountReceivedLD) = _debit(
@@ -324,12 +324,12 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
             _sendParam.dstEid
         );
 
-        // @dev Builds the options and OFT message to quote in the endpoint.
+        /// @dev Builds the options and OFT message to quote in the endpoint.
         (bytes memory message, bytes memory options) = _buildMsgAndOptions(_sendParam, amountReceivedLD);
 
-        // @dev Sends the message to the LayerZero endpoint and returns the LayerZero msg receipt.
+        /// @dev Sends the message to the LayerZero endpoint and returns the LayerZero msg receipt.
         msgReceipt = _lzSend(_sendParam.dstEid, message, options, _fee, _refundAddress);
-        // @dev Formulate the OFT receipt.
+        /// @dev Formulate the OFT receipt.
         oftReceipt = OFTReceipt(amountSentLD, amountReceivedLD);
 
         emit OFTSent(msgReceipt.guid, _sendParam.dstEid, msg.sender, amountSentLD, amountReceivedLD);
@@ -340,7 +340,7 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
      * @dev Caller must be authorized. eg. spice auction
      * @param amount Amount to burn
      */
-    function burn(uint256 amount) external onlyArbitrum {
+    function burn(uint256 amount) external override onlyArbitrum {
         if (!authorized[msg.sender]) { revert CommonEventsAndErrors.InvalidAccess(); }
         _burn(msg.sender, amount);
         _updateCirculatingSupply(msg.sender, amount);
@@ -361,8 +361,8 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
         Origin calldata _origin,
         bytes32 _guid,
         bytes calldata _message,
-        address /*_executor*/, // @dev unused in the default implementation.
-        bytes calldata /*_extraData*/ // @dev unused in the default implementation.
+        address /*_executor*/, // unused in the default implementation.
+        bytes calldata /*_extraData*/ // unused in the default implementation.
     ) internal virtual override {
         /// @dev Disallow further execution on destination by ignoring composed message
         if (_message.isComposed()) { revert CannotCompose(); }
@@ -374,10 +374,10 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
             // _origin.sender is spice auction
             _updateCirculatingSupply(_origin.sender.bytes32ToAddress(), _message.amountSD());
         } else {
-            // @dev The src sending chain doesnt know the address length on this chain (potentially non-evm)
+            /// @dev The src sending chain doesnt know the address length on this chain (potentially non-evm)
             // Thus everything is bytes32() encoded in flight.
             address toAddress = _message.sendTo().bytes32ToAddress();
-            // @dev Credit the amountLD to the recipient and return the ACTUAL amount the recipient received in local decimals
+            /// @dev Credit the amountLD to the recipient and return the ACTUAL amount the recipient received in local decimals
             uint256 amountReceivedLD = _credit(toAddress, _toLD(_message.amountSD()), _origin.srcEid);
 
             emit OFTReceived(_guid, _origin.srcEid, toAddress, amountReceivedLD);

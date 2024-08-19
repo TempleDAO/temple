@@ -38,6 +38,8 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
     address public immutable override templeGold;
     /// @notice DAO contract to execute configurations update
     address public override daoExecutor;
+    /// @notice operator
+    address public override operator;
 
     /// @notice Auctions run for minimum 1 week
     uint32 public constant MINIMUM_AUCTION_PERIOD = 1 weeks;
@@ -71,12 +73,14 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
         address _templeGold,
         address _spiceToken,
         address _daoExecutor,
+        address _operator,
         uint32 _arbEid,
         uint32 mintChainId_,
         string memory _name
     ) {
         spiceToken = _spiceToken;
         daoExecutor = _daoExecutor;
+        operator = _operator;
         templeGold = _templeGold;
         _arbitrumOneLzEid = _arbEid;
         _mintChainId = mintChainId_;
@@ -89,10 +93,20 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
      * @notice Set lzReceive gas used by executor
      * @param _gas Redemption notifier
      */
-    function setLzReceiveExecutorGas(uint32 _gas) external override onlyDAOExecutor {
+    function setLzReceiveExecutorGas(uint32 _gas) external override onlyOperatorOrDaoExecutor {
         if (_gas == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
         lzReceiveExecutorGas = _gas;
         emit LzReceiveExecutorGasSet(_gas);
+    }
+
+    /**
+     * @notice Set operator
+     * @param _operator operator to set
+     */
+    function setOperator(address _operator) external override onlyDAOExecutor {
+        if (_operator == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
+        operator = _operator;
+        emit OperatorSet(_operator);
     }
 
     /**
@@ -261,10 +275,17 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
      * @notice Check total bid token amount for epoch auction
      * @param epochId Epoch to check for
      */
-    function checkAuctionRedeemedAmount(uint256 epochId) external override view returns (uint256) {
+    function getAuctionTokenAmount(uint256 epochId) external override view returns (uint256) {
         EpochInfo storage info = epochs[epochId];
-        // silent
-        if (!info.hasEnded()) { return 0; }
+        return info.totalAuctionTokenAmount;
+    }
+
+    /**
+     * @notice Get total bid token amount for epoch auction
+     * @param epochId Epoch to get for
+     */
+    function getAuctionBidAmount(uint256 epochId) external override view returns (uint256) {
+        EpochInfo storage info = epochs[epochId];
         return info.totalBidTokenAmount;
     }
 
@@ -338,7 +359,12 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
     }
 
     /// @notice withdraw ETH used for layer zero sends
-    function withdrawEth(address payable _to, uint256 _amount) external onlyDAOExecutor() {
+    function withdrawEth(address payable _to, uint256 _amount) external override onlyOperatorOrDaoExecutor {
+        if (_to == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
+        if (_amount == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
+        uint256 _balance = address(this).balance;
+        if (_balance < _amount) { revert CommonEventsAndErrors.InsufficientBalance(address(0), _amount, _balance); }
+
         (bool success, ) = _to.call{ value: _amount }("");
         if (!success) { revert WithdrawFailed(_amount); }
     }
@@ -348,7 +374,7 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
      * @param epochId Epoch Id
      * @param useContractEth If to use contract eth for layerzero send
      */
-    function burnAndNotify(uint256 epochId, bool useContractEth) external payable override {
+    function burnAndNotify(uint256 epochId, bool useContractEth) external payable override nonReentrant {
         if (redeemedEpochs[epochId]) { revert CommonEventsAndErrors.InvalidParam(); }
         EpochInfo storage epochInfo = epochs[epochId];
         if (epochInfo.startTime == 0) { revert InvalidEpoch(); }
@@ -409,7 +435,7 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
             : (templeGold, spiceToken);
     }
 
-    function _burnAndNotify(uint256 amount, bool useContractEth) private nonReentrant {
+    function _burnAndNotify(uint256 amount, bool useContractEth) private {
         // burn directly and call TempleGold to update circulating supply
         if (block.chainid == _mintChainId) {
             ITempleGold(templeGold).burn(amount);
@@ -450,6 +476,11 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
     /// @notice modifier to allow execution by only DAO executor
     modifier onlyDAOExecutor() {
         if (msg.sender != daoExecutor) { revert CommonEventsAndErrors.InvalidAccess(); }
+        _;
+    }
+
+    modifier onlyOperatorOrDaoExecutor() {
+        if (msg.sender != operator && msg.sender != daoExecutor) { revert CommonEventsAndErrors.InvalidAccess(); }
         _;
     }
 

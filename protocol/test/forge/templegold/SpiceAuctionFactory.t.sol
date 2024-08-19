@@ -21,7 +21,7 @@ contract SpiceAuctionFactoryTestBase is TempleGoldCommon {
         ITempleGold.InitArgs memory initArgs = _getTempleGoldInitArgs();
 
         templeGold = new TempleGold(initArgs);
-        factory = new SpiceAuctionFactory(rescuer, executor, executor, address(templeGold), ARBITRUM_ONE_LZ_EID, uint32(arbitrumOneChainId));
+        factory = new SpiceAuctionFactory(rescuer, executor, executor, mike, address(templeGold), ARBITRUM_ONE_LZ_EID, uint32(arbitrumOneChainId));
     }
 
     function test_initialization() public {
@@ -29,6 +29,7 @@ contract SpiceAuctionFactoryTestBase is TempleGoldCommon {
         assertEq(factory.rescuer(), rescuer);
         assertEq(factory.daoExecutor(), executor);
         assertEq(factory.templeGold(), address(templeGold));
+        assertEq(factory.operator(), mike);
     }
 }
 
