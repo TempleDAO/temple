@@ -31,7 +31,7 @@ TGLD has the below constant values. When `mint()` is called, distribution happen
 //// @notice Distribution as a percentage of 100
 uint256 public constant DISTRIBUTION_DIVISOR = 100 ether;
 /// @notice 1B max supply
-uint256 public constant MAX_SUPPLY = 1_000_000_000 ether; // 1B
+uint256 public constant MAX_CIRCULATING_SUPPLY = 1_000_000_000 ether; // 1B
 /// @notice Minimum Temple Gold minted per call to mint
 uint256 public constant MINIMUM_MINT = 10_000 ether;
 ```
@@ -39,6 +39,16 @@ uint256 public constant MINIMUM_MINT = 10_000 ether;
 ### Minting
 
 Amount of tokens to mint are accrued per second depending on a vesting schedule. The vesting schedule (factor) is set using function `setVestingFactor(VestingFactor calldata _factor)`. 
+
+```solidity
+struct VestingFactor {
+    /// @notice Value of vesting factor. Typically 35
+    uint128 value;
+    /// @notice Week multiplier. Typically 1 week
+    uint128 weekMultiplier;
+}
+
+```
 
 `mint()` is a public function when called, tokens  are distributed according to the vesting factor, if accrued tokens at current time are more than `MINIMUM_MINT`.
 `distributeGold()` in TempleGoldStaking and DaiGoldAuction contracts also call `mint()`.
@@ -59,6 +69,8 @@ Migration is built in, if there is an upgrade to staking contract. First, `setMi
 Rewards can be claimed after migration.
 
 Staking contract will also be deployed to Arbitrum One chain.
+
+Staking contract has unstake cooldown feature. This means cooldown time after staking, before staker can unstake.
 
 ## Auctions
 
@@ -93,7 +105,6 @@ uint64 public constant AUCTION_DURATION = 1 weeks;
 
 ### Spice Auctions
 
-
 In a spice auction, a "spice" token is bid for Temple Gold or vice versa. Each spice auction epoch has a different configuration.
 ```solidity
 struct SpiceAuctionConfig {
@@ -109,8 +120,6 @@ struct SpiceAuctionConfig {
     address starter;
     /// @notice Is Temple Gold auction token
     bool isTempleGoldAuctionToken;
-    /// @notice Mode of auction activation
-    ActivationMode activationMode;
     /// @notice Auction proceeds recipient
     address recipient;
 }
@@ -120,6 +129,8 @@ Spice auction configuration are set and controlled by the DAO executor (part of 
 Each spice auction contract is configured with one spice token and templegold. Spice auction contracts are deployed via `SpiceAuctionFactory`.
 
 The Layer Zero integration allows Temple Gold (TGLD) usage in spice bazaar auctions cross-chain.
+
+After a spice auction (epoch), `burnAndNotify()` is called to perform a call to `TempleGold` to burn and update the circulating supply. `TempleGold.circulatingSupply()` on source chain Arbitrum One is the actual circulating supply.
 
 #### Constants
 ```solidity

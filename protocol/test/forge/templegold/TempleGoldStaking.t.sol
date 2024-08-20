@@ -14,6 +14,7 @@ import { DaiGoldAuction } from "contracts/templegold/DaiGoldAuction.sol";
 import { ITempleGoldStaking } from "contracts/interfaces/templegold/ITempleGoldStaking.sol";
 import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
 import { TempleGoldStakingMock } from "contracts/fakes/templegold/TempleGoldStakingMock.sol";
+import { ITempleElevatedAccess } from "contracts/interfaces/v2/access/ITempleElevatedAccess.sol";
 
 contract TempleGoldStakingTestBase is TempleGoldCommon {
 
@@ -575,6 +576,26 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         staking.recoverToken(daiToken, alice, amount);
         assertEq(IERC20(daiToken).balanceOf(alice), amount);
         assertEq(IERC20(daiToken).balanceOf(address(staking)), 0);
+    }
+
+    function test_notifyDistribution_explicit_access() public {
+        skip(1 weeks);
+        templeGold.mint();
+        vm.startPrank(executor);
+        ITempleElevatedAccess.ExplicitAccess[] memory _accesses = new ITempleElevatedAccess.ExplicitAccess[](1);
+        ITempleElevatedAccess.ExplicitAccess memory _access;
+        _access.fnSelector = staking.notifyDistribution.selector;
+        _access.allowed = true;
+        _accesses[0] = _access;
+        staking.setExplicitAccess(teamGnosis, _accesses);
+
+        // now team gnosis can send TGLD to staking contract and notify distribution
+        vm.startPrank(teamGnosis);
+        uint256 nextRewardAmount = staking.nextRewardAmount();
+        uint256 amount = 1 ether;
+        IERC20(templeGold).transfer(address(staking), amount);
+        staking.notifyDistribution(amount);
+        assertEq(staking.nextRewardAmount(), amount+nextRewardAmount);
     }
 
     function test_withdraw_single_account_single_stake() public {

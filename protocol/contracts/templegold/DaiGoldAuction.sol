@@ -42,10 +42,8 @@ contract DaiGoldAuction is IDaiGoldAuction, AuctionBase, TempleElevatedAccess {
 
     /// @notice Auction duration
     uint64 public constant AUCTION_DURATION = 1 weeks;
-
+    /// @notice Configuration for auction
     AuctionConfig private auctionConfig;
-
-    // mapping(uint256 epochId => bool recovered) public override epochsWithoutBidsRecovered;
 
     constructor(
         address _templeGold,
@@ -171,11 +169,11 @@ contract DaiGoldAuction is IDaiGoldAuction, AuctionBase, TempleElevatedAccess {
 
     /**
      * @notice Checkpoint total Temple Gold distributed for next epoch.
-     * Can only be called by Temple Gold contract
+     * Can only be called by Temple Gold contract or elevated access (for rebalancing purpose)
      * @param amount Amount of Temple Gold to checkpoint
      */
     function notifyDistribution(uint256 amount) external override {
-        if (msg.sender != address(templeGold)) { revert CommonEventsAndErrors.InvalidAccess(); }
+        if (msg.sender != address(templeGold) && !isElevatedAccess(msg.sender, msg.sig)) { revert CommonEventsAndErrors.InvalidAccess(); }
         /// @notice Temple Gold contract mints TGLD amount to contract before calling `notifyDistribution`
         nextAuctionGoldAmount += amount;
         emit GoldDistributionNotified(amount, block.timestamp);

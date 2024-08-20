@@ -351,8 +351,8 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
      * @notice Notify rewards distribution. Called by TempleGold contract after successful mint
      * @param amount Amount minted to this contract
      */
-    function notifyDistribution(uint256 amount) external {
-        if (msg.sender != address(rewardToken)) { revert CommonEventsAndErrors.InvalidAccess(); }
+    function notifyDistribution(uint256 amount) external override {
+        if (msg.sender != address(rewardToken) && !isElevatedAccess(msg.sender, msg.sig)) { revert CommonEventsAndErrors.InvalidAccess(); }
         /// @notice Temple Gold contract mints TGLD amount to contract before calling `notifyDistribution`
         nextRewardAmount += amount;
         emit GoldDistributionNotified(amount, block.timestamp);

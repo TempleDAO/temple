@@ -12,6 +12,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { ITempleERC20Token } from "contracts/interfaces/core/ITempleERC20Token.sol";
 import { TempleGoldStaking } from "contracts/templegold/TempleGoldStaking.sol";
+import { ITempleElevatedAccess } from "contracts/interfaces/v2/access/ITempleElevatedAccess.sol";
 
 contract DaiGoldAuctionTestBase is TempleGoldCommon {
     event AuctionStarted(uint256 epochId, address indexed starter, uint128 startTime, uint128 endTime, uint256 auctionTokenAmount);
@@ -609,6 +610,20 @@ contract DaiGoldAuctionTest is DaiGoldAuctionTestBase {
         assertEq(templeGold.balanceOf(alice), aliceBalance+recoverAmount);
         assertGt(nextAuctionGoldAmount, 0);
         assertEq(nextAuctionGoldAmount, daiGoldAuction.nextAuctionGoldAmount());
+
+        // now alice can send back TGLD to Dai Gold auction and notify distribution
+        vm.startPrank(executor);
+        ITempleElevatedAccess.ExplicitAccess[] memory _accesses = new ITempleElevatedAccess.ExplicitAccess[](1);
+        ITempleElevatedAccess.ExplicitAccess memory _access;
+        _access.fnSelector = daiGoldAuction.notifyDistribution.selector;
+        _access.allowed = true;
+        _accesses[0] = _access;
+        daiGoldAuction.setExplicitAccess(alice, _accesses);
+        vm.startPrank(alice);
+        nextAuctionGoldAmount = daiGoldAuction.nextAuctionGoldAmount();
+        IERC20(templeGold).transfer(address(daiGoldAuction), recoverAmount);
+        daiGoldAuction.notifyDistribution(recoverAmount);
+        assertEq(daiGoldAuction.nextAuctionGoldAmount(), recoverAmount+nextAuctionGoldAmount);
     }
 
     function test_recoverTempleGoldForZeroBidAuction_daiGold() public {
@@ -653,5 +668,13 @@ contract DaiGoldAuctionTest is DaiGoldAuctionTestBase {
 
         vm.expectRevert(abi.encodeWithSelector(IAuctionBase.AlreadyRecovered.selector));
         daiGoldAuction.recoverTempleGoldForZeroBidAuction(2, executor);
+
+        // now executor can send back TGLD to Dai Gold auction and notify distribution
+        vm.startPrank(executor);
+        uint256 nextAuctionGoldAmount = daiGoldAuction.nextAuctionGoldAmount();
+        uint256 recoverAmount = info.totalAuctionTokenAmount;
+        IERC20(templeGold).transfer(address(daiGoldAuction), recoverAmount);
+        daiGoldAuction.notifyDistribution(recoverAmount);
+        assertEq(daiGoldAuction.nextAuctionGoldAmount(), recoverAmount+nextAuctionGoldAmount);
     }
 }
