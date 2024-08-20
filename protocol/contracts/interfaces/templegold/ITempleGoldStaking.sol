@@ -25,6 +25,7 @@ interface ITempleGoldStaking {
     error UnstakeCooldown(uint256 timestampnow, uint256 unstakeTime);
     error CannotStake();
 
+    /// @notice Reward parameters
     struct Reward {
         uint40 periodFinish;
         uint216 rewardRate;  // The reward amount (1e18) per total reward duration
@@ -76,17 +77,10 @@ interface ITempleGoldStaking {
     function setMigrator(address _migrator) external;
 
     /**
-     * @notice Stake
+     * @notice Stake for an account when contract is not paused
      * @param amount Amount of staking token
      */
     function stake(uint256 amount) external;
-
-    /**
-     * @notice Stake for account when contract is not paused.
-     * @param _for Account to stake for
-     * @param _amount Amount of staking token
-     */
-    function stakeFor(address _for, uint256 _amount) external;
 
     /**
      * @notice Withdraw staked tokens
@@ -225,7 +219,7 @@ interface ITempleGoldStaking {
     function getPriorVotes(address account, uint256 blockNumber) external view returns (uint256);
     /// @notice Time staker can unstake
     function unstakeTimes(address account) external view returns (uint256);
-    /// @notice unstake cooldown
+    /// @notice Cooldown time before unstake
     function unstakeCooldown() external view returns (uint32);
 
     /**
@@ -233,4 +227,6 @@ interface ITempleGoldStaking {
      * @param _period Cooldown period
      */
     function setUnstakeCooldown(uint32 _period) external;
+
+    function rewardDuration() external view returns (uint256);
 }

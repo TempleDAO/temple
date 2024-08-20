@@ -16,6 +16,7 @@ export interface ContractAddresses {
     TEMPLE_GOLD: {
         AUCTION_AUTOMATION_EOA: string,
         STAKING_AUTOMATION_EOA: string,
+        SPICE_AUCTION_OPERATOR: string,
         TEMPLE_GOLD: string,
         TEMPLE_GOLD_ADMIN: string,
         TEMPLE_GOLD_STAKING: string,
@@ -44,6 +45,7 @@ const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
         TEMPLE_GOLD: {
             AUCTION_AUTOMATION_EOA: "string",
             STAKING_AUTOMATION_EOA: "string",
+            SPICE_AUCTION_OPERATOR: "string",
             TEMPLE_GOLD: "string",
             TEMPLE_GOLD_ADMIN: "string",
             TEMPLE_GOLD_STAKING: "string",

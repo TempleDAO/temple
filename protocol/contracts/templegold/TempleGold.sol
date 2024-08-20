@@ -32,8 +32,8 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
     /// @notice These addresses are mutable to allow change/upgrade.
     /// @notice Staking contract
     ITempleGoldStaking public override staking;
-    /// @notice Escrow auction contract
-    IDaiGoldAuction public override escrow;
+    /// @notice Dai Gold auction contract
+    IDaiGoldAuction public override daiGoldAuction;
     /// @notice Multisig gnosis address
     address public override teamGnosis;
 
@@ -44,8 +44,6 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
 
     //// @notice Distribution as a percentage of 100
     uint256 public constant DISTRIBUTION_DIVISOR = 100 ether;
-    /// @notice 1B max supply
-    // uint256 public constant MAX_SUPPLY = 1_000_000_000 ether; // 1B
     /// @notice 1B max circulating supply
     uint256 public constant MAX_CIRCULATING_SUPPLY = 1_000_000_000 ether; // 1B
     /// @notice Minimum Temple Gold minted per call to mint
@@ -63,7 +61,7 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
 
     /// @notice Whitelisted addresses for transferrability
     mapping(address => bool) public override authorized;
-    /// @notice Distribution parameters. Minted share percentages for staking, escrow and gnosis. Adds up to 100%
+    /// @notice Distribution parameters. Minted share percentages for staking, dai gold auction and gnosis. Adds up to 100%
     DistributionParams private distributionParams;
     /// @notice Vesting factor determines rate of mint
     // This represents the vesting factor
@@ -88,13 +86,13 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
     }
 
     /**
-     * @notice Set auctions escrow contract address
-     * @param _escrow Auctions escrow contract address
+     * @notice Set dai gold auction contract address
+     * @param _daiGoldAuction  contract address
      */
-    function setEscrow(address _escrow) external override onlyOwner {
-        if (_escrow == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
-        escrow = IDaiGoldAuction(_escrow);
-        emit EscrowSet(_escrow);
+    function setDaiGoldAuction(address _daiGoldAuction) external override onlyOwner {
+        if (_daiGoldAuction == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
+        daiGoldAuction = IDaiGoldAuction(_daiGoldAuction);
+        emit DaiGoldAuctionSet(_daiGoldAuction);
     }
 
     /**
@@ -123,9 +121,9 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
      * @param _params Distribution parameters
      */
     function setDistributionParams(DistributionParams calldata _params) external override onlyOwner {
-        if (_params.staking + _params.gnosis + _params.escrow != DISTRIBUTION_DIVISOR) { revert ITempleGold.InvalidTotalShare(); }
+        if (_params.staking + _params.gnosis + _params.daiGoldAuction != DISTRIBUTION_DIVISOR) { revert ITempleGold.InvalidTotalShare(); }
         distributionParams = _params;
-        emit DistributionParamsSet(_params.staking, _params.escrow, _params.gnosis);
+        emit DistributionParamsSet(_params.staking, _params.daiGoldAuction, _params.gnosis);
     }
 
     /**
@@ -133,13 +131,12 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
      * @param _factor Vesting factor
      */
     function setVestingFactor(VestingFactor calldata _factor) external override onlyOwner {
-        if (_factor.numerator == 0 || _factor.denominator == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
-        if (_factor.numerator > _factor.denominator) { revert CommonEventsAndErrors.InvalidParam(); }
+        if (_factor.value == 0 || _factor.weekMultiplier == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
         vestingFactor = _factor;
         /// @dev initialize
         if (lastMintTimestamp == 0) { lastMintTimestamp = uint32(block.timestamp); }
         else { mint(); }
-        emit VestingFactorSet(_factor.numerator, _factor.denominator);
+        emit VestingFactorSet(_factor.value, _factor.weekMultiplier);
     }
 
     function setNotifier(address _notifier) external onlyOwner {
@@ -156,7 +153,7 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
     function mint() public override onlyArbitrum {
         VestingFactor memory vestingFactorCache = vestingFactor;
         DistributionParams storage distributionParamsCache = distributionParams;
-        if (vestingFactorCache.numerator == 0) { revert ITempleGold.MissingParameter(); }
+        if (vestingFactorCache.value == 0) { revert ITempleGold.MissingParameter(); }
 
         uint256 mintAmount = _getMintAmount(vestingFactorCache);
         /// @dev no op silently
@@ -202,7 +199,7 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
     }
 
     /**
-     * @notice Get circulating supply on this chain
+     * @notice Get circulating supply on this chain. This value has spice auction redemptions subtracted
      * @dev When this function is called on source chain (arbitrum), you get the real circulating supply across chains
      * @return Circulating supply
      */
@@ -210,7 +207,12 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
         return _circulatingSupply;
     }
 
-    function totalDistributed() public view returns (uint256) {
+    /**
+     * @notice Get total distributed Temple Gold. This value has no spice auction redemptions subtracted
+     * @dev When this function is called on source chain (arbitrum), you get the actual total distributed
+     * @return Total distributed
+     */
+    function totalDistributed() public override view returns (uint256) {
         return _totalDistributed;
     }
 
@@ -246,25 +248,24 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
             staking.notifyDistribution(stakingAmount);
         }
 
-        uint256 escrowAmount = TempleMath.mulDivRound(params.escrow, mintAmount, DISTRIBUTION_DIVISOR, false);
-        if (escrowAmount > 0) {
-            _mint(address(escrow), escrowAmount);
-            escrow.notifyDistribution(escrowAmount);
+        uint256 daiGoldAuctionAmount = TempleMath.mulDivRound(params.daiGoldAuction, mintAmount, DISTRIBUTION_DIVISOR, false);
+        if (daiGoldAuctionAmount > 0) {
+            _mint(address(daiGoldAuction), daiGoldAuctionAmount);
+            daiGoldAuction.notifyDistribution(daiGoldAuctionAmount);
         }
 
-        uint256 gnosisAmount = mintAmount - stakingAmount - escrowAmount;
+        uint256 gnosisAmount = mintAmount - stakingAmount - daiGoldAuctionAmount;
         if (gnosisAmount > 0) {
             _mint(teamGnosis, gnosisAmount);
             /// @notice no requirement to notify gnosis because no action has to be taken
         }
         _totalDistributed += mintAmount;
         _circulatingSupply += mintAmount;
-        emit Distributed(stakingAmount, escrowAmount, gnosisAmount, block.timestamp);
+        emit Distributed(stakingAmount, daiGoldAuctionAmount, gnosisAmount, block.timestamp);
     }
 
     function _getMintAmount(VestingFactor memory vestingFactorCache) private view returns (uint256 mintAmount) {
         uint32 _lastMintTimestamp = lastMintTimestamp;
-        // uint256 totalSupplyCache = _totalDistributed;
         /// @dev if vesting factor is not set, return 0. `_lastMintTimestamp` is set when vesting factor is set
         if (_lastMintTimestamp == 0) { return 0; }
 
@@ -272,7 +273,7 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
 
         uint256 circulatingSupplyCache = _circulatingSupply;
         mintAmount = (TempleMath.mulDivRound((block.timestamp - _lastMintTimestamp), (MAX_CIRCULATING_SUPPLY - circulatingSupplyCache),
-            vestingFactorCache.numerator, false))/ vestingFactorCache.denominator;
+            vestingFactorCache.value, false))/ vestingFactorCache.weekMultiplier;
         if (circulatingSupplyCache + mintAmount > MAX_CIRCULATING_SUPPLY) {
             unchecked {
                 mintAmount = MAX_CIRCULATING_SUPPLY - circulatingSupplyCache;
@@ -313,7 +314,7 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
         if (_to == address(0) && _sendParam.dstEid != _mintChainLzEid) { revert CommonEventsAndErrors.InvalidParam(); }
         if (_to != address(0) && msg.sender != _to) { revert ITempleGold.NonTransferrable(msg.sender, _to); }
 
-        // @dev Applies the token transfers regarding this send() operation.
+        /// @dev Applies the token transfers regarding this send() operation.
         // - amountSentLD is the amount in local decimals that was ACTUALLY sent/debited from the sender.
         // - amountReceivedLD is the amount in local decimals that will be received/credited to the recipient on the remote OFT instance.
         (uint256 amountSentLD, uint256 amountReceivedLD) = _debit(
@@ -323,18 +324,23 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
             _sendParam.dstEid
         );
 
-        // @dev Builds the options and OFT message to quote in the endpoint.
+        /// @dev Builds the options and OFT message to quote in the endpoint.
         (bytes memory message, bytes memory options) = _buildMsgAndOptions(_sendParam, amountReceivedLD);
 
-        // @dev Sends the message to the LayerZero endpoint and returns the LayerZero msg receipt.
+        /// @dev Sends the message to the LayerZero endpoint and returns the LayerZero msg receipt.
         msgReceipt = _lzSend(_sendParam.dstEid, message, options, _fee, _refundAddress);
-        // @dev Formulate the OFT receipt.
+        /// @dev Formulate the OFT receipt.
         oftReceipt = OFTReceipt(amountSentLD, amountReceivedLD);
 
         emit OFTSent(msgReceipt.guid, _sendParam.dstEid, msg.sender, amountSentLD, amountReceivedLD);
     }
 
-    function burn(uint256 amount) external onlyArbitrum {
+    /**
+     * @notice Burn and update circulating supply on source chain
+     * @dev Caller must be authorized. eg. spice auction
+     * @param amount Amount to burn
+     */
+    function burn(uint256 amount) external override onlyArbitrum {
         if (!authorized[msg.sender]) { revert CommonEventsAndErrors.InvalidAccess(); }
         _burn(msg.sender, amount);
         _updateCirculatingSupply(msg.sender, amount);
@@ -355,8 +361,8 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
         Origin calldata _origin,
         bytes32 _guid,
         bytes calldata _message,
-        address /*_executor*/, // @dev unused in the default implementation.
-        bytes calldata /*_extraData*/ // @dev unused in the default implementation.
+        address /*_executor*/, // unused in the default implementation.
+        bytes calldata /*_extraData*/ // unused in the default implementation.
     ) internal virtual override {
         /// @dev Disallow further execution on destination by ignoring composed message
         if (_message.isComposed()) { revert CannotCompose(); }
@@ -368,10 +374,10 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
             // _origin.sender is spice auction
             _updateCirculatingSupply(_origin.sender.bytes32ToAddress(), _message.amountSD());
         } else {
-            // @dev The src sending chain doesnt know the address length on this chain (potentially non-evm)
+            /// @dev The src sending chain doesnt know the address length on this chain (potentially non-evm)
             // Thus everything is bytes32() encoded in flight.
             address toAddress = _message.sendTo().bytes32ToAddress();
-            // @dev Credit the amountLD to the recipient and return the ACTUAL amount the recipient received in local decimals
+            /// @dev Credit the amountLD to the recipient and return the ACTUAL amount the recipient received in local decimals
             uint256 amountReceivedLD = _credit(toAddress, _toLD(_message.amountSD()), _origin.srcEid);
 
             emit OFTReceived(_guid, _origin.srcEid, toAddress, amountReceivedLD);

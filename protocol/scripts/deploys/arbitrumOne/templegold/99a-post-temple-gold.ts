@@ -13,16 +13,16 @@ async function main() {
     const teamGnosis = '';
     const distributionParams = {
         staking: ethers.utils.parseEther("20"),
-        escrow: ethers.utils.parseEther("70"),
+        daiGoldAuction: ethers.utils.parseEther("70"),
         gnosis: ethers.utils.parseEther("10")
     }
     const vestingFactor = {
-        numerator: 1,
-        denominator: 3600 * 24 * 365 * 3
+        value: 35,
+        weekMultiplier: 3600 * 24 * 7 // 1 week
     }
     // Set and whitelist contracts
     await mine(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.TEMPLE_GOLD.setTeamGnosis(teamGnosis));
-    await mine(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.TEMPLE_GOLD.setEscrow(TEMPLE_GOLD_ADDRESSES.TEMPLE_GOLD.DAI_GOLD_AUCTION));
+    await mine(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.TEMPLE_GOLD.setDaiGoldAuction(TEMPLE_GOLD_ADDRESSES.TEMPLE_GOLD.DAI_GOLD_AUCTION));
     await mine(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.TEMPLE_GOLD.setStaking(TEMPLE_GOLD_ADDRESSES.TEMPLE_GOLD.TEMPLE_GOLD_STAKING));
     await mine(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.TEMPLE_GOLD.setVestingFactor(vestingFactor));
     await mine(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.TEMPLE_GOLD.setDistributionParams(distributionParams));

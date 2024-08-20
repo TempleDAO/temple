@@ -7,9 +7,9 @@ interface ISpiceAuction is IAuctionBase {
     event AuctionConfigSet(uint256 epoch, SpiceAuctionConfig config);
     event DaoExecutorSet(address daoExecutor);
     event AuctionConfigRemoved(uint256 configId, uint256 epochId);
-    event ClaimShouldNotifyTotalRedeemedSet(bool notify);
     event LzReceiveExecutorGasSet(uint32 gas);
     event RedeemedTempleGoldBurned(uint256 epochId, uint256 amount);
+    event OperatorSet(address indexed operator);
 
     error InvalidConfigOperation();
     error NotEnoughAuctionTokens();
@@ -44,6 +44,9 @@ interface ISpiceAuction is IAuctionBase {
 
     /// @notice DAO contract to execute configurations update
     function daoExecutor() external view returns (address);
+
+    /// @notice Operator
+    function operator() external view returns (address);
 
     /// @notice Name of this Spice Bazaar auction
     function name() external view returns (string memory);
@@ -93,25 +96,23 @@ interface ISpiceAuction is IAuctionBase {
     function recoverAuctionTokenForZeroBidAuction(uint256 epochId, address to) external;
 
     /**
-     * @notice Set if claim should notify total TGLD redeemed for an auction epoch
-     * @param _notify Boolean if to notify when user claims
+     * @notice Get total auction token amount for epoch auction
+     * @param epochId Epoch to get for
      */
-    function setClaimShouldNotifyTotalRedeemed(bool _notify) external;
-
-    function claimShouldNotifyTotalRedeemed() external view returns (bool);
+    function getAuctionTokenAmount(uint256 epochId) external view returns (uint256);
 
     /**
-     * @notice Check total bid token amount for epoch auction
-     * @param epochId Epoch to check for
+     * @notice Get total bid token amount for epoch auction
+     * @param epochId Epoch to get for
      */
-    function checkAuctionRedeemedAmount(uint256 epochId) external view returns (uint256);
+    function getAuctionBidAmount(uint256 epochId) external view returns (uint256);
 
     /**
      * @notice Claim share of Temple Gold for epoch
      * Can only claim for past epochs, not current auction epoch.
      * @param epochId Id of epoch
      */
-    function claim(uint256 epochId) external payable;
+    function claim(uint256 epochId) external;
 
     /**
      * @notice Set lzReceive gas used by executor
@@ -119,9 +120,10 @@ interface ISpiceAuction is IAuctionBase {
      */
     function setLzReceiveExecutorGas(uint32 _gas) external;
 
-    /// @notice Get executor gas used for calling `lzReceive`
+    /// @notice Max gas limit used by layer zero executor for calling `lzReceive`
     function lzReceiveExecutorGas() external view returns (uint32);
 
+    /// @notice Epochs which have redemption called to update circulating supply.
     function redeemedEpochs(uint256 epochId) external view returns (bool);
 
     /**
@@ -130,4 +132,13 @@ interface ISpiceAuction is IAuctionBase {
      * @param useContractEth If to use contract eth for layerzero send
      */
     function burnAndNotify(uint256 epochId, bool useContractEth) external payable;
+
+    /// @notice withdraw ETH used for layer zero sends
+    function withdrawEth(address payable _to, uint256 _amount) external;
+
+    /**
+     * @notice Set operator
+     * @param _operator operator to set
+     */
+    function setOperator(address _operator) external;
 }

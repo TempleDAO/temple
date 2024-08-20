@@ -14,11 +14,13 @@ async function main() {
   const CORE_ADDRESSES = getDeployedContracts();
   const TEMPLEGOLD_ADDRESSES = getDeployedTempleGoldContracts();
   const ARBITRUM_ONE_CHAIN_ID = 42161;
+  const ARBITRUM_ONE_LZ_EID = 30110;
   const _initArgs =  {
     // Changed in transfer ownership to TempleAdmin
     executor: CORE_ADDRESSES.CORE.EXECUTOR_MSIG, // executor is also used as delegate in LayerZero Endpoint.
     layerZeroEndpoint: TEMPLEGOLD_ADDRESSES.EXTERNAL.LAYER_ZERO.ENDPOINT, // local endpoint address
     mintChainId: ARBITRUM_ONE_CHAIN_ID,
+    mintChainLzEid: ARBITRUM_ONE_LZ_EID,
     name: "TEMPLE GOLD",
     symbol: "TGLD"
   };

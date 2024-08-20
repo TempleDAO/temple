@@ -12,6 +12,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { ITempleERC20Token } from "contracts/interfaces/core/ITempleERC20Token.sol";
 import { TempleGoldStaking } from "contracts/templegold/TempleGoldStaking.sol";
+import { ITempleElevatedAccess } from "contracts/interfaces/v2/access/ITempleElevatedAccess.sol";
 
 contract DaiGoldAuctionTestBase is TempleGoldCommon {
     event AuctionStarted(uint256 epochId, address indexed starter, uint128 startTime, uint128 endTime, uint256 auctionTokenAmount);
@@ -72,16 +73,16 @@ contract DaiGoldAuctionTestBase is TempleGoldCommon {
     }
 
     function _configureTempleGold() private {
-        templeGold.setEscrow(address(daiGoldAuction));
+        templeGold.setDaiGoldAuction(address(daiGoldAuction));
         daiGoldAuction.setBidToken(address(bidToken));
         ITempleGold.DistributionParams memory params;
-        params.escrow = 60 ether;
+        params.daiGoldAuction = 60 ether;
         params.gnosis = 10 ether;
         params.staking = 30 ether;
         templeGold.setDistributionParams(params);
         ITempleGold.VestingFactor memory factor;
-        factor.numerator = 2 ether;
-        factor.denominator = 1000 ether;
+        factor.value = 2 ether;
+        factor.weekMultiplier = 1000 ether;
         templeGold.setVestingFactor(factor);
         templeGold.setStaking(address(goldStaking));
         templeGold.setTeamGnosis(address(teamGnosis));
@@ -185,8 +186,8 @@ contract DaiGoldAuctionTestSetters is DaiGoldAuctionTestBase {
 
         // auction started
         ITempleGold.VestingFactor memory _factor;
-        _factor.numerator = 35;
-        _factor.denominator = 1 weeks;
+        _factor.value = 35;
+        _factor.weekMultiplier = 1 weeks;
         templeGold.setVestingFactor(_factor);
         skip(3 days);
         templeGold.mint();
@@ -351,7 +352,7 @@ contract DaiGoldAuctionTest is DaiGoldAuctionTestBase {
         // low TGLD distribution error
         vm.startPrank(executor);
         ITempleGold.DistributionParams memory _params = _getDistributionParameters();
-        _params.escrow = 0;
+        _params.daiGoldAuction = 0;
         _params.staking = 80 ether;
         _params.gnosis = 20 ether;
         // update so dai gold auction gets nothing
@@ -519,7 +520,7 @@ contract DaiGoldAuctionTest is DaiGoldAuctionTestBase {
         vm.warp(block.timestamp + 1 weeks);
         uint256 mintAmount = templeGold.getMintAmount();
         ITempleGold.DistributionParams memory dp = templeGold.getDistributionParameters();
-        uint256 auctionAmount = dp.escrow * mintAmount / 100 ether;
+        uint256 auctionAmount = dp.daiGoldAuction * mintAmount / 100 ether;
         templeGold.mint();
         assertEq(daiGoldAuction.nextAuctionGoldAmount(), nextGoldAmount+auctionAmount);
     }
@@ -586,7 +587,8 @@ contract DaiGoldAuctionTest is DaiGoldAuctionTestBase {
         daiGoldAuction.recoverToken(address(templeGold), alice, recoverAmount);
         assertEq(templeGold.balanceOf(alice), aliceBalance+recoverAmount);
         // plus the half of total auction amount that was not recovered
-        assertEq(nextAuctionGoldAmount + recoverAmount, daiGoldAuction.nextAuctionGoldAmount());
+        // delta of 1 because of rounding
+        assertApproxEqAbs(nextAuctionGoldAmount + recoverAmount, daiGoldAuction.nextAuctionGoldAmount(), 1);
         // epoch deleted, cannot recover
         vm.expectRevert(abi.encodeWithSelector(IAuctionBase.InvalidOperation.selector));
         daiGoldAuction.recoverToken(address(templeGold), alice, mintAmount);
@@ -608,16 +610,29 @@ contract DaiGoldAuctionTest is DaiGoldAuctionTestBase {
         assertEq(templeGold.balanceOf(alice), aliceBalance+recoverAmount);
         assertGt(nextAuctionGoldAmount, 0);
         assertEq(nextAuctionGoldAmount, daiGoldAuction.nextAuctionGoldAmount());
+
+        // now alice can send back TGLD to Dai Gold auction and notify distribution
+        vm.startPrank(executor);
+        ITempleElevatedAccess.ExplicitAccess[] memory _accesses = new ITempleElevatedAccess.ExplicitAccess[](1);
+        ITempleElevatedAccess.ExplicitAccess memory _access;
+        _access.fnSelector = daiGoldAuction.notifyDistribution.selector;
+        _access.allowed = true;
+        _accesses[0] = _access;
+        daiGoldAuction.setExplicitAccess(alice, _accesses);
+        vm.startPrank(alice);
+        nextAuctionGoldAmount = daiGoldAuction.nextAuctionGoldAmount();
+        IERC20(templeGold).transfer(address(daiGoldAuction), recoverAmount);
+        daiGoldAuction.notifyDistribution(recoverAmount);
+        assertEq(daiGoldAuction.nextAuctionGoldAmount(), recoverAmount+nextAuctionGoldAmount);
     }
 
     function test_recoverTempleGoldForZeroBidAuction_daiGold() public {
         vm.startPrank(executor);
         ITempleGold.VestingFactor memory _factor;
-        _factor.numerator = 35;
-        _factor.denominator = 1 weeks;
+        _factor.value = 35;
+        _factor.weekMultiplier = 1 weeks;
         templeGold.setVestingFactor(_factor);
         _startAuction();
-        uint256 balance = templeGold.balanceOf(address(daiGoldAuction));
         IAuctionBase.EpochInfo memory info = daiGoldAuction.getEpochInfo(1);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
         daiGoldAuction.recoverTempleGoldForZeroBidAuction(1, address(0));
@@ -653,5 +668,13 @@ contract DaiGoldAuctionTest is DaiGoldAuctionTestBase {
 
         vm.expectRevert(abi.encodeWithSelector(IAuctionBase.AlreadyRecovered.selector));
         daiGoldAuction.recoverTempleGoldForZeroBidAuction(2, executor);
+
+        // now executor can send back TGLD to Dai Gold auction and notify distribution
+        vm.startPrank(executor);
+        uint256 nextAuctionGoldAmount = daiGoldAuction.nextAuctionGoldAmount();
+        uint256 recoverAmount = info.totalAuctionTokenAmount;
+        IERC20(templeGold).transfer(address(daiGoldAuction), recoverAmount);
+        daiGoldAuction.notifyDistribution(recoverAmount);
+        assertEq(daiGoldAuction.nextAuctionGoldAmount(), recoverAmount+nextAuctionGoldAmount);
     }
 }

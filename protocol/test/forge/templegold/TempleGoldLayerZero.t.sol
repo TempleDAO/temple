@@ -97,7 +97,7 @@ contract TempleGoldLayerZeroTest is TestHelperOz5 {
         sendParam.to = addressToBytes32(userA);
 
         vm.startPrank(userA);
-        (MessagingReceipt memory msgReceipt, OFTReceipt memory oftReceipt) =
+        (MessagingReceipt memory msgReceipt,) =
              aTempleGold.send{ value: fee.nativeFee }(sendParam, fee, payable(address(this)));
         emit log_string("messaging receipt");
         emit log_bytes32(msgReceipt.guid);

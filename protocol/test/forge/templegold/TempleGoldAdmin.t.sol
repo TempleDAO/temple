@@ -17,10 +17,10 @@ import { IOAppOptionsType3 } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/
 
 contract TempleGoldAdminTestBase is TempleGoldCommon {
     event ContractAuthorizationSet(address indexed _contract, bool _whitelisted);
-    event VestingFactorSet(uint128 numerator, uint128 denominator);
-    event DistributionParamsSet(uint256 staking, uint256 escrow, uint256 gnosis);
+    event VestingFactorSet(uint128 value, uint128 weekMultiplier);
+    event DistributionParamsSet(uint256 staking, uint256 daiGoldAuction, uint256 gnosis);
     event StakingSet(address staking);
-    event EscrowSet(address escrow);
+    event DaiGoldAuctionSet(address daiGoldAuction);
     event TeamGnosisSet(address gnosis);
 
     DaiGoldAuction public daiGoldAuction;
@@ -67,15 +67,15 @@ contract TempleGoldAdminTestBase is TempleGoldCommon {
     }
 
     function _configureTempleGold() private {
-        templeGold.setEscrow(address(daiGoldAuction)); 
+        templeGold.setDaiGoldAuction(address(daiGoldAuction)); 
         ITempleGold.DistributionParams memory params;
-        params.escrow = 60 ether;
+        params.daiGoldAuction = 60 ether;
         params.gnosis = 10 ether;
         params.staking = 30 ether;
         templeGold.setDistributionParams(params);
         ITempleGold.VestingFactor memory factor;
-        factor.numerator = 2 ether;
-        factor.denominator = 1000 ether;
+        factor.value = 2 ether;
+        factor.weekMultiplier = 1000 ether;
         templeGold.setVestingFactor(factor);
         templeGold.setStaking(address(staking));
         templeGold.setTeamGnosis(address(teamGnosis));
@@ -93,10 +93,10 @@ contract TempleGoldAdminAccessTest is TempleGoldAdminTestBase {
         templeGoldAdmin.setStaking(alice);
     }
 
-    function test_access_setEscrow_tgldAdmin() public {
+    function test_access_setdaiGoldAuction_tgldAdmin() public {
         vm.startPrank(unauthorizedUser);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
-        templeGoldAdmin.setEscrow(alice);
+        templeGoldAdmin.setDaiGoldAuction(alice);
     }
 
     function test_access_setTeamgnosis_tgldAdmin() public {
@@ -168,17 +168,17 @@ contract TempleGoldAdminTest is TempleGoldAdminTestBase {
         assertEq(address(templeGold.staking()), alice);
     }
 
-    function test_setEscrow_tgoldProxy() public {
+    function test_setdaiGoldAuction_tgoldProxy() public {
         vm.startPrank(executor);
 
         vm.expectEmit(address(templeGold));
-        emit EscrowSet(address(daiGoldAuction));
-        templeGoldAdmin.setEscrow(address(daiGoldAuction));
-        assertEq(address(templeGold.escrow()), address(daiGoldAuction));
+        emit DaiGoldAuctionSet(address(daiGoldAuction));
+        templeGoldAdmin.setDaiGoldAuction(address(daiGoldAuction));
+        assertEq(address(templeGold.daiGoldAuction()), address(daiGoldAuction));
         vm.expectEmit(address(templeGold));
-        emit EscrowSet(alice);
-        templeGoldAdmin.setEscrow(alice);
-        assertEq(address(templeGold.escrow()), alice);
+        emit DaiGoldAuctionSet(alice);
+        templeGoldAdmin.setDaiGoldAuction(alice);
+        assertEq(address(templeGold.daiGoldAuction()), alice);
     }
 
     function test_setTeamGnosis_tgldAdmin() public {
@@ -197,38 +197,38 @@ contract TempleGoldAdminTest is TempleGoldAdminTestBase {
      function test_authorizeContract_tgldAdmin() public {
         vm.startPrank(executor);
 
-        address escrow = address(daiGoldAuction);
+        address daiGoldAuction = address(daiGoldAuction);
         vm.expectEmit(address(templeGold));
-        emit ContractAuthorizationSet(escrow, true);
-        templeGoldAdmin.authorizeContract(escrow, true);
-        assertEq(templeGold.authorized(escrow), true);
+        emit ContractAuthorizationSet(daiGoldAuction, true);
+        templeGoldAdmin.authorizeContract(daiGoldAuction, true);
+        assertEq(templeGold.authorized(daiGoldAuction), true);
         vm.expectEmit(address(templeGold));
-        emit ContractAuthorizationSet(escrow, false);
-        templeGoldAdmin.authorizeContract(escrow, false);
-        assertEq(templeGold.authorized(escrow), false);
+        emit ContractAuthorizationSet(daiGoldAuction, false);
+        templeGoldAdmin.authorizeContract(daiGoldAuction, false);
+        assertEq(templeGold.authorized(daiGoldAuction), false);
     }
 
     function test_setVestingFactor_tgldAdmin() public {
         vm.startPrank(executor);
         ITempleGold.VestingFactor memory _factor = _getVestingFactor();
         vm.expectEmit(address(templeGold));
-        emit VestingFactorSet(_factor.numerator, _factor.denominator);
+        emit VestingFactorSet(_factor.value, _factor.weekMultiplier);
         templeGoldAdmin.setVestingFactor(_factor);
         ITempleGold.VestingFactor memory _vf = templeGold.getVestingFactor();
-        assertEq(_vf.numerator, 10 ether);
-        assertEq(_vf.denominator, 100 ether);
+        assertEq(_vf.value, 10 ether);
+        assertEq(_vf.weekMultiplier, 100 ether);
     }
 
     function test_setDistributionParameters_tgldAdmin() public {
         vm.startPrank(executor);
         ITempleGold.DistributionParams memory _params = _getDistributionParameters();
         vm.expectEmit(address(templeGold));
-        emit DistributionParamsSet(_params.staking, _params.escrow, _params.gnosis);
+        emit DistributionParamsSet(_params.staking, _params.daiGoldAuction, _params.gnosis);
         templeGoldAdmin.setDistributionParams(_params);
 
         ITempleGold.DistributionParams memory _p = templeGold.getDistributionParameters();
         assertEq(_p.gnosis, _params.gnosis);
-        assertEq(_p.escrow, _params.escrow);
+        assertEq(_p.daiGoldAuction, _params.daiGoldAuction);
         assertEq(_p.staking, _params.staking);
     }
 

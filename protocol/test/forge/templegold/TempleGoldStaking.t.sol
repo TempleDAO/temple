@@ -14,6 +14,7 @@ import { DaiGoldAuction } from "contracts/templegold/DaiGoldAuction.sol";
 import { ITempleGoldStaking } from "contracts/interfaces/templegold/ITempleGoldStaking.sol";
 import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
 import { TempleGoldStakingMock } from "contracts/fakes/templegold/TempleGoldStakingMock.sol";
+import { ITempleElevatedAccess } from "contracts/interfaces/v2/access/ITempleElevatedAccess.sol";
 
 contract TempleGoldStakingTestBase is TempleGoldCommon {
 
@@ -73,15 +74,15 @@ contract TempleGoldStakingTestBase is TempleGoldCommon {
     }
 
     function _configureTempleGold() private {
-        templeGold.setEscrow(address(daiGoldAuction));
+        templeGold.setDaiGoldAuction(address(daiGoldAuction));
         ITempleGold.DistributionParams memory params;
-        params.escrow = 60 ether;
+        params.daiGoldAuction = 60 ether;
         params.gnosis = 10 ether;
         params.staking = 30 ether;
         templeGold.setDistributionParams(params);
         ITempleGold.VestingFactor memory factor;
-        factor.numerator = 35;
-        factor.denominator = 1 weeks;
+        factor.value = 35;
+        factor.weekMultiplier = 1 weeks;
         templeGold.setVestingFactor(factor);
         templeGold.setStaking(address(staking));
         templeGold.setTeamGnosis(teamGnosis);
@@ -101,8 +102,8 @@ contract TempleGoldStakingTestBase is TempleGoldCommon {
         uint32 _rewardDuration = 1 weeks;
         _setRewardDuration(_rewardDuration);
         ITempleGold.VestingFactor memory _factor = _getVestingFactor();
-        _factor.numerator = 35;
-        _factor.denominator = 1 weeks;
+        _factor.value = 35;
+        _factor.weekMultiplier = 1 weeks;
         vm.startPrank(executor);
         templeGold.setVestingFactor(_factor);
     }
@@ -203,16 +204,6 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         staking.withdraw(1, false);
     }
 
-    function test_revert_when_unstake_cooldown_not_set() public {
-        _setVestingFactor();
-        vm.startPrank(alice);
-        deal(address(templeToken), alice, 1 ether, true);
-        _approve(address(templeToken), address(staking), type(uint).max);
-        assertEq(staking.unstakeCooldown(), 0);
-        vm.expectRevert(abi.encodeWithSelector(ITempleGoldStaking.CannotStake.selector));
-        staking.stake(1 ether);
-    }
-
     function test_revert_distribute_when_paused() public {
         _setVestingFactor();
         _setUnstakeCooldown();
@@ -270,12 +261,12 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         staking.pause();
 
         vm.expectRevert(abi.encodeWithSelector(Pausable.EnforcedPause.selector));
-        staking.stakeFor(alice, 1 ether);
+        staking.stake(1 ether);
 
         staking.unpause();
         deal(address(templeToken), executor, 1000 ether, true);
         _approve(address(templeToken), address(staking), type(uint).max);
-        staking.stakeFor(alice, 1 ether);
+        staking.stake(1 ether);
     }
 
     function test_setDistributionStarter() public {
@@ -334,8 +325,8 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
 
         // distribute and test change
         ITempleGold.VestingFactor memory _factor = _getVestingFactor();
-        _factor.numerator = 35;
-        _factor.denominator = 1 weeks;
+        _factor.value = 35;
+        _factor.weekMultiplier = 1 weeks;
         vm.startPrank(executor);
         templeGold.setVestingFactor(_factor);
 
@@ -437,8 +428,8 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
 
     function test_distributeRewards() public {
         ITempleGold.VestingFactor memory _factor = _getVestingFactor();
-        _factor.numerator = 35;
-        _factor.denominator = 1 weeks;
+        _factor.value = 35;
+        _factor.weekMultiplier = 1 weeks;
         vm.startPrank(executor);
         templeGold.setVestingFactor(_factor);
 
@@ -522,8 +513,8 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         {
             // mint so there's nothing for next transaction
             _factor = _getVestingFactor();
-            _factor.numerator = 99 ether;
-            _factor.denominator = 100 ether;
+            _factor.value = 99 ether;
+            _factor.weekMultiplier = 100 ether;
             templeGold.setVestingFactor(_factor);
 
             // zero rewards minted, so no reward notification from TGLD. this is also for TempleGold max supply case.
@@ -556,8 +547,6 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
 
     function test_setUnstakeCooldown() public {
         vm.startPrank(executor);
-        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
-        staking.setUnstakeCooldown(0);
 
         vm.expectEmit(address(staking));
         emit UnstakeCooldownSet(1 weeks);
@@ -587,6 +576,26 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         staking.recoverToken(daiToken, alice, amount);
         assertEq(IERC20(daiToken).balanceOf(alice), amount);
         assertEq(IERC20(daiToken).balanceOf(address(staking)), 0);
+    }
+
+    function test_notifyDistribution_explicit_access() public {
+        skip(1 weeks);
+        templeGold.mint();
+        vm.startPrank(executor);
+        ITempleElevatedAccess.ExplicitAccess[] memory _accesses = new ITempleElevatedAccess.ExplicitAccess[](1);
+        ITempleElevatedAccess.ExplicitAccess memory _access;
+        _access.fnSelector = staking.notifyDistribution.selector;
+        _access.allowed = true;
+        _accesses[0] = _access;
+        staking.setExplicitAccess(teamGnosis, _accesses);
+
+        // now team gnosis can send TGLD to staking contract and notify distribution
+        vm.startPrank(teamGnosis);
+        uint256 nextRewardAmount = staking.nextRewardAmount();
+        uint256 amount = 1 ether;
+        IERC20(templeGold).transfer(address(staking), amount);
+        staking.notifyDistribution(amount);
+        assertEq(staking.nextRewardAmount(), amount+nextRewardAmount);
     }
 
     function test_withdraw_single_account_single_stake() public {
@@ -1006,11 +1015,13 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         _setVestingFactor();
         _setUnstakeCooldown();
 
+        uint256 unstakeCooldown = staking.unstakeCooldown();
         vm.startPrank(alice);
         deal(address(templeToken), alice, 1000 ether, true);
         _approve(address(templeToken), address(staking), type(uint).max);
         uint256 stakeAmount = 100 ether;
         staking.stake(stakeAmount);
+        assertEq(staking.unstakeTimes(alice), block.timestamp+unstakeCooldown);
         skip(1 days);
         _distributeRewards(alice);
         uint256 tgldRewardAmount = templeGold.balanceOf(address(staking));
@@ -1186,7 +1197,7 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         vm.startPrank(bob);
         _approve(address(templeToken), address(staking), type(uint).max);
         blockNumber = block.number;
-        staking.stakeFor(bob, stakeAmount);
+        staking.stake(stakeAmount);
         staking.delegate(mike);
         assertEq(staking.balanceOf(bob), stakeAmount);
         assertEq(staking.numCheckpoints(mike), 1);
@@ -1228,7 +1239,7 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         deal(address(templeToken), alice, 1000 ether, true);
         _approve(address(templeToken), address(staking), type(uint).max);
         uint256 blockNumber = block.number;
-        staking.stakeFor(alice, stakeAmount);
+        staking.stake(stakeAmount);
         ITempleGoldStaking.Checkpoint memory _checkpoint = staking.getCheckpoint(mike, 0);
         assertEq(_checkpoint.fromBlock, blockNumber);
         assertEq(_checkpoint.votes, stakeAmount);
