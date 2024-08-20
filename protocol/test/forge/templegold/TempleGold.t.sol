@@ -385,6 +385,7 @@ contract TempleGoldTest is TempleGoldTestBase {
         emit log_uint(emission);
         assertEq(emission, mintAmount);
         assertEq(emission, templeGold.circulatingSupply());
+        assertEq(templeGold.circulatingSupply(), 28571428571428571428571428);
         uint256 totalEmissions = emission;
         // week 2
         skip(1 weeks);
@@ -397,6 +398,7 @@ contract TempleGoldTest is TempleGoldTestBase {
         emit log_uint(totalEmissions);
         assertEq(emission, mintAmount);
         assertEq(totalEmissions, templeGold.circulatingSupply());
+        assertEq(templeGold.circulatingSupply(), 56326530612244897959183672);
 
         // week 3
         skip(1 weeks);
@@ -409,6 +411,7 @@ contract TempleGoldTest is TempleGoldTestBase {
         emit log_uint(totalEmissions);
         assertEq(emission, mintAmount);
         assertEq(totalEmissions, templeGold.circulatingSupply());
+        assertEq(templeGold.circulatingSupply(), 83288629737609329446064138);
 
         // week 4
         skip(1 weeks);
@@ -421,6 +424,7 @@ contract TempleGoldTest is TempleGoldTestBase {
         emit log_uint(totalEmissions);
         assertEq(emission, mintAmount);
         assertEq(totalEmissions, templeGold.circulatingSupply());
+        assertEq(templeGold.circulatingSupply(), 109480383173677634319033734);
 
         // // week 5
         skip(1 weeks);
@@ -433,6 +437,7 @@ contract TempleGoldTest is TempleGoldTestBase {
         emit log_uint(totalEmissions);
         assertEq(emission, mintAmount);
         assertEq(totalEmissions, templeGold.circulatingSupply());
+        assertEq(templeGold.circulatingSupply(), 134923800797286844767061341);
 
         // week 6
         skip(1 weeks);
