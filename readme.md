@@ -8,9 +8,7 @@
 
 This repository uses `.nvmrc` to dictate the version of node required to compile and run the project. This will allow you to use `nvm` followed by either `nvm use` or `nvm install` to automatically set the right version of node in that terminal session.
 
-If developing on Windows, some scripts are currently written in bash so WSL is recommended to run those. For most developments tasks you'll likely only need to run the steps in Protocol local deployment and Dapp. 
-
-This project uses yarn workspaces to share common dependencies between all the applications. Before attempting to run any of the apps, you'll want to run `yarn install` from the root of the project. 
+If developing on Windows, some scripts are currently written in bash so WSL is recommended to run those. For most developments tasks you'll likely only need to run the steps in Protocol local deployment and Dapp.
 
 ### Quick Start 
 
@@ -75,7 +73,7 @@ yarn hardhat verify --network rinkeby 0x359655dcB8A32479680Af81Eb38eA3Bb2B42Af54
 It's fine to have multiple versions of a contract on rinkeby, so it's okay to run before your PR is merged (and re-run if there are any
 comments on the PR on how to best setup the deploy scripts).
 
-You can also run and test locally by replacing `yarn workspace @temple/protocol hardhat:testnet` with `yarn workspace @temple/protocol hardhat:local`. You'll probably have to run some of the previous deploys
+You can also run and test locally by replacing `yarn hardhat:testnet` with `yarn hardhat:local` in the protocol directory. You'll probably have to run some of the previous deploys
 in order to setup the right local state
 
 ### Dapp
@@ -93,18 +91,6 @@ yarn build
 
 yarn serve
 ```
-
-## Local Dependencies
-
-### Naming Convention
-Please prefix all package names (in package.json) with `@temple/`. 
-Ex: `@temple/dapp`, `@temple/protocols`
-
-### Adding to projects
-If you need to add a *local* dependency to another local project, for example a shared lib to the dapp, you *must* include the version. This is a [bug](https://github.com/yarnpkg/yarn/issues/4878) in yarn:
-
-`yarn workspace @temple/dapp add @temple/demo@v1.0.0`
-
 
 ## Vercel
 
