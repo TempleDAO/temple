@@ -37,8 +37,6 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
     /// @notice Multisig gnosis address
     address public override teamGnosis;
 
-    address public notifier;
-
     /// @notice Last block timestamp Temple Gold was minted
     uint32 public override lastMintTimestamp;
 
@@ -137,12 +135,6 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
         if (lastMintTimestamp == 0) { lastMintTimestamp = uint32(block.timestamp); }
         else { mint(); }
         emit VestingFactorSet(_factor.value, _factor.weekMultiplier);
-    }
-
-    function setNotifier(address _notifier) external onlyOwner {
-        if (_notifier == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
-        notifier = _notifier;
-        emit NotifierSet(_notifier);
     }
     
     /**
@@ -392,11 +384,6 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
 
     modifier onlyArbitrum() {
         if (block.chainid != _mintChainId) { revert WrongChain(); }
-        _;
-    }
-
-    modifier onlyNotifier() {
-        if (msg.sender != notifier) { revert CommonEventsAndErrors.InvalidAccess(); }
         _;
     }
  }

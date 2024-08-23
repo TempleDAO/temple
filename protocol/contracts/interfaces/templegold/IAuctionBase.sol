@@ -30,13 +30,13 @@ interface IAuctionBase {
     }
 
     /// @notice Keep track of epochs details
-    function getEpochInfo(uint256 epochId) external returns (EpochInfo memory);
+    function getEpochInfo(uint256 epochId) external view returns (EpochInfo memory);
     /// @notice Keep track of depositors for each epoch
-    function depositors(address depositor, uint256 epochId) external returns (uint256);
+    function depositors(address depositor, uint256 epochId) external view returns (uint256);
     /// @notice Keep track of claimed accounts per epoch
-    function claimed(address depositor, uint256 epochId) external returns (bool);
+    function claimed(address depositor, uint256 epochId) external view returns (bool);
     /// @notice claimed amounts
-    function claimedAmount(address depositor, uint256 epochId) external returns (uint256);
+    function claimedAmount(address depositor, uint256 epochId) external view returns (uint256);
 
     /**
      * @notice Deposit bid token for current running epoch auction
