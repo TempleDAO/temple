@@ -6,7 +6,7 @@ import {
   expectAddressWithPrivateKey,
   toAtto,
 } from '../../helpers';
-import snapshot from './json/epoch25a.json';
+import snapshot from './json/epoch25b.json';
 
 // TODO: Add command line arguments for json allocations file
 async function main() {
