@@ -1,4 +1,5 @@
-import { Logger, TaskContext, TaskException } from '@mountainpath9/overlord';
+import { ERROR_INTERFACES } from '@/utils/ethers-exceptions';
+import { Logger, TaskContext, TaskException, logTaskException, mapParsedEthersException } from '@mountainpath9/overlord';
 import { WebhookClient, MessageCreateOptions } from 'discord.js';
 
 interface DiscordChannel {
@@ -32,12 +33,19 @@ export function decodeWebhookUrl(url: string): { id: string; token: string } {
   return { id: m[1], token: m[2] };
 }
 
-export async function discordNotifyTaskException(ctx: TaskContext, te: TaskException) {
+export async function discordNotifyTaskException(ctx: TaskContext, te0: TaskException) {
+  // Map custom errors for our contracts to be human readable
+  const te = { ...te0, exception: mapParsedEthersException(te0.exception, ERROR_INTERFACES) };
+
+  // Log failure to overlord
+  await logTaskException(ctx, te);
+
+  const tsyOpsRoleId = await ctx.config.getString(DISCORD_TSY_OPS_ROLE_ID_KEY);
   const content = [
+    `<@&${tsyOpsRoleId}>`, // discord role id to be tagged
     `**TEMPLE Task Failed**`,
     `task label: ${te.label}`,
     `task id: ${te.taskId}`,
-    `task phase: ${te.phase}`,
   ];
 
   if (te.exception instanceof Error) {
@@ -63,3 +71,4 @@ const DISCORD_URL_RE = new RegExp(
 
 export const DISCORD_WEBHOOK_URL_KEY = 'temple_tlc_discord_webhook_url';
 export const DISCORD_WEBHOOK_ERROR_URL_KEY = 'temple_tlc_discord_error_webhook_url';
+export const DISCORD_TSY_OPS_ROLE_ID_KEY = 'temple_tlc_discord_tsy_ops_role_id';

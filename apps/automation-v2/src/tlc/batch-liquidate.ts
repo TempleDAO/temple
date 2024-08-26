@@ -19,7 +19,6 @@ import { subgraphRequest } from '@/subgraph/subgraph-request';
 import { GetUserResponse } from '@/subgraph/types';
 import { matchAndDecodeEvent } from '@/common/filters';
 import { backOff } from 'exponential-backoff';
-import { AxiosResponse } from 'axios';
 
 export interface TlcBatchLiquidateConfig {
   CHAIN: Chain;
@@ -29,7 +28,6 @@ export interface TlcBatchLiquidateConfig {
   MIN_ETH_BALANCE_WARNING: bigint;
   GAS_LIMIT: bigint;
   SUBGRAPH_URL: string;
-  SUBGRAPH_ALCHEMY_URL: string;
   SUBGRAPH_RETRY_LIMIT: number;
 }
 
@@ -64,23 +62,12 @@ export async function batchLiquidate(
     return chunk;
   };
 
-  let res: AxiosResponse<GetUserResponse> | undefined = undefined;
-  const randomUrlFirstAlchemyApi = Math.random() < 0.5;
-  try {
-    // try first random subgraph api endpoint
-    res = await getTlcUsers(
-      ctx,
-      randomUrlFirstAlchemyApi ? config.SUBGRAPH_ALCHEMY_URL : config.SUBGRAPH_URL,
-      config.SUBGRAPH_RETRY_LIMIT
-    );
-  } catch (e) {
-    // if first fails, try the second endpoint option
-    res = await getTlcUsers(
-      ctx,
-      randomUrlFirstAlchemyApi ? config.SUBGRAPH_URL : config.SUBGRAPH_ALCHEMY_URL,
-      config.SUBGRAPH_RETRY_LIMIT
-    );
-  }
+  // try first random subgraph api endpoint
+  const res = await getTlcUsers(
+    ctx,
+    config.SUBGRAPH_URL,
+    config.SUBGRAPH_RETRY_LIMIT
+  );
 
   const tlcUsers = res.data.data?.tlcUsers;
   ctx.logger.info(`tlcUsers to check: ${JSON.stringify(tlcUsers)}`);

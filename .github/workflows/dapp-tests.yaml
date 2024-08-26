@@ -11,18 +11,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
         with:
           node-version: '20'
-          cache: 'yarn'
-      - uses: actions/cache@v3
-        with:
-          path: './node_modules'
-          key: ${{ runner.os }}-modules-${{ hashFiles('yarn.lock') }}
-      - uses: actions/cache@v3
+      - name: Cache Dependencies
+        uses: actions/cache@v3
         with:
           path: 'apps/dapp/node_modules'
           key: ${{ runner.os }}-modules-${{ hashFiles('apps/dapp/yarn.lock') }}
-      - run: yarn install
-      - run: NODE_OPTIONS="--max_old_space_size=4096" yarn build
+      - name: Install Dependencies
+        run: yarn install
+        working-directory: apps/dapp
+      - name: Build
+        run: NODE_OPTIONS="--max_old_space_size=4096" yarn build
         working-directory: apps/dapp
