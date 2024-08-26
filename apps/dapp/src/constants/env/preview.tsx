@@ -3,7 +3,7 @@ import { Environment } from './types';
 
 const env: Environment = {
   alchemyId: 'AorwfDdHDsEjIX4HPwS70zkVjWqjv5vZ',
-  rpcUrl: 'https://eth.llamarpc.com',
+  rpcUrl: 'https://rpc.ankr.com/eth',
   backendUrl: 'https://backend-stage.templedao.link',
   contracts: {
     balancerVault: '',
