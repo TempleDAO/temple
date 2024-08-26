@@ -42,7 +42,6 @@ interface ITempleGold is IOFT, IOAppCore, IOAppOptionsType3, IERC20 {
     event DaiGoldAuctionSet(address daiGoldAuction);
     event TeamGnosisSet(address gnosis);
     event CirculatingSupplyUpdated(address indexed sender, uint256 amount, uint256 circulatingSuppply, uint256 totalBurned);
-    event NotifierSet(address indexed notifier);
     
     error InvalidTotalShare();
     error MissingParameter();

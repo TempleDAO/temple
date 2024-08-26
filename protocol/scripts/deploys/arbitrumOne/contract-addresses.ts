@@ -68,6 +68,33 @@ const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
             }
         },
     },
+    localhost: {
+        TEMPLE_GOLD: {
+            AUCTION_AUTOMATION_EOA: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+            STAKING_AUTOMATION_EOA: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+            SPICE_AUCTION_OPERATOR: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+            TEMPLE_GOLD: "0xf3800C1f5374d9104ab20A48F1F83485BD9a37da",
+            TEMPLE_GOLD_ADMIN: "0x0222F49C69567eB50f425AF01E2F9FCc451e807B",
+            TEMPLE_GOLD_STAKING: "0xa7390dA200fcB4ce8C1032Cc024779F488B0D03a",
+            TEMPLE_TELEPORTER: "0x876d471068e723279Fe52Eb10A6A587cA1a26CA4",
+            SPICE_AUCTION: "string",
+            SPICE_AUCTION_FACTORY: "string",
+            DAI_GOLD_AUCTION: "0xA3174691290D9F0D8Fe3E98D8222441e117d1c46",
+            EXECUTOR_MSIG: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+            RESCUER_MSIG: "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+        },
+        CORE: {
+            TEMPLE_TOKEN: "0x7816d99063dfEc136d2139681D3fbD92375Ec14c",
+        },
+        EXTERNAL: {
+            LAYER_ZERO: {
+                ENDPOINT: '0x1a44076050125825900e736c501f859c50fE728c',
+            },
+            MAKER_DAO: {
+                DAI_TOKEN: "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1",
+            }
+        },
+    }
 }
 
 export function getDeployedTempleGoldContracts(): ContractAddresses {
