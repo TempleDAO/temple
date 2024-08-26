@@ -1071,12 +1071,12 @@
     "@babel/helper-validator-identifier" "^7.24.7"
     to-fast-properties "^2.0.0"
 
-"@balancer-labs/sdk@^1.0.4":
-  version "1.1.5"
-  resolved "https://registry.yarnpkg.com/@balancer-labs/sdk/-/sdk-1.1.5.tgz#29e70d15d7e98899831b18d8b909b6569e062758"
-  integrity sha512-Hxmo1u8qJureQxdbVAMAkN9qceeZxcKx4QjoevTDMrSGY5H9jc1hX18p9TTZXwlGAkw8n4rdErydUgsdWjWuLA==
+"@balancer-labs/sdk@^1.1.6":
+  version "1.1.6"
+  resolved "https://registry.yarnpkg.com/@balancer-labs/sdk/-/sdk-1.1.6.tgz#a54f37e237388eb7c9189b66814cf41471825e62"
+  integrity sha512-NSIjSk1TbHmmVCo2FO2zAYJFbNBdUaILP6rHUjzyMUDNQFNkXJs1IxX404HR89QV1zdvgGw/p8M6uz7sVujALg==
   dependencies:
-    "@balancer-labs/sor" "^4.1.1-beta.16"
+    "@balancer-labs/sor" "^4.1.1-beta.17"
     "@ethersproject/abi" "^5.4.0"
     "@ethersproject/abstract-signer" "^5.4.0"
     "@ethersproject/address" "^5.4.0"
@@ -1087,12 +1087,13 @@
     "@ethersproject/contracts" "^5.4.0"
     "@ethersproject/providers" "^5.4.5"
     axios "^0.24.0"
+    ethers "^5"
     graphql "^15.6.1"
     graphql-request "^3.5.0"
     json-to-graphql-query "^2.2.4"
     lodash "^4.17.21"
 
-"@balancer-labs/sor@^4.1.1-beta.16":
+"@balancer-labs/sor@^4.1.1-beta.17":
   version "4.1.1-beta.18"
   resolved "https://registry.yarnpkg.com/@balancer-labs/sor/-/sor-4.1.1-beta.18.tgz#25b37a2b77b3509172b408e6daf17624bc633ab9"
   integrity sha512-y/JfWXHAE76Ry/bptqzltTYmx8zvX1fHjCxKR28ZmAhhvG2ctWwBh8alabjMlQhstoaN1ResyHNLh9ChLsIDTA==
@@ -9833,7 +9834,7 @@ ethers@^4.0.32, ethers@^4.0.45:
     uuid "2.0.1"
     xmlhttprequest "1.8.0"
 
-ethers@^5.0.13:
+ethers@^5, ethers@^5.0.13:
   version "5.7.2"
   resolved "https://registry.yarnpkg.com/ethers/-/ethers-5.7.2.tgz#3a7deeabbb8c030d4126b24f84e525466145872e"
   integrity sha512-wswUsmWo1aOK8rR7DIKiWSw9DbLWe6x98Jrn8wcTflTVvaXhAMaB5zGAXy0GYQEQp9iO1iSHWVyARQm11zUtyg==

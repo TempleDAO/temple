@@ -221,6 +221,7 @@ const InputTokenWrapper = styled.div`
   p {
     font-size: 1.25rem;
     margin-top: 0.55rem;
+    margin-bottom: -0.11rem;
   }
 `;
 
@@ -234,6 +235,7 @@ export const InputHint = styled.small<InputHintProps>`
   text-align: center;
   text-transform: uppercase;
   width: max-content;
+  margin-top: 0.15rem;
 
   ${(props) =>
     props.hasAction &&
