@@ -50,7 +50,7 @@ export type TlcInfo = {
   templeCircuitBreakerRemaining: BigNumber;
 };
 
-export const MAX_LTV = 75;
+export const MAX_LTV = 85;
 
 export type Prices = { templePrice: number; daiPrice: number; tpi: number };
 
