@@ -4,7 +4,6 @@ import {
     mine,
 } from '../../helpers';
 import { connectToContracts, getDeployedTempleGoldContracts } from '../../arbitrumOne/contract-addresses';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { TempleGold__factory, TempleGoldStaking__factory, DaiGoldAuction__factory } from '../../../../typechain';
 
 

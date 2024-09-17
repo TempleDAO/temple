@@ -7,7 +7,7 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ISpiceAuction } from "contracts/interfaces/templegold/ISpiceAuction.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
-import { AuctionBase } from "contracts/templegold//AuctionBase.sol";
+import { AuctionBase } from "contracts/templegold/AuctionBase.sol";
 import { TempleMath } from "contracts/common/TempleMath.sol";
 import { EpochLib } from "contracts/templegold/EpochLib.sol";
 import { IAuctionBase } from "contracts/interfaces/templegold/IAuctionBase.sol";
