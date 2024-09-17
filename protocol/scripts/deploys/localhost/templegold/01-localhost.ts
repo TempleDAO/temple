@@ -11,7 +11,6 @@ import {
 import { getDeployedContracts } from '../../mainnet/v2/contract-addresses';
 import { getDeployedTempleGoldContracts } from '../../arbitrumOne/contract-addresses';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import { ContractAddresses } from '@balancer-labs/sdk';
 
 async function main() {
   ensureExpectedEnvvars();
@@ -87,7 +86,7 @@ async function _deployTempleGoldStaking(owner: SignerWithAddress, rescuer: Signe
       factory.deploy,
       await rescuer.getAddress(),
       await owner.getAddress(),
-      CORE_ADDRESSES.CORE.TEMPLE_TOKEN,
+      TEMPLEGOLD_ADDRESSES.CORE.TEMPLE_TOKEN,  //   CORE_ADDRESSES.CORE.TEMPLE_TOKEN,
       TEMPLEGOLD_ADDRESSES.TEMPLE_GOLD.TEMPLE_GOLD
     );
 }
