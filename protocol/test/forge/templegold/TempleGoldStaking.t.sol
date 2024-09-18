@@ -1021,7 +1021,7 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         _approve(address(templeToken), address(staking), type(uint).max);
         uint256 stakeAmount = 100 ether;
         staking.stake(stakeAmount);
-        assertEq(staking.unstakeTimes(alice), block.timestamp+unstakeCooldown);
+        assertEq(staking.stakeTimes(alice), block.timestamp);
         skip(1 days);
         _distributeRewards(alice);
         uint256 tgldRewardAmount = templeGold.balanceOf(address(staking));
