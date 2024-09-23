@@ -130,10 +130,10 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
      */
     function setVestingFactor(VestingFactor calldata _factor) external override onlyOwner {
         if (_factor.value == 0 || _factor.weekMultiplier == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
-        vestingFactor = _factor;
         /// @dev initialize
         if (lastMintTimestamp == 0) { lastMintTimestamp = uint32(block.timestamp); }
         else { mint(); }
+        vestingFactor = _factor;
         emit VestingFactorSet(_factor.value, _factor.weekMultiplier);
     }
     

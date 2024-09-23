@@ -599,4 +599,28 @@ contract TempleGoldTest is TempleGoldTestBase {
         assertEq(templeGold.totalSupply(), _totalSupply);
         assertEq(templeGold.getMintAmount(), 0);
     }
+
+    function test_setVestingFactor_repeat_expected_mint_amount() public {
+        vm.startPrank(executor);
+        ITempleGold.VestingFactor memory _factor;
+        {
+            _factor.value = 70;
+            _factor.weekMultiplier = 1 weeks;
+            templeGold.setVestingFactor(_factor);
+        }
+        skip(1 days);
+        uint256 mintAmountDayOne = templeGold.getMintAmount();
+
+        _factor.value = 35;
+        // setting vesting factor mints tgld tokens
+        templeGold.setVestingFactor(_factor);
+        assertEq(templeGold.getMintAmount(), 0);
+        skip(1 days);
+        uint256 mintAmountDayTwo = templeGold.getMintAmount();
+        assertApproxEqAbs(mintAmountDayTwo, mintAmountDayOne * 2, 1e22);
+        skip(1 days);
+        uint256 mintAmountDayThree = templeGold.getMintAmount() - mintAmountDayTwo;
+        assertEq(mintAmountDayThree, mintAmountDayTwo);
+
+    }
 }
