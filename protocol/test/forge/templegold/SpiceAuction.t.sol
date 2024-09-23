@@ -590,7 +590,7 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         spice.bid(10 ether);
         
         // start auction
-        ISpiceAuction.SpiceAuctionConfig memory _config =  _startAuction(true, true);
+        ISpiceAuction.SpiceAuctionConfig memory _config = _startAuction(true, true);
         uint256 epoch = spice.currentEpoch();
         IAuctionBase.EpochInfo memory epochInfo = spice.getEpochInfo(epoch);
         vm.warp(epochInfo.startTime);
@@ -849,5 +849,98 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         vm.expectEmit(address(spice));
         emit OperatorSet(alice);
         spice.setOperator(alice);
+    }
+
+    function test_burn_and_notify_arbitrum() public {
+         {
+            _setVestingFactor();
+            // authorize for transfers
+            vm.startPrank(executor);
+            templeGold.authorizeContract(mike, true);
+            templeGold.authorizeContract(treasury, true);
+            skip(4 weeks);
+            templeGold.mint();
+            // team gnosis
+            vm.startPrank(mike);
+            // approve spice auction contract to transfer
+            IERC20(templeGold).approve(address(spice), type(uint).max);
+            // distribute TGLD to alice
+            IERC20(templeGold).transfer(alice, 100 ether);
+        }
+
+        uint256 amount = 10 ether;
+        uint256 etherAmount = 5 ether;
+        vm.deal(address(spice), etherAmount);
+
+        // start spcie auction with TGLD as bid token
+        ISpiceAuction.SpiceAuctionConfig memory _config = _getAuctionConfig();
+        _config.isTempleGoldAuctionToken = false;
+        _config.recipient = mike;
+        vm.startPrank(daoExecutor);
+        spice.setAuctionConfig(_config);
+
+        {
+            deal(daiToken, address(spice), 500 ether);
+            vm.startPrank(alice);
+            spice.startAuction();
+            // skip cooldown
+            skip(_config.startCooldown);
+        }
+        uint256 bidAmount = 100 ether;
+        uint256 currentEpoch = spice.currentEpoch();
+
+         {
+            // bids
+            vm.startPrank(alice);
+            IERC20(templeGold).approve(address(spice), type(uint).max);
+            vm.expectEmit(address(spice));
+            emit Deposit(alice, currentEpoch, bidAmount);
+            spice.bid(bidAmount);
+        }
+
+        vm.expectRevert(abi.encodeWithSelector(IAuctionBase.InvalidEpoch.selector));
+        spice.burnAndNotify(3, false);
+
+        vm.startPrank(alice);
+        vm.expectRevert(abi.encodeWithSelector(IAuctionBase.AuctionActive.selector));
+        spice.burnAndNotify(currentEpoch, false);
+
+        IAuctionBase.EpochInfo memory _info = spice.getEpochInfo(currentEpoch);
+        vm.warp(_info.endTime);
+
+        uint256 circulatingSupply = templeGold.circulatingSupply();
+        vm.expectEmit(address(spice));
+        emit RedeemedTempleGoldBurned(currentEpoch, bidAmount);
+        spice.burnAndNotify(currentEpoch, false);
+        emit log_string("balance");
+        emit log_uint(IERC20(daiToken).balanceOf(address(spice)));
+        assertEq(spice.redeemedEpochs(currentEpoch), true);
+        assertEq(templeGold.circulatingSupply(), circulatingSupply-bidAmount);
+
+        _startAuction(true, true);
+        _config = spice.getAuctionConfig(currentEpoch+1);
+        currentEpoch = spice.currentEpoch();
+        _info = spice.getEpochInfo(currentEpoch);
+        vm.warp(_info.endTime);
+        
+        // tgld is auction token
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
+        spice.burnAndNotify(currentEpoch, false);
+
+        _config = _getAuctionConfig();
+        _config.isTempleGoldAuctionToken = false;
+        vm.startPrank(daoExecutor);
+        spice.setAuctionConfig(_config);
+        vm.startPrank(_config.starter);
+        skip(_config.waitPeriod);
+        dealAdditional(IERC20(daiToken), address(spice), 500 ether);
+        templeGold.mint();
+        spice.startAuction();
+        // no bids
+        currentEpoch = spice.currentEpoch();
+        _info = spice.getEpochInfo(currentEpoch);
+        vm.warp(_info.endTime);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
+        spice.burnAndNotify(currentEpoch, false);
     }
 }
