@@ -141,7 +141,6 @@ interface ITempleGold is IOFT, IOAppCore, IOAppOptionsType3, IERC20 {
 
     /**
      * @notice Burn and update circulating supply on source chain
-     * @dev Caller must be authorized. eg. spice auction
      * @param amount Amount to burn
      */
     function burn(uint256 amount) external;
