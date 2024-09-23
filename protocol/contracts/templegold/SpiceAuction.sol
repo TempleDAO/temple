@@ -379,12 +379,16 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
         EpochInfo storage epochInfo = epochs[epochId];
         if (epochInfo.startTime == 0) { revert InvalidEpoch(); }
         if (!epochInfo.hasEnded()) { revert AuctionActive(); }
+
+        SpiceAuctionConfig storage _config = auctionConfigs[epochId];
+        (address bidToken,) = _getBidAndAuctionTokens(_config);
+        if (bidToken != templeGold) { revert CommonEventsAndErrors.InvalidParam(); }
         uint256 amount = epochInfo.totalBidTokenAmount;
         if (amount == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
         
         emit RedeemedTempleGoldBurned(epochId, amount);
         redeemedEpochs[epochId] = true;
-        _burnAndNotify(amount, useContractEth);
+        _burnAndNotify(amount, _config.recipient, useContractEth);
     }
 
     /**
@@ -435,7 +439,9 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
             : (templeGold, spiceToken);
     }
 
-    function _burnAndNotify(uint256 amount, bool useContractEth) private {
+    function _burnAndNotify(uint256 amount, address from, bool useContractEth) private {
+        // pull funds from bids recipient (set in config)
+        IERC20(templeGold).safeTransferFrom(from, address(this), amount);
         // burn directly and call TempleGold to update circulating supply
         if (block.chainid == _mintChainId) {
             ITempleGold(templeGold).burn(amount);

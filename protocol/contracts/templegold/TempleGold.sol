@@ -329,11 +329,9 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
 
     /**
      * @notice Burn and update circulating supply on source chain
-     * @dev Caller must be authorized. eg. spice auction
      * @param amount Amount to burn
      */
     function burn(uint256 amount) external override onlyArbitrum {
-        if (!authorized[msg.sender]) { revert CommonEventsAndErrors.InvalidAccess(); }
         _burn(msg.sender, amount);
         _updateCirculatingSupply(msg.sender, amount);
     }
@@ -364,7 +362,7 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
             // already checked destination Eid for burn case in `send`
             // update circulating supply
             // _origin.sender is spice auction
-            _updateCirculatingSupply(_origin.sender.bytes32ToAddress(), _message.amountSD());
+            _updateCirculatingSupply(_origin.sender.bytes32ToAddress(), _toLD(_message.amountSD()));
         } else {
             /// @dev The src sending chain doesnt know the address length on this chain (potentially non-evm)
             // Thus everything is bytes32() encoded in flight.
@@ -378,8 +376,8 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
 
     function _updateCirculatingSupply(address sender, uint256 amount) private {
         uint256 _totalBurnedCache = _totalBurnedFromSpiceAuctions = _totalBurnedFromSpiceAuctions + amount;
-        uint256 _circulatingSuppplyCache = _circulatingSupply = _circulatingSupply - amount;
-        emit CirculatingSupplyUpdated(sender, amount, _circulatingSuppplyCache, _totalBurnedCache);
+        uint256 _circulatingSupplyCache = _circulatingSupply = _circulatingSupply - amount;
+        emit CirculatingSupplyUpdated(sender, amount, _circulatingSupplyCache, _totalBurnedCache);
     }
 
     modifier onlyArbitrum() {
