@@ -835,7 +835,6 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InsufficientBalance.selector, address(0), 1 ether, 0));
         spice.withdrawEth(payable(alice), 1 ether);
     }
-
     function test_setOperator() public {
         // access
         vm.startPrank(unauthorizedUser);
@@ -849,5 +848,70 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         vm.expectEmit(address(spice));
         emit OperatorSet(alice);
         spice.setOperator(alice);
+    }
+
+    function test_mint_max_supply_update_circulating_supply() public {
+        ITempleGold.VestingFactor memory _factor = _getVestingFactor();
+        {
+            vm.startPrank(executor);
+            _factor.value = 35;
+            _factor.weekMultiplier = 1 weeks;
+            templeGold.setVestingFactor(_factor);
+            templeGold.authorizeContract(mike, true);
+            templeGold.authorizeContract(treasury, true);
+            // team gnosis
+            vm.startPrank(mike);
+            skip(365 days);
+            templeGold.mint();
+            // distribute TGLD to alice
+            IERC20(templeGold).transfer(alice, 12_400 ether);
+        }
+        assertEq(templeGold.circulatingSupply(), templeGold.MAX_CIRCULATING_SUPPLY());
+        assertEq(templeGold.getMintAmount(), 0);
+        assertEq(templeGold.canDistribute(), false);
+
+        // create spice auction and redeem
+        ISpiceAuction.SpiceAuctionConfig memory config = _getAuctionConfig();
+        {
+            // tgld as bid token
+            config.isTempleGoldAuctionToken = false;
+            vm.startPrank(daoExecutor);
+            spice.setAuctionConfig(config);
+            deal(daiToken, address(spice), 500 ether);
+            vm.startPrank(alice);
+            spice.startAuction();
+            // skip cooldown
+            skip(config.startCooldown);
+        }
+        uint256 bidAmount = 12_333_456_789_012_345_678_900;
+        uint256 currentEpoch = spice.currentEpoch();
+        // bid
+        vm.startPrank(alice);
+        IERC20(templeGold).approve(address(spice), type(uint).max);
+        spice.bid(bidAmount);
+
+        IAuctionBase.EpochInfo memory epochInfo = spice.getEpochInfo(currentEpoch);
+        assertEq(epochInfo.totalBidTokenAmount, bidAmount);
+        vm.warp(epochInfo.endTime);
+
+        // burn redeemed TGLD and update circulating supply.
+        vm.deal(address(spice), 1 ether);
+        vm.startPrank(mike);
+        IERC20(templeGold).transfer(address(spice), 12_400 ether);
+        uint256 circulatingSupply = templeGold.MAX_CIRCULATING_SUPPLY() - bidAmount;
+        vm.expectEmit(address(templeGold));
+        emit CirculatingSupplyUpdated(address(spice), bidAmount, circulatingSupply, bidAmount);
+        spice.burnAndNotify(currentEpoch, true);
+        assertEq(templeGold.circulatingSupply(), circulatingSupply);
+        emit log_uint(templeGold.getMintAmount());
+        // circulating supply reduced but not enough to mint 10_000
+        assertEq(templeGold.canDistribute(), false);
+        vm.startPrank(executor);
+        // mint faster
+        _factor.weekMultiplier = 70;
+        templeGold.setVestingFactor(_factor);
+        skip(1 weeks);
+        emit log_uint(templeGold.getMintAmount());
+        assertEq(templeGold.canDistribute(), true);
     }
 }
