@@ -217,8 +217,8 @@ interface ITempleGoldStaking {
      * @return The number of votes the account had as of the given block
      */
     function getPriorVotes(address account, uint256 blockNumber) external view returns (uint256);
-    /// @notice Time staker can unstake
-    function unstakeTimes(address account) external view returns (uint256);
+    /// @notice Time staker staked
+    function stakeTimes(address account) external view returns (uint256);
     /// @notice Cooldown time before unstake
     function unstakeCooldown() external view returns (uint32);
 
