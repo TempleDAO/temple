@@ -187,7 +187,7 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
     }
 
     function _canDistribute(uint256 mintAmount) private view returns (bool) {
-        return mintAmount != 0 && _totalDistributed + mintAmount == MAX_CIRCULATING_SUPPLY ? true : mintAmount >= MINIMUM_MINT;
+        return mintAmount != 0 && _circulatingSupply + mintAmount == MAX_CIRCULATING_SUPPLY ? true : mintAmount >= MINIMUM_MINT;
     }
 
     /**
