@@ -181,7 +181,7 @@ export default function LineChart<T>(
             }}
             height={20}
             formatter={legendFormatter}
-            onClick={(e) => toggleLineVisibility(e.dataKey)}
+            onClick={(e) => toggleLineVisibility(e.dataKey?.toString() || '')}
           />
         ) : null}
       </ComposedChart>

@@ -1,6 +1,6 @@
 import { Dispatch, SetStateAction, useRef, useState } from 'react';
 import styled from 'styled-components';
-import { FilterButton } from 'components/Pages/Ascend/components/Trade/styles';
+import { FilterButton } from 'styles/common';
 import { RowFilter } from '../hooks/use-dashboardv2-txHistory';
 import { TableHeaders } from './TxnHistoryTable';
 import { RadioCheckbox } from 'components/Checkbox/RadioCheckbox';
@@ -38,8 +38,8 @@ export const RowFilterDropdown = (props: Props) => {
       <FilterButton onClick={() => setDropdownOpened(!dropdownOpened)} />
       {dropdownOpened && (
         <DropdownOptionsContainer ref={ref}>
-          {dropdownOptions.map((op, idx) => (
-            <DropdownOption key={idx} isChecked={op.checked}>
+          {dropdownOptions.map((op) => (
+            <DropdownOption key={op.label} isChecked={op.checked}>
               <RadioCheckbox
                 id={op.label}
                 defaultChecked={op.checked}

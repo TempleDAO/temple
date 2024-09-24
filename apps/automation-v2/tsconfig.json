@@ -12,7 +12,8 @@
       "forceConsistentCasingInFileNames": true,
       "paths": {
         "@/*": ["./src/*"]
-      }
+      },
+      "skipLibCheck": true,
     },
     "include": ["./src"]
 }

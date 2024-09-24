@@ -3,8 +3,7 @@ import { Environment } from './types';
 
 const env: Environment = {
   alchemyId: 'XiIZxWykHU5AOFBwxKgxseXWN984Mp8F',
-  rpcUrl:
-    'https://eth-mainnet.g.alchemy.com/v2/AorwfDdHDsEjIX4HPwS70zkVjWqjv5vZ',
+  rpcUrl: 'https://rpc.ankr.com/eth',
   backendUrl: 'https://backend.templedao.link',
   contracts: {
     balancerVault: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
@@ -141,6 +140,18 @@ const env: Environment = {
         name: 'Epoch 24b',
         address: '0xc6E01D796C39CBbA16278a8C29e7C1267DC48A8f',
       },
+      {
+        name: 'Epoch 24c',
+        address: '0x96288cF99b16Bd857781d4B7d49b60887D30Bf4E',
+      },
+      {
+        name: 'Epoch 25a',
+        address: '0xd2F37721cdE50fe5210974d9073F2F24cb53e319',
+      },
+      {
+        name: 'Epoch 25b',
+        address: '0x0197B9F8d504e020C875fcafb3403e55Bef31c36',
+      },
     ],
     temple: '0x470ebf5f030ed85fc1ed4c2d36b9dd02e77cf1b7',
     templeStaking: '0x4D14b24EDb751221B3Ff08BBB8bd91D4b1c8bc77',
@@ -245,7 +256,8 @@ const env: Environment = {
     balancerV2:
       'https://api.thegraph.com/subgraphs/name/templedao/templedao-balancer-v2',
     // TODO: Will be deprecated
-    ramos: 'https://api.studio.thegraph.com/query/76011/temple-ramos/version/latest',
+    ramos:
+      'https://api.studio.thegraph.com/query/76011/temple-ramos/version/latest',
     templeV2:
       'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-v2-mainnet/api',
     templeV2Balances:

@@ -106,20 +106,14 @@ const Home = ({ tlc }: { tlc?: boolean }) => {
   useEffect(() => {
     const fetchMetrics = async () => {
       const { data: treasuryData } = await fetchGenericSubgraph<any>(
-        env.subgraph.protocolMetrics,
+        env.subgraph.templeV2Balances,
         `{
-          metrics {
-            treasuryValueUSD
-          }
-        }`
-      );
-      const { data: arbitrumTreasuryData } = await fetchGenericSubgraph<any>(
-        env.subgraph.protocolMetricsArbitrum,
-        `{
-          metrics {
-            treasuryValueUSD
-          }
-        }`
+           treasuryReservesVaults {
+             principalUSD
+             benchmarkedEquityUSD
+             treasuryPriceIndex
+           }
+         }`
       );
       const { data: ramosData } = await fetchGenericSubgraph<any>(
         env.subgraph.ramos,
@@ -130,20 +124,13 @@ const Home = ({ tlc }: { tlc?: boolean }) => {
         }`
       );
 
-      const { data: tpiData } = await fetchGenericSubgraph<any>(
-        env.subgraph.templeV2,
-        `{
-          tpiOracles {
-            currentTpi
-          }
-        }`
-      );
+      const treasuryMetrics = treasuryData.treasuryReservesVaults[0];
       setMetrics({
         price: parseFloat(ramosData.metrics[0].spotPrice),
-        tpi: parseFloat(tpiData.tpiOracles[0].currentTpi),
+        tpi: parseFloat(treasuryMetrics.treasuryPriceIndex),
         treasury:
-          parseFloat(treasuryData.metrics[0].treasuryValueUSD) +
-          parseFloat(arbitrumTreasuryData.metrics[0].treasuryValueUSD),
+          parseFloat(treasuryMetrics.principalUSD) +
+          parseFloat(treasuryMetrics.benchmarkedEquityUSD),
       });
     };
     fetchMetrics();
@@ -210,7 +197,7 @@ const Home = ({ tlc }: { tlc?: boolean }) => {
         {/* Marketing content */}
         <Header>How Does It Work?</Header>
         {MarketingContent.map((content, index) => (
-          <MarketingRow index={index} key={index}>
+          <MarketingRow index={index} key={content.header}>
             <MarketingImage src={content.image} />
             <MarketingTextWrapper>
               <MarketingHeader>{content.header}</MarketingHeader>
@@ -233,11 +220,11 @@ const Home = ({ tlc }: { tlc?: boolean }) => {
       <FooterContainer>
         <LinkRow>
           {FooterContent.map((col, i) => (
-            <Links key={i}>
+            <Links key={col.header}>
               <h4>{col.header}</h4>
               <ul>
                 {col.links.map((link, j) => (
-                  <li key={j}>
+                  <li key={link.text}>
                     <a href={link.link} target="_blank" rel="noreferrer">
                       <FooterImage src={link.image} alt={link.text} />
                       <strong>{link.text}</strong>
