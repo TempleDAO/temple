@@ -37,6 +37,9 @@ import { SendParam, OFTReceipt } from "@layerzerolabs/lz-evm-oapp-v2/contracts/o
     uint256 private _totalBurnedFromSpiceAuctions;
     uint256 private _circulatingSupply;
 
+    /// @notice 1B max circulating supply
+    uint256 public constant MAX_CIRCULATING_SUPPLY = 1_000_000_000 ether; // 1B
+
     /// @notice Whitelisted addresses for transferrability
     mapping(address => bool) public authorized;
 

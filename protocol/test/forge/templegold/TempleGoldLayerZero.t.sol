@@ -30,11 +30,15 @@ contract TempleGoldLayerZeroTest is TestHelperOz5 {
     SpiceAuctionMock public aSpice;
     SpiceAuctionMock public bSpice;
 
+    address public alice = makeAddr("alice");
+
     address public userA = address(0x1);
     address public userB = address(0x2);
     uint256 public initialBalance = 100 ether;
 
     event RedeemedTempleGoldBurned(uint256 amount);
+    event CirculatingSupplyUpdated(address indexed sender, uint256 amount, uint256 circulatingSuppply, uint256 totalBurned);
+    
     function setUp() public virtual override {
         vm.deal(userA, 1000 ether);
         vm.deal(userB, 1000 ether);
@@ -132,7 +136,7 @@ contract TempleGoldLayerZeroTest is TestHelperOz5 {
             aEid, //<ARB_EID>,
             bytes32(uint256(uint160(address(0)))), // bytes32(address(0)) to burn
             amount,
-            amount,
+            0,
             options,
             bytes(""), // compose message
             ""
@@ -162,5 +166,47 @@ contract TempleGoldLayerZeroTest is TestHelperOz5 {
         assertEq(spiceBalanceBefore, address(bSpice).balance);
         assertLt(address(this).balance, balanceBefore);
         assertEq(address(bSpice).balance, 0);
+    }
+
+    function test_redemption_after_bid_cross_chain_truncation() public {
+        uint256 amount = 12_333_456_789_012_345_678_900;
+        uint256 maxSupply = aTempleGold.MAX_CIRCULATING_SUPPLY();
+        uint256 currentSupply = aTempleGold.circulatingSupply();
+        vm.deal(address(aSpice), 1 ether);
+        vm.deal(address(bSpice), 1 ether);
+        vm.deal(alice, 1 ether);
+        {   
+            aTempleGold.mint(address(aSpice), amount);
+            assertEq(aTempleGold.circulatingSupply(), amount + currentSupply);
+            // mint max circulating supply
+            currentSupply += amount;
+            aTempleGold.mint(alice, maxSupply - currentSupply);
+            assertEq(aTempleGold.circulatingSupply(), maxSupply);
+            currentSupply = aTempleGold.circulatingSupply();
+        }
+
+        bytes memory options = OptionsBuilder.newOptions().addExecutorLzReceiveOption(100_000, 0);
+        SendParam memory sendParam = SendParam(
+            aEid, //<chain_a>,
+            bytes32(uint256(uint160(address(0)))), // burn
+            amount,
+            0,
+            options,
+            bytes(""), // empty compose message
+            ""
+        );
+        // send remainder to burn
+        bTempleGold.mint(address(bSpice), amount - bTempleGold.balanceOf(address(bSpice)));
+
+        // burn tgld from spice on chain b
+        /// @dev Conversion to and from shared decimals and local decimals truncates trailing zeros
+        MessagingFee memory fee = TempleGoldMock(bTempleGold).quoteSend(sendParam, false);
+        uint256 amountTruncated = 12_333_456_789_000_000_000_000;
+        emit log_uint(bTempleGold.balanceOf(address(bSpice)));
+        uint256 bSpiceBalance = bTempleGold.balanceOf(address(bSpice));
+        bSpice.burnAndNotify(amount, true);
+        verifyPackets(aEid, addressToBytes32(address(aTempleGold)));
+        assertEq(bSpiceBalance - amountTruncated, bTempleGold.balanceOf(address(bSpice)));
+        assertEq(aTempleGold.circulatingSupply(), currentSupply - amountTruncated);
     }
 }

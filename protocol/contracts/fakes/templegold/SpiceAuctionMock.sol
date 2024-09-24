@@ -93,7 +93,7 @@ contract SpiceAuctionMock {
             _arbitrumOneLzEid, //<ARB_EID>,
             bytes32(uint256(uint160(address(0)))), // bytes32(address(0)) to burn
             amount,
-            amount, // todo
+            0,
             options,
             bytes(""), // compose message
             ""
