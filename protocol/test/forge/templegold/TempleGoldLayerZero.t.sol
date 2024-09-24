@@ -132,7 +132,7 @@ contract TempleGoldLayerZeroTest is TestHelperOz5 {
             aEid, //<ARB_EID>,
             bytes32(uint256(uint160(address(0)))), // bytes32(address(0)) to burn
             amount,
-            amount,
+            0,
             options,
             bytes(""), // compose message
             ""
@@ -162,5 +162,9 @@ contract TempleGoldLayerZeroTest is TestHelperOz5 {
         assertEq(spiceBalanceBefore, address(bSpice).balance);
         assertLt(address(this).balance, balanceBefore);
         assertEq(address(bSpice).balance, 0);
+    }
+
+    function test_redemption_after_bid_cross_chain() public {
+        
     }
 }
