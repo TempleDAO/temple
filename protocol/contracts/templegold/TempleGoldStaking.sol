@@ -67,8 +67,8 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     mapping(address account => mapping(uint256 epoch => Checkpoint)) private _checkpoints;
     /// @notice Track number of checkpoint for account
     mapping(address account => uint256 number) public override numCheckpoints;
-    /// @notice Track unstake times for accounts
-    mapping(address account => uint256 cooldownEnd) public override unstakeTimes;
+    /// @notice Track stake times for accounts
+    mapping(address account => uint256 stakeTime) public override stakeTimes;
     
     constructor(
         address _rescuer,
@@ -257,8 +257,8 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
      */
     function withdraw(uint256 amount, bool claimRewards) external override whenNotPaused {
         /// @dev Check here so migrationWithdraw can skip this in emergency cases
-        uint256 unstakeTime = unstakeTimes[msg.sender];
-        if ( unstakeTime > block.timestamp) { revert UnstakeCooldown(block.timestamp, unstakeTime); }
+        uint256 unstakeTime = stakeTimes[msg.sender] + unstakeCooldown;
+        if (unstakeTime > block.timestamp) { revert UnstakeCooldown(block.timestamp, unstakeTime); }
         _withdrawFor(msg.sender, msg.sender, amount, claimRewards, msg.sender);
     }
 
@@ -412,7 +412,7 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     function _applyStake(address _for, uint256 _amount) internal updateReward(_for) {
         totalSupply += _amount;
         _balances[_for] += _amount;
-        unstakeTimes[_for] = block.timestamp + unstakeCooldown;
+        stakeTimes[_for] = block.timestamp;
         emit Staked(_for, _amount);
     }
 

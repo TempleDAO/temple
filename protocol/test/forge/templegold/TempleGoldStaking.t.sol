@@ -516,6 +516,8 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
             _factor.value = 99 ether;
             _factor.weekMultiplier = 100 ether;
             templeGold.setVestingFactor(_factor);
+            skip(100 days);
+            _distributeRewards(address(0));
 
             // zero rewards minted, so no reward notification from TGLD. this is also for TempleGold max supply case.
             vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
@@ -1021,7 +1023,7 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         _approve(address(templeToken), address(staking), type(uint).max);
         uint256 stakeAmount = 100 ether;
         staking.stake(stakeAmount);
-        assertEq(staking.unstakeTimes(alice), block.timestamp+unstakeCooldown);
+        assertEq(staking.stakeTimes(alice), block.timestamp);
         skip(1 days);
         _distributeRewards(alice);
         uint256 tgldRewardAmount = templeGold.balanceOf(address(staking));

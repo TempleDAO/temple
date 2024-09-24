@@ -130,10 +130,10 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
      */
     function setVestingFactor(VestingFactor calldata _factor) external override onlyOwner {
         if (_factor.value == 0 || _factor.weekMultiplier == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
-        vestingFactor = _factor;
         /// @dev initialize
         if (lastMintTimestamp == 0) { lastMintTimestamp = uint32(block.timestamp); }
         else { mint(); }
+        vestingFactor = _factor;
         emit VestingFactorSet(_factor.value, _factor.weekMultiplier);
     }
     
@@ -187,7 +187,7 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
     }
 
     function _canDistribute(uint256 mintAmount) private view returns (bool) {
-        return mintAmount != 0 && _totalDistributed + mintAmount == MAX_CIRCULATING_SUPPLY ? true : mintAmount >= MINIMUM_MINT;
+        return mintAmount != 0 && _circulatingSupply + mintAmount == MAX_CIRCULATING_SUPPLY ? true : mintAmount >= MINIMUM_MINT;
     }
 
     /**
