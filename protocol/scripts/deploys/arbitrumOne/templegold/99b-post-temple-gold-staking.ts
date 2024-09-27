@@ -10,7 +10,6 @@ async function main() {
     const [owner] = await ethers.getSigners();
     const TEMPLE_GOLD_ADDRESSES = getDeployedTempleGoldContracts();
     const TEMPLE_GOLD_INSTANCES = connectToContracts(owner);
-    // const duration = 24 * 3600 * 7 * 16;
     const duration = 24 * 3600 * 7;
     const unstakeCooldown =  duration * 2; // 2 weeks
     const rewardsDistributionCooldown = 3600; // 1 hour

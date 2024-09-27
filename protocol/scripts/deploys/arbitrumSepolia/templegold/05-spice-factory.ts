@@ -5,29 +5,28 @@ import {
   deployAndMine,
   ensureExpectedEnvvars,
 } from '../../helpers';
-import { getDeployedTempleGoldContracts } from '../contract-addresses';
-import { getDeployedContracts } from '../../mainnet/v2/contract-addresses';
+import { getDeployedTempleGoldContracts } from '../../arbitrumOne/contract-addresses';
 
 async function main() {
   ensureExpectedEnvvars();
   const [owner] = await ethers.getSigners();
+  const ownerAddress = await owner.getAddress();
   const TEMPLEGOLD_ADDRESSES = getDeployedTempleGoldContracts();
-  const CORE_ADDRESSES = getDeployedContracts(); 
-  const ARBITRUM_ONE_CHAIN_ID = 42161;
-  const ARBITRUM_ONE_LZ_EID = 30110;
+  const ARBITRUM_SEPOLIA_CHAIN_ID = 421614;
+  const ARBITRUM_SEPOLIA_LZ_EID = 40231;
 
   const factory = new SpiceAuctionFactory__factory(owner);
   await deployAndMine(
     'SPICE_AUCTION_FACTORY',
     factory,
     factory.deploy,
-    CORE_ADDRESSES.CORE.RESCUER_MSIG,
-    CORE_ADDRESSES.CORE.EXECUTOR_MSIG,
-    CORE_ADDRESSES.CORE.EXECUTOR_MSIG, // dao executor, placeholder
-    TEMPLEGOLD_ADDRESSES.TEMPLE_GOLD.SPICE_AUCTION_OPERATOR,
+    "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720", // rescuer can't be executor. using placeholder
+    ownerAddress, // executor
+    ownerAddress, // dao executor, placeholder
+    ownerAddress, // spice auction operator
     TEMPLEGOLD_ADDRESSES.TEMPLE_GOLD.TEMPLE_GOLD,
-    ARBITRUM_ONE_LZ_EID,
-    ARBITRUM_ONE_CHAIN_ID
+    ARBITRUM_SEPOLIA_LZ_EID,
+    ARBITRUM_SEPOLIA_CHAIN_ID
   );
 }
 
