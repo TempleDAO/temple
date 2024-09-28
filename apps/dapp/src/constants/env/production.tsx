@@ -152,6 +152,10 @@ const env: Environment = {
         name: 'Epoch 25b',
         address: '0x0197B9F8d504e020C875fcafb3403e55Bef31c36',
       },
+      {
+        name: 'Epoch 25c',
+        address: '0xb486C1D3F49D20b442ba77f169998a16550ddAd8',
+      },
     ],
     temple: '0x470ebf5f030ed85fc1ed4c2d36b9dd02e77cf1b7',
     templeStaking: '0x4D14b24EDb751221B3Ff08BBB8bd91D4b1c8bc77',

@@ -92,7 +92,7 @@ export const Dashboards: DashboardData[] = [
     title: 'FOHMO',
     path: 'fohmo',
     description:
-      'FOHMO is a Gnosis Safe that holds the governance tokens for the DSR ecosystem. It is the primary point of interaction for the governance of the DSR ecosystem.',
+      'FOHMO is a strategy that aims to maintain a maxed looped position in OHM',
     contractLink: `${env.etherscan}/address/${env.contracts.strategies.fohmoGnosisStrategy}`,
   },
 ];
