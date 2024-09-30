@@ -24,6 +24,7 @@ async function main() {
     TEMPLEGOLD_ADDRESSES.TEMPLE_GOLD.TEMPLE_GOLD,
     '', // spice token
     CORE_ADDRESSES.CORE.EXECUTOR_MSIG, // dao executor placeholder
+    TEMPLEGOLD_ADDRESSES.TEMPLE_GOLD.SPICE_AUCTION_OPERATOR, // operator
     ARBITRUM_ONE_LZ_EID, // layer zero EID arbitrum one
     ARBITRUM_ONE_CHAIN_ID, // mint chain
     'name'

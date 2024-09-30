@@ -68,6 +68,33 @@ const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
             }
         },
     },
+    arbitrumSepolia: {
+        TEMPLE_GOLD: {
+            AUCTION_AUTOMATION_EOA: "string",
+            STAKING_AUTOMATION_EOA: "string",
+            SPICE_AUCTION_OPERATOR: "string",
+            TEMPLE_GOLD: "0x8afB7E03a6e115577361C5648924eBA3163381Fc",
+            TEMPLE_GOLD_ADMIN: "string",
+            TEMPLE_GOLD_STAKING: "0xa2f7B537B530481b12A5538bE7309fB6a34849f3",
+            TEMPLE_TELEPORTER: "0x57cde11128c70948B910Bf34cF6F834c78B66b0f",
+            SPICE_AUCTION: "string",
+            SPICE_AUCTION_FACTORY: "0x30223FD9CDBCb97F15FE188769B0170F2a993A3E",
+            DAI_GOLD_AUCTION: "0xF5B76f09B9df3eBD45155007590a9C14fEa2D4c1",
+            EXECUTOR_MSIG: "string",
+            RESCUER_MSIG: "string",
+        },
+        CORE: {
+            TEMPLE_TOKEN: "0x36061ce3Ac2F5d69667F0c7B98Ec6021ef33b8cB",
+        },
+        EXTERNAL: {
+            LAYER_ZERO: {
+                ENDPOINT: "0x6EDCE65403992e310A62460808c4b910D972f10f",
+            },
+            MAKER_DAO: {
+                DAI_TOKEN: "0x5879B1ae381DDbBa701170160162025d297ce3D3",
+            }
+        },
+    },
     localhost: {
         TEMPLE_GOLD: {
             AUCTION_AUTOMATION_EOA: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
