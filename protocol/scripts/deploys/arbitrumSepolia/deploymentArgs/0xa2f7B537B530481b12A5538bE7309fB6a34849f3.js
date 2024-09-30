@@ -1,0 +1,8 @@
+// arbitrumSepolia: TEMPLE_GOLD_STAKING=0xa2f7B537B530481b12A5538bE7309fB6a34849f3
+// yarn hardhat verify --network arbitrumSepolia 0xa2f7B537B530481b12A5538bE7309fB6a34849f3 --constructor-args scripts/deploys/arbitrumSepolia/deploymentArgs/0xa2f7B537B530481b12A5538bE7309fB6a34849f3.js
+module.exports = [
+  "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+  "0xC785695710292c042a2de8A0Ba16F3a054cC2eAD",
+  "0x36061ce3Ac2F5d69667F0c7B98Ec6021ef33b8cB",
+  "0x8afB7E03a6e115577361C5648924eBA3163381Fc"
+];

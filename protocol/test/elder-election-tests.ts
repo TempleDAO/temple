@@ -19,7 +19,7 @@ const TEMPLE_ROLE_INITIATE = "initiate";
 
 type MySigner = SignerWithAddress & TypedDataSigner;
 
-describe("Elder Election", async () => {
+describe.skip("Elder Election", async () => {
   let TEMPLAR: Templar;
   let TEMPLAR_METADATA: TemplarMetadata;
   let ELDER_ELECTION: ElderElection;

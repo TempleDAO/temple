@@ -1,6 +1,6 @@
 pragma solidity 0.8.20;
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Temple (interfaces/IMultiOtcOffer.sol)
+// Temple (interfaces/core/IMultiOtcOffer.sol)
 
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 interface IMultiOtcOffer {
