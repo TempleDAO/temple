@@ -12,10 +12,13 @@ import { ITempleElevatedAccess } from "contracts/interfaces/v2/access/ITempleEle
  */
 interface ITreasuryPriceIndexOracle is ITempleElevatedAccess {
     event TreasuryPriceIndexSet(uint96 oldTpi, uint96 newTpi);
+    event TreasuryPriceIndexSetAt(uint96 oldTpi, uint96 newTpiTarget, uint256 targetDate);
     event TpiCooldownSet(uint32 cooldownSecs);
     event MaxTreasuryPriceIndexDeltaSet(uint256 maxDelta);
+    event MaxTreasuryPriceIndexTargetDateDeltaSet(uint32 maxTargetDateDelta);
 
     error BreachedMaxTpiDelta(uint96 oldTpi, uint96 newTpi, uint256 maxDelta);
+    error BreachedMaxDateDelta(uint32 targetDate, uint32 currentDate, uint32 maxTargetDateDelta);
 
     /**
      * @notice The current Treasury Price Index (TPI) value
@@ -30,30 +33,39 @@ interface ITreasuryPriceIndexOracle is ITempleElevatedAccess {
     function maxTreasuryPriceIndexDelta() external view returns (uint256);
 
     /**
+     * @notice The maximum allowed time for TPI to reach it's target value.
+     * @dev Used as a bound to avoid unintended/fat fingering when updating TPI
+     */
+    function maxTreasuryPriceIndexTargetDateDelta() external view returns (uint32);
+
+    /**
      * @notice The current internal TPI data along with when it was last reset, and the prior value
      */
     function tpiData() external view returns (
         uint96 currentTpi,
-        uint96 previousTpi,
+        uint96 targetTpi,
         uint32 lastUpdatedAt,
-        uint32 cooldownSecs
+        uint32 targetDate,
+        uint96 tpiSlope,
+        bool increaseInTargetTpi
     );
-
-    /**
-     * @notice Set the Treasury Price Index (TPI)
-     */
-    function setTreasuryPriceIndex(uint96 value) external;
-
-    /**
-     * @notice Set the number of seconds to elapse before a new TPI will take effect.
-     */
-    function setTpiCooldown(uint32 cooldownSecs) external;
 
     /**
      * @notice Set the maximum allowed TPI change on any single `setTreasuryPriceIndex()`, in absolute terms.
      * @dev 18 decimal places, 0.20e18 == $0.20
      */
     function setMaxTreasuryPriceIndexDelta(uint256 maxDelta) external;
+
+    /**
+     * @notice Set the maximum allowed time range for TPI to reach it's target value.
+     * @dev Time in seconds.
+     */
+    function setMaxTreasuryPriceIndexTargetDateDelta(uint32 maxTargetDateDelta) external;
+
+    /**
+     * @notice Set the target TPI which will incrementally increase over the given targetDate.
+     */
+    function setTreasuryPriceIndexAt(uint96 targetRate, uint32 targetDate) external;
 
     /**
      * @notice The decimal precision of Temple Price Index (TPI)

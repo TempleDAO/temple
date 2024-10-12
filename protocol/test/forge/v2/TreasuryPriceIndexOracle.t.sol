@@ -12,61 +12,58 @@ contract TreasuryPriceIndexOracleTest is TempleTest {
     uint96 public defaultPrice = 0.97e18;
     uint96 public defaultMaxDelta = 0.1e18; // 10 cents
     uint32 public defaultCooldownSecs = 30;
+    uint32 public defaultTargetDateDelta = 1 weeks; // 1 week
 
-    event TreasuryPriceIndexSet(uint96 oldTpi, uint96 newTpi);
+    event TreasuryPriceIndexSetAt(uint96 oldTpi, uint96 newTpiTarget, uint256 time);
     event TpiCooldownSet(uint32 cooldownSecs);
     event MaxTreasuryPriceIndexDeltaSet(uint256 maxDelta);
+    event MaxTreasuryPriceIndexTargetDateDeltaSet(uint32 maxTargetDateDelta);
+
 
     function setUp() public {
-        tpiOracle = new TreasuryPriceIndexOracle(rescuer, executor, defaultPrice, defaultMaxDelta, defaultCooldownSecs);
+        tpiOracle = new TreasuryPriceIndexOracle(rescuer, executor, defaultPrice, defaultMaxDelta, defaultTargetDateDelta);
     }
     
-    function checkTpiData(uint96 expectedCurrent, uint96 expectedPrevious, uint32 expectedUpdatedAt, uint32 expectedCooldown) internal {
+    function checkTpiData(uint96 expectedCurrent, uint96 expectedTargetTpi, uint32 expectedUpdatedAt, uint32 expectedTargetDate, uint96 expectedTpiSlope, bool expectedIncreaseInTargetTpi) internal {
         (
             uint96 currentTpi,
-            uint96 previousTpi,
+            uint96 targetTpi,
             uint32 lastUpdatedAt,
-            uint32 cooldownSecs
+            uint32 targetDate,
+            uint96 tpiSlope,
+            bool increaseInTargetTpi
         ) = tpiOracle.tpiData();
         assertEq(currentTpi, expectedCurrent);
-        assertEq(previousTpi, expectedPrevious);
+        assertEq(targetTpi, expectedTargetTpi);
         assertEq(lastUpdatedAt, expectedUpdatedAt);
-        assertEq(cooldownSecs, expectedCooldown);
+        assertEq(targetDate, expectedTargetDate);
+        assertEq(tpiSlope, expectedTpiSlope);
+        assertEq(increaseInTargetTpi, expectedIncreaseInTargetTpi);
     }
 
     function test_initialize() public {
-        checkTpiData(defaultPrice, defaultPrice, uint32(block.timestamp), defaultCooldownSecs);
+        checkTpiData(defaultPrice, defaultPrice, uint32(block.timestamp), uint32(block.timestamp), 1, true);
         assertEq(tpiOracle.maxTreasuryPriceIndexDelta(), defaultMaxDelta);
+        assertEq(tpiOracle.maxTreasuryPriceIndexTargetDateDelta(), defaultTargetDateDelta);
         assertEq(tpiOracle.treasuryPriceIndex(), defaultPrice);
         assertEq(tpiOracle.TPI_DECIMALS(), 18);
-    }
-
-    function test_access_setTpiCooldown() public {
-        expectElevatedAccess();
-        tpiOracle.setTpiCooldown(100);
     }
     
     function test_access_setMaxTreasuryPriceIndexDelta() public {
         expectElevatedAccess();
         tpiOracle.setMaxTreasuryPriceIndexDelta(0.15e18);
     }
-    
-    function test_access_setTreasuryPriceIndex() public {
+
+    function test_access_setMaxTreasuryPriceIndexTargetDateDelta() public {
         expectElevatedAccess();
-        tpiOracle.setTreasuryPriceIndex(1.02e18);
+        tpiOracle.setMaxTreasuryPriceIndexTargetDateDelta(uint32(block.timestamp+1));
     }
 
-    function test_setTpiCooldown() public {
-        vm.startPrank(executor);
-
-        vm.expectEmit(address(tpiOracle));
-        emit TpiCooldownSet(uint32(99));
-
-        tpiOracle.setTpiCooldown(99);
-         (,,, uint32 cooldownSecs) = tpiOracle.tpiData();
-        assertEq(cooldownSecs, 99);
+    function test_access_setTreasuryPriceIndexAt() public {
+        expectElevatedAccess();
+        tpiOracle.setTreasuryPriceIndexAt(1.02e18, uint32(block.timestamp + 1 weeks));
     }
-
+    
     function test_setMaxTreasuryPriceIndexDelta() public {
         vm.startPrank(executor);
 
@@ -77,26 +74,38 @@ contract TreasuryPriceIndexOracleTest is TempleTest {
         assertEq(tpiOracle.maxTreasuryPriceIndexDelta(), 0.11e18);
     }
 
-    function test_setTreasuryPriceIndex_successUp() public {
-        uint96 newTpi = 1.07e18;
+    function test_setMaxTreasuryPriceIndexTargetDateDelta() public {
         vm.startPrank(executor);
 
         vm.expectEmit(address(tpiOracle));
-        emit TreasuryPriceIndexSet(defaultPrice, newTpi);
+        emit MaxTreasuryPriceIndexTargetDateDeltaSet(uint32(1 weeks));
 
-        tpiOracle.setTreasuryPriceIndex(newTpi);
-        checkTpiData(newTpi, defaultPrice, uint32(block.timestamp), defaultCooldownSecs);
+        tpiOracle.setMaxTreasuryPriceIndexTargetDateDelta(uint32(1 weeks));
+        assertEq(tpiOracle.maxTreasuryPriceIndexTargetDateDelta(), 1 weeks);
+    }
+
+    function test_setTreasuryPriceIndex_successUp() public {
+        uint96 newTpi = 1.07e18;
+        vm.startPrank(executor);
+        tpiOracle.setMaxTreasuryPriceIndexTargetDateDelta(0);
+
+        vm.expectEmit(address(tpiOracle));
+        emit TreasuryPriceIndexSetAt(defaultPrice, newTpi, block.timestamp+1);
+
+        tpiOracle.setTreasuryPriceIndexAt(newTpi, uint32(block.timestamp)+1);
+        checkTpiData(defaultPrice, newTpi, uint32(block.timestamp), uint32(block.timestamp)+1, 1e17, true);
     }
 
     function test_setTreasuryPriceIndex_successDown() public {
         uint96 newTpi = 0.87e18;
         vm.startPrank(executor);
+        tpiOracle.setMaxTreasuryPriceIndexTargetDateDelta(0);
 
         vm.expectEmit(address(tpiOracle));
-        emit TreasuryPriceIndexSet(defaultPrice, newTpi);
+        emit TreasuryPriceIndexSetAt(defaultPrice, newTpi, block.timestamp+1);
 
-        tpiOracle.setTreasuryPriceIndex(newTpi);
-        checkTpiData(newTpi, defaultPrice, uint32(block.timestamp), defaultCooldownSecs);
+        tpiOracle.setTreasuryPriceIndexAt(newTpi, uint32(block.timestamp)+1);
+        checkTpiData(defaultPrice, newTpi, uint32(block.timestamp), uint32(block.timestamp)+1, 1e17, false);
     }
 
     function test_setTreasuryPriceIndex_breachDeltaUp() public {
@@ -104,7 +113,7 @@ contract TreasuryPriceIndexOracleTest is TempleTest {
         vm.startPrank(executor);
 
         vm.expectRevert(abi.encodeWithSelector(ITreasuryPriceIndexOracle.BreachedMaxTpiDelta.selector, defaultPrice, newTpi, defaultMaxDelta));
-        tpiOracle.setTreasuryPriceIndex(newTpi);
+        tpiOracle.setTreasuryPriceIndexAt(newTpi, uint32(block.timestamp)+1);
     }
 
     function test_setTreasuryPriceIndex_breachDeltaDown() public {
@@ -112,78 +121,55 @@ contract TreasuryPriceIndexOracleTest is TempleTest {
         vm.startPrank(executor);
 
         vm.expectRevert(abi.encodeWithSelector(ITreasuryPriceIndexOracle.BreachedMaxTpiDelta.selector, defaultPrice, newTpi, defaultMaxDelta));
-        tpiOracle.setTreasuryPriceIndex(newTpi);
+        tpiOracle.setTreasuryPriceIndexAt(newTpi, uint32(block.timestamp)+1);
     }
 
-    function test_treasuryPriceIndex_beforeCooldown() public {
-        uint96 newTpi = 1.05e18;
+    function test_setTreasuryPriceIndex_breachDateDelta() public {
         vm.startPrank(executor);
-        tpiOracle.setTreasuryPriceIndex(newTpi);
-        vm.warp(block.timestamp + defaultCooldownSecs-1);
-        assertEq(tpiOracle.treasuryPriceIndex(), defaultPrice);
+
+        uint32 targetDate = uint32(block.timestamp + 2);
+
+        vm.expectRevert(abi.encodeWithSelector(ITreasuryPriceIndexOracle.BreachedMaxDateDelta.selector, targetDate, uint32(block.timestamp), 1 weeks));
+        tpiOracle.setTreasuryPriceIndexAt(1.07e18, targetDate);
     }
 
-    function test_treasuryPriceIndex_atCooldown() public {
-        uint96 newTpi = 1.05e18;
+    function test_setTreasuryPriceIndex_flatAtTargetDate() public {
+        uint96 newTpi = 1.06e18;
         vm.startPrank(executor);
-        tpiOracle.setTreasuryPriceIndex(newTpi);
-        vm.warp(block.timestamp + defaultCooldownSecs);
-        assertEq(tpiOracle.treasuryPriceIndex(), newTpi);
+        tpiOracle.setMaxTreasuryPriceIndexTargetDateDelta(0);
+
+        tpiOracle.setTreasuryPriceIndexAt(newTpi, uint32(block.timestamp)+1);
+        // check at target date we're at the target TPI
+        vm.warp(block.timestamp + 1);
+        uint96 actualTpi = tpiOracle.treasuryPriceIndex();
+        assertEq(newTpi, actualTpi);
+        // check in future price has remained static
+        vm.warp(block.timestamp + 1 days);
+        actualTpi = tpiOracle.treasuryPriceIndex();
+        assertEq(newTpi, actualTpi);
     }
 
-    function test_treasuryPriceIndex_afterCooldown() public {
-        uint96 newTpi = 1.05e18;
+    function test_setTreasuryPriceIndex_increasesAtExpectedRate() public {
+        uint96 newTpi = 1.07e18;
         vm.startPrank(executor);
-        tpiOracle.setTreasuryPriceIndex(newTpi);
-        vm.warp(block.timestamp + defaultCooldownSecs+1);
-        assertEq(tpiOracle.treasuryPriceIndex(), newTpi);
-    }
+        tpiOracle.setMaxTreasuryPriceIndexTargetDateDelta(0);
 
-    function test_treasuryPriceIndex_zeroCooldown() public {
-        uint96 newTpi = 1.05e18;
-        vm.startPrank(executor);
-        tpiOracle.setTpiCooldown(0);
-        tpiOracle.setTreasuryPriceIndex(newTpi);
-        assertEq(tpiOracle.treasuryPriceIndex(), newTpi);
-    }
-
-    function test_treasuryPriceIndex_reset_beforeCooldown() public {
-        uint96 newTpi = 1.05e18;
-        vm.startPrank(executor);
-        tpiOracle.setTreasuryPriceIndex(newTpi);
-        vm.warp(block.timestamp + defaultCooldownSecs-1);
-        uint96 newTpi2 = 1.07e18;
-        tpiOracle.setTreasuryPriceIndex(newTpi2);
-        assertEq(tpiOracle.treasuryPriceIndex(), defaultPrice);
-    }
-
-    function test_treasuryPriceIndex_reset_atCooldown() public {
-        uint96 newTpi = 1.05e18;
-        vm.startPrank(executor);
-        tpiOracle.setTreasuryPriceIndex(newTpi);
-        vm.warp(block.timestamp + defaultCooldownSecs);
-        uint96 newTpi2 = 1.07e18;
-        tpiOracle.setTreasuryPriceIndex(newTpi2);
-        assertEq(tpiOracle.treasuryPriceIndex(), newTpi);
-    }
-
-    function test_treasuryPriceIndex_reset_afterCooldown() public {
-        uint96 newTpi = 1.05e18;
-        vm.startPrank(executor);
-        tpiOracle.setTreasuryPriceIndex(newTpi);
-        vm.warp(block.timestamp + defaultCooldownSecs+1);
-        uint96 newTpi2 = 1.07e18;
-        tpiOracle.setTreasuryPriceIndex(newTpi2);
-        assertEq(tpiOracle.treasuryPriceIndex(), newTpi);
-    }
-
-    function test_treasuryPriceIndex_reset_zeroCooldown() public {
-        uint96 newTpi = 1.05e18;
-        vm.startPrank(executor);
-        tpiOracle.setTpiCooldown(0);
-        tpiOracle.setTreasuryPriceIndex(newTpi);
-        uint96 newTpi2 = 1.07e18;
-        tpiOracle.setTreasuryPriceIndex(newTpi2);
-        assertEq(tpiOracle.treasuryPriceIndex(), newTpi2);
+        uint96 currentTpi = tpiOracle.treasuryPriceIndex();
+        assertEq(defaultPrice, currentTpi);
+        tpiOracle.setTreasuryPriceIndexAt(newTpi, uint32(block.timestamp) + 4);
+        currentTpi = tpiOracle.treasuryPriceIndex();
+        assertEq(defaultPrice, currentTpi);
+        vm.warp(2);
+        currentTpi = tpiOracle.treasuryPriceIndex();
+        assertEq(9.95e17, currentTpi);
+        vm.warp(3);
+        currentTpi = tpiOracle.treasuryPriceIndex();
+        assertEq(1.02e18, currentTpi);
+        vm.warp(4);
+        currentTpi = tpiOracle.treasuryPriceIndex();
+        assertEq(1.045e18, currentTpi);
+        vm.warp(5);
+        currentTpi = tpiOracle.treasuryPriceIndex();
+        assertEq(1.07e18, currentTpi);
     }
 }
