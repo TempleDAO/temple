@@ -84,13 +84,13 @@ contract UniswapV2Router02NoEth is IUniswapV2Router02 {
         liquidity = IUniswapV2Pair(pair).mint(to);
     }
     function addLiquidityETH(
-        address token,
-        uint amountTokenDesired,
-        uint amountTokenMin,
-        uint amountETHMin,
-        address to,
+        address,
+        uint,
+        uint,
+        uint,
+        address,
         uint deadline
-    ) external virtual override payable ensure(deadline) returns (uint amountToken, uint amountETH, uint liquidity) {
+    ) external virtual override payable ensure(deadline) returns (uint, uint, uint) {
         revert("not implemented");
     }
 
@@ -113,13 +113,13 @@ contract UniswapV2Router02NoEth is IUniswapV2Router02 {
         require(amountB >= amountBMin, 'UniswapV2Router: INSUFFICIENT_B_AMOUNT');
     }
     function removeLiquidityETH(
-        address token,
-        uint liquidity,
-        uint amountTokenMin,
-        uint amountETHMin,
-        address to,
+        address,
+        uint,
+        uint,
+        uint,
+        address,
         uint deadline
-    ) public virtual override ensure(deadline) returns (uint amountToken, uint amountETH) {
+    ) public virtual override ensure(deadline) returns (uint, uint) {
         revert("not implemented");
     }
     function removeLiquidityWithPermit(
@@ -138,37 +138,37 @@ contract UniswapV2Router02NoEth is IUniswapV2Router02 {
         (amountA, amountB) = removeLiquidity(tokenA, tokenB, liquidity, amountAMin, amountBMin, to, deadline);
     }
     function removeLiquidityETHWithPermit(
-        address token,
-        uint liquidity,
-        uint amountTokenMin,
-        uint amountETHMin,
-        address to,
-        uint deadline,
-        bool approveMax, uint8 v, bytes32 r, bytes32 s
-    ) external virtual override returns (uint amountToken, uint amountETH) {
+        address,
+        uint,
+        uint,
+        uint,
+        address,
+        uint,
+        bool, uint8, bytes32, bytes32
+    ) external virtual override returns (uint, uint) {
         revert("not implemented");
     }
 
     // **** REMOVE LIQUIDITY (supporting fee-on-transfer tokens) ****
     function removeLiquidityETHSupportingFeeOnTransferTokens(
-        address token,
-        uint liquidity,
-        uint amountTokenMin,
-        uint amountETHMin,
-        address to,
+        address,
+        uint,
+        uint,
+        uint,
+        address,
         uint deadline
-    ) public virtual override ensure(deadline) returns (uint amountETH) {
+    ) public virtual override ensure(deadline) returns (uint) {
         revert("not implemented");
     }
     function removeLiquidityETHWithPermitSupportingFeeOnTransferTokens(
-        address token,
-        uint liquidity,
-        uint amountTokenMin,
-        uint amountETHMin,
-        address to,
-        uint deadline,
-        bool approveMax, uint8 v, bytes32 r, bytes32 s
-    ) external virtual override returns (uint amountETH) {
+        address,
+        uint,
+        uint,
+        uint,
+        address,
+        uint,
+        bool, uint8, bytes32, bytes32
+    ) external virtual override returns (uint) {
         revert("not implemented");
     }
 
@@ -214,41 +214,41 @@ contract UniswapV2Router02NoEth is IUniswapV2Router02 {
         );
         _swap(amounts, path, to);
     }
-    function swapExactETHForTokens(uint amountOutMin, address[] calldata path, address to, uint deadline)
+    function swapExactETHForTokens(uint, address[] calldata, address, uint deadline)
         external
         virtual
         override
         payable
         ensure(deadline)
-        returns (uint[] memory amounts)
+        returns (uint[] memory)
     {
         revert("not implemented");
     }
-    function swapTokensForExactETH(uint amountOut, uint amountInMax, address[] calldata path, address to, uint deadline)
+    function swapTokensForExactETH(uint, uint, address[] calldata, address, uint deadline)
         external
         virtual
         override
         ensure(deadline)
-        returns (uint[] memory amounts)
+        returns (uint[] memory)
     {
         revert("not implemented");
     }
-    function swapExactTokensForETH(uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline)
+    function swapExactTokensForETH(uint, uint, address[] calldata, address, uint deadline)
         external
         virtual
         override
         ensure(deadline)
-        returns (uint[] memory amounts)
+        returns (uint[] memory)
     {
         revert("not implemented");
     }
-    function swapETHForExactTokens(uint amountOut, address[] calldata path, address to, uint deadline)
+    function swapETHForExactTokens(uint, address[] calldata, address, uint deadline)
         external
         virtual
         override
         payable
         ensure(deadline)
-        returns (uint[] memory amounts)
+        returns (uint[] memory)
     {
         revert("not implemented");
     }
@@ -291,9 +291,9 @@ contract UniswapV2Router02NoEth is IUniswapV2Router02 {
         );
     }
     function swapExactETHForTokensSupportingFeeOnTransferTokens(
-        uint amountOutMin,
-        address[] calldata path,
-        address to,
+        uint,
+        address[] calldata,
+        address,
         uint deadline
     )
         external
@@ -305,10 +305,10 @@ contract UniswapV2Router02NoEth is IUniswapV2Router02 {
         revert("not implemented");
     }
     function swapExactTokensForETHSupportingFeeOnTransferTokens(
-        uint amountIn,
-        uint amountOutMin,
-        address[] calldata path,
-        address to,
+        uint,
+        uint,
+        address[] calldata,
+        address,
         uint deadline
     )
         external
