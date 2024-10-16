@@ -11,9 +11,7 @@ import { ITempleElevatedAccess } from "contracts/interfaces/v2/access/ITempleEle
  * This rate is updated manually with elevated permissions. The new TPI doesn't take effect until after a cooldown.
  */
 interface ITreasuryPriceIndexOracle is ITempleElevatedAccess {
-    event TreasuryPriceIndexSet(uint96 oldTpi, uint96 newTpi);
     event TreasuryPriceIndexSetAt(uint96 oldTpi, uint96 newTpiTarget, uint256 targetDate);
-    event TpiCooldownSet(uint32 cooldownSecs);
     event MaxTreasuryPriceIndexDeltaSet(uint256 maxDelta);
     event MinTreasuryPriceIndexTargetDateDeltaSet(uint32 maxTargetDateDelta);
 
