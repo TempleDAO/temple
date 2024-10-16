@@ -82,13 +82,14 @@ contract TreasuryPriceIndexOracle is ITreasuryPriceIndexOracle, TempleElevatedAc
      * @dev If the TPI has just been updated, the old TPI will be used until `cooldownSecs` has elapsed
      */
     function treasuryPriceIndex() public override view returns (uint96) {
-        if (block.timestamp >= tpiData.targetDate) {
+        uint96 _targetDate = tpiData.targetDate;
+        if (block.timestamp >= _targetDate) {
             return tpiData.targetTpi;  /// @dev target reached, no calculation required.
         } else {
             return (tpiData.increaseInTargetTpi) ?
-                uint96(tpiData.currentTpi + (((tpiData.targetDate - tpiData.lastUpdatedAt) - (tpiData.targetDate - block.timestamp)) * tpiData.tpiSlope))  /// @dev use the calculated current TPI - positive slope.
+                uint96(tpiData.currentTpi + (((_targetDate - tpiData.lastUpdatedAt) - (_targetDate - block.timestamp)) * tpiData.tpiSlope))  /// @dev use the calculated current TPI - positive slope.
                 :
-                uint96(tpiData.currentTpi - (((tpiData.targetDate - tpiData.lastUpdatedAt) - (tpiData.targetDate - block.timestamp)) * tpiData.tpiSlope));  /// @dev use the calculated current TPI - negative slope.
+                uint96(tpiData.currentTpi - (((_targetDate - tpiData.lastUpdatedAt) - (_targetDate - block.timestamp)) * tpiData.tpiSlope));  /// @dev use the calculated current TPI - negative slope.
         }
      }
         
