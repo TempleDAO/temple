@@ -25,14 +25,19 @@ contract TreasuryPriceIndexOracle is ITreasuryPriceIndexOracle, TempleElevatedAc
         uint96 currentTpi;
 
         /// @notice The previous TPI - used if there hasn't been enough elapsed time since the last update
-        uint96 previousTpi;
+        uint96 targetTpi;
 
         /// @notice The time at which TPI was last updated
         uint32 lastUpdatedAt;
 
-        /// @notice When TPI is updated, it doesn't immediately take effect.
-        /// The new TPI takes effect after this cooldown has elapsed.
-        uint32 cooldownSecs;
+        /// @notice The date which the target TPI should be reached.
+        uint32 targetDate;
+
+        /// @notice The rate at which the currentTpi will change over time until targetDate.
+        uint96 tpiSlope;   
+
+        /// @notice Used to determine positive or negative slope
+        bool increaseInTargetTpi;
     }
     
     /**
@@ -46,21 +51,30 @@ contract TreasuryPriceIndexOracle is ITreasuryPriceIndexOracle, TempleElevatedAc
      */
     uint256 public override maxTreasuryPriceIndexDelta;
 
+    /**
+     * @notice The maximum allowed TPI change on any single `setTreasuryPriceIndex()`, in absolute terms.
+     * @dev Used as a bound to avoid unintended/fat fingering when updating TPI
+     */
+    uint32 public override minTreasuryPriceIndexTargetDateDelta;
+
     constructor(
         address _initialRescuer,
         address _initialExecutor,
         uint96 _initialTreasuryPriceIndex,
         uint256 _maxTreasuryPriceIndexDelta,
-        uint32 _cooldownSecs
+        uint32 _minTreasuryPriceIndexTargetDateDelta
     ) TempleElevatedAccess(_initialRescuer, _initialExecutor)
     {
         tpiData = TpiData({
             currentTpi: _initialTreasuryPriceIndex,
-            previousTpi: _initialTreasuryPriceIndex,
+            targetTpi: _initialTreasuryPriceIndex,
             lastUpdatedAt: uint32(block.timestamp),
-            cooldownSecs: _cooldownSecs
+            targetDate: uint32(block.timestamp),
+            tpiSlope: 1,
+            increaseInTargetTpi: true
         });
         maxTreasuryPriceIndexDelta = _maxTreasuryPriceIndexDelta;
+        minTreasuryPriceIndexTargetDateDelta = _minTreasuryPriceIndexTargetDateDelta;
     }
 
     /**
@@ -68,18 +82,17 @@ contract TreasuryPriceIndexOracle is ITreasuryPriceIndexOracle, TempleElevatedAc
      * @dev If the TPI has just been updated, the old TPI will be used until `cooldownSecs` has elapsed
      */
     function treasuryPriceIndex() public override view returns (uint96) {
-        return (block.timestamp < (tpiData.lastUpdatedAt + tpiData.cooldownSecs))
-            ? tpiData.previousTpi  // use the previous TPI if we haven't passed the cooldown yet.
-            : tpiData.currentTpi;  // use the new TPI
-    }
-
-    /**
-     * @notice Set the number of seconds to elapse before a new TPI will take effect.
-     */
-    function setTpiCooldown(uint32 cooldownSecs) external override onlyElevatedAccess {
-        emit TpiCooldownSet(cooldownSecs);
-        tpiData.cooldownSecs = cooldownSecs;
-    }
+        uint96 _targetDate = tpiData.targetDate;
+        if (block.timestamp >= _targetDate) {
+            return tpiData.targetTpi;  /// @dev target reached, no calculation required.
+        } else {
+            return (tpiData.increaseInTargetTpi) ?
+                uint96(tpiData.currentTpi + (((_targetDate - tpiData.lastUpdatedAt) - (_targetDate - block.timestamp)) * tpiData.tpiSlope))  /// @dev use the calculated current TPI - positive slope.
+                :
+                uint96(tpiData.currentTpi - (((_targetDate - tpiData.lastUpdatedAt) - (_targetDate - block.timestamp)) * tpiData.tpiSlope));  /// @dev use the calculated current TPI - negative slope.
+        }
+     }
+        
 
     /**
      * @notice Set the maximum allowed TPI change on any single `setTreasuryPriceIndex()`, in absolute terms.
@@ -91,28 +104,46 @@ contract TreasuryPriceIndexOracle is ITreasuryPriceIndexOracle, TempleElevatedAc
     }
 
     /**
-     * @notice Set the Treasury Price Index (TPI)
-     * @dev 18 decimal places, 1.05e18 == $1.05
+     * @notice The maximum allowed TPI change on any single `setTreasuryPriceIndex()`, in absolute terms.
+     * @dev Used as a bound to avoid unintended/fat fingering when updating TPI
      */
-    function setTreasuryPriceIndex(uint96 value) external override onlyElevatedAccess {
-        // If the cooldownSecs hasn't yet passed since the last update, then this will still
-        // refer to the `previousTpi` value
-        uint96 _oldTpi = treasuryPriceIndex();
-        uint96 _newTpi = value;
+    function setMinTreasuryPriceIndexTargetDateDelta(uint32 minTargetDateDelta) external override onlyElevatedAccess {
+        emit MinTreasuryPriceIndexTargetDateDeltaSet(minTargetDateDelta);
+        minTreasuryPriceIndexTargetDateDelta = minTargetDateDelta;
+    }
 
+    /**
+     * @notice Set the target TPI which will incrementally increase over the given targetDate.
+     * @dev targetDate is unixtime, targetRate is target TPi, 18 decimal places, 1.05e18 == $1.05
+     */
+    function setTreasuryPriceIndexAt(uint96 targetRate, uint32 targetDate) external override onlyElevatedAccess {
+        uint96 _currentTpi = treasuryPriceIndex();
+        uint96 _newTpi = targetRate;
+
+        // Check delta is within margins
         unchecked {
-            uint256 _delta = (_newTpi > _oldTpi) ? _newTpi - _oldTpi : _oldTpi - _newTpi;
-            if (_delta > maxTreasuryPriceIndexDelta) revert BreachedMaxTpiDelta(_oldTpi, _newTpi, maxTreasuryPriceIndexDelta);
+            uint256 _delta = (_newTpi > _currentTpi) ? _newTpi - _currentTpi : _currentTpi - _newTpi;
+            if (_delta > maxTreasuryPriceIndexDelta) revert BreachedMaxTpiDelta(_currentTpi, _newTpi, maxTreasuryPriceIndexDelta);
+
+            if (targetDate + uint32(block.timestamp) < minTreasuryPriceIndexTargetDateDelta) revert BreachedMinDateDelta(targetDate, uint32(block.timestamp), minTreasuryPriceIndexTargetDateDelta);
         }
 
-        emit TreasuryPriceIndexSet(_oldTpi, _newTpi);
+        /// @dev calculate slope = (targetRate-currentRate)/(targetDate-currentDate)
+        bool increaseInTpi = _newTpi > _currentTpi;
+
+        uint96 slopeNumerator = increaseInTpi ? (_newTpi - _currentTpi) : (_currentTpi - _newTpi);
+        uint96 _slope = slopeNumerator / (targetDate - uint32(block.timestamp));
 
         tpiData = TpiData({
-            currentTpi: _newTpi,
-            previousTpi: _oldTpi,
+            currentTpi: _currentTpi,
+            targetTpi: _newTpi,
             lastUpdatedAt: uint32(block.timestamp),
-            cooldownSecs: tpiData.cooldownSecs
+            targetDate: targetDate,
+            tpiSlope: _slope,
+            increaseInTargetTpi: increaseInTpi
         });
+
+        emit TreasuryPriceIndexSetAt(_currentTpi, _newTpi, targetDate);
     }
 
 }
