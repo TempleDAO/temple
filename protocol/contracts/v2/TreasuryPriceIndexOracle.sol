@@ -55,14 +55,14 @@ contract TreasuryPriceIndexOracle is ITreasuryPriceIndexOracle, TempleElevatedAc
      * @notice The maximum allowed TPI change on any single `setTreasuryPriceIndex()`, in absolute terms.
      * @dev Used as a bound to avoid unintended/fat fingering when updating TPI
      */
-    uint32 public override maxTreasuryPriceIndexTargetDateDelta;
+    uint32 public override minTreasuryPriceIndexTargetDateDelta;
 
     constructor(
         address _initialRescuer,
         address _initialExecutor,
         uint96 _initialTreasuryPriceIndex,
         uint256 _maxTreasuryPriceIndexDelta,
-        uint32 _maxTreasuryPriceIndexTargetDateDelta
+        uint32 _minTreasuryPriceIndexTargetDateDelta
     ) TempleElevatedAccess(_initialRescuer, _initialExecutor)
     {
         tpiData = TpiData({
@@ -74,7 +74,7 @@ contract TreasuryPriceIndexOracle is ITreasuryPriceIndexOracle, TempleElevatedAc
             increaseInTargetTpi: true
         });
         maxTreasuryPriceIndexDelta = _maxTreasuryPriceIndexDelta;
-        maxTreasuryPriceIndexTargetDateDelta = _maxTreasuryPriceIndexTargetDateDelta;
+        minTreasuryPriceIndexTargetDateDelta = _minTreasuryPriceIndexTargetDateDelta;
     }
 
     /**
@@ -106,9 +106,9 @@ contract TreasuryPriceIndexOracle is ITreasuryPriceIndexOracle, TempleElevatedAc
      * @notice The maximum allowed TPI change on any single `setTreasuryPriceIndex()`, in absolute terms.
      * @dev Used as a bound to avoid unintended/fat fingering when updating TPI
      */
-    function setMaxTreasuryPriceIndexTargetDateDelta(uint32 maxTargetDateDelta) external override onlyElevatedAccess {
-        emit MaxTreasuryPriceIndexTargetDateDeltaSet(maxTargetDateDelta);
-        maxTreasuryPriceIndexTargetDateDelta = maxTargetDateDelta;
+    function setMinTreasuryPriceIndexTargetDateDelta(uint32 minTargetDateDelta) external override onlyElevatedAccess {
+        emit MinTreasuryPriceIndexTargetDateDeltaSet(minTargetDateDelta);
+        minTreasuryPriceIndexTargetDateDelta = minTargetDateDelta;
     }
 
     /**
@@ -124,7 +124,7 @@ contract TreasuryPriceIndexOracle is ITreasuryPriceIndexOracle, TempleElevatedAc
             uint256 _delta = (_newTpi > _currentTpi) ? _newTpi - _currentTpi : _currentTpi - _newTpi;
             if (_delta > maxTreasuryPriceIndexDelta) revert BreachedMaxTpiDelta(_currentTpi, _newTpi, maxTreasuryPriceIndexDelta);
 
-            if (targetDate + uint32(block.timestamp) < maxTreasuryPriceIndexTargetDateDelta) revert BreachedMaxDateDelta(targetDate, uint32(block.timestamp), maxTreasuryPriceIndexTargetDateDelta);
+            if (targetDate + uint32(block.timestamp) < minTreasuryPriceIndexTargetDateDelta) revert BreachedMinDateDelta(targetDate, uint32(block.timestamp), minTreasuryPriceIndexTargetDateDelta);
         }
 
         /// @dev calculate slope = (targetRate-currentRate)/(targetDate-currentDate)

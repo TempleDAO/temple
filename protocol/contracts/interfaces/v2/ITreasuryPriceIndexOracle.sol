@@ -15,10 +15,10 @@ interface ITreasuryPriceIndexOracle is ITempleElevatedAccess {
     event TreasuryPriceIndexSetAt(uint96 oldTpi, uint96 newTpiTarget, uint256 targetDate);
     event TpiCooldownSet(uint32 cooldownSecs);
     event MaxTreasuryPriceIndexDeltaSet(uint256 maxDelta);
-    event MaxTreasuryPriceIndexTargetDateDeltaSet(uint32 maxTargetDateDelta);
+    event MinTreasuryPriceIndexTargetDateDeltaSet(uint32 maxTargetDateDelta);
 
     error BreachedMaxTpiDelta(uint96 oldTpi, uint96 newTpi, uint256 maxDelta);
-    error BreachedMaxDateDelta(uint32 targetDate, uint32 currentDate, uint32 maxTargetDateDelta);
+    error BreachedMinDateDelta(uint32 targetDate, uint32 currentDate, uint32 maxTargetDateDelta);
 
     /**
      * @notice The current Treasury Price Index (TPI) value
@@ -36,7 +36,7 @@ interface ITreasuryPriceIndexOracle is ITempleElevatedAccess {
      * @notice The maximum allowed time for TPI to reach it's target value.
      * @dev Used as a bound to avoid unintended/fat fingering when updating TPI
      */
-    function maxTreasuryPriceIndexTargetDateDelta() external view returns (uint32);
+    function minTreasuryPriceIndexTargetDateDelta() external view returns (uint32);
 
     /**
      * @notice The current internal TPI data along with when it was last reset, and the prior value
@@ -60,7 +60,7 @@ interface ITreasuryPriceIndexOracle is ITempleElevatedAccess {
      * @notice Set the maximum allowed time range for TPI to reach it's target value.
      * @dev Time in seconds.
      */
-    function setMaxTreasuryPriceIndexTargetDateDelta(uint32 maxTargetDateDelta) external;
+    function setMinTreasuryPriceIndexTargetDateDelta(uint32 maxTargetDateDelta) external;
 
     /**
      * @notice Set the target TPI which will incrementally increase over the given targetDate.
