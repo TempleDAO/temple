@@ -781,7 +781,9 @@ describe("RAMOS", async () => {
             
             // skew price below TPI
             await singleSideDepositTemple(toAtto(50_000));
+            // TODO: clean up
             await tpiOracle.setTreasuryPriceIndexAt(ethers.utils.parseEther("0.97"), 604800);
+            await time.increase(604800);
             expect(await amo.treasuryPriceIndex()).to.equal(ethers.utils.parseEther("0.97"));
             await expect(amo.rebalanceDownExit(ONE_ETH, 1)).to.be.revertedWithCustomError(poolHelper, "NoRebalanceDown");
             await amo.pause();
