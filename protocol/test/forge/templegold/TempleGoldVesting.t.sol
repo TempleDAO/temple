@@ -15,11 +15,6 @@ import { DaiGoldAuction } from "contracts/templegold/DaiGoldAuction.sol";
 import { TempleGoldStaking } from "contracts/templegold/TempleGoldStaking.sol";
 
 contract TempleGoldVestingTestBase is TempleGoldCommon {
-
-    event VestingScheduleCreated(
-        bytes32 vestingId, address indexed _recipient, uint32 _start, 
-        uint32 _cliff, uint32 _duration, uint128 _amount
-    );
     event Revoked(bytes32 _id, address indexed _recipient, uint256 _unreleased, uint256 _totalVested);
     event Released(bytes32 _id, address indexed _recipient, uint256 _amount);
     event ScheduleCreated(
@@ -173,12 +168,6 @@ contract TempleGoldVestingAccessTest is TempleGoldVestingTestBase {
         vesting.createSchedules(schedules);
     }
 
-    function test_access_fail_changeRecipient() public {
-        vm.startPrank(unauthorizedUser);
-        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
-        vesting.changeRecipient(bytes32(bytes("")), alice);
-    }
-
     function test_access_fail_revokeVesting() public {
         vm.startPrank(unauthorizedUser);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
@@ -262,7 +251,7 @@ contract TempleGoldVestingTest is TempleGoldVestingTestBase {
         emit ScheduleCreated(_id, _schedule.recipient, _schedule.start, _schedule.cliff, _schedule.duration, _schedule.amount);
         vesting.createSchedules(schedules);
         bytes32[] memory ids = vesting.getVestingIds();
-        assertEq(vesting.totalVested(), _schedule.amount);
+        assertEq(vesting.totalVestedAndUnclaimed(), _schedule.amount);
         assertEq(vesting.getVestingIdAtIndex(0), _id);
         assertEq(ids.length, 1);
         assertEq(ids[0], _id);
@@ -289,7 +278,7 @@ contract TempleGoldVestingTest is TempleGoldVestingTestBase {
         vesting.createSchedules(schedules);
 
         ids = vesting.getVestingIds();
-        assertEq(vesting.totalVested(), _schedule.amount + schedules[0].amount + schedules[1].amount);
+        assertEq(vesting.totalVestedAndUnclaimed(), _schedule.amount + schedules[0].amount + schedules[1].amount);
         assertEq(vesting.getVestingIdAtIndex(1), _id2);
         assertEq(vesting.getVestingIdAtIndex(2), _id3);
         assertEq(ids.length, 3);
@@ -315,42 +304,42 @@ contract TempleGoldVestingTest is TempleGoldVestingTestBase {
         assertEq(_storedVest.start, schedules[1].start);
     }
 
-    function test_changeVestingRecipient() public {
-        vm.startPrank(executor);
-        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
-        vesting.changeRecipient(bytes32(bytes("")), address(0));
+    // function test_changeVestingRecipient() public {
+    //     vm.startPrank(executor);
+    //     vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
+    //     vesting.changeRecipient(bytes32(bytes("")), address(0));
 
-        bytes32 _id = vesting.computeNextVestingScheduleIdForHolder(alice);
-        ITempleGoldVesting.VestingSchedule[] memory schedules = new ITempleGoldVesting.VestingSchedule[](1);
-        schedules[0] = _getScheduleOne();
-        vesting.createSchedules(schedules);
+    //     bytes32 _id = vesting.computeNextVestingScheduleIdForHolder(alice);
+    //     ITempleGoldVesting.VestingSchedule[] memory schedules = new ITempleGoldVesting.VestingSchedule[](1);
+    //     schedules[0] = _getScheduleOne();
+    //     vesting.createSchedules(schedules);
 
-        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
-        vesting.changeRecipient(_id, address(0));
-        // same recipient 
-        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
-        vesting.changeRecipient(_id, alice);
+    //     vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
+    //     vesting.changeRecipient(_id, address(0));
+    //     // same recipient 
+    //     vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
+    //     vesting.changeRecipient(_id, alice);
 
-        bytes32 _newId = vesting.computeNextVestingScheduleIdForHolder(bob);
-        vm.expectEmit(address(vesting));
-        emit RecipientChanged(_newId, alice, bob);
-        vesting.changeRecipient(_id, bob);
-        assertEq(vesting.vestingIdExists(_id), false);
-        assertEq(vesting.vestingIdExists(_newId), true);
-        assertEq(vesting.getRecipientVestingCount(alice), 0);
-        assertEq(vesting.getRecipientVestingCount(bob), 1);
-        ITempleGoldVesting.VestingSchedule memory _schedule = vesting.getSchedule(_id);
-        assertEq(_schedule.duration, 0);
-        assertEq(_schedule.recipient, address(0));
-        assertEq(_schedule.amount, 0);
-        _schedule = vesting.getSchedule(_newId);
-        assertEq(_schedule.recipient, bob);
-        assertEq(schedules[0].amount, _schedule.amount);
-        assertEq(schedules[0].duration, _schedule.duration);
-        assertEq(schedules[0].cliff, _schedule.cliff);
-        assertEq(schedules[0].start, _schedule.start);
-        assertEq(schedules[0].distributed, _schedule.distributed);
-    }
+    //     bytes32 _newId = vesting.computeNextVestingScheduleIdForHolder(bob);
+    //     vm.expectEmit(address(vesting));
+    //     emit RecipientChanged(_newId, alice, bob);
+    //     vesting.changeRecipient(_id, bob);
+    //     assertEq(vesting.vestingIdExists(_id), false);
+    //     assertEq(vesting.vestingIdExists(_newId), true);
+    //     assertEq(vesting.getRecipientVestingCount(alice), 0);
+    //     assertEq(vesting.getRecipientVestingCount(bob), 1);
+    //     ITempleGoldVesting.VestingSchedule memory _schedule = vesting.getSchedule(_id);
+    //     assertEq(_schedule.duration, 0);
+    //     assertEq(_schedule.recipient, address(0));
+    //     assertEq(_schedule.amount, 0);
+    //     _schedule = vesting.getSchedule(_newId);
+    //     assertEq(_schedule.recipient, bob);
+    //     assertEq(schedules[0].amount, _schedule.amount);
+    //     assertEq(schedules[0].duration, _schedule.duration);
+    //     assertEq(schedules[0].cliff, _schedule.cliff);
+    //     assertEq(schedules[0].start, _schedule.start);
+    //     assertEq(schedules[0].distributed, _schedule.distributed);
+    // }
 
     function test_revokeVesting() public {
         {
@@ -381,7 +370,7 @@ contract TempleGoldVestingTest is TempleGoldVestingTestBase {
             assertEq(_storedVest.revoked, true);
             bytes32[] memory activeIds = vesting.getActiveVestingIds();
             assertEq(activeIds.length, 0);
-            assertEq(vesting.totalVested(), 0);
+            assertEq(vesting.totalVestedAndUnclaimed(), 0);
             vm.expectRevert(abi.encodeWithSelector(ITempleGoldVesting.VestingRevoked.selector));
             vesting.revokeVesting(_id, uint32(block.timestamp));
         }
@@ -424,14 +413,14 @@ contract TempleGoldVestingTest is TempleGoldVestingTestBase {
             uint256 vestedAtRevokeTime = vesting.getTotalVestedAt(_id, uint32(warpTime + 1 weeks));
             releasable = vesting.getReleasableAmount(_id);
             unreleased = _schedule.amount - releasable - (vestedAtRevokeTime - releasable);
-            uint256 vestedTotal = vesting.totalVested()-unreleased-releasable;
+            uint256 vestedTotal = vesting.totalVestedAndUnclaimed()-unreleased-releasable;
             // revoke 1 week from now
             vm.expectEmit(address(vesting));
             emit Revoked(_id, _schedule.recipient, unreleased, vestedTotal);
             vesting.revokeVesting(_id, uint32(block.timestamp + 1 weeks));
             assertEq(releasable, templeGold.balanceOf(mike)-mikeBalanceBefore);
             assertEq(vesting.revokedMaxAmounts(_id), vestedAtRevokeTime);
-            assertEq(vesting.totalVested(), vestedTotal);
+            assertEq(vesting.totalVestedAndUnclaimed(), vestedTotal);
             assertEq(vesting.isVestingRevoked(_id), true);
             assertEq(vesting.isActiveVestingId(_id), false);
         }
@@ -465,6 +454,7 @@ contract TempleGoldVestingTest is TempleGoldVestingTestBase {
     }
 
     function test_vestingIdExists() public {
+        assertEq(vesting.isVestingRevoked(bytes32(bytes(""))), true);
         bytes32 _id = _createFirstSchedule();
         assertEq(vesting.vestingIdExists(_id), true);
         assertEq(vesting.isActiveVestingId(_id), true);
@@ -513,14 +503,14 @@ contract TempleGoldVestingTest is TempleGoldVestingTestBase {
         vm.warp(_schedule.cliff + 1 weeks);
         uint256 releasable = vesting.getReleasableAmount(_id);
         uint256 balance = templeGold.balanceOf(alice);
-        uint256 totalVested = vesting.totalVested();
+        uint256 totalVestedAndUnclaimed = vesting.totalVestedAndUnclaimed();
         vm.expectEmit(address(vesting));
         emit Released(_id, alice, releasable);
         vesting.release(_id);
         assertEq(templeGold.balanceOf(alice), balance+releasable);
         _schedule = vesting.getSchedule(_id);
         assertEq(_schedule.distributed, releasable);
-        assertEq(vesting.totalVested(), totalVested-releasable);
+        assertEq(vesting.totalVestedAndUnclaimed(), totalVestedAndUnclaimed-releasable);
 
         // revoke and release. revoke same time
         vm.startPrank(executor);
@@ -545,11 +535,11 @@ contract TempleGoldVestingTest is TempleGoldVestingTestBase {
         assertEq(releasable, 0);
         vm.expectRevert(abi.encodeWithSelector(ITempleGoldVesting.VestingRevoked.selector));
         vesting.release(_id);
-        totalVested = vesting.getTotalVestedAt(_id, uint32(block.timestamp));
+        totalVestedAndUnclaimed = vesting.getTotalVestedAt(_id, uint32(block.timestamp));
         skip(1 weeks);
         uint256 revokedVestedMax = vesting.getTotalVestedAt(_id, uint32(block.timestamp));
         balance = templeGold.balanceOf(bob);
-        releasable = revokedVestedMax - totalVested;
+        releasable = revokedVestedMax - totalVestedAndUnclaimed;
         _schedule = vesting.getSchedule(_id);
         uint256 _distributed = _schedule.distributed;
         vm.expectEmit(address(vesting));
@@ -558,7 +548,7 @@ contract TempleGoldVestingTest is TempleGoldVestingTestBase {
         assertEq(templeGold.balanceOf(bob), balance + releasable);
         _schedule = vesting.getSchedule(_id);
         assertEq(_schedule.distributed, _distributed+releasable);
-        assertEq(vesting.totalVested(), totalVested-_distributed);
+        assertEq(vesting.totalVestedAndUnclaimed(), totalVestedAndUnclaimed-_distributed);
         // error after trying again
         vm.expectRevert(abi.encodeWithSelector(ITempleGoldVesting.VestingRevoked.selector));
         vesting.release(_id);
@@ -586,14 +576,14 @@ contract TempleGoldVestingTest is TempleGoldVestingTestBase {
         vesting.releaseAmount(_id, releasable+1);
 
         uint256 balance = templeGold.balanceOf(alice);
-        uint256 totalVested = vesting.totalVested();
+        uint256 totalVestedAndUnclaimed = vesting.totalVestedAndUnclaimed();
         vm.expectEmit(address(vesting));
         emit Released(_id, alice, releasable);
         vesting.releaseAmount(_id, releasable);
         assertEq(templeGold.balanceOf(alice), balance+releasable);
         _schedule = vesting.getSchedule(_id);
         assertEq(_schedule.distributed, releasable);
-        assertEq(vesting.totalVested(), totalVested-releasable);
+        assertEq(vesting.totalVestedAndUnclaimed(), totalVestedAndUnclaimed-releasable);
 
         // revoke and release. revoke same time
         vm.startPrank(executor);
@@ -618,11 +608,11 @@ contract TempleGoldVestingTest is TempleGoldVestingTestBase {
         assertEq(releasable, 0);
         vm.expectRevert(abi.encodeWithSelector(ITempleGoldVesting.VestingRevoked.selector));
         vesting.releaseAmount(_id, 1);
-        totalVested = vesting.getTotalVestedAt(_id, uint32(block.timestamp));
+        totalVestedAndUnclaimed = vesting.getTotalVestedAt(_id, uint32(block.timestamp));
         skip(1 weeks);
         uint256 revokedVestedMax = vesting.getTotalVestedAt(_id, uint32(block.timestamp));
         balance = templeGold.balanceOf(bob);
-        releasable = revokedVestedMax - totalVested;
+        releasable = revokedVestedMax - totalVestedAndUnclaimed;
         _schedule = vesting.getSchedule(_id);
         uint256 _distributed = _schedule.distributed;
         vm.expectEmit(address(vesting));
@@ -632,7 +622,7 @@ contract TempleGoldVestingTest is TempleGoldVestingTestBase {
         assertEq(templeGold.balanceOf(bob), balance + releasable);
         _schedule = vesting.getSchedule(_id);
         assertEq(_schedule.distributed, _distributed+releasable);
-        assertEq(vesting.totalVested(), totalVested-_distributed);
+        assertEq(vesting.totalVestedAndUnclaimed(), totalVestedAndUnclaimed-_distributed);
         // error after trying again
         vm.expectRevert(abi.encodeWithSelector(ITempleGoldVesting.VestingRevoked.selector));
         vesting.releaseAmount(_id, 1);

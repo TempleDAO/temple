@@ -5,10 +5,6 @@ pragma solidity ^0.8.20;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 interface ITempleGoldVesting {
-    event VestingScheduleCreated(
-        bytes32 vestingId, address indexed _recipient, uint32 _start, 
-        uint32 _cliff, uint32 _duration, uint128 _amount
-    );
     event Revoked(bytes32 _id, address indexed _recipient, uint256 _unreleased, uint256 _totalVested);
     event Released(bytes32 _id, address indexed _recipient, uint256 _amount);
     event ScheduleCreated(
@@ -20,43 +16,44 @@ interface ITempleGoldVesting {
 
     error VestingRevoked();
     error CannotRelease();
+    error InvalidScheduleId();
 
     struct VestingSchedule {
-        ///@notice cliff
+        /// @notice cliff
         uint32 cliff;
-        ///@notice Start time of vesting
+        /// @notice Start time of vesting
         uint32 start;
-        ///@notice Duration of vesting
+        /// @notice Duration of vesting
         uint32 duration;
-        ///@notice Amount of TGLD for whole vesting
+        /// @notice Amount of TGLD for whole vesting
         uint128 amount;
-        ///@notice Amount of TGLD distributed to recipient
+        /// @notice Amount of TGLD distributed to recipient
         uint128 distributed;
-        ///@notice Recipient of vesting
+        /// @notice Recipient of vesting
         address recipient;
-        ///@notice If vesting is revoked
+        /// @notice If vesting is revoked
         bool revoked;
     }
 
     struct VestingSummary {
-        ///@notice Recipient of vesting
+        /// @notice Recipient of vesting
         address recipient;
-        ///@notice distributed tgld
+        /// @notice distributed tgld
         uint128 distributed;
-        ///@notice total vested at current block.timestamp
+        /// @notice total vested at current block.timestamp
         uint128 vested;
-        ///@notice total vested at end time of summary
+        /// @notice total vested at end time of summary
         uint128 vestedAtEnd;
     }
 
-    ///@notice The owner of the TGLD funds
+    /// @notice The owner of the TGLD funds
     function fundsOwner() external view returns(address);
 
-    ///@notice TGLD address
+    /// @notice TGLD address
     function templeGold() external view returns(IERC20);
 
-    ///@notice Total TGLD vested and unclaimed
-    function totalVested() external view returns (uint256);
+    /// @notice Total TGLD vested and unclaimed
+    function totalVestedAndUnclaimed() external view returns (uint256);
 
     /**
      * @notice Get vesting schedule
@@ -79,12 +76,12 @@ interface ITempleGoldVesting {
         VestingSchedule[] calldata _schedules 
     ) external;
 
-    /**
-     * @notice Change recipient
-     * @param _vestingId Vesting Id.
-     * @param _recipient Recipient address
-     */
-    function changeRecipient(bytes32 _vestingId, address _recipient) external;
+    // /**
+    //  * @notice Change recipient
+    //  * @param _vestingId Vesting Id.
+    //  * @param _recipient Recipient address
+    //  */
+    // function changeRecipient(bytes32 _vestingId, address _recipient) external;
 
     /**
      * @notice Revoke vesting
