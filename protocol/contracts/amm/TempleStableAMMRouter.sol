@@ -130,7 +130,7 @@ contract TempleStableAMMRouter is Ownable {
         address pair = tokenPair[stable];
         require(pair != address(0), 'TempleStableAMMRouter: UNSUPPORTED_PAIR');
 
-        uint amountOut = swapExactStableForTempleQuote(pair, amountIn);
+        amountOut = swapExactStableForTempleQuote(pair, amountIn);
         require(amountOut >= amountOutMin, 'TempleStableAMMRouter: INSUFFICIENT_OUTPUT_AMOUNT');
 
         // Swap on AMM
