@@ -14,9 +14,9 @@ interface ITempleGoldVesting {
     event RecipientChanged(bytes32 _vestingId, address _oldRecipient, address indexed _recipient);
     event FundsOwnerSet(address indexed _fundsOwner);
 
-    error VestingRevoked();
     error CannotRelease();
     error InvalidScheduleId();
+    error FullyVested();
 
     struct VestingSchedule {
         /// @notice cliff
@@ -76,19 +76,11 @@ interface ITempleGoldVesting {
         VestingSchedule[] calldata _schedules 
     ) external;
 
-    // /**
-    //  * @notice Change recipient
-    //  * @param _vestingId Vesting Id.
-    //  * @param _recipient Recipient address
-    //  */
-    // function changeRecipient(bytes32 _vestingId, address _recipient) external;
-
     /**
      * @notice Revoke vesting
-     * @param _vestingId Vesting Id.
-     * @param _revokeTimestamp Time to revoke
+     * @param _vestingId Vesting Id
      */
-    function revokeVesting(bytes32 _vestingId, uint32 _revokeTimestamp) external;
+    function revokeVesting(bytes32 _vestingId) external;
 
     /**
      * @notice Recover ERC20 token
@@ -145,14 +137,19 @@ interface ITempleGoldVesting {
     ) external pure returns (bytes32);
 
     /**
-     * @dev Returns the last vesting schedule for a given holder address.
+     * @notice Returns the last vesting schedule for a given holder address.
+     * @param _recipient Recipient address
+     * @return VestingSchedule
      */
     function getLastVestingScheduleForHolder(
         address _recipient
     ) external view returns (VestingSchedule memory);
 
     /**
-     * @dev Returns vesting schedule by address and index
+     * @notice Returns vesting schedule by address and index
+     * @param recipient Recipient
+     * @param index Index
+     * @return VestingSchedule
      */
     function getVestingScheduleByAddressAndIndex(
         address recipient,
@@ -174,12 +171,6 @@ interface ITempleGoldVesting {
      * @return ids Vesting Ids 
      */
     function getVestingIds() external view returns (bytes32[] memory ids);
-    
-    /**
-     * @notice Get active vesting Ids
-     * @return ids Vesting Ids 
-     */
-    function getActiveVestingIds() external view returns (bytes32[] memory ids);
 
     /**
      * @notice Get recipient vesting count
@@ -187,13 +178,6 @@ interface ITempleGoldVesting {
      * @return Count
      */
     function getRecipientVestingCount(address _recipient) external view returns (uint256);
-
-    /**
-     * @notice Check if id is acting vesting
-     * @param vestingId Vesting Id
-     * @return Bool
-     */
-    function isActiveVestingId(bytes32 vestingId) external view returns (bool);
 
     /**
      * @notice Check if vesting Id exists

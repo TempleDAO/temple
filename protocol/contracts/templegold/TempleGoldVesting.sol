@@ -11,6 +11,12 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { TempleMath } from "contracts/common/TempleMath.sol";
 import { ITempleGoldVesting } from "contracts/interfaces/templegold/ITempleGoldVesting.sol";
 
+
+/**
+ * @title TGLD Vesting
+ * @notice Vesting contract for contributors. Token is TGLD and allocations are set with createSchedules.
+ *  An account can have multiple vesting schedules. Vesting schedules can be revoked and canceled.
+ */
 contract TempleGoldVesting is ITempleGoldVesting, TempleElevatedAccess {
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.Bytes32Set;
@@ -29,8 +35,6 @@ contract TempleGoldVesting is ITempleGoldVesting, TempleElevatedAccess {
     mapping(bytes32 id => uint256 amount) public revokedMaxAmounts;
     /// @notice Vesting Ids
     EnumerableSet.Bytes32Set private _vestingIds;
-    /// @notice Active vesting Ids
-    EnumerableSet.Bytes32Set private _activeVestingIds;
 
     constructor(
         address _rescuer,
@@ -79,68 +83,31 @@ contract TempleGoldVesting is ITempleGoldVesting, TempleElevatedAccess {
             bytes32 vestingId = computeNextVestingScheduleIdForHolder(_schedule.recipient);
             schedules[vestingId] = _schedule;
             totalVestedAndUnclaimed += _schedule.amount;
-            /// @dev very low possibility of duplicate vesting IDs generated from `computeNextVestingScheduleIdForHolder`. 
+            /// @dev very low possibility of duplicate vesting IDs generated but still checking. 
             if(!_vestingIds.add(vestingId)) { revert InvalidScheduleId(); }
-            if(!_activeVestingIds.add(vestingId)) { revert InvalidScheduleId(); }
             _holdersVestingCount[_schedule.recipient] += 1;
             emit ScheduleCreated(vestingId, _schedule.recipient, _schedule.start, _schedule.cliff, _schedule.duration, _schedule.amount);
         }
-    }
-
-    // /**
-    //  * @notice Change recipient
-    //  * @param _vestingId Vesting Id.
-    //  * @param _recipient Recipient address
-    //  */
-    // function changeRecipient(bytes32 _vestingId, address _recipient) external override onlyElevatedAccess {
-    //     if (!_vestingIdExists(_vestingId)) { revert CommonEventsAndErrors.InvalidParam(); }
-    //     if (_recipient == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
-
-    //     VestingSchedule storage _schedule = schedules[_vestingId];
-    //     address _oldRecipient = _schedule.recipient;
-    //     if (_oldRecipient == _recipient) { revert CommonEventsAndErrors.InvalidParam(); }
-    //     _schedule.recipient = _recipient;
-    //     // create new id
-    //     bytes32 _newVestingId = computeNextVestingScheduleIdForHolder(_recipient);
-    //     schedules[_newVestingId] = _schedule;
-    //     delete schedules[_vestingId];
-
-    //     _vestingIds.remove(_vestingId);
-    //     _activeVestingIds.remove(_vestingId);
-    //     _vestingIds.add(_newVestingId);
-    //     _activeVestingIds.add(_newVestingId);
-    //     _holdersVestingCount[_oldRecipient] -= 1;
-    //     _holdersVestingCount[_recipient] += 1;
-    //     emit RecipientChanged(_newVestingId, _oldRecipient, _recipient);
-    // }
+    }   
 
     /**
      * @notice Revoke vesting
-     * @param _vestingId Vesting Id.
-     * @param _revokeTimestamp Time to revoke
+     * @param _vestingId Vesting Id
      */
-    function revokeVesting(bytes32 _vestingId, uint32 _revokeTimestamp) external override onlyElevatedAccess {
-        if (_revokeTimestamp < block.timestamp) { revert CommonEventsAndErrors.InvalidParam(); }
+    function revokeVesting(bytes32 _vestingId) external override onlyElevatedAccess {
         if (!vestingIdExists(_vestingId)) { revert CommonEventsAndErrors.InvalidParam(); }
         VestingSchedule storage _schedule = schedules[_vestingId];
-        if (_revokeTimestamp >= _schedule.duration + _schedule.start) { revert CommonEventsAndErrors.InvalidParam(); }
-        if (_schedule.revoked) { revert VestingRevoked(); }
+        if (block.timestamp >= _schedule.duration + _schedule.start) { revert FullyVested(); }
+        /// @dev No need to check if `_schedule.revoked` because id is removed from _vestingIds so it will fail `vestingIdExists`
         uint256 _vestedAmount = _calculateReleasableAmountStorage(_schedule);
         if (_vestedAmount > 0) {
             _release(_schedule, _vestedAmount);
             emit Released(_vestingId, _schedule.recipient, _vestedAmount);
         }
         uint256 unreleased = _schedule.amount - _schedule.distributed;
-        // update new revoke duration
-        if (_revokeTimestamp > block.timestamp) {
-            uint256 maxAmount = _calculateTotalVestedAtStorage(_schedule, _revokeTimestamp);
-            revokedMaxAmounts[_vestingId] = maxAmount;
-            uint256 remainingAmount = maxAmount - _calculateTotalVestedAtStorage(_schedule, uint32(block.timestamp));
-            unreleased -= remainingAmount;
-        }
         totalVestedAndUnclaimed -= unreleased;
         _schedule.revoked = true;
-        _activeVestingIds.remove(_vestingId);
+        if(!_vestingIds.remove(_vestingId)) { revert CommonEventsAndErrors.InvalidParam(); }
         emit Revoked(_vestingId, _schedule.recipient, unreleased, totalVestedAndUnclaimed);
     }
 
@@ -187,6 +154,8 @@ contract TempleGoldVesting is ITempleGoldVesting, TempleElevatedAccess {
     function getVestingIdAtIndex(
         uint256 _index
     ) external view override returns (bytes32 id) {
+        /// @dev revert with an array out-of-bounds access if only `id = _vestingIds.at(_index);` is used
+        if (_vestingIds.length() == 0) { return id; }
         id = _vestingIds.at(_index);
     }
 
@@ -195,9 +164,9 @@ contract TempleGoldVesting is ITempleGoldVesting, TempleElevatedAccess {
      * @param _vestingId Vesting Id
      */
     function release(bytes32 _vestingId) external override {
-        if (!vestingIdExists(_vestingId)) { revert CommonEventsAndErrors.InvalidParam(); }
+        if(!vestingIdExists(_vestingId)) { revert CommonEventsAndErrors.InvalidParam(); }
         VestingSchedule storage _schedule = schedules[_vestingId];
-        uint256 _releasableAmount  = _validateRelease(_schedule, _vestingId);
+        uint256 _releasableAmount  = _validateRelease(_schedule);
         _release(_schedule, _releasableAmount);
         emit Released(_vestingId, msg.sender, _releasableAmount);
     }
@@ -208,10 +177,10 @@ contract TempleGoldVesting is ITempleGoldVesting, TempleElevatedAccess {
      * @param _amount Amount to release
      */
     function releaseAmount(bytes32 _vestingId, uint256 _amount) external override {
-        if (_amount == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
-        if (!vestingIdExists(_vestingId)) { revert CommonEventsAndErrors.InvalidParam(); }
+        if(!vestingIdExists(_vestingId)) { revert CommonEventsAndErrors.InvalidParam(); }
         VestingSchedule storage _schedule = schedules[_vestingId];
-        uint256 _releasableAmount = _validateRelease(_schedule, _vestingId);
+        if (_schedule.amount < _amount) { revert CommonEventsAndErrors.InvalidParam(); }
+        uint256 _releasableAmount = _validateRelease(_schedule);
         if (_amount > _releasableAmount) { revert CannotRelease(); }
         _release(_schedule, _amount);
         emit Released(_vestingId, msg.sender, _amount);
@@ -256,7 +225,9 @@ contract TempleGoldVesting is ITempleGoldVesting, TempleElevatedAccess {
     }
 
     /**
-     * @dev Returns the last vesting schedule for a given holder address.
+     * @notice Returns the last vesting schedule for a given holder address.
+     * @param _recipient Recipient address
+     * @return VestingSchedule
      */
     function getLastVestingScheduleForHolder(
         address _recipient
@@ -271,7 +242,10 @@ contract TempleGoldVesting is ITempleGoldVesting, TempleElevatedAccess {
     }
 
     /**
-     * @dev Returns vesting schedule by address and index
+     * @notice Returns vesting schedule by address and index
+     * @param recipient Recipient
+     * @param index Index
+     * @return VestingSchedule
      */
     function getVestingScheduleByAddressAndIndex(
         address recipient,
@@ -286,15 +260,10 @@ contract TempleGoldVesting is ITempleGoldVesting, TempleElevatedAccess {
      * @return Vested amount 
      */
     function getTotalVestingAtCurrentTime(bytes32 _vestingId) external view override returns (uint256) {
-        if (!vestingIdExists(_vestingId)) { return 0; }
         VestingSchedule memory _schedule = schedules[_vestingId];
+        if (_schedule.amount == 0) { return 0; }
         if (block.timestamp <= _schedule.start) { return 0; }
-        if (_schedule.revoked) { 
-            uint256 _maxAmount = revokedMaxAmounts[_vestingId];
-            if (_maxAmount == 0) { return 0; }
-            /// @dev account is revoked. return only releasable amount
-            return _calculateReleasableAmountRevoked(schedules[_vestingId], _maxAmount);
-        }
+        if (_schedule.revoked) { return 0; }
         uint32 _elapsed = _getElapsedTime(_schedule.start, uint32(block.timestamp), _schedule.duration);
         return TempleMath.mulDivRound(_schedule.amount, _elapsed, _schedule.duration, false);
     }
@@ -306,7 +275,7 @@ contract TempleGoldVesting is ITempleGoldVesting, TempleElevatedAccess {
      * @return summary Vesting summary 
      */
     function getVestingSummary(uint32 _from, uint32 _to) external view override returns (VestingSummary[] memory summary) {
-        bytes32[] memory ids = _activeVestingIds.values();
+        bytes32[] memory ids = _vestingIds.values();
         uint256 _length = ids.length;
         summary = new VestingSummary[](_length);
         VestingSchedule memory _schedule;
@@ -330,23 +299,6 @@ contract TempleGoldVesting is ITempleGoldVesting, TempleElevatedAccess {
     function getVestingIds() external view override returns (bytes32[] memory ids) {
         ids = _vestingIds.values();
     }
-    
-    /**
-     * @notice Get active vesting Ids
-     * @return ids Vesting Ids 
-     */
-    function getActiveVestingIds() external view override returns (bytes32[] memory ids) {
-        ids = _activeVestingIds.values();
-    }
-
-    /**
-     * @notice Check if id is acting vesting
-     * @param vestingId Vesting Id
-     * @return Bool
-     */
-    function isActiveVestingId(bytes32 vestingId) external view override returns (bool) {
-        return _activeVestingIds.contains(vestingId);
-    }
 
     /**
      * @notice Get recipient vesting count
@@ -365,13 +317,7 @@ contract TempleGoldVesting is ITempleGoldVesting, TempleElevatedAccess {
     function getReleasableAmount(bytes32 _vestingId) external view override returns (uint256) {
         if(!vestingIdExists(_vestingId)) { return 0; }
         VestingSchedule memory _schedule = schedules[_vestingId];
-        if (_schedule.revoked) {
-            uint256 _maxAmount = revokedMaxAmounts[_vestingId];
-            if (_maxAmount == 0) { return 0; }
-            return _calculateReleasableAmountRevoked(schedules[_vestingId], _maxAmount);
-        } else {
-            return _calculateReleasableAmount(schedules[_vestingId]);
-        }
+        return _calculateReleasableAmount(_schedule);
     }
 
     /**
@@ -381,8 +327,8 @@ contract TempleGoldVesting is ITempleGoldVesting, TempleElevatedAccess {
      * @return Total vested
      */
     function getTotalVestedAt(bytes32 _vestingId, uint32 _at) external view override returns (uint256) {
-        if(!vestingIdExists(_vestingId)) { return 0; }
         VestingSchedule memory _schedule = schedules[_vestingId];
+        if (_schedule.amount == 0) { return 0; }
         if (block.timestamp <= _schedule.start) { return 0; }
         return _calculateTotalVestedAt(_schedule, _at);
     }
@@ -409,40 +355,15 @@ contract TempleGoldVesting is ITempleGoldVesting, TempleElevatedAccess {
         }
     }
 
-    function _validateRelease(VestingSchedule storage _schedule, bytes32 _vestingId) private view returns (uint256 _releasableAmount) {
+    function _validateRelease(VestingSchedule storage _schedule) private view returns (uint256 _releasableAmount) {
         if (_schedule.recipient != msg.sender) { revert CommonEventsAndErrors.InvalidAccess(); }
         _releasableAmount = _calculateReleasableAmount(_schedule);
-        if (_schedule.revoked) {
-            uint256 _maxAmount = revokedMaxAmounts[_vestingId];
-            if (_maxAmount == 0) { revert VestingRevoked(); }
-            uint256 _releasableAmountRevoked =_calculateReleasableAmountRevoked(_schedule, _maxAmount);
-            if (_releasableAmountRevoked == 0) { revert VestingRevoked(); }
-            _releasableAmount = _releasableAmountRevoked;
-        }
-    }
-
-    function _calculateReleasableAmountRevoked(
-        VestingSchedule memory _schedule,
-        uint256 _maxAmount
-    ) private view returns (uint256) {
-        uint256 _vested = TempleMath.mulDivRound(_schedule.amount, block.timestamp - _schedule.start, _schedule.duration, false);
-        if (_vested > _maxAmount) { _vested = _maxAmount; }
-        return _schedule.distributed >= _vested ? 0 : _vested - _schedule.distributed;
     }
 
     function _calculateTotalVestedAt(
         VestingSchedule memory _schedule,
         uint32 _releaseTime
     ) private pure returns (uint256) {
-        uint256 _elapsed = _getElapsedTime(_schedule.start, _releaseTime, _schedule.duration);
-        uint256 _vested = TempleMath.mulDivRound(_schedule.amount, _elapsed, _schedule.duration, false);
-        return _vested;
-    }
-
-    function _calculateTotalVestedAtStorage(
-        VestingSchedule storage _schedule,
-        uint32 _releaseTime
-    ) private view returns (uint256) {
         uint256 _elapsed = _getElapsedTime(_schedule.start, _releaseTime, _schedule.duration);
         uint256 _vested = TempleMath.mulDivRound(_schedule.amount, _elapsed, _schedule.duration, false);
         return _vested;
