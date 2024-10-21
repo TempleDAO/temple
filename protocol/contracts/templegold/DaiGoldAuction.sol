@@ -69,10 +69,11 @@ contract DaiGoldAuction is IDaiGoldAuction, AuctionBase, TempleElevatedAccess {
                 || _config.auctionMinimumDistributedGold == 0
                 || _config.auctionsTimeDiff == 0) 
             { revert CommonEventsAndErrors.ExpectedNonZero(); }
-        if (!epochs[_currentEpochId].hasEnded()) { revert InvalidOperation(); }
+        uint256 currentEpochCache = _currentEpochId;
+        if (!epochs[currentEpochCache].hasEnded()) { revert InvalidOperation(); }
         auctionConfig = _config;
 
-        emit AuctionConfigSet(_currentEpochId, _config);
+        emit AuctionConfigSet(currentEpochCache, _config);
     }
 
     /**
@@ -105,18 +106,19 @@ contract DaiGoldAuction is IDaiGoldAuction, AuctionBase, TempleElevatedAccess {
      */
     function startAuction() external override {
         if (auctionStarter != address(0) && msg.sender != auctionStarter) { revert CommonEventsAndErrors.InvalidAccess(); }
-        EpochInfo storage prevAuctionInfo = epochs[_currentEpochId];
+        uint256 currentEpochCache = _currentEpochId;
+        EpochInfo storage prevAuctionInfo = epochs[currentEpochCache];
         if (!prevAuctionInfo.hasEnded()) { revert CannotStartAuction(); }
        
         AuctionConfig storage config = auctionConfig;
         /// @notice last auction end time plus wait period
-        if (_currentEpochId > 0 && (prevAuctionInfo.endTime + config.auctionsTimeDiff > block.timestamp)) {
+        if (currentEpochCache > 0 && (prevAuctionInfo.endTime + config.auctionsTimeDiff > block.timestamp)) {
             revert CannotStartAuction();
         }
         _distributeGold();
         uint256 totalGoldAmount = nextAuctionGoldAmount;
         nextAuctionGoldAmount = 0;
-        uint256 epochId = _currentEpochId = _currentEpochId + 1;
+        uint256 epochId = _currentEpochId = currentEpochCache + 1;
         
         if (totalGoldAmount < config.auctionMinimumDistributedGold) { revert LowGoldDistributed(totalGoldAmount); }
 
