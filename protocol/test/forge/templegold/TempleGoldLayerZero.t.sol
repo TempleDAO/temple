@@ -200,7 +200,6 @@ contract TempleGoldLayerZeroTest is TestHelperOz5 {
 
         // burn tgld from spice on chain b
         /// @dev Conversion to and from shared decimals and local decimals truncates trailing zeros
-        MessagingFee memory fee = TempleGoldMock(bTempleGold).quoteSend(sendParam, false);
         uint256 amountTruncated = 12_333_456_789_000_000_000_000;
         emit log_uint(bTempleGold.balanceOf(address(bSpice)));
         uint256 bSpiceBalance = bTempleGold.balanceOf(address(bSpice));
