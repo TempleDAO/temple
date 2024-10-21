@@ -9,7 +9,6 @@ import { FakeERC20 } from "contracts/fakes/FakeERC20.sol";
 import { ITempleGold } from "contracts/interfaces/templegold/ITempleGold.sol";
 import { ITempleGoldVesting } from "contracts/interfaces/templegold/ITempleGoldVesting.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
-import { IERC20Errors } from "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { DaiGoldAuction } from "contracts/templegold/DaiGoldAuction.sol";
 import { TempleGoldStaking } from "contracts/templegold/TempleGoldStaking.sol";
