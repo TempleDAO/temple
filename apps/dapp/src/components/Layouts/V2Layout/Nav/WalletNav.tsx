@@ -8,7 +8,7 @@ import walletIcon from 'assets/icons/account_balance_wallet.svg?react';
 import LinkIcon from 'assets/icons/link.svg?react';
 import DisconnectIcon from 'assets/icons/disconnect.svg?react';
 
-import { MAINNET_CHAIN, SEPOLIA_CHAIN } from 'utils/envChainMapping';
+import { MAINNET_CHAIN, SEPOLIA_CHAIN } from 'utils/chains';
 
 import Loader from 'components/Loader/Loader';
 import { useState } from 'react';
