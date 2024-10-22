@@ -30,9 +30,7 @@ contract TempleGoldVesting is ITempleGoldVesting, TempleElevatedAccess {
     /// @notice Schdules for recipients
     mapping(bytes32 id => VestingSchedule schedule) public schedules;
     /// @notice Recipient vesting counts for generating IDs. An account can have multiple vesting schedules
-    mapping(address => uint256) private _holdersVestingCount;
-    /// @notice Maximum amount of TGLD vested for revoked accounts
-    mapping(bytes32 id => uint256 amount) public revokedMaxAmounts;
+    mapping(address => uint256) public holdersVestingCount;
     /// @notice Vesting Ids
     EnumerableSet.Bytes32Set private _vestingIds;
 
@@ -85,7 +83,7 @@ contract TempleGoldVesting is ITempleGoldVesting, TempleElevatedAccess {
             totalVestedAndUnclaimed += _schedule.amount;
             /// @dev very low possibility of duplicate vesting IDs generated but still checking. 
             if(!_vestingIds.add(vestingId)) { revert InvalidScheduleId(); }
-            _holdersVestingCount[_schedule.recipient] += 1;
+            holdersVestingCount[_schedule.recipient] += 1;
             emit ScheduleCreated(vestingId, _schedule.recipient, _schedule.start, _schedule.cliff, _schedule.duration, _schedule.amount);
         }
     }   
@@ -99,7 +97,7 @@ contract TempleGoldVesting is ITempleGoldVesting, TempleElevatedAccess {
         VestingSchedule storage _schedule = schedules[_vestingId];
         if (block.timestamp >= _schedule.duration + _schedule.start) { revert FullyVested(); }
         /// @dev No need to check if `_schedule.revoked` because id is removed from _vestingIds so it will fail `vestingIdExists`
-        uint256 _vestedAmount = _calculateReleasableAmountStorage(_schedule);
+        uint256 _vestedAmount = _calculateReleasableAmount(_schedule);
         if (_vestedAmount > 0) {
             _release(_schedule, _vestedAmount);
             emit Released(_vestingId, _schedule.recipient, _vestedAmount);
@@ -131,19 +129,8 @@ contract TempleGoldVesting is ITempleGoldVesting, TempleElevatedAccess {
         return
             computeVestingScheduleIdForAddressAndIndex(
                 _recipient,
-                _holdersVestingCount[_recipient]
+                holdersVestingCount[_recipient]
             );
-    }
-
-    /**
-     * @notice Get vesting schedules count by recipient
-     * @param _recipient Recipient address
-     * @return Count
-     */
-    function getVestingSchedulesCountByRecipient(
-        address _recipient
-    ) external view override returns (uint256) {
-        return _holdersVestingCount[_recipient];
     }
 
     /**
@@ -236,7 +223,7 @@ contract TempleGoldVesting is ITempleGoldVesting, TempleElevatedAccess {
             schedules[
                 computeVestingScheduleIdForAddressAndIndex(
                     _recipient,
-                    _holdersVestingCount[_recipient] - 1
+                    holdersVestingCount[_recipient] - 1
                 )
             ];
     }
@@ -270,17 +257,21 @@ contract TempleGoldVesting is ITempleGoldVesting, TempleElevatedAccess {
 
     /**
      * @notice Get vesting summary
+     * @param _ids Vesting Ids
      * @param _from From timestamp
      * @param _to To timestamp
      * @return summary Vesting summary 
      */
-    function getVestingSummary(uint32 _from, uint32 _to) external view override returns (VestingSummary[] memory summary) {
-        bytes32[] memory ids = _vestingIds.values();
-        uint256 _length = ids.length;
+    function getVestingSummary(
+        bytes32[] memory _ids,
+        uint32 _from,
+        uint32 _to
+    ) external view override returns (VestingSummary[] memory summary) {
+        uint256 _length = _ids.length;
         summary = new VestingSummary[](_length);
         VestingSchedule memory _schedule;
         for (uint256 i; i < _length; ++i) {
-            _schedule = schedules[ids[i]];
+            _schedule = schedules[_ids[i]];
             if (_schedule.start >= _from && _schedule.start + _schedule.duration <= _to) {
                 summary[i] = VestingSummary(
                     _schedule.recipient,
@@ -301,22 +292,13 @@ contract TempleGoldVesting is ITempleGoldVesting, TempleElevatedAccess {
     }
 
     /**
-     * @notice Get recipient vesting count
-     * @param _recipient Recipient address
-     * @return Count
-     */
-    function getRecipientVestingCount(address _recipient) external view override returns (uint256) {
-        return _holdersVestingCount[_recipient];
-    }
-
-    /**
      * @notice Get releasable amount
      * @param _vestingId Vesting Id
      * @return Amount
      */
     function getReleasableAmount(bytes32 _vestingId) external view override returns (uint256) {
         if(!vestingIdExists(_vestingId)) { return 0; }
-        VestingSchedule memory _schedule = schedules[_vestingId];
+        VestingSchedule storage _schedule = schedules[_vestingId];
         return _calculateReleasableAmount(_schedule);
     }
 
@@ -334,17 +316,6 @@ contract TempleGoldVesting is ITempleGoldVesting, TempleElevatedAccess {
     }
 
     function _calculateReleasableAmount(
-        VestingSchedule memory _schedule
-    ) private view returns (uint256) {
-        if ((block.timestamp <= _schedule.cliff) || _schedule.revoked) {
-            return 0;
-        } else {
-            uint256 _vested = TempleMath.mulDivRound(_schedule.amount, block.timestamp - _schedule.start, _schedule.duration, false);
-            return _vested - _schedule.distributed;
-        }
-    }
-
-    function _calculateReleasableAmountStorage(
         VestingSchedule storage _schedule
     ) private view returns (uint256) {
         if ((block.timestamp <= _schedule.cliff) || _schedule.revoked) {

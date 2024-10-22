@@ -255,7 +255,7 @@ contract TempleGoldVestingTest is TempleGoldVestingTestBase {
         assertEq(ids.length, 1);
         assertEq(ids[0], _id);
         assertEq(vesting.vestingIdExists(_id), true);
-        assertEq(vesting.getRecipientVestingCount(_schedule.recipient), 1);
+        assertEq(vesting.holdersVestingCount(_schedule.recipient), 1);
         ITempleGoldVesting.VestingSchedule memory _storedVest = vesting.getVestingScheduleByAddressAndIndex(_schedule.recipient, 0);
         assertEq(_storedVest.amount, _schedule.amount);
         assertEq(_storedVest.cliff, _schedule.cliff);
@@ -283,8 +283,8 @@ contract TempleGoldVestingTest is TempleGoldVestingTestBase {
         assertEq(ids.length, 3);
         assertEq(vesting.vestingIdExists(_id2), true);
         assertEq(vesting.vestingIdExists(_id3), true);
-        assertEq(vesting.getRecipientVestingCount(schedules[0].recipient), 1);
-        assertEq(vesting.getRecipientVestingCount(schedules[1].recipient), 1);
+        assertEq(vesting.holdersVestingCount(schedules[0].recipient), 1);
+        assertEq(vesting.holdersVestingCount(schedules[1].recipient), 1);
         _storedVest = vesting.getVestingScheduleByAddressAndIndex(schedules[0].recipient, 0);
         assertEq(_storedVest.amount, schedules[0].amount);
         assertEq(_storedVest.cliff, schedules[0].cliff);
@@ -387,14 +387,14 @@ contract TempleGoldVestingTest is TempleGoldVestingTestBase {
     }
 
     function test_computeNextVestingScheduleIdForHolder() public {
-        assertEq(vesting.getRecipientVestingCount(alice), 0);
-        assertEq(vesting.getVestingSchedulesCountByRecipient(alice), 0);
+        assertEq(vesting.holdersVestingCount(alice), 0);
+        assertEq(vesting.holdersVestingCount(alice), 0);
         bytes32 nextId = keccak256(abi.encodePacked(alice, uint(0)));
         assertEq(vesting.computeNextVestingScheduleIdForHolder(alice), nextId);
         assertEq(vesting.computeVestingScheduleIdForAddressAndIndex(alice, 0), nextId);
         // create vesting
         _createFirstSchedule();
-        assertEq(vesting.getRecipientVestingCount(alice), 1);
+        assertEq(vesting.holdersVestingCount(alice), 1);
         nextId = keccak256(abi.encodePacked(alice, uint(1)));
         assertEq(vesting.computeNextVestingScheduleIdForHolder(alice), nextId);
         assertEq(vesting.computeVestingScheduleIdForAddressAndIndex(alice, 1), nextId);
@@ -566,7 +566,10 @@ contract TempleGoldVestingTest is TempleGoldVestingTestBase {
         ITempleGoldVesting.VestingSchedule memory _schedule1 = vesting.getSchedule(_id1);
         ITempleGoldVesting.VestingSchedule memory _schedule2 = vesting.getSchedule(_id2);
         vm.warp(_schedule1.cliff);
-        ITempleGoldVesting.VestingSummary[] memory summary = vesting.getVestingSummary(_schedule1.start, uint32(block.timestamp));
+        bytes32[] memory _ids = new bytes32[](2);
+        _ids[0] = _id1;
+        _ids[1] = _id2;
+        ITempleGoldVesting.VestingSummary[] memory summary = vesting.getVestingSummary(_ids, _schedule1.start, uint32(block.timestamp));
         assertEq(summary[0].recipient, address(0));
         assertEq(summary[0].distributed, 0);
         assertEq(summary[0].vested, 0);
@@ -580,7 +583,7 @@ contract TempleGoldVestingTest is TempleGoldVestingTestBase {
         uint256 releasable = vesting.getReleasableAmount(_id1);
         vesting.release(_id1);
         uint32 endTime = uint32(block.timestamp + 90 weeks);
-        summary = vesting.getVestingSummary(_schedule1.start, endTime);
+        summary = vesting.getVestingSummary(_ids, _schedule1.start, endTime);
         assertEq(summary[0].distributed, releasable);
         assertEq(summary[0].vested, vesting.getTotalVestedAt(_id1, uint32(block.timestamp)));
         assertEq(summary[0].vestedAtEnd, vesting.getTotalVestedAt(_id1, endTime));
@@ -591,7 +594,7 @@ contract TempleGoldVestingTest is TempleGoldVestingTestBase {
         vm.startPrank(bob);
         uint256 bobReleasable = vesting.getReleasableAmount(_id2);
         vesting.release(_id2);
-        summary = vesting.getVestingSummary(_schedule1.start, endTime);
+        summary = vesting.getVestingSummary(_ids, _schedule1.start, endTime);
         assertEq(summary[0].distributed, releasable); // same
         assertEq(summary[0].vested, vesting.getTotalVestedAt(_id1, uint32(block.timestamp)));
         assertEq(summary[0].vestedAtEnd, vesting.getTotalVestedAt(_id1, endTime));

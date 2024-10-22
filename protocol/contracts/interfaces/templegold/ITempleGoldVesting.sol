@@ -55,6 +55,9 @@ interface ITempleGoldVesting {
     /// @notice Total TGLD vested and unclaimed
     function totalVestedAndUnclaimed() external view returns (uint256);
 
+    /// @notice Recipient vesting counts for generating IDs. An account can have multiple vesting schedules
+    function holdersVestingCount(address holder) external view returns (uint256);
+
     /**
      * @notice Get vesting schedule
      * @param _vestingId Vesting Id
@@ -96,15 +99,6 @@ interface ITempleGoldVesting {
     function computeNextVestingScheduleIdForHolder(
         address _recipient
     ) external view returns (bytes32);
-
-    /**
-     * @notice Get vesting schedules count by recipient
-     * @param _recipient Recipient address
-     * @return Count
-     */
-    function getVestingSchedulesCountByRecipient(
-        address _recipient
-    ) external view returns (uint256);
 
     /**
      * @notice Get vesting Id at index from list of vesting Ids
@@ -158,26 +152,24 @@ interface ITempleGoldVesting {
 
     function getTotalVestingAtCurrentTime(bytes32 _vestingId) external view returns (uint256);
 
-    /**
+   /**
      * @notice Get vesting summary
+     * @param _ids Vesting Ids
      * @param _from From timestamp
      * @param _to To timestamp
      * @return summary Vesting summary 
      */
-    function getVestingSummary(uint32 _from, uint32 _to) external view returns (VestingSummary[] memory summary);
+    function getVestingSummary(
+        bytes32[] memory _ids,
+        uint32 _from,
+        uint32 _to
+    ) external view returns (VestingSummary[] memory summary);
 
     /**
      * @notice Get vesting Ids
      * @return ids Vesting Ids 
      */
     function getVestingIds() external view returns (bytes32[] memory ids);
-
-    /**
-     * @notice Get recipient vesting count
-     * @param _recipient Recipient address
-     * @return Count
-     */
-    function getRecipientVestingCount(address _recipient) external view returns (uint256);
 
     /**
      * @notice Check if vesting Id exists
