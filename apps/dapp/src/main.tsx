@@ -18,6 +18,7 @@ import { BorrowPage } from 'components/Pages/Core/DappPages/Borrow';
 import { LegacyPage } from 'components/Pages/Core/DappPages/LegacyPage';
 import V2Layout from 'components/Layouts/V2Layout';
 import { OhmagePage } from 'components/Pages/Core/DappPages/OhmagePage';
+import { FeatureNetworkSwitcher } from 'components/Layouts/CoreLayout/FeatureNetworkSwitcher';
 
 // Separate Chunks
 const TeamPayments = React.lazy(() => import('components/Pages/TeamPayments'));
@@ -85,6 +86,7 @@ root.render(
             </Route>
           </>
         </Routes>
+        <FeatureNetworkSwitcher />
       </BrowserRouter>
       <NotificationManager />
     </AppProvider>
