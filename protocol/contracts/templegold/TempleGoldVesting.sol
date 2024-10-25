@@ -351,8 +351,4 @@ contract TempleGoldVesting is ITempleGoldVesting, PaymentBase, TempleElevatedAcc
         totalVestedAndUnclaimed -= _amount;
         paymentToken.safeTransferFrom(fundsOwner, _schedule.recipient, _amount);
     }
-
-    function _getElapsedTime(uint32 _start, uint32 _end, uint32 _duration) private pure returns (uint32) {
-        return _end - _start > _duration ? _duration : _end - _start;
-    }
 }

@@ -271,8 +271,4 @@ contract TeamPayments is ITeamPayments, PaymentBase, TempleElevatedAccess {
         uint256 _total = TempleMath.mulDivRound(_payment.amount, _elapsed, _payment.duration, false);
         return _total;
     }
-
-    function _getElapsedTime(uint32 _start, uint32 _end, uint32 _duration) private pure returns (uint32) {
-        return _end - _start > _duration ? _duration : _end - _start;
-    }
 }

@@ -46,4 +46,8 @@ abstract contract PaymentBase is IPaymentBase {
         paymentToken = IERC20(_token);
         emit PaymentTokenSet(_token);
     }
+
+    function _getElapsedTime(uint32 _start, uint32 _end, uint32 _duration) internal pure returns (uint32) {
+        return _end - _start > _duration ? _duration : _end - _start;
+    }
 }
