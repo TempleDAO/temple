@@ -303,4 +303,16 @@ contract TreasuryPriceIndexOracleTest is TempleTest {
         currentTpi = tpiOracle.treasuryPriceIndex();
         assertEq(currentTpi, tpiStart - tpiDelta);
     }
+
+    function test_setTreasuryPriceIndexAt_keepTheSame() public {
+        assertEq(tpiOracle.treasuryPriceIndex(), defaultPrice);
+
+        vm.startPrank(executor);
+        tpiOracle.setTreasuryPriceIndexAt(defaultPrice, uint32(block.timestamp) + 365 days);
+
+        checkTpiData(defaultPrice, defaultPrice, uint32(block.timestamp), uint32(block.timestamp) + 365 days, 0);
+
+        skip(100 days);
+        assertEq(tpiOracle.treasuryPriceIndex(), defaultPrice);
+    }
 }
