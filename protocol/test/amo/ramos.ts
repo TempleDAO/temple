@@ -182,7 +182,13 @@ describe("RAMOS", async () => {
         await executor.sendTransaction({value: ONE_ETH, to: BAL_MULTISIG });
         await executor.sendTransaction({value: ONE_ETH, to: await auraMultisig.getAddress()});
 
-        tpiOracle = await new TreasuryPriceIndexOracle__factory(executor).deploy(rescuerAddress, executorAddress, ethers.utils.parseEther("0.97"), ethers.utils.parseEther("0.1"), 1);
+        tpiOracle = await new TreasuryPriceIndexOracle__factory(executor).deploy(
+            rescuerAddress, 
+            executorAddress, 
+            ethers.utils.parseEther("0.97"), 
+            ethers.utils.parseEther("0.1"), 
+            0
+        );
 
          // create gauge and add pool on Aura
         let token, rewards: string;
@@ -781,9 +787,11 @@ describe("RAMOS", async () => {
             
             // skew price below TPI
             await singleSideDepositTemple(toAtto(50_000));
-            // TODO: clean up
-            await tpiOracle.setTreasuryPriceIndexAt(ethers.utils.parseEther("0.97"), 604800);
-            await time.increase(604800);
+            await tpiOracle.setTreasuryPriceIndexAt(
+                ethers.utils.parseEther("0.97"), 
+                await blockTimestamp() + 2
+            );
+            await mineForwardSeconds(1);
             expect(await amo.treasuryPriceIndex()).to.equal(ethers.utils.parseEther("0.97"));
             await expect(amo.rebalanceDownExit(ONE_ETH, 1)).to.be.revertedWithCustomError(poolHelper, "NoRebalanceDown");
             await amo.pause();

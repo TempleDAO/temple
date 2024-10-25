@@ -118,7 +118,7 @@ contract TempleLineOfCreditTestBatchLiquidate is TlcBaseTest {
 
         // TLC drops (exploit) and a day passes
         tpiOracle.setRescueMode(true);
-        tpiOracle.setTreasuryPriceIndexAt(0.9e18, uint32(block.timestamp+1));
+        tpiOracle.setTreasuryPriceIndexAt(0.9e18, uint32(block.timestamp + 1));
         vm.warp(block.timestamp + 1 days);
 
         // Alice is now under water

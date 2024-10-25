@@ -67,7 +67,7 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
             vm.label(address(dTEMPLE), "dTEMPLE");
         }
 
-        tpiOracle = new TreasuryPriceIndexOracle(rescuer, executor, templePrice, 0.1e18, 1 weeks);
+        tpiOracle = new TreasuryPriceIndexOracle(rescuer, executor, templePrice, 0.1e18, 0);
         trv = new TreasuryReservesVault(rescuer, executor, address(tpiOracle));
         
         daiInterestRateModel = new LinearWithKinkInterestRateModel(
