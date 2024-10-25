@@ -20,19 +20,19 @@ contract TreasuryPriceIndexOracle is ITreasuryPriceIndexOracle, TempleElevatedAc
     uint256 public constant override TPI_DECIMALS = 18;
 
     struct TpiData {
-        /// @notice The current Treasury Price Index - the target price of the Treasury, in `stableToken` terms.
-        uint96 currentTpi;
-
-        /// @notice The target TPI at the `targetDate`
-        uint96 targetTpi;
+        /// @notice The Treasury Price Index at the time `setTreasuryPriceIndexAt()` was last called
+        uint96 startingTpi;
 
         /// @notice The time at which TPI was last updated via `setTreasuryPriceIndexAt()`
-        uint32 lastUpdatedAt;
+        uint32 startTime;
+
+        /// @notice The target TPI at the `targetTime`
+        uint96 targetTpi;
 
         /// @notice The date which the `targetTpi` will be reached.
-        uint32 targetDate;
+        uint32 targetTime;
 
-        /// @notice The rate at which the `currentTpi` will change over time from `lastUpdatedAt` until `targetDate`.
+        /// @notice The rate at which the `startingTpi` will change over time from `startTime` until `targetTime`.
         int96 tpiSlope;
     }
     
@@ -55,25 +55,25 @@ contract TreasuryPriceIndexOracle is ITreasuryPriceIndexOracle, TempleElevatedAc
      * @dev In seconds.
      * Used as a bound to avoid unintended/fat fingering when updating TPI
      */
-    uint32 public override minTreasuryPriceIndexTargetDateDelta;
+    uint32 public override minTreasuryPriceIndexTargetTimeDelta;
 
     constructor(
         address _initialRescuer,
         address _initialExecutor,
         uint96 _initialTreasuryPriceIndex,
         uint96 _maxTreasuryPriceIndexDelta,
-        uint32 _minTreasuryPriceIndexTargetDateDelta
+        uint32 _minTreasuryPriceIndexTargetTimeDelta
     ) TempleElevatedAccess(_initialRescuer, _initialExecutor)
     {
         tpiData = TpiData({
-            currentTpi: _initialTreasuryPriceIndex,
+            startingTpi: _initialTreasuryPriceIndex,
+            startTime: uint32(block.timestamp),
             targetTpi: _initialTreasuryPriceIndex,
-            lastUpdatedAt: uint32(block.timestamp),
-            targetDate: uint32(block.timestamp),
+            targetTime: uint32(block.timestamp),
             tpiSlope: 0
         });
         maxTreasuryPriceIndexDelta = _maxTreasuryPriceIndexDelta;
-        minTreasuryPriceIndexTargetDateDelta = _minTreasuryPriceIndexTargetDateDelta;
+        minTreasuryPriceIndexTargetTimeDelta = _minTreasuryPriceIndexTargetTimeDelta;
     }
 
     /**
@@ -81,13 +81,13 @@ contract TreasuryPriceIndexOracle is ITreasuryPriceIndexOracle, TempleElevatedAc
      */
     function treasuryPriceIndex() public override view returns (uint96) {
         uint32 _now = uint32(block.timestamp);
-        if (_now >= tpiData.targetDate) {
+        if (_now >= tpiData.targetTime) {
             // Target date reached, no calculation required just return the target TPI
             return tpiData.targetTpi;  
         } else {
             unchecked {
-                int96 delta = tpiData.tpiSlope * int32(_now - tpiData.lastUpdatedAt);
-                return uint96(delta + int96(tpiData.currentTpi));
+                int96 delta = tpiData.tpiSlope * int32(_now - tpiData.startTime);
+                return uint96(delta + int96(tpiData.startingTpi));
             }
         }
      }
@@ -107,38 +107,38 @@ contract TreasuryPriceIndexOracle is ITreasuryPriceIndexOracle, TempleElevatedAc
      * `setTreasuryPriceIndexAt()` is called.
      * @dev In seconds.
      */
-    function setMinTreasuryPriceIndexTargetDateDelta(uint32 minTargetDateDelta) external override onlyElevatedAccess {
-        emit MinTreasuryPriceIndexTargetDateDeltaSet(minTargetDateDelta);
-        minTreasuryPriceIndexTargetDateDelta = minTargetDateDelta;
+    function setMinTreasuryPriceIndexTargetTimeDelta(uint32 minTargetTimeDelta) external override onlyElevatedAccess {
+        emit MinTreasuryPriceIndexTargetTimeDeltaSet(minTargetTimeDelta);
+        minTreasuryPriceIndexTargetTimeDelta = minTargetTimeDelta;
     }
 
     /**
      * @notice Set the target TPI which will incrementally increase from it's current value to `targetTpi`
-     * between now and `targetDate`.
-     * @dev targetDate is unixtime, targetTpi is 18 decimal places, 1.05e18 == $1.05
+     * between now and `targetTime`.
+     * @dev targetTime is unixtime, targetTpi is 18 decimal places, 1.05e18 == $1.05
      */
-    function setTreasuryPriceIndexAt(uint96 targetTpi, uint32 targetDate) external override onlyElevatedAccess {
+    function setTreasuryPriceIndexAt(uint96 targetTpi, uint32 targetTime) external override onlyElevatedAccess {
         uint96 _currentTpi = treasuryPriceIndex();
         uint32 _now = uint32(block.timestamp);
         int96 _tpiDelta = int96(targetTpi) - int96(_currentTpi);
 
-        // targetDate must be at or after (now + minTreasuryPriceIndexTargetDateDelta)
-        if (targetDate < _now + minTreasuryPriceIndexTargetDateDelta) revert BreachedMinDateDelta(targetDate, _now, minTreasuryPriceIndexTargetDateDelta);
-        uint32 _timeDelta = targetDate - _now;
+        // targetTime must be at or after (now + minTreasuryPriceIndexTargetTimeDelta)
+        if (targetTime < _now + minTreasuryPriceIndexTargetTimeDelta) revert BreachedMinDateDelta(targetTime, _now, minTreasuryPriceIndexTargetTimeDelta);
+        uint32 _timeDelta = targetTime - _now;
 
         // Check absolute delta is within tolerance
         uint96 _absDelta = _tpiDelta < 0 ? uint96(-1 * _tpiDelta) : uint96(_tpiDelta);
         if (_absDelta > maxTreasuryPriceIndexDelta) revert BreachedMaxTpiDelta(_currentTpi, targetTpi, maxTreasuryPriceIndexDelta);
 
         tpiData = TpiData({
-            currentTpi: _currentTpi,
+            startingTpi: _currentTpi,
+            startTime: _now,
             targetTpi: targetTpi,
-            lastUpdatedAt: _now,
-            targetDate: targetDate,
+            targetTime: targetTime,
             tpiSlope: _tpiDelta / int32(_timeDelta)
         });
 
-        emit TreasuryPriceIndexSetAt(_currentTpi, targetTpi, targetDate);
+        emit TreasuryPriceIndexSetAt(_currentTpi, targetTpi, targetTime);
     }
 
 }

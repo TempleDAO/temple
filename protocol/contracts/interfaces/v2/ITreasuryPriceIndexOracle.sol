@@ -10,12 +10,12 @@ import { ITempleElevatedAccess } from "contracts/interfaces/v2/access/ITempleEle
  * Treasury Price Index, representing the target Treasury Value per token.
  */
 interface ITreasuryPriceIndexOracle is ITempleElevatedAccess {
-    event TreasuryPriceIndexSetAt(uint96 oldTpi, uint96 newTpiTarget, uint256 targetDate);
+    event TreasuryPriceIndexSetAt(uint96 oldTpi, uint96 newTpiTarget, uint256 targetTime);
     event MaxTreasuryPriceIndexDeltaSet(uint256 maxDelta);
-    event MinTreasuryPriceIndexTargetDateDeltaSet(uint32 maxTargetDateDelta);
+    event MinTreasuryPriceIndexTargetTimeDeltaSet(uint32 maxTargetTimeDelta);
 
     error BreachedMaxTpiDelta(uint96 oldTpi, uint96 newTpi, uint256 maxDelta);
-    error BreachedMinDateDelta(uint32 targetDate, uint32 currentDate, uint32 maxTargetDateDelta);
+    error BreachedMinDateDelta(uint32 targetTime, uint32 currentDate, uint32 maxTargetTimeDelta);
 
     /**
      * @notice The current Treasury Price Index (TPI) value
@@ -36,16 +36,16 @@ interface ITreasuryPriceIndexOracle is ITempleElevatedAccess {
      * @dev In seconds.
      * Used as a bound to avoid unintended/fat fingering when updating TPI
      */
-    function minTreasuryPriceIndexTargetDateDelta() external view returns (uint32);
+    function minTreasuryPriceIndexTargetTimeDelta() external view returns (uint32);
 
     /**
      * @notice The current TPI state data
      */
     function tpiData() external view returns (
-        uint96 currentTpi,
+        uint96 startingTpi,
+        uint32 startTime,
         uint96 targetTpi,
-        uint32 lastUpdatedAt,
-        uint32 targetDate,
+        uint32 targetTime,
         int96 tpiSlope
     );
 
@@ -61,14 +61,14 @@ interface ITreasuryPriceIndexOracle is ITempleElevatedAccess {
      * `setTreasuryPriceIndexAt()` is called.
      * @dev In seconds.
      */
-    function setMinTreasuryPriceIndexTargetDateDelta(uint32 maxTargetDateDelta) external;
+    function setMinTreasuryPriceIndexTargetTimeDelta(uint32 maxTargetTimeDelta) external;
 
     /**
      * @notice Set the target TPI which will incrementally increase from it's current value to `targetTpi`
-     * between now and `targetDate`.
-     * @dev targetDate is unixtime, targetTpi is 18 decimal places, 1.05e18 == $1.05
+     * between now and `targetTime`.
+     * @dev targetTime is unixtime, targetTpi is 18 decimal places, 1.05e18 == $1.05
      */
-    function setTreasuryPriceIndexAt(uint96 targetTpi, uint32 targetDate) external;
+    function setTreasuryPriceIndexAt(uint96 targetTpi, uint32 targetTime) external;
 
     /**
      * @notice The decimal precision of Temple Price Index (TPI)
