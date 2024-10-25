@@ -10,6 +10,7 @@ import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableS
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { TempleMath } from "contracts/common/TempleMath.sol";
 import { ITempleGoldVesting } from "contracts/interfaces/templegold/ITempleGoldVesting.sol";
+import { PaymentBase } from "contracts/admin/PaymentBase.sol";
 
 
 /**
@@ -17,14 +18,10 @@ import { ITempleGoldVesting } from "contracts/interfaces/templegold/ITempleGoldV
  * @notice Vesting contract for contributors. Token is TGLD and allocations are set with createSchedules.
  *  An account can have multiple vesting schedules. Vesting schedules can be revoked and canceled.
  */
-contract TempleGoldVesting is ITempleGoldVesting, TempleElevatedAccess {
+contract TempleGoldVesting is ITempleGoldVesting, PaymentBase, TempleElevatedAccess {
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.Bytes32Set;
 
-    /// @notice The owner of the TGLD funds
-    address public override fundsOwner;
-    /// @notice TGLD address
-    IERC20 public immutable override templeGold;
     /// @notice Total TGLD vested and unclaimed
     uint256 public override totalVestedAndUnclaimed;
     /// @notice Schdules for recipients
@@ -38,21 +35,18 @@ contract TempleGoldVesting is ITempleGoldVesting, TempleElevatedAccess {
         address _rescuer,
         address _executor,
         address _fundsOwner,
-        address _templeGold
+        address _paymentToken
     ) TempleElevatedAccess(_rescuer, _executor){
         fundsOwner = _fundsOwner;
-        templeGold = IERC20(_templeGold);
+        paymentToken = IERC20(_paymentToken);
     }
 
     /**
      * @notice Set funds owner
      * @param _fundsOwner Funds owner
      */
-    function setFundsOwner(address _fundsOwner) external override onlyElevatedAccess {
-        if (_fundsOwner == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
-        /// @dev Elevated access should revoke approval from old `fundsOwner` for this contract
-        fundsOwner = _fundsOwner;
-        emit FundsOwnerSet(_fundsOwner);
+    function setFundsOwner(address _fundsOwner) public override onlyElevatedAccess {
+        super.setFundsOwner(_fundsOwner);
     }
 
     /**
@@ -111,13 +105,25 @@ contract TempleGoldVesting is ITempleGoldVesting, TempleElevatedAccess {
 
     /**
      * @notice Recover ERC20 token
+     * @dev function visibility made public to match parent function
      * @param _token Token address
      * @param _to Recipient address
      * @param _amount Amount to recover
      */
-    function recoverToken(address _token, address _to, uint256 _amount) external override onlyElevatedAccess {
-        emit CommonEventsAndErrors.TokenRecovered(_to, _token, _amount);
-        IERC20(_token).safeTransfer(_to, _amount);
+    function recoverToken(
+        address _token,
+        address _to,
+        uint256 _amount
+    ) public override onlyElevatedAccess {
+        super.recoverToken(_token, _to, _amount);
+    }
+
+    /**
+     * @notice Set payment token for fixed and epoch payments
+     * @dev function visibility made public to match parent function. ignore compile warning saying visibility can be set to `pure`
+     */
+    function setPaymentToken(address /*_token*/) public override {
+        revert NotImplemented();
     }
 
     /**
@@ -343,7 +349,7 @@ contract TempleGoldVesting is ITempleGoldVesting, TempleElevatedAccess {
     function _release(VestingSchedule storage _schedule, uint256 _amount) private {
         _schedule.distributed += uint128(_amount);
         totalVestedAndUnclaimed -= _amount;
-        templeGold.safeTransferFrom(fundsOwner, _schedule.recipient, _amount);
+        paymentToken.safeTransferFrom(fundsOwner, _schedule.recipient, _amount);
     }
 
     function _getElapsedTime(uint32 _start, uint32 _end, uint32 _duration) private pure returns (uint32) {

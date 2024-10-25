@@ -12,7 +12,7 @@ interface ITempleGoldVesting {
         uint32 _cliff, uint32 _duration, uint128 _amount
     );
     event RecipientChanged(bytes32 _vestingId, address _oldRecipient, address indexed _recipient);
-    event FundsOwnerSet(address indexed _fundsOwner);
+    // event FundsOwnerSet(address indexed _fundsOwner);
 
     error CannotRelease();
     error InvalidScheduleId();
@@ -46,12 +46,6 @@ interface ITempleGoldVesting {
         uint128 vestedAtEnd;
     }
 
-    /// @notice The owner of the TGLD funds
-    function fundsOwner() external view returns(address);
-
-    /// @notice TGLD address
-    function templeGold() external view returns(IERC20);
-
     /// @notice Total TGLD vested and unclaimed
     function totalVestedAndUnclaimed() external view returns (uint256);
 
@@ -66,12 +60,6 @@ interface ITempleGoldVesting {
     function getSchedule(bytes32 _vestingId) external view returns (VestingSchedule memory);
 
     /**
-     * @notice Set funds owner
-     * @param _fundsOwner Funds owner
-     */
-    function setFundsOwner(address _fundsOwner) external;
-
-    /**
      * @notice Create multiple vesting schedules
      * @param _schedules Vesting schedules
      */
@@ -84,14 +72,6 @@ interface ITempleGoldVesting {
      * @param _vestingId Vesting Id
      */
     function revokeVesting(bytes32 _vestingId) external;
-
-    /**
-     * @notice Recover ERC20 token
-     * @param _token Token address
-     * @param _to Recipient address
-     * @param _amount Amount to recover
-     */
-    function recoverToken(address _token, address _to, uint256 _amount) external;
 
     /**
      * @dev Computes the next vesting schedule identifier for a given account address.

@@ -31,3 +31,4 @@ scripts/deploys/localhost/deploymentArgs
 
 # templegold scripts
 test/forge/templegold/scripts/
+scripts/deploys/arbitrumSepolia/templegold/README.md

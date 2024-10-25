@@ -75,7 +75,7 @@ contract TempleGoldVestingTestBase is TempleGoldCommon {
         assertEq(vesting.executor(), executor);
         assertEq(vesting.rescuer(), rescuer);
         assertEq(vesting.fundsOwner(), teamGnosis);
-        assertEq(address(vesting.templeGold()), address(templeGold));
+        assertEq(address(vesting.paymentToken()), address(templeGold));
     }
 
     function _getScheduleOne() internal view returns (ITempleGoldVesting.VestingSchedule memory schedule) {
