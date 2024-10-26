@@ -13,15 +13,23 @@ contract TreasuryPriceIndexOracleTest is TempleTest {
     uint96 public constant defaultMaxDelta = 0.1e18; // 10 cents
     uint32 public constant defaultCooldownSecs = 30;
     uint32 public constant defaultMinTargetTimeDelta = 1 weeks; // 1 week
+    uint96 public constant defaultMaxRateOfChange = uint96(0.01e18) / 1 days; // 1c / day
 
     event TreasuryPriceIndexSetAt(uint96 oldTpi, uint96 newTpiTarget, uint256 time);
     event TpiCooldownSet(uint32 cooldownSecs);
     event MaxTreasuryPriceIndexDeltaSet(uint256 maxDelta);
     event MinTreasuryPriceIndexTargetTimeDeltaSet(uint32 maxTargetTimeDelta);
-
+    event MaxAbsTreasuryPriceIndexRateOfChangeSet(uint96 maxAbsRateOfChange);
 
     function setUp() public {
-        tpiOracle = new TreasuryPriceIndexOracle(rescuer, executor, defaultTpi, defaultMaxDelta, defaultMinTargetTimeDelta);
+        tpiOracle = new TreasuryPriceIndexOracle(
+            rescuer, 
+            executor, 
+            defaultTpi, 
+            defaultMaxDelta, 
+            defaultMinTargetTimeDelta, 
+            defaultMaxRateOfChange
+        );
     }
     
     function checkTpiData(
@@ -49,6 +57,7 @@ contract TreasuryPriceIndexOracleTest is TempleTest {
         checkTpiData(defaultTpi, uint32(block.timestamp), defaultTpi, uint32(block.timestamp), 0);
         assertEq(tpiOracle.maxTreasuryPriceIndexDelta(), defaultMaxDelta);
         assertEq(tpiOracle.minTreasuryPriceIndexTargetTimeDelta(), defaultMinTargetTimeDelta);
+        assertEq(tpiOracle.maxAbsTreasuryPriceIndexRateOfChange(), defaultMaxRateOfChange);
         assertEq(tpiOracle.treasuryPriceIndex(), defaultTpi);
         assertEq(tpiOracle.TPI_DECIMALS(), 18);
     }
@@ -61,6 +70,11 @@ contract TreasuryPriceIndexOracleTest is TempleTest {
     function test_access_setMinTreasuryPriceIndexTargetTimeDelta() public {
         expectElevatedAccess();
         tpiOracle.setMinTreasuryPriceIndexTargetTimeDelta(uint32(block.timestamp+1));
+    }
+
+    function test_access_setMaxAbsTreasuryPriceIndexRateOfChange() public {
+        expectElevatedAccess();
+        tpiOracle.setMaxAbsTreasuryPriceIndexRateOfChange(0.01e18, 1 days);
     }
 
     function test_access_setTreasuryPriceIndexAt() public {
@@ -88,10 +102,22 @@ contract TreasuryPriceIndexOracleTest is TempleTest {
         assertEq(tpiOracle.minTreasuryPriceIndexTargetTimeDelta(), 1 weeks);
     }
 
+    function test_setMaxAbsTreasuryPriceIndexRateOfChange() public {
+        vm.startPrank(executor);
+
+        uint96 expectedRate = uint96(0.05e18) / uint32(1 weeks);
+        vm.expectEmit(address(tpiOracle));
+        emit MaxAbsTreasuryPriceIndexRateOfChangeSet(expectedRate);
+
+        tpiOracle.setMaxAbsTreasuryPriceIndexRateOfChange(0.05e18, uint32(1 weeks));
+        assertEq(tpiOracle.maxAbsTreasuryPriceIndexRateOfChange(), expectedRate);
+    }
+
     function test_setTreasuryPriceIndexAt_immediate_successUp() public {
         uint96 newTpi = 1.07e18;
         vm.startPrank(executor);
         tpiOracle.setMinTreasuryPriceIndexTargetTimeDelta(0);
+        tpiOracle.setMaxAbsTreasuryPriceIndexRateOfChange(1e18, 1);
 
         uint32 setTime = uint32(block.timestamp);
         uint32 targetTime = setTime+1;
@@ -111,6 +137,7 @@ contract TreasuryPriceIndexOracleTest is TempleTest {
         uint96 newTpi = 0.87e18;
         vm.startPrank(executor);
         tpiOracle.setMinTreasuryPriceIndexTargetTimeDelta(0);
+        tpiOracle.setMaxAbsTreasuryPriceIndexRateOfChange(1e18, 1);
 
         uint32 setTime = uint32(block.timestamp);
         uint32 targetTime = setTime+1;
@@ -129,6 +156,7 @@ contract TreasuryPriceIndexOracleTest is TempleTest {
     function test_setTreasuryPriceIndexAt_breachDeltaUp() public {
         uint96 newTpi = defaultTpi + defaultMaxDelta + 1;
         vm.startPrank(executor);
+        tpiOracle.setMaxAbsTreasuryPriceIndexRateOfChange(1e18, 1);
 
         vm.expectRevert(abi.encodeWithSelector(ITreasuryPriceIndexOracle.BreachedMaxTpiDelta.selector, defaultTpi, newTpi, defaultMaxDelta));
         tpiOracle.setTreasuryPriceIndexAt(newTpi, uint32(block.timestamp) + 1 weeks);
@@ -140,6 +168,7 @@ contract TreasuryPriceIndexOracleTest is TempleTest {
     function test_setTreasuryPriceIndexAt_breachDeltaDown() public {
         uint96 newTpi = defaultTpi - defaultMaxDelta - 1;
         vm.startPrank(executor);
+        tpiOracle.setMaxAbsTreasuryPriceIndexRateOfChange(1e18, 1);
 
         vm.expectRevert(abi.encodeWithSelector(ITreasuryPriceIndexOracle.BreachedMaxTpiDelta.selector, defaultTpi, newTpi, defaultMaxDelta));
         tpiOracle.setTreasuryPriceIndexAt(newTpi, uint32(block.timestamp) + 1 weeks);
@@ -151,6 +180,7 @@ contract TreasuryPriceIndexOracleTest is TempleTest {
     function test_setTreasuryPriceIndexAt_breachMinDateDelta() public {
         uint96 newTpi = 1.07e18;
         vm.startPrank(executor);
+        tpiOracle.setMaxAbsTreasuryPriceIndexRateOfChange(1e18, 1);
 
         // targetTime < now
         uint32 targetTime = uint32(block.timestamp)-1;
@@ -173,10 +203,22 @@ contract TreasuryPriceIndexOracleTest is TempleTest {
         checkTpiData(defaultTpi, uint32(block.timestamp), newTpi, targetTime, 165343915343);
     }
 
+    function test_setTreasuryPriceIndexAt_breachMaxTpiRateOfChange() public {
+        vm.startPrank(executor);
+        tpiOracle.setMaxTreasuryPriceIndexDelta(1e18);
+        tpiOracle.setMaxAbsTreasuryPriceIndexRateOfChange(0.30e18, 30 days);
+
+        vm.expectRevert(abi.encodeWithSelector(ITreasuryPriceIndexOracle.BreachedMaxTpiRateOfChange.selector, uint96(0.3e18 + 1e7) / 30 days, uint96(0.3e18) / 30 days));
+        tpiOracle.setTreasuryPriceIndexAt(defaultTpi + 0.30e18 + 1e7, uint32(block.timestamp + 30 days));
+
+        tpiOracle.setTreasuryPriceIndexAt(defaultTpi + 0.30e18, uint32(block.timestamp + 30 days));
+    }
+
     function test_setTreasuryPriceIndexAt_flatAtTargetTime() public {
         uint96 newTpi = 1.06e18;
         vm.startPrank(executor);
         tpiOracle.setMinTreasuryPriceIndexTargetTimeDelta(0);
+        tpiOracle.setMaxAbsTreasuryPriceIndexRateOfChange(1e18, 1);
 
         tpiOracle.setTreasuryPriceIndexAt(newTpi, uint32(block.timestamp)+1);
         // check at target date we're at the target TPI
@@ -193,6 +235,7 @@ contract TreasuryPriceIndexOracleTest is TempleTest {
         uint96 newTpi = 1.07e18;
         vm.startPrank(executor);
         tpiOracle.setMinTreasuryPriceIndexTargetTimeDelta(0);
+        tpiOracle.setMaxAbsTreasuryPriceIndexRateOfChange(1e18, 1);
 
         uint96 currentTpi = tpiOracle.treasuryPriceIndex();
         assertEq(defaultTpi, currentTpi);
@@ -222,7 +265,7 @@ contract TreasuryPriceIndexOracleTest is TempleTest {
         uint256 MAX_ABS_DELTA = 1e8; // Small (expected) rounding diffs
 
         vm.warp(startingBlock);
-        tpiOracle = new TreasuryPriceIndexOracle(rescuer, executor, tpiStart, 10e18, 1 days);
+        tpiOracle = new TreasuryPriceIndexOracle(rescuer, executor, tpiStart, 10e18, 1 days, defaultMaxRateOfChange);
 
         vm.startPrank(executor);
         tpiOracle.setTreasuryPriceIndexAt(tpiStart + tpiDelta, uint32(block.timestamp) + 365 days);
@@ -270,7 +313,7 @@ contract TreasuryPriceIndexOracleTest is TempleTest {
         uint256 MAX_ABS_DELTA = 1e8; // Small (expected) rounding diffs
 
         vm.warp(startingBlock);
-        tpiOracle = new TreasuryPriceIndexOracle(rescuer, executor, tpiStart, 10e18, 1 days);
+        tpiOracle = new TreasuryPriceIndexOracle(rescuer, executor, tpiStart, 10e18, 1 days, defaultMaxRateOfChange);
 
         vm.startPrank(executor);
         tpiOracle.setTreasuryPriceIndexAt(tpiStart - tpiDelta, uint32(block.timestamp) + 365 days);

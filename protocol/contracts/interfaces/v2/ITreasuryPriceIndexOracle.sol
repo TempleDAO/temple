@@ -13,9 +13,11 @@ interface ITreasuryPriceIndexOracle is ITempleElevatedAccess {
     event TreasuryPriceIndexSetAt(uint96 oldTpi, uint96 newTpiTarget, uint256 targetTime);
     event MaxTreasuryPriceIndexDeltaSet(uint256 maxDelta);
     event MinTreasuryPriceIndexTargetTimeDeltaSet(uint32 maxTargetTimeDelta);
+    event MaxAbsTreasuryPriceIndexRateOfChangeSet(uint96 maxAbsRateOfChange);
 
     error BreachedMaxTpiDelta(uint96 oldTpi, uint96 newTpi, uint256 maxDelta);
     error BreachedMinDateDelta(uint32 targetTime, uint32 currentDate, uint32 maxTargetTimeDelta);
+    error BreachedMaxTpiRateOfChange(uint96 targetRateOfChange, uint96 maxRateOfChange);
 
     /**
      * @notice The current Treasury Price Index (TPI) value
@@ -37,6 +39,13 @@ interface ITreasuryPriceIndexOracle is ITempleElevatedAccess {
      * Used as a bound to avoid unintended/fat fingering when updating TPI
      */
     function minTreasuryPriceIndexTargetTimeDelta() external view returns (uint32);
+
+    /**
+     * @notice The maximum absolute rate of change of TPI allowed, when 
+     * `setTreasuryPriceIndexAt()` is called.
+     * @dev Units: [TPI / second]
+     */
+    function maxAbsTreasuryPriceIndexRateOfChange() external view returns (uint96);
 
     /**
      * @notice The current TPI state data
@@ -62,6 +71,13 @@ interface ITreasuryPriceIndexOracle is ITempleElevatedAccess {
      * @dev In seconds.
      */
     function setMinTreasuryPriceIndexTargetTimeDelta(uint32 maxTargetTimeDelta) external;
+
+    /**
+     * @notice Set the maximum absolute rate of change of TPI allowed, when 
+     * `setTreasuryPriceIndexAt()` is called.
+     * @dev Units: [TPI / second]
+     */
+    function setMaxAbsTreasuryPriceIndexRateOfChange(uint96 tpiDelta, uint32 timeDelta) external;
 
     /**
      * @notice Set the target TPI which will incrementally increase from it's current value to `targetTpi`

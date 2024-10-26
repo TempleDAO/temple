@@ -187,7 +187,8 @@ describe("RAMOS", async () => {
             executorAddress, 
             ethers.utils.parseEther("0.97"), 
             ethers.utils.parseEther("0.1"), 
-            0
+            0,
+            ethers.utils.parseEther("0.001"),
         );
 
          // create gauge and add pool on Aura
@@ -456,7 +457,14 @@ describe("RAMOS", async () => {
         });
     
         it("sets treasury price index oracle", async () => {
-            const newOracle = await new TreasuryPriceIndexOracle__factory(executor).deploy(rescuerAddress, executorAddress, ethers.utils.parseEther("0.97"), ethers.utils.parseEther("0.1"), 0);
+            const newOracle = await new TreasuryPriceIndexOracle__factory(executor).deploy(
+                rescuerAddress, 
+                executorAddress, 
+                ethers.utils.parseEther("0.97"), 
+                ethers.utils.parseEther("0.1"), 
+                0,
+                ethers.utils.parseEther("0.001"), 
+            );
             await expect(amo.setTpiOracle(newOracle.address))
                 .to.emit(amo, "TpiOracleSet")
                 .withArgs(newOracle.address);

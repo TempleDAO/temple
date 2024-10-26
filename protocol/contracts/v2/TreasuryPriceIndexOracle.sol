@@ -57,12 +57,20 @@ contract TreasuryPriceIndexOracle is ITreasuryPriceIndexOracle, TempleElevatedAc
      */
     uint32 public override minTreasuryPriceIndexTargetTimeDelta;
 
+    /**
+     * @notice The maximum absolute rate of change of TPI allowed, when 
+     * `setTreasuryPriceIndexAt()` is called.
+     * @dev Units: [TPI / second]
+     */
+    uint96 public override maxAbsTreasuryPriceIndexRateOfChange;
+
     constructor(
         address _initialRescuer,
         address _initialExecutor,
         uint96 _initialTreasuryPriceIndex,
         uint96 _maxTreasuryPriceIndexDelta,
-        uint32 _minTreasuryPriceIndexTargetTimeDelta
+        uint32 _minTreasuryPriceIndexTargetTimeDelta,
+        uint96 _maxAbsTreasuryPriceIndexRateOfChange
     ) TempleElevatedAccess(_initialRescuer, _initialExecutor)
     {
         tpiData = TpiData({
@@ -74,6 +82,7 @@ contract TreasuryPriceIndexOracle is ITreasuryPriceIndexOracle, TempleElevatedAc
         });
         maxTreasuryPriceIndexDelta = _maxTreasuryPriceIndexDelta;
         minTreasuryPriceIndexTargetTimeDelta = _minTreasuryPriceIndexTargetTimeDelta;
+        maxAbsTreasuryPriceIndexRateOfChange = _maxAbsTreasuryPriceIndexRateOfChange;
     }
 
     /**
@@ -113,6 +122,18 @@ contract TreasuryPriceIndexOracle is ITreasuryPriceIndexOracle, TempleElevatedAc
     }
 
     /**
+     * @notice Set the maximum absolute rate of change of TPI allowed, when 
+     * `setTreasuryPriceIndexAt()` is called.
+     * @dev Units: [TPI / second]
+     */
+    function setMaxAbsTreasuryPriceIndexRateOfChange(uint96 tpiDelta, uint32 timeDelta) external override onlyElevatedAccess {
+        // Calculate the rate of change, rounding down.
+        uint96 maxAbsRateOfChange = tpiDelta / timeDelta;
+        emit MaxAbsTreasuryPriceIndexRateOfChangeSet(maxAbsRateOfChange);
+        maxAbsTreasuryPriceIndexRateOfChange = maxAbsRateOfChange;
+    }
+
+    /**
      * @notice Set the target TPI which will incrementally increase from it's current value to `targetTpi`
      * between now and `targetTime`.
      * @dev targetTime is unixtime, targetTpi is 18 decimal places, 1.05e18 == $1.05
@@ -129,6 +150,8 @@ contract TreasuryPriceIndexOracle is ITreasuryPriceIndexOracle, TempleElevatedAc
         // Check absolute delta is within tolerance
         uint96 _absDelta = _tpiDelta < 0 ? uint96(-1 * _tpiDelta) : uint96(_tpiDelta);
         if (_absDelta > maxTreasuryPriceIndexDelta) revert BreachedMaxTpiDelta(_currentTpi, targetTpi, maxTreasuryPriceIndexDelta);
+        uint96 _absRateOfChange = _absDelta / _timeDelta;
+        if (_absRateOfChange > maxAbsTreasuryPriceIndexRateOfChange) revert BreachedMaxTpiRateOfChange(_absRateOfChange, maxAbsTreasuryPriceIndexRateOfChange);
 
         tpiData = TpiData({
             startingTpi: _currentTpi,

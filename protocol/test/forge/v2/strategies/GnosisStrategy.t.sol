@@ -37,7 +37,7 @@ contract GnosisStrategyTestBase is TempleTest {
 
     function _setUp() internal {
         dUSD = new TempleDebtToken("Temple Debt", "dUSD", rescuer, executor, DEFAULT_BASE_INTEREST);
-        tpiOracle = new TreasuryPriceIndexOracle(rescuer, executor, 0.97e18, 0.1e18, 0);
+        tpiOracle = new TreasuryPriceIndexOracle(rescuer, executor, 0.97e18, 0.1e18, 0, 1e16);
         trv = new TreasuryReservesVault(rescuer, executor, address(tpiOracle));
         circuitBreakerProxy = new TempleCircuitBreakerProxy(rescuer, executor);
         strategy = new GnosisStrategy(rescuer, executor, "GnosisStrategy", address(trv), gnosisSafeWallet, address(circuitBreakerProxy));
