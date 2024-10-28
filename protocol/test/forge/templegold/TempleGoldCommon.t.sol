@@ -26,10 +26,8 @@ contract TempleGoldCommon is TempleTest {
     uint32 public constant MAINNET_LZ_EID = 30101;
     uint32 public constant ARBITRUM_ONE_LZ_EID = 30110;
 
-    // uint256 public constant forkBlockNumber = 204226954;
-    // uint256 public constant mainnetForkBlockNumber = 20053784;
-    uint256 public constant forkBlockNumber = 250226954;
-    uint256 public constant mainnetForkBlockNumber = 20653784;
+    uint256 public constant forkBlockNumber = 204226954;
+    uint256 public constant mainnetForkBlockNumber = 20053784;
     uint256 public constant WEEK_LENGTH = 7 days;
 
     string public constant NAME_ONE = "SPICE_AUCTION_TGLD_USDC";
