@@ -31,6 +31,7 @@ contract TempleGoldStakingTestBase is TempleGoldCommon {
     event RewardPaid(address indexed staker, address toAddress, uint256 reward);
     event RewardDurationSet(uint256 duration);
     event UnstakeCooldownSet(uint32 period);
+    event DAOExecutorSet(address indexed daoExecutor);
 
     IERC20 public bidToken;
     IERC20 public bidToken2;
@@ -166,6 +167,24 @@ contract TempleGoldStakingAccessTest is TempleGoldStakingTestBase {
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         staking.setUnstakeCooldown(1 weeks);
     }
+
+    function test_access_setDaoExecutor() public {
+        vm.startPrank(unauthorizedUser);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
+        staking.setDaoExecutor(alice);
+
+        vm.startPrank(executor);
+        staking.setDaoExecutor(alice);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
+        staking.setDaoExecutor(bob);
+    }
+
+    function test_access_setMigrator_when_dao() public {
+        vm.startPrank(executor);
+        staking.setDaoExecutor(alice);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
+        staking.setMigrator(bob);
+    }
 }
 
 contract TempleGoldStakingTest is TempleGoldStakingTestBase {
@@ -281,6 +300,28 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         staking.setDistributionStarter(bob);
 
         assertEq(staking.distributionStarter(), bob);
+    }
+
+    function test_setDaoExecutor_staking() public {
+        vm.startPrank(executor);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
+        staking.setDaoExecutor(address(0));
+
+        vm.expectEmit(address(staking));
+        emit DAOExecutorSet(alice);
+        staking.setDaoExecutor(alice);
+        assertEq(staking.daoExecutor(), alice);
+
+        // only DAO executor can set dao executor
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
+        staking.setDaoExecutor(bob);
+
+        emit log_address(staking.daoExecutor());
+        vm.startPrank(alice);
+        vm.expectEmit(address(staking));
+        emit DAOExecutorSet(bob);
+        staking.setDaoExecutor(bob);
+        assertEq(staking.daoExecutor(), bob);
     }
 
     function test_setMigrator() public {
@@ -409,8 +450,6 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         skip(2 days);
         uint256 bobEarned = staking.earned(bob);
         uint256 aliceEarned = staking.earned(alice);
-        emit log_string("alice earned");
-        emit log_uint(aliceEarned);
         // migrate withdraw
         mockStaking.migrateFromPreviousStaking();
         assertEq(staking.balanceOf(alice), 0);
@@ -549,6 +588,9 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
 
     function test_setUnstakeCooldown() public {
         vm.startPrank(executor);
+        uint32 invalidUnstakeCooldown = staking.MAXIMUM_UNSTAKE_COOLDOWN()+1;
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
+        staking.setUnstakeCooldown(invalidUnstakeCooldown);
 
         vm.expectEmit(address(staking));
         emit UnstakeCooldownSet(1 weeks);
@@ -846,6 +888,97 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         // check dust amount
         dust = (rewardsAmount + leftover) - (rewardRate * _period);
         assertEq(dust, staking.nextRewardAmount());
+    }
+
+    function test_reward_per_token_when_lastUpdateTime_is_periodFinish() public {
+        ITempleGold.VestingFactor memory _factor = _getVestingFactor();
+        _factor.value = 35;
+        _factor.weekMultiplier = 1 weeks;
+        vm.startPrank(executor);
+        templeGold.setVestingFactor(_factor);
+
+        uint256 _period = 7 days;
+        {
+            _setRewardDuration(_period);
+            _setVestingFactor(templeGold);
+            _setUnstakeCooldown();
+        }
+        
+        {
+            skip(1 days);
+            vm.startPrank(executor);
+            staking.setDistributionStarter(alice);
+        }
+
+        {
+            deal(address(templeToken), bob, 1000 ether, true);
+            vm.startPrank(bob);
+            _approve(address(templeToken), address(staking), type(uint).max);
+            staking.stake(1 ether);
+        }
+        
+        uint256 rewardAmount;
+        uint256 rewardPerToken;
+        uint256 lastUpdateTime;
+        {
+            vm.startPrank(alice);
+            staking.distributeRewards();
+            ITempleGoldStaking.Reward memory rewardData = staking.getRewardData();
+            rewardPerToken = staking.rewardPerToken();
+            // skip some time
+            skip(3 days);
+            assertGt(staking.rewardPerToken(), rewardPerToken);
+            // period finish is not same as last update time so expect full reward formular used
+            lastUpdateTime = rewardData.lastUpdateTime;
+            rewardPerToken = 
+                _calculateRewardPerToken(rewardPerToken, lastUpdateTime, 
+                block.timestamp, rewardData.rewardRate, staking.totalSupply());
+            vm.startPrank(bob);
+            // take action to update rewards data
+            staking.stake(1 ether);
+            // updateReward called after stake so check
+            assertEq(staking.rewardPerToken(), rewardPerToken);
+            // still below period finish
+            vm.warp(rewardData.periodFinish - 1);
+            lastUpdateTime = block.timestamp;
+            rewardPerToken = staking.rewardPerToken();
+            rewardPerToken = 
+                _calculateRewardPerToken(rewardPerToken, lastUpdateTime, 
+                block.timestamp, rewardData.rewardRate, staking.totalSupply());
+            // take action to call updateReward
+            staking.stake(1 ether);
+            assertEq(staking.rewardPerToken(), rewardPerToken);
+            // at period finish
+            skip(1 seconds);
+            lastUpdateTime = block.timestamp;
+            rewardPerToken = staking.rewardPerToken();
+            rewardPerToken = 
+                _calculateRewardPerToken(rewardPerToken, lastUpdateTime, 
+                rewardData.periodFinish, rewardData.rewardRate, staking.totalSupply());
+            assertEq(staking.rewardPerToken(), rewardPerToken);
+            skip(1 seconds);
+            // last update time will be set to period finish in `updateReward`
+            staking.stake(1 ether);
+            assertEq(staking.rewardPerToken(), rewardPerToken);
+            assertEq(lastUpdateTime, rewardData.periodFinish);
+            skip(1 weeks);
+            staking.stake(1 ether);
+            assertEq(staking.rewardPerToken(), rewardPerToken);
+        }
+    }
+
+    function _calculateRewardPerToken(
+        uint256 rewardPerToken,
+        uint256 lastUpdateTime,
+        uint256 lastTimeRewardApplicable,
+        uint256 rewardRate,
+        uint256 totalSupply
+    ) private pure returns (uint256) {
+        return rewardPerToken +
+            (((lastTimeRewardApplicable -
+                lastUpdateTime) *
+                rewardRate * 1e18)
+                / totalSupply);
     }
 
     function test_check_votes_tgld_staking() public {

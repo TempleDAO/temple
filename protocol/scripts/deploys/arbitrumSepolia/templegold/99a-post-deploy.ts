@@ -15,6 +15,7 @@ async function main() {
     await _templeGoldPostDeploy(owner, TEMPLE_GOLD_ADDRESSES, TEMPLE_GOLD_INSTANCES);
     await _stakingPostDeploy(owner, TEMPLE_GOLD_INSTANCES);
     await _daiGoldPostDeploy(owner, TEMPLE_GOLD_INSTANCES);
+    await _templeTeleporterPostDeploy();
 }
 
 async function _templeGoldPostDeploy(
@@ -81,6 +82,15 @@ async function _daiGoldPostDeploy(
     await mine(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.DAI_GOLD_AUCTION.setAuctionStarter(ownerAddress));
     // auction config
     await mine(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.DAI_GOLD_AUCTION.setAuctionConfig(auctionConfig));
+}
+
+async function _templeTeleporterPostDeploy() {
+    // Add all temple teleporter contracts cross chain as minters of TEMPLE token
+    // ownership of temple is multisig so this is here as a reminder
+    // const addresses: string[] = [];
+    // for (const address of addresses) {
+
+    // }
 }
 
 // We recommend this pattern to be able to use async/await everywhere

@@ -321,9 +321,8 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
     
         // check to not take away intended tokens for claims
         // calculate auction token amount
-        uint256 totalAuctionTokenAllocation = _totalAuctionTokenAllocation[token];
         uint256 balance = IERC20(token).balanceOf(address(this));
-        uint256 maxRecoverAmount = balance - (totalAuctionTokenAllocation - _claimedAuctionTokens[token]);
+        uint256 maxRecoverAmount = balance - (_totalAuctionTokenAllocation[token] - _claimedAuctionTokens[token]);
         
         if (amount > maxRecoverAmount) { revert CommonEventsAndErrors.InvalidParam(); }
         

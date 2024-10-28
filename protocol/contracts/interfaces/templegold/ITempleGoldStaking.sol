@@ -16,6 +16,7 @@ interface ITempleGoldStaking {
     event RewardPaid(address indexed staker, address toAddress, uint256 reward);
     event RewardDurationSet(uint256 duration);
     event UnstakeCooldownSet(uint32 period);
+    event DAOExecutorSet(address indexed daoExecutor);
 
     error CannotDistribute();
     error CannotDelegate();
@@ -27,9 +28,13 @@ interface ITempleGoldStaking {
 
     /// @notice Reward parameters
     struct Reward {
+        /// @notice The timestamp reward distribution finishes
         uint40 periodFinish;
-        uint216 rewardRate;  // The reward amount (1e18) per total reward duration
+        /// @notice The reward amount (1e18) per second during the reward period
+        uint216 rewardRate;
+        /// @notice The timestamp reward parameters were last updated
         uint40 lastUpdateTime;
+        /// @notice The reward per token
         uint216 rewardPerTokenStored;
     }
 
@@ -47,12 +52,11 @@ interface ITempleGoldStaking {
     /// @notice Distribution starter
     function distributionStarter() external view returns (address);
 
+    /// @notice Dao Executor
+    function daoExecutor() external view returns (address);
+
     /// @notice Total supply of staking token
     function totalSupply() external view returns (uint256);
-
-    /// @notice Time tracking
-    function periodFinish() external view returns (uint256);
-    function lastUpdateTime() external view returns (uint256);
 
     /// @notice Store next reward amount for next epoch
     function nextRewardAmount() external view returns (uint256);
@@ -75,6 +79,12 @@ interface ITempleGoldStaking {
      * @param _migrator Migrator
      */
     function setMigrator(address _migrator) external;
+
+    /**
+     * @notice Set DAO executor
+     * @param _executor DAO executor
+     */
+    function setDaoExecutor(address _executor) external;
 
     /**
      * @notice Stake for an account when contract is not paused

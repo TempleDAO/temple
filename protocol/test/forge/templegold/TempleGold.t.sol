@@ -224,6 +224,26 @@ contract TempleGoldViewTest is TempleGoldTestBase {
 
 contract TempleGoldTest is TempleGoldTestBase {
 
+    function test_only_source_chain_mint_setters_reverts() public {
+        templeGoldMainnet = _deployContractsOnMainnet();
+        vm.startPrank(executor);
+        ITempleGold.VestingFactor memory _factor = _getVestingFactor();
+        vm.expectRevert(abi.encodeWithSelector(ITempleGold.WrongChain.selector));
+        templeGoldMainnet.setVestingFactor(_factor);
+
+        vm.expectRevert(abi.encodeWithSelector(ITempleGold.WrongChain.selector));
+        templeGoldMainnet.setDistributionParams(_getDistributionParameters());
+
+        vm.expectRevert(abi.encodeWithSelector(ITempleGold.WrongChain.selector));
+        templeGoldMainnet.setStaking(address(staking));
+
+        vm.expectRevert(abi.encodeWithSelector(ITempleGold.WrongChain.selector));
+        templeGoldMainnet.setTeamGnosis(teamGnosis);
+
+        vm.expectRevert(abi.encodeWithSelector(ITempleGold.WrongChain.selector));
+        templeGoldMainnet.setDaiGoldAuction(address(daiGoldAuction));
+    }
+
     function test_setStaking_tgld() public {
         vm.startPrank(executor);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
