@@ -20,12 +20,12 @@ async function main() {
     treasuryPriceIndexOracle,
     treasuryPriceIndexOracle.deploy,
     TEMPLE_V2_ADDRESSES.CORE.RESCUER_MSIG,
-    await owner.getAddress(),
+    TEMPLE_V2_ADDRESSES.CORE.EXECUTOR_MSIG,
     await existingOracle.treasuryPriceIndex(),
     ethers.utils.parseEther("1"), // maxTreasuryPriceIndexDelta: $1
     14 * 86_400, // minTreasuryPriceIndexTargetTimeDelta: 2 weeks
     ethers.utils.parseEther("0.01").div(86_400), // maxAbsTreasuryPriceIndexRateOfChange: 1c/day
-  )
+  );
 
 }
 
