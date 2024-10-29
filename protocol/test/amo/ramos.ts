@@ -182,7 +182,14 @@ describe("RAMOS", async () => {
         await executor.sendTransaction({value: ONE_ETH, to: BAL_MULTISIG });
         await executor.sendTransaction({value: ONE_ETH, to: await auraMultisig.getAddress()});
 
-        tpiOracle = await new TreasuryPriceIndexOracle__factory(executor).deploy(rescuerAddress, executorAddress, ethers.utils.parseEther("0.97"), ethers.utils.parseEther("0.1"), 0);
+        tpiOracle = await new TreasuryPriceIndexOracle__factory(executor).deploy(
+            rescuerAddress, 
+            executorAddress, 
+            ethers.utils.parseEther("0.97"), 
+            ethers.utils.parseEther("0.1"), 
+            0,
+            ethers.utils.parseEther("0.001"),
+        );
 
          // create gauge and add pool on Aura
         let token, rewards: string;
@@ -450,7 +457,14 @@ describe("RAMOS", async () => {
         });
     
         it("sets treasury price index oracle", async () => {
-            const newOracle = await new TreasuryPriceIndexOracle__factory(executor).deploy(rescuerAddress, executorAddress, ethers.utils.parseEther("0.97"), ethers.utils.parseEther("0.1"), 0);
+            const newOracle = await new TreasuryPriceIndexOracle__factory(executor).deploy(
+                rescuerAddress, 
+                executorAddress, 
+                ethers.utils.parseEther("0.97"), 
+                ethers.utils.parseEther("0.1"), 
+                0,
+                ethers.utils.parseEther("0.001"), 
+            );
             await expect(amo.setTpiOracle(newOracle.address))
                 .to.emit(amo, "TpiOracleSet")
                 .withArgs(newOracle.address);
@@ -781,7 +795,11 @@ describe("RAMOS", async () => {
             
             // skew price below TPI
             await singleSideDepositTemple(toAtto(50_000));
-            await tpiOracle.setTreasuryPriceIndex(ethers.utils.parseEther("0.97"));
+            await tpiOracle.setTreasuryPriceIndexAt(
+                ethers.utils.parseEther("0.97"), 
+                await blockTimestamp() + 2
+            );
+            await mineForwardSeconds(1);
             expect(await amo.treasuryPriceIndex()).to.equal(ethers.utils.parseEther("0.97"));
             await expect(amo.rebalanceDownExit(ONE_ETH, 1)).to.be.revertedWithCustomError(poolHelper, "NoRebalanceDown");
             await amo.pause();
