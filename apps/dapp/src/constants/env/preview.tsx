@@ -1,6 +1,9 @@
 import { ADDRESS_ZERO } from 'utils/bigNumber';
 import { Environment } from './types';
 
+const BALANCER_SUBGRAPH_API_KEY = import.meta.env
+  .VITE_BALANCER_SUBGRAPH_API_KEY;
+
 const env: Environment = {
   alchemyId: 'AorwfDdHDsEjIX4HPwS70zkVjWqjv5vZ',
   rpcUrl: 'https://rpc.ankr.com/eth',
@@ -55,9 +58,7 @@ const env: Environment = {
       'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-metrics/api',
     protocolMetricsArbitrum:
       'https://api.studio.thegraph.com/query/76011/temple-metrics-arbitrum/version/latest',
-    // TODO: This is not used anymore and should be removed
-    balancerV2:
-      'https://api.thegraph.com/subgraphs/name/templedao/templedao-balancer-v2',
+    balancerV2: `https://gateway.thegraph.com/api/${BALANCER_SUBGRAPH_API_KEY}/subgraphs/id/C4ayEZP2yTXRAB8vSaTrgN4m9anTe9Mdm2ViyiAuV9TV`,
     ramos:
       'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-ramos/api',
     templeV2:

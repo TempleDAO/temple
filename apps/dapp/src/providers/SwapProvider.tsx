@@ -22,16 +22,14 @@ import VaultABI from 'data/abis/balancerVault.json';
 import { formatToken } from 'utils/formatter';
 import { ADDRESS_ZERO } from 'utils/bigNumber';
 import { backOff } from 'exponential-backoff';
-
-const BALANCER_SUBGRAPH_API_KEY = import.meta.env
-  .VITE_BALANCER_SUBGRAPH_API_KEY;
+import { MAINNET_CHAIN } from 'utils/envChainMapping';
 
 // Initialize balancer SOR
 const maxPools = 4;
 const balancer = new BalancerSDK({
   network: Network.MAINNET,
   rpcUrl: env.rpcUrl,
-  customSubgraphUrl: `https://gateway.thegraph.com/api/${BALANCER_SUBGRAPH_API_KEY}/subgraphs/id/C4ayEZP2yTXRAB8vSaTrgN4m9anTe9Mdm2ViyiAuV9TV`,
+  customSubgraphUrl: env.subgraph.balancerV2,
   enableLogging: true,
 });
 const { swaps: balancerSwaps } = balancer; // Swaps module is abstracting SOR
@@ -127,7 +125,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     const onMount = async () => {
       return backOff(async () => {
         const success = await balancerSwaps.fetchPools({
-          chainId: 1,
+          chainId: MAINNET_CHAIN.id,
           where: {
             id: {
               eq: env.contracts.templeDaiBalancerPool,
