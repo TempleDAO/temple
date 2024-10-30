@@ -37,6 +37,7 @@ const env: Environment = {
     vaultEarlyExit: '',
     ramos: '',
     ramosPoolHelper: '',
+    templeDaiBalancerPool: '',
     balancerHelpers: '',
     strategies: {
       dsrBaseStrategy: '',

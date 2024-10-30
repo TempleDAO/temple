@@ -174,6 +174,8 @@ const env: Environment = {
     vaultEarlyExit: '0x24719d3AF60e1B622a29317d29E5Ce283617DeEC',
     ramos: '0xDdF499e726Bfde29Ce035F6B355e55757F08B5EF',
     ramosPoolHelper: '0xe32089bf9724aF09C026BeC36a7d8a81500cd58A',
+    templeDaiBalancerPool:
+      '0x8bd4a1e74a27182d23b98c10fd21d4fbb0ed4ba00002000000000000000004ed',
     balancerHelpers: '0x5aDDCCa35b7A0D07C74063c48700C8590E87864E',
     strategies: {
       dsrBaseStrategy: '0x8b9e20D9970Af54fbaFe64049174e24d6DE0C412',

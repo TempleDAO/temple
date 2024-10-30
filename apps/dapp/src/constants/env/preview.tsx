@@ -35,6 +35,7 @@ const env: Environment = {
     vaultEarlyExit: '',
     ramos: '0x82ce000a51E8474378f7b555bcC4de5992052452',
     ramosPoolHelper: '0xbfC24c9d7D57C413618CE11cea1e313a2E8D9e1d',
+    templeDaiBalancerPool: '',
     balancerHelpers: '0xdAE7e32ADc5d490a43cCba1f0c736033F2b4eFca',
     strategies: {
       dsrBaseStrategy: '0x472C7cDb6E730ff499E118dE6260c6b44c61d7bf',

@@ -21,14 +21,20 @@ import { BalancerSDK, Network, SwapType, SwapInfo } from '@balancer-labs/sdk';
 import VaultABI from 'data/abis/balancerVault.json';
 import { formatToken } from 'utils/formatter';
 import { ADDRESS_ZERO } from 'utils/bigNumber';
+import { backOff } from 'exponential-backoff';
+
+const BALANCER_SUBGRAPH_API_KEY = import.meta.env
+  .VITE_BALANCER_SUBGRAPH_API_KEY;
 
 // Initialize balancer SOR
 const maxPools = 4;
 const balancer = new BalancerSDK({
   network: Network.MAINNET,
   rpcUrl: env.rpcUrl,
+  customSubgraphUrl: `https://gateway.thegraph.com/api/${BALANCER_SUBGRAPH_API_KEY}/subgraphs/id/C4ayEZP2yTXRAB8vSaTrgN4m9anTe9Mdm2ViyiAuV9TV`,
+  enableLogging: true,
 });
-const sor = balancer.sor;
+const { swaps: balancerSwaps } = balancer; // Swaps module is abstracting SOR
 
 const INITIAL_STATE: SwapService = {
   buy: asyncNoop,
@@ -36,7 +42,7 @@ const INITIAL_STATE: SwapService = {
   getSellQuote: asyncNoop,
   getBuyQuote: asyncNoop,
   error: null,
-  sor: balancer.sor,
+  balancerSwaps,
 };
 
 // Build batchSwap transaction details
@@ -109,6 +115,8 @@ const buildSingleTransaction = (
 
 const SwapContext = createContext(INITIAL_STATE);
 
+class FetchPoolsError extends Error {}
+
 // eslint-disable-next-line @typescript-eslint/ban-types
 export const SwapProvider = (props: PropsWithChildren<{}>) => {
   const [error, setError] = useState<Error | null>(null);
@@ -117,11 +125,19 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
 
   useEffect(() => {
     const onMount = async () => {
-      try {
-        await sor.fetchPools();
-      } catch (e) {
-        console.log('failed to fetch sor pools');
-      }
+      return backOff(async () => {
+        const success = await balancerSwaps.fetchPools({
+          chainId: 1,
+          where: {
+            id: {
+              eq: env.contracts.templeDaiBalancerPool,
+            },
+          },
+        });
+        if (!success) {
+          throw new FetchPoolsError();
+        }
+      });
     };
     onMount();
   }, []);
@@ -309,14 +325,13 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     const gasPrice = signer ? await signer?.getGasPrice() : BigNumber.from(0);
 
     // Find swapInfo for best trade given pair and amount
-    const swapInfo: SwapInfo = await sor.getSwaps(
-      tokenInInfo.address,
-      tokenOutInfo.address,
-      0,
-      amountIn,
-      { gasPrice, maxPools },
-      false
-    );
+    const swapInfo = await balancerSwaps.findRouteGivenIn({
+      tokenIn: tokenInInfo.address,
+      tokenOut: tokenOutInfo.address,
+      amount: amountIn,
+      gasPrice,
+      maxPools,
+    });
     console.debug('swapInfo', swapInfo);
     return swapInfo;
   };
@@ -331,14 +346,13 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     const gasPrice = signer ? await signer?.getGasPrice() : BigNumber.from(0);
 
     // Find swapInfo for best trade given pair and amount
-    const swapInfo: SwapInfo = await sor.getSwaps(
-      tokenInInfo.address,
-      tokenOutInfo.address,
-      0,
-      amountToSell,
-      { gasPrice, maxPools },
-      false
-    );
+    const swapInfo = await balancerSwaps.findRouteGivenIn({
+      tokenIn: tokenInInfo.address,
+      tokenOut: tokenOutInfo.address,
+      amount: amountToSell,
+      gasPrice,
+      maxPools,
+    });
     return swapInfo;
   };
 
@@ -350,7 +364,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
         getBuyQuote,
         getSellQuote,
         error,
-        sor,
+        balancerSwaps: balancerSwaps,
       }}
     >
       {props.children}
