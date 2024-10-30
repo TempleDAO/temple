@@ -48,7 +48,6 @@ const env: Environment = {
     templeCircuitBreaker: '0x8f783c4A3d90712A794d5660b632AC67611852aF',
   },
   subgraph: {
-    // TODO: These need updated to the templedao organization subgraphs once they are deployed
     templeCore:
       'https://api.studio.thegraph.com/query/76011/temple-core/version/latest',
     protocolMetrics:
@@ -58,15 +57,12 @@ const env: Environment = {
     // TODO: This is not used anymore and should be removed
     balancerV2:
       'https://api.thegraph.com/subgraphs/name/templedao/templedao-balancer-v2',
-    // TODO: Will be deprecated
     ramos:
-      'https://api.studio.thegraph.com/query/76011/temple-ramos/version/latest',
+      'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-ramos/api',
     templeV2:
       'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-v2-mainnet/api',
     templeV2Balances:
       'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-v2-balances/api',
-    // Original Balancer Subgraph
-    // balancerV2: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-goerli-v2',
   },
   gas: {
     swapFraxForTemple: 300000,
