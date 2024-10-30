@@ -1,54 +1,21 @@
-import { fetchGenericSubgraph } from 'utils/subgraph';
 import env from 'constants/env';
-import { SubGraphResponse } from 'hooks/core/types';
 import { TxHistoryFilterType } from '../Table';
 import { TableHeaders, TxHistoryTableHeader } from '../Table/TxnHistoryTable';
-import { TxType } from '../Table/TxnDataTable';
 import { getQueryKey } from 'utils/react-query-helpers';
 import { useQuery } from '@tanstack/react-query';
-import { DashboardData, StrategyKey, isTRVDashboard } from '../DashboardConfig';
-
-type Transactions = {
-  hash: string;
-  strategy: {
-    id: string;
-    name: StrategyKey;
-  };
-  token: {
-    id: string;
-    name: string;
-    symbol: string;
-  };
-  amount: string;
-  amountUsd: string;
-  id: string;
-  from: string;
-  to: string;
-  name: TxType;
-  timestamp: string;
-}[];
+import { DashboardData, isTRVDashboard } from '../DashboardConfig';
+import {
+  subgraphQuery,
+  queryStrategyTransactions,
+  StrategyTransactions,
+  queryStrategyTransactionsMeta,
+} from 'utils/subgraph';
 
 type AvailableRows = {
   totalTransactionCount: number;
   totalRowCount: number;
   blockNumber: number;
 };
-
-type Metrics = {
-  strategyTransactionCount: number;
-}[];
-
-type Meta = {
-  block: {
-    number: number;
-  };
-};
-
-type FetchTxnsResponse = SubGraphResponse<{
-  strategyTransactions: Transactions;
-  metrics: Metrics;
-  _meta: Meta;
-}>;
 
 export type RowFilter = {
   type?: string;
@@ -111,7 +78,7 @@ const useTxHistory = (props: TxHistoryProps) =>
 
 const fetchTransactions = async (
   props: TxHistoryProps
-): Promise<Transactions> => {
+): Promise<StrategyTransactions> => {
   const {
     dashboardData,
     blockNumber,
@@ -128,8 +95,6 @@ const fetchTransactions = async (
     : `strategy_: {name: "${strategyKey}"}`;
   const blockNumberQueryParam =
     blockNumber > 0 ? `block: { number: ${blockNumber} }` : ``;
-
-  const paginationQuery = `skip: ${offset} first: ${limit}`;
 
   const dateNowSecs = Math.round(Date.now() / 1000);
   const typeRowFilterQuery = `${
@@ -166,32 +131,10 @@ const fetchTransactions = async (
       : 'asc'
     : 'desc';
 
-  const subgraphQuery = `{
-    strategyTransactions(orderBy: ${orderBy}, orderDirection: ${orderType} ${paginationQuery} ${whereQuery}) {
-      hash
-      strategy {
-        id
-        name
-      }
-      token {
-        id
-        name
-        symbol
-      }
-      amount
-      amountUSD
-      id
-      from
-      name
-      timestamp
-    }
-  }`;
-
-  const { data: res } = await fetchGenericSubgraph<FetchTxnsResponse>(
+  const res = await subgraphQuery(
     env.subgraph.templeV2,
-    subgraphQuery
+    queryStrategyTransactions(orderBy, orderType, offset, limit, whereQuery)
   );
-  if (!res) return [];
   return res.strategyTransactions;
 };
 
@@ -224,31 +167,18 @@ const fetchTxHistoryAvailableRows = async (
       : ''
   }`;
   // get the max allowed 1000 records for a more accurate totalPages calculation
-  const whereQuery = `( first: 1000 
+  const whereQuery = `first: 1000 
     where: { 
       ${strategyQuery} 
       timestamp_gt: ${dateNowSecs - txHistoryFilterTypeToSeconds(txFilter)} 
       ${typeRowFilterQuery} 
       ${strategyRowFilterQuery} 
       ${tokenRowFilterQuery}
-    } 
-  )`;
-  const subgraphQuery = `{
-    metrics {
-      strategyTransactionCount
-    }
-    strategyTransactions${whereQuery} {
-      hash
-    }
-    _meta {
-      block {
-        number
-      }
-    }
-  }`;
-  const { data: res } = await fetchGenericSubgraph<FetchTxnsResponse>(
+    }`;
+
+  const res = await subgraphQuery(
     env.subgraph.templeV2,
-    subgraphQuery
+    queryStrategyTransactionsMeta(whereQuery)
   );
 
   let result: AvailableRows = {
@@ -261,29 +191,29 @@ const fetchTxHistoryAvailableRows = async (
   if (rowFilter.strategy) hasRowFilters = rowFilter.strategy.length > 0;
   if (rowFilter.token) hasRowFilters = rowFilter.token.length > 0;
   if (rowFilter.type) hasRowFilters = rowFilter.type.length > 0;
-  if (res) {
-    let totalRowCount = 0;
-    if (
-      props.txFilter === TxHistoryFilterType.all &&
-      isTRVDashboard(strategyKey) &&
-      !hasRowFilters
-    ) {
-      // if user chooses all transactions, sum the txCountTotal of every strategy, we don't use this
-      // calc for the last30days or lastweek filters because it could show an incorrect number of totalPages
-      totalRowCount = res.metrics[0].strategyTransactionCount;
-    } else {
-      // if user chooses last30days or lastweek filters, count the length of txs of each strategy
-      // in this case there maybe a chance of incorrect calc if there are more than 1000 records,
-      // which is unlikely in foreseeable future. This due to the max 1000 records subgraph limitation
-      totalRowCount = res.strategyTransactions.length;
-    }
 
-    result = {
-      totalRowCount,
-      blockNumber: res._meta.block.number,
-      totalTransactionCount: totalRowCount,
-    };
+  let totalRowCount = 0;
+  if (
+    props.txFilter === TxHistoryFilterType.all &&
+    isTRVDashboard(strategyKey) &&
+    !hasRowFilters
+  ) {
+    // if user chooses all transactions, sum the txCountTotal of every strategy, we don't use this
+    // calc for the last30days or lastweek filters because it could show an incorrect number of totalPages
+    totalRowCount = res.metrics[0].strategyTransactionCount;
+  } else {
+    // if user chooses last30days or lastweek filters, count the length of txs of each strategy
+    // in this case there maybe a chance of incorrect calc if there are more than 1000 records,
+    // which is unlikely in foreseeable future. This due to the max 1000 records subgraph limitation
+    totalRowCount = res.strategyTransactions.length;
   }
+
+  result = {
+    totalRowCount,
+    blockNumber: res._meta.block.number,
+    totalTransactionCount: totalRowCount,
+  };
+
   return result;
 };
 

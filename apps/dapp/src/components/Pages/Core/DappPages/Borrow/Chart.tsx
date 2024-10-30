@@ -10,7 +10,7 @@ import {
   formatNumberFixedDecimals,
 } from 'utils/formatter';
 import { formatDailyDataPoints } from 'utils/charts';
-import { fetchGenericSubgraph } from 'utils/subgraph';
+import { queryTlcDailySnapshots, subgraphQuery } from 'utils/subgraph';
 import IntervalToggler from 'components/Charts/IntervalToggler';
 import env from 'constants/env';
 
@@ -50,17 +50,18 @@ export const TlcChart = () => {
 
   useEffect(() => {
     const fetchMetrics = async () => {
-      const { data } = await fetchGenericSubgraph<any>(
+      const response = await subgraphQuery(
         env.subgraph.templeV2,
-        `{
-            tlcDailySnapshots(orderBy: timestamp, orderDirection: desc) {
-              timestamp
-              utilRatio
-              interestYield
-            }
-          }`
+        queryTlcDailySnapshots()
       );
-      setMetrics(data.tlcDailySnapshots);
+
+      setMetrics(
+        response.tlcDailySnapshots.map((r) => ({
+          timestamp: parseFloat(r.timestamp),
+          utilRatio: parseFloat(r.utilRatio),
+          interestYield: parseFloat(r.interestYield),
+        }))
+      );
     };
     fetchMetrics();
   }, []);

@@ -16,7 +16,12 @@ import { queryMinTablet } from 'styles/breakpoints';
 import env from 'constants/env';
 import linkSvg from 'assets/icons/link.svg?react';
 import { formatNumberWithCommas } from 'utils/formatter';
-import { DashboardData, Dashboards, isTRVDashboard } from '../DashboardConfig';
+import {
+  DashboardData,
+  Dashboards,
+  isTRVDashboard,
+  StrategyKey,
+} from '../DashboardConfig';
 
 type Props = {
   dashboardData: DashboardData;
@@ -271,8 +276,8 @@ const TxnHistoryTable = (props: Props) => {
     const timeOnly = format(new Date(Number(tx.timestamp) * 1000), 'H:mm:ss');
     return {
       date: isBiggerThanTablet ? datetime : dateOnly,
-      type: tx.name,
-      strategy: tx.strategy.name,
+      type: tx.name as TxType,
+      strategy: tx.strategy.name as StrategyKey,
       token: tx.token.symbol,
       amount: amountFmt,
       txHash: tx.hash,
