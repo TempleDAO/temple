@@ -80,7 +80,7 @@ contract SkyFarmBaseStrategyTestBase is TempleTest {
         fork("mainnet", 21067150);
 
         dUSD = new TempleDebtToken("Temple Debt", "dUSD", rescuer, executor, DEFAULT_BASE_INTEREST);
-        tpiOracle = new TreasuryPriceIndexOracle(rescuer, executor, 0.97e18, 0.1e18, 0);
+        tpiOracle = new TreasuryPriceIndexOracle(rescuer, executor, 0.97e18, 0.1e18, 0, 1e16);
         trv = new TreasuryReservesVault(rescuer, executor, address(tpiOracle));
         strategy = new SkyFarmBaseStrategy(rescuer, executor, "SkyFarmBaseStrategy", address(trv), address(origamiSkyVault), address(daiToUsds));
 
