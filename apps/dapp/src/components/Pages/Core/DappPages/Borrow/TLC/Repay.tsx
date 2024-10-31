@@ -100,19 +100,25 @@ export const Repay: React.FC<IProps> = ({
           setState({
             ...state,
             repayValue: accountPosition
-              ? formatToken(accountPosition.currentDebt, state.outputToken)
+              ? accountPosition.currentDebt.gt(state.outputTokenBalance)
+                ? formatToken(state.outputTokenBalance, state.outputToken)
+                : formatToken(accountPosition.currentDebt, state.outputToken)
               : '0',
           });
         }}
         min={0}
-        // Max is total debt
         hint={`Max: ${formatToken(
-          accountPosition ? accountPosition.currentDebt : ZERO,
+          accountPosition
+            ? accountPosition.currentDebt.gt(state.outputTokenBalance)
+              ? state.outputTokenBalance
+              : accountPosition.currentDebt
+            : ZERO,
           state.outputToken
         )}`}
         width="100%"
       />
-      {fromAtto(state.outputTokenBalance) < Number(state.repayValue) && (
+      {fromAtto(state.outputTokenBalance).toFixed(2) <
+        Number(state.repayValue).toFixed(2) && (
         <Warning>
           <InfoCircle>
             <p>i</p>
@@ -164,7 +170,8 @@ export const Repay: React.FC<IProps> = ({
           // Disable if repay amount is lte zero, or gt wallet balance
           disabled={
             Number(state.repayValue) <= 0 ||
-            fromAtto(state.outputTokenBalance) < Number(state.repayValue)
+            fromAtto(state.outputTokenBalance).toFixed(2) <
+              Number(state.repayValue).toFixed(2)
           }
           style={{ width: 'auto' }}
         >
