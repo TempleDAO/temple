@@ -102,7 +102,7 @@ export const BorrowPage = () => {
       templePrice: data.tokens.filter((t: any) => t.symbol == 'TEMPLE')[0]
         .price,
       daiPrice: data.tokens.filter((t: any) => t.symbol == 'DAI')[0].price,
-      tpi: data.treasuryReservesVaults[0].treasuryPriceIndex,
+      tpi: Number(data.treasuryReservesVaults[0].treasuryPriceIndex),
     });
   }, []);
 
@@ -718,7 +718,9 @@ export const BorrowPage = () => {
               <BrandParagraph>Current Borrow APY </BrandParagraph>
             </MetricContainer>
             <MetricContainer>
-              <LeadMetric>{showLoading ? '...' : prices.tpi}</LeadMetric>
+              <LeadMetric>
+                {showLoading ? '...' : prices.tpi.toFixed(2)}
+              </LeadMetric>
               <BrandParagraph>Current TPI</BrandParagraph>
             </MetricContainer>
           </Metrics>
