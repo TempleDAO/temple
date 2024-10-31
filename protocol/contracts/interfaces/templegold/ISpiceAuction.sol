@@ -127,6 +127,12 @@ interface ISpiceAuction is IAuctionBase {
     function redeemedEpochs(uint256 epochId) external view returns (bool);
 
     /**
+     * @notice Check if current epoch is active
+     * @return Bool for active status
+     */
+    function isActive() external view returns (bool);
+
+    /**
      * @notice Burn redeemd TGLD and notify circulating supply
      * @param epochId Epoch Id
      * @param useContractEth If to use contract eth for layerzero send

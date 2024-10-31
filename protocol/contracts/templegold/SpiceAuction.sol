@@ -416,6 +416,14 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
     }
 
     /**
+     * @notice Check if current epoch is active
+     * @return Bool for active status
+     */
+    function isActive() external view override returns (bool) {
+        return epochs[_currentEpochId].isActive();
+    }
+
+    /**
      * @notice Get claimable amount for an epoch
      * @dev function will return claimable for epoch. This can change with more user deposits
      * @param depositor Address to check amount for
@@ -467,10 +475,7 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
             ITempleGold(templeGold).send{ value: fee.nativeFee }(sendParam, fee, payable(address(this)));
         } else {
             ITempleGold(templeGold).send{ value: fee.nativeFee }(sendParam, fee, payable(msg.sender));
-            uint256 leftover;
-            unchecked {
-                leftover = msg.value - fee.nativeFee;
-            }
+            uint256 leftover = msg.value - fee.nativeFee;
             if (leftover > 0) { 
                 (bool success,) = payable(msg.sender).call{ value: leftover }("");
                 if (!success) { revert WithdrawFailed(leftover); }

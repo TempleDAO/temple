@@ -159,6 +159,17 @@ contract SpiceAuctionViewTest is SpiceAuctionTestBase {
         assertEq(auctionToken, spice.getAuctionTokenForCurrentEpoch());
     }
 
+    function test_is_current_epoch_active() public {
+        assertEq(spice.isActive(), false);
+        ISpiceAuction.SpiceAuctionConfig memory _config = _startAuction(true, true);
+        assertEq(spice.isActive(), false);
+        skip(_config.startCooldown);
+        assertEq(spice.isActive(), true);
+        IAuctionBase.EpochInfo memory _info = spice.getEpochInfo(1);
+        vm.warp(_info.endTime);
+        assertEq(spice.isActive(), false);
+    }
+
     function test_getClaimableForEpoch() public {
         // bid token == 0
         uint256 claimabale = spice.getClaimableForEpoch(alice, 0);
