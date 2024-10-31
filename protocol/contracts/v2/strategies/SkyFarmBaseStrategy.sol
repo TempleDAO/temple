@@ -7,15 +7,9 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IERC4626 } from "@openzeppelin/contracts/interfaces/IERC4626.sol";
 
 import { ITempleBaseStrategy } from "contracts/interfaces/v2/strategies/ITempleBaseStrategy.sol";
+import { IDaiUsds } from "contracts/interfaces/external/sky/IDaiUsds.sol";
 import { AbstractStrategy } from "contracts/v2/strategies/AbstractStrategy.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
-
-interface DaiUsds {
-    function daiToUsds(address usr, uint256 wad) external;
-    function usdsToDai(address usr, uint256 wad) external;
-    function dai() external view returns (IERC20);
-    function usds() external view returns (IERC20);
-}
 
 /**
  * @title DAI to Origami SKY Farm - Base Strategy
@@ -36,7 +30,7 @@ contract SkyFarmBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
     IERC4626 public immutable usdsVaultToken;
 
     /// @notice Maker/Sky provided contract to convert DAI<-->USDS 1:1
-    DaiUsds public immutable daiToUsds;
+    IDaiUsds public immutable daiToUsds;
 
     event DaiDeposited(uint256 amount);
     event DaiWithdrawn(uint256 amount);
@@ -50,7 +44,7 @@ contract SkyFarmBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
         address _daiToUsds
     ) AbstractStrategy(_initialRescuer, _initialExecutor, _strategyName, _treasuryReservesVault) {
         usdsVaultToken = IERC4626(_usdsVaultToken);
-        daiToUsds = DaiUsds(_daiToUsds);
+        daiToUsds = IDaiUsds(_daiToUsds);
         daiToken = daiToUsds.dai();
         usdsToken = daiToUsds.usds();
 

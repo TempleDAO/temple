@@ -17,15 +17,9 @@ import { TreasuryPriceIndexOracle } from "contracts/v2/TreasuryPriceIndexOracle.
 import { TempleCircuitBreakerAllUsersPerPeriod } from "contracts/v2/circuitBreaker/TempleCircuitBreakerAllUsersPerPeriod.sol";
 import { TempleCircuitBreakerProxy } from "contracts/v2/circuitBreaker/TempleCircuitBreakerProxy.sol";
 import { ITempleDebtToken } from "contracts/interfaces/v2/ITempleDebtToken.sol";
+import { IDaiUsds } from "contracts/interfaces/external/sky/IDaiUsds.sol";
 
 import { ud } from "@prb/math/src/UD60x18.sol";
-
-interface DaiUsds {
-    function daiToUsds(address usr, uint256 wad) external;
-    function usdsToDai(address usr, uint256 wad) external;
-    function dai() external view returns (IERC20);
-    function usds() external view returns (IERC20);
-}
 
 interface OrigamiErc4626 is IERC4626 {
     function manager() external view returns (OrigamiSkyManager);
@@ -57,7 +51,7 @@ contract SkyFarmBaseStrategyTestBase is TempleTest {
     IERC20 public constant temple = IERC20(0x470EBf5f030Ed85Fc1ed4C2d36B9DD02e77CF1b7);
     IERC20 public constant dai = IERC20(0x6B175474E89094C44Da98b954EedeAC495271d0F);
     IERC20 public constant usds = IERC20(0xdC035D45d973E3EC169d2276DDab16f1e407384F);
-    DaiUsds public constant daiToUsds = DaiUsds(0x3225737a9Bbb6473CB4a45b7244ACa2BeFdB276A);
+    IDaiUsds public constant daiToUsds = IDaiUsds(0x3225737a9Bbb6473CB4a45b7244ACa2BeFdB276A);
     OrigamiErc4626 public constant origamiSkyVault = OrigamiErc4626(0x0f90a6962e86b5587b4c11bA2B9697dC3bA84800);
 
     FakeERC20 public frax = new FakeERC20("FRAX", "FRAX", address(0), 0);
