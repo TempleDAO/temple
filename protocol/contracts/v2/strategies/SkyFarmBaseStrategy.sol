@@ -59,7 +59,6 @@ contract SkyFarmBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
         daiToken.forceApprove(address(daiToUsds), type(uint256).max);
         usdsToken.forceApprove(address(usdsVaultToken), type(uint256).max);
         usdsToken.forceApprove(address(daiToUsds), type(uint256).max);
-        usdsToken.forceApprove(address(daiToUsds), type(uint256).max);
 
         _updateTrvApprovals(address(0), _treasuryReservesVault);
     }
@@ -212,7 +211,7 @@ contract SkyFarmBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
      * to apply the shutdown.
      * @dev Each strategy may require a different set of params to do the shutdown. It can abi encode/decode
      * that data off chain, or by first calling populateShutdownData()
-     * Shutdown data isn't required for a the `usdsVaultToken` automated shutdown.
+     * Shutdown data isn't required for the `usdsVaultToken` automated shutdown.
      */
     function _doShutdown(bytes calldata /*data*/) internal override {
         // Withdraw all
