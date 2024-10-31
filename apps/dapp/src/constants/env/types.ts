@@ -54,6 +54,7 @@ interface Contracts {
     fohmoGnosisStrategy: string;
   };
   ramosPoolHelper: string;
+  templeDaiBalancerPool: string;
   balancerHelpers: string;
   daiCircuitBreaker: string;
   templeCircuitBreaker: string;
