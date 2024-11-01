@@ -1,6 +1,9 @@
 import { ADDRESS_ZERO } from 'utils/bigNumber';
 import { Environment } from './types';
 
+const BALANCER_SUBGRAPH_API_KEY = import.meta.env
+  .VITE_BALANCER_SUBGRAPH_API_KEY;
+
 const env: Environment = {
   alchemyId: 'XiIZxWykHU5AOFBwxKgxseXWN984Mp8F',
   rpcUrl: 'https://rpc.ankr.com/eth',
@@ -174,6 +177,8 @@ const env: Environment = {
     vaultEarlyExit: '0x24719d3AF60e1B622a29317d29E5Ce283617DeEC',
     ramos: '0xDdF499e726Bfde29Ce035F6B355e55757F08B5EF',
     ramosPoolHelper: '0xe32089bf9724aF09C026BeC36a7d8a81500cd58A',
+    templeDaiBalancerPool:
+      '0x8bd4a1e74a27182d23b98c10fd21d4fbb0ed4ba00002000000000000000004ed',
     balancerHelpers: '0x5aDDCCa35b7A0D07C74063c48700C8590E87864E',
     strategies: {
       dsrBaseStrategy: '0x8b9e20D9970Af54fbaFe64049174e24d6DE0C412',
@@ -253,25 +258,19 @@ const env: Environment = {
   network: 1,
   etherscan: 'https://etherscan.io',
   subgraph: {
-    // TODO: These need updated to the templedao organization subgraphs once they are deployed
     templeCore:
       'https://api.studio.thegraph.com/query/76011/temple-core/version/latest',
     protocolMetrics:
       'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-metrics/api',
     protocolMetricsArbitrum:
       'https://api.studio.thegraph.com/query/76011/temple-metrics-arbitrum/version/latest',
-    // TODO: This is not used anymore and should be removed
-    balancerV2:
-      'https://api.thegraph.com/subgraphs/name/templedao/templedao-balancer-v2',
-    // TODO: Will be deprecated
+    balancerV2: `https://gateway.thegraph.com/api/${BALANCER_SUBGRAPH_API_KEY}/subgraphs/id/C4ayEZP2yTXRAB8vSaTrgN4m9anTe9Mdm2ViyiAuV9TV`,
     ramos:
-      'https://api.studio.thegraph.com/query/76011/temple-ramos/version/latest',
+      'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-ramos/api',
     templeV2:
       'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-v2-mainnet/api',
     templeV2Balances:
       'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-v2-balances/api',
-    // Original Balancer Subgraph
-    // balancerV2: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-v2-beta',
   },
   featureFlags: {
     enableAscend: false,

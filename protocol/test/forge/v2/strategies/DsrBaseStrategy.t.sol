@@ -49,7 +49,7 @@ contract DsrBaseStrategyTestBase is TempleTest {
         fork("mainnet", 16675385);
 
         dUSD = new TempleDebtToken("Temple Debt", "dUSD", rescuer, executor, DEFAULT_BASE_INTEREST);
-        tpiOracle = new TreasuryPriceIndexOracle(rescuer, executor, 0.97e18, 0.1e18, 0);
+        tpiOracle = new TreasuryPriceIndexOracle(rescuer, executor, 0.97e18, 0.1e18, 0, 1e16);
         trv = new TreasuryReservesVault(rescuer, executor, address(tpiOracle));
         strategy = new DsrBaseStrategy(rescuer, executor, "DsrBaseStrategy", address(trv), address(dai), address(daiJoin), address(pot));
 

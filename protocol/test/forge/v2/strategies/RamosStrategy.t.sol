@@ -71,7 +71,7 @@ contract RamosStrategyTestBase is TempleTest {
 
         dUSD = new TempleDebtToken("Temple Debt USD", "dUSD", rescuer, executor, DEFAULT_BASE_INTEREST);
         dTEMPLE = new TempleDebtToken("Temple Debt TEMPLE", "dTEMPLE", rescuer, executor, DEFAULT_BASE_INTEREST);
-        tpiOracle = new TreasuryPriceIndexOracle(rescuer, executor, 0.97e18, 0.1e18, 0);
+        tpiOracle = new TreasuryPriceIndexOracle(rescuer, executor, 0.97e18, 0.1e18, 0, 1e16);
         trv = new TreasuryReservesVault(rescuer, executor, address(tpiOracle));
         templeBaseStrategy = new TempleTokenBaseStrategy(rescuer, executor, "TempleTokenBaseStrategy", address(trv), address(temple));
 

@@ -1,6 +1,9 @@
 import { ADDRESS_ZERO } from 'utils/bigNumber';
 import { Environment } from './types';
 
+const BALANCER_SUBGRAPH_API_KEY = import.meta.env
+  .VITE_BALANCER_SUBGRAPH_API_KEY;
+
 const env: Environment = {
   alchemyId: 'AorwfDdHDsEjIX4HPwS70zkVjWqjv5vZ',
   rpcUrl: 'https://rpc.ankr.com/eth',
@@ -35,6 +38,7 @@ const env: Environment = {
     vaultEarlyExit: '',
     ramos: '0x82ce000a51E8474378f7b555bcC4de5992052452',
     ramosPoolHelper: '0xbfC24c9d7D57C413618CE11cea1e313a2E8D9e1d',
+    templeDaiBalancerPool: '',
     balancerHelpers: '0xdAE7e32ADc5d490a43cCba1f0c736033F2b4eFca',
     strategies: {
       dsrBaseStrategy: '0x472C7cDb6E730ff499E118dE6260c6b44c61d7bf',
@@ -48,25 +52,19 @@ const env: Environment = {
     templeCircuitBreaker: '0x8f783c4A3d90712A794d5660b632AC67611852aF',
   },
   subgraph: {
-    // TODO: These need updated to the templedao organization subgraphs once they are deployed
     templeCore:
       'https://api.studio.thegraph.com/query/76011/temple-core/version/latest',
     protocolMetrics:
       'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-metrics/api',
     protocolMetricsArbitrum:
       'https://api.studio.thegraph.com/query/76011/temple-metrics-arbitrum/version/latest',
-    // TODO: This is not used anymore and should be removed
-    balancerV2:
-      'https://api.thegraph.com/subgraphs/name/templedao/templedao-balancer-v2',
-    // TODO: Will be deprecated
+    balancerV2: `https://gateway.thegraph.com/api/${BALANCER_SUBGRAPH_API_KEY}/subgraphs/id/C4ayEZP2yTXRAB8vSaTrgN4m9anTe9Mdm2ViyiAuV9TV`,
     ramos:
-      'https://api.studio.thegraph.com/query/76011/temple-ramos/version/latest',
+      'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-ramos/api',
     templeV2:
       'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-v2-mainnet/api',
     templeV2Balances:
       'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-v2-balances/api',
-    // Original Balancer Subgraph
-    // balancerV2: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-goerli-v2',
   },
   gas: {
     swapFraxForTemple: 300000,

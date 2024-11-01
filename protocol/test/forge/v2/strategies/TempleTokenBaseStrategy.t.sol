@@ -31,7 +31,7 @@ contract TempleTokenBaseStrategyTestBase is TempleTest {
 
         // 0% interest for dTEMPLE
         dTEMPLE = new TempleDebtToken("Temple Debt TEMPLE", "dTEMPLE", rescuer, executor, 0);
-        tpiOracle = new TreasuryPriceIndexOracle(rescuer, executor, 0.97e18, 0.1e18, 0);
+        tpiOracle = new TreasuryPriceIndexOracle(rescuer, executor, 0.97e18, 0.1e18, 0, 1e16);
         trv = new TreasuryReservesVault(rescuer, executor, address(tpiOracle));
         strategy = new TempleTokenBaseStrategy(rescuer, executor, "TempleTokenBaseStrategy", address(trv), address(temple));
 
