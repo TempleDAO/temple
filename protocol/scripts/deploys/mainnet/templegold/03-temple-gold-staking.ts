@@ -1,12 +1,12 @@
 import '@nomiclabs/hardhat-ethers';
 import { ethers } from 'hardhat';
-import { TempleGoldAdmin__factory } from '../../../../typechain';
+import { TempleGoldStaking__factory } from '../../../../typechain';
 import {
   deployAndMine,
   ensureExpectedEnvvars,
 } from '../../helpers';
-import { getDeployedTempleGoldContracts } from '../contract-addresses';
-import { getDeployedContracts } from '../../mainnet/v2/contract-addresses';
+import { getDeployedTempleGoldContracts } from './contract-addresses';
+import { getDeployedContracts } from '../v2/contract-addresses';
 
 async function main() {
   ensureExpectedEnvvars();
@@ -14,13 +14,15 @@ async function main() {
   const TEMPLEGOLD_ADDRESSES = getDeployedTempleGoldContracts();
   const CORE_ADDRESSES = getDeployedContracts(); 
 
-  const factory = new TempleGoldAdmin__factory(owner);
+
+  const factory = new TempleGoldStaking__factory(owner);
   await deployAndMine(
-    'TEMPLE_GOLD_ADMIN',
+    'TEMPLE_GOLD_STAKING',
     factory,
     factory.deploy,
     CORE_ADDRESSES.CORE.RESCUER_MSIG,
     CORE_ADDRESSES.CORE.EXECUTOR_MSIG,
+    CORE_ADDRESSES.CORE.TEMPLE_TOKEN,
     TEMPLEGOLD_ADDRESSES.TEMPLE_GOLD.TEMPLE_GOLD
   );
 }

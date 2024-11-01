@@ -3,7 +3,7 @@ import {
     ensureExpectedEnvvars,
     mine,
 } from '../../helpers';
-import { connectToContracts, getDeployedTempleGoldContracts } from '../contract-addresses';
+import { connectToContracts, getDeployedTempleGoldContracts } from './contract-addresses';
 
 async function main() {
     ensureExpectedEnvvars();

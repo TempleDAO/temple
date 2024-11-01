@@ -9,7 +9,7 @@ import {
   toAtto,
 } from '../../helpers';
 import { getDeployedContracts } from '../../mainnet/v2/contract-addresses';
-import { getDeployedTempleGoldContracts } from '../../arbitrumOne/contract-addresses';
+import { getDeployedTempleGoldContracts } from '../../mainnet/templegold/contract-addresses';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
 async function main() {

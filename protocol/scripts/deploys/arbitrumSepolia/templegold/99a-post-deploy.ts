@@ -3,7 +3,7 @@ import {
     ensureExpectedEnvvars,
     mine,
 } from '../../helpers';
-import { connectToContracts, ContractInstances, getDeployedTempleGoldContracts, ContractAddresses } from '../../arbitrumOne/contract-addresses';
+import { connectToContracts, ContractInstances, getDeployedTempleGoldContracts, ContractAddresses } from '../../mainnet/templegold/contract-addresses';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
 async function main() {

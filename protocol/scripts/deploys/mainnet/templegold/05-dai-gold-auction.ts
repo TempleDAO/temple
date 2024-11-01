@@ -1,33 +1,30 @@
 import '@nomiclabs/hardhat-ethers';
 import { ethers } from 'hardhat';
-import { SpiceAuctionFactory__factory } from '../../../../typechain';
+import { DaiGoldAuction__factory } from '../../../../typechain';
 import {
   deployAndMine,
   ensureExpectedEnvvars,
 } from '../../helpers';
-import { getDeployedTempleGoldContracts } from '../contract-addresses';
-import { getDeployedContracts } from '../../mainnet/v2/contract-addresses';
+import { getDeployedTempleGoldContracts } from './contract-addresses';
+import { getDeployedContracts } from '../v2/contract-addresses';
 
 async function main() {
   ensureExpectedEnvvars();
   const [owner] = await ethers.getSigners();
   const TEMPLEGOLD_ADDRESSES = getDeployedTempleGoldContracts();
   const CORE_ADDRESSES = getDeployedContracts(); 
-  const ARBITRUM_ONE_CHAIN_ID = 42161;
-  const ARBITRUM_ONE_LZ_EID = 30110;
 
-  const factory = new SpiceAuctionFactory__factory(owner);
+  const factory = new DaiGoldAuction__factory(owner);
   await deployAndMine(
-    'SPICE_AUCTION_FACTORY',
+    'DAI_GOLD_AUCTION',
     factory,
     factory.deploy,
+    TEMPLEGOLD_ADDRESSES.TEMPLE_GOLD.TEMPLE_GOLD,
+    CORE_ADDRESSES.EXTERNAL.MAKER_DAO.DAI_TOKEN,
+    CORE_ADDRESSES.CORE.EXECUTOR_MSIG, // treasury
     CORE_ADDRESSES.CORE.RESCUER_MSIG,
     CORE_ADDRESSES.CORE.EXECUTOR_MSIG,
-    CORE_ADDRESSES.CORE.EXECUTOR_MSIG, // dao executor, placeholder
-    TEMPLEGOLD_ADDRESSES.TEMPLE_GOLD.SPICE_AUCTION_OPERATOR,
-    TEMPLEGOLD_ADDRESSES.TEMPLE_GOLD.TEMPLE_GOLD,
-    ARBITRUM_ONE_LZ_EID,
-    ARBITRUM_ONE_CHAIN_ID
+    TEMPLEGOLD_ADDRESSES.TEMPLE_GOLD.AUCTION_AUTOMATION_EOA
   );
 }
 

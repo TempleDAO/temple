@@ -9,7 +9,7 @@ import {
     DaiGoldAuction__factory, DaiGoldAuction,
     TempleTeleporter, TempleTeleporter__factory,
     TempleERC20Token, TempleERC20Token__factory
-} from '../../../typechain';
+} from '../../../../typechain';
 import { Signer } from "ethers";
 
 export interface ContractAddresses {
@@ -61,10 +61,37 @@ const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
         },
         EXTERNAL: {
             LAYER_ZERO: {
-                ENDPOINT: '0x1a44076050125825900e736c501f859c50fE728c',
+                ENDPOINT: "0x1a44076050125825900e736c501f859c50fE728c",
             },
             MAKER_DAO: {
-                DAI_TOKEN: '',
+                DAI_TOKEN: "",
+            }
+        },
+    },
+    mainnet: {
+        TEMPLE_GOLD: {
+            AUCTION_AUTOMATION_EOA: "string",
+            STAKING_AUTOMATION_EOA: "string",
+            SPICE_AUCTION_OPERATOR: "string",
+            TEMPLE_GOLD: "string",
+            TEMPLE_GOLD_ADMIN: "string",
+            TEMPLE_GOLD_STAKING: "string",
+            TEMPLE_TELEPORTER: "string",
+            SPICE_AUCTION: "string",
+            SPICE_AUCTION_FACTORY: "string",
+            DAI_GOLD_AUCTION: "string",
+            EXECUTOR_MSIG: "string",
+            RESCUER_MSIG: "string",
+        },
+        CORE: {
+            TEMPLE_TOKEN: "string",
+        },
+        EXTERNAL: {
+            LAYER_ZERO: {
+                ENDPOINT: "0x1a44076050125825900e736c501f859c50fE728c",
+            },
+            MAKER_DAO: {
+                DAI_TOKEN: "",
             }
         },
     },

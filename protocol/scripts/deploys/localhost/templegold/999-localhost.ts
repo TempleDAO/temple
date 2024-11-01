@@ -3,7 +3,7 @@ import {
     ensureExpectedEnvvars,
     mine,
 } from '../../helpers';
-import { connectToContracts, getDeployedTempleGoldContracts } from '../../arbitrumOne/contract-addresses';
+import { connectToContracts, getDeployedTempleGoldContracts } from '../../mainnet/templegold/contract-addresses';
 import { TempleGold__factory, TempleGoldStaking__factory, DaiGoldAuction__factory } from '../../../../typechain';
 
 

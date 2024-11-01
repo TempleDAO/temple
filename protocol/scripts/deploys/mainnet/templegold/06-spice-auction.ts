@@ -5,16 +5,16 @@ import {
   deployAndMine,
   ensureExpectedEnvvars,
 } from '../../helpers';
-import { getDeployedTempleGoldContracts } from '../contract-addresses';
-import { getDeployedContracts } from '../../mainnet/v2/contract-addresses';
+import { getDeployedTempleGoldContracts } from './contract-addresses';
+import { getDeployedContracts } from '../v2/contract-addresses';
 
 async function main() {
   ensureExpectedEnvvars();
   const [owner] = await ethers.getSigners();
   const TEMPLEGOLD_ADDRESSES = getDeployedTempleGoldContracts();
   const CORE_ADDRESSES = getDeployedContracts(); 
-  const ARBITRUM_ONE_CHAIN_ID = 42161;
-  const ARBITRUM_ONE_LZ_EID = 30110;
+  const MAINNET_CHAIN_ID = 1;
+  const MAINNET_LZ_EID = 30101;
 
   const factory = new SpiceAuction__factory(owner);
   await deployAndMine(
@@ -25,9 +25,9 @@ async function main() {
     '', // spice token
     CORE_ADDRESSES.CORE.EXECUTOR_MSIG, // dao executor placeholder
     TEMPLEGOLD_ADDRESSES.TEMPLE_GOLD.SPICE_AUCTION_OPERATOR, // operator
-    ARBITRUM_ONE_LZ_EID, // layer zero EID arbitrum one
-    ARBITRUM_ONE_CHAIN_ID, // mint chain
-    'name'
+    MAINNET_LZ_EID, // layer zero EID mainnet
+    MAINNET_CHAIN_ID, // mint source chain
+    'spice_auction_name'
   );
 }
 
