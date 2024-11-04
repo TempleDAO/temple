@@ -919,6 +919,10 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         IAuctionBase.EpochInfo memory _info = spice.getEpochInfo(currentEpoch);
         vm.warp(_info.endTime);
 
+        vm.deal(alice, 1 ether);
+        vm.expectRevert(abi.encodeWithSelector(ISpiceAuction.EtherNotNeeded.selector));
+        spice.burnAndNotify{value: 1 ether}(currentEpoch, false);
+
         uint256 circulatingSupply = templeGold.circulatingSupply();
         vm.expectEmit(address(spice));
         emit RedeemedTempleGoldBurned(currentEpoch, bidAmount);

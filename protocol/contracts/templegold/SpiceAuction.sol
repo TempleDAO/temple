@@ -378,6 +378,8 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
         EpochInfo storage epochInfo = epochs[epochId];
         if (epochInfo.startTime == 0) { revert InvalidEpoch(); }
         if (!epochInfo.hasEnded()) { revert AuctionActive(); }
+        // no msg.value eth donation when chain is source chain
+        if (msg.value > 0 && block.chainid == _mintChainId) { revert EtherNotNeeded();}
 
         SpiceAuctionConfig storage _config = auctionConfigs[epochId];
         (address bidToken,) = _getBidAndAuctionTokens(_config);

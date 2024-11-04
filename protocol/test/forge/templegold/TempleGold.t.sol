@@ -372,8 +372,6 @@ contract TempleGoldTest is TempleGoldTestBase {
 
         TempleGold _templeGold = new TempleGold(_getTempleGoldInitArgs());
         vm.startPrank(executor);
-        vm.expectRevert(abi.encodeWithSelector(ITempleGold.MissingParameter.selector));
-        _templeGold.mint();
         ITempleGold.VestingFactor memory _factor;
         _factor.value = 35;
         _factor.weekMultiplier = 1 weeks;

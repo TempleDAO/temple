@@ -17,6 +17,7 @@ interface ISpiceAuction is IAuctionBase {
     error NoConfig();
     error RemoveAuctionConfig();
     error WithdrawFailed(uint256 amount);
+    error EtherNotNeeded();
 
     struct SpiceAuctionConfig {
         /// @notice Duration of auction

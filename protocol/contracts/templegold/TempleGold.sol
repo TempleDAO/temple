@@ -145,7 +145,7 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
     function mint() public override onlySourceChain {
         VestingFactor memory vestingFactorCache = vestingFactor;
         DistributionParams storage distributionParamsCache = distributionParams;
-        if (vestingFactorCache.value == 0) { revert ITempleGold.MissingParameter(); }
+        if (vestingFactorCache.value == 0) { return; }
 
         uint256 mintAmount = _getMintAmount(vestingFactorCache);
         /// @dev no op silently

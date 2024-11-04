@@ -115,6 +115,7 @@ contract DaiGoldAuction is IDaiGoldAuction, AuctionBase, TempleElevatedAccess {
         if (currentEpochCache > 0 && (prevAuctionInfo.endTime + config.auctionsTimeDiff > block.timestamp)) {
             revert CannotStartAuction();
         }
+        if (config.auctionMinimumDistributedGold == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
         _distributeGold();
         uint256 totalGoldAmount = nextAuctionGoldAmount;
         nextAuctionGoldAmount = 0;
