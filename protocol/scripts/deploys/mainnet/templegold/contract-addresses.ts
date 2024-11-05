@@ -100,7 +100,7 @@ const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
             AUCTION_AUTOMATION_EOA: "string",
             STAKING_AUTOMATION_EOA: "string",
             SPICE_AUCTION_OPERATOR: "string",
-            TEMPLE_GOLD: "0x0090F9655a0B0A32cEE0Da5ae45E93EAB4C6d149",
+            TEMPLE_GOLD: "0x192aA9BfDcA5540406E211950C226C8E0cd5047F",
             TEMPLE_GOLD_ADMIN: "string",
             TEMPLE_GOLD_STAKING: "string",
             TEMPLE_TELEPORTER: "0xcbc7cf85dd0AB91Aa2671400E86ebf3AaC6dc65",
