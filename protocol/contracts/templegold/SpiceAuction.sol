@@ -86,7 +86,7 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
         _mintChainId = mintChainId_;
         name = _name;
         _deployTimestamp = block.timestamp;
-        lzReceiveExecutorGas = 85_412;
+        lzReceiveExecutorGas = 85_889;
     }
 
     /**
