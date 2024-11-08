@@ -303,8 +303,8 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
      * @return Earned rewards of account
      */
     function earned(address account) external override view returns (uint256) {
-        uint256 rewardPerToken = _rewardPerToken();
-        return _earned(account, rewardPerToken);
+        uint256 rewardPerToken_ = _rewardPerToken();
+        return _earned(account, rewardPerToken_);
     }
 
     /**
@@ -321,6 +321,15 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
      */
     function rewardPeriodFinish() external view returns (uint40) {
         return rewardData.periodFinish;
+    }
+
+    /**
+     * @notice Get account unstake time
+     * @param account Account
+     * @return Unstake time
+     */
+    function getAccountUnstakeTime(address account) external override view returns (uint256) {
+        return stakeTimes[account] == 0 ? 0 : stakeTimes[account] + unstakeCooldown;
     }
 
     /**
@@ -410,11 +419,11 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     }
 
     function _earned(
-        address _account,
-        uint256 _rewardPerToken
+        address account_,
+        uint256 rewardPerToken_
     ) internal view returns (uint256) {
-        return _balances[_account] * (_rewardPerToken - userRewardPerTokenPaid[_account]) / 1e18 
-            + claimableRewards[_account];
+        return _balances[account_] * (rewardPerToken_ - userRewardPerTokenPaid[account_]) / 1e18 
+            + claimableRewards[account_];
     }
 
     function _applyStake(address _for, uint256 _amount) internal updateReward(_for) {

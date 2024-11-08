@@ -200,6 +200,13 @@ interface ITempleGoldStaking {
      */
     function numCheckpoints(address account) external view returns (uint256);
 
+     /**
+     * @notice Get account unstake time
+     * @param account Account
+     * @return Unstake time
+     */
+    function getAccountUnstakeTime(address account) external view returns (uint256);
+
     /**
      * @notice Set reward duration
      * @param _duration Reward duration

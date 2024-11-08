@@ -223,6 +223,27 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         staking.withdraw(1, false);
     }
 
+    function test_get_account_unstake_time() public {
+        _setRewardDuration(1 weeks);
+        _setVestingFactor();
+        _setUnstakeCooldown();
+
+        vm.startPrank(alice);
+        deal(address(templeToken), alice, 2 ether, true);
+        _approve(address(templeToken), address(staking), type(uint).max);
+        uint256 cooldown = staking.unstakeCooldown();
+        staking.stake(1 ether);
+        uint256 unstakeTime = block.timestamp + cooldown;
+        assertEq(unstakeTime, staking.getAccountUnstakeTime(alice));
+
+        vm.startPrank(executor);
+        staking.setUnstakeCooldown(3 days);
+        unstakeTime = block.timestamp + 3 days;
+        vm.startPrank(alice);
+        staking.stake(1 ether);
+        assertEq(unstakeTime, staking.getAccountUnstakeTime(alice));
+    }
+
     function test_revert_distribute_when_paused() public {
         _setVestingFactor();
         _setUnstakeCooldown();
@@ -381,12 +402,10 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         staking.setRewardDuration(duration);
     }
 
-
     function test_migrateWithdraw_tgldStaking() public {
         vm.startPrank(executor);
         staking.setMigrator(alice);
         uint256 _rewardDuration = 16 weeks;
-        uint32 _vestingPeriod = uint32(_rewardDuration);
         _setVestingFactor(templeGold);
         _setRewardDuration(_rewardDuration); 
         _setUnstakeCooldown();
@@ -423,7 +442,6 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
 
     function test_migrateWithdraw_end_to_end() public {
         uint256 _rewardDuration = 16 weeks;
-        uint32 _vestingPeriod = uint32(_rewardDuration);
         _setVestingFactor(templeGold);
         _setRewardDuration(_rewardDuration);
         _setUnstakeCooldown();
@@ -826,8 +844,6 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
             vm.expectEmit(address(staking));
             emit Withdrawn(alice, alice, 40 ether);
             staking.withdraw(40 ether, false);
-            uint256 remainingRewards = goldRewardAmount/2;
-            uint256 bobRewardsNow = goldRewardAmount*15/100;
             assertEq(staking.claimableRewards(alice), goldRewardAmount*35/100);
             skip(3 days);
             assertEq(staking.earned(alice), _getEarned(alice));
@@ -917,7 +933,6 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
             staking.stake(1 ether);
         }
         
-        uint256 rewardAmount;
         uint256 rewardPerToken;
         uint256 lastUpdateTime;
         {
@@ -1090,7 +1105,6 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
         staking.stake(0);
         uint256 blockNumber = block.number;
-        uint256 ts = block.timestamp;
         vm.expectEmit(address(staking));
         emit Staked(alice, stakeAmount);
         staking.stake(stakeAmount);
@@ -1157,6 +1171,8 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         uint256 stakeAmount = 100 ether;
         staking.stake(stakeAmount);
         assertEq(staking.stakeTimes(alice), block.timestamp);
+        uint256 unstakeTime = staking.stakeTimes(alice) + unstakeCooldown;
+        assertEq(staking.getAccountUnstakeTime(alice), unstakeTime);
         skip(1 days);
         _distributeRewards(alice);
         uint256 tgldRewardAmount = templeGold.balanceOf(address(staking));
@@ -1164,7 +1180,6 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         assertEq(staking.earned(alice), 0);
 
         skip(1 days);
-        uint256 rewardPerToken = staking.rewardPerToken();
         uint256 aliceEarned = _getEarned(alice);
         assertEq(staking.earned(alice), aliceEarned);
         assertEq(aliceEarned, tgldRewardsDistributed/7);
@@ -1205,12 +1220,10 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
             assertEq(staking.earned(alice), 0);
             rewardDataOne = staking.getRewardData();
         }
-        uint256 userRewardPerTokenPaid;
         uint256 rewardPerToken;
         uint256 earned;
         uint256 aliceBalanceBefore; 
         uint256 aliceBalanceAfter;
-        uint256 vestingRate;
         {
             skip(6 days);
             earned = _getEarned(alice);
