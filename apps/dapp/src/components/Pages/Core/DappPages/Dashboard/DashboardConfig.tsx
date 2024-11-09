@@ -38,7 +38,7 @@ export const Dashboards: DashboardData[] = [
     title: 'TRV',
     path: 'treasuryreservesvault',
     description:
-      'Treasury Reserves Vault (TRV) coordinates and manages the flow of capital for current Treasury allocations. When funding and management parameters are approved for a Strategy, the TRV will transfer funds e.g. DAI and issue corresponding debt to the Strategy borrower. The current equity of the Strategy is discounted by the loan principal and accrued interest benchmarked to the prevailing rate of the current Base Strategy for the borrowed token.',
+      'Treasury Reserves Vault (TRV) is the central clearinghouse for the Temple Treasury and critical coordinator for current Treasury Strategy allocations. When funding and management parameters are approved for a Strategy, the TRV will transfer funds and issue corresponding debt to the Strategy borrower. The current equity of the Strategy is discounted by the loan principal and accrued interest benchmarked to the prevailing rate of the current Base Strategy for the borrowed token.',
     contractLink: `${env.etherscan}/address/${env.contracts.treasuryReservesVault}`,
   },
   {
@@ -47,7 +47,7 @@ export const Dashboards: DashboardData[] = [
     title: 'RAMOS',
     path: 'ramos',
     description:
-      'Ramos is the automated market operations (AMO) manager that supplies liquidity to the TEMPLE/DAI pool on the Balancer Exchange platform. A bot manages the contract to support TEMPLE trading, reduce price volatility, and earn farming rewards.',
+      'Ramos is the automated market operations (AMO) manager that supplies liquidity to the TEMPLE/DAI pool on the Balancer DEX. A bot manages the contract to support TEMPLE trading, reduce price volatility, and earn farming rewards.',
     contractLink: `${env.etherscan}/address/${env.contracts.strategies.ramosStrategy}`,
   },
   {
@@ -56,7 +56,7 @@ export const Dashboards: DashboardData[] = [
     title: 'TLC',
     path: 'tlc',
     description:
-      'Temple Loving Care (also known as Temple Line of Credit) offers DAI lending for users who supply TEMPLE token as collateral. The value of the collateral is not determined by the current $TEMPLE spot price on the Balancer DEX but by the current Treasury Price Index (TPI). Users may borrow up to 75% loan-to-value (LTV) with the liquidation LTV set to 80%. There are no origination fees and users can withdraw their collateral at any time by repaying the DAI loan. TLC interest rate is a variable APR that is dependent on Debt Ceiling Utilisation. Any accrued interest will increase LTV over time. Borrowers can expect the APR to be set no lower than the prevailing APR for the Treasury DAI Base Strategy. <a target="_blank" href="https://templedao.medium.com/he-who-controls-the-spice-controls-the-universe-bae5fb92bd43">Click here</a> to learn more about Temple Loving Care.',
+      'Temple Loving Care (also known as Temple Line of Credit) offers DAI lending for users who supply TEMPLE as collateral. The TLC will use the current Treasury Price Index (TPI) Oracle to determine the collateral value of TEMPLE. Users may borrow up to 85% loan-to-value (LTV) with the TEMPLE liquidation LTV set to 90%. There are no origination fees and users can withdraw their TEMPLE at any time by repaying the DAI loan. The TLC interest rate is set to a fixed rate that will be periodically updated to 2X the yield from the current Treasury Base Strategy e.g. sDAI. <a target="_blank" href="https://templedao.medium.com/he-who-controls-the-spice-controls-the-universe-bae5fb92bd43">Click here</a> to learn more about Temple Loving Care.',
     contractLink: `${env.etherscan}/address/${env.contracts.strategies.tlcStrategy}`,
   },
   {
@@ -65,7 +65,7 @@ export const Dashboards: DashboardData[] = [
     title: 'TEMPLE BASE',
     path: 'templebase',
     description:
-      'Temple Base strategy is the source of automated market operations (AMO) TEMPLE tokens in the Treasury framework. The TRV facilitates the withdrawal of newly minted TEMPLE tokens from and the issuance of TEMPLE debt to the Temple Base strategy. These TEMPLE tokens will be borrowed by a Treasury Strategy such as Ramos to generate returns. Once these tokens are repaid to the TRV, they will be deposited to the Temple Base strategy to be burned. From the perspective of the TRV, positive returns will be realized when TEMPLE flows to the Temple Base strategy is net positive.',
+      'TEMPLE Base strategy is the funding source for TEMPLE tokens for automated market operations (AMO) in the Treasury framework. The TRV facilitates the withdrawal of newly minted TEMPLE tokens from and the issuance of TEMPLE debt to the TEMPLE Base strategy. These TEMPLE tokens will be borrowed by a Treasury Strategy such as Ramos to generate returns. Once these tokens are repaid to the TRV, they will be deposited to the TEMPLE Base strategy to be burned. Positive returns will be realized when TEMPLE flows to the TEMPLE Base strategy is net positive.',
     contractLink: `${env.etherscan}/address/${env.contracts.strategies.templeStrategy}`,
   },
   {
@@ -74,7 +74,7 @@ export const Dashboards: DashboardData[] = [
     title: 'DSR BASE',
     path: 'dsrbase',
     description:
-      'Idle capital in the Treasury Reserves Vault (TRV) that is not currently deployed to a Strategy borrower will be automatically directed to a Base Strategy to earn yield. Currently, the Base Strategy is set to the Dai Savings Rate (DSR) which makes DAI the base currency of the TRV. The current rate of return for DSR Base also serves as the benchmark interest rate for the Treasury Strategy that borrows DAI from the TRV.',
+      'Idle reserve capital in the TRV that is not currently borrowed by a Strategy Borrower will be automatically directed to a Base Strategy to earn yield. The TRV Base Strategy is currently set to the Dai Savings Rate (DSR) or sDAI. The current rate of return for the Base Strategy also serves as the performance benchmark or "risk-free" interest rate for Treasury Strategies.',
     contractLink: `${env.etherscan}/address/${env.contracts.strategies.dsrBaseStrategy}`,
   },
   {
@@ -83,7 +83,7 @@ export const Dashboards: DashboardData[] = [
     title: 'TEMPLO MAYOR',
     path: 'templomayor',
     description:
-      'Templo Mayor is an Gnosis Safe Omnibus strategy. An Omnibus Strategy utilises the same bookkeeping structure and approval process, but may entail several related holdings or sub-positions that are managed as a whole. For instance, deposits into different but similar or co-dependent vaults on the same platform or different platforms may be consolidated into one Omnibus Gnosis Safe. Seed allocations of a target risk profile may also be consolidated into an Omnibus Strategy to reduce the noise. Therefore an Omnibus Strategy may provide additional operational efficiency and allow Stakeholders to evaluate a series of related deployments as one composite position rather than as singletons.',
+      'Templo Mayor is an Gnosis Safe Omnibus Strategy that is particularly useful when full automation is not feasible. An Omnibus Strategy utilises the same bookkeeping structure and approval process as the automated Temple v2 Strategies, but may entail several related holdings or sub-positions that are managed holistically. For instance, deposits into different but similar or co-dependent vaults on the same platform or different platforms may be consolidated into one Omnibus Gnosis Safe. Partner seed allocations of a target risk profile may also be consolidated into an Omnibus Strategy to derisk any particular project. An Omnibus Strategy may provide additional operational efficiency and allow Stakeholders to evaluate a series of related deployments as one composite position rather than as singletons.',
     contractLink: `${env.etherscan}/address/${env.contracts.strategies.temploMayorGnosisStrategy}`,
   },
   {
@@ -92,7 +92,7 @@ export const Dashboards: DashboardData[] = [
     title: 'FOHMO',
     path: 'fohmo',
     description:
-      'FOHMO is a strategy that aims to maintain a maxed looped position in OHM',
+      'FOHMO is a strategy that aims to maintain a maximally looped position in OHM',
     contractLink: `${env.etherscan}/address/${env.contracts.strategies.fohmoGnosisStrategy}`,
   },
 ];
