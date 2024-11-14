@@ -12,10 +12,11 @@ async function main() {
     const TEMPLE_GOLD_ADDRESSES = getDeployedTempleGoldContracts();
     const TEMPLE_GOLD_INSTANCES = connectToContracts(owner);
     
-    await _templeGoldPostDeploy(owner, TEMPLE_GOLD_ADDRESSES, TEMPLE_GOLD_INSTANCES);
-    await _stakingPostDeploy(owner, TEMPLE_GOLD_INSTANCES);
-    await _daiGoldPostDeploy(owner, TEMPLE_GOLD_INSTANCES);
-    await _templeTeleporterPostDeploy();
+    // await _templeGoldPostDeploy(owner, TEMPLE_GOLD_ADDRESSES, TEMPLE_GOLD_INSTANCES);
+    // await _stakingPostDeploy(owner, TEMPLE_GOLD_INSTANCES);
+    // await _daiGoldPostDeploy(owner, TEMPLE_GOLD_INSTANCES);
+    // await _templeTeleporterPostDeploy();
+    // await _setSpiceAuctionConfig(owner, TEMPLE_GOLD_INSTANCES);
 }
 
 async function _templeGoldPostDeploy(
@@ -91,6 +92,23 @@ async function _templeTeleporterPostDeploy() {
     // for (const address of addresses) {
 
     // }
+}
+
+async function _setSpiceAuctionConfig(
+    owner: SignerWithAddress,
+    TEMPLE_GOLD_INSTANCES: ContractInstances
+) {
+    const config = {
+        duration: 60 * 60 * 24 * 7,
+        waitPeriod: 1, // 1 seocnd. testing reasons
+        startCooldown: 10,
+        minimumDistributedAuctionToken: 1,
+        starter: "0x0000000000000000000000000000000000000000",
+        isTempleGoldAuctionToken: true,
+        recipient: "0xC785695710292c042a2de8A0Ba16F3a054cC2eAD"
+    }
+
+    await mine(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.SPICE_AUCTION.setAuctionConfig(config));
 }
 
 // We recommend this pattern to be able to use async/await everywhere

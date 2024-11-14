@@ -12,9 +12,9 @@ async function main() {
     const TEMPLE_GOLD_INSTANCES = connectToContracts(owner);
     const teamGnosis = '';
     const distributionParams = {
-        staking: ethers.utils.parseEther("20"),
+        staking: ethers.utils.parseEther("15"),
         daiGoldAuction: ethers.utils.parseEther("70"),
-        gnosis: ethers.utils.parseEther("10")
+        gnosis: ethers.utils.parseEther("15")
     }
     const vestingFactor = {
         value: 35,

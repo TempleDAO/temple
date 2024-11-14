@@ -879,7 +879,6 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
             IERC20(templeGold).transfer(alice, 100 ether);
         }
 
-        uint256 amount = 10 ether;
         uint256 etherAmount = 5 ether;
         vm.deal(address(spice), etherAmount);
 
