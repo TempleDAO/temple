@@ -49,6 +49,7 @@ export type TlcInfo = {
   daiCircuitBreakerRemaining: BigNumber;
   templeCircuitBreakerRemaining: BigNumber;
   outstandingUserDebt: number;
+  trvAvailable: BigNumber;
 };
 
 export const MAX_LTV = 85;
@@ -161,6 +162,9 @@ export const BorrowPage = () => {
     const trvContract = new TreasuryReservesVault__factory(signer).attach(
       env.contracts.treasuryReservesVault
     );
+
+    const trvAvailable = await trvContract.totalAvailable(env.contracts.dai);
+
     const strategyAvailalableToBorrowFromTrv =
       await trvContract.availableForStrategyToBorrow(
         env.contracts.strategies.tlcStrategy,
@@ -192,6 +196,7 @@ export const BorrowPage = () => {
       borrowRate: currentBorrowInterestRate,
       liquidationLtv: fromAtto(maxLtv),
       outstandingUserDebt: fromAtto(outstandingUserDebt),
+      trvAvailable: trvAvailable,
       daiCircuitBreakerRemaining: circuitBreakers?.daiCircuitBreakerRemaining,
       templeCircuitBreakerRemaining:
         circuitBreakers?.templeCircuitBreakerRemaining,
@@ -243,6 +248,7 @@ export const BorrowPage = () => {
         templeCircuitBreakerRemaining:
           tlcInfoFromContracts?.templeCircuitBreakerRemaining || ZERO,
         outstandingUserDebt: tlcInfoFromContracts?.outstandingUserDebt || 0,
+        trvAvailable: tlcInfoFromContracts?.trvAvailable || ZERO,
       });
     } catch (e) {
       setMetricsLoading(false);
@@ -492,12 +498,12 @@ export const BorrowPage = () => {
       borrowableAmount = fromAtto(tlcInfo.daiCircuitBreakerRemaining);
     }
 
-    const trvAvailable = tlcInfo.outstandingUserDebt;
+    const trvAvailable = fromAtto(tlcInfo.trvAvailable);
     if (trvAvailable < borrowableAmount) {
       borrowableAmount = trvAvailable;
     }
 
-    return `$${Number(borrowableAmount).toLocaleString()}`;
+    return `$${Number(borrowableAmount).toFixed(2)}`;
   }, [tlcInfo]);
 
   return (
