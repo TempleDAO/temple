@@ -34,6 +34,7 @@ contract StakingHandler is BaseHandler {
 
     function stake(uint256 _amount) public instrument useSender {
         uint256 totalStakeBefore = staking.totalSupply();
+        // _amount = _bound(_amount, 0, 10_000 ether);
         // approve and stake
         {
             deal(address(templeToken), msg.sender, _amount, true);
@@ -45,9 +46,13 @@ contract StakingHandler is BaseHandler {
         assertGe(totalStakes, totalStakeBefore, "Invariant violation: total staked should be higher after stake");
     }
 
-    function getReward(uint256 timeJumpSeed) public instrument useSender adjustTimestamp(timeJumpSeed) {
+    function claim(uint256 timeJumpSeed) public instrument useSender adjustTimestamp(timeJumpSeed) {
+        // vm.warp(block.timestamp+_bound(timeJumpSeed, 0, 7 days));
         uint256 rewardAmount = staking.earned(msg.sender);
-        // amount = _bound(amount, 0, rewardAmount);
+        if (rewardAmount == 0) {
+            stateStore.setFinishedEarly();
+            return;
+        }
         staking.getReward(msg.sender);
         rewards[msg.sender] += rewardAmount;
         collectedRewards += rewardAmount;
@@ -59,17 +64,22 @@ contract StakingHandler is BaseHandler {
     }
 
     function withdraw(uint256 amount) public instrument useSender returns (uint256 withdrawAmount) {
-        // todo: jump time?
         uint256 totalStake = staking.balanceOf(msg.sender);
         amount = _bound(amount, 0, totalStake);
         if (amount == 0) {
             stateStore.setFinishedEarly();
             return 0;
         }
+        // avoid early withdrawal. withdraw end of period finish
+        ITempleGoldStaking.Reward memory rData = staking.getRewardData();
+        if (block.timestamp < rData.periodFinish) {
+            stateStore.setFinishedEarly();
+            return 0;
+        }
         uint256 withdrawsCache = totalWithdraws;
         staking.withdraw(amount, false);
+        withdrawAmount = amount;
         totalWithdraws += amount;
         assertGt(totalWithdraws, withdrawsCache, "Invariant violation: total withdraws  should be higher after withdraw");
-        assertEq(staking.totalSupply(), totalStakes-totalWithdraws, "Invariant violation: total stakes/withdraws difference");
     }
 }

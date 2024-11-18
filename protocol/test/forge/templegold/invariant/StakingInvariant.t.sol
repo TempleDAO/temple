@@ -21,9 +21,10 @@ contract StakingInvariantTest is BaseInvariantTest {
     TempleGold public templeGold;
     FakeERC20 public templeToken;
     DaiGoldAuction public daiGoldAuction;
+    IERC20 public bidToken;
 
     uint256 public arbitrumOneForkId;
-    IERC20 public bidToken;
+    uint256 public rewardAmount;
 
     function setUp() public override {
         BaseInvariantTest.setUp();
@@ -55,7 +56,7 @@ contract StakingInvariantTest is BaseInvariantTest {
         doMint(address(templeToken), executor, 1 ether);
         _approve(address(templeToken), address(staking), 1 ether);
         staking.stake(1);
-        uint256 rewardAmount = _distributeRewards();
+        rewardAmount = _distributeRewards();
         stakingHandler = new StakingHandler(
             timestampStore, stateStore,
             address(staking), address(templeToken),
@@ -64,9 +65,10 @@ contract StakingInvariantTest is BaseInvariantTest {
         );
         vm.label({ account: address(stakingHandler), newLabel: "StakingHandler" });
 
-        bytes4[] memory fnSelectors = new bytes4[](2);
+        bytes4[] memory fnSelectors = new bytes4[](3);
         fnSelectors[0] = StakingHandler.stake.selector;
-        fnSelectors[1] = StakingHandler.withdraw.selector;
+        fnSelectors[1] = StakingHandler.claim.selector;
+        fnSelectors[2] = StakingHandler.withdraw.selector;
         targetSelectors(
             address(stakingHandler),
             fnSelectors
@@ -121,11 +123,35 @@ contract StakingInvariantTest is BaseInvariantTest {
         );
     }
 
+    function invariant_claim() external {
+        ITempleGoldStaking.Reward memory rData = staking.getRewardData();
+        uint256 warpTime = rData.periodFinish > block.timestamp ? rData.periodFinish : block.timestamp;
+        vm.warp(warpTime+1);
+        staking.getReward(alice);
+        staking.getReward(executor);
+        if (staking.earned(alice) == 0) {
+            assertLt(templeGold.balanceOf(alice), rewardAmount, "Invarant Violation: Alice reward must be less than total rewards");
+            return;
+        }
+        assertEq(
+            templeGold.balanceOf(alice)+templeGold.balanceOf(executor),
+            rewardAmount,
+            "Invariant Violation: Total rewards"
+        );
+    }
+
     /**
      @dev Dump out the number of function calls made
      */
     function invariant_logCalls() external view {
         console.log("totalCalls: stakingHandler:", stakingHandler.totalCalls());
-        console.log("\tstakingcHandler.stake:", stakingHandler.calls(StakingHandler.stake.selector));
+        console.log("\tstakingHandler.stake:", stakingHandler.calls(StakingHandler.stake.selector));
+        console.log("\tstakingHandler.claim:", stakingHandler.calls(StakingHandler.claim.selector));
+        console.log("\tstakingHandler.withdraw:", stakingHandler.calls(StakingHandler.withdraw.selector));
+    }
+
+    function afterInvariant() external view {
+        // console.log("totalCalls: stakingHandler:", stakingHandler.totalCalls());
+        // console.log("\tstakingcHandler.stake:", stakingHandler.calls(StakingHandler.stake.selector));
     }
 }

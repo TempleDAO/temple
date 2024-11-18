@@ -26,10 +26,6 @@ contract StateStore {
         latestSig = bytes4(0);
         finishedEarly = false;
     }
-
-    function setCappedRebalanceDown(bool value) external {
-        cappedRebalanceDown = value;
-    }
     
     function setFinishedEarly() external {
         finishedEarly = true;

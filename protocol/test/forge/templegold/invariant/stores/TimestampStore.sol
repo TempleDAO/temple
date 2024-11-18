@@ -7,11 +7,9 @@ pragma solidity ^0.8.20;
 contract TimestampStore {
     uint256 public currentTimestamp;
 
-    constructor() {
-        currentTimestamp = block.timestamp;
-    }
+    constructor() {}
 
     function increaseCurrentTimestamp(uint256 timeJump) external {
-        currentTimestamp += timeJump;
+        currentTimestamp = block.timestamp + timeJump;
     }
 }
