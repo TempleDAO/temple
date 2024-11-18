@@ -503,7 +503,10 @@ export const BorrowPage = () => {
       borrowableAmount = trvAvailable;
     }
 
-    return `$${Number(borrowableAmount).toFixed(2)}`;
+    return `$${Number(borrowableAmount).toLocaleString('en', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
   }, [tlcInfo]);
 
   return (
@@ -744,7 +747,13 @@ export const BorrowPage = () => {
                 {showLoading
                   ? '...'
                   : tlcInfo &&
-                    `$${Number(tlcInfo.outstandingUserDebt).toLocaleString()}`}
+                    `$${Number(tlcInfo.outstandingUserDebt).toLocaleString(
+                      'en',
+                      {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      }
+                    )}`}
               </LeadMetric>
               <BrandParagraph>Outstanding User Debt</BrandParagraph>
             </MetricContainer>
