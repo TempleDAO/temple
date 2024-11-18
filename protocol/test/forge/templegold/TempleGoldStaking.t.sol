@@ -10,7 +10,7 @@ import { TempleGoldStaking } from "contracts/templegold/TempleGoldStaking.sol";
 import { ITempleGold } from "contracts/interfaces/templegold/ITempleGold.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import { DaiGoldAuction } from "contracts/templegold/DaiGoldAuction.sol";
+import { StableGoldAuction } from "contracts/templegold/StableGoldAuction.sol";
 import { ITempleGoldStaking } from "contracts/interfaces/templegold/ITempleGoldStaking.sol";
 import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
 import { TempleGoldStakingMock } from "contracts/fakes/templegold/TempleGoldStakingMock.sol";
@@ -35,7 +35,7 @@ contract TempleGoldStakingTestBase is TempleGoldCommon {
 
     IERC20 public bidToken;
     IERC20 public bidToken2;
-    DaiGoldAuction public daiGoldAuction;
+    StableGoldAuction public daiGoldAuction;
     FakeERC20 public templeToken;
     TempleGoldStaking public staking;
     TempleGoldStakingMock public mockStaking;
@@ -54,7 +54,7 @@ contract TempleGoldStakingTestBase is TempleGoldCommon {
         templeGold.authorizeContract(address(staking), true);
         bidToken = IERC20(daiToken);
         bidToken2 = IERC20(usdcToken);
-        daiGoldAuction = new DaiGoldAuction(
+        daiGoldAuction = new StableGoldAuction(
             address(templeGold),
             address(bidToken),
             treasury,
@@ -75,9 +75,9 @@ contract TempleGoldStakingTestBase is TempleGoldCommon {
     }
 
     function _configureTempleGold() private {
-        templeGold.setDaiGoldAuction(address(daiGoldAuction));
+        templeGold.setStableGoldAuction(address(daiGoldAuction));
         ITempleGold.DistributionParams memory params;
-        params.daiGoldAuction = 60 ether;
+        params.auction = 60 ether;
         params.gnosis = 10 ether;
         params.staking = 30 ether;
         templeGold.setDistributionParams(params);

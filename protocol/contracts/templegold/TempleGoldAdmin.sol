@@ -39,10 +39,10 @@ contract TempleGoldAdmin is ITempleGoldAdmin, TempleElevatedAccess {
 
     /**
      * @notice Set auctions Dai Gold contract address
-     * @param _daiGoldAuction  contract address
+     * @param _auction  contract address
      */
-    function setDaiGoldAuction(address _daiGoldAuction) external override onlyElevatedAccess {
-        templeGold.setDaiGoldAuction(_daiGoldAuction);
+    function setStableGoldAuction(address _auction) external override onlyElevatedAccess {
+        templeGold.setStableGoldAuction(_auction);
     }
 
     /**

@@ -28,9 +28,9 @@ interface ITempleGoldAdmin {
 
     /**
      * @notice Set auctions Dai Gold contract address
-     * @param _daiGoldAuction  contract address
+     * @param _auction  contract address
      */
-    function setDaiGoldAuction(address _daiGoldAuction) external;
+    function setStableGoldAuction(address _auction) external;
 
     /**
      * @notice Set team gnosis address

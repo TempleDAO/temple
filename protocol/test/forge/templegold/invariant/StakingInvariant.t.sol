@@ -8,7 +8,7 @@ import { FakeERC20 } from "contracts/fakes/FakeERC20.sol";
 import { StakingHandler } from "./handlers/StakingHandler.sol";
 import { TempleGoldStaking } from "contracts/templegold/TempleGoldStaking.sol";
 import { TempleGold } from "contracts/templegold/TempleGold.sol";
-import { DaiGoldAuction } from "contracts/templegold/DaiGoldAuction.sol";
+import { StableGoldAuction } from "contracts/templegold/StableGoldAuction.sol";
 import { ITempleGold } from "contracts/interfaces/templegold/ITempleGold.sol";
 import { ITempleGoldStaking } from "contracts/interfaces/templegold/ITempleGoldStaking.sol";
 import { console } from "forge-std/console.sol";
@@ -20,7 +20,7 @@ contract StakingInvariantTest is BaseInvariantTest {
     TempleGoldStaking public staking;
     TempleGold public templeGold;
     FakeERC20 public templeToken;
-    DaiGoldAuction public daiGoldAuction;
+    StableGoldAuction public auction;
     IERC20 public bidToken;
 
     uint256 public arbitrumOneForkId;
@@ -34,7 +34,7 @@ contract StakingInvariantTest is BaseInvariantTest {
         ITempleGold.InitArgs memory initArgs = _getTempleGoldInitArgs();
         templeGold = new TempleGold(initArgs);
         bidToken = IERC20(daiToken);
-        daiGoldAuction = new DaiGoldAuction(
+        auction = new StableGoldAuction(
             address(templeGold),
             address(bidToken),
             treasury,
@@ -89,9 +89,9 @@ contract StakingInvariantTest is BaseInvariantTest {
     }
 
     function _configureTempleGold() private {
-        templeGold.setDaiGoldAuction(address(daiGoldAuction));
+        templeGold.setStableGoldAuction(address(auction));
         ITempleGold.DistributionParams memory params;
-        params.daiGoldAuction = 60 ether;
+        params.auction = 60 ether;
         params.gnosis = 10 ether;
         params.staking = 30 ether;
         templeGold.setDistributionParams(params);
@@ -102,7 +102,7 @@ contract StakingInvariantTest is BaseInvariantTest {
         templeGold.setStaking(address(staking));
         templeGold.setTeamGnosis(teamGnosis);
         // whitelist
-        templeGold.authorizeContract(address(daiGoldAuction), true);
+        templeGold.authorizeContract(address(auction), true);
         templeGold.authorizeContract(address(staking), true);
         templeGold.authorizeContract(teamGnosis, true);
     }

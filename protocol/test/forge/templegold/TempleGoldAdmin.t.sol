@@ -4,7 +4,7 @@ pragma solidity 0.8.20;
 
 
 import { TempleGoldCommon } from "./TempleGoldCommon.t.sol";
-import { DaiGoldAuction } from "contracts/templegold/DaiGoldAuction.sol";
+import { StableGoldAuction } from "contracts/templegold/StableGoldAuction.sol";
 import { TempleGold } from "contracts/templegold/TempleGold.sol";
 import { TempleGoldStaking } from "contracts/templegold/TempleGoldStaking.sol";
 import { FakeERC20 } from "contracts/fakes/FakeERC20.sol";
@@ -17,12 +17,12 @@ import { IOAppOptionsType3 } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/
 contract TempleGoldAdminTestBase is TempleGoldCommon {
     event ContractAuthorizationSet(address indexed _contract, bool _whitelisted);
     event VestingFactorSet(uint128 value, uint128 weekMultiplier);
-    event DistributionParamsSet(uint256 staking, uint256 daiGoldAuction, uint256 gnosis);
+    event DistributionParamsSet(uint256 staking, uint256 auction, uint256 gnosis);
     event StakingSet(address staking);
-    event DaiGoldAuctionSet(address daiGoldAuction);
+    event StableGoldAuctionSet(address auction);
     event TeamGnosisSet(address gnosis);
 
-    DaiGoldAuction public daiGoldAuction;
+    StableGoldAuction public auction;
     TempleGoldStaking public staking;
     TempleGold public templeGold;
     TempleGold public templeGoldMainnet;
@@ -43,7 +43,7 @@ contract TempleGoldAdminTestBase is TempleGoldCommon {
         templeGold = new TempleGold(initArgs);
         templeToken = new FakeERC20("Temple Token", "TEMPLE", executor, 1000 ether);
         staking = new TempleGoldStaking(rescuer, executor, address(templeToken), address(templeGold));
-        daiGoldAuction = new DaiGoldAuction(
+        auction = new StableGoldAuction(
             address(templeGold),
             daiToken,
             treasury,
@@ -66,9 +66,9 @@ contract TempleGoldAdminTestBase is TempleGoldCommon {
     }
 
     function _configureTempleGold() private {
-        templeGold.setDaiGoldAuction(address(daiGoldAuction)); 
+        templeGold.setStableGoldAuction(address(auction)); 
         ITempleGold.DistributionParams memory params;
-        params.daiGoldAuction = 60 ether;
+        params.auction = 60 ether;
         params.gnosis = 10 ether;
         params.staking = 30 ether;
         templeGold.setDistributionParams(params);
@@ -79,7 +79,7 @@ contract TempleGoldAdminTestBase is TempleGoldCommon {
         templeGold.setStaking(address(staking));
         templeGold.setTeamGnosis(address(teamGnosis));
         // whitelist
-        templeGold.authorizeContract(address(daiGoldAuction), true);
+        templeGold.authorizeContract(address(auction), true);
         templeGold.authorizeContract(address(staking), true);
         templeGold.authorizeContract(teamGnosis, true);
     }
@@ -92,10 +92,10 @@ contract TempleGoldAdminAccessTest is TempleGoldAdminTestBase {
         templeGoldAdmin.setStaking(alice);
     }
 
-    function test_access_setdaiGoldAuction_tgldAdmin() public {
+    function test_access_setauction_tgldAdmin() public {
         vm.startPrank(unauthorizedUser);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
-        templeGoldAdmin.setDaiGoldAuction(alice);
+        templeGoldAdmin.setStableGoldAuction(alice);
     }
 
     function test_access_setTeamgnosis_tgldAdmin() public {
@@ -167,17 +167,17 @@ contract TempleGoldAdminTest is TempleGoldAdminTestBase {
         assertEq(address(templeGold.staking()), alice);
     }
 
-    function test_setdaiGoldAuction_tgoldProxy() public {
+    function test_setstableGoldAuction_tgoldProxy() public {
         vm.startPrank(executor);
 
         vm.expectEmit(address(templeGold));
-        emit DaiGoldAuctionSet(address(daiGoldAuction));
-        templeGoldAdmin.setDaiGoldAuction(address(daiGoldAuction));
-        assertEq(address(templeGold.daiGoldAuction()), address(daiGoldAuction));
+        emit StableGoldAuctionSet(address(auction));
+        templeGoldAdmin.setStableGoldAuction(address(auction));
+        assertEq(address(templeGold.auction()), address(auction));
         vm.expectEmit(address(templeGold));
-        emit DaiGoldAuctionSet(alice);
-        templeGoldAdmin.setDaiGoldAuction(alice);
-        assertEq(address(templeGold.daiGoldAuction()), alice);
+        emit StableGoldAuctionSet(alice);
+        templeGoldAdmin.setStableGoldAuction(alice);
+        assertEq(address(templeGold.auction()), alice);
     }
 
     function test_setTeamGnosis_tgldAdmin() public {
@@ -196,15 +196,15 @@ contract TempleGoldAdminTest is TempleGoldAdminTestBase {
      function test_authorizeContract_tgldAdmin() public {
         vm.startPrank(executor);
 
-        address daiGoldAuction = address(daiGoldAuction);
+        address _auction = address(auction);
         vm.expectEmit(address(templeGold));
-        emit ContractAuthorizationSet(daiGoldAuction, true);
-        templeGoldAdmin.authorizeContract(daiGoldAuction, true);
-        assertEq(templeGold.authorized(daiGoldAuction), true);
+        emit ContractAuthorizationSet(_auction, true);
+        templeGoldAdmin.authorizeContract(_auction, true);
+        assertEq(templeGold.authorized(_auction), true);
         vm.expectEmit(address(templeGold));
-        emit ContractAuthorizationSet(daiGoldAuction, false);
-        templeGoldAdmin.authorizeContract(daiGoldAuction, false);
-        assertEq(templeGold.authorized(daiGoldAuction), false);
+        emit ContractAuthorizationSet(_auction, false);
+        templeGoldAdmin.authorizeContract(_auction, false);
+        assertEq(templeGold.authorized(_auction), false);
     }
 
     function test_setVestingFactor_tgldAdmin() public {
@@ -222,12 +222,12 @@ contract TempleGoldAdminTest is TempleGoldAdminTestBase {
         vm.startPrank(executor);
         ITempleGold.DistributionParams memory _params = _getDistributionParameters();
         vm.expectEmit(address(templeGold));
-        emit DistributionParamsSet(_params.staking, _params.daiGoldAuction, _params.gnosis);
+        emit DistributionParamsSet(_params.staking, _params.auction, _params.gnosis);
         templeGoldAdmin.setDistributionParams(_params);
 
         ITempleGold.DistributionParams memory _p = templeGold.getDistributionParameters();
         assertEq(_p.gnosis, _params.gnosis);
-        assertEq(_p.daiGoldAuction, _params.daiGoldAuction);
+        assertEq(_p.auction, _params.auction);
         assertEq(_p.staking, _params.staking);
     }
 

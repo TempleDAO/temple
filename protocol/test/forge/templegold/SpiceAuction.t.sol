@@ -12,7 +12,7 @@ import { IAuctionBase } from "contracts/interfaces/templegold/IAuctionBase.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { FakeERC20 } from "contracts/fakes/FakeERC20.sol";
 import { TempleGoldStaking } from "contracts/templegold/TempleGoldStaking.sol";
-import { DaiGoldAuction } from "contracts/templegold/DaiGoldAuction.sol";
+import { StableGoldAuction } from "contracts/templegold/StableGoldAuction.sol";
 
 contract SpiceAuctionTestBase is TempleGoldCommon {
     event Claim(address indexed user, uint256 epochId, uint256 bidTokenAmount, uint256 auctionTokenAmount);
@@ -37,7 +37,7 @@ contract SpiceAuctionTestBase is TempleGoldCommon {
     ISpiceAuction public spice;
     SpiceAuctionFactory public factory;
     TempleGold public templeGold;
-    DaiGoldAuction public daiGoldAuction;
+    StableGoldAuction public auction;
 
     function setUp() public {
         fork("arbitrum_one", forkBlockNumber);
@@ -49,7 +49,7 @@ contract SpiceAuctionTestBase is TempleGoldCommon {
         staking = new TempleGoldStaking(rescuer, executor, address(templeToken), address(templeGold));
         factory = new SpiceAuctionFactory(rescuer, executor, daoExecutor, mike, address(templeGold), ARBITRUM_ONE_LZ_EID, uint32(arbitrumOneChainId));
         fakeERC20 = new FakeERC20("FAKE TOKEN", "FAKE", executor, 1000 ether);
-        daiGoldAuction = new DaiGoldAuction(
+        auction = new StableGoldAuction(
             address(templeGold),
             address(fakeERC20),
             treasury,
@@ -62,7 +62,7 @@ contract SpiceAuctionTestBase is TempleGoldCommon {
         templeGold.authorizeContract(address(spice), true);
         templeGold.setStaking(address(staking));
         templeGold.setTeamGnosis(mike);
-        templeGold.setDaiGoldAuction(address(daiGoldAuction));
+        templeGold.setStableGoldAuction(address(auction));
         vm.stopPrank();
     }
 

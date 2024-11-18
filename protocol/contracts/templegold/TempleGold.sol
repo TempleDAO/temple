@@ -7,7 +7,7 @@ import { Origin } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/interfaces/
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { IOFT, OFTCore } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/OFTCore.sol";
 import { ITempleGold } from "contracts/interfaces/templegold/ITempleGold.sol";
-import { IDaiGoldAuction } from "contracts/interfaces/templegold/IDaiGoldAuction.sol";
+import { IStableGoldAuction } from "contracts/interfaces/templegold/IStableGoldAuction.sol";
 import { OFT } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/OFT.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { ITempleGoldStaking}  from "contracts/interfaces/templegold/ITempleGoldStaking.sol";
@@ -19,7 +19,7 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
 /**
  * @title Temple Gold 
  * @notice Temple Gold is a non-transferrable ERC20 token with LayerZero integration for cross-chain transfer for holders.
- * On mint, Temple Gold is distributed to DaiGoldAuction, Staking contracts and team multisig using distribution share parameters percentages set at `DistributionParams`. 
+ * On mint, Temple Gold is distributed to StableGoldAuction, Staking contracts and team multisig using distribution share parameters percentages set at `DistributionParams`. 
  * Users can get Temple Gold by staking Temple for Temple Gold rewards on the staking contract or in auctions.
  * Holders can transfer their Temple Gold to same holder address across chains.
  * The intended owner of Temple Gold is the TempleGoldAdmin contract for admin functions. 
@@ -33,7 +33,7 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
     /// @notice Staking contract
     ITempleGoldStaking public override staking;
     /// @notice Dai Gold auction contract
-    IDaiGoldAuction public override daiGoldAuction;
+    IStableGoldAuction public override auction;
     /// @notice Multisig gnosis address
     address public override teamGnosis;
 
@@ -85,12 +85,12 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
 
     /**
      * @notice Set dai gold auction contract address
-     * @param _daiGoldAuction  contract address
+     * @param _auction  contract address
      */
-    function setDaiGoldAuction(address _daiGoldAuction) external override onlyOwner onlySourceChain {
-        if (_daiGoldAuction == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
-        daiGoldAuction = IDaiGoldAuction(_daiGoldAuction);
-        emit DaiGoldAuctionSet(_daiGoldAuction);
+    function setStableGoldAuction(address _auction) external override onlyOwner onlySourceChain {
+        if (_auction == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
+        auction = IStableGoldAuction(_auction);
+        emit StableGoldAuctionSet(_auction);
     }
 
     /**
@@ -119,9 +119,9 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
      * @param _params Distribution parameters
      */
     function setDistributionParams(DistributionParams calldata _params) external override onlyOwner onlySourceChain {
-        if (_params.staking + _params.gnosis + _params.daiGoldAuction != DISTRIBUTION_DIVISOR) { revert ITempleGold.InvalidTotalShare(); }
+        if (_params.staking + _params.gnosis + _params.auction != DISTRIBUTION_DIVISOR) { revert ITempleGold.InvalidTotalShare(); }
         distributionParams = _params;
-        emit DistributionParamsSet(_params.staking, _params.daiGoldAuction, _params.gnosis);
+        emit DistributionParamsSet(_params.staking, _params.auction, _params.gnosis);
     }
 
     /**
@@ -240,20 +240,20 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
             staking.notifyDistribution(stakingAmount);
         }
 
-        uint256 daiGoldAuctionAmount = TempleMath.mulDivRound(params.daiGoldAuction, mintAmount, DISTRIBUTION_DIVISOR, false);
-        if (daiGoldAuctionAmount > 0) {
-            _mint(address(daiGoldAuction), daiGoldAuctionAmount);
-            daiGoldAuction.notifyDistribution(daiGoldAuctionAmount);
+        uint256 auctionAmount = TempleMath.mulDivRound(params.auction, mintAmount, DISTRIBUTION_DIVISOR, false);
+        if (auctionAmount > 0) {
+            _mint(address(auction), auctionAmount);
+            auction.notifyDistribution(auctionAmount);
         }
 
-        uint256 gnosisAmount = mintAmount - stakingAmount - daiGoldAuctionAmount;
+        uint256 gnosisAmount = mintAmount - stakingAmount - auctionAmount;
         if (gnosisAmount > 0) {
             _mint(teamGnosis, gnosisAmount);
             /// @notice no requirement to notify gnosis because no action has to be taken
         }
         _totalDistributed += mintAmount;
         _circulatingSupply += mintAmount;
-        emit Distributed(stakingAmount, daiGoldAuctionAmount, gnosisAmount, block.timestamp);
+        emit Distributed(stakingAmount, auctionAmount, gnosisAmount, block.timestamp);
     }
 
     function _getMintAmount(VestingFactor memory vestingFactorCache) private view returns (uint256 mintAmount) {
