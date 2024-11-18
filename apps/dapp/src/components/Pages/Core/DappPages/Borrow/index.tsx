@@ -10,7 +10,11 @@ import {
   TreasuryReservesVault__factory,
 } from 'types/typechain';
 import { ITlcDataTypes } from 'types/typechain/contracts/interfaces/v2/templeLineOfCredit/ITempleLineOfCredit';
-import { fetchGenericSubgraph } from 'utils/subgraph';
+import {
+  queryTlcMinBorrowAmount,
+  queryTlcPrices,
+  subgraphQuery,
+} from 'utils/subgraph';
 import { BigNumber, ethers } from 'ethers';
 import daiImg from 'assets/images/newui-images/tokens/dai.png';
 import templeImg from 'assets/images/newui-images/tokens/temple.png';
@@ -86,23 +90,18 @@ export const BorrowPage = () => {
   const [metricsLoading, setMetricsLoading] = useState(false);
 
   const getPrices = useCallback(async () => {
-    const { data } = await fetchGenericSubgraph<any>(
+    const response = await subgraphQuery(
       env.subgraph.templeV2,
-      `{
-        tokens {
-          price
-          symbol
-        }
-        treasuryReservesVaults {
-          treasuryPriceIndex
-        }
-      }`
+      queryTlcPrices()
     );
     setPrices({
-      templePrice: data.tokens.filter((t: any) => t.symbol == 'TEMPLE')[0]
-        .price,
-      daiPrice: data.tokens.filter((t: any) => t.symbol == 'DAI')[0].price,
-      tpi: Number(data.treasuryReservesVaults[0].treasuryPriceIndex),
+      templePrice: parseFloat(
+        response.tokens.filter((t: any) => t.symbol == 'TEMPLE')[0].price
+      ),
+      daiPrice: parseFloat(
+        response.tokens.filter((t: any) => t.symbol == 'DAI')[0].price
+      ),
+      tpi: parseFloat(response.treasuryReservesVaults[0].treasuryPriceIndex),
     });
   }, []);
 
@@ -210,13 +209,9 @@ export const BorrowPage = () => {
     };
     getAccountPosition();
     try {
-      const { data } = await fetchGenericSubgraph<any>(
+      const response = await subgraphQuery(
         env.subgraph.templeV2,
-        `{
-          tlcDailySnapshots(orderBy: timestamp, orderDirection: desc, first: 1) {
-            minBorrowAmount
-          }
-        }`
+        queryTlcMinBorrowAmount()
       );
 
       const tlcInfoFromContracts = await getTlcInfoFromContracts();
@@ -230,7 +225,7 @@ export const BorrowPage = () => {
       }
 
       setTlcInfo({
-        minBorrow: data.tlcDailySnapshots[0].minBorrowAmount,
+        minBorrow: parseFloat(response.tlcDailySnapshots[0].minBorrowAmount),
         borrowRate: tlcInfoFromContracts?.borrowRate || 0,
         liquidationLtv: tlcInfoFromContracts?.liquidationLtv || 0,
         strategyBalance: tlcInfoFromContracts?.strategyBalance || 0,

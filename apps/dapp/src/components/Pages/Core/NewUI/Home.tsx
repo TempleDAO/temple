@@ -17,7 +17,7 @@ import { TemplePriceChart } from './PriceChart';
 import { RAMOSMetrics } from './RAMOSMetrics';
 import { Button } from 'components/Button/Button';
 import { useEffect, useState } from 'react';
-import { fetchGenericSubgraph } from 'utils/subgraph';
+import { queryRamosData, queryTrvData, subgraphQuery } from 'utils/subgraph';
 import env from 'constants/env';
 
 interface Metrics {
@@ -105,23 +105,14 @@ const Home = ({ tlc }: { tlc?: boolean }) => {
 
   useEffect(() => {
     const fetchMetrics = async () => {
-      const { data: treasuryData } = await fetchGenericSubgraph<any>(
+      const treasuryData = await subgraphQuery(
         env.subgraph.templeV2Balances,
-        `{
-           treasuryReservesVaults {
-             principalUSD
-             benchmarkedEquityUSD
-             treasuryPriceIndex
-           }
-         }`
+        queryTrvData()
       );
-      const { data: ramosData } = await fetchGenericSubgraph<any>(
+
+      const ramosData = await subgraphQuery(
         env.subgraph.ramos,
-        `{
-          metrics {
-            spotPrice
-          }
-        }`
+        queryRamosData()
       );
 
       const treasuryMetrics = treasuryData.treasuryReservesVaults[0];
