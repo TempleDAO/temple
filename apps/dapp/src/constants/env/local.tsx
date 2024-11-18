@@ -1,8 +1,9 @@
 import { ADDRESS_ZERO } from 'utils/bigNumber';
 import { Environment } from './types';
 
-const BALANCER_SUBGRAPH_API_KEY = import.meta.env
-  .VITE_BALANCER_SUBGRAPH_API_KEY;
+const ENV_VARS = import.meta.env;
+const BALANCER_SUBGRAPH_API_KEY = ENV_VARS.VITE_BALANCER_SUBGRAPH_API_KEY;
+const ENABLE_SUBGRAPH_LOGS = ENV_VARS.VITE_ENABLE_SUBGRAPH_LOGS === 'true';
 
 const env: Environment = {
   alchemyId: '-nNWThz_YpX1cGffGiz-lbSMu7dmp4GK',
@@ -140,6 +141,7 @@ const env: Environment = {
     //   address: '0x5CE28cAE5aAb002DcBc076d5A551A473a7C9dF89',
     // },
   ],
+  enableSubgraphLogs: ENABLE_SUBGRAPH_LOGS,
 };
 
 export default env;

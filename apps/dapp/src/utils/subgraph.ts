@@ -1,4 +1,4 @@
-export const ENABLE_SUBGRAPH_LOGS = false;
+import env from 'constants/env';
 import { z } from 'zod';
 import { backOff } from 'exponential-backoff';
 
@@ -599,7 +599,7 @@ async function _rawSubgraphQuery(
   label: string,
   query: string
 ): Promise<unknown> {
-  if (ENABLE_SUBGRAPH_LOGS) {
+  if (env.enableSubgraphLogs) {
     console.log('subgraph-request', label, query);
   }
   const response = await fetch(url, {
@@ -622,7 +622,7 @@ async function _rawSubgraphQuery(
 
   const rawResults = await response.json();
 
-  if (ENABLE_SUBGRAPH_LOGS) {
+  if (env.enableSubgraphLogs) {
     console.log('subgraph-response', label, rawResults);
   }
   if (rawResults.errors !== undefined) {
