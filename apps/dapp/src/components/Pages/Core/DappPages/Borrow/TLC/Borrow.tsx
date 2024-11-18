@@ -20,7 +20,7 @@ import {
   TlcInfo,
   Warning,
 } from '../index';
-import { fromAtto, toAtto } from 'utils/bigNumber';
+import { fromAtto, toAtto, ZERO } from 'utils/bigNumber';
 import styled from 'styled-components';
 import { ReactNode, useEffect, useMemo, useState } from 'react';
 
@@ -67,18 +67,28 @@ export const Borrow: React.FC<IProps> = ({
 
     const userMaxBorrowBigNumber = toAtto(userMaxBorrow);
 
-    if (!tlcInfo) {
-      return { value: userMaxBorrow, isCircuitBreakerActive: false };
-    }
+    let returnValue = { value: userMaxBorrow, isCircuitBreakerActive: false };
 
-    if (tlcInfo.daiCircuitBreakerRemaining.lt(userMaxBorrowBigNumber)) {
-      return {
+    // Check if the dai circuit breaker is active
+    if (
+      tlcInfo &&
+      tlcInfo.daiCircuitBreakerRemaining.lt(userMaxBorrowBigNumber)
+    ) {
+      returnValue = {
         value: fromAtto(tlcInfo.daiCircuitBreakerRemaining),
         isCircuitBreakerActive: true,
       };
     }
 
-    return { value: userMaxBorrow, isCircuitBreakerActive: false };
+    // Check if trvAvailable from the contract is less than the user max borrow
+    if (tlcInfo && tlcInfo.trvAvailable.lt(userMaxBorrowBigNumber)) {
+      returnValue = {
+        value: fromAtto(tlcInfo.trvAvailable || ZERO),
+        isCircuitBreakerActive: true,
+      };
+    }
+
+    return returnValue;
   }, [tlcInfo, accountPosition, prices.tpi]);
 
   return (

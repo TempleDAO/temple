@@ -52,6 +52,8 @@ export type TlcInfo = {
   debtCeiling: number;
   daiCircuitBreakerRemaining: BigNumber;
   templeCircuitBreakerRemaining: BigNumber;
+  outstandingUserDebt: number;
+  trvAvailable: BigNumber;
 };
 
 export const MAX_LTV = 85;
@@ -147,6 +149,7 @@ export const BorrowPage = () => {
     const debtPosition = await tlcContract.totalDebtPosition();
     const totalUserDebt = debtPosition.totalDebt;
     const utilizationRatio = debtPosition.utilizationRatio;
+    const outstandingUserDebt = debtPosition[2];
 
     // NOTE: We are intentionally rounding here to nearest 1e18
     const debtCeiling = totalUserDebt
@@ -158,6 +161,9 @@ export const BorrowPage = () => {
     const trvContract = new TreasuryReservesVault__factory(signer).attach(
       env.contracts.treasuryReservesVault
     );
+
+    const trvAvailable = await trvContract.totalAvailable(env.contracts.dai);
+
     const strategyAvailalableToBorrowFromTrv =
       await trvContract.availableForStrategyToBorrow(
         env.contracts.strategies.tlcStrategy,
@@ -188,6 +194,8 @@ export const BorrowPage = () => {
       strategyBalance: fromAtto(maxAvailableToBorrow),
       borrowRate: currentBorrowInterestRate,
       liquidationLtv: fromAtto(maxLtv),
+      outstandingUserDebt: fromAtto(outstandingUserDebt),
+      trvAvailable: trvAvailable,
       daiCircuitBreakerRemaining: circuitBreakers?.daiCircuitBreakerRemaining,
       templeCircuitBreakerRemaining:
         circuitBreakers?.templeCircuitBreakerRemaining,
@@ -234,6 +242,8 @@ export const BorrowPage = () => {
           tlcInfoFromContracts?.daiCircuitBreakerRemaining || ZERO,
         templeCircuitBreakerRemaining:
           tlcInfoFromContracts?.templeCircuitBreakerRemaining || ZERO,
+        outstandingUserDebt: tlcInfoFromContracts?.outstandingUserDebt || 0,
+        trvAvailable: tlcInfoFromContracts?.trvAvailable || ZERO,
       });
     } catch (e) {
       setMetricsLoading(false);
@@ -477,14 +487,21 @@ export const BorrowPage = () => {
     if (!tlcInfo) return '...';
 
     const availableAsBigNumber = toAtto(tlcInfo.strategyBalance);
+    let borrowableAmount = tlcInfo.strategyBalance;
 
     if (tlcInfo.daiCircuitBreakerRemaining.lt(availableAsBigNumber)) {
-      return `$${Number(
-        fromAtto(tlcInfo.daiCircuitBreakerRemaining)
-      ).toLocaleString()}`;
+      borrowableAmount = fromAtto(tlcInfo.daiCircuitBreakerRemaining);
     }
 
-    return `$${Number(tlcInfo.strategyBalance).toLocaleString()}`;
+    const trvAvailable = fromAtto(tlcInfo.trvAvailable);
+    if (trvAvailable < borrowableAmount) {
+      borrowableAmount = trvAvailable;
+    }
+
+    return `$${Number(borrowableAmount).toLocaleString('en', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
   }, [tlcInfo]);
 
   return (
@@ -712,11 +729,28 @@ export const BorrowPage = () => {
               </LeadMetric>
               <BrandParagraph>Current Borrow APY </BrandParagraph>
             </MetricContainer>
+          </Metrics>
+          <Metrics>
             <MetricContainer>
               <LeadMetric>
                 {showLoading ? '...' : prices.tpi.toFixed(2)}
               </LeadMetric>
               <BrandParagraph>Current TPI</BrandParagraph>
+            </MetricContainer>
+            <MetricContainer>
+              <LeadMetric>
+                {showLoading
+                  ? '...'
+                  : tlcInfo &&
+                    `$${Number(tlcInfo.outstandingUserDebt).toLocaleString(
+                      'en',
+                      {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      }
+                    )}`}
+              </LeadMetric>
+              <BrandParagraph>Outstanding User Debt</BrandParagraph>
             </MetricContainer>
           </Metrics>
           <ChartContainer>
