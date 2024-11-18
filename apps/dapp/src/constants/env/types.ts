@@ -123,4 +123,5 @@ export interface Environment {
     enableAscend: boolean;
   };
   safes: SafeWallet[];
+  enableSubgraphLogs: boolean;
 }

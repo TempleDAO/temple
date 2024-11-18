@@ -52,7 +52,8 @@
     "tippy.js": "^6.3.7",
     "use-debounce": "^9.0.2",
     "use-interval": "^1.4.0",
-    "util": "^0.12.4"
+    "util": "^0.12.4",
+    "zod": "^3.19.1"
   },
   "devDependencies": {
     "@babel/core": "^7.16.0",

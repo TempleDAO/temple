@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
 import millify from 'millify';
-import { fetchGenericSubgraph } from 'utils/subgraph';
 import env from 'constants/env';
 import { getQueryKey } from 'utils/react-query-helpers';
 import {
@@ -9,6 +8,20 @@ import {
   TrvKey,
   isTRVDashboard,
 } from '../DashboardConfig';
+import {
+  queryBenchmarkRate,
+  queryRamosData,
+  queryStrategyBalances,
+  queryStrategyData,
+  queryTempleCirculatingSupply,
+  queryTrvBalances,
+  queryTrvData,
+  StrategyBalancesResp,
+  StrategyDataResp,
+  subgraphQuery,
+  TrvBalancesResp,
+  TrvDataResp,
+} from 'utils/subgraph';
 
 export enum TokenSymbols {
   DAI = 'DAI',
@@ -84,80 +97,51 @@ export default function useDashboardV2Metrics(dashboardData: DashboardData) {
 
     try {
       const allMetricsPromises = [
-        fetchGenericSubgraph<any>(
-          env.subgraph.templeV2,
-          `{
-            strategies {
-              name
-              isShutdown
-              id
-              strategyTokens {
-                symbol
-                rate
-                premiumRate
-                debtShare
-                debtCeiling
-                debtCeilingUtil
-              }
-              totalRepaymentUSD
-              principalUSD
-              accruedInterestUSD
-            }
-      }`
-        ),
+        subgraphQuery(env.subgraph.templeV2, queryStrategyData()),
+
         // includes the external balances so has to come from the second subgraph
-        fetchGenericSubgraph<any>(
-          env.subgraph.templeV2Balances,
-          `{
-            strategies {
-              name
-              isShutdown
-              id
-              benchmarkedEquityUSD
-              totalMarketValueUSD
-            }
-           }`
-        ),
+        subgraphQuery(env.subgraph.templeV2Balances, queryStrategyBalances()),
       ];
 
       const [responses, responseExternalBalances] = await Promise.all(
         allMetricsPromises
       );
 
-      const subgraphData = responses?.data?.strategies.find(
+      const subgraphData = (responses as StrategyDataResp).strategies.find(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (_strategy: any) =>
           _strategy.name === strategy && _strategy.isShutdown === false
       );
 
-      const externalBalancesData =
-        responseExternalBalances?.data?.strategies.find(
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (_strategy: any) =>
-            _strategy.name === strategy && _strategy.isShutdown === false
-        );
+      const externalBalancesData = (
+        responseExternalBalances as StrategyBalancesResp
+      ).strategies.find(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (_strategy: any) =>
+          _strategy.name === strategy && _strategy.isShutdown === false
+      );
 
-      const daiStrategyTokenData = subgraphData?.strategyTokens.find(
+      const daiStrategyTokenData = subgraphData!.strategyTokens.find(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (_strategyToken: any) => _strategyToken.symbol === TokenSymbols.DAI
       );
 
       metrics = {
-        valueOfHoldings: parseFloat(externalBalancesData.totalMarketValueUSD),
+        valueOfHoldings: parseFloat(externalBalancesData!.totalMarketValueUSD),
         benchmarkedEquity: parseFloat(
-          externalBalancesData.benchmarkedEquityUSD
+          externalBalancesData!.benchmarkedEquityUSD
         ),
         interestRate:
-          parseFloat(daiStrategyTokenData.rate) +
-          parseFloat(daiStrategyTokenData.premiumRate),
-        debtShare: parseFloat(daiStrategyTokenData.debtShare),
-        debtCeiling: parseFloat(daiStrategyTokenData.debtCeiling),
+          parseFloat(daiStrategyTokenData!.rate) +
+          parseFloat(daiStrategyTokenData!.premiumRate),
+        debtShare: parseFloat(daiStrategyTokenData!.debtShare),
+        debtCeiling: parseFloat(daiStrategyTokenData!.debtCeiling),
         debtCeilingUtilization: parseFloat(
-          daiStrategyTokenData.debtCeilingUtil
+          daiStrategyTokenData!.debtCeilingUtil
         ),
-        totalRepayment: parseFloat(subgraphData.totalRepaymentUSD),
-        principal: parseFloat(subgraphData.principalUSD),
-        accruedInterest: parseFloat(subgraphData.accruedInterestUSD),
+        totalRepayment: parseFloat(subgraphData!.totalRepaymentUSD),
+        principal: parseFloat(subgraphData!.principalUSD),
+        accruedInterest: parseFloat(subgraphData!.accruedInterestUSD),
       };
     } catch (error) {
       console.info(error);
@@ -181,26 +165,11 @@ export default function useDashboardV2Metrics(dashboardData: DashboardData) {
 
       try {
         const allMetricsPromises = [
-          fetchGenericSubgraph<any>(
-            env.subgraph.templeV2,
-            `{
-              treasuryReservesVaults {
-                treasuryPriceIndex
-                principalUSD
-                accruedInterestUSD
-              }
-            }`
-          ),
+          subgraphQuery(env.subgraph.templeV2, queryTrvData()),
+
           // includes the external balances so has to come from the second subgraph
-          fetchGenericSubgraph<any>(
-            env.subgraph.templeV2Balances,
-            `{
-              treasuryReservesVaults {
-                totalMarketValueUSD
-                benchmarkedEquityUSD
-              }
-            }`
-          ),
+          subgraphQuery(env.subgraph.templeV2Balances, queryTrvBalances()),
+
           getBenchmarkRate(),
           getTempleCirculatingSupply(),
           getTempleSpotPrice(),
@@ -214,21 +183,26 @@ export default function useDashboardV2Metrics(dashboardData: DashboardData) {
           templeSpotPrice,
         ] = await Promise.all(allMetricsPromises);
 
-        const trvSubgraphData =
-          trvSubgraphResponse?.data?.treasuryReservesVaults[0];
+        const trvSubgraphData = (trvSubgraphResponse as TrvDataResp)
+          .treasuryReservesVaults[0];
 
-        const externalBalancesData =
-          responseExternalBalances?.data?.treasuryReservesVaults[0];
+        const externalBalancesData = (
+          responseExternalBalances as TrvBalancesResp
+        ).treasuryReservesVaults[0];
 
         metrics = {
-          totalMarketValue: parseFloat(externalBalancesData.totalMarketValueUSD),
-          spotPrice: parseFloat(templeSpotPrice),
+          totalMarketValue: parseFloat(
+            externalBalancesData.totalMarketValueUSD
+          ),
+          spotPrice: parseFloat(templeSpotPrice as string),
           treasuryPriceIndex: parseFloat(trvSubgraphData.treasuryPriceIndex),
-          circulatingSupply: parseFloat(templeCirculatingSupply),
-          benchmarkRate: parseFloat(benchmarkRate),
+          circulatingSupply: parseFloat(templeCirculatingSupply as string),
+          benchmarkRate: parseFloat(benchmarkRate as string),
           principal: parseFloat(trvSubgraphData.principalUSD),
           accruedInterest: parseFloat(trvSubgraphData.accruedInterestUSD),
-          benchmarkedEquity: parseFloat(externalBalancesData.benchmarkedEquityUSD),
+          benchmarkedEquity: parseFloat(
+            externalBalancesData.benchmarkedEquityUSD
+          ),
         };
       } catch (error) {
         console.info(error);
@@ -238,18 +212,12 @@ export default function useDashboardV2Metrics(dashboardData: DashboardData) {
     };
 
   const getBenchmarkRate = async () => {
-    const debtTokensResponse = await fetchGenericSubgraph<any>(
+    const debtTokensResponse = await subgraphQuery(
       env.subgraph.templeV2,
-      `{
-        debtTokens {
-          name
-          symbol
-          baseRate
-        }
-      }`
+      queryBenchmarkRate()
     );
 
-    const debtTokensData = debtTokensResponse?.data?.debtTokens;
+    const debtTokensData = debtTokensResponse.debtTokens;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return debtTokensData.find(
@@ -258,33 +226,16 @@ export default function useDashboardV2Metrics(dashboardData: DashboardData) {
   };
 
   const getTempleCirculatingSupply = async (): Promise<string> => {
-    const response = await fetchGenericSubgraph<any>(
+    const response = await subgraphQuery(
       env.subgraph.protocolMetrics,
-      `{
-        metrics(first: 1, orderBy: timestamp, orderDirection: desc) {
-          templeCirculatingSupply
-        }
-      }`
+      queryTempleCirculatingSupply()
     );
-
-    const data = response?.data?.metrics?.[0] || {};
-
-    return data.templeCirculatingSupply;
+    return response.metrics[0].templeCirculatingSupply;
   };
 
   const getTempleSpotPrice = async () => {
-    const response = await fetchGenericSubgraph<any>(
-      env.subgraph.ramos,
-      `{
-        metrics {
-          spotPrice
-        }
-      }`
-    );
-
-    const data = response?.data?.metrics?.[0] || {};
-
-    return data.spotPrice;
+    const response = await subgraphQuery(env.subgraph.ramos, queryRamosData());
+    return response.metrics[0].spotPrice;
   };
 
   const formatPercent = (input: number) => {
