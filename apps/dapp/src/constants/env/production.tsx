@@ -1,6 +1,10 @@
 import { ADDRESS_ZERO } from 'utils/bigNumber';
 import { Environment } from './types';
 
+const ENV_VARS = import.meta.env;
+const BALANCER_SUBGRAPH_API_KEY = ENV_VARS.VITE_BALANCER_SUBGRAPH_API_KEY;
+const ENABLE_SUBGRAPH_LOGS = ENV_VARS.VITE_ENABLE_SUBGRAPH_LOGS === 'true';
+
 const env: Environment = {
   alchemyId: 'XiIZxWykHU5AOFBwxKgxseXWN984Mp8F',
   rpcUrl: 'https://rpc.ankr.com/eth',
@@ -152,6 +156,14 @@ const env: Environment = {
         name: 'Epoch 25b',
         address: '0x0197B9F8d504e020C875fcafb3403e55Bef31c36',
       },
+      {
+        name: 'Epoch 25c',
+        address: '0xb486C1D3F49D20b442ba77f169998a16550ddAd8',
+      },
+      {
+        name: 'Epoch 26a',
+        address: '0xf78d757da74d5f3a67599240eab918FC347f2BdE',
+      },
     ],
     temple: '0x470ebf5f030ed85fc1ed4c2d36b9dd02e77cf1b7',
     templeStaking: '0x4D14b24EDb751221B3Ff08BBB8bd91D4b1c8bc77',
@@ -166,6 +178,8 @@ const env: Environment = {
     vaultEarlyExit: '0x24719d3AF60e1B622a29317d29E5Ce283617DeEC',
     ramos: '0xDdF499e726Bfde29Ce035F6B355e55757F08B5EF',
     ramosPoolHelper: '0xe32089bf9724aF09C026BeC36a7d8a81500cd58A',
+    templeDaiBalancerPool:
+      '0x8bd4a1e74a27182d23b98c10fd21d4fbb0ed4ba00002000000000000000004ed',
     balancerHelpers: '0x5aDDCCa35b7A0D07C74063c48700C8590E87864E',
     strategies: {
       dsrBaseStrategy: '0x8b9e20D9970Af54fbaFe64049174e24d6DE0C412',
@@ -245,25 +259,19 @@ const env: Environment = {
   network: 1,
   etherscan: 'https://etherscan.io',
   subgraph: {
-    // TODO: These need updated to the templedao organization subgraphs once they are deployed
     templeCore:
       'https://api.studio.thegraph.com/query/76011/temple-core/version/latest',
     protocolMetrics:
       'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-metrics/api',
     protocolMetricsArbitrum:
       'https://api.studio.thegraph.com/query/76011/temple-metrics-arbitrum/version/latest',
-    // TODO: This is not used anymore and should be removed
-    balancerV2:
-      'https://api.thegraph.com/subgraphs/name/templedao/templedao-balancer-v2',
-    // TODO: Will be deprecated
+    balancerV2: `https://gateway.thegraph.com/api/${BALANCER_SUBGRAPH_API_KEY}/subgraphs/id/C4ayEZP2yTXRAB8vSaTrgN4m9anTe9Mdm2ViyiAuV9TV`,
     ramos:
-      'https://api.studio.thegraph.com/query/76011/temple-ramos/version/latest',
+      'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-ramos/api',
     templeV2:
       'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-v2-mainnet/api',
     templeV2Balances:
       'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-v2-balances/api',
-    // Original Balancer Subgraph
-    // balancerV2: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-v2-beta',
   },
   featureFlags: {
     enableAscend: false,
@@ -295,6 +303,7 @@ const env: Environment = {
     //   address: '0x9f90430179D9b67341BFa50559bc7B8E35629f1b',
     // },
   ],
+  enableSubgraphLogs: ENABLE_SUBGRAPH_LOGS,
 };
 
 export default env;

@@ -37,7 +37,7 @@ contract TreasuryReservesVaultTestBase is TempleTest {
         dUSD = new TempleDebtToken("Temple Debt USD", "dUSD", rescuer, executor, DSR_INTEREST);
         dTEMPLE = new TempleDebtToken("Temple Debt TEMPLE", "dTEMPLE", rescuer, executor, 0);
         dETH = new TempleDebtToken("Temple Debt ETH", "dETH", rescuer, executor, ETH_INTEREST);
-        tpiOracle = new TreasuryPriceIndexOracle(rescuer, executor, 0.97e18, 0.1e18, 0);
+        tpiOracle = new TreasuryPriceIndexOracle(rescuer, executor, 0.97e18, 0.1e18, 0, 1e16);
         trv = new TreasuryReservesVault(rescuer, executor, address(tpiOracle));
         
         strategy = new MockStrategy(rescuer, executor, "MockStrategy", address(trv), address(dai), address(weth), address(temple), reportedAssets);
@@ -240,7 +240,7 @@ contract TreasuryReservesVaultTestAdmin is TreasuryReservesVaultTestBase {
         trv.setTpiOracle(address(0));
         
         // An oracle with a TPI=0 fails
-        TreasuryPriceIndexOracle newTpiOracle = new TreasuryPriceIndexOracle(rescuer, executor, 0, 0.1e18, 0);
+        TreasuryPriceIndexOracle newTpiOracle = new TreasuryPriceIndexOracle(rescuer, executor, 0, 0.1e18, 0, 1e16);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
         trv.setTpiOracle(address(newTpiOracle));
 
@@ -249,7 +249,7 @@ contract TreasuryReservesVaultTestAdmin is TreasuryReservesVaultTestBase {
         trv.setTpiOracle(address(bob));
 
         // Success
-        newTpiOracle = new TreasuryPriceIndexOracle(rescuer, executor, 1.23e18, 0.1e18, 0);
+        newTpiOracle = new TreasuryPriceIndexOracle(rescuer, executor, 1.23e18, 0.1e18, 0, 1e16);
         vm.expectEmit(address(trv));
         emit TpiOracleSet(address(newTpiOracle));
         trv.setTpiOracle(address(newTpiOracle));

@@ -54,6 +54,7 @@ interface Contracts {
     fohmoGnosisStrategy: string;
   };
   ramosPoolHelper: string;
+  templeDaiBalancerPool: string;
   balancerHelpers: string;
   daiCircuitBreaker: string;
   templeCircuitBreaker: string;
@@ -122,4 +123,5 @@ export interface Environment {
     enableAscend: boolean;
   };
   safes: SafeWallet[];
+  enableSubgraphLogs: boolean;
 }

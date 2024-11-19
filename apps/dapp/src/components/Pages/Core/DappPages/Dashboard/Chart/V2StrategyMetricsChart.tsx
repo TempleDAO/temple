@@ -7,13 +7,14 @@ import { formatTimestampedChartData } from 'utils/charts';
 import useV2StrategySnapshotData, {
   StrategyTokenField,
   V2SnapshotMetric,
-  V2StrategySnapshot,
 } from '../hooks/use-dashboardv2-daily-snapshots';
 import {
   ALL_STRATEGIES,
   DashboardData,
   isTRVDashboard,
+  StrategyKey,
 } from '../DashboardConfig';
+import { V2StrategySnapshot } from 'utils/subgraph';
 
 type XAxisTickFormatter = (timestamp: number) => string;
 
@@ -181,12 +182,16 @@ const V2StrategyMetricsChart: React.FC<{
 
   const filteredDaily =
     dailyMetrics
-      ?.filter((m) => chartStrategyNames.includes(m.strategy.name))
+      ?.filter((m) =>
+        chartStrategyNames.includes(m.strategy.name as StrategyKey)
+      )
       .sort((a, b) => parseInt(a.timestamp) - parseInt(b.timestamp)) ?? [];
 
   const filteredHourly =
     hourlyMetrics
-      ?.filter((m) => chartStrategyNames.includes(m.strategy.name))
+      ?.filter((m) =>
+        chartStrategyNames.includes(m.strategy.name as StrategyKey)
+      )
       .sort((a, b) => parseInt(a.timestamp) - parseInt(b.timestamp)) ?? [];
 
   // if we are rendering chart for only one strategy we can use data as is
