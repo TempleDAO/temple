@@ -1,5 +1,6 @@
 [profile.default]
   optimizer = true
+  auto_detect_solc = true
   optimizer_runs = 10_000_000
   verbosity = 3
   src = 'contracts'
@@ -9,6 +10,7 @@
   cache_path = 'cache-foundry'
   gas_reports = ["*"]
   evm_version = "paris"           # See https://www.evmdiff.com/features?name=PUSH0&kind=opcode
+
 
 [profile.ci]
   fuzz = { runs = 5000, seed = "0x4444" }
