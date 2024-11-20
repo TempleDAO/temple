@@ -22,6 +22,7 @@ import {
   TrvBalancesResp,
   TrvDataResp,
 } from 'utils/subgraph';
+import { aprToApy } from 'utils/helpers';
 
 export enum TokenSymbols {
   DAI = 'DAI',
@@ -131,9 +132,10 @@ export default function useDashboardV2Metrics(dashboardData: DashboardData) {
         benchmarkedEquity: parseFloat(
           externalBalancesData!.benchmarkedEquityUSD
         ),
-        interestRate:
+        interestRate: aprToApy(
           parseFloat(daiStrategyTokenData!.rate) +
-          parseFloat(daiStrategyTokenData!.premiumRate),
+            parseFloat(daiStrategyTokenData!.premiumRate)
+        ),
         debtShare: parseFloat(daiStrategyTokenData!.debtShare),
         debtCeiling: parseFloat(daiStrategyTokenData!.debtCeiling),
         debtCeilingUtilization: parseFloat(
@@ -197,7 +199,7 @@ export default function useDashboardV2Metrics(dashboardData: DashboardData) {
           spotPrice: parseFloat(templeSpotPrice as string),
           treasuryPriceIndex: parseFloat(trvSubgraphData.treasuryPriceIndex),
           circulatingSupply: parseFloat(templeCirculatingSupply as string),
-          benchmarkRate: parseFloat(benchmarkRate as string),
+          benchmarkRate: aprToApy(parseFloat(benchmarkRate as string)),
           principal: parseFloat(trvSubgraphData.principalUSD),
           accruedInterest: parseFloat(trvSubgraphData.accruedInterestUSD),
           benchmarkedEquity: parseFloat(
@@ -239,7 +241,7 @@ export default function useDashboardV2Metrics(dashboardData: DashboardData) {
   };
 
   const formatPercent = (input: number) => {
-    return Math.round(input * 100).toFixed(2);
+    return (Math.round(input * 10_000) / 100).toFixed(2);
   };
 
   /**
