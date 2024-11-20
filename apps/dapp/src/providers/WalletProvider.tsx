@@ -52,6 +52,7 @@ const INITIAL_STATE: WalletState = {
   updateBalance: asyncNoop,
   collectTempleTeamPayment: asyncNoop,
   ensureAllowance: asyncNoop,
+  ethersProvider: null,
 };
 
 const WalletContext = createContext<WalletState>(INITIAL_STATE);
@@ -62,10 +63,13 @@ export const WalletProvider = (props: PropsWithChildren<object>) => {
   const [{ wallet, connecting }] = useConnectWallet();
   const [signer, setSigner] = useState<Nullable<Signer>>(null);
   const [walletAddress, setWalletAddress] = useState<string | undefined>();
+  const [ethersProvider, setEthersProvider] =
+    useState<ethers.providers.Web3Provider | null>(null);
 
   useEffect(() => {
     if (wallet) {
       const ethersProvider = new ethers.providers.Web3Provider(wallet.provider);
+      setEthersProvider(ethersProvider);
       setSigner(ethersProvider.getSigner());
       if (wallet.accounts.length > 0) {
         setWalletAddress(wallet.accounts[0].address);
@@ -261,6 +265,7 @@ export const WalletProvider = (props: PropsWithChildren<object>) => {
         getBalance: updateBalance,
         updateBalance,
         collectTempleTeamPayment,
+        ethersProvider,
       }}
     >
       {children}

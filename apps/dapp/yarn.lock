@@ -1265,6 +1265,38 @@
   dependencies:
     chalk "^4.0.0"
 
+"@cowprotocol/events@^1.5.0":
+  version "1.5.0"
+  resolved "https://registry.yarnpkg.com/@cowprotocol/events/-/events-1.5.0.tgz#052e8c8d4462ffe64b81152f4ac3d90658a920e0"
+  integrity sha512-n7HTpd6ADSZrjwdtT9e79dfl1OWCqVHavm8l96FucW/De8ZCdFhPMsxLLdjdJlhWos3oFgpLjQNmthJvpzEl8A==
+  dependencies:
+    "@cowprotocol/types" "^1.2.0"
+
+"@cowprotocol/iframe-transport@^1.1.0":
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/@cowprotocol/iframe-transport/-/iframe-transport-1.1.0.tgz#18cf735134f05ecc4877a93dda5bd621c563de69"
+  integrity sha512-sT3B8WwmJqz1FhIgDtpmEZcDg3EFkTGevsPddLShSwdcaqV7fYsVeYv4JgB/b0fwIIVLO0dHdrUhoQh9DTihog==
+
+"@cowprotocol/types@^1.2.0":
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/@cowprotocol/types/-/types-1.2.0.tgz#b036c7959122118d278e67200da2aeb88d5aed09"
+  integrity sha512-K/jOyLtffgEFs52hRKX7tyDHtIA3asnsB9So6lINCPfNetr1GhM818+kf+f3sPtOHWsBpL3pTkjJphzDVCQntQ==
+
+"@cowprotocol/widget-lib@^0.16.0":
+  version "0.16.0"
+  resolved "https://registry.yarnpkg.com/@cowprotocol/widget-lib/-/widget-lib-0.16.0.tgz#75874201e5bcc27c12c79b9fa657979b7e261885"
+  integrity sha512-QAIFhpiWJXslWIxmX6KaoJE/ohYiOxwylApB7GO4TIx+HtvAMEZUorvPcb/ueF8K9P2zZMUGGZsiy83sOC5big==
+  dependencies:
+    "@cowprotocol/events" "^1.5.0"
+    "@cowprotocol/iframe-transport" "^1.1.0"
+
+"@cowprotocol/widget-react@^0.12.0":
+  version "0.12.0"
+  resolved "https://registry.yarnpkg.com/@cowprotocol/widget-react/-/widget-react-0.12.0.tgz#d45ad64ac3baf9d142f3df1b3a91f46a806adbf6"
+  integrity sha512-mN/+lMUGJAAKVRt3gin3NfFQqmHphbq23tdPvAl5pTGQ9FdhN+4YHmAjiWnxXR87slmNvwMYPrOkfrCPtR1+GA==
+  dependencies:
+    "@cowprotocol/widget-lib" "^0.16.0"
+
 "@cspotcode/source-map-support@^0.8.0":
   version "0.8.1"
   resolved "https://registry.yarnpkg.com/@cspotcode/source-map-support/-/source-map-support-0.8.1.tgz#00629c35a688e05a88b1cda684fb9d5e73f000a1"

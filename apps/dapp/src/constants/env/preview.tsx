@@ -9,6 +9,8 @@ const env: Environment = {
   alchemyId: 'AorwfDdHDsEjIX4HPwS70zkVjWqjv5vZ',
   rpcUrl: 'https://rpc.ankr.com/eth',
   backendUrl: 'https://backend-stage.templedao.link',
+  tradeTokenListUrl:
+    'https://sf294otxgnbicood.public.blob.vercel-storage.com/testnet-tokens-acdWvsxlYFCXUEjNZmcxd4DRB4fXAb.json',
   contracts: {
     balancerVault: '',
     exitQueue: '',

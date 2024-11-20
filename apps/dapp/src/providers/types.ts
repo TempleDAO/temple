@@ -1,4 +1,4 @@
-import { BigNumber, ContractReceipt, Signer } from 'ethers';
+import { BigNumber, ContractReceipt, ethers, Signer } from 'ethers';
 import { Nullable } from 'types/util';
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
@@ -134,4 +134,6 @@ export interface WalletState {
     spender: string,
     minAllowance: BigNumber
   ): Promise<void>;
+
+  ethersProvider: Nullable<ethers.providers.Web3Provider>;
 }
