@@ -30,9 +30,6 @@ export const TradeWidget = () => {
       asset: 'TEMPLE',
       amount: '100',
     },
-    forcedOrderDeadline: {
-      swap: 2,
-    },
     enabledTradeTypes: [TradeType.SWAP],
     theme: {
       baseTheme: 'dark',
@@ -73,15 +70,17 @@ export const TradeWidget = () => {
   };
 
   return (
-    <WidgetContainer>
+    <>
       {!ethersProvider && <Loader />}
       {ethersProvider && (
-        <CowSwapWidget
-          params={params}
-          provider={ethersProvider.provider as unknown as EthereumProvider}
-        />
+        <WidgetContainer>
+          <CowSwapWidget
+            params={params}
+            provider={ethersProvider.provider as unknown as EthereumProvider}
+          />
+        </WidgetContainer>
       )}
-    </WidgetContainer>
+    </>
   );
 };
 
@@ -89,7 +88,7 @@ const WidgetContainer = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
+  border: 0.0625rem solid rgb(189, 123, 79);
   border-radius: 10px;
-  height: 100%;
   width: 500px;
 `;
