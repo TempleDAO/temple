@@ -30,6 +30,9 @@ export const TradeWidget = () => {
       asset: 'TEMPLE',
       amount: '100',
     },
+    forcedOrderDeadline: {
+      swap: 7,
+    },
     enabledTradeTypes: [TradeType.SWAP],
     theme: {
       baseTheme: 'dark',
