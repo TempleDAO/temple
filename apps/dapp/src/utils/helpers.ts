@@ -12,3 +12,8 @@ export const asyncNoop = async () => {};
 export const isDevelopmentEnv = () => {
   return ENV.VITE_ENV === 'preview' || ENV.VITE_ENV === 'local';
 };
+
+// Continuously compounded rate
+export const aprToApy = (rate: number) => {
+  return Math.pow(1 + rate / 365, 365) - 1;
+};
