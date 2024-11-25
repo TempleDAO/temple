@@ -192,7 +192,7 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
                 ADDRESS: '0x8b9e20D9970Af54fbaFe64049174e24d6DE0C412',
             },
             DAI_ORIGAMI_SKY_FARM_BASE_STRATEGY: {
-                ADDRESS: '0x',
+                ADDRESS: '0x5D8E464fCA8D327fAD016EA8cF3424Cb113c07A8',
             },
             TEMPLE_BASE_STRATEGY: {
                 ADDRESS: '0xB8d09B0436adF927004Cea0B096E8c05f6dFdc3b',

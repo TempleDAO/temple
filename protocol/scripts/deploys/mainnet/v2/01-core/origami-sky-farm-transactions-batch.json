@@ -83,7 +83,7 @@
       },
       "contractInputsValues": {
         "token": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
-        "baseStrategy": "0x8b9e20D9970Af54fbaFe64049174e24d6DE0C412",
+        "baseStrategy": "0x5D8E464fCA8D327fAD016EA8cF3424Cb113c07A8",
         "baseStrategyWithdrawalBuffer": "50000000000000000000000",
         "baseStrategyDepositThreshold": "50000000000000000000000",
         "dToken": "0xd018d5ecCe2Cd1c230F1719367C22DfE92c696ac"
@@ -127,7 +127,7 @@
         "payable": false
       },
       "contractInputsValues": {
-        "strategy": "0x8b9e20D9970Af54fbaFe64049174e24d6DE0C412",
+        "strategy": "0x5D8E464fCA8D327fAD016EA8cF3424Cb113c07A8",
         "underperformingEquityThreshold": "0",
         "debtCeiling": "[[\"0x470EBf5f030Ed85Fc1ed4C2d36B9DD02e77CF1b7\",\"0\"],[\"0x6B175474E89094C44Da98b954EedeAC495271d0F\",\"30000000000000000000000000\"]]"
       }

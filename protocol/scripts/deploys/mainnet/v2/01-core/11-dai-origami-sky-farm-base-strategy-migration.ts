@@ -49,7 +49,7 @@ async function main() {
           {
             argType: "bytes",
             name: "shutdownParamsData",
-            value: "",
+            value: "0x",
           },
         ],
       ),
