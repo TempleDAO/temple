@@ -59,17 +59,6 @@ export const TradeWidget = () => {
       orderError: null,
       orderExecuted: null,
     },
-    customTokens: [
-      {
-        chainId: Number(connectedChain?.id) || 1,
-        address: env.tokens.temple.address,
-        name: env.tokens.temple.name,
-        symbol: 'TEMPLE',
-        decimals: env.tokens.temple.decimals,
-        logoURI:
-          'https://raw.githubusercontent.com/TempleDAO/temple/refs/heads/stage/apps/dapp/src/assets/icons/android-chrome-192x192.png',
-      },
-    ],
   };
 
   return (

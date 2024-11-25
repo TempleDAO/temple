@@ -10,7 +10,7 @@ const env: Environment = {
   rpcUrl: 'https://rpc.ankr.com/eth',
   backendUrl: 'https://backend.templedao.link',
   tradeTokenListUrl:
-    'https://sf294otxgnbicood.public.blob.vercel-storage.com/prod-tokens-k8H0DsKrVooLujzoz7lRVLKmmHI04u.json',
+    'https://sf294otxgnbicood.public.blob.vercel-storage.com/prod-tokens-ycNgmUSdpPt1kIoael5y4t81s2jtZc.json',
   contracts: {
     balancerVault: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
     exitQueue: '0xC6d556C34a179a224AEBE42e77c6e76594148B97',

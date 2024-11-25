@@ -10,7 +10,7 @@ const env: Environment = {
   rpcUrl: 'https://rpc.ankr.com/eth',
   backendUrl: 'https://backend-stage.templedao.link',
   tradeTokenListUrl:
-    'https://sf294otxgnbicood.public.blob.vercel-storage.com/testnet-tokens-acdWvsxlYFCXUEjNZmcxd4DRB4fXAb.json',
+    'https://sf294otxgnbicood.public.blob.vercel-storage.com/testnet-tokens-BCYU6hCLdzUdj1TvvTOcw5ux8Wxmhj.json',
   contracts: {
     balancerVault: '',
     exitQueue: '',
