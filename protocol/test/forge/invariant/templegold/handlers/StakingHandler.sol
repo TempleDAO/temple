@@ -5,8 +5,8 @@ pragma solidity ^0.8.20;
 import { BaseHandler } from "./BaseHandler.sol";
 import { ITempleGoldStaking } from "contracts/interfaces/templegold/ITempleGoldStaking.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import { TimestampStore } from "test/forge/templegold/invariant/stores/TimestampStore.sol";
-import { StateStore } from "test/forge/templegold/invariant/stores/StateStore.sol";
+import { TimestampStore } from "test/forge/invariant/templegold/stores/TimestampStore.sol";
+import { StateStore } from "test/forge/invariant/templegold/stores/StateStore.sol";
 
 contract StakingHandler is BaseHandler {
 

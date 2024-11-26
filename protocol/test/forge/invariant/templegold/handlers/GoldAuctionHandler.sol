@@ -6,8 +6,8 @@ import { BaseHandler } from "./BaseHandler.sol";
 import { IStableGoldAuction } from "contracts/interfaces/templegold/IStableGoldAuction.sol";
 import { IAuctionBase } from "contracts/interfaces/templegold/IAuctionBase.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import { TimestampStore } from "test/forge/templegold/invariant/stores/TimestampStore.sol";
-import { StateStore } from "test/forge/templegold/invariant/stores/StateStore.sol";
+import { TimestampStore } from "test/forge/invariant/templegold/stores/TimestampStore.sol";
+import { StateStore } from "test/forge/invariant/templegold/stores/StateStore.sol";
 
 
 contract GoldAuctionHandler is BaseHandler {

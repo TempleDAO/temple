@@ -3,9 +3,9 @@ pragma solidity ^0.8.20;
 // (tests/forge/templegold/invariant/BaseInvariant.t.sol)
 
 import { StdInvariant } from "forge-std/StdInvariant.sol";
-import { TempleGoldCommon } from "../TempleGoldCommon.t.sol";
-import { TimestampStore } from "test/forge/templegold/invariant/stores/TimestampStore.sol";
-import { StateStore } from "test/forge/templegold/invariant/stores/StateStore.sol";
+import { TempleGoldCommon } from "../../unit/templegold/TempleGoldCommon.t.sol";
+import { TimestampStore } from "test/forge/invariant/templegold/stores/TimestampStore.sol";
+import { StateStore } from "test/forge/invariant/templegold/stores/StateStore.sol";
 
 abstract contract BaseInvariantTest is StdInvariant, TempleGoldCommon {
 
