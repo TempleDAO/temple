@@ -759,3 +759,12 @@ export async function setExplicitAccess(
 
 const { AddressZero } = ethers.constants;
 export { AddressZero as ZERO_ADDRESS };
+
+export function runAsyncMain<T>(p: () => Promise<T>): void {
+  p()
+  .then(() => process.exit(0))
+  .catch(error => {
+    console.error(error);
+    process.exit(1);
+  });
+}

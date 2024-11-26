@@ -2,7 +2,8 @@ import { network } from "hardhat";
 import { 
     AuraStaking,AuraStaking__factory,
     BalancerPoolHelper, BalancerPoolHelper__factory,
-    DsrBaseStrategyTestnet, DsrBaseStrategyTestnet__factory,
+    DsrBaseStrategy,
+    DsrBaseStrategy__factory,
     FakeERC20, FakeERC20__factory,
     GnosisStrategy,
     GnosisStrategy__factory,
@@ -13,6 +14,8 @@ import {
     OtcOffer__factory,
     Ramos, Ramos__factory,
     RamosStrategy, RamosStrategy__factory,
+    SkyFarmBaseStrategy,
+    SkyFarmBaseStrategy__factory,
     TempleCircuitBreakerAllUsersPerPeriod, TempleCircuitBreakerAllUsersPerPeriod__factory,
     TempleCircuitBreakerProxy, TempleCircuitBreakerProxy__factory,
     TempleDebtToken, TempleDebtToken__factory,
@@ -70,6 +73,10 @@ export interface ContractAddresses {
             ADDRESS: string,
             // No circuit breakers for DSR base strategy
         }
+        DAI_ORIGAMI_SKY_FARM_BASE_STRATEGY: {
+            ADDRESS: string,
+            // No circuit breakers for DSR base strategy
+        },
         TEMPLE_BASE_STRATEGY: {
             ADDRESS: string,
             // No circuit breakers for Temple base strategy
@@ -113,6 +120,9 @@ export interface ContractAddresses {
             DAI_JOIN: string,
             POT: string,
         },
+        SKY: {
+            DAI_TO_USDS: string,
+        },
         BALANCER: {
             VAULT: string,
             HELPERS: string,
@@ -125,6 +135,13 @@ export interface ContractAddresses {
         OLYMPUS: {
             OHM_TOKEN: string,
             GOHM_TOKEN: string,
+        },
+        ORIGAMI: {
+            VAULTS: {
+                SUSDSpS: {
+                    TOKEN: string,
+                },
+            },
         },
     }
 }
@@ -174,6 +191,9 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
             DSR_BASE_STRATEGY: {
                 ADDRESS: '0x8b9e20D9970Af54fbaFe64049174e24d6DE0C412',
             },
+            DAI_ORIGAMI_SKY_FARM_BASE_STRATEGY: {
+                ADDRESS: '0x5D8E464fCA8D327fAD016EA8cF3424Cb113c07A8',
+            },
             TEMPLE_BASE_STRATEGY: {
                 ADDRESS: '0xB8d09B0436adF927004Cea0B096E8c05f6dFdc3b',
             },
@@ -220,6 +240,9 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
                 DAI_JOIN: '0x9759A6Ac90977b93B58547b4A71c78317f391A28',
                 POT: '0x197E90f9FAD81970bA7976f33CbD77088E5D7cf7',
             },
+            SKY: {
+                DAI_TO_USDS: '0x3225737a9Bbb6473CB4a45b7244ACa2BeFdB276A',
+            },
             BALANCER: {
                 VAULT: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
                 HELPERS: '0x5aDDCCa35b7A0D07C74063c48700C8590E87864E',
@@ -232,6 +255,13 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
             OLYMPUS: {
                 OHM_TOKEN: '0x64aa3364f17a4d01c6f1751fd97c2bd3d7e7f1d5',
                 GOHM_TOKEN: '0x0ab87046fBb341D058F17CBC4c1133F25a20a52f',
+            },
+            ORIGAMI: {
+                VAULTS: {
+                    SUSDSpS: {
+                        TOKEN: '0x0f90a6962e86b5587b4c11bA2B9697dC3bA84800',
+                    },
+                },
             },
         },
     },
@@ -281,6 +311,9 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
             DSR_BASE_STRATEGY: {
                 ADDRESS: '0xfB12F7170FF298CDed84C793dAb9aBBEcc01E798',
             },
+            DAI_ORIGAMI_SKY_FARM_BASE_STRATEGY: {
+                ADDRESS: '',
+            },
             TEMPLE_BASE_STRATEGY: {
                 ADDRESS: '0xc1EeD9232A0A44c2463ACB83698c162966FBc78d',
             },
@@ -323,6 +356,9 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
                 DAI_JOIN: '0x9759A6Ac90977b93B58547b4A71c78317f391A28',
                 POT: '0x197E90f9FAD81970bA7976f33CbD77088E5D7cf7',
             },
+            SKY: {
+                DAI_TO_USDS: '0x3225737a9Bbb6473CB4a45b7244ACa2BeFdB276A',
+            },
             BALANCER: {
                 VAULT: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
                 HELPERS: '0x5aDDCCa35b7A0D07C74063c48700C8590E87864E',
@@ -335,6 +371,13 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
             OLYMPUS: {
                 OHM_TOKEN: '',
                 GOHM_TOKEN: '',
+            },
+            ORIGAMI: {
+                VAULTS: {
+                    SUSDSpS: {
+                        TOKEN: '0x0f90a6962e86b5587b4c11bA2B9697dC3bA84800',
+                    },
+                },
             },
         },
     },
@@ -380,8 +423,11 @@ export interface ContractInstances {
     },
     STRATEGIES: {
         DSR_BASE_STRATEGY: {
-            INSTANCE: DsrBaseStrategyTestnet,
-        }
+            INSTANCE: DsrBaseStrategy,
+        },
+        DAI_ORIGAMI_SKY_FARM_BASE_STRATEGY: {
+            INSTANCE: SkyFarmBaseStrategy,
+        },
         TEMPLE_BASE_STRATEGY: {
             INSTANCE: TempleTokenBaseStrategy,
         },
@@ -457,7 +503,10 @@ export function connectToContracts(owner: Signer): ContractInstances {
         },
         STRATEGIES: {
             DSR_BASE_STRATEGY: {
-                INSTANCE: DsrBaseStrategyTestnet__factory.connect(TEMPLE_V2_ADDRESSES.STRATEGIES.DSR_BASE_STRATEGY.ADDRESS, owner),
+                INSTANCE: DsrBaseStrategy__factory.connect(TEMPLE_V2_ADDRESSES.STRATEGIES.DSR_BASE_STRATEGY.ADDRESS, owner),
+            },
+            DAI_ORIGAMI_SKY_FARM_BASE_STRATEGY: {
+                INSTANCE: SkyFarmBaseStrategy__factory.connect(TEMPLE_V2_ADDRESSES.STRATEGIES.DAI_ORIGAMI_SKY_FARM_BASE_STRATEGY.ADDRESS, owner),
             },
             TEMPLE_BASE_STRATEGY: {
                 INSTANCE: TempleTokenBaseStrategy__factory.connect(TEMPLE_V2_ADDRESSES.STRATEGIES.TEMPLE_BASE_STRATEGY.ADDRESS, owner),
