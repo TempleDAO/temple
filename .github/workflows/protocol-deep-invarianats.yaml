@@ -1,0 +1,159 @@
+name: Protocol Deep Invariant Tests
+on:
+  schedule:
+    - cron: "0 8 * * 0" # at 8:00pm UTC every Sunday
+  workflow_dispatch:
+    inputs:
+      invariantRuns:
+        default: "5000"
+        description: "Invariant runs: number of sequences of function calls generated and run."
+        required: false
+      invariantDepth:
+        default: "90"
+        description: "Invariant depth: number of function calls made in a given run."
+        required: false
+
+jobs:
+  build:
+    name: Build Contracts
+    runs-on: ${{ matrix.os }}
+    permissions:
+      # required for all workflows
+      security-events: write
+      # only required for workflows in private repositories
+      actions: read
+      contents: read
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+        node_version:
+          - 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Use Node.js ${{ matrix.node_version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node_version }}
+          cache: 'yarn'
+          cache-dependency-path: apps/protocol/yarn.lock
+
+      - name: Install yarn project
+        run: yarn install
+        working-directory: protocol
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Show the Foundry CI config
+        run: forge config
+        env:
+          FOUNDRY_PROFILE: ci
+      
+      - name: Show the Foundry version
+        run: forge --version
+        working-directory: protocol
+
+      - name: "Forge Build"
+        run: "forge build"
+        working-directory: protocol
+        env:
+          FOUNDRY_PROFILE: ci
+
+      - name: Increase swapfile
+        run: |
+          sudo swapoff -a
+          sudo fallocate -l 15G /swapfile
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
+          sudo swapon --show
+
+      - name: "Cache the build and the node modules so that they can be re-used by the other jobs"
+        uses: "actions/cache/save@v3"
+        with:
+          key: "build-and-modules-${{ github.sha }}"
+          path: |
+            protocol/node_modules
+            protocol/cache-foundry
+            protocol/artifacts-foundry
+
+      - name: "Store the contract artifacts in CI"
+        uses: "actions/upload-artifact@v4"
+        with:
+          name: "contract-artifacts"
+          path: "protocol/artifacts-foundry"
+
+      - name: "Add build summary"
+        run: |
+          echo "## Build result" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Passed" >> $GITHUB_STEP_SUMMARY
+
+  foundry-test-invariant:
+    name: Foundry Invariant Tests
+    needs: ["build"]
+    runs-on: ${{ matrix.os }}
+    permissions:
+      # required for all workflows
+      security-events: write
+      # only required for workflows in private repositories
+      actions: read
+      contents: read
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+        node_version:
+          - 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Use Node.js ${{ matrix.node_version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node_version }}
+          cache: 'yarn'
+          cache-dependency-path: protocol/yarn.lock
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+      - name: "Restore the cached build and the node modules"
+        uses: "actions/cache/restore@v3"
+        with:
+          fail-on-cache-miss: true
+          key: "build-and-modules-${{ github.sha }}"
+          path: |
+            protocol/node_modules
+            protocol/cache-foundry
+            protocol/artifacts-foundry
+      - name: "Generate fuzz seed"
+        run: echo "FOUNDRY_FUZZ_SEED=$EPOCHSECONDS" >> $GITHUB_ENV
+      
+      - name: "Log fuzz seed"
+        run: echo "FOUNDRY_FUZZ_SEED=$FOUNDRY_FUZZ_SEED"
+        
+      - name: Foundry invariant tests
+        run: "forge test --match-path \"test/foundry/invariant/**/*.sol\""
+        working-directory: protocol
+        env:
+          FOUNDRY_PROFILE: ci
+          FOUNDRY_INVARIANT_DEPTH: ${{ inputs.invariantDepth || '90' }}
+          FOUNDRY_INVARIANT_RUNS: ${{ inputs.invariantRuns || '5000' }}
+          MAINNET_RPC_URL: ${{ secrets.TESTS_MAINNET_RPC_URL }}
+          POLYGON_RPC_URL: ${{ secrets.TESTS_POLYGON_RPC_URL }}
+  
+      - name: "Add test summary"
+        run: |
+          echo "## Deep Invariant tests result" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Passed" >> $GITHUB_STEP_SUMMARY
