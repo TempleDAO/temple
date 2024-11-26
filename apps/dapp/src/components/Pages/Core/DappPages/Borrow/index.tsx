@@ -32,6 +32,7 @@ import env from 'constants/env';
 import { useConnectWallet } from '@web3-onboard/react';
 import Tooltip from 'components/Tooltip/Tooltip';
 import { estimateAndMine } from 'utils/ethers';
+import { aprToApy } from 'utils/helpers';
 
 export type State = {
   supplyValue: string;
@@ -184,8 +185,9 @@ export const BorrowPage = () => {
     const maxLtv = debtTokenConfig.maxLtvRatio;
 
     // current borrow apy
-    const currentBorrowInterestRate =
-      Math.pow(1 + fromAtto(debtTokenData.interestRate) / 365, 365) - 1;
+    const currentBorrowInterestRate = aprToApy(
+      fromAtto(debtTokenData.interestRate)
+    );
 
     const circuitBreakers = await getCircuitBreakers();
 
