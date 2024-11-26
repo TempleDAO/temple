@@ -78,6 +78,7 @@ export interface Token {
   address: string;
   decimals: number;
   symbol?: string;
+  logoURI?: string;
 }
 
 export interface Tokens {
@@ -106,6 +107,7 @@ export interface Environment {
   alchemyId: string;
   rpcUrl: string;
   backendUrl: string;
+  tradeTokenListUrl: string;
   contracts: Contracts;
   gas?: Gas;
   tokens: Tokens;
