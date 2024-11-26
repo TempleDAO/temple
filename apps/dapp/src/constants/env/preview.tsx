@@ -28,7 +28,7 @@ const env: Environment = {
     ogTemple: '',
     olympus: '0xf7f739Bb945880aD0398122069Fd3beC282c6621',
     otcOffer: '0x09fdf85893c1277bdc9ef1be2acdf29ee5e19771',
-    temple: '0x64a925B0fA211c44337148C0807f959Bd44b0B67',
+    temple: '0x98c5e61b1b3731a1f379e8770861164d23118cdc',
     templeStaking: '',
     templeV2FraxPair: '',
     templeV2Router: '',
@@ -53,6 +53,10 @@ const env: Environment = {
     },
     daiCircuitBreaker: '0x30AC664062f58b6E4DF187713a2352385633B739',
     templeCircuitBreaker: '0x8f783c4A3d90712A794d5660b632AC67611852aF',
+    spiceBazaar: {
+      templeGoldStaking: '0xdbDAc0FCA9cF8CA2F2Ef718775f0F265f581808F',
+      daiGoldAuction: '0x8d3671d794d511Bb0E3D28e260F8E2233C0653aB',
+    },
   },
   subgraph: {
     templeCore:
@@ -87,6 +91,12 @@ const env: Environment = {
     ascendQuote: 10_000,
   },
   tokens: {
+    templeGold: {
+      name: 'Temple Gold',
+      address: '0x2ae6318e34bb97ae3755AFcE75559452aA223A5D',
+      decimals: 18,
+      symbol: 'TGLD',
+    },
     frax: {
       name: 'Frax',
       address: '0x73651AD693531F9937528009cC204a4d9b696a68',
@@ -95,7 +105,7 @@ const env: Environment = {
     },
     temple: {
       name: 'Temple',
-      address: '0x64a925B0fA211c44337148C0807f959Bd44b0B67',
+      address: '0x98c5e61b1b3731a1f379e8770861164d23118cdc',
       decimals: 18,
       symbol: 'TEMPLE',
     },

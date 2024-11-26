@@ -193,6 +193,10 @@ const env: Environment = {
     },
     daiCircuitBreaker: '0x02607d6bc3146bb3d3022e991ef54f545988fb7b',
     templeCircuitBreaker: '0x0745D453A19DfEAd0e5fd350a231D878F5c71b8D',
+    spiceBazaar: {
+      templeGoldStaking: '',
+      daiGoldAuction: '',
+    },
   },
   gas: {
     swapFraxForTemple: 300000,
@@ -212,6 +216,11 @@ const env: Environment = {
     ascendQuote: 10_000,
   },
   tokens: {
+    templeGold: {
+      name: 'Temple Gold',
+      address: '',
+      decimals: 18,
+    },
     frax: {
       name: 'Frax',
       address: '0x853d955acef822db058eb8505911ed77f175b99e',

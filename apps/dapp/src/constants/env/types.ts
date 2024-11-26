@@ -58,6 +58,12 @@ interface Contracts {
   balancerHelpers: string;
   daiCircuitBreaker: string;
   templeCircuitBreaker: string;
+  spiceBazaar: SpiceBazaar;
+}
+
+interface SpiceBazaar {
+  templeGoldStaking: string;
+  daiGoldAuction: string;
 }
 
 interface Gas {
@@ -82,6 +88,7 @@ export interface Token {
 }
 
 export interface Tokens {
+  templeGold: Token;
   frax: Token;
   temple: Token;
   ogTemple: Token;

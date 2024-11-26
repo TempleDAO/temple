@@ -17,6 +17,7 @@ declare module 'styled-components' {
       dark: string;
       dark75: string;
       grayOpaque: string;
+      gold: string;
       light: string;
       light75: string;
       light50: string;

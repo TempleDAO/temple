@@ -14,6 +14,7 @@ import CurrencyExchange from 'assets/icons/currency_exchange.svg?react';
 import Payments from 'assets/icons/payments.svg?react';
 import Candle from 'assets/icons/candle.svg?react';
 import Restore from 'assets/icons/restore.svg?react';
+import StoreFront from 'assets/icons/storefront.svg?react';
 import { useGeoBlocked } from 'hooks/use-geo-blocked';
 import GeoblockModal from 'components/Popover/GeoblockModal';
 
@@ -32,6 +33,7 @@ enum V2DashboardLocPaths {
   Trade = '/dapp/trade',
   Trv = '/dapp/dashboard/treasuryreservesvault',
   Borrow = '/dapp/borrow',
+  SpiceBazaar = '/dapp/spice',
   Legacy = '/dapp/legacy',
 }
 
@@ -61,6 +63,12 @@ const V2Layout = () => {
       linkTo: V2DashboardLocPaths.Borrow,
       Logo: Payments,
       selected: V2DashboardLocPaths.Borrow === loc.pathname,
+    },
+    {
+      label: 'Spice Bazaar',
+      linkTo: V2DashboardLocPaths.SpiceBazaar,
+      Logo: StoreFront,
+      selected: V2DashboardLocPaths.SpiceBazaar === loc.pathname,
     },
     {
       label: 'Legacy',

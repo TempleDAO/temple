@@ -53,6 +53,10 @@ const env: Environment = {
     },
     daiCircuitBreaker: '',
     templeCircuitBreaker: '',
+    spiceBazaar: {
+      templeGoldStaking: '',
+      daiGoldAuction: '',
+    },
   },
   infuraId: '4cd22916292d4fb6be156454978c326b',
   subgraph: {
@@ -75,6 +79,11 @@ const env: Environment = {
   },
   etherscan: 'https://sepolia.etherscan.io',
   tokens: {
+    templeGold: {
+      name: 'Temple Gold',
+      address: '',
+      decimals: 18,
+    },
     frax: {
       name: 'Frax',
       address: '',
