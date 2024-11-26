@@ -9,6 +9,8 @@ const env: Environment = {
   alchemyId: '-nNWThz_YpX1cGffGiz-lbSMu7dmp4GK',
   rpcUrl: 'https://rpc.ankr.com/eth',
   backendUrl: 'http://localhost:3001',
+  tradeTokenListUrl:
+    'https://sf294otxgnbicood.public.blob.vercel-storage.com/testnet-tokens-acdWvsxlYFCXUEjNZmcxd4DRB4fXAb.json',
   contracts: {
     balancerVault: '',
     farmingWallet: '',

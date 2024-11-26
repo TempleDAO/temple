@@ -32,7 +32,6 @@ enum V2DashboardLocPaths {
   Trade = '/dapp/trade',
   Trv = '/dapp/dashboard/treasuryreservesvault',
   Borrow = '/dapp/borrow',
-  Ohmage = '/dapp/ohmage',
   Legacy = '/dapp/legacy',
 }
 
@@ -62,12 +61,6 @@ const V2Layout = () => {
       linkTo: V2DashboardLocPaths.Borrow,
       Logo: Payments,
       selected: V2DashboardLocPaths.Borrow === loc.pathname,
-    },
-    {
-      label: 'Ohmage',
-      linkTo: V2DashboardLocPaths.Ohmage,
-      Logo: Candle,
-      selected: V2DashboardLocPaths.Ohmage === loc.pathname,
     },
     {
       label: 'Legacy',

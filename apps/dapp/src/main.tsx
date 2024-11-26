@@ -17,7 +17,6 @@ import { TradePage } from './components/Pages/Core/DappPages/TradePage';
 import { BorrowPage } from 'components/Pages/Core/DappPages/Borrow';
 import { LegacyPage } from 'components/Pages/Core/DappPages/LegacyPage';
 import V2Layout from 'components/Layouts/V2Layout';
-import { OhmagePage } from 'components/Pages/Core/DappPages/OhmagePage';
 
 // Separate Chunks
 const TeamPayments = React.lazy(() => import('components/Pages/TeamPayments'));
@@ -80,7 +79,6 @@ root.render(
               <Route path="dashboard/*" element={<DashboardPage />} />
               <Route path="trade" element={<TradePage />} />
               <Route path="borrow" element={<BorrowPage />} />
-              <Route path="ohmage" element={<OhmagePage />} />
               <Route path="legacy" element={<LegacyPage />} />
             </Route>
           </>
