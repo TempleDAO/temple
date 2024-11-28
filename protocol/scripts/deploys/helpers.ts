@@ -46,6 +46,7 @@ interface TeamPayments {
   TEMPLE_TEAM_EPOCH_25B: string;
   TEMPLE_TEAM_EPOCH_25C: string;
   TEMPLE_TEAM_EPOCH_26A: string;
+  TEMPLE_TEAM_EPOCH_26B: string;
 }
 
 export interface DeployedContracts {
@@ -319,6 +320,7 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
       TEMPLE_TEAM_EPOCH_25B: '0x0197B9F8d504e020C875fcafb3403e55Bef31c36',
       TEMPLE_TEAM_EPOCH_25C: '0xb486C1D3F49D20b442ba77f169998a16550ddAd8',
       TEMPLE_TEAM_EPOCH_26A: '0xf78d757da74d5f3a67599240eab918FC347f2BdE',
+      TEMPLE_TEAM_EPOCH_26B: '0xa493DaEeEb5BaDf74fdB872555090A7850ac49f0',
     },
 
     TEMPLE_TEAM_PAYMENTS_IMPLEMENTATION: '',
