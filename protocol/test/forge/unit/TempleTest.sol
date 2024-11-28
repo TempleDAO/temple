@@ -1,4 +1,4 @@
-pragma solidity 0.8.20;
+pragma solidity ^0.8.20;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
@@ -26,6 +26,12 @@ abstract contract TempleTest is Test {
         blockNumber = _blockNumber;
         chain = getChain(chainAlias);
         forkId = vm.createSelectFork(chain.rpcUrl, _blockNumber);
+    }
+
+    // Fork using .env $<CHAIN_ALIAS>_RPC_URL (or the default RPC URL), at latest blockNumber. Returns fork id
+    function fork(string memory chainAlias) internal returns (uint256) {
+        chain = getChain(chainAlias);
+        return vm.createSelectFork(chain.rpcUrl);
     }
 
     function dealAdditional(IERC20 token, address to, uint256 additionalAmount) internal {
