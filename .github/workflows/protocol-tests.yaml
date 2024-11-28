@@ -50,6 +50,7 @@ jobs:
         working-directory: protocol
         env:
           TESTS_MAINNET_RPC_URL: ${{ secrets.TESTS_MAINNET_RPC_URL }}
+          ARBITRUM_ONE_RPC_URL: ${{ secrets.TESTS_ARBITRUM_ONE_RPC_URL }}
 
   foundryTests:
     name: Foundry Tests
@@ -100,12 +101,73 @@ jobs:
         run: forge --version
         working-directory: protocol
 
-      - name: Foundry tests
-        run: forge test --gas-report
+      - name: Foundry unit tests
+        run: forge test --match-path "test/forge/unit/**/*.t.sol"
         working-directory: protocol
         env:
           FOUNDRY_PROFILE: ci
           MAINNET_RPC_URL: ${{ secrets.TESTS_MAINNET_RPC_URL }}
+          ARBITRUM_ONE_RPC_URL: ${{ secrets.TESTS_ARBITRUM_ONE_RPC_URL }}
+
+  foundryInvariantTests:
+    name: Foundry Invariant Tests
+    runs-on: ${{ matrix.os }}
+    permissions:
+      # required for all workflows
+      security-events: write
+      # only required for workflows in private repositories
+      actions: read
+      contents: read
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+        node_version:
+          - 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Use Node.js ${{ matrix.node_version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node_version }}
+          cache: 'yarn'
+          cache-dependency-path: protocol/yarn.lock
+
+      - name: Install yarn project
+        run: yarn install
+        working-directory: protocol
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+          #  version: nightly-ca67d15f4abd46394b324c50e21e66f306a1162d
+          cache: true
+      
+      - name: Show the Foundry CI config
+        run: forge config
+        env:
+          FOUNDRY_PROFILE: ci
+        
+      - name: Show the Foundry version
+        run: forge --version
+        working-directory: protocol
+
+      - name: Foundry invariant tests
+        run: forge test --match-path "test/forge/invariant/**/*.sol"
+        working-directory: protocol
+        env:
+          FOUNDRY_PROFILE: ci
+          FOUNDRY_INVARIANT_RUNS: 150  # Defer larger runs for another pipeline
+          FOUNDRY_INVARIANT_DEPTH: 80
+          MAINNET_RPC_URL: ${{ secrets.TESTS_MAINNET_RPC_URL }}
+          ARBITRUM_ONE_RPC_URL: ${{ secrets.TESTS_ARBITRUM_ONE_RPC_URL }}
+
 
   slither:
     name: Slither
