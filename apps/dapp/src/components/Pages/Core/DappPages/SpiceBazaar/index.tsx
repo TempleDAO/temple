@@ -37,47 +37,21 @@ export const SpiceBazaarPage = () => {
           </Title>
           {isPhoneOrAbove ? (
             <Text>
-              Welcome to Spice Auctions, <br />
-              a marketplace where you <br />
-              can spend your earned <br />
-              Temple Gold (TGLD) to <br />
-              acquire valuable tokens <br />
-              from the Temple Treasury. <br />
-              Each Spice Auction will <br />
-              have a fixed duration with <br />
-              no reserve price. <br />
-              Interested buyers may <br />
-              enter a bid for any amount <br />
-              of TGLD. The final price for <br />
-              the token lot up for <br />
-              bidding will be determined <br />
-              at the end of the auction <br />
-              once the last TGLD bid has <br />
-              been received. Good luck <br />
-              to all the Bidders!
+              Welcome to the Spice Bazaar, <br />
+              a marketplace where you can <br />
+              earn Temple Gold and spend <br />
+              them to acquire valuable <br />
+              tokens from the Treasury. <br />
             </Text>
           ) : (
             <TextMobileContainer>
               <TextMobile>
-                Welcome to Spice Auctions, a <br />
-                marketplace where you can spend your <br />
-                earned Temple Gold (TGLD) to acquire <br />
-                valuable tokens from the Temple <br />
-                Treasury.
+                Welcome to the Spice Bazaar, <br />
+                a marketplace where you can <br />
+                earn Temple Gold and spend <br />
+                them to acquire valuable <br />
+                tokens from the Treasury. <br />
               </TextMobile>
-              <TextMobile>
-                Each Spice Auction will have a fixed <br />
-                duration with no reserve price.
-              </TextMobile>
-              <TextMobile>
-                Interested buyers may enter a bid for <br />
-                any amount of TGLD. The final price for <br />
-                the token lot up for bidding will be <br />
-                determined at the end of the auction <br />
-                once the last TGLD bid has been <br />
-                received.
-              </TextMobile>
-              <TextMobile>Good luck to all the Bidders!</TextMobile>
             </TextMobileContainer>
           )}
         </LeftContainer>
