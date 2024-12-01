@@ -26,10 +26,16 @@ export const Earn = () => {
           <LinkIcon />
         </HeaderTitle>
         <HeaderText>
-          Welcome to the Spice Bazaar, a {!isPhoneOrAbove && <br />}
-          marketplace where you can earn TGLD {!isPhoneOrAbove && <br />}
-          and participate in Spice Auctions to bid {!isPhoneOrAbove && <br />}
-          on partner tokens.
+          Temple Gold (TGLD) is the native currency of the Spice Bazaar. {!isPhoneOrAbove && <br />}
+          TGLD can be used to enter bids on certain tokens from the Treasury {!isPhoneOrAbove && <br />}
+          offered through periodic Auctions called Spice Auctions. {!isPhoneOrAbove && <br />}
+        </HeaderText>
+        <HeaderText>
+          Temple Gold is accessible to everyone. If you do not {!isPhoneOrAbove && <br />}
+          hold TEMPLE, You may directly enter USDS bids for {!isPhoneOrAbove && <br />}
+          TGLD through bi-weekly Gold Auctions. If you are a {!isPhoneOrAbove && <br />}
+          TEMPLE holder, simply stake TEMPLE for TGLD {!isPhoneOrAbove && <br />}
+          rewards every Epoch and use them in Spice Auctions. {!isPhoneOrAbove && <br />} 
         </HeaderText>
       </Header>
       <ContentContainer>
