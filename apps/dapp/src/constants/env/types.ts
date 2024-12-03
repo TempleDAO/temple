@@ -46,12 +46,12 @@ interface Contracts {
   vaultEarlyExit: string;
   ramos: string;
   strategies: {
-    dsrBaseStrategy: string;
     ramosStrategy: string;
     templeStrategy: string;
     tlcStrategy: string;
     temploMayorGnosisStrategy: string;
     fohmoGnosisStrategy: string;
+    daiSkyFarmBaseStrategy: string;
   };
   ramosPoolHelper: string;
   templeDaiBalancerPool: string;

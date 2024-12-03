@@ -8,7 +8,7 @@ export enum StrategyKey {
   RAMOS = 'RamosStrategy',
   TLC = 'TlcStrategy',
   TEMPLEBASE = 'TempleBaseStrategy',
-  DSRBASE = 'DsrBaseStrategy',
+  SKY_FARM_BASE = 'DaiSkyFarmBaseStrategy',
   TEMPLO_MAYOR_GNOSIS = 'TemploMayorStrategy',
   FOHMO_GNOSIS = 'FohmoStrategy',
 }
@@ -69,13 +69,13 @@ export const Dashboards: DashboardData[] = [
     contractLink: `${env.etherscan}/address/${env.contracts.strategies.templeStrategy}`,
   },
   {
-    key: StrategyKey.DSRBASE,
-    name: 'DSR Base',
-    title: 'DSR BASE',
-    path: 'dsrbase',
+    key: StrategyKey.SKY_FARM_BASE,
+    name: 'Sky Farm Base',
+    title: 'SKY FARM BASE',
+    path: 'skyfarmbase',
     description:
-      'Idle reserve capital in the TRV that is not currently borrowed by a Strategy Borrower will be automatically directed to a Base Strategy to earn yield. The TRV Base Strategy is currently set to the Dai Savings Rate (DSR) or sDAI. The current rate of return for the Base Strategy also serves as the performance benchmark or "risk-free" interest rate for Treasury Strategies.',
-    contractLink: `${env.etherscan}/address/${env.contracts.strategies.dsrBaseStrategy}`,
+      'Idle reserve capital in the TRV that is not currently borrowed by a Strategy Borrower will be automatically directed to a Base Strategy to earn yield. The TRV Base Strategy is currently set to the Sky Farm Base Strategy. The current rate of return for the Base Strategy also serves as the performance benchmark or "risk-free" interest rate for Treasury Strategies.',
+    contractLink: `${env.etherscan}/address/${env.contracts.strategies.daiSkyFarmBaseStrategy}`,
   },
   {
     key: StrategyKey.TEMPLO_MAYOR_GNOSIS,

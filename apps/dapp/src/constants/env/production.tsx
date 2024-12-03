@@ -188,12 +188,12 @@ const env: Environment = {
       '0x8bd4a1e74a27182d23b98c10fd21d4fbb0ed4ba00002000000000000000004ed',
     balancerHelpers: '0x5aDDCCa35b7A0D07C74063c48700C8590E87864E',
     strategies: {
-      dsrBaseStrategy: '0x8b9e20D9970Af54fbaFe64049174e24d6DE0C412',
       ramosStrategy: '0xDA5CeF575eaEF14032C5006eb5cbEbE7eE0E347b',
       templeStrategy: '0xB8d09B0436adF927004Cea0B096E8c05f6dFdc3b',
       tlcStrategy: '0xcABDE42dd767361739bD7c09C6E574057080ef01',
       temploMayorGnosisStrategy: '0xb28FEC0EE90680EE25d42e8101159a72E359be7c',
       fohmoGnosisStrategy: '0xF179C63735690d2C08cfb231d15c0c7ac3A2Bc67',
+      daiSkyFarmBaseStrategy: '0x5d8e464fca8d327fad016ea8cf3424cb113c07a8',
     },
     daiCircuitBreaker: '0x02607d6bc3146bb3d3022e991ef54f545988fb7b',
     templeCircuitBreaker: '0x0745D453A19DfEAd0e5fd350a231D878F5c71b8D',
