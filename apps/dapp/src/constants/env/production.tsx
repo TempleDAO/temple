@@ -188,6 +188,7 @@ const env: Environment = {
       '0x8bd4a1e74a27182d23b98c10fd21d4fbb0ed4ba00002000000000000000004ed',
     balancerHelpers: '0x5aDDCCa35b7A0D07C74063c48700C8590E87864E',
     strategies: {
+      dsrBaseStrategy: '0x8b9e20D9970Af54fbaFe64049174e24d6DE0C412',
       ramosStrategy: '0xDA5CeF575eaEF14032C5006eb5cbEbE7eE0E347b',
       templeStrategy: '0xB8d09B0436adF927004Cea0B096E8c05f6dFdc3b',
       tlcStrategy: '0xcABDE42dd767361739bD7c09C6E574057080ef01',

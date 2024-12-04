@@ -46,6 +46,7 @@ interface Contracts {
   vaultEarlyExit: string;
   ramos: string;
   strategies: {
+    dsrBaseStrategy: string;
     ramosStrategy: string;
     templeStrategy: string;
     tlcStrategy: string;
