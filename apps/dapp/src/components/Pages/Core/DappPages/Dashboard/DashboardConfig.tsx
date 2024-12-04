@@ -91,9 +91,9 @@ export const Dashboards: DashboardData[] = [
   {
     key: StrategyKey.SKY_FARM_BASE,
     title: 'BASE sUSDS+s',
-    path: 'skyfarmbase',
+    path: 'susdspsbase',
     description:
-      'Idle reserve capital in the TRV that is not currently borrowed by a Strategy Borrower will be automatically directed to a Base Strategy to earn yield. The TRV Base Strategy is currently set to the Sky Farm Base Strategy. The current rate of return for the Base Strategy also serves as the performance benchmark or "risk-free" interest rate for Treasury Strategies.',
+      'Idle reserve capital in the TRV that is not currently borrowed by a Strategy Borrower will be automatically directed to a Base Strategy to earn yield. The TRV Base Strategy is currently set to the Origami Sky Auto Farm (sUSDS+s) Base Strategy. The current rate of return for the Base Strategy also serves as the performance benchmark or "risk-free" interest rate for Treasury Strategies.',
     contractLink: `${env.etherscan}/address/${env.contracts.strategies.daiSkyFarmBaseStrategy}`,
   },
 ];
