@@ -98,7 +98,7 @@ contract BalancerPoolHelper is IBalancerPoolHelper {
         return getSpotPrice() > treasuryPriceIndex;
     }
 
-    // @notice will exit take price above TPI by a percentage
+    // @notice will exit of protocol tokens take price above TPI by a percentage
     // percentage in bps
     // tokensOut: expected min amounts out. for rebalance this is expected `ProtocolToken` tokens out
     function willExitTakePriceAboveTpiUpperBound(

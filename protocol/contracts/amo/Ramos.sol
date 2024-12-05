@@ -77,6 +77,7 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
     /// @notice The vault from where to borrow and repay the Protocol & Quote Tokens
     IRamosTokenVault public override tokenVault;
 
+    // todo
     /// @notice The percentage bounds (in bps) beyond which to rebalance up or down
     uint64 public override rebalancePercentageBoundLow;
     uint64 public override rebalancePercentageBoundUp;
@@ -141,7 +142,7 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
      * @notice Set the acceptable amount of price impact allowed due to a rebalance
      */
     function setPostRebalanceDelta(uint64 deltaBps) external onlyElevatedAccess {
-        if (deltaBps > BPS_PRECISION || deltaBps == 0) {
+        if (deltaBps == 0) {
             revert AMOCommon.InvalidBPSValue(deltaBps);
         }
         postRebalanceDelta = deltaBps;
@@ -166,8 +167,11 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
 
     /// @notice Set maximum percentage bounds (in bps) beyond which to rebalance up or down
     function setRebalancePercentageBounds(uint64 belowTpi, uint64 aboveTpi) external onlyElevatedAccess {
-        if (belowTpi > BPS_PRECISION || aboveTpi > BPS_PRECISION) {
+        if (belowTpi == 0) {
             revert AMOCommon.InvalidBPSValue(belowTpi);
+        }
+        if (aboveTpi == 0) {
+            revert AMOCommon.InvalidBPSValue(aboveTpi);
         }
         rebalancePercentageBoundLow = belowTpi;
         rebalancePercentageBoundUp = aboveTpi;
