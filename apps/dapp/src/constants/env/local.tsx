@@ -50,6 +50,7 @@ const env: Environment = {
       tlcStrategy: '',
       temploMayorGnosisStrategy: '',
       fohmoGnosisStrategy: '',
+      daiSkyFarmBaseStrategy: '',
     },
     daiCircuitBreaker: '',
     templeCircuitBreaker: '',

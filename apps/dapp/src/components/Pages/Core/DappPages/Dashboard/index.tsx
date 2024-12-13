@@ -72,7 +72,7 @@ const NavLink = styled(BaseNavLink)<NavLinkProps>`
 `;
 
 const NavCell = styled.div`
-  padding-right: 1rem;
+  padding-right: 1.8rem;
   font-size: 1.2rem;
   font-weight: 600;
   cursor: pointer;
