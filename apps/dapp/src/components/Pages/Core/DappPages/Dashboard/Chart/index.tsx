@@ -31,8 +31,6 @@ const metricOptions: { value: V2SnapshotMetric; label: string }[] = [
 const CHART_SELECTOR_QUERY_PARAM = 'chart';
 
 const DashboardChart = ({ dashboardData }: DashboardChartProps) => {
-  console.debug('DashboardChart with name: ', dashboardData.name);
-
   const [searchParams, setSearchParams] = useSearchParams();
   const isDesktop = useMediaQuery({
     query: breakpoints.queryPhone,
