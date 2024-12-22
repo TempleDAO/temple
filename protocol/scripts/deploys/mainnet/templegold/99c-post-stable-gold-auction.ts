@@ -21,9 +21,9 @@ async function main() {
         auctionMinimumDistributedGold: ethers.utils.parseEther("10_000"),
     };
     // auction starter
-    await mine(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.DAI_GOLD_AUCTION.setAuctionStarter(TEMPLE_GOLD_ADDRESSES.TEMPLE_GOLD.AUCTION_AUTOMATION_EOA));
+    await mine(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.STABLE_GOLD_AUCTION.setAuctionStarter(TEMPLE_GOLD_ADDRESSES.TEMPLE_GOLD.AUCTION_AUTOMATION_EOA));
     // auction config
-    await mine(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.DAI_GOLD_AUCTION.setAuctionConfig(auctionConfig));
+    await mine(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.STABLE_GOLD_AUCTION.setAuctionConfig(auctionConfig));
 }
   
 // We recommend this pattern to be able to use async/await everywhere

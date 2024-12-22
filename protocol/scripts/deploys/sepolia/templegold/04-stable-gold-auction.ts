@@ -1,6 +1,6 @@
 import '@nomiclabs/hardhat-ethers';
 import { ethers } from 'hardhat';
-import { DaiGoldAuction__factory } from '../../../../typechain';
+import { StableGoldAuction__factory } from '../../../../typechain';
 import {
   deployAndMine,
   ensureExpectedEnvvars,
@@ -13,7 +13,7 @@ async function main() {
   const ownerAddress = await owner.getAddress();
   const TEMPLEGOLD_ADDRESSES = getDeployedTempleGoldContracts();
 
-  const factory = new DaiGoldAuction__factory(owner);
+  const factory = new StableGoldAuction__factory(owner);
   await deployAndMine(
     'DAI_GOLD_AUCTION',
     factory,

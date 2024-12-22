@@ -16,7 +16,9 @@ async function main() {
     const staking = TempleGoldStaking__factory.connect(TEMPLE_GOLD_ADDRESSES.TEMPLE_GOLD.TEMPLE_GOLD_STAKING, owner);
     const templeToken = FakeERC20__factory.connect(TEMPLE_GOLD_ADDRESSES.CORE.TEMPLE_TOKEN, owner);
 
-    await mine(templeToken.approve(TEMPLE_GOLD_ADDRESSES.TEMPLE_GOLD.TEMPLE_GOLD_STAKING, toAtto(1000)));
+    const amount = toAtto(100_000);
+    await mine(templeToken.approve(TEMPLE_GOLD_ADDRESSES.TEMPLE_GOLD.TEMPLE_GOLD_STAKING, amount));
+    await mine(templeToken.mint(await owner.getAddress(), amount));
     await mine(staking.stake(toAtto(1)));
 }
 
