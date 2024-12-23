@@ -59,10 +59,7 @@ export const Withdraw: React.FC<IProps> = ({
     return getEstimatedCollateral() * prices.tpi * (MAX_LTV / 100);
   };
 
-  const maxWithdrawWithCircuitBreaker = useMemo((): {
-    value: number;
-    isCircuitBreakerActive: boolean;
-  } => {
+  const maxWithdrawValue = useMemo((): number => {
     const userMaxWithdraw = accountPosition
       ? fromAtto(accountPosition.collateral) -
         fromAtto(accountPosition.currentDebt) / (MAX_LTV / 100) / prices.tpi
@@ -70,18 +67,16 @@ export const Withdraw: React.FC<IProps> = ({
 
     const userMaxWithdrawBigNumber = toAtto(userMaxWithdraw);
 
-    if (!tlcInfo) {
-      return { value: userMaxWithdraw, isCircuitBreakerActive: false };
+    if (
+      tlcInfo &&
+      tlcInfo.circuitBreakers.templeCircuitBreakerRemaining.lt(
+        userMaxWithdrawBigNumber
+      )
+    ) {
+      return fromAtto(tlcInfo.circuitBreakers.templeCircuitBreakerRemaining);
     }
 
-    if (tlcInfo.templeCircuitBreakerRemaining.lt(userMaxWithdrawBigNumber)) {
-      return {
-        value: fromAtto(tlcInfo.templeCircuitBreakerRemaining),
-        isCircuitBreakerActive: true,
-      };
-    }
-
-    return { value: userMaxWithdraw, isCircuitBreakerActive: false };
+    return userMaxWithdraw;
   }, [accountPosition, prices.tpi, tlcInfo]);
 
   return (
@@ -102,11 +97,11 @@ export const Withdraw: React.FC<IProps> = ({
         onHintClick={() => {
           setState({
             ...state,
-            withdrawValue: maxWithdrawWithCircuitBreaker.value.toFixed(2),
+            withdrawValue: maxWithdrawValue.toFixed(2),
           });
         }}
         min={0}
-        hint={`Max: ${maxWithdrawWithCircuitBreaker.value.toFixed(2)}`}
+        hint={`Max: ${maxWithdrawValue.toFixed(2)}`}
         width="100%"
       />
       {/* Only display if user has borrows */}
@@ -168,7 +163,7 @@ export const Withdraw: React.FC<IProps> = ({
           // Disable if amount is 0 or greater than max withdraw
           disabled={
             Number(state.withdrawValue) <= 0 ||
-            Number(state.withdrawValue) > maxWithdrawWithCircuitBreaker.value
+            Number(state.withdrawValue) > maxWithdrawValue
           }
         >
           Withdraw

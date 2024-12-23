@@ -8,6 +8,7 @@ export enum StrategyKey {
   RAMOS = 'RamosStrategy',
   TLC = 'TlcStrategy',
   TEMPLEBASE = 'TempleBaseStrategy',
+  SKY_FARM_BASE = 'DaiSkyFarmBaseStrategy',
   DSRBASE = 'DsrBaseStrategy',
   TEMPLO_MAYOR_GNOSIS = 'TemploMayorStrategy',
   FOHMO_GNOSIS = 'FohmoStrategy',
@@ -24,7 +25,6 @@ export const isTRVDashboard = (strategy: StrategyKey | TrvKey) =>
 
 export type DashboardData = {
   key: StrategyKey | TrvKey;
-  name: string;
   title: string;
   path: string;
   description: string;
@@ -34,7 +34,6 @@ export type DashboardData = {
 export const Dashboards: DashboardData[] = [
   {
     key: TRV_KEY,
-    name: 'Treasury Reserves Vault',
     title: 'TRV',
     path: 'treasuryreservesvault',
     description:
@@ -43,7 +42,6 @@ export const Dashboards: DashboardData[] = [
   },
   {
     key: StrategyKey.RAMOS,
-    name: 'Ramos',
     title: 'RAMOS',
     path: 'ramos',
     description:
@@ -52,7 +50,6 @@ export const Dashboards: DashboardData[] = [
   },
   {
     key: StrategyKey.TLC,
-    name: 'TLC',
     title: 'TLC',
     path: 'tlc',
     description:
@@ -60,26 +57,7 @@ export const Dashboards: DashboardData[] = [
     contractLink: `${env.etherscan}/address/${env.contracts.strategies.tlcStrategy}`,
   },
   {
-    key: StrategyKey.TEMPLEBASE,
-    name: 'Temple Base',
-    title: 'TEMPLE BASE',
-    path: 'templebase',
-    description:
-      'TEMPLE Base strategy is the funding source for TEMPLE tokens for automated market operations (AMO) in the Treasury framework. The TRV facilitates the withdrawal of newly minted TEMPLE tokens from and the issuance of TEMPLE debt to the TEMPLE Base strategy. These TEMPLE tokens will be borrowed by a Treasury Strategy such as Ramos to generate returns. Once these tokens are repaid to the TRV, they will be deposited to the TEMPLE Base strategy to be burned. Positive returns will be realized when TEMPLE flows to the TEMPLE Base strategy is net positive.',
-    contractLink: `${env.etherscan}/address/${env.contracts.strategies.templeStrategy}`,
-  },
-  {
-    key: StrategyKey.DSRBASE,
-    name: 'DSR Base',
-    title: 'DSR BASE',
-    path: 'dsrbase',
-    description:
-      'Idle reserve capital in the TRV that is not currently borrowed by a Strategy Borrower will be automatically directed to a Base Strategy to earn yield. The TRV Base Strategy is currently set to the Dai Savings Rate (DSR) or sDAI. The current rate of return for the Base Strategy also serves as the performance benchmark or "risk-free" interest rate for Treasury Strategies.',
-    contractLink: `${env.etherscan}/address/${env.contracts.strategies.dsrBaseStrategy}`,
-  },
-  {
     key: StrategyKey.TEMPLO_MAYOR_GNOSIS,
-    name: 'Templo Mayor',
     title: 'TEMPLO MAYOR',
     path: 'templomayor',
     description:
@@ -88,11 +66,34 @@ export const Dashboards: DashboardData[] = [
   },
   {
     key: StrategyKey.FOHMO_GNOSIS,
-    name: 'Fohmo',
     title: 'FOHMO',
     path: 'fohmo',
     description:
       'FOHMO is a strategy that aims to maintain a maximally looped position in OHM',
     contractLink: `${env.etherscan}/address/${env.contracts.strategies.fohmoGnosisStrategy}`,
+  },
+  {
+    key: StrategyKey.TEMPLEBASE,
+    title: 'BASE TEMPLE',
+    path: 'templebase',
+    description:
+      'TEMPLE Base strategy is the funding source for TEMPLE tokens for automated market operations (AMO) in the Treasury framework. The TRV facilitates the withdrawal of newly minted TEMPLE tokens from and the issuance of TEMPLE debt to the TEMPLE Base strategy. These TEMPLE tokens will be borrowed by a Treasury Strategy such as Ramos to generate returns. Once these tokens are repaid to the TRV, they will be deposited to the TEMPLE Base strategy to be burned. Positive returns will be realized when TEMPLE flows to the TEMPLE Base strategy is net positive.',
+    contractLink: `${env.etherscan}/address/${env.contracts.strategies.templeStrategy}`,
+  },
+  {
+    key: StrategyKey.DSRBASE,
+    title: 'BASE DSR ',
+    path: 'dsrbase',
+    description:
+      'Idle reserve capital in the TRV that is not currently borrowed by a Strategy Borrower will be automatically directed to a Base Strategy to earn yield. The TRV Base Strategy is currently set to the Dai Savings Rate (DSR) or sDAI. The current rate of return for the Base Strategy also serves as the performance benchmark or "risk-free" interest rate for Treasury Strategies.',
+    contractLink: `${env.etherscan}/address/${env.contracts.strategies.dsrBaseStrategy}`,
+  },
+  {
+    key: StrategyKey.SKY_FARM_BASE,
+    title: 'BASE SKY AUTO FARM',
+    path: 'sky-auto-farm-base',
+    description:
+      'Idle reserve capital in the TRV that is not currently borrowed by a Strategy Borrower will be automatically directed to a Base Strategy to earn yield. The TRV Base Strategy is currently set to the Sky Auto Farm Base Strategy. The current rate of return for the Base Strategy also serves as the performance benchmark or "risk-free" interest rate for Treasury Strategies.',
+    contractLink: `${env.etherscan}/address/${env.contracts.strategies.daiSkyFarmBaseStrategy}`,
   },
 ];
