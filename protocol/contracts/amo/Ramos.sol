@@ -77,7 +77,6 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
     /// @notice The vault from where to borrow and repay the Protocol & Quote Tokens
     IRamosTokenVault public override tokenVault;
 
-    // todo
     /// @notice The percentage bounds (in bps) beyond which to rebalance up or down
     uint64 public override rebalancePercentageBoundLow;
     uint64 public override rebalancePercentageBoundUp;
