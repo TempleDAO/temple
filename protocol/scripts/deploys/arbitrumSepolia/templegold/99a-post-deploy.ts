@@ -27,7 +27,7 @@ async function _templeGoldPostDeploy(
     const ownerAddress = await owner.getAddress();
     const distributionParams = {
         staking: ethers.utils.parseEther("20"),
-        daiGoldAuction: ethers.utils.parseEther("70"),
+        auction: ethers.utils.parseEther("70"),
         gnosis: ethers.utils.parseEther("10")
     }
     const vestingFactor = {
@@ -36,12 +36,12 @@ async function _templeGoldPostDeploy(
     }
     // Set and whitelist contracts
     await mine(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.TEMPLE_GOLD.setTeamGnosis(ownerAddress));
-    await mine(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.TEMPLE_GOLD.setDaiGoldAuction(TEMPLE_GOLD_ADDRESSES.TEMPLE_GOLD.DAI_GOLD_AUCTION));
+    await mine(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.TEMPLE_GOLD.setStableGoldAuction(TEMPLE_GOLD_ADDRESSES.TEMPLE_GOLD.STABLE_GOLD_AUCTION));
     await mine(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.TEMPLE_GOLD.setStaking(TEMPLE_GOLD_ADDRESSES.TEMPLE_GOLD.TEMPLE_GOLD_STAKING));
     await mine(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.TEMPLE_GOLD.setVestingFactor(vestingFactor));
     await mine(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.TEMPLE_GOLD.setDistributionParams(distributionParams));
     // authorize contracts
-    await mine(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.TEMPLE_GOLD.authorizeContract(TEMPLE_GOLD_ADDRESSES.TEMPLE_GOLD.DAI_GOLD_AUCTION, true));
+    await mine(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.TEMPLE_GOLD.authorizeContract(TEMPLE_GOLD_ADDRESSES.TEMPLE_GOLD.STABLE_GOLD_AUCTION, true));
     await mine(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.TEMPLE_GOLD.authorizeContract(TEMPLE_GOLD_ADDRESSES.TEMPLE_GOLD.TEMPLE_GOLD_STAKING, true));
     await mine(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.TEMPLE_GOLD.authorizeContract(ownerAddress, true));
 }
@@ -80,9 +80,9 @@ async function _daiGoldPostDeploy(
         auctionMinimumDistributedGold: ethers.utils.parseEther("10"),
     };
     // auction starter
-    await mine(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.DAI_GOLD_AUCTION.setAuctionStarter(ownerAddress));
+    await mine(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.STABLE_GOLD_AUCTION.setAuctionStarter(ownerAddress));
     // auction config
-    await mine(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.DAI_GOLD_AUCTION.setAuctionConfig(auctionConfig));
+    await mine(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.STABLE_GOLD_AUCTION.setAuctionConfig(auctionConfig));
 }
 
 async function _templeTeleporterPostDeploy() {
