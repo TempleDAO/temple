@@ -100,7 +100,7 @@ const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
             AUCTION_AUTOMATION_EOA: "string",
             STAKING_AUTOMATION_EOA: "string",
             SPICE_AUCTION_OPERATOR: "string",
-            TEMPLE_GOLD: "0x2ae6318e34bb97ae3755AFcE75559452aA223A5D", //"0x192aA9BfDcA5540406E211950C226C8E0cd5047F",
+            TEMPLE_GOLD: "0x2ae6318e34bb97ae3755AFcE75559452aA223A5D",
             TEMPLE_GOLD_ADMIN: "string",
             TEMPLE_GOLD_STAKING: "0xdbDAc0FCA9cF8CA2F2Ef718775f0F265f581808F",
             TEMPLE_TELEPORTER: "0x7De0066A6BD454B2Ecaeb3E54814458a71D345A5",
@@ -119,6 +119,33 @@ const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
             },
             MAKER_DAO: {
                 DAI_TOKEN: "0xBe9162230D9e637218D74C7f41f62ef2385fEe64",
+            }
+        },
+    },
+    b13_testnet: {
+        TEMPLE_GOLD: {
+            AUCTION_AUTOMATION_EOA: "string",
+            STAKING_AUTOMATION_EOA: "string",
+            SPICE_AUCTION_OPERATOR: "string",
+            TEMPLE_GOLD: "string",
+            TEMPLE_GOLD_ADMIN: "string",
+            TEMPLE_GOLD_STAKING: "string",
+            TEMPLE_TELEPORTER: "string",
+            SPICE_AUCTION: "string",
+            SPICE_AUCTION_FACTORY: "string",
+            STABLE_GOLD_AUCTION: "string",
+            EXECUTOR_MSIG: "string",
+            RESCUER_MSIG: "string",
+        },
+        CORE: {
+            TEMPLE_TOKEN: "string",
+        },
+        EXTERNAL: {
+            LAYER_ZERO: {
+                ENDPOINT: "0x6C7Ab2202C98C4227C5c46f1417D81144DA716Ff",
+            },
+            MAKER_DAO: {
+                DAI_TOKEN: "string",
             }
         },
     },
