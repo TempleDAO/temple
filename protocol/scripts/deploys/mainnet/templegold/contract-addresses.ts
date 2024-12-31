@@ -122,7 +122,7 @@ const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
             }
         },
     },
-    b13_testnet: {
+    cartio: {
         TEMPLE_GOLD: {
             AUCTION_AUTOMATION_EOA: "string",
             STAKING_AUTOMATION_EOA: "string",

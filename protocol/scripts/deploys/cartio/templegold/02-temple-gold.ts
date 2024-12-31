@@ -12,14 +12,14 @@ async function main() {
   const [owner] = await ethers.getSigners();
   const ownerAddress = await owner.getAddress();
   const TEMPLEGOLD_ADDRESSES = getDeployedTempleGoldContracts();
-  const B13_TESTNET_CHAIN_ID = 80000;
-  const B13_TESTNET_LZ_EID = 40346;
+  const CARTIO_TESTNET_CHAIN_ID = 80000;
+  const CARTIO_TESTNET_LZ_EID = 40346;
   const _initArgs =  {
     // Changed in transfer ownership to TempleAdmin
     executor: ownerAddress, // executor is also used as delegate in LayerZero Endpoint.
     layerZeroEndpoint: TEMPLEGOLD_ADDRESSES.EXTERNAL.LAYER_ZERO.ENDPOINT, // local endpoint address
-    mintChainId: B13_TESTNET_CHAIN_ID,
-    mintChainLzEid: B13_TESTNET_LZ_EID,
+    mintChainId: CARTIO_TESTNET_CHAIN_ID,
+    mintChainLzEid: CARTIO_TESTNET_LZ_EID,
     name: "TEMPLE GOLD",
     symbol: "TGLD"
   };
