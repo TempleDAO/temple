@@ -223,6 +223,7 @@ module.exports = {
       goerli: process.env.ETHERSCAN_API_KEY,
       sepolia: process.env.ETHERSCAN_API_KEY,
       arbitrumSepolia: process.env.ARBISCAN_API_KEY,
+      cartio: process.env.CARTIO_API_KEY,
     },
     customChains: [
       {

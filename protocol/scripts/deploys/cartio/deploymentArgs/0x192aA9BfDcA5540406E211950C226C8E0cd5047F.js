@@ -1,0 +1,7 @@
+// cartio: TEMPLE_GOLD_ADMIN=0x192aA9BfDcA5540406E211950C226C8E0cd5047F
+// yarn hardhat verify --network cartio 0x192aA9BfDcA5540406E211950C226C8E0cd5047F --constructor-args scripts/deploys/cartio/deploymentArgs/0x192aA9BfDcA5540406E211950C226C8E0cd5047F.js
+module.exports = [
+  "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+  "0xC785695710292c042a2de8A0Ba16F3a054cC2eAD",
+  "0x98c5E61b1B3731A1f379E8770861164d23118cdc"
+];

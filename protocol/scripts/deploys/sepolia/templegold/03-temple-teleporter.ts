@@ -1,27 +1,24 @@
 import '@nomiclabs/hardhat-ethers';
 import { ethers } from 'hardhat';
-import { TempleTeleporter__factory } from '../../../../typechain';
+import { TempleTeleporterTestnet__factory } from '../../../../typechain';
 import {
   deployAndMine,
   ensureExpectedEnvvars,
 } from '../../helpers';
 import { getDeployedTempleGoldContracts } from '../../mainnet/templegold/contract-addresses';
-import { getDeployedContracts } from '../v2/contract-addresses';
 
 async function main() {
   ensureExpectedEnvvars();
   const [owner] = await ethers.getSigners();
   const TEMPLEGOLD_ADDRESSES = getDeployedTempleGoldContracts();
-  const CORE_ADDRESSES = getDeployedContracts(); 
 
-
-  const factory = new TempleTeleporter__factory(owner);
+  const factory = new TempleTeleporterTestnet__factory(owner);
   await deployAndMine(
     'TEMPLE_TELEPORTER',
     factory,
     factory.deploy,
     await owner.getAddress(), // executor
-    CORE_ADDRESSES.CORE.TEMPLE_TOKEN,
+    TEMPLEGOLD_ADDRESSES.CORE.TEMPLE_TOKEN,
     TEMPLEGOLD_ADDRESSES.EXTERNAL.LAYER_ZERO.ENDPOINT
   );
 }

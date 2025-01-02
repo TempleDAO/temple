@@ -6,21 +6,20 @@ import {
   ensureExpectedEnvvars,
 } from '../../helpers';
 import { getDeployedTempleGoldContracts } from '../../mainnet/templegold/contract-addresses';
-import { getDeployedContracts } from '../../mainnet/v2/contract-addresses';
 
 async function main() {
   ensureExpectedEnvvars();
   const [owner] = await ethers.getSigners();
   const TEMPLEGOLD_ADDRESSES = getDeployedTempleGoldContracts();
-  const CORE_ADDRESSES = getDeployedContracts(); 
+  const rescuer = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
 
   const factory = new TempleGoldAdmin__factory(owner);
   await deployAndMine(
     'TEMPLE_GOLD_ADMIN',
     factory,
     factory.deploy,
-    CORE_ADDRESSES.CORE.RESCUER_MSIG,
-    CORE_ADDRESSES.CORE.EXECUTOR_MSIG,
+    rescuer, // rescuer
+    await owner.getAddress(), // executor
     TEMPLEGOLD_ADDRESSES.TEMPLE_GOLD.TEMPLE_GOLD
   );
 }
