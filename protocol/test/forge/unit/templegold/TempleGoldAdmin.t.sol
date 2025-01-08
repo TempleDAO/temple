@@ -28,6 +28,7 @@ contract TempleGoldAdminTestBase is TempleGoldCommon {
     TempleGold public templeGoldMainnet;
     FakeERC20 public templeToken;
     TempleGoldAdmin public templeGoldAdmin;
+    TempleGoldAdmin public nextTempleGoldAdmin;
 
     uint256 public constant MINIMUM_DISTRIBUTION_SHARE = 1 ether;
     uint256 public constant ARBITRUM_ONE_BLOCKNUMBER_B = 207201713;
@@ -52,6 +53,7 @@ contract TempleGoldAdminTestBase is TempleGoldCommon {
             executor
         );
         templeGoldAdmin = new TempleGoldAdmin(rescuer, executor, address(templeGold));
+        nextTempleGoldAdmin = new TempleGoldAdmin(rescuer, executor, address(templeGold));
         vm.startPrank(executor);
         _configureTempleGold();
         templeGold.transferOwnership(address(templeGoldAdmin));
@@ -150,6 +152,12 @@ contract TempleGoldAdminAccessTest is TempleGoldAdminTestBase {
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         EnforcedOptionParam[] memory _params;
         templeGoldAdmin.setEnforcedOptions(_params);
+    }
+
+    function test_access_transferOwnership_tgldAdmin() public {
+        vm.startPrank(unauthorizedUser);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
+        templeGoldAdmin.transferOwnership(alice);
     }
 }
 
@@ -256,6 +264,7 @@ contract TempleGoldAdminTest is TempleGoldAdminTestBase {
     function test_setPeer_tgldAdmin() public {
         vm.startPrank(executor);
         bytes32 peerAsBytes32 = bytes32(uint256(uint160(alice)));
+        assertEq(templeGold.isPeer(MAINNET_LZ_EID, peerAsBytes32), false);
         templeGoldAdmin.setPeer(MAINNET_LZ_EID, peerAsBytes32);
         assertEq(templeGold.isPeer(MAINNET_LZ_EID, peerAsBytes32), true);
     }
@@ -270,5 +279,12 @@ contract TempleGoldAdminTest is TempleGoldAdminTestBase {
         enforcedOptions[0] = EnforcedOptionParam(MAINNET_LZ_EID, 1, hex"0003"); // type 3
         templeGoldAdmin.setEnforcedOptions(enforcedOptions);
         assertEq(templeGold.enforcedOptions(MAINNET_LZ_EID, 1), hex"0003");
+    }
+
+    function test_transferOwnership_tgldAdmin() public {
+        assertEq(templeGold.owner(), address(templeGoldAdmin));
+        vm.startPrank(executor);
+        templeGoldAdmin.transferOwnership(address(nextTempleGoldAdmin));
+        assertEq(templeGold.owner(), address(nextTempleGoldAdmin));
     }
 }

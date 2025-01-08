@@ -43,8 +43,6 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
 
     /// @notice Auctions run for minimum 1 week
     uint32 public constant MINIMUM_AUCTION_PERIOD = 1 weeks;
-    /// @notice Maximum wait period between last and next auctions
-    uint32 public constant MAXIMUM_AUCTION_WAIT_PERIOD = 90 days;
     /// @notice Maximum auction duration
     uint32 public constant MAXIMUM_AUCTION_DURATION = 30 days;
     /// @notice Arbitrum One layer zero EID
@@ -134,8 +132,7 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
             if (info.isActive()) { revert InvalidConfigOperation(); }
         }
         if (_config.duration < MINIMUM_AUCTION_PERIOD 
-            || _config.duration > MAXIMUM_AUCTION_DURATION
-            || _config.waitPeriod > MAXIMUM_AUCTION_WAIT_PERIOD) { revert CommonEventsAndErrors.InvalidParam(); }
+            || _config.duration > MAXIMUM_AUCTION_DURATION) { revert CommonEventsAndErrors.InvalidParam(); }
         /// @dev startCooldown can be zero
         if (_config.waitPeriod == 0
             || _config.minimumDistributedAuctionToken == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }

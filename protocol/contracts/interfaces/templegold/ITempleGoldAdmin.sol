@@ -95,4 +95,10 @@ interface ITempleGoldAdmin {
      * if you are only making a standard LayerZero message ie. lzReceive() WITHOUT sendCompose().
      */
     function setEnforcedOptions(EnforcedOptionParam[] calldata _enforcedOptions) external;
+
+    /**
+     * @notice Transfer ownership of TGLD to a new contract
+     * @param _newOwner New owner
+     */
+    function transferOwnership(address _newOwner) external;
 }

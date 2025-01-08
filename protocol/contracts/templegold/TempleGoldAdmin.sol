@@ -135,4 +135,12 @@ contract TempleGoldAdmin is ITempleGoldAdmin, TempleElevatedAccess {
     function setEnforcedOptions(EnforcedOptionParam[] calldata _enforcedOptions) public virtual onlyElevatedAccess {
         IOAppOptionsType3(address(templeGold)).setEnforcedOptions(_enforcedOptions);
     }
+
+    /**
+     * @notice Transfer ownership of TGLD to a new contract
+     * @param _newOwner New owner
+     */
+    function transferOwnership(address _newOwner) external override onlyElevatedAccess {
+        templeGold.transferOwnership(_newOwner);
+    }
 }

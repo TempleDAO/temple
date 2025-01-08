@@ -65,8 +65,8 @@ contract StableGoldAuction is IStableGoldAuction, AuctionBase, TempleElevatedAcc
      * @param _config Auction configuration
      */
     function setAuctionConfig(AuctionConfig calldata _config) external override onlyElevatedAccess {
-        if (_config.auctionStartCooldown == 0
-                || _config.auctionMinimumDistributedGold == 0
+        /// @dev zero value `auctionStartCooldown` allowed
+        if (_config.auctionMinimumDistributedGold == 0
                 || _config.auctionsTimeDiff == 0) 
             { revert CommonEventsAndErrors.ExpectedNonZero(); }
         uint256 currentEpochCache = _currentEpochId;
