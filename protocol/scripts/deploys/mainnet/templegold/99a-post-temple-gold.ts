@@ -17,7 +17,7 @@ async function main() {
         gnosis: ethers.utils.parseEther("15")
     }
     const vestingFactor = {
-        value: 35,
+        value: 156,
         weekMultiplier: 3600 * 24 * 7 // 1 week
     }
     // Set and whitelist contracts
