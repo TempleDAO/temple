@@ -29,6 +29,7 @@ export interface ContractAddresses {
     },
     CORE: {
         TEMPLE_TOKEN: string,
+        FEE_COLLECTOR: string,
     },
     EXTERNAL: {
         LAYER_ZERO: {
@@ -36,6 +37,9 @@ export interface ContractAddresses {
         },
         MAKER_DAO: {
             DAI_TOKEN: string,
+        },
+        SKY: {
+            USDS_TOKEN: string,
         }
     }
 }
@@ -63,6 +67,7 @@ const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
         },
         CORE: {
             TEMPLE_TOKEN: "string",
+            FEE_COLLECTOR: "string",
         },
         EXTERNAL: {
             LAYER_ZERO: {
@@ -70,6 +75,9 @@ const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
             },
             MAKER_DAO: {
                 DAI_TOKEN: "",
+            },
+            SKY: {
+                USDS_TOKEN: "string",
             }
         },
     },
@@ -90,6 +98,7 @@ const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
         },
         CORE: {
             TEMPLE_TOKEN: "string",
+            FEE_COLLECTOR: "0x4D6175d58C5AceEf30F546C0d5A557efFa53A950",
         },
         EXTERNAL: {
             LAYER_ZERO: {
@@ -97,6 +106,9 @@ const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
             },
             MAKER_DAO: {
                 DAI_TOKEN: "",
+            },
+            SKY: {
+                USDS_TOKEN: "0xdC035D45d973E3EC169d2276DDab16f1e407384F",
             }
         },
     },
@@ -117,6 +129,7 @@ const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
         },
         CORE: {
             TEMPLE_TOKEN: "0x98c5E61b1B3731A1f379E8770861164d23118cdc",
+            FEE_COLLECTOR: "string",
         },
         EXTERNAL: {
             LAYER_ZERO: {
@@ -124,6 +137,9 @@ const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
             },
             MAKER_DAO: {
                 DAI_TOKEN: "0xBe9162230D9e637218D74C7f41f62ef2385fEe64",
+            },
+            SKY: {
+                USDS_TOKEN: "string",
             }
         },
     },
@@ -144,6 +160,7 @@ const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
         },
         CORE: {
             TEMPLE_TOKEN: "0x0090F9655a0B0A32cEE0Da5ae45E93EAB4C6d149",
+            FEE_COLLECTOR: "string",
         },
         EXTERNAL: {
             LAYER_ZERO: {
@@ -151,6 +168,9 @@ const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
             },
             MAKER_DAO: {
                 DAI_TOKEN: "string",
+            },
+            SKY: {
+                USDS_TOKEN: "string",
             }
         },
     },
@@ -171,6 +191,7 @@ const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
         },
         CORE: {
             TEMPLE_TOKEN: "0x36061ce3Ac2F5d69667F0c7B98Ec6021ef33b8cB",
+            FEE_COLLECTOR: "string",
         },
         EXTERNAL: {
             LAYER_ZERO: {
@@ -178,6 +199,9 @@ const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
             },
             MAKER_DAO: {
                 DAI_TOKEN: "0x5879B1ae381DDbBa701170160162025d297ce3D3",
+            },
+            SKY: {
+                USDS_TOKEN: "string",
             }
         },
     },
@@ -198,6 +222,7 @@ const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
         },
         CORE: {
             TEMPLE_TOKEN: "0x2B5757720f361559fe0C499C55eFa65bd6bC6cA3",
+            FEE_COLLECTOR: "string",
         },
         EXTERNAL: {
             LAYER_ZERO: {
@@ -205,6 +230,9 @@ const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
             },
             MAKER_DAO: {
                 DAI_TOKEN: "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1",
+            },
+            SKY: {
+                USDS_TOKEN: "string",
             }
         },
     }
@@ -222,6 +250,10 @@ const PEER_INFO: { [key: string]: PeerInfo } = {
     arbitrumSepolia: {
         destEid: 40231,
         chainId: 421614
+    },
+    mainnet: {
+        destEid: 30101,
+        chainId: 1
     }
 }
 

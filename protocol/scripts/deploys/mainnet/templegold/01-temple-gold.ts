@@ -6,21 +6,20 @@ import {
   ensureExpectedEnvvars,
 } from '../../helpers';
 import { getDeployedContracts } from '../v2/contract-addresses';
-import { getDeployedTempleGoldContracts } from './contract-addresses';
+import { getDeployedTempleGoldContracts, getPeerInfo } from './contract-addresses';
 
 async function main() {
   ensureExpectedEnvvars();
   const [owner] = await ethers.getSigners();
   const CORE_ADDRESSES = getDeployedContracts();
   const TEMPLEGOLD_ADDRESSES = getDeployedTempleGoldContracts();
-  const MAINNET_CHAIN_ID = 1;
-  const MAINNET_LZ_EID = 30101;
+  const peerInfo = getPeerInfo("mainnet");
   const _initArgs =  {
     // Changed in transfer ownership to TempleAdmin
     executor: CORE_ADDRESSES.CORE.EXECUTOR_MSIG, // executor is also used as delegate in LayerZero Endpoint.
     layerZeroEndpoint: TEMPLEGOLD_ADDRESSES.EXTERNAL.LAYER_ZERO.ENDPOINT, // local endpoint address
-    mintChainId: MAINNET_CHAIN_ID,
-    mintChainLzEid: MAINNET_LZ_EID,
+    mintChainId: peerInfo.chainId,
+    mintChainLzEid: peerInfo.destEid,
     name: "TEMPLE GOLD",
     symbol: "TGLD"
   };
