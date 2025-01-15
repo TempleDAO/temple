@@ -50,10 +50,9 @@ jobs:
           docker push ghcr.io/templedao/temple-tasks:latest
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.TEMPLE_TASKS_AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.TEMPLE_TASKS_AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: arn:aws:iam::582215036096:role/temple_tenant_ci_pushrepos
           aws-region: ap-southeast-2
 
       - name: Login to Amazon ECR
