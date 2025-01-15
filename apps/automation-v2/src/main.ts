@@ -1,4 +1,4 @@
-import { createTaskRunner, fallibleWebhookTask } from '@mountainpath9/overlord';
+import { createTaskRunner } from '@mountainpath9/overlord-core';
 
 import { batchLiquidate } from '@/tlc/batch-liquidate';
 
@@ -21,14 +21,6 @@ async function main() {
     cronSchedule: '*/10 * * * *',
     action: async (ctx) => await batchLiquidate(ctx, config.tlcBatchLiquidate),
   });
-
-  runner.addWebhookTask(
-    fallibleWebhookTask({
-      id: 'tlc-batch-liquidate-wh',
-      action: async (ctx) =>
-        await batchLiquidate(ctx, config.tlcBatchLiquidate),
-    })
-  );
 
   runner.main();
 }

@@ -14,7 +14,8 @@ import {
   TaskContext,
   taskSuccess,
   taskSuccessSilent,
-} from '@mountainpath9/overlord';
+} from '@mountainpath9/overlord-core';
+import { getProvider, getSigner } from '@mountainpath9/overlord-ethers';
 import { subgraphRequest } from '@/subgraph/subgraph-request';
 import { GetUserResponse } from '@/subgraph/types';
 import { matchAndDecodeEvent } from '@/common/filters';
@@ -35,14 +36,14 @@ export async function batchLiquidate(
   ctx: TaskContext,
   config: TlcBatchLiquidateConfig
 ): Promise<TaskResult> {
-  const provider = await ctx.getProvider(config.CHAIN.id);
-  const signer = await ctx.getSigner(provider, config.WALLET_NAME);
+  const provider = await getProvider(ctx, config.CHAIN.id);
+  const signer = await getSigner(ctx, provider, config.WALLET_NAME);
   const walletAddress = await signer.getAddress();
   const webhookUrl = await ctx.getSecret(DISCORD_WEBHOOK_URL_KEY);
   const discord = await connectDiscord(webhookUrl, ctx.logger);
 
   const tlc: ITempleLineOfCredit = ITempleLineOfCredit__factory.connect(
-    await config.TLC_ADDRESS,
+    config.TLC_ADDRESS,
     signer
   );
 

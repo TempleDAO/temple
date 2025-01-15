@@ -1,5 +1,8 @@
-import { ERROR_INTERFACES } from '@/utils/ethers-exceptions';
-import { Logger, TaskContext, TaskException, logTaskException, mapParsedEthersException } from '@mountainpath9/overlord';
+import { ERROR_INTERFACES, mapParsedEthersException } from '@/utils/ethers-exceptions';
+
+
+
+import { Logger, TaskContext, TaskException, logTaskException } from '@mountainpath9/overlord-core';
 import { WebhookClient, MessageCreateOptions } from 'discord.js';
 
 interface DiscordChannel {
