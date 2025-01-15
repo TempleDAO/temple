@@ -2,7 +2,7 @@ import { ERROR_INTERFACES, mapParsedEthersException } from '@/common/ethers-exce
 
 
 
-import { Logger, TaskContext, TaskException, logTaskException } from '@mountainpath9/overlord-core';
+import { Logger, StringVariable, TaskContext, TaskException, logTaskException } from '@mountainpath9/overlord-core';
 import { WebhookClient, MessageCreateOptions } from 'discord.js';
 
 interface DiscordChannel {
@@ -43,7 +43,7 @@ export async function discordNotifyTaskException(ctx: TaskContext, te0: TaskExce
   // Log failure to overlord
   await logTaskException(ctx, te);
 
-  const tsyOpsRoleId = await ctx.config.getString(DISCORD_TSY_OPS_ROLE_ID_KEY);
+  const tsyOpsRoleId = await discord_error_role_id.getValue(ctx);
   const content = [
     `<@&${tsyOpsRoleId}>`, // discord role id to be tagged
     `**TEMPLE Task Failed**`,
@@ -63,15 +63,25 @@ export async function discordNotifyTaskException(ctx: TaskContext, te0: TaskExce
     content.push(`exception type: unknown`);
   }
 
-  const webhookUrl = await ctx.getSecret(DISCORD_WEBHOOK_ERROR_URL_KEY);
-  const discord = await connectDiscord(webhookUrl, ctx.logger);
-  await discord.postMessage({ content: content.join('\n') });
+  const webhookUrl = await discord_error_webhook_url.getValue(ctx);
+  if (webhookUrl) {
+    const discord = await connectDiscord(webhookUrl, ctx.logger);
+    await discord.postMessage({ content: content.join('\n') });
+  }
 }
 
 const DISCORD_URL_RE = new RegExp(
   'https://discord.com/api/webhooks/([^/]+)/(.+)$'
 );
 
-export const DISCORD_WEBHOOK_URL_KEY = 'temple_tlc_discord_webhook_url';
-export const DISCORD_WEBHOOK_ERROR_URL_KEY = 'temple_tlc_discord_error_webhook_url';
-export const DISCORD_TSY_OPS_ROLE_ID_KEY = 'temple_tlc_discord_tsy_ops_role_id';
+const discord_error_webhook_url = new StringVariable({
+    name: 'discord_error_webhook_url',
+    description: 'webhook url for the discord channel to which we send task failures',
+    isSecret: true,
+});
+
+const discord_error_role_id = new StringVariable({
+    name: 'discord_error_role_id',
+    description: 'role id to be tagged when sending discord error notification',
+});
+
