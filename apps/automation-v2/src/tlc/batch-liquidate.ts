@@ -1,4 +1,4 @@
-import { DISCORD_WEBHOOK_URL_KEY, connectDiscord } from '@/common/discord';
+import { connectDiscord } from '@/common/discord';
 import {
   TempleTaskDiscordEvent,
   TempleTaskDiscordMetadata,
@@ -19,6 +19,7 @@ import { subgraphRequest } from './subgraph/subgraph-request';
 import { GetUserResponse } from './subgraph/types';
 import { matchAndDecodeEvent } from '@/common/filters';
 import { backOff } from 'exponential-backoff';
+import { tlc_discord_webhook_url } from './variables';
 
 export interface Chain {
   id: number;
@@ -45,7 +46,7 @@ export async function batchLiquidate(
   const provider = await getProvider(ctx, config.CHAIN.id);
   const signer = await getSigner(ctx, provider, config.WALLET_NAME);
   const walletAddress = await signer.getAddress();
-  const webhookUrl = await ctx.getSecret(DISCORD_WEBHOOK_URL_KEY);
+  const webhookUrl = await tlc_discord_webhook_url.requireValue(ctx);
   const discord = await connectDiscord(webhookUrl, ctx.logger);
 
   const tlc: ITempleLineOfCredit = ITempleLineOfCredit__factory.connect(

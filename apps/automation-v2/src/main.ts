@@ -1,4 +1,4 @@
-import { createTaskRunner } from '@mountainpath9/overlord-core';
+import { createTaskRunner, getAllVariableMetadata } from '@mountainpath9/overlord-core';
 
 import { batchLiquidate } from '@/tlc/batch-liquidate';
 import { TLC_BATCH_LIQUIDATE_CONFIG } from '@/tlc/config';
@@ -9,6 +9,7 @@ async function main() {
 
   runner.setVersion(process.env.VERSION || 'unknown');
   runner.setTaskExceptionHandler(discordNotifyTaskException);
+  runner.setConfigVariables(getAllVariableMetadata());
 
   runner.addPeriodicTask({
     id: 'tlc-batch-liquidate',
