@@ -14,6 +14,7 @@ async function main() {
   const isProdnet = mode === 'prodnets';
   const config = isProdnet ? CONFIG_PRODNETS : CONFIG_TESTNETS;
 
+  runner.setVersion(process.env.VERSION || 'unknown');
   runner.setTaskExceptionHandler(discordNotifyTaskException);
 
   runner.addPeriodicTask({
