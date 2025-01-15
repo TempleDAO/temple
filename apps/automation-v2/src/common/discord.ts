@@ -1,4 +1,4 @@
-import { ERROR_INTERFACES, mapParsedEthersException } from '@/utils/ethers-exceptions';
+import { ERROR_INTERFACES, mapParsedEthersException } from '@/common/ethers-exceptions';
 
 
 

@@ -1,4 +1,3 @@
-import { Chain } from '@/chains';
 import { DISCORD_WEBHOOK_URL_KEY, connectDiscord } from '@/common/discord';
 import {
   TempleTaskDiscordEvent,
@@ -6,7 +5,7 @@ import {
   buildDiscordMessageCheckEth,
   buildTempleTasksDiscordMessage,
   formatBigNumber,
-} from '@/common/utils';
+} from './utils';
 import { ITempleLineOfCredit, ITempleLineOfCredit__factory } from '@/typechain';
 import { EventLog } from 'ethers';
 import {
@@ -16,10 +15,17 @@ import {
   taskSuccessSilent,
 } from '@mountainpath9/overlord-core';
 import { getProvider, getSigner } from '@mountainpath9/overlord-ethers';
-import { subgraphRequest } from '@/subgraph/subgraph-request';
-import { GetUserResponse } from '@/subgraph/types';
+import { subgraphRequest } from './subgraph/subgraph-request';
+import { GetUserResponse } from './subgraph/types';
 import { matchAndDecodeEvent } from '@/common/filters';
 import { backOff } from 'exponential-backoff';
+
+export interface Chain {
+  id: number;
+  name: string;
+  transactionUrl(txhash: string): string;
+  addressUrl(txhash: string): string;
+}
 
 export interface TlcBatchLiquidateConfig {
   CHAIN: Chain;

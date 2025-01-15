@@ -4,8 +4,8 @@ import {
   Provider,
 } from 'ethers';
 import { format } from 'date-fns';
-import { Chain } from '@/chains';
-import { DiscordMesage } from './discord';
+import { Chain } from './batch-liquidate';
+import { DiscordMesage } from '@/common/discord';
 
 export async function getBlockTimestamp(provider: Provider): Promise<bigint> {
   const latestBlock = await provider.getBlock('latest');
