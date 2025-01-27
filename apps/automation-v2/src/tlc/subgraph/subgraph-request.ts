@@ -1,7 +1,7 @@
 import axios, { AxiosError } from 'axios';
 
 import { SubGraphQuery, SubGraphResponse, SubgraphError } from './types';
-import { Logger } from '@mountainpath9/overlord';
+import { Logger } from '@mountainpath9/overlord-core';
 
 export const subgraphRequest = <R extends SubGraphResponse<object>>(
   subgraphUrl: string,
