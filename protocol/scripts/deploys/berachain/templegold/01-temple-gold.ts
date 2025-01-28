@@ -1,6 +1,6 @@
 import '@nomiclabs/hardhat-ethers';
 import { ethers } from 'hardhat';
-import { TempleTeleporterTestnet__factory } from '../../../../typechain';
+import { TempleGold__factory } from '../../../../typechain';
 import {
   deployAndMine,
   ensureExpectedEnvvars,
@@ -10,17 +10,27 @@ import { getDeployedTempleGoldContracts } from '../../mainnet/templegold/contrac
 async function main() {
   ensureExpectedEnvvars();
   const [owner] = await ethers.getSigners();
+  const ownerAddress = await owner.getAddress();
   const TEMPLEGOLD_ADDRESSES = getDeployedTempleGoldContracts();
-
-  const factory = new TempleTeleporterTestnet__factory(owner);
+  const BERACHAIN_CHAIN_ID = "";
+  const BERACHAIN_LZ_EID = "";
+  const _initArgs =  {
+    // Changed in transfer ownership to TempleAdmin
+    executor: ownerAddress, // executor is also used as delegate in LayerZero Endpoint.
+    layerZeroEndpoint: TEMPLEGOLD_ADDRESSES.EXTERNAL.LAYER_ZERO.ENDPOINT, // local endpoint address
+    mintChainId: BERACHAIN_CHAIN_ID,
+    mintChainLzEid: BERACHAIN_LZ_EID,
+    name: "TEMPLE GOLD",
+    symbol: "TGLD"
+  };
+  const factory = new TempleGold__factory(owner);
   await deployAndMine(
-    'TEMPLE_TELEPORTER',
+    'TEMPLE_GOLD',
     factory,
     factory.deploy,
-    await owner.getAddress(), // executor
-    TEMPLEGOLD_ADDRESSES.CORE.TEMPLE_TOKEN,
-    TEMPLEGOLD_ADDRESSES.EXTERNAL.LAYER_ZERO.ENDPOINT
+    _initArgs
   );
+
 }
 
 // We recommend this pattern to be able to use async/await everywhere

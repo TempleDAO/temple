@@ -1,6 +1,6 @@
 import '@nomiclabs/hardhat-ethers';
 import { ethers } from 'hardhat';
-import { TempleTeleporterTestnet__factory } from '../../../../typechain';
+import { TempleGoldAdmin__factory } from '../../../../typechain';
 import {
   deployAndMine,
   ensureExpectedEnvvars,
@@ -11,15 +11,16 @@ async function main() {
   ensureExpectedEnvvars();
   const [owner] = await ethers.getSigners();
   const TEMPLEGOLD_ADDRESSES = getDeployedTempleGoldContracts();
+  const rescuer = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
 
-  const factory = new TempleTeleporterTestnet__factory(owner);
+  const factory = new TempleGoldAdmin__factory(owner);
   await deployAndMine(
-    'TEMPLE_TELEPORTER',
+    'TEMPLE_GOLD_ADMIN',
     factory,
     factory.deploy,
+    rescuer, // rescuer
     await owner.getAddress(), // executor
-    TEMPLEGOLD_ADDRESSES.CORE.TEMPLE_TOKEN,
-    TEMPLEGOLD_ADDRESSES.EXTERNAL.LAYER_ZERO.ENDPOINT
+    TEMPLEGOLD_ADDRESSES.TEMPLE_GOLD.TEMPLE_GOLD
   );
 }
 

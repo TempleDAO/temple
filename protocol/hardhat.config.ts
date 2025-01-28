@@ -193,6 +193,13 @@ module.exports = {
         gasPrice: parseInt(process.env.SEPOLIA_GAS_IN_GWEI || '0') * 1000000000,
         eid: EndpointId.SEPOLIA_V2_TESTNET
     },
+    cartio: {
+      url: process.env.CARTIO_RPC_URL || '',
+      accounts: process.env.CARTIO_ADDRESS_PRIVATE_KEY
+          ? [process.env.CARTIO_ADDRESS_PRIVATE_KEY]
+          : [],
+      chainId: 80000,
+  },
     anvil: {
         url: "http://127.0.0.1:8545/",
         accounts: "remote",
@@ -216,6 +223,7 @@ module.exports = {
       goerli: process.env.ETHERSCAN_API_KEY,
       sepolia: process.env.ETHERSCAN_API_KEY,
       arbitrumSepolia: process.env.ARBISCAN_API_KEY,
+      cartio: process.env.CARTIO_API_KEY,
     },
     customChains: [
       {
@@ -225,7 +233,16 @@ module.exports = {
           apiURL: "https://api-sepolia.arbiscan.io/api",
           browserURL: "https://sepolia.arbiscan.io"
         }
-      }
+      },
+      {
+        network: "cartio",
+        chainId: 80000,
+        urls: {
+            apiURL:
+                "https://api.routescan.io/v2/network/testnet/evm/80000/etherscan/api/",
+            browserURL: "https://80000.testnet.routescan.io/",
+        },
+    },
     ]
   },
   mocha: {

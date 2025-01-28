@@ -1,6 +1,6 @@
 import '@nomiclabs/hardhat-ethers';
 import { ethers } from 'hardhat';
-import { TempleTeleporterTestnet__factory } from '../../../../typechain';
+import { TempleTeleporter__factory } from '../../../../typechain';
 import {
   deployAndMine,
   ensureExpectedEnvvars,
@@ -12,7 +12,7 @@ async function main() {
   const [owner] = await ethers.getSigners();
   const TEMPLEGOLD_ADDRESSES = getDeployedTempleGoldContracts();
 
-  const factory = new TempleTeleporterTestnet__factory(owner);
+  const factory = new TempleTeleporter__factory(owner);
   await deployAndMine(
     'TEMPLE_TELEPORTER',
     factory,

@@ -40,6 +40,11 @@ export interface ContractAddresses {
     }
 }
 
+export interface PeerInfo {
+    destEid: number,
+    chainId: number,
+}
+
 const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
     arbitrumOne: {
         TEMPLE_GOLD: {
@@ -100,10 +105,10 @@ const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
             AUCTION_AUTOMATION_EOA: "string",
             STAKING_AUTOMATION_EOA: "string",
             SPICE_AUCTION_OPERATOR: "string",
-            TEMPLE_GOLD: "0x2ae6318e34bb97ae3755AFcE75559452aA223A5D", //"0x192aA9BfDcA5540406E211950C226C8E0cd5047F",
+            TEMPLE_GOLD: "0x2ae6318e34bb97ae3755AFcE75559452aA223A5D",
             TEMPLE_GOLD_ADMIN: "string",
             TEMPLE_GOLD_STAKING: "0xdbDAc0FCA9cF8CA2F2Ef718775f0F265f581808F",
-            TEMPLE_TELEPORTER: "0x7De0066A6BD454B2Ecaeb3E54814458a71D345A5",
+            TEMPLE_TELEPORTER: "0x7455A2bDbE76d36c835824D9A41E6842216d6c36",
             SPICE_AUCTION: "string",
             SPICE_AUCTION_FACTORY: "0x0231340BBAf990B3Aa9f2B095b9DC11e493059c1",
             STABLE_GOLD_AUCTION: "0x8d3671d794d511Bb0E3D28e260F8E2233C0653aB",
@@ -119,6 +124,33 @@ const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
             },
             MAKER_DAO: {
                 DAI_TOKEN: "0xBe9162230D9e637218D74C7f41f62ef2385fEe64",
+            }
+        },
+    },
+    cartio: {
+        TEMPLE_GOLD: {
+            AUCTION_AUTOMATION_EOA: "string",
+            STAKING_AUTOMATION_EOA: "string",
+            SPICE_AUCTION_OPERATOR: "string",
+            TEMPLE_GOLD: "0x2ae6318e34bb97ae3755AFcE75559452aA223A5D",
+            TEMPLE_GOLD_ADMIN: "0xBe9162230D9e637218D74C7f41f62ef2385fEe64",
+            TEMPLE_GOLD_STAKING: "string",
+            TEMPLE_TELEPORTER: "0xcbc7cf85dd0AB91Aa2671400E86ebf3AaC6dc658",
+            SPICE_AUCTION: "string",
+            SPICE_AUCTION_FACTORY: "string",
+            STABLE_GOLD_AUCTION: "string",
+            EXECUTOR_MSIG: "string",
+            RESCUER_MSIG: "string",
+        },
+        CORE: {
+            TEMPLE_TOKEN: "0x0090F9655a0B0A32cEE0Da5ae45E93EAB4C6d149",
+        },
+        EXTERNAL: {
+            LAYER_ZERO: {
+                ENDPOINT: "0x6C7Ab2202C98C4227C5c46f1417D81144DA716Ff",
+            },
+            MAKER_DAO: {
+                DAI_TOKEN: "string",
             }
         },
     },
@@ -178,6 +210,21 @@ const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
     }
 }
 
+const PEER_INFO: { [key: string]: PeerInfo } = {
+    cartio: {
+        destEid: 40346,
+        chainId: 80000
+    },
+    sepolia: {
+        destEid: 40161,
+        chainId: 11155111
+    },
+    arbitrumSepolia: {
+        destEid: 40231,
+        chainId: 421614
+    }
+}
+
 export function getDeployedTempleGoldContracts(): ContractAddresses {
     if (TEMPLEGOLD_DEPLOYED_CONTRACTS[network.name] === undefined) {
       console.log(`No contracts configured for ${network.name}`);
@@ -185,6 +232,15 @@ export function getDeployedTempleGoldContracts(): ContractAddresses {
     } else {
       return TEMPLEGOLD_DEPLOYED_CONTRACTS[network.name];
     }
+}
+
+export function getPeerInfo(network: string): PeerInfo {
+    if (PEER_INFO[network] === undefined) {
+        console.log(`No peer info configured for ${network}`);
+        throw new Error(`No peer info configured for ${network}`);
+      } else {
+        return PEER_INFO[network];
+      }
 }
 
 export interface ContractInstances {
