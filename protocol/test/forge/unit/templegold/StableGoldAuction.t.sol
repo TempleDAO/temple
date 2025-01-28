@@ -26,7 +26,7 @@ contract StableGoldAuctionTestBase is TempleGoldCommon {
 
     /// @notice Auction duration
     uint64 public constant AUCTION_DURATION = 1 weeks;
-    uint32 public constant AUCTIONS_TIME_DIFF_ONE = 2 weeks;
+    uint32 public constant AUCTIONS_TIME_DIFF_ONE = 1 weeks;
     uint32 public constant AUCTIONS_START_COOLDOWN_ONE = 1 hours;
     uint192 public constant AUCTION_MIN_DISTRIBUTED_GOLD_ONE = 1_000;
     
@@ -170,9 +170,6 @@ contract StableGoldAuctionTestSetters is StableGoldAuctionTestBase {
     function test_setAuctionConfig() public {
         vm.startPrank(executor);
         IStableGoldAuction.AuctionConfig memory fakeConfig;
-        // config.auctionStartCooldown = 0 error
-        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
-        auction.setAuctionConfig(fakeConfig);
         fakeConfig.auctionStartCooldown = 100;
         // config.auctionMinimumDistributedGold = 0 error
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));

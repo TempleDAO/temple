@@ -14,7 +14,7 @@ interface IStableGoldAuction is IAuctionBase {
     error LowGoldDistributed(uint256 epochGoldAmount);
 
     struct AuctionConfig {
-        /// @notice Time diff between two auctions. Usually 2 weeks
+        /// @notice Time diff between two auctions. Usually 1 week
         uint32 auctionsTimeDiff;
         /// @notice Cooldown after auction start is triggered, to allow deposits
         uint32 auctionStartCooldown;
