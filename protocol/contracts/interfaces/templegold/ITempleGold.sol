@@ -13,7 +13,7 @@ interface ITempleGold is IOFT, IOAppCore, IOAppOptionsType3, IERC20 {
     struct DistributionParams {
         /// @notice staking contract
         uint256 staking;
-        /// @notice DAI_TGLD auction contract
+        /// @notice STABLE_TGLD auction contract
         uint256 auction;
         /// @notice Team gnosis
         uint256 gnosis;
@@ -151,4 +151,10 @@ interface ITempleGold is IOFT, IOAppCore, IOAppOptionsType3, IERC20 {
      * @return Total distributed
      */
     function totalDistributed() external view returns (uint256);
+
+    /**
+     * @notice Transfer ownership of TGLD to a new contract
+     * @param _newOwner New owner
+     */
+    function transferOwnership(address _newOwner) external;
 }

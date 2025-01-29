@@ -26,6 +26,7 @@ contract TempleGoldTestBase is TempleGoldCommon {
     event TeamGnosisSet(address gnosis);
     event CirculatingSupplyUpdated(address indexed sender, uint256 amount, uint256 circulatingSuppply, uint256 totalBurned);
     event NotifierSet(address indexed notifier);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
     StableGoldAuction public auction;
     TempleGoldStaking public staking;
@@ -75,9 +76,9 @@ contract TempleGoldTestBase is TempleGoldCommon {
     function _configureTempleGold() private {
         templeGold.setStableGoldAuction(address(auction));
         ITempleGold.DistributionParams memory params;
-        params.auction = 60 ether;
-        params.gnosis = 10 ether;
-        params.staking = 30 ether;
+        params.auction = 70 ether;
+        params.gnosis = 15 ether;
+        params.staking = 15 ether;
         templeGold.setDistributionParams(params);
         ITempleGold.VestingFactor memory factor;
         factor.value = 2 ether;
@@ -344,6 +345,16 @@ contract TempleGoldTest is TempleGoldTestBase {
         assertEq(_p.gnosis, _params.gnosis);
         assertEq(_p.auction, _params.auction);
         assertEq(_p.staking, _params.staking);
+    }
+     function test_transferOwnership_tgld() public {
+        vm.startPrank(alice);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
+        templeGold.transferOwnership(bob);
+
+        vm.startPrank(executor);
+        vm.expectEmit(address(templeGold));
+        emit OwnershipTransferred(executor, alice);
+        templeGold.transferOwnership(alice);
     }
 
     function test_mint_tgld_revert() public {

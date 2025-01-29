@@ -337,6 +337,15 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
     }
 
     /**
+     * @notice Transfer ownership of TGLD to a new contract
+     * @dev Overriden function here so `TempleGoldAdmin` can call
+     * @param _newOwner New owner
+     */
+    function transferOwnership(address _newOwner) public override(ITempleGold, Ownable) onlyOwner {
+        super.transferOwnership(_newOwner);
+    }
+
+    /**
      * @dev Internal function to handle the receive on the LayerZero endpoint.
      * @param _origin The origin information.
      *  - srcEid: The source chain endpoint ID.

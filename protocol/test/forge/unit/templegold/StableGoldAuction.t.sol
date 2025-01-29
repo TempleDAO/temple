@@ -23,10 +23,11 @@ contract StableGoldAuctionTestBase is TempleGoldCommon {
     event Deposit(address indexed depositor, uint256 epochId, uint256 amount);
     event Claim(address indexed user, uint256 epochId, uint256 bidTokenAmount, uint256 auctionTokenAmount);
     event TokenRecovered(address indexed to, address indexed token, uint256 amount);
+    event TreasurySet(address treasury);
 
     /// @notice Auction duration
     uint64 public constant AUCTION_DURATION = 1 weeks;
-    uint32 public constant AUCTIONS_TIME_DIFF_ONE = 2 weeks;
+    uint32 public constant AUCTIONS_TIME_DIFF_ONE = 1 weeks;
     uint32 public constant AUCTIONS_START_COOLDOWN_ONE = 1 hours;
     uint192 public constant AUCTION_MIN_DISTRIBUTED_GOLD_ONE = 1_000;
     
@@ -148,6 +149,12 @@ contract StableGoldAuctionTestAccess is StableGoldAuctionTestBase {
         auction.setBidToken(address(templeGold));
     }
 
+    function test_access_setTreasury_auction_fail() public {
+        vm.startPrank(unauthorizedUser);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
+        auction.setTreasury(alice);
+    }
+
     function test_access_setAuctionConfigSuccess() public {
         vm.startPrank(executor);
         IStableGoldAuction.AuctionConfig memory config = _getAuctionConfig();
@@ -163,16 +170,29 @@ contract StableGoldAuctionTestAccess is StableGoldAuctionTestBase {
         vm.startPrank(executor);
         auction.setBidToken(address(bidToken));
     }
+
+    function test_access_setTreasury_auction_success() public {
+        vm.startPrank(executor);
+        auction.setTreasury(alice);
+    }
 }
 
 contract StableGoldAuctionTestSetters is StableGoldAuctionTestBase {
 
+    function test_setTreasury() public {
+        vm.startPrank(executor);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
+        auction.setTreasury(address(0));
+
+        vm.expectEmit(address(auction));
+        emit TreasurySet(bob);
+        auction.setTreasury(bob);
+        assertEq(auction.treasury(), bob);
+    }
+
     function test_setAuctionConfig() public {
         vm.startPrank(executor);
         IStableGoldAuction.AuctionConfig memory fakeConfig;
-        // config.auctionStartCooldown = 0 error
-        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
-        auction.setAuctionConfig(fakeConfig);
         fakeConfig.auctionStartCooldown = 100;
         // config.auctionMinimumDistributedGold = 0 error
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));

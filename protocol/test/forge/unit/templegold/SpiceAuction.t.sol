@@ -212,10 +212,6 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         config.duration = 31 days;
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
         spice.setAuctionConfig(config);
-        // exceeds max wait period
-        config.waitPeriod = 91 days;
-        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
-        spice.setAuctionConfig(config);
         config.duration = 7 days;
         // wait period error
         config.waitPeriod = 0;

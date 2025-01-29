@@ -33,7 +33,7 @@ contract StableGoldAuction is IStableGoldAuction, AuctionBase, TempleElevatedAcc
     /// @dev This token is assumed to not have any taxes or complicated mechanisms. Plan is to use DAI token. This could change in future
     IERC20 public override bidToken;
     /// @notice Destination address for proceeds of auctions
-    address public immutable override treasury;
+    address public override treasury;
     /// @notice Address that can trigger start of auction. address(0) means anyone
     address public override auctionStarter;
 
@@ -61,12 +61,22 @@ contract StableGoldAuction is IStableGoldAuction, AuctionBase, TempleElevatedAcc
     }
 
     /**
+     * @notice Set treasury
+     * @param _treasury Recipient of auction proceeds
+     */
+    function setTreasury(address _treasury) external override onlyElevatedAccess {
+        if (_treasury == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
+        treasury = _treasury;
+        emit TreasurySet(_treasury);
+    }
+
+    /**
      * @notice Set auction configuration
      * @param _config Auction configuration
      */
     function setAuctionConfig(AuctionConfig calldata _config) external override onlyElevatedAccess {
-        if (_config.auctionStartCooldown == 0
-                || _config.auctionMinimumDistributedGold == 0
+        /// @dev zero value `auctionStartCooldown` allowed
+        if (_config.auctionMinimumDistributedGold == 0
                 || _config.auctionsTimeDiff == 0) 
             { revert CommonEventsAndErrors.ExpectedNonZero(); }
         uint256 currentEpochCache = _currentEpochId;

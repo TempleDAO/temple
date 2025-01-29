@@ -43,13 +43,11 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
 
     /// @notice Auctions run for minimum 1 week
     uint32 public constant MINIMUM_AUCTION_PERIOD = 1 weeks;
-    /// @notice Maximum wait period between last and next auctions
-    uint32 public constant MAXIMUM_AUCTION_WAIT_PERIOD = 90 days;
     /// @notice Maximum auction duration
     uint32 public constant MAXIMUM_AUCTION_DURATION = 30 days;
-    /// @notice Arbitrum One layer zero EID
-    uint32 private immutable _arbitrumOneLzEid;
-    /// @notice Arbitrum One chain ID
+    /// @notice layer zero EID of mint chain
+    uint32 private immutable _mintChainEid;
+    /// @notice The mint chain ID
     uint32 private immutable _mintChainId;
     /// @notice Max gas limit for use by executor in calling `lzReceive`
     uint32 public override lzReceiveExecutorGas;
@@ -74,7 +72,7 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
         address _spiceToken,
         address _daoExecutor,
         address _operator,
-        uint32 _arbEid,
+        uint32 mintChainEid_,
         uint32 mintChainId_,
         string memory _name
     ) {
@@ -82,7 +80,7 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
         daoExecutor = _daoExecutor;
         operator = _operator;
         templeGold = _templeGold;
-        _arbitrumOneLzEid = _arbEid;
+        _mintChainEid = mintChainEid_;
         _mintChainId = mintChainId_;
         name = _name;
         _deployTimestamp = block.timestamp;
@@ -134,8 +132,7 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
             if (info.isActive()) { revert InvalidConfigOperation(); }
         }
         if (_config.duration < MINIMUM_AUCTION_PERIOD 
-            || _config.duration > MAXIMUM_AUCTION_DURATION
-            || _config.waitPeriod > MAXIMUM_AUCTION_WAIT_PERIOD) { revert CommonEventsAndErrors.InvalidParam(); }
+            || _config.duration > MAXIMUM_AUCTION_DURATION) { revert CommonEventsAndErrors.InvalidParam(); }
         /// @dev startCooldown can be zero
         if (_config.waitPeriod == 0
             || _config.minimumDistributedAuctionToken == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
@@ -458,7 +455,7 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
         }
         bytes memory options = OptionsBuilder.newOptions().addExecutorLzReceiveOption(lzReceiveExecutorGas, 0);
         SendParam memory sendParam = SendParam(
-            _arbitrumOneLzEid, //<ARB_EID>,
+            _mintChainEid, // layer Zero EID of mint chain,
             bytes32(uint256(uint160(address(0)))), // bytes32(address(0)) to burn
             amount,
             0,

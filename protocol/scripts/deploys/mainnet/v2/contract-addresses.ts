@@ -89,6 +89,14 @@ export interface ContractAddresses {
                 TEMPLE: string,
             },
         },
+        COSECHA_SEGUNDA_GNOSIS_STRATEGY: {
+            ADDRESS: string,
+            UNDERLYING_GNOSIS_SAFE: string,
+            CIRCUIT_BREAKERS: {
+                DAI: string,
+                TEMPLE: string,
+            },
+        },
         FOHMO_GNOSIS_STRATEGY: {
             ADDRESS: string,
             UNDERLYING_GNOSIS_SAFE: string,
@@ -122,6 +130,7 @@ export interface ContractAddresses {
         },
         SKY: {
             DAI_TO_USDS: string,
+            USDS: string,
         },
         BALANCER: {
             VAULT: string,
@@ -143,6 +152,9 @@ export interface ContractAddresses {
                 },
             },
         },
+        CIRCLE: {
+            USDC: string,
+        }
     }
 }
 
@@ -205,6 +217,14 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
                     TEMPLE: '', // Not needed as yet
                 },
             },
+            COSECHA_SEGUNDA_GNOSIS_STRATEGY: {
+                ADDRESS: '',
+                UNDERLYING_GNOSIS_SAFE: '0xA1f01d98d60273ED562eE79fEb718bbdB85E1d9C',
+                CIRCUIT_BREAKERS: {
+                    DAI: '',
+                    TEMPLE: ''
+                },
+            },
             FOHMO_GNOSIS_STRATEGY: {
                 ADDRESS: '0xF179C63735690d2C08cfb231d15c0c7ac3A2Bc67',
                 UNDERLYING_GNOSIS_SAFE: '0xA0eC2aF0aE7fE5F3Ae572a2C8349f7E26bE2e5Fd',
@@ -242,6 +262,7 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
             },
             SKY: {
                 DAI_TO_USDS: '0x3225737a9Bbb6473CB4a45b7244ACa2BeFdB276A',
+                USDS: '0xdC035D45d973E3EC169d2276DDab16f1e407384F',
             },
             BALANCER: {
                 VAULT: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
@@ -263,6 +284,9 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
                     },
                 },
             },
+            CIRCLE: {
+                USDC: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+            }
         },
     },
 
@@ -325,6 +349,14 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
                     TEMPLE: '',
                 },
             },
+            COSECHA_SEGUNDA_GNOSIS_STRATEGY: {
+                ADDRESS: '',
+                UNDERLYING_GNOSIS_SAFE: '',
+                CIRCUIT_BREAKERS: {
+                    DAI: '',
+                    TEMPLE: '',
+                },
+            },
             FOHMO_GNOSIS_STRATEGY: {
                 ADDRESS: '',
                 UNDERLYING_GNOSIS_SAFE: '',
@@ -358,6 +390,7 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
             },
             SKY: {
                 DAI_TO_USDS: '0x3225737a9Bbb6473CB4a45b7244ACa2BeFdB276A',
+                USDS: '',
             },
             BALANCER: {
                 VAULT: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
@@ -379,6 +412,9 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
                     },
                 },
             },
+            CIRCLE: {
+                USDC: '',
+            }
         },
     },
 }
@@ -446,6 +482,12 @@ export interface ContractInstances {
             CIRCUIT_BREAKERS: {
                 DAI: TempleCircuitBreakerAllUsersPerPeriod,
                 TEMPLE: TempleCircuitBreakerAllUsersPerPeriod,
+            },
+        },
+        COSECHA_SEGUNDA_GNOSIS_STRATEGY: {
+            INSTANCE: GnosisStrategy,
+            CIRCUIT_BREAKERS: {
+                DAI: TempleCircuitBreakerAllUsersPerPeriod,
             },
         },
         FOHMO_GNOSIS_STRATEGY: {
@@ -526,6 +568,13 @@ export function connectToContracts(owner: Signer): ContractInstances {
                 CIRCUIT_BREAKERS: {
                     DAI: TempleCircuitBreakerAllUsersPerPeriod__factory.connect(TEMPLE_V2_ADDRESSES.STRATEGIES.TEMPLO_MAYOR_GNOSIS_STRATEGY.CIRCUIT_BREAKERS.DAI, owner),
                     TEMPLE: TempleCircuitBreakerAllUsersPerPeriod__factory.connect(TEMPLE_V2_ADDRESSES.STRATEGIES.TEMPLO_MAYOR_GNOSIS_STRATEGY.CIRCUIT_BREAKERS.TEMPLE, owner),
+                },
+            },
+            COSECHA_SEGUNDA_GNOSIS_STRATEGY: {
+                INSTANCE: GnosisStrategy__factory.connect(TEMPLE_V2_ADDRESSES.STRATEGIES.COSECHA_SEGUNDA_GNOSIS_STRATEGY.ADDRESS, owner),
+                CIRCUIT_BREAKERS: {
+                    DAI: TempleCircuitBreakerAllUsersPerPeriod__factory.connect(TEMPLE_V2_ADDRESSES.STRATEGIES.COSECHA_SEGUNDA_GNOSIS_STRATEGY.CIRCUIT_BREAKERS.DAI, owner),
+
                 },
             },
             FOHMO_GNOSIS_STRATEGY: {
