@@ -49,7 +49,7 @@ jobs:
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
-          version: nightly
+          version: stable
 
       - name: Show the Foundry CI config
         run: forge config
@@ -127,7 +127,7 @@ jobs:
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
-          version: nightly
+          version: stable
       - name: "Restore the cached build and the node modules"
         uses: "actions/cache/restore@v3"
         with:
