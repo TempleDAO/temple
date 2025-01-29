@@ -130,6 +130,7 @@ export interface ContractAddresses {
         },
         SKY: {
             DAI_TO_USDS: string,
+            USDS: string,
         },
         BALANCER: {
             VAULT: string,
@@ -151,6 +152,9 @@ export interface ContractAddresses {
                 },
             },
         },
+        CIRCLE: {
+            USDC: string,
+        }
     }
 }
 
@@ -258,6 +262,7 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
             },
             SKY: {
                 DAI_TO_USDS: '0x3225737a9Bbb6473CB4a45b7244ACa2BeFdB276A',
+                USDS: '0xdC035D45d973E3EC169d2276DDab16f1e407384F',
             },
             BALANCER: {
                 VAULT: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
@@ -279,6 +284,9 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
                     },
                 },
             },
+            CIRCLE: {
+                USDC: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+            }
         },
     },
 
@@ -382,6 +390,7 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
             },
             SKY: {
                 DAI_TO_USDS: '0x3225737a9Bbb6473CB4a45b7244ACa2BeFdB276A',
+                USDS: '',
             },
             BALANCER: {
                 VAULT: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
@@ -403,6 +412,9 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
                     },
                 },
             },
+            CIRCLE: {
+                USDC: '',
+            }
         },
     },
 }

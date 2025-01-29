@@ -36,7 +36,7 @@ async function setupFromExecutorMultisig() {
         const debtCeiling: ITempleStrategy.AssetBalanceStruct[] = [
             {
                 asset: TEMPLE_V2_ADDRESSES.EXTERNAL.MAKER_DAO.DAI_TOKEN,
-                balance: ethers.utils.parseEther("25000000"), // $25mm
+                balance: ethers.utils.parseEther("50000000"), // $50mm
             },
             {
                 asset: TEMPLE_V2_ADDRESSES.CORE.TEMPLE_TOKEN,
@@ -64,10 +64,13 @@ async function setup() {
     }
 
     {
-        // Register DAI and TEMPLE as the tokens to track
+        // Register ETH, USDS, USDC, DAI and TEMPLE as the tokens to track
         await mine(TEMPLE_V2_INSTANCES.STRATEGIES.COSECHA_SEGUNDA_GNOSIS_STRATEGY.INSTANCE.setAssets([
             TEMPLE_V2_ADDRESSES.EXTERNAL.MAKER_DAO.DAI_TOKEN,
             TEMPLE_V2_ADDRESSES.CORE.TEMPLE_TOKEN,
+            ethers.constants.AddressZero,
+            TEMPLE_V2_ADDRESSES.EXTERNAL.SKY.USDS,
+            TEMPLE_V2_ADDRESSES.EXTERNAL.CIRCLE.USDC
         ]));
     }
 }
