@@ -10,6 +10,7 @@ interface IStableGoldAuction is IAuctionBase {
     event GoldDistributionNotified(uint256 amount, uint256 timestamp);
     event AuctionConfigSet(uint256 epochId, AuctionConfig config);
     event AuctionStarterSet(address indexed starter);
+    event TreasurySet(address treasury);
 
     error LowGoldDistributed(uint256 epochGoldAmount);
 
@@ -128,4 +129,10 @@ interface IStableGoldAuction is IAuctionBase {
      * @param epochId Id of epoch
      */
     function claim(uint256 epochId) external;
+
+    /**
+     * @notice Set treasury
+     * @param _treasury Recipient of auction proceeds
+     */
+    function setTreasury(address _treasury) external;
 }
