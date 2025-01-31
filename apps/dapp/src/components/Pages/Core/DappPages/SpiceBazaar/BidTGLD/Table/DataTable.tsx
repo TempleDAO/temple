@@ -7,6 +7,10 @@ import { BidTGLD } from '../BidTGLD';
 import { Popover } from 'components/Pages/Core/DappPages/SpiceBazaar/components/Popover';
 import { Button } from 'components/Button/Button';
 import * as breakpoints from 'styles/breakpoints';
+import active from 'assets/icons/active_auc.svg?react';
+import scheduled from 'assets/icons/scheduled_auc.svg?react';
+import closed from 'assets/icons/closed.svg?react';
+import { ScrollBar } from 'components/Pages/Core/DappPages/SpiceBazaar/components/CustomScrollBar';
 
 enum TableHeaders {
   Status = 'Status',
@@ -26,12 +30,7 @@ type TableProps = {
 
 const ROWS_PER_PAGE = 5;
 
-export const DataTable: React.FC<TableProps> = ({
-  transactions,
-  loading,
-  refetch,
-  dataRefetching,
-}) => {
+export const DataTable: React.FC<TableProps> = ({ transactions, loading }) => {
   const tableHeaders = [
     { name: TableHeaders.Status },
     { name: TableHeaders.AuctionName },
@@ -102,7 +101,7 @@ export const DataTable: React.FC<TableProps> = ({
             ))}
           </FilterContainer>
         </Header>
-        <TableWrapper>
+        <ScrollBar autoHide={false}>
           <TableData>
             <thead>
               <HeaderRow>
@@ -123,7 +122,33 @@ export const DataTable: React.FC<TableProps> = ({
               ) : (
                 currentTransactions.map((transaction) => (
                   <DataRow key={transaction.auctionName}>
-                    <DataCell>{transaction.status}</DataCell>
+                    {(() => {
+                      if (transaction.status.includes('Closed')) {
+                        return (
+                          <DataCell>
+                            <Status>
+                              <Closed /> {transaction.status}
+                            </Status>
+                          </DataCell>
+                        );
+                      } else if (transaction.status.includes('Upcoming')) {
+                        return (
+                          <DataCell>
+                            <Status>
+                              <Scheduled /> {transaction.status}
+                            </Status>
+                          </DataCell>
+                        );
+                      } else if (transaction.status.includes('Ends')) {
+                        return (
+                          <DataCell>
+                            <Status>
+                              <Active /> {transaction.status}
+                            </Status>
+                          </DataCell>
+                        );
+                      }
+                    })()}
                     <DataCell>{transaction.auctionName}</DataCell>
                     <DataCell>{transaction.totalVolume} ETH</DataCell>
                     <DataCell>{transaction.floorPrice} TGLD</DataCell>
@@ -152,7 +177,7 @@ export const DataTable: React.FC<TableProps> = ({
               )}
             </tbody>
           </TableData>
-        </TableWrapper>
+        </ScrollBar>
         <PaginationControl
           totalPages={totalPages}
           currentPage={currentPage}
@@ -217,29 +242,6 @@ const FilterButton = styled.button<{ selected: boolean }>`
   cursor: pointer;
 `;
 
-const TableWrapper = styled.div`
-  overflow-x: scroll;
-  padding-bottom: 20px;
-  scrollbar-width: thin;
-  scrollbar-color: #58321a #95613f;
-
-  &::-webkit-scrollbar {
-    height: 8px;
-    background: transparent;
-    border-radius: 8px;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: linear-gradient(to right, #58321a 20%, #95613f 84.5%);
-    margin: 2px 82px 2px 2px;
-  }
-
-  &::-webkit-scrollbar-track {
-    border: 1px solid #351f11;
-    border-radius: 8px;
-  }
-`;
-
 const TableData = styled.table`
   border-spacing: 10px;
   min-width: 980px;
@@ -261,6 +263,15 @@ const TableHeader = styled.th`
   position: sticky;
   top: 0;
   z-index: 1;
+  padding: 20px 16px;
+
+  &:first-child {
+    padding: 20px 16px 20px 0px;
+  }
+
+  &:last-child {
+    padding: 20px 0px 20px 16px;
+  }
 `;
 
 const DataRow = styled.tr``;
@@ -270,12 +281,17 @@ const DataCell = styled.td`
   font-weight: 700;
   line-height: 20px;
   text-align: left;
-  padding: 20px 0px 20px 0px;
+  padding: 20px 16px;
   border-bottom: 1px solid ${({ theme }) => theme.palette.brand};
   color: ${({ theme }) => theme.palette.brandLight};
+  max-width: 170px;
+
+  &:first-child {
+    padding: 20px 16px 20px 0px;
+  }
 
   &:last-child {
-    text-align: right;
+    padding: 20px 0px 20px 16px;
   }
 `;
 
@@ -290,21 +306,28 @@ const ButtonsContainer = styled.div`
 
 const TradeButton = styled(Button)`
   padding: 10px 20px;
-  width: ${(props) => props.width || 'min-content'};
+  width: auto;
   height: min-content;
-  background: ${({ theme }) => theme.palette.gradients.dark};
+  background: linear-gradient(90deg, #58321a 20%, #95613f 84.5%);
   border: ${({ disabled, theme }) =>
     disabled ? 'none' : `1px solid ${theme.palette.brandDark}`};
   box-shadow: ${({ disabled }) =>
-    disabled ? 'none' : '0px 0px 20px rgba(222, 92, 6, 0.4)'};
+    disabled ? 'none' : '0px 0px 20px 0px #DE5C0666'};
   border-radius: 10px;
   font-weight: 700;
   font-size: 12px;
-  line-height: 18px;
+  line-height: 20px;
   text-transform: uppercase;
   color: ${({ theme }) => theme.palette.brandLight};
-
-  &:disabled {
-    color: #acacac;
-  }
 `;
+
+const Status = styled.td`
+  display: flex;
+  align-items: center;
+`;
+
+const Active = styled(active)``;
+
+const Scheduled = styled(scheduled)``;
+
+const Closed = styled(closed)``;

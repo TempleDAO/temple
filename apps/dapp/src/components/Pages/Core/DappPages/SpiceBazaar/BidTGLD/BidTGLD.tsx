@@ -6,6 +6,7 @@ import * as breakpoints from 'styles/breakpoints';
 import { useMediaQuery } from 'react-responsive';
 import { queryPhone } from 'styles/breakpoints';
 import { useState } from 'react';
+import LargeRoundCheckBox from 'components/Pages/Core/DappPages/SpiceBazaar/components/LargeRoundCheckBox';
 
 export const BidTGLD = () => {
   const isPhoneOrAbove = useMediaQuery({
@@ -16,6 +17,16 @@ export const BidTGLD = () => {
     setInputValue(e.target.value);
   };
   const availableAmount = 70.53;
+
+  const [isCheckboxChecked1, setIsCheckboxChecked1] = useState(false);
+  const handleCheckboxToggle1 = (checked: boolean) => {
+    setIsCheckboxChecked1(checked);
+  };
+
+  const [isCheckboxChecked2, setIsCheckboxChecked2] = useState(false);
+  const handleCheckboxToggle2 = (checked: boolean) => {
+    setIsCheckboxChecked2(checked);
+  };
 
   return (
     <ContentContainer>
@@ -53,16 +64,21 @@ export const BidTGLD = () => {
           TOKEN at 5.32 TGLD per TOKEN
         </ReceiveText>
         <WarningMessage>
-          <InfoCircle>
-            <p>i</p>
-          </InfoCircle>
           <MessageText>
+            <LargeRoundCheckBox
+              checked={isCheckboxChecked1}
+              onToggle={handleCheckboxToggle1}
+            />
             <Text>
               Current TGLD price may rise before the end of the auction.
             </Text>
-            <Text>
-              Once submitted, the bid cannot be withdrawn or cancelled.
-            </Text>
+          </MessageText>
+          <MessageText>
+            <LargeRoundCheckBox
+              checked={isCheckboxChecked2}
+              onToggle={handleCheckboxToggle2}
+            />
+            <Text>Once submitted, bids cannot be withdrawn or canceled.</Text>
           </MessageText>
         </WarningMessage>
         <TradeButton
@@ -75,7 +91,7 @@ export const BidTGLD = () => {
           disabled={
             availableAmount > parseFloat(inputValue) && inputValue !== '0'
               ? false
-              : true
+              : true || !isCheckboxChecked1 || !isCheckboxChecked2
           }
         >
           SUBMIT BID
@@ -218,13 +234,14 @@ const InfoCircle = styled.div`
 
 const MessageText = styled.div`
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  flex-direction: row;
+  gap: 10px;
+  align-items: center;
 `;
 
 const Text = styled.p`
   margin: 0px;
-  color: ${({ theme }) => theme.palette.brand};
+  color: ${({ theme }) => theme.palette.brandLight};
   font-size: 12px;
   line-height: 18px;
   font-weight: 700;
@@ -232,8 +249,8 @@ const Text = styled.p`
 
 const WarningMessage = styled.div`
   display: flex;
-  flex-direction: row;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
   width: 100%;
   border: 2px solid transparent;
   border-image-source: linear-gradient(

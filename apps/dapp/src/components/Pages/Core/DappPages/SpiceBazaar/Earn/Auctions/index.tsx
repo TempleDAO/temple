@@ -155,11 +155,13 @@ export const Auctions = () => {
                           <Scheduled />
                           UPCOMING
                         </AuctionStatus>
-                        <TimeStamp>
-                          {countdown === 'Starts soon'
-                            ? countdown
-                            : `Starts in ${countdown}`}
-                        </TimeStamp>
+                        {countdown && (
+                          <TimeStamp>
+                            {countdown === 'Starts soon'
+                              ? countdown
+                              : `Starts in ${countdown}`}
+                          </TimeStamp>
+                        )}
                       </>
                     )}
                   </HeaderRightContainer>

@@ -306,19 +306,15 @@ const TradeButton = styled(Button)`
   padding: 10px 20px;
   width: ${(props) => props.width || '120px'};
   height: min-content;
-  background: linear-gradient(90deg, #58321a 20%, #95613f 84.5%);
+  background: ${({ theme }) => theme.palette.gradients.dark};
   border: ${({ disabled, theme }) =>
     disabled ? 'none' : `1px solid ${theme.palette.brandDark}`};
   box-shadow: ${({ disabled }) =>
-    disabled ? 'none' : '0px 0px 20px 0px #DE5C0666'};
+    disabled ? 'none' : '0px 0px 20px 0px rgba(222, 92, 6, 0.4)'};
   border-radius: 10px;
   font-weight: 700;
   font-size: 12px;
   line-height: 20px;
   text-transform: uppercase;
   color: ${({ theme }) => theme.palette.brandLight};
-
-  &:disabled {
-    color: #acacac;
-  }
 `;

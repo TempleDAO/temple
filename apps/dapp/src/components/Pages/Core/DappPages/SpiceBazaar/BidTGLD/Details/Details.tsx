@@ -1,4 +1,3 @@
-import linkSvg from 'assets/icons/link.svg?react';
 import active from 'assets/icons/active.svg?react';
 import scheduled from 'assets/icons/scheduled.svg?react';
 import styled from 'styled-components';
@@ -8,8 +7,9 @@ import { Chart } from '../Chart/Chart';
 import { BidTGLD } from '../BidTGLD';
 import { Popover } from 'components/Pages/Core/DappPages/SpiceBazaar/components/Popover';
 import { AuctionsHistory } from './Table';
-import { BidTopNav } from '../TopNav';
 import * as breakpoints from 'styles/breakpoints';
+import { Link } from 'react-router-dom';
+import arrowBack from 'assets/icons/arrow_back.svg?react';
 
 export const Details = () => {
   const [isLive, setIsLive] = useState(true);
@@ -18,86 +18,99 @@ export const Details = () => {
   return (
     <>
       <PageContainer>
-        <BidTopNav />
         <ContentContainer>
-          <SpiceAuctionDetails>
-            <SpiceAuction>
-              <SpiceAuctionTitle>
-                Spice Auctions Details
-                <LinkIcon />
-              </SpiceAuctionTitle>
-            </SpiceAuction>
-            <CurrentAuction>
-              <Header>
-                <HeaderLeft>
-                  <Left>
-                    <CurrentAuctionTitle>Current Auction</CurrentAuctionTitle>
-                    <CurrentAddress>0xC4973de5e...5EcF</CurrentAddress>
-                  </Left>
-                  <Right>
-                    <Epoch>EPOCH 2</Epoch>
-                  </Right>
-                </HeaderLeft>
-                <HeaderRight>
-                  <HeaderRightContainer
-                    onClick={() => {
-                      setIsLive(!isLive);
-                    }}
+          <SpiceAuction>
+            <BackLink to="/dapp/spice/bid">
+              <ArrowBack />
+              Back to all Spice Auctions
+            </BackLink>
+            <SpiceAuctionDetails>
+              <SpiceAuctionTitle>Spice Auction Details</SpiceAuctionTitle>
+              <CurrentAuction>
+                <Header>
+                  <HeaderLeft>
+                    <Left>
+                      <CurrentAuctionTitle>Current Auction</CurrentAuctionTitle>
+                      <CurrentAddress>0xC4973de5e...5EcF</CurrentAddress>
+                    </Left>
+                    <Right>
+                      <Epoch>EPOCH 2</Epoch>
+                    </Right>
+                  </HeaderLeft>
+                  <HeaderRight>
+                    <HeaderRightContainer
+                      onClick={() => {
+                        setIsLive(!isLive);
+                      }}
+                      style={{ whiteSpace: 'nowrap', margin: 0 }}
+                    >
+                      {isLive ? (
+                        <>
+                          <AuctionStatus>
+                            <Active />
+                            ACTIVE
+                          </AuctionStatus>
+                          <TimeStamp>
+                            Ends in 00:15:03:04 at 07.07.24 23:59 CST
+                          </TimeStamp>
+                        </>
+                      ) : (
+                        <>
+                          <AuctionStatus>
+                            <Scheduled />
+                            SCHEDULE
+                          </AuctionStatus>
+                          <TimeStamp>05.10.24 at 00:00 CST</TimeStamp>
+                        </>
+                      )}
+                    </HeaderRightContainer>
+                  </HeaderRight>
+                </Header>
+                <ButtonContainer>
+                  <TradeButton
+                    onClick={() => setModal('bidTgld')}
+                    style={{ whiteSpace: 'nowrap' }}
                   >
-                    {isLive ? (
-                      <>
-                        <AuctionStatus>
-                          <Active />
-                          ACTIVE
-                        </AuctionStatus>
-                        <TimeStamp>
-                          Ends in 00:15:03:04 at 07.07.24 23:59 CST
-                        </TimeStamp>
-                      </>
-                    ) : (
-                      <>
-                        <AuctionStatus>
-                          <Scheduled />
-                          SCHEDULE
-                        </AuctionStatus>
-                        <TimeStamp>05.10.24 at 00:00 CST</TimeStamp>
-                      </>
-                    )}
-                  </HeaderRightContainer>
-                </HeaderRight>
-              </Header>
-              <Status>
-                <StatusContent>
-                  <StatusTitle>Amount to be auctioned</StatusTitle>
-                  <StatusValue>2500 TOKENS</StatusValue>
-                </StatusContent>
-                <StatusContent>
-                  <StatusTitle>Price Ratio</StatusTitle>
-                  <StatusValue>1 Token = 5.32 TGLD</StatusValue>
-                  <StatusLink href="/">View history</StatusLink>
-                </StatusContent>
-                <StatusContent>
-                  <StatusTitle>Amount TGLD submitted until now</StatusTitle>
-                  <StatusValue>2500 TGLD</StatusValue>
-                </StatusContent>
-              </Status>
-              {isLive ? (
-                <ChartContainer>
-                  <ChartTitle>Token Price History</ChartTitle>
-                  <Chart />
-                </ChartContainer>
-              ) : null}
-              <ButtonContainer>
-                <TradeButton
-                  onClick={() => setModal('bidTgld')}
-                  style={{ whiteSpace: 'nowrap' }}
-                >
-                  BID TGLD
-                </TradeButton>
-              </ButtonContainer>
-            </CurrentAuction>
-          </SpiceAuctionDetails>
-          <AuctionsHistoryContainer>
+                    BID TGLD
+                  </TradeButton>
+                </ButtonContainer>
+                <Status>
+                  <StatusContent>
+                    <StatusTitle>Price Ratio</StatusTitle>
+                    <StatusValue>1 TOKEN = 5.32 TGLD</StatusValue>
+                    <StatusLink
+                      href="#auction-history"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        document
+                          .getElementById('auction-history')
+                          ?.scrollIntoView({
+                            behavior: 'smooth',
+                          });
+                      }}
+                    >
+                      View history
+                    </StatusLink>
+                  </StatusContent>
+                  <StatusContent>
+                    <StatusTitle>Amount to be auctioned</StatusTitle>
+                    <StatusValue>2500 TOKENS</StatusValue>
+                  </StatusContent>
+                  <StatusContent>
+                    <StatusTitle>Amount Submitted</StatusTitle>
+                    <StatusValue>2500 TGLD</StatusValue>
+                  </StatusContent>
+                </Status>
+                {isLive ? (
+                  <ChartContainer>
+                    <ChartTitle>Token Price History</ChartTitle>
+                    <Chart />
+                  </ChartContainer>
+                ) : null}
+              </CurrentAuction>
+            </SpiceAuctionDetails>
+          </SpiceAuction>
+          <AuctionsHistoryContainer id="auction-history">
             <AuctionsHistory />
           </AuctionsHistoryContainer>
         </ContentContainer>
@@ -114,12 +127,8 @@ export const Details = () => {
   );
 };
 
-const LinkIcon = styled(linkSvg)`
-  fill: ${({ theme }) => theme.palette.brand};
-  cursor: pointer;
-`;
 const PageContainer = styled.div`
-  margin-top: -20px;
+  margin-top: -40px;
 `;
 
 const ContentContainer = styled.div`
@@ -129,9 +138,30 @@ const ContentContainer = styled.div`
   padding: 20px 20px 40px 20px;
 
   ${breakpoints.phoneAndAbove(`
-    gap: 60px;
-    padding: 60px 0px 0px 0px;
+    gap: 80px;
+    padding: 40px 0px 0px 0px;
   `)}
+`;
+
+const SpiceAuction = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+`;
+
+const BackLink = styled(Link)`
+  display: flex;
+  flex-direction: row;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 20px;
+  text-decoration: underline;
+  gap: 10px;
+`;
+
+const ArrowBack = styled(arrowBack)`
+  width: 20px;
+  height: 20px;
 `;
 
 const SpiceAuctionDetails = styled.div`
@@ -140,14 +170,8 @@ const SpiceAuctionDetails = styled.div`
   gap: 20px;
 
   ${breakpoints.phoneAndAbove(`
-    gap: 60px;
+    gap: 40px;
   `)}
-`;
-
-const SpiceAuction = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
 `;
 
 const SpiceAuctionTitle = styled.h2`
@@ -365,33 +389,27 @@ const ChartContainer = styled.div`
 
 const ChartTitle = styled.div`
   color: ${({ theme }) => theme.palette.brand};
-  font-weight: 700;
   font-size: 16px;
   line-height: 19px;
-  margin-left: 20px;
 `;
 
 const AuctionsHistoryContainer = styled.div``;
 
 const ButtonContainer = styled.div`
   display: flex;
-  justify-content: center;
 `;
 
 export const TradeButton = styled(Button)`
   padding: 12px 20px 12px 20px;
   width: ${(props) => props.width || 'min-content'};
   height: min-content;
-  background: ${({ theme }) => theme.palette.gradients.dark};
+  background: linear-gradient(90deg, #58321a 20%, #95613f 84.5%);
   border: 1px solid ${({ theme }) => theme.palette.brandDark};
-  box-shadow: 0px 0px 20px rgba(222, 92, 6, 0.4);
+  box-shadow: 0px 0px 20px 0px #de5c0666;
   border-radius: 10px;
   font-size: 16px;
-  line-height: 19px;
+  line-height: 20px;
+  font-weight: 700;
   text-transform: uppercase;
   color: ${({ theme }) => theme.palette.brandLight};
-
-  &:disabled {
-    color: #acacac;
-  }
 `;

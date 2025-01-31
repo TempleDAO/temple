@@ -1,14 +1,14 @@
 import styled from 'styled-components';
 import active from 'assets/icons/active.svg?react';
 import scheduled from 'assets/icons/scheduled.svg?react';
-import { BidTopNav } from './TopNav';
 import { AuctionsHistory } from './Table/Table';
 import * as breakpoints from 'styles/breakpoints';
+import ena from 'assets/icons/ena_logo.svg?react';
+import kami from 'assets/icons/kami_logo.svg?react';
 
 export const Bid = () => {
   return (
     <PageContainer>
-      <BidTopNav />
       <ContentContainer>
         <SpiceAuctions>
           <SpiceTitle>
@@ -26,9 +26,7 @@ export const Bid = () => {
               </StatusHeader>
               <StatusBody>
                 <AmountInAuction>
-                  <AmountInAuctionIcon>
-                    <img src="" alt="Token icon" />
-                  </AmountInAuctionIcon>
+                  <KamiLogo />
                   <AmountInActionSum>70.530 KAMI</AmountInActionSum>
                 </AmountInAuction>
                 <TotalAmountText>
@@ -56,9 +54,7 @@ export const Bid = () => {
               </StatusHeader>
               <StatusBody>
                 <AmountInAuction>
-                  <AmountInAuctionIcon>
-                    <img src="" alt="Token icon" />
-                  </AmountInAuctionIcon>
+                  <EnaLogo />
                   <AmountInActionSum>85.000 ENA</AmountInActionSum>
                 </AmountInAuction>
                 <TotalAmountText>
@@ -86,9 +82,7 @@ export const Bid = () => {
               </StatusHeader>
               <StatusBody>
                 <AmountInAuction>
-                  <AmountInAuctionIcon>
-                    <img src="" alt="Token icon" />
-                  </AmountInAuctionIcon>
+                  <KamiLogo />
                   <AmountInActionSum>40.320 KAMI</AmountInActionSum>
                 </AmountInAuction>
                 <TotalAmountText>Total amount to be auctioned</TotalAmountText>
@@ -111,7 +105,7 @@ export const Bid = () => {
 };
 
 const PageContainer = styled.div`
-  margin-top: -20px;
+  margin-top: -40px;
 `;
 
 const ContentContainer = styled.div`
@@ -224,8 +218,12 @@ const AmountInAuction = styled.div`
   gap: 4px;
 `;
 
-const AmountInAuctionIcon = styled.div`
-  display: flex;
+const KamiLogo = styled(kami)`
+  width: 42px;
+  height: 42px;
+`;
+
+const EnaLogo = styled(ena)`
   width: 42px;
   height: 42px;
 `;

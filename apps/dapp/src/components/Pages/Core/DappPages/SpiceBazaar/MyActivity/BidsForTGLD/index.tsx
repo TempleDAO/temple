@@ -263,12 +263,14 @@ const TablesContainer = styled.div`
   `)}
 `;
 const TradeButton = styled(Button)`
-  padding: 10px 20px 10px 20px;
+  padding: 10px 20px;
   width: ${(props) => props.width || 'min-content'};
   height: min-content;
-  background: linear-gradient(90deg, #58321a 20%, #95613f 84.5%);
-  border: 1px solid ${({ theme }) => theme.palette.brandDark};
-  box-shadow: 0px 0px 20px 0px #de5c0666;
+  background: ${({ theme }) => theme.palette.gradients.dark};
+  border: ${({ disabled, theme }) =>
+    disabled ? 'none' : `1px solid ${theme.palette.brandDark}`};
+  box-shadow: ${({ disabled }) =>
+    disabled ? 'none' : '0px 0px 20px 0px rgba(222, 92, 6, 0.4)'};
   border-radius: 10px;
   font-weight: 700;
   font-size: 12px;

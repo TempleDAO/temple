@@ -3,14 +3,18 @@ import styled from 'styled-components';
 import { Transaction } from './Table';
 import { PaginationControl } from 'components/Pages/Core/DappPages/SpiceBazaar/components/PaginationControl';
 import * as breakpoints from 'styles/breakpoints';
+import active from 'assets/icons/active_auc.svg?react';
+import scheduled from 'assets/icons/scheduled_auc.svg?react';
+import closed from 'assets/icons/closed.svg?react';
+import { ScrollBar } from 'components/Pages/Core/DappPages/SpiceBazaar/components/CustomScrollBar';
 
 enum TableHeaders {
   Epoch = 'EPOCH',
   Status = 'Status',
   AuctionStartDate = 'Auction Start Date',
   AuctionEndDate = 'Auction End Date',
-  AmountTGLDAuctioned = 'Amount TGLD Auctioned',
-  PriceRatio = 'Price Ratio',
+  TGLDAuctioned = 'TGLD Auctioned',
+  UnitPrice = 'Unit Price',
 }
 
 type TableProps = {
@@ -20,21 +24,16 @@ type TableProps = {
   dataRefetching?: boolean;
 };
 
-const ROWS_PER_PAGE = 4;
+const ROWS_PER_PAGE = 3;
 
-export const DataTable: React.FC<TableProps> = ({
-  transactions,
-  loading,
-  refetch,
-  dataRefetching,
-}) => {
+export const DataTable: React.FC<TableProps> = ({ transactions, loading }) => {
   const tableHeaders = [
     { name: TableHeaders.Epoch },
     { name: TableHeaders.Status },
     { name: TableHeaders.AuctionStartDate },
     { name: TableHeaders.AuctionEndDate },
-    { name: TableHeaders.AmountTGLDAuctioned },
-    { name: TableHeaders.PriceRatio },
+    { name: TableHeaders.TGLDAuctioned },
+    { name: TableHeaders.UnitPrice },
   ];
 
   const [filter, setFilter] = useState('Last 30 Days');
@@ -91,7 +90,7 @@ export const DataTable: React.FC<TableProps> = ({
           ))}
         </FilterContainer>
       </Header>
-      <TableWrapper>
+      <ScrollBar autoHide={false}>
         <TableData>
           <thead>
             <HeaderRow>
@@ -113,20 +112,42 @@ export const DataTable: React.FC<TableProps> = ({
               currentTransactions.map((transaction) => (
                 <DataRow key={transaction.epoch}>
                   <DataCell>{transaction.epoch}</DataCell>
-                  <DataCell>{transaction.status}</DataCell>
+                  {(() => {
+                    if (transaction.status === 'Closed') {
+                      return (
+                        <DataCell>
+                          <Status>
+                            <Closed /> {transaction.status}
+                          </Status>
+                        </DataCell>
+                      );
+                    } else if (transaction.status === 'Upcoming') {
+                      return (
+                        <DataCell>
+                          <Status>
+                            <Scheduled /> {transaction.status}
+                          </Status>
+                        </DataCell>
+                      );
+                    } else if (transaction.status === 'Active') {
+                      return (
+                        <DataCell>
+                          <Status>
+                            <Active /> {transaction.status}
+                          </Status>
+                        </DataCell>
+                      );
+                    }
+                  })()}
+                  <DataCell>{transaction.auctionStartDate}</DataCell>
                   <DataCell>
-                    {transaction.status !== 'Not yet started'
-                      ? transaction.auctionStartDate
-                      : '-'}
-                  </DataCell>
-                  <DataCell>
-                    {transaction.status === 'Finished'
+                    {transaction.status === 'Closed'
                       ? transaction.auctionEndDate
                       : '-'}
                   </DataCell>
                   <DataCell>{transaction.amountTGLD}</DataCell>
                   <DataCell>
-                    {transaction.status === 'Finished'
+                    {transaction.status === 'Closed'
                       ? transaction.priceRatio
                       : '-'}
                   </DataCell>
@@ -135,7 +156,7 @@ export const DataTable: React.FC<TableProps> = ({
             )}
           </tbody>
         </TableData>
-      </TableWrapper>
+      </ScrollBar>
       <PaginationControl
         totalPages={totalPages}
         currentPage={currentPage}
@@ -191,29 +212,6 @@ const FilterButton = styled.button<{ selected: boolean }>`
   cursor: pointer;
 `;
 
-const TableWrapper = styled.div`
-  overflow-x: scroll;
-  padding-bottom: 20px;
-  scrollbar-width: thin;
-  scrollbar-color: #58321a #95613f;
-
-  &::-webkit-scrollbar {
-    height: 8px;
-    background: transparent;
-    border-radius: 8px;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: linear-gradient(to right, #58321a 20%, #95613f 84.5%);
-    margin: 2px 82px 2px 2px;
-  }
-
-  &::-webkit-scrollbar-track {
-    border: 1px solid #351f11;
-    border-radius: 8px;
-  }
-`;
-
 const TableData = styled.table`
   border-spacing: 10px;
   min-width: 980px;
@@ -254,3 +252,14 @@ const DataCell = styled.td`
     padding-left: 16px;
   }
 `;
+
+const Status = styled.td`
+  display: flex;
+  align-items: center;
+`;
+
+const Active = styled(active)``;
+
+const Scheduled = styled(scheduled)``;
+
+const Closed = styled(closed)``;
