@@ -43,6 +43,7 @@ const theme: DefaultTheme = {
     dark75: transparentize(0.25, darkColor),
     // check if this color is needed? If it is then need to sync to Figma
     grayOpaque: '#1B1919',
+    gold: '#EAB85B',
     light: '#FFFFFF',
     light75: darken(0.25, '#FFFFFF'),
     light50: darken(0.5, '#FFFFFF'),

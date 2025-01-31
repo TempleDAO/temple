@@ -11,6 +11,7 @@ import daiImg from 'assets/images/newui-images/tokens/dai.png';
 import fraxImg from 'assets/images/newui-images/tokens/frax.png';
 import usdcImg from 'assets/images/newui-images/tokens/usdc.png';
 import usdtImg from 'assets/images/newui-images/tokens/usdt.png';
+import usdsImg from 'assets/images/newui-images/tokens/usds.png';
 import templeImg from 'assets/images/newui-images/tokens/temple.png';
 import ohmImg from 'assets/images/newui-images/tokens/ohm.png';
 
@@ -58,12 +59,14 @@ const TickerImages: Record<TICKER_SYMBOL, string> = {
   ETH: ethImg,
   WETH: wethImg,
   DAI: daiImg,
+  USDS: usdsImg,
   FRAX: fraxImg,
   USDC: usdcImg,
   USDT: usdtImg,
   TEMPLE: templeImg,
   OGTEMPLE: templeImg,
   OHM: ohmImg,
+  TGLD: templeImg, // TODO: Need a temple gold image?
 };
 
 /**
