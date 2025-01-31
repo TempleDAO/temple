@@ -20,6 +20,7 @@ const env: Environment = {
     usdc: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
     usdt: '0xdac17f958d2ee523a2206206994597c13d831ec7',
     dai: '0x6b175474e89094c44da98b954eedeac495271d0f',
+    usds: '0xdC035D45d973E3EC169d2276DDab16f1e407384F',
     weth: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
     frax3CrvFarming: '0xd632f22692fac7611d2aa1c0d552930d43caed3b',
     frax3CrvFarmingRewards: '0xB900EF131301B307dB5eFcbed9DBb50A3e209B2e',
@@ -180,6 +181,7 @@ const env: Environment = {
       },
     ],
     temple: '0x470ebf5f030ed85fc1ed4c2d36b9dd02e77cf1b7',
+    templegold: '0x0E7B53dDe30754A94D4B10C9CdCaCA1C749ECd1b',
     templeStaking: '0x4D14b24EDb751221B3Ff08BBB8bd91D4b1c8bc77',
     templeV2FraxPair: '0x6021444f1706f15465bEe85463BCc7d7cC17Fc03',
     templeV2Router: '0x98257C876ACe5009e7B97843F8c71b3AE795c71E',
@@ -206,6 +208,10 @@ const env: Environment = {
     },
     daiCircuitBreaker: '0x02607d6bc3146bb3d3022e991ef54f545988fb7b',
     templeCircuitBreaker: '0x0745D453A19DfEAd0e5fd350a231D878F5c71b8D',
+    spiceBazaar: {
+      templeGoldStaking: '0x64866d080CfEf0e45A3a64A558dA6eEAD7542657',
+      daiGoldAuction: '0x0bC14503c467CB675b6B30da05Dbed80C83d154e',
+    },
   },
   gas: {
     swapFraxForTemple: 300000,
@@ -225,6 +231,12 @@ const env: Environment = {
     ascendQuote: 10_000,
   },
   tokens: {
+    tgld: {
+      name: 'Temple Gold',
+      address: '0x0E7B53dDe30754A94D4B10C9CdCaCA1C749ECd1b',
+      decimals: 18,
+      symbol: 'TGLD',
+    },
     frax: {
       name: 'Frax',
       address: '0x853d955acef822db058eb8505911ed77f175b99e',
@@ -270,6 +282,11 @@ const env: Environment = {
       address: '0x6b175474e89094c44da98b954eedeac495271d0f',
       decimals: 18,
     },
+    usds: {
+      name: 'USDS',
+      address: '0xdC035D45d973E3EC169d2276DDab16f1e407384F',
+      decimals: 18,
+    },
   },
   network: 1,
   etherscan: 'https://etherscan.io',
@@ -287,6 +304,7 @@ const env: Environment = {
       'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-v2-mainnet/api',
     templeV2Balances:
       'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-v2-balances/api',
+    spiceBazaar: '',
   },
   featureFlags: {
     enableAscend: false,

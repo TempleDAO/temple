@@ -639,3 +639,292 @@ class FetchError extends Error {
     super(message);
   }
 }
+
+//----------------------------------------------------------------------------------------------------
+
+export function userTransactions(): SubGraphQuery<UserTransactionsResp> {
+  const label = 'UserTransactions';
+  const request = `
+  {
+    userTransactions(orderBy: timestamp, orderDirection: desc) {
+        id
+        timestamp
+        hash
+        name
+    }
+  }`;
+  return {
+    label,
+    request,
+    parse: UserTransactionsResp.parse,
+  };
+}
+
+const UserTransactionsResp = z.object({
+  userTransactions: z.array(
+    z.object({
+      id: z.string(),
+      timestamp: z.string(),
+      hash: z.string(),
+      name: z.string(),
+    })
+  ),
+});
+export type UserTransactionsResp = z.infer<typeof UserTransactionsResp>;
+
+//----------------------------------------------------------------------------------------------------
+
+export function userTransactionsDAIGoldAuctions(
+  id: string
+): SubGraphQuery<UserTransactionsDAIGoldAuctionsResp> {
+  const label = 'UserTransactionsDAIGoldAuctions';
+  const request = `
+  {
+     user(id: "${id}") {
+        id
+       positions {
+           id
+           transactions(orderDirection: desc, orderBy: timestamp) {
+               id
+               timestamp
+               hash
+               ... on BidTransaction {
+                   id
+                   bidAmount
+                   timestamp
+                   hash
+               }
+               ... on ClaimTransaction {
+                   id
+                   auctionAmount
+                   timestamp
+                   hash
+               }
+           }
+       }
+    }
+  }`;
+  return {
+    label,
+    request,
+    parse: UserTransactionsDAIGoldAuctionsResp.parse,
+  };
+}
+
+const UserTransactionsDAIGoldAuctionsResp = z.object({
+  user: z.object({
+    id: z.string(),
+    positions: z.array(
+      z.object({
+        id: z.string(),
+        transactions: z.array(
+          z.union([
+            z.object({
+              id: z.string(),
+              timestamp: z.string(),
+              hash: z.string(),
+              bidAmount: z.string(),
+            }),
+            z.object({
+              id: z.string(),
+              timestamp: z.string(),
+              hash: z.string(),
+              auctionAmount: z.string(),
+            }),
+          ])
+        ),
+      })
+    ),
+  }),
+});
+
+export type UserTransactionsDAIGoldAuctionsResp = z.infer<
+  typeof UserTransactionsDAIGoldAuctionsResp
+>;
+
+//----------------------------------------------------------------------------------------------------
+
+export function bidsHistoryGoldAuction(
+  id: string
+): SubGraphQuery<BidsHistoryGoldAuctionResp> {
+  const label = 'BidsHistoryGoldAuction';
+  const request = `
+  {
+    stableGoldAuctionInstance(id: "${id}") {
+      id
+      bidTransaction(orderBy: timestamp, orderDirection: desc) {
+        bidAmount
+        timestamp
+        hash
+        price
+      }
+    }
+  }`;
+  return {
+    label,
+    request,
+    parse: BidsHistoryGoldAuctionResp.parse,
+  };
+}
+
+const BidsHistoryGoldAuctionResp = z.object({
+  stableGoldAuctionInstance: z.object({
+    id: z.string(),
+    bidTransaction: z.array(
+      z.object({
+        bidAmount: z.string(),
+        timestamp: z.string(),
+        hash: z.string(),
+        price: z.string(),
+      })
+    ),
+  }),
+});
+
+export type BidsHistoryGoldAuctionResp = z.infer<
+  typeof BidsHistoryGoldAuctionResp
+>;
+
+//----------------------------------------------------------------------------------------------------
+
+export function stableGoldAuctionInstances(): SubGraphQuery<StableGoldAuctionInstancesResp> {
+  const label = 'StableGoldAuctionInstances';
+  const request = `
+  {
+    stableGoldAuctionInstances {
+        epoch
+        startTime
+        endTime
+        totalAuctionTokenAmount
+        priceRatio
+    }
+  }`;
+  return {
+    label,
+    request,
+    parse: StableGoldAuctionInstancesResp.parse,
+  };
+}
+
+const StableGoldAuctionInstancesResp = z.object({
+  stableGoldAuctionInstances: z.array(
+    z.object({
+      epoch: z.string(),
+      startTime: z.string(),
+      endTime: z.string(),
+      totalAuctionTokenAmount: z.string(),
+      priceRatio: z.string(),
+    })
+  ),
+});
+export type StableGoldAuctionInstancesResp = z.infer<
+  typeof StableGoldAuctionInstancesResp
+>;
+
+//----------------------------------------------------------------------------------------------------
+
+export function user(id: string): SubGraphQuery<UserResp> {
+  const label = 'User';
+  const request = `
+  {
+    user(id: "${id}") {
+        id
+        positions {            
+            auctionInstance {
+                epoch
+                startTime
+                endTime
+                priceRatio
+            }
+            totalBidAmount
+            hasClaimed
+        }
+    }
+  }`;
+  return {
+    label,
+    request,
+    parse: UserResp.parse,
+  };
+}
+
+const UserResp = z.object({
+  user: z.object({
+    id: z.string(),
+    positions: z.array(
+      z.object({
+        auctionInstance: z.object({
+          epoch: z.string(),
+          startTime: z.string(),
+          endTime: z.string(),
+          priceRatio: z.string(),
+        }),
+        totalBidAmount: z.string(),
+        hasClaimed: z.boolean(),
+      })
+    ),
+  }),
+});
+export type UserResp = z.infer<typeof UserResp>;
+
+//----------------------------------------------------------------------------------------------------
+
+export function priceHistory(epoch: string): SubGraphQuery<PriceHistoryResp> {
+  const label = 'PriceHistory';
+  const request = `
+  query PriceHistoryQuery {
+    stableGoldAuctionInstances(where: { epoch: "${epoch}" }) {
+        epoch
+        auctionInstanceDailySnapshots {
+            id
+            timeframe
+            timestamp
+            priceRatio
+            price
+            totalBidTokenAmount
+        }
+        auctionInstanceHourlySnapshots {
+            id
+            timeframe
+            timestamp
+            priceRatio
+            price
+        }
+    }
+  }`;
+
+  return {
+    label,
+    request,
+    parse: PriceHistoryResp.parse,
+  };
+}
+
+const PriceHistoryResp = z.object({
+  stableGoldAuctionInstances: z.array(
+    z.object({
+      epoch: z.string(),
+      auctionInstanceDailySnapshots: z.array(
+        z.object({
+          id: z.string(),
+          timeframe: z.string(),
+          timestamp: z.string(),
+          priceRatio: z.string(),
+          price: z.string(),
+          totalBidTokenAmount: z.string(),
+        })
+      ),
+      auctionInstanceHourlySnapshots: z.array(
+        z.object({
+          id: z.string(),
+          timeframe: z.string(),
+          timestamp: z.string(),
+          priceRatio: z.string(),
+          price: z.string(),
+        })
+      ),
+    })
+  ),
+});
+
+export type PriceHistoryResp = z.infer<typeof PriceHistoryResp>;
