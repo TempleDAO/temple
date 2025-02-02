@@ -45,13 +45,12 @@ const V2Layout = () => {
   const { isBlocked, loading } = useGeoBlocked();
   const [geoblockModalOpen, setGeoblockModalOpen] = useState(false);
   const [menuNavItems, setMenuNavItems] = useState<Array<MenuNavItem>>([
-    // TODO: Hidden until launch
-    // {
-    //   label: 'Spice Bazaar',
-    //   linkTo: V2DashboardLocPaths.SpiceBazaar,
-    //   Logo: StoreFront,
-    //   selected: V2DashboardLocPaths.SpiceBazaar === loc.pathname,
-    // },
+    {
+      label: 'Spice Bazaar',
+      linkTo: V2DashboardLocPaths.SpiceBazaar,
+      Logo: StoreFront,
+      selected: V2DashboardLocPaths.SpiceBazaar === loc.pathname,
+    },
     {
       label: 'Trade',
       linkTo: V2DashboardLocPaths.Trade,
