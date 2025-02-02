@@ -20,6 +20,7 @@ const env: Environment = {
     usdc: '',
     usdt: '',
     dai: '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512',
+    usds: '',
     weth: '',
     frax3CrvFarming: '',
     frax3CrvFarmingRewards: '',
@@ -29,6 +30,7 @@ const env: Environment = {
     olympus: '',
     otcOffer: '',
     temple: '0x5FbDB2315678afecb367f032d93F642f64180aa3',
+    templegold: '',
     templeStaking: '0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6',
     templeV2FraxPair: '',
     templeV2Router: '',
@@ -54,6 +56,10 @@ const env: Environment = {
     },
     daiCircuitBreaker: '',
     templeCircuitBreaker: '',
+    spiceBazaar: {
+      templeGoldStaking: '',
+      daiGoldAuction: '',
+    },
   },
   infuraId: '4cd22916292d4fb6be156454978c326b',
   subgraph: {
@@ -69,6 +75,7 @@ const env: Environment = {
       'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-v2-mainnet/api',
     templeV2Balances:
       'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-v2-balances/api',
+    spiceBazaar: '',
   },
   intervals: {
     ascendData: 30_000,
@@ -76,6 +83,11 @@ const env: Environment = {
   },
   etherscan: 'https://sepolia.etherscan.io',
   tokens: {
+    tgld: {
+      name: 'Temple Gold',
+      address: '',
+      decimals: 18,
+    },
     frax: {
       name: 'Frax',
       address: '',
@@ -127,6 +139,12 @@ const env: Environment = {
       address: '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512',
       decimals: 18,
       symbol: 'DAI',
+    },
+    usds: {
+      name: 'USDS',
+      address: '',
+      decimals: 18,
+      symbol: 'USDS',
     },
   },
   network: 30001,

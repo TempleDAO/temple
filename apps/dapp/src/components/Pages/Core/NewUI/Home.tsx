@@ -148,6 +148,8 @@ const Home = ({ tlc }: { tlc?: boolean }) => {
               </LearnMoreLink>
               <ButtonContainer>
                 <Link to="/dapp/trade">
+                  {' '}
+                  {/* TODO: Change to spice when launch */}
                   <LaunchAppButton label={'Launch App'} role="button" />
                 </Link>
               </ButtonContainer>

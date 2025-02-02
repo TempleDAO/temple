@@ -132,8 +132,12 @@ export interface WalletState {
     // Should be ERC20, need to update Typechain (fix is in 8.0.x)
     erc20Token: any,
     spender: string,
-    minAllowance: BigNumber
+    minAllowance: BigNumber,
+    shouldUseMinAllowance?: boolean
   ): Promise<void>;
 
   ethersProvider: Nullable<ethers.providers.Web3Provider>;
+  providerWithReadOnlyFallback:
+    | ethers.providers.JsonRpcProvider
+    | ethers.providers.Web3Provider;
 }
