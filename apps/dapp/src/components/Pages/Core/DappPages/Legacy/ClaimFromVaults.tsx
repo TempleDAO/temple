@@ -96,14 +96,14 @@ export const ClaimFromVaults = () => {
       );
       const receipt = await tx.wait();
       openNotification({
-        title: `Approved Early Withdraw`,
+        title: `Approved Withdraw`,
         hash: receipt.transactionHash,
       });
       fetchAllowance();
     } catch (e) {
       console.log(e);
       openNotification({
-        title: `Failed to increase Early Withdraw allowance`,
+        title: `Failed to increase Withdraw allowance`,
         hash: '',
       });
     }
@@ -189,7 +189,7 @@ export const ClaimFromVaults = () => {
           />
         ) : insufficientAllowance ? (
           <ClaimButton
-            label={'Approve Early Withdraw'}
+            label={'Approve Withdraw'}
             onClick={async () => {
               await approve();
             }}
