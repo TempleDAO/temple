@@ -1,0 +1,9 @@
+// mainnet: STRATEGIES.COSECHA_SEGUNDA_GNOSIS_STRATEGY.CIRCUIT_BREAKERS.DAI=0x3367D02eCA5AA15D1dDbA270F3d0EffcdC3be7bb
+// yarn hardhat verify --network mainnet 0x3367D02eCA5AA15D1dDbA270F3d0EffcdC3be7bb --constructor-args scripts/deploys/mainnet/deploymentArgs/0x3367D02eCA5AA15D1dDbA270F3d0EffcdC3be7bb.js
+module.exports = [
+  "0x9f90430179D9b67341BFa50559bc7B8E35629f1b",
+  "0xbbb38C1B90Deb7dd0E8FA12a050B9bE19dF71E91",
+  93600,
+  13,
+  "10000000000000000000000000"
+];

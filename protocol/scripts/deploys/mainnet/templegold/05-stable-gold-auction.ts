@@ -13,6 +13,7 @@ async function main() {
   const [owner] = await ethers.getSigners();
   const TEMPLEGOLD_ADDRESSES = getDeployedTempleGoldContracts();
   const CORE_ADDRESSES = getDeployedContracts(); 
+  const treasury = "0xA1f01d98d60273ED562eE79fEb718bbdB85E1d9C";
 
   const factory = new StableGoldAuction__factory(owner);
   await deployAndMine(
@@ -20,11 +21,11 @@ async function main() {
     factory,
     factory.deploy,
     TEMPLEGOLD_ADDRESSES.TEMPLE_GOLD.TEMPLE_GOLD,
-    CORE_ADDRESSES.EXTERNAL.MAKER_DAO.DAI_TOKEN,
-    CORE_ADDRESSES.CORE.EXECUTOR_MSIG, // treasury
+    TEMPLEGOLD_ADDRESSES.EXTERNAL.SKY.USDS,
+    treasury, // gnosis for CSS strategy
     CORE_ADDRESSES.CORE.RESCUER_MSIG,
     CORE_ADDRESSES.CORE.EXECUTOR_MSIG,
-    TEMPLEGOLD_ADDRESSES.TEMPLE_GOLD.AUCTION_AUTOMATION_EOA
+    CORE_ADDRESSES.CORE.EXECUTOR_MSIG, // start with executor //TEMPLEGOLD_ADDRESSES.TEMPLE_GOLD.AUCTION_AUTOMATION_EOA
   );
 }
 

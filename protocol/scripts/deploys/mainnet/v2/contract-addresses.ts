@@ -218,10 +218,10 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
                 },
             },
             COSECHA_SEGUNDA_GNOSIS_STRATEGY: {
-                ADDRESS: '',
+                ADDRESS: '0x0cB92fEfae1806ed3047E3EB8F36bC963AC48637',
                 UNDERLYING_GNOSIS_SAFE: '0xA1f01d98d60273ED562eE79fEb718bbdB85E1d9C',
                 CIRCUIT_BREAKERS: {
-                    DAI: '',
+                    DAI: '0x3367D02eCA5AA15D1dDbA270F3d0EffcdC3be7bb',
                     TEMPLE: ''
                 },
             },
