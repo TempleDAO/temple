@@ -3,7 +3,6 @@ import Image from 'components/Image/Image';
 import styled, { css } from 'styled-components';
 
 import Loader from '../Loader/Loader';
-import useIsMounted from 'hooks/use-is-mounted';
 
 export interface ButtonProps
   extends ButtonStyledProps,
@@ -31,7 +30,6 @@ export const Button = ({
   ...props
 }: ButtonProps) => {
   const [isLoading, setIsLoading] = useState(false);
-  const isMounted = useIsMounted();
 
   /**
    * Click handler which shows a spinner while the action is in progress.
@@ -57,12 +55,6 @@ export const Button = ({
         console.info(`Error: ${JSON.stringify(err, null, 2)}`);
       }
     } finally {
-      // Make sure the component is still mounted after async code.
-      // setting state on an unmounted component is a memory leak.
-      if (!isMounted.current) {
-        return;
-      }
-
       setIsLoading(false);
     }
   };
@@ -81,7 +73,7 @@ export const Button = ({
       {...props}
     >
       {loading ? (
-        <Loader iconSize={32} />
+        <Loader iconSize={20} />
       ) : (
         <>
           {leadingIcon && (

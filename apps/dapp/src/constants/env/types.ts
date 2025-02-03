@@ -13,6 +13,7 @@ interface Subgraphs {
   // basically this subgraph contains a subset of the above templeV2 with some
   // metric including the externally priced assets
   templeV2Balances: string;
+  spiceBazaar: string;
 }
 
 interface Contracts {
@@ -24,6 +25,7 @@ interface Contracts {
   usdc: string;
   usdt: string;
   dai: string;
+  usds: string;
   weth: string;
   frax3CrvFarming: string;
   frax3CrvFarmingRewards: string;
@@ -34,6 +36,7 @@ interface Contracts {
   otcOffer: string;
   teamPayments?: { name: string; address: string }[];
   temple: string;
+  templegold: string;
   templeStaking: string;
   templeV2FraxPair: string;
   templeV2Router: string;
@@ -59,6 +62,12 @@ interface Contracts {
   balancerHelpers: string;
   daiCircuitBreaker: string;
   templeCircuitBreaker: string;
+  spiceBazaar: SpiceBazaar;
+}
+
+interface SpiceBazaar {
+  templeGoldStaking: string;
+  daiGoldAuction: string;
 }
 
 interface Gas {
@@ -83,6 +92,7 @@ export interface Token {
 }
 
 export interface Tokens {
+  tgld: Token;
   frax: Token;
   temple: Token;
   ogTemple: Token;
@@ -91,6 +101,7 @@ export interface Tokens {
   usdc: Token;
   usdt: Token;
   dai: Token;
+  usds: Token;
   ohm: Token;
 }
 

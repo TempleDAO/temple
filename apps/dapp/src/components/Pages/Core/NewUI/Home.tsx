@@ -147,7 +147,8 @@ const Home = ({ tlc }: { tlc?: boolean }) => {
                 Learn More
               </LearnMoreLink>
               <ButtonContainer>
-                <Link to="/dapp/trade">
+                <Link to="/dapp/spice">
+                  {' '}
                   <LaunchAppButton label={'Launch App'} role="button" />
                 </Link>
               </ButtonContainer>
