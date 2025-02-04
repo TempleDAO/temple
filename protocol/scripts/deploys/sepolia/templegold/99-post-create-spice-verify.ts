@@ -21,6 +21,8 @@ async function main() {
     const name = ""; //"TGLD_TOKENNAME_SPICE";
     const spiceToken = "";
 
+    if(!name || !spiceToken) { throw new Error("Missing name or spice token!"); }
+
     await mine(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.SPICE_AUCTION_FACTORY.createAuction(spiceToken, name));
     const spiceAuction = await TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.SPICE_AUCTION_FACTORY.findAuctionForSpiceToken(spiceToken);
     
@@ -37,6 +39,8 @@ async function main() {
         ],
     });
 
+    // comment out both lines below and run immediately if `auctionConfig.startCooldown` is 0.
+    // Otherwise run them one after the next.
     // await _setAuctionConfig(ownerAddress, TEMPLE_GOLD_INSTANCES);
     // await _startAuction(TEMPLE_GOLD_INSTANCES);
 }
