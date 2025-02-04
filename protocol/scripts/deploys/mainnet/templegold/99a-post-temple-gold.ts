@@ -10,14 +10,14 @@ async function main() {
     const [owner] = await ethers.getSigners();
     const TEMPLE_GOLD_ADDRESSES = getDeployedTempleGoldContracts();
     const TEMPLE_GOLD_INSTANCES = connectToContracts(owner);
-    const teamGnosis = '';
+    const teamGnosis = TEMPLE_GOLD_ADDRESSES.TEMPLE_GOLD.TEAM_GNOSIS; //'0x4D6175d58C5AceEf30F546C0d5A557efFa53A950';
     const distributionParams = {
         staking: ethers.utils.parseEther("15"),
         auction: ethers.utils.parseEther("70"),
         gnosis: ethers.utils.parseEther("15")
     }
     const vestingFactor = {
-        value: 35,
+        value: 156,
         weekMultiplier: 3600 * 24 * 7 // 1 week
     }
     // Set and whitelist contracts
