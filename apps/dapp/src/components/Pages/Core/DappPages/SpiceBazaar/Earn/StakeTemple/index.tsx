@@ -98,17 +98,11 @@ export const StakeTemple = () => {
               />
             </HeaderTitle>
             <HeaderText>
-              Stake your TEMPLE to receive Temple Gold{' '}
-              {!isPhoneOrAbove && <br />}
-              (TGLD) weekly Epoch rewards. TEMPLE tokens{' '}
-              {!isPhoneOrAbove && <br />}
-              that are currently being supplied in TLC{' '}
-              {!isPhoneOrAbove && <br />}
-              cannot be staked. Newly staked TEMPLE have{' '}
-              {!isPhoneOrAbove && <br />}a cooldown period before they can be{' '}
-              {!isPhoneOrAbove && <br />}
-              unstaked. Claimed TGLD can be used in {!isPhoneOrAbove && <br />}a
-              current or future Spice Auction.
+              Stake your TEMPLE to receive Temple Gold (TGLD) weekly Epoch
+              rewards. TEMPLE tokens that are currently being supplied in TLC{' '}
+              cannot be staked. Newly staked TEMPLE have a cooldown period
+              before they can be unstaked. Claimed TGLD can be used in a current
+              or future Spice Auction.
             </HeaderText>
           </Header>
           <StatusContainer>

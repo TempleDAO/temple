@@ -237,7 +237,7 @@ export const BidUSDS = ({
           )}
           <BidContent>
             <TitleBid>
-              {mode === 'increaseBid'
+              {mode === BidUSDSMode.IncreaseBid
                 ? 'Amount to Increase'
                 : 'Your Bid Amount'}
             </TitleBid>

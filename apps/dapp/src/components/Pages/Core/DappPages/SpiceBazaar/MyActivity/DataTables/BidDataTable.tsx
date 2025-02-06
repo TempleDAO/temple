@@ -2,12 +2,15 @@ import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { Button } from 'components/Button/Button';
 import { Popover } from 'components/Pages/Core/DappPages/SpiceBazaar/components/Popover';
-import { BidTgld } from '../BidsForSpice/BidTgld';
 import * as breakpoints from 'styles/breakpoints';
 import { useSpiceBazaar } from 'providers/SpiceBazaarProvider';
 import { BidUSDS, BidUSDSMode } from '../../Earn/Auctions/BidUSDS';
 import { formatNumberWithCommas } from 'utils/formatter';
 import { ScrollBar } from 'components/Pages/Core/DappPages/SpiceBazaar/components/CustomScrollBar';
+import {
+  BidTGLD,
+  BidTGLDMode,
+} from 'components/Pages/Core/DappPages/SpiceBazaar/BidTGLD/BidTGLD';
 
 export type Transaction = {
   epochId: string;
@@ -200,7 +203,7 @@ export const DataTable: React.FC<TableProps> = ({
             currentBidAmount={currentBidAmount}
           />
         )}
-        {modal === 'bidTgld' && <BidTgld />}
+        {modal === 'bidTgld' && <BidTGLD mode={BidTGLDMode.IncreaseBid} />}
       </Popover>
     </>
   );

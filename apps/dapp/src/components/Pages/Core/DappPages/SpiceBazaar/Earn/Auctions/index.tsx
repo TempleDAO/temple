@@ -87,25 +87,13 @@ export const Auctions = () => {
                 />
               </DaiGoldTitle>
               <DaiGoldText>
-                In a Temple Gold Auction, you can earn{' '}
-                {!isPhoneOrAbove && <br />}
-                Temple Gold (TGLD) by submitting USDS{' '}
-                {!isPhoneOrAbove && <br />}
-                Bids even if you do not hold any TEMPLE.{' '}
-                {!isPhoneOrAbove && <br />}
-                Once placed, USDS Bids cannot be withdrawn,{' '}
-                {!isPhoneOrAbove && <br />}
-                but you may enter additional Bids. The more{' '}
-                {!isPhoneOrAbove && <br />}
-                you USDS bid, the more TGLD you will earn.{' '}
-                {!isPhoneOrAbove && <br />}
-                However, the final TGLD unit price for a{' '}
-                {!isPhoneOrAbove && <br />}
-                given Auction will not be known until the{' '}
-                {!isPhoneOrAbove && <br />}
-                last Bid has been entered and may be higher{' '}
-                {!isPhoneOrAbove && <br />}
-                or lower than in previous Auctions.
+                In a Temple Gold Auction, you can win Temple Gold (TGLD) by
+                submitting USDS Bids even if you do not hold any TEMPLE. Once
+                placed, USDS Bids cannot be withdrawn, but you may enter
+                additional Bids. The more you USDS bid, the more TGLD you will
+                earn. However, the final TGLD unit price for a given Auction
+                will not be known until the last Bid has been entered and may be
+                higher or lower than in previous Auctions.
               </DaiGoldText>
             </DaiGold>
             <CurrentAuction>

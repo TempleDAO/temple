@@ -4,7 +4,7 @@ import styled from 'styled-components';
 import { useState } from 'react';
 import { Button } from 'components/Button/Button';
 import { Chart } from '../Chart/Chart';
-import { BidTGLD } from '../BidTGLD';
+import { BidTGLD, BidTGLDMode } from '../BidTGLD';
 import { Popover } from 'components/Pages/Core/DappPages/SpiceBazaar/components/Popover';
 import { AuctionsHistory } from './Table';
 import * as breakpoints from 'styles/breakpoints';
@@ -121,7 +121,7 @@ export const Details = () => {
         closeOnClickOutside
         showCloseButton
       >
-        <BidTGLD />
+        <BidTGLD mode={BidTGLDMode.Bid} />
       </Popover>
     </>
   );
@@ -255,11 +255,12 @@ const HeaderRightContainer = styled.div`
   background: ${({ theme }) => theme.palette.black};
   border: solid 1px #588f22;
   border-radius: 10px;
-  padding: 8px 24px 8px 24px;
+  padding: 16px 24px 16px 24px;
   gap: 10px;
   width: 305px;
 
   ${breakpoints.phoneAndAbove(`
+    padding: 8px 24px 8px 24px;
     width: 100%;
     flex-direction: row;
     width: 100%;
@@ -286,6 +287,7 @@ const TimeStamp = styled.div`
   line-height: 19px;
   text-align: center;
   color: ${({ theme }) => theme.palette.brandLight};
+  white-space: normal;
 `;
 
 const Active = styled(active)``;

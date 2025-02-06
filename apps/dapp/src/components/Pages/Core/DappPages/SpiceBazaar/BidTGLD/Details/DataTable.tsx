@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import { Transaction } from './Table';
+import { Transaction } from '../hooks/use-bid-details';
 import { PaginationControl } from 'components/Pages/Core/DappPages/SpiceBazaar/components/PaginationControl';
 import * as breakpoints from 'styles/breakpoints';
 import active from 'assets/icons/active_auc.svg?react';
