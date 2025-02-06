@@ -105,11 +105,9 @@ export const Stake = () => {
             onToggle={handleCheckboxToggle1}
           />
           <TextMessage>
-            TGLD is non-transferrable but can be cross-
-            {!isPhoneOrAbove && <br />}
-            chain {isPhoneOrAbove && <br />}
-            transferred to the same address. For {!isPhoneOrAbove && <br />}
-            multisigs,{' '}
+            TGLD is non-transferrable but can be cross-chain{' '}
+            {isPhoneOrAbove && <br />}
+            transferred to the same address. For multisigs,{' '}
             <a
               target="_blank"
               rel="noreferrer"
@@ -124,10 +122,10 @@ export const Stake = () => {
             checked={isCheckboxChecked2}
             onToggle={handleCheckboxToggle2}
           />
-          Once submitted, stakes cannot be {!isPhoneOrAbove && <br />}
-          withdrawn or canceled {isPhoneOrAbove && <br />}
-          and your staked {!isPhoneOrAbove && <br />}
-          TEMPLE tokens will be locked for 7 days <br />
+          Once submitted, stakes cannot be withdrawn or canceled{' '}
+          {isPhoneOrAbove && <br />}
+          and your staked TEMPLE tokens will be locked for 7 days{' '}
+          {isPhoneOrAbove && <br />}
           before they can be unstaked.
         </Message>
       </WarningMessage>

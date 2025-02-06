@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { PaginationControl } from 'components/Pages/Core/DappPages/SpiceBazaar/components/PaginationControl';
-import { Transaction } from './Table';
-import { BidTGLD } from '../BidTGLD';
+import { Transaction } from '../hooks/use-bids-history';
+import { BidTGLD, BidTGLDMode } from '../BidTGLD';
 import { Popover } from 'components/Pages/Core/DappPages/SpiceBazaar/components/Popover';
 import { Button } from 'components/Button/Button';
 import * as breakpoints from 'styles/breakpoints';
@@ -190,7 +190,7 @@ export const DataTable: React.FC<TableProps> = ({ transactions, loading }) => {
         closeOnClickOutside
         showCloseButton
       >
-        <BidTGLD />
+        <BidTGLD mode={BidTGLDMode.Bid} />
       </Popover>
     </>
   );
@@ -308,17 +308,21 @@ const TradeButton = styled(Button)`
   padding: 10px 20px;
   width: auto;
   height: min-content;
-  background: linear-gradient(90deg, #58321a 20%, #95613f 84.5%);
+  background: ${({ theme }) => theme.palette.gradients.dark};
   border: ${({ disabled, theme }) =>
     disabled ? 'none' : `1px solid ${theme.palette.brandDark}`};
   box-shadow: ${({ disabled }) =>
-    disabled ? 'none' : '0px 0px 20px 0px #DE5C0666'};
+    disabled ? 'none' : '0px 0px 20px 0px rgba(222, 92, 6, 0.4)'};
   border-radius: 10px;
   font-weight: 700;
   font-size: 12px;
   line-height: 20px;
   text-transform: uppercase;
   color: ${({ theme }) => theme.palette.brandLight};
+
+  &:disabled {
+    color: #acacac;
+  }
 `;
 
 const Status = styled.td`

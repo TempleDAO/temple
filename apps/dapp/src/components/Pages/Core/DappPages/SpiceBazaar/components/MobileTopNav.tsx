@@ -46,69 +46,75 @@ export const MobileTopNav = (props: TopNavProps) => {
   };
 
   return (
-    <TopNavContainer>
-      {menuNavItems.map((item, index) => (
-        <NavCellWrapper key={item.label}>
-          <NavCell
-            selected={item.selected}
-            onClick={() => handleNavClick(index, item)}
-          >
-            {item.label}
-            {item.options && item.options.length > 0 && (
-              <StyledIconWrapper>
-                {openDropdownIndex === index ? (
-                  <ExpandLessIcon />
-                ) : (
-                  <ExpandMoreIcon />
-                )}
-              </StyledIconWrapper>
+    <PageContainer>
+      <TopNavContainer>
+        {menuNavItems.map((item, index) => (
+          <NavCellWrapper key={item.label}>
+            <NavCell
+              selected={item.selected}
+              onClick={() => handleNavClick(index, item)}
+            >
+              {item.label}
+              {item.options && item.options.length > 0 && (
+                <StyledIconWrapper>
+                  {openDropdownIndex === index ? (
+                    <ExpandLessIcon />
+                  ) : (
+                    <ExpandMoreIcon />
+                  )}
+                </StyledIconWrapper>
+              )}
+            </NavCell>
+            {item.options && openDropdownIndex === index && (
+              <Dropdown>
+                {item.options.map((option) => (
+                  <DropdownItem
+                    key={option.label}
+                    onClick={() => handleOptionClick(option)}
+                    isSelected={location.pathname === option.path}
+                  >
+                    {option.label}
+                  </DropdownItem>
+                ))}
+              </Dropdown>
             )}
-          </NavCell>
-          {item.options && openDropdownIndex === index && (
-            <Dropdown>
-              {item.options.map((option) => (
-                <DropdownItem
-                  key={option.label}
-                  onClick={() => handleOptionClick(option)}
-                  isSelected={location.pathname === option.path}
-                >
-                  {option.label}
-                </DropdownItem>
-              ))}
-            </Dropdown>
-          )}
-        </NavCellWrapper>
-      ))}
-    </TopNavContainer>
+          </NavCellWrapper>
+        ))}
+      </TopNavContainer>
+    </PageContainer>
   );
 };
+
+const PageContainer = styled.div`
+  display: flex;
+  flex-direction: row;
+  align-items: left;
+  border-top: 1px solid ${({ theme }) => theme.palette.brand};
+  padding: 8px 8px 4px 8px;
+  height: 64px;
+  margin-top: -25px;
+  margin-left: -20px;
+  margin-right: -20px;
+`;
 
 const TopNavContainer = styled.div`
   display: flex;
   flex-direction: row;
-  height: 64px;
-  align-items: left;
-  border-top: 1px solid ${({ theme }) => theme.palette.brand};
-  padding: 8px 8px 4px 8px;
   gap: 10px;
-  margin-top: -25px;
-  margin-left: -20px;
-  margin-right: -20px;
-  overflow: visible;
   white-space: nowrap;
 `;
 
 const NavCellWrapper = styled.div`
   position: relative;
   min-width: 181px;
-  z-index: 20;
 `;
 
 const NavCell = styled.div<NavCellProps>`
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 16px 12px;
+  gap: 5px;
+  padding: 16px 16px;
   min-width: 181px;
   border: 1px solid;
   border-image-source: linear-gradient(
@@ -133,19 +139,20 @@ const StyledIconWrapper = styled.div`
 `;
 
 const ExpandMoreIcon = styled(expandMore)`
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
 `;
 
 const ExpandLessIcon = styled(expandLess)`
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
 `;
 
 const Dropdown = styled.div`
   position: absolute;
   top: 100%;
   left: 0;
+  right: 0;
   border-radius: 4px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   width: 100%;
