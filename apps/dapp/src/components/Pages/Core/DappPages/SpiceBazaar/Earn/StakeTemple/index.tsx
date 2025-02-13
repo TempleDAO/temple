@@ -98,17 +98,11 @@ export const StakeTemple = () => {
               />
             </HeaderTitle>
             <HeaderText>
-              Stake your TEMPLE to receive Temple Gold{' '}
-              {!isPhoneOrAbove && <br />}
-              (TGLD) weekly Epoch rewards. TEMPLE tokens{' '}
-              {!isPhoneOrAbove && <br />}
-              that are currently being supplied in TLC{' '}
-              {!isPhoneOrAbove && <br />}
-              cannot be staked. Newly staked TEMPLE have{' '}
-              {!isPhoneOrAbove && <br />}a cooldown period before they can be{' '}
-              {!isPhoneOrAbove && <br />}
-              unstaked. Claimed TGLD can be used in {!isPhoneOrAbove && <br />}a
-              current or future Spice Auction.
+              Stake your TEMPLE to receive Temple Gold (TGLD) weekly Epoch
+              rewards. TEMPLE tokens that are currently being supplied in TLC{' '}
+              cannot be staked. Newly staked TEMPLE have a cooldown period
+              before they can be unstaked. Claimed TGLD can be used in a current
+              or future Spice Auction.
             </HeaderText>
           </Header>
           <StatusContainer>
@@ -125,6 +119,21 @@ export const StakeTemple = () => {
                       &nbsp;TEMPLE
                     </Sum>
                     <Title>Total Staked</Title>
+                  </>
+                )}
+              </Box>
+              <Box>
+                {stakePageMetricsLoading ? (
+                  <Loader iconSize={32} />
+                ) : (
+                  <>
+                    <Sum>
+                      {formatNumberWithCommas(
+                        stakePageMetricsData.circulatingSupply
+                      )}
+                      &nbsp;TGLD
+                    </Sum>
+                    <Title>Circulating Supply</Title>
                   </>
                 )}
               </Box>
@@ -168,6 +177,16 @@ export const StakeTemple = () => {
                         </>
                       )}
                     </Title>
+                  </>
+                )}
+              </Box>
+              <Box>
+                {stakePageMetricsLoading ? (
+                  <Loader iconSize={32} />
+                ) : (
+                  <>
+                    <Sum>2,694&nbsp;TGLD</Sum>
+                    <Title>Expected daily TGLD vest</Title>
                   </>
                 )}
               </Box>

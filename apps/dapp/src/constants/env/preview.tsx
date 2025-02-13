@@ -59,6 +59,7 @@ const env: Environment = {
     spiceBazaar: {
       templeGoldStaking: '0xdbDAc0FCA9cF8CA2F2Ef718775f0F265f581808F',
       daiGoldAuction: '0x8d3671d794d511Bb0E3D28e260F8E2233C0653aB',
+      spiceAuctionFactory: '0x4c73b3336731f502584ecbef4ceacc37dd078012',
     },
   },
   subgraph: {

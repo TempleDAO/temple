@@ -1,9 +1,6 @@
 import styled from 'styled-components';
-import { DataTable } from '../../DataTables/BidDataTable';
+import { DataTable } from '../DataTables/BidDataTable';
 import { useMyActivityBidsTGLDHistory } from '../hooks/use-myActivity-bidsTGLDHistory';
-import { useWallet } from 'providers/WalletProvider';
-import { useCallback, useEffect } from 'react';
-import { Button } from 'components/Button/Button';
 
 enum TableHeaders {
   EpochId = 'EPOCH\nID',
