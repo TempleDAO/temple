@@ -16,7 +16,7 @@ async function main() {
         /// Time diff between two auctions. Usually 2 weeks
         auctionsTimeDiff: auctionsTimeDiff,
         ///  Cooldown after auction start is triggered, to allow deposits
-        auctionStartCooldown: 3600,
+        auctionStartCooldown: 0,
         /// Minimum Gold distributed to enable auction start
         auctionMinimumDistributedGold: ethers.utils.parseEther("10_000"),
     };

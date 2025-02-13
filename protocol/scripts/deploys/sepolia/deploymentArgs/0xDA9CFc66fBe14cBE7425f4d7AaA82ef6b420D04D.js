@@ -1,0 +1,11 @@
+// sepolia: SPICE_CONTRACT_TEMPLE_TGLD=0xDA9CFc66fBe14cBE7425f4d7AaA82ef6b420D04D
+// yarn hardhat verify --network sepolia 0xDA9CFc66fBe14cBE7425f4d7AaA82ef6b420D04D --constructor-args scripts/deploys/sepolia/deploymentArgs/0xDA9CFc66fBe14cBE7425f4d7AaA82ef6b420D04D.js
+module.exports = [
+    "0x2ae6318e34bb97ae3755AFcE75559452aA223A5D",
+    "0x98c5E61b1B3731A1f379E8770861164d23118cdc",
+    "0xC785695710292c042a2de8A0Ba16F3a054cC2eAD",
+    "0xC785695710292c042a2de8A0Ba16F3a054cC2eAD",
+    40161,
+    11155111,
+    "TGLD_TEMPLE_SPICE"
+  ];
