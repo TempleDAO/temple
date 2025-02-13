@@ -31,10 +31,15 @@ export const useAuctionCountdown = () => {
   useEffect(() => {
     if (!daiGoldAuctionInfo?.auctionEndTime) return;
 
-    const targetTime = daiGoldAuctionInfo.currentEpochAuctionLive
-      ? daiGoldAuctionInfo.auctionEndTime
-      : daiGoldAuctionInfo.auctionEndTime + daiGoldAuctionInfo.auctionDuration;
-    setCountdown(calculateTimeLeft(targetTime));
+    if (daiGoldAuctionInfo.currentEpoch === 1) {
+      setCountdown(calculateTimeLeft(daiGoldAuctionInfo.auctionEndTime));
+    } else {
+      const targetTime = daiGoldAuctionInfo.currentEpochAuctionLive
+        ? daiGoldAuctionInfo.auctionEndTime
+        : daiGoldAuctionInfo.auctionEndTime +
+          daiGoldAuctionInfo.auctionDuration;
+      setCountdown(calculateTimeLeft(targetTime));
+    }
 
     const timer = setInterval(() => {
       const targetTime = daiGoldAuctionInfo.currentEpochAuctionLive
