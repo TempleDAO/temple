@@ -219,6 +219,7 @@ export const WalletProvider = (props: PropsWithChildren<object>) => {
 
   const updateBalance = useCallback(async () => {
     if (!walletAddress || !signer) {
+      setBalanceState(INITIAL_STATE.balance);
       return;
     }
 

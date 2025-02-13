@@ -1,24 +1,26 @@
 import styled from 'styled-components';
-import { DataTable } from '../../DataTables/BidDataTable';
+import { DataTable } from '../DataTables/BidDataTable';
 import { useMyActivityBidsSpiceHistory } from '../hooks/use-myActivity-bidsSpiceHistory';
 
 enum TableHeaders {
   EpochId = 'EPOCH\nID',
-  AuctionEndDateTime = 'Auction End\nDate/Time',
-  BidAmount = 'Bid Amount',
-  Claimable = 'Claimable',
+  AuctionEndDateTime = 'Auction End',
+  Chain = 'Chain',
   Token = 'Token',
-  Price = 'Price in TGLD',
+  Claimable = 'Claimable',
+  Price = 'Unit Price\n(TGLD)',
+  BidTotal = 'Bid Total\n(TGLD)',
   Action = 'Action',
 }
 
 const tableHeaders = [
   { name: TableHeaders.EpochId },
   { name: TableHeaders.AuctionEndDateTime },
-  { name: TableHeaders.BidAmount },
-  { name: TableHeaders.Claimable },
+  { name: TableHeaders.Chain },
   { name: TableHeaders.Token },
+  { name: TableHeaders.Claimable },
   { name: TableHeaders.Price },
+  { name: TableHeaders.BidTotal },
   { name: TableHeaders.Action },
 ];
 
@@ -31,7 +33,7 @@ export const BidHistory = () => {
         transactions={data || []}
         loading={loading}
         refetch={refetch}
-        title="Bids for Spice History"
+        title="Bids for SPICE History"
         tableHeaders={tableHeaders}
         modal="bidTgld"
       />

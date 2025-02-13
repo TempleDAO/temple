@@ -682,7 +682,7 @@ export function userTransactionsDAIGoldAuctions(
   {
      user(id: "${id}") {
         id
-       positions {
+       positions(where: {auctionType: StableGoldAuction}) {
            id
            transactions(orderDirection: desc, orderBy: timestamp) {
                id
@@ -823,13 +823,13 @@ export type StableGoldAuctionInstancesResp = z.infer<
 
 //----------------------------------------------------------------------------------------------------
 
-export function user(id: string): SubGraphQuery<UserResp> {
+export function user(id: string, auction: string): SubGraphQuery<UserResp> {
   const label = 'User';
   const request = `
   {
     user(id: "${id}") {
         id
-        positions {            
+        positions(where: {auctionType: "${auction}"}) {            
             auctionInstance {
                 epoch
                 startTime
@@ -928,3 +928,153 @@ const PriceHistoryResp = z.object({
 });
 
 export type PriceHistoryResp = z.infer<typeof PriceHistoryResp>;
+
+//----------------------------------------------------------------------------------------------------
+
+export function spiceAuctionFactories(
+  id: string
+): SubGraphQuery<SpiceAuctionFactoriesResp> {
+  const label = 'SpiceAuctionFactories';
+  const request = `
+  query SpiceAuctionFactoriesQuery {
+    spiceAuctionFactories(where: { id: "${id}" }) {
+      spiceAuctions {
+        auctionInstanceCount
+        id
+        name
+        spiceToken {
+          id
+          name
+          symbol
+        }
+        templeGold {
+          id
+          name
+          symbol
+        }
+        isTempleGoldAuctionToken
+        auctionInstances {
+          epoch
+          duration
+          startCooldown
+          startTime
+          totalAuctionTokenAmount
+        }
+      }
+    }
+  }`;
+
+  return {
+    label,
+    request,
+    parse: SpiceAuctionFactoriesResp.parse,
+  };
+}
+
+const SpiceAuctionFactoriesResp = z.object({
+  spiceAuctionFactories: z.array(
+    z.object({
+      spiceAuctions: z.array(
+        z.object({
+          auctionInstanceCount: z.number(),
+          id: z.string(),
+          name: z.string(),
+          spiceToken: z.object({
+            id: z.string(),
+            name: z.string(),
+            symbol: z.string(),
+          }),
+          templeGold: z.object({
+            id: z.string(),
+            name: z.string(),
+            symbol: z.string(),
+          }),
+          isTempleGoldAuctionToken: z.boolean(),
+          auctionInstances: z.array(
+            z.object({
+              epoch: z.string(),
+              duration: z.string(),
+              startCooldown: z.string(),
+              startTime: z.string(),
+              totalAuctionTokenAmount: z.string(),
+            })
+          ),
+        })
+      ),
+    })
+  ),
+});
+
+export type SpiceAuctionFactoriesResp = z.infer<
+  typeof SpiceAuctionFactoriesResp
+>;
+
+//----------------------------------------------------------------------------------------------------
+
+export function userTransactionsSpiceAuctions(
+  id: string
+): SubGraphQuery<UserTransactionsSpiceAuctionsResp> {
+  const label = 'UserTransactionsSpiceAuctionsResp';
+  const request = `
+  {
+     user(id: "${id}") {
+        id
+       positions(where: {auctionType: SpiceAuction}) {
+           id
+           transactions(orderDirection: desc, orderBy: timestamp) {
+               id
+               timestamp
+               hash
+               ... on BidTransaction {
+                   id
+                   bidAmount
+                   timestamp
+                   hash
+               }
+               ... on ClaimTransaction {
+                   id
+                   auctionAmount
+                   timestamp
+                   hash
+               }
+           }
+       }
+    }
+  }`;
+  return {
+    label,
+    request,
+    parse: UserTransactionsSpiceAuctionsResp.parse,
+  };
+}
+
+const UserTransactionsSpiceAuctionsResp = z.object({
+  user: z.object({
+    id: z.string(),
+    positions: z.array(
+      z.object({
+        id: z.string(),
+        transactions: z.array(
+          z.union([
+            z.object({
+              id: z.string(),
+              timestamp: z.string(),
+              hash: z.string(),
+              bidAmount: z.string(),
+            }),
+            z.object({
+              id: z.string(),
+              timestamp: z.string(),
+              hash: z.string(),
+              auctionAmount: z.string(),
+            }),
+          ])
+        ),
+      })
+    ),
+  }),
+});
+
+export type UserTransactionsSpiceAuctionsResp = z.infer<
+  typeof UserTransactionsSpiceAuctionsResp
+>;

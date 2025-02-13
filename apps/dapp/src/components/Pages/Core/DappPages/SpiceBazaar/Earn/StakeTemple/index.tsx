@@ -129,6 +129,21 @@ export const StakeTemple = () => {
                   <>
                     <Sum>
                       {formatNumberWithCommas(
+                        stakePageMetricsData.circulatingSupply
+                      )}
+                      &nbsp;TGLD
+                    </Sum>
+                    <Title>Circulating Supply</Title>
+                  </>
+                )}
+              </Box>
+              <Box>
+                {stakePageMetricsLoading ? (
+                  <Loader iconSize={32} />
+                ) : (
+                  <>
+                    <Sum>
+                      {formatNumberWithCommas(
                         stakePageMetricsData.totalEpochRewards
                       )}
                       &nbsp;TGLD
@@ -162,6 +177,16 @@ export const StakeTemple = () => {
                         </>
                       )}
                     </Title>
+                  </>
+                )}
+              </Box>
+              <Box>
+                {stakePageMetricsLoading ? (
+                  <Loader iconSize={32} />
+                ) : (
+                  <>
+                    <Sum>2,694&nbsp;TGLD</Sum>
+                    <Title>Expected daily TGLD vest</Title>
                   </>
                 )}
               </Box>

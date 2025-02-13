@@ -1,5 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { user, subgraphQuery } from 'utils/subgraph';
 import type { Transaction } from '../../DataTables/BidDataTable';
+import { useWallet } from 'providers/WalletProvider';
+import { useSpiceBazaar } from 'providers/SpiceBazaarProvider';
+import env from 'constants/env';
+import { Auction } from '../../BidsForTGLD/hooks/use-myActivity-bidsTGLDHistory';
 
 type useMyActivityBidsSpiceHistoryReturn = {
   data: Transaction[] | null;
@@ -8,81 +13,95 @@ type useMyActivityBidsSpiceHistoryReturn = {
   refetch: () => void;
 };
 
-const transactionsData: Transaction[] = [
-  {
-    epochId: '1',
-    auctionEndDateTime: '30.09.2024',
-    bidAmount: '100',
-    claimableTokens: 0,
-    unit: 'WSBI',
-    unitPrice: '-',
-    action: 'Bid',
-  },
-  {
-    epochId: '2',
-    auctionEndDateTime: '14.10.2024',
-    bidAmount: '100',
-    claimableTokens: 100000,
-    unit: 'WSBI',
-    unitPrice: '231',
-    action: 'Claim',
-  },
-  {
-    epochId: '3',
-    auctionEndDateTime: '28.10.2024',
-    bidAmount: '100',
-    claimableTokens: 200000,
-    unit: 'ENA',
-    unitPrice: '99',
-    action: 'Claim',
-  },
-  {
-    epochId: '4',
-    auctionEndDateTime: '28.10.2024',
-    bidAmount: '100',
-    claimableTokens: 150000,
-    unit: 'WSBI',
-    unitPrice: '78',
-    action: 'Bid',
-  },
-  {
-    epochId: '5',
-    auctionEndDateTime: '-',
-    bidAmount: '100',
-    claimableTokens: 0,
-    unit: 'ENA',
-    unitPrice: '-',
-    action: 'Bid',
-  },
-];
-
 export const useMyActivityBidsSpiceHistory =
   (): useMyActivityBidsSpiceHistoryReturn => {
-    const [data, setData] = useState<Transaction[] | null>(null);
-    const [loading, setLoading] = useState<boolean>(true);
+    const [data, setData] = useState<Transaction[] | null>([]);
+    const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
 
-    const fetchData = () => {
+    const { wallet } = useWallet();
+
+    const {
+      currentUser: { getClaimableAtEpoch },
+    } = useSpiceBazaar();
+
+    const action = async (
+      endTime: string,
+      totalBid: string,
+      hasClaimed: boolean
+    ) => {
+      const currentTime = new Date().getTime().toString();
+
+      if (endTime > currentTime) {
+        return 'Bid';
+      }
+
+      if (endTime < currentTime && parseFloat(totalBid) > 0 && !hasClaimed) {
+        return 'Claim';
+      }
+
+      return '';
+    };
+
+    const fetchData = useCallback(async () => {
       setLoading(true);
       setError(null);
 
       try {
-        setData(transactionsData);
+        if (!wallet) {
+          setData([]);
+          setLoading(false);
+          return;
+        }
+
+        const response = await subgraphQuery(
+          env.subgraph.spiceBazaar,
+          user(wallet, Auction.SpiceAuction)
+        );
+
+        const positions = await Promise.all(
+          response.user.positions.map(async (p: any) => {
+            const actionResult = await action(
+              p.auctionInstance.endTime,
+              p.totalBidAmount,
+              p.hasClaimed
+            );
+
+            // do not fetch unless the action is "Claim"
+            const claimableTokens =
+              actionResult === 'Claim' &&
+              (await getClaimableAtEpoch(p.auctionInstance.epoch));
+
+            return {
+              epochId: p.auctionInstance.epoch,
+              auctionEndDateTime: p.auctionInstance.endTime,
+              bidAmount: parseFloat(p.totalBidAmount).toFixed(2),
+              claimableTokens,
+              unit: 'TGLD',
+              unitPrice: parseFloat(p.auctionInstance.priceRatio).toFixed(5),
+              action: actionResult,
+            };
+          })
+        );
+
+        setData(positions as Transaction[]);
         setLoading(false);
       } catch (err) {
+        console.error('Error fetching data:', err);
         setError('Failed to fetch auction history.');
         setLoading(false);
       }
-    };
+    }, [getClaimableAtEpoch, wallet]);
 
+    // refresh when wallet changes
     useEffect(() => {
       fetchData();
-    }, []);
+    }, [wallet, fetchData]);
 
     return {
       data,
       loading,
       error,
-      refetch: fetchData,
+      refetch: () => fetchData(),
     };
   };
