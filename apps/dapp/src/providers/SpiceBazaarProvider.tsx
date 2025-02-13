@@ -10,6 +10,7 @@ import {
 import {
   DaiGoldAuction__factory,
   TempleGoldStaking__factory,
+  TempleGold__factory,
   ERC20__factory,
 } from 'types/typechain';
 import { useWallet } from 'providers/WalletProvider';
@@ -24,6 +25,7 @@ import { asyncNoop } from 'utils/helpers';
 
 export type StakePageMetrics = {
   stakedTemple: number;
+  circulatingSupply: number;
   totalEpochRewards: number;
   yourStake: number;
   yourRewards: number;
@@ -84,6 +86,7 @@ const INITIAL_STATE: SpiceBazaarContextValue = {
   stakePageMetrics: {
     data: {
       stakedTemple: 0,
+      circulatingSupply: 0,
       totalEpochRewards: 0,
       yourStake: 0,
       yourRewards: 0,
@@ -206,6 +209,23 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
       return fromAtto(totalSupply);
     } catch (err) {
       console.error('Error while getting staked temple', {
+        cause: err,
+      });
+      return 0;
+    }
+  }, [providerWithReadOnlyFallback]);
+
+  const getCirculatingSupply = useCallback(async () => {
+    try {
+      const templeGold = TempleGold__factory.connect(
+        env.contracts.templegold,
+        providerWithReadOnlyFallback
+      );
+
+      const circulatingSupply = await templeGold.circulatingSupply();
+      return fromAtto(circulatingSupply);
+    } catch (err) {
+      console.error('Error while getting circulating supply', {
         cause: err,
       });
       return 0;
@@ -380,8 +400,14 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
     setStakePageMetricsLoading(true);
 
     try {
+      if (!wallet) {
+        setStakePageMetrics(INITIAL_STATE.stakePageMetrics.data);
+        return;
+      }
+
       const allMetrics = await Promise.all([
         getStakedTemple(),
+        getCirculatingSupply(),
         getTotalEpochRewards(),
         getYourStake(),
         getYourRewards(),
@@ -390,9 +416,10 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
       if (!allMetrics.some((metric) => metric === null)) {
         setStakePageMetrics({
           stakedTemple: allMetrics[0] || 0,
-          totalEpochRewards: allMetrics[1] || 0,
-          yourStake: allMetrics[2] || 0,
-          yourRewards: allMetrics[3] || 0,
+          circulatingSupply: allMetrics[1] || 0,
+          totalEpochRewards: allMetrics[2] || 0,
+          yourStake: allMetrics[3] || 0,
+          yourRewards: allMetrics[4] || 0,
         });
       }
     } catch (error) {
@@ -401,7 +428,9 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
       setStakePageMetricsLoading(false);
     }
   }, [
+    wallet,
     getStakedTemple,
+    getCirculatingSupply,
     getTotalEpochRewards,
     getYourStake,
     getYourRewards,

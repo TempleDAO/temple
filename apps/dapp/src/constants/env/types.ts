@@ -68,6 +68,7 @@ interface Contracts {
 interface SpiceBazaar {
   templeGoldStaking: string;
   daiGoldAuction: string;
+  spiceAuctionFactory: string;
 }
 
 interface Gas {

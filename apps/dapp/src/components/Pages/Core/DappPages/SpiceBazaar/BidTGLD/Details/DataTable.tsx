@@ -9,6 +9,7 @@ import closed from 'assets/icons/closed.svg?react';
 import { ScrollBar } from 'components/Pages/Core/DappPages/SpiceBazaar/components/CustomScrollBar';
 
 enum TableHeaders {
+  ID = 'ID',
   Epoch = 'EPOCH',
   Status = 'Status',
   AuctionStartDate = 'Auction Start Date',
@@ -28,6 +29,7 @@ const ROWS_PER_PAGE = 3;
 
 export const DataTable: React.FC<TableProps> = ({ transactions, loading }) => {
   const tableHeaders = [
+    { name: TableHeaders.ID },
     { name: TableHeaders.Epoch },
     { name: TableHeaders.Status },
     { name: TableHeaders.AuctionStartDate },
@@ -111,6 +113,7 @@ export const DataTable: React.FC<TableProps> = ({ transactions, loading }) => {
             ) : (
               currentTransactions.map((transaction) => (
                 <DataRow key={transaction.epoch}>
+                  <DataCell>{transaction.id}</DataCell>
                   <DataCell>{transaction.epoch}</DataCell>
                   {(() => {
                     if (transaction.status === 'Closed') {
@@ -233,6 +236,10 @@ const TableHeader = styled.th`
   position: sticky;
   top: 0;
   z-index: 1;
+
+  &:first-child {
+    padding-left: 16px;
+  }
 `;
 
 const DataRow = styled.tr`

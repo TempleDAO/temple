@@ -1,14 +1,16 @@
 import styled from 'styled-components';
-import { DataTable } from '../../DataTables/TransactionsDataTable';
+import { DataTable } from '../DataTables/TransactionsDataTable';
 import { useMyActivityTxnHistory } from '../hooks/use-myActivity-txnHistory';
 
 enum TableHeaders {
+  AuctionID = 'Auction ID',
   Epoch = 'EPOCH',
   Type = 'Type',
   TransactionLink = 'Transaction Link',
 }
 
 const tableHeaders = [
+  { name: TableHeaders.AuctionID },
   { name: TableHeaders.Epoch },
   { name: TableHeaders.Type },
   { name: TableHeaders.TransactionLink },

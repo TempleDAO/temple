@@ -6,6 +6,11 @@ import { useSpiceBazaar } from 'providers/SpiceBazaarProvider';
 import { formatNumberWithCommas } from 'utils/formatter';
 import env from 'constants/env';
 
+export enum Auction {
+  SpiceAuction = 'SpiceAuction',
+  StableGoldAuction = 'StableGoldAuction',
+}
+
 type useMyActivityBidsTGLDHistoryReturn = {
   data: Transaction[] | null;
   loading: boolean;
@@ -56,7 +61,7 @@ export const useMyActivityBidsTGLDHistory =
 
         const response = await subgraphQuery(
           env.subgraph.spiceBazaar,
-          user(wallet)
+          user(wallet, Auction.StableGoldAuction)
         );
 
         const positions = await Promise.all(

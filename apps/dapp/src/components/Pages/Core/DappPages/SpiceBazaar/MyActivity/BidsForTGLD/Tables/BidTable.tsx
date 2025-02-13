@@ -1,5 +1,5 @@
 import styled from 'styled-components';
-import { DataTable } from '../../DataTables/BidDataTable';
+import { DataTable } from '../DataTables/BidDataTable';
 import { useMyActivityBidsTGLDHistory } from '../hooks/use-myActivity-bidsTGLDHistory';
 
 enum TableHeaders {
