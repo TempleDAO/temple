@@ -87,7 +87,7 @@ export const Auctions = () => {
                 />
               </DaiGoldTitle>
               <DaiGoldText>
-                In a Temple Gold Auction, you can win{' '}
+                In a Temple Gold Auction, you can earn{' '}
                 {!isPhoneOrAbove && <br />}
                 Temple Gold (TGLD) by submitting USDS{' '}
                 {!isPhoneOrAbove && <br />}
