@@ -78,6 +78,8 @@ interface SpiceBazaarContextValue {
   };
 }
 
+const SEVEN_DAYS_IN_SECONDS = 7 * 24 * 60 * 60;
+
 const INITIAL_STATE: SpiceBazaarContextValue = {
   stakePageMetrics: {
     data: {
@@ -310,19 +312,26 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
   }, [providerWithReadOnlyFallback]);
 
   const getTotalEpochRewards = useCallback(async () => {
-    const currentEpoch = await getCurrentEpoch();
-    const epochInfo = await getEpochInfo(Number(currentEpoch));
+    const stakingContract = TempleGoldStaking__factory.connect(
+      env.contracts.spiceBazaar.templeGoldStaking,
+      providerWithReadOnlyFallback
+    );
 
-    if (!epochInfo) {
+    const rewardData = await stakingContract.getRewardData();
+
+    if (!rewardData) {
+      return 0;
+    }
+    const rewardRate = rewardData.rewardRate;
+
+    if (!rewardRate) {
       return 0;
     }
 
-    if (!epochInfo.totalAuctionTokenAmount) {
-      return 0;
-    }
+    const rewards = fromAtto(rewardRate) * SEVEN_DAYS_IN_SECONDS;
 
-    return fromAtto(epochInfo.totalAuctionTokenAmount);
-  }, [getCurrentEpoch, getEpochInfo]);
+    return rewards;
+  }, [providerWithReadOnlyFallback]);
 
   const getYourStake = useCallback(async () => {
     if (!wallet || !providerWithReadOnlyFallback) {

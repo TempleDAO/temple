@@ -27,6 +27,7 @@ import {
 import env from 'constants/env';
 import { ZERO } from 'utils/bigNumber';
 import { Nullable } from 'types/util';
+import { estimateAndMine } from 'utils/ethers';
 
 // We want to save gas burn $ for the Templars,
 // so we approving 1M up front, so only 1 approve TXN is required for approve
@@ -242,7 +243,7 @@ export const WalletProvider = (props: PropsWithChildren<object>) => {
     shouldUseMinAllowance = false
   ) => {
     // pre-condition
-    if (!walletAddress) {
+    if (!walletAddress || !signer) {
       throw new NoWalletAddressError();
     }
 
@@ -251,19 +252,17 @@ export const WalletProvider = (props: PropsWithChildren<object>) => {
 
     if (allowance.lt(minAllowance)) {
       // increase allowance
-      const approveTXN = await token.approve(
+      const populatedTransaction = await token.populateTransaction.approve(
         spender,
-        shouldUseMinAllowance ? minAllowance : DEFAULT_ALLOWANCE,
-        {
-          gasLimit: 50000,
-        }
+        shouldUseMinAllowance ? minAllowance : DEFAULT_ALLOWANCE
       );
-      await approveTXN.wait();
+
+      const receipt = await estimateAndMine(signer, populatedTransaction);
 
       // Show feedback to user
       openNotification({
         title: `${tokenName} allowance approved`,
-        hash: approveTXN.hash,
+        hash: receipt.transactionHash,
       });
     }
   };
