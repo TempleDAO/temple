@@ -1,78 +1,31 @@
 import styled from 'styled-components';
-import { DataTable } from '../../DataTables/TransactionsDataTable';
-import type { Transaction } from '../../DataTables/TransactionsDataTable';
+import { DataTable } from '../DataTables/TransactionsDataTable';
+import { useMyActivityTxnHistory } from '../hooks/use-myActivity-txnHistory';
 
 enum TableHeaders {
+  AuctionID = 'Auction ID',
   Epoch = 'EPOCH',
   Type = 'Type',
   TransactionLink = 'Transaction Link',
 }
 
-const data: Transaction[] = [
-  {
-    epoch: '12/11/2024',
-    type: 'Bid',
-    transactionLink: '0x192c453a2dbb0b...0e74a056',
-    id: '',
-    transactionHash: '',
-  },
-  {
-    epoch: '12/11/2024',
-    type: 'Claim',
-    transactionLink: '0x342c4535430979a...0b6b8b25',
-    id: '',
-    transactionHash: '',
-  },
-  {
-    epoch: '12/11/2024',
-    type: 'Bid',
-    transactionLink: '0x192c453a2dbb0b...0e74a056',
-    id: '',
-    transactionHash: '',
-  },
-  {
-    epoch: '12/11/2024',
-    type: 'Bid',
-    transactionLink: '0x192c453a2dbb0b...0e74a056',
-    id: '',
-    transactionHash: '',
-  },
-  {
-    epoch: '12/11/2024',
-    type: 'Claim',
-    transactionLink: '0x192c453a2dbb0b...0e74a056',
-    id: '',
-    transactionHash: '',
-  },
-  {
-    epoch: '12/11/2024',
-    type: 'Claim',
-    transactionLink: '0x192c453a2dbb0b...0e74a056',
-    id: '',
-    transactionHash: '',
-  },
-  {
-    epoch: '12/11/2024',
-    type: 'Claim',
-    transactionLink: '0x192c453a2dbb0b...0e74a056',
-    id: '',
-    transactionHash: '',
-  },
-];
-
 const tableHeaders = [
+  { name: TableHeaders.AuctionID },
   { name: TableHeaders.Epoch },
   { name: TableHeaders.Type },
   { name: TableHeaders.TransactionLink },
 ];
 
 export const TransactionsHistory = () => {
+  const { data, loading, error, refetch } = useMyActivityTxnHistory();
+
   return (
     <AuctionsHistoryContainer>
       <DataTable
         tableHeaders={tableHeaders}
-        transactions={data}
-        loading={false}
+        transactions={data || []}
+        loading={loading}
+        refetch={refetch}
       />
     </AuctionsHistoryContainer>
   );

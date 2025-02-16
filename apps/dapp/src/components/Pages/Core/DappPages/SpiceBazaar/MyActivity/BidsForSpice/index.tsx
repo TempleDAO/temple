@@ -12,7 +12,15 @@ export const MyActivitySpice = () => {
       <MyActivityTopNav />
       <Title>
         <TitleText>Bids for Spice</TitleText>
-        <LinkIcon />
+        <LinkIcon
+          onClick={() =>
+            window.open(
+              'https://docs.templedao.link/spice-bazaar',
+              '_blank',
+              'noreferrer'
+            )
+          }
+        />
       </Title>
       <ContentContainer>
         <StatusContainer>
@@ -30,10 +38,11 @@ export const MyActivitySpice = () => {
                 whiteSpace: 'nowrap',
                 marginTop: '0px',
                 padding: '10px 20px 10px 20px',
+                width: '150px',
               }}
               onClick={() => console.log('clicked')}
             >
-              Claim selected
+              Claim
             </TradeButton>
           </UnclaimedBox>
         </StatusContainer>
@@ -47,12 +56,13 @@ export const MyActivitySpice = () => {
 };
 
 const PageContainer = styled.div`
-  margin-top: -20px;
+  margin-top: -40px;
   display: flex;
   flex-direction: column;
   gap: 20px;
 
   ${breakpoints.phoneAndAbove(`
+    margin-top: -20px;
     gap: 40px;
   `)}
 `;
@@ -114,11 +124,12 @@ const BalanceBox = styled.div`
   background: linear-gradient(180deg, #0b0a0a 0%, #1d1a1a 100%);
 
   ${breakpoints.phoneAndAbove(`
-    padding: 10px 20px 20px 20px;
-    background: none;
-    height: 180px;
-    gap: 20px;
-  `)}
+      padding: 30px 20px 20px 20px;
+      justify-content: flex-start;
+      background: none;
+      height: 180px;
+      gap: 20px;
+    `)}
 `;
 
 const UnclaimedBox = styled.div`
