@@ -87,7 +87,7 @@ export const Auctions = () => {
                 />
               </DaiGoldTitle>
               <DaiGoldText>
-                In a Temple Gold Auction, you can win Temple Gold (TGLD) by
+                In a Temple Gold Auction, you can earn Temple Gold (TGLD) by
                 submitting USDS Bids even if you do not hold any TEMPLE. Once
                 placed, USDS Bids cannot be withdrawn, but you may enter
                 additional Bids. The more you USDS bid, the more TGLD you will

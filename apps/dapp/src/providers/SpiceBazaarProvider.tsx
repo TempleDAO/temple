@@ -67,6 +67,7 @@ interface SpiceBazaarContextValue {
   };
   currentUser: {
     data: {
+      dailyVestedTgldReward: number;
       previousEpochRewards: number;
       currentEpochBidAmount: number;
     };
@@ -122,6 +123,7 @@ const INITIAL_STATE: SpiceBazaarContextValue = {
   },
   currentUser: {
     data: {
+      dailyVestedTgldReward: 0,
       previousEpochRewards: 0,
       currentEpochBidAmount: 0,
     },
@@ -162,9 +164,11 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
     useState(false);
 
   const [currentUserMetrics, setCurrentUserMetrics] = useState<{
+    dailyVestedTgldReward: number;
     previousEpochRewards: number;
     currentEpochBidAmount: number;
   }>({
+    dailyVestedTgldReward: 0,
     previousEpochRewards: 0,
     currentEpochBidAmount: 0,
   });
@@ -295,16 +299,46 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
     return fromAtto(currentEpochBidAmount);
   }, [wallet, getCurrentEpoch, providerWithReadOnlyFallback]);
 
+  const getDailyVestedTgldReward = useCallback(async () => {
+    if (!wallet || !providerWithReadOnlyFallback) {
+      return 0;
+    }
+
+    try {
+      const templeGoldStaking = TempleGoldStaking__factory.connect(
+        env.contracts.spiceBazaar.templeGoldStaking,
+        providerWithReadOnlyFallback
+      );
+
+      const rewardPerToken = await templeGoldStaking.rewardPerToken();
+      const rewardPerTokenNumber = fromAtto(rewardPerToken);
+      const balance = await templeGoldStaking.balanceOf(wallet);
+      const balanceNumber = fromAtto(balance);
+
+      const dailyVestedTgldReward = (rewardPerTokenNumber * balanceNumber) / 7;
+
+      return dailyVestedTgldReward;
+    } catch (err) {
+      console.error('Error while getting daily vested tgld reward', {
+        cause: err,
+      });
+      return 0;
+    }
+  }, [wallet, providerWithReadOnlyFallback]);
+
   const fetchCurrentUserMetrics = useCallback(async () => {
     setCurrentUserMetricsLoading(true);
+    const dailyVestedTgldReward = await getDailyVestedTgldReward();
     const previousEpochRewards = await getPreviousEpochRewards();
     const currentEpochBidAmount = await getCurrentEpochBidAmount();
     setCurrentUserMetrics({
+      dailyVestedTgldReward,
       previousEpochRewards,
       currentEpochBidAmount,
     });
     setCurrentUserMetricsLoading(false);
   }, [
+    getDailyVestedTgldReward,
     getPreviousEpochRewards,
     getCurrentEpochBidAmount,
     setCurrentUserMetrics,
@@ -555,15 +589,22 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
     fetchStakePageMetrics();
   }, [wallet, signer, openNotification, fetchStakePageMetrics]);
 
-  // TODO: possibly move to useMemo
   const isCurrentEpochAuctionLive = useCallback(async () => {
     const daiGoldAuction = DaiGoldAuction__factory.connect(
       env.contracts.spiceBazaar.daiGoldAuction,
       providerWithReadOnlyFallback
     );
 
-    return await daiGoldAuction.canDeposit();
-  }, [providerWithReadOnlyFallback]);
+    const currentEpoch = await getCurrentEpoch();
+    const info = await daiGoldAuction.getEpochInfo(Number(currentEpoch));
+    const now = Date.now();
+
+    const isActive =
+      now >= info.startTime.toNumber() * 1000 &&
+      now < info.endTime.toNumber() * 1000;
+
+    return isActive;
+  }, [providerWithReadOnlyFallback, getCurrentEpoch]);
 
   const fetchDaiGoldAuctionInfo = useCallback(
     async (silent?: boolean) => {

@@ -53,7 +53,7 @@ export const StakeTemple = () => {
   const [{}, connect] = useConnectWallet();
   const { wallet } = useWallet();
 
-  const { stakePageMetrics } = useSpiceBazaar();
+  const { stakePageMetrics, currentUser } = useSpiceBazaar();
 
   const {
     data: stakePageMetricsData,
@@ -61,12 +61,19 @@ export const StakeTemple = () => {
     fetch: fetchStakePageMetrics,
   } = stakePageMetrics;
 
+  const {
+    data: currentUserMetricsData,
+    loading: currentUserMetricsLoading,
+    fetch: fetchCurrentUserMetrics,
+  } = currentUser;
+
   useEffect(() => {
     const onMount = async () => {
       await fetchStakePageMetrics();
+      await fetchCurrentUserMetrics();
     };
     onMount();
-  }, [fetchStakePageMetrics, wallet]);
+  }, [fetchStakePageMetrics, fetchCurrentUserMetrics, wallet]);
 
   useEffect(() => {
     if (loc.pathname) {
@@ -181,11 +188,16 @@ export const StakeTemple = () => {
                 )}
               </Box>
               <Box>
-                {stakePageMetricsLoading ? (
+                {currentUserMetricsLoading ? (
                   <Loader iconSize={32} />
                 ) : (
                   <>
-                    <Sum>2,694&nbsp;TGLD</Sum>
+                    <Sum>
+                      {formatNumberWithCommas(
+                        currentUserMetricsData.dailyVestedTgldReward
+                      )}
+                      &nbsp;TGLD
+                    </Sum>
                     <Title>Expected daily TGLD vest</Title>
                   </>
                 )}
