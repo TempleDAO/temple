@@ -132,7 +132,7 @@ export const BidUSDS = ({
 
       const priceRatioAfterBid =
         (Number(daiGoldAuctionInfo?.data?.totalBidTokenAmount) +
-          numericAmount) /
+          Number(inputUsdsAmount)) /
         Number(daiGoldAuctionInfo?.data?.totalAuctionTokenAmount);
 
       const amountToReceive = numericAmount / priceRatioAfterBid;
