@@ -132,7 +132,7 @@ export const BidUSDS = ({
 
       const priceRatioAfterBid =
         (Number(daiGoldAuctionInfo?.data?.totalBidTokenAmount) +
-          numericAmount) /
+          Number(inputUsdsAmount)) /
         Number(daiGoldAuctionInfo?.data?.totalAuctionTokenAmount);
 
       const amountToReceive = numericAmount / priceRatioAfterBid;
@@ -237,7 +237,7 @@ export const BidUSDS = ({
           )}
           <BidContent>
             <TitleBid>
-              {mode === 'increaseBid'
+              {mode === BidUSDSMode.IncreaseBid
                 ? 'Amount to Increase'
                 : 'Your Bid Amount'}
             </TitleBid>

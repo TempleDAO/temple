@@ -4,7 +4,7 @@ import styled from 'styled-components';
 import { useState } from 'react';
 import { Button } from 'components/Button/Button';
 import { Chart } from '../Chart/Chart';
-import { BidTGLD } from '../BidTGLD';
+import { BidTGLD, BidTGLDMode } from '../BidTGLD';
 import { Popover } from 'components/Pages/Core/DappPages/SpiceBazaar/components/Popover';
 import { AuctionsHistory } from './Table';
 import * as breakpoints from 'styles/breakpoints';
@@ -34,7 +34,12 @@ export const Details = () => {
                       <CurrentAddress>0xC4973de5e...5EcF</CurrentAddress>
                     </Left>
                     <Right>
-                      <Epoch>EPOCH 2</Epoch>
+                      <Epoch>
+                        <Text>EPOCH 2</Text>
+                      </Epoch>
+                      <AuctionId>
+                        <Text>AUCTION ID</Text>
+                      </AuctionId>
                     </Right>
                   </HeaderLeft>
                   <HeaderRight>
@@ -121,7 +126,7 @@ export const Details = () => {
         closeOnClickOutside
         showCloseButton
       >
-        <BidTGLD />
+        <BidTGLD mode={BidTGLDMode.Bid} />
       </Popover>
     </>
   );
@@ -234,8 +239,12 @@ const Left = styled.div`
 
 const Right = styled.div`
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   gap: 8px;
+
+  ${breakpoints.phoneAndAbove(`
+    flex-direction: row;
+  `)}
 `;
 
 const HeaderRight = styled.div`
@@ -244,7 +253,7 @@ const HeaderRight = styled.div`
 
   ${breakpoints.phoneAndAbove(`
     gap: 12px;
-    justify-content: flex-end;;
+    justify-content: flex-end;
   `)}
 `;
 
@@ -252,17 +261,18 @@ const HeaderRightContainer = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   background: ${({ theme }) => theme.palette.black};
   border: solid 1px #588f22;
   border-radius: 10px;
-  padding: 8px 24px 8px 24px;
+  padding: 16px 24px 16px 24px;
   gap: 10px;
   width: 305px;
 
   ${breakpoints.phoneAndAbove(`
-    width: 100%;
+    padding: 8px 24px 8px 24px;
+    width: 490px;
     flex-direction: row;
-    width: 100%;
     height: 45px;
   `)}
 `;
@@ -286,6 +296,7 @@ const TimeStamp = styled.div`
   line-height: 19px;
   text-align: center;
   color: ${({ theme }) => theme.palette.brandLight};
+  white-space: normal;
 `;
 
 const Active = styled(active)``;
@@ -302,18 +313,32 @@ const CurrentAuctionTitle = styled.h3`
   margin: 0px;
 `;
 
-const Epoch = styled.div`
-  display: flex;
-  white-space: nowrap;
-  border: 1px solid ${({ theme }) => theme.palette.brand};
-  border-radius: 10px;
-  padding: 8px;
-  background: ${({ theme }) => theme.palette.black};
-  gap: 10px;
+const Text = styled.p`
   font-size: 12px;
   font-weight: 700;
   line-height: 18px;
   color: ${({ theme }) => theme.palette.brand};
+  margin: 0px;
+`;
+
+const Epoch = styled.div`
+  display: flex;
+  width: 75px;
+  align-items: center;
+  padding: 8px;
+  border-radius: 10px;
+  border: 1px solid ${({ theme }) => theme.palette.brand};
+  background: ${({ theme }) => theme.palette.black};
+`;
+
+const AuctionId = styled.div`
+  display: flex;
+  width: 90px;
+  align-items: center;
+  padding: 8px;
+  border-radius: 10px;
+  border: 1px solid ${({ theme }) => theme.palette.brand};
+  background: ${({ theme }) => theme.palette.black};
 `;
 
 const Status = styled.div`
@@ -397,6 +422,11 @@ const AuctionsHistoryContainer = styled.div``;
 
 const ButtonContainer = styled.div`
   display: flex;
+  justify-content: center;
+
+  ${breakpoints.phoneAndAbove(`
+    justify-content: left;
+  `)}
 `;
 
 export const TradeButton = styled(Button)`

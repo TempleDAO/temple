@@ -4,7 +4,7 @@ import { Button } from 'components/Button/Button';
 import { Popover } from 'components/Pages/Core/DappPages/SpiceBazaar/components/Popover';
 import * as breakpoints from 'styles/breakpoints';
 import { useSpiceBazaar } from 'providers/SpiceBazaarProvider';
-import { BidUSDS, BidUSDSMode } from '../../Earn/Auctions/BidUSDS';
+import { BidUSDS, BidUSDSMode } from '../../../Earn/Auctions/BidUSDS';
 import { formatNumberWithCommas } from 'utils/formatter';
 import { ScrollBar } from 'components/Pages/Core/DappPages/SpiceBazaar/components/CustomScrollBar';
 import {

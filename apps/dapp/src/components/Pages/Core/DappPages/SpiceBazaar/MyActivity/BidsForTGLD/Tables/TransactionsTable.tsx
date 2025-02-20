@@ -1,5 +1,5 @@
 import styled from 'styled-components';
-import { DataTable } from '../../DataTables/TransactionsDataTable';
+import { DataTable } from '../DataTables/TransactionsDataTable';
 import { useMyActivityTxnHistory } from '../hooks/use-myActivity-txnHistory';
 
 enum TableHeaders {

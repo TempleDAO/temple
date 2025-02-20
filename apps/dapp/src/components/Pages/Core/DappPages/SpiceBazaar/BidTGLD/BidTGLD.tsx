@@ -8,7 +8,25 @@ import { queryPhone } from 'styles/breakpoints';
 import { useState } from 'react';
 import LargeRoundCheckBox from 'components/Pages/Core/DappPages/SpiceBazaar/components/LargeRoundCheckBox';
 
-export const BidTGLD = () => {
+const PRICE_UPDATE_INTERVAL = 10000;
+const FADE_EFFECT_DURATION = 500;
+
+interface BidTGLDProps {
+  onBidSubmitted?: () => void;
+  mode: BidTGLDMode;
+  currentBidAmount?: string;
+}
+
+export enum BidTGLDMode {
+  IncreaseBid = 'increaseBid',
+  Bid = 'bid',
+}
+
+export const BidTGLD = ({
+  onBidSubmitted,
+  mode = BidTGLDMode.Bid,
+  currentBidAmount = '0',
+}: BidTGLDProps) => {
   const isPhoneOrAbove = useMediaQuery({
     query: queryPhone,
   });
@@ -42,19 +60,41 @@ export const BidTGLD = () => {
           </AvailableAmountText>
         </AvailableAmountContainer>
         <BidContainer>
+          {mode === BidTGLDMode.IncreaseBid && (
+            <BidContent>
+              <TitleBid>Current Bid Amount</TitleBid>
+              <Input
+                crypto={{
+                  kind: 'value',
+                  value: 'TGLD',
+                }}
+                placeholder={currentBidAmount}
+                isNumber
+                readOnly
+                min={0}
+                width="100%"
+              />
+            </BidContent>
+          )}
           <BidContent>
-            <TitleBid>Your Bid Amount</TitleBid>
+            <TitleBid>
+              {mode === BidTGLDMode.IncreaseBid
+                ? 'Amount to Increase'
+                : 'Your Bid Amount'}
+            </TitleBid>
             <Input
               crypto={{
                 kind: 'value',
                 value: 'TGLD',
               }}
+              hint={`Max amount: 100000 TGLD`}
+              value={inputValue}
+              // onHintClick={}
+              handleChange={handleInputChange}
               isNumber
               placeholder="0.00"
               min={0}
               width="100%"
-              value={inputValue}
-              onChange={handleInputChange}
             />
           </BidContent>
         </BidContainer>
