@@ -4,13 +4,14 @@ import { Button } from 'components/Button/Button';
 import { Popover } from 'components/Pages/Core/DappPages/SpiceBazaar/components/Popover';
 import * as breakpoints from 'styles/breakpoints';
 import { useSpiceBazaar } from 'providers/SpiceBazaarProvider';
-import { BidUSDS, BidUSDSMode } from '../../Earn/Auctions/BidUSDS';
+import { BidUSDS, BidUSDSMode } from '../../../Earn/Auctions/BidUSDS';
 import { formatNumberWithCommas } from 'utils/formatter';
 import { ScrollBar } from 'components/Pages/Core/DappPages/SpiceBazaar/components/CustomScrollBar';
 import {
   BidTGLD,
   BidTGLDMode,
 } from 'components/Pages/Core/DappPages/SpiceBazaar/BidTGLD/BidTGLD';
+import { InputSelect } from 'components/InputSelect/InputSelect';
 
 export type Transaction = {
   epochId: string;
@@ -34,6 +35,18 @@ type TableProps = {
   dataRefetching?: boolean;
 };
 
+const metricOptions1: { value: string; label: string }[] = [
+  { label: 'Chain 1', value: 'chain1' },
+  { label: 'Chain 2', value: 'chain2' },
+  { label: 'Chain 3', value: 'chain3' },
+];
+
+const metricOptions2: { value: string; label: string }[] = [
+  { label: 'All Tokens', value: 'allTokens' },
+  { label: 'Opt 2', value: 'opt2' },
+  { label: 'Opt 3', value: 'opt3' },
+];
+
 export const DataTable: React.FC<TableProps> = ({
   modal,
   tableHeaders,
@@ -52,6 +65,16 @@ export const DataTable: React.FC<TableProps> = ({
   const [filteredTransactions, setFilteredTransactions] =
     useState<Transaction[]>(transactions);
   const filterOptions = ['Last 5 Shown', 'Show All'];
+
+  const [selectedMetric1, setSelectedMetric1] = useState('chain1');
+  const [selectedMetric2, setSelectedMetric2] = useState('allTokens');
+
+  const selectMetric1 = (metric: string) => {
+    setSelectedMetric1(metric);
+  };
+  const selectMetric2 = (metric: string) => {
+    setSelectedMetric2(metric);
+  };
 
   const {
     daiGoldAuctions: { claim: daiGoldAuctionClaim },
@@ -101,7 +124,35 @@ export const DataTable: React.FC<TableProps> = ({
     <>
       <PageContainer>
         <Header>
-          <Title>{title}</Title>
+          <HeaderLeft>
+            <Title>{title}</Title>
+            <Options>
+              <SelectMetricContainer1>
+                <InputSelect
+                  options={metricOptions1}
+                  defaultValue={metricOptions1.find(
+                    (m) => m.value === selectedMetric1
+                  )}
+                  onChange={(e) => selectMetric1(e.value)}
+                  isSearchable={false}
+                  fontSize={'16px'}
+                  fontWeight={'400'}
+                />
+              </SelectMetricContainer1>
+              <SelectMetricContainer2>
+                <InputSelect
+                  options={metricOptions2}
+                  defaultValue={metricOptions2.find(
+                    (m) => m.value === selectedMetric2
+                  )}
+                  onChange={(e) => selectMetric2(e.value)}
+                  isSearchable={false}
+                  fontSize={'16px'}
+                  fontWeight={'400'}
+                />
+              </SelectMetricContainer2>
+            </Options>
+          </HeaderLeft>
           <FilterContainer>
             {filterOptions.map((option) => (
               <FilterButton
@@ -217,13 +268,24 @@ const PageContainer = styled.div`
 
 const Header = styled.div`
   display: flex;
-  justify-content: space-between;
   align-items: center;
   flex-direction: column;
   gap: 10px;
 
   ${breakpoints.phoneAndAbove(`
     flex-direction: row;
+    justify-content: space-between;
+  `)}
+`;
+
+const HeaderLeft = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  ${breakpoints.phoneAndAbove(`
+    flex-direction: row;
+    gap: 40px;
   `)}
 `;
 
@@ -232,6 +294,24 @@ const Title = styled.h3`
   font-size: 24px;
   line-height: 44px;
   margin: 0;
+`;
+
+const Options = styled.div`
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 20px;
+  width: 320px;
+`;
+
+const SelectMetricContainer1 = styled.div`
+  flex: 1;
+  max-width: 120px;
+`;
+
+const SelectMetricContainer2 = styled.div`
+  flex: 1;
+  max-width: 130px;
 `;
 
 const FilterContainer = styled.div`

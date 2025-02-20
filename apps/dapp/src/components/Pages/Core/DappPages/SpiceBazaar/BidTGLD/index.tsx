@@ -18,11 +18,14 @@ export const Bid = () => {
             <StatusContent>
               <StatusHeader>
                 <AuctionName>
-                  <AuctionNameText>Spice 2</AuctionNameText>
+                  <Text>Spice 2</Text>
                 </AuctionName>
                 <Epoch>
-                  <EpochText>Epoch 2</EpochText>
+                  <Text>Epoch 2</Text>
                 </Epoch>
+                <AuctionId>
+                  <Text>AUCTION ID</Text>
+                </AuctionId>
               </StatusHeader>
               <StatusBody>
                 <AmountInAuction>
@@ -46,11 +49,14 @@ export const Bid = () => {
             <StatusContent>
               <StatusHeader>
                 <AuctionName>
-                  <AuctionNameText>Spice 5</AuctionNameText>
+                  <Text>Spice 5</Text>
                 </AuctionName>
                 <Epoch>
-                  <EpochText>Epoch 3</EpochText>
+                  <Text>Epoch 3</Text>
                 </Epoch>
+                <AuctionId>
+                  <Text>AUCTION ID</Text>
+                </AuctionId>
               </StatusHeader>
               <StatusBody>
                 <AmountInAuction>
@@ -74,11 +80,14 @@ export const Bid = () => {
             <StatusContent>
               <StatusHeader>
                 <AuctionName>
-                  <AuctionNameText>Spice 2</AuctionNameText>
+                  <Text>Spice 2</Text>
                 </AuctionName>
                 <Epoch>
-                  <EpochText>Epoch 2</EpochText>
+                  <Text>Epoch 2</Text>
                 </Epoch>
+                <AuctionId>
+                  <Text>AUCTION ID</Text>
+                </AuctionId>
               </StatusHeader>
               <StatusBody>
                 <AmountInAuction>
@@ -179,7 +188,7 @@ const AuctionName = styled.div`
   background: ${({ theme }) => theme.palette.black};
 `;
 
-const AuctionNameText = styled.p`
+const Text = styled.p`
   font-size: 12px;
   font-weight: 700;
   line-height: 18px;
@@ -196,12 +205,13 @@ const Epoch = styled.div`
   background: ${({ theme }) => theme.palette.black};
 `;
 
-const EpochText = styled.p`
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 18px;
-  color: ${({ theme }) => theme.palette.brand};
-  margin: 0px;
+const AuctionId = styled.div`
+  display: flex;
+  align-items: center;
+  padding: 8px;
+  border-radius: 10px;
+  border: 1px solid ${({ theme }) => theme.palette.brand};
+  background: ${({ theme }) => theme.palette.black};
 `;
 
 const StatusBody = styled.div`

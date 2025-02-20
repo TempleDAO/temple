@@ -87,25 +87,13 @@ export const Auctions = () => {
                 />
               </DaiGoldTitle>
               <DaiGoldText>
-                In a Temple Gold Auction, you can earn{' '}
-                {!isPhoneOrAbove && <br />}
-                Temple Gold (TGLD) by submitting USDS{' '}
-                {!isPhoneOrAbove && <br />}
-                Bids even if you do not hold any TEMPLE.{' '}
-                {!isPhoneOrAbove && <br />}
-                Once placed, USDS Bids cannot be withdrawn,{' '}
-                {!isPhoneOrAbove && <br />}
-                but you may enter additional Bids. The more{' '}
-                {!isPhoneOrAbove && <br />}
-                you USDS bid, the more TGLD you will earn.{' '}
-                {!isPhoneOrAbove && <br />}
-                However, the final TGLD unit price for a{' '}
-                {!isPhoneOrAbove && <br />}
-                given Auction will not be known until the{' '}
-                {!isPhoneOrAbove && <br />}
-                last Bid has been entered and may be higher{' '}
-                {!isPhoneOrAbove && <br />}
-                or lower than in previous Auctions.
+                In a Temple Gold Auction, you can earn Temple Gold (TGLD) by
+                submitting USDS Bids even if you do not hold any TEMPLE. Once
+                placed, USDS Bids cannot be withdrawn, but you may enter
+                additional Bids. The more USDS you bid, the more TGLD you will
+                earn. However, the final TGLD unit price for a given Auction
+                will not be known until the last Bid has been entered and may be
+                higher or lower than in previous Auctions.
               </DaiGoldText>
             </DaiGold>
             <CurrentAuction>
@@ -421,7 +409,7 @@ const HeaderRightContainer = styled.div<{ isLive: boolean }>`
   width: 305px;
 
   ${breakpoints.phoneAndAbove(`
-    width: 100%;
+    width: 250px;
     padding: 8px 24px 8px 24px;
   `)}
 `;
@@ -439,6 +427,7 @@ const AuctionStatus = styled.div`
 const TimeStamp = styled.div`
   display: flex;
   flex-direction: row;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
   font-size: 16px;

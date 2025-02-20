@@ -3,23 +3,18 @@ import { user, subgraphQuery } from 'utils/subgraph';
 import type { Transaction } from '../../DataTables/BidDataTable';
 import { useWallet } from 'providers/WalletProvider';
 import { useSpiceBazaar } from 'providers/SpiceBazaarProvider';
-import { formatNumberWithCommas } from 'utils/formatter';
 import env from 'constants/env';
+import { Auction } from '../../BidsForTGLD/hooks/use-myActivity-bidsTGLDHistory';
 
-export enum Auction {
-  SpiceAuction = 'SpiceAuction',
-  StableGoldAuction = 'StableGoldAuction',
-}
-
-type useMyActivityBidsTGLDHistoryReturn = {
+type useMyActivityBidsSpiceHistoryReturn = {
   data: Transaction[] | null;
   loading: boolean;
   error: string | null;
   refetch: () => void;
 };
 
-export const useMyActivityBidsTGLDHistory =
-  (): useMyActivityBidsTGLDHistoryReturn => {
+export const useMyActivityBidsSpiceHistory =
+  (): useMyActivityBidsSpiceHistoryReturn => {
     const [data, setData] = useState<Transaction[] | null>([]);
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
@@ -61,7 +56,7 @@ export const useMyActivityBidsTGLDHistory =
 
         const response = await subgraphQuery(
           env.subgraph.spiceBazaar,
-          user(wallet, Auction.StableGoldAuction)
+          user(wallet, Auction.SpiceAuction)
         );
 
         const positions = await Promise.all(

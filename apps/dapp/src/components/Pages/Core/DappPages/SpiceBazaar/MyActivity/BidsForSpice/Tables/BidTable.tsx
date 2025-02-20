@@ -1,86 +1,41 @@
 import styled from 'styled-components';
-import { DataTable } from '../../DataTables/BidDataTable';
-import type { Transaction } from '../../DataTables/BidDataTable';
+import { DataTable } from '../DataTables/BidDataTable';
+import { useMyActivityBidsSpiceHistory } from '../hooks/use-myActivity-bidsSpiceHistory';
 
 enum TableHeaders {
   EpochId = 'EPOCH\nID',
-  AuctionEndDateTime = 'Auction End\nDate/Time',
-  BidAmount = 'Bid Amount',
-  ClaimableTokens = 'Claimable\nTOKENS',
-  Unit = 'Unit',
-  UnitPrice = 'Unit Price\n(TGLD)',
-  Claim = 'Claim',
-  Increase = '',
+  AuctionEndDateTime = 'Auction End',
+  Chain = 'Chain',
+  Token = 'Token',
+  Claimable = 'Claimable',
+  Price = 'Unit Price\n(TGLD)',
+  BidTotal = 'Bid Total\n(TGLD)',
+  Action = 'Action',
 }
-
-const data: Transaction[] = [
-  {
-    epochId: '1',
-    auctionEndDateTime: '30.09.2024',
-    bidAmount: '100',
-    claimableTokens: 0,
-    unit: 'WSBI',
-    unitPrice: '-',
-    action: 'Bid',
-  },
-  {
-    epochId: '2',
-    auctionEndDateTime: '14.10.2024',
-    bidAmount: '100',
-    claimableTokens: 100000,
-    unit: 'WSBI',
-    unitPrice: '231',
-    action: 'Bid',
-  },
-  {
-    epochId: '3',
-    auctionEndDateTime: '28.10.2024',
-    bidAmount: '100',
-    claimableTokens: 200000,
-    unit: 'ENA',
-    unitPrice: '99',
-    action: 'Bid',
-  },
-  {
-    epochId: '4',
-    auctionEndDateTime: '28.10.2024',
-    bidAmount: '100',
-    claimableTokens: 150000,
-    unit: 'WSBI',
-    unitPrice: '78',
-    action: 'Bid',
-  },
-  {
-    epochId: '5',
-    auctionEndDateTime: '-',
-    bidAmount: '100',
-    claimableTokens: 0,
-    unit: 'ENA',
-    unitPrice: '-',
-    action: 'Bid',
-  },
-];
 
 const tableHeaders = [
   { name: TableHeaders.EpochId },
   { name: TableHeaders.AuctionEndDateTime },
-  { name: TableHeaders.BidAmount },
-  { name: TableHeaders.ClaimableTokens },
-  { name: TableHeaders.Unit },
-  { name: TableHeaders.UnitPrice },
-  { name: TableHeaders.Claim },
-  { name: TableHeaders.Increase },
+  { name: TableHeaders.Chain },
+  { name: TableHeaders.Token },
+  { name: TableHeaders.Claimable },
+  { name: TableHeaders.Price },
+  { name: TableHeaders.BidTotal },
+  { name: TableHeaders.Action },
 ];
 
 export const BidHistory = () => {
+  const { data, loading, error, refetch } = useMyActivityBidsSpiceHistory();
+
   return (
     <AuctionsHistoryContainer>
       <DataTable
+        transactions={data || []}
+        loading={loading}
+        refetch={refetch}
+        title="Bids for SPICE History"
         tableHeaders={tableHeaders}
-        transactions={data}
         modal="bidTgld"
-        loading={false}
-        title="Bids for Spice History"
       />
     </AuctionsHistoryContainer>
   );
