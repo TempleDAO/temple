@@ -11,6 +11,7 @@ export enum StrategyKey {
   SKY_FARM_BASE = 'DaiSkyFarmBaseStrategy',
   DSRBASE = 'DsrBaseStrategy',
   TEMPLO_MAYOR_GNOSIS = 'TemploMayorStrategy',
+  COSECHA_SEGUNDA_GNOSIS = 'CosechaSegundaStrategy',
   FOHMO_GNOSIS = 'FohmoStrategy',
 }
 
@@ -63,6 +64,13 @@ export const Dashboards: DashboardData[] = [
     description:
       'Templo Mayor is an Gnosis Safe Omnibus Strategy that is particularly useful when full automation is not feasible. An Omnibus Strategy utilises the same bookkeeping structure and approval process as the automated Temple v2 Strategies, but may entail several related holdings or sub-positions that are managed holistically. For instance, deposits into different but similar or co-dependent vaults on the same platform or different platforms may be consolidated into one Omnibus Gnosis Safe. Partner seed allocations of a target risk profile may also be consolidated into an Omnibus Strategy to derisk any particular project. An Omnibus Strategy may provide additional operational efficiency and allow Stakeholders to evaluate a series of related deployments as one composite position rather than as singletons.',
     contractLink: `${env.etherscan}/address/${env.contracts.strategies.temploMayorGnosisStrategy}`,
+  },
+  {
+    key: StrategyKey.COSECHA_SEGUNDA_GNOSIS,
+    title: 'COSECHA SEGUNDA',
+    path: 'cosechasegunda',
+    description: 'todo todo',
+    contractLink: `${env.etherscan}/address/${env.contracts.strategies.cosechaSegundaStrategy}`,
   },
   {
     key: StrategyKey.FOHMO_GNOSIS,
