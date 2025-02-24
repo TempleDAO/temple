@@ -54,7 +54,7 @@ export const Dashboards: DashboardData[] = [
     title: 'TLC',
     path: 'tlc',
     description:
-      'Temple Loving Care (also known as Temple Line of Credit) offers DAI lending for users who supply TEMPLE as collateral. The TLC will use the current Treasury Price Index (TPI) Oracle to determine the collateral value of TEMPLE. Users may borrow up to 85% loan-to-value (LTV) with the TEMPLE liquidation LTV set to 90%. There are no origination fees and users can withdraw their TEMPLE at any time by repaying the DAI loan. The TLC interest rate is set to a fixed rate that will be periodically updated to 2X the yield from the current Treasury Base Strategy e.g. sDAI. <a target="_blank" href="https://templedao.medium.com/he-who-controls-the-spice-controls-the-universe-bae5fb92bd43">Click here</a> to learn more about Temple Loving Care.',
+      'Temple Loving Care (also known as Temple Line of Credit) offers DAI lending for users who supply TEMPLE as collateral. The TLC will utilise the current Treasury Price Index (TPI) Oracle to determine the collateral value of TEMPLE. Users may borrow up to 85% loan-to-value (LTV) with the TEMPLE liquidation LTV set to 90%. There are no origination fees and users can withdraw their TEMPLE at any time by repaying the DAI loan. The TLC interest rate is set to the rate shown below. <a target="_blank" href="https://templedao.medium.com/he-who-controls-the-spice-controls-the-universe-bae5fb92bd43">Click here</a> to learn more about Temple Loving Care.',
     contractLink: `${env.etherscan}/address/${env.contracts.strategies.tlcStrategy}`,
   },
   {
@@ -62,7 +62,7 @@ export const Dashboards: DashboardData[] = [
     title: 'TEMPLO MAYOR',
     path: 'templomayor',
     description:
-      'Templo Mayor is an Gnosis Safe Omnibus Strategy that is particularly useful when full automation is not feasible. An Omnibus Strategy utilises the same bookkeeping structure and approval process as the automated Temple v2 Strategies, but may entail several related holdings or sub-positions that are managed holistically. For instance, deposits into different but similar or co-dependent vaults on the same platform or different platforms may be consolidated into one Omnibus Gnosis Safe. Partner seed allocations of a target risk profile may also be consolidated into an Omnibus Strategy to derisk any particular project. An Omnibus Strategy may provide additional operational efficiency and allow Stakeholders to evaluate a series of related deployments as one composite position rather than as singletons.',
+      'Templo Mayor is an Gnosis Safe Omnibus Strategy that is utlised when full automation is not feasible. An Omnibus Strategy utilises the same bookkeeping structure and approval process as the automated Temple v2 Strategies, but may entail several related token holdings or sub-positions that are managed holistically. For instance, deposits into different but similar or co-dependent vaults on the same platform or different platforms may be consolidated into one Omnibus Gnosis Safe. An Omnibus Strategy may provide additional operational efficiency and allow Stakeholders to evaluate a series of related deployments as one composite position rather than as singletons.',
     contractLink: `${env.etherscan}/address/${env.contracts.strategies.temploMayorGnosisStrategy}`,
   },
   {
@@ -78,7 +78,7 @@ export const Dashboards: DashboardData[] = [
     title: 'FOHMO',
     path: 'fohmo',
     description:
-      'FOHMO is a strategy that aims to maintain a maximally looped position in OHM',
+      'FOHMO is a Temple v2 Gnosis Strategy that aims to maintain a maximally looped position for gOHM based on Cooler loans.',
     contractLink: `${env.etherscan}/address/${env.contracts.strategies.fohmoGnosisStrategy}`,
   },
   {
@@ -102,7 +102,7 @@ export const Dashboards: DashboardData[] = [
     title: 'BASE SKY AUTO FARM',
     path: 'sky-auto-farm-base',
     description:
-      'Idle reserve capital in the TRV that is not currently borrowed by a Strategy Borrower will be automatically directed to a Base Strategy to earn yield. The TRV Base Strategy is currently set to the Sky Auto Farm Base Strategy. The current rate of return for the Base Strategy also serves as the performance benchmark or "risk-free" interest rate for Treasury Strategies.',
+      'Idle reserve capital in the TRV that is not currently borrowed by a Strategy will be automatically directed to a Base Strategy to earn yield. The TRV Base Strategy is currently set to the Sky Auto Farm Base Strategy. The current rate of return for the Base Strategy also serves as the performance benchmark or "risk-free" interest rate for Treasury Strategies.',
     contractLink: `${env.etherscan}/address/${env.contracts.strategies.daiSkyFarmBaseStrategy}`,
   },
 ];
