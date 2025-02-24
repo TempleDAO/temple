@@ -205,6 +205,7 @@ const env: Environment = {
       temploMayorGnosisStrategy: '0xb28FEC0EE90680EE25d42e8101159a72E359be7c',
       fohmoGnosisStrategy: '0xF179C63735690d2C08cfb231d15c0c7ac3A2Bc67',
       daiSkyFarmBaseStrategy: '0x5d8e464fca8d327fad016ea8cf3424cb113c07a8',
+      cosechaSegundaStrategy: '0x0cB92fEfae1806ed3047E3EB8F36bC963AC48637',
     },
     daiCircuitBreaker: '0x02607d6bc3146bb3d3022e991ef54f545988fb7b',
     templeCircuitBreaker: '0x0745D453A19DfEAd0e5fd350a231D878F5c71b8D',
