@@ -69,7 +69,8 @@ export const Dashboards: DashboardData[] = [
     key: StrategyKey.COSECHA_SEGUNDA_GNOSIS,
     title: 'COSECHA SEGUNDA',
     path: 'cosechasegunda',
-    description: 'todo todo',
+    description:
+      'The Cosecha Segunda Strategy (CSS) is responsible for engaging and incubating new Partners and Projects affiliated with the Spice Bazaar. Appropriate Strategy activities include Strategic Alliances, Liquidity Bootstrapping, Gauge Emission Bribing, and Direct investments in early rounds. As with other Temple v2 Strategies, the Treasury Reserve Vault will fund the CSS Strategy up to a fixed debt ceiling. Proceeds from Temple Gold Auctions in the Spice Bazaar will be collected by the CSS to repay the TRV or generate idle yield. Vested tokens from Partner airdrops or other CSS agreements will be re-directed to Spice Auctions in the Spice Bazaar when circumstances permit and subject to governance approval.',
     contractLink: `${env.etherscan}/address/${env.contracts.strategies.cosechaSegundaStrategy}`,
   },
   {
