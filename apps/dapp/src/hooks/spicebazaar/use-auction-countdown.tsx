@@ -31,7 +31,11 @@ export const useAuctionCountdown = () => {
   useEffect(() => {
     if (!daiGoldAuctionInfo?.auctionEndTime) return;
 
-    if (daiGoldAuctionInfo.currentEpoch === 1) {
+    // special case only for the first epoch
+    if (
+      daiGoldAuctionInfo.currentEpoch === 1 &&
+      daiGoldAuctionInfo.auctionEndTime > Date.now()
+    ) {
       setCountdown(calculateTimeLeft(daiGoldAuctionInfo.auctionEndTime));
     } else {
       const targetTime = daiGoldAuctionInfo.currentEpochAuctionLive
