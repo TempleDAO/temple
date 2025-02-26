@@ -637,8 +637,13 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
           ? auctionConfig?.auctionsTimeDiff + fromAtto(epochInfo.endTime)
           : undefined;
 
-        const auctionDuration =
-          fromAtto(epochInfo.endTime) - fromAtto(epochInfo.startTime);
+        const daiGoldAuction = DaiGoldAuction__factory.connect(
+          env.contracts.spiceBazaar.daiGoldAuction,
+          providerWithReadOnlyFallback
+        );
+
+        const auctionDuration = await daiGoldAuction.AUCTION_DURATION();
+        const auctionDurationNumber = auctionDuration.toNumber() * 1000;
 
         setDaiGoldAuctionInfo({
           currentEpoch: Number(currentEpoch),
@@ -653,7 +658,7 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
           totalAuctionTokenAmount: fromAtto(epochInfo.totalAuctionTokenAmount),
           totalBidTokenAmount: fromAtto(epochInfo.totalBidTokenAmount),
           priceRatio: priceRatio,
-          auctionDuration,
+          auctionDuration: auctionDurationNumber,
           nextAuctionStartTimestamp,
         });
       } catch (err) {

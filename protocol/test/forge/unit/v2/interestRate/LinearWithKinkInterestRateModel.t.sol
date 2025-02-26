@@ -52,7 +52,7 @@ contract LinearWithKinkInterestRateModelTestBase is TempleTest {
         uint80 newMaxInterestRate,
         uint256 newKinkUtilizationRatio,
         uint80 newKinkInterestRate
-    ) internal {
+    ) internal view {
         // get initial params
         (
             uint80 baseInterestRate,
@@ -181,33 +181,33 @@ contract LinearWithKinkInterestRateModelTestModifiers is
         );
     }
 
-    function test_calculateInterestRateKink_zeroUR() public {
+    function test_calculateInterestRateKink_zeroUR() public view {
         uint256 utilizationRatio = 0.0e18; // 0% UR
         uint256 expectedInterestRate = interestRateModelKinkNinety
             .calculateInterestRate(utilizationRatio);
         assertEq(expectedInterestRate, IR_AT_0_UR); // 5% IR
     }
 
-    function test_calculateInterestRateKink_oneUR() public {
+    function test_calculateInterestRateKink_oneUR() public view {
         uint256 utilizationRatio = 0.01e18; // 1% UR
         uint256 expectedInterestRate = interestRateModelKinkNinety
             .calculateInterestRate(utilizationRatio);
         assertEq(expectedInterestRate, 0.050555555555555555e18); // ~5.06% IR
     }
 
-    function test_calculateInterestRateKink_HalfUR() public {
+    function test_calculateInterestRateKink_HalfUR() public view {
         uint256 expectedInterestRate = interestRateModelKinkNinety
             .calculateInterestRate(UTILIZATION_RATIO_90 / 2);
         assertEq(expectedInterestRate, 0.074999999999999999e18); // ~7.49% IR
     }
 
-    function test_calculateInterestRateKink_BeforeKink() public {
+    function test_calculateInterestRateKink_BeforeKink() public view {
         uint256 expectedInterestRate = interestRateModelKinkNinety
             .calculateInterestRate(UTILIZATION_RATIO_90 - 1);
         assertEq(expectedInterestRate, 0.099999999999999999e18); // <10% IR
     }
 
-    function test_calculateInterestRateKink_AtKink() public {
+    function test_calculateInterestRateKink_AtKink() public view {
         uint256 expectedInterestRate = interestRateModelKinkNinety
             .calculateInterestRate(UTILIZATION_RATIO_90);
 
@@ -215,13 +215,13 @@ contract LinearWithKinkInterestRateModelTestModifiers is
         assertEq(expectedInterestRate, 0.099999999999999999e18); // ~10% IR
     }
 
-    function test_calculateInterestRateKink_AfterKink() public {
+    function test_calculateInterestRateKink_AfterKink() public view {
         uint256 expectedInterestRate = interestRateModelKinkNinety
             .calculateInterestRate(UTILIZATION_RATIO_90 + 1);
         assertEq(expectedInterestRate, 0.100000000000000001e18); // >10% IR
     }
 
-    function test_calculateInterestRateKink_HalfWayUpKink() public {
+    function test_calculateInterestRateKink_HalfWayUpKink() public view {
         uint256 expectedInterestRate = interestRateModelKinkNinety
             .calculateInterestRate(
                 UTILIZATION_RATIO_90 + (1e18 - UTILIZATION_RATIO_90) / 2
@@ -229,82 +229,82 @@ contract LinearWithKinkInterestRateModelTestModifiers is
         assertEq(expectedInterestRate, 0.15e18); // 15% IR
     }
 
-    function test_calculateInterestRateKink_BeforeHundredUR() public {
+    function test_calculateInterestRateKink_BeforeHundredUR() public view {
         uint256 expectedInterestRate = interestRateModelKinkNinety
             .calculateInterestRate(1e18 - 1);
         assertEq(expectedInterestRate, 0.199999999999999999e18); // ~19.99% IR
     }
 
-    function test_calculateInterestRateKink_HundredUR() public {
+    function test_calculateInterestRateKink_HundredUR() public view {
         uint256 expectedInterestRate = interestRateModelKinkNinety
             .calculateInterestRate(1e18);
         assertEq(expectedInterestRate, IR_AT_100_UR); // ~20% IR
     }
 
-    function test_calculateInterestRateKink_AfterHundredUR() public {
+    function test_calculateInterestRateKink_AfterHundredUR() public view {
         uint256 expectedInterestRate = interestRateModelKinkNinety
             .calculateInterestRate(1e18 + 1);
         assertEq(expectedInterestRate, IR_AT_100_UR); // ~20% IR
     }
 
-    function test_calculateInterestRateFlat_ZeroUR() public {
+    function test_calculateInterestRateFlat_ZeroUR() public view {
         uint256 utilizationRatio = 0e18; // 0% UR
         uint256 expectedInterestRate = interestRateModelFlat
             .calculateInterestRate(utilizationRatio);
         assertEq(expectedInterestRate, FLAT_IR_12); // 12% IR
     }
 
-    function test_calculateInterestRateFlat_OneUR() public {
+    function test_calculateInterestRateFlat_OneUR() public view {
         uint256 utilizationRatio = 0.01e18; // 1% UR
         uint256 expectedInterestRate = interestRateModelFlat
             .calculateInterestRate(utilizationRatio);
         assertEq(expectedInterestRate, FLAT_IR_12); // 12% IR
     }
 
-    function test_calculateInterestRateFlat_HalfUR() public {
+    function test_calculateInterestRateFlat_HalfUR() public view {
         uint256 expectedInterestRate = interestRateModelFlat
             .calculateInterestRate(UTILIZATION_RATIO_90 / 2);
         assertEq(expectedInterestRate, FLAT_IR_12); // 12% IR
     }
 
-    function test_calculateInterestRateFlat_BeforeKink() public {
+    function test_calculateInterestRateFlat_BeforeKink() public view {
         uint256 expectedInterestRate = interestRateModelFlat
             .calculateInterestRate(UTILIZATION_RATIO_90 - 1);
         assertEq(expectedInterestRate, FLAT_IR_12); // 12% IR
     }
 
-    function test_calculateInterestRateFlat_AtKink() public {
+    function test_calculateInterestRateFlat_AtKink() public view {
         uint256 expectedInterestRate = interestRateModelFlat
             .calculateInterestRate(UTILIZATION_RATIO_90);
         assertEq(expectedInterestRate, FLAT_IR_12); // 12% IR
     }
 
-    function test_calculateInterestRateFlat_AfterKink() public {
+    function test_calculateInterestRateFlat_AfterKink() public view {
         uint256 expectedInterestRate = interestRateModelFlat
             .calculateInterestRate(UTILIZATION_RATIO_90 + 1);
         assertEq(expectedInterestRate, FLAT_IR_12); // 12% IR
     }
 
-    function test_calculateInterestRateFlat_HundredUR() public {
+    function test_calculateInterestRateFlat_HundredUR() public view {
         uint256 expectedInterestRate = interestRateModelFlat
             .calculateInterestRate(100e18);
         assertEq(expectedInterestRate, FLAT_IR_12); // 12% IR
     }
 
-    function test_calculateInterestRateFlat_AfterHundredUR() public {
+    function test_calculateInterestRateFlat_AfterHundredUR() public view {
         uint256 expectedInterestRate = interestRateModelFlat
             .calculateInterestRate(100e18 + 1);
         assertEq(expectedInterestRate, FLAT_IR_12); // 12% IR
     }
 
-    function test_calculateInterest_ExceedPrecission() public {
+    function test_calculateInterest_ExceedPrecission() public view {
         uint256 utilizationRatio = 0.1e20;
         uint256 expectedInterestRate = interestRateModelFlat
             .calculateInterestRate(utilizationRatio);
         assertEq(expectedInterestRate, FLAT_IR_12); // 12% IR
     }
 
-    function test_calculateInterest_MaxUR() public {
+    function test_calculateInterest_MaxUR() public view {
         uint256 utilizationRatio = type(uint256).max;
         uint256 expectedInterestRate = interestRateModelFlat
             .calculateInterestRate(utilizationRatio);

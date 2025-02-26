@@ -31,7 +31,7 @@ contract TempleCircuitBreakerProxyTest is TempleTest {
         daiCircuitBreaker = new TempleCircuitBreakerAllUsersPerPeriod(rescuer, executor, 26 hours, 13, 1_000e18);
     }
 
-    function test_initialisation() public {
+    function test_initialisation() public view {
         assertEq(circuitBreakerProxy.executor(), executor);
         assertEq(circuitBreakerProxy.rescuer(), rescuer);
         bytes32[] memory ids = circuitBreakerProxy.identifiers();

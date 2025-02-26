@@ -66,7 +66,7 @@ contract SpiceAuctionTestBase is TempleGoldCommon {
         vm.stopPrank();
     }
 
-    function test_initialization() public {
+    function test_initialization() public view {
         assertEq(spice.name(), NAME_ONE);
         assertEq(spice.templeGold(), address(templeGold));
         assertEq(spice.spiceToken(), daiToken);
@@ -843,7 +843,7 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
             vm.startPrank(daoExecutor);
             spice.setAuctionConfig(config);
             deal(daiToken, address(spice), 500 ether);
-            emit log_address(config.starter);
+            // emit log_address(config.starter);
             vm.startPrank(alice);
             spice.startAuction();
             // skip cooldown
@@ -882,8 +882,8 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         spice.claim(currentEpoch);
 
         uint256 balanceBefore = IERC20(daiToken).balanceOf(alice);
-        emit log_string("balance before");
-        emit log_uint(balanceBefore);
+        // emit log_string("balance before");
+        // emit log_uint(balanceBefore);
         uint256 claimAmount = 2*epochInfo.totalAuctionTokenAmount/5;
         vm.startPrank(alice);
         vm.expectEmit(address(spice));
@@ -1012,8 +1012,8 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         vm.expectEmit(address(spice));
         emit RedeemedTempleGoldBurned(currentEpoch, bidAmount);
         spice.burnAndNotify(currentEpoch, false);
-        emit log_string("balance");
-        emit log_uint(IERC20(daiToken).balanceOf(address(spice)));
+        // emit log_string("balance");
+        // emit log_uint(IERC20(daiToken).balanceOf(address(spice)));
         assertEq(spice.redeemedEpochs(currentEpoch), true);
         assertEq(templeGold.circulatingSupply(), circulatingSupply-bidAmount);
 
@@ -1098,7 +1098,7 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         emit CirculatingSupplyUpdated(address(spice), bidAmount, circulatingSupply, bidAmount);
         spice.burnAndNotify(currentEpoch, true);
         assertEq(templeGold.circulatingSupply(), circulatingSupply);
-        emit log_uint(templeGold.getMintAmount());
+        // emit log_uint(templeGold.getMintAmount());
         // circulating supply reduced but not enough to mint 10_000
         assertEq(templeGold.canDistribute(), false);
         vm.startPrank(executor);
@@ -1106,7 +1106,7 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         _factor.weekMultiplier = 70;
         templeGold.setVestingFactor(_factor);
         skip(1 weeks);
-        emit log_uint(templeGold.getMintAmount());
+        // emit log_uint(templeGold.getMintAmount());
         assertEq(templeGold.canDistribute(), true);
     }
 }

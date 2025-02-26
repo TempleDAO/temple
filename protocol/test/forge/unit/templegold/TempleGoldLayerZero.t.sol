@@ -103,8 +103,8 @@ contract TempleGoldLayerZeroTest is TestHelperOz5 {
         vm.startPrank(userA);
         (MessagingReceipt memory msgReceipt,) =
              aTempleGold.send{ value: fee.nativeFee }(sendParam, fee, payable(address(this)));
-        emit log_string("messaging receipt");
-        emit log_bytes32(msgReceipt.guid);
+        // emit log_string("messaging receipt");
+        // emit log_bytes32(msgReceipt.guid);
         verifyPackets(bEid, addressToBytes32(address(bTempleGold)));
 
         assertEq(aTempleGold.balanceOf(userA), initialBalance - tokensToSend);
@@ -124,14 +124,14 @@ contract TempleGoldLayerZeroTest is TestHelperOz5 {
         assertEq(bTempleGold.balanceOf(userA), tokensToSend);
         // todo remove
         address r = 0xC785695710292c042a2de8A0Ba16F3a054cC2eAD;
-        emit log_bytes32(addressToBytes32(r));
-        emit log_uint(1 ether);
-        emit log_uint(1);
-        emit log_bytes(options);
-        emit log_bytes(bytes(""));
-        emit log_bytes(bytes(""));
-        emit log_bytes32(addressToBytes32(0x192aA9BfDcA5540406E211950C226C8E0cd5047F));
-        emit log_bytes32(addressToBytes32(0x8afB7E03a6e115577361C5648924eBA3163381Fc));
+        // emit log_bytes32(addressToBytes32(r));
+        // emit log_uint(1 ether);
+        // emit log_uint(1);
+        // emit log_bytes(options);
+        // emit log_bytes(bytes(""));
+        // emit log_bytes(bytes(""));
+        // emit log_bytes32(addressToBytes32(0x192aA9BfDcA5540406E211950C226C8E0cd5047F));
+        // emit log_bytes32(addressToBytes32(0x8afB7E03a6e115577361C5648924eBA3163381Fc));
 
         // ["40161", "0x000000000000000000000000c785695710292c042a2de8a0ba16f3a054cc2ead", "1000000000000000000", "1", "0x00030100110100000000000000000000000000030d40", "0x", "0x"]
     }
@@ -203,7 +203,7 @@ contract TempleGoldLayerZeroTest is TestHelperOz5 {
         // burn tgld from spice on chain b
         /// @dev Conversion to and from shared decimals and local decimals truncates trailing zeros
         uint256 amountTruncated = 12_333_456_789_000_000_000_000;
-        emit log_uint(bTempleGold.balanceOf(address(bSpice)));
+        // emit log_uint(bTempleGold.balanceOf(address(bSpice)));
         uint256 bSpiceBalance = bTempleGold.balanceOf(address(bSpice));
         bSpice.burnAndNotify(amount, true);
         verifyPackets(aEid, addressToBytes32(address(aTempleGold)));

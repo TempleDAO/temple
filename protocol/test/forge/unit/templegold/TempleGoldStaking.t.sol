@@ -67,7 +67,7 @@ contract TempleGoldStakingTestBase is TempleGoldCommon {
         vm.stopPrank();
     }
 
-    function test_initialization() public {
+    function test_initialization() public view {
         assertEq(staking.rescuer(), rescuer);
         assertEq(staking.executor(), executor);
         assertEq(address(staking.stakingToken()), address(templeToken));
@@ -337,7 +337,7 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         staking.setDaoExecutor(bob);
 
-        emit log_address(staking.daoExecutor());
+        // emit log_address(staking.daoExecutor());
         vm.startPrank(alice);
         vm.expectEmit(address(staking));
         emit DAOExecutorSet(bob);
@@ -1228,14 +1228,14 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
             skip(6 days);
             earned = _getEarned(alice);
             aliceBalanceBefore = templeGold.balanceOf(alice);
-            emit log_string("alice before get reward");
-            emit log_uint(aliceBalanceBefore);
+            // emit log_string("alice before get reward");
+            // emit log_uint(aliceBalanceBefore);
             vm.expectEmit(address(staking));
             emit RewardPaid(alice, alice, earned);
             staking.getReward(alice);
             aliceBalanceAfter = templeGold.balanceOf(alice);
-            emit log_string("alice after get reward");
-            emit log_uint(aliceBalanceAfter);
+            // emit log_string("alice after get reward");
+            // emit log_uint(aliceBalanceAfter);
             assertEq(aliceBalanceAfter - aliceBalanceBefore, earned);
             assertEq(staking.claimableRewards(alice), 0);
             assertEq(templeGold.balanceOf(address(staking)), goldRewardsAmount + staking.nextRewardAmount() - earned);
@@ -1270,8 +1270,8 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
             assertEq(templeGold.balanceOf(address(staking)), stakingGoldBalance - earned);
 
             skip(8 weeks);
-            emit log_string("goldbalancebefore");
-            emit log_uint(templeGold.balanceOf(address(staking)));
+            // emit log_string("goldbalancebefore");
+            // emit log_uint(templeGold.balanceOf(address(staking)));
             aliceBalanceBefore = templeGold.balanceOf(alice);
             bobBalanceBefore = templeGold.balanceOf(bob);
             earned = staking.earned(alice);
@@ -1285,8 +1285,8 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
 
             // skip till end of reward distribution two
             skip(8 weeks);
-            emit log_string("goldbalanceafter");
-            emit log_uint(templeGold.balanceOf(address(staking)));
+            // emit log_string("goldbalanceafter");
+            // emit log_uint(templeGold.balanceOf(address(staking)));
             earned = staking.earned(alice);
             aliceBalanceBefore = templeGold.balanceOf(alice);
             vm.expectEmit(address(staking));
@@ -1301,8 +1301,8 @@ contract TempleGoldStakingTest is TempleGoldStakingTestBase {
             emit RewardPaid(bob, bob, earned);
             staking.getReward(bob);
             assertEq(earned, templeGold.balanceOf(bob) - bobBalanceBefore);
-            emit log_string("gold in staking");
-            emit log_uint(templeGold.balanceOf(address(staking)));
+            // emit log_string("gold in staking");
+            // emit log_uint(templeGold.balanceOf(address(staking)));
             assertEq(staking.earned(alice), 0);
             assertEq(staking.earned(bob), 0);
             assertEq(templeGold.balanceOf(address(staking)), staking.nextRewardAmount());
