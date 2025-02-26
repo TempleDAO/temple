@@ -188,6 +188,96 @@ contract SpiceAuctionViewTest is SpiceAuctionTestBase {
     function test_currentEpoch() public {
         /// @dev see claim and bid tests
     }
+
+    function test_get_claimable_and_claimed_for_epochs() public {
+        vm.startPrank(executor);
+        templeGold.authorizeContract(treasury, true);
+        // create and bid a couple of epochs
+        deal(daiToken, alice, 100 ether);
+        deal(address(templeGold), alice, 100 ether);
+        deal(address(templeGold), bob, 100 ether);
+        uint256 bidAmount = 10 ether;
+        
+        // start auction
+        ISpiceAuction.SpiceAuctionConfig memory _config = _startAuction(true, true);
+        uint256 epoch = spice.currentEpoch();
+        IAuctionBase.EpochInfo memory epochInfo = spice.getEpochInfo(epoch);
+        vm.warp(epochInfo.startTime);
+
+        vm.startPrank(alice);
+        IERC20(daiToken).approve(address(spice), type(uint).max);
+
+        spice.bid(bidAmount);
+        // end auction
+        vm.warp(epochInfo.endTime);
+        // claimable is full amount
+        uint256[] memory epochs = new uint256[](1);
+        epochs[0] = epoch;
+        uint256[] memory claimable = spice.getClaimableForEpochs(alice, epochs);
+        uint256[] memory claimed = spice.getClaimedForEpochs(alice, epochs);
+        assertEq(claimable[0], epochInfo.totalAuctionTokenAmount);
+        assertEq(claimed[0], 0);
+        assertEq(spice.accountTotalClaimed(alice, address(templeGold)), 0);
+        assertEq(spice.accountTotalClaimed(alice, spice.spiceToken()), 0);
+
+        // claim and check
+        vm.warp(epochInfo.endTime);
+        spice.claim(epoch);
+        uint256 aliceSpiceTotalClaimed = spice.accountTotalClaimed(alice, spice.spiceToken());
+        uint256 aliceTGldClaimed = spice.accountTotalClaimed(alice, address(templeGold));
+        claimable = spice.getClaimableForEpochs(alice, epochs);
+        claimed = spice.getClaimedForEpochs(alice, epochs);
+        assertEq(claimable[0], 0);
+        assertEq(claimed[0], epochInfo.totalAuctionTokenAmount);
+        assertEq(aliceTGldClaimed, epochInfo.totalAuctionTokenAmount);
+        assertEq(aliceSpiceTotalClaimed, 0);
+
+        skip(_config.waitPeriod);
+        _config = _getAuctionConfig();
+        _config.isTempleGoldAuctionToken = false;
+        vm.startPrank(daoExecutor);
+        spice.setAuctionConfig(_config);
+        _config = _startAuction(false, true);
+        epoch = spice.currentEpoch();
+        epochInfo = spice.getEpochInfo(epoch);
+        vm.warp(epochInfo.startTime);
+
+        vm.startPrank(alice);
+        IERC20(address(templeGold)).approve(address(spice), type(uint).max);
+        spice.bid(bidAmount);
+        vm.startPrank(bob);
+        IERC20(address(templeGold)).approve(address(spice), type(uint).max);
+        spice.bid(bidAmount);
+        
+        vm.warp(epochInfo.endTime);
+        uint256 expectedClaimable = epochInfo.totalAuctionTokenAmount/2;
+        epochs = new uint256[](2);
+        epochs[0] = 1;
+        epochs[1] = 2;
+        claimable = new uint256[](2);
+        claimable = spice.getClaimableForEpochs(alice, epochs);
+        assertEq(claimable[0], 0);
+        assertEq(claimable[1], expectedClaimable);
+        claimable = spice.getClaimableForEpochs(bob, epochs);
+        assertEq(claimable[0], 0);
+        assertEq(claimable[1], expectedClaimable);
+        claimed = new uint256[](2);
+        claimed = spice.getClaimedForEpochs(alice, epochs);
+        assertEq(claimed[0], aliceTGldClaimed);
+        assertEq(claimed[1], 0);
+        claimed = spice.getClaimedForEpochs(bob, epochs);
+        assertEq(claimed[0], 0);
+        assertEq(claimed[1], 0);
+        
+        uint256 currentEpoch = spice.currentEpoch();
+        spice.claim(currentEpoch);
+        vm.startPrank(alice);
+        spice.claim(currentEpoch);
+        assertEq(spice.accountTotalClaimed(alice, address(templeGold)), aliceTGldClaimed);
+        assertEq(spice.accountTotalClaimed(alice, spice.spiceToken()), aliceSpiceTotalClaimed+expectedClaimable);
+        assertEq(spice.accountTotalClaimed(bob, address(templeGold)), 0);
+        assertEq(spice.accountTotalClaimed(bob, spice.spiceToken()), expectedClaimable);
+    }
 }
 
 contract SpiceAuctionTest is SpiceAuctionTestBase {
