@@ -66,7 +66,7 @@ contract SpiceAuctionTestBase is TempleGoldCommon {
         vm.stopPrank();
     }
 
-    function test_initialization() public view {
+    function test_initialization() public {
         assertEq(spice.name(), NAME_ONE);
         assertEq(spice.templeGold(), address(templeGold));
         assertEq(spice.spiceToken(), daiToken);

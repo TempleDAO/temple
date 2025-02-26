@@ -67,7 +67,7 @@ contract TempleGoldStakingTestBase is TempleGoldCommon {
         vm.stopPrank();
     }
 
-    function test_initialization() public view {
+    function test_initialization() public {
         assertEq(staking.rescuer(), rescuer);
         assertEq(staking.executor(), executor);
         assertEq(address(staking.stakingToken()), address(templeToken));

@@ -93,7 +93,7 @@ contract StableGoldAuctionTestBase is TempleGoldCommon {
         templeGold.authorizeContract(teamGnosis, true);
     }
 
-    function test_initialization() public view {
+    function test_initialization() public {
         assertEq(address(templeGold), address(auction.templeGold()));
         assertEq(rescuer, auction.rescuer());
         assertEq(executor, auction.executor());
@@ -295,7 +295,7 @@ contract StableGoldAuctionTestView is StableGoldAuctionTestBase {
         /// @dev See test_setAuctionConfig()
     }
 
-    function test_nextEpoch() public view {
+    function test_nextEpoch() public {
         uint256 currentEpoch = auction.currentEpoch();
         assertEq(auction.nextEpoch(), currentEpoch+1);
     }

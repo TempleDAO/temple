@@ -33,7 +33,7 @@ contract CompoundedInterestTest is TempleTest {
     uint256 public zeroPrincipalAmount = 0e18;
 
     // Zero percent interest tests
-    function test_compound_zeroPct_dayOne() public view {
+    function test_compound_zeroPct_dayOne() public {
         uint256 newInterestRate = initialPrincipalAmount.continuouslyCompounded(
             1 days,
             ZERO_PCT_INTEREST
@@ -41,7 +41,7 @@ contract CompoundedInterestTest is TempleTest {
         assertEq(newInterestRate, ZERO_PCT_1DAY);
     }
 
-    function test_compound_zeroPct_dayThirty() public view {
+    function test_compound_zeroPct_dayThirty() public {
         uint256 newInterestRate = initialPrincipalAmount.continuouslyCompounded(
             30 days,
             ZERO_PCT_INTEREST
@@ -49,7 +49,7 @@ contract CompoundedInterestTest is TempleTest {
         assertEq(newInterestRate, ZERO_PCT_30DAY);
     }
 
-    function test_compound_zeroPct_yearOne() public view {
+    function test_compound_zeroPct_yearOne() public {
         uint256 newInterestRate = initialPrincipalAmount.continuouslyCompounded(
             365 days,
             ZERO_PCT_INTEREST
@@ -58,7 +58,7 @@ contract CompoundedInterestTest is TempleTest {
     }
 
     // One percent interest tests
-    function test_compound_onePct_dayOne() public view {
+    function test_compound_onePct_dayOne() public {
         uint256 newInterestRate = initialPrincipalAmount.continuouslyCompounded(
             1 days,
             ONE_PCT_INTEREST
@@ -66,7 +66,7 @@ contract CompoundedInterestTest is TempleTest {
         assertEq(newInterestRate, ONE_PCT_1DAY);
     }
 
-    function test_compound_onePct_dayThirty() public view {
+    function test_compound_onePct_dayThirty() public {
         uint256 newInterestRate = initialPrincipalAmount.continuouslyCompounded(
             30 days,
             ONE_PCT_INTEREST
@@ -74,7 +74,7 @@ contract CompoundedInterestTest is TempleTest {
         assertEq(newInterestRate, ONE_PCT_30DAY);
     }
 
-    function test_compound_onePct_yearOne() public view {
+    function test_compound_onePct_yearOne() public {
         uint256 newInterestRate = initialPrincipalAmount.continuouslyCompounded(
             365 days,
             ONE_PCT_INTEREST
@@ -83,7 +83,7 @@ contract CompoundedInterestTest is TempleTest {
     }
 
     // Five percent interest tests
-    function test_compound_fivePct_dayOne() public view {
+    function test_compound_fivePct_dayOne() public {
         uint256 newInterestRate = initialPrincipalAmount.continuouslyCompounded(
             1 days,
             FIVE_PCT_INTEREST
@@ -91,7 +91,7 @@ contract CompoundedInterestTest is TempleTest {
         assertEq(newInterestRate, FIVE_PCT_1DAY);
     }
 
-    function test_compound_fivePct_dayThirty() public view {
+    function test_compound_fivePct_dayThirty() public {
         uint256 newInterestRate = initialPrincipalAmount.continuouslyCompounded(
             30 days,
             FIVE_PCT_INTEREST
@@ -99,7 +99,7 @@ contract CompoundedInterestTest is TempleTest {
         assertEq(newInterestRate, FIVE_PCT_30DAY);
     }
 
-    function test_compound_fivePct_yearOne() public view {
+    function test_compound_fivePct_yearOne() public {
         uint256 newInterestRate = initialPrincipalAmount.continuouslyCompounded(
             365 days,
             FIVE_PCT_INTEREST
@@ -108,7 +108,7 @@ contract CompoundedInterestTest is TempleTest {
     }
 
     // Ten percent interest tests
-    function test_compound_yenPct_dayOne() public view {
+    function test_compound_yenPct_dayOne() public {
         uint256 newInterestRate = initialPrincipalAmount.continuouslyCompounded(
             1 days,
             TEN_PCT_INTEREST
@@ -116,7 +116,7 @@ contract CompoundedInterestTest is TempleTest {
         assertEq(newInterestRate, TEN_PCT_1DAY);
     }
 
-    function test_compound_yenPct_dayThirty() public view {
+    function test_compound_yenPct_dayThirty() public {
         uint256 newInterestRate = initialPrincipalAmount.continuouslyCompounded(
             30 days,
             TEN_PCT_INTEREST
@@ -124,7 +124,7 @@ contract CompoundedInterestTest is TempleTest {
         assertEq(newInterestRate, TEN_PCT_30DAY);
     }
 
-    function test_compound_yenPct_yearOne() public view {
+    function test_compound_yenPct_yearOne() public {
         uint256 newInterestRate = initialPrincipalAmount.continuouslyCompounded(
             365 days,
             TEN_PCT_INTEREST
@@ -132,7 +132,7 @@ contract CompoundedInterestTest is TempleTest {
         assertEq(newInterestRate, TEN_PCT_1YEAR);
     }
 
-    function test_compound_zeroPrincipal() public view {
+    function test_compound_zeroPrincipal() public {
         uint256 newInterestRate = zeroPrincipalAmount.continuouslyCompounded(
             1 days,
             FIVE_PCT_INTEREST
@@ -140,7 +140,7 @@ contract CompoundedInterestTest is TempleTest {
         assertEq(newInterestRate, 0e18);
     }
 
-    function test_compound_zeroDays() public view {
+    function test_compound_zeroDays() public {
         uint256 newInterestRate = initialPrincipalAmount.continuouslyCompounded(
             0 days,
             FIVE_PCT_INTEREST

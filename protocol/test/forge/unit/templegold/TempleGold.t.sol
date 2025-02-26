@@ -65,7 +65,7 @@ contract TempleGoldTestBase is TempleGoldCommon {
         vm.stopPrank();
     }
 
-    function test_initialization() public view {
+    function test_initialization() public {
         assertEq(templeGold.owner(), executor);
         assertEq(address(templeGold.auction()), address(auction));
         assertEq(address(templeGold.staking()), address(staking));
@@ -151,7 +151,7 @@ contract TempleGoldAccessTest is TempleGoldTestBase {
 }
 
 contract TempleGoldViewTest is TempleGoldTestBase {
-    function test_oftVersion_tgld() public view {
+    function test_oftVersion_tgld() public {
         (bytes4 interfaceId, ) = templeGold.oftVersion();
         bytes4 expectedId = 0x02e49c2c;
         assertEq(interfaceId, expectedId);

@@ -42,7 +42,7 @@ contract MultiOtcOfferTestBase is TempleTest {
         otcOffer = new MultiOtcOffer(rescuer, executor);
     }
 
-    function test_initialization() public view {
+    function test_initialization() public {
         assertEq(rescuer, otcOffer.rescuer());
         assertEq(executor, otcOffer.executor());
     }

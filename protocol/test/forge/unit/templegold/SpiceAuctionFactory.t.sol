@@ -24,7 +24,7 @@ contract SpiceAuctionFactoryTestBase is TempleGoldCommon {
         factory = new SpiceAuctionFactory(rescuer, executor, executor, mike, address(templeGold), ARBITRUM_ONE_LZ_EID, uint32(arbitrumOneChainId));
     }
 
-    function test_initialization() public view {
+    function test_initialization() public {
         assertEq(factory.executor(), executor);
         assertEq(factory.rescuer(), rescuer);
         assertEq(factory.daoExecutor(), executor);

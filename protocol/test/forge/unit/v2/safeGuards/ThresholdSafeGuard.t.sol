@@ -367,7 +367,7 @@ contract ThresholdSafeGuardTestAdmin is ThresholdSafeGuardTestBase {
     event SafeTxExecutorAdded(address indexed executor);
     event SafeTxExecutorRemoved(address indexed executor);
 
-    function test_initalization() public view {
+    function test_initalization() public {
         assertEq(guard.executor(), executor);
         assertEq(guard.rescuer(), rescuer);
         assertEq(guard.VERSION(), "1.0.0");

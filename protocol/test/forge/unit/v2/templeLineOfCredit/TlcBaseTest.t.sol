@@ -162,7 +162,7 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
     function checkDebtTokenConfig(
         ITempleLineOfCredit.DebtTokenConfig memory actual,
         ITempleLineOfCredit.DebtTokenConfig memory expected
-    ) internal pure {
+    ) internal {
         assertEq(address(actual.interestRateModel), address(expected.interestRateModel), "DebtTokenConfig__interestRateModel");
         assertEq(actual.maxLtvRatio, expected.maxLtvRatio, "DebtTokenConfig__maxLtvRatio");
         assertEq(actual.borrowsPaused, expected.borrowsPaused, "DebtTokenConfig__borrowsPaused");
@@ -171,7 +171,7 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
     function checkDebtTokenData(
         ITempleLineOfCredit.DebtTokenData memory actual,
         ITempleLineOfCredit.DebtTokenData memory expected
-    ) internal pure {
+    ) internal {
         assertEq(actual.interestAccumulatorUpdatedAt, expected.interestAccumulatorUpdatedAt, "DebtTokenData__interestAccumulatorUpdatedAt");
         assertApproxEqRel(actual.totalDebt, expected.totalDebt, 1e10, "DebtTokenData__totalDebt");
         assertApproxEqRel(actual.interestRate, expected.interestRate, 1e11, "DebtTokenData__interestRate");
@@ -183,7 +183,7 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
         uint96 expectedInterestRate,
         uint256 expectedInterestAccumulator,
         uint256 expectedInterestAccumulatorUpdatedAt
-    ) internal view {
+    ) internal {
         (DebtTokenConfig memory config, DebtTokenData memory totals) = tlc.debtTokenDetails();
         checkDebtTokenConfig(config, getDefaultConfig());
 
@@ -200,7 +200,7 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
         uint256 b,
         uint256 maxPercentDelta, // An 18 decimal fixed point number, where 1e18 == 100%
         string memory err
-    ) internal pure {
+    ) internal {
         if (a == type(uint256).max || b == type(uint256).max) {
             assertEq(a, b, err);
         } else {
@@ -216,7 +216,7 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
         uint256 expectedDaiAccumulatorCheckpoint;
     }
 
-    function checkAccountPosition(CheckAccountPositionParams memory params) internal view {
+    function checkAccountPosition(CheckAccountPositionParams memory params) internal {
         AccountPosition memory actualAccountPosition = tlc.accountPosition(params.account);        
         AccountData memory accountData = tlc.accountData(params.account);
 
@@ -239,7 +239,7 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
         uint256 expectedDaiUR,
         uint256 expectedDaiIR,
         uint256 expectedDaiDebt
-    ) internal view returns (uint256) {
+    ) internal returns (uint256) {
         TotalDebtPosition memory actualDaiPosition = tlc.totalDebtPosition();
         assertApproxEqRel(actualDaiPosition.utilizationRatio, expectedDaiUR, 1e10, "daiUtilizationRatio");
         assertApproxEqRel(actualDaiPosition.borrowRate, expectedDaiIR, 1e10, "daiBorrowRate"); 
@@ -321,7 +321,7 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
         bool expectedHasExceededMaxLtv,
         uint256 expectedCollateral,
         uint256 expectedCurrentDaiDebt
-    ) internal view {
+    ) internal {
         address[] memory accounts = new address[](1);
         accounts[0] = account;
         LiquidationStatus[] memory status = tlc.computeLiquidity(accounts);

@@ -65,7 +65,7 @@ contract DsrBaseStrategyTestnetTestAdmin is DsrBaseStrategyTestnetTestBase {
         _setUp();
     }
 
-    function test_dsr_interest_equivalence() public pure {
+    function test_dsr_interest_equivalence() public {
         uint256 dsrRate = 1.01e18;
         uint256 equivalentDusdRate = ud(dsrRate).ln().unwrap();
         assertEq(equivalentDusdRate, 0.009950330853168072e18);
@@ -75,7 +75,7 @@ contract DsrBaseStrategyTestnetTestAdmin is DsrBaseStrategyTestnetTestBase {
         assertEq(equivalentDusdRate, 0.034304803691990293e18);
     }
 
-    function test_initalization() public view {
+    function test_initalization() public {
         assertEq(strategy.executor(), executor);
         assertEq(strategy.rescuer(), rescuer);
         assertEq(strategy.apiVersion(), "1.0.0");

@@ -39,7 +39,7 @@ contract TempleElevatedAccessTestBase is TempleTest {
         mock = new Mock(rescuer, executor);
     }
 
-    function test_initialization() public view {
+    function test_initialization() public {
         assertEq(mock.rescuer(), rescuer);
         assertEq(mock.executor(), executor);
         assertEq(mock.inRescueMode(), false);

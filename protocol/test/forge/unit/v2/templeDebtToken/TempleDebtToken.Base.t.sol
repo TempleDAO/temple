@@ -103,7 +103,7 @@ contract TempleDebtTokenTestBase is TempleTest {
         uint256 expectedCurrentBasePrincipalAndInterest,
         uint256 expectedTotalPrincipal,
         uint256 expectedCurrentEstimatedDebtorInterest
-    ) internal view {
+    ) internal {
         if (LOG) dumpBase();
 
         assertEq(dUSD.baseRate(), expectedInterestRateBps, "baseRate");
@@ -126,7 +126,7 @@ contract TempleDebtTokenTestBase is TempleTest {
         uint256 expectedCheckpoint,
         uint256 expectedCheckpointTime,
         uint256 expectedBalancedOf
-    ) internal view {
+    ) internal {
         if (LOG) dumpDebtor(debtor);
 
         (uint256 principal, uint256 baseShares, uint256 rate, uint256 checkpoint, uint256 checkpointTime) = dUSD.debtors(debtor);
@@ -159,7 +159,7 @@ contract TempleDebtTokenTestAdmin is TempleDebtTokenTestBase {
         _setUp();
     }
 
-    function test_initalization() public view {
+    function test_initalization() public {
         assertEq(dUSD.version(), "1.0.0");
         assertEq(dUSD.name(), "Temple Debt");
         assertEq(dUSD.symbol(), "dUSD");

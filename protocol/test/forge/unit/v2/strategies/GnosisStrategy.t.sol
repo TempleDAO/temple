@@ -63,7 +63,7 @@ contract GnosisStrategyTestAdmin is GnosisStrategyTestBase {
         _setUp();
     }
 
-    function test_initalization() public view {
+    function test_initalization() public {
         assertEq(strategy.executor(), executor);
         assertEq(strategy.rescuer(), rescuer);
         assertEq(strategy.apiVersion(), "1.0.0");

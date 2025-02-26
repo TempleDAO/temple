@@ -103,8 +103,6 @@ contract TempleGoldLayerZeroTest is TestHelperOz5 {
         vm.startPrank(userA);
         (MessagingReceipt memory msgReceipt,) =
              aTempleGold.send{ value: fee.nativeFee }(sendParam, fee, payable(address(this)));
-        // emit log_string("messaging receipt");
-        // emit log_bytes32(msgReceipt.guid);
         verifyPackets(bEid, addressToBytes32(address(bTempleGold)));
 
         assertEq(aTempleGold.balanceOf(userA), initialBalance - tokensToSend);
@@ -122,18 +120,6 @@ contract TempleGoldLayerZeroTest is TestHelperOz5 {
         assertEq(aTempleGold.balanceOf(userA), initialBalance - tokensToSend);
         assertEq(bTempleGold.balanceOf(userB), initialBalance - tokensToSend);
         assertEq(bTempleGold.balanceOf(userA), tokensToSend);
-        // todo remove
-        address r = 0xC785695710292c042a2de8A0Ba16F3a054cC2eAD;
-        // emit log_bytes32(addressToBytes32(r));
-        // emit log_uint(1 ether);
-        // emit log_uint(1);
-        // emit log_bytes(options);
-        // emit log_bytes(bytes(""));
-        // emit log_bytes(bytes(""));
-        // emit log_bytes32(addressToBytes32(0x192aA9BfDcA5540406E211950C226C8E0cd5047F));
-        // emit log_bytes32(addressToBytes32(0x8afB7E03a6e115577361C5648924eBA3163381Fc));
-
-        // ["40161", "0x000000000000000000000000c785695710292c042a2de8a0ba16f3a054cc2ead", "1000000000000000000", "1", "0x00030100110100000000000000000000000000030d40", "0x", "0x"]
     }
 
     function test_redemption_cross_chain() public {
