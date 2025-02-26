@@ -46,7 +46,7 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
     }
 
     // @dev After the trv/etc has been set
-    function test_initalization() public {
+    function test_initalization() public view {
         // Reserve tokens are initialized
         checkDebtTokenDetails(0, MIN_BORROW_RATE, INITIAL_INTEREST_ACCUMULATOR, uint32(block.timestamp));
 

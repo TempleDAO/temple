@@ -34,7 +34,7 @@ contract TempleCircuitBreakerTestBase is TempleTest {
         breaker = new TempleCircuitBreakerAllUsersPerPeriod(rescuer, executor, 1 days, 24, 100e18);
     }
 
-    function test_initialization() public {
+    function test_initialization() public view {
         assertEq(breaker.nBuckets(), 24);
         assertEq(breaker.periodDuration(), 1 days); 
         assertEq(breaker.secondsPerBucket(), 60*60);

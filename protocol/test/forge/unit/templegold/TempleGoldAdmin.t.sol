@@ -60,7 +60,7 @@ contract TempleGoldAdminTestBase is TempleGoldCommon {
         vm.stopPrank();
     }
 
-    function test_initialization() public {
+    function test_initialization() public view {
         assertEq(templeGoldAdmin.rescuer(), rescuer);
         assertEq(templeGoldAdmin.executor(), executor);
         assertEq(address(templeGoldAdmin.templeGold()), address(templeGold));

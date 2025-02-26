@@ -211,7 +211,7 @@ contract RamosStrategyTestAdmin is RamosStrategyTestBase {
         _setUp();
     }
 
-    function test_initalization() public {
+    function test_initalization() public view {
         assertEq(strategy.executor(), executor);
         assertEq(strategy.rescuer(), rescuer);
         assertEq(strategy.apiVersion(), "1.0.0");
@@ -496,7 +496,7 @@ contract RamosStrategyTestBalances is RamosStrategyTestBase {
         _setUp();
     }
 
-    function checkBalance(uint256 expectedDai, uint256 expectedTemple) internal {
+    function checkBalance(uint256 expectedDai, uint256 expectedTemple) internal view {
         ITempleStrategy.AssetBalance[] memory assetBalances = strategy.latestAssetBalances();
         assertEq(assetBalances.length, 2);
         assertEq(assetBalances[0].asset, address(dai));
