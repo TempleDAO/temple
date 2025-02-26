@@ -56,6 +56,7 @@ interface Contracts {
     temploMayorGnosisStrategy: string;
     fohmoGnosisStrategy: string;
     daiSkyFarmBaseStrategy: string;
+    cosechaSegundaStrategy: string;
   };
   ramosPoolHelper: string;
   templeDaiBalancerPool: string;

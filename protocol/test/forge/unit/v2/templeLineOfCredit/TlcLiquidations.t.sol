@@ -6,7 +6,7 @@ import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.so
 
 /* solhint-disable func-name-mixedcase, contract-name-camelcase, not-rely-on-time */
 contract TempleLineOfCreditTestCheckLiquidity is TlcBaseTest {
-    function test_computeLiquidity_noBorrowsNoCollateral() external {
+    function test_computeLiquidity_noBorrowsNoCollateral() external view {
         checkLiquidationStatus(alice, false, 0, 0);
     }
 

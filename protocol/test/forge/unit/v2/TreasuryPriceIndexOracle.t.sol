@@ -38,7 +38,7 @@ contract TreasuryPriceIndexOracleTest is TempleTest {
         uint96 expectedTargetTpi,
         uint32 expectedTargetTime, 
         int96 expectedTpiSlope
-    ) internal {
+    ) internal view {
         (
             uint96 startingTpi,
             uint32 startTime,
@@ -53,7 +53,7 @@ contract TreasuryPriceIndexOracleTest is TempleTest {
         assertEq(tpiSlope, expectedTpiSlope, "tpiSlope");
     }
 
-    function test_initialize() public {
+    function test_initialize() public view {
         checkTpiData(defaultTpi, uint32(block.timestamp), defaultTpi, uint32(block.timestamp), 0);
         assertEq(tpiOracle.maxTreasuryPriceIndexDelta(), defaultMaxDelta);
         assertEq(tpiOracle.minTreasuryPriceIndexTargetTimeDelta(), defaultMinTargetTimeDelta);

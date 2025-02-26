@@ -54,7 +54,7 @@ contract TempleTokenBaseStrategyTestAdmin is TempleTokenBaseStrategyTestBase {
         _setUp();
     }
 
-    function test_initalization() public {
+    function test_initalization() public view {
         assertEq(strategy.executor(), executor);
         assertEq(strategy.rescuer(), rescuer);
         assertEq(strategy.apiVersion(), "1.0.0");
@@ -137,7 +137,7 @@ contract TempleTokenBaseStrategyTestBorrow is TempleTokenBaseStrategyTestBase {
         strategy.borrowAndDeposit(0.02e18);
     }
 
-    function test_latestAssetBalances() public {
+    function test_latestAssetBalances() public view {
         ITempleStrategy.AssetBalance[] memory balances = strategy.latestAssetBalances();
         assertEq(balances.length, 1);
         assertEq(balances[0].asset, address(temple));

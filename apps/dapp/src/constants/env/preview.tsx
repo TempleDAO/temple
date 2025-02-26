@@ -53,6 +53,7 @@ const env: Environment = {
       temploMayorGnosisStrategy: '',
       fohmoGnosisStrategy: '',
       daiSkyFarmBaseStrategy: '0x5d8e464fca8d327fad016ea8cf3424cb113c07a8',
+      cosechaSegundaStrategy: '0x0cB92fEfae1806ed3047E3EB8F36bC963AC48637',
     },
     daiCircuitBreaker: '0x30AC664062f58b6E4DF187713a2352385633B739',
     templeCircuitBreaker: '0x8f783c4A3d90712A794d5660b632AC67611852aF',

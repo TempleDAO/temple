@@ -113,7 +113,7 @@ contract StakingInvariantTest is BaseInvariantTest {
     }
 
     /// @dev total amount staked matches total supply and total balance
-    function invariant_total_supply_balance() external {
+    function invariant_total_supply_balance() external view {
         uint256 balance = templeToken.balanceOf(address(staking));
         uint256 totalSupply = staking.totalSupply();
         assertEq(

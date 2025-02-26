@@ -65,7 +65,7 @@ contract TempleGoldTestBase is TempleGoldCommon {
         vm.stopPrank();
     }
 
-    function test_initialization() public {
+    function test_initialization() public view {
         assertEq(templeGold.owner(), executor);
         assertEq(address(templeGold.auction()), address(auction));
         assertEq(address(templeGold.staking()), address(staking));
@@ -151,7 +151,7 @@ contract TempleGoldAccessTest is TempleGoldTestBase {
 }
 
 contract TempleGoldViewTest is TempleGoldTestBase {
-    function test_oftVersion_tgld() public {
+    function test_oftVersion_tgld() public view {
         (bytes4 interfaceId, ) = templeGold.oftVersion();
         bytes4 expectedId = 0x02e49c2c;
         assertEq(interfaceId, expectedId);
@@ -410,8 +410,8 @@ contract TempleGoldTest is TempleGoldTestBase {
         skip(1 weeks);
         mintAmount = templeGold.getMintAmount();
         templeGold.mint();
-        emit log_string("Emission 1");
-        emit log_uint(emission);
+        // emit log_string("Emission 1");
+        // emit log_uint(emission);
         assertEq(emission, mintAmount);
         assertEq(emission, templeGold.circulatingSupply());
         assertEq(templeGold.circulatingSupply(), 28571428571428571428571428);
@@ -422,9 +422,9 @@ contract TempleGoldTest is TempleGoldTestBase {
         mintAmount = templeGold.getMintAmount();
         totalEmissions += emission;
         templeGold.mint();
-        emit log_string("Emission 2");
-        emit log_uint(emission);
-        emit log_uint(totalEmissions);
+        // emit log_string("Emission 2");
+        // emit log_uint(emission);
+        // emit log_uint(totalEmissions);
         assertEq(emission, mintAmount);
         assertEq(totalEmissions, templeGold.circulatingSupply());
         assertEq(templeGold.circulatingSupply(), 56326530612244897959183672);
@@ -435,9 +435,9 @@ contract TempleGoldTest is TempleGoldTestBase {
         mintAmount = templeGold.getMintAmount();
         totalEmissions += emission;
         templeGold.mint();
-        emit log_string("Emission 3");
-        emit log_uint(emission);
-        emit log_uint(totalEmissions);
+        // emit log_string("Emission 3");
+        // emit log_uint(emission);
+        // emit log_uint(totalEmissions);
         assertEq(emission, mintAmount);
         assertEq(totalEmissions, templeGold.circulatingSupply());
         assertEq(templeGold.circulatingSupply(), 83288629737609329446064138);
@@ -448,9 +448,9 @@ contract TempleGoldTest is TempleGoldTestBase {
         mintAmount = templeGold.getMintAmount();
         totalEmissions += emission;
         templeGold.mint();
-        emit log_string("Emission 4");
-        emit log_uint(emission);
-        emit log_uint(totalEmissions);
+        // emit log_string("Emission 4");
+        // emit log_uint(emission);
+        // emit log_uint(totalEmissions);
         assertEq(emission, mintAmount);
         assertEq(totalEmissions, templeGold.circulatingSupply());
         assertEq(templeGold.circulatingSupply(), 109480383173677634319033734);
@@ -461,9 +461,9 @@ contract TempleGoldTest is TempleGoldTestBase {
         mintAmount = templeGold.getMintAmount();
         totalEmissions += emission;
         templeGold.mint();
-        emit log_string("Emission 5");
-        emit log_uint(emission);
-        emit log_uint(totalEmissions);
+        // emit log_string("Emission 5");
+        // emit log_uint(emission);
+        // emit log_uint(totalEmissions);
         assertEq(emission, mintAmount);
         assertEq(totalEmissions, templeGold.circulatingSupply());
         assertEq(templeGold.circulatingSupply(), 134923800797286844767061341);
@@ -474,9 +474,9 @@ contract TempleGoldTest is TempleGoldTestBase {
         mintAmount = templeGold.getMintAmount();
         totalEmissions += emission;
         templeGold.mint();
-        emit log_string("Emission 6");
-        emit log_uint(emission);
-        emit log_uint(totalEmissions);
+        // emit log_string("Emission 6");
+        // emit log_uint(emission);
+        // emit log_uint(totalEmissions);
         assertEq(emission, mintAmount);
         assertEq(totalEmissions, templeGold.circulatingSupply());
     }
@@ -518,10 +518,10 @@ contract TempleGoldTest is TempleGoldTestBase {
         uint256 auctionBalanceBefore = templeGold.balanceOf(address(auction));
         uint256 gnosisBalanceBefore = templeGold.balanceOf(teamGnosis);
         templeGold.mint();
-        emit log_string("balances 2");
-        emit log_uint(templeGold.balanceOf(address(staking)));
-        emit log_uint(templeGold.balanceOf(address(auction)));
-        emit log_uint(mintAmount);
+        // emit log_string("balances 2");
+        // emit log_uint(templeGold.balanceOf(address(staking)));
+        // emit log_uint(templeGold.balanceOf(address(auction)));
+        // emit log_uint(mintAmount);
         assertEq(templeGold.totalSupply(), totalSupply+mintAmount);
         assertEq(templeGold.balanceOf(address(staking)), stakingBalanceBefore+stakingAmount);
         assertEq(templeGold.balanceOf(address(auction)), auctionBalanceBefore+auctionAmount);
@@ -550,8 +550,8 @@ contract TempleGoldTest is TempleGoldTestBase {
         uint256 stakingAmount = _params.staking * mintAmount / 100 ether;
         uint256 gnosisAmount = 0;
         uint256 auctionAmount = _params.auction * mintAmount / 100 ether;
-        emit log_string("gnosis amount");
-        emit log_uint(templeGold.balanceOf(teamGnosis));
+        // emit log_string("gnosis amount");
+        // emit log_uint(templeGold.balanceOf(teamGnosis));
         templeGold.mint();
         assertEq(templeGold.totalSupply(), totalSupply+mintAmount);
         assertEq(templeGold.balanceOf(address(staking)), stakingAmount);

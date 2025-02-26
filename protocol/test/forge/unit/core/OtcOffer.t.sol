@@ -68,7 +68,7 @@ contract OtcOfferTestAdmin is OtcOfferTestBase {
     event OfferPriceRangeSet(uint128 minValidOfferPrice, uint128 maxValidOfferPrice);
     event FundsOwnerSet(address indexed fundsOwner);
 
-    function test_init() public {
+    function test_init() public view {
         // OHM=>DAI
         { 
             assertEq(address(otcOfferDaiOhm.userSellToken()), address(ohmToken));
@@ -227,7 +227,7 @@ contract OtcOfferTestAccess is OtcOfferTestBase {
 contract OtcOfferTestSwap is OtcOfferTestBase {
     event Swap(address indexed account, address indexed fundsOwner, uint256 userSellTokenAmount, uint256 userBuyTokenAmount);
 
-    function test_quote() public {
+    function test_quote() public view {
         // User sells OHM for DAI
         // Price defined as 11.4 DAI/OHM
         {

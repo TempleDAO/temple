@@ -144,7 +144,7 @@ contract TreasuryReservesVaultTestAdmin is TreasuryReservesVaultTestBase {
         _setUp();
     }
 
-    function test_initalization() public {
+    function test_initalization() public view {
         assertEq(trv.apiVersion(), "1.0.0");
         address[] memory strategiesList = trv.strategiesList();
         assertEq(strategiesList.length, 0);
