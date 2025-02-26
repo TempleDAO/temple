@@ -118,7 +118,7 @@ contract AuctionInvariantTest is BaseInvariantTest {
         vm.stopPrank();
     }
 
-    function invariant_total_bids() public {
+    function invariant_total_bids() public view {
         uint256 currentEpoch = auction.currentEpoch();
         IAuctionBase.EpochInfo memory info = auction.getEpochInfo(currentEpoch);
         // checking recipient address of bids

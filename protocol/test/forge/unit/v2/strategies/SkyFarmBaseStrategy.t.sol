@@ -96,13 +96,13 @@ contract SkyFarmBaseStrategyTestAdmin is SkyFarmBaseStrategyTestBase {
         _setUp();
     }
 
-    function test_dsr_interest_equivalence() public {
+    function test_dsr_interest_equivalence() public pure {
         uint256 dsrRate = 1.095e18;
         uint256 equivalentDusdRate = ud(dsrRate).ln().unwrap();
         assertEq(equivalentDusdRate, 0.090754363268464133e18);
     }
 
-    function test_initalization() public {
+    function test_initalization() public view {
         assertEq(strategy.executor(), executor);
         assertEq(strategy.rescuer(), rescuer);
         assertEq(strategy.apiVersion(), "1.0.0");
