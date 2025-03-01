@@ -52,6 +52,9 @@ interface ISpiceAuction is IAuctionBase {
     /// @notice Name of this Spice Bazaar auction
     function name() external view returns (string memory);
 
+    /// @notice Keep track of total claimed token per account
+    function accountTotalClaimed(address account, address token) external view returns (uint256);
+
     /**
      * @notice Set config for an epoch. This enables dynamic and multiple auctions especially for vested scenarios
      * @dev Must be set before epoch auction starts
@@ -82,6 +85,29 @@ interface ISpiceAuction is IAuctionBase {
      * @return Claimable amount
      */
     function getClaimableForEpoch(address depositor, uint256 epochId) external view returns (uint256);
+
+    /**
+     * @notice Get total claimed amount for an array of epochs
+     * @param depositor Address to check amount for
+     * @param epochIds Array of epoch ids
+     * @return claimed Total claimed
+     */
+    function getClaimedForEpochs(
+        address depositor,
+        uint256[] memory epochIds
+    ) external view returns (uint256[] memory claimed);
+
+    /**
+     * @notice Get claimable amount for an array of epochs
+     * @dev If the epochs contains a current epoch, function will return claimable at current time.
+     * @param depositor Address to check amount for
+     * @param epochIds Array of epoch ids
+     * @return claimable Total claimable
+     */
+    function getClaimableForEpochs(
+        address depositor,
+        uint256[] memory epochIds
+    ) external view returns (uint256[] memory claimable);
 
     /**
      * @notice Set DAO executor for DAO actions
