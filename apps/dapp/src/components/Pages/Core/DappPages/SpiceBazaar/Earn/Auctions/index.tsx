@@ -204,7 +204,7 @@ export const Auctions = () => {
                         <>
                           <StatusTitle>Price Ratio</StatusTitle>
                           <StatusValue>
-                            1 TLGD ={' '}
+                            1 TGLD ={' '}
                             {daiGoldAuctionInfo?.priceRatio < 0.01
                               ? '<0.01'
                               : daiGoldAuctionInfo?.priceRatio.toFixed(4)}{' '}
