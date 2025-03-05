@@ -81,7 +81,8 @@ interface SpiceBazaarContextValue {
   };
 }
 
-const SEVEN_DAYS_IN_SECONDS = 7 * 24 * 60 * 60;
+const ONE_DAY_IN_SECONDS = 24 * 60 * 60;
+const SEVEN_DAYS_IN_SECONDS = ONE_DAY_IN_SECONDS * 7;
 
 const INITIAL_STATE: SpiceBazaarContextValue = {
   stakePageMetrics: {
@@ -310,14 +311,19 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
         providerWithReadOnlyFallback
       );
 
-      const rewardPerToken = await templeGoldStaking.rewardPerToken();
-      const rewardPerTokenNumber = fromAtto(rewardPerToken);
       const balance = await templeGoldStaking.balanceOf(wallet);
       const balanceNumber = fromAtto(balance);
 
-      const dailyVestedTgldReward = (rewardPerTokenNumber * balanceNumber) / 7;
+      const rewardData = await templeGoldStaking.getRewardData();
+      const rewardPerDayBn = rewardData.rewardRate;
+      const rewardPerDay = fromAtto(rewardPerDayBn) * ONE_DAY_IN_SECONDS;
 
-      return dailyVestedTgldReward;
+      const totalSupplyBn = await templeGoldStaking.totalSupply();
+      const totalSupplyNumber = fromAtto(totalSupplyBn);
+
+      const dailyVested = (rewardPerDay * balanceNumber) / totalSupplyNumber;
+
+      return dailyVested;
     } catch (err) {
       console.error('Error while getting daily vested tgld reward', {
         cause: err,
