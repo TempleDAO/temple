@@ -66,6 +66,8 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
     mapping(address token => uint256 amount) private _totalAuctionTokenAllocation;
     /// @notice Keep track of redeemed and notified epochs
     mapping(uint256 epochId => bool redeemed) public override redeemedEpochs;
+    /// @notice Keep track of total claimed token per account
+    mapping(address account => mapping(address token => uint256 amount)) public override accountTotalClaimed;
 
     constructor(
         address _templeGold,
@@ -264,6 +266,7 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
         claimedAmount[msg.sender][epochId] = claimAmount;
         /// checkpoint claim for auction token
         _claimedAuctionTokens[auctionToken] += claimAmount;
+        accountTotalClaimed[msg.sender][auctionToken] += claimAmount;
         IERC20(auctionToken).safeTransfer(msg.sender, claimAmount);
         emit Claim(msg.sender, epochId, bidTokenAmount, claimAmount);
     }
@@ -429,12 +432,51 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
      * @param epochId Epoch id
      * @return Claimable amount
      */
-    function getClaimableForEpoch(address depositor, uint256 epochId) external override view returns (uint256) {
+    function getClaimableForEpoch(address depositor, uint256 epochId) public override view returns (uint256) {
         if (claimed[depositor][epochId]) { return 0; }
         uint256 bidTokenAmount = depositors[depositor][epochId];
         if (bidTokenAmount == 0 || epochId > _currentEpochId) { return 0; }
         EpochInfo memory info = epochs[epochId];
         return bidTokenAmount.mulDivRound(info.totalAuctionTokenAmount, info.totalBidTokenAmount, false);
+    }
+
+    /**
+     * @notice Get claimable amount for an array of epochs
+     * @dev If the epochs contains a current epoch, function will return claimable at current time.
+     * @param depositor Address to check amount for
+     * @param epochIds Array of epoch ids
+     * @return claimable Total claimable
+     */
+    function getClaimableForEpochs(
+        address depositor,
+        uint256[] memory epochIds
+    ) external override view returns (uint256[] memory claimable) {
+        uint256 _length = epochIds.length;
+        claimable = new uint256[](_length);
+        uint256 epoch;
+        for (uint i; i < _length; ++i) {
+            epoch = epochIds[i];
+            claimable[i] = getClaimableForEpoch(depositor, epoch);
+        }
+    }
+
+    /**
+     * @notice Get claimed amount for an array of epochs
+     * @param depositor Address to check amount for
+     * @param epochIds Array of epoch ids
+     * @return claimed Total claimable
+     */
+    function getClaimedForEpochs(
+        address depositor,
+        uint256[] memory epochIds
+    ) external override view returns (uint256[] memory claimed) {
+        uint256 _length = epochIds.length;
+        claimed = new uint256[](_length);
+        uint256 epoch;
+        for (uint i; i < _length; ++i) {
+            epoch = epochIds[i];
+            claimed[i] = claimedAmount[depositor][epoch];
+        }
     }
 
     function _getBidAndAuctionTokens(
