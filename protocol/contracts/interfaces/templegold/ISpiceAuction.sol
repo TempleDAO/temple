@@ -17,6 +17,7 @@ interface ISpiceAuction is IAuctionBase {
     error NoConfig();
     error RemoveAuctionConfig();
     error WithdrawFailed(uint256 amount);
+    error EtherNotNeeded();
 
     struct SpiceAuctionConfig {
         /// @notice Duration of auction
@@ -125,6 +126,12 @@ interface ISpiceAuction is IAuctionBase {
 
     /// @notice Epochs which have redemption called to update circulating supply.
     function redeemedEpochs(uint256 epochId) external view returns (bool);
+
+    /**
+     * @notice Check if current epoch is active
+     * @return Bool for active status
+     */
+    function isActive() external view returns (bool);
 
     /**
      * @notice Burn redeemd TGLD and notify circulating supply

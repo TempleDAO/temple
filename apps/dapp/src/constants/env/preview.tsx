@@ -1,10 +1,16 @@
 import { ADDRESS_ZERO } from 'utils/bigNumber';
 import { Environment } from './types';
 
+const ENV_VARS = import.meta.env;
+const BALANCER_SUBGRAPH_API_KEY = ENV_VARS.VITE_BALANCER_SUBGRAPH_API_KEY;
+const ENABLE_SUBGRAPH_LOGS = ENV_VARS.VITE_ENABLE_SUBGRAPH_LOGS === 'true';
+
 const env: Environment = {
   alchemyId: 'AorwfDdHDsEjIX4HPwS70zkVjWqjv5vZ',
-  rpcUrl: 'https://rpc.ankr.com/eth',
+  rpcUrl: 'https://ethereum-sepolia-rpc.publicnode.com',
   backendUrl: 'https://backend-stage.templedao.link',
+  tradeTokenListUrl:
+    'https://sf294otxgnbicood.public.blob.vercel-storage.com/testnet-tokens-BCYU6hCLdzUdj1TvvTOcw5ux8Wxmhj.json',
   contracts: {
     balancerVault: '',
     exitQueue: '',
@@ -14,6 +20,7 @@ const env: Environment = {
     usdc: '',
     usdt: '',
     dai: '0x33FA9618365F67c5345066d5Cfd7f3A2f183599A',
+    usds: '0xBe9162230D9e637218D74C7f41f62ef2385fEe64',
     weth: '',
     frax3CrvFarming: '',
     frax3CrvFarmingRewards: '',
@@ -22,7 +29,8 @@ const env: Environment = {
     ogTemple: '',
     olympus: '0xf7f739Bb945880aD0398122069Fd3beC282c6621',
     otcOffer: '0x09fdf85893c1277bdc9ef1be2acdf29ee5e19771',
-    temple: '0x64a925B0fA211c44337148C0807f959Bd44b0B67',
+    temple: '0x98c5e61b1b3731a1f379e8770861164d23118cdc',
+    templegold: '0x2ae6318e34bb97ae3755afce75559452aa223a5d',
     templeStaking: '',
     templeV2FraxPair: '',
     templeV2Router: '',
@@ -35,6 +43,7 @@ const env: Environment = {
     vaultEarlyExit: '',
     ramos: '0x82ce000a51E8474378f7b555bcC4de5992052452',
     ramosPoolHelper: '0xbfC24c9d7D57C413618CE11cea1e313a2E8D9e1d',
+    templeDaiBalancerPool: '',
     balancerHelpers: '0xdAE7e32ADc5d490a43cCba1f0c736033F2b4eFca',
     strategies: {
       dsrBaseStrategy: '0x472C7cDb6E730ff499E118dE6260c6b44c61d7bf',
@@ -43,30 +52,33 @@ const env: Environment = {
       tlcStrategy: '0x415A9B41700AC645d9C22F2499a6E853b625F792',
       temploMayorGnosisStrategy: '',
       fohmoGnosisStrategy: '',
+      daiSkyFarmBaseStrategy: '0x5d8e464fca8d327fad016ea8cf3424cb113c07a8',
+      cosechaSegundaStrategy: '0x0cB92fEfae1806ed3047E3EB8F36bC963AC48637',
     },
     daiCircuitBreaker: '0x30AC664062f58b6E4DF187713a2352385633B739',
     templeCircuitBreaker: '0x8f783c4A3d90712A794d5660b632AC67611852aF',
+    spiceBazaar: {
+      templeGoldStaking: '0xdbDAc0FCA9cF8CA2F2Ef718775f0F265f581808F',
+      daiGoldAuction: '0x8d3671d794d511Bb0E3D28e260F8E2233C0653aB',
+      spiceAuctionFactory: '0x4c73b3336731f502584ecbef4ceacc37dd078012',
+    },
   },
   subgraph: {
-    // TODO: These need updated to the templedao organization subgraphs once they are deployed
     templeCore:
       'https://api.studio.thegraph.com/query/76011/temple-core/version/latest',
     protocolMetrics:
       'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-metrics/api',
     protocolMetricsArbitrum:
       'https://api.studio.thegraph.com/query/76011/temple-metrics-arbitrum/version/latest',
-    // TODO: This is not used anymore and should be removed
-    balancerV2:
-      'https://api.thegraph.com/subgraphs/name/templedao/templedao-balancer-v2',
-    // TODO: Will be deprecated
+    balancerV2: `https://gateway.thegraph.com/api/${BALANCER_SUBGRAPH_API_KEY}/subgraphs/id/C4ayEZP2yTXRAB8vSaTrgN4m9anTe9Mdm2ViyiAuV9TV`,
     ramos:
-      'https://api.studio.thegraph.com/query/76011/temple-ramos/version/latest',
+      'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-ramos/api',
     templeV2:
       'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-v2-mainnet/api',
     templeV2Balances:
       'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-v2-balances/api',
-    // Original Balancer Subgraph
-    // balancerV2: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-goerli-v2',
+    spiceBazaar:
+      'https://subgraph.satsuma-prod.com/a912521dd162/templedao/spice-bazaar-sepolia/api',
   },
   gas: {
     swapFraxForTemple: 300000,
@@ -86,6 +98,12 @@ const env: Environment = {
     ascendQuote: 10_000,
   },
   tokens: {
+    tgld: {
+      name: 'Temple Gold',
+      address: '0x2ae6318e34bb97ae3755AFcE75559452aA223A5D',
+      decimals: 18,
+      symbol: 'TGLD',
+    },
     frax: {
       name: 'Frax',
       address: '0x73651AD693531F9937528009cC204a4d9b696a68',
@@ -94,7 +112,7 @@ const env: Environment = {
     },
     temple: {
       name: 'Temple',
-      address: '0x64a925B0fA211c44337148C0807f959Bd44b0B67',
+      address: '0x98c5e61b1b3731a1f379e8770861164d23118cdc',
       decimals: 18,
       symbol: 'TEMPLE',
     },
@@ -137,6 +155,12 @@ const env: Environment = {
       decimals: 18,
       symbol: 'DAI',
     },
+    usds: {
+      name: 'USDS',
+      address: '0xBe9162230D9e637218D74C7f41f62ef2385fEe64',
+      decimals: 18,
+      symbol: 'USDS',
+    },
   },
   network: 11155111,
   etherscan: 'https://sepolia.etherscan.io',
@@ -154,6 +178,7 @@ const env: Environment = {
     //   address: '0x5CE28cAE5aAb002DcBc076d5A551A473a7C9dF89',
     // },
   ],
+  enableSubgraphLogs: ENABLE_SUBGRAPH_LOGS,
 };
 
 export default env;

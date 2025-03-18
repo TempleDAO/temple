@@ -20,9 +20,9 @@ import {
   TlcInfo,
   Warning,
 } from '../index';
-import { fromAtto, toAtto } from 'utils/bigNumber';
+import { fromAtto, toAtto, ZERO } from 'utils/bigNumber';
 import styled from 'styled-components';
-import { ReactNode, useEffect, useMemo, useState } from 'react';
+import { ReactNode, useMemo, useState } from 'react';
 
 interface IProps {
   accountPosition: ITlcDataTypes.AccountPositionStructOutput | undefined;
@@ -56,10 +56,7 @@ export const Borrow: React.FC<IProps> = ({
       : '0.00';
   };
 
-  const maxBorrowValueWithCircuitBreaker = useMemo((): {
-    value: number;
-    isCircuitBreakerActive: boolean;
-  } => {
+  const maxBorrowValue = useMemo((): number => {
     const userMaxBorrow = accountPosition
       ? fromAtto(accountPosition.collateral) * prices.tpi * (MAX_LTV / 100) -
         fromAtto(accountPosition.currentDebt)
@@ -67,18 +64,12 @@ export const Borrow: React.FC<IProps> = ({
 
     const userMaxBorrowBigNumber = toAtto(userMaxBorrow);
 
-    if (!tlcInfo) {
-      return { value: userMaxBorrow, isCircuitBreakerActive: false };
+    // Check if trvAvailable from the contract is less than the user max borrow
+    if (tlcInfo && tlcInfo.availableToBorrow.lt(userMaxBorrowBigNumber)) {
+      return fromAtto(tlcInfo.availableToBorrow || ZERO);
     }
 
-    if (tlcInfo.daiCircuitBreakerRemaining.lt(userMaxBorrowBigNumber)) {
-      return {
-        value: fromAtto(tlcInfo.daiCircuitBreakerRemaining),
-        isCircuitBreakerActive: true,
-      };
-    }
-
-    return { value: userMaxBorrow, isCircuitBreakerActive: false };
+    return userMaxBorrow;
   }, [tlcInfo, accountPosition, prices.tpi]);
 
   return (
@@ -99,11 +90,11 @@ export const Borrow: React.FC<IProps> = ({
         onHintClick={() => {
           setState({
             ...state,
-            borrowValue: maxBorrowValueWithCircuitBreaker.value.toFixed(2),
+            borrowValue: maxBorrowValue.toFixed(2),
           });
         }}
         min={1000}
-        hint={`Max: ${maxBorrowValueWithCircuitBreaker.value.toFixed(2)}`}
+        hint={`Max: ${maxBorrowValue.toFixed(2)}`}
         width="100%"
       />
 
@@ -128,22 +119,23 @@ export const Borrow: React.FC<IProps> = ({
           </p>
         </Warning>
       )}
-      {tlcInfo && tlcInfo.strategyBalance < Number(state.borrowValue) && (
-        <Warning>
-          <InfoCircle>
-            <p>i</p>
-          </InfoCircle>
-          <p>
-            Amount exceeds available DAI.
-            <br />
-            Current max borrow:{' '}
-            {tlcInfo.strategyBalance
-              ? Number(tlcInfo.strategyBalance).toFixed(4)
-              : 0}{' '}
-            DAI
-          </p>
-        </Warning>
-      )}
+      {tlcInfo &&
+        fromAtto(tlcInfo.availableToBorrow) < Number(state.borrowValue) && (
+          <Warning>
+            <InfoCircle>
+              <p>i</p>
+            </InfoCircle>
+            <p>
+              Amount exceeds available DAI.
+              <br />
+              Current max borrow:{' '}
+              {tlcInfo.availableToBorrow
+                ? fromAtto(tlcInfo.availableToBorrow).toFixed(4)
+                : 0}{' '}
+              DAI
+            </p>
+          </Warning>
+        )}
       <MarginTop />
       <RangeLabel>Estimated DAI LTV: {getEstimatedLTV()}%</RangeLabel>
       <RangeSlider
@@ -203,11 +195,10 @@ export const Borrow: React.FC<IProps> = ({
               fromAtto(accountPosition.maxBorrow) <
                 Number(state.borrowValue)) ||
             (tlcInfo && tlcInfo.minBorrow > Number(state.borrowValue)) ||
-            (tlcInfo && tlcInfo.strategyBalance < Number(state.borrowValue)) ||
-            Number(getEstimatedLTV()) > MAX_LTV ||
-            (maxBorrowValueWithCircuitBreaker.isCircuitBreakerActive &&
-              Number(state.borrowValue) >
-                maxBorrowValueWithCircuitBreaker.value)
+            (tlcInfo &&
+              fromAtto(tlcInfo.availableToBorrow) <
+                Number(state.borrowValue)) ||
+            Number(getEstimatedLTV()) > MAX_LTV
           }
         >
           Borrow

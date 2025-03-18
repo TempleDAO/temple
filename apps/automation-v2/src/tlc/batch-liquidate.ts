@@ -1,12 +1,11 @@
-import { Chain } from '@/chains';
-import { DISCORD_WEBHOOK_URL_KEY, connectDiscord } from '@/common/discord';
+import { connectDiscord } from '@/common/discord';
 import {
   TempleTaskDiscordEvent,
   TempleTaskDiscordMetadata,
   buildDiscordMessageCheckEth,
   buildTempleTasksDiscordMessage,
   formatBigNumber,
-} from '@/common/utils';
+} from './utils';
 import { ITempleLineOfCredit, ITempleLineOfCredit__factory } from '@/typechain';
 import { EventLog } from 'ethers';
 import {
@@ -14,11 +13,20 @@ import {
   TaskContext,
   taskSuccess,
   taskSuccessSilent,
-} from '@mountainpath9/overlord';
-import { subgraphRequest } from '@/subgraph/subgraph-request';
-import { GetUserResponse } from '@/subgraph/types';
+} from '@mountainpath9/overlord-core';
+import { getProvider, getSigner } from '@mountainpath9/overlord-ethers';
+import { subgraphRequest } from './subgraph/subgraph-request';
+import { GetUserResponse } from './subgraph/types';
 import { matchAndDecodeEvent } from '@/common/filters';
 import { backOff } from 'exponential-backoff';
+import { tlc_discord_webhook_url } from './variables';
+
+export interface Chain {
+  id: number;
+  name: string;
+  transactionUrl(txhash: string): string;
+  addressUrl(txhash: string): string;
+}
 
 export interface TlcBatchLiquidateConfig {
   CHAIN: Chain;
@@ -35,14 +43,14 @@ export async function batchLiquidate(
   ctx: TaskContext,
   config: TlcBatchLiquidateConfig
 ): Promise<TaskResult> {
-  const provider = await ctx.getProvider(config.CHAIN.id);
-  const signer = await ctx.getSigner(provider, config.WALLET_NAME);
+  const provider = await getProvider(ctx, config.CHAIN.id);
+  const signer = await getSigner(ctx, provider, config.WALLET_NAME);
   const walletAddress = await signer.getAddress();
-  const webhookUrl = await ctx.getSecret(DISCORD_WEBHOOK_URL_KEY);
+  const webhookUrl = await tlc_discord_webhook_url.requireValue(ctx);
   const discord = await connectDiscord(webhookUrl, ctx.logger);
 
   const tlc: ITempleLineOfCredit = ITempleLineOfCredit__factory.connect(
-    await config.TLC_ADDRESS,
+    config.TLC_ADDRESS,
     signer
   );
 

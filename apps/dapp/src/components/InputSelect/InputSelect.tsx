@@ -19,6 +19,7 @@ export interface SelectTempleDaoProps {
   isSearchable?: boolean;
   width?: CSS.Property.Width;
   fontSize?: CSS.Property.FontSize;
+  fontWeight?: CSS.Property.FontWeight;
   textAlign?: CSS.Property.TextAlign;
   zIndex?: CSS.Property.ZIndex;
 }
@@ -88,7 +89,7 @@ export const InputSelect = (props: SelectTempleDaoProps) => {
           transition: theme.transitions.backgroundColor,
           height: selectHeight,
           borderBottom: `0.0625rem solid ${theme.palette.brand}`,
-          fontWeight: 'bold',
+          fontWeight: props.fontWeight ? props.fontWeight : 'bold',
           fontSize: props.fontSize,
           color: theme.palette.brandLight,
         }),
@@ -101,7 +102,7 @@ export const InputSelect = (props: SelectTempleDaoProps) => {
           transition: 'opacity 300ms',
           textAlign: props.textAlign ?? 'center',
           width: '100%',
-          fontWeight: 'bold',
+          fontWeight: props.fontWeight ? props.fontWeight : 'bold',
           fontSize: props.fontSize ?? '1.25rem',
           color: theme.palette.brandLight,
         }),

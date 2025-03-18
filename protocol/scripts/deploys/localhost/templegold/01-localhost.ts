@@ -2,14 +2,14 @@ import '@nomiclabs/hardhat-ethers';
 import { ethers } from 'hardhat';
 import { TempleGold__factory, TempleGoldAdmin__factory, 
     TempleGoldStaking__factory, TempleTeleporter__factory,
-    DaiGoldAuction__factory, FakeERC20__factory } from '../../../../typechain';
+    StableGoldAuction__factory, FakeERC20__factory } from '../../../../typechain';
 import {
   deployAndMine,
   ensureExpectedEnvvars,
   toAtto,
 } from '../../helpers';
 import { getDeployedContracts } from '../../mainnet/v2/contract-addresses';
-import { getDeployedTempleGoldContracts } from '../../arbitrumOne/contract-addresses';
+import { getDeployedTempleGoldContracts } from '../../mainnet/templegold/contract-addresses';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
 async function main() {
@@ -23,7 +23,7 @@ async function main() {
   await _deployTempleGoldStaking(owner, rescuer);
   await _deployTempleTeleporter(owner);
 
-  await _deployDaiGoldAuction(owner, rescuer);
+  await _deployStableGoldAuction(owner, rescuer);
 }
 
 async function _deployTempleToken(owner: SignerWithAddress) {
@@ -76,8 +76,6 @@ async function _deployTempleGoldAdmin(owner: SignerWithAddress, rescuer: SignerW
 
 async function _deployTempleGoldStaking(owner: SignerWithAddress, rescuer: SignerWithAddress) {
     const TEMPLEGOLD_ADDRESSES = getDeployedTempleGoldContracts();
-    const CORE_ADDRESSES = getDeployedContracts(); 
-  
   
     const factory = new TempleGoldStaking__factory(owner);
     await deployAndMine(
@@ -93,7 +91,6 @@ async function _deployTempleGoldStaking(owner: SignerWithAddress, rescuer: Signe
 
 async function _deployTempleTeleporter(owner: SignerWithAddress) {
     const TEMPLEGOLD_ADDRESSES = getDeployedTempleGoldContracts();
-    const CORE_ADDRESSES = getDeployedContracts(); 
 
     const factory = new TempleTeleporter__factory(owner);
     await deployAndMine(
@@ -101,17 +98,17 @@ async function _deployTempleTeleporter(owner: SignerWithAddress) {
         factory,
         factory.deploy,
         await owner.getAddress(),
-        CORE_ADDRESSES.CORE.TEMPLE_TOKEN,
+        TEMPLEGOLD_ADDRESSES.CORE.TEMPLE_TOKEN,
         TEMPLEGOLD_ADDRESSES.EXTERNAL.LAYER_ZERO.ENDPOINT
     );
 }
 
-async function _deployDaiGoldAuction(owner: SignerWithAddress, rescuer: SignerWithAddress): Promise<void> {
+async function _deployStableGoldAuction(owner: SignerWithAddress, rescuer: SignerWithAddress): Promise<void> {
     const TEMPLEGOLD_ADDRESSES = getDeployedTempleGoldContracts();
     const arbDaiToken = "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1";
-    const factory = new DaiGoldAuction__factory(owner);
+    const factory = new StableGoldAuction__factory(owner);
     await deployAndMine(
-        'DAI_GOLD_AUCTION',
+        'STABLE_GOLD_AUCTION',
         factory,
         factory.deploy,
         TEMPLEGOLD_ADDRESSES.TEMPLE_GOLD.TEMPLE_GOLD,

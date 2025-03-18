@@ -28,9 +28,9 @@ interface ITempleGoldAdmin {
 
     /**
      * @notice Set auctions Dai Gold contract address
-     * @param _daiGoldAuction  contract address
+     * @param _auction  contract address
      */
-    function setDaiGoldAuction(address _daiGoldAuction) external;
+    function setStableGoldAuction(address _auction) external;
 
     /**
      * @notice Set team gnosis address
@@ -95,4 +95,10 @@ interface ITempleGoldAdmin {
      * if you are only making a standard LayerZero message ie. lzReceive() WITHOUT sendCompose().
      */
     function setEnforcedOptions(EnforcedOptionParam[] calldata _enforcedOptions) external;
+
+    /**
+     * @notice Transfer ownership of TGLD to a new contract
+     * @param _newOwner New owner
+     */
+    function transferOwnership(address _newOwner) external;
 }

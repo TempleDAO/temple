@@ -1,14 +1,8 @@
-import { Network } from '@ethersproject/providers';
-import {
-  BigNumber,
-  ContractReceipt,
-  Signer,
-  ContractTransaction,
-} from 'ethers';
+import { BigNumber, ContractReceipt, ethers, Signer } from 'ethers';
 import { Nullable } from 'types/util';
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
-import { Sor, SwapInfo } from '@balancer-labs/sdk';
+import { Swaps, SwapInfo } from '@balancer-labs/sdk';
 
 export enum RitualKind {
   OFFERING_STAKING = 'OFFERING_STAKING',
@@ -115,7 +109,7 @@ export interface SwapService {
 
   error: Error | null;
 
-  sor: Sor;
+  balancerSwaps: Swaps;
 }
 
 export interface WalletState {
@@ -138,6 +132,12 @@ export interface WalletState {
     // Should be ERC20, need to update Typechain (fix is in 8.0.x)
     erc20Token: any,
     spender: string,
-    minAllowance: BigNumber
+    minAllowance: BigNumber,
+    shouldUseMinAllowance?: boolean
   ): Promise<void>;
+
+  ethersProvider: Nullable<ethers.providers.Web3Provider>;
+  providerWithReadOnlyFallback:
+    | ethers.providers.JsonRpcProvider
+    | ethers.providers.Web3Provider;
 }

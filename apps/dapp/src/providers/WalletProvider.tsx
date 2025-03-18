@@ -4,6 +4,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useState,
 } from 'react';
 import { BigNumber, ethers, Signer } from 'ethers';
@@ -26,10 +27,13 @@ import {
 import env from 'constants/env';
 import { ZERO } from 'utils/bigNumber';
 import { Nullable } from 'types/util';
+import { estimateAndMine } from 'utils/ethers';
 
 // We want to save gas burn $ for the Templars,
 // so we approving 1M up front, so only 1 approve TXN is required for approve
 const DEFAULT_ALLOWANCE = toAtto(100000000);
+
+const readOnlyProvider = new ethers.providers.JsonRpcProvider(env.rpcUrl);
 
 const INITIAL_STATE: WalletState = {
   balance: {
@@ -37,11 +41,13 @@ const INITIAL_STATE: WalletState = {
     USDC: ZERO,
     USDT: ZERO,
     DAI: ZERO,
+    USDS: ZERO,
     ETH: ZERO,
     WETH: ZERO,
     TEMPLE: ZERO,
     OGTEMPLE: ZERO,
     OHM: ZERO,
+    TGLD: ZERO,
   },
   wallet: undefined,
   walletAddress: undefined,
@@ -52,6 +58,8 @@ const INITIAL_STATE: WalletState = {
   updateBalance: asyncNoop,
   collectTempleTeamPayment: asyncNoop,
   ensureAllowance: asyncNoop,
+  ethersProvider: null,
+  providerWithReadOnlyFallback: readOnlyProvider,
 };
 
 const WalletContext = createContext<WalletState>(INITIAL_STATE);
@@ -62,10 +70,19 @@ export const WalletProvider = (props: PropsWithChildren<object>) => {
   const [{ wallet, connecting }] = useConnectWallet();
   const [signer, setSigner] = useState<Nullable<Signer>>(null);
   const [walletAddress, setWalletAddress] = useState<string | undefined>();
+  const [ethersProvider, setEthersProvider] =
+    useState<ethers.providers.Web3Provider | null>(null);
+
+  const providerWithReadOnlyFallback = useMemo(() => {
+    return (
+      (signer?.provider as ethers.providers.Web3Provider) || readOnlyProvider
+    );
+  }, [signer]);
 
   useEffect(() => {
     if (wallet) {
       const ethersProvider = new ethers.providers.Web3Provider(wallet.provider);
+      setEthersProvider(ethersProvider);
       setSigner(ethersProvider.getSigner());
       if (wallet.accounts.length > 0) {
         setWalletAddress(wallet.accounts[0].address);
@@ -96,8 +113,10 @@ export const WalletProvider = (props: PropsWithChildren<object>) => {
       USDC: ZERO,
       USDT: ZERO,
       DAI: ZERO,
+      USDS: ZERO,
       WETH: ZERO,
       OHM: ZERO,
+      TGLD: ZERO,
     };
 
     if (env.contracts.frax) {
@@ -134,6 +153,16 @@ export const WalletProvider = (props: PropsWithChildren<object>) => {
       const daiContract = new ERC20__factory(signer).attach(env.contracts.dai);
       const daiBalance: BigNumber = await daiContract.balanceOf(walletAddress);
       response = { ...response, DAI: daiBalance };
+    }
+
+    if (env.contracts.usds) {
+      const usdsContract = new ERC20__factory(signer).attach(
+        env.contracts.usds
+      );
+      const usdsBalance: BigNumber = await usdsContract.balanceOf(
+        walletAddress
+      );
+      response = { ...response, USDS: usdsBalance };
     }
 
     if (env.contracts.weth) {
@@ -173,6 +202,16 @@ export const WalletProvider = (props: PropsWithChildren<object>) => {
       response = { ...response, TEMPLE: templeBalance };
     }
 
+    if (env.contracts.templegold) {
+      const tgldContract = new ERC20__factory(signer).attach(
+        env.contracts.templegold
+      );
+      const tgldBalance: BigNumber = await tgldContract.balanceOf(
+        walletAddress
+      );
+      response = { ...response, TGLD: tgldBalance };
+    }
+
     return {
       ...response,
       ETH: await signer.getBalance(),
@@ -181,6 +220,7 @@ export const WalletProvider = (props: PropsWithChildren<object>) => {
 
   const updateBalance = useCallback(async () => {
     if (!walletAddress || !signer) {
+      setBalanceState(INITIAL_STATE.balance);
       return;
     }
 
@@ -200,10 +240,11 @@ export const WalletProvider = (props: PropsWithChildren<object>) => {
     // Should be ERC20, need to update Typechain (fix is in 8.0.x)
     erc20Token: any,
     spender: string,
-    minAllowance: BigNumber
+    minAllowance: BigNumber,
+    shouldUseMinAllowance = false
   ) => {
     // pre-condition
-    if (!walletAddress) {
+    if (!walletAddress || !signer) {
       throw new NoWalletAddressError();
     }
 
@@ -212,15 +253,17 @@ export const WalletProvider = (props: PropsWithChildren<object>) => {
 
     if (allowance.lt(minAllowance)) {
       // increase allowance
-      const approveTXN = await token.approve(spender, DEFAULT_ALLOWANCE, {
-        gasLimit: 50000,
-      });
-      await approveTXN.wait();
+      const populatedTransaction = await token.populateTransaction.approve(
+        spender,
+        shouldUseMinAllowance ? minAllowance : DEFAULT_ALLOWANCE
+      );
+
+      const receipt = await estimateAndMine(signer, populatedTransaction);
 
       // Show feedback to user
       openNotification({
         title: `${tokenName} allowance approved`,
-        hash: approveTXN.hash,
+        hash: receipt.transactionHash,
       });
     }
   };
@@ -261,6 +304,8 @@ export const WalletProvider = (props: PropsWithChildren<object>) => {
         getBalance: updateBalance,
         updateBalance,
         collectTempleTeamPayment,
+        ethersProvider,
+        providerWithReadOnlyFallback,
       }}
     >
       {children}

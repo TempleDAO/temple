@@ -3,7 +3,6 @@ pragma solidity ^0.8.20;
 // Temple (templegold/TempleGoldStaking.sol)
 
 
-import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
 import { ITempleGold } from "contracts/interfaces/templegold/ITempleGold.sol";
@@ -29,15 +28,12 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
 
     /// @notice Distribution starter
     address public override distributionStarter;
+    /// @notice DAO executor
+    address public override daoExecutor;
     /// @notice Week length
     uint256 constant public WEEK_LENGTH = 7 days;
     /// @notice Total supply of staking token
     uint256 public override totalSupply;
-
-    /// @notice Time tracking
-    uint256 public override periodFinish;
-    /// @notice Last rewards update time
-    uint256 public override lastUpdateTime;
 
     /// @notice Store next reward amount for next epoch
     uint256 public override nextRewardAmount;
@@ -50,6 +46,8 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     uint96 public override lastRewardNotificationTimestamp;
     /// @notice Cooldown time before unstake
     uint32 public override unstakeCooldown;
+    /// @notice Maximum unstake cooldown
+    uint32 constant public MAXIMUM_UNSTAKE_COOLDOWN = 30 days;
 
     /// @notice For use when migrating to a new staking contract if TGLD changes.
     address public override migrator;
@@ -85,6 +83,7 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
      * @param _period Cooldown period. Zero value accepted to disable cooldown feature
      */
     function setUnstakeCooldown(uint32 _period) external override onlyElevatedAccess {
+        if (_period > MAXIMUM_UNSTAKE_COOLDOWN) { revert CommonEventsAndErrors.InvalidParam(); }
         unstakeCooldown = _period;
         emit UnstakeCooldownSet(_period);
     }
@@ -103,10 +102,8 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     }
 
     /**
-     * @notice Set starter of rewards distribution for the next epoch
+     * @notice Set starter of rewards distribution
      * @param _starter Starter address
-     * @dev could be:
-     * 1. a bot (if set to non zero address) that checks requirements are met before starting auction
      */
     function setDistributionStarter(address _starter) external onlyElevatedAccess {
         if (_starter == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
@@ -118,10 +115,20 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
      * @notice Set migrator
      * @param _migrator Migrator
      */
-    function setMigrator(address _migrator) external override onlyElevatedAccess {
+    function setMigrator(address _migrator) external override onlyElevatedAccessUntilDAO {
         if (_migrator == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
         migrator = _migrator;
         emit MigratorSet(_migrator);
+    }
+
+    /**
+     * @notice Set DAO executor
+     * @param _executor DAO executor
+     */
+    function setDaoExecutor(address _executor) external override onlyElevatedAccessUntilDAO {
+        if (_executor == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
+        daoExecutor = _executor;
+        emit DAOExecutorSet(_executor);
     }
 
     /**
@@ -174,7 +181,6 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
         if (rewardAmount < rewardDuration ) { revert CommonEventsAndErrors.ExpectedNonZero(); }
         nextRewardAmount = 0;
         _notifyReward(rewardAmount);
-        lastRewardNotificationTimestamp = uint32(block.timestamp);
     }
 
     /**
@@ -297,7 +303,8 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
      * @return Earned rewards of account
      */
     function earned(address account) external override view returns (uint256) {
-        return _earned(account);
+        uint256 rewardPerToken_ = _rewardPerToken();
+        return _earned(account, rewardPerToken_);
     }
 
     /**
@@ -314,6 +321,15 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
      */
     function rewardPeriodFinish() external view returns (uint40) {
         return rewardData.periodFinish;
+    }
+
+    /**
+     * @notice Get account unstake time
+     * @param account Account
+     * @return Unstake time
+     */
+    function getAccountUnstakeTime(address account) external override view returns (uint256) {
+        return stakeTimes[account] == 0 ? 0 : stakeTimes[account] + unstakeCooldown;
     }
 
     /**
@@ -403,10 +419,11 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     }
 
     function _earned(
-        address _account
+        address account_,
+        uint256 rewardPerToken_
     ) internal view returns (uint256) {
-        return _balances[_account] * (_rewardPerToken() - userRewardPerTokenPaid[_account]) / 1e18 
-            + claimableRewards[_account];
+        return _balances[account_] * (rewardPerToken_ - userRewardPerTokenPaid[account_]) / 1e18 
+            + claimableRewards[account_];
     }
 
     function _applyStake(address _for, uint256 _amount) internal updateReward(_for) {
@@ -417,7 +434,7 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     }
 
     function _rewardPerToken() internal view returns (uint256) {
-        if (totalSupply == 0) {
+        if (totalSupply == 0 || rewardData.lastUpdateTime == rewardData.periodFinish) {
             return rewardData.rewardPerTokenStored;
         }
 
@@ -430,19 +447,22 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     }
 
     function _notifyReward(uint256 amount) private {
+        uint256 rewardDurationCache = rewardDuration;
         if (block.timestamp >= rewardData.periodFinish) {
-            rewardData.rewardRate = uint216(amount / rewardDuration);
+            rewardData.rewardRate = uint216(amount / rewardDurationCache);
             // collect dust
-            nextRewardAmount = amount - (rewardData.rewardRate * rewardDuration);
+            nextRewardAmount = amount - (rewardData.rewardRate * rewardDurationCache);
         } else {
             uint256 remaining = uint256(rewardData.periodFinish) - block.timestamp;
             uint256 leftover = remaining * rewardData.rewardRate;
-            rewardData.rewardRate = uint216((amount + leftover) / rewardDuration);
+            rewardData.rewardRate = uint216((amount + leftover) / rewardDurationCache);
             // collect dust
-            nextRewardAmount = (amount + leftover) - (rewardData.rewardRate * rewardDuration);
+            nextRewardAmount = (amount + leftover) - (rewardData.rewardRate * rewardDurationCache);
         }
         rewardData.lastUpdateTime = uint40(block.timestamp);
-        rewardData.periodFinish = uint40(block.timestamp + rewardDuration);
+        rewardData.periodFinish = uint40(block.timestamp + rewardDurationCache);
+        // update reward notification timestamp
+        lastRewardNotificationTimestamp = uint32(block.timestamp);
     }
 
     function _lastTimeRewardApplicable(uint256 _finishTime) internal view returns (uint256) {
@@ -505,11 +525,11 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
 
     modifier updateReward(address _account) {
         {
-            rewardData.rewardPerTokenStored = uint216(_rewardPerToken());
+            uint216 rewardPerTokenCached = rewardData.rewardPerTokenStored = uint216(_rewardPerToken());
             rewardData.lastUpdateTime = uint40(_lastTimeRewardApplicable(rewardData.periodFinish));
             if (_account != address(0)) {
-                claimableRewards[_account] = _earned(_account);
-                userRewardPerTokenPaid[_account] = uint256(rewardData.rewardPerTokenStored);
+                claimableRewards[_account] = _earned(_account, rewardPerTokenCached);
+                userRewardPerTokenPaid[_account] = uint256(rewardPerTokenCached);
             }
         }
         _;
@@ -517,6 +537,15 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     
     modifier onlyMigrator() {
         if (msg.sender != migrator) { revert CommonEventsAndErrors.InvalidAccess(); }
+        _;
+    }
+
+    modifier onlyElevatedAccessUntilDAO() {
+        if (daoExecutor == address(0)) {
+            if (!isElevatedAccess(msg.sender, msg.sig)) revert CommonEventsAndErrors.InvalidAccess();
+        } else if(msg.sender != daoExecutor) {
+            revert CommonEventsAndErrors.InvalidAccess();
+        }
         _;
     }
 }

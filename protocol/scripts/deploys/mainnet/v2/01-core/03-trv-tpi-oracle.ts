@@ -12,17 +12,20 @@ async function main() {
   const [owner] = await ethers.getSigners();
   const TEMPLE_V2_ADDRESSES = getDeployedContracts();
 
+  const existingOracle = TreasuryPriceIndexOracle__factory.connect(TEMPLE_V2_ADDRESSES.TREASURY_RESERVES_VAULT.TPI_ORACLE, owner);
+
   const treasuryPriceIndexOracle = new TreasuryPriceIndexOracle__factory(owner);
   await deployAndMine(
     'CORE.TREASURY_RESERVES_VAULT.TPI_ORACLE',
     treasuryPriceIndexOracle,
     treasuryPriceIndexOracle.deploy,
     TEMPLE_V2_ADDRESSES.CORE.RESCUER_MSIG,
-    await owner.getAddress(),
-    ethers.utils.parseEther("1.06"), // ~1.06 TPI at deployment date
-    ethers.utils.parseEther("0.05"), // max treasury price index delta
-    1_800 // cooldown
-  )
+    TEMPLE_V2_ADDRESSES.CORE.EXECUTOR_MSIG,
+    await existingOracle.treasuryPriceIndex(),
+    ethers.utils.parseEther("1"), // maxTreasuryPriceIndexDelta: $1
+    14 * 86_400, // minTreasuryPriceIndexTargetTimeDelta: 2 weeks
+    ethers.utils.parseEther("0.01").div(86_400), // maxAbsTreasuryPriceIndexRateOfChange: 1c/day
+  );
 
 }
 

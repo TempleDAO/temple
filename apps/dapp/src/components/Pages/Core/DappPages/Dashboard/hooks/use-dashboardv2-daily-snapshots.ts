@@ -1,9 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import env from 'constants/env';
 import { getQueryKey } from 'utils/react-query-helpers';
-import { SubGraphResponse } from 'hooks/core/types';
-import { fetchGenericSubgraph } from 'utils/subgraph';
-import { StrategyKey } from '../DashboardConfig';
+import {
+  queryStrategyDailySnapshots,
+  queryStrategyHourlySnapshots,
+  subgraphQuery,
+  V2StrategySnapshot,
+} from 'utils/subgraph';
 
 const V2SnapshotMetrics = [
   'totalMarketValueUSD',
@@ -30,37 +33,11 @@ const STRATEGY_TOKEN_FIELDS = [
 
 export type StrategyTokenField = (typeof STRATEGY_TOKEN_FIELDS)[number];
 
-const QUERIED_FIELDS = `
-  strategy{
-    name
-  }
-  timeframe
-  timestamp
-  ${V2SnapshotMetrics.join('\n')}
-  strategyTokens{
-     ${STRATEGY_TOKEN_FIELDS.join('\n')}
-  }
-`;
-
-export type V2StrategySnapshot = {
-  timestamp: string;
-  timeframe: string;
-  strategy: { name: StrategyKey };
-  strategyTokens: { [key in (typeof STRATEGY_TOKEN_FIELDS)[number]]: string }[];
-} & { [key in V2SnapshotMetric]: string };
-
 export function isV2SnapshotMetric(
   key?: string | null
 ): key is V2SnapshotMetric {
   return V2SnapshotMetrics.some((m) => m === key);
 }
-
-type FetchV2StrategyDailySnapshotResponse = SubGraphResponse<{
-  strategyDailySnapshots: V2StrategySnapshot[];
-}>;
-type FetchV2StrategyHourlySnapshotResponse = SubGraphResponse<{
-  strategyHourlySnapshots: V2StrategySnapshot[];
-}>;
 
 const ONE_DAY_ONE_HOUR_MS = 25 * 60 * 60 * 1000;
 const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
@@ -73,22 +50,17 @@ async function fetchStrategyHourlySnapshots() {
   ).toString();
   // if # of strategies * 24 > 1000 we would be missing data
   // but we shouldnt be getting anywhere close to that
-  const query = `
-            query {
-            strategyHourlySnapshots(first: ${itemsPerPage},
-                                   orderBy: timestamp,
-                                   orderDirection: asc,
-                                   where: {timestamp_gt: ${since}}
-                                   ) {
-              ${QUERIED_FIELDS}
-            }
-            }`;
-  const resp =
-    await fetchGenericSubgraph<FetchV2StrategyHourlySnapshotResponse>(
-      env.subgraph.templeV2Balances,
-      query
-    );
-  return resp?.data?.strategyHourlySnapshots ?? [];
+  const resp = await subgraphQuery(
+    env.subgraph.templeV2Balances,
+    queryStrategyHourlySnapshots(
+      V2SnapshotMetrics,
+      STRATEGY_TOKEN_FIELDS,
+      itemsPerPage,
+      since
+    )
+  );
+
+  return resp.strategyHourlySnapshots;
 }
 
 async function fetchStrategyDailySnapshots() {
@@ -99,26 +71,19 @@ async function fetchStrategyDailySnapshots() {
   const MAX_PAGE_SIZE = 1000; // current max page size
   let skip = 0;
   while (true) {
-    const query = `
-            query {
-            strategyDailySnapshots(first: ${MAX_PAGE_SIZE},
-                                   orderBy: timestamp,
-                                   orderDirection: asc,
-                                   where: {timestamp_gt: ${since}}
-                                   skip: ${skip}) {
-              ${QUERIED_FIELDS}
-            }
-            }`;
-    const page =
-      await fetchGenericSubgraph<FetchV2StrategyDailySnapshotResponse>(
-        env.subgraph.templeV2Balances,
-        query
-      );
-    const itemsOnPage = page.data?.strategyDailySnapshots.length ?? 0;
-    if (page.data) {
-      result.push(...page.data.strategyDailySnapshots);
-      skip += itemsOnPage;
-    }
+    const page = await subgraphQuery(
+      env.subgraph.templeV2Balances,
+      queryStrategyDailySnapshots(
+        V2SnapshotMetrics,
+        STRATEGY_TOKEN_FIELDS,
+        MAX_PAGE_SIZE,
+        since,
+        skip
+      )
+    );
+    const itemsOnPage = page.strategyDailySnapshots.length ?? 0;
+    result.push(...page.strategyDailySnapshots);
+    skip += itemsOnPage;
     if (itemsOnPage < MAX_PAGE_SIZE) {
       break;
     }

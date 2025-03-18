@@ -43,13 +43,11 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
 
     /// @notice Auctions run for minimum 1 week
     uint32 public constant MINIMUM_AUCTION_PERIOD = 1 weeks;
-    /// @notice Maximum wait period between last and next auctions
-    uint32 public constant MAXIMUM_AUCTION_WAIT_PERIOD = 90 days;
     /// @notice Maximum auction duration
     uint32 public constant MAXIMUM_AUCTION_DURATION = 30 days;
-    /// @notice Arbitrum One layer zero EID
-    uint32 private immutable _arbitrumOneLzEid;
-    /// @notice Arbitrum One chain ID
+    /// @notice layer zero EID of mint chain
+    uint32 private immutable _mintChainEid;
+    /// @notice The mint chain ID
     uint32 private immutable _mintChainId;
     /// @notice Max gas limit for use by executor in calling `lzReceive`
     uint32 public override lzReceiveExecutorGas;
@@ -74,7 +72,7 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
         address _spiceToken,
         address _daoExecutor,
         address _operator,
-        uint32 _arbEid,
+        uint32 mintChainEid_,
         uint32 mintChainId_,
         string memory _name
     ) {
@@ -82,11 +80,11 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
         daoExecutor = _daoExecutor;
         operator = _operator;
         templeGold = _templeGold;
-        _arbitrumOneLzEid = _arbEid;
+        _mintChainEid = mintChainEid_;
         _mintChainId = mintChainId_;
         name = _name;
         _deployTimestamp = block.timestamp;
-        lzReceiveExecutorGas = 85_412;
+        lzReceiveExecutorGas = 85_889;
     }
 
     /**
@@ -134,8 +132,7 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
             if (info.isActive()) { revert InvalidConfigOperation(); }
         }
         if (_config.duration < MINIMUM_AUCTION_PERIOD 
-            || _config.duration > MAXIMUM_AUCTION_DURATION
-            || _config.waitPeriod > MAXIMUM_AUCTION_WAIT_PERIOD) { revert CommonEventsAndErrors.InvalidParam(); }
+            || _config.duration > MAXIMUM_AUCTION_DURATION) { revert CommonEventsAndErrors.InvalidParam(); }
         /// @dev startCooldown can be zero
         if (_config.waitPeriod == 0
             || _config.minimumDistributedAuctionToken == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
@@ -321,9 +318,8 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
     
         // check to not take away intended tokens for claims
         // calculate auction token amount
-        uint256 totalAuctionTokenAllocation = _totalAuctionTokenAllocation[token];
         uint256 balance = IERC20(token).balanceOf(address(this));
-        uint256 maxRecoverAmount = balance - (totalAuctionTokenAllocation - _claimedAuctionTokens[token]);
+        uint256 maxRecoverAmount = balance - (_totalAuctionTokenAllocation[token] - _claimedAuctionTokens[token]);
         
         if (amount > maxRecoverAmount) { revert CommonEventsAndErrors.InvalidParam(); }
         
@@ -379,6 +375,8 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
         EpochInfo storage epochInfo = epochs[epochId];
         if (epochInfo.startTime == 0) { revert InvalidEpoch(); }
         if (!epochInfo.hasEnded()) { revert AuctionActive(); }
+        // no msg.value eth donation when chain is source chain
+        if (msg.value > 0 && block.chainid == _mintChainId) { revert EtherNotNeeded();}
 
         SpiceAuctionConfig storage _config = auctionConfigs[epochId];
         (address bidToken,) = _getBidAndAuctionTokens(_config);
@@ -417,6 +415,14 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
     }
 
     /**
+     * @notice Check if current epoch is active
+     * @return Bool for active status
+     */
+    function isActive() external view override returns (bool) {
+        return epochs[_currentEpochId].isActive();
+    }
+
+    /**
      * @notice Get claimable amount for an epoch
      * @dev function will return claimable for epoch. This can change with more user deposits
      * @param depositor Address to check amount for
@@ -449,7 +455,7 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
         }
         bytes memory options = OptionsBuilder.newOptions().addExecutorLzReceiveOption(lzReceiveExecutorGas, 0);
         SendParam memory sendParam = SendParam(
-            _arbitrumOneLzEid, //<ARB_EID>,
+            _mintChainEid, // layer Zero EID of mint chain,
             bytes32(uint256(uint160(address(0)))), // bytes32(address(0)) to burn
             amount,
             0,
@@ -468,10 +474,7 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
             ITempleGold(templeGold).send{ value: fee.nativeFee }(sendParam, fee, payable(address(this)));
         } else {
             ITempleGold(templeGold).send{ value: fee.nativeFee }(sendParam, fee, payable(msg.sender));
-            uint256 leftover;
-            unchecked {
-                leftover = msg.value - fee.nativeFee;
-            }
+            uint256 leftover = msg.value - fee.nativeFee;
             if (leftover > 0) { 
                 (bool success,) = payable(msg.sender).call{ value: leftover }("");
                 if (!success) { revert WithdrawFailed(leftover); }

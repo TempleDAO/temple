@@ -49,7 +49,7 @@ contract TempleTeleporter is ITempleTeleporter, OApp {
         if (amount == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
         if (to == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
         // Encodes the message before invoking _lzSend.
-        bytes memory _payload = abi.encodePacked(to.addressToBytes32(), amount);
+        bytes memory _payload = abi.encode(to.addressToBytes32(), amount);
         // debit
         temple.burnFrom(msg.sender, amount);
         emit TempleTeleported(dstEid, msg.sender, to, amount);

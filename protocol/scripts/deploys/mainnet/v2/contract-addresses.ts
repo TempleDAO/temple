@@ -2,7 +2,8 @@ import { network } from "hardhat";
 import { 
     AuraStaking,AuraStaking__factory,
     BalancerPoolHelper, BalancerPoolHelper__factory,
-    DsrBaseStrategyTestnet, DsrBaseStrategyTestnet__factory,
+    DsrBaseStrategy,
+    DsrBaseStrategy__factory,
     FakeERC20, FakeERC20__factory,
     GnosisStrategy,
     GnosisStrategy__factory,
@@ -13,6 +14,8 @@ import {
     OtcOffer__factory,
     Ramos, Ramos__factory,
     RamosStrategy, RamosStrategy__factory,
+    SkyFarmBaseStrategy,
+    SkyFarmBaseStrategy__factory,
     TempleCircuitBreakerAllUsersPerPeriod, TempleCircuitBreakerAllUsersPerPeriod__factory,
     TempleCircuitBreakerProxy, TempleCircuitBreakerProxy__factory,
     TempleDebtToken, TempleDebtToken__factory,
@@ -70,11 +73,23 @@ export interface ContractAddresses {
             ADDRESS: string,
             // No circuit breakers for DSR base strategy
         }
+        DAI_ORIGAMI_SKY_FARM_BASE_STRATEGY: {
+            ADDRESS: string,
+            // No circuit breakers for DSR base strategy
+        },
         TEMPLE_BASE_STRATEGY: {
             ADDRESS: string,
             // No circuit breakers for Temple base strategy
         },
         TEMPLO_MAYOR_GNOSIS_STRATEGY: {
+            ADDRESS: string,
+            UNDERLYING_GNOSIS_SAFE: string,
+            CIRCUIT_BREAKERS: {
+                DAI: string,
+                TEMPLE: string,
+            },
+        },
+        COSECHA_SEGUNDA_GNOSIS_STRATEGY: {
             ADDRESS: string,
             UNDERLYING_GNOSIS_SAFE: string,
             CIRCUIT_BREAKERS: {
@@ -113,6 +128,10 @@ export interface ContractAddresses {
             DAI_JOIN: string,
             POT: string,
         },
+        SKY: {
+            DAI_TO_USDS: string,
+            USDS: string,
+        },
         BALANCER: {
             VAULT: string,
             HELPERS: string,
@@ -126,6 +145,16 @@ export interface ContractAddresses {
             OHM_TOKEN: string,
             GOHM_TOKEN: string,
         },
+        ORIGAMI: {
+            VAULTS: {
+                SUSDSpS: {
+                    TOKEN: string,
+                },
+            },
+        },
+        CIRCLE: {
+            USDC: string,
+        }
     }
 }
 
@@ -142,7 +171,7 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
             ADDRESS: '0xf359Bae7b6AD295724e798A3Ef6Fa5109919F399',
             D_USD_TOKEN: '0xd018d5ecCe2Cd1c230F1719367C22DfE92c696ac',
             D_TEMPLE_TOKEN: '0x20aa0dCad8D08ccea01d94DaB76bde277d773Ca8',
-            TPI_ORACLE: '0x97e9103267D58448Bae0CF6E056F343bD7728D02',
+            TPI_ORACLE: '0x6008C7D33bC509A6849D6cf3196F38d693d3Ae6A',
         },
         TEMPLE_LINE_OF_CREDIT: {
             ADDRESS: '0xcbc0A8d5C7352Fe3625614ea343019e6d6b89031',
@@ -174,6 +203,9 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
             DSR_BASE_STRATEGY: {
                 ADDRESS: '0x8b9e20D9970Af54fbaFe64049174e24d6DE0C412',
             },
+            DAI_ORIGAMI_SKY_FARM_BASE_STRATEGY: {
+                ADDRESS: '0x5D8E464fCA8D327fAD016EA8cF3424Cb113c07A8',
+            },
             TEMPLE_BASE_STRATEGY: {
                 ADDRESS: '0xB8d09B0436adF927004Cea0B096E8c05f6dFdc3b',
             },
@@ -183,6 +215,14 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
                 CIRCUIT_BREAKERS: {
                     DAI: '0x621bB3B5e76b72d4F100864EC0A797594C0bF43E',
                     TEMPLE: '', // Not needed as yet
+                },
+            },
+            COSECHA_SEGUNDA_GNOSIS_STRATEGY: {
+                ADDRESS: '0x0cB92fEfae1806ed3047E3EB8F36bC963AC48637',
+                UNDERLYING_GNOSIS_SAFE: '0xA1f01d98d60273ED562eE79fEb718bbdB85E1d9C',
+                CIRCUIT_BREAKERS: {
+                    DAI: '0x3367D02eCA5AA15D1dDbA270F3d0EffcdC3be7bb',
+                    TEMPLE: ''
                 },
             },
             FOHMO_GNOSIS_STRATEGY: {
@@ -220,6 +260,10 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
                 DAI_JOIN: '0x9759A6Ac90977b93B58547b4A71c78317f391A28',
                 POT: '0x197E90f9FAD81970bA7976f33CbD77088E5D7cf7',
             },
+            SKY: {
+                DAI_TO_USDS: '0x3225737a9Bbb6473CB4a45b7244ACa2BeFdB276A',
+                USDS: '0xdC035D45d973E3EC169d2276DDab16f1e407384F',
+            },
             BALANCER: {
                 VAULT: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
                 HELPERS: '0x5aDDCCa35b7A0D07C74063c48700C8590E87864E',
@@ -233,6 +277,16 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
                 OHM_TOKEN: '0x64aa3364f17a4d01c6f1751fd97c2bd3d7e7f1d5',
                 GOHM_TOKEN: '0x0ab87046fBb341D058F17CBC4c1133F25a20a52f',
             },
+            ORIGAMI: {
+                VAULTS: {
+                    SUSDSpS: {
+                        TOKEN: '0x0f90a6962e86b5587b4c11bA2B9697dC3bA84800',
+                    },
+                },
+            },
+            CIRCLE: {
+                USDC: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+            }
         },
     },
 
@@ -281,10 +335,21 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
             DSR_BASE_STRATEGY: {
                 ADDRESS: '0xfB12F7170FF298CDed84C793dAb9aBBEcc01E798',
             },
+            DAI_ORIGAMI_SKY_FARM_BASE_STRATEGY: {
+                ADDRESS: '',
+            },
             TEMPLE_BASE_STRATEGY: {
                 ADDRESS: '0xc1EeD9232A0A44c2463ACB83698c162966FBc78d',
             },
             TEMPLO_MAYOR_GNOSIS_STRATEGY: {
+                ADDRESS: '',
+                UNDERLYING_GNOSIS_SAFE: '',
+                CIRCUIT_BREAKERS: {
+                    DAI: '',
+                    TEMPLE: '',
+                },
+            },
+            COSECHA_SEGUNDA_GNOSIS_STRATEGY: {
                 ADDRESS: '',
                 UNDERLYING_GNOSIS_SAFE: '',
                 CIRCUIT_BREAKERS: {
@@ -323,6 +388,10 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
                 DAI_JOIN: '0x9759A6Ac90977b93B58547b4A71c78317f391A28',
                 POT: '0x197E90f9FAD81970bA7976f33CbD77088E5D7cf7',
             },
+            SKY: {
+                DAI_TO_USDS: '0x3225737a9Bbb6473CB4a45b7244ACa2BeFdB276A',
+                USDS: '',
+            },
             BALANCER: {
                 VAULT: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
                 HELPERS: '0x5aDDCCa35b7A0D07C74063c48700C8590E87864E',
@@ -336,6 +405,16 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
                 OHM_TOKEN: '',
                 GOHM_TOKEN: '',
             },
+            ORIGAMI: {
+                VAULTS: {
+                    SUSDSpS: {
+                        TOKEN: '0x0f90a6962e86b5587b4c11bA2B9697dC3bA84800',
+                    },
+                },
+            },
+            CIRCLE: {
+                USDC: '',
+            }
         },
     },
 }
@@ -380,8 +459,11 @@ export interface ContractInstances {
     },
     STRATEGIES: {
         DSR_BASE_STRATEGY: {
-            INSTANCE: DsrBaseStrategyTestnet,
-        }
+            INSTANCE: DsrBaseStrategy,
+        },
+        DAI_ORIGAMI_SKY_FARM_BASE_STRATEGY: {
+            INSTANCE: SkyFarmBaseStrategy,
+        },
         TEMPLE_BASE_STRATEGY: {
             INSTANCE: TempleTokenBaseStrategy,
         },
@@ -400,6 +482,12 @@ export interface ContractInstances {
             CIRCUIT_BREAKERS: {
                 DAI: TempleCircuitBreakerAllUsersPerPeriod,
                 TEMPLE: TempleCircuitBreakerAllUsersPerPeriod,
+            },
+        },
+        COSECHA_SEGUNDA_GNOSIS_STRATEGY: {
+            INSTANCE: GnosisStrategy,
+            CIRCUIT_BREAKERS: {
+                DAI: TempleCircuitBreakerAllUsersPerPeriod,
             },
         },
         FOHMO_GNOSIS_STRATEGY: {
@@ -457,7 +545,10 @@ export function connectToContracts(owner: Signer): ContractInstances {
         },
         STRATEGIES: {
             DSR_BASE_STRATEGY: {
-                INSTANCE: DsrBaseStrategyTestnet__factory.connect(TEMPLE_V2_ADDRESSES.STRATEGIES.DSR_BASE_STRATEGY.ADDRESS, owner),
+                INSTANCE: DsrBaseStrategy__factory.connect(TEMPLE_V2_ADDRESSES.STRATEGIES.DSR_BASE_STRATEGY.ADDRESS, owner),
+            },
+            DAI_ORIGAMI_SKY_FARM_BASE_STRATEGY: {
+                INSTANCE: SkyFarmBaseStrategy__factory.connect(TEMPLE_V2_ADDRESSES.STRATEGIES.DAI_ORIGAMI_SKY_FARM_BASE_STRATEGY.ADDRESS, owner),
             },
             TEMPLE_BASE_STRATEGY: {
                 INSTANCE: TempleTokenBaseStrategy__factory.connect(TEMPLE_V2_ADDRESSES.STRATEGIES.TEMPLE_BASE_STRATEGY.ADDRESS, owner),
@@ -477,6 +568,13 @@ export function connectToContracts(owner: Signer): ContractInstances {
                 CIRCUIT_BREAKERS: {
                     DAI: TempleCircuitBreakerAllUsersPerPeriod__factory.connect(TEMPLE_V2_ADDRESSES.STRATEGIES.TEMPLO_MAYOR_GNOSIS_STRATEGY.CIRCUIT_BREAKERS.DAI, owner),
                     TEMPLE: TempleCircuitBreakerAllUsersPerPeriod__factory.connect(TEMPLE_V2_ADDRESSES.STRATEGIES.TEMPLO_MAYOR_GNOSIS_STRATEGY.CIRCUIT_BREAKERS.TEMPLE, owner),
+                },
+            },
+            COSECHA_SEGUNDA_GNOSIS_STRATEGY: {
+                INSTANCE: GnosisStrategy__factory.connect(TEMPLE_V2_ADDRESSES.STRATEGIES.COSECHA_SEGUNDA_GNOSIS_STRATEGY.ADDRESS, owner),
+                CIRCUIT_BREAKERS: {
+                    DAI: TempleCircuitBreakerAllUsersPerPeriod__factory.connect(TEMPLE_V2_ADDRESSES.STRATEGIES.COSECHA_SEGUNDA_GNOSIS_STRATEGY.CIRCUIT_BREAKERS.DAI, owner),
+
                 },
             },
             FOHMO_GNOSIS_STRATEGY: {

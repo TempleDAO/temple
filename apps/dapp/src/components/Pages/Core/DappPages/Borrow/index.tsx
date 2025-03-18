@@ -10,8 +10,12 @@ import {
   TreasuryReservesVault__factory,
 } from 'types/typechain';
 import { ITlcDataTypes } from 'types/typechain/contracts/interfaces/v2/templeLineOfCredit/ITempleLineOfCredit';
-import { fetchGenericSubgraph } from 'utils/subgraph';
-import { BigNumber, ethers } from 'ethers';
+import {
+  queryTlcMinBorrowAmount,
+  queryTlcPrices,
+  subgraphQuery,
+} from 'utils/subgraph';
+import { BigNumber } from 'ethers';
 import daiImg from 'assets/images/newui-images/tokens/dai.png';
 import templeImg from 'assets/images/newui-images/tokens/temple.png';
 import { formatToken } from 'utils/formatter';
@@ -28,6 +32,7 @@ import env from 'constants/env';
 import { useConnectWallet } from '@web3-onboard/react';
 import Tooltip from 'components/Tooltip/Tooltip';
 import { estimateAndMine } from 'utils/ethers';
+import { aprToApy } from 'utils/helpers';
 
 export type State = {
   supplyValue: string;
@@ -44,15 +49,22 @@ export type TlcInfo = {
   minBorrow: number;
   borrowRate: number;
   liquidationLtv: number;
-  strategyBalance: number;
   debtCeiling: number;
-  daiCircuitBreakerRemaining: BigNumber;
-  templeCircuitBreakerRemaining: BigNumber;
+  circuitBreakers: {
+    daiCircuitBreakerRemaining: BigNumber;
+    templeCircuitBreakerRemaining: BigNumber;
+  };
+  outstandingUserDebt: number;
+  availableToBorrow: BigNumber;
 };
 
 export const MAX_LTV = 85;
 
 export type Prices = { templePrice: number; daiPrice: number; tpi: number };
+
+const minBN = (v1: BigNumber, v2: BigNumber): BigNumber => {
+  return v1.lt(v2) ? v1 : v2;
+};
 
 export const BorrowPage = () => {
   const [{}, connect] = useConnectWallet();
@@ -86,23 +98,18 @@ export const BorrowPage = () => {
   const [metricsLoading, setMetricsLoading] = useState(false);
 
   const getPrices = useCallback(async () => {
-    const { data } = await fetchGenericSubgraph<any>(
+    const response = await subgraphQuery(
       env.subgraph.templeV2,
-      `{
-        tokens {
-          price
-          symbol
-        }
-        treasuryReservesVaults {
-          treasuryPriceIndex
-        }
-      }`
+      queryTlcPrices()
     );
     setPrices({
-      templePrice: data.tokens.filter((t: any) => t.symbol == 'TEMPLE')[0]
-        .price,
-      daiPrice: data.tokens.filter((t: any) => t.symbol == 'DAI')[0].price,
-      tpi: data.treasuryReservesVaults[0].treasuryPriceIndex,
+      templePrice: parseFloat(
+        response.tokens.filter((t: any) => t.symbol == 'TEMPLE')[0].price
+      ),
+      daiPrice: parseFloat(
+        response.tokens.filter((t: any) => t.symbol == 'DAI')[0].price
+      ),
+      tpi: parseFloat(response.treasuryReservesVaults[0].treasuryPriceIndex),
     });
   }, []);
 
@@ -145,53 +152,48 @@ export const BorrowPage = () => {
     const tlcContract = new TempleLineOfCredit__factory(signer).attach(
       env.contracts.tlc
     );
-    const debtPosition = await tlcContract.totalDebtPosition();
-    const totalUserDebt = debtPosition.totalDebt;
-    const utilizationRatio = debtPosition.utilizationRatio;
-
-    // NOTE: We are intentionally rounding here to nearest 1e18
-    const debtCeiling = totalUserDebt
-      .div(utilizationRatio)
-      .mul(ethers.utils.parseEther('1'));
-
-    const userAvailableToBorrowFromTlc = debtCeiling.sub(totalUserDebt);
-
     const trvContract = new TreasuryReservesVault__factory(signer).attach(
       env.contracts.treasuryReservesVault
     );
-    const strategyAvailalableToBorrowFromTrv =
-      await trvContract.availableForStrategyToBorrow(
+
+    const [
+      debtPosition,
+      debtCeiling,
+      trvAvailableCash,
+      tlcAvailalableToBorrow,
+      [debtTokenConfig, debtTokenData],
+      circuitBreakers,
+    ] = await Promise.all([
+      tlcContract.totalDebtPosition(),
+      trvContract.strategyDebtCeiling(
         env.contracts.strategies.tlcStrategy,
         env.contracts.dai
-      );
+      ),
+      trvContract.totalAvailable(env.contracts.dai),
+      trvContract.availableForStrategyToBorrow(
+        env.contracts.strategies.tlcStrategy,
+        env.contracts.dai
+      ),
+      tlcContract.debtTokenDetails(),
+      getCircuitBreakers(),
+    ]);
 
-    // available to borrow
-    // return the lesser of userAvailableToBorrowFromTlc and strategyAvailalableToBorrowFromTrv
-    const maxAvailableToBorrow = userAvailableToBorrowFromTlc.gte(
-      strategyAvailalableToBorrowFromTrv
-    )
-      ? strategyAvailalableToBorrowFromTrv
-      : userAvailableToBorrowFromTlc;
-
-    // Getting the max borrow LTV and interest rate
-    const [debtTokenConfig, debtTokenData] =
-      await tlcContract.debtTokenDetails();
-    const maxLtv = debtTokenConfig.maxLtvRatio;
-
-    // current borrow apy
-    const currentBorrowInterestRate =
-      Math.pow(1 + fromAtto(debtTokenData.interestRate) / 365, 365) - 1;
-
-    const circuitBreakers = await getCircuitBreakers();
+    // The minimum of:
+    //   - What cash is available
+    //   - The TLC free to borrow under it's debt ceiling cap
+    //   - The circuit breaker availability
+    const trvAvailable = minBN(
+      minBN(trvAvailableCash, tlcAvailalableToBorrow),
+      circuitBreakers?.daiCircuitBreakerRemaining || ZERO
+    );
 
     return {
       debtCeiling: fromAtto(debtCeiling),
-      strategyBalance: fromAtto(maxAvailableToBorrow),
-      borrowRate: currentBorrowInterestRate,
-      liquidationLtv: fromAtto(maxLtv),
-      daiCircuitBreakerRemaining: circuitBreakers?.daiCircuitBreakerRemaining,
-      templeCircuitBreakerRemaining:
-        circuitBreakers?.templeCircuitBreakerRemaining,
+      availableToBorrow: trvAvailable,
+      borrowRate: aprToApy(fromAtto(debtTokenData.interestRate)),
+      liquidationLtv: fromAtto(debtTokenConfig.maxLtvRatio),
+      outstandingUserDebt: fromAtto(debtPosition.totalDebt),
+      circuitBreakers,
     };
   }, [signer, getCircuitBreakers]);
 
@@ -210,13 +212,9 @@ export const BorrowPage = () => {
     };
     getAccountPosition();
     try {
-      const { data } = await fetchGenericSubgraph<any>(
+      const response = await subgraphQuery(
         env.subgraph.templeV2,
-        `{
-          tlcDailySnapshots(orderBy: timestamp, orderDirection: desc, first: 1) {
-            minBorrowAmount
-          }
-        }`
+        queryTlcMinBorrowAmount()
       );
 
       const tlcInfoFromContracts = await getTlcInfoFromContracts();
@@ -230,15 +228,16 @@ export const BorrowPage = () => {
       }
 
       setTlcInfo({
-        minBorrow: data.tlcDailySnapshots[0].minBorrowAmount,
+        minBorrow: parseFloat(response.tlcDailySnapshots[0].minBorrowAmount),
         borrowRate: tlcInfoFromContracts?.borrowRate || 0,
         liquidationLtv: tlcInfoFromContracts?.liquidationLtv || 0,
-        strategyBalance: tlcInfoFromContracts?.strategyBalance || 0,
         debtCeiling: tlcInfoFromContracts?.debtCeiling || 0,
-        daiCircuitBreakerRemaining:
-          tlcInfoFromContracts?.daiCircuitBreakerRemaining || ZERO,
-        templeCircuitBreakerRemaining:
-          tlcInfoFromContracts?.templeCircuitBreakerRemaining || ZERO,
+        outstandingUserDebt: tlcInfoFromContracts?.outstandingUserDebt || 0,
+        availableToBorrow: tlcInfoFromContracts?.availableToBorrow || ZERO,
+        circuitBreakers: tlcInfoFromContracts?.circuitBreakers || {
+          daiCircuitBreakerRemaining: ZERO,
+          templeCircuitBreakerRemaining: ZERO,
+        },
       });
     } catch (e) {
       setMetricsLoading(false);
@@ -481,15 +480,11 @@ export const BorrowPage = () => {
   const availableToBorrow = useMemo(() => {
     if (!tlcInfo) return '...';
 
-    const availableAsBigNumber = toAtto(tlcInfo.strategyBalance);
-
-    if (tlcInfo.daiCircuitBreakerRemaining.lt(availableAsBigNumber)) {
-      return `$${Number(
-        fromAtto(tlcInfo.daiCircuitBreakerRemaining)
-      ).toLocaleString()}`;
-    }
-
-    return `$${Number(tlcInfo.strategyBalance).toLocaleString()}`;
+    const borrowableAmount = Number(fromAtto(tlcInfo.availableToBorrow));
+    return `$${borrowableAmount.toLocaleString('en', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
   }, [tlcInfo]);
 
   return (
@@ -717,9 +712,28 @@ export const BorrowPage = () => {
               </LeadMetric>
               <BrandParagraph>Current Borrow APY </BrandParagraph>
             </MetricContainer>
+          </Metrics>
+          <Metrics>
             <MetricContainer>
-              <LeadMetric>{showLoading ? '...' : prices.tpi}</LeadMetric>
+              <LeadMetric>
+                {showLoading ? '...' : prices.tpi.toFixed(2)}
+              </LeadMetric>
               <BrandParagraph>Current TPI</BrandParagraph>
+            </MetricContainer>
+            <MetricContainer>
+              <LeadMetric>
+                {showLoading
+                  ? '...'
+                  : tlcInfo &&
+                    `$${Number(tlcInfo.outstandingUserDebt).toLocaleString(
+                      'en',
+                      {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      }
+                    )}`}
+              </LeadMetric>
+              <BrandParagraph>Outstanding User Debt</BrandParagraph>
             </MetricContainer>
           </Metrics>
           <ChartContainer>

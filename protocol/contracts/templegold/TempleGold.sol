@@ -7,7 +7,7 @@ import { Origin } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/interfaces/
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { IOFT, OFTCore } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/OFTCore.sol";
 import { ITempleGold } from "contracts/interfaces/templegold/ITempleGold.sol";
-import { IDaiGoldAuction } from "contracts/interfaces/templegold/IDaiGoldAuction.sol";
+import { IStableGoldAuction } from "contracts/interfaces/templegold/IStableGoldAuction.sol";
 import { OFT } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/OFT.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { ITempleGoldStaking}  from "contracts/interfaces/templegold/ITempleGoldStaking.sol";
@@ -19,7 +19,7 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
 /**
  * @title Temple Gold 
  * @notice Temple Gold is a non-transferrable ERC20 token with LayerZero integration for cross-chain transfer for holders.
- * On mint, Temple Gold is distributed to DaiGoldAuction, Staking contracts and team multisig using distribution share parameters percentages set at `DistributionParams`. 
+ * On mint, Temple Gold is distributed to StableGoldAuction, Staking contracts and team multisig using distribution share parameters percentages set at `DistributionParams`. 
  * Users can get Temple Gold by staking Temple for Temple Gold rewards on the staking contract or in auctions.
  * Holders can transfer their Temple Gold to same holder address across chains.
  * The intended owner of Temple Gold is the TempleGoldAdmin contract for admin functions. 
@@ -33,7 +33,7 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
     /// @notice Staking contract
     ITempleGoldStaking public override staking;
     /// @notice Dai Gold auction contract
-    IDaiGoldAuction public override daiGoldAuction;
+    IStableGoldAuction public override auction;
     /// @notice Multisig gnosis address
     address public override teamGnosis;
 
@@ -53,8 +53,8 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
 
     /// @notice Total distribtued to track total supply
     uint256 private _totalDistributed;
-    /// @notice Total TGLD burned from all spice auctions
-    uint256 private _totalBurnedFromSpiceAuctions;
+    /// @notice Total TGLD burned from all spice auctions and holders
+    uint256 private _totalBurned;
     uint256 private _circulatingSupply;
 
     /// @notice Whitelisted addresses for transferrability
@@ -77,7 +77,7 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
      * @notice Set staking proxy contract address
      * @param _staking Staking proxy contract
      */
-    function setStaking(address _staking) external override onlyOwner {
+    function setStaking(address _staking) external override onlyOwner onlySourceChain{
         if (_staking == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
         staking = ITempleGoldStaking(_staking);
         emit StakingSet(_staking);
@@ -85,19 +85,19 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
 
     /**
      * @notice Set dai gold auction contract address
-     * @param _daiGoldAuction  contract address
+     * @param _auction  contract address
      */
-    function setDaiGoldAuction(address _daiGoldAuction) external override onlyOwner {
-        if (_daiGoldAuction == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
-        daiGoldAuction = IDaiGoldAuction(_daiGoldAuction);
-        emit DaiGoldAuctionSet(_daiGoldAuction);
+    function setStableGoldAuction(address _auction) external override onlyOwner onlySourceChain {
+        if (_auction == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
+        auction = IStableGoldAuction(_auction);
+        emit StableGoldAuctionSet(_auction);
     }
 
     /**
      * @notice Set team gnosis address
      * @param _gnosis Team gnosis address
      */
-    function setTeamGnosis(address _gnosis) external override onlyOwner {
+    function setTeamGnosis(address _gnosis) external override onlyOwner onlySourceChain {
         if (_gnosis == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
         teamGnosis = _gnosis;
         emit TeamGnosisSet(_gnosis);
@@ -118,17 +118,17 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
      * @notice Set distribution percentages of newly minted Temple Gold
      * @param _params Distribution parameters
      */
-    function setDistributionParams(DistributionParams calldata _params) external override onlyOwner {
-        if (_params.staking + _params.gnosis + _params.daiGoldAuction != DISTRIBUTION_DIVISOR) { revert ITempleGold.InvalidTotalShare(); }
+    function setDistributionParams(DistributionParams calldata _params) external override onlyOwner onlySourceChain {
+        if (_params.staking + _params.gnosis + _params.auction != DISTRIBUTION_DIVISOR) { revert ITempleGold.InvalidTotalShare(); }
         distributionParams = _params;
-        emit DistributionParamsSet(_params.staking, _params.daiGoldAuction, _params.gnosis);
+        emit DistributionParamsSet(_params.staking, _params.auction, _params.gnosis);
     }
 
     /**
      * @notice Set vesting factor
      * @param _factor Vesting factor
      */
-    function setVestingFactor(VestingFactor calldata _factor) external override onlyOwner {
+    function setVestingFactor(VestingFactor calldata _factor) external override onlyOwner onlySourceChain {
         if (_factor.value == 0 || _factor.weekMultiplier == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
         /// @dev initialize
         if (lastMintTimestamp == 0) { lastMintTimestamp = uint32(block.timestamp); }
@@ -142,10 +142,10 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
      * Enforces minimum mint amount and uses vesting factor to calculate mint token amount.
      * Minting is only possible on source chain Arbitrum
      */
-    function mint() public override onlyArbitrum {
+    function mint() public override onlySourceChain {
         VestingFactor memory vestingFactorCache = vestingFactor;
         DistributionParams storage distributionParamsCache = distributionParams;
-        if (vestingFactorCache.value == 0) { revert ITempleGold.MissingParameter(); }
+        if (vestingFactorCache.value == 0) { return; }
 
         uint256 mintAmount = _getMintAmount(vestingFactorCache);
         /// @dev no op silently
@@ -240,20 +240,20 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
             staking.notifyDistribution(stakingAmount);
         }
 
-        uint256 daiGoldAuctionAmount = TempleMath.mulDivRound(params.daiGoldAuction, mintAmount, DISTRIBUTION_DIVISOR, false);
-        if (daiGoldAuctionAmount > 0) {
-            _mint(address(daiGoldAuction), daiGoldAuctionAmount);
-            daiGoldAuction.notifyDistribution(daiGoldAuctionAmount);
+        uint256 auctionAmount = TempleMath.mulDivRound(params.auction, mintAmount, DISTRIBUTION_DIVISOR, false);
+        if (auctionAmount > 0) {
+            _mint(address(auction), auctionAmount);
+            auction.notifyDistribution(auctionAmount);
         }
 
-        uint256 gnosisAmount = mintAmount - stakingAmount - daiGoldAuctionAmount;
+        uint256 gnosisAmount = mintAmount - stakingAmount - auctionAmount;
         if (gnosisAmount > 0) {
             _mint(teamGnosis, gnosisAmount);
             /// @notice no requirement to notify gnosis because no action has to be taken
         }
         _totalDistributed += mintAmount;
         _circulatingSupply += mintAmount;
-        emit Distributed(stakingAmount, daiGoldAuctionAmount, gnosisAmount, block.timestamp);
+        emit Distributed(stakingAmount, auctionAmount, gnosisAmount, block.timestamp);
     }
 
     function _getMintAmount(VestingFactor memory vestingFactorCache) private view returns (uint256 mintAmount) {
@@ -331,9 +331,18 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
      * @notice Burn and update circulating supply on source chain
      * @param amount Amount to burn
      */
-    function burn(uint256 amount) external override onlyArbitrum {
+    function burn(uint256 amount) external override onlySourceChain {
         _burn(msg.sender, amount);
         _updateCirculatingSupply(msg.sender, amount);
+    }
+
+    /**
+     * @notice Transfer ownership of TGLD to a new contract
+     * @dev Overriden function here so `TempleGoldAdmin` can call
+     * @param _newOwner New owner
+     */
+    function transferOwnership(address _newOwner) public override(ITempleGold, Ownable) onlyOwner {
+        super.transferOwnership(_newOwner);
     }
 
     /**
@@ -375,12 +384,12 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
     }
 
     function _updateCirculatingSupply(address sender, uint256 amount) private {
-        uint256 _totalBurnedCache = _totalBurnedFromSpiceAuctions = _totalBurnedFromSpiceAuctions + amount;
+        uint256 _totalBurnedCache = _totalBurned = _totalBurned + amount;
         uint256 _circulatingSupplyCache = _circulatingSupply = _circulatingSupply - amount;
         emit CirculatingSupplyUpdated(sender, amount, _circulatingSupplyCache, _totalBurnedCache);
     }
 
-    modifier onlyArbitrum() {
+    modifier onlySourceChain() {
         if (block.chainid != _mintChainId) { revert WrongChain(); }
         _;
     }

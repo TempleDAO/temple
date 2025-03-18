@@ -12,6 +12,10 @@ const arbitrumSepoliaContract: OmniPointHardhat = {
     contractName: 'TempleGold',
 }
 
+const mainnetContract: OmniPointHardhat = {
+    eid: Number(EndpointId.ETHEREUM_MAINNET),
+    contractName: 'TempleGold',
+}
 
 const config: OAppOmniGraphHardhat = {
     contracts: [

@@ -5,7 +5,7 @@ import {
   deployAndMine,
   ensureExpectedEnvvars,
 } from '../../helpers';
-import { getDeployedTempleGoldContracts } from '../../arbitrumOne/contract-addresses';
+import { getDeployedTempleGoldContracts } from '../../mainnet/templegold/contract-addresses';
 
 async function main() {
   ensureExpectedEnvvars();

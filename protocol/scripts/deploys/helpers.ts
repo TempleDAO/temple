@@ -44,6 +44,12 @@ interface TeamPayments {
   TEMPLE_TEAM_EPOCH_24C: string;
   TEMPLE_TEAM_EPOCH_25A: string;
   TEMPLE_TEAM_EPOCH_25B: string;
+  TEMPLE_TEAM_EPOCH_25C: string;
+  TEMPLE_TEAM_EPOCH_26A: string;
+  TEMPLE_TEAM_EPOCH_26B: string;
+  TEMPLE_TEAM_EPOCH_26C: string;
+  TEMPLE_TEAM_EPOCH_27A: string;
+  TEMPLE_TEAM_EPOCH_27B: string;
 }
 
 export interface DeployedContracts {
@@ -315,6 +321,12 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
       TEMPLE_TEAM_EPOCH_24C: '0x96288cF99b16Bd857781d4B7d49b60887D30Bf4E',
       TEMPLE_TEAM_EPOCH_25A: '0xd2F37721cdE50fe5210974d9073F2F24cb53e319',
       TEMPLE_TEAM_EPOCH_25B: '0x0197B9F8d504e020C875fcafb3403e55Bef31c36',
+      TEMPLE_TEAM_EPOCH_25C: '0xb486C1D3F49D20b442ba77f169998a16550ddAd8',
+      TEMPLE_TEAM_EPOCH_26A: '0xf78d757da74d5f3a67599240eab918FC347f2BdE',
+      TEMPLE_TEAM_EPOCH_26B: '0xa493DaEeEb5BaDf74fdB872555090A7850ac49f0',
+      TEMPLE_TEAM_EPOCH_26C: '0xaDf1136E0Ba142280D628182A1800E5B73dfE9cD',
+      TEMPLE_TEAM_EPOCH_27A: '0xdE8964E4E0406eb3074491EE67Fc9dC45719215c',
+      TEMPLE_TEAM_EPOCH_27B: '0x504632fa6ee0Fab0971454de4c36c3795BA70e2c',
     },
 
     TEMPLE_TEAM_PAYMENTS_IMPLEMENTATION: '',
@@ -755,3 +767,12 @@ export async function setExplicitAccess(
 
 const { AddressZero } = ethers.constants;
 export { AddressZero as ZERO_ADDRESS };
+
+export function runAsyncMain<T>(p: () => Promise<T>): void {
+  p()
+  .then(() => process.exit(0))
+  .catch(error => {
+    console.error(error);
+    process.exit(1);
+  });
+}

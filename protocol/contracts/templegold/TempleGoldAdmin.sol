@@ -39,10 +39,10 @@ contract TempleGoldAdmin is ITempleGoldAdmin, TempleElevatedAccess {
 
     /**
      * @notice Set auctions Dai Gold contract address
-     * @param _daiGoldAuction  contract address
+     * @param _auction  contract address
      */
-    function setDaiGoldAuction(address _daiGoldAuction) external override onlyElevatedAccess {
-        templeGold.setDaiGoldAuction(_daiGoldAuction);
+    function setStableGoldAuction(address _auction) external override onlyElevatedAccess {
+        templeGold.setStableGoldAuction(_auction);
     }
 
     /**
@@ -134,5 +134,13 @@ contract TempleGoldAdmin is ITempleGoldAdmin, TempleElevatedAccess {
      */
     function setEnforcedOptions(EnforcedOptionParam[] calldata _enforcedOptions) public virtual onlyElevatedAccess {
         IOAppOptionsType3(address(templeGold)).setEnforcedOptions(_enforcedOptions);
+    }
+
+    /**
+     * @notice Transfer ownership of TGLD to a new contract
+     * @param _newOwner New owner
+     */
+    function transferOwnership(address _newOwner) external override onlyElevatedAccess {
+        templeGold.transferOwnership(_newOwner);
     }
 }
