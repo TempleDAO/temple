@@ -1,6 +1,6 @@
 pragma solidity 0.8.20;
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// (tests/forge/templegold/TempleGoldVesting.t.sol)
+// (tests/forge/unit/templegold/TempleGoldVesting.t.sol)
 
 import { TempleGoldCommon } from "./TempleGoldCommon.t.sol";
 import { TempleGoldVesting } from "contracts/templegold/TempleGoldVesting.sol";
@@ -10,7 +10,7 @@ import { ITempleGold } from "contracts/interfaces/templegold/ITempleGold.sol";
 import { ITempleGoldVesting } from "contracts/interfaces/templegold/ITempleGoldVesting.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import { DaiGoldAuction } from "contracts/templegold/DaiGoldAuction.sol";
+import { StableGoldAuction } from "contracts/templegold/StableGoldAuction.sol";
 import { TempleGoldStaking } from "contracts/templegold/TempleGoldStaking.sol";
 
 contract TempleGoldVestingTestBase is TempleGoldCommon {
@@ -27,7 +27,7 @@ contract TempleGoldVestingTestBase is TempleGoldCommon {
     FakeERC20 public templeToken;
     TempleGold public templeGold;
     TempleGoldVesting public vesting;
-    DaiGoldAuction public daiGoldAuction;
+    StableGoldAuction public stableGoldAuction;
     TempleGoldStaking public staking;
 
     uint256 public arbitrumOneForkId;
@@ -40,7 +40,7 @@ contract TempleGoldVestingTestBase is TempleGoldCommon {
         fakeToken = new FakeERC20("Fake Token", "FAKE", executor, 1000 ether);
         templeToken = new FakeERC20("Temple Token", "TEMPLE", executor, 1000 ether);
         staking = new TempleGoldStaking(rescuer, executor, address(templeToken), address(templeGold));
-        daiGoldAuction = new DaiGoldAuction(
+        stableGoldAuction = new StableGoldAuction(
             address(templeGold),
             daiToken,
             treasury,
@@ -53,9 +53,9 @@ contract TempleGoldVestingTestBase is TempleGoldCommon {
 
         // configure TGLD
         vm.startPrank(executor);
-        templeGold.setDaiGoldAuction(address(daiGoldAuction));
+        templeGold.setStableGoldAuction(address(stableGoldAuction));
         ITempleGold.DistributionParams memory params;
-        params.daiGoldAuction = 60 ether;
+        params.auction = 60 ether;
         params.gnosis = 10 ether;
         params.staking = 30 ether;
         templeGold.setDistributionParams(params);
@@ -66,7 +66,7 @@ contract TempleGoldVestingTestBase is TempleGoldCommon {
         templeGold.setStaking(address(staking));
         templeGold.setTeamGnosis(address(teamGnosis));
         // whitelist
-        templeGold.authorizeContract(address(daiGoldAuction), true);
+        templeGold.authorizeContract(address(stableGoldAuction), true);
         templeGold.authorizeContract(address(staking), true);
         templeGold.authorizeContract(teamGnosis, true);
     }

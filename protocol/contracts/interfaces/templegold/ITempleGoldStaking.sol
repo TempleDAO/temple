@@ -16,10 +16,7 @@ interface ITempleGoldStaking {
     event RewardPaid(address indexed staker, address toAddress, uint256 reward);
     event RewardDurationSet(uint256 duration);
     event UnstakeCooldownSet(uint32 period);
-<<<<<<< HEAD
-=======
     event DAOExecutorSet(address indexed daoExecutor);
->>>>>>> main
 
     error CannotDistribute();
     error CannotDelegate();
