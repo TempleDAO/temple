@@ -89,41 +89,28 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
         lzReceiveExecutorGas = 85_889;
     }
 
-    /**
-     * @notice Set lzReceive gas used by executor
-     * @param _gas Redemption notifier
-     */
+    /// @inheritdoc ISpiceAuction
     function setLzReceiveExecutorGas(uint32 _gas) external override onlyOperatorOrDaoExecutor {
         if (_gas == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
         lzReceiveExecutorGas = _gas;
         emit LzReceiveExecutorGasSet(_gas);
     }
 
-    /**
-     * @notice Set operator
-     * @param _operator operator to set
-     */
+    /// @inheritdoc ISpiceAuction
     function setOperator(address _operator) external override onlyDAOExecutor {
         if (_operator == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
         operator = _operator;
         emit OperatorSet(_operator);
     }
 
-    /**
-     * @notice Set DAO executor for DAO actions
-     * @param _daoExecutor New dao executor
-     */
+    /// @inheritdoc ISpiceAuction
     function setDaoExecutor(address _daoExecutor) external onlyDAOExecutor {
         if (_daoExecutor == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
         daoExecutor = _daoExecutor;
         emit DaoExecutorSet(_daoExecutor);
     }
 
-    /**
-     * @notice Set config for an epoch. This enables dynamic and multiple auctions especially for vested scenarios
-     * @dev Must be set before epoch auction starts
-     * @param _config Config to set
-     */
+    /// @inheritdoc ISpiceAuction
     function setAuctionConfig(SpiceAuctionConfig calldata _config) external onlyDAOExecutor {
         /// @dev epoch Id is only updated when auction starts. 
         /// @dev cannot set config for past or ongoing auction
@@ -145,7 +132,7 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
         emit AuctionConfigSet(currentEpochIdCache, _config);
     }
 
-    /// @notice Remove auction config set for last epoch
+    /// @inheritdoc ISpiceAuction
     function removeAuctionConfig() external override onlyDAOExecutor {
         /// only delete latest epoch if auction is not started
         uint256 id = _currentEpochId;
@@ -218,11 +205,7 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
         emit AuctionStarted(epochId, msg.sender, startTime, endTime, epochAuctionTokenAmount);
     }
 
-    /**
-     * @notice Bid using `bidToken` for `auctionToken`
-     * Once a bid is placed for an auction, user cannot withdraw or cancel bid.
-     * @param amount Amount of `bidToken` to bid
-     */
+    /// @inheritdoc IAuctionBase
     function bid(uint256 amount) external virtual override {
         /// @dev Cache, gas savings
         uint256 epochId = _currentEpochId;
@@ -245,10 +228,7 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
         emit Deposit(msg.sender, epochId, amount);
     }
 
-    /**
-     * @notice Claim (retro) rewards for an epoch . Cannot claim for a live epoch auction
-     * @param epochId Epoch to claim for
-     */
+    /// @inheritdoc ISpiceAuction
     function claim(uint256 epochId) external virtual override {
         /// @notice cannot claim for current live epoch
         EpochInfo storage info = epochs[epochId];
@@ -271,30 +251,19 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
         emit Claim(msg.sender, epochId, bidTokenAmount, claimAmount);
     }
 
-    /**
-     * @notice Check total bid token amount for epoch auction
-     * @param epochId Epoch to check for
-     */
+    /// @inheritdoc ISpiceAuction
     function getAuctionTokenAmount(uint256 epochId) external override view returns (uint256) {
         EpochInfo storage info = epochs[epochId];
         return info.totalAuctionTokenAmount;
     }
 
-    /**
-     * @notice Get total bid token amount for epoch auction
-     * @param epochId Epoch to get for
-     */
+    /// @inheritdoc ISpiceAuction
     function getAuctionBidAmount(uint256 epochId) external override view returns (uint256) {
         EpochInfo storage info = epochs[epochId];
         return info.totalBidTokenAmount;
     }
 
-    /**
-     * @notice Recover auction tokens for last but not started auction
-     * @param token Token to recover
-     * @param to Recipient
-     * @param amount Amount to auction tokens
-     */
+    /// @inheritdoc IAuctionBase
     function recoverToken(
         address token,
         address to,
@@ -331,11 +300,7 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
         emit CommonEventsAndErrors.TokenRecovered(to, token, amount);
     }
 
-    /**
-     * @notice Recover auction tokens for epoch with zero bids
-     * @param epochId Epoch Id
-     * @param to Recipient
-     */
+    /// @inheritdoc ISpiceAuction
     function recoverAuctionTokenForZeroBidAuction(uint256 epochId, address to) external override onlyDAOExecutor {
         if (to == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
         // has to be valid epoch
@@ -357,7 +322,7 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
         IERC20(auctionToken).safeTransfer(to, amount);
     }
 
-    /// @notice withdraw ETH used for layer zero sends
+    /// @inheritdoc ISpiceAuction
     function withdrawEth(address payable _to, uint256 _amount) external override onlyOperatorOrDaoExecutor {
         if (_to == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
         if (_amount == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
@@ -368,11 +333,7 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
         if (!success) { revert WithdrawFailed(_amount); }
     }
 
-    /**
-     * @notice Burn redeemd TGLD and notify circulating supply
-     * @param epochId Epoch Id
-     * @param useContractEth If to use contract eth for layerzero send
-     */
+    /// @inheritdoc ISpiceAuction
     function burnAndNotify(uint256 epochId, bool useContractEth) external payable override nonReentrant {
         if (redeemedEpochs[epochId]) { revert CommonEventsAndErrors.InvalidParam(); }
         EpochInfo storage epochInfo = epochs[epochId];
@@ -392,90 +353,82 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
         _burnAndNotify(amount, _config.recipient, useContractEth);
     }
 
-    /**
-     * @notice Get spice auction config for an auction
-     * @param auctionId Id of auction
-     */
+    /// @inheritdoc ISpiceAuction
     function getAuctionConfig(uint256 auctionId) external view override returns (SpiceAuctionConfig memory) {
         return auctionConfigs[auctionId];
     }
 
-    /**
-     * @notice Get auction token for current epoch
-     * @return Auction token
-     */
+    /// @inheritdoc ISpiceAuction
     function getAuctionTokenForCurrentEpoch() external override view returns (address) {
         SpiceAuctionConfig memory config = auctionConfigs[_currentEpochId];
         return config.isTempleGoldAuctionToken ? templeGold : spiceToken;
     }
 
-    /**
-     * @notice Get current epoch
-     * @return Epoch Id
-     */
+    /// @inheritdoc IAuctionBase
     function currentEpoch() external view override returns (uint256) {
         return _currentEpochId;
     }
 
-    /**
-     * @notice Check if current epoch is active
-     * @return Bool for active status
-     */
+    /// @inheritdoc ISpiceAuction
     function isActive() external view override returns (bool) {
         return epochs[_currentEpochId].isActive();
     }
 
-    /**
-     * @notice Get claimable amount for an epoch
-     * @dev function will return claimable for epoch. This can change with more user deposits
-     * @param depositor Address to check amount for
-     * @param epochId Epoch id
-     * @return Claimable amount
-     */
-    function getClaimableForEpoch(address depositor, uint256 epochId) public override view returns (uint256) {
-        if (claimed[depositor][epochId]) { return 0; }
+    /// @inheritdoc ISpiceAuction
+    function getClaimableForEpoch(
+        address depositor,
+        uint256 epochId
+    ) public override view returns (TokenAmount memory tokenAmount) {
+        if (epochId > _currentEpochId || epochId == 0) { return tokenAmount; }
+
         uint256 bidTokenAmount = depositors[depositor][epochId];
-        if (bidTokenAmount == 0 || epochId > _currentEpochId) { return 0; }
         EpochInfo memory info = epochs[epochId];
-        return bidTokenAmount.mulDivRound(info.totalAuctionTokenAmount, info.totalBidTokenAmount, false);
+        (, address auctionToken) = _getBidAndAuctionTokens(auctionConfigs[epochId]);
+        uint256 amount = bidTokenAmount == 0 ?
+            0 : bidTokenAmount.mulDivRound(info.totalAuctionTokenAmount, info.totalBidTokenAmount, false);
+        amount = claimed[depositor][epochId] ? 0 : amount;
+        tokenAmount = TokenAmount({
+            token: auctionToken,
+            amount: amount
+        });
     }
 
-    /**
-     * @notice Get claimable amount for an array of epochs
-     * @dev If the epochs contains a current epoch, function will return claimable at current time.
-     * @param depositor Address to check amount for
-     * @param epochIds Array of epoch ids
-     * @return claimable Total claimable
-     */
+    /// @inheritdoc ISpiceAuction
     function getClaimableForEpochs(
         address depositor,
         uint256[] memory epochIds
-    ) external override view returns (uint256[] memory claimable) {
+    ) external view returns (TokenAmount[] memory tokenAmounts) {
         uint256 _length = epochIds.length;
-        claimable = new uint256[](_length);
-        uint256 epoch;
-        for (uint i; i < _length; ++i) {
-            epoch = epochIds[i];
-            claimable[i] = getClaimableForEpoch(depositor, epoch);
+        tokenAmounts = new TokenAmount[](_length);
+        for (uint256 i; i < _length; ++i) {
+            tokenAmounts[i] = getClaimableForEpoch(depositor, epochIds[i]);
         }
     }
 
-    /**
-     * @notice Get claimed amount for an array of epochs
-     * @param depositor Address to check amount for
-     * @param epochIds Array of epoch ids
-     * @return claimed Total claimable
-     */
+    /// @inheritdoc ISpiceAuction
+    function getClaimedForEpoch(
+        address depositor,
+        uint256 epochId
+    ) public override view returns (TokenAmount memory tokenAmount) {
+        if (epochId > _currentEpochId || epochId == 0) { return  tokenAmount; }
+        uint256 amount = claimedAmount[depositor][epochId];
+        /// @dev Don't return null if amount is 0, still insert the epoch auction token. 
+        (, address auctionToken) = _getBidAndAuctionTokens(auctionConfigs[epochId]);
+        tokenAmount = TokenAmount({
+            token: auctionToken,
+            amount: amount
+        });
+    }
+
+    /// @inheritdoc ISpiceAuction
     function getClaimedForEpochs(
         address depositor,
-        uint256[] memory epochIds
-    ) external override view returns (uint256[] memory claimed) {
+        uint256[] calldata epochIds
+    ) external override view returns (TokenAmount[] memory tokenAmounts) {
         uint256 _length = epochIds.length;
-        claimed = new uint256[](_length);
-        uint256 epoch;
-        for (uint i; i < _length; ++i) {
-            epoch = epochIds[i];
-            claimed[i] = claimedAmount[depositor][epoch];
+        tokenAmounts = new TokenAmount[](_length);
+        for (uint256 i; i < _length; ++i) {
+            tokenAmounts[i] = getClaimedForEpoch(depositor, epochIds[i]);
         }
     }
 

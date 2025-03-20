@@ -36,6 +36,14 @@ interface ISpiceAuction is IAuctionBase {
         address recipient;
     }
 
+    /// @notice Struct for dapp to query epoch claimable or claimed 
+    struct TokenAmount {
+        /// @notice Either spice token or TGLD
+        address token;
+        /// @notice Amount of token
+        uint256 amount;
+    }
+
     /// @notice Spice auction contracts are set up for 2 tokens. Either can be bid or sell token for a given auction
     /// @notice Temple GOLD
     function templeGold() external view returns (address);
@@ -82,32 +90,46 @@ interface ISpiceAuction is IAuctionBase {
      * @dev function will return claimable for epoch. This can change with more user deposits
      * @param depositor Address to check amount for
      * @param epochId Epoch id
-     * @return Claimable amount
+     * @return tokenAmount Claimable represented by TokenAmount struct
      */
-    function getClaimableForEpoch(address depositor, uint256 epochId) external view returns (uint256);
+    function getClaimableForEpoch(
+        address depositor,
+        uint256 epochId
+    ) external view returns (TokenAmount memory tokenAmount);
 
     /**
-     * @notice Get total claimed amount for an array of epochs
+     * @notice Get claimed for an epoch along with auction token
+     * @param depositor Address to check amount for
+     * @param epochId Epoch Id
+     * @return tokenAmount TokenAmount claimable struct
+     */
+    function getClaimedForEpoch(
+        address depositor,
+        uint256 epochId
+    ) external view returns (TokenAmount memory tokenAmount);
+
+    /**
+     * @notice Get claimed amount for an array of epochs
      * @param depositor Address to check amount for
      * @param epochIds Array of epoch ids
-     * @return claimed Total claimed
+     * @return tokenAmounts Array of claimed TokenAmount structs
      */
     function getClaimedForEpochs(
         address depositor,
-        uint256[] memory epochIds
-    ) external view returns (uint256[] memory claimed);
+        uint256[] calldata epochIds
+    ) external view returns (TokenAmount[] memory tokenAmounts);
 
     /**
      * @notice Get claimable amount for an array of epochs
      * @dev If the epochs contains a current epoch, function will return claimable at current time.
      * @param depositor Address to check amount for
      * @param epochIds Array of epoch ids
-     * @return claimable Total claimable
+     * @return tokenAmounts Array of TokenAmount claimable struct
      */
     function getClaimableForEpochs(
         address depositor,
         uint256[] memory epochIds
-    ) external view returns (uint256[] memory claimable);
+    ) external view returns (TokenAmount[] memory tokenAmounts);
 
     /**
      * @notice Set DAO executor for DAO actions
