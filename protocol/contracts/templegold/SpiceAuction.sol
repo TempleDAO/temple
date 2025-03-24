@@ -38,8 +38,10 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
     address public immutable override templeGold;
     /// @notice DAO contract to execute configurations update
     address public override daoExecutor;
-    /// @notice operator
+    /// @notice Operator
     address public override operator;
+    /// @notice Cosecha Segunda Strategy multisig
+    address public immutable override strategyGnosis;
 
     /// @notice Auctions run for minimum 1 week
     uint32 public constant MINIMUM_AUCTION_PERIOD = 1 weeks;
@@ -74,6 +76,7 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
         address _spiceToken,
         address _daoExecutor,
         address _operator,
+        address _strategyGnosis,
         uint32 mintChainEid_,
         uint32 mintChainId_,
         string memory _name
@@ -81,6 +84,7 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
         spiceToken = _spiceToken;
         daoExecutor = _daoExecutor;
         operator = _operator;
+        strategyGnosis = _strategyGnosis;
         templeGold = _templeGold;
         _mintChainEid = mintChainEid_;
         _mintChainId = mintChainId_;
@@ -157,9 +161,11 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
             _currentEpochId = id - 1;
             emit AuctionConfigRemoved(id, id);
         } else {
+            // @todo check bc now setNextParams is called
             // `auctionStart` is not triggered but `auctionConfig` is set
             id += 1;
             delete auctionConfigs[id];
+            /// @dev 0 here means the epoch was not deleted
             emit AuctionConfigRemoved(id, 0);
         }
     }
@@ -169,10 +175,10 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
      */
     function startAuction() external override {
         uint256 epochId = _currentEpochId;
-        /// @dev config is always set for next auction
-        /// @notice Configuration is set before auctions so configId = currentEpochId + 1;
+        /// @dev config is always set for next auction ahead of auction start
+        /// @dev Configuration is set before auctions so configId = currentEpochId + 1;
         SpiceAuctionConfig storage config = auctionConfigs[epochId+1];
-        if (config.duration == 0) { revert CannotStartAuction(); }
+        if (config.duration == 0) { revert AuctionConfigNotSet(epochId+1); }
         /// @notice only starter
         if (config.starter != address(0) && msg.sender != config.starter) { revert CommonEventsAndErrors.InvalidAccess(); }
         /// @notice enough wait period since last auction
@@ -186,23 +192,50 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
             /// For first auction
             if (_deployTimestamp + config.waitPeriod > block.timestamp) { revert CannotStartAuction(); }
         }
-        (,address auctionToken) = _getBidAndAuctionTokens(config);
-        uint256 totalAuctionTokenAllocation = _totalAuctionTokenAllocation[auctionToken];
-        uint256 balance = IERC20(auctionToken).balanceOf(address(this));
-        uint256 epochAuctionTokenAmount = balance - (totalAuctionTokenAllocation - _claimedAuctionTokens[auctionToken]);
-        if (config.minimumDistributedAuctionToken == 0) { revert MissingAuctionTokenConfig(); }
-        if (epochAuctionTokenAmount < config.minimumDistributedAuctionToken) { revert NotEnoughAuctionTokens(); }
-        // epoch start settings
-        // now update currentEpochId
-        epochId = _currentEpochId = _currentEpochId + 1;
-        EpochInfo storage info = epochs[epochId];
-        uint128 startTime = info.startTime = uint128(block.timestamp) + config.startCooldown;
-        uint128 endTime = info.endTime = startTime + config.duration;
-        info.totalAuctionTokenAmount = epochAuctionTokenAmount;
-        // Keep track of total allocation auction tokens per epoch
-        _totalAuctionTokenAllocation[auctionToken] = totalAuctionTokenAllocation + epochAuctionTokenAmount;
+        // next auction
+        epochId += 1;
+        // check strategy gnosis already funded and set epoch info for next auction
+        EpochInfo memory info = epochs[epochId];
+        uint256 amount = info.totalAuctionTokenAmount;
+        if (amount == 0) { revert AuctionNotFunded(epochId); }
+        if (info.startTime > block.timestamp) { revert CannotStartAuction(); }
 
-        emit AuctionStarted(epochId, msg.sender, startTime, endTime, epochAuctionTokenAmount);
+        _currentEpochId = epochId;
+        
+        emit SpiceAuctionStarted(epochId, msg.sender, amount);
+    }
+
+    /// @inheritdoc ISpiceAuction
+    function fundNextAuction(uint256 amount, uint128 startTime) external {
+        // only strategy admin can call
+        if (msg.sender != strategyGnosis) { revert CommonEventsAndErrors.InvalidAccess(); }
+        if (amount == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
+        /// @dev Not imposing restrictions on start time except for being in future to allow for flexibility
+        if (startTime <= block.timestamp) { revert CommonEventsAndErrors.InvalidParam(); }
+        // we check that last auction has ended before updating the amount of tokens
+        uint256 epochId = _currentEpochId;
+        if (!epochs[epochId].hasEnded()) { revert AuctionActive(); }
+
+        // auction config for next auction must be set
+        uint256 nextEpochId = epochId + 1;
+        SpiceAuctionConfig storage config = auctionConfigs[nextEpochId];
+        if (config.duration == 0) { revert MissingAuctionConfig(nextEpochId); }
+        if (amount < config.minimumDistributedAuctionToken) { revert NotEnoughAuctionTokens(); }
+
+        (,address auctionToken) = _getBidAndAuctionTokens(config);
+        IERC20(auctionToken).safeTransferFrom(msg.sender, address(this), amount);
+
+        EpochInfo storage info = epochs[nextEpochId];
+        /// @dev This assumes startTime has cooldown baked in
+        info.startTime = startTime;
+        uint128 endTime = info.endTime = startTime + config.duration;
+
+        emit SpiceAuctionEpochSet(auctionToken, startTime, endTime, amount);
+
+        /// @dev This does not take into account donated tokens transferred to this contract
+        info.totalAuctionTokenAmount = amount;
+        // Keep track of total allocation auction tokens
+        _totalAuctionTokenAllocation[auctionToken] += amount;
     }
 
     /// @inheritdoc IAuctionBase

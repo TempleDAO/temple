@@ -10,6 +10,9 @@ interface ISpiceAuction is IAuctionBase {
     event LzReceiveExecutorGasSet(uint32 gas);
     event RedeemedTempleGoldBurned(uint256 epochId, uint256 amount);
     event OperatorSet(address indexed operator);
+    event NextAuctionTimesSet(uint128 startTime, uint128 endTime);
+    event SpiceAuctionStarted(uint256 epochId, address sender, uint256 amount);
+    event SpiceAuctionEpochSet(address auctionToken, uint128 startTime, uint128 endTime, uint256 amount);
 
     error InvalidConfigOperation();
     error NotEnoughAuctionTokens();
@@ -18,11 +21,16 @@ interface ISpiceAuction is IAuctionBase {
     error RemoveAuctionConfig();
     error WithdrawFailed(uint256 amount);
     error EtherNotNeeded();
+    error MissingAuctionConfig(uint256 epochId);
+    error AuctionNotFunded(uint256 epochId);
+    error AuctionConfigNotSet(uint256 epochId);
 
+    // @todo still need `startCooldown`?
     struct SpiceAuctionConfig {
         /// @notice Duration of auction
         uint32 duration;
         /// @notice Minimum time between successive auctions
+        /// @dev For first auction, set this to 0 or a reasonable `startTime - deployTime = waitPeriod` value
         uint32 waitPeriod;
         /// @notice Cooldown after auction start is triggered, to allow deposits
         uint32 startCooldown;
@@ -53,6 +61,9 @@ interface ISpiceAuction is IAuctionBase {
 
     /// @notice DAO contract to execute configurations update
     function daoExecutor() external view returns (address);
+
+    /// @notice Cosecha Segunda Strategy multisig
+    function strategyGnosis() external view returns (address);
 
     /// @notice Operator
     function operator() external view returns (address);
@@ -196,4 +207,13 @@ interface ISpiceAuction is IAuctionBase {
      * @param _operator operator to set
      */
     function setOperator(address _operator) external;
+
+    /**
+     * @notice Set next auction start and end times.
+     * Transfers auction token for next auction and updates epoch time params
+     * @dev Must be called by CSS strategy gnosis
+     * @param amount Amount of auction tokens to transfer
+     * @param startTime Start time of next auction
+     */
+    function fundNextAuction(uint256 amount, uint128 startTime) external;
 }

@@ -5,7 +5,7 @@ pragma solidity ^0.8.20;
 
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
-import { SpiceAuction } from "contracts/templegold/SpiceAuction.sol";
+import { ISpiceAuctionDeployer } from "contracts/interfaces/templegold/ISpiceAuctionDeployer.sol";
 import { ISpiceAuctionFactory } from "contracts/interfaces/templegold/ISpiceAuctionFactory.sol";
 
 
@@ -14,12 +14,17 @@ import { ISpiceAuctionFactory } from "contracts/interfaces/templegold/ISpiceAuct
  * @notice Factory to create and keep track of spice auction contracts
  */
 contract SpiceAuctionFactory is ISpiceAuctionFactory, TempleElevatedAccess {
+
     /// @notice Temple Gold
     address public immutable override templeGold;
     /// @notice Dao executing contract
     address public immutable override daoExecutor;
     /// @notice Operator
     address public immutable override operator;
+    /// @notice Cosecha Segunda Strategy gnosis
+    address public immutable override strategyGnosis;
+    /// @notice Spice Auction deployer
+    ISpiceAuctionDeployer public immutable override deployer;
     /// @notice Mint chain layer zero EID
     uint32 private immutable _mintChainLzEid;
     /// @notice Arbitrum One chain ID
@@ -32,15 +37,19 @@ contract SpiceAuctionFactory is ISpiceAuctionFactory, TempleElevatedAccess {
         address _executor,
         address _daoExecutor,
         address _operator,
+        address _strategyGnosis,
+        address _deployer,
         address _templeGold,
         uint32 mintChainLzEid_,
         uint32 mintChainId_
     ) TempleElevatedAccess(_rescuer, _executor) {
         daoExecutor = _daoExecutor;
         operator = _operator;
+        strategyGnosis = _strategyGnosis;
         templeGold = _templeGold;
         _mintChainLzEid = mintChainLzEid_;
         _mintChainId = mintChainId_;
+        deployer = ISpiceAuctionDeployer(_deployer);
     }
 
     /**
@@ -50,15 +59,18 @@ contract SpiceAuctionFactory is ISpiceAuctionFactory, TempleElevatedAccess {
      */
     function createAuction(
         address spiceToken,
+        bytes32 salt,
         string memory name
     ) external override onlyElevatedAccess returns (address) {
         if (spiceToken == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
         if (spiceToken == templeGold) { revert CommonEventsAndErrors.InvalidParam(); }
-        SpiceAuction spiceAuction = new SpiceAuction(templeGold, spiceToken, daoExecutor, operator, _mintChainLzEid, _mintChainId, name);
+
+        address spiceAuction = deployer.deploy(templeGold, spiceToken, daoExecutor, operator, strategyGnosis,
+            _mintChainLzEid, _mintChainId, name, salt);
         bytes32 pairId = _getPairHash(spiceToken);
         /// @dev not checking pair address exists to allow overwrite in case of a migration
-        deployedAuctions[pairId] = address(spiceAuction);
-        emit AuctionCreated(pairId, address(spiceAuction));
+        deployedAuctions[pairId] = spiceAuction;
+        emit AuctionCreated(pairId, spiceAuction);
         return address(spiceAuction);
     }
 
