@@ -10,34 +10,25 @@ interface ISpiceAuction is IAuctionBase {
     event LzReceiveExecutorGasSet(uint32 gas);
     event RedeemedTempleGoldBurned(uint256 epochId, uint256 amount);
     event OperatorSet(address indexed operator);
-    event NextAuctionTimesSet(uint128 startTime, uint128 endTime);
-    event SpiceAuctionStarted(uint256 epochId, address sender, uint256 amount);
-    event SpiceAuctionEpochSet(address auctionToken, uint128 startTime, uint128 endTime, uint256 amount);
+    event SpiceAuctionEpochSet(uint256 epoch, address auctionToken, uint128 startTime, uint128 endTime, uint256 amount);
 
     error InvalidConfigOperation();
     error NotEnoughAuctionTokens();
-    error MissingAuctionTokenConfig();
-    error NoConfig();
-    error RemoveAuctionConfig();
     error WithdrawFailed(uint256 amount);
     error EtherNotNeeded();
     error MissingAuctionConfig(uint256 epochId);
-    error AuctionNotFunded(uint256 epochId);
-    error AuctionConfigNotSet(uint256 epochId);
+    error AuctionFunded();
+    error WaitPeriod();
+    error Unimplemented();
 
-    // @todo still need `startCooldown`?
     struct SpiceAuctionConfig {
         /// @notice Duration of auction
         uint32 duration;
         /// @notice Minimum time between successive auctions
         /// @dev For first auction, set this to 0 or a reasonable `startTime - deployTime = waitPeriod` value
         uint32 waitPeriod;
-        /// @notice Cooldown after auction start is triggered, to allow deposits
-        uint32 startCooldown;
         /// @notice Minimum Gold distributed to enable auction start
         uint160 minimumDistributedAuctionToken;
-        /// @notice Address to start next auction when all criteria are met. Address zero means anyone can trigger start
-        address starter;
         /// @notice Is Temple Gold auction token
         bool isTempleGoldAuctionToken;
         /// @notice Auction proceeds recipient
