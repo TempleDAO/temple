@@ -19,7 +19,7 @@ const env: Environment = {
     frax: '',
     usdc: '',
     usdt: '',
-    dai: '0x33FA9618365F67c5345066d5Cfd7f3A2f183599A',
+    dai: '0x33FA9618365F67c5345066d5Cfd7f3A2f183599A', //0x33FA9618365F67c5345066d5Cfd7f3A2f183599A addres
     usds: '0xBe9162230D9e637218D74C7f41f62ef2385fEe64',
     weth: '',
     frax3CrvFarming: '',
@@ -29,7 +29,7 @@ const env: Environment = {
     ogTemple: '',
     olympus: '0xf7f739Bb945880aD0398122069Fd3beC282c6621',
     otcOffer: '0x09fdf85893c1277bdc9ef1be2acdf29ee5e19771',
-    temple: '0x98c5e61b1b3731a1f379e8770861164d23118cdc',
+    temple: '0x64a925B0fA211c44337148C0807f959Bd44b0B67', //'0x98c5e61b1b3731a1f379e8770861164d23118cdc', // this the spice bazaar temple
     templegold: '0x2ae6318e34bb97ae3755afce75559452aa223a5d',
     templeStaking: '',
     templeV2FraxPair: '',
@@ -112,7 +112,7 @@ const env: Environment = {
     },
     temple: {
       name: 'Temple',
-      address: '0x98c5e61b1b3731a1f379e8770861164d23118cdc',
+      address: '0x64a925B0fA211c44337148C0807f959Bd44b0B67', //'0x98c5e61b1b3731a1f379e8770861164d23118cdc', // this the spice bazaar temple
       decimals: 18,
       symbol: 'TEMPLE',
     },
@@ -151,7 +151,7 @@ const env: Environment = {
     },
     dai: {
       name: 'DAI',
-      address: '0x33FA9618365F67c5345066d5Cfd7f3A2f183599A',
+      address: '0x33FA9618365F67c5345066d5Cfd7f3A2f183599A', //0x33FA9618365F67c5345066d5Cfd7f3A2f183599A addres
       decimals: 18,
       symbol: 'DAI',
     },
