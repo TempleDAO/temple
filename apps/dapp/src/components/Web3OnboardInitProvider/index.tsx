@@ -12,6 +12,7 @@ import { APP_CHAINS_FOR_WEB3_INIT } from 'utils/envChainMapping';
 const wcV2InitOptions = {
   projectId: 'b7ff3533ae86dc9fd727429a32572d08',
   requiredChains: [1],
+  dappUrl: 'https://templedao.link',
 };
 
 const walletConnect = walletConnectModule(wcV2InitOptions);
