@@ -156,13 +156,20 @@ jobs:
         run: forge --version
         working-directory: protocol
 
+      - name: "Generate fuzz seed"
+        run: echo "FOUNDRY_FUZZ_SEED=$EPOCHSECONDS" >> $GITHUB_ENV
+
+      - name: "Log fuzz seed"
+        run: echo "FOUNDRY_FUZZ_SEED=$FOUNDRY_FUZZ_SEED"
+
       - name: Foundry invariant tests
         run: forge test --match-path "test/forge/invariant/**/*.sol"
         working-directory: protocol
         env:
           FOUNDRY_PROFILE: ci
-          FOUNDRY_INVARIANT_RUNS: 150  # Defer larger runs for another pipeline
+          FOUNDRY_INVARIANT_RUNS: 100  # Defer larger runs for another pipeline
           FOUNDRY_INVARIANT_DEPTH: 80
+          FOUNDRY_FUZZ_RUNS: 100
           MAINNET_RPC_URL: ${{ secrets.TESTS_MAINNET_RPC_URL }}
           ARBITRUM_ONE_RPC_URL: ${{ secrets.TESTS_ARBITRUM_ONE_RPC_URL }}
 
