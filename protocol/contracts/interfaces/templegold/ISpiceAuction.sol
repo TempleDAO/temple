@@ -10,30 +10,37 @@ interface ISpiceAuction is IAuctionBase {
     event LzReceiveExecutorGasSet(uint32 gas);
     event RedeemedTempleGoldBurned(uint256 epochId, uint256 amount);
     event OperatorSet(address indexed operator);
+    event SpiceAuctionEpochSet(uint256 epoch, address auctionToken, uint128 startTime, uint128 endTime, uint256 amount);
 
     error InvalidConfigOperation();
     error NotEnoughAuctionTokens();
-    error MissingAuctionTokenConfig();
-    error NoConfig();
-    error RemoveAuctionConfig();
     error WithdrawFailed(uint256 amount);
     error EtherNotNeeded();
+    error MissingAuctionConfig(uint256 epochId);
+    error AuctionFunded();
+    error WaitPeriod();
+    error Unimplemented();
 
     struct SpiceAuctionConfig {
         /// @notice Duration of auction
         uint32 duration;
         /// @notice Minimum time between successive auctions
+        /// @dev For first auction, set this to 0 or a reasonable `startTime - deployTime = waitPeriod` value
         uint32 waitPeriod;
-        /// @notice Cooldown after auction start is triggered, to allow deposits
-        uint32 startCooldown;
         /// @notice Minimum Gold distributed to enable auction start
         uint160 minimumDistributedAuctionToken;
-        /// @notice Address to start next auction when all criteria are met. Address zero means anyone can trigger start
-        address starter;
         /// @notice Is Temple Gold auction token
         bool isTempleGoldAuctionToken;
         /// @notice Auction proceeds recipient
         address recipient;
+    }
+
+    /// @notice Struct for dapp to query epoch claimable or claimed 
+    struct TokenAmount {
+        /// @notice Either spice token or TGLD
+        address token;
+        /// @notice Amount of token
+        uint256 amount;
     }
 
     /// @notice Spice auction contracts are set up for 2 tokens. Either can be bid or sell token for a given auction
@@ -46,11 +53,17 @@ interface ISpiceAuction is IAuctionBase {
     /// @notice DAO contract to execute configurations update
     function daoExecutor() external view returns (address);
 
+    /// @notice Cosecha Segunda Strategy multisig
+    function strategyGnosis() external view returns (address);
+
     /// @notice Operator
     function operator() external view returns (address);
 
     /// @notice Name of this Spice Bazaar auction
     function name() external view returns (string memory);
+
+    /// @notice Keep track of total claimed token per account
+    function accountTotalClaimed(address account, address token) external view returns (uint256);
 
     /**
      * @notice Set config for an epoch. This enables dynamic and multiple auctions especially for vested scenarios
@@ -79,9 +92,46 @@ interface ISpiceAuction is IAuctionBase {
      * @dev function will return claimable for epoch. This can change with more user deposits
      * @param depositor Address to check amount for
      * @param epochId Epoch id
-     * @return Claimable amount
+     * @return tokenAmount Claimable represented by TokenAmount struct
      */
-    function getClaimableForEpoch(address depositor, uint256 epochId) external view returns (uint256);
+    function getClaimableForEpoch(
+        address depositor,
+        uint256 epochId
+    ) external view returns (TokenAmount memory tokenAmount);
+
+    /**
+     * @notice Get claimed for an epoch along with auction token
+     * @param depositor Address to check amount for
+     * @param epochId Epoch Id
+     * @return tokenAmount TokenAmount claimable struct
+     */
+    function getClaimedForEpoch(
+        address depositor,
+        uint256 epochId
+    ) external view returns (TokenAmount memory tokenAmount);
+
+    /**
+     * @notice Get claimed amount for an array of epochs
+     * @param depositor Address to check amount for
+     * @param epochIds Array of epoch ids
+     * @return tokenAmounts Array of claimed TokenAmount structs
+     */
+    function getClaimedForEpochs(
+        address depositor,
+        uint256[] calldata epochIds
+    ) external view returns (TokenAmount[] memory tokenAmounts);
+
+    /**
+     * @notice Get claimable amount for an array of epochs
+     * @dev If the epochs contains a current epoch, function will return claimable at current time.
+     * @param depositor Address to check amount for
+     * @param epochIds Array of epoch ids
+     * @return tokenAmounts Array of TokenAmount claimable struct
+     */
+    function getClaimableForEpochs(
+        address depositor,
+        uint256[] memory epochIds
+    ) external view returns (TokenAmount[] memory tokenAmounts);
 
     /**
      * @notice Set DAO executor for DAO actions
@@ -148,4 +198,13 @@ interface ISpiceAuction is IAuctionBase {
      * @param _operator operator to set
      */
     function setOperator(address _operator) external;
+
+    /**
+     * @notice Set next auction start and end times.
+     * Transfers auction token for next auction and updates epoch time params
+     * @dev Must be called by CSS strategy gnosis
+     * @param amount Amount of auction tokens to transfer
+     * @param startTime Start time of next auction
+     */
+    function fundNextAuction(uint256 amount, uint128 startTime) external;
 }

@@ -2,6 +2,7 @@ pragma solidity ^0.8.20;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (interface/templegold/ISpiceAuctionFactory.sol)
 
+import { ISpiceAuctionDeployer } from "contracts/interfaces/templegold/ISpiceAuctionDeployer.sol";
 interface ISpiceAuctionFactory {
     event AuctionCreated(bytes32 id, address auction);
 
@@ -13,6 +14,12 @@ interface ISpiceAuctionFactory {
 
     /// @notice Operator
     function operator() external view returns (address);
+
+    /// @notice Cosecha Segunda Strategy Gnosis
+    function strategyGnosis() external view returns (address);
+
+    /// @notice Spice Auction deployer
+    function deployer() external view returns (ISpiceAuctionDeployer);
     
     /// @notice Keep track of deployed spice auctions
     function deployedAuctions(bytes32 id) external view returns (address);
@@ -20,9 +27,10 @@ interface ISpiceAuctionFactory {
     /**
      * @notice Create Spice Auction contract
      * @param spiceToken Spice token
+     * @param salt Salt
      * @param name Name of spice auction contract
      */
-    function createAuction(address spiceToken, string memory name) external returns (address);
+    function createAuction(address spiceToken, bytes32 salt, string memory name) external returns (address);
 
     /**
      * @notice Given a pair of tokens, retrieve spice auction contract
