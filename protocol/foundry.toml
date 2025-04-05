@@ -11,10 +11,17 @@
   gas_reports = ["*"]
   evm_version = "paris"           # See https://www.evmdiff.com/features?name=PUSH0&kind=opcode
 
+[profile.default.fuzz]
+  max_test_rejects = 20000
+  runs = 5000
 
-[profile.ci]
-  fuzz = { runs = 5000, seed = "0x4444" }
-  invariant = { runs = 1000 }
+[profile.default.invariant]
+  call_override = false # Override unsafe external calls to perform reentrancy checks
+  #fail_on_revert = true
+  include_storage = false
+  # Number of calls executed in one run. Be mindful that all Handler fns are (unevenly) split over this total depth
+  depth = 80
+  runs = 500
 
 [profile.lite]
   fuzz = { runs = 50 }

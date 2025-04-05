@@ -34,11 +34,11 @@ async function setupFromExecutorMultisig() {
 
         // No Temple CB for the main treasury strategy
         // Circuit breaker for Temple
-        // await mine(TEMPLE_V2_EXECUTOR_INSTANCES.CORE.CIRCUIT_BREAKER_PROXY.setCircuitBreaker(
-        //     NAME_HASH,
-        //     TEMPLE_V2_ADDRESSES.CORE.TEMPLE_TOKEN,
-        //     TEMPLE_V2_ADDRESSES.STRATEGIES.TEMPLO_MAYOR_GNOSIS_STRATEGY.CIRCUIT_BREAKERS.TEMPLE
-        // ));
+        await mine(TEMPLE_V2_EXECUTOR_INSTANCES.CORE.CIRCUIT_BREAKER_PROXY.setCircuitBreaker(
+            NAME_HASH,
+            TEMPLE_V2_ADDRESSES.CORE.TEMPLE_TOKEN,
+            TEMPLE_V2_ADDRESSES.STRATEGIES.TEMPLO_MAYOR_GNOSIS_STRATEGY.CIRCUIT_BREAKERS.TEMPLE
+        ));
     }
 
     {
@@ -49,7 +49,7 @@ async function setupFromExecutorMultisig() {
             },
             {
                 asset: TEMPLE_V2_ADDRESSES.CORE.TEMPLE_TOKEN,
-                balance: ethers.utils.parseEther("0"), // No temple debt allowed
+                balance: ethers.utils.parseEther("1000000"), // 1mm
             }
         ];
 
@@ -71,13 +71,13 @@ async function setup() {
             true
         );
 
-        // No Temple CB for the main treasury strategy
-        // await setExplicitAccess(
-        //     TEMPLE_V2_INSTANCES.STRATEGIES.TEMPLO_MAYOR_GNOSIS_STRATEGY.CIRCUIT_BREAKERS.TEMPLE,
-        //     TEMPLE_V2_ADDRESSES.CORE.CIRCUIT_BREAKER_PROXY,
-        //     ["preCheck"],
-        //     true
-        // );
+        // Grant permission for the circuit breaker proxy to call the underlying circuit breakers
+        await setExplicitAccess(
+            TEMPLE_V2_INSTANCES.STRATEGIES.TEMPLO_MAYOR_GNOSIS_STRATEGY.CIRCUIT_BREAKERS.TEMPLE,
+            TEMPLE_V2_ADDRESSES.CORE.CIRCUIT_BREAKER_PROXY,
+            ["preCheck"],
+            true
+        );
     }
 
     {
@@ -104,7 +104,7 @@ async function transferOwnership() {
         TEMPLE_V2_ADDRESSES.CORE.EXECUTOR_MSIG,
     );
     await proposeCore(TEMPLE_V2_INSTANCES.STRATEGIES.TEMPLO_MAYOR_GNOSIS_STRATEGY.CIRCUIT_BREAKERS.DAI);
-    // await proposeCore(TEMPLE_V2_INSTANCES.STRATEGIES.TEMPLO_MAYOR_GNOSIS_STRATEGY.CIRCUIT_BREAKERS.TEMPLE);
+    await proposeCore(TEMPLE_V2_INSTANCES.STRATEGIES.TEMPLO_MAYOR_GNOSIS_STRATEGY.CIRCUIT_BREAKERS.TEMPLE);
 }
 
 async function main() {

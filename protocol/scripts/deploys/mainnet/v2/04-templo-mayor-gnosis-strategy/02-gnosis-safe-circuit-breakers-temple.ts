@@ -1,31 +1,29 @@
-// Not yet needed for Templo Mayor, but may be in future
-
 import '@nomiclabs/hardhat-ethers';
-// import { ethers } from 'hardhat';
-// import { TempleCircuitBreakerAllUsersPerPeriod__factory } from '../../../../../typechain';
+import { ethers } from 'hardhat';
+import { TempleCircuitBreakerAllUsersPerPeriod__factory } from '../../../../../typechain';
 import {
-//   deployAndMine,
+  deployAndMine,
   ensureExpectedEnvvars,
 } from '../../../helpers';
-// import { getDeployedContracts } from '../contract-addresses';
+import { getDeployedContracts } from '../contract-addresses';
 
 async function main() {
   ensureExpectedEnvvars();
-//   const [owner] = await ethers.getSigners();
-//   const TEMPLE_V2_ADDRESSES = getDeployedContracts();
+  const [owner] = await ethers.getSigners();
+  const TEMPLE_V2_ADDRESSES = getDeployedContracts();
 
-//   const circuitBreakerFactory = new TempleCircuitBreakerAllUsersPerPeriod__factory(owner);
+  const circuitBreakerFactory = new TempleCircuitBreakerAllUsersPerPeriod__factory(owner);
 
-//   await deployAndMine(
-//     'STRATEGIES.TEMPLO_MAYOR_GNOSIS_STRATEGY.CIRCUIT_BREAKERS.TEMPLE',
-//     circuitBreakerFactory,
-//     circuitBreakerFactory.deploy,
-//     TEMPLE_V2_ADDRESSES.CORE.RESCUER_MSIG,
-//     await owner.getAddress(),
-//     60*60*26, // 26 hours
-//     13, // no of buckets
-//     ethers.utils.parseEther("10000000"), // 10mm cap per bucket
-//   );
+  await deployAndMine(
+    'STRATEGIES.TEMPLO_MAYOR_GNOSIS_STRATEGY.CIRCUIT_BREAKERS.TEMPLE',
+    circuitBreakerFactory,
+    circuitBreakerFactory.deploy,
+    TEMPLE_V2_ADDRESSES.CORE.RESCUER_MSIG,
+    await owner.getAddress(),
+    60*60*26, // 26 hours
+    13, // no of buckets
+    ethers.utils.parseEther("200000"), // 200k cap per bucket
+  );
 }
 
 // We recommend this pattern to be able to use async/await everywhere

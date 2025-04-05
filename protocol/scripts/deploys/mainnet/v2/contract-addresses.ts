@@ -161,7 +161,7 @@ export interface ContractAddresses {
 const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
     mainnet: {
         CORE: {
-            TEMPLE_TOKEN: '0x470ebf5f030ed85fc1ed4c2d36b9dd02e77cf1b7',
+            TEMPLE_TOKEN: '0x470EBf5f030Ed85Fc1ed4C2d36B9DD02e77CF1b7',
             CIRCUIT_BREAKER_PROXY: '0x87B8D213177FB132e508b5d7018f7b590e00a480',
             GNOSIS_SAFE_GUARD: '0x421D1571f47614670A4D182E22628DFe41c3d64B',
             EXECUTOR_MSIG: '0x94b62A27a2f23CBdc0220826a8452fB5055cF273',
@@ -214,7 +214,7 @@ const V2_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
                 UNDERLYING_GNOSIS_SAFE: '0x0591926d5d3b9Cc48ae6eFB8Db68025ddc3adFA5',
                 CIRCUIT_BREAKERS: {
                     DAI: '0x621bB3B5e76b72d4F100864EC0A797594C0bF43E',
-                    TEMPLE: '', // Not needed as yet
+                    TEMPLE: '0x3a7C6b773b9A337778Dbe1F0F610b1B0f8B4b43F',
                 },
             },
             COSECHA_SEGUNDA_GNOSIS_STRATEGY: {
