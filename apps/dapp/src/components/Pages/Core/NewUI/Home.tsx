@@ -17,7 +17,7 @@ import { TemplePriceChart } from './PriceChart';
 import { RAMOSMetrics } from './RAMOSMetrics';
 import { Button } from 'components/Button/Button';
 import { useEffect, useState } from 'react';
-import { queryRamosData, queryTrvData, subgraphQuery } from 'utils/subgraph';
+import { queryProtocolData, queryTrvData, subgraphQuery } from 'utils/subgraph';
 import env from 'constants/env';
 import { useTemplePrice } from 'hooks/use-temple-price';
 
@@ -113,14 +113,14 @@ const Home = ({ tlc }: { tlc?: boolean }) => {
         queryTrvData()
       );
 
-      const ramosData = await subgraphQuery(
-        env.subgraph.ramos,
-        queryRamosData()
+      const protocolData = await subgraphQuery(
+        env.subgraph.protocolMetrics,
+        queryProtocolData()
       );
 
       const treasuryMetrics = treasuryData.treasuryReservesVaults[0];
       setMetrics({
-        price: parseFloat(ramosData.metrics[0].spotPrice),
+        price: parseFloat(protocolData.metrics[0].templePrice),
         tpi: parseFloat(treasuryMetrics.treasuryPriceIndex),
         treasury:
           parseFloat(treasuryMetrics.principalUSD) +
