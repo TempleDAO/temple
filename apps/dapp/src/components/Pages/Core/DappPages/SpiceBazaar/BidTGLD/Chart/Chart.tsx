@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
-import styled, { useTheme } from 'styled-components';
+import styled from 'styled-components';
 import { subHours } from 'date-fns';
 import LineChart from './LineChart';
+import CustomBarChart from './BarChart';
 import Loader from 'components/Loader/Loader';
 import { formatNumberAbbreviated } from 'utils/formatter';
+import { InputSelect, Option } from './InputSelector';
+import * as breakpoints from 'styles/breakpoints';
 
 const tickFormatter = (timestamp: number) => {
   const hoursAgo = Math.floor(
@@ -12,44 +15,80 @@ const tickFormatter = (timestamp: number) => {
   return `${hoursAgo}h`;
 };
 
-type Metric = { timestamp: number; price: number };
+type Metric = { date: string; value: number };
 
-const pricesLast72H = [
-  { timestamp: new Date().getTime(), price: 1.8 },
-  { timestamp: subHours(new Date(), 12).getTime(), price: 2.1 },
-  { timestamp: subHours(new Date(), 24).getTime(), price: 2.4 },
-  { timestamp: subHours(new Date(), 36).getTime(), price: 2.6 },
-  { timestamp: subHours(new Date(), 48).getTime(), price: 2.2 },
-  { timestamp: subHours(new Date(), 60).getTime(), price: 3.7 },
-  { timestamp: subHours(new Date(), 72).getTime(), price: 3.2 },
+const data = [
+  { date: 'Mar 10', value: 3.0 },
+  { date: 'Apr 10', value: 3.1 },
+  { date: 'Jun 15', value: 3.2 },
+  { date: 'Jul 9', value: 2.0 },
+  { date: 'Aug 12', value: 3.2 },
+  { date: 'Sep 12', value: 1.5 },
+  { date: 'Oct 12', value: 3.0 },
+];
+
+const auctionOptions = [
+  { label: 'Mar 10', value: 'mar-10' },
+  { label: 'Apr 10', value: 'apr-10' },
+  { label: 'Jun 15', value: 'jun-15' },
+  { label: 'Jul 9', value: 'jul-9' },
+  { label: 'Aug 12', value: 'aug-12' },
+  { label: 'Sep 12', value: 'sep-12' },
+  { label: 'Oct 12', value: 'oct-12' },
 ];
 
 export const Chart = () => {
   const [metrics, setMetrics] = useState<Metric[]>([]);
-  const theme = useTheme();
 
   useEffect(() => {
-    setMetrics(pricesLast72H);
+    setMetrics(data);
   }, []);
+
+  const [selectedAuctions, setSelectedAuctions] = useState<Option[]>([
+    auctionOptions[0],
+    auctionOptions[1],
+    auctionOptions[2],
+    auctionOptions[3],
+    auctionOptions[4],
+    auctionOptions[5],
+    auctionOptions[6],
+  ]);
+
+  const handleChange = (selected: Option[]) => {
+    setSelectedAuctions(selected);
+  };
 
   if (!metrics.length) return <Loader />;
 
   return (
     <PageContainer>
-      <LineChart
-        chartData={metrics.reverse()}
-        xDataKey="timestamp"
-        lines={[{ series: 'price', color: theme.palette.brandLight }]}
-        xTickFormatter={tickFormatter}
-        yTickFormatter={(val) =>
-          `${formatNumberAbbreviated(val).number.toFixed(2)} TGLD`
+      <HeaderContainer>
+        <ChartTitle>Closing Price History</ChartTitle>
+        <InputSelect
+          options={auctionOptions}
+          defaultValue={selectedAuctions}
+          onChange={handleChange}
+          width="150px"
+          fontSize="1rem"
+          maxMenuItems={7}
+        />
+      </HeaderContainer>
+      <CustomBarChart
+        chartData={data.filter((d) =>
+          selectedAuctions.some((option) => option.label === d.date)
+        )}
+        xDataKey="date"
+        yDataKey="value"
+        xTickFormatter={(val: any) => val}
+        yTickFormatter={(val: any) =>
+          `$${formatNumberAbbreviated(val).number.toFixed(2)}`
         }
-        tooltipLabelFormatter={tickFormatter}
-        yDomain={[1, 4]}
-        tooltipValuesFormatter={(value) => [
-          `${value.toFixed(2)} TGLD`,
-          'Price',
+        tooltipLabelFormatter={() => 'Auction ID'}
+        tooltipValuesFormatter={(value: any) => [
+          `$${value.toFixed(2)}`,
+          'Value',
         ]}
+        xAxisTitle="Auction end date"
       />
     </PageContainer>
   );
@@ -57,4 +96,25 @@ export const Chart = () => {
 
 const PageContainer = styled.div`
   height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+`;
+
+const HeaderContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+
+  ${breakpoints.phoneAndAbove(`
+    flex-direction: row;
+    gap: 40px;
+    align-items: center;
+  `)}
+`;
+
+const ChartTitle = styled.div`
+  color: ${({ theme }) => theme.palette.brand};
+  font-size: 16px;
+  line-height: 19px;
 `;

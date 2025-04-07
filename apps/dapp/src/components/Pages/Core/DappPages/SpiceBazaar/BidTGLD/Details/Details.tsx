@@ -10,10 +10,24 @@ import { AuctionsHistory } from './Table';
 import * as breakpoints from 'styles/breakpoints';
 import { Link } from 'react-router-dom';
 import arrowBack from 'assets/icons/arrow_back.svg?react';
+import { UpcomingAuctionsPopover } from '../components/Popover';
+import calendar from 'assets/icons/calendar.svg?react';
+import { useMediaQuery } from 'react-responsive';
+import { queryPhone } from 'styles/breakpoints';
+
+const popoverData = [
+  { date: '11 Apr 2025', amount: '2.6M TGLD' },
+  { date: '11 May 2025', amount: '1.2M TGLD' },
+  { date: '11 Jun 2025', amount: 'TBD' },
+];
 
 export const Details = () => {
+  const isPhoneOrAbove = useMediaQuery({
+    query: queryPhone,
+  });
   const [isLive, setIsLive] = useState(true);
   const [modal, setModal] = useState<'closed' | 'bidTgld'>('closed');
+  const [openPopover, setOpenPopover] = useState<boolean>(false);
 
   return (
     <>
@@ -25,7 +39,7 @@ export const Details = () => {
               Back to all Spice Auctions
             </BackLink>
             <SpiceAuctionDetails>
-              <SpiceAuctionTitle>Spice Auction Details</SpiceAuctionTitle>
+              <SpiceAuctionTitle>KAMI Auction Details</SpiceAuctionTitle>
               <CurrentAuction>
                 <Header>
                   <HeaderLeft>
@@ -71,14 +85,34 @@ export const Details = () => {
                     </HeaderRightContainer>
                   </HeaderRight>
                 </Header>
-                <ButtonContainer>
+                <ButtonsContainer>
                   <TradeButton
                     onClick={() => setModal('bidTgld')}
                     style={{ whiteSpace: 'nowrap' }}
+                    width={isPhoneOrAbove ? 'min-content' : '255px'}
                   >
                     BID TGLD
                   </TradeButton>
-                </ButtonContainer>
+                  <TradeButton
+                    gradient={true}
+                    style={{ whiteSpace: 'nowrap' }}
+                    onClick={() => setOpenPopover(true)}
+                    width={'255px'}
+                  >
+                    <CalendarIcon />
+                    UPCOMING AUCTIONS
+                    {openPopover && (
+                      <UpcomingAuctionsPopover
+                        isOpen={openPopover}
+                        onClose={() => setOpenPopover(false)}
+                        data={popoverData}
+                        titles={['Date', 'Amount', 'Reminder']}
+                        width="320px"
+                        reminder={true}
+                      />
+                    )}
+                  </TradeButton>
+                </ButtonsContainer>
                 <Status>
                   <StatusContent>
                     <StatusTitle>Price Ratio</StatusTitle>
@@ -108,16 +142,15 @@ export const Details = () => {
                 </Status>
                 {isLive ? (
                   <ChartContainer>
-                    <ChartTitle>Token Price History</ChartTitle>
                     <Chart />
                   </ChartContainer>
                 ) : null}
               </CurrentAuction>
             </SpiceAuctionDetails>
           </SpiceAuction>
-          <AuctionsHistoryContainer id="auction-history">
+          {/* <AuctionsHistoryContainer id="auction-history">
             <AuctionsHistory />
-          </AuctionsHistoryContainer>
+          </AuctionsHistoryContainer> */}
         </ContentContainer>
       </PageContainer>
       <Popover
@@ -140,7 +173,7 @@ const ContentContainer = styled.div`
   display: flex;
   flex-direction: column;
   gap: 20px;
-  padding: 20px 20px 40px 20px;
+  padding: 20px 15px 40px 15px;
 
   ${breakpoints.phoneAndAbove(`
     gap: 80px;
@@ -359,6 +392,7 @@ const StatusContent = styled.div`
   justify-content: center;
   align-items: center;
   height: 136px;
+  min-width: 270px;
   width: 305px;
   white-space: nowrap;
   border: solid 1px ${({ theme }) => theme.palette.brand};
@@ -405,6 +439,7 @@ const StatusLink = styled.a`
 const ChartContainer = styled.div`
   display: flex;
   flex-direction: column;
+  min-width: 270px;
   padding: 20px 20px 20px 20px;
   gap: 40px;
   background: ${({ theme }) => theme.palette.black};
@@ -412,34 +447,51 @@ const ChartContainer = styled.div`
   border-radius: 10px;
 `;
 
-const ChartTitle = styled.div`
-  color: ${({ theme }) => theme.palette.brand};
-  font-size: 16px;
-  line-height: 19px;
-`;
-
 const AuctionsHistoryContainer = styled.div``;
 
-const ButtonContainer = styled.div`
+const ButtonsContainer = styled.div`
+  position: relative;
   display: flex;
   justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  gap: 15px;
 
   ${breakpoints.phoneAndAbove(`
+    flex-direction: row;
     justify-content: left;
+    width: 570px;
   `)}
 `;
 
-export const TradeButton = styled(Button)`
+const CalendarIcon = styled(calendar)``;
+
+export const TradeButton = styled(Button)<{ gradient?: boolean }>`
   padding: 12px 20px 12px 20px;
   width: ${(props) => props.width || 'min-content'};
   height: min-content;
-  background: linear-gradient(90deg, #58321a 20%, #95613f 84.5%);
+  background: ${({ theme, gradient }) =>
+    gradient
+      ? theme.palette.gradients.dark
+      : 'linear-gradient(90deg, #58321A 20%, #95613F 84.5%)'};
   border: 1px solid ${({ theme }) => theme.palette.brandDark};
   box-shadow: 0px 0px 20px 0px #de5c0666;
   border-radius: 10px;
   font-size: 16px;
   line-height: 20px;
   font-weight: 700;
-  text-transform: uppercase;
   color: ${({ theme }) => theme.palette.brandLight};
+
+  /* Flex settings for centering button content */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  /* Flex settings for the span inside the button */
+  & > span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+  }
 `;

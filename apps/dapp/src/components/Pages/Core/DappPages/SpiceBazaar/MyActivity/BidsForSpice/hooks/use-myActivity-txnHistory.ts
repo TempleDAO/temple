@@ -1,8 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { Transaction } from '../../DataTables/TransactionsDataTable';
 import { useWallet } from 'providers/WalletProvider';
-import { userTransactionsSpiceAuctions, subgraphQuery } from 'utils/subgraph';
-import env from 'constants/env';
+
+type Transaction = {
+  kekId: string;
+  epoch: string;
+  type: string;
+  tx: string;
+};
 
 type UseMyActivityTxnHistoryReturn = {
   data: Transaction[] | null;
@@ -10,6 +14,39 @@ type UseMyActivityTxnHistoryReturn = {
   error: string | null;
   refetch: () => void;
 };
+
+const tableData = [
+  {
+    kekId: '1234',
+    epoch: '12/12/2024',
+    type: 'Bid',
+    tx: '0x192c453a2dbb0b...0e74a056',
+  },
+  {
+    kekId: '1234',
+    epoch: '12/12/2024',
+    type: 'Claim',
+    tx: '0x342c4535430979a...0b6b8b25',
+  },
+  {
+    kekId: '1234',
+    epoch: '12/12/2024',
+    type: 'Bid',
+    tx: '0x192c453a2dbb0b...0e74a056',
+  },
+  {
+    kekId: '1234',
+    epoch: '12/12/2024',
+    type: 'Bid',
+    tx: '0x342c4535430979a...0b6b8b25',
+  },
+  {
+    kekId: '1234',
+    epoch: '12/12/2024',
+    type: 'Claim',
+    tx: '0x192c453a2dbb0b...0e74a056',
+  },
+];
 
 export const useMyActivityTxnHistory = (): UseMyActivityTxnHistoryReturn => {
   const [data, setData] = useState<Transaction[] | null>(null);
@@ -34,27 +71,7 @@ export const useMyActivityTxnHistory = (): UseMyActivityTxnHistoryReturn => {
         return;
       }
 
-      const response = await subgraphQuery(
-        env.subgraph.spiceBazaar,
-        userTransactionsSpiceAuctions(wallet)
-      );
-
-      const parsedData = response?.user?.positions
-        ?.flatMap((position) => position.transactions)
-        ?.map((transaction) => {
-          const isBid = 'bidAmount' in transaction;
-          const isClaim = 'auctionAmount' in transaction;
-
-          return {
-            id: transaction.id,
-            epoch: transaction.timestamp,
-            type: isBid ? 'Bid' : isClaim ? 'Claim' : 'Unknown',
-            transactionLink: shortenTxnHash(transaction.hash),
-            transactionHash: transaction.hash,
-          };
-        });
-
-      setData(parsedData);
+      setData(tableData);
       setLoading(false);
     } catch (err) {
       setError('Failed to fetch txn history.');

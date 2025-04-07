@@ -9,13 +9,11 @@ import closed from 'assets/icons/closed.svg?react';
 import { ScrollBar } from 'components/Pages/Core/DappPages/SpiceBazaar/components/CustomScrollBar';
 
 enum TableHeaders {
-  ID = 'ID',
-  Epoch = 'EPOCH',
-  Status = 'Status',
-  AuctionStartDate = 'Auction Start Date',
-  AuctionEndDate = 'Auction End Date',
-  TGLDAuctioned = 'TGLD Auctioned',
-  UnitPrice = 'Unit Price',
+  AuctionID = 'Auction ID',
+  AuctionStartDate = 'Auction start',
+  AuctionEndDate = 'Auction end',
+  TGLDAuctioned = 'TGLD auctioned',
+  UnitPrice = 'Unit price',
 }
 
 type TableProps = {
@@ -29,9 +27,7 @@ const ROWS_PER_PAGE = 3;
 
 export const DataTable: React.FC<TableProps> = ({ transactions, loading }) => {
   const tableHeaders = [
-    { name: TableHeaders.ID },
-    { name: TableHeaders.Epoch },
-    { name: TableHeaders.Status },
+    { name: TableHeaders.AuctionID },
     { name: TableHeaders.AuctionStartDate },
     { name: TableHeaders.AuctionEndDate },
     { name: TableHeaders.TGLDAuctioned },
@@ -112,48 +108,12 @@ export const DataTable: React.FC<TableProps> = ({ transactions, loading }) => {
               </DataRow>
             ) : (
               currentTransactions.map((transaction) => (
-                <DataRow key={transaction.epoch}>
+                <DataRow key={transaction.id}>
                   <DataCell>{transaction.id}</DataCell>
-                  <DataCell>{transaction.epoch}</DataCell>
-                  {(() => {
-                    if (transaction.status === 'Closed') {
-                      return (
-                        <DataCell>
-                          <Status>
-                            <Closed /> {transaction.status}
-                          </Status>
-                        </DataCell>
-                      );
-                    } else if (transaction.status === 'Upcoming') {
-                      return (
-                        <DataCell>
-                          <Status>
-                            <Scheduled /> {transaction.status}
-                          </Status>
-                        </DataCell>
-                      );
-                    } else if (transaction.status === 'Active') {
-                      return (
-                        <DataCell>
-                          <Status>
-                            <Active /> {transaction.status}
-                          </Status>
-                        </DataCell>
-                      );
-                    }
-                  })()}
                   <DataCell>{transaction.auctionStartDate}</DataCell>
-                  <DataCell>
-                    {transaction.status === 'Closed'
-                      ? transaction.auctionEndDate
-                      : '-'}
-                  </DataCell>
+                  <DataCell>{transaction.auctionEndDate}</DataCell>
                   <DataCell>{transaction.amountTGLD}</DataCell>
-                  <DataCell>
-                    {transaction.status === 'Closed'
-                      ? transaction.priceRatio
-                      : '-'}
-                  </DataCell>
+                  <DataCell>{transaction.priceRatio}</DataCell>
                 </DataRow>
               ))
             )}
@@ -244,6 +204,7 @@ const TableHeader = styled.th`
 
 const DataRow = styled.tr`
   padding-left: 16px;
+  border-bottom: 1px solid ${({ theme }) => theme.palette.brand};
 `;
 
 const DataCell = styled.td`

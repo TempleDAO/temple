@@ -203,13 +203,13 @@ export const Auctions = () => {
                       ) : (
                         <>
                           <StatusTitle>Price Ratio</StatusTitle>
-                          <StatusValueSmaller>
+                          <StatusValue>
                             1 TGLD ={' '}
                             {daiGoldAuctionInfo?.priceRatio < 0.01
                               ? '<0.01'
-                              : daiGoldAuctionInfo?.priceRatio.toFixed(3)}{' '}
+                              : daiGoldAuctionInfo?.priceRatio.toFixed(4)}{' '}
                             USDS
-                          </StatusValueSmaller>
+                          </StatusValue>
                           <StatusLink
                             href="#auction-history"
                             onClick={(e) => {
@@ -508,14 +508,6 @@ const StatusTitle = styled.p`
 const StatusValue = styled.p`
   margin: 0px;
   font-size: 24px;
-  font-weight: 700;
-  line-height: 29px;
-  color: ${({ theme }) => theme.palette.brandLight};
-`;
-
-const StatusValueSmaller = styled.p`
-  margin: 0px;
-  font-size: 22px;
   font-weight: 700;
   line-height: 29px;
   color: ${({ theme }) => theme.palette.brandLight};

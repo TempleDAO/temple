@@ -1,24 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { PaginationControl } from 'components/Pages/Core/DappPages/SpiceBazaar/components/PaginationControl';
 import { Transaction } from '../hooks/use-bids-history';
-import { BidTGLD, BidTGLDMode } from '../BidTGLD';
-import { Popover } from 'components/Pages/Core/DappPages/SpiceBazaar/components/Popover';
-import { Button } from 'components/Button/Button';
 import * as breakpoints from 'styles/breakpoints';
-import active from 'assets/icons/active_auc.svg?react';
-import scheduled from 'assets/icons/scheduled_auc.svg?react';
-import closed from 'assets/icons/closed.svg?react';
 import { ScrollBar } from 'components/Pages/Core/DappPages/SpiceBazaar/components/CustomScrollBar';
 
 enum TableHeaders {
-  Status = 'Status',
-  AuctionName = 'Auction Name',
-  TotalVolume = 'Total Volume',
-  FloorPrice = 'Floor Price',
-  BestOffer = 'Best Offer',
-  Links = '',
+  KekID = 'KEK ID',
+  DateStarted = 'Date started',
+  DateEnded = 'Date ended',
+  TokenName = 'Token name',
+  LotSize = 'Lot size',
+  TotalTGLDBid = 'Total TGLD bid',
+  FinalPrice = 'Final price',
 }
 
 type TableProps = {
@@ -32,26 +26,25 @@ const ROWS_PER_PAGE = 5;
 
 export const DataTable: React.FC<TableProps> = ({ transactions, loading }) => {
   const tableHeaders = [
-    { name: TableHeaders.Status },
-    { name: TableHeaders.AuctionName },
-    { name: TableHeaders.TotalVolume },
-    { name: TableHeaders.FloorPrice },
-    { name: TableHeaders.BestOffer },
-    { name: TableHeaders.Links },
+    { name: TableHeaders.KekID },
+    { name: TableHeaders.DateStarted },
+    { name: TableHeaders.DateEnded },
+    { name: TableHeaders.TokenName },
+    { name: TableHeaders.LotSize },
+    { name: TableHeaders.TotalTGLDBid },
+    { name: TableHeaders.FinalPrice },
   ];
-  const [modal, setModal] = useState<'closed' | 'bidTgld'>('closed');
+  // const [modal, setModal] = useState<'closed' | 'bidTgld'>('closed');
   const [filter, setFilter] = useState('Last 30 Days');
   const [filteredTransactions, setFilteredTransactions] =
     useState<Transaction[]>(transactions);
   const [currentPage, setCurrentPage] = useState(1);
 
-  const navigate = useNavigate();
-
   const filterOptions = ['Last Week', 'Last 30 Days', 'All'];
 
   useEffect(() => {
     const sortedTransactions = [...transactions].sort(
-      (a, b) => Number(b.startTime) - Number(a.startTime)
+      (a, b) => Number(b.dateEnded) - Number(a.dateStarted)
     );
 
     const today = new Date();
@@ -66,14 +59,14 @@ export const DataTable: React.FC<TableProps> = ({ transactions, loading }) => {
     const newFilteredTransactions = sortedTransactions.filter((transaction) => {
       if (filter === 'Last Week') {
         return (
-          transaction.startTime >= getStartOfPeriod(7) &&
-          transaction.startTime <= todayUnix
+          transaction.dateStarted >= getStartOfPeriod(7) &&
+          transaction.dateEnded <= todayUnix
         );
       }
       if (filter === 'Last 30 Days') {
         return (
-          transaction.startTime >= getStartOfPeriod(30) &&
-          transaction.startTime <= todayUnix
+          transaction.dateStarted >= getStartOfPeriod(30) &&
+          transaction.dateEnded <= todayUnix
         );
       }
       return true;
@@ -91,167 +84,78 @@ export const DataTable: React.FC<TableProps> = ({ transactions, loading }) => {
   );
   const totalPages = Math.ceil(filteredTransactions.length / ROWS_PER_PAGE);
 
-  const formatAuctionStatus = (startTime: string, endTime: string): string => {
-    const now = Math.floor(Date.now() / 1000);
-    const start = Number(startTime);
-    const end = Number(endTime);
-    const formattedEndTime = new Date((end as any) * 1000);
-
-    if (start > now) {
-      return `Upcoming ${formattedEndTime.toLocaleDateString()} ${formattedEndTime.toLocaleTimeString()}`;
-    } else if (end > now) {
-      const timeRemaining = end - now;
-      const days = Math.floor(timeRemaining / 86400);
-      const hours = Math.floor((timeRemaining % 86400) / 3600);
-      const minutes = Math.floor((timeRemaining % 3600) / 60);
-      const seconds = timeRemaining % 60;
-
-      return `Ends in ${days > 0 ? `${days}d ` : ''}${String(hours).padStart(
-        2,
-        '0'
-      )}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(
-        2,
-        '0'
-      )} at 
-      ${formattedEndTime.toLocaleDateString()} ${formattedEndTime.toLocaleTimeString()}`;
-    } else {
-      return `Closed at ${formattedEndTime.toLocaleDateString()} ${formattedEndTime.toLocaleTimeString()}`;
-    }
-  };
-
-  const getButtonState = (startTime: string, endTime: string) => {
-    const now = Math.floor(Date.now() / 1000);
-    const start = Number(startTime);
-    const end = Number(endTime);
-
-    const isUpcoming = start > now;
-    const isActive = end > now && start <= now;
-    const isClosed = end <= now;
-
-    return {
-      isActive,
-      isUpcoming,
-      isClosed,
-      detailsEnabled: isActive || isClosed,
-      bidEnabled: isActive,
-    };
-  };
-
   return (
-    <>
-      <PageContainer>
-        <Header>
-          <Title>Auctions History</Title>
-          <FilterContainer>
-            {filterOptions.map((option) => (
-              <FilterButton
-                key={option}
-                onClick={() => setFilter(option)}
-                selected={filter === option}
-              >
-                {option}
-              </FilterButton>
-            ))}
-          </FilterContainer>
-        </Header>
-        <ScrollBar autoHide={false}>
-          <TableData>
-            <thead>
-              <HeaderRow>
-                {tableHeaders.map((h) => (
-                  <TableHeader key={h.name}>{h.name}</TableHeader>
-                ))}
-              </HeaderRow>
-            </thead>
-            <tbody>
-              {loading ? (
-                <DataRow>
-                  <DataCell colSpan={6}>Loading...</DataCell>
-                </DataRow>
-              ) : currentTransactions.length === 0 ? (
-                <DataRow>
-                  <DataCell colSpan={6}>No data available</DataCell>
-                </DataRow>
-              ) : (
-                currentTransactions.map((transaction) => {
-                  const formattedStatus = formatAuctionStatus(
-                    transaction.startTime,
-                    transaction.endTime
-                  );
-                  const { detailsEnabled, bidEnabled } = getButtonState(
-                    transaction.startTime,
-                    transaction.endTime
-                  );
-
-                  return (
-                    <DataRow key={transaction.auctionName}>
-                      <DataCell>
-                        <Status>
-                          <StatusIcon>
-                            {formattedStatus.includes('Closed') && <Closed />}
-                            {formattedStatus.includes('Upcoming') && (
-                              <Scheduled />
-                            )}
-                            {formattedStatus.includes('Ends') && <Active />}
-                          </StatusIcon>
-                          <StatusText>
-                            {formattedStatus.split(' at ')[0]} <br />
-                            {formattedStatus.includes('at') &&
-                              `at ${formattedStatus.split(' at ')[1]}`}
-                          </StatusText>
-                        </Status>
-                      </DataCell>
-                      <DataCell>{transaction.auctionName}</DataCell>
-                      <DataCell>{transaction.totalVolume} ETH</DataCell>
-                      <DataCell>{transaction.floorPrice} TGLD</DataCell>
-                      <DataCell>{transaction.bestOffer} TGLD</DataCell>
-                      <DataCell>
-                        <ButtonsContainer>
-                          <TradeButton
-                            onClick={() => navigate(transaction.details)}
-                            style={{ whiteSpace: 'nowrap', margin: 0 }}
-                            disabled={!detailsEnabled}
-                          >
-                            Details
-                          </TradeButton>
-                          <TradeButton
-                            onClick={() => setModal('bidTgld')}
-                            style={{ whiteSpace: 'nowrap', margin: 0 }}
-                            disabled={!bidEnabled}
-                          >
-                            BID
-                          </TradeButton>
-                        </ButtonsContainer>
-                      </DataCell>
-                    </DataRow>
-                  );
-                })
-              )}
-            </tbody>
-          </TableData>
-        </ScrollBar>
-        <PaginationControl
-          totalPages={totalPages}
-          currentPage={currentPage}
-          setCurrentPage={setCurrentPage}
-        />
-      </PageContainer>
-      <Popover
-        isOpen={modal != 'closed'}
-        onClose={() => setModal('closed')}
-        closeOnClickOutside
-        showCloseButton
-      >
-        <BidTGLD mode={BidTGLDMode.Bid} />
-      </Popover>
-    </>
+    <PageContainer>
+      <Header>
+        <Title>Auctions History</Title>
+        <FilterContainer>
+          {filterOptions.map((option) => (
+            <FilterButton
+              key={option}
+              onClick={() => setFilter(option)}
+              selected={filter === option}
+            >
+              {option}
+            </FilterButton>
+          ))}
+        </FilterContainer>
+      </Header>
+      <ScrollBar autoHide={false}>
+        <TableData>
+          <thead>
+            <HeaderRow>
+              {tableHeaders.map((h) => (
+                <TableHeader key={h.name}>{h.name}</TableHeader>
+              ))}
+            </HeaderRow>
+          </thead>
+          <tbody>
+            {loading ? (
+              <DataRow>
+                <DataCell colSpan={6}>Loading...</DataCell>
+              </DataRow>
+            ) : currentTransactions.length === 0 ? (
+              <DataRow>
+                <DataCell colSpan={6}>No data available</DataCell>
+              </DataRow>
+            ) : (
+              currentTransactions.map((transaction) => {
+                return (
+                  <DataRow key={transaction.kekId}>
+                    <DataCell>{transaction.kekId}</DataCell>
+                    <DataCell>
+                      {new Date(
+                        Number(transaction.dateStarted) * 1000
+                      ).toLocaleDateString('en-GB')}
+                    </DataCell>
+                    <DataCell>
+                      {new Date(
+                        Number(transaction.dateEnded) * 1000
+                      ).toLocaleDateString('en-GB')}
+                    </DataCell>
+                    <DataCell>{transaction.tokenName}</DataCell>
+                    <DataCell>{transaction.lotSize} Unit</DataCell>
+                    <DataCell>{transaction.totalTgldBid} TGLD</DataCell>
+                    <DataCell>{transaction.finalPrice} TGLD</DataCell>
+                  </DataRow>
+                );
+              })
+            )}
+          </tbody>
+        </TableData>
+      </ScrollBar>
+      <PaginationControl
+        totalPages={totalPages}
+        currentPage={currentPage}
+        setCurrentPage={setCurrentPage}
+      />
+    </PageContainer>
   );
 };
 
 const PageContainer = styled.div`
   display: flex;
   flex-direction: column;
-  padding: 40px 0px 24px 0px;
   gap: 20px;
 
   ${breakpoints.phoneAndAbove(`
@@ -325,7 +229,9 @@ const TableHeader = styled.th`
   }
 `;
 
-const DataRow = styled.tr``;
+const DataRow = styled.tr`
+  border-bottom: 1px solid ${({ theme }) => theme.palette.brand};
+`;
 
 const DataCell = styled.td`
   font-size: 13px;
@@ -345,55 +251,3 @@ const DataCell = styled.td`
     padding: 20px 0px 20px 16px;
   }
 `;
-
-const ButtonsContainer = styled.div`
-  display: flex;
-  flex-direction: row;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-`;
-
-const TradeButton = styled(Button)`
-  padding: 10px 20px;
-  width: auto;
-  height: min-content;
-  background: ${({ theme }) => theme.palette.gradients.dark};
-  border: ${({ disabled, theme }) =>
-    disabled ? 'none' : `1px solid ${theme.palette.brandDark}`};
-  box-shadow: ${({ disabled }) =>
-    disabled ? 'none' : '0px 0px 20px 0px rgba(222, 92, 6, 0.4)'};
-  border-radius: 10px;
-  font-weight: 700;
-  font-size: 12px;
-  line-height: 20px;
-  text-transform: uppercase;
-  color: ${({ theme }) => theme.palette.brandLight};
-
-  &:disabled {
-    color: #acacac;
-  }
-`;
-
-const Status = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px; /* Space between icon and text */
-`;
-
-const StatusIcon = styled.div`
-  display: flex;
-  align-items: center;
-`;
-
-const StatusText = styled.div`
-  display: flex;
-  flex-direction: column;
-`;
-
-const Active = styled(active)``;
-
-const Scheduled = styled(scheduled)``;
-
-const Closed = styled(closed)``;

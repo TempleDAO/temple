@@ -1,17 +1,13 @@
 import { useState, useEffect } from 'react';
-import { spiceAuctionFactories, subgraphQuery } from 'utils/subgraph';
-import env from 'constants/env';
 
 export type Transaction = {
-  status: 'Upcoming' | 'Active' | 'Closed';
-  auctionName: string;
-  totalVolume: number;
-  floorPrice: number;
-  bestOffer: number;
-  details: string;
-  bid: string;
-  startTime: string;
-  endTime: string;
+  kekId: string;
+  dateStarted: string;
+  dateEnded: string;
+  tokenName: string;
+  lotSize: number;
+  totalTgldBid: number;
+  finalPrice: number;
 };
 
 type UseBidsHistoryReturn = {
@@ -21,64 +17,110 @@ type UseBidsHistoryReturn = {
   refetch: () => void;
 };
 
+const transactionsData: Transaction[] = [
+  {
+    kekId: 'ID name',
+    dateStarted: '1742455532',
+    dateEnded: '1742455532',
+    tokenName: 'Spice 1',
+    lotSize: 1848,
+    totalTgldBid: 0.1097,
+    finalPrice: 0.0819,
+  },
+  {
+    kekId: 'ID name',
+    dateStarted: '1742282732',
+    dateEnded: '1742282732',
+    tokenName: 'Spice 1',
+    lotSize: 1848,
+    totalTgldBid: 0.1097,
+    finalPrice: 0.0819,
+  },
+  {
+    kekId: 'ID name',
+    dateStarted: '1742282732',
+    dateEnded: '1742282732',
+    tokenName: 'Spice 2',
+    lotSize: 1848,
+    totalTgldBid: 0.1088,
+    finalPrice: 0.0919,
+  },
+  {
+    kekId: 'ID name',
+    dateStarted: '1742196332',
+    dateEnded: '1742196332',
+    tokenName: 'Spice 2',
+    lotSize: 1848,
+    totalTgldBid: 0.1088,
+    finalPrice: 0.0919,
+  },
+  {
+    kekId: 'ID name',
+    dateStarted: '1742196332',
+    dateEnded: '1742196332',
+    tokenName: 'Spice 5',
+    lotSize: 1848,
+    totalTgldBid: 0.1093,
+    finalPrice: 0.0811,
+  },
+  {
+    kekId: 'ID name',
+    dateStarted: '1741245932',
+    dateEnded: '1741245932',
+    tokenName: 'Spice 5',
+    lotSize: 1848,
+    totalTgldBid: 0.1093,
+    finalPrice: 0.0811,
+  },
+  {
+    kekId: 'ID name',
+    dateStarted: '1741159532',
+    dateEnded: '1741159532',
+    tokenName: 'Spice 3',
+    lotSize: 1848,
+    totalTgldBid: 0.1091,
+    finalPrice: 0.0829,
+  },
+  {
+    kekId: 'ID name',
+    dateStarted: '1741159532',
+    dateEnded: '1741159532',
+    tokenName: 'Spice 3',
+    lotSize: 1848,
+    totalTgldBid: 0.1091,
+    finalPrice: 0.0829,
+  },
+  {
+    kekId: 'ID name',
+    dateStarted: '1741073132',
+    dateEnded: '1741073132',
+    tokenName: 'Spice 4',
+    lotSize: 1848,
+    totalTgldBid: 0.1064,
+    finalPrice: 0.0862,
+  },
+  {
+    kekId: 'ID name',
+    dateStarted: '1741073132',
+    dateEnded: '1741073132',
+    tokenName: 'Spice 4',
+    lotSize: 1848,
+    totalTgldBid: 0.1064,
+    finalPrice: 0.0862,
+  },
+];
+
 export const useBidsHistory = (): UseBidsHistoryReturn => {
   const [data, setData] = useState<Transaction[] | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-
-  const getAuctionStatus = (
-    startTime: string,
-    endTime: string
-  ): 'Upcoming' | 'Active' | 'Closed' => {
-    const now = new Date().getTime().toString();
-
-    if (startTime > now) {
-      return 'Upcoming';
-    } else if (endTime > now) {
-      return 'Active';
-    } else {
-      return 'Closed';
-    }
-  };
 
   const fetchData = async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const response = await subgraphQuery(
-        env.subgraph.spiceBazaar,
-        spiceAuctionFactories(env.contracts.spiceBazaar.spiceAuctionFactory)
-      );
-
-      setData(
-        response.spiceAuctionFactories.flatMap((factory) =>
-          factory.spiceAuctions.flatMap((auction) =>
-            auction.auctionInstances.slice(0, 3).map((instance) => {
-              const startTime = instance.startTime;
-              const endTime = (
-                Number(startTime) + Number(instance.duration)
-              ).toString();
-
-              return {
-                status: getAuctionStatus(
-                  startTime.toString(),
-                  endTime.toString()
-                ),
-                auctionName: auction.name.replace(/_/g, ' '),
-                totalVolume: Number(instance.totalAuctionTokenAmount) || 0,
-                floorPrice: 0, // Placeholder
-                bestOffer: 0, // Placeholder
-                details: 'details',
-                bid: '',
-                startTime,
-                endTime,
-              };
-            })
-          )
-        )
-      );
-
+      setData(transactionsData);
       setLoading(false);
     } catch (err) {
       console.error('Error fetching data:', err);

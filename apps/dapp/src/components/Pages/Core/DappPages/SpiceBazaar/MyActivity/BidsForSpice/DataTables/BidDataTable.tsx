@@ -14,12 +14,13 @@ import {
 import { InputSelect } from 'components/InputSelect/InputSelect';
 
 export type Transaction = {
-  epochId: string;
+  kekId: string;
   auctionEndDateTime: string;
-  bidAmount: string;
+  chain: string;
+  token: string;
   claimableTokens: number | undefined;
-  unit: string;
   unitPrice: string;
+  bidTotal: string;
   action: 'Bid' | 'Claim' | '';
 };
 
@@ -80,17 +81,18 @@ export const DataTable: React.FC<TableProps> = ({
     daiGoldAuctions: { claim: daiGoldAuctionClaim },
   } = useSpiceBazaar();
 
-  useEffect(() => {
-    const sortedTransactions = [...transactions].sort(
-      (a, b) => Number(b.epochId) - Number(a.epochId)
-    );
+  // Not needed for the dummy data
+  // useEffect(() => {
+  //   const sortedTransactions = [...transactions].sort(
+  //     (a, b) => Number(b.kekId) - Number(a.kekId)
+  //   );
 
-    if (filter === 'Last 5 Shown') {
-      setFilteredTransactions(sortedTransactions.slice(0, 5));
-    } else {
-      setFilteredTransactions(sortedTransactions);
-    }
-  }, [filter, transactions]);
+  //   if (filter === 'Last 5 Shown') {
+  //     setFilteredTransactions(sortedTransactions.slice(0, 5));
+  //   } else {
+  //     setFilteredTransactions(sortedTransactions);
+  //   }
+  // }, [filter, transactions]);
 
   const [resolvedActions, setResolvedActions] = useState<
     Record<string, '' | 'Bid' | 'Claim'>
@@ -105,14 +107,14 @@ export const DataTable: React.FC<TableProps> = ({
     const resolveActions = async () => {
       const resolved = await Promise.all(
         transactions.map(async (transaction) => ({
-          epochId: transaction.epochId,
+          kekId: transaction.kekId,
           action: await transaction.action,
         }))
       );
 
       setResolvedActions(
         resolved.reduce((acc, curr) => {
-          acc[curr.epochId] = curr.action;
+          acc[curr.kekId] = curr.action;
           return acc;
         }, {} as Record<string, 'Bid' | 'Claim' | ''>) // The state will hold "Bid", "Claim", or ""
       );
@@ -187,29 +189,26 @@ export const DataTable: React.FC<TableProps> = ({
                 </DataRow>
               ) : (
                 filteredTransactions.map((transaction) => {
-                  const action = resolvedActions[transaction.epochId];
+                  const action = resolvedActions[transaction.kekId];
                   return (
-                    <DataRow key={transaction.epochId}>
-                      <DataCell>{transaction.epochId}</DataCell>
+                    <DataRow key={transaction.kekId}>
+                      <DataCell>{transaction.kekId}</DataCell>
+                      <DataCell>{transaction.auctionEndDateTime}</DataCell>
+                      <DataCell>{transaction.chain}</DataCell>
+                      <DataCell>{transaction.token}</DataCell>
                       <DataCell>
-                        {new Date(
-                          Number(transaction.auctionEndDateTime) * 1000
-                        ).toLocaleDateString('en-GB')}
-                      </DataCell>
-                      <DataCell>{transaction.bidAmount} USDS</DataCell>
-                      <DataCell>
-                        {transaction.claimableTokens
+                        {transaction.claimableTokens !== undefined
                           ? formatNumberWithCommas(transaction.claimableTokens)
-                          : ' - '}
+                          : '-'}
                       </DataCell>
-                      <DataCell>{transaction.unit}</DataCell>
                       <DataCell>{transaction.unitPrice}</DataCell>
+                      <DataCell>{transaction.bidTotal}</DataCell>
                       <DataCell>
                         <ButtonContainer>
                           {action === 'Bid' && (
                             <TradeButton
                               onClick={() => {
-                                setCurrentBidAmount(transaction.bidAmount);
+                                setCurrentBidAmount(transaction.bidTotal);
                                 setModalState(modal);
                               }}
                               style={{ whiteSpace: 'nowrap', margin: 0 }}
@@ -222,7 +221,7 @@ export const DataTable: React.FC<TableProps> = ({
                               <TradeButton
                                 onClick={async () => {
                                   await daiGoldAuctionClaim(
-                                    Number(transaction.epochId)
+                                    Number(transaction.kekId)
                                   );
                                   refetch?.();
                                 }}
@@ -259,6 +258,7 @@ export const DataTable: React.FC<TableProps> = ({
     </>
   );
 };
+
 const PageContainer = styled.div`
   display: flex;
   flex-direction: column;
@@ -356,7 +356,7 @@ const TableHeader = styled.th<{ name: string }>`
   z-index: 1;
 
   &:first-child {
-    padding: 20px 25px 20px 0px;
+    padding: 5px 25px 20px 0px;
   }
 `;
 
