@@ -19,7 +19,6 @@ import { Button } from 'components/Button/Button';
 import { useEffect, useState } from 'react';
 import { queryProtocolData, queryTrvData, subgraphQuery } from 'utils/subgraph';
 import env from 'constants/env';
-import { useTemplePrice } from 'hooks/use-temple-price';
 
 interface Metrics {
   price: number;
@@ -98,8 +97,6 @@ const FooterContent = [
 ];
 
 const Home = ({ tlc }: { tlc?: boolean }) => {
-  const { price } = useTemplePrice();
-
   const [metrics, setMetrics] = useState<Metrics>({
     price: 0,
     tpi: 0,
@@ -162,7 +159,7 @@ const Home = ({ tlc }: { tlc?: boolean }) => {
         {/* Metrics */}
         <MetricsRow>
           <Metric>
-            <MetricValue>${price ? price.toFixed(2) : '0.00'}</MetricValue>
+            <MetricValue>${metrics.price.toFixed(4)}</MetricValue>
             <MetricTitle>$TEMPLE Price</MetricTitle>
           </Metric>
           <Metric>
