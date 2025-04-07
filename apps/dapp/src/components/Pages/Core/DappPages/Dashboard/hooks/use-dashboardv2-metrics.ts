@@ -10,7 +10,7 @@ import {
 } from '../DashboardConfig';
 import {
   queryBenchmarkRate,
-  queryRamosData,
+  queryProtocolData,
   queryStrategyBalances,
   queryStrategyData,
   queryTempleCirculatingSupply,
@@ -236,8 +236,8 @@ export default function useDashboardV2Metrics(dashboardData: DashboardData) {
   };
 
   const getTempleSpotPrice = async () => {
-    const response = await subgraphQuery(env.subgraph.ramos, queryRamosData());
-    return response.metrics[0].spotPrice;
+    const response = await subgraphQuery(env.subgraph.protocolMetrics, queryProtocolData());
+    return response.metrics[0].templePrice;
   };
 
   const formatPercent = (input: number) => {
