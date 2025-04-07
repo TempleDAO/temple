@@ -108,14 +108,7 @@ export const SpiceBazaarTopNav = () => {
     setMenuNavItems((prevMenuNavItems) =>
       prevMenuNavItems.map((menuItem) => ({
         ...menuItem,
-        selected:
-          menuItem.path === loc.pathname ||
-          (menuItem.path === '/dapp/spice/earn' &&
-            loc.pathname.startsWith('/dapp/spice/earn')) ||
-          (menuItem.path === '/dapp/spice/bid' &&
-            loc.pathname.startsWith('/dapp/spice/bid')) ||
-          (menuItem.path === '/dapp/spice/myactivity/tgld' &&
-            loc.pathname.startsWith('/dapp/spice/myactivity')),
+        selected: menuItem.path === loc.pathname,
       }))
     );
   }, [loc.pathname]);

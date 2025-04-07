@@ -4,7 +4,7 @@ import { subDays } from 'date-fns';
 import { format } from 'date-fns';
 import { formatNumberAbbreviated } from 'utils/formatter';
 import { InputSelect } from 'components/InputSelect/InputSelect';
-import CustomBarChart from '../componentes/BarChart';
+import CustomBarChart from '../components/BarChart';
 
 type XAxisTickFormatter = (timestamp: number) => string;
 

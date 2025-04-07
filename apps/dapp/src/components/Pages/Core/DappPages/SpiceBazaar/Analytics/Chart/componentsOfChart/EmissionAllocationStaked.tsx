@@ -1,5 +1,5 @@
 import { subDays } from 'date-fns';
-import LineChart from '../../componentes/LineChart';
+import LineChart from '../../components/LineChart';
 import { formatNumberAbbreviated } from 'utils/formatter';
 import { useTheme } from 'styled-components';
 import { tickFormatter } from '../Chart';

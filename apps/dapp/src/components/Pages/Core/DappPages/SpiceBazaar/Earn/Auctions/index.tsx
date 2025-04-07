@@ -1,4 +1,3 @@
-import { EarnTopNav } from 'components/Pages/Core/DappPages/SpiceBazaar/Earn/TopNav';
 import linkSvg from 'assets/icons/link.svg?react';
 import active from 'assets/icons/active.svg?react';
 import scheduled from 'assets/icons/scheduled.svg?react';
@@ -70,7 +69,6 @@ export const Auctions = () => {
   return (
     <>
       <PageContainer>
-        <EarnTopNav />
         <ContentContainer>
           <DaiGoldAuctions>
             <DaiGold>
@@ -300,7 +298,7 @@ const PageContainer = styled.div`
   margin-top: -60px;
 
   ${breakpoints.phoneAndAbove(`
-    margin-top: -20px;
+    // margin-top: 0px;
   `)}
 `;
 
