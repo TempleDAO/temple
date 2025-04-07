@@ -1,4 +1,3 @@
-import { EarnTopNav } from 'components/Pages/Core/DappPages/SpiceBazaar/Earn/TopNav';
 import linkSvg from 'assets/icons/link.svg?react';
 import active from 'assets/icons/active.svg?react';
 import scheduled from 'assets/icons/scheduled.svg?react';
@@ -70,7 +69,6 @@ export const Auctions = () => {
   return (
     <>
       <PageContainer>
-        <EarnTopNav />
         <ContentContainer>
           <DaiGoldAuctions>
             <DaiGold>
@@ -203,13 +201,13 @@ export const Auctions = () => {
                       ) : (
                         <>
                           <StatusTitle>Price Ratio</StatusTitle>
-                          <StatusValueSmaller>
+                          <StatusValue>
                             1 TGLD ={' '}
                             {daiGoldAuctionInfo?.priceRatio < 0.01
                               ? '<0.01'
-                              : daiGoldAuctionInfo?.priceRatio.toFixed(3)}{' '}
+                              : daiGoldAuctionInfo?.priceRatio.toFixed(4)}{' '}
                             USDS
-                          </StatusValueSmaller>
+                          </StatusValue>
                           <StatusLink
                             href="#auction-history"
                             onClick={(e) => {
@@ -300,7 +298,7 @@ const PageContainer = styled.div`
   margin-top: -60px;
 
   ${breakpoints.phoneAndAbove(`
-    margin-top: -20px;
+    // margin-top: 0px;
   `)}
 `;
 
@@ -508,14 +506,6 @@ const StatusTitle = styled.p`
 const StatusValue = styled.p`
   margin: 0px;
   font-size: 24px;
-  font-weight: 700;
-  line-height: 29px;
-  color: ${({ theme }) => theme.palette.brandLight};
-`;
-
-const StatusValueSmaller = styled.p`
-  margin: 0px;
-  font-size: 22px;
   font-weight: 700;
   line-height: 29px;
   color: ${({ theme }) => theme.palette.brandLight};

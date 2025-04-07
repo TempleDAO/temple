@@ -10,7 +10,6 @@ import { useMediaQuery } from 'react-responsive';
 import { queryPhone, queryMinTablet } from 'styles/breakpoints';
 import { useSpiceBazaar } from 'providers/SpiceBazaarProvider';
 import { useEffect } from 'react';
-import { EarnTopNav } from 'components/Pages/Core/DappPages/SpiceBazaar/Earn/TopNav';
 
 export const Earn = () => {
   const navigate = useNavigate();
@@ -33,11 +32,10 @@ export const Earn = () => {
 
   return (
     <PageContainer>
-      <EarnTopNav />
       <BodyContainer>
         <Header>
           <HeaderTitle>
-            Earn Temple Gold
+            Spice Bazaar
             <LinkIcon
               onClick={() =>
                 window.open(

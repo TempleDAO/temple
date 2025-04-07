@@ -1,10 +1,17 @@
 import { useCallback, useEffect, useState } from 'react';
-import { user, subgraphQuery } from 'utils/subgraph';
-import type { Transaction } from '../../DataTables/BidDataTable';
 import { useWallet } from 'providers/WalletProvider';
 import { useSpiceBazaar } from 'providers/SpiceBazaarProvider';
-import env from 'constants/env';
-import { Auction } from '../../BidsForTGLD/hooks/use-myActivity-bidsTGLDHistory';
+
+type Transaction = {
+  kekId: string;
+  auctionEndDateTime: string;
+  chain: string;
+  token: string;
+  claimableTokens: number | undefined;
+  unitPrice: string;
+  bidTotal: string;
+  action: 'Bid' | 'Claim' | '';
+};
 
 type useMyActivityBidsSpiceHistoryReturn = {
   data: Transaction[] | null;
@@ -12,6 +19,59 @@ type useMyActivityBidsSpiceHistoryReturn = {
   error: string | null;
   refetch: () => void;
 };
+
+const transactions: Transaction[] = [
+  {
+    kekId: 'ID',
+    auctionEndDateTime: '30.09.2024',
+    chain: 'Chain 1',
+    token: 'WSBI',
+    claimableTokens: undefined,
+    unitPrice: '-',
+    bidTotal: '100 TLGD',
+    action: 'Claim',
+  },
+  {
+    kekId: 'ID',
+    auctionEndDateTime: '14.10.2024',
+    chain: 'Chain 1',
+    token: 'WSBI',
+    claimableTokens: 100000,
+    unitPrice: '231',
+    bidTotal: '100 TLGD',
+    action: 'Claim',
+  },
+  {
+    kekId: 'ID',
+    auctionEndDateTime: '28.10.2024',
+    chain: 'Chain 1',
+    token: 'ENA',
+    claimableTokens: 200000,
+    unitPrice: '99',
+    bidTotal: '100 TLGD',
+    action: 'Claim',
+  },
+  {
+    kekId: 'ID',
+    auctionEndDateTime: '30.09.2024',
+    chain: 'Chain 1',
+    token: 'WSBI',
+    claimableTokens: 150000,
+    unitPrice: '78',
+    bidTotal: '100 TLGD',
+    action: 'Claim',
+  },
+  {
+    kekId: 'ID',
+    auctionEndDateTime: '-',
+    chain: 'Chain 1',
+    token: 'ENA',
+    claimableTokens: undefined,
+    unitPrice: '-',
+    bidTotal: '100 TLGD',
+    action: 'Claim',
+  },
+];
 
 export const useMyActivityBidsSpiceHistory =
   (): useMyActivityBidsSpiceHistoryReturn => {
@@ -54,37 +114,7 @@ export const useMyActivityBidsSpiceHistory =
           return;
         }
 
-        const response = await subgraphQuery(
-          env.subgraph.spiceBazaar,
-          user(wallet, Auction.SpiceAuction)
-        );
-
-        const positions = await Promise.all(
-          response.user.positions.map(async (p: any) => {
-            const actionResult = await action(
-              p.auctionInstance.endTime,
-              p.totalBidAmount,
-              p.hasClaimed
-            );
-
-            // do not fetch unless the action is "Claim"
-            const claimableTokens =
-              actionResult === 'Claim' &&
-              (await getClaimableAtEpoch(p.auctionInstance.epoch));
-
-            return {
-              epochId: p.auctionInstance.epoch,
-              auctionEndDateTime: p.auctionInstance.endTime,
-              bidAmount: parseFloat(p.totalBidAmount).toFixed(2),
-              claimableTokens,
-              unit: 'TGLD',
-              unitPrice: parseFloat(p.auctionInstance.priceRatio).toFixed(5),
-              action: actionResult,
-            };
-          })
-        );
-
-        setData(positions as Transaction[]);
+        setData(transactions);
         setLoading(false);
       } catch (err) {
         console.error('Error fetching data:', err);

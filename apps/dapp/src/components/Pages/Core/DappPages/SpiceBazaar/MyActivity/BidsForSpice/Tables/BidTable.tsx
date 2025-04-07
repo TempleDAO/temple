@@ -3,7 +3,7 @@ import { DataTable } from '../DataTables/BidDataTable';
 import { useMyActivityBidsSpiceHistory } from '../hooks/use-myActivity-bidsSpiceHistory';
 
 enum TableHeaders {
-  EpochId = 'EPOCH\nID',
+  KekId = 'KEK ID',
   AuctionEndDateTime = 'Auction End',
   Chain = 'Chain',
   Token = 'Token',
@@ -14,7 +14,7 @@ enum TableHeaders {
 }
 
 const tableHeaders = [
-  { name: TableHeaders.EpochId },
+  { name: TableHeaders.KekId },
   { name: TableHeaders.AuctionEndDateTime },
   { name: TableHeaders.Chain },
   { name: TableHeaders.Token },

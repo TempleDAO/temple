@@ -5,11 +5,10 @@ import * as breakpoints from 'styles/breakpoints';
 import { ScrollBar } from 'components/Pages/Core/DappPages/SpiceBazaar/components/CustomScrollBar';
 
 export type Transaction = {
-  id: string;
+  kekId: string;
   epoch: string;
   type: string;
-  transactionLink: string;
-  transactionHash: string;
+  tx: string;
 };
 
 type TableHeader = { name: string };
@@ -30,6 +29,7 @@ export const DataTable: React.FC<TableProps> = ({
   const [filter, setFilter] = useState('Last 5 Shown');
   const [filteredTransactions, setFilteredTransactions] =
     useState<Transaction[]>(transactions);
+
   const filterOptions = ['Last 5 Shown', 'Show All'];
 
   useEffect(() => {
@@ -72,28 +72,25 @@ export const DataTable: React.FC<TableProps> = ({
           <tbody>
             {loading ? (
               <DataRow>
-                <DataCell colSpan={6}>Loading...</DataCell>
+                <DataCell colSpan={4}>Loading...</DataCell>
               </DataRow>
             ) : filteredTransactions.length === 0 ? (
               <DataRow>
-                <DataCell colSpan={6}>No data available</DataCell>
+                <DataCell colSpan={4}>No data available</DataCell>
               </DataRow>
             ) : (
               filteredTransactions.map((transaction) => (
-                <DataRow key={transaction.id}>
-                  <DataCell>
-                    {new Date(
-                      Number(transaction.epoch) * 1000
-                    ).toLocaleDateString('en-GB')}
-                  </DataCell>
+                <DataRow key={`${transaction.kekId}-${transaction.tx}`}>
+                  <DataCell>{transaction.kekId}</DataCell>
+                  <DataCell>{transaction.epoch}</DataCell>
                   <DataCell>{transaction.type}</DataCell>
                   <DataCell>
                     <a
                       target="_blank"
                       rel="noreferrer"
-                      href={`${env.etherscan}/tx/${transaction.transactionHash}`}
+                      href={`${env.etherscan}/tx/${transaction.tx}`}
                     >
-                      {transaction.transactionLink}
+                      {transaction.tx}
                     </a>
                   </DataCell>
                 </DataRow>
@@ -150,11 +147,10 @@ const FilterButton = styled.button<{ selected: boolean }>`
 `;
 
 const TableData = styled.table`
-  border-spacing: 10px
+  border-spacing: 10px;
   width: 100%;
   border-collapse: collapse;
   min-width: 500px;
-  width: 100%;
 `;
 
 const HeaderRow = styled.tr`
@@ -186,6 +182,7 @@ const DataRow = styled.tr`
 `;
 
 const DataCell = styled.td`
+  width: 30%;
   font-size: 13px;
   font-weight: 700;
   line-height: 20px;

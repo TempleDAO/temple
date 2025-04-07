@@ -22,19 +22,19 @@ export const SpiceBazaarTopNav = () => {
   const SpiceBazaarConfig = featureFlag.isEnabled
     ? [
         {
-          label: 'Earn Temple Gold',
+          label: 'Overview',
           linkTo: SpiceLocPaths.Earn,
-          options: [
-            { label: 'Overview', path: '/dapp/spice/earn' },
-            {
-              label: 'Stake TEMPLE',
-              path: '/dapp/spice/earn/staketemple/stake',
-            },
-            { label: 'USDS Gold Auctions', path: '/dapp/spice/earn/auctions' },
-          ],
         },
         {
-          label: 'Bid Temple Gold',
+          label: 'Earn Temple Gold',
+          linkTo: '/dapp/spice/earn/staketemple/stake',
+        },
+        {
+          label: 'Bid For Temple Gold',
+          linkTo: '/dapp/spice/earn/auctions',
+        },
+        {
+          label: 'Spend Temple Gold',
           linkTo: SpiceLocPaths.Bid,
         },
         {
@@ -108,14 +108,7 @@ export const SpiceBazaarTopNav = () => {
     setMenuNavItems((prevMenuNavItems) =>
       prevMenuNavItems.map((menuItem) => ({
         ...menuItem,
-        selected:
-          menuItem.path === loc.pathname ||
-          (menuItem.path === '/dapp/spice/earn' &&
-            loc.pathname.startsWith('/dapp/spice/earn')) ||
-          (menuItem.path === '/dapp/spice/bid' &&
-            loc.pathname.startsWith('/dapp/spice/bid')) ||
-          (menuItem.path === '/dapp/spice/myactivity/tgld' &&
-            loc.pathname.startsWith('/dapp/spice/myactivity')),
+        selected: menuItem.path === loc.pathname,
       }))
     );
   }, [loc.pathname]);
@@ -140,6 +133,8 @@ export const SpiceBazaarTopNav = () => {
             <TopNav
               menuNavItems={menuNavItems}
               onSelectMenuNavItems={onSelectMenuNavItems}
+              showSelector={true}
+              positionSelector={'-20%'}
             />
           ) : (
             <MobileTopNav
@@ -173,4 +168,6 @@ const AllSpices = styled(allSpices)`
   top: 0;
   right: 0;
   z-index: 0;
+  height: auto;
+  overflow: hidden;
 `;

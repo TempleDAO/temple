@@ -11,9 +11,9 @@ import {
   formatNumberWithCommas,
 } from 'utils/formatter';
 import * as breakpoints from 'styles/breakpoints';
-import useRefreshableProtocolMetrics, {
-  ProtocolMetrics,
-} from 'hooks/use-refreshable-protocol-metrics';
+import useRefreshableRamosMetrics, {
+  RamosMetrics,
+} from 'hooks/use-refreshable-ramos-metrics';
 
 type XAxisTickFormatter = (timestamp: number) => string;
 
@@ -52,14 +52,14 @@ const xTickFormatter = (value: number, _index: number) =>
 const CHART_INTERVAL: ChartSupportedTimeInterval = '1Y';
 
 export const RAMOSMetrics: FC = () => {
-  const { dailyMetrics, hourlyMetrics } = useRefreshableProtocolMetrics();
+  const { dailyMetrics, hourlyMetrics } = useRefreshableRamosMetrics();
   const theme = useTheme();
 
   if (dailyMetrics.length === 0 || hourlyMetrics.length === 0) {
     return <Loader iconSize={48} />;
   }
 
-  function formatData(metric: ProtocolMetrics) {
+  function formatData(metric: RamosMetrics) {
     return {
       timestamp: metric.timestamp * 1000,
       templeBurned: parseFloat(metric.templeBurned),

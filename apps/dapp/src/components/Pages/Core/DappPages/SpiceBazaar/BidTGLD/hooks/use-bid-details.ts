@@ -2,8 +2,6 @@ import { useState, useEffect } from 'react';
 
 export type Transaction = {
   id: number;
-  epoch: number;
-  status: 'Closed' | 'Active' | 'Upcoming';
   auctionStartDate: string;
   auctionEndDate: string;
   amountTGLD: string;
@@ -20,8 +18,6 @@ type UseBidDetailsReturn = {
 const transactionsData: Transaction[] = [
   {
     id: 113,
-    epoch: 6,
-    status: 'Closed',
     auctionStartDate: '2025-02-02 23:22:59 CST',
     auctionEndDate: '2025-02-03 23:22:59 CST',
     amountTGLD: '20,832.81 TGLD',
@@ -29,8 +25,6 @@ const transactionsData: Transaction[] = [
   },
   {
     id: 112,
-    epoch: 5,
-    status: 'Closed',
     auctionStartDate: '2025-02-02 23:22:59 CST',
     auctionEndDate: '2025-02-03 23:22:59 CST',
     amountTGLD: '20,832.81 TGLD',
@@ -38,8 +32,6 @@ const transactionsData: Transaction[] = [
   },
   {
     id: 111,
-    epoch: 4,
-    status: 'Active',
     auctionStartDate: '2025-02-03 23:22:59 CST',
     auctionEndDate: '-',
     amountTGLD: '18,000.00 TGLD',
@@ -47,8 +39,6 @@ const transactionsData: Transaction[] = [
   },
   {
     id: 110,
-    epoch: 3,
-    status: 'Active',
     auctionStartDate: '2025-02-03 23:22:59 CST',
     auctionEndDate: '-',
     amountTGLD: '18,000.00 TGLD',
@@ -56,8 +46,6 @@ const transactionsData: Transaction[] = [
   },
   {
     id: 109,
-    epoch: 2,
-    status: 'Upcoming',
     auctionStartDate: '2025-02-03 23:22:59 CST',
     auctionEndDate: '-',
     amountTGLD: '22,500.00 TGLD',
@@ -65,8 +53,6 @@ const transactionsData: Transaction[] = [
   },
   {
     id: 108,
-    epoch: 1,
-    status: 'Upcoming',
     auctionStartDate: '2025-02-03 23:22:59 CST',
     auctionEndDate: '-',
     amountTGLD: '22,500.00 TGLD',
