@@ -3,7 +3,6 @@ import { ThemeProvider } from 'styled-components';
 import { theme } from 'styles/theme';
 import { NotificationProvider } from 'providers/NotificationProvider';
 import { WalletProvider } from 'providers/WalletProvider';
-import { SwapProvider } from 'providers/SwapProvider';
 import { StakingProvider } from 'providers/StakingProvider';
 import { FaithProvider } from 'providers/FaithProvider';
 import { VaultContextProvider } from 'components/Pages/Core/VaultContext';
@@ -28,22 +27,18 @@ export const AppProvider = (props: PropsWithChildren<{}>) => {
     <NotificationProvider>
       <WalletProvider>
         <QueryClientProvider client={queryClient}>
-          <SwapProvider>
-            <StakingProvider>
-              <FaithProvider>
-                <VaultContextProvider>
-                  <ThemeProvider theme={theme}>
-                    <AppContext.Provider value={{}}>
-                      <WrongNetworkPopover />
-                      <SpiceBazaarProvider>
-                        {props.children}
-                      </SpiceBazaarProvider>
-                    </AppContext.Provider>
-                  </ThemeProvider>
-                </VaultContextProvider>
-              </FaithProvider>
-            </StakingProvider>
-          </SwapProvider>
+          <StakingProvider>
+            <FaithProvider>
+              <VaultContextProvider>
+                <ThemeProvider theme={theme}>
+                  <AppContext.Provider value={{}}>
+                    <WrongNetworkPopover />
+                    <SpiceBazaarProvider>{props.children}</SpiceBazaarProvider>
+                  </AppContext.Provider>
+                </ThemeProvider>
+              </VaultContextProvider>
+            </FaithProvider>
+          </StakingProvider>
         </QueryClientProvider>
       </WalletProvider>
     </NotificationProvider>

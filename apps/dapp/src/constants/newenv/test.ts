@@ -17,8 +17,8 @@ import { AppConfig, Chain, ContractConfig, TokenConfig } from './types';
 const ETH_SEPOLIA: Chain = {
   name: 'Ethereum Sepolia',
   id: 11155111,
-  rpcUrl: 'https://0xrpc.io/sep',
-  walletRpcUrl: 'https://0xrpc.io/sep',
+  rpcUrl: 'https://ethereum-sepolia-rpc.publicnode.com',
+  walletRpcUrl: 'https://ethereum-sepolia-rpc.publicnode.com',
   nativeCurrency: {
     name: 'SepoliaETH',
     symbol: 'SepoliaETH',

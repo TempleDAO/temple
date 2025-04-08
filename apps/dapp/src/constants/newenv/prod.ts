@@ -18,8 +18,8 @@ import { TempleGoldStaking__factory } from 'types/typechain';
 const ETH_MAINNET: Chain = {
   name: 'Ethereum Mainnet',
   id: 1,
-  rpcUrl: 'https://rpc.ankr.com/eth',
-  walletRpcUrl: 'https://rpc.ankr.com/eth',
+  rpcUrl: 'https://eth.llamarpc.com',
+  walletRpcUrl: 'https://eth.llamarpc.com',
   nativeCurrency: {
     name: 'ETH',
     symbol: 'ETH',
