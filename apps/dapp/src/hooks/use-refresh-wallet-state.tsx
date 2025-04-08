@@ -1,6 +1,5 @@
 import { useCallback, useState } from 'react';
 import { useWallet } from 'providers/WalletProvider';
-import { useSwap } from 'providers/SwapProvider';
 import { useStaking } from 'providers/StakingProvider';
 import { useFaith } from 'providers/FaithProvider';
 
