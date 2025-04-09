@@ -16,6 +16,7 @@ export type ProviderApi = {
   providers: VMap<ChainId, providers.JsonRpcProvider>;
   tokens: MemoizedAsyncMap<TokenConfig, Contract>;
   contracts: MemoizedAsyncMap<ContractConfig<Contract>, Contract>;
+  getProvider: (chainId: ChainId) => providers.JsonRpcProvider;
   getContract: <T extends Contract>(config: ContractConfig<T>) => Promise<T>;
   getConnectedContract: <T extends Contract>(
     config: ContractConfig<T>,

@@ -6,4 +6,5 @@ export const NETWORK_AGNOSTIC_ROUTE_PATTERNS = [
   '/dapp/spice', // Spice Bazaar features
   '/dapp/borrow', // Borrow features
   '/dapp/dashboard', // Dashboard features
+  '/dapp/trade', // Trade features
 ] as const;
