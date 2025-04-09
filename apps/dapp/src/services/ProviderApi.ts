@@ -10,6 +10,7 @@ import { VMap } from 'utils/vmap';
 import { BigNumber, Contract, providers, Signer } from 'ethers';
 
 import { ERC20, ERC20__factory } from 'types/typechain';
+import { logged } from './utils';
 export type ProviderApi = {
   chains: VMap<ChainId, Chain>;
   providers: VMap<ChainId, providers.JsonRpcProvider>;
@@ -99,6 +100,15 @@ export class ProviderApiImpl implements ProviderApi {
   }
 
   async loadContract<T extends Contract>(
+    config: ContractConfig<T>
+  ): Promise<T> {
+    return logged(this._loadContract(config), {
+      label: 'loadContract',
+      req: [config],
+    });
+  }
+
+  async _loadContract<T extends Contract>(
     config: ContractConfig<T>
   ): Promise<T> {
     const provider = this.getProvider(config.chainId);
