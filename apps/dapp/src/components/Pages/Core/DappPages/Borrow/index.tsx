@@ -243,7 +243,6 @@ export const BorrowPage = () => {
       );
 
       const tlcInfoFromContracts = await getTlcInfoFromContracts();
-
       setMetricsLoading(false);
 
       // prevent showing 0s in UI if we don't have data from contracts
@@ -266,9 +265,8 @@ export const BorrowPage = () => {
       });
     } catch (e) {
       setMetricsLoading(false);
-      console.log(e);
     }
-  }, [getTlcInfoFromContracts, signer, wallet]);
+  }, [getTlcInfoFromContracts, papi, wallet]);
 
   useEffect(() => {
     const onMount = async () => {
@@ -555,10 +553,7 @@ export const BorrowPage = () => {
   const getBorrowRate = () =>
     tlcInfo ? (tlcInfo.borrowRate * 100).toFixed(2) : 0;
 
-  const showLoading = useMemo(
-    () => metricsLoading || !wallet,
-    [metricsLoading, wallet]
-  );
+  const showLoading = useMemo(() => metricsLoading, [metricsLoading]);
 
   const availableToBorrow = useMemo(() => {
     if (!tlcInfo) return '...';
