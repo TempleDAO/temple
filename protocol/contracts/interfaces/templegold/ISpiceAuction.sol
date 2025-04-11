@@ -53,7 +53,7 @@ interface ISpiceAuction is IAuctionBase {
     /// @notice DAO contract to execute configurations update
     function daoExecutor() external view returns (address);
 
-    /// @notice Cosecha Segunda Strategy multisig
+    /// @notice Strategy Gnosis address which funds spice auctions
     function strategyGnosis() external view returns (address);
 
     /// @notice Operator
@@ -87,31 +87,31 @@ interface ISpiceAuction is IAuctionBase {
      */
     function getAuctionConfig(uint256 auctionId) external view returns (SpiceAuctionConfig memory);
 
-    /**
-     * @notice Get claimable amount for an epoch
-     * @dev function will return claimable for epoch. This can change with more user deposits
-     * @param depositor Address to check amount for
-     * @param epochId Epoch id
-     * @return tokenAmount Claimable represented by TokenAmount struct
-     */
-    function getClaimableForEpoch(
-        address depositor,
-        uint256 epochId
-    ) external view returns (TokenAmount memory tokenAmount);
+    // /**
+    //  * @notice Get claimable amount for an epoch
+    //  * @dev function will return claimable for epoch. This can change with more user deposits
+    //  * @param depositor Address to check amount for
+    //  * @param epochId Epoch id
+    //  * @return tokenAmount Claimable represented by TokenAmount struct
+    //  */
+    // function getClaimableForEpoch(
+    //     address depositor,
+    //     uint256 epochId
+    // ) external view returns (TokenAmount memory tokenAmount);
+
+    // /**
+    //  * @notice Get claimed amount for an epoch and also the address of the auction token
+    //  * @param depositor Address to check amount for
+    //  * @param epochId Epoch Id
+    //  * @return tokenAmount TokenAmount claimable struct
+    //  */
+    // function getClaimedForEpoch(
+    //     address depositor,
+    //     uint256 epochId
+    // ) external view returns (TokenAmount memory tokenAmount);
 
     /**
-     * @notice Get claimed for an epoch along with auction token
-     * @param depositor Address to check amount for
-     * @param epochId Epoch Id
-     * @return tokenAmount TokenAmount claimable struct
-     */
-    function getClaimedForEpoch(
-        address depositor,
-        uint256 epochId
-    ) external view returns (TokenAmount memory tokenAmount);
-
-    /**
-     * @notice Get claimed amount for an array of epochs
+     * @notice Get claimed amounts for an array of epochs
      * @param depositor Address to check amount for
      * @param epochIds Array of epoch ids
      * @return tokenAmounts Array of claimed TokenAmount structs
@@ -202,7 +202,7 @@ interface ISpiceAuction is IAuctionBase {
     /**
      * @notice Set next auction start and end times.
      * Transfers auction token for next auction and updates epoch time params
-     * @dev Must be called by CSS strategy gnosis
+     * @dev Must be called by `strategyGnosis()`
      * @param amount Amount of auction tokens to transfer
      * @param startTime Start time of next auction
      */

@@ -41,7 +41,7 @@ contract StableGoldAuctionTestBase is TempleGoldCommon {
     TempleGoldStaking public goldStaking;
 
     function setUp() public {
-        /// @dev forking for layerzero endpoint to execute code
+        // forking for layerzero endpoint to execute code
         fork("arbitrum_one", 204026954);
 
         ITempleGold.InitArgs memory initArgs = _getTempleGoldInitArgs();
@@ -292,7 +292,7 @@ contract StableGoldAuctionTestView is StableGoldAuctionTestBase {
     }
 
     function test_getAuctionConfig() public {
-        /// @dev See test_setAuctionConfig()
+        // See test_setAuctionConfig()
     }
 
     function test_nextEpoch() public view {

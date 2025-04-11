@@ -15,7 +15,7 @@ interface ISpiceAuctionFactory {
     /// @notice Operator
     function operator() external view returns (address);
 
-    /// @notice Cosecha Segunda Strategy Gnosis
+    /// @notice Strategy Gnosis address which funds spice auctions
     function strategyGnosis() external view returns (address);
 
     /// @notice Spice Auction deployer

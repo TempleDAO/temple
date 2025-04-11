@@ -68,7 +68,7 @@ contract SpiceAuctionFactory is ISpiceAuctionFactory, TempleElevatedAccess {
         address spiceAuction = deployer.deploy(templeGold, spiceToken, daoExecutor, operator, strategyGnosis,
             _mintChainLzEid, _mintChainId, name, salt);
         bytes32 pairId = _getPairHash(spiceToken);
-        /// @dev not checking pair address exists to allow overwrite in case of a migration
+        /// not checking pair address exists to allow overwrite in case of a migration
         deployedAuctions[pairId] = spiceAuction;
         emit AuctionCreated(pairId, spiceAuction);
         return address(spiceAuction);

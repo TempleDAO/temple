@@ -116,20 +116,20 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
 
     /// @inheritdoc ISpiceAuction
     function setAuctionConfig(SpiceAuctionConfig calldata _config) external onlyDAOExecutor {
-        /// @dev epoch Id is only updated when auction starts. 
-        /// @dev cannot set config for past or ongoing auction
+        // epoch Id is only updated when auction starts. 
+        // cannot set config for past or ongoing auction
         uint256 currentEpochIdCache = _currentEpochId;
         if (currentEpochIdCache > 0) {
             EpochInfo storage info = epochs[currentEpochIdCache];
             /// Cannot set config for ongoing auction
             if (info.isActive()) { revert InvalidConfigOperation(); }
-            /// @dev if auction is funded and `startTime > block.timestamp`, call `removeAuctionConfig` and receive funds
+            // If the next auction is already funded and `epoch.startTime > block.timestamp`, admin should call `removeAuctionConfig()` to reset config and pull funds, which also deletes the next auction.
             if (epochs[currentEpochIdCache].startTime > block.timestamp) { revert AuctionFunded(); }
         }
         
         if (_config.duration < MINIMUM_AUCTION_PERIOD 
             || _config.duration > MAXIMUM_AUCTION_DURATION) { revert CommonEventsAndErrors.InvalidParam(); }
-        /// @dev startCooldown can be zero
+        // startCooldown can be zero
         if (_config.waitPeriod == 0
             || _config.minimumDistributedAuctionToken == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
         if (_config.recipient == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
@@ -149,11 +149,11 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
         if (info.startTime == 0) { revert InvalidConfigOperation(); }
         // Cannot reset an ongoing auction
         if (info.isActive()) { revert AuctionActive(); }
-        /// @dev could be that `fundNextAuction` is called but `block.timestamp < startTime`(so can delete epochInfo for _currentEpochId and refund)
+        // could be that `fundNextAuction` is called but `block.timestamp < startTime`(so can delete epochInfo for _currentEpochId and refund)
         // or `fundNextAuction` is not called but `auctionConfig` is set (where _currentEpochId is not updated yet)
         bool configSetButAuctionNotFunded = auctionConfigs[id+1].duration > 0;
         if  (!configSetButAuctionNotFunded) {
-            /// @dev Unlikely admin tries to delete old ended auction, but check nonetheless
+            // Unlikely admin tries to delete old ended auction, but check nonetheless
             if (info.hasEnded()) { revert AuctionEnded(); }
             SpiceAuctionConfig storage config = auctionConfigs[id];
             (,address auctionToken) = _getBidAndAuctionTokens(config);
@@ -170,7 +170,7 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
             // `fundNextAuction` is not called but auction config is set
             id += 1;
             delete auctionConfigs[id];
-            /// @dev 0 here means the epoch was not deleted
+            // 0 here means the epoch was not deleted
             emit AuctionConfigRemoved(id, 0);
         }
     }
@@ -186,7 +186,7 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
         if (msg.sender != strategyGnosis) { revert CommonEventsAndErrors.InvalidAccess(); }
         if (amount == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
 
-        /// @dev Not imposing restrictions on start time except for being in future to allow for flexibility
+        // Not imposing restrictions on start time except for being in future to allow for flexibility
         if (startTime <= block.timestamp) { revert CommonEventsAndErrors.InvalidParam(); }
         // we check that last auction has ended before updating the amount of tokens
         uint256 epochId = _currentEpochId;
@@ -203,13 +203,13 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
         IERC20(auctionToken).safeTransferFrom(msg.sender, address(this), amount);
 
         EpochInfo storage info = epochs[nextEpochId];
-        /// @dev This assumes startTime has cooldown baked in
+        // This assumes startTime has cooldown baked in
         info.startTime = startTime;
         uint128 endTime = info.endTime = startTime + config.duration;
 
         emit SpiceAuctionEpochSet(nextEpochId, auctionToken, startTime, endTime, amount);
 
-        /// @dev This does not take into account donated tokens transferred to this contract
+        // This does not take into account donated tokens transferred to this contract
         info.totalAuctionTokenAmount = amount;
         // update epoch
         _currentEpochId = nextEpochId;
@@ -225,7 +225,7 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
     ) private view {
         /// check enough wait period since last auction
         if (epochId > 0) {
-            /// @dev `_currentEpochId` is still last epoch
+            // `_currentEpochId` is still last epoch
             EpochInfo memory lastEpochInfo = epochs[epochId];
             /// use waitperiod from last auction config
             uint64 _waitPeriod = auctionConfigs[epochId].waitPeriod;
@@ -238,7 +238,7 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
 
     /// @inheritdoc IAuctionBase
     function bid(uint256 amount) external virtual override {
-        /// @dev Cache, gas savings
+        // Cache, gas savings
         uint256 epochId = _currentEpochId;
         EpochInfo storage info = epochs[epochId];
 
@@ -309,7 +309,7 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
             return;
         }
 
-        /// @dev To recover spice or TGLD tokens after funding but before `startTime`, use `removeAucionConfig`
+        // To recover spice or TGLD tokens after funding but before `startTime`, use `removeAucionConfig()`
         
         // recover "donated" spice or TGLD tokens
         uint256 balance = IERC20(token).balanceOf(address(this));
@@ -397,49 +397,27 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
     }
 
     /// @inheritdoc ISpiceAuction
-    function getClaimableForEpoch(
-        address depositor,
-        uint256 epochId
-    ) public override view returns (TokenAmount memory tokenAmount) {
-        if (epochId > _currentEpochId || epochId == 0) { return tokenAmount; }
-
-        uint256 bidTokenAmount = depositors[depositor][epochId];
-        EpochInfo memory info = epochs[epochId];
-        (, address auctionToken) = _getBidAndAuctionTokens(auctionConfigs[epochId]);
-        uint256 amount = bidTokenAmount == 0 ?
-            0 : bidTokenAmount.mulDivRound(info.totalAuctionTokenAmount, info.totalBidTokenAmount, false);
-        amount = claimed[depositor][epochId] ? 0 : amount;
-        tokenAmount = TokenAmount({
-            token: auctionToken,
-            amount: amount
-        });
-    }
-
-    /// @inheritdoc ISpiceAuction
     function getClaimableForEpochs(
         address depositor,
         uint256[] memory epochIds
     ) external view returns (TokenAmount[] memory tokenAmounts) {
         uint256 _length = epochIds.length;
         tokenAmounts = new TokenAmount[](_length);
+        uint256 epochId;
+        uint256 amount;
         for (uint256 i; i < _length; ++i) {
-            tokenAmounts[i] = getClaimableForEpoch(depositor, epochIds[i]);
+            epochId = epochIds[i];
+            if (epochId > _currentEpochId || epochId == 0) { continue; }
+            uint256 bidTokenAmount = depositors[depositor][epochId];
+            EpochInfo memory info = epochs[epochId];
+            (, address auctionToken) = _getBidAndAuctionTokens(auctionConfigs[epochId]);
+            amount = info.totalBidTokenAmount == 0 ? 0 : bidTokenAmount.mulDivRound(info.totalAuctionTokenAmount, info.totalBidTokenAmount, false);
+            amount = claimed[depositor][epochId] ? 0 : amount;
+            tokenAmounts[i] = TokenAmount({
+                token: auctionToken,
+                amount: amount
+            });
         }
-    }
-
-    /// @inheritdoc ISpiceAuction
-    function getClaimedForEpoch(
-        address depositor,
-        uint256 epochId
-    ) public override view returns (TokenAmount memory tokenAmount) {
-        if (epochId > _currentEpochId || epochId == 0) { return  tokenAmount; }
-        uint256 amount = claimedAmount[depositor][epochId];
-        /// @dev Don't return null if amount is 0, still insert the epoch auction token. 
-        (, address auctionToken) = _getBidAndAuctionTokens(auctionConfigs[epochId]);
-        tokenAmount = TokenAmount({
-            token: auctionToken,
-            amount: amount
-        });
     }
 
     /// @inheritdoc ISpiceAuction
@@ -449,8 +427,18 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
     ) external override view returns (TokenAmount[] memory tokenAmounts) {
         uint256 _length = epochIds.length;
         tokenAmounts = new TokenAmount[](_length);
+        uint256 epochId;
+        uint256 amount;
         for (uint256 i; i < _length; ++i) {
-            tokenAmounts[i] = getClaimedForEpoch(depositor, epochIds[i]);
+            epochId = epochIds[i];
+            if (epochId > _currentEpochId || epochId == 0) { continue; }
+            amount = claimedAmount[depositor][epochId];
+            // Don't return null if amount is 0, still insert the epoch auction token.
+            (, address auctionToken) = _getBidAndAuctionTokens(auctionConfigs[epochId]);
+            tokenAmounts[i] = TokenAmount({
+                token: auctionToken,
+                amount: amount
+            });
         }
     }
 
