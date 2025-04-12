@@ -2,20 +2,23 @@ pragma solidity ^0.8.20;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (templegold/SpiceAuction.sol)
 
-
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { ISpiceAuction } from "contracts/interfaces/templegold/ISpiceAuction.sol";
-import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
-import { AuctionBase } from "contracts/templegold/AuctionBase.sol";
-import { TempleMath } from "contracts/common/TempleMath.sol";
-import { EpochLib } from "contracts/templegold/EpochLib.sol";
-import { IAuctionBase } from "contracts/interfaces/templegold/IAuctionBase.sol";
-import { ITempleGold } from "contracts/interfaces/templegold/ITempleGold.sol";
 import { SendParam } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/interfaces/IOFT.sol";
 import { MessagingFee } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/OFTCore.sol";
 import { OptionsBuilder } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/libs/OptionsBuilder.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
+import { ISpiceAuction } from "contracts/interfaces/templegold/ISpiceAuction.sol";
+import { IAuctionBase } from "contracts/interfaces/templegold/IAuctionBase.sol";
+import { ITempleGold } from "contracts/interfaces/templegold/ITempleGold.sol";
+
+import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
+import { AuctionBase } from "contracts/templegold/AuctionBase.sol";
+import { TempleMath } from "contracts/common/TempleMath.sol";
+import { EpochLib } from "contracts/templegold/EpochLib.sol";
+
 
 /** 
  * @title SpiceAuction
@@ -26,71 +29,87 @@ import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.s
  * Bid and auction tokens could change per auction. These are set in `AuctionConfig`. 
  * Config is set before the next auction starts using `setAuctionConfig` by DAO execution.
  */
-contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
+contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard, Initializable {
     using SafeERC20 for IERC20;
     using TempleMath for uint256;
     using EpochLib for IAuctionBase.EpochInfo;
     using OptionsBuilder for bytes;
 
-    /// @notice Spice auction contracts are set up for 2 tokens. Either token can be bid or sell token for a given auction
-    address public immutable override spiceToken;
-    /// @notice Temple GOLD
-    address public immutable override templeGold;
-    /// @notice DAO contract to execute configurations update
-    address public override daoExecutor;
-    /// @notice Operator
-    address public override operator;
-    /// @notice Cosecha Segunda Strategy multisig
-    address public immutable override strategyGnosis;
+    /// @inheritdoc ISpiceAuction
+    address public override spiceToken;
 
-    /// @notice Auctions run for minimum 1 week
-    uint32 public constant MINIMUM_AUCTION_PERIOD = 1 weeks;
-    /// @notice Maximum auction duration
+   /// @inheritdoc ISpiceAuction
+    address public override templeGold;
+
+    /// @inheritdoc ISpiceAuction
+    address public override daoExecutor;
+
+    /// @inheritdoc ISpiceAuction
+    address public override operator;
+
+    /// @inheritdoc ISpiceAuction
+    address public override strategyGnosis;
+
+    /// @inheritdoc ISpiceAuction
+    uint32 public constant MINIMUM_AUCTION_DURATION = 1 weeks;
+
+    /// @inheritdoc ISpiceAuction
     uint32 public constant MAXIMUM_AUCTION_DURATION = 30 days;
+
     /// @notice layer zero EID of mint chain
-    uint32 private immutable _mintChainEid;
-    /// @notice The mint chain ID
-    uint32 private immutable _mintChainId;
-    /// @notice Max gas limit for use by executor in calling `lzReceive`
+    uint32 private _mintChainEid;
+
+    /// @inheritdoc ISpiceAuction
     uint32 public override lzReceiveExecutorGas;
 
-    /// @notice Name of this Spice Bazaar auction
+    /// @inheritdoc ISpiceAuction
     string public override name;
 
-    /// @notice Last time auction was started. For zero auctions, it is the contract deploy timestamp
-    uint256 private immutable _deployTimestamp;
+    /// @notice Last time auction was started. For zero auctions, it is the contract initialize timestamp
+    uint256 private _initializeTimestamp;
+
+    /// @notice The mint chain ID
+    uint32 private _mintChainId;
 
     /// @notice Keep track of the different configurations for each auction
     mapping(uint256 auctionId => SpiceAuctionConfig config) public auctionConfigs;
+
     /// @notice Keep track of claimed amounts per auction token. This helps calculate amount of auction tokens for next epoch.
     mapping(address token => uint256 amount) private _claimedAuctionTokens;
+
     /// @notice Keep track of total allocation per auction token
     mapping(address token => uint256 amount) private _totalAuctionTokenAllocation;
-    /// @notice Keep track of redeemed and notified epochs
+
+    /// @inheritdoc ISpiceAuction
     mapping(uint256 epochId => bool redeemed) public override redeemedEpochs;
-    /// @notice Keep track of total claimed token per account
+
+    /// @inheritdoc ISpiceAuction
     mapping(address account => mapping(address token => uint256 amount)) public override accountTotalClaimed;
 
-    constructor(
-        address _templeGold,
-        address _spiceToken,
-        address _daoExecutor,
-        address _operator,
-        address _strategyGnosis,
+    constructor() {
+        lzReceiveExecutorGas = 85_889;
+    }
+
+    /// @inheritdoc ISpiceAuction
+    function initialize(
+        address templeGold_,
+        address spiceToken_,
+        address daoExecutor_,
+        address operator_,
+        address strategyGnosis_,
         uint32 mintChainEid_,
         uint32 mintChainId_,
-        string memory _name
-    ) {
-        spiceToken = _spiceToken;
-        daoExecutor = _daoExecutor;
-        operator = _operator;
-        strategyGnosis = _strategyGnosis;
-        templeGold = _templeGold;
+        string memory name_
+    ) external initializer {
+        spiceToken = spiceToken_;
+        daoExecutor = daoExecutor_;
+        operator = operator_;
+        strategyGnosis = strategyGnosis_;
+        templeGold = templeGold_;
         _mintChainEid = mintChainEid_;
         _mintChainId = mintChainId_;
-        name = _name;
-        _deployTimestamp = block.timestamp;
-        lzReceiveExecutorGas = 85_889;
+        name = name_;
+        _initializeTimestamp = block.timestamp;
     }
 
     /// @inheritdoc ISpiceAuction
@@ -127,7 +146,7 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
             if (epochs[currentEpochIdCache].startTime > block.timestamp) { revert AuctionFunded(); }
         }
         
-        if (_config.duration < MINIMUM_AUCTION_PERIOD 
+        if (_config.duration < MINIMUM_AUCTION_DURATION
             || _config.duration > MAXIMUM_AUCTION_DURATION) { revert CommonEventsAndErrors.InvalidParam(); }
         // startCooldown can be zero
         if (_config.waitPeriod == 0
@@ -145,7 +164,7 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
         uint256 id = _currentEpochId;
         
         EpochInfo storage info = epochs[id];
-        // if _currentEpochId = 0
+        // if _currentEpochId is 0
         if (info.startTime == 0) { revert InvalidConfigOperation(); }
         // Cannot reset an ongoing auction
         if (info.isActive()) { revert AuctionActive(); }
@@ -232,7 +251,7 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard {
             if (lastEpochInfo.endTime + _waitPeriod > checkTimestamp) { revert WaitPeriod(); }
         } else {
             /// For first auction
-            if (_deployTimestamp + nextAuctionConfig.waitPeriod > checkTimestamp) { revert WaitPeriod(); }
+            if (_initializeTimestamp + nextAuctionConfig.waitPeriod > checkTimestamp) { revert WaitPeriod(); }
         }
     }
 

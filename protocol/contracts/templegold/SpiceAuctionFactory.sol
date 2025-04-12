@@ -2,11 +2,13 @@ pragma solidity ^0.8.20;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (templegold/SpiceAuctionFactory.sol)
 
+import { Clones } from "@openzeppelin/contracts/proxy/Clones.sol";
+
+import { ISpiceAuctionFactory } from "contracts/interfaces/templegold/ISpiceAuctionFactory.sol";
+import { ISpiceAuction } from "contracts/interfaces/templegold/ISpiceAuction.sol";
 
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
-import { ISpiceAuctionDeployer } from "contracts/interfaces/templegold/ISpiceAuctionDeployer.sol";
-import { ISpiceAuctionFactory } from "contracts/interfaces/templegold/ISpiceAuctionFactory.sol";
 
 
 /** 
@@ -15,41 +17,48 @@ import { ISpiceAuctionFactory } from "contracts/interfaces/templegold/ISpiceAuct
  */
 contract SpiceAuctionFactory is ISpiceAuctionFactory, TempleElevatedAccess {
 
-    /// @notice Temple Gold
+    /// @inheritdoc ISpiceAuctionFactory
+    address public immutable override implementation;
+
+     /// @inheritdoc ISpiceAuctionFactory
     address public immutable override templeGold;
-    /// @notice Dao executing contract
+
+    /// @inheritdoc ISpiceAuctionFactory
     address public immutable override daoExecutor;
-    /// @notice Operator
+
+    /// @inheritdoc ISpiceAuctionFactory
     address public immutable override operator;
-    /// @notice Cosecha Segunda Strategy gnosis
+
+    /// @inheritdoc ISpiceAuctionFactory
     address public immutable override strategyGnosis;
-    /// @notice Spice Auction deployer
-    ISpiceAuctionDeployer public immutable override deployer;
+
     /// @notice Mint chain layer zero EID
     uint32 private immutable _mintChainLzEid;
+
     /// @notice Arbitrum One chain ID
     uint32 private immutable _mintChainId;
+
     /// @notice Keep track of deployed spice auctions
     mapping(bytes32 id => address auction) public override deployedAuctions;
 
     constructor(
-        address _rescuer,
-        address _executor,
-        address _daoExecutor,
-        address _operator,
-        address _strategyGnosis,
-        address _deployer,
-        address _templeGold,
+        address implementation_,
+        address rescuer_,
+        address executor_,
+        address daoExecutor_,
+        address operator_,
+        address strategyGnosis_,
+        address templeGold_,
         uint32 mintChainLzEid_,
         uint32 mintChainId_
-    ) TempleElevatedAccess(_rescuer, _executor) {
-        daoExecutor = _daoExecutor;
-        operator = _operator;
-        strategyGnosis = _strategyGnosis;
-        templeGold = _templeGold;
+    ) TempleElevatedAccess(rescuer_, executor_) {
+        implementation = implementation_;
+        daoExecutor = daoExecutor_;
+        operator = operator_;
+        strategyGnosis = strategyGnosis_;
+        templeGold = templeGold_;
         _mintChainLzEid = mintChainLzEid_;
         _mintChainId = mintChainId_;
-        deployer = ISpiceAuctionDeployer(_deployer);
     }
 
     /**
@@ -59,19 +68,19 @@ contract SpiceAuctionFactory is ISpiceAuctionFactory, TempleElevatedAccess {
      */
     function createAuction(
         address spiceToken,
-        bytes32 salt,
         string memory name
-    ) external override onlyElevatedAccess returns (address) {
+    ) external override onlyElevatedAccess returns (address spiceAuction) {
         if (spiceToken == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
         if (spiceToken == templeGold) { revert CommonEventsAndErrors.InvalidParam(); }
 
-        address spiceAuction = deployer.deploy(templeGold, spiceToken, daoExecutor, operator, strategyGnosis,
-            _mintChainLzEid, _mintChainId, name, salt);
+        // deploy and initialize
+        spiceAuction = Clones.clone(implementation);
+        ISpiceAuction(spiceAuction).initialize(templeGold, spiceToken, daoExecutor, operator, strategyGnosis, _mintChainLzEid, _mintChainId, name);
+
         bytes32 pairId = _getPairHash(spiceToken);
-        /// not checking pair address exists to allow overwrite in case of a migration
+        // not checking pair address exists to allow overwrite in case of a migration
         deployedAuctions[pairId] = spiceAuction;
         emit AuctionCreated(pairId, spiceAuction);
-        return address(spiceAuction);
     }
 
     /**

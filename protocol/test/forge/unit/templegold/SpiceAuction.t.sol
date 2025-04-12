@@ -2,18 +2,20 @@ pragma solidity ^0.8.20;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // (tests/forge/templegold/SpiceAuction.t.sol)
 
-import { TempleGoldCommon } from "./TempleGoldCommon.t.sol";
-import { ISpiceAuction } from "contracts/interfaces/templegold/ISpiceAuction.sol";
-import { SpiceAuctionFactory } from "contracts/templegold/SpiceAuctionFactory.sol";
-import { SpiceAuctionDeployer } from "contracts/templegold/SpiceAuctionDeployer.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+
 import { ITempleGold } from "contracts/interfaces/templegold/ITempleGold.sol";
+import { ISpiceAuction } from "contracts/interfaces/templegold/ISpiceAuction.sol";
+import { IAuctionBase } from "contracts/interfaces/templegold/IAuctionBase.sol";
+
+import { TempleGoldCommon } from "test/forge/unit/templegold/TempleGoldCommon.t.sol";
+import { SpiceAuctionFactory } from "contracts/templegold/SpiceAuctionFactory.sol";
 import { TempleGold } from "contracts/templegold/TempleGold.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
-import { IAuctionBase } from "contracts/interfaces/templegold/IAuctionBase.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { FakeERC20 } from "contracts/fakes/FakeERC20.sol";
 import { TempleGoldStaking } from "contracts/templegold/TempleGoldStaking.sol";
 import { StableGoldAuction } from "contracts/templegold/StableGoldAuction.sol";
+import { SpiceAuction } from "contracts/templegold/SpiceAuction.sol";
 
 contract SpiceAuctionTestBase is TempleGoldCommon {
     event Claim(address indexed user, uint256 epochId, uint256 bidTokenAmount, uint256 auctionTokenAmount);
@@ -29,19 +31,28 @@ contract SpiceAuctionTestBase is TempleGoldCommon {
     event OperatorSet(address indexed operator);
     event SpiceAuctionEpochSet(uint256 epoch, address auctionToken, uint128 startTime, uint128 endTime, uint256 amount);
 
-    address public daoExecutor = makeAddr("daoExecutor");
-    address public cssGnosis = makeAddr("cssGnosis");
-    FakeERC20 public TEMPLE_TOKEN;
-    TempleGoldStaking public staking;
+    address internal daoExecutor = makeAddr("daoExecutor");
+
+    address internal cssGnosis = makeAddr("cssGnosis");
+
+    SpiceAuction internal implementation;
+
+    FakeERC20 internal TEMPLE_TOKEN;
+
+    TempleGoldStaking internal staking;
 
     /// @notice Auctions run for minimum 1 week
-    uint32 public constant MINIMUM_AUCTION_PERIOD = 604_800;
+    uint32 internal constant MINIMUM_AUCTION_DURATION = 604_800;
 
-    ISpiceAuction public spice;
-    SpiceAuctionFactory public factory;
-    TempleGold public TGLD;
-    StableGoldAuction public auction;
-    SpiceAuctionDeployer public deployer;
+    uint32 internal constant MAXIMUM_AUCTION_DURATION = 30 days;
+
+    ISpiceAuction internal spice;
+
+    SpiceAuctionFactory internal factory;
+
+    TempleGold internal TGLD;
+
+    StableGoldAuction internal auction;
 
     uint256 internal _deployTs;
 
@@ -53,8 +64,8 @@ contract SpiceAuctionTestBase is TempleGoldCommon {
         TGLD = new TempleGold(initArgs);
         TEMPLE_TOKEN = new FakeERC20("Temple Token", "TEMPLE", executor, 1000 ether);
         staking = new TempleGoldStaking(rescuer, executor, address(TEMPLE_TOKEN), address(TGLD));
-        deployer = new SpiceAuctionDeployer();
-        factory = new SpiceAuctionFactory(rescuer, executor, daoExecutor, mike, cssGnosis, address(deployer),
+        implementation = new SpiceAuction();
+        factory = new SpiceAuctionFactory(address(implementation), rescuer, executor, daoExecutor, mike, cssGnosis,
             address(TGLD), ARBITRUM_ONE_LZ_EID, uint32(arbitrumOneChainId));
         fakeERC20 = new FakeERC20("FAKE TOKEN", "FAKE", executor, 1000 ether);
         auction = new StableGoldAuction(
@@ -66,7 +77,7 @@ contract SpiceAuctionTestBase is TempleGoldCommon {
             executor
         );
         vm.startPrank(executor);
-        spice = ISpiceAuction(factory.createAuction(daiToken, bytes32(""), NAME_ONE));
+        spice = ISpiceAuction(factory.createAuction(daiToken, NAME_ONE));
         _deployTs = block.timestamp;
         TGLD.authorizeContract(address(spice), true);
         TGLD.authorizeContract(cssGnosis, true);
@@ -82,6 +93,8 @@ contract SpiceAuctionTestBase is TempleGoldCommon {
         assertEq(spice.spiceToken(), daiToken);
         assertEq(spice.daoExecutor(), daoExecutor);
         assertEq(spice.operator(), mike);
+        assertEq(spice.MINIMUM_AUCTION_DURATION(), MINIMUM_AUCTION_DURATION);
+        assertEq(spice.MAXIMUM_AUCTION_DURATION(), MAXIMUM_AUCTION_DURATION);
     }
 
     function _getAuctionConfig() internal view returns (ISpiceAuction.SpiceAuctionConfig memory config) {

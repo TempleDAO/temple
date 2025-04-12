@@ -9,34 +9,49 @@ import { FakeERC20 } from "contracts/fakes/FakeERC20.sol";
 import { TempleGold } from "contracts/templegold/TempleGold.sol";
 
 contract TempleGoldCommon is TempleTest {
-    address public treasury = makeAddr("treasury");
-    address public teamGnosis = makeAddr("teamGnosis");
-    address public mike = makeAddr("mike");
-    address public layerZeroEndpointArbitrumOne = 0x1a44076050125825900e736c501f859c50fE728c;
-    address public layerZeroEndpointEthereum = 0x1a44076050125825900e736c501f859c50fE728c;
-    uint256 public layerZeroEndpointArbitrumId = 30110;
-    address public usdcToken = 0xaf88d065e77c8cC2239327C5EDb3A432268e5831; // arb USDC
-    address public daiToken = 0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1; //arb DAI
+    address internal treasury = makeAddr("treasury");
 
-    string public constant TEMPLE_GOLD_NAME = "TEMPLE GOLD";
-    string public constant TEMPLE_GOLD_SYMBOL = "TGLD";
+    address internal teamGnosis = makeAddr("teamGnosis");
 
-    uint256 public mintChainId = 1;
-    uint256 public arbitrumOneChainId = 42161;
-    uint32 public constant MAINNET_LZ_EID = 30101;
-    uint32 public constant ARBITRUM_ONE_LZ_EID = 30110;
+    address internal mike = makeAddr("mike");
 
-    uint256 public constant forkBlockNumber = 204226954;
-    uint256 public constant mainnetForkBlockNumber = 20053784;
-    uint256 public constant WEEK_LENGTH = 7 days;
+    address internal layerZeroEndpointArbitrumOne = 0x1a44076050125825900e736c501f859c50fE728c;
 
-    string public constant NAME_ONE = "SPICE_AUCTION_TGLD_USDC";
-    string public constant NAME_TWO = "SPICE_AUCTION_TGLD_DAI";
+    address internal layerZeroEndpointEthereum = 0x1a44076050125825900e736c501f859c50fE728c;
 
-    string public constant VOTE_TOKEN_NAME = "Staked Temple Vote Token";
-    string public constant VOTE_TOKEN_SYMBOL = "stTemple";
+    uint256 internal layerZeroEndpointArbitrumId = 30110;
 
-    FakeERC20 public fakeERC20;
+    address internal usdcToken = 0xaf88d065e77c8cC2239327C5EDb3A432268e5831; // arb USDC
+
+    address internal daiToken = 0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1; //arb DAI
+
+    string internal constant TEMPLE_GOLD_NAME = "TEMPLE GOLD";
+
+    string internal constant TEMPLE_GOLD_SYMBOL = "TGLD";
+
+    uint256 internal mintChainId = 1;
+
+    uint256 internal arbitrumOneChainId = 42161;
+
+    uint32 internal constant MAINNET_LZ_EID = 30101;
+
+    uint32 internal constant ARBITRUM_ONE_LZ_EID = 30110;
+
+    uint256 internal constant forkBlockNumber = 204226954;
+
+    uint256 internal constant mainnetForkBlockNumber = 20053784;
+
+    uint256 internal constant WEEK_LENGTH = 7 days;
+
+    string internal constant NAME_ONE = "SPICE_AUCTION_TGLD_USDC";
+
+    string internal constant NAME_TWO = "SPICE_AUCTION_TGLD_DAI";
+
+    string internal constant VOTE_TOKEN_NAME = "Staked Temple Vote Token";
+    
+    string internal constant VOTE_TOKEN_SYMBOL = "stTemple";
+
+    FakeERC20 internal fakeERC20;
 
     receive() external payable {}
 

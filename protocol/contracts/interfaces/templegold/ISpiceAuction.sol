@@ -43,11 +43,16 @@ interface ISpiceAuction is IAuctionBase {
         uint256 amount;
     }
 
-    /// @notice Spice auction contracts are set up for 2 tokens. Either can be bid or sell token for a given auction
+    /// @notice Maximum auction Duration
+    function MAXIMUM_AUCTION_DURATION() external view returns (uint32);
+
+    /// @notice Minimum auction duration
+    function MINIMUM_AUCTION_DURATION() external view returns (uint32);
+
     /// @notice Temple GOLD
     function templeGold() external view returns (address);
 
-    /// @notice Spice Token
+    /// @notice Spice auction contracts are set up for 2 tokens. Either token can be bid or sell token for a given auction
     function spiceToken() external view returns (address);
 
     /// @notice DAO contract to execute configurations update
@@ -86,29 +91,6 @@ interface ISpiceAuction is IAuctionBase {
      * @param auctionId Id of auction
      */
     function getAuctionConfig(uint256 auctionId) external view returns (SpiceAuctionConfig memory);
-
-    // /**
-    //  * @notice Get claimable amount for an epoch
-    //  * @dev function will return claimable for epoch. This can change with more user deposits
-    //  * @param depositor Address to check amount for
-    //  * @param epochId Epoch id
-    //  * @return tokenAmount Claimable represented by TokenAmount struct
-    //  */
-    // function getClaimableForEpoch(
-    //     address depositor,
-    //     uint256 epochId
-    // ) external view returns (TokenAmount memory tokenAmount);
-
-    // /**
-    //  * @notice Get claimed amount for an epoch and also the address of the auction token
-    //  * @param depositor Address to check amount for
-    //  * @param epochId Epoch Id
-    //  * @return tokenAmount TokenAmount claimable struct
-    //  */
-    // function getClaimedForEpoch(
-    //     address depositor,
-    //     uint256 epochId
-    // ) external view returns (TokenAmount memory tokenAmount);
 
     /**
      * @notice Get claimed amounts for an array of epochs
@@ -207,4 +189,27 @@ interface ISpiceAuction is IAuctionBase {
      * @param startTime Start time of next auction
      */
     function fundNextAuction(uint256 amount, uint128 startTime) external;
+
+    /**
+     * @notice Initialize spice auction after deploy
+     * @dev Deployer calls initialize in same transaction after deploy 
+     * @param templeGold Temple Gold address
+     * @param spiceToken Spice token address
+     * @param daoExecutor Dao executor
+     * @param operator Spice auction operator
+     * @param strategyGnosis Strategy gnosis
+     * @param mintChainEid Mint chain layer zero EID
+     * @param mintChainId Mint chain ID
+     * @param name Name of spice auction contract
+     */
+    function initialize(
+        address templeGold,
+        address spiceToken,
+        address daoExecutor,
+        address operator,
+        address strategyGnosis,
+        uint32 mintChainEid,
+        uint32 mintChainId,
+        string memory name
+    ) external;
 }

@@ -22,19 +22,24 @@ contract TempleGoldLayerZeroTest is TestHelperOz5 {
     using OptionsBuilder for bytes;
 
     uint32 aEid = 1;
+
     uint32 bEid = 2;
 
-    TempleGoldMock public aTempleGold;
-    TempleGoldMock public bTempleGold;
+    TempleGoldMock internal aTempleGold;
 
-    SpiceAuctionMock public aSpice;
-    SpiceAuctionMock public bSpice;
+    TempleGoldMock internal bTempleGold;
 
-    address public alice = makeAddr("alice");
+    SpiceAuctionMock internal aSpice;
 
-    address public userA = address(0x1);
-    address public userB = address(0x2);
-    uint256 public initialBalance = 100 ether;
+    SpiceAuctionMock internal bSpice;
+
+    address internal alice = makeAddr("alice");
+
+    address internal userA = address(0x1);
+
+    address internal userB = address(0x2);
+    
+    uint256 internal initialBalance = 100 ether;
 
     event RedeemedTempleGoldBurned(uint256 amount);
     event CirculatingSupplyUpdated(address indexed sender, uint256 amount, uint256 circulatingSuppply, uint256 totalBurned);
