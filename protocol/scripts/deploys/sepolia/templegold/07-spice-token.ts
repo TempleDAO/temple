@@ -13,11 +13,11 @@ async function main() {
     
     const factory = new FakeERC20__factory(owner);
     await deployAndMine(
-        'DAI_TOKEN',
+        'SPICE_TOKEN_A',
         factory,
         factory.deploy,
-        "Dai Token",
-        "DAI",
+        "Spice Token A",
+        "SPICEA",
         await owner.getAddress(),
         toAtto(100_000)
     );
