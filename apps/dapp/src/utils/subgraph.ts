@@ -127,29 +127,29 @@ export type TrvBalancesResp = z.infer<typeof TrvBalancesResp>;
 
 //----------------------------------------------------------------------------------------------------
 
-export function queryRamosData(): SubGraphQuery<RamosDataResp> {
-  const label = 'queryRamosData';
+export function queryProtocolData(): SubGraphQuery<ProtocolDataResp> {
+  const label = 'queryProtocolData';
   const request = `
   {
     metrics {
-      spotPrice
+      templePrice
     }
   }`;
   return {
     label,
     request,
-    parse: RamosDataResp.parse,
+    parse: ProtocolDataResp.parse,
   };
 }
 
-const RamosDataResp = z.object({
+const ProtocolDataResp = z.object({
   metrics: z.array(
     z.object({
-      spotPrice: z.string(),
+      templePrice: z.string(),
     })
   ),
 });
-export type RamosDataResp = z.infer<typeof RamosDataResp>;
+export type ProtocolDataResp = z.infer<typeof ProtocolDataResp>;
 
 //----------------------------------------------------------------------------------------------------
 
@@ -829,7 +829,7 @@ export function user(id: string, auction: string): SubGraphQuery<UserResp> {
   {
     user(id: "${id}") {
         id
-        positions(where: {auctionType: "${auction}"}) {            
+        positions(where: {auctionType: "${auction}"}) {
             auctionInstance {
                 epoch
                 startTime

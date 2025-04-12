@@ -2,23 +2,21 @@ import { useState } from 'react';
 import useInterval from 'use-interval';
 import env from 'constants/env';
 
-export type RamosMetrics = {
+export type ProtocolMetrics = {
   templeBurned: string;
-  templePriceUSD: string;
-  templeVolume: string;
+  templePrice: string;
   timeframe: number;
   timestamp: number;
   totalProfitUSD: string;
-  tpiLowerBoundUSD: string;
-  treasuryPriceIndexUSD: string;
+  treasuryPriceIndex: string;
 };
 
-export default function useRefreshableRamosMetrics(intervalMinutes = 20) {
-  const [hourlyMetrics, setHourlyMetrics] = useState<RamosMetrics[]>([]);
-  const [dailyMetrics, setDailyMetrics] = useState<RamosMetrics[]>([]);
+export default function useRefreshableProtocolMetrics(intervalMinutes = 20) {
+  const [hourlyMetrics, setHourlyMetrics] = useState<ProtocolMetrics[]>([]);
+  const [dailyMetrics, setDailyMetrics] = useState<ProtocolMetrics[]>([]);
 
   async function refreshMetrics() {
-    const hourlyRequest = await fetch(env.subgraph.ramos, {
+    const hourlyRequest = await fetch(env.subgraph.protocolMetrics, {
       method: 'POST',
       headers: {
         Accept: 'application/json',
@@ -28,19 +26,17 @@ export default function useRefreshableRamosMetrics(intervalMinutes = 20) {
         query: `{
             metricHourlySnapshots(orderDirection: desc, orderBy: timeframe, first: 24) {
               templeBurned
-              templePriceUSD
-              templeVolume
+              templePrice
               timeframe
               timestamp
               totalProfitUSD
-              tpiLowerBoundUSD
-              treasuryPriceIndexUSD
+              treasuryPriceIndex
             }
           }`,
       }),
     });
 
-    const dailyRequest = await fetch(env.subgraph.ramos, {
+    const dailyRequest = await fetch(env.subgraph.protocolMetrics, {
       method: 'POST',
       headers: {
         Accept: 'application/json',
@@ -50,13 +46,11 @@ export default function useRefreshableRamosMetrics(intervalMinutes = 20) {
         query: `{
             metricDailySnapshots(orderDirection: desc, orderBy: timeframe, first: 365) {
               templeBurned
-              templePriceUSD
-              templeVolume
+              templePrice
               timeframe
               timestamp
               totalProfitUSD
-              tpiLowerBoundUSD
-              treasuryPriceIndexUSD
+              treasuryPriceIndex
             }
           }`,
       }),

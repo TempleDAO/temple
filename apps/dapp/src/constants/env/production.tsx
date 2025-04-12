@@ -183,6 +183,10 @@ const env: Environment = {
         name: 'Epoch 27b',
         address: '0x504632fa6ee0Fab0971454de4c36c3795BA70e2c',
       },
+      {
+        name: 'Epoch 27c',
+        address: '0x05aa69725890310AeA06475c2CD4D20C517f01B0',
+      },
     ],
     temple: '0x470ebf5f030ed85fc1ed4c2d36b9dd02e77cf1b7',
     templegold: '0x0E7B53dDe30754A94D4B10C9CdCaCA1C749ECd1b',
@@ -300,7 +304,7 @@ const env: Environment = {
     templeCore:
       'https://api.studio.thegraph.com/query/76011/temple-core/version/latest',
     protocolMetrics:
-      'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-metrics/api',
+      'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-metrics/version/v0.1.4/api',
     protocolMetricsArbitrum:
       'https://api.studio.thegraph.com/query/76011/temple-metrics-arbitrum/version/latest',
     balancerV2: `https://gateway.thegraph.com/api/${BALANCER_SUBGRAPH_API_KEY}/subgraphs/id/C4ayEZP2yTXRAB8vSaTrgN4m9anTe9Mdm2ViyiAuV9TV`,
