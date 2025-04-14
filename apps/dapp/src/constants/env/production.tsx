@@ -4,10 +4,11 @@ import { Environment } from './types';
 const ENV_VARS = import.meta.env;
 const BALANCER_SUBGRAPH_API_KEY = ENV_VARS.VITE_BALANCER_SUBGRAPH_API_KEY;
 const ENABLE_SUBGRAPH_LOGS = ENV_VARS.VITE_ENABLE_SUBGRAPH_LOGS === 'true';
+const RPC_KEY = ENV_VARS.VITE_RPC_KEY;
 
 const env: Environment = {
   alchemyId: 'XiIZxWykHU5AOFBwxKgxseXWN984Mp8F',
-  rpcUrl: 'https://rpc.ankr.com/eth',
+  rpcUrl: `https://ethereum-rpc.publicnode.com/${RPC_KEY}`,
   backendUrl: 'https://backend.templedao.link',
   tradeTokenListUrl:
     'https://sf294otxgnbicood.public.blob.vercel-storage.com/prod-tokens-ycNgmUSdpPt1kIoael5y4t81s2jtZc.json',

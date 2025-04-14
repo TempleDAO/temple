@@ -14,11 +14,14 @@ import {
 } from 'types/typechain';
 import { AppConfig, Chain, ContractConfig, TokenConfig } from './types';
 
+const ENV_VARS = import.meta.env;
+const RPC_KEY = ENV_VARS.VITE_RPC_KEY;
+
 const ETH_SEPOLIA: Chain = {
   name: 'Ethereum Sepolia',
   id: 11155111,
-  rpcUrl: 'https://ethereum-sepolia-rpc.publicnode.com',
-  walletRpcUrl: 'https://ethereum-sepolia-rpc.publicnode.com',
+  rpcUrl: `https://ethereum-sepolia-rpc.publicnode.com/${RPC_KEY}`,
+  walletRpcUrl: `https://ethereum-sepolia-rpc.publicnode.com/${RPC_KEY}`,
   nativeCurrency: {
     name: 'SepoliaETH',
     symbol: 'SepoliaETH',
@@ -35,6 +38,7 @@ const ETH_SEPOLIA: Chain = {
   },
 };
 
+// https://berachain-bepolia-rpc.publicnode.com
 // const ARB_SEPOLIA: Chain = {
 //   name: "Arbitrum Sepolia",
 //   id: 421614,
@@ -83,7 +87,7 @@ const TGLD_TOKEN_ON_ETH_SEPOLIA: TokenConfig = {
 const TEMPLE_TOKEN_ON_ETH_SEPOLIA: TokenConfig = {
   chainId: ETH_SEPOLIA.id,
   name: 'Temple',
-  address: '0x64a925B0fA211c44337148C0807f959Bd44b0B67', //"0x98c5e61b1b3731a1f379e8770861164d23118cdc", // this the spice bazaar temple
+  address: '0x64a925B0fA211c44337148C0807f959Bd44b0B67',
   decimals: 18,
   symbol: 'TEMPLE',
 };
@@ -158,13 +162,13 @@ const OHM_TOKEN_ON_ETH_SEPOLIA: TokenConfig = {
 
 const DAI_GOLD_AUCTION_ON_ETH_SEPOLIA: ContractConfig<DaiGoldAuction> = {
   chainId: ETH_SEPOLIA.id,
-  address: '0x8d3671d794d511Bb0E3D28e260F8E2233C0653aB',
+  address: '0x485B3C94563095a7d8dEBf8821E479E1F7d0cF4B',
   contractFactory: DaiGoldAuction__factory,
 };
 
 const TEMPLE_GOLD_STAKING_ON_ETH_SEPOLIA: ContractConfig<TempleGoldStaking> = {
   chainId: ETH_SEPOLIA.id,
-  address: '0xdbDAc0FCA9cF8CA2F2Ef718775f0F265f581808F',
+  address: '0x36061ce3Ac2F5d69667F0c7B98Ec6021ef33b8cB',
   contractFactory: TempleGoldStaking__factory,
 };
 

@@ -506,8 +506,9 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
           connectedSigner
         );
 
-        const templeGoldStaking = (await papi.getContract(
-          getAppConfig().contracts.templeGoldStaking
+        const templeGoldStaking = (await papi.getConnectedContract(
+          getAppConfig().contracts.templeGoldStaking,
+          connectedSigner
         )) as TempleGoldStaking;
 
         const populatedTransaction =
