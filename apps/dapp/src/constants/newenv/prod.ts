@@ -14,12 +14,15 @@ import {
 } from 'types/typechain';
 import { TempleGoldStaking__factory } from 'types/typechain';
 
+const ENV_VARS = import.meta.env;
+const RPC_KEY = ENV_VARS.VITE_RPC_KEY;
+
 // chain config
 const ETH_MAINNET: Chain = {
   name: 'Ethereum Mainnet',
   id: 1,
-  rpcUrl: 'https://eth.llamarpc.com',
-  walletRpcUrl: 'https://eth.llamarpc.com',
+  rpcUrl: `https://ethereum-rpc.publicnode.com/${RPC_KEY}`,
+  walletRpcUrl: `https://ethereum-rpc.publicnode.com/${RPC_KEY}`,
   nativeCurrency: {
     name: 'ETH',
     symbol: 'ETH',
@@ -37,6 +40,7 @@ const ETH_MAINNET: Chain = {
 };
 
 // TODO: Other chains e.g. berachain
+// https://berachain-rpc.publicnode.com
 // const ARB_MAINNET: Chain = {
 //   name: "Arbitrum Mainnet",
 //   id: 42161,
