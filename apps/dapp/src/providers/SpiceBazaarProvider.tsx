@@ -561,8 +561,11 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
         getTokenInfo(TICKER_SYMBOL.TEMPLE_TOKEN).decimals
       );
 
-      const templeGoldStaking = (await papi.getContract(
-        getAppConfig().contracts.templeGoldStaking
+      const connectedSigner = getConnectedSigner();
+
+      const templeGoldStaking = (await papi.getConnectedContract(
+        getAppConfig().contracts.templeGoldStaking,
+        connectedSigner
       )) as TempleGoldStaking;
 
       const populatedTransaction =
@@ -579,7 +582,14 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
 
       fetchStakePageMetrics();
     },
-    [wallet, signer, openNotification, fetchStakePageMetrics]
+    [
+      wallet,
+      signer,
+      getConnectedSigner,
+      papi,
+      openNotification,
+      fetchStakePageMetrics,
+    ]
   );
 
   const claimRewards = useCallback(async () => {
@@ -588,8 +598,11 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
       return;
     }
 
-    const templeGoldStaking = (await papi.getContract(
-      getAppConfig().contracts.templeGoldStaking
+    const connectedSigner = getConnectedSigner();
+
+    const templeGoldStaking = (await papi.getConnectedContract(
+      getAppConfig().contracts.templeGoldStaking,
+      connectedSigner
     )) as TempleGoldStaking;
 
     const populatedTransaction =
@@ -602,7 +615,14 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
     });
 
     fetchStakePageMetrics();
-  }, [wallet, signer, papi, openNotification, fetchStakePageMetrics]);
+  }, [
+    wallet,
+    signer,
+    getConnectedSigner,
+    papi,
+    openNotification,
+    fetchStakePageMetrics,
+  ]);
 
   const isCurrentEpochAuctionLive = useCallback(async () => {
     const daiGoldAuctionContract = (await papi.getContract(
@@ -728,16 +748,20 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
           getTokenInfo(TICKER_SYMBOL.USDS).decimals
         );
 
+        const connectedSigner = getConnectedSigner();
+
         await ensureAllowanceWithSigner(
           TICKER_SYMBOL.USDS,
           env.contracts.usds,
           env.contracts.spiceBazaar.daiGoldAuction,
           usdsAmount,
-          true
+          true,
+          connectedSigner
         );
 
-        const daiGoldAuctionContract = (await papi.getContract(
-          getAppConfig().contracts.daiGoldAuction
+        const daiGoldAuctionContract = (await papi.getConnectedContract(
+          getAppConfig().contracts.daiGoldAuction,
+          connectedSigner
         )) as DaiGoldAuction;
 
         const populatedTransaction =
@@ -809,8 +833,11 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
         return;
       }
 
-      const daiGoldAuction = (await papi.getContract(
-        getAppConfig().contracts.daiGoldAuction
+      const connectedSigner = getConnectedSigner();
+
+      const daiGoldAuction = (await papi.getConnectedContract(
+        getAppConfig().contracts.daiGoldAuction,
+        connectedSigner
       )) as DaiGoldAuction;
 
       const populatedTransaction =
@@ -828,6 +855,7 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
     [
       wallet,
       signer,
+      getConnectedSigner,
       papi,
       openNotification,
       fetchDaiGoldAuctionInfo,
