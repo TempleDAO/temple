@@ -18,19 +18,19 @@ import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.s
 contract SpiceAuctionFactory is ISpiceAuctionFactory, TempleElevatedAccess {
 
     /// @inheritdoc ISpiceAuctionFactory
-    address public immutable override implementation;
-
-     /// @inheritdoc ISpiceAuctionFactory
     address public immutable override templeGold;
 
     /// @inheritdoc ISpiceAuctionFactory
-    address public immutable override daoExecutor;
+    address public override implementation;
 
     /// @inheritdoc ISpiceAuctionFactory
-    address public immutable override operator;
+    address public override daoExecutor;
 
     /// @inheritdoc ISpiceAuctionFactory
-    address public immutable override strategyGnosis;
+    address public override operator;
+
+    /// @inheritdoc ISpiceAuctionFactory
+    address public override strategyGnosis;
 
     /// @notice Mint chain layer zero EID
     uint32 private immutable _mintChainLzEid;
@@ -38,8 +38,11 @@ contract SpiceAuctionFactory is ISpiceAuctionFactory, TempleElevatedAccess {
     /// @notice Arbitrum One chain ID
     uint32 private immutable _mintChainId;
 
-    /// @notice Keep track of deployed spice auctions
-    mapping(bytes32 id => address auction) public override deployedAuctions;
+    /// @inheritdoc ISpiceAuctionFactory
+    mapping(address spiceToken => uint256 latestVersion) public override spiceTokenLatestVersion;
+
+    /// @inheritdoc ISpiceAuctionFactory
+    mapping(address spiceToken => mapping(uint256 version => address auction)) public override deployedAuctions;
 
     constructor(
         address implementation_,
@@ -61,11 +64,35 @@ contract SpiceAuctionFactory is ISpiceAuctionFactory, TempleElevatedAccess {
         _mintChainId = mintChainId_;
     }
 
-    /**
-     * @notice Create Spice Auction contract
-     * @param spiceToken Spice token
-     * @param name Name of spice auction contract
-     */
+    /// @inheritdoc ISpiceAuctionFactory
+    function setStrategyGnosis(address _gnosis) external onlyElevatedAccess {
+        if (_gnosis == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
+        strategyGnosis = _gnosis;
+        emit StrategyGnosisSet(_gnosis);
+    }
+
+    /// @inheritdoc ISpiceAuctionFactory
+    function setOperator(address _operator) external onlyElevatedAccess {
+        if (_operator == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
+        operator = _operator;
+        emit OperatorSet(_operator);
+    }
+
+    /// @inheritdoc ISpiceAuctionFactory
+    function setDaoExecutor(address _executor) external onlyElevatedAccess {
+        if (_executor == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
+        daoExecutor = _executor;
+        emit DaoExecutorSet(_executor);
+    }
+
+    /// @inheritdoc ISpiceAuctionFactory
+    function setImplementation(address _implementation) external onlyElevatedAccess {
+        if (_implementation == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
+        implementation = _implementation;
+        emit SpiceAuctionImplementationSet(_implementation);
+    }
+
+    /// @inheritdoc ISpiceAuctionFactory
     function createAuction(
         address spiceToken,
         string memory name
@@ -77,36 +104,21 @@ contract SpiceAuctionFactory is ISpiceAuctionFactory, TempleElevatedAccess {
         spiceAuction = Clones.clone(implementation);
         ISpiceAuction(spiceAuction).initialize(templeGold, spiceToken, daoExecutor, operator, strategyGnosis, _mintChainLzEid, _mintChainId, name);
 
-        bytes32 pairId = _getPairHash(spiceToken);
-        // not checking pair address exists to allow overwrite in case of a migration
-        deployedAuctions[pairId] = spiceAuction;
-        emit AuctionCreated(pairId, spiceAuction);
+        uint256 nextVersion = spiceTokenLatestVersion[spiceToken] + 1;
+        spiceTokenLatestVersion[spiceToken] = nextVersion;
+        deployedAuctions[spiceToken][nextVersion] = spiceAuction;
+
+        emit AuctionCreated(spiceToken, nextVersion, spiceAuction);
     }
 
-    /**
-     * @notice Given a pair of tokens, retrieve spice auction contract
-     * @param spiceToken Spice Token
-     * @return Address of auction contract
-     */
+    /// @inheritdoc ISpiceAuctionFactory
     function findAuctionForSpiceToken(address spiceToken) external override view returns (address) {
-        bytes32 pairId = _getPairHash(spiceToken);
-        return deployedAuctions[pairId];
+        uint256 version = spiceTokenLatestVersion[spiceToken];
+        return deployedAuctions[spiceToken][version];
     }
 
-    /**
-     * @notice Given a pair of tokens, retrieve pair hash Id
-     * @param spiceToken Spice token
-     * @return Id of token pair
-     */
-    function getPairId(address spiceToken) external override view returns (bytes32) {
-        return _getPairHash(spiceToken);
-    }
-
-    function _getPairHash(address _spiceToken) private view returns (bytes32 pairId) {
-        if (templeGold < _spiceToken) {
-            pairId = keccak256(abi.encodePacked(templeGold, _spiceToken));
-        } else {
-            pairId = keccak256(abi.encodePacked(_spiceToken, templeGold));
-        }
+    /// @inheritdoc ISpiceAuctionFactory
+    function getLastAuctionVersion(address spiceToken) external override view returns (uint256) {
+        return spiceTokenLatestVersion[spiceToken];
     }
 }

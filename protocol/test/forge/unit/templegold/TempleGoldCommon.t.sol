@@ -2,11 +2,15 @@ pragma solidity ^0.8.20;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // (tests/forge/templegold/TempleGoldCommon.t.sol)
 
-import { TempleTest } from "../TempleTest.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+
 import { ITempleGold } from "contracts/interfaces/templegold/ITempleGold.sol";
+
 import { FakeERC20 } from "contracts/fakes/FakeERC20.sol";
 import { TempleGold } from "contracts/templegold/TempleGold.sol";
+import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
+
+import { TempleTest } from "test/forge/unit/TempleTest.sol";
 
 contract TempleGoldCommon is TempleTest {
     address internal treasury = makeAddr("treasury");
@@ -90,5 +94,10 @@ contract TempleGoldCommon is TempleTest {
         factor.weekMultiplier = 1 weeks;
         templeGold.setVestingFactor(factor);
         vm.stopPrank();
+    }
+
+    function _expectElevatedAccess() internal {
+        vm.startPrank(unauthorizedUser);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
     }
 }

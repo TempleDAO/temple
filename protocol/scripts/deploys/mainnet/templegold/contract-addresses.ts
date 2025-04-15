@@ -46,6 +46,38 @@ export interface ContractAddresses {
 }
 
 const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
+    berachain: {
+        TEMPLE_GOLD: {
+            AUCTION_AUTOMATION_EOA: "0x",
+            STAKING_AUTOMATION_EOA: "0x",
+            SPICE_AUCTION_OPERATOR: "0x",
+            TEMPLE_GOLD: "0x",
+            TEMPLE_GOLD_ADMIN: "0x",
+            TEMPLE_GOLD_STAKING: "0x",
+            TEMPLE_TELEPORTER: "0x",
+            SPICE_AUCTION: "0x",
+            SPICE_AUCTION_FACTORY: "0x",
+            STABLE_GOLD_AUCTION: "0x",
+            EXECUTOR_MSIG: "0x",
+            RESCUER_MSIG: "0x",
+            TEAM_GNOSIS: "0x",
+            SPICE_AUCTION_IMPLEMENTATION: "0x",
+        },
+        CORE: {
+            TEMPLE_TOKEN: "0x",
+        },
+        EXTERNAL: {
+            LAYER_ZERO: {
+                ENDPOINT: "0x6F475642a6e85809B1c36Fa62763669b1b48DD5B",
+            },
+            MAKER_DAO: {
+                DAI_TOKEN: "0x",
+            },
+            SKY: {
+                USDS: "0x",
+            }
+        },
+    },
     arbitrumOne: {
         TEMPLE_GOLD: {
             AUCTION_AUTOMATION_EOA: "0x",
@@ -117,10 +149,10 @@ const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
             SPICE_AUCTION_OPERATOR: "0x",
             TEMPLE_GOLD: "0x2ae6318e34bb97ae3755AFcE75559452aA223A5D",
             TEMPLE_GOLD_ADMIN: "0x",
-            TEMPLE_GOLD_STAKING: "0x36061ce3Ac2F5d69667F0c7B98Ec6021ef33b8cB", //"0xdbDAc0FCA9cF8CA2F2Ef718775f0F265f581808F",
+            TEMPLE_GOLD_STAKING: "0x36061ce3Ac2F5d69667F0c7B98Ec6021ef33b8cB",
             TEMPLE_TELEPORTER: "0x7De0066A6BD454B2Ecaeb3E54814458a71D345A5",
             SPICE_AUCTION: "0xA52D686d250F62e6b4Bc31dD17ad18f94c6cA56D",
-            SPICE_AUCTION_FACTORY: "0xf2573BAa3A1EB4eDcaB3a1b105FFcdb8dEcC7FB3", //"0x4c73b3336731F502584EcBEf4cEACc37dd078012",
+            SPICE_AUCTION_FACTORY: "0xf2573BAa3A1EB4eDcaB3a1b105FFcdb8dEcC7FB3",
             STABLE_GOLD_AUCTION: "0x8d3671d794d511Bb0E3D28e260F8E2233C0653aB",
             EXECUTOR_MSIG: "0x",
             RESCUER_MSIG: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",

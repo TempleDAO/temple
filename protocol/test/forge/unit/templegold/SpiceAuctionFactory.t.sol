@@ -13,7 +13,10 @@ import { TempleGold } from "contracts/templegold/TempleGold.sol";
 
 
 contract SpiceAuctionFactoryTestBase is TempleGoldCommon {
-    event AuctionCreated(bytes32 id, address auction);
+    event SpiceAuctionImplementationSet(address implementation);
+    event StrategyGnosisSet(address gnosis);
+    event OperatorSet(address operator);
+    event DaoExecutorSet(address executor);
 
     address internal fakeToken = makeAddr("fakeToken");
 
@@ -50,46 +53,145 @@ contract SpiceAuctionFactoryTestBase is TempleGoldCommon {
 }
 
 contract SpiceAuctionFactoryTestAccess is SpiceAuctionFactoryTestBase {
-    function test_access_createAuction() public {
-        vm.startPrank(unauthorizedUser);
-        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
-        factory.createAuction(usdcToken, NAME_ONE);
+
+    function test_access_setOperator() public {
+        _expectElevatedAccess();
+        factory.setOperator(alice);
     }
+
+    function test_access_setStrategyGnosis() public {
+        _expectElevatedAccess();
+        factory.setStrategyGnosis(alice);
+    }
+
+    function test_access_setDaoExecutor() public {
+        _expectElevatedAccess();
+        factory.setDaoExecutor(alice);
+    }
+
+    function test_access_setImplementation() public {
+        _expectElevatedAccess();
+        factory.setImplementation(alice);
+    }
+
+    function test_access_createAuction() public {
+        _expectElevatedAccess();
+        factory.createAuction(address(templeGold), NAME_ONE);
+    }
+
 }
 
 contract SpiceAuctionFactoryTest is SpiceAuctionFactoryTestBase {
-    // function test_deploy() public {
-    //     address auction = deployer.deploy(address(TGLD), address(SPICE_TOKEN_A), executor, executor, executor,
-    //         11, 1, AUCTION_A_NAME);
-    //     assertNotEq(auction, address(0));
-    //     address auction2 = deployer.deploy(address(TGLD), address(SPICE_TOKEN_A), executor, executor, executor,
-    //         11, 1, AUCTION_A_NAME);
-    //     assertNotEq(auction2, address(0));
-    //     assertEq(auction.code, auction2.code);
-    // }
+    
+    function test_setImplementation_invalid_address() public {
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
+        vm.startPrank(executor);
+        factory.setImplementation(address(0));
+    }
 
-    function test_createAuction() public {
+    function test_setOperator_invalid_address() public {
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
+        vm.startPrank(executor);
+        factory.setOperator(address(0));
+    }
+
+    function test_setStrategyGnosis_invalid_address() public {
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
+        vm.startPrank(executor);
+        factory.setStrategyGnosis(address(0));
+    }
+
+    function test_setDaoExecutor_invalid_address() public {
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
+        vm.startPrank(executor);
+        factory.setDaoExecutor(address(0));
+    }
+
+    function test_createAuction_invalid_address() public {
         vm.startPrank(executor);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
         factory.createAuction(address(0), NAME_ONE);
+    }
 
+    function test_createAuction_invalid_spice_token() public {
+        vm.startPrank(executor);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
         factory.createAuction(address(templeGold), NAME_ONE);
+    }
 
+    function test_setStrategyGnosis() public {
+        vm.startPrank(executor);
+        vm.expectEmit(address(factory));
+        emit StrategyGnosisSet(alice);
+        factory.setStrategyGnosis(alice);
+        assertEq(factory.strategyGnosis(), alice);
+        
+        vm.expectEmit(address(factory));
+        emit StrategyGnosisSet(bob);
+        factory.setStrategyGnosis(bob);
+        assertEq(factory.strategyGnosis(), bob);
+    }
+
+    function test_setDaoExecutor() public {
+        vm.startPrank(executor);
+        vm.expectEmit(address(factory));
+        emit DaoExecutorSet(alice);
+        factory.setDaoExecutor(alice);
+
+        assertEq(factory.daoExecutor(), alice);
+        vm.expectEmit(address(factory));
+        emit DaoExecutorSet(bob);
+        factory.setDaoExecutor(bob);
+        assertEq(factory.daoExecutor(), bob);
+    }
+
+    function test_setOperator() public {
+        vm.startPrank(executor);
+        vm.expectEmit(address(factory));
+        emit OperatorSet(alice);
+        factory.setOperator(alice);
+
+        assertEq(factory.operator(), alice);
+        vm.expectEmit(address(factory));
+        emit OperatorSet(bob);
+        factory.setOperator(bob);
+        assertEq(factory.operator(), bob);
+    }
+
+    function test_setImplementation() public {
+        vm.startPrank(executor);
+        vm.expectEmit(address(factory));
+        emit SpiceAuctionImplementationSet(address(implementation));
+        factory.setImplementation(address(implementation));
+        assertEq(factory.implementation(), address(implementation));
+
+        SpiceAuction auction = new SpiceAuction();
+        vm.expectEmit(address(factory));
+        emit SpiceAuctionImplementationSet(address(auction));
+        factory.setImplementation(address(auction));
+        assertEq(factory.implementation(), address(auction));
+    }
+
+    function test_createAuction() public {
+        vm.startPrank(executor);
+        assertEq(factory.getLastAuctionVersion(usdcToken), 0);
         address auction = factory.createAuction(usdcToken, NAME_ONE);
-        assertFalse(auction == address(0));
-        bytes32 id = factory.getPairId(usdcToken);
+        assertTrue(auction != address(0));
+        assertEq(factory.getLastAuctionVersion(usdcToken), 1);
+        uint256 version = factory.getLastAuctionVersion(usdcToken);
         assertEq(auction, factory.findAuctionForSpiceToken(usdcToken));
-        assertEq(factory.deployedAuctions(id), auction);
+        assertEq(factory.deployedAuctions(usdcToken, version), auction);
 
-        // deploy same spice token again. new auction address is stored
+        // deploy same spice token again. new auction address is stored as latest version
         address oldAuction = auction;
         auction = factory.createAuction(usdcToken, NAME_ONE);
         assertFalse(auction == address(0));
-        id = factory.getPairId(usdcToken);
-        assertNotEq(oldAuction, factory.deployedAuctions(id));
+        version = factory.getLastAuctionVersion(usdcToken);
+        assertEq(version, 2);
+        assertEq(factory.deployedAuctions(usdcToken, 1), oldAuction);
+        assertNotEq(oldAuction, factory.deployedAuctions(usdcToken, version));
         assertEq(auction, factory.findAuctionForSpiceToken(usdcToken));
-        assertEq(factory.deployedAuctions(id), auction);
+        assertEq(factory.deployedAuctions(usdcToken, version), auction);
         assertEq(oldAuction.code, auction.code);
 
         ISpiceAuction spiceAuction = ISpiceAuction(auction);
@@ -99,21 +201,5 @@ contract SpiceAuctionFactoryTest is SpiceAuctionFactoryTestBase {
         assertEq(spiceAuction.daoExecutor(), executor);
         assertEq(spiceAuction.operator(), mike);
         assertEq(spiceAuction.strategyGnosis(), cssGnosis);
-    }
-
-    function test_getPairId() public {
-        vm.startPrank(executor);
-        address auction = factory.createAuction(usdcToken, NAME_ONE);
-        bytes32 id = factory.getPairId(usdcToken);
-        assertEq(auction, factory.findAuctionForSpiceToken(usdcToken));
-        assertEq(factory.deployedAuctions(id), auction);
-        
-        auction = factory.createAuction(daiToken, NAME_ONE);
-        id = factory.getPairId(daiToken);
-        assertEq(auction, factory.findAuctionForSpiceToken(daiToken));
-        assertEq(factory.deployedAuctions(id), auction);
-
-        // get id of token < templeGold. test coverage
-        id = factory.getPairId(fakeToken);
     }
 }
