@@ -28,6 +28,7 @@ export interface ContractAddresses {
         RESCUER_MSIG: string,
         TEAM_GNOSIS: string,
         SPICE_AUCTION_IMPLEMENTATION: string,
+        STRATEGY_GNOSIS: string,
     },
     CORE: {
         TEMPLE_TOKEN: string,
@@ -62,6 +63,7 @@ const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
             RESCUER_MSIG: "0x",
             TEAM_GNOSIS: "0x",
             SPICE_AUCTION_IMPLEMENTATION: "0x",
+            STRATEGY_GNOSIS: "0x",
         },
         CORE: {
             TEMPLE_TOKEN: "0x",
@@ -94,6 +96,7 @@ const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
             RESCUER_MSIG: "0x",
             TEAM_GNOSIS: "0x",
             SPICE_AUCTION_IMPLEMENTATION: "0x",
+            STRATEGY_GNOSIS: "0x",
         },
         CORE: {
             TEMPLE_TOKEN: "0x",
@@ -126,6 +129,7 @@ const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
             RESCUER_MSIG: "0x",
             TEAM_GNOSIS: "0x4D6175d58C5AceEf30F546C0d5A557efFa53A950",
             SPICE_AUCTION_IMPLEMENTATION: "0x",
+            STRATEGY_GNOSIS: "0x",
         },
         CORE: {
             TEMPLE_TOKEN: "0x",
@@ -158,6 +162,7 @@ const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
             RESCUER_MSIG: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
             TEAM_GNOSIS: "0x",
             SPICE_AUCTION_IMPLEMENTATION: "0xC8E5D9B2f53Ae2180bf39F2738c9c9F4cE713138",
+            STRATEGY_GNOSIS: "0x",
         },
         CORE: {
             TEMPLE_TOKEN: "0x98c5E61b1B3731A1f379E8770861164d23118cdc",
@@ -190,6 +195,7 @@ const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
             RESCUER_MSIG: "0x",
             TEAM_GNOSIS: "0x",
             SPICE_AUCTION_IMPLEMENTATION: "0x",
+            STRATEGY_GNOSIS: "0x",
         },
         CORE: {
             TEMPLE_TOKEN: "0x36061ce3Ac2F5d69667F0c7B98Ec6021ef33b8cB",
@@ -222,6 +228,7 @@ const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
             RESCUER_MSIG: "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
             TEAM_GNOSIS: "0x",
             SPICE_AUCTION_IMPLEMENTATION: "0x",
+            STRATEGY_GNOSIS: "0x",
         },
         CORE: {
             TEMPLE_TOKEN: "0x2B5757720f361559fe0C499C55eFa65bd6bC6cA3",
