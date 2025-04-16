@@ -33,13 +33,19 @@ contract TempleGoldStakingTestBase is TempleGoldCommon {
     event UnstakeCooldownSet(uint32 period);
     event DAOExecutorSet(address indexed daoExecutor);
 
-    IERC20 public bidToken;
-    IERC20 public bidToken2;
-    StableGoldAuction public daiGoldAuction;
-    FakeERC20 public templeToken;
-    TempleGoldStaking public staking;
-    TempleGoldStakingMock public mockStaking;
-    TempleGold public templeGold;
+    IERC20 internal bidToken;
+
+    IERC20 internal bidToken2;
+
+    StableGoldAuction internal daiGoldAuction;
+
+    FakeERC20 internal templeToken;
+
+    TempleGoldStaking internal staking;
+
+    TempleGoldStakingMock internal mockStaking;
+    
+    TempleGold internal templeGold;
 
     function setUp() public {
         fork("arbitrum_one", forkBlockNumber);

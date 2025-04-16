@@ -144,7 +144,7 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
      * @param _cooldown Cooldown in seconds
      */
     function setRewardDistributionCoolDown(uint160 _cooldown) external override onlyElevatedAccess {
-        /// @dev zero cooldown is allowed
+        // zero cooldown is allowed
         rewardDistributionCoolDown = _cooldown;
         emit RewardDistributionCoolDownSet(_cooldown);
     }
@@ -262,7 +262,7 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
      * @param claimRewards Whether to claim rewards
      */
     function withdraw(uint256 amount, bool claimRewards) external override whenNotPaused {
-        /// @dev Check here so migrationWithdraw can skip this in emergency cases
+        // Check here so migrationWithdraw can skip this in emergency cases
         uint256 unstakeTime = stakeTimes[msg.sender] + unstakeCooldown;
         if (unstakeTime > block.timestamp) { revert UnstakeCooldown(block.timestamp, unstakeTime); }
         _withdrawFor(msg.sender, msg.sender, amount, claimRewards, msg.sender);
@@ -473,7 +473,7 @@ contract TempleGoldStaking is ITempleGoldStaking, TempleElevatedAccess, Pausable
     }
 
     function _distributeGold() internal {
-        /// @dev no op silent fail if nothing to distribute
+        // no op silent fail if nothing to distribute
         ITempleGold(address(rewardToken)).mint();
     }
 

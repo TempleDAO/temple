@@ -28,20 +28,29 @@ contract TempleGoldTestBase is TempleGoldCommon {
     event NotifierSet(address indexed notifier);
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
-    StableGoldAuction public auction;
-    TempleGoldStaking public staking;
-    TempleGold public templeGold;
-    TempleGold public templeGoldMainnet;
-    FakeERC20 public templeToken;
+    StableGoldAuction internal auction;
+
+    TempleGoldStaking internal staking;
+
+    TempleGold internal templeGold;
+
+    TempleGold internal templeGoldMainnet;
+
+    FakeERC20 internal templeToken;
 
     uint32 internal _setVestingFactorTime;
 
-    uint256 public constant MINIMUM_DISTRIBUTION_SHARE = 1 ether;
-    uint256 public constant ARBITRUM_ONE_BLOCKNUMBER_B = 207201713;
-    uint256 public constant MINIMUM_MINT = 1_000;
-    uint256 public constant MAXIMUM_CIRCULATING_SUPPLY = 1_000_000_000 ether;
-    uint256 public arbitrumOneForkId;
-    uint256 public mainnetForkId;
+    uint256 internal constant MINIMUM_DISTRIBUTION_SHARE = 1 ether;
+
+    uint256 internal constant ARBITRUM_ONE_BLOCKNUMBER_B = 207201713;
+
+    uint256 internal constant MINIMUM_MINT = 1_000;
+
+    uint256 internal constant MAXIMUM_CIRCULATING_SUPPLY = 1_000_000_000 ether;
+
+    uint256 internal arbitrumOneForkId;
+    
+    uint256 internal mainnetForkId;
 
     function setUp() public {
         arbitrumOneForkId = fork("arbitrum_one");

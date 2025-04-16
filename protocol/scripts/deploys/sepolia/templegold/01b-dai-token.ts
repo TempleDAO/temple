@@ -6,16 +6,11 @@ import {
   ensureExpectedEnvvars,
   toAtto,
 } from '../../helpers';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
 async function main() {
     ensureExpectedEnvvars();
     const [owner] = await ethers.getSigners();
     
-    await _deployTempleToken(owner);
-}
-  
-async function _deployTempleToken(owner: SignerWithAddress) {
     const factory = new FakeERC20__factory(owner);
     await deployAndMine(
         'DAI_TOKEN',
