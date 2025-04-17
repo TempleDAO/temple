@@ -495,7 +495,6 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
 
   // Create a dedicated fetch function for currentUserMetrics
   const fetchUserMetrics = useCallback(async () => {
-    console.log('---- inside query function fetchUserMetrics');
     const dailyVestedTgldReward = await getDailyVestedTgldReward();
     const previousEpochRewards = await getPreviousEpochRewards();
     const currentEpochBidAmount = await getCurrentEpochBidAmount();
@@ -569,6 +568,8 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
         getTokenInfo(TICKER_SYMBOL.TEMPLE_TOKEN).decimals
       );
 
+      await switchNetwork(getChainId());
+
       const connectedSigner = getConnectedSigner();
 
       const templeGoldStaking = (await papi.getConnectedContract(
@@ -581,7 +582,11 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
           templeAmount,
           claimRewards
         );
-      const receipt = await estimateAndMine(signer, populatedTransaction);
+
+      const receipt = await estimateAndMine(
+        connectedSigner,
+        populatedTransaction
+      );
 
       openNotification({
         title: `Unstaked ${amount} TEMPLE`,
@@ -589,14 +594,17 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
       });
 
       fetchStakePageMetrics();
+      updateBalance();
     },
     [
       wallet,
       signer,
+      switchNetwork,
       getConnectedSigner,
       papi,
       openNotification,
       fetchStakePageMetrics,
+      updateBalance,
     ]
   );
 
@@ -605,6 +613,8 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
       console.debug('Missing wallet or signer when trying to use SpiceBazaar.');
       return;
     }
+
+    await switchNetwork(getChainId());
 
     const connectedSigner = getConnectedSigner();
 
@@ -615,7 +625,10 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
 
     const populatedTransaction =
       await templeGoldStaking.populateTransaction.getReward(wallet);
-    const receipt = await estimateAndMine(signer, populatedTransaction);
+    const receipt = await estimateAndMine(
+      connectedSigner,
+      populatedTransaction
+    );
 
     openNotification({
       title: `Claimed your TGLD`,
@@ -626,6 +639,7 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
   }, [
     wallet,
     signer,
+    switchNetwork,
     getConnectedSigner,
     papi,
     openNotification,
@@ -653,8 +667,6 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
   // Create a dedicated fetch function for daiGoldAuctionInfo
   const fetchAuctionInfo = useCallback(
     async (silent?: boolean) => {
-      console.log('---- inside query function fetchAuctionInfo');
-
       try {
         const currentEpoch = await getCurrentEpoch();
         const epochInfo = await getEpochInfo(Number(currentEpoch));
@@ -730,6 +742,7 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
 
   useEffect(() => {
     refetchDaiGoldAuctionInfo();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wallet]);
 
   // Create a wrapper for the refetch function to match the existing API
@@ -797,7 +810,10 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
 
         const populatedTransaction =
           await daiGoldAuctionContract.populateTransaction.bid(usdsAmount);
-        const receipt = await estimateAndMine(signer, populatedTransaction);
+        const receipt = await estimateAndMine(
+          connectedSigner,
+          populatedTransaction
+        );
 
         openNotification({
           title: `Bid ${amount} USDS`,
@@ -873,7 +889,10 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
 
       const populatedTransaction =
         await daiGoldAuction.populateTransaction.claim(epoch);
-      const receipt = await estimateAndMine(signer, populatedTransaction);
+      const receipt = await estimateAndMine(
+        connectedSigner,
+        populatedTransaction
+      );
 
       openNotification({
         title: `Claimed your TGLD`,
