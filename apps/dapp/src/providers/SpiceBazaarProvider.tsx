@@ -594,6 +594,7 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
       });
 
       fetchStakePageMetrics();
+      fetchCurrentUserMetrics();
       updateBalance();
     },
     [
@@ -605,6 +606,7 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
       openNotification,
       fetchStakePageMetrics,
       updateBalance,
+      fetchCurrentUserMetrics,
     ]
   );
 
@@ -636,6 +638,7 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
     });
 
     fetchStakePageMetrics();
+    fetchCurrentUserMetrics();
   }, [
     wallet,
     signer,
@@ -644,6 +647,7 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
     papi,
     openNotification,
     fetchStakePageMetrics,
+    fetchCurrentUserMetrics,
   ]);
 
   const isCurrentEpochAuctionLive = useCallback(async () => {
