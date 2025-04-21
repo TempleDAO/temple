@@ -841,6 +841,7 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
       wallet,
       signer,
       switchNetwork,
+      getConnectedSigner,
       ensureAllowanceWithSigner,
       papi,
       openNotification,
@@ -884,6 +885,8 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
         return;
       }
 
+      await switchNetwork(getChainId());
+
       const connectedSigner = getConnectedSigner();
 
       const daiGoldAuction = (await papi.getConnectedContract(
@@ -909,6 +912,7 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
     [
       wallet,
       signer,
+      switchNetwork,
       getConnectedSigner,
       papi,
       openNotification,
