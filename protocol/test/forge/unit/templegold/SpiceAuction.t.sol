@@ -32,6 +32,8 @@ contract SpiceAuctionTestBase is TempleGoldCommon {
     event SpiceAuctionEpochSet(uint256 epoch, address auctionToken, uint128 startTime, uint128 endTime, uint256 amount);
     event RecoveredTokenForZeroBidAuction(uint256 epoch, address to, address token, uint256 amount);
     event StrategyGnosisSet(address strategyGnosis);
+    event SpiceClaim(address indexed sender, uint256 epochId, address bidToken, uint256 bidTokenAmount, address auctionToken, uint256 claimAmount);
+    event SpiceDeposit(address indexed sender, uint256 epochId, address bidToken, uint256 amount);
 
     address internal daoExecutor = makeAddr("daoExecutor");
 
@@ -682,11 +684,11 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
             ISpiceAuction.TokenAmount[] memory aliceClaimable = spice.getClaimableForEpochs(alice, epochs);
             ISpiceAuction.TokenAmount[] memory bobClaimable = spice.getClaimableForEpochs(bob, epochs);
             vm.expectEmit(address(spice));
-            emit Claim(alice, 1, bidTokenAmount, aliceClaimable[0].amount);
+            emit SpiceClaim(alice, 1, daiToken, bidTokenAmount, address(TGLD),  aliceClaimable[0].amount);
             spice.claim(1);
             vm.startPrank(bob);
             vm.expectEmit(address(spice));
-            emit Claim(bob, 1, bidTokenAmount, bobClaimable[0].amount);
+            emit SpiceClaim(bob, 1, daiToken, bidTokenAmount, address(TGLD), bobClaimable[0].amount);
             spice.claim(1);
             assertEq(auctionTokenAllocation, bobClaimable[0].amount+aliceClaimable[0].amount);
         }
@@ -835,7 +837,7 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         vm.startPrank(alice);
         IERC20(daiToken).approve(address(spice), type(uint).max);
         vm.expectEmit(address(spice));
-        emit Deposit(alice, epoch, aliceBidAmount);
+        emit SpiceDeposit(alice, epoch, daiToken, aliceBidAmount);
         spice.bid(aliceBidAmount);
 
         assertEq(spice.getAuctionBidAmount(1), aliceBidAmount);
@@ -856,7 +858,7 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         vm.startPrank(bob);
         IERC20(daiToken).approve(address(spice), type(uint).max);
         vm.expectEmit(address(spice));
-        emit Deposit(bob, epoch, bobBidAmount);
+        emit SpiceDeposit(bob, epoch, daiToken, bobBidAmount);
         spice.bid(bobBidAmount);
 
         assertEq(spice.getAuctionBidAmount(1), aliceBidAmount+bobBidAmount);
@@ -943,14 +945,15 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         ISpiceAuction.TokenAmount[] memory bobClaim = spice.getClaimableForEpochs(bob, epochs);
         ISpiceAuction.TokenAmount[] memory aliceClaim = spice.getClaimableForEpochs(alice, epochs);
         vm.expectEmit(address(spice));
-        emit Claim(bob, epoch, bobBidAmount, bobClaim[0].amount);
+        emit SpiceClaim(bob, epoch, daiToken, bobBidAmount, address(TGLD),bobClaim[0].amount);
+        
         spice.claim(epoch);
         assertEq(TGLD.balanceOf(bob), bobTGoldBalance+bobClaim[0].amount);
         assertEq(bobClaim[0].amount, 100 ether * 30/50);
 
         vm.startPrank(alice);
         vm.expectEmit(address(spice));
-        emit Claim(alice, epoch, aliceBidAmount, aliceClaim[0].amount);
+        emit SpiceClaim(alice, epoch, daiToken, aliceBidAmount, address(TGLD), aliceClaim[0].amount);
         spice.claim(epoch);
         assertEq(TGLD.balanceOf(alice), aliceTGoldBalance+aliceClaim[0].amount);
         assertEq(aliceClaim[0].amount, 100 ether * 20/50);
@@ -992,13 +995,13 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         vm.startPrank(alice);
         IERC20(TGLD).approve(address(spice), type(uint).max);
         vm.expectEmit(address(spice));
-        emit Deposit(alice, currentEpoch, aliceBidAmount);
+        emit SpiceDeposit(alice, currentEpoch, address(TGLD), aliceBidAmount);
         spice.bid(aliceBidAmount);
 
         vm.startPrank(bob);
         IERC20(TGLD).approve(address(spice), type(uint).max);
         vm.expectEmit(address(spice));
-        emit Deposit(bob, currentEpoch, bobBidAmount);
+        emit SpiceDeposit(bob, currentEpoch, address(TGLD), bobBidAmount);
         spice.bid(bobBidAmount);
             
         assertEq(spice.depositors(alice, currentEpoch), aliceBidAmount);
@@ -1023,7 +1026,7 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         uint256 claimAmount = 2*epochInfo.totalAuctionTokenAmount/5;
         vm.startPrank(alice);
         vm.expectEmit(address(spice));
-        emit Claim(alice, currentEpoch, aliceBidAmount, claimAmount);
+        emit SpiceClaim(alice, currentEpoch, address(TGLD), aliceBidAmount, daiToken, claimAmount);
         spice.claim(currentEpoch);
         assertEq(IERC20(daiToken).balanceOf(alice), balanceBefore+claimAmount);
 
@@ -1031,7 +1034,7 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         balanceBefore = IERC20(daiToken).balanceOf(bob);
         claimAmount = epochInfo.totalAuctionTokenAmount-claimAmount;
         vm.expectEmit(address(spice));
-        emit Claim(bob, currentEpoch, bobBidAmount, claimAmount);
+        emit SpiceClaim(bob, currentEpoch, address(TGLD), bobBidAmount, daiToken, claimAmount);
         spice.claim(currentEpoch);
         assertEq(IERC20(daiToken).balanceOf(bob), balanceBefore+claimAmount);
     }
@@ -1109,7 +1112,7 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
             vm.startPrank(alice);
             IERC20(TGLD).approve(address(spice), type(uint).max);
             vm.expectEmit(address(spice));
-            emit Deposit(alice, currentEpoch, bidAmount);
+            emit SpiceDeposit(alice, currentEpoch, address(TGLD), bidAmount);
             spice.bid(bidAmount);
         }
 

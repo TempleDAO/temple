@@ -274,7 +274,7 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard, Initializa
         depositors[msg.sender][epochId] += amount;
 
         info.totalBidTokenAmount += amount;
-        emit Deposit(msg.sender, epochId, amount);
+        emit SpiceDeposit(msg.sender, epochId, bidToken, amount);
     }
 
     /// @inheritdoc ISpiceAuction
@@ -289,15 +289,16 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard, Initializa
         if (bidTokenAmount == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
         claimed[msg.sender][epochId] = true;
         SpiceAuctionConfig storage config = auctionConfigs[epochId];
-        (, address auctionToken) = _getBidAndAuctionTokens(config);
+        (address bidToken, address auctionToken) = _getBidAndAuctionTokens(config);
 
         uint256 claimAmount = bidTokenAmount.mulDivRound(info.totalAuctionTokenAmount, info.totalBidTokenAmount, false);
         claimedAmount[msg.sender][epochId] = claimAmount;
         /// checkpoint claim for auction token
         _claimedAuctionTokens[auctionToken] += claimAmount;
         accountTotalClaimed[msg.sender][auctionToken] += claimAmount;
+
         IERC20(auctionToken).safeTransfer(msg.sender, claimAmount);
-        emit Claim(msg.sender, epochId, bidTokenAmount, claimAmount);
+        emit SpiceClaim(msg.sender, epochId, bidToken, bidTokenAmount, auctionToken, claimAmount);
     }
 
     /// @inheritdoc ISpiceAuction

@@ -13,6 +13,8 @@ interface ISpiceAuction is IAuctionBase {
     event SpiceAuctionEpochSet(uint256 epoch, address auctionToken, uint128 startTime, uint128 endTime, uint256 amount);
     event RecoveredTokenForZeroBidAuction(uint256 epoch, address to, address token, uint256 amount);
     event StrategyGnosisSet(address strategyGnosis);
+    event SpiceClaim(address indexed sender, uint256 epochId, address bidToken, uint256 bidTokenAmount, address auctionToken, uint256 claimAmount);
+    event SpiceDeposit(address indexed sender, uint256 epochId, address bidToken, uint256 amount);
 
     error InvalidConfigOperation();
     error NotEnoughAuctionTokens();
