@@ -65,9 +65,6 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard, Initializa
     /// @inheritdoc ISpiceAuction
     string public override name;
 
-    /// @notice Used for the checking the wait period of the first auction
-    uint256 private _initializeTimestamp;
-
     /// @notice The mint chain ID
     uint32 private _mintChainId;
 
@@ -109,7 +106,6 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard, Initializa
         _mintChainEid = mintChainEid_;
         _mintChainId = mintChainId_;
         name = name_;
-        _initializeTimestamp = block.timestamp;
     }
 
     /// @inheritdoc ISpiceAuction
@@ -222,7 +218,7 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard, Initializa
         SpiceAuctionConfig storage config = auctionConfigs[nextEpochId];
         if (config.duration == 0) { revert MissingAuctionConfig(nextEpochId); }
         if (amount < config.minimumDistributedAuctionToken) { revert NotEnoughAuctionTokens(); }
-        _checkWaitPeriod(epochId, startTime, config);
+        _checkWaitPeriod(epochId, startTime);
 
         (,address auctionToken) = _getBidAndAuctionTokens(config);
         IERC20(auctionToken).safeTransferFrom(msg.sender, address(this), amount);
@@ -245,8 +241,7 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard, Initializa
     /// @dev epochId is the current epoch ID
     function _checkWaitPeriod(
         uint256 epochId,
-        uint256 checkTimestamp,
-        SpiceAuctionConfig storage nextAuctionConfig
+        uint256 checkTimestamp
     ) private view {
         /// check enough wait period since last auction
         if (epochId > 0) {
@@ -255,10 +250,8 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard, Initializa
             /// use waitperiod from last auction config
             uint64 _waitPeriod = auctionConfigs[epochId].waitPeriod;
             if (lastEpochInfo.endTime + _waitPeriod > checkTimestamp) { revert WaitPeriod(); }
-        } else {
-            /// For first auction
-            if (_initializeTimestamp + nextAuctionConfig.waitPeriod > checkTimestamp) { revert WaitPeriod(); }
         }
+        // For first auction, do not check for wait period
     }
 
     /// @inheritdoc IAuctionBase
