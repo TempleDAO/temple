@@ -65,7 +65,7 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard, Initializa
     /// @inheritdoc ISpiceAuction
     string public override name;
 
-    /// @notice Last time auction was started. For zero auctions, it is the contract initialize timestamp
+    /// @notice Used for the checking the wait period of the first auction
     uint256 private _initializeTimestamp;
 
     /// @notice The mint chain ID
@@ -127,6 +127,13 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard, Initializa
     }
 
     /// @inheritdoc ISpiceAuction
+    function setStrategyGnosis(address _gnosis) external override onlyDAOExecutor {
+        if (_gnosis == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
+        strategyGnosis = _gnosis;
+        emit StrategyGnosisSet(_gnosis);
+    }
+
+    /// @inheritdoc ISpiceAuction
     function setDaoExecutor(address _daoExecutor) external onlyDAOExecutor {
         if (_daoExecutor == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
         daoExecutor = _daoExecutor;
@@ -148,7 +155,6 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard, Initializa
         
         if (_config.duration < MINIMUM_AUCTION_DURATION
             || _config.duration > MAXIMUM_AUCTION_DURATION) { revert CommonEventsAndErrors.InvalidParam(); }
-        // startCooldown can be zero
         if (_config.waitPeriod == 0
             || _config.minimumDistributedAuctionToken == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
         if (_config.recipient == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
@@ -356,10 +362,11 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard, Initializa
         (, address auctionToken) = _getBidAndAuctionTokens(config);
         epochsWithoutBidsRecovered[epochId] = true;
         uint256 amount = epochInfo.totalAuctionTokenAmount;
+        epochInfo.totalAuctionTokenAmount = 0;
         _totalAuctionTokenAllocation[auctionToken] -= amount;
 
         // strategy gnosis funds auctions. so check caller and send back tokens to strategy gnosis
-        emit CommonEventsAndErrors.TokenRecovered(msg.sender, auctionToken, amount);
+        emit RecoveredTokenForZeroBidAuction(epochId, msg.sender, auctionToken, amount);
         IERC20(auctionToken).safeTransfer(msg.sender, amount);
     }
 

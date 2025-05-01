@@ -174,11 +174,11 @@ contract SpiceAuctionFactoryTest is SpiceAuctionFactoryTestBase {
 
     function test_createAuction() public {
         vm.startPrank(executor);
-        assertEq(factory.getLastAuctionVersion(usdcToken), 0);
+        assertEq(factory.spiceTokenLatestVersion(usdcToken), 0);
         address auction = factory.createAuction(usdcToken, NAME_ONE);
         assertTrue(auction != address(0));
-        assertEq(factory.getLastAuctionVersion(usdcToken), 1);
-        uint256 version = factory.getLastAuctionVersion(usdcToken);
+        assertEq(factory.spiceTokenLatestVersion(usdcToken), 1);
+        uint256 version = factory.spiceTokenLatestVersion(usdcToken);
         assertEq(auction, factory.findAuctionForSpiceToken(usdcToken));
         assertEq(factory.deployedAuctions(usdcToken, version), auction);
 
@@ -186,7 +186,7 @@ contract SpiceAuctionFactoryTest is SpiceAuctionFactoryTestBase {
         address oldAuction = auction;
         auction = factory.createAuction(usdcToken, NAME_ONE);
         assertFalse(auction == address(0));
-        version = factory.getLastAuctionVersion(usdcToken);
+        version = factory.spiceTokenLatestVersion(usdcToken);
         assertEq(version, 2);
         assertEq(factory.deployedAuctions(usdcToken, 1), oldAuction);
         assertNotEq(oldAuction, factory.deployedAuctions(usdcToken, version));

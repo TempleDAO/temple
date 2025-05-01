@@ -75,11 +75,4 @@ interface ISpiceAuctionFactory {
      * @param version Version of deployed spice token
      */
     function deployedAuctions(address spiceToken, uint256 version) external view returns (address auction);
-
-    /**
-     * @notice Keep track of deployed spice auctions
-     * @param spiceToken Spice token address
-     * @return version Version of last deployed spice auction
-     */
-    function getLastAuctionVersion(address spiceToken) external view returns (uint256 version);
 }

@@ -116,9 +116,4 @@ contract SpiceAuctionFactory is ISpiceAuctionFactory, TempleElevatedAccess {
         uint256 version = spiceTokenLatestVersion[spiceToken];
         return deployedAuctions[spiceToken][version];
     }
-
-    /// @inheritdoc ISpiceAuctionFactory
-    function getLastAuctionVersion(address spiceToken) external override view returns (uint256) {
-        return spiceTokenLatestVersion[spiceToken];
-    }
 }

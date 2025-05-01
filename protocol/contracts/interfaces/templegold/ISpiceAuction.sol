@@ -11,6 +11,8 @@ interface ISpiceAuction is IAuctionBase {
     event RedeemedTempleGoldBurned(uint256 epochId, uint256 amount);
     event OperatorSet(address indexed operator);
     event SpiceAuctionEpochSet(uint256 epoch, address auctionToken, uint128 startTime, uint128 endTime, uint256 amount);
+    event RecoveredTokenForZeroBidAuction(uint256 epoch, address to, address token, uint256 amount);
+    event StrategyGnosisSet(address strategyGnosis);
 
     error InvalidConfigOperation();
     error NotEnoughAuctionTokens();
@@ -180,6 +182,12 @@ interface ISpiceAuction is IAuctionBase {
      * @param _operator operator to set
      */
     function setOperator(address _operator) external;
+
+    /**
+     * @notice Set strategy gnosis
+     * @param _gnosis strategy gnosis to set
+     */
+    function setStrategyGnosis(address _gnosis) external;
 
     /**
      * @notice Set next auction start and end times.

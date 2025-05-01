@@ -30,6 +30,8 @@ contract SpiceAuctionTestBase is TempleGoldCommon {
     event RedeemedTempleGoldBurned(uint256 epochId, uint256 amount);
     event OperatorSet(address indexed operator);
     event SpiceAuctionEpochSet(uint256 epoch, address auctionToken, uint128 startTime, uint128 endTime, uint256 amount);
+    event RecoveredTokenForZeroBidAuction(uint256 epoch, address to, address token, uint256 amount);
+    event StrategyGnosisSet(address strategyGnosis);
 
     address internal daoExecutor = makeAddr("daoExecutor");
 
@@ -159,6 +161,12 @@ contract SpiceAuctionAccessTest is SpiceAuctionTestBase {
         spice.setAuctionConfig(_getAuctionConfig());
     }
 
+    function test_access_setStrategyGnosisFail() public {
+        vm.startPrank(unauthorizedUser);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
+        spice.setStrategyGnosis(alice);
+    }
+
      function test_access_setDaoExecutorFail() public {
         vm.startPrank(unauthorizedUser);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
@@ -183,6 +191,11 @@ contract SpiceAuctionAccessTest is SpiceAuctionTestBase {
         vm.warp(info.endTime);
         spice.setAuctionConfig(_getAuctionConfig());
         spice.removeAuctionConfig();
+    }
+
+    function test_access_setStrategyGnosisSuccess() public {
+        vm.startPrank(daoExecutor);
+        spice.setStrategyGnosis(alice);
     }
 
     function test_access_fundNextAuctionFail() public {
@@ -237,24 +250,6 @@ contract SpiceAuctionViewTest is SpiceAuctionTestBase {
         vm.warp(_info.endTime);
         assertEq(spice.isActive(), false);
     }
-
-    // function test_getClaimableForEpoch() public {
-    //     // bid token == 0
-    //     ISpiceAuction.TokenAmount memory claimable = spice.getClaimableForEpoch(alice, 0);
-    //     assertEq(claimable.amount, 0);
-    //     assertEq(claimable.token, address(0));
-
-    //     _startAuction(true, true);
-    //     vm.startPrank(alice);
-    //     deal(daiToken, alice, 100 ether);
-    //     IERC20(daiToken).approve(address(spice), type(uint).max);
-    //     // epoch > 1 . current epoch is 1
-    //     claimable = spice.getClaimableForEpoch(alice, 2);
-    //     assertEq(claimable.amount, 0);
-    //     assertEq(claimable.token, address(0));
-        
-    //     // see claim and bid tests
-    // }
 
     function test_currentEpoch() public {
         // see claim and bid tests
@@ -366,6 +361,17 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         emit DaoExecutorSet(alice);
         spice.setDaoExecutor(alice);
         assertEq(spice.daoExecutor(), alice);
+    }
+
+    function test_setStrategyGnosis() public {
+        vm.startPrank(daoExecutor);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
+        spice.setStrategyGnosis(address(0));
+
+        vm.expectEmit(address(spice));
+        emit StrategyGnosisSet(alice);
+        spice.setStrategyGnosis(alice);
+        assertEq(spice.strategyGnosis(), alice);
     }
 
     function test_setSpiceAuctionConfig() public {
@@ -538,7 +544,7 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
 
         assertEq(spice.epochsWithoutBidsRecovered(2), false);
         vm.expectEmit(address(spice));
-        emit TokenRecovered(cssGnosis, auctionToken, auctionTokenAmount);
+        emit RecoveredTokenForZeroBidAuction(2, cssGnosis, auctionToken, auctionTokenAmount);
         spice.recoverAuctionTokenForZeroBidAuction(2, cssGnosis);
         assertEq(IERC20(auctionToken).balanceOf(address(spice)), auctionTokenBalance - auctionTokenAmount);
         assertEq(IERC20(auctionToken).balanceOf(cssGnosis), balance + auctionTokenAmount);
