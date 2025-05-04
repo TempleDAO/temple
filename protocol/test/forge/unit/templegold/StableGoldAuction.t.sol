@@ -26,23 +26,33 @@ contract StableGoldAuctionTestBase is TempleGoldCommon {
     event TreasurySet(address treasury);
 
     /// @notice Auction duration
-    uint64 public constant AUCTION_DURATION = 1 weeks;
-    uint32 public constant AUCTIONS_TIME_DIFF_ONE = 1 weeks;
-    uint32 public constant AUCTIONS_START_COOLDOWN_ONE = 1 hours;
-    uint192 public constant AUCTION_MIN_DISTRIBUTED_GOLD_ONE = 1_000;
+    uint64 internal constant AUCTION_DURATION = 1 weeks;
+
+    uint32 internal constant AUCTIONS_TIME_DIFF_ONE = 1 weeks;
+
+    uint32 internal constant AUCTIONS_START_COOLDOWN_ONE = 1 hours;
+
+    uint192 internal constant AUCTION_MIN_DISTRIBUTED_GOLD_ONE = 1_000;
     
-    address public templeToken = 0x470EBf5f030Ed85Fc1ed4C2d36B9DD02e77CF1b7;
+    address internal templeToken = 0x470EBf5f030Ed85Fc1ed4C2d36B9DD02e77CF1b7;
     
-    TempleGold public templeGold;
-    IERC20 public bidToken;
-    IERC20 public bidToken2;
-    ITempleERC20Token public temple;
-    StableGoldAuction public auction;
-    TempleGoldStaking public goldStaking;
+    TempleGold internal templeGold;
+
+    IERC20 internal bidToken;
+
+    IERC20 internal bidToken2;
+
+    ITempleERC20Token internal temple;
+
+    StableGoldAuction internal auction;
+
+    TempleGoldStaking internal goldStaking;
+
+    uint256 internal constant ARBITRUM_ONE_FORK_BLOCK_NUMBER = 204026954;
 
     function setUp() public {
-        /// @dev forking for layerzero endpoint to execute code
-        fork("arbitrum_one", 204026954);
+        // forking for layerzero endpoint to execute code
+        fork("arbitrum_one", ARBITRUM_ONE_FORK_BLOCK_NUMBER);
 
         ITempleGold.InitArgs memory initArgs = _getTempleGoldInitArgs();
 
@@ -292,7 +302,7 @@ contract StableGoldAuctionTestView is StableGoldAuctionTestBase {
     }
 
     function test_getAuctionConfig() public {
-        /// @dev See test_setAuctionConfig()
+        // See test_setAuctionConfig()
     }
 
     function test_nextEpoch() public view {

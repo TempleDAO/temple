@@ -14,16 +14,20 @@ async function main() {
   const TEMPLEGOLD_ADDRESSES = getDeployedTempleGoldContracts();
   const SEPOLIA_CHAIN_ID = 11155111;
   const SEPOLIA_LZ_EID = 40161;
+  // rescuer can't be executor. using placeholder
+  const RESCUER = "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720"; 
 
   const factory = new SpiceAuctionFactory__factory(owner);
   await deployAndMine(
     'SPICE_AUCTION_FACTORY',
     factory,
     factory.deploy,
-    "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720", // rescuer can't be executor. using placeholder
+    TEMPLEGOLD_ADDRESSES.TEMPLE_GOLD.SPICE_AUCTION_IMPLEMENTATION,
+    RESCUER,
     ownerAddress, // executor
     ownerAddress, // dao executor, placeholder
     ownerAddress, // spice auction operator
+    ownerAddress, // strategy gnosis funds auctions
     TEMPLEGOLD_ADDRESSES.TEMPLE_GOLD.TEMPLE_GOLD,
     SEPOLIA_LZ_EID,
     SEPOLIA_CHAIN_ID

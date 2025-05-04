@@ -22,19 +22,29 @@ contract TempleGoldAdminTestBase is TempleGoldCommon {
     event StableGoldAuctionSet(address auction);
     event TeamGnosisSet(address gnosis);
 
-    StableGoldAuction public auction;
-    TempleGoldStaking public staking;
-    TempleGold public templeGold;
-    TempleGold public templeGoldMainnet;
-    FakeERC20 public templeToken;
-    TempleGoldAdmin public templeGoldAdmin;
-    TempleGoldAdmin public nextTempleGoldAdmin;
+    StableGoldAuction internal auction;
 
-    uint256 public constant MINIMUM_DISTRIBUTION_SHARE = 1 ether;
-    uint256 public constant ARBITRUM_ONE_BLOCKNUMBER_B = 207201713;
-    uint256 public constant MINIMUM_MINT = 1_000;
-    uint256 public arbitrumOneForkId;
-    uint256 public mainnetForkId;
+    TempleGoldStaking internal staking;
+
+    TempleGold internal templeGold;
+
+    TempleGold internal templeGoldMainnet;
+
+    FakeERC20 internal templeToken;
+
+    TempleGoldAdmin internal templeGoldAdmin;
+
+    TempleGoldAdmin internal nextTempleGoldAdmin;
+
+    uint256 internal constant MINIMUM_DISTRIBUTION_SHARE = 1 ether;
+
+    uint256 internal constant ARBITRUM_ONE_BLOCKNUMBER_B = 207201713;
+
+    uint256 internal constant MINIMUM_MINT = 1_000;
+    
+    uint256 internal arbitrumOneForkId;
+
+    uint256 internal mainnetForkId;
 
     function setUp() public {
         fork("arbitrum_one", forkBlockNumber);
