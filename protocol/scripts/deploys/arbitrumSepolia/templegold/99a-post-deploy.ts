@@ -3,8 +3,10 @@ import {
     ensureExpectedEnvvars,
     mine,
 } from '../../helpers';
+import { Constants as SEPOLIA_CONSTANTS } from '../../sepolia/constants';
 import { connectToContracts, ContractInstances, getDeployedTempleGoldContracts, ContractAddresses } from '../../mainnet/templegold/contract-addresses';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { EnforcedOptionParamStruct } from '../../../../typechain/@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/libs/OAppOptionsType3';
 
 async function main() {
     ensureExpectedEnvvars();
@@ -44,6 +46,14 @@ async function _templeGoldPostDeploy(
     await mine(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.TEMPLE_GOLD.authorizeContract(TEMPLE_GOLD_ADDRESSES.TEMPLE_GOLD.STABLE_GOLD_AUCTION, true));
     await mine(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.TEMPLE_GOLD.authorizeContract(TEMPLE_GOLD_ADDRESSES.TEMPLE_GOLD.TEMPLE_GOLD_STAKING, true));
     await mine(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.TEMPLE_GOLD.authorizeContract(ownerAddress, true));
+
+    // set enforced options
+    const options: EnforcedOptionParamStruct[] = [{
+        eid: SEPOLIA_CONSTANTS.LAYER_ZERO.EID,
+        msgType: 1, // SEND
+        options: "0x00030100110100000000000000000000000000030d40", // 200k gas limit
+    }];
+    await mine(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.TEMPLE_GOLD.setEnforcedOptions(options));
 }
 
 async function _stakingPostDeploy(
