@@ -4,13 +4,13 @@ import { Button } from 'components/Button/Button';
 import { Popover } from 'components/Pages/Core/DappPages/SpiceBazaar/components/Popover';
 import * as breakpoints from 'styles/breakpoints';
 import { useSpiceBazaar } from 'providers/SpiceBazaarProvider';
-import { BidUSDS, BidUSDSMode } from '../../../Earn/Auctions/BidUSDS';
+import { BidUSDS, BidUSDSMode } from '../../../Bid/BidUSDS';
 import { formatNumberWithCommas } from 'utils/formatter';
 import { ScrollBar } from 'components/Pages/Core/DappPages/SpiceBazaar/components/CustomScrollBar';
 import {
   BidTGLD,
   BidTGLDMode,
-} from 'components/Pages/Core/DappPages/SpiceBazaar/BidTGLD/BidTGLD';
+} from 'components/Pages/Core/DappPages/SpiceBazaar/Spend/BidTGLD';
 
 export type Transaction = {
   epochId: string;
@@ -69,33 +69,10 @@ export const DataTable: React.FC<TableProps> = ({
     }
   }, [filter, transactions]);
 
-  const [resolvedActions, setResolvedActions] = useState<
-    Record<string, '' | 'Bid' | 'Claim'>
-  >({});
-
   const onBidSubmitted = () => {
     refetch?.();
     setModalState('closed');
   };
-
-  useEffect(() => {
-    const resolveActions = async () => {
-      const resolved = await Promise.all(
-        transactions.map(async (transaction) => ({
-          epochId: transaction.epochId,
-          action: await transaction.action,
-        }))
-      );
-
-      setResolvedActions(
-        resolved.reduce((acc, curr) => {
-          acc[curr.epochId] = curr.action;
-          return acc;
-        }, {} as Record<string, 'Bid' | 'Claim' | ''>) // The state will hold "Bid", "Claim", or ""
-      );
-    };
-    resolveActions();
-  }, [transactions]);
 
   return (
     <>
@@ -136,7 +113,7 @@ export const DataTable: React.FC<TableProps> = ({
                 </DataRow>
               ) : (
                 filteredTransactions.map((transaction) => {
-                  const action = resolvedActions[transaction.epochId];
+                  const action = transaction.action;
                   return (
                     <DataRow key={transaction.epochId}>
                       <DataCell>{transaction.epochId}</DataCell>
@@ -263,7 +240,7 @@ const HeaderRow = styled.tr`
 `;
 
 const TableHeader = styled.th<{ name: string }>`
-  padding: 20px 25px;
+  padding: 0px 25px;
   font-size: 13px;
   font-weight: 700;
   line-height: 20px;
@@ -276,7 +253,7 @@ const TableHeader = styled.th<{ name: string }>`
   z-index: 1;
 
   &:first-child {
-    padding: 20px 25px 20px 0px;
+    padding: 5px 25px 0px 0px;
   }
 `;
 

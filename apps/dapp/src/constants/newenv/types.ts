@@ -28,6 +28,13 @@ export type TokenConfig = {
   symbol: string;
 };
 
+export type SpiceAuctionConfig = {
+  name: string;
+  chainId: ChainId;
+  auctionTokenSymbol: string;
+  contractConfig: ContractConfig<Contract>;
+};
+
 export type AppConfig = {
   chains: Chain[];
   tokens: {
@@ -50,6 +57,9 @@ export type AppConfig = {
     trv: ContractConfig<Contract>;
     daiCircuitBreaker: ContractConfig<Contract>;
     templeCircuitBreaker: ContractConfig<Contract>;
+  };
+  spiceBazaar: {
+    spiceAuctions: SpiceAuctionConfig[];
   };
 };
 

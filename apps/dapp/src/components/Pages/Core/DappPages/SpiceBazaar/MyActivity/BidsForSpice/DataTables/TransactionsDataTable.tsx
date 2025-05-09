@@ -5,7 +5,6 @@ import * as breakpoints from 'styles/breakpoints';
 import { ScrollBar } from 'components/Pages/Core/DappPages/SpiceBazaar/components/CustomScrollBar';
 
 export type Transaction = {
-  id: string;
   epoch: string;
   type: string;
   transactionLink: string;
@@ -30,6 +29,7 @@ export const DataTable: React.FC<TableProps> = ({
   const [filter, setFilter] = useState('Last 5 Shown');
   const [filteredTransactions, setFilteredTransactions] =
     useState<Transaction[]>(transactions);
+
   const filterOptions = ['Last 5 Shown', 'Show All'];
 
   useEffect(() => {
@@ -72,15 +72,15 @@ export const DataTable: React.FC<TableProps> = ({
           <tbody>
             {loading ? (
               <DataRow>
-                <DataCell colSpan={6}>Loading...</DataCell>
+                <DataCell colSpan={4}>Loading...</DataCell>
               </DataRow>
             ) : filteredTransactions.length === 0 ? (
               <DataRow>
-                <DataCell colSpan={6}>No data available</DataCell>
+                <DataCell colSpan={4}>No data available</DataCell>
               </DataRow>
             ) : (
               filteredTransactions.map((transaction) => (
-                <DataRow key={transaction.id}>
+                <DataRow key={transaction.epoch}>
                   <DataCell>
                     {new Date(
                       Number(transaction.epoch) * 1000
@@ -150,11 +150,10 @@ const FilterButton = styled.button<{ selected: boolean }>`
 `;
 
 const TableData = styled.table`
-  border-spacing: 10px
+  border-spacing: 10px;
   width: 100%;
   border-collapse: collapse;
   min-width: 500px;
-  width: 100%;
 `;
 
 const HeaderRow = styled.tr`
@@ -170,14 +169,14 @@ const TableHeader = styled.th`
   position: sticky;
   top: 0;
   z-index: 1;
-  padding: 20px 16px;
+  padding: 0px 16px;
 
   &:first-child {
-    padding: 20px 0px 20px 0px;
+    padding: 10px 0px;
   }
 
   &:last-child {
-    padding: 20px 0px 20px 16px;
+    padding: 10px 0px 10px 16px;
   }
 `;
 
@@ -186,6 +185,7 @@ const DataRow = styled.tr`
 `;
 
 const DataCell = styled.td`
+  width: 30%;
   font-size: 13px;
   font-weight: 700;
   line-height: 20px;

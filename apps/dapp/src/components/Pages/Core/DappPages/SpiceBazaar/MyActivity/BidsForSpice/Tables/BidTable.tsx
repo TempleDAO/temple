@@ -3,29 +3,27 @@ import { DataTable } from '../DataTables/BidDataTable';
 import { useMyActivityBidsSpiceHistory } from '../hooks/use-myActivity-bidsSpiceHistory';
 
 enum TableHeaders {
-  EpochId = 'EPOCH\nID',
+  EpochId = 'EPOCH ID',
   AuctionEndDateTime = 'Auction End',
-  Chain = 'Chain',
-  Token = 'Token',
   Claimable = 'Claimable',
   Price = 'Unit Price\n(TGLD)',
   BidTotal = 'Bid Total\n(TGLD)',
   Action = 'Action',
+  Token = 'Token',
 }
 
 const tableHeaders = [
   { name: TableHeaders.EpochId },
   { name: TableHeaders.AuctionEndDateTime },
-  { name: TableHeaders.Chain },
-  { name: TableHeaders.Token },
   { name: TableHeaders.Claimable },
+  { name: TableHeaders.Token },
   { name: TableHeaders.Price },
   { name: TableHeaders.BidTotal },
   { name: TableHeaders.Action },
 ];
 
 export const BidHistory = () => {
-  const { data, loading, error, refetch } = useMyActivityBidsSpiceHistory();
+  const { data, loading, refetch } = useMyActivityBidsSpiceHistory();
 
   return (
     <AuctionsHistoryContainer>

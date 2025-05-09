@@ -76,10 +76,6 @@ interface SpiceBazaarContextValue {
     fetch: () => Promise<void>;
     getClaimableAtEpoch: (epochId: string) => Promise<number>;
   };
-  featureFlag: {
-    isEnabled: boolean;
-    toggle: () => void;
-  };
 }
 
 const ONE_DAY_IN_SECONDS = 24 * 60 * 60;
@@ -132,10 +128,6 @@ const INITIAL_STATE: SpiceBazaarContextValue = {
     loading: false,
     fetch: asyncNoop,
     getClaimableAtEpoch: async () => 0,
-  },
-  featureFlag: {
-    isEnabled: false,
-    toggle: asyncNoop,
   },
 };
 
@@ -374,35 +366,6 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
       updateBalance,
     ]
   );
-
-  const getStoredFlagState = () => {
-    if (typeof window !== 'undefined') {
-      const storedFlag = localStorage.getItem('featureFlagState');
-      return storedFlag ? JSON.parse(storedFlag) : false;
-    }
-    return false;
-  };
-
-  const [isFeatureEnabled, setIsFeatureEnabled] = useState(getStoredFlagState);
-
-  const toggleFeatureFlag = useCallback(() => {
-    setIsFeatureEnabled((prev: boolean) => {
-      const newState = !prev;
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('featureFlagState', JSON.stringify(newState));
-      }
-      return newState;
-    });
-  }, []);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const storedFlag = localStorage.getItem('featureFlagState');
-      if (storedFlag) {
-        setIsFeatureEnabled(JSON.parse(storedFlag));
-      }
-    }
-  }, []);
 
   const getCurrentEpoch = useCallback(async () => {
     const daiGoldAuction = (await papi.getContract(
@@ -959,10 +922,6 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
         fetch: fetchCurrentUserMetrics,
         getClaimableAtEpoch,
       },
-      featureFlag: {
-        isEnabled: isFeatureEnabled,
-        toggle: toggleFeatureFlag,
-      },
     };
   }, [
     currentUserMetricsData,
@@ -981,8 +940,6 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
     currentUserMetricsLoading,
     fetchCurrentUserMetrics,
     getClaimableAtEpoch,
-    isFeatureEnabled,
-    toggleFeatureFlag,
   ]);
 
   return (

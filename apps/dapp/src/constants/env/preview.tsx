@@ -60,7 +60,7 @@ const env: Environment = {
     templeCircuitBreaker: '0x8f783c4A3d90712A794d5660b632AC67611852aF',
     spiceBazaar: {
       templeGoldStaking: '0x36061ce3Ac2F5d69667F0c7B98Ec6021ef33b8cB',
-      daiGoldAuction: '0x485B3C94563095a7d8dEBf8821E479E1F7d0cF4B',
+      daiGoldAuction: '0x8d3671d794d511Bb0E3D28e260F8E2233C0653aB',
       spiceAuctionFactory: '0xf2573BAa3A1EB4eDcaB3a1b105FFcdb8dEcC7FB3',
     },
   },

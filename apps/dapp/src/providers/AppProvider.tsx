@@ -11,6 +11,7 @@ import { WrongNetworkPopover } from 'components/Layouts/CoreLayout/WrongNetworkP
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SpiceBazaarProvider } from './SpiceBazaarProvider';
+import { SpiceAuctionProvider } from './SpiceAuctionProvider';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 interface AppProviderState {}
@@ -33,7 +34,11 @@ export const AppProvider = (props: PropsWithChildren<{}>) => {
                 <ThemeProvider theme={theme}>
                   <AppContext.Provider value={{}}>
                     <WrongNetworkPopover />
-                    <SpiceBazaarProvider>{props.children}</SpiceBazaarProvider>
+                    <SpiceAuctionProvider>
+                      <SpiceBazaarProvider>
+                        {props.children}
+                      </SpiceBazaarProvider>
+                    </SpiceAuctionProvider>
                   </AppContext.Provider>
                 </ThemeProvider>
               </VaultContextProvider>

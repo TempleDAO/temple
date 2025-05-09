@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { userTransactionsDAIGoldAuctions, subgraphQuery } from 'utils/subgraph';
-import type { Transaction } from '../../DataTables/TransactionsDataTable';
+import type { Transaction } from '../DataTables/TransactionsDataTable';
 import { useWallet } from 'providers/WalletProvider';
 import env from 'constants/env';
 

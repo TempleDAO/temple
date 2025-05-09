@@ -1,6 +1,10 @@
 import {
   DaiGoldAuction,
   DaiGoldAuction__factory,
+  SpiceAuction,
+  SpiceAuction__factory,
+  SpiceAuctionFactory,
+  SpiceAuctionFactory__factory,
   TempleCircuitBreakerAllUsersPerPeriod,
   TempleCircuitBreakerAllUsersPerPeriod__factory,
   TempleGold,
@@ -162,7 +166,7 @@ const OHM_TOKEN_ON_ETH_SEPOLIA: TokenConfig = {
 
 const DAI_GOLD_AUCTION_ON_ETH_SEPOLIA: ContractConfig<DaiGoldAuction> = {
   chainId: ETH_SEPOLIA.id,
-  address: '0x485B3C94563095a7d8dEBf8821E479E1F7d0cF4B',
+  address: '0x8d3671d794d511Bb0E3D28e260F8E2233C0653aB',
   contractFactory: DaiGoldAuction__factory,
 };
 
@@ -206,6 +210,19 @@ const TEMPLE_CIRCUIT_BREAKER_CONTRACT_ON_ETH_SEPOLIA: ContractConfig<TempleCircu
     contractFactory: TempleCircuitBreakerAllUsersPerPeriod__factory,
   };
 
+const SPICE_AUCTION_FACTORY_ON_ETH_SEPOLIA: ContractConfig<SpiceAuctionFactory> =
+  {
+    chainId: ETH_SEPOLIA.id,
+    address: '0x3c84E8848C2D78107630c367500d79E8E6975be4',
+    contractFactory: SpiceAuctionFactory__factory,
+  };
+
+const SPICE_AUCTION_ON_ETH_SEPOLIA: ContractConfig<SpiceAuction> = {
+  chainId: ETH_SEPOLIA.id,
+  address: '0xee46c5826cb312b1a80f7a6d1af795488941dbd0',
+  contractFactory: SpiceAuction__factory,
+};
+
 const testEnv: AppConfig = {
   chains: [ETH_SEPOLIA], //, ARB_SEPOLIA],
   tokens: {
@@ -228,6 +245,17 @@ const testEnv: AppConfig = {
     trv: TREASURY_RESERVES_VAULT_ON_ETH_SEPOLIA,
     daiCircuitBreaker: DAI_CIRCUIT_BREAKER_CONTRACT_ON_ETH_SEPOLIA,
     templeCircuitBreaker: TEMPLE_CIRCUIT_BREAKER_CONTRACT_ON_ETH_SEPOLIA,
+  },
+  spiceBazaar: {
+    // TODO: For now, we only have one spice auction. Eventually, could be many. So we use an array.
+    spiceAuctions: [
+      {
+        name: 'Test DAI TGLD Auction',
+        chainId: ETH_SEPOLIA.id, // TODO: We need to support berachain
+        auctionTokenSymbol: 'DAI',
+        contractConfig: SPICE_AUCTION_ON_ETH_SEPOLIA,
+      },
+    ],
   },
 };
 

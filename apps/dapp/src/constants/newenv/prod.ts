@@ -2,6 +2,10 @@ import { AppConfig, Chain, ContractConfig, TokenConfig } from './types';
 import {
   DaiGoldAuction,
   DaiGoldAuction__factory,
+  SpiceAuction,
+  SpiceAuction__factory,
+  SpiceAuctionFactory,
+  SpiceAuctionFactory__factory,
   TempleCircuitBreakerAllUsersPerPeriod,
   TempleCircuitBreakerAllUsersPerPeriod__factory,
   TempleGold,
@@ -202,6 +206,21 @@ const TEMPLECIRCUITBREAKER_ON_ETH_MAINNET: ContractConfig<TempleCircuitBreakerAl
     contractFactory: TempleCircuitBreakerAllUsersPerPeriod__factory,
   };
 
+// TODO: Prod address
+const SPICE_AUCTION_FACTORY_ON_ETH_MAINNET: ContractConfig<SpiceAuctionFactory> =
+  {
+    chainId: ETH_MAINNET.id,
+    address: '0x0000000000000000000000000000000000000000',
+    contractFactory: SpiceAuctionFactory__factory,
+  };
+
+// TODO: Prod address
+const SPICE_AUCTION_ON_ETH_MAINNET: ContractConfig<SpiceAuction> = {
+  chainId: ETH_MAINNET.id,
+  address: '0x0000000000000000000000000000000000000000',
+  contractFactory: SpiceAuction__factory,
+};
+
 const prodEnv: AppConfig = {
   chains: [ETH_MAINNET], //, ARB_MAINNET],
   tokens: {
@@ -224,6 +243,16 @@ const prodEnv: AppConfig = {
     trv: TRV_ON_ETH_MAINNET,
     daiCircuitBreaker: DAICIRCUITBREAKER_ON_ETH_MAINNET,
     templeCircuitBreaker: TEMPLECIRCUITBREAKER_ON_ETH_MAINNET,
+  },
+  spiceBazaar: {
+    spiceAuctions: [
+      // { TODO
+      //   chainId: ETH_MAINNET.id,
+      //   address: "0x0000000000000000000000000000000000000000",
+      //   contractFactory: SpiceAuctionFactory__factory,
+      //   auctionTokenSymbol: "DAI",
+      // },
+    ],
   },
 };
 

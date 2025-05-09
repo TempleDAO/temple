@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { Transaction } from '../../DataTables/TransactionsDataTable';
-import { useWallet } from 'providers/WalletProvider';
 import { userTransactionsSpiceAuctions, subgraphQuery } from 'utils/subgraph';
+import type { Transaction } from '../DataTables/TransactionsDataTable';
+import { useWallet } from 'providers/WalletProvider';
 import env from 'constants/env';
 
 type UseMyActivityTxnHistoryReturn = {
@@ -46,7 +46,6 @@ export const useMyActivityTxnHistory = (): UseMyActivityTxnHistoryReturn => {
           const isClaim = 'auctionAmount' in transaction;
 
           return {
-            id: transaction.id,
             epoch: transaction.timestamp,
             type: isBid ? 'Bid' : isClaim ? 'Claim' : 'Unknown',
             transactionLink: shortenTxnHash(transaction.hash),
