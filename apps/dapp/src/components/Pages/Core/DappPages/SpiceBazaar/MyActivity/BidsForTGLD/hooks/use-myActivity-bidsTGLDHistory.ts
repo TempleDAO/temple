@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { user, subgraphQuery } from 'utils/subgraph';
-import type { Transaction } from '../../DataTables/BidDataTable';
+import type { Transaction } from '../DataTables/BidDataTable';
 import { useWallet } from 'providers/WalletProvider';
 import { useSpiceBazaar } from 'providers/SpiceBazaarProvider';
-import { formatNumberWithCommas } from 'utils/formatter';
 import env from 'constants/env';
 
 export enum Auction {
@@ -73,9 +72,21 @@ export const useMyActivityBidsTGLDHistory =
             );
 
             // do not fetch unless the action is "Claim"
-            const claimableTokens =
-              actionResult === 'Claim' &&
-              (await getClaimableAtEpoch(p.auctionInstance.epoch));
+
+            let claimableTokens: number | undefined = undefined;
+            if (actionResult === 'Claim') {
+              try {
+                claimableTokens = await getClaimableAtEpoch(
+                  p.auctionInstance.epoch
+                );
+              } catch (err) {
+                console.error(
+                  `Failed to fetch claimable tokens for epoch ${p.auctionInstance.epoch}`,
+                  err
+                );
+                claimableTokens = undefined;
+              }
+            }
 
             return {
               epochId: p.auctionInstance.epoch,

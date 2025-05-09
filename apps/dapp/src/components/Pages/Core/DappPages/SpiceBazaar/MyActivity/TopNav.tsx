@@ -3,7 +3,6 @@ import { useLocation } from 'react-router-dom';
 import { TopNav } from 'components/Pages/Core/DappPages/SpiceBazaar/components/TopNav';
 import { useMediaQuery } from 'react-responsive';
 import { queryPhone } from 'styles/breakpoints';
-import { useSpiceBazaar } from 'providers/SpiceBazaarProvider';
 
 enum MyActivityLocPaths {
   Tgld = '/dapp/spice/myactivity/tgld',
@@ -11,28 +10,16 @@ enum MyActivityLocPaths {
 }
 
 export const MyActivityTopNav = () => {
-  const { featureFlag } = useSpiceBazaar();
-  const MyActivityConfig = featureFlag.isEnabled
-    ? [
-        {
-          label: 'Bids for TGLD',
-          linkTo: MyActivityLocPaths.Tgld,
-        },
-        {
-          label: 'Bids for Spice',
-          linkTo: MyActivityLocPaths.Spice,
-        },
-      ]
-    : [
-        {
-          label: 'Bids for TGLD',
-          linkTo: MyActivityLocPaths.Tgld,
-        },
-        // {
-        //   label: 'Bids for Spice',
-        //   linkTo: MyActivityLocPaths.Spice,
-        // },
-      ];
+  const MyActivityConfig = [
+    {
+      label: 'Bids for TGLD',
+      linkTo: MyActivityLocPaths.Tgld,
+    },
+    {
+      label: 'Bids for Spice',
+      linkTo: MyActivityLocPaths.Spice,
+    },
+  ];
 
   const isPhoneOrAbove = useMediaQuery({
     query: queryPhone,
