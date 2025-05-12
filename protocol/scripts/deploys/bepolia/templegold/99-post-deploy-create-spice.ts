@@ -25,7 +25,7 @@ async function main() {
 
     if(!name || !spiceToken) { throw new Error("Missing name or spice token!"); }
 
-    await mine(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.SPICE_AUCTION_FACTORY.createAuction(spiceToken, name));
+    // await mine(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.SPICE_AUCTION_FACTORY.createAuction(spiceToken, name));
     const spiceAuction = await TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.SPICE_AUCTION_FACTORY.findAuctionForSpiceToken(spiceToken);
     
     // If etherscan knows the contract bytecode, it may already have automatically been verified.
@@ -61,7 +61,7 @@ async function _fundAuction(instances: ContractInstances, spiceInstance: SpiceAu
     // approve spend
     await mine(instances.TEMPLE_GOLD.SPICE_TOKEN.approve(spiceInstance.address, amount));
     const now = (new Date()).getTime();
-    const startTime = Math.floor((now / 1000) +  3 * 60 * 60);
+    const startTime = Math.floor((now / 1000) +  1 * 60 * 60); // 1 hour from now
  
     await mine(spiceInstance.fundNextAuction(amount, startTime));
 }
