@@ -12,9 +12,9 @@ async function main() {
     const ADDRESSES = getDeployedTempleGoldContracts();
 
     // Transfer ownership of TGLD to executor msig
-    await mine(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.TEMPLE_GOLD.transferOwnership(ADDRESSES.TEMPLE_GOLD.EXECUTOR_MSIG));
+    await mine(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.TEMPLE_GOLD.transferOwnership(ADDRESSES.CORE.EXECUTOR_MSIG));
     // Transfer ownership of Spice factory to executor msig
-    await mine(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.SPICE_AUCTION_FACTORY.proposeNewExecutor(ADDRESSES.TEMPLE_GOLD.EXECUTOR_MSIG));
+    await mine(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.SPICE_AUCTION_FACTORY.proposeNewExecutor(ADDRESSES.CORE.EXECUTOR_MSIG));
 }
   
 // We recommend this pattern to be able to use async/await everywhere

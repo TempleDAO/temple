@@ -24,8 +24,6 @@ export interface ContractAddresses {
         SPICE_AUCTION: string,
         SPICE_AUCTION_FACTORY: string,
         STABLE_GOLD_AUCTION: string,
-        EXECUTOR_MSIG: string,
-        RESCUER_MSIG: string,
         TEAM_GNOSIS: string,
         SPICE_AUCTION_IMPLEMENTATION: string,
         STRATEGY_GNOSIS: string,
@@ -34,6 +32,7 @@ export interface ContractAddresses {
     CORE: {
         TEMPLE_TOKEN: string,
         EXECUTOR_MSIG: string,
+        RESCUER_MSIG: string,
     },
     EXTERNAL: {
         LAYER_ZERO: {
@@ -65,8 +64,6 @@ export const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} =
             SPICE_AUCTION: "0x",
             SPICE_AUCTION_FACTORY: "0x",
             STABLE_GOLD_AUCTION: "0x",
-            EXECUTOR_MSIG: "0x",
-            RESCUER_MSIG: "0x",
             TEAM_GNOSIS: "0x",
             SPICE_AUCTION_IMPLEMENTATION: "0x",
             STRATEGY_GNOSIS: "0x",
@@ -75,6 +72,7 @@ export const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} =
         CORE: {
             TEMPLE_TOKEN: "0x",
             EXECUTOR_MSIG: "0x94b62A27a2f23CBdc0220826a8452fB5055cF273",
+            RESCUER_MSIG: "0x",
         },
         EXTERNAL: {
             LAYER_ZERO: {
@@ -104,8 +102,6 @@ export const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} =
             SPICE_AUCTION: "0x",
             SPICE_AUCTION_FACTORY: "0xD5e60Dbc43A76EaB01bdC3d320d8e4bbAc3b9191",
             STABLE_GOLD_AUCTION: "0x",
-            EXECUTOR_MSIG: "0x7d1e9012aA41278349791f29C2cdaa3DF4ceDcEd",
-            RESCUER_MSIG: "0x8dbe2E7Cab43F00fce7fFe90769b87456692CE46",
             TEAM_GNOSIS: "0x",
             SPICE_AUCTION_IMPLEMENTATION: "0xCb9d6d71aFBC09964577EE400d3E5a92fbAabaA0",
             STRATEGY_GNOSIS: "0x",
@@ -113,6 +109,8 @@ export const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} =
         },
         CORE: {
             TEMPLE_TOKEN: "0x",
+            EXECUTOR_MSIG: "0x7d1e9012aA41278349791f29C2cdaa3DF4ceDcEd",
+            RESCUER_MSIG: "0x8dbe2E7Cab43F00fce7fFe90769b87456692CE46",
         },
         EXTERNAL: {
             LAYER_ZERO: {
@@ -142,8 +140,6 @@ export const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} =
             SPICE_AUCTION: "0x",
             SPICE_AUCTION_FACTORY: "0x",
             STABLE_GOLD_AUCTION: "0x",
-            EXECUTOR_MSIG: "0x",
-            RESCUER_MSIG: "0x",
             TEAM_GNOSIS: "0x",
             SPICE_AUCTION_IMPLEMENTATION: "0x",
             STRATEGY_GNOSIS: "0x",
@@ -152,6 +148,7 @@ export const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} =
         CORE: {
             TEMPLE_TOKEN: "0x",
             EXECUTOR_MSIG: "0x",
+            RESCUER_MSIG: "0x",
         },
         EXTERNAL: {
             LAYER_ZERO: {
@@ -181,8 +178,6 @@ export const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} =
             SPICE_AUCTION: "0x",
             SPICE_AUCTION_FACTORY: "0x",
             STABLE_GOLD_AUCTION: "0x0bC14503c467CB675b6B30da05Dbed80C83d154e",
-            EXECUTOR_MSIG: "0x",
-            RESCUER_MSIG: "0x",
             TEAM_GNOSIS: "0x4D6175d58C5AceEf30F546C0d5A557efFa53A950",
             SPICE_AUCTION_IMPLEMENTATION: "0x",
             STRATEGY_GNOSIS: "0x",
@@ -191,6 +186,7 @@ export const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} =
         CORE: {
             TEMPLE_TOKEN: "0x",
             EXECUTOR_MSIG: "0x94b62A27a2f23CBdc0220826a8452fB5055cF273",
+            RESCUER_MSIG: "0x",
         },
         EXTERNAL: {
             LAYER_ZERO: {
@@ -220,8 +216,6 @@ export const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} =
             SPICE_AUCTION: "0xA52D686d250F62e6b4Bc31dD17ad18f94c6cA56D",
             SPICE_AUCTION_FACTORY: "0x3c84E8848C2D78107630c367500d79E8E6975be4",
             STABLE_GOLD_AUCTION: "0x8d3671d794d511Bb0E3D28e260F8E2233C0653aB",
-            EXECUTOR_MSIG: "0x",
-            RESCUER_MSIG: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
             TEAM_GNOSIS: "0x",
             SPICE_AUCTION_IMPLEMENTATION: "0xC8E5D9B2f53Ae2180bf39F2738c9c9F4cE713138",
             STRATEGY_GNOSIS: "0x",
@@ -230,6 +224,7 @@ export const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} =
         CORE: {
             TEMPLE_TOKEN: "0x98c5E61b1B3731A1f379E8770861164d23118cdc",
             EXECUTOR_MSIG: "0x",
+            RESCUER_MSIG: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
         },
         EXTERNAL: {
             LAYER_ZERO: {
@@ -259,8 +254,6 @@ export const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} =
             SPICE_AUCTION: "0x51ebd148AE75B3e2CfDF972c94D7775B16060672",
             SPICE_AUCTION_FACTORY: "0x30223FD9CDBCb97F15FE188769B0170F2a993A3E",
             STABLE_GOLD_AUCTION: "0xF5B76f09B9df3eBD45155007590a9C14fEa2D4c1",
-            EXECUTOR_MSIG: "0x",
-            RESCUER_MSIG: "0x",
             TEAM_GNOSIS: "0x",
             SPICE_AUCTION_IMPLEMENTATION: "0x",
             STRATEGY_GNOSIS: "0x",
@@ -269,6 +262,7 @@ export const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} =
         CORE: {
             TEMPLE_TOKEN: "0x36061ce3Ac2F5d69667F0c7B98Ec6021ef33b8cB",
             EXECUTOR_MSIG: "0x",
+            RESCUER_MSIG: "0x",
         },
         EXTERNAL: {
             LAYER_ZERO: {
@@ -298,8 +292,6 @@ export const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} =
             SPICE_AUCTION: "0x",
             SPICE_AUCTION_FACTORY: "0xFBc00Fa47a7d3bbE3e82B5Aa560B47008c1bD64c",
             STABLE_GOLD_AUCTION: "0x99aA73dA6309b8eC484eF2C95e96C131C1BBF7a0",
-            EXECUTOR_MSIG: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-            RESCUER_MSIG: "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
             TEAM_GNOSIS: "0x",
             SPICE_AUCTION_IMPLEMENTATION: "0x98721EFD3D09A7Ae662C4D63156286DF673FC50B",
             STRATEGY_GNOSIS: "0x",
@@ -307,7 +299,8 @@ export const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} =
         },
         CORE: {
             TEMPLE_TOKEN: "0x10d16E2A026C4b5264A2aAC51cA65749cDf2037E",
-            EXECUTOR_MSIG: "0x",
+            EXECUTOR_MSIG: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+            RESCUER_MSIG: "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
         },
         EXTERNAL: {
             LAYER_ZERO: {

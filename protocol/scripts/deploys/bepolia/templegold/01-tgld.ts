@@ -6,18 +6,17 @@ import {
   ensureExpectedEnvvars,
 } from '../../helpers';
 import { getDeployedTempleGoldContracts } from '../../mainnet/templegold/contract-addresses';
+import { Constants as SEPOLIA_CONSTANTS } from '../../sepolia/constants';
 
 async function main() {
   ensureExpectedEnvvars();
   const [owner] = await ethers.getSigners();
   const TEMPLEGOLD_ADDRESSES = getDeployedTempleGoldContracts();
-  const SEPOLIA_CHAIN_ID = 11155111;
-  const SEPOLIA_LZ_EID = 40161;
   const initArgs =  {
     executor: await owner.getAddress(),
     layerZeroEndpoint: TEMPLEGOLD_ADDRESSES.EXTERNAL.LAYER_ZERO.ENDPOINT, // local endpoint address
-    mintChainId: SEPOLIA_CHAIN_ID, // only mint on mint chain id
-    mintChainLzEid: SEPOLIA_LZ_EID,
+    mintChainId: SEPOLIA_CONSTANTS.CHAIN_ID, // only mint on mint chain id
+    mintChainLzEid: SEPOLIA_CONSTANTS.LAYER_ZERO.EID,
     name: "TEMPLE GOLD",
     symbol: "TGLD"
   };

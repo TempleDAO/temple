@@ -6,16 +6,15 @@ import {
   ensureExpectedEnvvars,
 } from '../../helpers';
 import { getDeployedTempleGoldContracts } from '../../mainnet/templegold/contract-addresses';
+import { Constants as SEPOLIA_CONSTANTS } from '../../sepolia/constants';
 
 async function main() {
   ensureExpectedEnvvars();
   const [owner] = await ethers.getSigners();
   const ownerAddress = await owner.getAddress();
   const TEMPLEGOLD_ADDRESSES = getDeployedTempleGoldContracts();
-  const SEPOLIA_CHAIN_ID = 11155111;
-  const SEPOLIA_LZ_EID = 40161;
   // rescuer can't be executor
-  const RESCUER = TEMPLEGOLD_ADDRESSES.TEMPLE_GOLD.RESCUER_MSIG;
+  const RESCUER = TEMPLEGOLD_ADDRESSES.CORE.RESCUER_MSIG;
 
   const factory = new SpiceAuctionFactory__factory(owner);
   await deployAndMine(
@@ -29,8 +28,8 @@ async function main() {
     ownerAddress, // spice auction operator
     ownerAddress, // strategy gnosis funds auctions
     TEMPLEGOLD_ADDRESSES.TEMPLE_GOLD.TEMPLE_GOLD,
-    SEPOLIA_LZ_EID,
-    SEPOLIA_CHAIN_ID
+    SEPOLIA_CONSTANTS.LAYER_ZERO.EID,
+    SEPOLIA_CONSTANTS.CHAIN_ID
   );
 }
 
