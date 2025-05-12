@@ -81,6 +81,10 @@ export const Repay: React.FC<IProps> = ({
     );
   }, [accountPosition, state.outputToken, state.repayValue]);
 
+  const isRepayValueGreaterThanBalance = useMemo(() => {
+    return fromAtto(state.outputTokenBalance) < Number(state.repayValue);
+  }, [state.outputTokenBalance, state.repayValue]);
+
   return (
     <>
       <RemoveMargin />
@@ -117,8 +121,7 @@ export const Repay: React.FC<IProps> = ({
         )}`}
         width="100%"
       />
-      {fromAtto(state.outputTokenBalance).toFixed(2) <
-        Number(state.repayValue).toFixed(2) && (
+      {isRepayValueGreaterThanBalance && (
         <Warning>
           <InfoCircle>
             <p>i</p>
@@ -169,9 +172,7 @@ export const Repay: React.FC<IProps> = ({
           }}
           // Disable if repay amount is lte zero, or gt wallet balance
           disabled={
-            Number(state.repayValue) <= 0 ||
-            fromAtto(state.outputTokenBalance).toFixed(2) <
-              Number(state.repayValue).toFixed(2)
+            Number(state.repayValue) <= 0 || isRepayValueGreaterThanBalance
           }
           style={{ width: 'auto' }}
         >

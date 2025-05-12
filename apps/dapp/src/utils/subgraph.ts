@@ -1,6 +1,8 @@
 import env from 'constants/env';
 import { z } from 'zod';
 import { backOff } from 'exponential-backoff';
+import { SpiceAuction } from 'types/typechain';
+import { timeStamp } from 'console';
 
 /** A typed query to subgraph  */
 interface SubGraphQuery<T> {
@@ -831,6 +833,7 @@ export function user(id: string, auction: string): SubGraphQuery<UserResp> {
         id
         positions(where: {auctionType: "${auction}"}) {
             auctionInstance {
+                id
                 epoch
                 startTime
                 endTime
@@ -854,6 +857,7 @@ const UserResp = z.object({
     positions: z.array(
       z.object({
         auctionInstance: z.object({
+          id: z.string(),
           epoch: z.string(),
           startTime: z.string(),
           endTime: z.string(),
@@ -1078,3 +1082,209 @@ const UserTransactionsSpiceAuctionsResp = z.object({
 export type UserTransactionsSpiceAuctionsResp = z.infer<
   typeof UserTransactionsSpiceAuctionsResp
 >;
+
+//----------------------------------------------------------------------------------------------------
+
+export function stableGoldAuction(
+  id: string
+): SubGraphQuery<StableGoldAuctionResp> {
+  const label = 'StableGoldAuction';
+  const request = `
+    {
+      stableGoldAuction(id: "${id}") {
+        id
+        timestamp
+        auctionInstanceCount
+        auctionInstances {
+          id
+          timestamp
+          auctionType
+          epoch
+          startTime
+          endTime
+          totalAuctionTokenAmount
+          totalBidTokenAmount
+          claimedTokenAmount
+          priceRatio
+          price
+        }
+      }
+    }
+  `;
+
+  return {
+    label,
+    request,
+    parse: StableGoldAuctionResp.parse,
+  };
+}
+
+const StableGoldAuctionResp = z.object({
+  stableGoldAuction: z.object({
+    id: z.string(),
+    timestamp: z.string(),
+    auctionInstanceCount: z.number(),
+    auctionInstances: z.array(
+      z.object({
+        id: z.string(),
+        timestamp: z.string(),
+        auctionType: z.string(),
+        epoch: z.string(),
+        startTime: z.string(),
+        endTime: z.string(),
+        totalAuctionTokenAmount: z.string(),
+        totalBidTokenAmount: z.string(),
+        claimedTokenAmount: z.string(),
+        priceRatio: z.string(),
+        price: z.string(),
+      })
+    ),
+  }),
+});
+
+export type StableGoldAuctionResp = z.infer<typeof StableGoldAuctionResp>;
+
+//----------------------------------------------------------------------------------------------------
+
+export function spiceAuctionInfoQuery(
+  id: string
+): SubGraphQuery<SpiceAuctionInfoResp> {
+  const label = 'SpiceAuctionInfo';
+  const request = `query SpiceAuction {
+                spiceAuction(id: "${id}") {
+                    id
+                    timestamp
+                    version
+                    auctionInstanceCount
+                    name
+                    duration
+                    waitPeriod
+                    minDistAuctionToken
+                    isTempleGoldAuctionToken
+                    recipient
+                    auctionInstances {
+                        id
+                        timestamp
+                        auctionType
+                        epoch
+                        startTime
+                        endTime
+                        totalAuctionTokenAmount
+                        totalBidTokenAmount
+                        claimedTokenAmount
+                        priceRatio
+                        price
+                        redeemedTokenAmount
+                        duration
+                        waitPeriod
+                        minDistAuctionToken
+                        isTempleGoldAuctionToken
+                        recipient
+                    }
+                }
+            }
+  `;
+
+  return {
+    label,
+    request,
+    parse: SpiceAuctionInfoResp.parse,
+  };
+}
+
+const SpiceAuctionInfoResp = z.object({
+  spiceAuction: z.object({
+    id: z.string(),
+    timestamp: z.string(),
+    version: z.string(),
+    auctionInstanceCount: z.number(),
+    name: z.string(),
+    duration: z.string(),
+    waitPeriod: z.string(),
+    minDistAuctionToken: z.string(),
+    isTempleGoldAuctionToken: z.boolean(),
+    recipient: z.string(),
+    auctionInstances: z.array(
+      z.object({
+        id: z.string(),
+        timestamp: z.string(),
+        auctionType: z.string(),
+        epoch: z.string(),
+        startTime: z.string(),
+        endTime: z.string(),
+        totalAuctionTokenAmount: z.string(),
+        totalBidTokenAmount: z.string(),
+        claimedTokenAmount: z.string(),
+        priceRatio: z.string(),
+        price: z.string(),
+        redeemedTokenAmount: z.string(),
+        duration: z.string(),
+        waitPeriod: z.string(),
+        minDistAuctionToken: z.string(),
+        isTempleGoldAuctionToken: z.boolean(),
+        recipient: z.string(),
+      })
+    ),
+  }),
+});
+
+export type SpiceAuctionInfoResp = z.infer<typeof SpiceAuctionInfoResp>;
+
+//----------------------------------------------------------------------------------------------------
+
+export function spiceAuction(id: string): SubGraphQuery<SpiceAuctionResp> {
+  const label = 'SpiceAuction';
+  const request = `
+    {
+      spiceAuction(id: "${id}") {
+        id
+        timestamp
+        auctionInstanceCount
+        auctionInstances {
+          id
+          timestamp
+          auctionType
+          epoch
+          startTime
+          endTime
+          totalAuctionTokenAmount
+          totalBidTokenAmount
+          claimedTokenAmount
+          priceRatio
+          price
+        }
+      }
+    }
+  `;
+
+  return {
+    label,
+    request,
+    parse: SpiceAuctionResp.parse,
+  };
+}
+
+const SpiceAuctionResp = z.object({
+  spiceAuction: z.object({
+    id: z.string(),
+    timestamp: z.string(),
+    auctionInstanceCount: z.number(),
+    auctionInstances: z.array(
+      z.object({
+        id: z.string(),
+        timestamp: z.string(),
+        auctionType: z.string(),
+        epoch: z.string(),
+        startTime: z.string(),
+        endTime: z.string(),
+        totalAuctionTokenAmount: z.string(),
+        totalBidTokenAmount: z.string(),
+        claimedTokenAmount: z.string(),
+        priceRatio: z.string(),
+        price: z.string(),
+      })
+    ),
+  }),
+});
+
+export type SpiceAuctionResp = z.infer<typeof SpiceAuctionResp>;

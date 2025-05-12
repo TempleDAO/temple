@@ -11,7 +11,7 @@ export const TradePage = () => {
   return (
     <TradeContainer>
       <HeaderText>Trade</HeaderText>
-      {wallet ? (
+      {true ? (
         <TradeWidget />
       ) : (
         <TradeButton
