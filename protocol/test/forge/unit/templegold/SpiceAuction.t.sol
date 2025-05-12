@@ -545,11 +545,14 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         vm.startPrank(cssGnosis);
 
         assertEq(spice.epochsWithoutBidsRecovered(2), false);
+        assertEq(spice.redeemedEpochs(2), false);
         vm.expectEmit(address(spice));
         emit RecoveredTokenForZeroBidAuction(2, cssGnosis, auctionToken, auctionTokenAmount);
         spice.recoverAuctionTokenForZeroBidAuction(2, cssGnosis);
         assertEq(IERC20(auctionToken).balanceOf(address(spice)), auctionTokenBalance - auctionTokenAmount);
         assertEq(IERC20(auctionToken).balanceOf(cssGnosis), balance + auctionTokenAmount);
+        // epoch was marked as redeemed
+        assertEq(spice.redeemedEpochs(2), true);
 
         // bidders from previous auction can claim
         vm.startPrank(bob);

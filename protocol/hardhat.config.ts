@@ -204,10 +204,23 @@ module.exports = {
         : [],
       gasPrice: 2000000000,
       eid: EndpointId.ARBITRUM_V2_TESTNET
-    }
+    },
+    berachain: {
+      url: process.env.BERACHAIN_RPC_URL || '',
+      accounts: process.env.BERACHAIN_ADDRESS_PRIVATE_KEY
+          ? [process.env.BERACHAIN_ADDRESS_PRIVATE_KEY]
+          : [],
+      chainId: 80094,
+    },
+    bepolia: {
+      url: process.env.BEPOLIA_RPC_URL || '',
+      accounts: process.env.BEPOLIA_ADDRESS_PRIVATE_KEY
+          ? [process.env.BEPOLIA_ADDRESS_PRIVATE_KEY]
+          : [],
+      chainId: 80069,
+    },
   },
   etherscan: {
-
     apiKey: {
       mainnet: process.env.ETHERSCAN_API_KEY,
       gnosis: process.env.GNOSISSCAN_API_KEY,
@@ -216,6 +229,8 @@ module.exports = {
       goerli: process.env.ETHERSCAN_API_KEY,
       sepolia: process.env.ETHERSCAN_API_KEY,
       arbitrumSepolia: process.env.ARBISCAN_API_KEY,
+      berachain: process.env.BERASCAN_API_KEY,
+      bepolia: "berachainbepolia", // unused
     },
     customChains: [
       {
@@ -225,7 +240,31 @@ module.exports = {
           apiURL: "https://api-sepolia.arbiscan.io/api",
           browserURL: "https://sepolia.arbiscan.io"
         }
-      }
+      },
+      {
+        network: "berachain",
+        chainId: 80094,
+        urls: {
+            // For Routescan if required (API key is unused, so can be anything)
+            // apiURL:
+            // "https://api.routescan.io/v2/network/mainnet/evm/80094/etherscan",
+            // browserURL: "https://80094.routescan.io/",
+
+            // For Berascan
+            apiURL:
+                "https://api.berascan.com/api",
+            browserURL: "https://berascan.com//",
+        },
+      },
+      {
+        network: "bepolia",
+        chainId: 80069,
+        urls: {
+            apiURL:
+                "https://api.routescan.io/v2/network/testnet/evm/80069/etherscan",
+            browserURL: "https://bepolia.beratrail.io/",
+        },
+      },
     ]
   },
   mocha: {

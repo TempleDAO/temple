@@ -4,7 +4,6 @@ import { SpiceAuction__factory } from '../../../../typechain';
 import {
   deployAndMine,
   ensureExpectedEnvvars,
-  toAtto,
 } from '../../helpers';
 
 async function main() {
