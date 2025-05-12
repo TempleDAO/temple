@@ -33,6 +33,7 @@ export interface ContractAddresses {
     },
     CORE: {
         TEMPLE_TOKEN: string,
+        EXECUTOR_MSIG: string,
     },
     EXTERNAL: {
         LAYER_ZERO: {
@@ -73,6 +74,7 @@ export const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} =
         },
         CORE: {
             TEMPLE_TOKEN: "0x",
+            EXECUTOR_MSIG: "0x94b62A27a2f23CBdc0220826a8452fB5055cF273",
         },
         EXTERNAL: {
             LAYER_ZERO: {
@@ -149,6 +151,7 @@ export const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} =
         },
         CORE: {
             TEMPLE_TOKEN: "0x",
+            EXECUTOR_MSIG: "0x",
         },
         EXTERNAL: {
             LAYER_ZERO: {
@@ -187,6 +190,7 @@ export const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} =
         },
         CORE: {
             TEMPLE_TOKEN: "0x",
+            EXECUTOR_MSIG: "0x94b62A27a2f23CBdc0220826a8452fB5055cF273",
         },
         EXTERNAL: {
             LAYER_ZERO: {
@@ -225,6 +229,7 @@ export const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} =
         },
         CORE: {
             TEMPLE_TOKEN: "0x98c5E61b1B3731A1f379E8770861164d23118cdc",
+            EXECUTOR_MSIG: "0x",
         },
         EXTERNAL: {
             LAYER_ZERO: {
@@ -263,6 +268,7 @@ export const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} =
         },
         CORE: {
             TEMPLE_TOKEN: "0x36061ce3Ac2F5d69667F0c7B98Ec6021ef33b8cB",
+            EXECUTOR_MSIG: "0x",
         },
         EXTERNAL: {
             LAYER_ZERO: {
@@ -301,6 +307,7 @@ export const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} =
         },
         CORE: {
             TEMPLE_TOKEN: "0x10d16E2A026C4b5264A2aAC51cA65749cDf2037E",
+            EXECUTOR_MSIG: "0x",
         },
         EXTERNAL: {
             LAYER_ZERO: {
