@@ -3,19 +3,18 @@ import {
     ensureExpectedEnvvars,
     mine,
 } from '../../helpers';
-import { connectToContracts } from '../../mainnet/templegold/contract-addresses';
-import { getDeployedContracts } from '../../sepolia/v2/contract-addresses';
+import { connectToContracts, getDeployedTempleGoldContracts } from '../../mainnet/templegold/contract-addresses';
 
 async function main() {
     ensureExpectedEnvvars();
     const [owner] = await ethers.getSigners();
     const TEMPLE_GOLD_INSTANCES = connectToContracts(owner);
-    const V2_ADDRESSES = getDeployedContracts();
+    const ADDRESSES = getDeployedTempleGoldContracts();
 
     // Transfer ownership of TGLD to executor msig
-    await mine(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.TEMPLE_GOLD.transferOwnership(V2_ADDRESSES.CORE.EXECUTOR_MSIG));
+    await mine(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.TEMPLE_GOLD.transferOwnership(ADDRESSES.TEMPLE_GOLD.EXECUTOR_MSIG));
     // Transfer ownership of Spice factory to executor msig
-    await mine(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.SPICE_AUCTION_FACTORY.proposeNewExecutor(V2_ADDRESSES.CORE.EXECUTOR_MSIG));
+    await mine(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.SPICE_AUCTION_FACTORY.proposeNewExecutor(ADDRESSES.TEMPLE_GOLD.EXECUTOR_MSIG));
 }
   
 // We recommend this pattern to be able to use async/await everywhere

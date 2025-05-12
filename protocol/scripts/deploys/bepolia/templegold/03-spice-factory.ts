@@ -6,7 +6,6 @@ import {
   ensureExpectedEnvvars,
 } from '../../helpers';
 import { getDeployedTempleGoldContracts } from '../../mainnet/templegold/contract-addresses';
-import { getDeployedContracts } from '../../sepolia/v2/contract-addresses';
 
 async function main() {
   ensureExpectedEnvvars();
@@ -16,8 +15,7 @@ async function main() {
   const SEPOLIA_CHAIN_ID = 11155111;
   const SEPOLIA_LZ_EID = 40161;
   // rescuer can't be executor
-  const V2_ADDRESSES = getDeployedContracts();
-  const RESCUER = V2_ADDRESSES.CORE.RESCUER_MSIG;
+  const RESCUER = TEMPLEGOLD_ADDRESSES.TEMPLE_GOLD.RESCUER_MSIG;
 
   const factory = new SpiceAuctionFactory__factory(owner);
   await deployAndMine(
