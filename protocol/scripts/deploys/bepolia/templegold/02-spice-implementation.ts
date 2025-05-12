@@ -1,6 +1,6 @@
 import '@nomiclabs/hardhat-ethers';
 import { ethers } from 'hardhat';
-import { SpiceAuction__factory } from '../../../../typechain';
+import { SpiceMock__factory } from '../../../../typechain';
 import {
   deployAndMine,
   ensureExpectedEnvvars,
@@ -9,8 +9,8 @@ import {
 async function main() {
     ensureExpectedEnvvars();
     const [owner] = await ethers.getSigners();
-    
-    const factory = new SpiceAuction__factory(owner);
+    // use testnet version for frequent and small time auctions
+    const factory = new SpiceMock__factory(owner);
     await deployAndMine(
         'SPICE_AUCTION_IMPLEMENTATION',
         factory,

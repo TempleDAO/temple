@@ -29,6 +29,7 @@ export interface ContractAddresses {
         TEAM_GNOSIS: string,
         SPICE_AUCTION_IMPLEMENTATION: string,
         STRATEGY_GNOSIS: string,
+        SPICE_TOKEN: string,
     },
     CORE: {
         TEMPLE_TOKEN: string,
@@ -64,6 +65,7 @@ const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
             TEAM_GNOSIS: "0x",
             SPICE_AUCTION_IMPLEMENTATION: "0x",
             STRATEGY_GNOSIS: "0x",
+            SPICE_TOKEN: "0x",
         },
         CORE: {
             TEMPLE_TOKEN: "0x",
@@ -71,6 +73,40 @@ const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
         EXTERNAL: {
             LAYER_ZERO: {
                 ENDPOINT: "0x6F475642a6e85809B1c36Fa62763669b1b48DD5B",
+            },
+            MAKER_DAO: {
+                DAI_TOKEN: "0x",
+            },
+            SKY: {
+                USDS: "0x",
+            }
+        },
+    },
+    bepolia: {
+        TEMPLE_GOLD: {
+            AUCTION_AUTOMATION_EOA: "0x",
+            STAKING_AUTOMATION_EOA: "0x",
+            SPICE_AUCTION_OPERATOR: "0x",
+            TEMPLE_GOLD: "0x",
+            TEMPLE_GOLD_ADMIN: "0x",
+            TEMPLE_GOLD_STAKING: "0x",
+            TEMPLE_TELEPORTER: "0x",
+            SPICE_AUCTION: "0x",
+            SPICE_AUCTION_FACTORY: "0x",
+            STABLE_GOLD_AUCTION: "0x",
+            EXECUTOR_MSIG: "0x",
+            RESCUER_MSIG: "0x",
+            TEAM_GNOSIS: "0x",
+            SPICE_AUCTION_IMPLEMENTATION: "0x",
+            STRATEGY_GNOSIS: "0x",
+            SPICE_TOKEN: "0x",
+        },
+        CORE: {
+            TEMPLE_TOKEN: "0x",
+        },
+        EXTERNAL: {
+            LAYER_ZERO: {
+                ENDPOINT: "0x6C7Ab2202C98C4227C5c46f1417D81144DA716Ff",
             },
             MAKER_DAO: {
                 DAI_TOKEN: "0x",
@@ -97,6 +133,7 @@ const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
             TEAM_GNOSIS: "0x",
             SPICE_AUCTION_IMPLEMENTATION: "0x",
             STRATEGY_GNOSIS: "0x",
+            SPICE_TOKEN: "0x",
         },
         CORE: {
             TEMPLE_TOKEN: "0x",
@@ -130,6 +167,7 @@ const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
             TEAM_GNOSIS: "0x4D6175d58C5AceEf30F546C0d5A557efFa53A950",
             SPICE_AUCTION_IMPLEMENTATION: "0x",
             STRATEGY_GNOSIS: "0x",
+            SPICE_TOKEN: "0x",
         },
         CORE: {
             TEMPLE_TOKEN: "0x",
@@ -139,7 +177,7 @@ const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
                 ENDPOINT: "0x1a44076050125825900e736c501f859c50fE728c",
             },
             MAKER_DAO: {
-                DAI_TOKEN: "0x",
+                DAI_TOKEN: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
             },
             SKY: {
                 USDS: "0xdC035D45d973E3EC169d2276DDab16f1e407384F",
@@ -163,6 +201,7 @@ const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
             TEAM_GNOSIS: "0x",
             SPICE_AUCTION_IMPLEMENTATION: "0xC8E5D9B2f53Ae2180bf39F2738c9c9F4cE713138",
             STRATEGY_GNOSIS: "0x",
+            SPICE_TOKEN: "0x",
         },
         CORE: {
             TEMPLE_TOKEN: "0x98c5E61b1B3731A1f379E8770861164d23118cdc",
@@ -196,6 +235,7 @@ const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
             TEAM_GNOSIS: "0x",
             SPICE_AUCTION_IMPLEMENTATION: "0x",
             STRATEGY_GNOSIS: "0x",
+            SPICE_TOKEN: "0x",
         },
         CORE: {
             TEMPLE_TOKEN: "0x36061ce3Ac2F5d69667F0c7B98Ec6021ef33b8cB",
@@ -217,28 +257,29 @@ const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} = {
             AUCTION_AUTOMATION_EOA: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
             STAKING_AUTOMATION_EOA: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
             SPICE_AUCTION_OPERATOR: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-            TEMPLE_GOLD: "0xB21C6Ba5fE6dC56DDF86B3979bE5A45004813033",
+            TEMPLE_GOLD: "0xAf7868a9BB72E16B930D50636519038d7F057470",
             TEMPLE_GOLD_ADMIN: "0xAbB1910DCFD0d7a0527Ad276b464324Dd4d2586B",
-            TEMPLE_GOLD_STAKING: "0x76b94f0a5b6b71E109fFC600ce0968a2D0f56289",
+            TEMPLE_GOLD_STAKING: "0x4B7099FD879435a087C364aD2f9E7B3f94d20bBe",
             TEMPLE_TELEPORTER: "0x7914a8b73E11432953d9cCda060018EA1d9DCde9",
             SPICE_AUCTION: "0x",
-            SPICE_AUCTION_FACTORY: "0x",
-            STABLE_GOLD_AUCTION: "0x5FBF8300577eA2410098fF5E4CC3198f1b51A4cF",
+            SPICE_AUCTION_FACTORY: "0xFBc00Fa47a7d3bbE3e82B5Aa560B47008c1bD64c",
+            STABLE_GOLD_AUCTION: "0x99aA73dA6309b8eC484eF2C95e96C131C1BBF7a0",
             EXECUTOR_MSIG: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
             RESCUER_MSIG: "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
             TEAM_GNOSIS: "0x",
-            SPICE_AUCTION_IMPLEMENTATION: "0x",
+            SPICE_AUCTION_IMPLEMENTATION: "0x98721EFD3D09A7Ae662C4D63156286DF673FC50B",
             STRATEGY_GNOSIS: "0x",
+            SPICE_TOKEN: "0x",
         },
         CORE: {
-            TEMPLE_TOKEN: "0x2B5757720f361559fe0C499C55eFa65bd6bC6cA3",
+            TEMPLE_TOKEN: "0x10d16E2A026C4b5264A2aAC51cA65749cDf2037E",
         },
         EXTERNAL: {
             LAYER_ZERO: {
                 ENDPOINT: '0x1a44076050125825900e736c501f859c50fE728c',
             },
             MAKER_DAO: {
-                DAI_TOKEN: "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1",
+                DAI_TOKEN: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
             },
             SKY: {
                 USDS: "0x",
@@ -265,6 +306,7 @@ export interface ContractInstances {
         SPICE_AUCTION: SpiceAuction,
         SPICE_AUCTION_FACTORY: SpiceAuctionFactory,
         STABLE_GOLD_AUCTION: StableGoldAuction,
+        SPICE_TOKEN: FakeERC20,
     },
     CORE: {
         TEMPLE_TOKEN: TempleERC20Token
@@ -288,6 +330,7 @@ export function connectToContracts(owner: Signer): ContractInstances {
             SPICE_AUCTION_FACTORY: SpiceAuctionFactory__factory.connect(TEMPLE_GOLD_ADDRESSES.TEMPLE_GOLD.SPICE_AUCTION_FACTORY, owner),
             STABLE_GOLD_AUCTION: StableGoldAuction__factory.connect(TEMPLE_GOLD_ADDRESSES.TEMPLE_GOLD.STABLE_GOLD_AUCTION, owner),
             TEMPLE_TELEPORTER: TempleTeleporter__factory.connect(TEMPLE_GOLD_ADDRESSES.TEMPLE_GOLD.TEMPLE_TELEPORTER, owner),
+            SPICE_TOKEN: FakeERC20__factory.connect(TEMPLE_GOLD_ADDRESSES.TEMPLE_GOLD.SPICE_TOKEN, owner),
         },
         CORE: {
             TEMPLE_TOKEN: TempleERC20Token__factory.connect(TEMPLE_GOLD_ADDRESSES.CORE.TEMPLE_TOKEN, owner),

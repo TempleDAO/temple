@@ -1,6 +1,6 @@
 pragma solidity ^0.8.20;
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Temple (templegold/SpiceAuction.sol)
+// Temple (fakes/templegold/SpiceAuction.sol)
 
 import { SendParam } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/interfaces/IOFT.sol";
 import { MessagingFee } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/OFTCore.sol";
@@ -10,7 +10,7 @@ import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import { ISpiceAuction } from "contracts/interfaces/templegold/ISpiceAuction.sol";
+// import { ISpiceAuction } from "contracts/interfaces/templegold/ISpiceAuction.sol";
 import { IAuctionBase } from "contracts/interfaces/templegold/IAuctionBase.sol";
 import { ITempleGold } from "contracts/interfaces/templegold/ITempleGold.sol";
 
@@ -28,42 +28,37 @@ import { EpochLib } from "contracts/templegold/EpochLib.sol";
  * claim their bid token and can only claim their share of reward token for epoch after epoch finishes.
  * Bid and auction tokens could change per auction. These are set in `AuctionConfig`. 
  * Config is set before the next auction starts using `setAuctionConfig` by DAO execution.
+ * @dev This mock contract removes restrictions on setting auction duration, minimum fund amount, and other configs
+ * for ease of testing on testnets
  */
-contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard, Initializable {
+contract SpiceMock is AuctionBase, ReentrancyGuard, Initializable {
     using SafeERC20 for IERC20;
     using TempleMath for uint256;
     using EpochLib for IAuctionBase.EpochInfo;
     using OptionsBuilder for bytes;
 
-    /// @inheritdoc ISpiceAuction
-    address public override spiceToken;
+    /// @notice Spice auction contracts are set up for 2 tokens. Either token can be bid or sell token for a given auction
+    address public spiceToken;
 
-    /// @inheritdoc ISpiceAuction
-    address public override templeGold;
+    /// @notice Temple GOLD
+    address public templeGold;
 
-    /// @inheritdoc ISpiceAuction
-    address public override daoExecutor;
+    /// @notice DAO contract to execute configurations update
+    address public daoExecutor;
 
-    /// @inheritdoc ISpiceAuction
-    address public override operator;
+    /// @notice Operator
+    address public operator;
 
-    /// @inheritdoc ISpiceAuction
-    address public override strategyGnosis;
-
-    /// @inheritdoc ISpiceAuction
-    uint32 public constant MINIMUM_AUCTION_DURATION = 1 weeks;
-
-    /// @inheritdoc ISpiceAuction
-    uint32 public constant MAXIMUM_AUCTION_DURATION = 30 days;
+    /// @notice Strategy Gnosis address which funds spice auctions
+    address public strategyGnosis;
 
     /// @notice layer zero EID of mint chain
     uint32 private _mintChainEid;
 
-    /// @inheritdoc ISpiceAuction
-    uint32 public override lzReceiveExecutorGas;
+    uint32 public lzReceiveExecutorGas;
 
-    /// @inheritdoc ISpiceAuction
-    string public override name;
+    /// @notice Name of this Spice Bazaar auction
+    string public name;
 
     /// @notice The mint chain ID
     uint32 private _mintChainId;
@@ -77,17 +72,71 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard, Initializa
     /// @notice Keep track of total allocation per auction token
     mapping(address token => uint256 amount) private _totalAuctionTokenAllocation;
 
-    /// @inheritdoc ISpiceAuction
-    mapping(uint256 epochId => bool redeemed) public override redeemedEpochs;
+    /// @notice Epochs which have redemption called to update circulating supply.
+    mapping(uint256 epochId => bool redeemed) public redeemedEpochs;
 
-    /// @inheritdoc ISpiceAuction
-    mapping(address account => mapping(address token => uint256 amount)) public override accountTotalClaimed;
+    /// @notice Keep track of total claimed token per account
+    mapping(address account => mapping(address token => uint256 amount)) public accountTotalClaimed;
+
+    struct SpiceAuctionConfig {
+        /// @notice Duration of auction
+        uint32 duration;
+        /// @notice Minimum time between successive auctions
+        /// @dev For first auction, set this to 0 or a reasonable `startTime - deployTime = waitPeriod` value
+        uint32 waitPeriod;
+        /// @notice Minimum Gold distributed to enable auction start
+        uint160 minimumDistributedAuctionToken;
+        /// @notice Is Temple Gold auction token
+        bool isTempleGoldAuctionToken;
+        /// @notice Auction proceeds recipient
+        address recipient;
+    }
+
+    /// @notice Struct for dapp to query epoch claimable or claimed 
+    struct TokenAmount {
+        /// @notice Either spice token or TGLD
+        address token;
+        /// @notice Amount of token
+        uint256 amount;
+    }
+
+    event AuctionConfigSet(uint256 epoch, SpiceAuctionConfig config);
+    event DaoExecutorSet(address daoExecutor);
+    event AuctionConfigRemoved(uint256 configId, uint256 epochId);
+    event LzReceiveExecutorGasSet(uint32 gas);
+    event RedeemedTempleGoldBurned(uint256 epochId, uint256 amount);
+    event OperatorSet(address indexed operator);
+    event SpiceAuctionEpochSet(uint256 epoch, address auctionToken, uint128 startTime, uint128 endTime, uint256 amount);
+    event RecoveredTokenForZeroBidAuction(uint256 epoch, address to, address token, uint256 amount);
+    event StrategyGnosisSet(address strategyGnosis);
+    event SpiceClaim(address indexed sender, uint256 epochId, address bidToken, uint256 bidTokenAmount, address auctionToken, uint256 claimAmount);
+    event SpiceDeposit(address indexed sender, uint256 epochId, address bidToken, uint256 amount);
+
+    error InvalidConfigOperation();
+    error NotEnoughAuctionTokens();
+    error WithdrawFailed(uint256 amount);
+    error EtherNotNeeded();
+    error MissingAuctionConfig(uint256 epochId);
+    error AuctionFunded();
+    error WaitPeriod();
+    error Unimplemented();
 
     constructor() {
         lzReceiveExecutorGas = 85_889;
     }
 
-    /// @inheritdoc ISpiceAuction
+    /**
+     * @notice Initialize spice auction after deploy
+     * @dev Deployer calls initialize in same transaction after deploy 
+     * @param templeGold_ Temple Gold address
+     * @param spiceToken_ Spice token address
+     * @param daoExecutor_ Dao executor
+     * @param operator_ Spice auction operator
+     * @param strategyGnosis_ Strategy gnosis
+     * @param mintChainEid_ Mint chain layer zero EID
+     * @param mintChainId_ Mint chain ID
+     * @param name_ Name of spice auction contract
+     */
     function initialize(
         address templeGold_,
         address spiceToken_,
@@ -108,35 +157,51 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard, Initializa
         name = name_;
     }
 
-    /// @inheritdoc ISpiceAuction
-    function setLzReceiveExecutorGas(uint32 _gas) external override onlyOperatorOrDaoExecutor {
+    /**
+     * @notice Set lzReceive gas used by executor
+     * @param _gas Redemption notifier
+     */
+    function setLzReceiveExecutorGas(uint32 _gas) external onlyOperatorOrDaoExecutor {
         if (_gas == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
         lzReceiveExecutorGas = _gas;
         emit LzReceiveExecutorGasSet(_gas);
     }
 
-    /// @inheritdoc ISpiceAuction
-    function setOperator(address _operator) external override onlyDAOExecutor {
+    /**
+     * @notice Set operator
+     * @param _operator operator to set
+     */
+    function setOperator(address _operator) external onlyDAOExecutor {
         if (_operator == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
         operator = _operator;
         emit OperatorSet(_operator);
     }
 
-    /// @inheritdoc ISpiceAuction
-    function setStrategyGnosis(address _gnosis) external override onlyDAOExecutor {
+    /**
+     * @notice Set strategy gnosis
+     * @param _gnosis strategy gnosis to set
+     */
+    function setStrategyGnosis(address _gnosis) external onlyDAOExecutor {
         if (_gnosis == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
         strategyGnosis = _gnosis;
         emit StrategyGnosisSet(_gnosis);
     }
 
-    /// @inheritdoc ISpiceAuction
+    /**
+     * @notice Set DAO executor for DAO actions
+     * @param _daoExecutor New dao executor
+     */
     function setDaoExecutor(address _daoExecutor) external onlyDAOExecutor {
         if (_daoExecutor == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
         daoExecutor = _daoExecutor;
         emit DaoExecutorSet(_daoExecutor);
     }
 
-    /// @inheritdoc ISpiceAuction
+    /**
+     * @notice Set config for an epoch. This enables dynamic and multiple auctions especially for vested scenarios
+     * @dev Must be set before epoch auction starts
+     * @param _config Config to set
+     */
     function setAuctionConfig(SpiceAuctionConfig calldata _config) external onlyDAOExecutor {
         // epoch Id is only updated when auction starts. 
         // cannot set config for past or ongoing auction
@@ -149,10 +214,6 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard, Initializa
             if (epochs[currentEpochIdCache].startTime > block.timestamp) { revert AuctionFunded(); }
         }
         
-        if (_config.duration < MINIMUM_AUCTION_DURATION
-            || _config.duration > MAXIMUM_AUCTION_DURATION) { revert CommonEventsAndErrors.InvalidParam(); }
-        if (_config.waitPeriod == 0
-            || _config.minimumDistributedAuctionToken == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
         if (_config.recipient == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
 
         currentEpochIdCache += 1;
@@ -160,8 +221,8 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard, Initializa
         emit AuctionConfigSet(currentEpochIdCache, _config);
     }
 
-    /// @inheritdoc ISpiceAuction
-    function removeAuctionConfig() external override onlyDAOExecutor {
+    /// @notice Remove auction config set for last epoch
+    function removeAuctionConfig() external onlyDAOExecutor {
         /// only delete latest epoch if auction is not started
         uint256 id = _currentEpochId;
         
@@ -197,11 +258,17 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard, Initializa
     }
 
     /// @inheritdoc IAuctionBase
-    function startAuction() external pure override {
+    function startAuction() external pure {
         revert Unimplemented();
     }
 
-    /// @inheritdoc ISpiceAuction
+    /**
+     * @notice Set next auction start and end times.
+     * Transfers auction token for next auction and updates epoch time params
+     * @dev Must be called by `strategyGnosis()`
+     * @param amount Amount of auction tokens to transfer
+     * @param startTime Start time of next auction
+     */
     function fundNextAuction(uint256 amount, uint128 startTime) external {
         // only strategy admin can call
         if (msg.sender != strategyGnosis) { revert CommonEventsAndErrors.InvalidAccess(); }
@@ -277,8 +344,12 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard, Initializa
         emit SpiceDeposit(msg.sender, epochId, bidToken, amount);
     }
 
-    /// @inheritdoc ISpiceAuction
-    function claim(uint256 epochId) external virtual override {
+    /**
+     * @notice Claim share of Temple Gold for epoch
+     * Can only claim for past epochs, not current auction epoch.
+     * @param epochId Id of epoch
+     */
+    function claim(uint256 epochId) external virtual {
         /// @notice cannot claim for current live epoch
         EpochInfo storage info = epochs[epochId];
         if (info.startTime == 0) { revert InvalidEpoch(); }
@@ -301,14 +372,20 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard, Initializa
         emit SpiceClaim(msg.sender, epochId, bidToken, bidTokenAmount, auctionToken, claimAmount);
     }
 
-    /// @inheritdoc ISpiceAuction
-    function getAuctionTokenAmount(uint256 epochId) external override view returns (uint256) {
+    /**
+     * @notice Get total auction token amount for epoch auction
+     * @param epochId Epoch to get for
+     */
+    function getAuctionTokenAmount(uint256 epochId) external view returns (uint256) {
         EpochInfo storage info = epochs[epochId];
         return info.totalAuctionTokenAmount;
     }
 
-    /// @inheritdoc ISpiceAuction
-    function getAuctionBidAmount(uint256 epochId) external override view returns (uint256) {
+    /**
+     * @notice Get total bid token amount for epoch auction
+     * @param epochId Epoch to get for
+     */
+    function getAuctionBidAmount(uint256 epochId) external view returns (uint256) {
         EpochInfo storage info = epochs[epochId];
         return info.totalBidTokenAmount;
     }
@@ -340,8 +417,11 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard, Initializa
         emit CommonEventsAndErrors.TokenRecovered(to, token, amount);
     }
 
-    /// @inheritdoc ISpiceAuction
-    function recoverAuctionTokenForZeroBidAuction(uint256 epochId, address /*to*/) external override {
+    /**
+     * @notice Recover auction tokens for epoch with zero bids
+     * @param epochId Epoch Id
+     */
+    function recoverAuctionTokenForZeroBidAuction(uint256 epochId, address /*to*/) external {
         if (msg.sender != strategyGnosis) { revert CommonEventsAndErrors.InvalidAccess(); }
         // has to be valid epoch
         if (epochId > _currentEpochId) { revert InvalidEpoch(); }
@@ -366,8 +446,8 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard, Initializa
         IERC20(auctionToken).safeTransfer(msg.sender, amount);
     }
 
-    /// @inheritdoc ISpiceAuction
-    function withdrawEth(address payable _to, uint256 _amount) external override onlyOperatorOrDaoExecutor {
+    /// @notice withdraw ETH used for layer zero sends
+    function withdrawEth(address payable _to, uint256 _amount) external onlyOperatorOrDaoExecutor {
         if (_to == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
         if (_amount == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
         uint256 _balance = address(this).balance;
@@ -377,8 +457,12 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard, Initializa
         if (!success) { revert WithdrawFailed(_amount); }
     }
 
-    /// @inheritdoc ISpiceAuction
-    function burnAndNotify(uint256 epochId, bool useContractEth) external payable override nonReentrant {
+    /**
+     * @notice Burn redeemd TGLD and notify circulating supply
+     * @param epochId Epoch Id
+     * @param useContractEth If to use contract eth for layerzero send
+     */
+    function burnAndNotify(uint256 epochId, bool useContractEth) external payable nonReentrant {
         if (redeemedEpochs[epochId]) { revert CommonEventsAndErrors.InvalidParam(); }
         EpochInfo storage epochInfo = epochs[epochId];
         if (epochInfo.startTime == 0) { revert InvalidEpoch(); }
@@ -397,13 +481,19 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard, Initializa
         _burnAndNotify(amount, _config.recipient, useContractEth);
     }
 
-    /// @inheritdoc ISpiceAuction
-    function getAuctionConfig(uint256 auctionId) external view override returns (SpiceAuctionConfig memory) {
+    /**
+     * @notice Get spice auction config for an auction
+     * @param auctionId Id of auction
+     */
+    function getAuctionConfig(uint256 auctionId) external view returns (SpiceAuctionConfig memory) {
         return auctionConfigs[auctionId];
     }
 
-    /// @inheritdoc ISpiceAuction
-    function getAuctionTokenForCurrentEpoch() external override view returns (address) {
+    /**
+     * @notice Get auction token for current epoch
+     * @return Auction token
+     */
+    function getAuctionTokenForCurrentEpoch() external view returns (address) {
         SpiceAuctionConfig memory config = auctionConfigs[_currentEpochId];
         return config.isTempleGoldAuctionToken ? templeGold : spiceToken;
     }
@@ -413,12 +503,21 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard, Initializa
         return _currentEpochId;
     }
 
-    /// @inheritdoc ISpiceAuction
-    function isActive() external view override returns (bool) {
+    /**
+     * @notice Check if current epoch is active
+     * @return Bool for active status
+     */
+    function isActive() external view returns (bool) {
         return epochs[_currentEpochId].isActive();
     }
 
-    /// @inheritdoc ISpiceAuction
+    /**
+     * @notice Get claimable amount for an array of epochs
+     * @dev If the epochs contains a current epoch, function will return claimable at current time.
+     * @param depositor Address to check amount for
+     * @param epochIds Array of epoch ids
+     * @return tokenAmounts Array of TokenAmount claimable struct
+     */
     function getClaimableForEpochs(
         address depositor,
         uint256[] memory epochIds
@@ -442,11 +541,16 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard, Initializa
         }
     }
 
-    /// @inheritdoc ISpiceAuction
+    /**
+     * @notice Get claimed amounts for an array of epochs
+     * @param depositor Address to check amount for
+     * @param epochIds Array of epoch ids
+     * @return tokenAmounts Array of claimed TokenAmount structs
+     */
     function getClaimedForEpochs(
         address depositor,
         uint256[] calldata epochIds
-    ) external override view returns (TokenAmount[] memory tokenAmounts) {
+    ) external view returns (TokenAmount[] memory tokenAmounts) {
         uint256 _length = epochIds.length;
         tokenAmounts = new TokenAmount[](_length);
         uint256 epochId;

@@ -1,20 +1,25 @@
 import '@nomiclabs/hardhat-ethers';
 import { ethers } from 'hardhat';
-import { SpiceAuction__factory } from '../../../../typechain';
+import { FakeERC20__factory } from '../../../../typechain';
 import {
   deployAndMine,
   ensureExpectedEnvvars,
+  toAtto,
 } from '../../helpers';
 
 async function main() {
     ensureExpectedEnvvars();
     const [owner] = await ethers.getSigners();
     
-    const factory = new SpiceAuction__factory(owner);
+    const factory = new FakeERC20__factory(owner);
     await deployAndMine(
-        'SPICE_AUCTION_IMPLEMENTATION',
+        'SPICE_TOKEN',
         factory,
-        factory.deploy
+        factory.deploy,
+        "Spice Token",
+        "SPICE",
+        await owner.getAddress(),
+        toAtto(100_000)
     );
 }
 
