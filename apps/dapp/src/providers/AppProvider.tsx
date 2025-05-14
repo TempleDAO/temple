@@ -3,12 +3,10 @@ import { ThemeProvider } from 'styled-components';
 import { theme } from 'styles/theme';
 import { NotificationProvider } from 'providers/NotificationProvider';
 import { WalletProvider } from 'providers/WalletProvider';
-import { SwapProvider } from 'providers/SwapProvider';
 import { StakingProvider } from 'providers/StakingProvider';
 import { FaithProvider } from 'providers/FaithProvider';
 import { VaultContextProvider } from 'components/Pages/Core/VaultContext';
 
-import { Web3OnboardInitProvider } from 'components/Web3OnboardInitProvider';
 import { WrongNetworkPopover } from 'components/Layouts/CoreLayout/WrongNetworkPopover';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -27,28 +25,22 @@ export const AppProvider = (props: PropsWithChildren<{}>) => {
 
   return (
     <NotificationProvider>
-      <Web3OnboardInitProvider>
-        <WalletProvider>
-          <QueryClientProvider client={queryClient}>
-            <SwapProvider>
-              <StakingProvider>
-                <FaithProvider>
-                  <VaultContextProvider>
-                    <ThemeProvider theme={theme}>
-                      <AppContext.Provider value={{}}>
-                        <WrongNetworkPopover />
-                        <SpiceBazaarProvider>
-                          {props.children}
-                        </SpiceBazaarProvider>
-                      </AppContext.Provider>
-                    </ThemeProvider>
-                  </VaultContextProvider>
-                </FaithProvider>
-              </StakingProvider>
-            </SwapProvider>
-          </QueryClientProvider>
-        </WalletProvider>
-      </Web3OnboardInitProvider>
+      <WalletProvider>
+        <QueryClientProvider client={queryClient}>
+          <StakingProvider>
+            <FaithProvider>
+              <VaultContextProvider>
+                <ThemeProvider theme={theme}>
+                  <AppContext.Provider value={{}}>
+                    <WrongNetworkPopover />
+                    <SpiceBazaarProvider>{props.children}</SpiceBazaarProvider>
+                  </AppContext.Provider>
+                </ThemeProvider>
+              </VaultContextProvider>
+            </FaithProvider>
+          </StakingProvider>
+        </QueryClientProvider>
+      </WalletProvider>
     </NotificationProvider>
   );
 };
