@@ -30,54 +30,53 @@ async function main() {
         value: 35,
         weekMultiplier: 3600 * 24 * 7 // 1 week
     }
-    ///// TEMPLE GOLD
+    // TEMPLE GOLD
     const templeGold = TempleGold__factory.connect(TEMPLE_GOLD_ADDRESSES.TEMPLE_GOLD.TEMPLE_GOLD, owner);
     const staking = TempleGoldStaking__factory.connect(TEMPLE_GOLD_ADDRESSES.TEMPLE_GOLD.TEMPLE_GOLD_STAKING, owner);
     const daiGoldAuction = StableGoldAuction__factory.connect(TEMPLE_GOLD_ADDRESSES.TEMPLE_GOLD.STABLE_GOLD_AUCTION, owner);
-    // console.log(`TempleGold: ${staking.address}`);
-    // // Set and whitelist contracts
-    // await mine(templeGold.setTeamGnosis(teamGnosis));
-    // await mine(templeGold.setStableGoldAuction(TEMPLE_GOLD_ADDRESSES.TEMPLE_GOLD.STABLE_GOLD_AUCTION));
-    // await mine(templeGold.setStaking(TEMPLE_GOLD_ADDRESSES.TEMPLE_GOLD.TEMPLE_GOLD_STAKING));
-    // await mine(templeGold.setVestingFactor(vestingFactor));
-    // await mine(templeGold.setDistributionParams(distributionParams));
-    // // // authorize contracts
-    // await mine(templeGold.authorizeContract(TEMPLE_GOLD_ADDRESSES.TEMPLE_GOLD.STABLE_GOLD_AUCTION, true));
-    // await mine(templeGold.authorizeContract(TEMPLE_GOLD_ADDRESSES.TEMPLE_GOLD.TEMPLE_GOLD_STAKING, true));
-    // await mine(templeGold.authorizeContract(teamGnosis, true));
+    // Set and whitelist contracts
+    await mine(templeGold.setTeamGnosis(teamGnosis));
+    await mine(templeGold.setStableGoldAuction(TEMPLE_GOLD_ADDRESSES.TEMPLE_GOLD.STABLE_GOLD_AUCTION));
+    await mine(templeGold.setStaking(TEMPLE_GOLD_ADDRESSES.TEMPLE_GOLD.TEMPLE_GOLD_STAKING));
+    await mine(templeGold.setVestingFactor(vestingFactor));
+    await mine(templeGold.setDistributionParams(distributionParams));
+    // authorize contracts
+    await mine(templeGold.authorizeContract(TEMPLE_GOLD_ADDRESSES.TEMPLE_GOLD.STABLE_GOLD_AUCTION, true));
+    await mine(templeGold.authorizeContract(TEMPLE_GOLD_ADDRESSES.TEMPLE_GOLD.TEMPLE_GOLD_STAKING, true));
+    await mine(templeGold.authorizeContract(teamGnosis, true));
 
-    // // // ///// Staking
-    // const oneDay = 24 * 3600;
-    // const duration = oneDay * 7; // 7 days
-    // const unstakeCooldown = oneDay; // 1 day
-    // const rewardsDistributionCooldown = 60; // 60 seconds
-    // // reward duration
-    // await mine(staking.setRewardDuration(duration));
-    // // distribution starter
-    // await mine(staking.setDistributionStarter(teamGnosis));
-    // // rewards distribution cool down
-    // await mine(staking.setRewardDistributionCoolDown(rewardsDistributionCooldown));
-    // // // unstake cool down
-    // await mine(staking.setUnstakeCooldown(unstakeCooldown));
+    // Staking
+    const oneDay = 24 * 3600;
+    const duration = oneDay * 7; // 7 days
+    const unstakeCooldown = oneDay; // 1 day
+    const rewardsDistributionCooldown = 60; // 60 seconds
+    // reward duration
+    await mine(staking.setRewardDuration(duration));
+    // distribution starter
+    await mine(staking.setDistributionStarter(teamGnosis));
+    // rewards distribution cool down
+    await mine(staking.setRewardDistributionCoolDown(rewardsDistributionCooldown));
+    // unstake cool down
+    await mine(staking.setUnstakeCooldown(unstakeCooldown));
 
-    // // ////// DAI GOLD AUCTION
-    // const auctionsTimeDiff = 60;
-    // const auctionConfig = {
-    //     /// Time diff between two auctions. Usually 2 weeks
-    //     auctionsTimeDiff: auctionsTimeDiff,
-    //     ///  Cooldown after auction start is triggered, to allow deposits
-    //     auctionStartCooldown: 60,
-    //     /// Minimum Gold distributed to enable auction start
-    //     auctionMinimumDistributedGold: ethers.utils.parseEther("0.01"),
-    // };
-    // // // auction starter
-    // await mine(daiGoldAuction.setAuctionStarter(teamGnosis));
-    // // // auction config
-    // await mine(daiGoldAuction.setAuctionConfig(auctionConfig));
-    // // set enforced optons
-    // await setEnforcedOptions(templeGold);
+    // DAI GOLD AUCTION
+    const auctionsTimeDiff = 60;
+    const auctionConfig = {
+        /// Time diff between two auctions. Usually 2 weeks
+        auctionsTimeDiff: auctionsTimeDiff,
+        ///  Cooldown after auction start is triggered, to allow deposits
+        auctionStartCooldown: 60,
+        /// Minimum Gold distributed to enable auction start
+        auctionMinimumDistributedGold: ethers.utils.parseEther("0.01"),
+    };
+    // auction starter
+    await mine(daiGoldAuction.setAuctionStarter(teamGnosis));
+    // auction config
+    await mine(daiGoldAuction.setAuctionConfig(auctionConfig));
+    // set enforced optons
+    await setEnforcedOptions(templeGold);
     // fund next auction
-    // await fundNextAuction(TEMPLE_GOLD_INSTANCES, TEMPLE_GOLD_ADDRESSES, owner, recipient);
+    await fundNextAuction(TEMPLE_GOLD_INSTANCES, TEMPLE_GOLD_ADDRESSES, owner, recipient);
 }
 
 async function setEnforcedOptions(templeGold: TempleGold) {
@@ -140,4 +139,3 @@ main()
         console.error(error);
         process.exit(1);
     });
-

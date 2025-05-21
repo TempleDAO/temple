@@ -239,7 +239,7 @@ export const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} =
         },
         SPICE_AUCTIONS: {
             SPICE_TGLD: "0x",
-            DAI_TGLD: "0x",
+            DAI_TGLD: "0xee46c5826cb312b1a80f7a6d1af795488941dbd0",
         },
     },
     arbitrumSepolia: {
