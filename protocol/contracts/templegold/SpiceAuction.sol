@@ -38,7 +38,7 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard, Initializa
     /// @inheritdoc ISpiceAuction
     address public override spiceToken;
 
-   /// @inheritdoc ISpiceAuction
+    /// @inheritdoc ISpiceAuction
     address public override templeGold;
 
     /// @inheritdoc ISpiceAuction
@@ -358,6 +358,8 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard, Initializa
         uint256 amount = epochInfo.totalAuctionTokenAmount;
         epochInfo.totalAuctionTokenAmount = 0;
         _totalAuctionTokenAllocation[auctionToken] -= amount;
+        // mark epoch as redeemed
+        redeemedEpochs[epochId] = true;
 
         // strategy gnosis funds auctions. so check caller and send back tokens to strategy gnosis
         emit RecoveredTokenForZeroBidAuction(epochId, msg.sender, auctionToken, amount);
