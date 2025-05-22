@@ -6,20 +6,17 @@ import {
   ensureExpectedEnvvars,
 } from '../../helpers';
 import { getDeployedTempleGoldContracts } from '../../mainnet/templegold/contract-addresses';
+import { Constants as SEPOLIA_CONSTANTS } from '../../sepolia/constants';
 
 async function main() {
   ensureExpectedEnvvars();
   const [owner] = await ethers.getSigners();
-  const ownerAddress = await owner.getAddress();
   const TEMPLEGOLD_ADDRESSES = getDeployedTempleGoldContracts();
-  const ARBITRUM_SEPOLIA_CHAIN_ID = 421614;
-  const ARBITRUM_SEPOLIA_LZ_EID = 40231;
-  const _initArgs =  {
-    // Changed in transfer ownership to TempleAdmin
-    executor: ownerAddress, // executor is also used as delegate in LayerZero Endpoint.
+  const initArgs =  {
+    executor: await owner.getAddress(),
     layerZeroEndpoint: TEMPLEGOLD_ADDRESSES.EXTERNAL.LAYER_ZERO.ENDPOINT, // local endpoint address
-    mintChainId: ARBITRUM_SEPOLIA_CHAIN_ID,
-    mintChainLzEid: ARBITRUM_SEPOLIA_LZ_EID,
+    mintChainId: SEPOLIA_CONSTANTS.CHAIN_ID, // only mint on mint chain id
+    mintChainLzEid: SEPOLIA_CONSTANTS.LAYER_ZERO.EID,
     name: "TEMPLE GOLD",
     symbol: "TGLD"
   };
@@ -28,9 +25,8 @@ async function main() {
     'TEMPLE_GOLD',
     factory,
     factory.deploy,
-    _initArgs
+    initArgs
   );
-
 }
 
 // We recommend this pattern to be able to use async/await everywhere
