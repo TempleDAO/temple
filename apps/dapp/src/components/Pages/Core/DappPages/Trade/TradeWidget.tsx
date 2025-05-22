@@ -5,21 +5,34 @@ import {
 } from '@cowprotocol/widget-react';
 
 import { CowSwapWidgetParams } from '@cowprotocol/widget-react';
-import { useSetChain } from '@web3-onboard/react';
-import Loader from 'components/Loader/Loader';
 import env from 'constants/env';
 import { useWallet } from 'providers/WalletProvider';
 import styled from 'styled-components';
+import { useCallback, useEffect, useState } from 'react';
+import { useApiManager } from 'hooks/use-api-manager';
+
+const ENV = import.meta.env;
 
 export const TradeWidget = () => {
-  const [{ connectedChain }] = useSetChain();
-  const { ethersProvider } = useWallet();
+  const { wallet, switchNetwork, ethersProvider } = useWallet();
+
+  const { papi } = useApiManager();
+
+  const getChainId = useCallback(() => {
+    if (ENV.VITE_ENV === 'production') {
+      return 1;
+    } else if (ENV.VITE_ENV === 'preview') {
+      return 11155111;
+    } else {
+      throw new Error('Invalid environment');
+    }
+  }, []);
 
   const params: CowSwapWidgetParams = {
     appCode: 'Temple Dapp',
     width: '100%',
     height: '640px',
-    chainId: Number(connectedChain?.id) || 1,
+    chainId: getChainId(),
     tokenLists: [env.tradeTokenListUrl],
     tradeType: TradeType.SWAP,
     sell: {
@@ -61,17 +74,32 @@ export const TradeWidget = () => {
     },
   };
 
+  const [provider, setProvider] = useState<EthereumProvider | undefined>(
+    undefined
+  );
+
+  useEffect(() => {
+    const _switchNetwork = async () => {
+      await switchNetwork(getChainId());
+    };
+    if (wallet) {
+      _switchNetwork();
+      console.debug('TRADE WIDGET: Using wallet provider');
+      setProvider(ethersProvider?.provider as unknown as EthereumProvider);
+    } else {
+      console.debug('TRADE WIDGET: Using papi provider');
+      const provider = papi.getProvider(
+        getChainId()
+      ) as unknown as EthereumProvider;
+      setProvider(provider);
+    }
+  }, [wallet, papi, ethersProvider, switchNetwork, getChainId]);
+
   return (
     <>
-      {!ethersProvider && <Loader />}
-      {ethersProvider && (
-        <WidgetContainer>
-          <CowSwapWidget
-            params={params}
-            provider={ethersProvider.provider as unknown as EthereumProvider}
-          />
-        </WidgetContainer>
-      )}
+      <WidgetContainer>
+        <CowSwapWidget params={params} provider={provider} />
+      </WidgetContainer>
     </>
   );
 };
