@@ -420,8 +420,6 @@ export const SpiceAuctionProvider = ({ children }: PropsWithChildren) => {
           throw new Error('Temple Gold address is not set');
         }
 
-        console.log('setting allowance for');
-
         await ensureAllowanceWithSigner(
           TICKER_SYMBOL.TEMPLE_GOLD_TOKEN,
           templeGoldAddress,
@@ -430,8 +428,6 @@ export const SpiceAuctionProvider = ({ children }: PropsWithChildren) => {
           true,
           connectedSigner
         );
-
-        console.log('SET allowance for');
 
         const spiceAuctionContract = (await papi.getConnectedContract(
           auctionStaticConfig.contractConfig,
@@ -751,16 +747,10 @@ export const SpiceAuctionProvider = ({ children }: PropsWithChildren) => {
             getAppConfig().spiceBazaar.tgldBridge.sourceLayer0EndpointId;
         }
 
-        console.log('amount', amount);
-        console.log('source', source);
-
         const tgldAmount = getBigNumberFromString(
           amount,
           getTokenInfo(TICKER_SYMBOL.TEMPLE_GOLD_TOKEN).decimals
         );
-
-        console.log('tgldAmount', tgldAmount);
-        console.log('destinationChainId', destinationChainId);
 
         const sendParam = {
           dstEid: destinationChainId,
@@ -772,7 +762,7 @@ export const SpiceAuctionProvider = ({ children }: PropsWithChildren) => {
           oftCmd: '0x',
         };
 
-        console.log('sendParam', sendParam);
+        console.debug('sendParam', sendParam);
 
         const payInLzToken = false; // Paying in native token (e.g., ETH)
 
@@ -781,11 +771,10 @@ export const SpiceAuctionProvider = ({ children }: PropsWithChildren) => {
           payInLzToken
         );
 
-        console.log('nativeFee', nativeFee);
-        console.log('lzTokenFee', lzTokenFee);
+        console.debug('nativeFee', nativeFee);
+        console.debug('lzTokenFee', lzTokenFee);
 
         const refundAddress = wallet;
-        console.log('refundAddress', refundAddress);
 
         const tx = await sourceTgldContract.send(
           sendParam,
@@ -797,7 +786,6 @@ export const SpiceAuctionProvider = ({ children }: PropsWithChildren) => {
           { value: nativeFee } // Sending the native fee
         );
 
-        console.log(`Transaction hash: ${tx.hash}`);
         await tx.wait();
 
         openNotification({

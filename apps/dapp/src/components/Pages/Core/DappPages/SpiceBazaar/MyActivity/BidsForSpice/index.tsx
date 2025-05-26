@@ -8,10 +8,24 @@ import * as breakpoints from 'styles/breakpoints';
 import { useMyActivityRedeemAmountSpice } from './hooks/use-myActivity-redeemAmount';
 import Loader from 'components/Loader/Loader';
 import { useMyActivityRewardAmount } from './hooks/use-myActivity-rewardAmount';
+import { useMemo } from 'react';
+import { useWallet } from 'providers/WalletProvider';
 
 export const MyActivitySpice = () => {
   const redeemAmount = useMyActivityRedeemAmountSpice();
   const rewardAmount = useMyActivityRewardAmount();
+  const { wallet } = useWallet();
+
+  // if wallet is not connected, set redeemAmount to 0
+  const redeemAmountIfConnected = useMemo(() => {
+    if (!wallet) return '0';
+    return redeemAmount;
+  }, [wallet, redeemAmount]);
+
+  const rewardAmountIfConnected = useMemo(() => {
+    if (!wallet) return '0';
+    return rewardAmount;
+  }, [wallet, rewardAmount]);
 
   return (
     <PageContainer>
@@ -31,9 +45,9 @@ export const MyActivitySpice = () => {
       <ContentContainer>
         <StatusContainer>
           <BalanceBox>
-            {redeemAmount !== null ? (
+            {redeemAmountIfConnected !== null ? (
               <>
-                <StatusValue>{redeemAmount}</StatusValue>
+                <StatusValue>{redeemAmountIfConnected}</StatusValue>
                 <StatusText>Total Redeemed TGLD</StatusText>
               </>
             ) : (
@@ -42,9 +56,9 @@ export const MyActivitySpice = () => {
           </BalanceBox>
           <BalanceBox>
             <Status>
-              {rewardAmount !== null ? (
+              {rewardAmountIfConnected !== null ? (
                 <>
-                  <StatusValue>{rewardAmount}</StatusValue>
+                  <StatusValue>{rewardAmountIfConnected}</StatusValue>
                   <StatusText>Unclaimed Rewards</StatusText>
                 </>
               ) : (

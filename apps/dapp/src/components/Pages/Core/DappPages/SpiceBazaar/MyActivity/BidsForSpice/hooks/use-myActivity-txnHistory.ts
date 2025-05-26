@@ -65,7 +65,7 @@ export const useMyActivityTxnHistory = (): UseMyActivityTxnHistoryReturn => {
             epoch: transaction.timestamp,
             type: isBid ? 'Bid' : isClaim ? 'Claim' : 'Unknown',
             transactionLink: shortenTxnHash(transaction.hash),
-            transactionHash: `${transaction.hash}-${position._subgraphLabel}`, // Ensure uniqueness
+            transactionHash: transaction.hash,
             name: position.auctionInstance?.spiceAuction?.name || '-',
           };
         })

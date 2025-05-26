@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { user, subgraphQuery, cachedSubgraphQuery } from 'utils/subgraph';
+import { user, cachedSubgraphQuery } from 'utils/subgraph';
 import { useWallet } from 'providers/WalletProvider';
 import type { Transaction } from '../DataTables/BidDataTable';
 import { Auction } from 'components/Pages/Core/DappPages/SpiceBazaar/MyActivity/BidsForTGLD/hooks/use-myActivity-bidsTGLDHistory';

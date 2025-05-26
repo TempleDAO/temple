@@ -42,6 +42,14 @@ export const ARBITRUM_CHAIN: ChainDefinition = {
   rpcUrl: env.rpcUrl,
 };
 
+export const ARBITRUM_SEPOLIA_CHAIN: ChainDefinition = {
+  id: 421614,
+  token: 'ETH',
+  name: 'Arbitrum Sepolia',
+  label: 'Arbitrum Sepolia',
+  rpcUrl: env.rpcUrl,
+};
+
 export const ARBITRUM_GOERLI_CHAIN: ChainDefinition = {
   id: 421611,
   token: 'ETH',
@@ -75,6 +83,7 @@ const APP_CHAINS = [
   ARBITRUM_GOERLI_CHAIN,
   BERACHAIN_BEPOLIA_CHAIN,
   BERACHAIN_MAINNET_CHAIN_CHAIN,
+  ARBITRUM_SEPOLIA_CHAIN,
 ];
 
 export const getChainById = (id: string) => {
