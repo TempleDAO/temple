@@ -1,21 +1,23 @@
 import styled from 'styled-components';
-import { TradeButton } from './Details/Details';
 import templeGold from 'assets/icons/temple-gold.svg?react';
 import { Input } from '../components/Input';
 import * as breakpoints from 'styles/breakpoints';
 import { useMediaQuery } from 'react-responsive';
 import { queryPhone } from 'styles/breakpoints';
-import { useState, useCallback, useEffect, useMemo } from 'react';
-import LargeRoundCheckBox from 'components/Pages/Core/DappPages/SpiceBazaar/components/LargeRoundCheckBox';
 import { useWallet } from 'providers/WalletProvider';
-import { useSpiceAuction } from 'providers/SpiceAuctionProvider';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { formatToken, formatNumberWithCommas } from 'utils/formatter';
+import { useState, useCallback, useEffect, useMemo } from 'react';
+import {
+  SpiceAuctionInfo,
+  useSpiceAuction,
+} from 'providers/SpiceAuctionProvider';
 import { ZERO } from 'utils/bigNumber';
-import { getTokenInfo } from 'components/Vault/utils';
+import LargeRoundCheckBox from 'components/Pages/Core/DappPages/SpiceBazaar/components/LargeRoundCheckBox';
 import { useAudioPlayer } from 'react-use-audio-player';
 import marketSound from 'assets/sounds/Age of Empires 2 - Market Sound.mp3';
-import { getAppConfig } from 'constants/newenv';
+import { TradeButton } from './Details/Details';
+import { useConnectWallet } from '@web3-onboard/react';
 
 const PRICE_UPDATE_INTERVAL = 10000;
 const FADE_EFFECT_DURATION = 500;
@@ -24,15 +26,13 @@ interface BidTGLDProps {
   onBidSubmitted?: () => void;
   mode: BidTGLDMode;
   currentBidAmount?: string;
-  auction?: any;
+  auction?: SpiceAuctionInfo;
 }
 
 export enum BidTGLDMode {
   IncreaseBid = 'increaseBid',
   Bid = 'bid',
 }
-
-// TODO: This should allow bidding TGLD for a specific spice auction
 
 export const BidTGLD = ({
   onBidSubmitted,
@@ -49,12 +49,12 @@ export const BidTGLD = ({
   const [inputValue, setInputValue] = useState<string>('');
   const [fadeEffect, setFadeEffect] = useState(false);
   const [lastPriceUpdate, setLastPriceUpdate] = useState(Date.now());
-
-  const { wallet, balance, updateBalance } = useWallet();
   const {
     spiceAuctions: { bid },
     allSpiceAuctions,
   } = useSpiceAuction();
+  const { wallet, balance, updateBalance } = useWallet();
+  const [{}, connect] = useConnectWallet();
 
   useEffect(() => {
     updateBalance();
@@ -65,22 +65,11 @@ export const BidTGLD = ({
   };
 
   const handleBidClick = async () => {
-    if (!auction?.address) return;
+    if (!auction) return;
 
     setIsSubmitting(true);
     try {
-      // TODO: Why can't we use the auction object passed in the props?
-      // Get the auction config from the app config
-      const appConfig = getAppConfig();
-      const auctionConfig = appConfig.spiceBazaar.spiceAuctions.find(
-        (a: any) => a.contractConfig.address === auction.address
-      );
-
-      if (!auctionConfig) {
-        throw new Error('Could not find auction config');
-      }
-
-      await bid(auctionConfig, inputValue);
+      await bid(auction.staticConfig, inputValue);
       load(marketSound);
       play();
       onBidSubmitted?.();
@@ -93,9 +82,9 @@ export const BidTGLD = ({
   };
 
   const handleHintClick = () => {
-    const amount = balance.TGLD.eq(ZERO)
+    const amount = balanceToken.eq(ZERO)
       ? ''
-      : formatToken(balance.TGLD, TICKER_SYMBOL.TEMPLE_GOLD_TOKEN);
+      : formatToken(balanceToken, TICKER_SYMBOL.TEMPLE_GOLD_TOKEN);
     setInputValue(amount);
   };
 
@@ -145,6 +134,12 @@ export const BidTGLD = ({
 
   const auctionName = auction?.name || 'TGLD';
 
+  const balanceToken = useMemo(() => {
+    if (!auction) return balance.TGLD;
+
+    return balance[auction.staticConfig.templeGoldTokenBalanceTickerSymbol];
+  }, [balance, auction]);
+
   // Update price every n seconds
   useEffect(() => {
     if (!inputValue || isSubmitting) return;
@@ -172,9 +167,9 @@ export const BidTGLD = ({
           <TempleGoldIcon />
           <AvailableAmountText>
             <AvailableAmount>
-              {!balance?.TGLD
+              {!balanceToken
                 ? '0'
-                : formatToken(balance.TGLD, TICKER_SYMBOL.TEMPLE_GOLD_TOKEN)}
+                : formatToken(balanceToken, TICKER_SYMBOL.TEMPLE_GOLD_TOKEN)}
             </AvailableAmount>
             <AvailableText>AVAILABLE</AvailableText>
           </AvailableAmountText>
@@ -208,7 +203,7 @@ export const BidTGLD = ({
                 value: 'TGLD',
               }}
               hint={`Max amount: ${formatToken(
-                balance.TGLD,
+                balanceToken,
                 TICKER_SYMBOL.TEMPLE_GOLD_TOKEN
               )} TGLD`}
               value={inputValue}
@@ -221,80 +216,95 @@ export const BidTGLD = ({
             />
           </BidContent>
         </BidContainer>
-        <ReceiveAmountContainer fadeEffect={fadeEffect}>
-          <ReceiveTextTop>You will receive</ReceiveTextTop>
-          <ReceiveContainer>
-            <TempleGoldIcon />
-            <ReceiveAmount fadeEffect={fadeEffect}>
-              {inputValue === '' || exceededAmount
-                ? '0'
-                : formatNumberWithCommas(
-                    Number(calculateTokenAmount(inputValue))
-                  )}{' '}
-              {auction?.auctionTokenSymbol || 'X TOKEN'}
-            </ReceiveAmount>
-          </ReceiveContainer>
-          <ReceiveTextBottom>
-            at the current price of {!isPhoneOrAbove && <br />}
-            {auction?.priceRatio?.toFixed(2) || '5.32'} TGLD per{' '}
-            {auction?.auctionTokenSymbol || 'TOKEN'}
-          </ReceiveTextBottom>
-        </ReceiveAmountContainer>
-        {exceededAmount && (
-          <WarningMessage>
-            <MessageText>
-              <InfoCircle>
-                <p>i</p>
-              </InfoCircle>
-              <Text>
-                Amount exceeds {auction?.auctionTokenSymbol || 'TOKEN'} auction
-                limit.
-              </Text>
-            </MessageText>
-          </WarningMessage>
+        {wallet ? (
+          <>
+            <ReceiveAmountContainer fadeEffect={fadeEffect}>
+              <ReceiveTextTop>You will receive</ReceiveTextTop>
+              <ReceiveContainer>
+                <TempleGoldIcon />
+                <ReceiveAmount fadeEffect={fadeEffect}>
+                  {inputValue === '' || exceededAmount
+                    ? '0'
+                    : formatNumberWithCommas(
+                        Number(calculateTokenAmount(inputValue))
+                      )}{' '}
+                  {auction?.auctionTokenSymbol || 'X TOKEN'}
+                </ReceiveAmount>
+              </ReceiveContainer>
+              <ReceiveTextBottom>
+                at the current price of {!isPhoneOrAbove && <br />}
+                {auction?.priceRatio?.toFixed(2) || '5.32'} TGLD per{' '}
+                {auction?.auctionTokenSymbol || 'TOKEN'}
+              </ReceiveTextBottom>
+            </ReceiveAmountContainer>
+            {exceededAmount && (
+              <WarningMessage>
+                <MessageText>
+                  <InfoCircle>
+                    <p>i</p>
+                  </InfoCircle>
+                  <Text>
+                    Amount exceeds {auction?.auctionTokenSymbol || 'TOKEN'}{' '}
+                    auction limit.
+                  </Text>
+                </MessageText>
+              </WarningMessage>
+            )}
+            <WarningMessage>
+              <MessageText>
+                <LargeRoundCheckBox
+                  checked={isCheckboxChecked1}
+                  onToggle={handleCheckboxToggle1}
+                />
+                <Text>
+                  Current {auction?.auctionTokenSymbol || 'TOKEN'} price may
+                  rise before the end of the auction.
+                </Text>
+              </MessageText>
+              <MessageText>
+                <LargeRoundCheckBox
+                  checked={isCheckboxChecked2}
+                  onToggle={handleCheckboxToggle2}
+                />
+                <Text>
+                  Once submitted, bids cannot be withdrawn or canceled.
+                </Text>
+              </MessageText>
+            </WarningMessage>
+            <TradeButton
+              style={{
+                whiteSpace: 'nowrap',
+                marginTop: '0px',
+                alignSelf: 'center',
+              }}
+              onClick={handleBidClick}
+              disabled={
+                !inputValue ||
+                Number(inputValue) <= 0 ||
+                Number(inputValue) >
+                  Number(
+                    formatToken(balanceToken, TICKER_SYMBOL.TEMPLE_GOLD_TOKEN)
+                  ) ||
+                exceededAmount ||
+                !isCheckboxChecked1 ||
+                !isCheckboxChecked2 ||
+                isSubmitting ||
+                fadeEffect
+              }
+            >
+              SUBMIT BID
+            </TradeButton>
+          </>
+        ) : (
+          <TradeButton
+            style={{ whiteSpace: 'nowrap', margin: '0px', alignSelf: 'center' }}
+            onClick={() => {
+              connect();
+            }}
+          >
+            CONNECT WALLET
+          </TradeButton>
         )}
-        <WarningMessage>
-          <MessageText>
-            <LargeRoundCheckBox
-              checked={isCheckboxChecked1}
-              onToggle={handleCheckboxToggle1}
-            />
-            <Text>
-              Current {auction?.auctionTokenSymbol || 'TOKEN'} price may rise
-              before the end of the auction.
-            </Text>
-          </MessageText>
-          <MessageText>
-            <LargeRoundCheckBox
-              checked={isCheckboxChecked2}
-              onToggle={handleCheckboxToggle2}
-            />
-            <Text>Once submitted, bids cannot be withdrawn or canceled.</Text>
-          </MessageText>
-        </WarningMessage>
-        <TradeButton
-          style={{
-            whiteSpace: 'nowrap',
-            marginTop: '0px',
-            alignSelf: 'center',
-          }}
-          onClick={handleBidClick}
-          disabled={
-            !inputValue ||
-            Number(inputValue) <= 0 ||
-            Number(inputValue) >
-              Number(
-                formatToken(balance.TGLD, TICKER_SYMBOL.TEMPLE_GOLD_TOKEN)
-              ) ||
-            exceededAmount ||
-            !isCheckboxChecked1 ||
-            !isCheckboxChecked2 ||
-            isSubmitting ||
-            fadeEffect
-          }
-        >
-          SUBMIT BID
-        </TradeButton>
       </Container>
     </ContentContainer>
   );

@@ -42,13 +42,13 @@ export const Chart = ({ auctionAddress }: ChartProps) => {
     setSelectedAuctions(selected);
   };
 
-  if (loading || !metrics?.length) return <Loader />;
+  if (loading) return <Loader />;
+  if (!metrics || metrics.length === 0)
+    return <div>No chart data available</div>;
 
   const chartData = metrics
     .filter((d) => selectedAuctions.some((option) => option.label === d.date))
     .sort((a, b) => a.timestamp - b.timestamp);
-
-  console.log('Chart Data:', chartData);
 
   const values = chartData.map((d) => d.value);
 

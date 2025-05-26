@@ -5,8 +5,14 @@ import { BidHistory } from './Tables/BidTable';
 import { TransactionsHistory } from './Tables/TransactionsTable';
 import { Button } from 'components/Button/Button';
 import * as breakpoints from 'styles/breakpoints';
+import { useMyActivityRedeemAmountSpice } from './hooks/use-myActivity-redeemAmount';
+import Loader from 'components/Loader/Loader';
+import { useMyActivityRewardAmount } from './hooks/use-myActivity-rewardAmount';
 
 export const MyActivitySpice = () => {
+  const redeemAmount = useMyActivityRedeemAmountSpice();
+  const rewardAmount = useMyActivityRewardAmount();
+
   return (
     <PageContainer>
       <MyActivityTopNav />
@@ -25,26 +31,38 @@ export const MyActivitySpice = () => {
       <ContentContainer>
         <StatusContainer>
           <BalanceBox>
-            <StatusValue>0</StatusValue>
-            <StatusText>Total Redeemed TGLD</StatusText>
+            {redeemAmount !== null ? (
+              <>
+                <StatusValue>{redeemAmount}</StatusValue>
+                <StatusText>Total Redeemed TGLD</StatusText>
+              </>
+            ) : (
+              <Loader iconSize={32} />
+            )}
           </BalanceBox>
-          <UnclaimedBox>
+          <BalanceBox>
             <Status>
-              <StatusValue>$17,851</StatusValue>
-              <StatusText>Unclaimed Rewards (USD)</StatusText>
+              {rewardAmount !== null ? (
+                <>
+                  <StatusValue>{rewardAmount}</StatusValue>
+                  <StatusText>Unclaimed Rewards</StatusText>
+                </>
+              ) : (
+                <Loader iconSize={32} />
+              )}
             </Status>
-            <TradeButton
+            {/* <TradeButton
               style={{
-                whiteSpace: 'nowrap',
-                marginTop: '0px',
-                padding: '10px 20px 10px 20px',
-                width: '150px',
+                whiteSpace: "nowrap",
+                marginTop: "0px",
+                padding: "10px 20px 10px 20px",
+                width: "150px",
               }}
-              onClick={() => console.log('clicked')}
+              onClick={() => console.log("clicked")}
             >
               Claim
-            </TradeButton>
-          </UnclaimedBox>
+            </TradeButton> */}
+          </BalanceBox>
         </StatusContainer>
         <TablesContainer>
           <BidHistory />
@@ -125,7 +143,7 @@ const BalanceBox = styled.div`
 
   ${breakpoints.phoneAndAbove(`
       padding: 30px 20px 20px 20px;
-      justify-content: flex-start;
+      justify-content: center;
       background: none;
       height: 180px;
       gap: 20px;

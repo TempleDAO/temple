@@ -1,11 +1,4 @@
-import {
-  BigNumber,
-  ContractReceipt,
-  ethers,
-  Signer,
-  providers,
-  Contract,
-} from 'ethers';
+import { BigNumber, ContractReceipt, ethers, Signer } from 'ethers';
 import { Nullable } from 'types/util';
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';

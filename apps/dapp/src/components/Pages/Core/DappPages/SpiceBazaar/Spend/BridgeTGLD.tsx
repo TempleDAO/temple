@@ -6,11 +6,102 @@ import etherum from 'assets/icons/etherum-icon.svg?react';
 import berachain from 'assets/icons/berachain-icon.svg?react';
 import { TradeButton } from './Details/Details';
 import { Input } from '../components/Input';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { TICKER_SYMBOL } from 'enums/ticker-symbol';
+import { formatToken } from 'utils/formatter';
+import { ZERO } from 'utils/bigNumber';
+import { useWallet } from 'providers/WalletProvider';
+import {
+  BridgeTGLDSource,
+  useSpiceAuction,
+} from 'providers/SpiceAuctionProvider';
+import { BigNumber } from 'ethers';
+import { getAppConfig } from 'constants/newenv';
 
-export const BridgeTGLD = () => {
-  const availableAmount = 50.392;
+interface BridgeTGLDProps {
+  onBridgeComplete?: () => void;
+}
+
+export const BridgeTGLD = ({ onBridgeComplete }: BridgeTGLDProps) => {
   const [inputValue, setInputValue] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [bridgeSource, setBridgeSource] = useState<BridgeTGLDSource>(
+    BridgeTGLDSource.ETH_SOURCE
+  );
+
+  const [sourceBalance, setSourceBalance] = useState<BigNumber>(ZERO);
+
+  const { bridgeTgld } = useSpiceAuction();
+
+  const { wallet, balance, updateBalance } = useWallet();
+
+  useEffect(() => {
+    updateBalance();
+  }, [updateBalance]);
+
+  const handleInputChange = (value: string) => {
+    setInputValue(value);
+  };
+
+  const handleHintClick = () => {
+    const amount = sourceBalance.eq(ZERO)
+      ? ''
+      : formatToken(sourceBalance, TICKER_SYMBOL.TEMPLE_GOLD_TOKEN);
+    setInputValue(amount);
+  };
+
+  useEffect(() => {
+    const updateSelectedTokenBalance = () => {
+      if (bridgeSource === BridgeTGLDSource.ETH_SOURCE) {
+        setSourceBalance(balance.TGLD);
+      } else {
+        setSourceBalance(
+          balance[getAppConfig().spiceBazaar.tgldBridge.altchainTgldTokenKey]
+        );
+      }
+    };
+    updateSelectedTokenBalance();
+  }, [balance, bridgeSource]);
+
+  const handleBridgeClick = async () => {
+    if (!wallet) return;
+
+    setIsSubmitting(true);
+    try {
+      await bridgeTgld(inputValue, bridgeSource);
+      updateBalance();
+      onBridgeComplete?.();
+    } catch (error) {
+      console.error('Bridge txn failed:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSwapClick = () => {
+    if (isSubmitting) return;
+
+    setBridgeSource(
+      bridgeSource === BridgeTGLDSource.ETH_SOURCE
+        ? BridgeTGLDSource.ALTCHAIN_SOURCE
+        : BridgeTGLDSource.ETH_SOURCE
+    );
+
+    // also set the input value to 0
+    setInputValue('');
+
+    if (bridgeSource === BridgeTGLDSource.ETH_SOURCE) {
+      setSourceBalance(
+        balance[getAppConfig().spiceBazaar.tgldBridge.altchainTgldTokenKey]
+      );
+    } else {
+      setSourceBalance(balance.TGLD);
+    }
+  };
+
+  const altchainDisplayName =
+    getAppConfig().spiceBazaar.tgldBridge.altchainDisplayName;
 
   return (
     <BridgeContainer>
@@ -22,8 +113,8 @@ export const BridgeTGLD = () => {
         </BridgeHeader>
         <BridgeBody>
           <BridgeInfo>
-            Bridge your Temple Gold to Berachain to use them in Spice Auctions.
-            They’ll transfer onto the same wallet.{' '}
+            Bridge your Temple Gold to {altchainDisplayName} to use them in
+            Spice Auctions. They&apos;ll transfer onto the same wallet.{' '}
             <a
               target="_blank"
               rel="noreferrer"
@@ -35,7 +126,12 @@ export const BridgeTGLD = () => {
           <BridgeAvailable>
             <TempleGoldIcon />
             <AvailableAmountText>
-              <AvailableAmount>{availableAmount} TGLD </AvailableAmount>
+              <AvailableAmount>
+                {' '}
+                {!balance?.TGLD
+                  ? '0'
+                  : formatToken(sourceBalance, TICKER_SYMBOL.TEMPLE_GOLD_TOKEN)}
+              </AvailableAmount>
               <AvailableText>AVAILABLE</AvailableText>
             </AvailableAmountText>
           </BridgeAvailable>
@@ -47,9 +143,13 @@ export const BridgeTGLD = () => {
                   kind: 'value',
                   value: 'TGLD',
                 }}
+                hint={`Max amount: ${formatToken(
+                  sourceBalance,
+                  TICKER_SYMBOL.TEMPLE_GOLD_TOKEN
+                )} TGLD`}
                 value={inputValue}
-                // onHintClick={}
-                // handleChange={handleInputChange}
+                onHintClick={handleHintClick}
+                handleChange={handleInputChange}
                 isNumber
                 placeholder="0.00"
                 min={0}
@@ -60,28 +160,55 @@ export const BridgeTGLD = () => {
               <TransferFrom>
                 <FromTitle>From</FromTitle>
                 <ChainContainer>
-                  <EtherumIcon />
-                  Etherum
+                  {bridgeSource === 'ethSource' ? (
+                    <>
+                      <EtherumIcon />
+                      Etherum
+                    </>
+                  ) : (
+                    <>
+                      <AltChainIcon />
+                      {altchainDisplayName}
+                    </>
+                  )}
                 </ChainContainer>
               </TransferFrom>
               <TransferSwap>
-                <BridgeSwapIcon />
+                <BridgeSwapIcon onClick={handleSwapClick} />
               </TransferSwap>
               <TransferTo>
                 <ToTitle>To</ToTitle>
                 <ChainContainer>
-                  <BerachainIcon />
-                  Berachain
+                  {bridgeSource === 'ethSource' ? (
+                    <>
+                      <AltChainIcon />
+                      {altchainDisplayName}
+                    </>
+                  ) : (
+                    <>
+                      <EtherumIcon />
+                      Etherum
+                    </>
+                  )}
                 </ChainContainer>
               </TransferTo>
             </TransferFromTo>
           </BridgeTransfer>
-          <BridgeWarning>
-            You are bridging <strong>500 TGLD</strong> to{' '}
-            <strong>x001928199</strong> on <strong>Berachain</strong>. It will
-            take a few minutes for the tokens to arrive.
-          </BridgeWarning>
-          <TradeButton> TRANSFER </TradeButton>
+          {inputValue && Number(inputValue) > 0 && sourceBalance.gt(ZERO) && (
+            <BridgeWarning>
+              You are bridging <strong>{inputValue || '0'} TGLD</strong> to{' '}
+              <strong>{wallet}</strong> on{' '}
+              <strong>{altchainDisplayName}</strong>. It will take a few minutes
+              for the tokens to arrive.
+            </BridgeWarning>
+          )}
+          <TradeButton
+            disabled={inputValue === '0' || !inputValue}
+            onClick={handleBridgeClick}
+          >
+            {' '}
+            TRANSFER{' '}
+          </TradeButton>
         </BridgeBody>
       </BridgeContent>
     </BridgeContainer>
@@ -270,7 +397,7 @@ const EtherumIcon = styled(etherum)`
   height: 24px;
 `;
 
-const BerachainIcon = styled(berachain)`
+const AltChainIcon = styled(berachain)`
   width: 24px;
   height: 24px;
 `;
@@ -292,6 +419,7 @@ const ToTitle = styled.div`
 
 const ChainContainer = styled.div`
   display: flex;
+  width: 120px;
   flex-direction: row;
   align-items: center;
   gap: 10px;
@@ -307,6 +435,7 @@ const ChainContainer = styled.div`
   color: ${({ theme }) => theme.palette.brandLight};
 
   ${breakpoints.phoneAndAbove(`
+    width: 165px;
     font-weight: 700;
     font-size: 18px;
     line-height: 18px;

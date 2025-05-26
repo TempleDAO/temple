@@ -6,11 +6,13 @@ enum TableHeaders {
   Epoch = 'EPOCH',
   Type = 'Type',
   TransactionLink = 'Transaction Link',
+  AuctionName = 'Auction name',
 }
 
 const tableHeaders = [
   { name: TableHeaders.Epoch },
   { name: TableHeaders.Type },
+  { name: TableHeaders.AuctionName },
   { name: TableHeaders.TransactionLink },
 ];
 

@@ -117,7 +117,7 @@ export const useAuctionsPriceHistory = (
 
     try {
       const response = await subgraphQuery<SubgraphResponse>(
-        env.subgraph.spiceBazaar,
+        env.subgraph.spiceBazaar.eth, // stable/gold auctions only on eth network
         priceHistory(auctionInfo.currentEpoch.toString())
       );
 

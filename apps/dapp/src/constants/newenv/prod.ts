@@ -1,3 +1,4 @@
+import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { AppConfig, Chain, ContractConfig, TokenConfig } from './types';
 import {
   DaiGoldAuction,
@@ -41,30 +42,31 @@ const ETH_MAINNET: Chain = {
         ? `#writeContract#${params.writeContractMethod}`
         : ''),
   },
+  layer0EndpointId: 30101,
 };
 
-// TODO: Other chains e.g. berachain
-// https://berachain-rpc.publicnode.com
-// const ARB_MAINNET: Chain = {
-//   name: "Arbitrum Mainnet",
-//   id: 42161,
-//   rpcUrl: "https://arbitrum-rpc.publicnode.com",
-//   walletRpcUrl: "https://arbitrum-rpc.publicnode.com",
-//   nativeCurrency: {
-//     name: "ETH",
-//     symbol: "ETH",
-//     decimals: 18,
-//   },
-//   explorer: {
-//     transactionUrl: (hash: string) => `https://arbiscan.io/tx/${hash}`,
-//     tokenUrl: (hash: string) => `https://arbiscan.io/token/${hash}`,
-//     contractUrl: (address: string, params: any) =>
-//       `https://arbiscan.io/address/${address}` +
-//       (params.writeContractMethod
-//         ? `#writeContract#${params.writeContractMethod}`
-//         : ""),
-//   },
-// };
+// TODO: Verify correctness
+const BERACHAIN_MAINNET: Chain = {
+  name: 'Berachain',
+  id: 80069,
+  rpcUrl: 'https://berachain-rpc.publicnode.com',
+  walletRpcUrl: 'https://berachain-rpc.publicnode.com',
+  nativeCurrency: {
+    name: 'BERA',
+    symbol: 'BERA',
+    decimals: 18,
+  },
+  explorer: {
+    transactionUrl: (hash: string) => `https://berachain.com/tx/${hash}`,
+    tokenUrl: (hash: string) => `https://berachain.com/token/${hash}`,
+    contractUrl: (address: string, params: any) =>
+      `https://berachain.com/address/${address}` +
+      (params.writeContractMethod
+        ? `#writeContract#${params.writeContractMethod}`
+        : ''),
+  },
+  layer0EndpointId: 30362,
+};
 
 ////////////////////////////////////////////////////////////
 // TOKENS
@@ -222,7 +224,7 @@ const SPICE_AUCTION_ON_ETH_MAINNET: ContractConfig<SpiceAuction> = {
 };
 
 const prodEnv: AppConfig = {
-  chains: [ETH_MAINNET], //, ARB_MAINNET],
+  chains: [ETH_MAINNET, BERACHAIN_MAINNET],
   tokens: {
     templeToken: TEMPLE_TOKEN_ON_ETH_MAINNET,
     fraxToken: FRAX_TOKEN_ON_ETH_MAINNET,
@@ -234,11 +236,17 @@ const prodEnv: AppConfig = {
     usdsToken: USDS_TOKEN_ON_ETH_MAINNET,
     wethToken: WETH_TOKEN_ON_ETH_MAINNET,
     ohmToken: OHM_TOKEN_ON_ETH_MAINNET,
+    templeGoldTokenBerachain: TGLD_TOKEN_ON_ETH_MAINNET, // TODO: fix
+    spiceTokenBerachain: TEMPLE_TOKEN_ON_ETH_MAINNET, // TODO: fix
+    templeGoldTokenArbitrum: TGLD_TOKEN_ON_ETH_MAINNET, // TODO: fix
+    spiceTokenArbitrum: TEMPLE_TOKEN_ON_ETH_MAINNET, // TODO: fix
   },
   contracts: {
     templeGoldStaking: TEMPLE_GOLD_STAKING_ON_ETH_MAINNET,
     daiGoldAuction: DAIGOLD_AUCTION_ON_ETH_MAINNET,
     templeGold: TEMPLE_GOLD_ON_ETH_MAINNET,
+    templeGoldBerachain: TEMPLE_GOLD_ON_ETH_MAINNET, // TODO: fix
+    templeGoldArbitrum: TEMPLE_GOLD_ON_ETH_MAINNET, // TODO: fix
     tlc: TLC_ON_ETH_MAINNET,
     trv: TRV_ON_ETH_MAINNET,
     daiCircuitBreaker: DAICIRCUITBREAKER_ON_ETH_MAINNET,
@@ -253,6 +261,14 @@ const prodEnv: AppConfig = {
       //   auctionTokenSymbol: "DAI",
       // },
     ],
+    tgldBridge: {
+      sourceLayer0EndpointId: ETH_MAINNET.layer0EndpointId,
+      sourceTgldTokenContract: TEMPLE_GOLD_ON_ETH_MAINNET,
+      altchainLayer0EndpointId: BERACHAIN_MAINNET.layer0EndpointId,
+      altchainTgldTokenContract: TEMPLE_GOLD_ON_ETH_MAINNET, // TODO: fix (berachain)
+      altchainTgldTokenKey: TICKER_SYMBOL.TEMPLE_GOLD_TOKEN_BERACHAIN,
+      altchainDisplayName: 'Berachain',
+    },
   },
 };
 

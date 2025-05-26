@@ -59,12 +59,12 @@ export const useMyActivityBidsTGLDHistory =
         }
 
         const response = await subgraphQuery(
-          env.subgraph.spiceBazaar,
+          env.subgraph.spiceBazaar.eth, // stable/gold auctions only on eth network
           user(wallet, Auction.StableGoldAuction)
         );
 
         const positions = await Promise.all(
-          response.user.positions.map(async (p: any) => {
+          (response.user?.positions || []).map(async (p: any) => {
             const actionResult = await action(
               p.auctionInstance.endTime,
               p.totalBidAmount,

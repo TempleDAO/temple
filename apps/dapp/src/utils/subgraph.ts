@@ -1,8 +1,9 @@
 import env from 'constants/env';
-import { z } from 'zod';
+import { nullable, z } from 'zod';
 import { backOff } from 'exponential-backoff';
 import { SpiceAuction } from 'types/typechain';
 import { timeStamp } from 'console';
+import { useQuery, QueryClient } from '@tanstack/react-query';
 
 /** A typed query to subgraph  */
 interface SubGraphQuery<T> {
@@ -831,6 +832,8 @@ export function user(id: string, auction: string): SubGraphQuery<UserResp> {
   {
     user(id: "${id}") {
         id
+        redeemAmount
+        rewardAmount
         positions(where: {auctionType: "${auction}"}) {
             auctionInstance {
                 id
@@ -838,6 +841,11 @@ export function user(id: string, auction: string): SubGraphQuery<UserResp> {
                 startTime
                 endTime
                 priceRatio
+                ... on SpiceAuctionInstance {
+                    spiceAuction {
+                        name
+                    }
+                }
             }
             totalBidAmount
             hasClaimed
@@ -852,22 +860,33 @@ export function user(id: string, auction: string): SubGraphQuery<UserResp> {
 }
 
 const UserResp = z.object({
-  user: z.object({
-    id: z.string(),
-    positions: z.array(
-      z.object({
-        auctionInstance: z.object({
-          id: z.string(),
-          epoch: z.string(),
-          startTime: z.string(),
-          endTime: z.string(),
-          priceRatio: z.string(),
-        }),
-        totalBidAmount: z.string(),
-        hasClaimed: z.boolean(),
-      })
-    ),
-  }),
+  user: z
+    .object({
+      id: z.string(),
+      redeemAmount: z.string().nullable(),
+      rewardAmount: z.string().nullable(),
+      positions: z
+        .array(
+          z.object({
+            auctionInstance: z.object({
+              id: z.string(),
+              epoch: z.string(),
+              startTime: z.string(),
+              endTime: z.string(),
+              priceRatio: z.string(),
+              spiceAuction: z
+                .object({
+                  name: z.string(),
+                })
+                .optional(),
+            }),
+            totalBidAmount: z.string(),
+            hasClaimed: z.boolean(),
+          })
+        )
+        .optional(),
+    })
+    .nullable(),
 });
 export type UserResp = z.infer<typeof UserResp>;
 
@@ -1023,8 +1042,15 @@ export function userTransactionsSpiceAuctions(
   {
      user(id: "${id}") {
         id
-       positions(where: {auctionType: SpiceAuction}) {
+        positions(where: {auctionType: SpiceAuction}) {
            id
+           auctionInstance{
+              ... on SpiceAuctionInstance {
+                      spiceAuction {
+                        name
+                    }
+                }
+           }
            transactions(orderDirection: desc, orderBy: timestamp) {
                id
                timestamp
@@ -1053,30 +1079,41 @@ export function userTransactionsSpiceAuctions(
 }
 
 const UserTransactionsSpiceAuctionsResp = z.object({
-  user: z.object({
-    id: z.string(),
-    positions: z.array(
-      z.object({
-        id: z.string(),
-        transactions: z.array(
-          z.union([
-            z.object({
-              id: z.string(),
-              timestamp: z.string(),
-              hash: z.string(),
-              bidAmount: z.string(),
+  user: z
+    .object({
+      id: z.string(),
+      positions: z
+        .array(
+          z.object({
+            id: z.string(),
+            auctionInstance: z.object({
+              spiceAuction: z
+                .object({
+                  name: z.string(),
+                })
+                .optional(),
             }),
-            z.object({
-              id: z.string(),
-              timestamp: z.string(),
-              hash: z.string(),
-              auctionAmount: z.string(),
-            }),
-          ])
-        ),
-      })
-    ),
-  }),
+            transactions: z.array(
+              z.union([
+                z.object({
+                  id: z.string(),
+                  timestamp: z.string(),
+                  hash: z.string(),
+                  bidAmount: z.string(),
+                }),
+                z.object({
+                  id: z.string(),
+                  timestamp: z.string(),
+                  hash: z.string(),
+                  auctionAmount: z.string(),
+                }),
+              ])
+            ),
+          })
+        )
+        .optional(),
+    })
+    .nullable(),
 });
 
 export type UserTransactionsSpiceAuctionsResp = z.infer<
@@ -1265,26 +1302,61 @@ export function spiceAuction(id: string): SubGraphQuery<SpiceAuctionResp> {
 }
 
 const SpiceAuctionResp = z.object({
-  spiceAuction: z.object({
-    id: z.string(),
-    timestamp: z.string(),
-    auctionInstanceCount: z.number(),
-    auctionInstances: z.array(
-      z.object({
-        id: z.string(),
-        timestamp: z.string(),
-        auctionType: z.string(),
-        epoch: z.string(),
-        startTime: z.string(),
-        endTime: z.string(),
-        totalAuctionTokenAmount: z.string(),
-        totalBidTokenAmount: z.string(),
-        claimedTokenAmount: z.string(),
-        priceRatio: z.string(),
-        price: z.string(),
-      })
-    ),
-  }),
+  spiceAuction: z
+    .object({
+      id: z.string(),
+      timestamp: z.string(),
+      auctionInstanceCount: z.number(),
+      auctionInstances: z.array(
+        z.object({
+          id: z.string(),
+          timestamp: z.string(),
+          auctionType: z.string(),
+          epoch: z.string(),
+          startTime: z.string(),
+          endTime: z.string(),
+          totalAuctionTokenAmount: z.string(),
+          totalBidTokenAmount: z.string(),
+          claimedTokenAmount: z.string(),
+          priceRatio: z.string(),
+          price: z.string(),
+        })
+      ),
+    })
+    .nullable(),
 });
 
 export type SpiceAuctionResp = z.infer<typeof SpiceAuctionResp>;
+
+//----------------------------------------------------------------------------------------------------
+
+export const TTL_IN_SECONDS = 30;
+
+export const cachedSubgraphQuery = async <T>(
+  subgraphUrl: string,
+  query: SubGraphQuery<T>
+): Promise<T> => {
+  const queryClient = new QueryClient();
+
+  const result = await queryClient.fetchQuery<T>({
+    queryKey: [subgraphUrl, query.label] as const,
+    queryFn: () => subgraphQuery(subgraphUrl, query),
+    staleTime: TTL_IN_SECONDS * 1000,
+    cacheTime: TTL_IN_SECONDS * 1000,
+  });
+
+  return result;
+};
+
+// Hook version for use in React components
+export const useCachedSubgraphQuery = <T>(
+  subgraphUrl: string,
+  query: SubGraphQuery<T>
+) => {
+  return useQuery<T>({
+    queryKey: [subgraphUrl, query.label] as const,
+    queryFn: () => subgraphQuery(subgraphUrl, query),
+    staleTime: TTL_IN_SECONDS * 1000,
+    cacheTime: TTL_IN_SECONDS * 1000,
+  });
+};

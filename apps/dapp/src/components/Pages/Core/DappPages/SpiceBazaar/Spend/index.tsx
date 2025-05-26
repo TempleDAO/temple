@@ -1,9 +1,8 @@
 import styled from 'styled-components';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import active from 'assets/icons/active.svg?react';
 import scheduled from 'assets/icons/scheduled.svg?react';
-import { AuctionsHistory } from './Table/Table';
 import * as breakpoints from 'styles/breakpoints';
 import ena from 'assets/icons/ena_logo.svg?react';
 import kami from 'assets/icons/kami_logo.svg?react';
@@ -20,25 +19,43 @@ import { useSpiceAuction } from 'providers/SpiceAuctionProvider';
 import Loader from 'components/Loader/Loader';
 import { AuctionCountdown } from './AuctionCountdown';
 import { SpiceAuctionInfo } from 'providers/SpiceAuctionProvider';
+import { useQuery } from '@tanstack/react-query';
+import { useWallet } from 'providers/WalletProvider';
+import { getAppConfig } from 'constants/newenv';
 
-export const Spend = () => {
+// Custom hook for auction-specific user metrics
+export const useAuctionUserMetrics = (auctionAddress: string | undefined) => {
+  const { currentUser, allSpiceAuctions } = useSpiceAuction();
+  const { fetch } = currentUser;
+  const { data: allAuctions } = allSpiceAuctions;
+
+  return useQuery({
+    queryKey: ['auctionUserMetrics', auctionAddress] as const,
+    queryFn: async () => {
+      const auction = allAuctions?.find(
+        (a: SpiceAuctionInfo) => a.address === auctionAddress
+      );
+      if (!auction) return { currentEpochBidAmount: 0 };
+      return fetch(auction.staticConfig);
+    },
+    enabled: !!auctionAddress,
+    staleTime: 30 * 1000,
+    refetchOnWindowFocus: false,
+  });
+};
+
+// Individual auction component to handle metrics
+const AuctionCard = ({
+  auction,
+  onOpenBidModal,
+}: {
+  auction: SpiceAuctionInfo;
+  onOpenBidModal: (auction: SpiceAuctionInfo, mode: BidTGLDMode) => void;
+}) => {
   const navigate = useNavigate();
-  const [modal, setModal] = useState<{
-    type: 'closed' | 'bidTgld' | 'bridgeTgld';
-    auction?: SpiceAuctionInfo;
-  }>({ type: 'closed' });
-  const { allSpiceAuctions } = useSpiceAuction();
-  const {
-    data: allAuctions,
-    loading: allAuctionsLoading,
-    fetch,
-  } = allSpiceAuctions;
 
-  useEffect(() => {
-    fetch();
-  }, [fetch]);
-
-  // const [selected, setSelected] = useState<"MAINNET" | "BERACHAIN">("MAINNET"); - not in the mvp
+  const { data: userMetrics, isLoading: userMetricsLoading } =
+    useAuctionUserMetrics(auction.address);
 
   const getLogo = (name?: string) => {
     if (!name) return <KamiLogo />;
@@ -52,26 +69,142 @@ export const Spend = () => {
   };
 
   return (
+    <StatusContent key={auction.address}>
+      <StatusHeader>
+        <Epoch>
+          <Text>EPOCH {auction.currentEpoch}</Text>
+        </Epoch>
+      </StatusHeader>
+      <StatusBody>
+        <AmountInAuction>
+          {getLogo(auction.auctionTokenSymbol)}
+          <AmountInActionSum>
+            {auction.totalAuctionTokenAmount} {auction.auctionTokenSymbol}
+          </AmountInActionSum>
+        </AmountInAuction>
+        <TotalAmountText>
+          {auction.currentEpochAuctionLive
+            ? 'Total amount currently in auction'
+            : 'Total amount scheduled for bidding'}
+        </TotalAmountText>
+        <AuctionStatus>
+          {auction.currentEpochAuctionLive ? (
+            <ActiveContainer>
+              <Active />
+              <ActiveText>Active</ActiveText>
+              <AuctionCountdown auction={auction} isLive={true} />
+            </ActiveContainer>
+          ) : (
+            <ScheduledContainer>
+              <Scheduled />
+              <AuctionCountdown auction={auction} isLive={false} />
+            </ScheduledContainer>
+          )}
+        </AuctionStatus>
+      </StatusBody>
+      <ButtonsContainer>
+        <TradeButton
+          onClick={() => navigate(`details/${auction.address}`)}
+          style={{ whiteSpace: 'nowrap', margin: 0 }}
+        >
+          Details
+        </TradeButton>
+        {auction.currentEpochAuctionLive &&
+          (userMetricsLoading ? (
+            <Loader iconSize={32} />
+          ) : userMetrics?.currentEpochBidAmount ? (
+            <TradeButton
+              onClick={() => onOpenBidModal(auction, BidTGLDMode.IncreaseBid)}
+              style={{ whiteSpace: 'nowrap', margin: 0 }}
+              gradient={true}
+            >
+              INCREASE BID
+            </TradeButton>
+          ) : (
+            <TradeButton
+              onClick={() => onOpenBidModal(auction, BidTGLDMode.Bid)}
+              style={{ whiteSpace: 'nowrap', margin: 0 }}
+              gradient={true}
+            >
+              BID NOW
+            </TradeButton>
+          ))}
+      </ButtonsContainer>
+    </StatusContent>
+  );
+};
+
+export const Spend = () => {
+  const { allSpiceAuctions } = useSpiceAuction();
+  const {
+    data: allAuctions,
+    loading: allAuctionsLoading,
+    fetch,
+  } = allSpiceAuctions;
+
+  const { updateBalance } = useWallet();
+
+  const [modal, setModal] = useState<{
+    type: 'closed' | 'bidTgld' | 'bridgeTgld';
+    auction?: SpiceAuctionInfo;
+    currentBidAmount?: string;
+  }>({ type: 'closed' });
+  const [modalMode, setModalMode] = useState<BidTGLDMode>(BidTGLDMode.Bid);
+
+  // Get user metrics for the selected auction
+  const { data: userMetrics, refetch: refetchUserMetrics } =
+    useAuctionUserMetrics(modal.auction?.address);
+
+  useEffect(() => {
+    fetch();
+  }, [fetch]);
+
+  // on load, load balances
+  useEffect(() => {
+    updateBalance().catch((err) => {
+      console.warn('Failed to update balance:', err);
+      // Optionally show a user-friendly message
+    });
+  }, [updateBalance]);
+
+  const handleOpenBidModal = async (
+    auction: SpiceAuctionInfo,
+    mode: BidTGLDMode
+  ) => {
+    // Set the modal first so the hook can use the auction address
+    setModal({
+      type: 'bidTgld',
+      auction,
+      currentBidAmount: '0', // We'll update this after fetching
+    });
+    setModalMode(mode);
+
+    // Then fetch the latest metrics
+    const { data: metrics } = await refetchUserMetrics();
+
+    // Update the modal with the fetched metrics
+    setModal((prev) => ({
+      ...prev,
+      currentBidAmount: metrics?.currentEpochBidAmount?.toString() || '0',
+    }));
+  };
+
+  const activeAuctions = useMemo(
+    () => allAuctions?.filter((auction) => auction.staticConfig.isActive),
+    [allAuctions]
+  );
+
+  return (
     <>
       <PageContainer>
         <ContentContainer>
           <SpiceTitle>
             <SpiceTitleText>Spice Auctions</SpiceTitleText>
-            {/* <ToggleContainer> // not in the MVP
-              <ToggleWrapper>
-                <Slider position={selected} />
-                <ToggleButton active={selected === "MAINNET"} onClick={() => setSelected("MAINNET")}>
-                  MAINNET
-                </ToggleButton>
-                <ToggleButton active={selected === "BERACHAIN"} onClick={() => setSelected("BERACHAIN")}>
-                  BERACHAIN
-                </ToggleButton>
-              </ToggleWrapper>
-            </ToggleContainer> */}
             <Bridge>
               <BridgeText>
-                Bridge your Temple Gold to Berachain to use them in Spice
-                Auctions.
+                Bridge your Temple Gold to{' '}
+                {getAppConfig().spiceBazaar.tgldBridge.altchainDisplayName} to
+                use them in Spice Auctions.
               </BridgeText>
               <TradeButton
                 onClick={() => setModal({ type: 'bridgeTgld' })}
@@ -82,77 +215,27 @@ export const Spend = () => {
             </Bridge>
           </SpiceTitle>
           <SpiceAuctions>
-            {/* // TODO: Might be cool at some point to have a different loader for the "card" */}
             {allAuctionsLoading && <Loader />}
-            {!allAuctionsLoading && allAuctions && allAuctions.length > 0 ? (
+            {!allAuctionsLoading &&
+            activeAuctions &&
+            activeAuctions.length > 0 ? (
               <Status>
-                {allAuctions.map((auction, index) => (
-                  <StatusContent key={auction.address || index}>
-                    <StatusHeader>
-                      <Epoch>
-                        <Text>EPOCH {auction.currentEpoch}</Text>
-                      </Epoch>
-                    </StatusHeader>
-                    <StatusBody>
-                      <AmountInAuction>
-                        {getLogo(auction.auctionTokenSymbol)}
-                        <AmountInActionSum>
-                          {auction.totalAuctionTokenAmount}{' '}
-                          {auction.auctionTokenSymbol}
-                        </AmountInActionSum>
-                      </AmountInAuction>
-                      <TotalAmountText>
-                        {auction.currentEpochAuctionLive
-                          ? 'Total amount currently in auction'
-                          : 'Total amount scheduled for bidding'}
-                      </TotalAmountText>
-                      <AuctionStatus>
-                        {auction.currentEpochAuctionLive ? (
-                          <ActiveContainer>
-                            <Active />
-                            <ActiveText>Active</ActiveText>
-                            <AuctionCountdown auction={auction} isLive={true} />
-                          </ActiveContainer>
-                        ) : (
-                          <ScheduledContainer>
-                            <Scheduled />
-                            <AuctionCountdown
-                              auction={auction}
-                              isLive={false}
-                            />
-                          </ScheduledContainer>
-                        )}
-                      </AuctionStatus>
-                    </StatusBody>
-                    <ButtonsContainer>
-                      <TradeButton
-                        onClick={() => navigate(`details/${auction.address}`)}
-                        style={{ whiteSpace: 'nowrap', margin: 0 }}
-                      >
-                        Details
-                      </TradeButton>
-                      {auction.currentEpochAuctionLive && (
-                        <TradeButton
-                          onClick={() => setModal({ type: 'bidTgld' })}
-                          style={{ whiteSpace: 'nowrap', margin: 0 }}
-                          gradient={true}
-                        >
-                          BID NOW
-                        </TradeButton>
-                      )}
-                    </ButtonsContainer>
-                  </StatusContent>
+                {activeAuctions.map((auction) => (
+                  <AuctionCard
+                    key={auction.address}
+                    auction={auction}
+                    onOpenBidModal={handleOpenBidModal}
+                  />
                 ))}
               </Status>
             ) : (
-              !allAuctionsLoading && (
+              !allAuctionsLoading &&
+              activeAuctions &&
+              activeAuctions.length === 0 && (
                 <NoAuctions>No active auctions found</NoAuctions>
               )
             )}
           </SpiceAuctions>
-          {/* <AuctionsHistoryContainer> // not in the MVP
-            <AuctionsHistory />
-          </AuctionsHistoryContainer> */}
         </ContentContainer>
       </PageContainer>
       <Popover
@@ -162,9 +245,21 @@ export const Spend = () => {
         showCloseButton
       >
         {modal.type === 'bidTgld' && (
-          <BidTGLD mode={BidTGLDMode.Bid} auction={modal.auction} />
+          <BidTGLD
+            mode={modalMode}
+            auction={modal.auction}
+            currentBidAmount={modal.currentBidAmount}
+            onBidSubmitted={() => setModal({ type: 'closed' })}
+          />
         )}
-        {modal.type === 'bridgeTgld' && <BridgeTGLD />}
+        {modal.type === 'bridgeTgld' && (
+          <BridgeTGLD
+            onBridgeComplete={() => {
+              // TODO: What to do here, if anything?
+              // Close modal?
+            }}
+          />
+        )}
       </Popover>
     </>
   );

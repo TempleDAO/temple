@@ -17,9 +17,17 @@ import {
   TreasuryReservesVault__factory,
 } from 'types/typechain';
 import { AppConfig, Chain, ContractConfig, TokenConfig } from './types';
+import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 
 const ENV_VARS = import.meta.env;
 const RPC_KEY = ENV_VARS.VITE_RPC_KEY;
+
+const ETH_SPICE_BAZAAR_SUBGRAPH_URL =
+  'https://subgraph.satsuma-prod.com/a912521dd162/templedao/spice-bazaar-sepolia/api';
+const BERACHAIN_SPICE_BAZAAR_SUBGRAPH_URL =
+  'https://api.goldsky.com/api/public/project_clq1l1in2hoze01x1ha1q1bui/subgraphs/spice-bazaar-bepolia/main/gn';
+const ARBIBRUM_SPICE_BAZAAR_SUBGRAPH_URL =
+  'https://subgraph.satsuma-prod.com/a912521dd162/templedao/spice-bazaar-arb-sepolia/api';
 
 const ETH_SEPOLIA: Chain = {
   name: 'Ethereum Sepolia',
@@ -40,31 +48,53 @@ const ETH_SEPOLIA: Chain = {
         ? `#writeContract#${params.writeContractMethod}`
         : ''),
   },
+  layer0EndpointId: 40161,
 };
 
-// https://berachain-bepolia-rpc.publicnode.com
-// const ARB_SEPOLIA: Chain = {
-//   name: "Arbitrum Sepolia",
-//   id: 421614,
-//   rpcUrl: "https://sepolia-arb-rpc.publicnode.com",
-//   walletRpcUrl: "https://sepolia-arb-rpc.publicnode.com",
-//   nativeCurrency: {
-//     // TODO: Fix
-//     name: "ETH",
-//     symbol: "ETH",
-//     decimals: 18,
-//   },
-//   explorer: {
-//     transactionUrl: (hash: string) =>
-//       `https://sepolia-arb.arbiscan.io/tx/${hash}`,
-//     tokenUrl: (hash: string) => `https://sepolia-arb.arbiscan.io/token/${hash}`,
-//     contractUrl: (address: string, params: any) =>
-//       `https://sepolia-arb.arbiscan.io/address/${address}` +
-//       (params.writeContractMethod
-//         ? `#writeContract#${params.writeContractMethod}`
-//         : ""),
-//   },
-// };
+const BERACHAIN_BEPOLIA: Chain = {
+  name: 'Berachain BePolia',
+  id: 80069,
+  rpcUrl: 'https://bepolia.rpc.berachain.com',
+  walletRpcUrl: 'https://bepolia.rpc.berachain.com',
+  nativeCurrency: {
+    name: 'BERA',
+    symbol: 'BERA',
+    decimals: 18,
+  },
+  explorer: {
+    transactionUrl: (hash: string) =>
+      `https://bepolia.berachain.com/tx/${hash}`,
+    tokenUrl: (hash: string) => `https://bepolia.berachain.com/token/${hash}`,
+    contractUrl: (address: string, params: any) =>
+      `https://bepolia.berachain.com/address/${address}` +
+      (params.writeContractMethod
+        ? `#writeContract#${params.writeContractMethod}`
+        : ''),
+  },
+  layer0EndpointId: 40371,
+};
+
+const ARB_SEPOLIA: Chain = {
+  name: 'Arbitrum Sepolia',
+  id: 421614,
+  rpcUrl: `https://arbitrum-sepolia-rpc.publicnode.com/${RPC_KEY}`,
+  walletRpcUrl: `https://arbitrum-sepolia-rpc.publicnode.com/${RPC_KEY}`,
+  nativeCurrency: {
+    name: 'Arbitrum Sepolia ETH',
+    symbol: 'ArbSepoliaETH',
+    decimals: 18,
+  },
+  explorer: {
+    transactionUrl: (hash: string) => `https://sepolia.arbiscan.io/tx/${hash}`,
+    tokenUrl: (hash: string) => `https://sepolia.arbiscan.io/token/${hash}`,
+    contractUrl: (address: string, params: any) =>
+      `https://sepolia.arbiscan.io/address/${address}` +
+      (params.writeContractMethod
+        ? `#writeContract#${params.writeContractMethod}`
+        : ''),
+  },
+  layer0EndpointId: 40231,
+};
 
 ////////////////////////////////////////////////////////////
 // TOKENS
@@ -76,6 +106,22 @@ const TGLD_TOKEN_ON_ETH_SEPOLIA: TokenConfig = {
   address: '0x2ae6318e34bb97ae3755AFcE75559452aA223A5D',
   decimals: 18,
   symbol: 'TGLD',
+};
+
+const TGLD_TOKEN_ON_BERACHAIN_BEPOLIA: TokenConfig = {
+  chainId: BERACHAIN_BEPOLIA.id,
+  name: 'Temple Gold',
+  address: '0x20ceB4504a9e7eda0491ab6356A5EfC419002df9',
+  decimals: 18,
+  symbol: 'TGLD',
+};
+
+const SPICE_TOKEN_ON_BERACHAIN_BEPOLIA: TokenConfig = {
+  chainId: BERACHAIN_BEPOLIA.id,
+  name: 'Spice',
+  address: '0x21F980E0B3b484eB361626e0098AA9741A1221cb',
+  decimals: 18,
+  symbol: 'SPICE',
 };
 
 // For example we can have tokens on other chains
@@ -160,6 +206,14 @@ const OHM_TOKEN_ON_ETH_SEPOLIA: TokenConfig = {
   symbol: 'OHM',
 };
 
+const TGLD_TOKEN_ON_ARBITRUM_SEPOLIA: TokenConfig = {
+  chainId: ARB_SEPOLIA.id,
+  name: 'Temple Gold',
+  address: '0xca3e16f6f204D221193EF83eC3d67B5A957C032c',
+  decimals: 18,
+  symbol: 'TGLD',
+};
+
 ////////////////////////////////////////////////////////////
 // CONTRACTS
 ////////////////////////////////////////////////////////////
@@ -223,12 +277,43 @@ const SPICE_AUCTION_ON_ETH_SEPOLIA: ContractConfig<SpiceAuction> = {
   contractFactory: SpiceAuction__factory,
 };
 
+const SPICE_AUCTION_ON_BERACHAIN_BEPOLIA: ContractConfig<SpiceAuction> = {
+  chainId: BERACHAIN_BEPOLIA.id,
+  address: '0x72D7C9c5E0A187A06E4D1508ceA77dE17db07953',
+  contractFactory: SpiceAuction__factory,
+};
+
+const SPICE_AUCTION_ON_ARBITRUM_SEPOLIA: ContractConfig<SpiceAuction> = {
+  chainId: ARB_SEPOLIA.id,
+  address: '0x41fFE184C981cA5A9F1453e707c179079aC3A551',
+  contractFactory: SpiceAuction__factory,
+};
+
+const TEMPLE_GOLD_ON_BERACHAIN_BEPOLIA: ContractConfig<TempleGold> = {
+  chainId: BERACHAIN_BEPOLIA.id,
+  address: '0x20ceB4504a9e7eda0491ab6356A5EfC419002df9',
+  contractFactory: TempleGold__factory,
+};
+
+const TEMPLE_GOLD_ON_ARBITRUM_SEPOLIA: ContractConfig<TempleGold> = {
+  chainId: ARB_SEPOLIA.id,
+  address: '0xca3e16f6f204D221193EF83eC3d67B5A957C032c',
+  contractFactory: TempleGold__factory,
+};
+
+const SPICE_TOKEN_ON_ARBITRUM_SEPOLIA: TokenConfig = {
+  chainId: ARB_SEPOLIA.id,
+  name: 'Spice',
+  address: '0xe56B2431198CabFaBc1aF5D413c8239c8615E816',
+  decimals: 18,
+  symbol: 'SPICE',
+};
+
 const testEnv: AppConfig = {
-  chains: [ETH_SEPOLIA], //, ARB_SEPOLIA],
+  chains: [ETH_SEPOLIA, BERACHAIN_BEPOLIA, ARB_SEPOLIA],
   tokens: {
     templeToken: TEMPLE_TOKEN_ON_ETH_SEPOLIA,
     fraxToken: FRAX_TOKEN_ON_ETH_SEPOLIA,
-    templeGoldToken: TGLD_TOKEN_ON_ETH_SEPOLIA,
     ogTempleToken: OG_TEMPLE_TOKEN_ON_ETH_SEPOLIA,
     usdcToken: USDC_TOKEN_ON_ETH_SEPOLIA,
     usdtToken: USDT_TOKEN_ON_ETH_SEPOLIA,
@@ -236,26 +321,70 @@ const testEnv: AppConfig = {
     usdsToken: USDS_TOKEN_ON_ETH_SEPOLIA,
     wethToken: WETH_TOKEN_ON_ETH_SEPOLIA,
     ohmToken: OHM_TOKEN_ON_ETH_SEPOLIA,
+    // Eth chain
+    templeGoldToken: TGLD_TOKEN_ON_ETH_SEPOLIA,
+    // Berachain
+    templeGoldTokenBerachain: TGLD_TOKEN_ON_BERACHAIN_BEPOLIA,
+    spiceTokenBerachain: SPICE_TOKEN_ON_BERACHAIN_BEPOLIA,
+    // Arbitrum
+    templeGoldTokenArbitrum: TGLD_TOKEN_ON_ARBITRUM_SEPOLIA,
+    spiceTokenArbitrum: SPICE_TOKEN_ON_ARBITRUM_SEPOLIA,
   },
   contracts: {
     templeGoldStaking: TEMPLE_GOLD_STAKING_ON_ETH_SEPOLIA,
     daiGoldAuction: DAI_GOLD_AUCTION_ON_ETH_SEPOLIA,
     templeGold: TEMPLE_GOLD_ON_ETH_SEPOLIA,
+    templeGoldBerachain: TEMPLE_GOLD_ON_BERACHAIN_BEPOLIA,
+    templeGoldArbitrum: TEMPLE_GOLD_ON_ARBITRUM_SEPOLIA,
     tlc: TEMPLE_LINE_OF_CREDIT_ON_ETH_SEPOLIA,
     trv: TREASURY_RESERVES_VAULT_ON_ETH_SEPOLIA,
     daiCircuitBreaker: DAI_CIRCUIT_BREAKER_CONTRACT_ON_ETH_SEPOLIA,
     templeCircuitBreaker: TEMPLE_CIRCUIT_BREAKER_CONTRACT_ON_ETH_SEPOLIA,
   },
   spiceBazaar: {
-    // TODO: For now, we only have one spice auction. Eventually, could be many. So we use an array.
+    // TODO: For now, we only have one active spice auction. Eventually, could be many. So we use an array.
     spiceAuctions: [
       {
+        isActive: true,
+        name: 'Test ARB TGLD Auction',
+        chainId: ARB_SEPOLIA.id,
+        auctionTokenSymbol: 'SPICE',
+        templeGoldToken: TGLD_TOKEN_ON_ARBITRUM_SEPOLIA,
+        templeGoldTokenBalanceTickerSymbol:
+          TICKER_SYMBOL.TEMPLE_GOLD_TOKEN_ARBITRUM,
+        contractConfig: SPICE_AUCTION_ON_ARBITRUM_SEPOLIA,
+        subgraphUrl: ARBIBRUM_SPICE_BAZAAR_SUBGRAPH_URL,
+      },
+      {
+        isActive: false,
+        name: 'Test BERA TGLD Auction',
+        chainId: BERACHAIN_BEPOLIA.id,
+        auctionTokenSymbol: 'SPICE',
+        templeGoldToken: TGLD_TOKEN_ON_BERACHAIN_BEPOLIA,
+        templeGoldTokenBalanceTickerSymbol:
+          TICKER_SYMBOL.TEMPLE_GOLD_TOKEN_BERACHAIN,
+        contractConfig: SPICE_AUCTION_ON_BERACHAIN_BEPOLIA,
+        subgraphUrl: BERACHAIN_SPICE_BAZAAR_SUBGRAPH_URL,
+      },
+      {
+        isActive: false,
         name: 'Test DAI TGLD Auction',
-        chainId: ETH_SEPOLIA.id, // TODO: We need to support berachain
+        chainId: ETH_SEPOLIA.id,
         auctionTokenSymbol: 'DAI',
+        templeGoldToken: TGLD_TOKEN_ON_ETH_SEPOLIA,
+        templeGoldTokenBalanceTickerSymbol: TICKER_SYMBOL.TEMPLE_GOLD_TOKEN,
         contractConfig: SPICE_AUCTION_ON_ETH_SEPOLIA,
+        subgraphUrl: ETH_SPICE_BAZAAR_SUBGRAPH_URL,
       },
     ],
+    tgldBridge: {
+      sourceLayer0EndpointId: ETH_SEPOLIA.layer0EndpointId,
+      sourceTgldTokenContract: TEMPLE_GOLD_ON_ETH_SEPOLIA,
+      altchainLayer0EndpointId: ARB_SEPOLIA.layer0EndpointId, // TODO: Possibly other altchains? Object?
+      altchainTgldTokenContract: TEMPLE_GOLD_ON_ARBITRUM_SEPOLIA,
+      altchainTgldTokenKey: TICKER_SYMBOL.TEMPLE_GOLD_TOKEN_ARBITRUM,
+      altchainDisplayName: 'Arbitrum',
+    },
   },
 };
 

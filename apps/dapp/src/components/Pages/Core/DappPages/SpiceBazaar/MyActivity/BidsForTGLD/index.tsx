@@ -116,9 +116,12 @@ export const MyActivityTGLD = () => {
                 width: '150px',
               }}
               disabled={!shouldShowUnclaimedLastEpoch}
-              onClick={() =>
-                daiGoldAuctionClaim(daiGoldAuctionInfoData.currentEpoch - 1)
-              }
+              onClick={async () => {
+                await daiGoldAuctionClaim(
+                  daiGoldAuctionInfoData.currentEpoch - 1
+                );
+                await fetchCurrentUserMetrics();
+              }}
             >
               Claim
             </TradeButton>

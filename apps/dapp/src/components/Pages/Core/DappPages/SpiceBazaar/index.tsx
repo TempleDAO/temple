@@ -68,7 +68,7 @@ export const SpiceBazaarPage = () => {
             <TradeButton onClick={() => navigate('earn/staketemple/stake')}>
               EARN TEMPLE GOLD
             </TradeButton>
-            <TradeButton onClick={() => navigate('earn/auctions')}>
+            <TradeButton onClick={() => navigate('spend')}>
               BID TEMPLE GOLD
             </TradeButton>
           </ButtoonsContainer>

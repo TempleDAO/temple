@@ -78,8 +78,11 @@ const env: Environment = {
       'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-v2-mainnet/api',
     templeV2Balances:
       'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-v2-balances/api',
-    spiceBazaar:
-      'https://subgraph.satsuma-prod.com/a912521dd162/templedao/spice-bazaar-sepolia/api',
+    // TODO: Move to new appconfig
+    spiceBazaar: {
+      eth: 'https://subgraph.satsuma-prod.com/a912521dd162/templedao/spice-bazaar-sepolia/api',
+      bera: 'https://api.goldsky.com/api/public/project_clq1l1in2hoze01x1ha1q1bui/subgraphs/spice-bazaar-bepolia/main/gn',
+    },
   },
   gas: {
     swapFraxForTemple: 300000,

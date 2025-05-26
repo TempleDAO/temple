@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import { user, subgraphQuery } from 'utils/subgraph';
+import { user, subgraphQuery, cachedSubgraphQuery } from 'utils/subgraph';
 import { useWallet } from 'providers/WalletProvider';
 import type { Transaction } from '../DataTables/BidDataTable';
 import { Auction } from 'components/Pages/Core/DappPages/SpiceBazaar/MyActivity/BidsForTGLD/hooks/use-myActivity-bidsTGLDHistory';
-import env from 'constants/env';
 import { useSpiceAuction } from 'providers/SpiceAuctionProvider';
+import { getAllSpiceBazaarSubgraphEndpoints } from 'constants/env/getSpiceBazaarEndpoints';
 
 export const useMyActivityBidsSpiceHistory = (): {
   data: Transaction[] | null;
@@ -47,13 +47,27 @@ export const useMyActivityBidsSpiceHistory = (): {
         return;
       }
 
-      const response = await subgraphQuery(
-        env.subgraph.spiceBazaar,
-        user(wallet, Auction.SpiceAuction)
+      const responses = await Promise.all(
+        getAllSpiceBazaarSubgraphEndpoints().map((entry) =>
+          cachedSubgraphQuery(
+            entry.url,
+            user(wallet, Auction.SpiceAuction)
+          ).then((res) => ({
+            data: res,
+            label: entry.label,
+          }))
+        )
+      );
+
+      const allPositions = responses.flatMap(({ data, label }) =>
+        (data.user?.positions || []).map((p: any) => ({
+          ...p,
+          _subgraphLabel: label,
+        }))
       );
 
       const positions = await Promise.all(
-        response.user.positions.map(async (p: any) => {
+        allPositions.map(async (p: any) => {
           const actionResult = await action(
             p.auctionInstance.endTime,
             p.totalBidAmount,
@@ -89,6 +103,7 @@ export const useMyActivityBidsSpiceHistory = (): {
           }
 
           return {
+            id: `${p.auctionInstance.id}-${p._subgraphLabel}`, // just to make them unique for testing
             epoch: p.auctionInstance.epoch,
             auctionEndDateTime: p.auctionInstance.endTime,
             claimableTokens,
@@ -97,6 +112,7 @@ export const useMyActivityBidsSpiceHistory = (): {
             action: actionResult,
             auctionStaticConfig: targetAuction?.staticConfig,
             token: targetAuction?.auctionTokenSymbol,
+            name: p.auctionInstance.spiceAuction?.name || '-',
           };
         })
       );

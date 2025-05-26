@@ -27,10 +27,19 @@ export type Transaction = {
   token: string;
 };
 
-type TableHeader = { name: string };
+type TableHeadersMobile = { name: string };
+
+export enum FieldLabels {
+  Epoch = 'Epoch ID',
+  AuctionName = 'Auction Name',
+  AuctionEnd = 'Auction End',
+  Claimable = 'Claimable',
+  UnitPrice = 'Unit Price',
+  BidTotal = 'Bid Total',
+}
 
 type TableProps = {
-  tableHeaders: TableHeader[];
+  tableHeaders: TableHeadersMobile[];
   transactions: Transaction[];
   modal: 'bidDai' | 'bidTgld';
   loading: boolean;
@@ -39,7 +48,7 @@ type TableProps = {
   dataRefetching?: boolean;
 };
 
-export const DataTable: React.FC<TableProps> = ({
+export const DataTableMobile: React.FC<TableProps> = ({
   modal,
   tableHeaders,
   transactions,
@@ -53,10 +62,10 @@ export const DataTable: React.FC<TableProps> = ({
 
   const [currentBidAmount, setCurrentBidAmount] = useState<string>('');
 
-  const [filter, setFilter] = useState('Last 5 Shown');
+  const [filter, setFilter] = useState('Last 3 Shown');
   const [filteredTransactions, setFilteredTransactions] =
     useState<Transaction[]>(transactions);
-  const filterOptions = ['Last 5 Shown', 'Show All'];
+  const filterOptions = ['Last 3 Shown', 'Show All'];
 
   const {
     allSpiceAuctions: {
@@ -76,8 +85,8 @@ export const DataTable: React.FC<TableProps> = ({
       (a, b) => Number(b.auctionEndDateTime) - Number(a.auctionEndDateTime)
     );
 
-    if (filter === 'Last 5 Shown') {
-      setFilteredTransactions(sortedTransactions.slice(0, 5));
+    if (filter === 'Last 3 Shown') {
+      setFilteredTransactions(sortedTransactions.slice(0, 3));
     } else {
       setFilteredTransactions(sortedTransactions);
     }
@@ -136,7 +145,14 @@ export const DataTable: React.FC<TableProps> = ({
               <HeaderRow>
                 {tableHeaders.map((h) => (
                   <TableHeader key={h.name} name={h.name}>
-                    {h.name}
+                    {h.name.includes('\n')
+                      ? h.name.split('\n').map((line, i) => (
+                          <React.Fragment key={h.name}>
+                            {line}
+                            <br />
+                          </React.Fragment>
+                        ))
+                      : h.name}
                   </TableHeader>
                 ))}
               </HeaderRow>
@@ -155,23 +171,54 @@ export const DataTable: React.FC<TableProps> = ({
                   const action =
                     resolvedActions[transaction.auctionEndDateTime];
                   return (
-                    // <DataRow key={transaction.auctionEndDateTime}> commented out for testing multiple endpoints
-                    <DataRow key={transaction.id}>
-                      <DataCell>{transaction.epoch}</DataCell>
-                      <DataCell>{transaction.name || '-'}</DataCell>
+                    <CardRow key={transaction.auctionEndDateTime}>
                       <DataCell>
-                        {new Date(
-                          Number(transaction.auctionEndDateTime) * 1000
-                        ).toLocaleDateString('en-GB')}
+                        <DataRowContainer>
+                          <DataRowTitle>{FieldLabels.Epoch}:</DataRowTitle>
+                          <DataRowValue>{transaction.epoch}</DataRowValue>
+                        </DataRowContainer>
+                        <DataRowContainer>
+                          <DataRowTitle>
+                            {FieldLabels.AuctionName}:
+                          </DataRowTitle>
+                          <DataRowValue>{transaction.name || '-'}</DataRowValue>
+                        </DataRowContainer>
+                        <DataRowContainer>
+                          <DataRowTitle>{FieldLabels.AuctionEnd}:</DataRowTitle>
+                          <DataRowValue>
+                            {new Date(
+                              Number(transaction.auctionEndDateTime) * 1000
+                            ).toLocaleDateString('en-GB')}
+                          </DataRowValue>
+                        </DataRowContainer>
                       </DataCell>
                       <DataCell>
-                        {transaction.claimableTokens !== undefined
-                          ? formatNumberWithCommas(transaction.claimableTokens)
-                          : '-'}
+                        <DataRowContainer>
+                          <DataRowTitle>{FieldLabels.Claimable}:</DataRowTitle>
+                          <DataRowValue>
+                            {transaction.claimableTokens !== undefined
+                              ? formatNumberWithCommas(
+                                  transaction.claimableTokens
+                                )
+                              : '-'}
+                            {transaction.claimableTokens !== undefined
+                              ? ' ' + transaction.token
+                              : ''}
+                          </DataRowValue>
+                        </DataRowContainer>
+                        <DataRowContainer>
+                          <DataRowTitle>{FieldLabels.UnitPrice}:</DataRowTitle>
+                          <DataRowValue>
+                            {transaction.unitPrice} TGLD
+                          </DataRowValue>
+                        </DataRowContainer>
+                        <DataRowContainer>
+                          <DataRowTitle>{FieldLabels.BidTotal}:</DataRowTitle>
+                          <DataRowValue>
+                            {transaction.bidTotal} TGLD
+                          </DataRowValue>
+                        </DataRowContainer>
                       </DataCell>
-                      <DataCell>{transaction.token}</DataCell>
-                      <DataCell>{transaction.unitPrice}</DataCell>
-                      <DataCell>{transaction.bidTotal}</DataCell>
                       <DataCell>
                         <ButtonContainer>
                           {action === 'Bid' && (
@@ -206,7 +253,7 @@ export const DataTable: React.FC<TableProps> = ({
                             )}
                         </ButtonContainer>
                       </DataCell>
-                    </DataRow>
+                    </CardRow>
                   );
                 })
               )}
@@ -310,7 +357,6 @@ const FilterButton = styled.button<{ selected: boolean }>`
 
 const TableData = styled.table`
   border-spacing: 10px;
-  min-width: 800px;
   border-collapse: collapse;
   width: 100%;
 `;
@@ -320,8 +366,9 @@ const HeaderRow = styled.tr`
 `;
 
 const TableHeader = styled.th<{ name: string }>`
-  padding: 0px 25px;
-  font-size: 13px;
+  width: 33%;
+  white-space: pre-wrap;
+  font-size: 14px;
   font-weight: 700;
   line-height: 20px;
   text-align: left;
@@ -331,27 +378,41 @@ const TableHeader = styled.th<{ name: string }>`
   position: sticky;
   top: 0;
   z-index: 1;
-
-  &:first-child {
-    padding: 5px 25px 0px 0px;
-  }
 `;
 
 const DataRow = styled.tr`
   border-bottom: 1px solid ${({ theme }) => theme.palette.brand};
 `;
 
+const CardRow = styled.tr`
+  border-bottom: 1px solid ${({ theme }) => theme.palette.brand};
+`;
+
+const DataRowContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 16px;
+
+  &:last-child {
+    padding-bottom: 20px;
+  }
+`;
+
+const DataRowTitle = styled.span`
+  color: ${({ theme }) => theme.palette.brandDark};
+`;
+
+const DataRowValue = styled.span`
+  color: ${({ theme }) => theme.palette.brandLight};
+`;
+
 const DataCell = styled.td`
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   line-height: 20px;
   text-align: left;
   color: ${({ theme }) => theme.palette.brandLight};
-  padding: 20px 25px;
-
-  &:first-child {
-    padding: 20px 25px 20px 0px;
-  }
+  padding-top: 20px;
 `;
 
 const ButtonContainer = styled.div`
@@ -364,7 +425,7 @@ const ButtonContainer = styled.div`
 
 const TradeButton = styled(Button)`
   padding: 10px 20px;
-  width: ${(props) => props.width || '120px'};
+  width: ${(props) => props.width || '75px'};
   height: min-content;
   background: ${({ theme }) => theme.palette.gradients.dark};
   border: ${({ disabled, theme }) =>

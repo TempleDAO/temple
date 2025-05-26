@@ -26,8 +26,8 @@ export const AppProvider = (props: PropsWithChildren<{}>) => {
 
   return (
     <NotificationProvider>
-      <WalletProvider>
-        <QueryClientProvider client={queryClient}>
+      <QueryClientProvider client={queryClient}>
+        <WalletProvider>
           <StakingProvider>
             <FaithProvider>
               <VaultContextProvider>
@@ -44,8 +44,8 @@ export const AppProvider = (props: PropsWithChildren<{}>) => {
               </VaultContextProvider>
             </FaithProvider>
           </StakingProvider>
-        </QueryClientProvider>
-      </WalletProvider>
+        </WalletProvider>
+      </QueryClientProvider>
     </NotificationProvider>
   );
 };

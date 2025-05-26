@@ -11,11 +11,15 @@ import { Link, useParams } from 'react-router-dom';
 import arrowBack from 'assets/icons/arrow_back.svg?react';
 import { useMediaQuery } from 'react-responsive';
 import { queryPhone } from 'styles/breakpoints';
-import { useSpiceAuction } from 'providers/SpiceAuctionProvider';
+import {
+  SpiceAuctionInfo,
+  useSpiceAuction,
+} from 'providers/SpiceAuctionProvider';
 import env from 'constants/env';
 import { useSpiceAuctionCountdown } from 'hooks/spicebazaar/use-spice-auction-countdown';
 import Loader from 'components/Loader/Loader';
 import { DEVMODE_QUERY_PARAM } from '../../Bid';
+import { useAuctionUserMetrics } from 'components/Pages/Core/DappPages/SpiceBazaar/Spend';
 
 export const Details = () => {
   // get the address from the path
@@ -29,10 +33,49 @@ export const Details = () => {
     },
   } = useSpiceAuction();
 
+  const [modal, setModal] = useState<{
+    type: 'closed' | 'bidTgld' | 'bridgeTgld';
+    auction?: SpiceAuctionInfo;
+    currentBidAmount?: string;
+  }>({ type: 'closed' });
+  const [modalMode, setModalMode] = useState<BidTGLDMode>(BidTGLDMode.Bid);
+
   const auction = useMemo(
     () => allSpiceAuctionsData.find((auction) => auction.address === address),
     [allSpiceAuctionsData, address]
   );
+  // Get user metrics for the selected auction
+  const {
+    data: userMetrics,
+    refetch: refetchUserMetrics,
+    isLoading: userMetricsLoading,
+  } = useAuctionUserMetrics(auction?.address);
+
+  useEffect(() => {
+    fetchAllSpiceAuctions();
+  }, [fetchAllSpiceAuctions]);
+
+  const onOpenBidModal = async (
+    auction: SpiceAuctionInfo,
+    mode: BidTGLDMode
+  ) => {
+    // Set the modal first so the hook can use the auction address
+    setModal({
+      type: 'bidTgld',
+      auction,
+      currentBidAmount: '0', // We'll update this after fetching
+    });
+    setModalMode(mode);
+
+    // Then fetch the latest metrics
+    const { data: metrics } = await refetchUserMetrics();
+
+    // Update the modal with the fetched metrics
+    setModal((prev) => ({
+      ...prev,
+      currentBidAmount: metrics?.currentEpochBidAmount?.toString() || '0',
+    }));
+  };
 
   const shortenAddress = (address: string) => {
     if (!address || address.length < 16) return address;
@@ -41,19 +84,11 @@ export const Details = () => {
 
   const [showChart, setShowChart] = useState(false);
 
-  // TODO: Use this auction info and populate the details page
-
   const isPhoneOrAbove = useMediaQuery({
     query: queryPhone,
   });
-  const [modal, setModal] = useState<'closed' | 'bidTgld'>('closed');
 
   const countdown = useSpiceAuctionCountdown(auction || null);
-
-  const onBidSubmittedHandler = () => {
-    setModal('closed');
-    fetchAllSpiceAuctions();
-  };
 
   const MemoizedChart = useMemo(() => {
     if (!auction?.address) return null;
@@ -146,19 +181,28 @@ export const Details = () => {
                     </HeaderRightContainer>
                   </HeaderRight>
                 </Header>
-                {auction?.currentEpochAuctionLive && (
-                  // TODO: Conditionally show increase bid
-                  // just like gold auction
-                  <ButtonsContainer>
-                    <TradeButton
-                      onClick={() => setModal('bidTgld')}
-                      style={{ whiteSpace: 'nowrap' }}
-                      width={isPhoneOrAbove ? 'min-content' : '255px'}
-                    >
-                      BID TGLD
-                    </TradeButton>
-                  </ButtonsContainer>
-                )}
+                <ButtonsContainer>
+                  {auction?.currentEpochAuctionLive &&
+                    (userMetricsLoading ? (
+                      <Loader iconSize={32} />
+                    ) : userMetrics?.currentEpochBidAmount ? (
+                      <TradeButton
+                        onClick={() =>
+                          onOpenBidModal(auction, BidTGLDMode.IncreaseBid)
+                        }
+                        style={{ whiteSpace: 'nowrap', margin: 0 }}
+                      >
+                        INCREASE BID
+                      </TradeButton>
+                    ) : (
+                      <TradeButton
+                        onClick={() => onOpenBidModal(auction, BidTGLDMode.Bid)}
+                        style={{ whiteSpace: 'nowrap', margin: 0 }}
+                      >
+                        BID NOW
+                      </TradeButton>
+                    ))}
+                </ButtonsContainer>
                 {(auction?.currentEpochAuctionLive || showChart) && (
                   <>
                     <Status>
@@ -212,16 +256,19 @@ export const Details = () => {
         </ContentContainer>
       </PageContainer>
       <Popover
-        isOpen={modal != 'closed'}
-        onClose={() => setModal('closed')}
+        isOpen={modal.type !== 'closed'}
+        onClose={() => setModal({ type: 'closed' })}
         closeOnClickOutside
         showCloseButton
       >
-        <BidTGLD
-          mode={BidTGLDMode.Bid}
-          auction={auction}
-          onBidSubmitted={onBidSubmittedHandler}
-        />
+        {modal.type === 'bidTgld' && (
+          <BidTGLD
+            mode={modalMode}
+            auction={modal.auction}
+            currentBidAmount={modal.currentBidAmount}
+            onBidSubmitted={() => setModal({ type: 'closed' })}
+          />
+        )}
       </Popover>
     </>
   );

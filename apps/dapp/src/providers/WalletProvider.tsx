@@ -5,9 +5,11 @@ import {
   useContext,
   useEffect,
   useState,
+  useMemo,
 } from 'react';
 import { BigNumber, ethers, Signer } from 'ethers';
 import { useConnectWallet, useSetChain } from '@web3-onboard/react';
+import { useQuery } from '@tanstack/react-query';
 
 import { useNotification } from 'providers/NotificationProvider';
 import { NoWalletAddressError } from 'providers/errors';
@@ -48,6 +50,8 @@ const INITIAL_STATE: WalletState = {
     OGTEMPLE: ZERO,
     OHM: ZERO,
     TGLD: ZERO,
+    TGLD_BERA: ZERO,
+    TGLD_ARB: ZERO,
   },
   wallet: undefined,
   walletAddress: undefined,
@@ -156,9 +160,17 @@ export const WalletProvider = (props: PropsWithChildren<object>) => {
 
   const { openNotification } = useNotification();
 
-  const [balanceState, setBalanceState] = useState<Balance>(
-    INITIAL_STATE.balance
-  );
+  const TTL_IN_SECONDS = 30;
+
+  const { data: balanceData = INITIAL_STATE.balance, refetch: refetchBalance } =
+    useQuery({
+      queryKey: ['walletBalance', walletAddress],
+      queryFn: () =>
+        walletAddress ? getBalance(walletAddress) : INITIAL_STATE.balance,
+      staleTime: TTL_IN_SECONDS * 1000, // 30 seconds
+      refetchOnWindowFocus: false,
+      enabled: !!walletAddress,
+    });
 
   const getBalance = useCallback(
     async (walletAddress: string) => {
@@ -178,6 +190,8 @@ export const WalletProvider = (props: PropsWithChildren<object>) => {
         USDT: ZERO,
         WETH: ZERO,
         OHM: ZERO,
+        TGLD_BERA: ZERO,
+        TGLD_ARB: ZERO,
       };
 
       // FYI Temporarily comment out unused tokens
@@ -279,6 +293,22 @@ export const WalletProvider = (props: PropsWithChildren<object>) => {
         response = { ...response, TGLD: tgldBalance };
       }
 
+      if (getAppConfig().tokens.templeGoldTokenBerachain?.address) {
+        const tgldBalance = await papi.getTokenBalance(
+          walletAddress,
+          getAppConfig().tokens.templeGoldTokenBerachain
+        );
+        response = { ...response, TGLD_BERA: tgldBalance };
+      }
+
+      if (getAppConfig().tokens.templeGoldTokenArbitrum?.address) {
+        const tgldBalance = await papi.getTokenBalance(
+          walletAddress,
+          getAppConfig().tokens.templeGoldTokenArbitrum
+        );
+        response = { ...response, TGLD_ARB: tgldBalance };
+      }
+
       return {
         ...response,
         // TODO: Technically need get native balance for each chain
@@ -289,14 +319,8 @@ export const WalletProvider = (props: PropsWithChildren<object>) => {
   );
 
   const updateBalance = useCallback(async () => {
-    if (!walletAddress) {
-      setBalanceState(INITIAL_STATE.balance);
-      return;
-    }
-
-    const balance = await getBalance(walletAddress);
-    setBalanceState(balance);
-  }, [getBalance, walletAddress]);
+    await refetchBalance();
+  }, [refetchBalance]);
 
   /**
    * Always use this to increase allowance for TOKENS
@@ -306,124 +330,148 @@ export const WalletProvider = (props: PropsWithChildren<object>) => {
    * @param minAllowance
    */
 
-  const ensureAllowance = async (
-    tokenName: string,
-    // Should be ERC20, need to update Typechain (fix is in 8.0.x)
-    erc20Token: any,
-    spender: string,
-    minAllowance: BigNumber,
-    shouldUseMinAllowance = false
-  ) => {
-    // pre-condition
-    if (!walletAddress || !signer) {
-      throw new NoWalletAddressError();
-    }
+  const ensureAllowance = useCallback(
+    async (
+      tokenName: string,
+      // Should be ERC20, need to update Typechain (fix is in 8.0.x)
+      erc20Token: any,
+      spender: string,
+      minAllowance: BigNumber,
+      shouldUseMinAllowance = false
+    ) => {
+      // pre-condition
+      if (!walletAddress || !signer) {
+        throw new NoWalletAddressError();
+      }
 
-    const token = erc20Token as ERC20;
-    const allowance = await token.allowance(walletAddress, spender);
+      const token = erc20Token as ERC20;
+      const allowance = await token.allowance(walletAddress, spender);
 
-    if (allowance.lt(minAllowance)) {
-      // increase allowance
-      const populatedTransaction = await token.populateTransaction.approve(
-        spender,
-        shouldUseMinAllowance ? minAllowance : DEFAULT_ALLOWANCE
-      );
+      if (allowance.lt(minAllowance)) {
+        // increase allowance
+        const populatedTransaction = await token.populateTransaction.approve(
+          spender,
+          shouldUseMinAllowance ? minAllowance : DEFAULT_ALLOWANCE
+        );
 
-      const receipt = await estimateAndMine(signer, populatedTransaction);
+        const receipt = await estimateAndMine(signer, populatedTransaction);
 
-      // Show feedback to user
-      openNotification({
-        title: `${tokenName} allowance approved`,
-        hash: receipt.transactionHash,
-      });
-    }
-  };
+        // Show feedback to user
+        openNotification({
+          title: `${tokenName} allowance approved`,
+          hash: receipt.transactionHash,
+        });
+      }
+    },
+    [walletAddress, signer, openNotification]
+  );
 
   // The reason we have this is that, with the new network agnostic implementation
   // we can't use the contract bound to a signer that might not be on the right chain
   // or a wallet signer at all. So it could cause problems.
   // This should be moved to a new signer api with a better approach but it's fine for now
-  const ensureAllowanceWithSigner = async (
-    tokenName: string,
-    tokenAddress: string,
-    spenderAddress: string,
-    minAllowance: BigNumber,
-    shouldUseMinAllowance = false,
-    signer: Signer
-  ) => {
-    // pre-condition
-    if (!walletAddress || !signer) {
-      throw new NoWalletAddressError();
-    }
+  const ensureAllowanceWithSigner = useCallback(
+    async (
+      tokenName: string,
+      tokenAddress: string,
+      spenderAddress: string,
+      minAllowance: BigNumber,
+      shouldUseMinAllowance = false,
+      signer: Signer
+    ) => {
+      // pre-condition
+      if (!walletAddress || !signer) {
+        throw new NoWalletAddressError();
+      }
 
-    const tokenContract = new ERC20__factory(signer).attach(tokenAddress);
+      const tokenContract = new ERC20__factory(signer).attach(tokenAddress);
 
-    const allowance = await tokenContract.allowance(
+      const allowance = await tokenContract.allowance(
+        walletAddress,
+        spenderAddress
+      );
+
+      if (allowance.lt(minAllowance)) {
+        // increase allowance
+        const populatedTransaction =
+          await tokenContract.populateTransaction.approve(
+            spenderAddress,
+            shouldUseMinAllowance ? minAllowance : DEFAULT_ALLOWANCE
+          );
+
+        const receipt = await estimateAndMine(signer, populatedTransaction);
+
+        // Show feedback to user
+        openNotification({
+          title: `${tokenName} allowance approved`,
+          hash: receipt.transactionHash,
+        });
+      }
+    },
+    [walletAddress, openNotification]
+  );
+
+  const collectTempleTeamPayment = useCallback(
+    async (epoch: number) => {
+      if (walletAddress && signer && env.contracts.teamPayments) {
+        const contractAddress = env.contracts.teamPayments[epoch].address;
+        const teamPaymentContract = new TempleTeamPayments__factory(
+          signer
+        ).attach(contractAddress);
+
+        const collectTxn = await teamPaymentContract.claim();
+        const txnReceipt = await collectTxn.wait();
+
+        openNotification({
+          title: `${
+            epoch <= 14 ? TICKER_SYMBOL.TEMPLE_TOKEN : TICKER_SYMBOL.DAI
+          } claimed`,
+          hash: collectTxn.hash,
+        });
+
+        return txnReceipt;
+      } else {
+        console.error('Missing wallet address');
+      }
+    },
+    [walletAddress, signer, openNotification]
+  );
+
+  const contextValue = useMemo(
+    () => ({
+      balance: balanceData,
+      wallet: walletAddress,
       walletAddress,
-      spenderAddress
-    );
-
-    if (allowance.lt(minAllowance)) {
-      // increase allowance
-      const populatedTransaction =
-        await tokenContract.populateTransaction.approve(
-          spenderAddress,
-          shouldUseMinAllowance ? minAllowance : DEFAULT_ALLOWANCE
-        );
-
-      const receipt = await estimateAndMine(signer, populatedTransaction);
-
-      // Show feedback to user
-      openNotification({
-        title: `${tokenName} allowance approved`,
-        hash: receipt.transactionHash,
-      });
-    }
-  };
-
-  const collectTempleTeamPayment = async (epoch: number) => {
-    if (walletAddress && signer && env.contracts.teamPayments) {
-      const contractAddress = env.contracts.teamPayments[epoch].address;
-      const teamPaymentContract = new TempleTeamPayments__factory(
-        signer
-      ).attach(contractAddress);
-
-      const collectTxn = await teamPaymentContract.claim();
-      const txnReceipt = await collectTxn.wait();
-
-      openNotification({
-        title: `${
-          epoch <= 14 ? TICKER_SYMBOL.TEMPLE_TOKEN : TICKER_SYMBOL.DAI
-        } claimed`,
-        hash: collectTxn.hash,
-      });
-
-      return txnReceipt;
-    } else {
-      console.error('Missing wallet address');
-    }
-  };
+      isConnected: !!wallet,
+      isConnecting: connecting,
+      signer,
+      getBalance: updateBalance,
+      updateBalance,
+      collectTempleTeamPayment,
+      ensureAllowance,
+      ensureAllowanceWithSigner,
+      ethersProvider,
+      switchNetwork,
+      getConnectedSigner,
+    }),
+    [
+      balanceData,
+      wallet,
+      walletAddress,
+      connecting,
+      signer,
+      updateBalance,
+      collectTempleTeamPayment,
+      ensureAllowance,
+      ensureAllowanceWithSigner,
+      ethersProvider,
+      switchNetwork,
+      getConnectedSigner,
+    ]
+  );
 
   return (
-    <WalletContext.Provider
-      value={{
-        balance: balanceState,
-        isConnected: !!walletAddress && !connecting,
-        isConnecting: connecting,
-        wallet: walletAddress, // to be deprecated, keeping now for backwards compatibility
-        walletAddress,
-        ensureAllowance,
-        ensureAllowanceWithSigner,
-        signer,
-        getBalance: updateBalance,
-        updateBalance,
-        collectTempleTeamPayment,
-        ethersProvider,
-        // new methods
-        switchNetwork,
-        getConnectedSigner,
-      }}
-    >
+    <WalletContext.Provider value={contextValue}>
       {children}
     </WalletContext.Provider>
   );

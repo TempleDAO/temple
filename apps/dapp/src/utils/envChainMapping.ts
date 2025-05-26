@@ -50,12 +50,31 @@ export const ARBITRUM_GOERLI_CHAIN: ChainDefinition = {
   rpcUrl: env.rpcUrl,
 };
 
+export const BERACHAIN_BEPOLIA_CHAIN: ChainDefinition = {
+  id: 80069,
+  token: 'ETH',
+  name: 'Berachain Bepolia',
+  label: 'Berachain Bepolia',
+  rpcUrl: env.rpcUrl, // TODO: Fixme
+};
+
+export const BERACHAIN_MAINNET_CHAIN_CHAIN: ChainDefinition = {
+  id: 80094,
+  token: 'ETH',
+  name: 'Berachain',
+  label: 'Berachain',
+  rpcUrl: env.rpcUrl, // TODO: Fixme
+};
+
+// TODO: Try to centralize with newenv
 const APP_CHAINS = [
   MAINNET_CHAIN,
   SEPOLIA_CHAIN,
   LOCAL_CHAIN,
   ARBITRUM_CHAIN,
   ARBITRUM_GOERLI_CHAIN,
+  BERACHAIN_BEPOLIA_CHAIN,
+  BERACHAIN_MAINNET_CHAIN_CHAIN,
 ];
 
 export const getChainById = (id: string) => {

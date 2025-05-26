@@ -29,7 +29,7 @@ export const useStableGoldAuctionMetrics =
 
       try {
         const response = await subgraphQuery(
-          env.subgraph.spiceBazaar,
+          env.subgraph.spiceBazaar.eth, // stable/gold auctions only on eth network
           stableGoldAuction(env.contracts.spiceBazaar.daiGoldAuction)
         );
 

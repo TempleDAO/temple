@@ -1,3 +1,4 @@
+import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { Contract, providers, Signer } from 'ethers';
 
 export type ChainId = number;
@@ -18,6 +19,7 @@ export type Chain = {
     tokenUrl: (hash: string) => string;
     contractUrl: (address: string, params: any) => string;
   };
+  layer0EndpointId: number;
 };
 
 export type TokenConfig = {
@@ -29,10 +31,14 @@ export type TokenConfig = {
 };
 
 export type SpiceAuctionConfig = {
+  isActive: boolean;
   name: string;
   chainId: ChainId;
   auctionTokenSymbol: string;
+  templeGoldToken: TokenConfig;
+  templeGoldTokenBalanceTickerSymbol: TICKER_SYMBOL;
   contractConfig: ContractConfig<Contract>;
+  subgraphUrl: string;
 };
 
 export type AppConfig = {
@@ -47,12 +53,18 @@ export type AppConfig = {
     usdsToken: TokenConfig;
     wethToken: TokenConfig;
     ohmToken: TokenConfig;
-    templeGoldToken: TokenConfig;
+    templeGoldToken: TokenConfig; // TODO: Contract as a property
+    templeGoldTokenBerachain: TokenConfig;
+    spiceTokenBerachain: TokenConfig;
+    templeGoldTokenArbitrum: TokenConfig;
+    spiceTokenArbitrum: TokenConfig;
   };
   contracts: {
     templeGoldStaking: ContractConfig<Contract>;
     daiGoldAuction: ContractConfig<Contract>;
     templeGold: ContractConfig<Contract>;
+    templeGoldBerachain: ContractConfig<Contract>;
+    templeGoldArbitrum: ContractConfig<Contract>;
     tlc: ContractConfig<Contract>;
     trv: ContractConfig<Contract>;
     daiCircuitBreaker: ContractConfig<Contract>;
@@ -60,6 +72,14 @@ export type AppConfig = {
   };
   spiceBazaar: {
     spiceAuctions: SpiceAuctionConfig[];
+    tgldBridge: {
+      sourceLayer0EndpointId: number;
+      sourceTgldTokenContract: ContractConfig<Contract>;
+      altchainLayer0EndpointId: number;
+      altchainTgldTokenContract: ContractConfig<Contract>;
+      altchainTgldTokenKey: TICKER_SYMBOL;
+      altchainDisplayName: string;
+    };
   };
 };
 

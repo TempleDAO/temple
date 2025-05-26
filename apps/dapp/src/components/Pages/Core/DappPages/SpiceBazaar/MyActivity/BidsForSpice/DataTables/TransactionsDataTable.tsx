@@ -9,6 +9,7 @@ export type Transaction = {
   type: string;
   transactionLink: string;
   transactionHash: string;
+  name?: string;
 };
 
 type TableHeader = { name: string };
@@ -80,13 +81,14 @@ export const DataTable: React.FC<TableProps> = ({
               </DataRow>
             ) : (
               filteredTransactions.map((transaction) => (
-                <DataRow key={transaction.epoch}>
+                <DataRow key={transaction.transactionHash}>
                   <DataCell>
                     {new Date(
                       Number(transaction.epoch) * 1000
                     ).toLocaleDateString('en-GB')}
                   </DataCell>
                   <DataCell>{transaction.type}</DataCell>
+                  <DataCell>{transaction.name}</DataCell>
                   <DataCell>
                     <a
                       target="_blank"
@@ -185,7 +187,7 @@ const DataRow = styled.tr`
 `;
 
 const DataCell = styled.td`
-  width: 30%;
+  width: 25%;
   font-size: 13px;
   font-weight: 700;
   line-height: 20px;
@@ -203,10 +205,10 @@ const DataCell = styled.td`
   padding: 20px 16px;
 
   &:first-child {
-    padding: 20px 0px 20px 0px;
+    padding-left: 0px;
   }
 
   &:last-child {
-    padding: 20px 0px 20px 0px;
+    padding-right: 0px;
   }
 `;

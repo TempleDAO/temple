@@ -573,6 +573,9 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
     ]
   );
 
+  /**
+   * Claim staking rewards
+   */
   const claimRewards = useCallback(async () => {
     if (!wallet || !signer) {
       console.debug('Missing wallet or signer when trying to use SpiceBazaar.');
@@ -839,6 +842,10 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
     [wallet, signer, papi]
   );
 
+  /**
+   * Claim stable gold auction rewards
+   * TODO: Rename
+   */
   const daiGoldAuctionClaim = useCallback(
     async (epoch: number) => {
       if (!wallet || !signer) {
