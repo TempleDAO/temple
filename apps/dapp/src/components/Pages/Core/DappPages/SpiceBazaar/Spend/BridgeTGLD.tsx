@@ -17,12 +17,14 @@ import {
 } from 'providers/SpiceAuctionProvider';
 import { BigNumber } from 'ethers';
 import { getAppConfig } from 'constants/newenv';
+import { useConnectWallet } from '@web3-onboard/react';
 
 interface BridgeTGLDProps {
   onBridgeComplete?: () => void;
 }
 
 export const BridgeTGLD = ({ onBridgeComplete }: BridgeTGLDProps) => {
+  const [{}, connect] = useConnectWallet();
   const [inputValue, setInputValue] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -202,13 +204,28 @@ export const BridgeTGLD = ({ onBridgeComplete }: BridgeTGLDProps) => {
               for the tokens to arrive.
             </BridgeWarning>
           )}
-          <TradeButton
-            disabled={inputValue === '0' || !inputValue}
-            onClick={handleBridgeClick}
-          >
-            {' '}
-            TRANSFER{' '}
-          </TradeButton>
+          {wallet ? (
+            <TradeButton
+              disabled={inputValue === '0' || !inputValue}
+              onClick={handleBridgeClick}
+            >
+              {' '}
+              TRANSFER{' '}
+            </TradeButton>
+          ) : (
+            <TradeButton
+              style={{
+                whiteSpace: 'nowrap',
+                margin: '0px',
+                alignSelf: 'center',
+              }}
+              onClick={() => {
+                connect();
+              }}
+            >
+              CONNECT WALLET
+            </TradeButton>
+          )}
         </BridgeBody>
       </BridgeContent>
     </BridgeContainer>
