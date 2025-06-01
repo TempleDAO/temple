@@ -75,7 +75,7 @@ contract StableGoldAuction is IStableGoldAuction, AuctionBase, TempleElevatedAcc
      * @param _config Auction configuration
      */
     function setAuctionConfig(AuctionConfig calldata _config) external override onlyElevatedAccess {
-        /// @dev zero value `auctionStartCooldown` allowed
+        // zero value `auctionStartCooldown` allowed
         if (_config.auctionMinimumDistributedGold == 0
                 || _config.auctionsTimeDiff == 0) 
             { revert CommonEventsAndErrors.ExpectedNonZero(); }
@@ -167,7 +167,7 @@ contract StableGoldAuction is IStableGoldAuction, AuctionBase, TempleElevatedAcc
         /// @notice cannot claim for current live epoch
         EpochInfo storage info = epochs[epochId];
         if (!info.hasEnded()) { revert CannotClaim(epochId); }
-        /// @dev epochId could be invalid. eg epochId > _currentEpochId
+        // epochId could be invalid. eg epochId > _currentEpochId
         if (info.startTime == 0) { revert InvalidEpoch(); }
         if (claimed[msg.sender][epochId]) { revert AlreadyClaimed(); }
 
@@ -297,10 +297,10 @@ contract StableGoldAuction is IStableGoldAuction, AuctionBase, TempleElevatedAcc
         if (info.hasEnded()) { revert AuctionEnded(); }
         uint256 _totalAuctionTokenAmount = info.totalAuctionTokenAmount;
         if (amount > _totalAuctionTokenAmount) { revert CommonEventsAndErrors.InvalidAmount(token, amount); }
-        /// @dev Epoch data is deleted and leftover amount is added to nextAuctionGoldAmount.
+        // Epoch data is deleted and leftover amount is added to nextAuctionGoldAmount.
         /// so admin should recover total auction amount for epoch if that's the requirement
         delete epochs[epochId];
-        /// @dev `nextAuctionGoldAmount` is set to 0 in `startAuction`.
+        // `nextAuctionGoldAmount` is set to 0 in `startAuction`.
         /// `nextAuctionGoldAmount > 0` if there was a distribution after `auctionStart` called
         /// epoch is deleted. so if amount < totalAuctionTokenAmount for epoch, add leftover to next auction amount
         unchecked {
@@ -341,7 +341,7 @@ contract StableGoldAuction is IStableGoldAuction, AuctionBase, TempleElevatedAcc
     }
     
     function _distributeGold() private {
-        /// @dev no op silent fail if nothing to distribute
+        // no op silent fail if nothing to distribute
         templeGold.mint();
     }
 

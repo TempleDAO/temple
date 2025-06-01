@@ -4,6 +4,9 @@ import {
     mine,
 } from '../../helpers';
 import { connectToContracts, getDeployedTempleGoldContracts } from './contract-addresses';
+import { Constants as BERACHAIN_CONSTANTS } from '../../berachain/constants';
+import { EnforcedOptionParamStruct } from '../../../../typechain/@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/libs/OAppOptionsType3';
+import { TempleGold } from '../../../../typechain';
 
 async function main() {
     ensureExpectedEnvvars();
@@ -30,6 +33,19 @@ async function main() {
     await mine(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.TEMPLE_GOLD.authorizeContract(TEMPLE_GOLD_ADDRESSES.TEMPLE_GOLD.STABLE_GOLD_AUCTION, true));
     await mine(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.TEMPLE_GOLD.authorizeContract(TEMPLE_GOLD_ADDRESSES.TEMPLE_GOLD.TEMPLE_GOLD_STAKING, true));
     await mine(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.TEMPLE_GOLD.authorizeContract(teamGnosis, true));
+
+    // set enforced options
+    await setEnforcedOptionsBerachain(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.TEMPLE_GOLD);
+}
+
+async function setEnforcedOptionsBerachain(templeGold: TempleGold) {
+    // set enforced options
+     const options: EnforcedOptionParamStruct[] = [{
+        eid: BERACHAIN_CONSTANTS.LAYER_ZERO.EID,
+        msgType: 1, // SEND
+        options: "0x00030100110100000000000000000000000000030d40", // 200k gas limit
+    }];
+    await mine(templeGold.setEnforcedOptions(options));
 }
   
 // We recommend this pattern to be able to use async/await everywhere

@@ -52,6 +52,7 @@ interface TeamPayments {
   TEMPLE_TEAM_EPOCH_27B: string;
   TEMPLE_TEAM_EPOCH_27C: string;
   TEMPLE_TEAM_EPOCH_28A: string;
+  TEMPLE_TEAM_EPOCH_28B: string;
 }
 
 export interface DeployedContracts {
@@ -331,6 +332,7 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
       TEMPLE_TEAM_EPOCH_27B: '0x504632fa6ee0Fab0971454de4c36c3795BA70e2c',
       TEMPLE_TEAM_EPOCH_27C: '0x05aa69725890310AeA06475c2CD4D20C517f01B0',
       TEMPLE_TEAM_EPOCH_28A: '0x4e0E44351A7D3eA0fE09ece3298D239509c86EDc',
+      TEMPLE_TEAM_EPOCH_28B: '0x54D9Db1c37956e35666dDa36BF46B79E490CFC39',
     },
 
     TEMPLE_TEAM_PAYMENTS_IMPLEMENTATION: '',
@@ -696,6 +698,8 @@ const expectedEnvvars: { [key: string]: string[] } = {
   polygonMumbai: ['MUMBAI_ADDRESS_PRIVATE_KEY', 'MUMBAI_RPC_URL'],
   sepolia: ['SEPOLIA_ADDRESS_PRIVATE_KEY', 'SEPOLIA_RPC_URL'],
   arbitrumSepolia: ['ARBITRUM_SEPOLIA_ADDRESS_PRIVATE_KEY', 'ARBITRUM_SEPOLIA_RPC_URL'],
+  berachain: ['BERACHAIN_ADDRESS_PRIVATE_KEY', 'BERACHAIN_RPC_URL'],
+  bepolia: ['BEPOLIA_ADDRESS_PRIVATE_KEY', 'BEPOLIA_RPC_URL'],
   anvil: [],
   localhost: [],
 };

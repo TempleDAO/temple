@@ -22,15 +22,20 @@ contract TempleTeleporterTest is TestHelperOz5 {
     uint32 aEid = 1;
     uint32 bEid = 2;
 
-    TempleTeleporter public aTT;
-    TempleTeleporter public bTT;
-    TempleERC20Token public aTemple;
-    TempleERC20Token public bTemple;
+    TempleTeleporter internal aTT;
+
+    TempleTeleporter internal bTT;
+
+    TempleERC20Token internal aTemple;
+    
+    TempleERC20Token internal bTemple;
 
 
-    address public userA = address(0x1);
-    address public userB = address(0x2);
-    uint256 public initialBalance = 100 ether;
+    address internal userA = address(0x1);
+
+    address internal userB = address(0x2);
+
+    uint256 internal initialBalance = 100 ether;
 
     function setUp() public virtual override {
         aTemple = new TempleERC20Token();

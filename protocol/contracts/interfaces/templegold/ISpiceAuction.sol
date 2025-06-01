@@ -10,47 +10,69 @@ interface ISpiceAuction is IAuctionBase {
     event LzReceiveExecutorGasSet(uint32 gas);
     event RedeemedTempleGoldBurned(uint256 epochId, uint256 amount);
     event OperatorSet(address indexed operator);
+    event SpiceAuctionEpochSet(uint256 epoch, address auctionToken, uint128 startTime, uint128 endTime, uint256 amount);
+    event RecoveredTokenForZeroBidAuction(uint256 epoch, address to, address token, uint256 amount);
+    event StrategyGnosisSet(address strategyGnosis);
+    event SpiceClaim(address indexed sender, uint256 epochId, address bidToken, uint256 bidTokenAmount, address auctionToken, uint256 claimAmount);
+    event SpiceDeposit(address indexed sender, uint256 epochId, address bidToken, uint256 amount);
 
     error InvalidConfigOperation();
     error NotEnoughAuctionTokens();
-    error MissingAuctionTokenConfig();
-    error NoConfig();
-    error RemoveAuctionConfig();
     error WithdrawFailed(uint256 amount);
     error EtherNotNeeded();
+    error MissingAuctionConfig(uint256 epochId);
+    error AuctionFunded();
+    error WaitPeriod();
+    error Unimplemented();
 
     struct SpiceAuctionConfig {
         /// @notice Duration of auction
         uint32 duration;
         /// @notice Minimum time between successive auctions
+        /// @dev For first auction, set this to 0 or a reasonable `startTime - deployTime = waitPeriod` value
         uint32 waitPeriod;
-        /// @notice Cooldown after auction start is triggered, to allow deposits
-        uint32 startCooldown;
         /// @notice Minimum Gold distributed to enable auction start
         uint160 minimumDistributedAuctionToken;
-        /// @notice Address to start next auction when all criteria are met. Address zero means anyone can trigger start
-        address starter;
         /// @notice Is Temple Gold auction token
         bool isTempleGoldAuctionToken;
         /// @notice Auction proceeds recipient
         address recipient;
     }
 
-    /// @notice Spice auction contracts are set up for 2 tokens. Either can be bid or sell token for a given auction
+    /// @notice Struct for dapp to query epoch claimable or claimed 
+    struct TokenAmount {
+        /// @notice Either spice token or TGLD
+        address token;
+        /// @notice Amount of token
+        uint256 amount;
+    }
+
+    /// @notice Maximum auction Duration
+    function MAXIMUM_AUCTION_DURATION() external view returns (uint32);
+
+    /// @notice Minimum auction duration
+    function MINIMUM_AUCTION_DURATION() external view returns (uint32);
+
     /// @notice Temple GOLD
     function templeGold() external view returns (address);
 
-    /// @notice Spice Token
+    /// @notice Spice auction contracts are set up for 2 tokens. Either token can be bid or sell token for a given auction
     function spiceToken() external view returns (address);
 
     /// @notice DAO contract to execute configurations update
     function daoExecutor() external view returns (address);
+
+    /// @notice Strategy Gnosis address which funds spice auctions
+    function strategyGnosis() external view returns (address);
 
     /// @notice Operator
     function operator() external view returns (address);
 
     /// @notice Name of this Spice Bazaar auction
     function name() external view returns (string memory);
+
+    /// @notice Keep track of total claimed token per account
+    function accountTotalClaimed(address account, address token) external view returns (uint256);
 
     /**
      * @notice Set config for an epoch. This enables dynamic and multiple auctions especially for vested scenarios
@@ -75,13 +97,27 @@ interface ISpiceAuction is IAuctionBase {
     function getAuctionConfig(uint256 auctionId) external view returns (SpiceAuctionConfig memory);
 
     /**
-     * @notice Get claimable amount for an epoch
-     * @dev function will return claimable for epoch. This can change with more user deposits
+     * @notice Get claimed amounts for an array of epochs
      * @param depositor Address to check amount for
-     * @param epochId Epoch id
-     * @return Claimable amount
+     * @param epochIds Array of epoch ids
+     * @return tokenAmounts Array of claimed TokenAmount structs
      */
-    function getClaimableForEpoch(address depositor, uint256 epochId) external view returns (uint256);
+    function getClaimedForEpochs(
+        address depositor,
+        uint256[] calldata epochIds
+    ) external view returns (TokenAmount[] memory tokenAmounts);
+
+    /**
+     * @notice Get claimable amount for an array of epochs
+     * @dev If the epochs contains a current epoch, function will return claimable at current time.
+     * @param depositor Address to check amount for
+     * @param epochIds Array of epoch ids
+     * @return tokenAmounts Array of TokenAmount claimable struct
+     */
+    function getClaimableForEpochs(
+        address depositor,
+        uint256[] memory epochIds
+    ) external view returns (TokenAmount[] memory tokenAmounts);
 
     /**
      * @notice Set DAO executor for DAO actions
@@ -148,4 +184,42 @@ interface ISpiceAuction is IAuctionBase {
      * @param _operator operator to set
      */
     function setOperator(address _operator) external;
+
+    /**
+     * @notice Set strategy gnosis
+     * @param _gnosis strategy gnosis to set
+     */
+    function setStrategyGnosis(address _gnosis) external;
+
+    /**
+     * @notice Set next auction start and end times.
+     * Transfers auction token for next auction and updates epoch time params
+     * @dev Must be called by `strategyGnosis()`
+     * @param amount Amount of auction tokens to transfer
+     * @param startTime Start time of next auction
+     */
+    function fundNextAuction(uint256 amount, uint128 startTime) external;
+
+    /**
+     * @notice Initialize spice auction after deploy
+     * @dev Deployer calls initialize in same transaction after deploy 
+     * @param templeGold Temple Gold address
+     * @param spiceToken Spice token address
+     * @param daoExecutor Dao executor
+     * @param operator Spice auction operator
+     * @param strategyGnosis Strategy gnosis
+     * @param mintChainEid Mint chain layer zero EID
+     * @param mintChainId Mint chain ID
+     * @param name Name of spice auction contract
+     */
+    function initialize(
+        address templeGold,
+        address spiceToken,
+        address daoExecutor,
+        address operator,
+        address strategyGnosis,
+        uint32 mintChainEid,
+        uint32 mintChainId,
+        string memory name
+    ) external;
 }

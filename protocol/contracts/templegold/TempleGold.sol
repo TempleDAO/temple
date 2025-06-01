@@ -130,7 +130,7 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
      */
     function setVestingFactor(VestingFactor calldata _factor) external override onlyOwner onlySourceChain {
         if (_factor.value == 0 || _factor.weekMultiplier == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
-        /// @dev initialize
+        // initialize
         if (lastMintTimestamp == 0) { lastMintTimestamp = uint32(block.timestamp); }
         else { mint(); }
         vestingFactor = _factor;
@@ -148,7 +148,7 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
         if (vestingFactorCache.value == 0) { return; }
 
         uint256 mintAmount = _getMintAmount(vestingFactorCache);
-        /// @dev no op silently
+        // no op silently
         if (!_canDistribute(mintAmount)) { return; }
 
         lastMintTimestamp = uint32(block.timestamp);
@@ -226,7 +226,7 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
      */
     function _update(address from, address to, uint256 value) internal override {
         /// can only transfer to or from whitelisted addreess
-        /// @dev skip check on mint and burn. function `send` checks from == to
+        // skip check on mint and burn. function `send` checks from == to
         if (from != address(0) && to != address(0)) {
             if (!authorized[from] && !authorized[to]) { revert ITempleGold.NonTransferrable(from, to); }
         }
@@ -258,10 +258,10 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
 
     function _getMintAmount(VestingFactor memory vestingFactorCache) private view returns (uint256 mintAmount) {
         uint32 _lastMintTimestamp = lastMintTimestamp;
-        /// @dev if vesting factor is not set, return 0. `_lastMintTimestamp` is set when vesting factor is set
+        // if vesting factor is not set, return 0. `_lastMintTimestamp` is set when vesting factor is set
         if (_lastMintTimestamp == 0) { return 0; }
 
-        /// @dev curernt supply = totalDistributed - totalBurnedInSpiceAuctions
+        // curernt supply = totalDistributed - totalBurnedInSpiceAuctions
 
         uint256 circulatingSupplyCache = _circulatingSupply;
         mintAmount = (TempleMath.mulDivRound((block.timestamp - _lastMintTimestamp), (MAX_CIRCULATING_SUPPLY - circulatingSupplyCache),
@@ -300,13 +300,13 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
         if (_sendParam.composeMsg.length > 0) { revert CannotCompose(); }
         /// cast bytes32 to address
         address _to = _sendParam.to.bytes32ToAddress();
-        /// @dev user can cross-chain transfer to self
-        /// @dev whitelisted address like spice auctions can burn by setting `_to` to address(0)
+        // user can cross-chain transfer to self
+        // whitelisted address like spice auctions can burn by setting `_to` to address(0)
         // only burn TGLD on source chain
         if (_to == address(0) && _sendParam.dstEid != _mintChainLzEid) { revert CommonEventsAndErrors.InvalidParam(); }
         if (_to != address(0) && msg.sender != _to) { revert ITempleGold.NonTransferrable(msg.sender, _to); }
 
-        /// @dev Applies the token transfers regarding this send() operation.
+        // Applies the token transfers regarding this send() operation.
         // - amountSentLD is the amount in local decimals that was ACTUALLY sent/debited from the sender.
         // - amountReceivedLD is the amount in local decimals that will be received/credited to the recipient on the remote OFT instance.
         (uint256 amountSentLD, uint256 amountReceivedLD) = _debit(
@@ -316,12 +316,12 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
             _sendParam.dstEid
         );
 
-        /// @dev Builds the options and OFT message to quote in the endpoint.
+        // Builds the options and OFT message to quote in the endpoint.
         (bytes memory message, bytes memory options) = _buildMsgAndOptions(_sendParam, amountReceivedLD);
 
-        /// @dev Sends the message to the LayerZero endpoint and returns the LayerZero msg receipt.
+        // Sends the message to the LayerZero endpoint and returns the LayerZero msg receipt.
         msgReceipt = _lzSend(_sendParam.dstEid, message, options, _fee, _refundAddress);
-        /// @dev Formulate the OFT receipt.
+        // Formulate the OFT receipt.
         oftReceipt = OFTReceipt(amountSentLD, amountReceivedLD);
 
         emit OFTSent(msgReceipt.guid, _sendParam.dstEid, msg.sender, amountSentLD, amountReceivedLD);
@@ -363,20 +363,20 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
         address /*_executor*/, // unused in the default implementation.
         bytes calldata /*_extraData*/ // unused in the default implementation.
     ) internal virtual override {
-        /// @dev Disallow further execution on destination by ignoring composed message
+        // Disallow further execution on destination by ignoring composed message
         if (_message.isComposed()) { revert CannotCompose(); }
 
         if (_message.sendTo().bytes32ToAddress() == address(0)) {
-            /// @dev no need to burn, that happened in source chain
+            // no need to burn, that happened in source chain
             // already checked destination Eid for burn case in `send`
             // update circulating supply
             // _origin.sender is spice auction
             _updateCirculatingSupply(_origin.sender.bytes32ToAddress(), _toLD(_message.amountSD()));
         } else {
-            /// @dev The src sending chain doesnt know the address length on this chain (potentially non-evm)
+            // The src sending chain doesnt know the address length on this chain (potentially non-evm)
             // Thus everything is bytes32() encoded in flight.
             address toAddress = _message.sendTo().bytes32ToAddress();
-            /// @dev Credit the amountLD to the recipient and return the ACTUAL amount the recipient received in local decimals
+            // Credit the amountLD to the recipient and return the ACTUAL amount the recipient received in local decimals
             uint256 amountReceivedLD = _credit(toAddress, _toLD(_message.amountSD()), _origin.srcEid);
 
             emit OFTReceived(_guid, _origin.srcEid, toAddress, amountReceivedLD);
