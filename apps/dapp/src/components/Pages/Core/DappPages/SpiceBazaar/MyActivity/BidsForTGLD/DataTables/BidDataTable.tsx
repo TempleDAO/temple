@@ -180,7 +180,18 @@ export const DataTable: React.FC<TableProps> = ({
             currentBidAmount={currentBidAmount}
           />
         )}
-        {modal === 'bidTgld' && <BidTGLD mode={BidTGLDMode.IncreaseBid} />}
+        {/* // TODO: Is this even needed? */}
+        {modal === 'bidTgld' && (
+          <BidTGLD
+            mode={BidTGLDMode.IncreaseBid}
+            currentBidAmount={currentBidAmount}
+            onBidSuccess={async () => {
+              await refetch?.();
+              setModalState('closed');
+            }}
+            isLoadingUserMetrics={false}
+          />
+        )}
       </Popover>
     </>
   );

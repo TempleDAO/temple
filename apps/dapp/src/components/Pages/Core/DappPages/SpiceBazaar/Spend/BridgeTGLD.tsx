@@ -407,6 +407,7 @@ const TransferSwap = styled.div`
 const BridgeSwapIcon = styled(bridgeSwap)`
   width: 40px;
   height: 54px;
+  cursor: pointer;
 `;
 
 const EtherumIcon = styled(etherum)`

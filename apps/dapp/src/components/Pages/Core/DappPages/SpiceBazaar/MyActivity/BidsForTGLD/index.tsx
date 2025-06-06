@@ -141,6 +141,8 @@ const PageContainer = styled.div`
   display: flex;
   flex-direction: column;
   gap: 20px;
+  position: relative;
+  z-index: 1;
 
   ${breakpoints.phoneAndAbove(`
     margin-top: -20px;

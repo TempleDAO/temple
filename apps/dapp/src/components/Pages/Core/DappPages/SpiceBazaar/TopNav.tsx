@@ -131,12 +131,17 @@ export const SpiceBazaarTopNav = () => {
 
 const PageContainer = styled.div`
   position: relative;
+  overflow: visible;
+  z-index: 10;
+  height: auto;
 `;
 
 const Content = styled.div`
   display: flex;
   flex-direction: column;
   gap: 60px;
+  position: relative;
+  z-index: 0;
 `;
 
 const AllSpices = styled(allSpices)`

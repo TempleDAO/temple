@@ -7,13 +7,20 @@ import { Button } from 'components/Button/Button';
 import * as breakpoints from 'styles/breakpoints';
 import { useMyActivityRedeemAmountSpice } from './hooks/use-myActivity-redeemAmount';
 import Loader from 'components/Loader/Loader';
-import { useMyActivityRewardAmount } from './hooks/use-myActivity-rewardAmount';
 import { useMemo } from 'react';
 import { useWallet } from 'providers/WalletProvider';
+import { useSpiceAuction } from 'providers/SpiceAuctionProvider';
+import { formatNumberWithCommasAndDecimals } from 'utils/formatter';
 
 export const MyActivitySpice = () => {
   const redeemAmount = useMyActivityRedeemAmountSpice();
-  const rewardAmount = useMyActivityRewardAmount();
+
+  const { currentUser } = useSpiceAuction();
+  const {
+    data: { unclaimedAmount },
+    loading: currentUserMetricsLoading,
+  } = currentUser;
+
   const { wallet } = useWallet();
 
   // if wallet is not connected, set redeemAmount to 0
@@ -22,10 +29,13 @@ export const MyActivitySpice = () => {
     return redeemAmount;
   }, [wallet, redeemAmount]);
 
-  const rewardAmountIfConnected = useMemo(() => {
+  const unclaimedAmountIfConnected = useMemo(() => {
     if (!wallet) return '0';
-    return rewardAmount;
-  }, [wallet, rewardAmount]);
+
+    if (currentUserMetricsLoading) return '0';
+
+    return unclaimedAmount;
+  }, [wallet, unclaimedAmount, currentUserMetricsLoading]);
 
   return (
     <PageContainer>
@@ -56,9 +66,14 @@ export const MyActivitySpice = () => {
           </BalanceBox>
           <BalanceBox>
             <Status>
-              {rewardAmountIfConnected !== null ? (
+              {unclaimedAmountIfConnected !== null &&
+              !currentUserMetricsLoading ? (
                 <>
-                  <StatusValue>{rewardAmountIfConnected}</StatusValue>
+                  <StatusValue>
+                    {formatNumberWithCommasAndDecimals(
+                      unclaimedAmountIfConnected
+                    )}
+                  </StatusValue>
                   <StatusText>Unclaimed Rewards</StatusText>
                 </>
               ) : (
@@ -92,6 +107,8 @@ const PageContainer = styled.div`
   display: flex;
   flex-direction: column;
   gap: 20px;
+  position: relative;
+  z-index: 1;
 
   ${breakpoints.phoneAndAbove(`
     margin-top: -20px;

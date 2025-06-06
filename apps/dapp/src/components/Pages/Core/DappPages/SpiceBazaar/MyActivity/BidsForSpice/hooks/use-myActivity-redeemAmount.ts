@@ -21,7 +21,11 @@ export const useMyActivityRedeemAmountSpice = () => {
         );
 
         const total = responses.reduce((acc, res) => {
-          const value = Number(res.user?.redeemAmount || 0);
+          const value = Number(
+            res.user?.claimedTokens?.reduce((acc, token) => {
+              return acc + Number(token.amount);
+            }, 0) || 0
+          );
           return acc + value;
         }, 0);
 

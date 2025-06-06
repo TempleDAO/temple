@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   ResponsiveContainer,
   BarChart,
@@ -42,6 +42,7 @@ export default function CustomBarChart<T>({
 }: React.PropsWithChildren<BarChartProps<T>>) {
   const theme = useTheme();
   const isPhoneOrAbove = useMediaQuery({ query: queryPhone });
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
   const barColors = [
     '#FFE3D4',
@@ -173,8 +174,11 @@ export default function CustomBarChart<T>({
             />
 
             <Tooltip
-              wrapperStyle={{ outline: 'none' }}
-              separator={isPhoneOrAbove ? ': ' : ':\n  '}
+              wrapperStyle={{
+                outline: 'none',
+                visibility: activeIndex === null ? 'hidden' : 'visible',
+              }}
+              // separator={isPhoneOrAbove ? ": " : ":\n  "}
               cursor={false}
               contentStyle={{
                 background:
@@ -184,7 +188,10 @@ export default function CustomBarChart<T>({
                 borderRadius: '15px',
                 border: 0,
                 padding: '12px 16px',
-                minWidth: '180px',
+                minWidth: isPhoneOrAbove ? '180px' : 'auto',
+                maxWidth: isPhoneOrAbove ? 'none' : '90vw',
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
               }}
               itemStyle={{
                 background: 'transparent',
@@ -204,20 +211,19 @@ export default function CustomBarChart<T>({
                   : undefined
               }
             />
-
             <Bar
               dataKey={yDataKey as string}
               radius={[6, 6, 6, 6]}
-              activeBar={{
-                stroke: '#FFFFFF',
-                strokeWidth: 2,
-              }}
+              onMouseEnter={(_, index) => setActiveIndex(index)}
+              onMouseLeave={() => setActiveIndex(null)}
             >
               {chartData.map((_, index) => (
                 <Cell
                   // eslint-disable-next-line react/no-array-index-key
                   key={`cell-${index}`}
                   fill={barColors[index % barColors.length]}
+                  stroke={index === activeIndex ? '#FFFFFF' : undefined}
+                  strokeWidth={index === activeIndex ? 2 : 0}
                 />
               ))}
             </Bar>

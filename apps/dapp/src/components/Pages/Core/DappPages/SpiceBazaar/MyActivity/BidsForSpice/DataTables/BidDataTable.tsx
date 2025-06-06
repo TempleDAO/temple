@@ -231,7 +231,11 @@ export const DataTable: React.FC<TableProps> = ({
           <BidTGLD
             mode={BidTGLDMode.IncreaseBid}
             currentBidAmount={currentBidAmount}
-            onBidSubmitted={() => setModalState('closed')}
+            onBidSuccess={async () => {
+              await refetch?.();
+              setModalState('closed');
+            }}
+            isLoadingUserMetrics={false}
             auction={(() => {
               const transaction = transactions.find(
                 (t) => Number(t.bidTotal) === Number(currentBidAmount)

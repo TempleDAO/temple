@@ -22,10 +22,10 @@ import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 const ENV_VARS = import.meta.env;
 const RPC_KEY = ENV_VARS.VITE_RPC_KEY;
 
-const ETH_SPICE_BAZAAR_SUBGRAPH_URL =
-  'https://subgraph.satsuma-prod.com/a912521dd162/templedao/spice-bazaar-sepolia/api';
-const BERACHAIN_SPICE_BAZAAR_SUBGRAPH_URL =
-  'https://api.goldsky.com/api/public/project_clq1l1in2hoze01x1ha1q1bui/subgraphs/spice-bazaar-bepolia/main/gn';
+// const ETH_SPICE_BAZAAR_SUBGRAPH_URL =
+//   "https://subgraph.satsuma-prod.com/a912521dd162/templedao/spice-bazaar-sepolia/api";
+// const BERACHAIN_SPICE_BAZAAR_SUBGRAPH_URL =
+//   "https://api.goldsky.com/api/public/project_clq1l1in2hoze01x1ha1q1bui/subgraphs/spice-bazaar-bepolia/main/gn";
 const ARBIBRUM_SPICE_BAZAAR_SUBGRAPH_URL =
   'https://subgraph.satsuma-prod.com/a912521dd162/templedao/spice-bazaar-arb-sepolia/api';
 
@@ -354,27 +354,6 @@ const testEnv: AppConfig = {
           TICKER_SYMBOL.TEMPLE_GOLD_TOKEN_ARBITRUM,
         contractConfig: SPICE_AUCTION_ON_ARBITRUM_SEPOLIA,
         subgraphUrl: ARBIBRUM_SPICE_BAZAAR_SUBGRAPH_URL,
-      },
-      {
-        isActive: false,
-        name: 'Test BERA TGLD Auction',
-        chainId: BERACHAIN_BEPOLIA.id,
-        auctionTokenSymbol: 'SPICE',
-        templeGoldToken: TGLD_TOKEN_ON_BERACHAIN_BEPOLIA,
-        templeGoldTokenBalanceTickerSymbol:
-          TICKER_SYMBOL.TEMPLE_GOLD_TOKEN_BERACHAIN,
-        contractConfig: SPICE_AUCTION_ON_BERACHAIN_BEPOLIA,
-        subgraphUrl: BERACHAIN_SPICE_BAZAAR_SUBGRAPH_URL,
-      },
-      {
-        isActive: false,
-        name: 'Test DAI TGLD Auction',
-        chainId: ETH_SEPOLIA.id,
-        auctionTokenSymbol: 'DAI',
-        templeGoldToken: TGLD_TOKEN_ON_ETH_SEPOLIA,
-        templeGoldTokenBalanceTickerSymbol: TICKER_SYMBOL.TEMPLE_GOLD_TOKEN,
-        contractConfig: SPICE_AUCTION_ON_ETH_SEPOLIA,
-        subgraphUrl: ETH_SPICE_BAZAAR_SUBGRAPH_URL,
       },
     ],
     tgldBridge: {

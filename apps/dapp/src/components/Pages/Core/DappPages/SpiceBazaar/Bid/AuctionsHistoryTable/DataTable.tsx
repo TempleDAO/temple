@@ -226,6 +226,10 @@ const TableHeader = styled.th`
   position: sticky;
   top: 0;
   z-index: 1;
+
+  &:first-child {
+    padding: 0px 16px 0px 0px;
+  }
 `;
 
 const DataRow = styled.tr`
@@ -239,6 +243,10 @@ const DataCell = styled.td`
   text-align: left;
   padding: 20px 16px;
   color: ${({ theme }) => theme.palette.brandLight};
+
+  &:first-child {
+    padding: 20px 16px 20px 0px;
+  }
 `;
 
 const Status = styled.td`

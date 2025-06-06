@@ -152,8 +152,11 @@ export const Spend = () => {
   const [modalMode, setModalMode] = useState<BidTGLDMode>(BidTGLDMode.Bid);
 
   // Get user metrics for the selected auction
-  const { data: userMetrics, refetch: refetchUserMetrics } =
-    useAuctionUserMetrics(modal.auction?.address);
+  const {
+    data: userMetrics,
+    isLoading: userMetricsLoading,
+    refetch: refetchUserMetrics,
+  } = useAuctionUserMetrics(modal.auction?.address);
 
   useEffect(() => {
     fetch();
@@ -249,14 +252,19 @@ export const Spend = () => {
             mode={modalMode}
             auction={modal.auction}
             currentBidAmount={modal.currentBidAmount}
-            onBidSubmitted={() => setModal({ type: 'closed' })}
+            onBidSuccess={async () => {
+              // Refetch metrics after bid success signalled by the provider
+              await refetchUserMetrics();
+              // Close modal after metrics are updated
+              setModal({ type: 'closed' });
+            }}
+            isLoadingUserMetrics={userMetricsLoading}
           />
         )}
         {modal.type === 'bridgeTgld' && (
           <BridgeTGLD
             onBridgeComplete={() => {
-              // TODO: What to do here, if anything?
-              // Close modal?
+              setModal({ type: 'closed' });
             }}
           />
         )}

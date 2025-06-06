@@ -46,6 +46,7 @@ export type SpiceAuctionInfo = {
 
 export type SpiceAuctionUserMetrics = {
   currentEpochBidAmount: number;
+  unclaimedAmount: number;
 };
 
 export enum BridgeTGLDSource {
@@ -77,6 +78,7 @@ interface SpiceAuctionContextValue {
   currentUser: {
     data: {
       currentEpochBidAmount: number;
+      unclaimedAmount: number;
     };
     loading: boolean;
     fetch: (
@@ -142,9 +144,10 @@ const INITIAL_STATE: SpiceAuctionContextValue = {
   currentUser: {
     data: {
       currentEpochBidAmount: 0,
+      unclaimedAmount: 0,
     },
     loading: false,
-    fetch: async () => ({ currentEpochBidAmount: 0 }),
+    fetch: async () => ({ currentEpochBidAmount: 0, unclaimedAmount: 0 }),
     getClaimableAtEpoch: async () => 0,
   },
   bridgeTgld: asyncNoop,
@@ -203,20 +206,72 @@ export const SpiceAuctionProvider = ({ children }: PropsWithChildren) => {
     [wallet, getCurrentEpoch, papi]
   );
 
+  const getUnclaimedAmount = useCallback(
+    async (auctionStaticConfig: SpiceAuctionConfig) => {
+      if (!wallet) {
+        return 0;
+      }
+
+      const currentEpoch = await getCurrentEpoch(auctionStaticConfig);
+
+      const spiceAuctionContract = (await papi.getContract(
+        auctionStaticConfig.contractConfig
+      )) as SpiceAuction;
+
+      // create an array from 1 to epoch before current epoch
+      const epochs = Array.from(
+        { length: Number(currentEpoch) - 1 },
+        (_, i) => i + 1
+      );
+
+      const unclaimedAmounts = await spiceAuctionContract.getClaimableForEpochs(
+        wallet,
+        epochs
+      );
+
+      return unclaimedAmounts.reduce((acc, unclaimedAmount) => {
+        return acc + fromAtto(unclaimedAmount.amount);
+      }, 0);
+    },
+    [wallet, getCurrentEpoch, papi]
+  );
+
+  const getUnclaimedAmountAllAuctions = useCallback(async () => {
+    if (!wallet) {
+      return 0;
+    }
+
+    // get all spice auctions
+    const spiceAuctions = getAppConfig().spiceBazaar.spiceAuctions;
+
+    // for each spice auction, get the unclaimed amount
+    const unclaimedAmounts = await Promise.all(
+      spiceAuctions.map(async (auction) => {
+        return await getUnclaimedAmount(auction);
+      })
+    );
+
+    return unclaimedAmounts.reduce((acc, unclaimedAmount) => {
+      return acc + unclaimedAmount;
+    }, 0);
+  }, [wallet, getUnclaimedAmount]);
+
   const fetchUserMetrics = useCallback(
     async (auctionStaticConfig: SpiceAuctionConfig) => {
       const currentEpochBidAmount = await getCurrentEpochBidAmount(
         auctionStaticConfig
       );
-      return { currentEpochBidAmount };
+
+      const unclaimedAmount = await getUnclaimedAmountAllAuctions();
+      return { currentEpochBidAmount, unclaimedAmount };
     },
-    [getCurrentEpochBidAmount]
+    [getCurrentEpochBidAmount, getUnclaimedAmountAllAuctions]
   );
 
   const useUserMetrics = (
     auctionStaticConfig: SpiceAuctionConfig | undefined
   ) => {
-    return useQuery<SpiceAuctionUserMetrics>({
+    return useQuery({
       queryKey: [
         'currentUserMetrics',
         wallet ? wallet : 'no-wallet',
@@ -248,11 +303,6 @@ export const SpiceAuctionProvider = ({ children }: PropsWithChildren) => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wallet]);
-
-  const fetchCurrentUserMetrics = useCallback(async (): Promise<void> => {
-    await refetchCurrentUserMetrics();
-    return;
-  }, [refetchCurrentUserMetrics]);
 
   const getEpochInfo = useCallback(
     async (auctionStaticConfig: SpiceAuctionConfig, epoch: number) => {
@@ -713,10 +763,7 @@ export const SpiceAuctionProvider = ({ children }: PropsWithChildren) => {
   );
 
   const bridgeTgld = useCallback(
-    async (
-      amount: string,
-      source: BridgeTGLDSource // TODO: Possible flexibility needed for other chains?
-    ) => {
+    async (amount: string, source: BridgeTGLDSource) => {
       try {
         if (!wallet || !signer) {
           console.debug(
@@ -724,6 +771,16 @@ export const SpiceAuctionProvider = ({ children }: PropsWithChildren) => {
           );
           return;
         }
+
+        // Determine the required chain ID based on the source chain
+        const requiredChainId =
+          source === BridgeTGLDSource.ETH_SOURCE
+            ? getAppConfig().contracts.templeGold.chainId // Ethereum Mainnet chain ID
+            : getAppConfig().spiceBazaar.tgldBridge.altchainTgldTokenContract
+                .chainId; // Altchain chain ID
+
+        // Switch to the required network
+        await switchNetwork(requiredChainId);
 
         const connectedSigner = getConnectedSigner();
 
@@ -804,12 +861,21 @@ export const SpiceAuctionProvider = ({ children }: PropsWithChildren) => {
         throw error;
       }
     },
-    [wallet, signer, getConnectedSigner, papi, openNotification, updateBalance]
+    [
+      wallet,
+      signer,
+      getConnectedSigner,
+      papi,
+      openNotification,
+      updateBalance,
+      switchNetwork,
+    ]
   );
 
   const contextValue = useMemo(() => {
     const currentUserMetrics = currentUserMetricsData || {
       currentEpochBidAmount: 0,
+      unclaimedAmount: 0,
     };
 
     return {
@@ -832,7 +898,10 @@ export const SpiceAuctionProvider = ({ children }: PropsWithChildren) => {
         loading: currentUserMetricsLoading,
         fetch: (auctionStaticConfig?: SpiceAuctionConfig) => {
           if (!auctionStaticConfig) {
-            return Promise.resolve({ currentEpochBidAmount: 0 });
+            return Promise.resolve({
+              currentEpochBidAmount: 0,
+              unclaimedAmount: 0,
+            });
           }
           return fetchUserMetrics(auctionStaticConfig);
         },

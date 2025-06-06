@@ -23,10 +23,11 @@ const PRICE_UPDATE_INTERVAL = 10000;
 const FADE_EFFECT_DURATION = 500;
 
 interface BidTGLDProps {
-  onBidSubmitted?: () => void;
+  onBidSuccess: () => Promise<void>;
   mode: BidTGLDMode;
   currentBidAmount?: string;
   auction?: SpiceAuctionInfo;
+  isLoadingUserMetrics: boolean;
 }
 
 export enum BidTGLDMode {
@@ -35,10 +36,11 @@ export enum BidTGLDMode {
 }
 
 export const BidTGLD = ({
-  onBidSubmitted,
+  onBidSuccess,
   mode = BidTGLDMode.Bid,
   currentBidAmount = '0',
   auction,
+  isLoadingUserMetrics,
 }: BidTGLDProps) => {
   const isPhoneOrAbove = useMediaQuery({
     query: queryPhone,
@@ -68,14 +70,14 @@ export const BidTGLD = ({
     if (!auction) return;
 
     setIsSubmitting(true);
+
     try {
       await bid(auction.staticConfig, inputValue);
       load(marketSound);
       play();
-      onBidSubmitted?.();
+      await onBidSuccess();
     } catch (error) {
       console.error('Bid submission failed:', error);
-      setIsSubmitting(false);
     } finally {
       setIsSubmitting(false);
     }
@@ -233,8 +235,10 @@ export const BidTGLD = ({
               </ReceiveContainer>
               <ReceiveTextBottom>
                 at the current price of {!isPhoneOrAbove && <br />}
-                {auction?.priceRatio?.toFixed(2) || '5.32'} TGLD per{' '}
-                {auction?.auctionTokenSymbol || 'TOKEN'}
+                {(auction?.priceRatio ?? 0) < 0.001
+                  ? '<0.001'
+                  : auction?.priceRatio?.toFixed(2) || '5.32'}{' '}
+                TGLD per {auction?.auctionTokenSymbol || 'TOKEN'}
               </ReceiveTextBottom>
             </ReceiveAmountContainer>
             {exceededAmount && (
@@ -289,7 +293,8 @@ export const BidTGLD = ({
                 !isCheckboxChecked1 ||
                 !isCheckboxChecked2 ||
                 isSubmitting ||
-                fadeEffect
+                fadeEffect ||
+                isLoadingUserMetrics
               }
             >
               SUBMIT BID

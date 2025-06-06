@@ -850,6 +850,10 @@ export function user(id: string, auction: string): SubGraphQuery<UserResp> {
             totalBidAmount
             hasClaimed
         }
+        claimedTokens {
+          name
+          amount
+        }
     }
   }`;
   return {
@@ -882,6 +886,14 @@ const UserResp = z.object({
             }),
             totalBidAmount: z.string(),
             hasClaimed: z.boolean(),
+          })
+        )
+        .optional(),
+      claimedTokens: z
+        .array(
+          z.object({
+            name: z.string(),
+            amount: z.string(),
           })
         )
         .optional(),

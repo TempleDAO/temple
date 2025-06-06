@@ -213,7 +213,7 @@ export const Details = () => {
                           <>
                             <StatusTitle>Price Ratio</StatusTitle>
                             <StatusValue>
-                              1 TOKEN = {auction?.priceRatio} TGLD
+                              1 TOKEN = {auction?.priceRatio.toFixed(4)} TGLD
                             </StatusValue>
                           </>
                         )}
@@ -266,7 +266,13 @@ export const Details = () => {
             mode={modalMode}
             auction={modal.auction}
             currentBidAmount={modal.currentBidAmount}
-            onBidSubmitted={() => setModal({ type: 'closed' })}
+            onBidSuccess={async () => {
+              // Refetch metrics after bid success signalled by the provider
+              await refetchUserMetrics();
+              // Close modal after metrics are updated
+              setModal({ type: 'closed' });
+            }}
+            isLoadingUserMetrics={userMetricsLoading}
           />
         )}
       </Popover>
