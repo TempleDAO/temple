@@ -25,7 +25,7 @@ const LargeRoundCheckBox: React.FC<CustomCheckboxProps> = ({
     <CheckboxContainer onClick={handleClick} disabled={disabled}>
       <CheckboxSvgWrapper>
         <StyledCircle />
-        <StyledCheckmark visible={checked} />
+        <StyledCheckmark data-visible={checked} />
       </CheckboxSvgWrapper>
       {children && <Label disabled={disabled}>{children}</Label>}
     </CheckboxContainer>
@@ -58,14 +58,14 @@ const StyledCircle = styled.div`
   border: 2px solid ${({ theme }) => theme.palette.brand};
 `;
 
-const StyledCheckmark = styled(checkmark)<{ visible: boolean }>`
+const StyledCheckmark = styled(checkmark)<{ 'data-visible': boolean }>`
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   width: 20px;
   height: 20px;
-  opacity: ${({ visible }) => (visible ? 1 : 0)};
+  opacity: ${({ 'data-visible': visible }) => (visible ? 1 : 0)};
   transition: opacity 0.2s ease;
 `;
 

@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import styled from 'styled-components';
+import { useLocation } from 'react-router-dom';
 
 import { UnstyledList } from 'styles/common';
 import { Button } from 'components/Button/Button';
+import { NETWORK_AGNOSTIC_ROUTE_PATTERNS } from 'constants/routes';
 
 import { Popover } from 'components/Popover';
 import { Nullable } from 'types/util';
@@ -22,6 +24,7 @@ const IS_PROD = ENV === 'production';
 
 export const WrongNetworkPopover = () => {
   const [{ connectedChain, settingChain: loading }, setChain] = useSetChain();
+  const { pathname } = useLocation();
 
   const [currentChain, setCurrentChain] =
     useState<Nullable<ChainDefinition>>(null);
@@ -29,6 +32,15 @@ export const WrongNetworkPopover = () => {
   const currentNetworkId = useMemo(
     () => parseInt(connectedChain?.id || '', 16),
     [connectedChain]
+  );
+
+  const isNetworkAgnosticRoute = useMemo(
+    () =>
+      pathname === '/' ||
+      NETWORK_AGNOSTIC_ROUTE_PATTERNS.some((pattern) =>
+        pathname.startsWith(pattern)
+      ),
+    [pathname]
   );
 
   useEffect(() => {
@@ -47,7 +59,12 @@ export const WrongNetworkPopover = () => {
   const defaultChainForEnv = ENV_CHAIN_MAPPING.get(ENV) || MAINNET_CHAIN;
 
   useEffect(() => {
-    if (loading || !currentNetworkId || dismissedChainId === currentNetworkId) {
+    if (
+      loading ||
+      !currentNetworkId ||
+      dismissedChainId === currentNetworkId ||
+      isNetworkAgnosticRoute
+    ) {
       return;
     }
 
@@ -67,6 +84,7 @@ export const WrongNetworkPopover = () => {
     loading,
     dismissedChainId,
     defaultChainForEnv,
+    isNetworkAgnosticRoute,
   ]);
 
   const onDismiss = () => {

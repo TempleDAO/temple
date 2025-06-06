@@ -18,6 +18,15 @@ export const formatNumberWithCommas = (n: number | string): string => {
     .replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 };
 
+export const formatNumberWithCommasAndDecimals = (
+  n: number | string
+): string => {
+  if (typeof n === 'string') n = Number(n);
+  return formatNumber(n)
+    .toFixed(2)
+    .replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+};
+
 export const formatNumberFixedDecimals = (
   n: number | string,
   decimals = 2
