@@ -7,6 +7,7 @@ import allSpices from 'assets/images/all-spices.svg?react';
 import { useMediaQuery } from 'react-responsive';
 import { queryPhone, queryMinTablet } from 'styles/breakpoints';
 import { DisclaimerModal } from 'components/Pages/Core/DappPages/SpiceBazaar/Earn/DisclaimerModal';
+import { getAppConfig } from 'constants/newenv';
 
 enum SpiceLocPaths {
   Overview = '/dapp/spice/overview',
@@ -18,6 +19,9 @@ enum SpiceLocPaths {
 }
 
 export const SpiceBazaarTopNav = () => {
+  const spiceAuctions = getAppConfig().spiceBazaar.spiceAuctions;
+  const hasSpiceAuctions = spiceAuctions.length > 0;
+
   const SpiceBazaarConfig = [
     {
       label: 'Overview',
@@ -57,8 +61,14 @@ export const SpiceBazaarTopNav = () => {
   });
   const loc = useLocation();
   const [disclaimerModalOpen, setDisclaimerModalOpen] = useState(false);
+
+  const filteredSpiceBazaarConfig = SpiceBazaarConfig.filter((item) => {
+    if (item.label === 'Spend Temple Gold' && !hasSpiceAuctions) return false;
+    return true;
+  });
+
   const [menuNavItems, setMenuNavItems] = useState(
-    SpiceBazaarConfig.map((item) => ({
+    filteredSpiceBazaarConfig.map((item) => ({
       label: item.label,
       path: item.linkTo,
       selected: item.linkTo === loc.pathname,

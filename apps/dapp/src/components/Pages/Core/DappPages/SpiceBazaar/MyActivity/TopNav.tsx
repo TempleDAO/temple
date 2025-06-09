@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { TopNav } from 'components/Pages/Core/DappPages/SpiceBazaar/components/TopNav';
 import { useMediaQuery } from 'react-responsive';
 import { queryPhone } from 'styles/breakpoints';
+import { getAppConfig } from 'constants/newenv';
 
 enum MyActivityLocPaths {
   Tgld = '/dapp/spice/myactivity/tgld',
@@ -10,6 +11,9 @@ enum MyActivityLocPaths {
 }
 
 export const MyActivityTopNav = () => {
+  const spiceAuctions = getAppConfig().spiceBazaar.spiceAuctions;
+  const hasSpiceAuctions = spiceAuctions.length > 0;
+
   const MyActivityConfig = [
     {
       label: 'Bids for TGLD',
@@ -25,8 +29,12 @@ export const MyActivityTopNav = () => {
     query: queryPhone,
   });
   const loc = useLocation();
+  const filteredMyActivityConfig = MyActivityConfig.filter((item) => {
+    if (item.label === 'Bids for Spice' && !hasSpiceAuctions) return false;
+    return true;
+  });
   const [menuNavItems, setMenuNavItems] = useState(
-    MyActivityConfig.map((item) => ({
+    filteredMyActivityConfig.map((item) => ({
       label: item.label,
       path: item.linkTo,
       selected: item.linkTo === loc.pathname,

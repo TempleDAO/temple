@@ -126,7 +126,7 @@ const NavCell = styled.div<NavCellProps>`
   color: ${({ selected, theme }) =>
     selected ? theme.palette.brandLight : theme.palette.brand};
   position: relative;
-  z-index: 2;
+  // z-index: 2;
 `;
 
 const SelectorWrapper = styled.div<{
@@ -137,7 +137,7 @@ const SelectorWrapper = styled.div<{
   bottom: ${({ bottomPosition }) => bottomPosition || '-55%'};
   left: 45%; // make something to be sure it,s in the middle
   width: 100%;
-  z-index: 3;
+  // z-index: 3;
   pointer-events: none;
 `;
 

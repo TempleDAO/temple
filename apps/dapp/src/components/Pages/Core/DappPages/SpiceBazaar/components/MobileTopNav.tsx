@@ -127,8 +127,8 @@ const PageContainer = styled.div`
   margin-top: -25px;
   margin-left: -20px;
   margin-right: -20px;
-  position: relative;
-  z-index: 1000;
+  // position: relative;
+  // z-index: 1000;
 `;
 
 const TopNavContainer = styled.div`
@@ -138,11 +138,11 @@ const TopNavContainer = styled.div`
   white-space: nowrap;
   overflow-x: auto;
   overflow-y: visible;
-  position: relative;
+  // position: relative;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   min-width: 100%;
-  z-index: 1000;
+  // z-index: 1000;
 
   &::-webkit-scrollbar {
     display: none;
@@ -150,9 +150,9 @@ const TopNavContainer = styled.div`
 `;
 
 const NavCellWrapper = styled.div`
-  position: relative;
+  // position: relative;
   min-width: 181px;
-  z-index: 1000;
+  // z-index: 1000;
   display: flex;
   flex-direction: column;
 `;
@@ -178,7 +178,7 @@ const NavCell = styled.div<NavCellProps>`
   cursor: pointer;
   color: ${({ selected, theme }) =>
     selected ? theme.palette.brandLight : theme.palette.brand};
-  position: relative;
+  // position: relative;
 `;
 
 const StyledIconWrapper = styled.div`

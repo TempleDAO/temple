@@ -10,9 +10,13 @@ import * as breakpoints from 'styles/breakpoints';
 import { useMediaQuery } from 'react-responsive';
 import { queryPhone, queryMinTablet } from 'styles/breakpoints';
 import { useSpiceBazaar } from 'providers/SpiceBazaarProvider';
+import { getAppConfig } from 'constants/newenv';
 import { useEffect } from 'react';
 
 export const Overview = () => {
+  const spiceAuctions = getAppConfig().spiceBazaar.spiceAuctions;
+  const hasSpiceAuctions = spiceAuctions.length > 0;
+
   const navigate = useNavigate();
   const isPhoneOrAbove = useMediaQuery({
     query: queryPhone,
@@ -159,50 +163,52 @@ export const Overview = () => {
               )}
             </AuctionsContent>
           </AuctionsContainer>
-          <SpendContainer>
-            <SpendContent>
-              <SpendBody>
-                <SpendTitle>
-                  Spend TGLD for partner tokens <br /> (Spice Auctions)
-                </SpendTitle>
-                <SpendText>
-                  <ListItem>
-                    Spice Auctions provide a marketplace where you can spend
-                    your earned Temple Gold (TGLD) to acquire valuable tokens
-                    from the Temple Treasury. Interested buyers may enter a bid
-                    for any amount of TGLD.
-                  </ListItem>
-                  <ListItem>
-                    Each Spice Auction will have a fixed duration with no
-                    reserve price.
-                  </ListItem>
-                  <ListItem>
-                    Interested buyers may enter a bid for any amount of TGLD.
-                  </ListItem>
-                  <ListItem>
-                    The final price for the token lot up for bidding will be
-                    determined at the end of the auction once the last TGLD bid
-                    has been received. <br />
-                    <a
-                      target="_blank"
-                      rel="noreferrer"
-                      href="https://docs.templedao.link/spice-bazaar"
-                    >
-                      Learn more
-                    </a>
-                  </ListItem>
-                </SpendText>
-              </SpendBody>
-              <TradeButton
-                style={{ whiteSpace: 'nowrap' }}
-                onClick={() => navigate('/dapp/spice/spend')}
-              >
-                {' '}
-                SPEND TGLD
-              </TradeButton>
-            </SpendContent>
-            <SpendImg alt="Spend TGDL" src={spendTGDL} />
-          </SpendContainer>
+          {hasSpiceAuctions && (
+            <SpendContainer>
+              <SpendContent>
+                <SpendBody>
+                  <SpendTitle>
+                    Spend TGLD for partner tokens <br /> (Spice Auctions)
+                  </SpendTitle>
+                  <SpendText>
+                    <ListItem>
+                      Spice Auctions provide a marketplace where you can spend
+                      your earned Temple Gold (TGLD) to acquire valuable tokens
+                      from the Temple Treasury. Interested buyers may enter a
+                      bid for any amount of TGLD.
+                    </ListItem>
+                    <ListItem>
+                      Each Spice Auction will have a fixed duration with no
+                      reserve price.
+                    </ListItem>
+                    <ListItem>
+                      Interested buyers may enter a bid for any amount of TGLD.
+                    </ListItem>
+                    <ListItem>
+                      The final price for the token lot up for bidding will be
+                      determined at the end of the auction once the last TGLD
+                      bid has been received. <br />
+                      <a
+                        target="_blank"
+                        rel="noreferrer"
+                        href="https://docs.templedao.link/spice-bazaar"
+                      >
+                        Learn more
+                      </a>
+                    </ListItem>
+                  </SpendText>
+                </SpendBody>
+                <TradeButton
+                  style={{ whiteSpace: 'nowrap' }}
+                  onClick={() => navigate('/dapp/spice/spend')}
+                >
+                  {' '}
+                  SPEND TGLD
+                </TradeButton>
+              </SpendContent>
+              <SpendImg alt="Spend TGDL" src={spendTGDL} />
+            </SpendContainer>
+          )}
         </ContentContainer>
       </BodyContainer>
     </PageContainer>

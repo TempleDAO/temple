@@ -7,10 +7,6 @@ import { useSpiceBazaar } from 'providers/SpiceBazaarProvider';
 import { BidUSDS, BidUSDSMode } from '../../../Bid/BidUSDS';
 import { formatNumberWithCommas } from 'utils/formatter';
 import { ScrollBar } from 'components/Pages/Core/DappPages/SpiceBazaar/components/CustomScrollBar';
-import {
-  BidTGLD,
-  BidTGLDMode,
-} from 'components/Pages/Core/DappPages/SpiceBazaar/Spend/BidTGLD';
 
 export type Transaction = {
   epochId: string;
@@ -178,18 +174,6 @@ export const DataTable: React.FC<TableProps> = ({
             onBidSubmitted={onBidSubmitted}
             mode={BidUSDSMode.IncreaseBid}
             currentBidAmount={currentBidAmount}
-          />
-        )}
-        {/* // TODO: Is this even needed? */}
-        {modal === 'bidTgld' && (
-          <BidTGLD
-            mode={BidTGLDMode.IncreaseBid}
-            currentBidAmount={currentBidAmount}
-            onBidSuccess={async () => {
-              await refetch?.();
-              setModalState('closed');
-            }}
-            isLoadingUserMetrics={false}
           />
         )}
       </Popover>

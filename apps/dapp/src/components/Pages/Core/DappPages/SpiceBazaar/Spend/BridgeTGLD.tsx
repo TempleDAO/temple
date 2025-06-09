@@ -162,10 +162,10 @@ export const BridgeTGLD = ({ onBridgeComplete }: BridgeTGLDProps) => {
               <TransferFrom>
                 <FromTitle>From</FromTitle>
                 <ChainContainer>
-                  {bridgeSource === 'ethSource' ? (
+                  {bridgeSource === BridgeTGLDSource.ETH_SOURCE ? (
                     <>
                       <EtherumIcon />
-                      Etherum
+                      Ethereum
                     </>
                   ) : (
                     <>
@@ -181,7 +181,7 @@ export const BridgeTGLD = ({ onBridgeComplete }: BridgeTGLDProps) => {
               <TransferTo>
                 <ToTitle>To</ToTitle>
                 <ChainContainer>
-                  {bridgeSource === 'ethSource' ? (
+                  {bridgeSource === BridgeTGLDSource.ETH_SOURCE ? (
                     <>
                       <AltChainIcon />
                       {altchainDisplayName}
@@ -189,7 +189,7 @@ export const BridgeTGLD = ({ onBridgeComplete }: BridgeTGLDProps) => {
                   ) : (
                     <>
                       <EtherumIcon />
-                      Etherum
+                      Ethereum
                     </>
                   )}
                 </ChainContainer>
