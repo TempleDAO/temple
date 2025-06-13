@@ -162,7 +162,7 @@ const HeaderRow = styled.tr`
 `;
 
 const TableHeader = styled.th`
-  padding: 20px 0px;
+  padding: 10px 0px;
   font-size: 13px;
   font-weight: 700;
   line-height: 20px;

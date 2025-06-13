@@ -29,6 +29,7 @@ type TopNavProps = {
   }[];
   onSelectMenuNavItems: (mi: MenuNavItem) => void;
   showSelector?: boolean;
+  positionSelector?: string;
   height?: string;
   fontWeight?: number;
   borderButtomGradient?: string;
@@ -42,6 +43,7 @@ export const TopNav = (props: TopNavProps) => {
     menuNavItems,
     onSelectMenuNavItems,
     showSelector,
+    positionSelector,
     height,
     fontWeight,
     borderButtomGradient,
@@ -72,7 +74,10 @@ export const TopNav = (props: TopNavProps) => {
         >
           {item.label}
           {item.selected && showSelector && (
-            <SelectorWrapper selected={item.selected}>
+            <SelectorWrapper
+              selected={item.selected}
+              bottomPosition={positionSelector}
+            >
               <Selector />
             </SelectorWrapper>
           )}
@@ -92,7 +97,6 @@ const TopNavContainer = styled.div<TopNavContainerProps>`
     borderButtomGradient ||
     'linear-gradient(90deg, #58321A 20%, #95613F 84.5%)'};
   border-image-slice: 1;
-  padding: 0px 90px;
   margin-top: -40px;
   margin-left: -120px;
   margin-right: -120px;
@@ -113,14 +117,7 @@ const NavCell = styled.div<NavCellProps>`
       ? 'linear-gradient(180deg, #643C22 0%, #95613F 52.5%, #58321A 99.5%)'
       : 'linear-gradient(180deg, #643C22 0%, #95613F 52.5%, #58321A 99.5%)'};
   border-image-slice: 1;
-  &:first-child {
-    border-left: ${({ borderVerticalStyle }) =>
-      borderVerticalStyle ? `${borderVerticalStyle} solid` : '1px solid'};
-    border-image-source: ${({ borderVerticalStyle }) =>
-      borderVerticalStyle
-        ? 'linear-gradient(180deg, #643C22 0%, #95613F 52.5%, #58321A 99.5%)'
-        : 'linear-gradient(180deg, #643C22 0%, #95613F 52.5%, #58321A 99.5%)'};
-  }
+
   font-size: 16px;
   line-height: 20px;
   font-weight: ${({ fontWeight }) => fontWeight || 700};
@@ -129,15 +126,18 @@ const NavCell = styled.div<NavCellProps>`
   color: ${({ selected, theme }) =>
     selected ? theme.palette.brandLight : theme.palette.brand};
   position: relative;
-  z-index: 2;
+  // z-index: 2;
 `;
 
-const SelectorWrapper = styled.div<{ selected: boolean }>`
+const SelectorWrapper = styled.div<{
+  selected: boolean;
+  bottomPosition?: string;
+}>`
   position: absolute;
-  bottom: -55%;
+  bottom: ${({ bottomPosition }) => bottomPosition || '-55%'};
   left: 45%; // make something to be sure it,s in the middle
   width: 100%;
-  z-index: 3;
+  // z-index: 3;
   pointer-events: none;
 `;
 

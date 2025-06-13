@@ -12,8 +12,12 @@ import spice5 from 'assets/images/spice-all-spices.svg?react';
 import * as breakpoints from 'styles/breakpoints';
 import { useMediaQuery } from 'react-responsive';
 import { queryPhone } from 'styles/breakpoints';
+import { getAppConfig } from 'constants/newenv';
 
 export const SpiceBazaarPage = () => {
+  const spiceAuctions = getAppConfig().spiceBazaar.spiceAuctions;
+  const hasSpiceAuctions = spiceAuctions.length > 0;
+
   const isPhoneOrAbove = useMediaQuery({
     query: queryPhone,
   });
@@ -65,10 +69,12 @@ export const SpiceBazaarPage = () => {
         </LeftContainer>
         <RightContainer>
           <ButtoonsContainer>
-            <TradeButton onClick={() => navigate('earn')}>
+            <TradeButton onClick={() => navigate('earn/staketemple/stake')}>
               EARN TEMPLE GOLD
             </TradeButton>
-            <TradeButton onClick={() => navigate('earn/auctions')}>
+            <TradeButton
+              onClick={() => navigate(hasSpiceAuctions ? 'spend' : 'bid')}
+            >
               BID TEMPLE GOLD
             </TradeButton>
           </ButtoonsContainer>

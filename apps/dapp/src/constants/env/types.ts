@@ -13,7 +13,10 @@ interface Subgraphs {
   // basically this subgraph contains a subset of the above templeV2 with some
   // metric including the externally priced assets
   templeV2Balances: string;
-  spiceBazaar: string;
+  spiceBazaar: {
+    eth: string;
+    bera: string;
+  };
 }
 
 interface Contracts {

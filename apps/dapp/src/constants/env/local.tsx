@@ -77,7 +77,10 @@ const env: Environment = {
       'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-v2-mainnet/api',
     templeV2Balances:
       'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-v2-balances/api',
-    spiceBazaar: '',
+    spiceBazaar: {
+      eth: '',
+      bera: '',
+    },
   },
   intervals: {
     ascendData: 30_000,

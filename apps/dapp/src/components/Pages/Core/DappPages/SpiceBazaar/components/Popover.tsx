@@ -78,7 +78,7 @@ const Wrapper = styled.div<{ isOpen: boolean }>`
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  z-index: 10;
+  z-index: 20;
   padding-bottom: 32px;
   flex-direction: column;
   // height: 707px;
@@ -95,5 +95,5 @@ const Dimmer = styled.div`
   left: 0;
   height: 100%;
   width: 100%;
-  z-index: 9;
+  z-index: 19;
 `;

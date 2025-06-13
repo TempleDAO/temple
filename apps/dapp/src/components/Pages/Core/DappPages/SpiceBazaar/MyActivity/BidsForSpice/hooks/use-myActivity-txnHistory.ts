@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { Transaction } from '../../DataTables/TransactionsDataTable';
+import {
+  userTransactionsSpiceAuctions,
+  cachedSubgraphQuery,
+} from 'utils/subgraph';
+import type { Transaction } from '../DataTables/TransactionsDataTable';
 import { useWallet } from 'providers/WalletProvider';
-import { userTransactionsSpiceAuctions, subgraphQuery } from 'utils/subgraph';
-import env from 'constants/env';
+import { getAllSpiceBazaarSubgraphEndpoints } from 'constants/env/getSpiceBazaarEndpoints';
 
 type UseMyActivityTxnHistoryReturn = {
   data: Transaction[] | null;
@@ -18,10 +21,10 @@ export const useMyActivityTxnHistory = (): UseMyActivityTxnHistoryReturn => {
 
   const { wallet } = useWallet();
 
-  function shortenTxnHash(hash: string) {
+  const shortenTxnHash = (hash: string) => {
     if (!hash || hash.length < 16) return hash;
     return `${hash.slice(0, 16)}...${hash.slice(-8)}`;
-  }
+  };
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -34,30 +37,45 @@ export const useMyActivityTxnHistory = (): UseMyActivityTxnHistoryReturn => {
         return;
       }
 
-      const response = await subgraphQuery(
-        env.subgraph.spiceBazaar,
-        userTransactionsSpiceAuctions(wallet)
+      const responses = await Promise.all(
+        getAllSpiceBazaarSubgraphEndpoints().map((entry) =>
+          cachedSubgraphQuery(
+            entry.url,
+            userTransactionsSpiceAuctions(wallet)
+          ).then((res) => ({
+            data: res,
+            label: entry.label,
+          }))
+        )
       );
 
-      const parsedData = response?.user?.positions
-        ?.flatMap((position) => position.transactions)
-        ?.map((transaction) => {
+      const allPositions = responses.flatMap(({ data, label }) =>
+        (data?.user?.positions || []).map((position) => ({
+          ...position,
+          _subgraphLabel: label,
+        }))
+      );
+
+      const parsedData = allPositions.flatMap((position) =>
+        (position.transactions || []).map((transaction: any) => {
           const isBid = 'bidAmount' in transaction;
           const isClaim = 'auctionAmount' in transaction;
 
           return {
-            id: transaction.id,
             epoch: transaction.timestamp,
             type: isBid ? 'Bid' : isClaim ? 'Claim' : 'Unknown',
             transactionLink: shortenTxnHash(transaction.hash),
             transactionHash: transaction.hash,
+            name: position.auctionInstance?.spiceAuction?.name || '-',
           };
-        });
+        })
+      );
 
       setData(parsedData);
-      setLoading(false);
     } catch (err) {
+      console.error('Failed to fetch txn history', err);
       setError('Failed to fetch txn history.');
+    } finally {
       setLoading(false);
     }
   }, [wallet]);
