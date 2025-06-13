@@ -188,25 +188,6 @@ export const Bid = () => {
                       BID USDS FOR TGLD
                     </TradeButton>
                   )}
-                  {/* <TradeButton
-                    gradient={true}
-                    style={{ whiteSpace: "nowrap" }}
-                    onClick={() => setOpenPopover(true)}
-                    width={"255px"}
-                  >
-                    <CalendarIcon />
-                    UPCOMING AUCTIONS
-                    {openPopover && (
-                      <UpcomingAuctionsPopover
-                        isOpen={openPopover}
-                        onClose={() => setOpenPopover(false)}
-                        data={popoverData}
-                        titles={["Date", "Amount", "Reminder"]}
-                        width="320px"
-                        repeatRow={true}
-                      />
-                    )}
-                  </TradeButton> */}
                 </ButtonContainer>
               )}
               {(daiGoldAuctionInfo?.currentEpochAuctionLive || showChart) && (

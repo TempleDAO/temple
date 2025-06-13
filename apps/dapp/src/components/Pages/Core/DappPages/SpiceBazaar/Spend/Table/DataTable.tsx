@@ -34,7 +34,6 @@ export const DataTable: React.FC<TableProps> = ({ transactions, loading }) => {
     { name: TableHeaders.TotalTGLDBid },
     { name: TableHeaders.FinalPrice },
   ];
-  // const [modal, setModal] = useState<'closed' | 'bidTgld'>('closed');
   const [filter, setFilter] = useState('Last 30 Days');
   const [filteredTransactions, setFilteredTransactions] =
     useState<Transaction[]>(transactions);

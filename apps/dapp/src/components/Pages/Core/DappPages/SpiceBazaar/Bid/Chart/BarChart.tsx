@@ -178,7 +178,6 @@ export default function CustomBarChart<T>({
                 outline: 'none',
                 visibility: activeIndex === null ? 'hidden' : 'visible',
               }}
-              // separator={isPhoneOrAbove ? ": " : ":\n  "}
               cursor={false}
               contentStyle={{
                 background:

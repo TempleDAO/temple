@@ -213,7 +213,11 @@ export const Details = () => {
                           <>
                             <StatusTitle>Price Ratio</StatusTitle>
                             <StatusValue>
-                              1 TOKEN = {auction?.priceRatio.toFixed(4)} TGLD
+                              1 TOKEN ={' '}
+                              {Number(auction?.priceRatio) < 0.01
+                                ? '<0.01'
+                                : auction?.priceRatio.toFixed(4)}{' '}
+                              TGLD
                             </StatusValue>
                           </>
                         )}
