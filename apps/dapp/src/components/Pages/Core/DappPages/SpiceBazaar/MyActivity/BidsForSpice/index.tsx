@@ -5,8 +5,38 @@ import { BidHistory } from './Tables/BidTable';
 import { TransactionsHistory } from './Tables/TransactionsTable';
 import { Button } from 'components/Button/Button';
 import * as breakpoints from 'styles/breakpoints';
+import { useMyActivityRedeemAmountSpice } from './hooks/use-myActivity-redeemAmount';
+import Loader from 'components/Loader/Loader';
+import { useMemo } from 'react';
+import { useWallet } from 'providers/WalletProvider';
+import { useSpiceAuction } from 'providers/SpiceAuctionProvider';
+import { formatNumberWithCommasAndDecimals } from 'utils/formatter';
 
 export const MyActivitySpice = () => {
+  const redeemAmount = useMyActivityRedeemAmountSpice();
+
+  const { currentUser } = useSpiceAuction();
+  const {
+    data: { unclaimedAmount },
+    loading: currentUserMetricsLoading,
+  } = currentUser;
+
+  const { wallet } = useWallet();
+
+  // if wallet is not connected, set redeemAmount to 0
+  const redeemAmountIfConnected = useMemo(() => {
+    if (!wallet) return '0';
+    return redeemAmount;
+  }, [wallet, redeemAmount]);
+
+  const unclaimedAmountIfConnected = useMemo(() => {
+    if (!wallet) return '0';
+
+    if (currentUserMetricsLoading) return '0';
+
+    return unclaimedAmount;
+  }, [wallet, unclaimedAmount, currentUserMetricsLoading]);
+
   return (
     <PageContainer>
       <MyActivityTopNav />
@@ -25,26 +55,43 @@ export const MyActivitySpice = () => {
       <ContentContainer>
         <StatusContainer>
           <BalanceBox>
-            <StatusValue>0</StatusValue>
-            <StatusText>Total Redeemed TGLD</StatusText>
+            {redeemAmountIfConnected !== null ? (
+              <>
+                <StatusValue>{redeemAmountIfConnected}</StatusValue>
+                <StatusText>Total Redeemed TGLD</StatusText>
+              </>
+            ) : (
+              <Loader iconSize={32} />
+            )}
           </BalanceBox>
-          <UnclaimedBox>
+          <BalanceBox>
             <Status>
-              <StatusValue>$17,851</StatusValue>
-              <StatusText>Unclaimed Rewards (USD)</StatusText>
+              {unclaimedAmountIfConnected !== null &&
+              !currentUserMetricsLoading ? (
+                <>
+                  <StatusValue>
+                    {formatNumberWithCommasAndDecimals(
+                      unclaimedAmountIfConnected
+                    )}
+                  </StatusValue>
+                  <StatusText>Unclaimed Rewards</StatusText>
+                </>
+              ) : (
+                <Loader iconSize={32} />
+              )}
             </Status>
-            <TradeButton
+            {/* <TradeButton
               style={{
-                whiteSpace: 'nowrap',
-                marginTop: '0px',
-                padding: '10px 20px 10px 20px',
-                width: '150px',
+                whiteSpace: "nowrap",
+                marginTop: "0px",
+                padding: "10px 20px 10px 20px",
+                width: "150px",
               }}
-              onClick={() => console.log('clicked')}
+              onClick={() => console.log("clicked")}
             >
               Claim
-            </TradeButton>
-          </UnclaimedBox>
+            </TradeButton> */}
+          </BalanceBox>
         </StatusContainer>
         <TablesContainer>
           <BidHistory />
@@ -60,6 +107,8 @@ const PageContainer = styled.div`
   display: flex;
   flex-direction: column;
   gap: 20px;
+  position: relative;
+  z-index: 1;
 
   ${breakpoints.phoneAndAbove(`
     margin-top: -20px;
@@ -125,7 +174,7 @@ const BalanceBox = styled.div`
 
   ${breakpoints.phoneAndAbove(`
       padding: 30px 20px 20px 20px;
-      justify-content: flex-start;
+      justify-content: center;
       background: none;
       height: 180px;
       gap: 20px;

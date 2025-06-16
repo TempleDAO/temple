@@ -1,6 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { userTransactionsDAIGoldAuctions, subgraphQuery } from 'utils/subgraph';
-import type { Transaction } from '../../DataTables/TransactionsDataTable';
+import {
+  userTransactionsDAIGoldAuctions,
+  subgraphQuery,
+  cachedSubgraphQuery,
+} from 'utils/subgraph';
+import type { Transaction } from '../DataTables/TransactionsDataTable';
 import { useWallet } from 'providers/WalletProvider';
 import env from 'constants/env';
 
@@ -34,8 +38,8 @@ export const useMyActivityTxnHistory = (): UseMyActivityTxnHistoryReturn => {
         return;
       }
 
-      const response = await subgraphQuery(
-        env.subgraph.spiceBazaar,
+      const response = await cachedSubgraphQuery(
+        env.subgraph.spiceBazaar.eth, // stable/gold auctions only on eth network
         userTransactionsDAIGoldAuctions(wallet)
       );
 

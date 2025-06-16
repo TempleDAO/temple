@@ -136,8 +136,18 @@ export interface WalletState {
     shouldUseMinAllowance?: boolean
   ): Promise<void>;
 
+  ensureAllowanceWithSigner(
+    tokenName: string,
+    tokenAddress: string,
+    spenderAddress: string,
+    minAllowance: BigNumber,
+    shouldUseMinAllowance?: boolean,
+    signer?: Signer
+  ): Promise<void>;
+
   ethersProvider: Nullable<ethers.providers.Web3Provider>;
-  providerWithReadOnlyFallback:
-    | ethers.providers.JsonRpcProvider
-    | ethers.providers.Web3Provider;
+
+  // new methods and properties ---------------------------------------
+  switchNetwork: (chainId: number) => Promise<void> | null;
+  getConnectedSigner: () => Signer;
 }

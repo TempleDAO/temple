@@ -67,6 +67,8 @@ const TickerImages: Record<TICKER_SYMBOL, string> = {
   OGTEMPLE: templeImg,
   OHM: ohmImg,
   TGLD: templeImg, // TODO: Need a temple gold image?
+  TGLD_BERA: templeImg, // TODO: Need a temple gold image?
+  TGLD_ARB: templeImg, // TODO: Need a temple gold image?
 };
 
 /**
