@@ -3,16 +3,16 @@ import { DataTable } from '../DataTables/TransactionsDataTable';
 import { useMyActivityTxnHistory } from '../hooks/use-myActivity-txnHistory';
 
 enum TableHeaders {
-  AuctionID = 'Auction ID',
   Epoch = 'EPOCH',
   Type = 'Type',
   TransactionLink = 'Transaction Link',
+  AuctionName = 'Auction name',
 }
 
 const tableHeaders = [
-  { name: TableHeaders.AuctionID },
   { name: TableHeaders.Epoch },
   { name: TableHeaders.Type },
+  { name: TableHeaders.AuctionName },
   { name: TableHeaders.TransactionLink },
 ];
 

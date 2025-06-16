@@ -3,24 +3,28 @@ import styled from 'styled-components';
 import { Button } from 'components/Button/Button';
 import { Popover } from 'components/Pages/Core/DappPages/SpiceBazaar/components/Popover';
 import * as breakpoints from 'styles/breakpoints';
-import { useSpiceBazaar } from 'providers/SpiceBazaarProvider';
-import { BidUSDS, BidUSDSMode } from '../../../Earn/Auctions/BidUSDS';
+import { BidUSDS, BidUSDSMode } from '../../../Bid/BidUSDS';
 import { formatNumberWithCommas } from 'utils/formatter';
 import { ScrollBar } from 'components/Pages/Core/DappPages/SpiceBazaar/components/CustomScrollBar';
 import {
   BidTGLD,
   BidTGLDMode,
-} from 'components/Pages/Core/DappPages/SpiceBazaar/BidTGLD/BidTGLD';
-import { InputSelect } from 'components/InputSelect/InputSelect';
+} from 'components/Pages/Core/DappPages/SpiceBazaar/Spend/BidTGLD';
+import { useSpiceAuction } from 'providers/SpiceAuctionProvider';
+import { SpiceAuctionConfig } from 'constants/newenv/types';
 
 export type Transaction = {
-  epochId: string;
+  id: string;
+  epoch: string;
   auctionEndDateTime: string;
-  bidAmount: string;
   claimableTokens: number | undefined;
-  unit: string;
   unitPrice: string;
+  bidTotal: string;
   action: 'Bid' | 'Claim' | '';
+  auctionTokenSymbol?: string;
+  name?: string;
+  auctionStaticConfig: SpiceAuctionConfig;
+  token: string;
 };
 
 type TableHeader = { name: string };
@@ -34,18 +38,6 @@ type TableProps = {
   refetch?: () => void;
   dataRefetching?: boolean;
 };
-
-const metricOptions1: { value: string; label: string }[] = [
-  { label: 'Chain 1', value: 'chain1' },
-  { label: 'Chain 2', value: 'chain2' },
-  { label: 'Chain 3', value: 'chain3' },
-];
-
-const metricOptions2: { value: string; label: string }[] = [
-  { label: 'All Tokens', value: 'allTokens' },
-  { label: 'Opt 2', value: 'opt2' },
-  { label: 'Opt 3', value: 'opt3' },
-];
 
 export const DataTable: React.FC<TableProps> = ({
   modal,
@@ -66,23 +58,22 @@ export const DataTable: React.FC<TableProps> = ({
     useState<Transaction[]>(transactions);
   const filterOptions = ['Last 5 Shown', 'Show All'];
 
-  const [selectedMetric1, setSelectedMetric1] = useState('chain1');
-  const [selectedMetric2, setSelectedMetric2] = useState('allTokens');
-
-  const selectMetric1 = (metric: string) => {
-    setSelectedMetric1(metric);
-  };
-  const selectMetric2 = (metric: string) => {
-    setSelectedMetric2(metric);
-  };
-
   const {
-    daiGoldAuctions: { claim: daiGoldAuctionClaim },
-  } = useSpiceBazaar();
+    allSpiceAuctions: {
+      fetch: fetchAllSpiceAuctions,
+      data: allSpiceAuctionsData,
+      loading: allSpiceAuctionsLoading,
+    },
+    spiceAuctions: { claim: spiceAuctionClaim },
+  } = useSpiceAuction();
+
+  useEffect(() => {
+    fetchAllSpiceAuctions();
+  }, [fetchAllSpiceAuctions]);
 
   useEffect(() => {
     const sortedTransactions = [...transactions].sort(
-      (a, b) => Number(b.epochId) - Number(a.epochId)
+      (a, b) => Number(b.auctionEndDateTime) - Number(a.auctionEndDateTime)
     );
 
     if (filter === 'Last 5 Shown') {
@@ -105,14 +96,14 @@ export const DataTable: React.FC<TableProps> = ({
     const resolveActions = async () => {
       const resolved = await Promise.all(
         transactions.map(async (transaction) => ({
-          epochId: transaction.epochId,
+          kekId: transaction.auctionEndDateTime,
           action: await transaction.action,
         }))
       );
 
       setResolvedActions(
         resolved.reduce((acc, curr) => {
-          acc[curr.epochId] = curr.action;
+          acc[curr.kekId] = curr.action;
           return acc;
         }, {} as Record<string, 'Bid' | 'Claim' | ''>) // The state will hold "Bid", "Claim", or ""
       );
@@ -126,32 +117,6 @@ export const DataTable: React.FC<TableProps> = ({
         <Header>
           <HeaderLeft>
             <Title>{title}</Title>
-            <Options>
-              <SelectMetricContainer1>
-                <InputSelect
-                  options={metricOptions1}
-                  defaultValue={metricOptions1.find(
-                    (m) => m.value === selectedMetric1
-                  )}
-                  onChange={(e) => selectMetric1(e.value)}
-                  isSearchable={false}
-                  fontSize={'16px'}
-                  fontWeight={'400'}
-                />
-              </SelectMetricContainer1>
-              <SelectMetricContainer2>
-                <InputSelect
-                  options={metricOptions2}
-                  defaultValue={metricOptions2.find(
-                    (m) => m.value === selectedMetric2
-                  )}
-                  onChange={(e) => selectMetric2(e.value)}
-                  isSearchable={false}
-                  fontSize={'16px'}
-                  fontWeight={'400'}
-                />
-              </SelectMetricContainer2>
-            </Options>
           </HeaderLeft>
           <FilterContainer>
             {filterOptions.map((option) => (
@@ -187,29 +152,36 @@ export const DataTable: React.FC<TableProps> = ({
                 </DataRow>
               ) : (
                 filteredTransactions.map((transaction) => {
-                  const action = resolvedActions[transaction.epochId];
+                  const action =
+                    resolvedActions[transaction.auctionEndDateTime];
                   return (
-                    <DataRow key={transaction.epochId}>
-                      <DataCell>{transaction.epochId}</DataCell>
+                    // <DataRow key={transaction.auctionEndDateTime}> commented out for testing multiple endpoints
+                    <DataRow key={transaction.id}>
+                      <DataCell>{transaction.epoch}</DataCell>
+                      <DataCell>{transaction.name || '-'}</DataCell>
                       <DataCell>
                         {new Date(
                           Number(transaction.auctionEndDateTime) * 1000
                         ).toLocaleDateString('en-GB')}
                       </DataCell>
-                      <DataCell>{transaction.bidAmount} USDS</DataCell>
                       <DataCell>
-                        {transaction.claimableTokens
+                        {transaction.claimableTokens !== undefined
                           ? formatNumberWithCommas(transaction.claimableTokens)
-                          : ' - '}
+                          : '-'}
                       </DataCell>
-                      <DataCell>{transaction.unit}</DataCell>
+                      <DataCell>{transaction.token}</DataCell>
                       <DataCell>{transaction.unitPrice}</DataCell>
+                      <DataCell>{transaction.bidTotal}</DataCell>
                       <DataCell>
                         <ButtonContainer>
                           {action === 'Bid' && (
                             <TradeButton
                               onClick={() => {
-                                setCurrentBidAmount(transaction.bidAmount);
+                                console.log(
+                                  'Setting currentBidAmount:',
+                                  transaction.bidTotal
+                                );
+                                setCurrentBidAmount(transaction.bidTotal);
                                 setModalState(modal);
                               }}
                               style={{ whiteSpace: 'nowrap', margin: 0 }}
@@ -221,8 +193,9 @@ export const DataTable: React.FC<TableProps> = ({
                             Number(transaction.claimableTokens) > 0 && (
                               <TradeButton
                                 onClick={async () => {
-                                  await daiGoldAuctionClaim(
-                                    Number(transaction.epochId)
+                                  await spiceAuctionClaim(
+                                    transaction.auctionStaticConfig,
+                                    Number(transaction.epoch)
                                   );
                                   refetch?.();
                                 }}
@@ -254,11 +227,37 @@ export const DataTable: React.FC<TableProps> = ({
             currentBidAmount={currentBidAmount}
           />
         )}
-        {modal === 'bidTgld' && <BidTGLD mode={BidTGLDMode.IncreaseBid} />}
+        {modal === 'bidTgld' && (
+          <BidTGLD
+            mode={BidTGLDMode.IncreaseBid}
+            currentBidAmount={currentBidAmount}
+            onBidSuccess={async () => {
+              await refetch?.();
+              setModalState('closed');
+            }}
+            isLoadingUserMetrics={false}
+            auction={(() => {
+              const transaction = transactions.find(
+                (t) => Number(t.bidTotal) === Number(currentBidAmount)
+              );
+
+              const addressFromTransactionId = transaction?.id
+                ?.split('-')[0]
+                ?.toLowerCase();
+
+              const auction = allSpiceAuctionsData.find(
+                (a) => a.address?.toLowerCase() === addressFromTransactionId
+              );
+
+              return auction;
+            })()}
+          />
+        )}
       </Popover>
     </>
   );
 };
+
 const PageContainer = styled.div`
   display: flex;
   flex-direction: column;
@@ -296,24 +295,6 @@ const Title = styled.h3`
   margin: 0;
 `;
 
-const Options = styled.div`
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  gap: 20px;
-  width: 320px;
-`;
-
-const SelectMetricContainer1 = styled.div`
-  flex: 1;
-  max-width: 120px;
-`;
-
-const SelectMetricContainer2 = styled.div`
-  flex: 1;
-  max-width: 130px;
-`;
-
 const FilterContainer = styled.div`
   display: flex;
   flex-direction: row;
@@ -343,7 +324,7 @@ const HeaderRow = styled.tr`
 `;
 
 const TableHeader = styled.th<{ name: string }>`
-  padding: 20px 25px;
+  padding: 0px 25px;
   font-size: 13px;
   font-weight: 700;
   line-height: 20px;
@@ -356,7 +337,7 @@ const TableHeader = styled.th<{ name: string }>`
   z-index: 1;
 
   &:first-child {
-    padding: 20px 25px 20px 0px;
+    padding: 5px 25px 0px 0px;
   }
 `;
 

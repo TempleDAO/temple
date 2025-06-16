@@ -5,9 +5,10 @@ import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { useWallet } from 'providers/WalletProvider';
 import {
   ERC20__factory,
-  TempleCircuitBreakerAllUsersPerPeriod__factory,
+  TempleCircuitBreakerAllUsersPerPeriod,
+  TempleLineOfCredit,
   TempleLineOfCredit__factory,
-  TreasuryReservesVault__factory,
+  TreasuryReservesVault,
 } from 'types/typechain';
 import { ITlcDataTypes } from 'types/typechain/contracts/interfaces/v2/templeLineOfCredit/ITempleLineOfCredit';
 import {
@@ -15,7 +16,7 @@ import {
   queryTlcPrices,
   subgraphQuery,
 } from 'utils/subgraph';
-import { BigNumber } from 'ethers';
+import { BigNumber, Contract } from 'ethers';
 import daiImg from 'assets/images/newui-images/tokens/dai.png';
 import templeImg from 'assets/images/newui-images/tokens/temple.png';
 import { formatToken } from 'utils/formatter';
@@ -33,6 +34,10 @@ import { useConnectWallet } from '@web3-onboard/react';
 import Tooltip from 'components/Tooltip/Tooltip';
 import { estimateAndMine } from 'utils/ethers';
 import { aprToApy } from 'utils/helpers';
+import { getAppConfig } from 'constants/newenv';
+import { useApiManager } from 'hooks/use-api-manager';
+
+const ENV = import.meta.env;
 
 export type State = {
   supplyValue: string;
@@ -66,10 +71,31 @@ const minBN = (v1: BigNumber, v2: BigNumber): BigNumber => {
   return v1.lt(v2) ? v1 : v2;
 };
 
+const getChainId = () => {
+  if (ENV.VITE_ENV === 'production') {
+    return 1;
+  } else if (ENV.VITE_ENV === 'preview') {
+    return 11155111;
+  } else {
+    throw new Error('Invalid environment');
+  }
+};
+
 export const BorrowPage = () => {
   const [{}, connect] = useConnectWallet();
-  const { balance, wallet, updateBalance, signer, ensureAllowance } =
-    useWallet();
+  const {
+    balance,
+    wallet,
+    updateBalance,
+    signer,
+    ensureAllowance,
+    ensureAllowanceWithSigner,
+    getConnectedSigner,
+    switchNetwork,
+  } = useWallet();
+
+  const { papi } = useApiManager();
+
   const { openNotification } = useNotification();
   const [modal, setModal] = useState<
     'closed' | 'supply' | 'withdraw' | 'borrow' | 'repay'
@@ -114,16 +140,13 @@ export const BorrowPage = () => {
   }, []);
 
   const getCircuitBreakers = useCallback(async () => {
-    if (!signer) return;
-    const daiCircuitBreakerContract =
-      new TempleCircuitBreakerAllUsersPerPeriod__factory(signer).attach(
-        env.contracts.daiCircuitBreaker
-      );
+    const daiCircuitBreakerContract = (await papi.getContract(
+      getAppConfig().contracts.daiCircuitBreaker
+    )) as TempleCircuitBreakerAllUsersPerPeriod;
 
-    const templeCircuitBreakerContract =
-      new TempleCircuitBreakerAllUsersPerPeriod__factory(signer).attach(
-        env.contracts.templeCircuitBreaker
-      );
+    const templeCircuitBreakerContract = (await papi.getContract(
+      getAppConfig().contracts.templeCircuitBreaker
+    )) as TempleCircuitBreakerAllUsersPerPeriod;
 
     const daiCircuitBreakerCap = await daiCircuitBreakerContract.cap();
     const daiCircuitBreakerUtilisation =
@@ -144,17 +167,16 @@ export const BorrowPage = () => {
       daiCircuitBreakerRemaining,
       templeCircuitBreakerRemaining,
     };
-  }, [signer]);
+  }, [papi]);
 
   const getTlcInfoFromContracts = useCallback(async () => {
-    if (!signer) return;
+    const tlcContract = (await papi.getContract(
+      getAppConfig().contracts.tlc
+    )) as TempleLineOfCredit;
 
-    const tlcContract = new TempleLineOfCredit__factory(signer).attach(
-      env.contracts.tlc
-    );
-    const trvContract = new TreasuryReservesVault__factory(signer).attach(
-      env.contracts.treasuryReservesVault
-    );
+    const trvContract = (await papi.getContract(
+      getAppConfig().contracts.trv
+    )) as TreasuryReservesVault;
 
     const [
       debtPosition,
@@ -195,22 +217,25 @@ export const BorrowPage = () => {
       outstandingUserDebt: fromAtto(debtPosition.totalDebt),
       circuitBreakers,
     };
-  }, [signer, getCircuitBreakers]);
+  }, [papi, getCircuitBreakers]);
 
   const getTlcInfo = useCallback(async () => {
     setMetricsLoading(true);
     const getAccountPosition = async () => {
-      if (!signer || !wallet) {
+      if (!wallet) {
         setAccountPosition(undefined);
         return;
       }
-      const tlcContract = new TempleLineOfCredit__factory(signer).attach(
-        env.contracts.tlc
-      );
+      const tlcContract = (await papi.getContract(
+        getAppConfig().contracts.tlc
+      )) as TempleLineOfCredit;
+
       const position = await tlcContract.accountPosition(wallet);
       setAccountPosition(position);
     };
+
     getAccountPosition();
+
     try {
       const response = await subgraphQuery(
         env.subgraph.templeV2,
@@ -218,7 +243,6 @@ export const BorrowPage = () => {
       );
 
       const tlcInfoFromContracts = await getTlcInfoFromContracts();
-
       setMetricsLoading(false);
 
       // prevent showing 0s in UI if we don't have data from contracts
@@ -241,9 +265,8 @@ export const BorrowPage = () => {
       });
     } catch (e) {
       setMetricsLoading(false);
-      console.log(e);
     }
-  }, [getTlcInfoFromContracts, signer, wallet]);
+  }, [getTlcInfoFromContracts, papi, wallet]);
 
   useEffect(() => {
     const onMount = async () => {
@@ -281,29 +304,45 @@ export const BorrowPage = () => {
   };
 
   const supply = async () => {
-    if (!signer || !wallet) return;
-    const tlcContract = new TempleLineOfCredit__factory(signer).attach(
-      env.contracts.tlc
-    );
+    if (!signer || !wallet) {
+      console.debug('Missing wallet or signer when trying to use Tlc.');
+      return;
+    }
+
     const amount = getBigNumberFromString(
       state.supplyValue,
       getTokenInfo(state.inputToken).decimals
     );
+
+    // TODO: Possibly move to signer API
+    // E.g. wrap the entire block below in a signer api call
+    await switchNetwork(getChainId());
+
     try {
-      // Ensure allowance for TLC to spend TEMPLE
-      const templeContract = new ERC20__factory(signer).attach(
-        env.contracts.temple
-      );
-      await ensureAllowance(
+      const connectedSigner = await getConnectedSigner();
+
+      await ensureAllowanceWithSigner(
         TICKER_SYMBOL.TEMPLE_TOKEN,
-        templeContract,
-        env.contracts.tlc,
-        amount
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        getAppConfig().tokens.templeToken.address!, // token address
+        getAppConfig().contracts.tlc.address, // spender
+        amount,
+        true,
+        connectedSigner
       );
+
+      // get the contract from provider api
+      const tlcContract = (await papi.getConnectedContract(
+        getAppConfig().contracts.tlc,
+        connectedSigner
+      )) as TempleLineOfCredit;
 
       const populatedTransaction =
         await tlcContract.populateTransaction.addCollateral(amount, wallet);
-      const receipt = await estimateAndMine(signer, populatedTransaction);
+      const receipt = await estimateAndMine(
+        connectedSigner,
+        populatedTransaction
+      );
 
       openNotification({
         title: `Supplied ${state.supplyValue} TEMPLE`,
@@ -322,18 +361,32 @@ export const BorrowPage = () => {
   };
 
   const withdraw = async () => {
-    if (!signer || !wallet) return;
-    const tlcContract = new TempleLineOfCredit__factory(signer).attach(
-      env.contracts.tlc
-    );
+    if (!signer || !wallet) {
+      console.debug('Missing wallet or signer when trying to use Tlc.');
+      return;
+    }
+
     const amount = getBigNumberFromString(
       state.withdrawValue,
       getTokenInfo(state.inputToken).decimals
     );
+
+    await switchNetwork(getChainId());
+
     try {
+      const connectedSigner = await getConnectedSigner();
+
+      const tlcContract = (await papi.getConnectedContract(
+        getAppConfig().contracts.tlc,
+        connectedSigner
+      )) as TempleLineOfCredit;
+
       const populatedTransaction =
         await tlcContract.populateTransaction.removeCollateral(amount, wallet);
-      const receipt = await estimateAndMine(signer, populatedTransaction);
+      const receipt = await estimateAndMine(
+        connectedSigner,
+        populatedTransaction
+      );
 
       openNotification({
         title: `Withdrew ${state.withdrawValue} TEMPLE`,
@@ -352,20 +405,33 @@ export const BorrowPage = () => {
   };
 
   const borrow = async () => {
-    if (!signer || !wallet) return;
-    const tlcContract = new TempleLineOfCredit__factory(signer).attach(
-      env.contracts.tlc
-    );
+    if (!signer || !wallet) {
+      console.debug('Missing wallet or signer when trying to use Tlc.');
+      return;
+    }
+
+    await switchNetwork(getChainId());
     const amount = getBigNumberFromString(
       state.borrowValue,
       getTokenInfo(state.outputToken).decimals
     );
+
     try {
+      const connectedSigner = await getConnectedSigner();
+
+      const tlcContract = (await papi.getConnectedContract(
+        getAppConfig().contracts.tlc,
+        connectedSigner
+      )) as TempleLineOfCredit;
+
       const populatedTransaction = await tlcContract.populateTransaction.borrow(
         amount,
         wallet
       );
-      const receipt = await estimateAndMine(signer, populatedTransaction);
+      const receipt = await estimateAndMine(
+        connectedSigner,
+        populatedTransaction
+      );
 
       openNotification({
         title: `Borrowed ${state.borrowValue} DAI`,
@@ -384,30 +450,45 @@ export const BorrowPage = () => {
   };
 
   const repay = async () => {
-    if (!signer || !wallet) return;
-    const tlcContract = new TempleLineOfCredit__factory(signer).attach(
-      env.contracts.tlc
-    );
+    if (!signer || !wallet) {
+      console.debug('Missing wallet or signer when trying to use Tlc.');
+      return;
+    }
+
+    await switchNetwork(getChainId());
+
     const amount = getBigNumberFromString(
       state.repayValue,
       getTokenInfo(state.outputToken).decimals
     );
     try {
+      const connectedSigner = await getConnectedSigner();
+
       // Ensure allowance for TLC to spend DAI
-      const daiContract = new ERC20__factory(signer).attach(env.contracts.dai);
-      await ensureAllowance(
+      await ensureAllowanceWithSigner(
         TICKER_SYMBOL.DAI,
-        daiContract,
-        env.contracts.tlc,
-        amount
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        getAppConfig().tokens.daiToken.address!, // token address
+        getAppConfig().contracts.tlc.address, // spender
+        amount,
+        true,
+        connectedSigner
       );
+
+      const tlcContract = (await papi.getConnectedContract(
+        getAppConfig().contracts.tlc,
+        connectedSigner
+      )) as TempleLineOfCredit;
 
       // Note Repay vs RepayAll
       const populatedTransaction = await tlcContract.populateTransaction.repay(
         amount,
         wallet
       );
-      const receipt = await estimateAndMine(signer, populatedTransaction);
+      const receipt = await estimateAndMine(
+        connectedSigner,
+        populatedTransaction
+      );
 
       openNotification({
         title: `Repaid ${state.repayValue} DAI`,
@@ -472,10 +553,7 @@ export const BorrowPage = () => {
   const getBorrowRate = () =>
     tlcInfo ? (tlcInfo.borrowRate * 100).toFixed(2) : 0;
 
-  const showLoading = useMemo(
-    () => metricsLoading || !wallet,
-    [metricsLoading, wallet]
-  );
+  const showLoading = useMemo(() => metricsLoading, [metricsLoading]);
 
   const availableToBorrow = useMemo(() => {
     if (!tlcInfo) return '...';

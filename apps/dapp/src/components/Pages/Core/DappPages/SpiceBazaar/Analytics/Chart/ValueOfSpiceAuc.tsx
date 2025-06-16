@@ -1,95 +1,62 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import styled, { useTheme } from 'styled-components';
 import { subDays } from 'date-fns';
 import { format } from 'date-fns';
 import { formatNumberAbbreviated } from 'utils/formatter';
-import { InputSelect } from 'components/InputSelect/InputSelect';
-import CustomBarChart from './BarChart';
+import CustomBarChart from '../components/BarChart';
+import * as breakpoints from 'styles/breakpoints';
+import { InputSelect, Option } from '../../components/InputSelector';
+import Loader from 'components/Loader/Loader';
 
 type XAxisTickFormatter = (timestamp: number) => string;
 
 export const tickFormatter: XAxisTickFormatter = (timestamp) =>
   format(new Date(timestamp), 'MMM dd');
 
-export type Metric = {
-  timestamp: number;
+type Metric = {
+  name: string;
   value1: number;
   value2: number;
   value3: number;
   value4: number;
 };
 
-const pricesLast7Days: Metric[] = [
+const data = [
   {
-    timestamp: subDays(new Date(), 9).getTime(),
+    name: 'KAMI',
     value1: 1.0,
     value2: 0.4,
     value3: 1.6,
     value4: 1.1,
   },
   {
-    timestamp: subDays(new Date(), 8).getTime(),
+    name: 'ENA',
     value1: 1.8,
     value2: 1.0,
     value3: 0.5,
     value4: 0.5,
   },
   {
-    timestamp: subDays(new Date(), 7).getTime(),
+    name: 'BRRR',
     value1: 1.9,
     value2: 0.2,
     value3: 1.0,
     value4: 1.0,
   },
   {
-    timestamp: subDays(new Date(), 6).getTime(),
+    name: 'iRED',
     value1: 2.5,
     value2: 0.0,
     value3: 1.0,
     value4: 1.0,
   },
-  {
-    timestamp: subDays(new Date(), 5).getTime(),
-    value1: 1.6,
-    value2: 0.0,
-    value3: 1.0,
-    value4: 1.0,
-  },
-  {
-    timestamp: subDays(new Date(), 4).getTime(),
-    value1: 1.0,
-    value2: 1.0,
-    value3: 0.8,
-    value4: 0.7,
-  },
-  {
-    timestamp: subDays(new Date(), 3).getTime(),
-    value1: 2.2,
-    value2: 0.2,
-    value3: 2.0,
-    value4: 1.0,
-  },
-  {
-    timestamp: subDays(new Date(), 2).getTime(),
-    value1: 0.8,
-    value2: 0.0,
-    value3: 0.5,
-    value4: 0.3,
-  },
-  {
-    timestamp: subDays(new Date(), 1).getTime(),
-    value1: 1.7,
-    value2: 0.7,
-    value3: 2.0,
-    value4: 1.0,
-  },
-  {
-    timestamp: new Date().getTime(),
-    value1: 1.9,
-    value2: 0.0,
-    value3: 1.7,
-    value4: 1.0,
-  },
+];
+
+const auctionOptions = [
+  { label: 'KAMI', value: 'KAMI' },
+  { label: 'ENA', value: 'ENA' },
+  { label: 'BRRR', value: 'BRRR' },
+  { label: 'iRED', value: 'iRED' },
 ];
 
 const series = [
@@ -99,31 +66,29 @@ const series = [
   { key: 'value4', color: '#95613F' },
 ];
 
-const metricOptions1: { value: string; label: string }[] = [
-  { label: 'Token', value: 'token' },
-  { label: 'Opt 2', value: 'opt2' },
-  { label: 'Opt 3', value: 'opt3' },
-];
-
-const metricOptions2: { value: string; label: string }[] = [
-  { label: 'Auction End Date', value: 'auctionEndDate' },
-  { label: 'Opt 2', value: 'opt2' },
-  { label: 'Opt 3', value: 'opt3' },
-];
-
 export const ValueOfSpiceAuc = () => {
   const theme = useTheme();
-  const metrics = pricesLast7Days;
+  const [metrics, setMetrics] = useState<Metric[]>([]);
 
-  const [selectedMetric1, setSelectedMetric1] = useState('token');
-  const [selectedMetric2, setSelectedMetric2] = useState('auctionEndDate');
+  useEffect(() => {
+    setMetrics(data);
+  }, []);
 
-  const selectMetric1 = (metric: string) => {
-    setSelectedMetric1(metric);
+  const [selectedAuctions, setSelectedAuctions] = useState<Option[]>([
+    auctionOptions[0],
+    auctionOptions[1],
+    auctionOptions[2],
+    auctionOptions[3],
+    auctionOptions[4],
+    auctionOptions[5],
+    auctionOptions[6],
+  ]);
+
+  const handleChange = (selected: Option[]) => {
+    setSelectedAuctions(selected);
   };
-  const selectMetric2 = (metric: string) => {
-    setSelectedMetric2(metric);
-  };
+
+  if (!metrics.length) return <Loader />;
 
   return (
     <PageContainer>
@@ -132,42 +97,46 @@ export const ValueOfSpiceAuc = () => {
         <Options>
           <SelectMetricContainer1>
             <InputSelect
-              options={metricOptions1}
-              defaultValue={metricOptions1.find(
-                (m) => m.value === selectedMetric1
-              )}
-              onChange={(e) => selectMetric1(e.value)}
-              isSearchable={false}
-              fontSize={'16px'}
-              fontWeight={'400'}
+              options={auctionOptions}
+              defaultValue={selectedAuctions}
+              onChange={handleChange}
+              width="150px"
+              fontSize="1rem"
+              maxMenuItems={7}
+              textAlloptions="All tokens"
             />
           </SelectMetricContainer1>
-          <SelectMetricContainer2>
-            <InputSelect
-              options={metricOptions2}
-              defaultValue={metricOptions2.find(
-                (m) => m.value === selectedMetric2
-              )}
-              onChange={(e) => selectMetric2(e.value)}
-              isSearchable={false}
-              fontSize={'16px'}
-              fontWeight={'400'}
-            />
-          </SelectMetricContainer2>
         </Options>
       </HeaderContainer>
-      <CustomBarChart
-        chartData={metrics}
-        series={series}
-        xDataKey="timestamp"
-        xTickFormatter={tickFormatter}
-        yTickFormatter={(val) =>
-          `$${formatNumberAbbreviated(val).number.toFixed(2)}\u00A0M`
-        }
-        tooltipLabelFormatter={tickFormatter}
-        yDomain={[1.0, 2.5, 4.0, 5.5]}
-        tooltipValuesFormatter={(value) => [`$ ${value.toFixed(2)} M`, 'Value']}
-      />
+      <BodyContainer>
+        <LeftContainer>
+          <Box>
+            <Sum>$1,123,181</Sum>
+            <BoxTitle>Total Real Market Value</BoxTitle>
+          </Box>
+          <Box>
+            <Sum>5,834 TGLD</Sum>
+            <BoxTitle>Burned TGLD</BoxTitle>
+          </Box>
+        </LeftContainer>
+        <CustomBarChart
+          chartData={data.filter((d) =>
+            selectedAuctions.some((option) => option.label === d.name)
+          )}
+          series={series}
+          xDataKey="name"
+          xTickFormatter={(val: any) => val}
+          yTickFormatter={(val: any) =>
+            `$${formatNumberAbbreviated(val).number.toFixed(2)}`
+          }
+          tooltipLabelFormatter={(value: any) => value}
+          yDomain={[1.0, 2.5, 4.0, 5.5]}
+          tooltipValuesFormatter={(value) => [
+            `$ ${value.toFixed(2)} M`,
+            'Value',
+          ]}
+        />
+      </BodyContainer>
     </PageContainer>
   );
 };
@@ -176,14 +145,14 @@ const PageContainer = styled.div`
   height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 20px;
   width: 100%;
 `;
 
 const HeaderContainer = styled.div`
   display: flex;
-  justify-content: space-between;
-  flex-direction: row;
+  flex-direction: column;
+  gap: 20px;
 `;
 
 const Title = styled.h3`
@@ -206,7 +175,52 @@ const SelectMetricContainer1 = styled.div`
   max-width: 100px;
 `;
 
-const SelectMetricContainer2 = styled.div`
-  flex: 1;
-  max-width: 195px;
+const BodyContainer = styled.div`
+  display: flex;
+  flex-direction: row;
+  gap: 60px;
+`;
+
+const LeftContainer = styled.div`
+  display: flex;
+  flex-direction: row;
+  gap: 20px;
+  height: 309px;
+
+  ${breakpoints.phoneAndAbove(`
+    flex-direction: column;
+    min-width: 460px;
+  `)}
+`;
+
+const Box = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-grow: 1;
+  flex-basis: 0;
+  min-height: 136px;
+  gap: 12px;
+  padding: 10px;
+  border: 1px solid ${({ theme }) => theme.palette.brand};
+  border-radius: 10px;
+  background: linear-gradient(
+    to bottom,
+    #0b0a0a,
+    #1d1a1a
+  ); //it is lighter than the grey from theme.palette
+`;
+
+const BoxTitle = styled.div`
+  font-size: 16px;
+  line-height: 19px;
+  color: ${({ theme }) => theme.palette.brand};
+`;
+
+const Sum = styled.div`
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 29px;
+  color: ${({ theme }) => theme.palette.brandLight};
 `;
