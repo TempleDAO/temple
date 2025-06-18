@@ -142,6 +142,26 @@ export const BidTGLD = ({
     return balance[auction.staticConfig.templeGoldTokenBalanceTickerSymbol];
   }, [balance, auction]);
 
+  const priceRatioAfterBid = useMemo(() => {
+    // if no bids have been made, meaning totalBidTokenAmount is 0, then the price
+    // ratio is the current bid amount (inputValue) divided by the total auction token amount
+
+    // if bids have been made, then the price ratio is the total bid token amount
+    // plus the current bid amount (inputValue) divided by the total auction token amount
+
+    const totalBidTokenAmount = auction?.totalBidTokenAmount;
+    const totalAuctionTokenAmount = auction?.totalAuctionTokenAmount;
+
+    if (totalBidTokenAmount === 0) {
+      return Number(inputValue) / Number(totalAuctionTokenAmount);
+    }
+
+    return (
+      (Number(totalBidTokenAmount) + Number(inputValue)) /
+      Number(totalAuctionTokenAmount)
+    );
+  }, [auction, inputValue]);
+
   // Update price every n seconds
   useEffect(() => {
     if (!inputValue || isSubmitting) return;
@@ -235,9 +255,9 @@ export const BidTGLD = ({
               </ReceiveContainer>
               <ReceiveTextBottom>
                 at the current price of {!isPhoneOrAbove && <br />}
-                {(auction?.priceRatio ?? 0) < 0.001
+                {priceRatioAfterBid < 0.001
                   ? '<0.001'
-                  : auction?.priceRatio?.toFixed(2) || '5.32'}{' '}
+                  : priceRatioAfterBid.toFixed(4)}{' '}
                 TGLD per {auction?.auctionTokenSymbol || 'TOKEN'}
               </ReceiveTextBottom>
             </ReceiveAmountContainer>
