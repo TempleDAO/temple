@@ -44,6 +44,7 @@ export const Details = () => {
     () => allSpiceAuctionsData.find((auction) => auction.address === address),
     [allSpiceAuctionsData, address]
   );
+
   // Get user metrics for the selected auction
   const {
     data: userMetrics,
@@ -268,7 +269,7 @@ export const Details = () => {
         {modal.type === 'bidTgld' && (
           <BidTGLD
             mode={modalMode}
-            auction={modal.auction}
+            auctionConfig={modal.auction?.staticConfig}
             currentBidAmount={modal.currentBidAmount}
             onBidSuccess={async () => {
               // Refetch metrics after bid success signalled by the provider

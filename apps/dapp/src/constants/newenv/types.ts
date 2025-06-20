@@ -73,6 +73,7 @@ export type AppConfig = {
   spiceBazaar: {
     spiceAuctions: SpiceAuctionConfig[];
     tgldBridge: {
+      active: boolean;
       sourceLayer0EndpointId: number;
       sourceTgldTokenContract: ContractConfig<Contract>;
       altchainLayer0EndpointId: number;

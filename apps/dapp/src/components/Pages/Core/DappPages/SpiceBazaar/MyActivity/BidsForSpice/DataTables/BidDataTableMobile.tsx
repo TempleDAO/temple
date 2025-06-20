@@ -283,20 +283,12 @@ export const DataTableMobile: React.FC<TableProps> = ({
               setModalState('closed');
             }}
             isLoadingUserMetrics={false}
-            auction={(() => {
+            auctionConfig={(() => {
               const transaction = transactions.find(
                 (t) => Number(t.bidTotal) === Number(currentBidAmount)
               );
 
-              const addressFromTransactionId = transaction?.id
-                ?.split('-')[0]
-                ?.toLowerCase();
-
-              const auction = allSpiceAuctionsData.find(
-                (a) => a.address?.toLowerCase() === addressFromTransactionId
-              );
-
-              return auction;
+              return transaction?.auctionStaticConfig;
             })()}
           />
         )}

@@ -197,25 +197,29 @@ export const Spend = () => {
     [allAuctions]
   );
 
+  const tgldBridgeConfig = getAppConfig().spiceBazaar.tgldBridge;
+
   return (
     <>
       <PageContainer>
         <ContentContainer>
           <SpiceTitle>
             <SpiceTitleText>Spice Auctions</SpiceTitleText>
-            <Bridge>
-              <BridgeText>
-                Bridge your Temple Gold to{' '}
-                {getAppConfig().spiceBazaar.tgldBridge.altchainDisplayName} to
-                use them in Spice Auctions.
-              </BridgeText>
-              <TradeButton
-                onClick={() => setModal({ type: 'bridgeTgld' })}
-                style={{ whiteSpace: 'nowrap', margin: 0 }}
-              >
-                BRIDGE&nbsp;MY&nbsp;<SpanBreak>TEMPLE&nbsp;GOLD</SpanBreak>
-              </TradeButton>
-            </Bridge>
+            {tgldBridgeConfig.active && (
+              <Bridge>
+                <BridgeText>
+                  Bridge your Temple Gold to{' '}
+                  {tgldBridgeConfig.altchainDisplayName} to use them in Spice
+                  Auctions.
+                </BridgeText>
+                <TradeButton
+                  onClick={() => setModal({ type: 'bridgeTgld' })}
+                  style={{ whiteSpace: 'nowrap', margin: 0 }}
+                >
+                  BRIDGE&nbsp;MY&nbsp;<SpanBreak>TEMPLE&nbsp;GOLD</SpanBreak>
+                </TradeButton>
+              </Bridge>
+            )}
           </SpiceTitle>
           <SpiceAuctions>
             {allAuctionsLoading && <Loader />}
@@ -250,7 +254,7 @@ export const Spend = () => {
         {modal.type === 'bidTgld' && (
           <BidTGLD
             mode={modalMode}
-            auction={modal.auction}
+            auctionConfig={modal.auction?.staticConfig}
             currentBidAmount={modal.currentBidAmount}
             onBidSuccess={async () => {
               // Refetch metrics after bid success signalled by the provider
@@ -261,7 +265,7 @@ export const Spend = () => {
             isLoadingUserMetrics={userMetricsLoading}
           />
         )}
-        {modal.type === 'bridgeTgld' && (
+        {modal.type === 'bridgeTgld' && tgldBridgeConfig.active && (
           <BridgeTGLD
             onBridgeComplete={() => {
               setModal({ type: 'closed' });
