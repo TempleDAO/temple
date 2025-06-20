@@ -177,11 +177,10 @@ export const DataTable: React.FC<TableProps> = ({
                           {action === 'Bid' && (
                             <TradeButton
                               onClick={() => {
-                                console.log(
-                                  'Setting currentBidAmount:',
-                                  transaction.bidTotal
+                                // TODO: Have to fix this and pass numeric values
+                                setCurrentBidAmount(
+                                  Number(transaction.bidTotal).toString()
                                 );
-                                setCurrentBidAmount(transaction.bidTotal);
                                 setModalState(modal);
                               }}
                               style={{ whiteSpace: 'nowrap', margin: 0 }}

@@ -24,13 +24,16 @@ import { useWallet } from 'providers/WalletProvider';
 import { getAppConfig } from 'constants/newenv';
 
 // Custom hook for auction-specific user metrics
-export const useAuctionUserMetrics = (auctionAddress: string | undefined) => {
+export const useAuctionUserMetrics = (
+  auctionAddress: string | undefined,
+  wallet: string | undefined
+) => {
   const { currentUser, allSpiceAuctions } = useSpiceAuction();
   const { fetch } = currentUser;
   const { data: allAuctions } = allSpiceAuctions;
 
   return useQuery({
-    queryKey: ['auctionUserMetrics', auctionAddress] as const,
+    queryKey: ['auctionUserMetrics', wallet, auctionAddress] as const,
     queryFn: async () => {
       const auction = allAuctions?.find(
         (a: SpiceAuctionInfo) => a.address === auctionAddress
@@ -53,9 +56,10 @@ const AuctionCard = ({
   onOpenBidModal: (auction: SpiceAuctionInfo, mode: BidTGLDMode) => void;
 }) => {
   const navigate = useNavigate();
+  const { wallet } = useWallet();
 
   const { data: userMetrics, isLoading: userMetricsLoading } =
-    useAuctionUserMetrics(auction.address);
+    useAuctionUserMetrics(auction.address, wallet);
 
   const getLogo = (name?: string) => {
     if (!name) return <KamiLogo />;
@@ -142,7 +146,7 @@ export const Spend = () => {
     fetch,
   } = allSpiceAuctions;
 
-  const { updateBalance } = useWallet();
+  const { updateBalance, wallet } = useWallet();
 
   const [modal, setModal] = useState<{
     type: 'closed' | 'bidTgld' | 'bridgeTgld';
@@ -156,11 +160,12 @@ export const Spend = () => {
     data: userMetrics,
     isLoading: userMetricsLoading,
     refetch: refetchUserMetrics,
-  } = useAuctionUserMetrics(modal.auction?.address);
+  } = useAuctionUserMetrics(modal.auction?.address, wallet);
 
   useEffect(() => {
     fetch();
-  }, [fetch]);
+    refetchUserMetrics();
+  }, [fetch, refetchUserMetrics, wallet]);
 
   // on load, load balances
   useEffect(() => {

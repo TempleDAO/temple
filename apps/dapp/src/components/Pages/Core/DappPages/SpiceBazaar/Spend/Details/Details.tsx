@@ -20,10 +20,12 @@ import { useSpiceAuctionCountdown } from 'hooks/spicebazaar/use-spice-auction-co
 import Loader from 'components/Loader/Loader';
 import { DEVMODE_QUERY_PARAM } from '../../Bid';
 import { useAuctionUserMetrics } from 'components/Pages/Core/DappPages/SpiceBazaar/Spend';
+import { useWallet } from 'providers/WalletProvider';
 
 export const Details = () => {
   // get the address from the path
   const { address } = useParams();
+  const { wallet } = useWallet();
 
   const {
     allSpiceAuctions: {
@@ -50,7 +52,7 @@ export const Details = () => {
     data: userMetrics,
     refetch: refetchUserMetrics,
     isLoading: userMetricsLoading,
-  } = useAuctionUserMetrics(auction?.address);
+  } = useAuctionUserMetrics(auction?.address, wallet);
 
   useEffect(() => {
     fetchAllSpiceAuctions();
@@ -64,18 +66,9 @@ export const Details = () => {
     setModal({
       type: 'bidTgld',
       auction,
-      currentBidAmount: '0', // We'll update this after fetching
+      currentBidAmount: userMetrics?.currentEpochBidAmount?.toString() || '0',
     });
     setModalMode(mode);
-
-    // Then fetch the latest metrics
-    const { data: metrics } = await refetchUserMetrics();
-
-    // Update the modal with the fetched metrics
-    setModal((prev) => ({
-      ...prev,
-      currentBidAmount: metrics?.currentEpochBidAmount?.toString() || '0',
-    }));
   };
 
   const shortenAddress = (address: string) => {
