@@ -127,10 +127,11 @@ export const BidTGLD = ({
 
       if (isNaN(numericAmountOfTgldInput)) return '0';
 
-      // Formula: BID_AMOUNT / (CURRENT_TOTAL + BID_AMOUNT) * SPICE_TOTAL
+      // Formula: USER_TOTAL_BID_AMOUNT / (CURRENT_TOTAL + USER_INCREASE_BID_AMOUNT) * SPICE_TOTAL
       // Where:
-      // - BID_AMOUNT = user's total bid (including current bid if increasing)
-      // - CURRENT_TOTAL = total bids before this bid
+      // - USER_TOTAL_BID_AMOUNT = user's total bid (including current bid if increasing)
+      // - CURRENT_TOTAL = total bids (all users) before this bid
+      // - USER_INCREASE_BID_AMOUNT = just the new input amount (not the total)
       // - SPICE_TOTAL = total SPICE in auction
       const currentTotal = Number(auction?.totalBidTokenAmount) || 0;
       const spiceTotal = Number(auction?.totalAuctionTokenAmount) || 0;

@@ -123,8 +123,10 @@ export const BidUSDS = ({
 
   const calculateTGLDAmount = useCallback(
     (inputUsdsAmount: string): string => {
-      if (!inputUsdsAmount || Number(inputUsdsAmount) === 0) return '0';
-      let numericAmount = Number(inputUsdsAmount);
+      const inputUsdsAmountN = Number(inputUsdsAmount);
+
+      if (!inputUsdsAmount || inputUsdsAmountN === 0) return '0';
+      let numericAmount = inputUsdsAmountN;
 
       if (mode === BidUSDSMode.IncreaseBid) {
         numericAmount += Number(currentBidAmount);
@@ -139,14 +141,16 @@ export const BidUSDS = ({
         daiGoldAuctionInfo?.data?.totalAuctionTokenAmount
       );
 
+      // technically possible in the contract, but not likely
+      if (totalAuctionTokenAmount === 0) return '0';
+
       // If no bids have been made and no input amount, return 0
-      if (totalBidTokenAmount === 0 && Number(inputUsdsAmount) === 0) {
+      if (totalBidTokenAmount === 0 && inputUsdsAmountN === 0) {
         return '0';
       }
 
       const priceRatioAfterBid =
-        (totalBidTokenAmount + Number(inputUsdsAmount)) /
-        totalAuctionTokenAmount;
+        (totalBidTokenAmount + inputUsdsAmountN) / totalAuctionTokenAmount;
 
       // Prevent division by zero
       if (priceRatioAfterBid === 0) return '0';
