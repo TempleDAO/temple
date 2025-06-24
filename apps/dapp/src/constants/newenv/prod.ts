@@ -262,6 +262,7 @@ const prodEnv: AppConfig = {
       // },
     ],
     tgldBridge: {
+      active: false,
       sourceLayer0EndpointId: ETH_MAINNET.layer0EndpointId,
       sourceTgldTokenContract: TEMPLE_GOLD_ON_ETH_MAINNET,
       altchainLayer0EndpointId: BERACHAIN_MAINNET.layer0EndpointId,

@@ -75,6 +75,9 @@ interface SpiceAuctionContextValue {
     loading: boolean;
     fetch: (silent?: boolean) => Promise<void>;
   };
+  fetchAuctionByConfig: (
+    auctionStaticConfig: SpiceAuctionConfig
+  ) => Promise<SpiceAuctionInfo | null>;
   currentUser: {
     data: {
       currentEpochBidAmount: number;
@@ -141,6 +144,7 @@ const INITIAL_STATE: SpiceAuctionContextValue = {
     loading: false,
     fetch: asyncNoop,
   },
+  fetchAuctionByConfig: async () => null,
   currentUser: {
     data: {
       currentEpochBidAmount: 0,
@@ -893,6 +897,7 @@ export const SpiceAuctionProvider = ({ children }: PropsWithChildren) => {
         loading: allSpiceAuctionsLoading,
         fetch: fetchAllSpiceAuctionsInfo,
       },
+      fetchAuctionByConfig: fetchAuctionInfoForAuction,
       currentUser: {
         data: currentUserMetrics,
         loading: currentUserMetricsLoading,
@@ -919,6 +924,7 @@ export const SpiceAuctionProvider = ({ children }: PropsWithChildren) => {
     allSpiceAuctionsData,
     allSpiceAuctionsLoading,
     fetchAllSpiceAuctionsInfo,
+    fetchAuctionInfoForAuction,
     currentUserMetricsLoading,
     getClaimableAtEpoch,
     bridgeTgld,

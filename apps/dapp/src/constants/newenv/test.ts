@@ -357,6 +357,7 @@ const testEnv: AppConfig = {
       },
     ],
     tgldBridge: {
+      active: true,
       sourceLayer0EndpointId: ETH_SEPOLIA.layer0EndpointId,
       sourceTgldTokenContract: TEMPLE_GOLD_ON_ETH_SEPOLIA,
       altchainLayer0EndpointId: ARB_SEPOLIA.layer0EndpointId, // TODO: Possibly other altchains? Object?
