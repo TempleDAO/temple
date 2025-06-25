@@ -8,16 +8,16 @@ import { useWallet } from 'providers/WalletProvider';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { formatToken, formatNumberWithCommas } from 'utils/formatter';
 import { useState, useCallback, useEffect, useMemo } from 'react';
-import {
-  SpiceAuctionInfo,
-  useSpiceAuction,
-} from 'providers/SpiceAuctionProvider';
-import { ZERO } from 'utils/bigNumber';
+import { useSpiceAuction } from 'providers/SpiceAuctionProvider';
+import { SpiceAuctionConfig } from 'constants/newenv/types';
+import { ZERO, fromAtto } from 'utils/bigNumber';
 import LargeRoundCheckBox from 'components/Pages/Core/DappPages/SpiceBazaar/components/LargeRoundCheckBox';
 import { useAudioPlayer } from 'react-use-audio-player';
 import marketSound from 'assets/sounds/Age of Empires 2 - Market Sound.mp3';
 import { TradeButton } from './Details/Details';
 import { useConnectWallet } from '@web3-onboard/react';
+import { useQuery } from '@tanstack/react-query';
+import Loader from 'components/Loader/Loader';
 
 const PRICE_UPDATE_INTERVAL = 10000;
 const FADE_EFFECT_DURATION = 500;
@@ -26,7 +26,7 @@ interface BidTGLDProps {
   onBidSuccess: () => Promise<void>;
   mode: BidTGLDMode;
   currentBidAmount?: string;
-  auction?: SpiceAuctionInfo;
+  auctionConfig?: SpiceAuctionConfig;
   isLoadingUserMetrics: boolean;
 }
 
@@ -35,11 +35,29 @@ export enum BidTGLDMode {
   Bid = 'bid',
 }
 
+// Custom hook to fetch auction data for a specific config
+const useAuctionData = (auctionConfig?: SpiceAuctionConfig) => {
+  const { fetchAuctionByConfig } = useSpiceAuction();
+
+  return useQuery({
+    queryKey: ['auctionData', auctionConfig?.contractConfig.address],
+    queryFn: async () => {
+      if (!auctionConfig) return null;
+      return fetchAuctionByConfig(auctionConfig);
+    },
+    enabled: !!auctionConfig,
+    staleTime: 5 * 1000, // 5 seconds - very short to ensure fresh data
+    refetchOnWindowFocus: false,
+    refetchOnMount: true,
+    refetchOnReconnect: true,
+  });
+};
+
 export const BidTGLD = ({
   onBidSuccess,
   mode = BidTGLDMode.Bid,
   currentBidAmount = '0',
-  auction,
+  auctionConfig,
   isLoadingUserMetrics,
 }: BidTGLDProps) => {
   const isPhoneOrAbove = useMediaQuery({
@@ -51,9 +69,16 @@ export const BidTGLD = ({
   const [inputValue, setInputValue] = useState<string>('');
   const [fadeEffect, setFadeEffect] = useState(false);
   const [lastPriceUpdate, setLastPriceUpdate] = useState(Date.now());
+
+  // Fetch auction data using the config
+  const {
+    data: auction,
+    isLoading: auctionLoading,
+    refetch: refetchAuction,
+  } = useAuctionData(auctionConfig);
+
   const {
     spiceAuctions: { bid },
-    allSpiceAuctions,
   } = useSpiceAuction();
   const { wallet, balance, updateBalance } = useWallet();
   const [{}, connect] = useConnectWallet();
@@ -67,14 +92,15 @@ export const BidTGLD = ({
   };
 
   const handleBidClick = async () => {
-    if (!auction) return;
+    if (!auctionConfig) return;
 
     setIsSubmitting(true);
 
     try {
-      await bid(auction.staticConfig, inputValue);
+      await bid(auctionConfig, inputValue);
       load(marketSound);
       play();
+      refetchAuction();
       await onBidSuccess();
     } catch (error) {
       console.error('Bid submission failed:', error);
@@ -92,31 +118,34 @@ export const BidTGLD = ({
 
   const calculateTokenAmount = useCallback(
     (inputTgldAmount: string): string => {
-      if (!inputTgldAmount) return '0';
-      let numericAmount = Number(inputTgldAmount);
+      if (!inputTgldAmount || Number(inputTgldAmount) === 0) return '0';
+      let numericAmountOfTgldInput = Number(inputTgldAmount);
 
       if (mode === BidTGLDMode.IncreaseBid) {
-        numericAmount += Number(currentBidAmount);
+        numericAmountOfTgldInput += Number(currentBidAmount);
       }
 
-      if (isNaN(numericAmount)) return '0';
+      if (isNaN(numericAmountOfTgldInput)) return '0';
 
-      const priceRatioAfterBid =
-        (Number(auction?.totalBidTokenAmount) + Number(inputTgldAmount)) /
-        Number(auction?.totalAuctionTokenAmount);
+      // Formula: USER_TOTAL_BID_AMOUNT / (CURRENT_TOTAL + USER_INCREASE_BID_AMOUNT) * SPICE_TOTAL
+      // Where:
+      // - USER_TOTAL_BID_AMOUNT = user's total bid (including current bid if increasing)
+      // - CURRENT_TOTAL = total bids (all users) before this bid
+      // - USER_INCREASE_BID_AMOUNT = just the new input amount (not the total)
+      // - SPICE_TOTAL = total SPICE in auction
+      const currentTotal = Number(auction?.totalBidTokenAmount) || 0;
+      const spiceTotal = Number(auction?.totalAuctionTokenAmount) || 0;
 
-      const amountToReceive = numericAmount / priceRatioAfterBid;
+      const amountToReceive =
+        (numericAmountOfTgldInput / (currentTotal + Number(inputTgldAmount))) *
+        spiceTotal;
       return amountToReceive.toFixed(2);
     },
-    [
-      currentBidAmount,
-      auction?.totalAuctionTokenAmount,
-      auction?.totalBidTokenAmount,
-      mode,
-    ]
+    [currentBidAmount, mode, auction]
   );
 
   const exceededAmount = useMemo(() => {
+    if (!auction) return false;
     const amountAfterbid = Number(inputValue) + Number(currentBidAmount);
     return (
       Number(calculateTokenAmount(amountAfterbid.toString())) >
@@ -134,13 +163,29 @@ export const BidTGLD = ({
     setIsCheckboxChecked2(checked);
   };
 
-  const auctionName = auction?.name || 'TGLD';
+  const auctionName = auction?.name || auctionConfig?.name || 'TGLD';
 
   const balanceToken = useMemo(() => {
-    if (!auction) return balance.TGLD;
+    if (!auctionConfig) return balance.TGLD;
 
-    return balance[auction.staticConfig.templeGoldTokenBalanceTickerSymbol];
-  }, [balance, auction]);
+    return balance[auctionConfig.templeGoldTokenBalanceTickerSymbol];
+  }, [balance, auctionConfig]);
+
+  const priceRatioAfterBid = useMemo(() => {
+    if (!auction) return 0;
+
+    // Formula: (CURRENT_TOTAL + BID_AMOUNT) / SPICE_TOTAL
+    // This gives us the price ratio (TGLD per SPICE) after the bid
+    const totalBidTokenAmount = auction?.totalBidTokenAmount || 0;
+    const totalAuctionTokenAmount = auction?.totalAuctionTokenAmount || 0;
+
+    if (totalAuctionTokenAmount === 0) return 0;
+
+    return (
+      (Number(totalBidTokenAmount) + Number(inputValue)) /
+      Number(totalAuctionTokenAmount)
+    );
+  }, [auction, inputValue]);
 
   // Update price every n seconds
   useEffect(() => {
@@ -149,7 +194,7 @@ export const BidTGLD = ({
     const interval = setInterval(async () => {
       const now = Date.now();
       if (now - lastPriceUpdate > PRICE_UPDATE_INTERVAL) {
-        await allSpiceAuctions.fetch();
+        await refetchAuction();
         setFadeEffect(true);
         setTimeout(() => setFadeEffect(false), FADE_EFFECT_DURATION);
         setLastPriceUpdate(now);
@@ -157,7 +202,7 @@ export const BidTGLD = ({
     }, PRICE_UPDATE_INTERVAL);
 
     return () => clearInterval(interval);
-  }, [inputValue, isSubmitting, lastPriceUpdate, allSpiceAuctions]);
+  }, [inputValue, isSubmitting, lastPriceUpdate, refetchAuction]);
 
   return (
     <ContentContainer>
@@ -213,7 +258,7 @@ export const BidTGLD = ({
               handleChange={handleInputChange}
               isNumber
               placeholder="0.00"
-              min={0}
+              min={1}
               width="100%"
             />
           </BidContent>
@@ -225,20 +270,24 @@ export const BidTGLD = ({
               <ReceiveContainer>
                 <TempleGoldIcon />
                 <ReceiveAmount fadeEffect={fadeEffect}>
-                  {inputValue === '' || exceededAmount
-                    ? '0'
-                    : formatNumberWithCommas(
-                        Number(calculateTokenAmount(inputValue))
-                      )}{' '}
-                  {auction?.auctionTokenSymbol || 'X TOKEN'}
+                  {auctionLoading ? (
+                    <Loader iconSize={32} />
+                  ) : inputValue === '' || exceededAmount ? (
+                    0
+                  ) : (
+                    formatNumberWithCommas(
+                      Number(calculateTokenAmount(inputValue))
+                    )
+                  )}{' '}
+                  {auction?.auctionTokenSymbol}
                 </ReceiveAmount>
               </ReceiveContainer>
               <ReceiveTextBottom>
                 at the current price of {!isPhoneOrAbove && <br />}
-                {(auction?.priceRatio ?? 0) < 0.001
+                {priceRatioAfterBid < 0.001
                   ? '<0.001'
-                  : auction?.priceRatio?.toFixed(2) || '5.32'}{' '}
-                TGLD per {auction?.auctionTokenSymbol || 'TOKEN'}
+                  : priceRatioAfterBid.toFixed(4)}{' '}
+                TGLD per {auction?.auctionTokenSymbol}
               </ReceiveTextBottom>
             </ReceiveAmountContainer>
             {exceededAmount && (
@@ -294,7 +343,8 @@ export const BidTGLD = ({
                 !isCheckboxChecked2 ||
                 isSubmitting ||
                 fadeEffect ||
-                isLoadingUserMetrics
+                isLoadingUserMetrics ||
+                auctionLoading
               }
             >
               SUBMIT BID

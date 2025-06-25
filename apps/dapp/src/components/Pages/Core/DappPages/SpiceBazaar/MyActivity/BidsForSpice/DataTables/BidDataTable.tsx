@@ -177,11 +177,10 @@ export const DataTable: React.FC<TableProps> = ({
                           {action === 'Bid' && (
                             <TradeButton
                               onClick={() => {
-                                console.log(
-                                  'Setting currentBidAmount:',
-                                  transaction.bidTotal
+                                // TODO: Have to fix this and pass numeric values
+                                setCurrentBidAmount(
+                                  Number(transaction.bidTotal).toString()
                                 );
-                                setCurrentBidAmount(transaction.bidTotal);
                                 setModalState(modal);
                               }}
                               style={{ whiteSpace: 'nowrap', margin: 0 }}
@@ -236,20 +235,12 @@ export const DataTable: React.FC<TableProps> = ({
               setModalState('closed');
             }}
             isLoadingUserMetrics={false}
-            auction={(() => {
+            auctionConfig={(() => {
               const transaction = transactions.find(
                 (t) => Number(t.bidTotal) === Number(currentBidAmount)
               );
 
-              const addressFromTransactionId = transaction?.id
-                ?.split('-')[0]
-                ?.toLowerCase();
-
-              const auction = allSpiceAuctionsData.find(
-                (a) => a.address?.toLowerCase() === addressFromTransactionId
-              );
-
-              return auction;
+              return transaction?.auctionStaticConfig;
             })()}
           />
         )}
