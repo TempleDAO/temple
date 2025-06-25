@@ -39,13 +39,14 @@ export const useStableGoldAuctionMetrics =
         const metrics: Metric[] = rawInstances
           .map((instance: any) => ({
             id: instance.id,
-            timestamp: Number(instance.timestamp),
-            date: new Date(
-              Number(instance.timestamp) * 1000
-            ).toLocaleDateString('en-GB', {
-              month: 'short',
-              day: 'numeric',
-            }),
+            timestamp: Number(instance.endTime),
+            date: new Date(Number(instance.endTime) * 1000).toLocaleDateString(
+              'en-GB',
+              {
+                month: 'short',
+                day: 'numeric',
+              }
+            ),
             value: parseFloat(instance.totalBidTokenAmount),
           }))
           .sort((a, b) => a.timestamp - b.timestamp);
