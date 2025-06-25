@@ -39,14 +39,20 @@ export const Chart = () => {
     setSelectedAuctions(selected);
   };
 
-  if (loading || !metrics?.length) return <Loader />;
+  const chartData = useMemo(() => {
+    if (loading || !metrics?.length) return [];
 
-  const chartData = metrics
-    .filter((d) => selectedAuctions.some((option) => option.label === d.date))
-    .sort((a, b) => a.timestamp - b.timestamp);
+    const data = metrics
+      .filter((d) => selectedAuctions.some((option) => option.label === d.date))
+      .sort((a, b) => a.timestamp - b.timestamp);
 
-  const values = chartData.map((d) => d.value);
+    return data;
+  }, [metrics, selectedAuctions, loading]);
+
+  const values = useMemo(() => chartData.map((d) => d.value), [chartData]);
   const { yDomain, yTicks } = getYAxisDomainAndTicks(values);
+
+  if (loading || !metrics?.length) return <Loader />;
 
   return (
     <PageContainer>
