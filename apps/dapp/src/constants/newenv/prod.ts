@@ -83,7 +83,7 @@ const TGLD_TOKEN_ON_ETH_MAINNET: TokenConfig = {
 const OG_TEMPLE_TOKEN_ON_ETH_MAINNET: TokenConfig = {
   chainId: ETH_MAINNET.id,
   name: 'OG Temple',
-  address: '0x64866d080CfEf0e45A3a64A558dA6eEAD7542657',
+  address: '0x654590F810f01B51dc7B86915D4632977e49EA33',
   decimals: 18,
   symbol: 'OGTEMPLE',
 };
