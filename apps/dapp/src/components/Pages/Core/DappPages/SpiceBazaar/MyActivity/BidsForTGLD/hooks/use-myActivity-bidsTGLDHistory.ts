@@ -34,13 +34,17 @@ export const useMyActivityBidsTGLDHistory =
       totalBid: string,
       hasClaimed: boolean
     ) => {
-      const currentTime = new Date().getTime().toString();
+      const currentTime = Math.floor(new Date().getTime() / 1000);
 
-      if (endTime > currentTime) {
+      if (Number(endTime) > currentTime) {
         return 'Bid';
       }
 
-      if (endTime < currentTime && parseFloat(totalBid) > 0 && !hasClaimed) {
+      if (
+        Number(endTime) < currentTime &&
+        parseFloat(totalBid) > 0 &&
+        !hasClaimed
+      ) {
         return 'Claim';
       }
 
