@@ -56,6 +56,8 @@ interface SpiceBazaarContextValue {
     unstakeTemple: (amount: string, claimRewards: boolean) => Promise<void>;
     claimRewards: () => Promise<void>;
     getUnstakeTime: () => Promise<number>;
+    delegate: (delegatee: string) => Promise<void>;
+    getDelegatedAddress: () => Promise<string>;
   };
   daiGoldAuctionInfo: {
     data: DaiGoldAuctionInfo;
@@ -98,6 +100,8 @@ const INITIAL_STATE: SpiceBazaarContextValue = {
     unstakeTemple: asyncNoop,
     claimRewards: asyncNoop,
     getUnstakeTime: async () => 0,
+    delegate: asyncNoop,
+    getDelegatedAddress: async () => '',
   },
   daiGoldAuctionInfo: {
     data: {
@@ -745,6 +749,70 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
     }
   }, [wallet, signer, papi]);
 
+  const getDelegatedAddress = useCallback(async () => {
+    if (!wallet) {
+      return '';
+    }
+
+    try {
+      const templeGoldStakingContract = (await papi.getContract(
+        getAppConfig().contracts.templeGoldStaking
+      )) as TempleGoldStaking;
+
+      const delegatedAddress = await templeGoldStakingContract.delegates(
+        wallet
+      );
+
+      // Return empty string if no delegate (returns 0x0000000000000000000000000000000000000000)
+      return delegatedAddress === '0x0000000000000000000000000000000000000000'
+        ? ''
+        : delegatedAddress;
+    } catch (error) {
+      console.error('Error fetching delegated address:', error);
+      return '';
+    }
+  }, [wallet, papi]);
+
+  const delegate = useCallback(
+    async (delegatee: string) => {
+      if (!wallet || !signer) {
+        console.debug('Missing wallet or signer when trying to delegate.');
+        return;
+      }
+
+      await switchNetwork(getChainId());
+
+      try {
+        const connectedSigner = getConnectedSigner();
+
+        const templeGoldStaking = (await papi.getConnectedContract(
+          getAppConfig().contracts.templeGoldStaking,
+          connectedSigner
+        )) as TempleGoldStaking;
+
+        const populatedTransaction =
+          await templeGoldStaking.populateTransaction.delegate(delegatee);
+
+        const receipt = await estimateAndMine(
+          connectedSigner,
+          populatedTransaction
+        );
+
+        openNotification({
+          title: `Successfully delegated voting rights`,
+          hash: receipt.transactionHash,
+        });
+      } catch (err) {
+        console.error('Error while delegating:', err);
+        openNotification({
+          title: 'Error delegating voting rights',
+          hash: '',
+        });
+      }
+    },
+    [wallet, signer, switchNetwork, getConnectedSigner, papi, openNotification]
+  );
+
   const daiGoldAuctionBid = useCallback(
     async (amount: string) => {
       if (!wallet || !signer) {
@@ -913,6 +981,8 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
         unstakeTemple,
         claimRewards,
         getUnstakeTime,
+        delegate,
+        getDelegatedAddress,
       },
       daiGoldAuctionInfo: {
         data: daiGoldAuctionInfo,

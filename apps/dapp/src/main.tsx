@@ -2,7 +2,6 @@ import React, { Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import styled from 'styled-components';
-
 import { GlobalStyle } from 'styles/GlobalStyle';
 import { AppProvider } from 'providers/AppProvider';
 import NotificationManager from 'components/Notification/NotificationManager';
@@ -10,7 +9,6 @@ import PageLayout from 'components/Layouts/Page';
 import Loader from 'components/Loader/Loader';
 import Disclaimer from 'components/Pages/Disclaimer';
 import Home from 'components/Pages/Core/NewUI/Home';
-
 import { AnalyticsService } from 'services/AnalyticsService';
 import { DashboardPage } from 'components/Pages/Core/DappPages/Dashboard';
 import { TradePage } from './components/Pages/Core/DappPages/TradePage';
@@ -24,6 +22,7 @@ import { StakeTemple } from 'components/Pages/Core/DappPages/SpiceBazaar/Earn/St
 import { Stake } from 'components/Pages/Core/DappPages/SpiceBazaar/Earn/StakeTemple/Stake';
 import { Unstake } from 'components/Pages/Core/DappPages/SpiceBazaar/Earn/StakeTemple/Unstake';
 import { Claim } from 'components/Pages/Core/DappPages/SpiceBazaar/Earn/StakeTemple/Claim';
+import { Delegate } from 'components/Pages/Core/DappPages/SpiceBazaar/Earn/StakeTemple/Delegate';
 import { Spend } from 'components/Pages/Core/DappPages/SpiceBazaar/Spend';
 import { MyActivityTGLD } from 'components/Pages/Core/DappPages/SpiceBazaar/MyActivity/BidsForTGLD';
 import { Analytics } from 'components/Pages/Core/DappPages/SpiceBazaar/Analytics';
@@ -121,6 +120,7 @@ root.render(
                       <Route path="stake" element={<Stake />} />
                       <Route path="unstake" element={<Unstake />} />
                       <Route path="claim" element={<Claim />} />
+                      <Route path="delegate" element={<Delegate />} />
                     </Route>
                     <Route path="spice/bid" element={<Bid />} />
                     <Route path="spice/spend" element={<Spend />} />
