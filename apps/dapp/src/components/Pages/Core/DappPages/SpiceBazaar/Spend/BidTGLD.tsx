@@ -338,7 +338,7 @@ export const BidTGLD = ({
                   Number(
                     formatToken(balanceToken, TICKER_SYMBOL.TEMPLE_GOLD_TOKEN)
                   ) ||
-                exceededAmount ||
+                // exceededAmount ||
                 !isCheckboxChecked1 ||
                 !isCheckboxChecked2 ||
                 isSubmitting ||
