@@ -6,17 +6,15 @@ import {
   ensureExpectedEnvvars,
 } from '../../helpers';
 import { getDeployedTempleGoldContracts } from '../../mainnet/templegold/contract-addresses';
-import { getDeployedContracts } from '../../mainnet/v2/contract-addresses';
 import { Constants as MAINNET_CONSTANTS } from '../../mainnet/constants';
 
 async function main() {
   ensureExpectedEnvvars();
   const [owner] = await ethers.getSigners();
   const TEMPLEGOLD_ADDRESSES = getDeployedTempleGoldContracts();
-  const V2_ADDRESSES = getDeployedContracts();
   const MAINNET_CHAIN_ID = 1;
   const initArgs =  {
-    executor:  V2_ADDRESSES.CORE.EXECUTOR_MSIG,
+    executor:  await owner.getAddress(),// transfer to TEMPLEGOLD_ADDRESSES.CORE.EXECUTOR_MSIG in post deploy
     layerZeroEndpoint: TEMPLEGOLD_ADDRESSES.EXTERNAL.LAYER_ZERO.ENDPOINT, // local endpoint address
     mintChainId: MAINNET_CHAIN_ID, // only mint on mint chain id
     mintChainLzEid: MAINNET_CONSTANTS.LAYER_ZERO.EID,
