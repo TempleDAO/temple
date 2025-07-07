@@ -41,7 +41,10 @@ export const Delegate = () => {
         } else if (
           delegatedAddress.toLowerCase() === walletAddress.toLowerCase()
         ) {
-          setIsDelegatingToSelf(true);
+          // If currently delegating to self, set to "another address" option
+          // since "yourself" option will be disabled
+          setIsDelegatingToSelf(false);
+          setInputValue(''); // Clear input since they're delegating to themselves
         } else {
           setIsDelegatingToSelf(false);
           setInputValue(delegatedAddress);
@@ -85,8 +88,8 @@ export const Delegate = () => {
         setIsDelegatingToSelf(true);
         setInputValue('');
       } else if (newDelegate.toLowerCase() === walletAddress.toLowerCase()) {
-        // If delegated to self, set to "yourself" option
-        setIsDelegatingToSelf(true);
+        // If delegated to self, set to "another address" option since "yourself" will be disabled
+        setIsDelegatingToSelf(false);
         setInputValue('');
       } else {
         // If delegated to another address, set to "another address" option
@@ -164,10 +167,31 @@ export const Delegate = () => {
                   id="yourself"
                   name="delegate"
                   value="yourself"
-                  checked={isDelegatingToSelf}
+                  checked={
+                    isDelegatingToSelf &&
+                    !(
+                      currentDelegate?.toLowerCase() ===
+                      walletAddress?.toLowerCase()
+                    )
+                  }
                   onChange={() => setIsDelegatingToSelf(true)}
+                  disabled={
+                    currentDelegate?.toLowerCase() ===
+                    walletAddress?.toLowerCase()
+                  }
                 />
-                <RadioLabel htmlFor="yourself">Yourself</RadioLabel>
+                <RadioLabel
+                  htmlFor="yourself"
+                  disabled={
+                    currentDelegate?.toLowerCase() ===
+                    walletAddress?.toLowerCase()
+                  }
+                >
+                  {currentDelegate?.toLowerCase() ===
+                  walletAddress?.toLowerCase()
+                    ? 'Yourself - you are currently delegating to yourself'
+                    : 'Yourself'}
+                </RadioLabel>
               </RadioOption>
               <AnotherAddressContainer>
                 <RadioOption>
@@ -176,7 +200,11 @@ export const Delegate = () => {
                     id="another"
                     name="delegate"
                     value="another"
-                    checked={!isDelegatingToSelf}
+                    checked={
+                      !isDelegatingToSelf ||
+                      currentDelegate?.toLowerCase() ===
+                        walletAddress?.toLowerCase()
+                    }
                     onChange={() => setIsDelegatingToSelf(false)}
                   />
                   <RadioLabel htmlFor="another">Another address</RadioLabel>
@@ -249,12 +277,14 @@ export const Delegate = () => {
               </StakedStatusText>
             </StakedTempleText>
           </StakedTempleContainer>
-          <Line></Line>
-          <NoStakedTempleText>
-            Stake TEMPLE in the ‘Stake’ tab and come back here to delegate your
-            voting rights to yourself or to another wallet. All voting rights
-            can only be held by one wallet.
-          </NoStakedTempleText>
+          <Padding>
+            <Line></Line>
+            <NoStakedTempleText>
+              Stake TEMPLE in the ‘Stake’ tab and come back here to delegate
+              your voting rights to yourself or to another wallet. All voting
+              rights can only be held by one wallet.
+            </NoStakedTempleText>
+          </Padding>
         </>
       )}
     </PageContainer>
@@ -262,6 +292,7 @@ export const Delegate = () => {
 };
 
 const PageContainer = styled.div`
+  // width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -272,7 +303,7 @@ const PageContainer = styled.div`
 const StakedTempleContainer = styled.div`
   display: flex;
   flex-direction: row;
-  width: 450px;
+  max-width: 450px;
   align-items: center;
   padding: 0px 24px 0px 24px;
   gap: 15px;
@@ -296,8 +327,6 @@ const StakedStatusText = styled.div`
 `;
 
 const StakedAmount = styled.h3`
-  font-size: 28px;
-  line-height: 52px;
   color: ${({ theme }) => theme.palette.brandLight};
   margin: 0px;
 `;
@@ -305,12 +334,15 @@ const StakedAmount = styled.h3`
 const DelegateContainer = styled.div`
   display: flex;
   flex-direction: column;
-  width: 100%;
   border-top: 2px solid ${({ theme }) => theme.palette.brand};
   border-bottom: 2px solid ${({ theme }) => theme.palette.brand};
   background: ${({ theme }) => theme.palette.gradients.grey};
   padding: 24px;
   gap: 32px;
+
+  ${breakpoints.phoneAndAbove(`
+  width: 450px;
+`)}
 `;
 
 const DelegateRights = styled.div`
@@ -323,13 +355,17 @@ const StakedContainer = styled.div<{ fadeEffect?: boolean }>`
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 450px;
+  width: 100%;
   border: 1px solid ${({ theme }) => theme.palette.brand};
   border-radius: 10px;
   background: ${({ theme }) => theme.palette.black};
   gap: 20px;
   padding: 16px;
   opacity: ${({ fadeEffect }) => (fadeEffect ? 0.5 : 1)};
+
+  ${breakpoints.phoneAndAbove(`
+  width: 450px;
+`)}
 `;
 
 const StakedAmountContainer = styled.div`
@@ -346,11 +382,14 @@ const StakedTextBottom = styled.div`
   color: ${({ theme }) => theme.palette.brandLight};
 `;
 
-const Staked = styled.h3`
-  font-size: 28px;
-  line-height: 52px;
+const Staked = styled.h4`
   color: ${({ theme }) => theme.palette.brandLight};
   margin: 0px;
+
+  ${breakpoints.phoneAndAbove(`
+  font-size: 24px;
+  line-height: 120%;
+`)}
 `;
 
 const RadioGroup = styled.div`
@@ -374,14 +413,15 @@ const AnotherAddressContainer = styled.div`
 const RadioInput = styled.input`
   appearance: none;
   -webkit-appearance: none;
-  width: 20px;
-  height: 20px;
+  min-width: 20px;
+  min-height: 20px;
   border: 1px solid ${({ theme }) => theme.palette.brandLight};
   border-radius: 50%;
   background: ${({ theme }) => theme.palette.black};
   cursor: pointer;
   position: relative;
   margin: 0;
+  flex-shrink: 0;
 
   &:checked {
     &::after {
@@ -397,22 +437,39 @@ const RadioInput = styled.input`
     }
   }
 
-  &:hover {
-    border-color: ${({ theme }) => theme.palette.brand};
+  &:disabled {
+    border-color: #878787;
+    cursor: not-allowed;
   }
 `;
 
-const RadioLabel = styled.label`
+const RadioLabel = styled.label<{ disabled?: boolean }>`
   font-size: 16px;
   line-height: 19px;
-  color: ${({ theme }) => theme.palette.brandLight};
-  cursor: pointer;
+  color: ${({ theme, disabled }) =>
+    disabled ? '#878787' : theme.palette.brandLight};
+  cursor: ${({ disabled }) => (disabled ? 'not-allowed' : 'pointer')};
+`;
+
+const Padding = styled.div`
+  display: flex;
+  flex-direction: column;
+  padding: 10px 24px;
+  gap: 24px;
+
+  ${breakpoints.phoneAndAbove(`
+      padding: 0px;
+`)}
 `;
 
 const Line = styled.div`
-  width: 450px;
+  width: 100%;
   height: 2px;
   background: ${({ theme }) => theme.palette.brand};
+
+  ${breakpoints.phoneAndAbove(`
+  width: 450px;
+`)}
 `;
 
 const LoaderContainer = styled.div`
@@ -423,14 +480,14 @@ const LoaderContainer = styled.div`
 `;
 
 const NoStakedTempleText = styled.div`
-  width: 450px;
   font-weight: 700;
   color: ${({ theme }) => theme.palette.brand};
   font-size: 16px;
-  line-height: 19px;
+  line-height: 120%;
 
   ${breakpoints.phoneAndAbove(`
     font-size: 18px;
-    line-height: 22px;
+    line-height: 100%;
+    width: 450px;
 `)}
 `;

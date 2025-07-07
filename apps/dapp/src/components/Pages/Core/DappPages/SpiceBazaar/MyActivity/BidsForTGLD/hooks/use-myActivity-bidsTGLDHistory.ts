@@ -41,7 +41,7 @@ export const useMyActivityBidsTGLDHistory =
       }
 
       if (
-        Number(endTime) < currentTime &&
+        Number(endTime) <= currentTime &&
         parseFloat(totalBid) > 0 &&
         !hasClaimed
       ) {

@@ -31,7 +31,7 @@ export const useMyActivityBidsSpiceHistory = (): {
 
     if (Number(endTime) > currentTime) return 'Bid';
     if (
-      Number(endTime) < currentTime &&
+      Number(endTime) <= currentTime &&
       parseFloat(totalBid) > 0 &&
       !hasClaimed
     )
