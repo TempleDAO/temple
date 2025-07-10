@@ -10,7 +10,7 @@ import {
 import { DaiGoldAuction, TempleGold, TempleGoldStaking } from 'types/typechain';
 import { useWallet } from 'providers/WalletProvider';
 import env from 'constants/env';
-import { fromAtto } from 'utils/bigNumber';
+import { ADDRESS_ZERO, fromAtto } from 'utils/bigNumber';
 import { useNotification } from 'providers/NotificationProvider';
 import { estimateAndMine } from 'utils/ethers';
 import { getBigNumberFromString, getTokenInfo } from 'components/Vault/utils';
@@ -764,9 +764,7 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
       );
 
       // Return empty string if no delegate (returns 0x0000000000000000000000000000000000000000)
-      return delegatedAddress === '0x0000000000000000000000000000000000000000'
-        ? ''
-        : delegatedAddress;
+      return delegatedAddress === ADDRESS_ZERO ? '' : delegatedAddress;
     } catch (error) {
       console.error('Error fetching delegated address:', error);
       return '';

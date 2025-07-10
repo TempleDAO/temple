@@ -8,6 +8,7 @@ import { useWallet } from 'providers/WalletProvider';
 import { useSpiceBazaar } from 'providers/SpiceBazaarProvider';
 import Loader from 'components/Loader/Loader';
 import { TradeButton } from './Stake';
+import { useNavigate } from 'react-router-dom';
 
 export const Delegate = () => {
   const [inputValue, setInputValue] = useState<string>('');
@@ -16,6 +17,7 @@ export const Delegate = () => {
   const [currentDelegate, setCurrentDelegate] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const { walletAddress } = useWallet();
+  const navigate = useNavigate();
 
   const formatAddress = (address: string) => {
     if (!address) return '';
@@ -280,9 +282,14 @@ export const Delegate = () => {
           <Padding>
             <Line></Line>
             <NoStakedTempleText>
-              Stake TEMPLE in the ‘Stake’ tab and come back here to delegate
-              your voting rights to yourself or to another wallet. All voting
-              rights can only be held by one wallet.
+              <StakeLink
+                onClick={() => navigate('/dapp/spice/earn/staketemple/stake')}
+              >
+                Stake TEMPLE
+              </StakeLink>{' '}
+              and come back here to delegate your voting rights to yourself or
+              to another wallet. All voting rights can only be held by one
+              wallet.
             </NoStakedTempleText>
           </Padding>
         </>
@@ -490,4 +497,14 @@ const NoStakedTempleText = styled.div`
     line-height: 100%;
     width: 450px;
 `)}
+`;
+
+const StakeLink = styled.span`
+  color: ${({ theme }) => theme.palette.brandLight};
+  cursor: pointer;
+  text-decoration: underline;
+
+  &:hover {
+    opacity: 0.8;
+  }
 `;
