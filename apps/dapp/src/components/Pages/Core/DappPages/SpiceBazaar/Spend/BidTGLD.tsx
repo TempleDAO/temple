@@ -266,7 +266,7 @@ export const BidTGLD = ({
         {wallet ? (
           <>
             <ReceiveAmountContainer fadeEffect={fadeEffect}>
-              <ReceiveTextTop>You will receive</ReceiveTextTop>
+              <ReceiveTextTop>You may receive up to a total of</ReceiveTextTop>
               <ReceiveContainer>
                 <TempleGoldIcon />
                 <ReceiveAmount fadeEffect={fadeEffect}>
@@ -283,7 +283,7 @@ export const BidTGLD = ({
                 </ReceiveAmount>
               </ReceiveContainer>
               <ReceiveTextBottom>
-                at the current price of {!isPhoneOrAbove && <br />}
+                at the new quote of {!isPhoneOrAbove && <br />}
                 {priceRatioAfterBid < 0.001
                   ? '<0.001'
                   : priceRatioAfterBid.toFixed(4)}{' '}
