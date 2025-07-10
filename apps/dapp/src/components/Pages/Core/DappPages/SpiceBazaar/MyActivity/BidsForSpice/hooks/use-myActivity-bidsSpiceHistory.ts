@@ -27,10 +27,14 @@ export const useMyActivityBidsSpiceHistory = (): {
     totalBid: string,
     hasClaimed: boolean
   ): Promise<'Bid' | 'Claim' | ''> => {
-    const currentTime = Date.now().toString();
+    const currentTime = Math.floor(Date.now() / 1000);
 
-    if (endTime > currentTime) return 'Bid';
-    if (endTime < currentTime && parseFloat(totalBid) > 0 && !hasClaimed)
+    if (Number(endTime) > currentTime) return 'Bid';
+    if (
+      Number(endTime) <= currentTime &&
+      parseFloat(totalBid) > 0 &&
+      !hasClaimed
+    )
       return 'Claim';
 
     return '';
