@@ -3,11 +3,19 @@ import { stableGoldAuction } from 'utils/subgraph';
 import { subgraphQuery } from 'utils/subgraph';
 import env from 'constants/env';
 
+export type MetricType =
+  | 'totalUsdsBid'
+  | 'tgldFinalPrice'
+  | 'tgldInCirculation';
+
 export type Metric = {
   id: string;
   date: string;
-  value: number;
   timestamp: number;
+  // Values for different metrics
+  totalUsdsBid: number;
+  tgldFinalPrice: number;
+  tgldInCirculation: number;
 };
 
 type UseStableGoldAuctionMetricsReturn = {
@@ -37,18 +45,23 @@ export const useStableGoldAuctionMetrics =
           response?.stableGoldAuction?.auctionInstances ?? [];
 
         const metrics: Metric[] = rawInstances
-          .map((instance: any) => ({
-            id: instance.id,
-            timestamp: Number(instance.endTime),
-            date: new Date(Number(instance.endTime) * 1000).toLocaleDateString(
-              'en-GB',
-              {
-                month: 'short',
-                day: 'numeric',
-              }
-            ),
-            value: parseFloat(instance.totalBidTokenAmount),
-          }))
+          .map((instance: any) => {
+            const date = new Date(
+              Number(instance.endTime) * 1000
+            ).toLocaleDateString('en-GB', {
+              month: 'short',
+              day: 'numeric',
+            });
+
+            return {
+              id: instance.id,
+              timestamp: Number(instance.endTime),
+              date,
+              totalUsdsBid: parseFloat(instance.totalBidTokenAmount),
+              tgldFinalPrice: parseFloat(instance.priceRatio),
+              tgldInCirculation: parseFloat(instance.circulatingTgld || '0'),
+            };
+          })
           .sort((a, b) => a.timestamp - b.timestamp);
 
         setData(metrics);

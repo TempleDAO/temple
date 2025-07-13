@@ -1072,12 +1072,20 @@ export function userTransactionsSpiceAuctions(
                    bidAmount
                    timestamp
                    hash
+                   auctionInstance {
+                     endTime
+                     epoch
+                  }
                }
                ... on ClaimTransaction {
                    id
                    auctionAmount
                    timestamp
                    hash
+                   auctionInstance {
+                     endTime
+                     epoch
+                  }
                }
            }
        }
@@ -1112,12 +1120,20 @@ const UserTransactionsSpiceAuctionsResp = z.object({
                   timestamp: z.string(),
                   hash: z.string(),
                   bidAmount: z.string(),
+                  auctionInstance: z.object({
+                    endTime: z.string(),
+                    epoch: z.string(),
+                  }),
                 }),
                 z.object({
                   id: z.string(),
                   timestamp: z.string(),
                   hash: z.string(),
                   auctionAmount: z.string(),
+                  auctionInstance: z.object({
+                    endTime: z.string(),
+                    epoch: z.string(),
+                  }),
                 }),
               ])
             ),
@@ -1156,6 +1172,7 @@ export function stableGoldAuction(
           claimedTokenAmount
           priceRatio
           price
+          circulatingTgld
         }
       }
     }
@@ -1186,6 +1203,7 @@ const StableGoldAuctionResp = z.object({
         claimedTokenAmount: z.string(),
         priceRatio: z.string(),
         price: z.string(),
+        circulatingTgld: z.string(),
       })
     ),
   }),
