@@ -5,6 +5,7 @@ import DashboardMetrics from './Metrics';
 import DashboardTransactionHistory from './Table';
 import linkSvg from 'assets/icons/link.svg?react';
 import { DashboardData, Dashboards } from './DashboardConfig';
+import useDashboardV2Metrics from './hooks/use-dashboardv2-metrics';
 
 type DashboardContentProps = {
   selectedDashboard?: DashboardData;
@@ -15,11 +16,14 @@ const DEFAULT_DASHBOARD = Dashboards[0];
 const DashboardContent = ({
   selectedDashboard = DEFAULT_DASHBOARD,
 }: DashboardContentProps) => {
+  const { isShutdown } = useDashboardV2Metrics(selectedDashboard);
+
   return (
     <DashboardContentContainer>
       <Header>
         <HeaderTextContainer>
           <HeaderTitle>{selectedDashboard.title}</HeaderTitle>
+          {isShutdown && <ShutdownBadge>Shutdown</ShutdownBadge>}
           <LinkIcon
             onClick={() =>
               window.open(selectedDashboard.contractLink, '_blank')
@@ -30,12 +34,31 @@ const DashboardContent = ({
           dangerouslySetInnerHTML={{ __html: selectedDashboard.description }}
         />
       </Header>
-      <DashboardChart dashboardData={selectedDashboard} />
-      <DashboardMetrics dashboardData={selectedDashboard} />
+      <DashboardChart
+        dashboardData={selectedDashboard}
+        isShutdown={isShutdown}
+      />
+      {!isShutdown && <DashboardMetrics dashboardData={selectedDashboard} />}
       <DashboardTransactionHistory dashboardData={selectedDashboard} />
     </DashboardContentContainer>
   );
 };
+
+const ShutdownBadge = styled.div`
+  background: transparent;
+  border: 1px solid ${({ theme }) => theme.palette.brand};
+  color: ${({ theme }) => theme.palette.brand};
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-right: 15px;
+  white-space: nowrap;
+  ${breakpoints.tabletAndAbove(`
+    font-size: 14px;
+    padding: 6px 16px;
+  `)}
+`;
 
 const LinkIcon = styled(linkSvg)`
   fill: ${({ theme }) => theme.palette.brand};
