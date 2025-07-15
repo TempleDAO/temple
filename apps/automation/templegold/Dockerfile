@@ -2,7 +2,6 @@
 FROM node:20-alpine AS appbuild
 WORKDIR /app
 COPY package.json yarn.lock tsconfig.json ./
-COPY ./abi ./abi
 COPY ./src ./src
 RUN yarn install
 RUN yarn build
