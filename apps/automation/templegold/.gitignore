@@ -1,0 +1,6 @@
+node_modules
+dist
+src/typechain
+src/scripts/export-config.ts
+.env
+src/scripts/variables.json

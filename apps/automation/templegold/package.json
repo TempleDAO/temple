@@ -1,0 +1,32 @@
+{
+  "name": "tgld-automations",
+  "version": "1.0.0",
+  "license": "AGPL-3.0-or-later",
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build": "yarn tsc --noEmit &&  yarn esbuild --platform=node --bundle --outfile=dist/main.js src/main.ts",
+    "build:localtest": "yarn tsc --noEmit &&  yarn esbuild --platform=node --bundle --outfile=dist/main-localtest.js src/main-localtest.ts",
+    "build:image": "docker build --file Dockerfile --tag tgld-tasks .",
+    "dev": "yarn build && node ./dist/main.js",
+    "dev:local": "yarn build:localtest && node ./dist/main-localtest.js",
+    "install-abis": "./src/scripts/install-abis.sh"
+  },
+  "dependencies": {
+    "@mountainpath9/big-rational": "^0.2.0",
+    "@mountainpath9/overlord-core": "^1.4.0",
+    "@mountainpath9/overlord-viem": "^1.4.4",
+    "cron-parser": "^4.9.0",
+    "crypto-random-string": "^5.0.0",
+    "discord.js": "^14.14.1",
+    "ethers": "~6.13.1",
+    "exponential-backoff": "^3.1.1",
+    "viem": "^2.30.5",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@typechain/ethers-v6": "0.5.0",
+    "esbuild": "^0.19.3",
+    "tsx": "^4.7.2",
+    "typescript": "^5.1.6"
+  }
+}
