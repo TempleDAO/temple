@@ -9,7 +9,7 @@ VIEM_ABI_DIR=$REPO_ROOT/apps/automation/templegold/src/abi
 
 mk_viem_abi() {
    name=$1
-   src=$PROTOCOL_DIR/artifacts-foundry/$name.sol/$name.0.8.20.json
+   src=$PROTOCOL_DIR/artifacts-foundry/$name.sol/$name.json
    target=$VIEM_ABI_DIR/$name.ts
    echo "export const ABI = $(jq .abi $src) as const;" >$target
 }
@@ -18,7 +18,7 @@ mk_viem_abi() {
 rm -f $VIEM_ABI_DIR/*.ts
 
 # Build artifacts
-(cd $PROTOCOL_DIR; forge build contracts/templegold contracts/interfaces/templegold --use solc:0.8.20)
+(cd $PROTOCOL_DIR; forge build contracts/templegold contracts/interfaces/templegold)
 
 mk_viem_abi IAuctionBase
 mk_viem_abi IERC20
