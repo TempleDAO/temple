@@ -44,7 +44,7 @@ jobs:
         with:
           node-version: ${{ matrix.node_version }}
           cache: 'yarn'
-          cache-dependency-path: apps/protocol/yarn.lock
+          cache-dependency-path: protocol/yarn.lock
 
       - name: Install yarn project
         run: yarn install

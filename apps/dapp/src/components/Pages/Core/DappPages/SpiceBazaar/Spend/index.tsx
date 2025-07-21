@@ -210,21 +210,6 @@ export const Spend = () => {
         <ContentContainer>
           <SpiceTitle>
             <SpiceTitleText>Spice Auctions</SpiceTitleText>
-            {tgldBridgeConfig.active && (
-              <Bridge>
-                <BridgeText>
-                  Bridge your Temple Gold to{' '}
-                  {tgldBridgeConfig.altchainDisplayName} to use them in Spice
-                  Auctions.
-                </BridgeText>
-                <TradeButton
-                  onClick={() => setModal({ type: 'bridgeTgld' })}
-                  style={{ whiteSpace: 'nowrap', margin: 0 }}
-                >
-                  BRIDGE&nbsp;MY&nbsp;<SpanBreak>TEMPLE&nbsp;GOLD</SpanBreak>
-                </TradeButton>
-              </Bridge>
-            )}
           </SpiceTitle>
           <SpiceAuctions>
             {allAuctionsLoading && <Loader />}
@@ -248,6 +233,21 @@ export const Spend = () => {
               )
             )}
           </SpiceAuctions>
+          {tgldBridgeConfig.active && (
+            <Bridge>
+              <BridgeText>
+                Bridge your Temple Gold to{' '}
+                {tgldBridgeConfig.altchainDisplayName} to use them in Spice
+                Auctions.
+              </BridgeText>
+              <TradeButton
+                onClick={() => setModal({ type: 'bridgeTgld' })}
+                style={{ whiteSpace: 'nowrap', margin: 0 }}
+              >
+                BRIDGE&nbsp;MY&nbsp;<SpanBreak>TEMPLE&nbsp;GOLD</SpanBreak>
+              </TradeButton>
+            </Bridge>
+          )}
         </ContentContainer>
       </PageContainer>
       <Popover
