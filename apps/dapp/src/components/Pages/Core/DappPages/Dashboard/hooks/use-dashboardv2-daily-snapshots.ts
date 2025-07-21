@@ -63,10 +63,19 @@ async function fetchStrategyHourlySnapshots() {
   return resp.strategyHourlySnapshots;
 }
 
+// Fetch the last 10 years of data, by default
+// This will be filtered by the chart time range selector later
+// No strategy has been running for 10 years, so we won't technically have that much data
+// But for shutdown strategies, we need all available data
+// This is a bit of a hack, but a reasonable compromise for now.
+// Potentially we could configure a "start date" for the strategy to limit the data we're fetching
+// But that's overkill for now, considering the amount of data we're fetching
+const TEN_YEARS_MS = 5 * 365 * 24 * 60 * 60 * 1000;
+
 async function fetchStrategyDailySnapshots() {
   const now = new Date();
   // the largest value from the chart time range selector 1W | 1M | 1Y
-  const since = Math.floor((now.getTime() - ONE_YEAR_MS) / 1000).toString();
+  const since = Math.floor((now.getTime() - TEN_YEARS_MS) / 1000).toString();
   const result: V2StrategySnapshot[] = [];
   const MAX_PAGE_SIZE = 1000; // current max page size
   let skip = 0;
