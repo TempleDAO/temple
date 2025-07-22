@@ -70,7 +70,7 @@ async function fetchStrategyHourlySnapshots() {
 // This is a bit of a hack, but a reasonable compromise for now.
 // Potentially we could configure a "start date" for the strategy to limit the data we're fetching
 // But that's overkill for now, considering the amount of data we're fetching
-const TEN_YEARS_MS = 5 * 365 * 24 * 60 * 60 * 1000;
+const TEN_YEARS_MS = 10 * 365 * 24 * 60 * 60 * 1000;
 
 async function fetchStrategyDailySnapshots() {
   const now = new Date();
