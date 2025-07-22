@@ -15,6 +15,7 @@ import { useMediaQuery } from 'react-responsive';
 
 type DashboardChartProps = {
   dashboardData: DashboardData;
+  isShutdown: boolean;
 };
 
 const metricOptions: { value: V2SnapshotMetric; label: string }[] = [
@@ -30,7 +31,7 @@ const metricOptions: { value: V2SnapshotMetric; label: string }[] = [
 
 const CHART_SELECTOR_QUERY_PARAM = 'chart';
 
-const DashboardChart = ({ dashboardData }: DashboardChartProps) => {
+const DashboardChart = ({ dashboardData, isShutdown }: DashboardChartProps) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const isDesktop = useMediaQuery({
     query: breakpoints.queryPhone,
@@ -66,17 +67,20 @@ const DashboardChart = ({ dashboardData }: DashboardChartProps) => {
               fontSize={isDesktop ? '16px' : '12px'}
             />
           </SelectMetricContainer>
-          <IntervalTogglerContainer>
-            <IntervalToggler
-              selectedInterval={selectedInterval}
-              setSelectedInterval={setSelectedInterval}
-            />
-          </IntervalTogglerContainer>
+          {!isShutdown && (
+            <IntervalTogglerContainer>
+              <IntervalToggler
+                selectedInterval={selectedInterval}
+                setSelectedInterval={setSelectedInterval}
+              />
+            </IntervalTogglerContainer>
+          )}
         </ChartHeader>
         <V2StrategyMetricsChart
           dashboardData={dashboardData}
           selectedMetric={selectedMetric}
           selectedInterval={selectedInterval}
+          isShutdown={isShutdown}
         />
       </ChartContainer>
     </>
