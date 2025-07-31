@@ -20,6 +20,7 @@ type ItemProps = {
 enum StakeTempleLocPaths {
   Stake = '/dapp/spice/earn/staketemple/stake',
   Unstake = '/dapp/spice/earn/staketemple/unstake',
+  Delegate = '/dapp/spice/earn/staketemple/delegate',
   Claim = '/dapp/spice/earn/staketemple/claim',
 }
 
@@ -31,6 +32,10 @@ const items = [
   {
     label: 'UNSTAKE',
     linkTo: StakeTempleLocPaths.Unstake,
+  },
+  {
+    label: 'DELEGATE',
+    linkTo: StakeTempleLocPaths.Delegate,
   },
   {
     label: 'CLAIM TGLD',

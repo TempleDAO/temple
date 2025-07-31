@@ -43,7 +43,7 @@ export const DataTable: React.FC<TableProps> = ({ transactions, loading }) => {
 
   useEffect(() => {
     const sortedTransactions = [...transactions].sort(
-      (a, b) => Number(b.dateEnded) - Number(a.dateStarted)
+      (a, b) => Number(b.dateStarted) - Number(a.dateStarted)
     );
 
     const today = new Date();

@@ -27,11 +27,11 @@ export const useAuctionsHistory = (): UseAuctionsHistoryReturn => {
     startTime: string,
     endTime: string
   ): 'Upcoming' | 'Active' | 'Closed' => {
-    const now = new Date().getTime().toString();
+    const now = Math.floor(new Date().getTime() / 1000);
 
-    if (startTime > now) {
+    if (Number(startTime) > now) {
       return 'Upcoming';
-    } else if (endTime > now) {
+    } else if (Number(endTime) > now) {
       return 'Active';
     } else {
       return 'Closed';
