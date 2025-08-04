@@ -20,7 +20,7 @@ const env: Environment = {
     frax: '',
     usdc: '',
     usdt: '',
-    dai: '0x33FA9618365F67c5345066d5Cfd7f3A2f183599A', //0x33FA9618365F67c5345066d5Cfd7f3A2f183599A addres
+    dai: '0x33FA9618365F67c5345066d5Cfd7f3A2f183599A',
     usds: '0xBe9162230D9e637218D74C7f41f62ef2385fEe64',
     weth: '',
     frax3CrvFarming: '',
@@ -116,7 +116,7 @@ const env: Environment = {
     },
     temple: {
       name: 'Temple',
-      address: '0x64a925B0fA211c44337148C0807f959Bd44b0B67', //'0x98c5e61b1b3731a1f379e8770861164d23118cdc', // this the spice bazaar temple
+      address: '0x64a925B0fA211c44337148C0807f959Bd44b0B67',
       decimals: 18,
       symbol: 'TEMPLE',
     },
@@ -155,7 +155,7 @@ const env: Environment = {
     },
     dai: {
       name: 'DAI',
-      address: '0x33FA9618365F67c5345066d5Cfd7f3A2f183599A', //0x33FA9618365F67c5345066d5Cfd7f3A2f183599A addres
+      address: '0x33FA9618365F67c5345066d5Cfd7f3A2f183599A',
       decimals: 18,
       symbol: 'DAI',
     },
