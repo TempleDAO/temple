@@ -1,0 +1,175 @@
+pragma solidity ^0.8.20;
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Temple (interfaces/templegold/ITempleGoldVesting.sol)
+
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
+interface ITempleGoldVesting {
+    event Revoked(bytes32 _id, address indexed _recipient, uint256 _unreleased, uint256 _totalVested);
+    event Released(bytes32 _id, address indexed _recipient, uint256 _amount);
+    event ScheduleCreated(
+        bytes32 _id, address indexed _recipient, uint32 _start,
+        uint32 _cliff, uint32 _duration, uint128 _amount
+    );
+    event RecipientChanged(bytes32 _vestingId, address _oldRecipient, address indexed _recipient);
+    // event FundsOwnerSet(address indexed _fundsOwner);
+
+    error CannotRelease();
+    error InvalidScheduleId();
+    error FullyVested();
+
+    struct VestingSchedule {
+        /// @notice cliff
+        uint32 cliff;
+        /// @notice Start time of vesting
+        uint32 start;
+        /// @notice Duration of vesting
+        uint32 duration;
+        /// @notice Amount of TGLD for whole vesting
+        uint128 amount;
+        /// @notice Amount of TGLD distributed to recipient
+        uint128 distributed;
+        /// @notice Recipient of vesting
+        address recipient;
+        /// @notice If vesting is revoked
+        bool revoked;
+    }
+
+    struct VestingSummary {
+        /// @notice Recipient of vesting
+        address recipient;
+        /// @notice distributed tgld
+        uint128 distributed;
+        /// @notice total vested at current block.timestamp
+        uint128 vested;
+        /// @notice total vested at end time of summary
+        uint128 vestedAtEnd;
+    }
+
+    /// @notice Total TGLD vested and unclaimed
+    function totalVestedAndUnclaimed() external view returns (uint256);
+
+    /// @notice Recipient vesting counts for generating IDs. An account can have multiple vesting schedules
+    function holdersVestingCount(address holder) external view returns (uint256);
+
+    /**
+     * @notice Get vesting schedule
+     * @param _vestingId Vesting Id
+     * @return VestingSchedule 
+     */
+    function getSchedule(bytes32 _vestingId) external view returns (VestingSchedule memory);
+
+    /**
+     * @notice Create multiple vesting schedules
+     * @param _schedules Vesting schedules
+     */
+    function createSchedules(
+        VestingSchedule[] calldata _schedules 
+    ) external;
+
+    /**
+     * @notice Revoke vesting
+     * @param _vestingId Vesting Id
+     */
+    function revokeVesting(bytes32 _vestingId) external;
+
+    /**
+     * @dev Computes the next vesting schedule identifier for a given account address.
+     */
+    function computeNextVestingScheduleIdForHolder(
+        address _recipient
+    ) external view returns (bytes32);
+
+    /**
+     * @notice Get vesting Id at index from list of vesting Ids
+     * @param _index Index
+     * @return id Bytes32 Id
+     */
+    function getVestingIdAtIndex(
+        uint256 _index
+    ) external view returns (bytes32 id);
+
+    /**
+     * @notice Release tokens vested at current block timestamp. Caller must be recipient of vest
+     * @param _vestingId Vesting Id
+     */
+    function release(bytes32 _vestingId) external;
+
+    /**
+     * @dev Computes the vesting schedule identifier for an address and an index.
+     */
+    function computeVestingScheduleIdForAddressAndIndex(
+        address holder,
+        uint256 index
+    ) external pure returns (bytes32);
+
+    /**
+     * @notice Returns the last vesting schedule for a given holder address.
+     * @param _recipient Recipient address
+     * @return VestingSchedule
+     */
+    function getLastVestingScheduleForHolder(
+        address _recipient
+    ) external view returns (VestingSchedule memory);
+
+    /**
+     * @notice Returns vesting schedule by address and index
+     * @param recipient Recipient
+     * @param index Index
+     * @return VestingSchedule
+     */
+    function getVestingScheduleByAddressAndIndex(
+        address recipient,
+        uint256 index
+    ) external view returns (VestingSchedule memory);
+
+    function getTotalVestingAtCurrentTime(bytes32 _vestingId) external view returns (uint256);
+
+   /**
+     * @notice Get vesting summary
+     * @param _ids Vesting Ids
+     * @param _from From timestamp
+     * @param _to To timestamp
+     * @return summary Vesting summary 
+     */
+    function getVestingSummary(
+        bytes32[] memory _ids,
+        uint32 _from,
+        uint32 _to
+    ) external view returns (VestingSummary[] memory summary);
+
+    /**
+     * @notice Get vesting Ids
+     * @return ids Vesting Ids 
+     */
+    function getVestingIds() external view returns (bytes32[] memory ids);
+
+    /**
+     * @notice Check if vesting Id exists
+     * @param _id Vesting Id
+     * @return Bool
+     */
+    function vestingIdExists(bytes32 _id) external view returns (bool);
+
+    /**
+     * @notice Get releasable amount
+     * @param _vestingId Vesting Id
+     * @return Amount
+     */
+    function getReleasableAmount(bytes32 _vestingId) external view returns (uint256);
+
+    /**
+     * @notice Get total amount vested for an Id at timestamp
+     * @param _vestingId Vesting Id
+     * @param _at At timestamp
+     * @return Total vested
+     */
+    function getTotalVestedAt(bytes32 _vestingId, uint32 _at) external view returns (uint256);
+
+    /**
+     * @notice Check if vesting is revoked
+     * @param _vestingId Vesting Id
+     * @return Bool
+     */
+    function isVestingRevoked(bytes32 _vestingId) external view returns (bool);
+}
