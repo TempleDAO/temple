@@ -10,7 +10,7 @@ import {
 } from '../DashboardConfig';
 import {
   queryBenchmarkRate,
-  queryRamosData,
+  queryProtocolData,
   queryStrategyBalances,
   queryStrategyData,
   queryTempleCirculatingSupply,
@@ -59,6 +59,7 @@ export interface StrategyMetrics {
   totalRepayment: number;
   principal: number;
   accruedInterest: number;
+  isShutdown: boolean;
 }
 
 const CACHE_TTL = 1000 * 60;
@@ -68,14 +69,19 @@ export default function useDashboardV2Metrics(dashboardData: DashboardData) {
     queryKey: getQueryKey.metricsDashboard(dashboardData.key),
     queryFn: async () => {
       if (isTRVDashboard(dashboardData.key)) {
-        return getArrangedTreasuryReservesVaultMetrics(
-          await fetchTreasuryReservesVaultMetrics()
-        );
+        return {
+          metrics: getArrangedTreasuryReservesVaultMetrics(
+            await fetchTreasuryReservesVaultMetrics()
+          ),
+          isShutdown: false, // TRV is never shutdown
+        };
       }
 
-      return getArrangedStrategyMetrics(
-        await fetchStrategyMetrics(dashboardData.key)
-      );
+      const strategyMetrics = await fetchStrategyMetrics(dashboardData.key);
+      return {
+        metrics: getArrangedStrategyMetrics(strategyMetrics),
+        isShutdown: strategyMetrics.isShutdown,
+      };
     },
     refetchInterval: CACHE_TTL,
     staleTime: CACHE_TTL,
@@ -94,6 +100,7 @@ export default function useDashboardV2Metrics(dashboardData: DashboardData) {
       totalRepayment: 0,
       principal: 0,
       accruedInterest: 0,
+      isShutdown: false,
     };
 
     try {
@@ -110,43 +117,68 @@ export default function useDashboardV2Metrics(dashboardData: DashboardData) {
 
       const subgraphData = (responses as StrategyDataResp).strategies.find(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (_strategy: any) =>
-          _strategy.name === strategy && _strategy.isShutdown === false
+        (_strategy: any) => _strategy.name === strategy
       );
 
       const externalBalancesData = (
         responseExternalBalances as StrategyBalancesResp
       ).strategies.find(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (_strategy: any) =>
-          _strategy.name === strategy && _strategy.isShutdown === false
+        (_strategy: any) => _strategy.name === strategy
       );
 
-      const daiStrategyTokenData = subgraphData!.strategyTokens.find(
+      if (!subgraphData) {
+        console.error(`Strategy not found or is shutdown: ${strategy}`);
+        return metrics;
+      }
+
+      if (!externalBalancesData) {
+        console.error(
+          `External balances data not found for strategy: ${strategy}`
+        );
+        return metrics;
+      }
+
+      if (
+        !subgraphData.strategyTokens ||
+        subgraphData.strategyTokens.length === 0
+      ) {
+        console.error(`No strategy tokens found for strategy: ${strategy}`);
+        return metrics;
+      }
+
+      const daiStrategyTokenData = subgraphData.strategyTokens.find(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (_strategyToken: any) => _strategyToken.symbol === TokenSymbols.DAI
       );
 
+      // Checking if DAI token data exists
+      if (!daiStrategyTokenData) {
+        console.error(`DAI strategy token not found for strategy: ${strategy}`);
+        return metrics; // Return default metrics instead of crashing
+      }
+
       metrics = {
-        valueOfHoldings: parseFloat(externalBalancesData!.totalMarketValueUSD),
+        valueOfHoldings: parseFloat(externalBalancesData.totalMarketValueUSD),
         benchmarkedEquity: parseFloat(
-          externalBalancesData!.benchmarkedEquityUSD
+          externalBalancesData.benchmarkedEquityUSD
         ),
         interestRate: aprToApy(
-          parseFloat(daiStrategyTokenData!.rate) +
-            parseFloat(daiStrategyTokenData!.premiumRate)
+          parseFloat(daiStrategyTokenData.rate) +
+            parseFloat(daiStrategyTokenData.premiumRate)
         ),
-        debtShare: parseFloat(daiStrategyTokenData!.debtShare),
-        debtCeiling: parseFloat(daiStrategyTokenData!.debtCeiling),
+        debtShare: parseFloat(daiStrategyTokenData.debtShare),
+        debtCeiling: parseFloat(daiStrategyTokenData.debtCeiling),
         debtCeilingUtilization: parseFloat(
-          daiStrategyTokenData!.debtCeilingUtil
+          daiStrategyTokenData.debtCeilingUtil
         ),
-        totalRepayment: parseFloat(subgraphData!.totalRepaymentUSD),
-        principal: parseFloat(subgraphData!.principalUSD),
-        accruedInterest: parseFloat(subgraphData!.accruedInterestUSD),
+        totalRepayment: parseFloat(subgraphData.totalRepaymentUSD),
+        principal: parseFloat(subgraphData.principalUSD),
+        accruedInterest: parseFloat(subgraphData.accruedInterestUSD),
+        isShutdown: subgraphData.isShutdown,
       };
     } catch (error) {
-      console.info(error);
+      console.error('Error fetching strategy metrics:', error);
     }
 
     return metrics;
@@ -236,8 +268,11 @@ export default function useDashboardV2Metrics(dashboardData: DashboardData) {
   };
 
   const getTempleSpotPrice = async () => {
-    const response = await subgraphQuery(env.subgraph.ramos, queryRamosData());
-    return response.metrics[0].spotPrice;
+    const response = await subgraphQuery(
+      env.subgraph.protocolMetrics,
+      queryProtocolData()
+    );
+    return response.metrics[0].templePrice;
   };
 
   const formatPercent = (input: number) => {
@@ -368,8 +403,12 @@ export default function useDashboardV2Metrics(dashboardData: DashboardData) {
   };
 
   return {
-    dashboardMetrics,
+    dashboardMetrics: {
+      ...dashboardMetrics,
+      data: dashboardMetrics.data?.metrics,
+    },
     getArrangedTreasuryReservesVaultMetrics,
     getArrangedStrategyMetrics,
+    isShutdown: dashboardMetrics.data?.isShutdown || false,
   };
 }

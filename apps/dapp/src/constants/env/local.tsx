@@ -67,7 +67,7 @@ const env: Environment = {
   subgraph: {
     templeCore: 'http://localhost:8000/subgraphs/name/templedao-core',
     protocolMetrics:
-      'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-metrics/api',
+      'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-metrics/version/v0.1.4/api',
     protocolMetricsArbitrum:
       'https://api.studio.thegraph.com/query/76011/temple-metrics-arbitrum/version/latest',
     balancerV2: `https://gateway.thegraph.com/api/${BALANCER_SUBGRAPH_API_KEY}/subgraphs/id/C4ayEZP2yTXRAB8vSaTrgN4m9anTe9Mdm2ViyiAuV9TV`,
@@ -77,7 +77,10 @@ const env: Environment = {
       'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-v2-mainnet/api',
     templeV2Balances:
       'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-v2-balances/api',
-    spiceBazaar: '',
+    spiceBazaar: {
+      eth: '',
+      bera: '',
+    },
   },
   intervals: {
     ascendData: 30_000,

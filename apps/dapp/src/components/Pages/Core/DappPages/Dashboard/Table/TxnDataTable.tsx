@@ -142,15 +142,15 @@ export const TxnDataTable = (props: Props) => {
                 1,
                 tableHeaders.filter((h) => h.isHidden === false).length
               )}
-            {tableRows.map((row) => {
+            {tableRows.map((row, index) => {
               // deconstruct so we can remove expRowMobView, and then use rowData as key of the Fragment
               const { expRowMobView, ...rowData } = row;
+              const uniqueKey = `${row.txHash}-${row.date}-${row.type}-${index}`;
               return (
-                <Fragment key={JSON.stringify(rowData)}>
+                <Fragment key={uniqueKey}>
                   <DataRow
                     hasBorderBotton={false}
                     ref={ref}
-                    key={row.token + row.txHash}
                     onClick={() => clickTableRow(row)}
                   >
                     <DataCell isHidden={tableHeaders[0].isHidden}>

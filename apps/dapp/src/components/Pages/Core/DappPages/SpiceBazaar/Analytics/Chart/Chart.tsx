@@ -3,21 +3,26 @@ import styled from 'styled-components';
 import { format } from 'date-fns';
 import * as breakpoints from 'styles/breakpoints';
 import { InputSelect } from 'components/InputSelect/InputSelect';
-import PriceChart from './PriceChart';
-import TotalBidsChart from './TotalBidsChart';
-import CirculatingSupplyChart from './CirculatingSupplyChart';
-import StakedTempleChart from 'components/Pages/Core/DappPages/SpiceBazaar/Analytics/Chart/StakedTempleChart';
-import EmissionAllocationStaked from 'components/Pages/Core/DappPages/SpiceBazaar/Analytics/Chart/EmissionAllocationStaked';
-import TotalBidders from 'components/Pages/Core/DappPages/SpiceBazaar/Analytics/Chart/TotalBidders';
-import TotalTGLDHoldersChart from 'components/Pages/Core/DappPages/SpiceBazaar/Analytics/Chart/TotalTGLDHoldersChart';
-import EmissionAllocationEpochChart from 'components/Pages/Core/DappPages/SpiceBazaar/Analytics/Chart/EmissionAllocationEpoch';
+import PriceChart from './componentsOfChart/Price';
+import TotalBidsChart from './componentsOfChart/TotalBids';
+import CirculatingSupplyChart from './componentsOfChart/CirculatingSupply';
+import StakedTempleChart from 'components/Pages/Core/DappPages/SpiceBazaar/Analytics/Chart/componentsOfChart/StakedTemple';
+import EmissionAllocationStaked from 'components/Pages/Core/DappPages/SpiceBazaar/Analytics/Chart/componentsOfChart/EmissionAllocationStaked';
+import TotalBidders from 'components/Pages/Core/DappPages/SpiceBazaar/Analytics/Chart/componentsOfChart/TotalBidders';
+import TotalTGLDHoldersChart from 'components/Pages/Core/DappPages/SpiceBazaar/Analytics/Chart/componentsOfChart/TotalTGLDHolders';
+import EmissionAllocationEpochChart from 'components/Pages/Core/DappPages/SpiceBazaar/Analytics/Chart/componentsOfChart/EmissionAllocationEpoch';
 
 type XAxisTickFormatter = (timestamp: number) => string;
 
 export const tickFormatter: XAxisTickFormatter = (timestamp) =>
   format(new Date(timestamp), 'MMM dd');
 
-export type Metric = { timestamp: number; price: number };
+export type Metric = {
+  timestamp: number;
+  epoch1: number;
+  epoch2: number;
+  epoch3?: number;
+};
 
 const metricOptions: { value: string; label: string }[] = [
   { label: 'Price', value: 'price' },
@@ -97,8 +102,10 @@ const PageContainer = styled.div`
 const HeaderContainer = styled.div`
   display: flex;
   justify-content: space-between;
+  align-items: center;
   flex-direction: column;
   gap: 10px;
+  margin-bottom: -40px;
 
   ${breakpoints.phoneAndAbove(`
     flex-direction: row;

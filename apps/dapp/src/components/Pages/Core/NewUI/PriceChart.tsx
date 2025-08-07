@@ -5,9 +5,9 @@ import styled, { useTheme } from 'styled-components';
 import { format } from 'date-fns';
 import { LineChart, IntervalToggler } from 'components/Charts';
 import Loader from 'components/Loader/Loader';
-import useRefreshableRamosMetrics, {
-  RamosMetrics,
-} from 'hooks/use-refreshable-ramos-metrics';
+import useRefreshableProtocolMetrics, {
+  ProtocolMetrics,
+} from 'hooks/use-refreshable-protocol-metrics';
 import { formatNumberFixedDecimals } from 'utils/formatter';
 import { formatTimestampedChartData } from 'utils/charts';
 
@@ -46,7 +46,7 @@ const yDomain: AxisDomain = ([dataMin, dataMax]) => [
 export const TemplePriceChart = () => {
   const [selectedInterval, setSelectedInterval] =
     useState<ChartSupportedTimeInterval>('1M');
-  const { dailyMetrics, hourlyMetrics } = useRefreshableRamosMetrics();
+  const { dailyMetrics, hourlyMetrics } = useRefreshableProtocolMetrics();
   const theme = useTheme();
 
   if (dailyMetrics.length === 0 || hourlyMetrics.length === 0) {
@@ -95,11 +95,11 @@ export const TemplePriceChart = () => {
   );
 };
 
-function formatData(metric: RamosMetrics) {
+function formatData(metric: ProtocolMetrics) {
   return {
     timestamp: metric.timestamp * 1000,
-    templePriceUSD: metric.templePriceUSD,
-    tpiUSD: metric.treasuryPriceIndexUSD,
+    templePriceUSD: metric.templePrice,
+    tpiUSD: metric.treasuryPriceIndex,
   };
 }
 

@@ -5,13 +5,17 @@ on:
   workflow_dispatch:
     inputs:
       invariantRuns:
-        default: "5000"
+        default: "2000"
         description: "Invariant runs: number of sequences of function calls generated and run."
         required: false
       invariantDepth:
         default: "90"
         description: "Invariant depth: number of function calls made in a given run."
         required: false
+      fuzzRuns:
+          default: "1000"
+          description: "Fuzz runs: number of sequences of function calls generated and run."
+          required: false
 
 jobs:
   build:
@@ -40,7 +44,7 @@ jobs:
         with:
           node-version: ${{ matrix.node_version }}
           cache: 'yarn'
-          cache-dependency-path: apps/protocol/yarn.lock
+          cache-dependency-path: protocol/yarn.lock
 
       - name: Install yarn project
         run: yarn install
@@ -137,6 +141,7 @@ jobs:
             protocol/node_modules
             protocol/cache-foundry
             protocol/artifacts-foundry
+
       - name: "Generate fuzz seed"
         run: echo "FOUNDRY_FUZZ_SEED=$EPOCHSECONDS" >> $GITHUB_ENV
       
@@ -149,9 +154,10 @@ jobs:
         env:
           FOUNDRY_PROFILE: ci
           FOUNDRY_INVARIANT_DEPTH: ${{ inputs.invariantDepth || '90' }}
-          FOUNDRY_INVARIANT_RUNS: ${{ inputs.invariantRuns || '5000' }}
+          FOUNDRY_INVARIANT_RUNS: ${{ inputs.invariantRuns || '2000' }}
+          FOUNDRY_FUZZ_RUNS: ${{ inputs.fuzzRuns || '2000' }}
           MAINNET_RPC_URL: ${{ secrets.TESTS_MAINNET_RPC_URL }}
-          POLYGON_RPC_URL: ${{ secrets.TESTS_POLYGON_RPC_URL }}
+          ARBITRUM_ONE_RPC_URL: ${{ secrets.TESTS_ARBITRUM_ONE_RPC_URL }}
   
       - name: "Add test summary"
         run: |

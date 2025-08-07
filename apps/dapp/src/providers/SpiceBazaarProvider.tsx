@@ -7,21 +7,22 @@ import {
   useMemo,
   useEffect,
 } from 'react';
-import {
-  DaiGoldAuction__factory,
-  TempleGoldStaking__factory,
-  TempleGold__factory,
-  ERC20__factory,
-} from 'types/typechain';
+import { DaiGoldAuction, TempleGold, TempleGoldStaking } from 'types/typechain';
 import { useWallet } from 'providers/WalletProvider';
 import env from 'constants/env';
-import { fromAtto } from 'utils/bigNumber';
+import { ADDRESS_ZERO, fromAtto } from 'utils/bigNumber';
 import { useNotification } from 'providers/NotificationProvider';
 import { estimateAndMine } from 'utils/ethers';
 import { getBigNumberFromString, getTokenInfo } from 'components/Vault/utils';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
-import { BigNumber, ethers } from 'ethers';
+import { BigNumber } from 'ethers';
 import { asyncNoop } from 'utils/helpers';
+import { useApiManager } from 'hooks/use-api-manager';
+import { useQuery } from '@tanstack/react-query';
+
+import { getAppConfig } from 'constants/newenv';
+
+const ENV = import.meta.env;
 
 export type StakePageMetrics = {
   stakedTemple: number;
@@ -55,6 +56,8 @@ interface SpiceBazaarContextValue {
     unstakeTemple: (amount: string, claimRewards: boolean) => Promise<void>;
     claimRewards: () => Promise<void>;
     getUnstakeTime: () => Promise<number>;
+    delegate: (delegatee: string) => Promise<void>;
+    getDelegatedAddress: () => Promise<string>;
   };
   daiGoldAuctionInfo: {
     data: DaiGoldAuctionInfo;
@@ -74,10 +77,6 @@ interface SpiceBazaarContextValue {
     loading: boolean;
     fetch: () => Promise<void>;
     getClaimableAtEpoch: (epochId: string) => Promise<number>;
-  };
-  featureFlag: {
-    isEnabled: boolean;
-    toggle: () => void;
   };
 }
 
@@ -101,6 +100,8 @@ const INITIAL_STATE: SpiceBazaarContextValue = {
     unstakeTemple: asyncNoop,
     claimRewards: asyncNoop,
     getUnstakeTime: async () => 0,
+    delegate: asyncNoop,
+    getDelegatedAddress: async () => '',
   },
   daiGoldAuctionInfo: {
     data: {
@@ -132,10 +133,6 @@ const INITIAL_STATE: SpiceBazaarContextValue = {
     fetch: asyncNoop,
     getClaimableAtEpoch: async () => 0,
   },
-  featureFlag: {
-    isEnabled: false,
-    toggle: asyncNoop,
-  },
 };
 
 const SpiceBazaarContext =
@@ -145,70 +142,30 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
   const {
     wallet,
     signer,
-    ensureAllowance,
+    ensureAllowanceWithSigner,
     updateBalance,
-    providerWithReadOnlyFallback,
+    getConnectedSigner,
+    switchNetwork,
   } = useWallet();
+
+  const { papi } = useApiManager();
   const { openNotification } = useNotification();
 
-  const [stakePageMetricsLoading, setStakePageMetricsLoading] = useState(false);
-  const [stakePageMetrics, setStakePageMetrics] = useState<StakePageMetrics>(
-    INITIAL_STATE.stakePageMetrics.data
-  );
-
-  const [daiGoldAuctionInfoLoading, setDaiGoldAuctionInfoLoading] =
-    useState(false);
-  const [daiGoldAuctionInfo, setDaiGoldAuctionInfo] =
-    useState<DaiGoldAuctionInfo>(INITIAL_STATE.daiGoldAuctionInfo.data);
-
-  const [currentUserMetricsLoading, setCurrentUserMetricsLoading] =
-    useState(false);
-
-  const [currentUserMetrics, setCurrentUserMetrics] = useState<{
-    dailyVestedTgldReward: number;
-    previousEpochRewards: number;
-    currentEpochBidAmount: number;
-  }>({
-    dailyVestedTgldReward: 0,
-    previousEpochRewards: 0,
-    currentEpochBidAmount: 0,
-  });
-
-  const getStoredFlagState = () => {
-    if (typeof window !== 'undefined') {
-      const storedFlag = localStorage.getItem('featureFlagState');
-      return storedFlag ? JSON.parse(storedFlag) : false;
+  const getChainId = () => {
+    if (ENV.VITE_ENV === 'production') {
+      return 1;
+    } else if (ENV.VITE_ENV === 'preview') {
+      return 11155111;
+    } else {
+      throw new Error('Invalid environment');
     }
-    return false;
   };
-
-  const [isFeatureEnabled, setIsFeatureEnabled] = useState(getStoredFlagState);
-
-  const toggleFeatureFlag = useCallback(() => {
-    setIsFeatureEnabled((prev: boolean) => {
-      const newState = !prev;
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('featureFlagState', JSON.stringify(newState));
-      }
-      return newState;
-    });
-  }, []);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const storedFlag = localStorage.getItem('featureFlagState');
-      if (storedFlag) {
-        setIsFeatureEnabled(JSON.parse(storedFlag));
-      }
-    }
-  }, []);
 
   const getStakedTemple = useCallback(async () => {
     try {
-      const templeGoldStaking = TempleGoldStaking__factory.connect(
-        env.contracts.spiceBazaar.templeGoldStaking,
-        providerWithReadOnlyFallback
-      );
+      const templeGoldStaking = (await papi.getContract(
+        getAppConfig().contracts.templeGoldStaking
+      )) as TempleGoldStaking;
 
       const totalSupply = await templeGoldStaking.totalSupply();
       return fromAtto(totalSupply);
@@ -218,16 +175,16 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
       });
       return 0;
     }
-  }, [providerWithReadOnlyFallback]);
+  }, [papi]);
 
   const getCirculatingSupply = useCallback(async () => {
     try {
-      const templeGold = TempleGold__factory.connect(
-        env.contracts.templegold,
-        providerWithReadOnlyFallback
-      );
+      const templeGoldContract = (await papi.getContract(
+        getAppConfig().contracts.templeGold
+      )) as TempleGold;
 
-      const circulatingSupply = await templeGold.circulatingSupply();
+      const circulatingSupply = await templeGoldContract.circulatingSupply();
+
       return fromAtto(circulatingSupply);
     } catch (err) {
       console.error('Error while getting circulating supply', {
@@ -235,147 +192,12 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
       });
       return 0;
     }
-  }, [providerWithReadOnlyFallback]);
-
-  const getCurrentEpoch = useCallback(async () => {
-    const daiGoldAuction = DaiGoldAuction__factory.connect(
-      env.contracts.spiceBazaar.daiGoldAuction,
-      providerWithReadOnlyFallback
-    );
-
-    return BigNumber.from(await daiGoldAuction.currentEpoch());
-  }, [providerWithReadOnlyFallback]);
-
-  const getPreviousEpochRewards = useCallback(async () => {
-    if (!wallet) {
-      return 0;
-    }
-
-    const currentEpoch = await getCurrentEpoch();
-
-    if (!currentEpoch) {
-      return 0;
-    }
-
-    if (currentEpoch.lt(2)) {
-      return 0;
-    }
-
-    const previousEpoch = currentEpoch.sub(1);
-
-    const daiGoldAuction = DaiGoldAuction__factory.connect(
-      env.contracts.spiceBazaar.daiGoldAuction,
-      providerWithReadOnlyFallback
-    );
-
-    const rewardsFromPreviousEpoch = await daiGoldAuction.getClaimableAtEpoch(
-      wallet,
-      previousEpoch
-    );
-
-    return fromAtto(rewardsFromPreviousEpoch);
-  }, [wallet, getCurrentEpoch, providerWithReadOnlyFallback]);
-
-  const getCurrentEpochBidAmount = useCallback(async () => {
-    if (!wallet) {
-      return 0;
-    }
-
-    const currentEpoch = await getCurrentEpoch();
-
-    if (!currentEpoch) {
-      return 0;
-    }
-
-    const daiGoldAuction = DaiGoldAuction__factory.connect(
-      env.contracts.spiceBazaar.daiGoldAuction,
-      providerWithReadOnlyFallback
-    );
-
-    const currentEpochBidAmount = await daiGoldAuction.depositors(
-      wallet,
-      currentEpoch
-    );
-
-    return fromAtto(currentEpochBidAmount);
-  }, [wallet, getCurrentEpoch, providerWithReadOnlyFallback]);
-
-  const getDailyVestedTgldReward = useCallback(async () => {
-    if (!wallet || !providerWithReadOnlyFallback) {
-      return 0;
-    }
-
-    try {
-      const templeGoldStaking = TempleGoldStaking__factory.connect(
-        env.contracts.spiceBazaar.templeGoldStaking,
-        providerWithReadOnlyFallback
-      );
-
-      const balance = await templeGoldStaking.balanceOf(wallet);
-      const balanceNumber = fromAtto(balance);
-
-      const rewardData = await templeGoldStaking.getRewardData();
-      const rewardPerDayBn = rewardData.rewardRate;
-      const rewardPerDay = fromAtto(rewardPerDayBn) * ONE_DAY_IN_SECONDS;
-
-      const totalSupplyBn = await templeGoldStaking.totalSupply();
-      const totalSupplyNumber = fromAtto(totalSupplyBn);
-
-      const dailyVested = (rewardPerDay * balanceNumber) / totalSupplyNumber;
-
-      return dailyVested;
-    } catch (err) {
-      console.error('Error while getting daily vested tgld reward', {
-        cause: err,
-      });
-      return 0;
-    }
-  }, [wallet, providerWithReadOnlyFallback]);
-
-  const fetchCurrentUserMetrics = useCallback(async () => {
-    setCurrentUserMetricsLoading(true);
-    const dailyVestedTgldReward = await getDailyVestedTgldReward();
-    const previousEpochRewards = await getPreviousEpochRewards();
-    const currentEpochBidAmount = await getCurrentEpochBidAmount();
-    setCurrentUserMetrics({
-      dailyVestedTgldReward,
-      previousEpochRewards,
-      currentEpochBidAmount,
-    });
-    setCurrentUserMetricsLoading(false);
-  }, [
-    getDailyVestedTgldReward,
-    getPreviousEpochRewards,
-    getCurrentEpochBidAmount,
-    setCurrentUserMetrics,
-  ]);
-
-  const getEpochInfo = useCallback(
-    async (epoch: number) => {
-      const daiGoldAuction = DaiGoldAuction__factory.connect(
-        env.contracts.spiceBazaar.daiGoldAuction,
-        providerWithReadOnlyFallback
-      );
-
-      return await daiGoldAuction.getEpochInfo(epoch);
-    },
-    [providerWithReadOnlyFallback]
-  );
-
-  const getAuctionConfig = useCallback(async () => {
-    const daiGoldAuction = DaiGoldAuction__factory.connect(
-      env.contracts.spiceBazaar.daiGoldAuction,
-      providerWithReadOnlyFallback
-    );
-
-    return await daiGoldAuction.getAuctionConfig();
-  }, [providerWithReadOnlyFallback]);
+  }, [papi]);
 
   const getTotalEpochRewards = useCallback(async () => {
-    const stakingContract = TempleGoldStaking__factory.connect(
-      env.contracts.spiceBazaar.templeGoldStaking,
-      providerWithReadOnlyFallback
-    );
+    const stakingContract = (await papi.getContract(
+      getAppConfig().contracts.templeGoldStaking
+    )) as TempleGoldStaking;
 
     const rewardData = await stakingContract.getRewardData();
 
@@ -391,91 +213,93 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
     const rewards = fromAtto(rewardRate) * SEVEN_DAYS_IN_SECONDS;
 
     return rewards;
-  }, [providerWithReadOnlyFallback]);
+  }, [papi]);
 
   const getYourStake = useCallback(async () => {
-    if (!wallet || !providerWithReadOnlyFallback) {
-      return null;
+    if (!wallet) {
+      return 0;
     }
 
     try {
-      const templeGoldStaking = TempleGoldStaking__factory.connect(
-        env.contracts.spiceBazaar.templeGoldStaking,
-        providerWithReadOnlyFallback
-      );
+      const templeGoldStakingContract = (await papi.getContract(
+        getAppConfig().contracts.templeGoldStaking
+      )) as TempleGoldStaking;
 
-      const balance = await templeGoldStaking.balanceOf(wallet);
+      const balance = await templeGoldStakingContract.balanceOf(wallet);
       return fromAtto(balance);
     } catch (error) {
       console.error('Error fetching stake balance:', error);
-      return null;
+      return 0;
     }
-  }, [providerWithReadOnlyFallback, wallet]);
+  }, [wallet, papi]);
 
   const getYourRewards = useCallback(async () => {
-    if (!wallet || !providerWithReadOnlyFallback) {
-      return null;
+    if (!wallet) {
+      return 0;
     }
 
     try {
-      const templeGoldStaking = TempleGoldStaking__factory.connect(
-        env.contracts.spiceBazaar.templeGoldStaking,
-        providerWithReadOnlyFallback
-      );
+      const templeGoldStakingContract = (await papi.getContract(
+        getAppConfig().contracts.templeGoldStaking
+      )) as TempleGoldStaking;
 
-      const reward = await templeGoldStaking.earned(wallet);
+      const reward = await templeGoldStakingContract.earned(wallet);
       return fromAtto(reward);
     } catch (error) {
       console.error('Error fetching rewards:', error);
-      return null;
+      return 0;
     }
-  }, [providerWithReadOnlyFallback, wallet]);
+  }, [wallet, papi]);
 
-  const fetchStakePageMetrics = useCallback(async () => {
-    if (!providerWithReadOnlyFallback) {
-      console.log('Provider not ready, skipping fetch');
-      return;
-    }
+  const fetchMetrics = useCallback(async (): Promise<StakePageMetrics> => {
+    const allMetrics = await Promise.allSettled([
+      getStakedTemple(),
+      getCirculatingSupply(),
+      getTotalEpochRewards(),
+      getYourStake(),
+      getYourRewards(),
+    ]);
 
-    setStakePageMetricsLoading(true);
+    const metricValues = allMetrics.map((metric) =>
+      metric.status === 'fulfilled' ? metric.value : 0
+    );
 
-    try {
-      if (!wallet) {
-        setStakePageMetrics(INITIAL_STATE.stakePageMetrics.data);
-        return;
-      }
-
-      const allMetrics = await Promise.all([
-        getStakedTemple(),
-        getCirculatingSupply(),
-        getTotalEpochRewards(),
-        getYourStake(),
-        getYourRewards(),
-      ]);
-
-      if (!allMetrics.some((metric) => metric === null)) {
-        setStakePageMetrics({
-          stakedTemple: allMetrics[0] || 0,
-          circulatingSupply: allMetrics[1] || 0,
-          totalEpochRewards: allMetrics[2] || 0,
-          yourStake: allMetrics[3] || 0,
-          yourRewards: allMetrics[4] || 0,
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching stake page metrics:', error);
-    } finally {
-      setStakePageMetricsLoading(false);
-    }
+    return {
+      stakedTemple: metricValues[0],
+      circulatingSupply: metricValues[1],
+      totalEpochRewards: metricValues[2],
+      yourStake: metricValues[3],
+      yourRewards: metricValues[4],
+    };
   }, [
-    wallet,
     getStakedTemple,
     getCirculatingSupply,
     getTotalEpochRewards,
     getYourStake,
     getYourRewards,
-    providerWithReadOnlyFallback,
   ]);
+
+  const {
+    data: stakePageMetricsData,
+    isLoading: stakePageMetricsLoading,
+    refetch: refetchStakePageMetrics,
+  } = useQuery({
+    queryKey: ['stakePageMetrics', wallet ? wallet : 'no-wallet'],
+    queryFn: fetchMetrics,
+    staleTime: 30 * 1000,
+    refetchOnWindowFocus: false,
+    enabled: false, // automatic fetching disabled
+  });
+
+  useEffect(() => {
+    refetchStakePageMetrics();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wallet]);
+
+  const fetchStakePageMetrics = useCallback(async (): Promise<void> => {
+    await refetchStakePageMetrics();
+    return;
+  }, [refetchStakePageMetrics]);
 
   const stakeTemple = useCallback(
     async (amount: string) => {
@@ -486,32 +310,38 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
         return;
       }
 
+      // TODO marshall: We can move this to a new SignerApi
+      await switchNetwork(getChainId());
+
       try {
         const templeAmount = getBigNumberFromString(
           amount,
           getTokenInfo(TICKER_SYMBOL.TEMPLE_TOKEN).decimals
         );
 
-        const templeContract = new ERC20__factory(signer).attach(
-          env.contracts.temple
-        );
+        const connectedSigner = getConnectedSigner();
 
-        await ensureAllowance(
+        await ensureAllowanceWithSigner(
           TICKER_SYMBOL.TEMPLE_TOKEN,
-          templeContract,
+          env.contracts.temple,
           env.contracts.spiceBazaar.templeGoldStaking,
           templeAmount,
-          true
+          true,
+          connectedSigner
         );
 
-        const templeGoldStaking = new TempleGoldStaking__factory(signer).attach(
-          env.contracts.spiceBazaar.templeGoldStaking
-        );
+        const templeGoldStaking = (await papi.getConnectedContract(
+          getAppConfig().contracts.templeGoldStaking,
+          connectedSigner
+        )) as TempleGoldStaking;
 
         const populatedTransaction =
           await templeGoldStaking.populateTransaction.stake(templeAmount);
 
-        const receipt = await estimateAndMine(signer, populatedTransaction);
+        const receipt = await estimateAndMine(
+          connectedSigner,
+          populatedTransaction
+        );
 
         openNotification({
           title: `Staked ${amount} TEMPLE`,
@@ -531,12 +361,165 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
     [
       wallet,
       signer,
-      ensureAllowance,
+      switchNetwork,
+      getConnectedSigner,
+      ensureAllowanceWithSigner,
+      papi,
       openNotification,
       fetchStakePageMetrics,
       updateBalance,
     ]
   );
+
+  const getCurrentEpoch = useCallback(async () => {
+    const daiGoldAuction = (await papi.getContract(
+      getAppConfig().contracts.daiGoldAuction
+    )) as DaiGoldAuction;
+
+    return BigNumber.from(await daiGoldAuction.currentEpoch());
+  }, [papi]);
+
+  const getPreviousEpochRewards = useCallback(async () => {
+    if (!wallet) {
+      return 0;
+    }
+
+    const currentEpoch = await getCurrentEpoch();
+
+    if (!currentEpoch) {
+      return 0;
+    }
+
+    if (currentEpoch.lt(2)) {
+      return 0;
+    }
+
+    const previousEpoch = currentEpoch.sub(1);
+
+    const daiGoldAuctionContract = (await papi.getContract(
+      getAppConfig().contracts.daiGoldAuction
+    )) as DaiGoldAuction;
+
+    const rewardsFromPreviousEpoch =
+      await daiGoldAuctionContract.getClaimableAtEpoch(wallet, previousEpoch);
+
+    return fromAtto(rewardsFromPreviousEpoch);
+  }, [wallet, getCurrentEpoch, papi]);
+
+  const getCurrentEpochBidAmount = useCallback(async () => {
+    if (!wallet) {
+      return 0;
+    }
+
+    const currentEpoch = await getCurrentEpoch();
+
+    if (!currentEpoch) {
+      return 0;
+    }
+
+    const daiGoldAuctionContract = (await papi.getContract(
+      getAppConfig().contracts.daiGoldAuction
+    )) as DaiGoldAuction;
+
+    const currentEpochBidAmount = await daiGoldAuctionContract.depositors(
+      wallet,
+      currentEpoch
+    );
+
+    return fromAtto(currentEpochBidAmount);
+  }, [wallet, getCurrentEpoch, papi]);
+
+  const getDailyVestedTgldReward = useCallback(async () => {
+    if (!wallet) {
+      return 0;
+    }
+
+    try {
+      const templeGoldStakingContract = (await papi.getContract(
+        getAppConfig().contracts.templeGoldStaking
+      )) as TempleGoldStaking;
+
+      const balance = await templeGoldStakingContract.balanceOf(wallet);
+      const balanceNumber = fromAtto(balance);
+
+      const rewardData = await templeGoldStakingContract.getRewardData();
+      const rewardPerDayBn = rewardData.rewardRate;
+      const rewardPerDay = fromAtto(rewardPerDayBn) * ONE_DAY_IN_SECONDS;
+
+      const totalSupplyBn = await templeGoldStakingContract.totalSupply();
+      const totalSupplyNumber = fromAtto(totalSupplyBn);
+
+      const dailyVested = (rewardPerDay * balanceNumber) / totalSupplyNumber;
+
+      return dailyVested;
+    } catch (err) {
+      console.error('Error while getting daily vested tgld reward', {
+        cause: err,
+      });
+      return 0;
+    }
+  }, [wallet, papi]);
+
+  // Create a dedicated fetch function for currentUserMetrics
+  const fetchUserMetrics = useCallback(async () => {
+    const dailyVestedTgldReward = await getDailyVestedTgldReward();
+    const previousEpochRewards = await getPreviousEpochRewards();
+    const currentEpochBidAmount = await getCurrentEpochBidAmount();
+
+    return {
+      dailyVestedTgldReward,
+      previousEpochRewards,
+      currentEpochBidAmount,
+    };
+  }, [
+    getDailyVestedTgldReward,
+    getPreviousEpochRewards,
+    getCurrentEpochBidAmount,
+  ]);
+
+  const {
+    data: currentUserMetricsData,
+    isLoading: currentUserMetricsLoading,
+    refetch: refetchCurrentUserMetrics,
+  } = useQuery({
+    queryKey: ['currentUserMetrics', wallet ? wallet : 'no-wallet'],
+    queryFn: fetchUserMetrics,
+    staleTime: 30 * 1000,
+    refetchOnWindowFocus: false,
+    enabled: false, // automatic fetching disabled
+  });
+
+  // Manually trigger fetch when wallet changes
+  useEffect(() => {
+    if (wallet) {
+      refetchCurrentUserMetrics();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wallet]);
+
+  const fetchCurrentUserMetrics = useCallback(async (): Promise<void> => {
+    await refetchCurrentUserMetrics();
+    return;
+  }, [refetchCurrentUserMetrics]);
+
+  const getEpochInfo = useCallback(
+    async (epoch: number) => {
+      const daiGoldAuctionContract = (await papi.getContract(
+        getAppConfig().contracts.daiGoldAuction
+      )) as DaiGoldAuction;
+
+      return await daiGoldAuctionContract.getEpochInfo(epoch);
+    },
+    [papi]
+  );
+
+  const getAuctionConfig = useCallback(async () => {
+    const daiGoldAuctionContract = (await papi.getContract(
+      getAppConfig().contracts.daiGoldAuction
+    )) as DaiGoldAuction;
+
+    return await daiGoldAuctionContract.getAuctionConfig();
+  }, [papi]);
 
   const unstakeTemple = useCallback(
     async (amount: string, claimRewards: boolean) => {
@@ -552,16 +535,25 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
         getTokenInfo(TICKER_SYMBOL.TEMPLE_TOKEN).decimals
       );
 
-      const templeGoldStaking = new TempleGoldStaking__factory(signer).attach(
-        env.contracts.spiceBazaar.templeGoldStaking
-      );
+      await switchNetwork(getChainId());
+
+      const connectedSigner = getConnectedSigner();
+
+      const templeGoldStaking = (await papi.getConnectedContract(
+        getAppConfig().contracts.templeGoldStaking,
+        connectedSigner
+      )) as TempleGoldStaking;
 
       const populatedTransaction =
         await templeGoldStaking.populateTransaction.withdraw(
           templeAmount,
           claimRewards
         );
-      const receipt = await estimateAndMine(signer, populatedTransaction);
+
+      const receipt = await estimateAndMine(
+        connectedSigner,
+        populatedTransaction
+      );
 
       openNotification({
         title: `Unstaked ${amount} TEMPLE`,
@@ -569,23 +561,46 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
       });
 
       fetchStakePageMetrics();
+      fetchCurrentUserMetrics();
+      updateBalance();
     },
-    [wallet, signer, openNotification, fetchStakePageMetrics]
+    [
+      wallet,
+      signer,
+      switchNetwork,
+      getConnectedSigner,
+      papi,
+      openNotification,
+      fetchStakePageMetrics,
+      updateBalance,
+      fetchCurrentUserMetrics,
+    ]
   );
 
+  /**
+   * Claim staking rewards
+   */
   const claimRewards = useCallback(async () => {
     if (!wallet || !signer) {
       console.debug('Missing wallet or signer when trying to use SpiceBazaar.');
       return;
     }
 
-    const templeGoldStaking = new TempleGoldStaking__factory(signer).attach(
-      env.contracts.spiceBazaar.templeGoldStaking
-    );
+    await switchNetwork(getChainId());
+
+    const connectedSigner = getConnectedSigner();
+
+    const templeGoldStaking = (await papi.getConnectedContract(
+      getAppConfig().contracts.templeGoldStaking,
+      connectedSigner
+    )) as TempleGoldStaking;
 
     const populatedTransaction =
       await templeGoldStaking.populateTransaction.getReward(wallet);
-    const receipt = await estimateAndMine(signer, populatedTransaction);
+    const receipt = await estimateAndMine(
+      connectedSigner,
+      populatedTransaction
+    );
 
     openNotification({
       title: `Claimed your TGLD`,
@@ -593,16 +608,27 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
     });
 
     fetchStakePageMetrics();
-  }, [wallet, signer, openNotification, fetchStakePageMetrics]);
+    fetchCurrentUserMetrics();
+  }, [
+    wallet,
+    signer,
+    switchNetwork,
+    getConnectedSigner,
+    papi,
+    openNotification,
+    fetchStakePageMetrics,
+    fetchCurrentUserMetrics,
+  ]);
 
   const isCurrentEpochAuctionLive = useCallback(async () => {
-    const daiGoldAuction = DaiGoldAuction__factory.connect(
-      env.contracts.spiceBazaar.daiGoldAuction,
-      providerWithReadOnlyFallback
-    );
+    const daiGoldAuctionContract = (await papi.getContract(
+      getAppConfig().contracts.daiGoldAuction
+    )) as DaiGoldAuction;
 
     const currentEpoch = await getCurrentEpoch();
-    const info = await daiGoldAuction.getEpochInfo(Number(currentEpoch));
+    const info = await daiGoldAuctionContract.getEpochInfo(
+      Number(currentEpoch)
+    );
     const now = Date.now();
 
     const isActive =
@@ -610,14 +636,11 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
       now < info.endTime.toNumber() * 1000;
 
     return isActive;
-  }, [providerWithReadOnlyFallback, getCurrentEpoch]);
+  }, [getCurrentEpoch, papi]);
 
-  const fetchDaiGoldAuctionInfo = useCallback(
+  // Create a dedicated fetch function for daiGoldAuctionInfo
+  const fetchAuctionInfo = useCallback(
     async (silent?: boolean) => {
-      if (!silent) {
-        setDaiGoldAuctionInfoLoading(true);
-      }
-
       try {
         const currentEpoch = await getCurrentEpoch();
         const epochInfo = await getEpochInfo(Number(currentEpoch));
@@ -625,8 +648,7 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
         const auctionConfig = await getAuctionConfig();
 
         if (!epochInfo) {
-          setDaiGoldAuctionInfoLoading(false);
-          return;
+          return INITIAL_STATE.daiGoldAuctionInfo.data;
         }
 
         const totalBidTokenAmountNumber = fromAtto(
@@ -643,15 +665,13 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
           ? auctionConfig?.auctionsTimeDiff + fromAtto(epochInfo.endTime)
           : undefined;
 
-        const daiGoldAuction = DaiGoldAuction__factory.connect(
-          env.contracts.spiceBazaar.daiGoldAuction,
-          providerWithReadOnlyFallback
-        );
-
-        const auctionDuration = await daiGoldAuction.AUCTION_DURATION();
+        const daiGoldAuctionContract = (await papi.getContract(
+          getAppConfig().contracts.daiGoldAuction
+        )) as DaiGoldAuction;
+        const auctionDuration = await daiGoldAuctionContract.AUCTION_DURATION();
         const auctionDurationNumber = auctionDuration.toNumber() * 1000;
 
-        setDaiGoldAuctionInfo({
+        return {
           currentEpoch: Number(currentEpoch),
           nextEpoch: Number(currentEpoch) + 1,
           currentEpochAuctionLive: currentEpochAuctionLive || false,
@@ -666,14 +686,46 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
           priceRatio: priceRatio,
           auctionDuration: auctionDurationNumber,
           nextAuctionStartTimestamp,
-        });
+        };
       } catch (err) {
         console.error('Error fetching auction info', err);
-      } finally {
-        setDaiGoldAuctionInfoLoading(false);
+        return INITIAL_STATE.daiGoldAuctionInfo.data;
       }
     },
-    [getCurrentEpoch, getEpochInfo, getAuctionConfig, isCurrentEpochAuctionLive]
+    [
+      getCurrentEpoch,
+      getEpochInfo,
+      isCurrentEpochAuctionLive,
+      getAuctionConfig,
+      papi,
+    ]
+  );
+
+  // Use React Query for daiGoldAuctionInfo
+  const {
+    data: daiGoldAuctionInfo = INITIAL_STATE.daiGoldAuctionInfo.data,
+    isLoading: daiGoldAuctionInfoLoading,
+    refetch: refetchDaiGoldAuctionInfo,
+  } = useQuery({
+    queryKey: ['daiGoldAuctionInfo', wallet ? wallet : 'no-wallet'],
+    queryFn: () => fetchAuctionInfo(),
+    staleTime: 30 * 1000,
+    refetchOnWindowFocus: false,
+    enabled: false, // automatic fetching disabled
+  });
+
+  useEffect(() => {
+    refetchDaiGoldAuctionInfo();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wallet]);
+
+  // Create a wrapper for the refetch function to match the existing API
+  const fetchDaiGoldAuctionInfo = useCallback(
+    async (silent?: boolean): Promise<void> => {
+      await refetchDaiGoldAuctionInfo();
+      return;
+    },
+    [refetchDaiGoldAuctionInfo]
   );
 
   const getUnstakeTime = useCallback(async () => {
@@ -683,9 +735,9 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
     }
 
     try {
-      const templeGoldStaking = new TempleGoldStaking__factory(signer).attach(
-        env.contracts.spiceBazaar.templeGoldStaking
-      );
+      const templeGoldStaking = (await papi.getContract(
+        getAppConfig().contracts.templeGoldStaking
+      )) as TempleGoldStaking;
 
       const unstakeTime = await templeGoldStaking.getAccountUnstakeTime(wallet);
       return unstakeTime.toNumber();
@@ -695,7 +747,69 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
       });
       return 0;
     }
-  }, [wallet, signer]);
+  }, [wallet, signer, papi]);
+
+  const getDelegatedAddress = useCallback(async () => {
+    if (!wallet) {
+      return '';
+    }
+
+    try {
+      const templeGoldStakingContract = (await papi.getContract(
+        getAppConfig().contracts.templeGoldStaking
+      )) as TempleGoldStaking;
+
+      const delegatedAddress = await templeGoldStakingContract.delegates(
+        wallet
+      );
+
+      // Return empty string if no delegate (returns 0x0000000000000000000000000000000000000000)
+      return delegatedAddress === ADDRESS_ZERO ? '' : delegatedAddress;
+    } catch (error) {
+      console.error('Error fetching delegated address:', error);
+      return '';
+    }
+  }, [wallet, papi]);
+
+  const delegate = useCallback(
+    async (delegatee: string) => {
+      if (!wallet || !signer) {
+        console.debug('Missing wallet or signer when trying to delegate.');
+        return;
+      }
+
+      await switchNetwork(getChainId());
+
+      try {
+        const connectedSigner = getConnectedSigner();
+
+        const templeGoldStaking = (await papi.getConnectedContract(
+          getAppConfig().contracts.templeGoldStaking,
+          connectedSigner
+        )) as TempleGoldStaking;
+
+        const populatedTransaction =
+          await templeGoldStaking.populateTransaction.delegate(delegatee);
+
+        const receipt = await estimateAndMine(
+          connectedSigner,
+          populatedTransaction
+        );
+
+        openNotification({
+          title: `Successfully delegated voting rights`,
+          hash: receipt.transactionHash,
+        });
+      } catch (err) {
+        console.error('Error while delegating:', err);
+        openNotification({
+          title: 'Error delegating voting rights',
+          hash: '',
+        });
+      }
+    },
+    [wallet, signer, switchNetwork, getConnectedSigner, papi, openNotification]
+  );
 
   const daiGoldAuctionBid = useCallback(
     async (amount: string) => {
@@ -706,31 +820,36 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
         return;
       }
 
+      await switchNetwork(getChainId());
+
       try {
         const usdsAmount = getBigNumberFromString(
           amount,
           getTokenInfo(TICKER_SYMBOL.USDS).decimals
         );
 
-        const usdsContract = new ERC20__factory(signer).attach(
-          env.contracts.usds
-        );
+        const connectedSigner = getConnectedSigner();
 
-        await ensureAllowance(
+        await ensureAllowanceWithSigner(
           TICKER_SYMBOL.USDS,
-          usdsContract,
+          env.contracts.usds,
           env.contracts.spiceBazaar.daiGoldAuction,
           usdsAmount,
-          true
+          true,
+          connectedSigner
         );
 
-        const daiGoldAuction = new DaiGoldAuction__factory(signer).attach(
-          env.contracts.spiceBazaar.daiGoldAuction
-        );
+        const daiGoldAuctionContract = (await papi.getConnectedContract(
+          getAppConfig().contracts.daiGoldAuction,
+          connectedSigner
+        )) as DaiGoldAuction;
 
         const populatedTransaction =
-          await daiGoldAuction.populateTransaction.bid(usdsAmount);
-        const receipt = await estimateAndMine(signer, populatedTransaction);
+          await daiGoldAuctionContract.populateTransaction.bid(usdsAmount);
+        const receipt = await estimateAndMine(
+          connectedSigner,
+          populatedTransaction
+        );
 
         openNotification({
           title: `Bid ${amount} USDS`,
@@ -753,7 +872,10 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
     [
       wallet,
       signer,
-      ensureAllowance,
+      switchNetwork,
+      getConnectedSigner,
+      ensureAllowanceWithSigner,
+      papi,
       openNotification,
       fetchDaiGoldAuctionInfo,
       updateBalance,
@@ -769,9 +891,9 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
         return 0;
       }
       try {
-        const daiGoldAuction = new DaiGoldAuction__factory(signer).attach(
-          env.contracts.spiceBazaar.daiGoldAuction
-        );
+        const daiGoldAuction = (await papi.getContract(
+          getAppConfig().contracts.daiGoldAuction
+        )) as DaiGoldAuction;
 
         const claimableAtEpoch = await daiGoldAuction.getClaimableAtEpoch(
           wallet,
@@ -783,9 +905,13 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
         throw error;
       }
     },
-    [wallet, signer]
+    [wallet, signer, papi]
   );
 
+  /**
+   * Claim stable gold auction rewards
+   * TODO: Rename
+   */
   const daiGoldAuctionClaim = useCallback(
     async (epoch: number) => {
       if (!wallet || !signer) {
@@ -795,13 +921,21 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
         return;
       }
 
-      const daiGoldAuction = new DaiGoldAuction__factory(signer).attach(
-        env.contracts.spiceBazaar.daiGoldAuction
-      );
+      await switchNetwork(getChainId());
+
+      const connectedSigner = getConnectedSigner();
+
+      const daiGoldAuction = (await papi.getConnectedContract(
+        getAppConfig().contracts.daiGoldAuction,
+        connectedSigner
+      )) as DaiGoldAuction;
 
       const populatedTransaction =
         await daiGoldAuction.populateTransaction.claim(epoch);
-      const receipt = await estimateAndMine(signer, populatedTransaction);
+      const receipt = await estimateAndMine(
+        connectedSigner,
+        populatedTransaction
+      );
 
       openNotification({
         title: `Claimed your TGLD`,
@@ -811,11 +945,30 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
       fetchDaiGoldAuctionInfo();
       updateBalance();
     },
-    [wallet, signer, openNotification, fetchDaiGoldAuctionInfo, updateBalance]
+    [
+      wallet,
+      signer,
+      switchNetwork,
+      getConnectedSigner,
+      papi,
+      openNotification,
+      fetchDaiGoldAuctionInfo,
+      updateBalance,
+    ]
   );
 
-  const value = useMemo(
-    () => ({
+  const value = useMemo(() => {
+    // Calculate currentUserMetrics inside useMemo
+    const currentUserMetrics = currentUserMetricsData || {
+      dailyVestedTgldReward: 0,
+      previousEpochRewards: 0,
+      currentEpochBidAmount: 0,
+    };
+
+    const stakePageMetrics =
+      stakePageMetricsData || INITIAL_STATE.stakePageMetrics.data;
+
+    return {
       stakePageMetrics: {
         data: stakePageMetrics,
         loading: stakePageMetricsLoading,
@@ -826,6 +979,8 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
         unstakeTemple,
         claimRewards,
         getUnstakeTime,
+        delegate,
+        getDelegatedAddress,
       },
       daiGoldAuctionInfo: {
         data: daiGoldAuctionInfo,
@@ -842,32 +997,25 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
         fetch: fetchCurrentUserMetrics,
         getClaimableAtEpoch,
       },
-      featureFlag: {
-        isEnabled: isFeatureEnabled,
-        toggle: toggleFeatureFlag,
-      },
-    }),
-    [
-      stakePageMetrics,
-      stakePageMetricsLoading,
-      fetchStakePageMetrics,
-      stakeTemple,
-      unstakeTemple,
-      claimRewards,
-      getUnstakeTime,
-      daiGoldAuctionInfo,
-      daiGoldAuctionInfoLoading,
-      fetchDaiGoldAuctionInfo,
-      daiGoldAuctionBid,
-      getClaimableAtEpoch,
-      daiGoldAuctionClaim,
-      fetchCurrentUserMetrics,
-      currentUserMetrics,
-      currentUserMetricsLoading,
-      isFeatureEnabled,
-      toggleFeatureFlag,
-    ]
-  );
+    };
+  }, [
+    currentUserMetricsData,
+    stakePageMetricsData,
+    stakePageMetricsLoading,
+    fetchStakePageMetrics,
+    stakeTemple,
+    unstakeTemple,
+    claimRewards,
+    getUnstakeTime,
+    daiGoldAuctionInfo,
+    daiGoldAuctionInfoLoading,
+    fetchDaiGoldAuctionInfo,
+    daiGoldAuctionBid,
+    daiGoldAuctionClaim,
+    currentUserMetricsLoading,
+    fetchCurrentUserMetrics,
+    getClaimableAtEpoch,
+  ]);
 
   return (
     <SpiceBazaarContext.Provider value={value}>

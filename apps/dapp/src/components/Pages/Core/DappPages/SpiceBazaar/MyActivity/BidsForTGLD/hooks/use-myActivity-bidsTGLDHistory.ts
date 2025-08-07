@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { user, subgraphQuery } from 'utils/subgraph';
-import type { Transaction } from '../../DataTables/BidDataTable';
+import type { Transaction } from '../DataTables/BidDataTable';
 import { useWallet } from 'providers/WalletProvider';
 import { useSpiceBazaar } from 'providers/SpiceBazaarProvider';
-import { formatNumberWithCommas } from 'utils/formatter';
 import env from 'constants/env';
 
 export enum Auction {
@@ -35,13 +34,17 @@ export const useMyActivityBidsTGLDHistory =
       totalBid: string,
       hasClaimed: boolean
     ) => {
-      const currentTime = new Date().getTime().toString();
+      const currentTime = Math.floor(new Date().getTime() / 1000);
 
-      if (endTime > currentTime) {
+      if (Number(endTime) > currentTime) {
         return 'Bid';
       }
 
-      if (endTime < currentTime && parseFloat(totalBid) > 0 && !hasClaimed) {
+      if (
+        Number(endTime) <= currentTime &&
+        parseFloat(totalBid) > 0 &&
+        !hasClaimed
+      ) {
         return 'Claim';
       }
 
@@ -60,12 +63,12 @@ export const useMyActivityBidsTGLDHistory =
         }
 
         const response = await subgraphQuery(
-          env.subgraph.spiceBazaar,
+          env.subgraph.spiceBazaar.eth, // stable/gold auctions only on eth network
           user(wallet, Auction.StableGoldAuction)
         );
 
         const positions = await Promise.all(
-          response.user.positions.map(async (p: any) => {
+          (response.user?.positions || []).map(async (p: any) => {
             const actionResult = await action(
               p.auctionInstance.endTime,
               p.totalBidAmount,
@@ -73,9 +76,21 @@ export const useMyActivityBidsTGLDHistory =
             );
 
             // do not fetch unless the action is "Claim"
-            const claimableTokens =
-              actionResult === 'Claim' &&
-              (await getClaimableAtEpoch(p.auctionInstance.epoch));
+
+            let claimableTokens: number | undefined = undefined;
+            if (actionResult === 'Claim') {
+              try {
+                claimableTokens = await getClaimableAtEpoch(
+                  p.auctionInstance.epoch
+                );
+              } catch (err) {
+                console.error(
+                  `Failed to fetch claimable tokens for epoch ${p.auctionInstance.epoch}`,
+                  err
+                );
+                claimableTokens = undefined;
+              }
+            }
 
             return {
               epochId: p.auctionInstance.epoch,

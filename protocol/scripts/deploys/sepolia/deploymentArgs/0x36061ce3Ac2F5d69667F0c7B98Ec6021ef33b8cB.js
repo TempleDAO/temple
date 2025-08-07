@@ -1,0 +1,8 @@
+// sepolia: TEMPLE_GOLD_STAKING=0x36061ce3Ac2F5d69667F0c7B98Ec6021ef33b8cB
+// yarn hardhat verify --network sepolia 0x36061ce3Ac2F5d69667F0c7B98Ec6021ef33b8cB --constructor-args scripts/deploys/sepolia/deploymentArgs/0x36061ce3Ac2F5d69667F0c7B98Ec6021ef33b8cB.js
+module.exports = [
+  "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+  "0xC785695710292c042a2de8A0Ba16F3a054cC2eAD",
+  "0x64a925B0fA211c44337148C0807f959Bd44b0B67",
+  "0x2ae6318e34bb97ae3755AFcE75559452aA223A5D"
+];

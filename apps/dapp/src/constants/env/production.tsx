@@ -4,10 +4,11 @@ import { Environment } from './types';
 const ENV_VARS = import.meta.env;
 const BALANCER_SUBGRAPH_API_KEY = ENV_VARS.VITE_BALANCER_SUBGRAPH_API_KEY;
 const ENABLE_SUBGRAPH_LOGS = ENV_VARS.VITE_ENABLE_SUBGRAPH_LOGS === 'true';
+const RPC_KEY = ENV_VARS.VITE_RPC_KEY;
 
 const env: Environment = {
   alchemyId: 'XiIZxWykHU5AOFBwxKgxseXWN984Mp8F',
-  rpcUrl: 'https://rpc.ankr.com/eth',
+  rpcUrl: `https://ethereum-rpc.publicnode.com/${RPC_KEY}`,
   backendUrl: 'https://backend.templedao.link',
   tradeTokenListUrl:
     'https://sf294otxgnbicood.public.blob.vercel-storage.com/prod-tokens-ycNgmUSdpPt1kIoael5y4t81s2jtZc.json',
@@ -183,6 +184,26 @@ const env: Environment = {
         name: 'Epoch 27b',
         address: '0x504632fa6ee0Fab0971454de4c36c3795BA70e2c',
       },
+      {
+        name: 'Epoch 27c',
+        address: '0x05aa69725890310AeA06475c2CD4D20C517f01B0',
+      },
+      {
+        name: 'Epoch 28a',
+        address: '0x4e0E44351A7D3eA0fE09ece3298D239509c86EDc',
+      },
+      {
+        name: 'Epoch 28b',
+        address: '0x54D9Db1c37956e35666dDa36BF46B79E490CFC39',
+      },
+      {
+        name: 'Epoch 28c',
+        address: '0x98DE4F694D1471a7eDFd979B990D787C1C39747d',
+      },
+      {
+        name: 'Epoch 29a',
+        address: '0xc5Db76bE904f73BA3094a43D7012d43e24768Ce0',
+      },
     ],
     temple: '0x470ebf5f030ed85fc1ed4c2d36b9dd02e77cf1b7',
     templegold: '0x0E7B53dDe30754A94D4B10C9CdCaCA1C749ECd1b',
@@ -300,7 +321,7 @@ const env: Environment = {
     templeCore:
       'https://api.studio.thegraph.com/query/76011/temple-core/version/latest',
     protocolMetrics:
-      'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-metrics/api',
+      'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-metrics/version/v0.1.4/api',
     protocolMetricsArbitrum:
       'https://api.studio.thegraph.com/query/76011/temple-metrics-arbitrum/version/latest',
     balancerV2: `https://gateway.thegraph.com/api/${BALANCER_SUBGRAPH_API_KEY}/subgraphs/id/C4ayEZP2yTXRAB8vSaTrgN4m9anTe9Mdm2ViyiAuV9TV`,
@@ -310,8 +331,10 @@ const env: Environment = {
       'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-v2-mainnet/api',
     templeV2Balances:
       'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-v2-balances/api',
-    spiceBazaar:
-      'https://subgraph.satsuma-prod.com/a912521dd162/templedao/spice-bazaar-mainnet/api',
+    spiceBazaar: {
+      eth: 'https://subgraph.satsuma-prod.com/a912521dd162/templedao/spice-bazaar-mainnet/api',
+      bera: '',
+    },
   },
   featureFlags: {
     enableAscend: false,

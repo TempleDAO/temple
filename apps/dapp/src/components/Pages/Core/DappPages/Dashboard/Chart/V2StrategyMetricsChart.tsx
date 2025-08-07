@@ -89,7 +89,8 @@ const V2StrategyMetricsChart: React.FC<{
   dashboardData: DashboardData;
   selectedMetric: V2SnapshotMetric;
   selectedInterval: ChartSupportedTimeInterval;
-}> = ({ dashboardData, selectedMetric, selectedInterval }) => {
+  isShutdown: boolean;
+}> = ({ dashboardData, selectedMetric, selectedInterval, isShutdown }) => {
   // uncamel-case the metric names
   const formatMetricName = (name: string) => {
     // format only
@@ -222,16 +223,25 @@ const V2StrategyMetricsChart: React.FC<{
   const xDataKey = 'timestamp';
   const colors = theme.palette.charts;
 
-  if (formattedData[selectedInterval].length === 0 || isLoadingOrError) {
+  // For shutdown strategies, use all historical data instead of selected interval
+  const chartData = isShutdown
+    ? transformedDaily.map((a) => ({
+        ...a,
+        timestamp:
+          (typeof a.timestamp === 'string'
+            ? parseInt(a.timestamp)
+            : a.timestamp) * 1000,
+      }))
+    : formattedData[selectedInterval];
+
+  if (chartData.length === 0 || isLoadingOrError) {
     return <Loader iconSize={48} />;
   }
 
   // infer available metrics from the data
   // cant look at first element only because strategyTokens
   // can can change during the lifetime of strategy
-  const allKeys = new Set(
-    formattedData[selectedInterval].flatMap((row) => Object.keys(row))
-  );
+  const allKeys = new Set(chartData.flatMap((row) => Object.keys(row)));
   allKeys.delete(xDataKey);
 
   // sort to make color coding deterministic when switching interval/rerendering
@@ -260,14 +270,22 @@ const V2StrategyMetricsChart: React.FC<{
         }))
     : undefined;
 
+  // For shutdown strategies, use 1Y formatter to show all historical data
+  const tickFormatter = isShutdown
+    ? tickFormatters['1Y']
+    : tickFormatters[selectedInterval];
+  const tooltipFormatter = isShutdown
+    ? tooltipLabelFormatters['1Y']
+    : tooltipLabelFormatters[selectedInterval];
+
   return (
     <LineChart
-      chartData={formattedData[selectedInterval]}
+      chartData={chartData}
       xDataKey={'timestamp'}
       lines={lines}
       stackedItems={stackedItems}
-      xTickFormatter={tickFormatters[selectedInterval]}
-      tooltipLabelFormatter={tooltipLabelFormatters[selectedInterval]}
+      xTickFormatter={tickFormatter}
+      tooltipLabelFormatter={tooltipFormatter}
       legendFormatter={formatMetricName}
       tooltipValuesFormatter={tooltipValuesFormatter}
     />

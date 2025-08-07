@@ -1,0 +1,80 @@
+import { createTaskRunner, getAllVariableMetadata } from "@mountainpath9/overlord-core";
+import { getConfig } from "@/config";
+import { taskExceptionHandler } from "./utils/task-exceptions";
+import * as vars from "./config/variables";
+import { distributeStakingRewards, startStableGoldAuction, checkSignersBalance, updateAuctionSidebarBotTask,
+    startSepoliaStableGoldAuction, distributeSepoliaStakingRewards, checkSepoliaSignersBalance,
+    redeemTempleGoldSepolia
+ } from "./tasks";
+import { startSidebarBot } from "./tasks/discord-sidebar-auction";
+
+
+async function main() {
+    const runner = createTaskRunner();
+
+    runner.setVersion(process.env.VERSION || 'unknown');
+    runner.setTaskExceptionHandler(taskExceptionHandler);
+    runner.setConfigVariables(getAllVariableMetadata());
+
+    const config = getConfig('mainnet');
+    const sepoliaConfig = getConfig('sepolia');
+
+    const sidebarBot = await startSidebarBot(runner);
+    // dai gold auction start
+    runner.addPeriodicTask({
+        id: 'start-stable-gold-auction',
+        cronSchedule: '*/5 * * * *', // every 5 minutes
+        action: async (ctx, _time) => startStableGoldAuction(config, ctx)
+    });
+
+    // distribute staking rewards
+    runner.addPeriodicTask({
+        id: 'distribute-staking-rewards',
+        cronSchedule: '*/5 * * * *', // every 5 minutes
+        action: async (ctx, _time) => distributeStakingRewards(config, ctx)
+    });
+
+    runner.addPeriodicTask({
+        id: 'check-accounts-balance',
+        cronSchedule: '0 * * * *', // 0 minute of every hour
+        action: async (ctx, _time) => checkSignersBalance(config, ctx)
+    });
+
+    runner.addPeriodicTask({
+        id: 'update-auction-sidebar-bot',
+        cronSchedule: '*/15 * * * *', // every 15 minutes
+        action: (ctx)=> updateAuctionSidebarBotTask(config, ctx, sidebarBot)
+    });
+
+    // Seploia tasks
+    // dai gold auction start
+    runner.addPeriodicTask({
+        id: 'start-stable-gold-auction-sepolia',
+        cronSchedule: '*/5 * * * *', // every 5 minutes
+        action: async (ctx, _time) => startSepoliaStableGoldAuction(sepoliaConfig, ctx)
+    });
+
+    // distribute staking rewards
+    runner.addPeriodicTask({
+        id: 'distribute-staking-rewards-sepolia',
+        cronSchedule: '*/5 * * * *', // every 5 minutes
+        action: async (ctx, _time) => distributeSepoliaStakingRewards(sepoliaConfig, ctx)
+    });
+
+    runner.addPeriodicTask({
+        id: 'check-accounts-balance-sepolia',
+        cronSchedule: '0 * * * *', // 0 minute of every hour
+        action: async (ctx, _time) => checkSepoliaSignersBalance(sepoliaConfig, ctx)
+    });
+
+    // burn and notify to redeem bid TGLD
+    runner.addPeriodicTask({
+        id: 'redeem-tgld-sepolia',
+        cronSchedule: '0 */8 * * *', // once every 8 hours
+        action: async (ctx, _time) => redeemTempleGoldSepolia(sepoliaConfig, ctx)
+    });
+
+    runner.main();
+}
+
+main();

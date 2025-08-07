@@ -4,7 +4,6 @@ import styled from 'styled-components';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useWallet } from 'providers/WalletProvider';
 import linkSvg from 'assets/icons/link.svg?react';
-import { EarnTopNav } from 'components/Pages/Core/DappPages/SpiceBazaar/Earn/TopNav';
 import { Button } from 'components/Button/Button';
 import wallet from 'assets/icons/wallet.svg?react';
 import { useSpiceBazaar } from 'providers/SpiceBazaarProvider';
@@ -21,6 +20,7 @@ type ItemProps = {
 enum StakeTempleLocPaths {
   Stake = '/dapp/spice/earn/staketemple/stake',
   Unstake = '/dapp/spice/earn/staketemple/unstake',
+  Delegate = '/dapp/spice/earn/staketemple/delegate',
   Claim = '/dapp/spice/earn/staketemple/claim',
 }
 
@@ -32,6 +32,10 @@ const items = [
   {
     label: 'UNSTAKE',
     linkTo: StakeTempleLocPaths.Unstake,
+  },
+  {
+    label: 'DELEGATE',
+    linkTo: StakeTempleLocPaths.Delegate,
   },
   {
     label: 'CLAIM TGLD',
@@ -88,12 +92,11 @@ export const StakeTemple = () => {
 
   return (
     <PageContainer>
-      <EarnTopNav />
       <BodyContainer>
         <ContainerTop>
           <Header>
             <HeaderTitle>
-              Stake TEMPLE
+              Earn Temple Gold
               <LinkIcon
                 onClick={() =>
                   window.open(
@@ -255,7 +258,7 @@ const PageContainer = styled.div`
   margin-top: -60px;
 
   ${breakpoints.phoneAndAbove(`
-    margin-top: -20px;
+    // margin-top: -20px;
   `)}
 `;
 
