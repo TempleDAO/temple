@@ -45,7 +45,7 @@ const reducerInitialState: ReducerState = {
   labelFixed: `COLLECT ${PAYMENT_TOKEN} FOR IMPACT`,
 };
 
-const TeamPayments = () => {
+const TeamPaymentsCash = () => {
   const {
     collectingFixed,
     labelFixed,
@@ -330,4 +330,4 @@ const EpochDropdownContainer = styled.div`
   width: 12rem;
 `;
 
-export default TeamPayments;
+export default TeamPaymentsCash;
