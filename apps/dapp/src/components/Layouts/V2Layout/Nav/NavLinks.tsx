@@ -108,6 +108,8 @@ const NavLinkText = styled.span<NavLinkProps>`
     text-decoration: underline;
   }
   font-size: ${(props) => (props.small ? '0.75rem' : '1rem')};
+  white-space: pre;
+  display: inline-block;
 `;
 
 const NavLinkCell = styled.div<NavLinkProps>`
