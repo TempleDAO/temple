@@ -5,20 +5,6 @@ pragma solidity ^0.8.20;
 import { IPaymentBase } from "contracts/interfaces/admin/IPaymentBase.sol";
 
 interface IEpochPayments is IPaymentBase {
-    // /// @notice Struct for team payment information
-    // struct Payment {
-    //     /// @notice Start time for payment
-    //     uint40 start;
-    //     /// @notice Duration of payment
-    //     uint40 duration;
-    //     /// @notice Is payment valid or cancel
-    //     bool isCancelled;
-    //     /// @notice Amount claimed out of the total amount
-    //     uint128 claimed;
-    //     /// @notice Total payment amount
-    //     uint128 amount;
-    // }
-
     // event CancelledPayment(address indexed recipient, uint256 totalClaimed, uint256 unreleased);
     event CancelledEpochPayment(address indexed recipient, uint256 epoch, uint256 amountRevoked);
     // event PaymentSet(address indexed recipient, uint40 startTime, uint40 endTime, uint256 amount);

@@ -158,7 +158,7 @@ interface IVestingPayments {
      * @param _at At timestamp
      * @return Total vested
      */
-    function getTotalVestedAt(bytes32 _vestingId, uint32 _at) external view returns (uint256);
+    function getTotalVestedAt(bytes32 _vestingId, uint40 _at) external view returns (uint256);
 
     /**
      * @notice Check if vesting is revoked

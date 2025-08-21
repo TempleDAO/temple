@@ -94,12 +94,7 @@ contract VestingPayments is IVestingPayments, PaymentBase, TempleElevatedAccess 
         VestingSchedule storage _schedule = schedules[_vestingId];
         if (block.timestamp >= _schedule.duration + _schedule.start) { revert FullyVested(); }
         /// @dev No need to check if `_schedule.revoked` because id is removed from _activeVestingIds so it will fail `isActiveVestingId`
-        // uint256 _vestedAmount = _calculateReleasableAmount(_schedule);
-        // todo let user call release() on their own (possible taxable event)
-        // if (_vestedAmount > 0) {
-        //     _release(_schedule, _vestedAmount);
-        //     emit Released(_vestingId, _schedule.recipient, _vestedAmount);
-        // }
+        
         uint256 unreleased = _schedule.amount - _schedule.distributed;
         totalVestedAndUnclaimed -= unreleased;
         _schedule.revoked = true;
@@ -287,10 +282,10 @@ contract VestingPayments is IVestingPayments, PaymentBase, TempleElevatedAccess 
      * @param _at At timestamp
      * @return Total vested
      */
-    function getTotalVestedAt(bytes32 _vestingId, uint32 _at) external view override returns (uint256) {
+    function getTotalVestedAt(bytes32 _vestingId, uint40 _at) external view override returns (uint256) {
         VestingSchedule memory _schedule = schedules[_vestingId];
         if (_schedule.amount == 0) { return 0; }
-        if (block.timestamp <= _schedule.start) { return 0; }
+        if (_at <= _schedule.start) { return 0; }
         return _calculateTotalVestedAt(_schedule, _at);
     }
 

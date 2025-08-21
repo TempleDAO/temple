@@ -10,13 +10,13 @@ interface IPaymentBase {
 
     error NotImplemented();
 
-    /// @notice The owner of the TGLD funds
+    /// @notice The owner of the payment asset funds
     function fundsOwner() external view returns(address);
 
-    /// @notice TGLD address
+    /// @notice Payment token address
     function paymentToken() external view returns(IERC20);
 
-    /**
+     /**
      * @notice Set funds owner
      * @param _fundsOwner Funds owner
      */
@@ -29,10 +29,4 @@ interface IPaymentBase {
      * @param _amount Amount to recover
      */
     function recoverToken(address _token, address _to, uint256 _amount) external;
-
-    /**
-     * @notice Set payment token for fixed and epoch payments
-     * @param _token Payment token 
-     */
-    function setPaymentToken(address _token) external;
 }

@@ -10,16 +10,21 @@ import { IPaymentBase } from "contracts/interfaces/admin/IPaymentBase.sol";
 abstract contract PaymentBase is IPaymentBase {
     using SafeERC20 for IERC20;
 
-    /// @notice The owner of the TGLD funds
+    /// @inheritdoc IPaymentBase
     address public override fundsOwner;
-    /// @notice Payment token address
-    IERC20 public paymentToken;
+
+    /// @inheritdoc IPaymentBase
+    IERC20 public immutable paymentToken;
+
+    constructor(address _paymentToken) {
+        paymentToken = IERC20(_paymentToken);
+    }
 
     /**
      * @notice Set funds owner
      * @param _fundsOwner Funds owner
      */
-    function setFundsOwner(address _fundsOwner) public virtual {
+    function _setFundsOwner(address _fundsOwner) internal {
         if (_fundsOwner == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
         /// @dev Elevated access should revoke approval from old `fundsOwner` for this contract
         fundsOwner = _fundsOwner;
@@ -32,22 +37,12 @@ abstract contract PaymentBase is IPaymentBase {
      * @param _to Recipient address
      * @param _amount Amount to recover
      */
-    function recoverToken(address _token, address _to, uint256 _amount) public virtual {
+    function _recoverToken(address _token, address _to, uint256 _amount) internal {
         emit CommonEventsAndErrors.TokenRecovered(_to, _token, _amount);
         IERC20(_token).safeTransfer(_to, _amount);
     }
 
-    /**
-     * @notice Set payment token for fixed and epoch payments
-     * @param _token Payment token 
-     */
-    function setPaymentToken(address _token) public virtual {
-        if (_token == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
-        paymentToken = IERC20(_token);
-        emit PaymentTokenSet(_token);
-    }
-
-    function _getElapsedTime(uint32 _start, uint32 _end, uint32 _duration) internal pure returns (uint32) {
+    function _getElapsedTime(uint40 _start, uint40 _end, uint40 _duration) internal pure returns (uint40) {
         return _end - _start > _duration ? _duration : _end - _start;
     }
 }
