@@ -17,6 +17,7 @@ abstract contract PaymentBase is IPaymentBase {
     IERC20 public immutable paymentToken;
 
     constructor(address _paymentToken) {
+        if (_paymentToken == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
         paymentToken = IERC20(_paymentToken);
     }
 
@@ -43,6 +44,10 @@ abstract contract PaymentBase is IPaymentBase {
     }
 
     function _getElapsedTime(uint40 _start, uint40 _end, uint40 _duration) internal pure returns (uint40) {
-        return _end - _start > _duration ? _duration : _end - _start;
+        if (_end <= _start) {
+            return 0;
+        }
+        uint40 elapsed = _end - _start;
+        return elapsed > _duration ? _duration : elapsed;
     }
 }
