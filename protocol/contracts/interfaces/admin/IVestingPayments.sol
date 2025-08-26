@@ -2,7 +2,9 @@ pragma solidity ^0.8.20;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (interfaces/admin/IVestingPayments.sol)
 
-interface IVestingPayments {
+import { IPaymentBase } from "contracts/interfaces/admin/IPaymentBase.sol";
+
+interface IVestingPayments is IPaymentBase {
     event Revoked(bytes32 _id, address indexed _recipient, uint256 _unreleased, uint256 _totalVested);
     event Released(bytes32 _id, address indexed _recipient, uint256 _amount);
     event ScheduleCreated(
@@ -44,12 +46,15 @@ interface IVestingPayments {
         // uint128 vestedAtEnd;
     }
 
-    /// @notice Total TGLD vested and unclaimed
+    /// @notice When an account is revoked, record the releasable amount for later when they claim
+    function revokedAccountsReleasable(address account) external view returns (uint256);
+
+    /// @notice Total vesting token vested and unclaimed
     function totalVestedAndUnclaimed() external view returns (uint256);
 
     /// @notice Recipient vesting counts for generating IDs. An account can have multiple vesting schedules
     function holdersVestingCount(address holder) external view returns (uint256);
-
+    
     /**
      * @notice Get vesting schedule
      * @param _vestingId Vesting Id
@@ -73,6 +78,7 @@ interface IVestingPayments {
 
     /**
      * @dev Computes the next vesting schedule identifier for a given account address.
+     * @param _recipient Recipient address
      */
     function computeNextVestingScheduleIdForHolder(
         address _recipient
@@ -80,6 +86,8 @@ interface IVestingPayments {
 
     /**
      * @notice Get vesting Id at index from list of vesting Ids
+     * @dev When a vesting item is revoked, the index changes after the enumerable set swap and pop.
+     * @dev Client should use `getVestingIds()` to get an updated list of ids, before calling this function.
      * @param _index Index
      * @return id Bytes32 Id
      */
@@ -121,6 +129,12 @@ interface IVestingPayments {
         uint256 index
     ) external view returns (VestingSchedule memory);
 
+    /**
+     * @notice Returns the total vesting at block timestamp of a vesting schedule
+     * @dev The returned value does not subtract the distributed amount
+     * @param _vestingId Vesting Id
+     * @return Total vest
+     */
     function getTotalVestingAtCurrentTime(bytes32 _vestingId) external view returns (uint256);
 
    /**

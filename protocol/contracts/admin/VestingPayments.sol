@@ -23,14 +23,17 @@ contract VestingPayments is IVestingPayments, PaymentBase, TempleElevatedAccess 
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.Bytes32Set;
 
-    /// @notice Total vesting token vested and unclaimed
+    /// @inheritdoc IVestingPayments
     uint256 public override totalVestedAndUnclaimed;
 
     /// @notice Schdules for recipients
     mapping(bytes32 id => VestingSchedule schedule) public schedules;
 
-    /// @notice Recipient vesting counts for generating IDs. An account can have multiple vesting schedules
+    /// @inheritdoc IVestingPayments
     mapping(address => uint256) public holdersVestingCount;
+
+    /// @inheritdoc IVestingPayments
+    mapping(address account => uint256 amount) public revokedAccountsReleasable;
 
     /// @notice Vesting Ids
     EnumerableSet.Bytes32Set private _activeVestingIds;
@@ -52,10 +55,7 @@ contract VestingPayments is IVestingPayments, PaymentBase, TempleElevatedAccess 
         _setFundsOwner(_fundsOwner);
     }
 
-    /**
-     * @notice Create multiple vesting schedules
-     * @param _schedules Vesting schedules
-     */
+    /// @inheritdoc IVestingPayments
     function createSchedules(
         VestingSchedule[] calldata _schedules 
     ) external override onlyElevatedAccess {
@@ -85,18 +85,17 @@ contract VestingPayments is IVestingPayments, PaymentBase, TempleElevatedAccess 
         }
     }   
 
-    /**
-     * @notice Revoke vesting
-     * @param _vestingId Vesting Id
-     */
+    /// @inheritdoc IVestingPayments
     function revokeVesting(bytes32 _vestingId) external override onlyElevatedAccess {
         if (!isActiveVestingId(_vestingId)) { revert CommonEventsAndErrors.InvalidParam(); }
         VestingSchedule storage _schedule = schedules[_vestingId];
         if (block.timestamp >= _schedule.duration + _schedule.start) { revert FullyVested(); }
         /// @dev No need to check if `_schedule.revoked` because id is removed from _activeVestingIds so it will fail `isActiveVestingId`
-        
+
+        uint256 vestedNow = _getTotalVestingAtCurrentTime(_schedule);
+        revokedAccountsReleasable[_schedule.recipient] = vestedNow;
+
         uint256 unreleased = _schedule.amount - _schedule.distributed;
-        totalVestedAndUnclaimed -= unreleased;
         _schedule.revoked = true;
         if(!_activeVestingIds.remove(_vestingId)) { revert CommonEventsAndErrors.InvalidParam(); }
         emit Revoked(_vestingId, _schedule.recipient, unreleased, totalVestedAndUnclaimed);
@@ -117,9 +116,7 @@ contract VestingPayments is IVestingPayments, PaymentBase, TempleElevatedAccess 
         _recoverToken(_token, _to, _amount);
     }
 
-    /**
-     * @dev Computes the next vesting schedule identifier for a given account address.
-     */
+    /// @inheritdoc IVestingPayments
     function computeNextVestingScheduleIdForHolder(
         address _recipient
     ) public view override returns (bytes32) {
@@ -130,13 +127,7 @@ contract VestingPayments is IVestingPayments, PaymentBase, TempleElevatedAccess 
             );
     }
 
-    /**
-     * @notice Get vesting Id at index from list of vesting Ids
-     * @dev When a vesting item is revoked, the index changes after the enumerable set swap and pop.
-     * @dev Client should use `getVestingIds()` to get an updated list of ids, before calling this function.
-     * @param _index Index
-     * @return id Bytes32 Id
-     */
+    /// @inheritdoc IVestingPayments
     function getVestingIdAtIndex(
         uint256 _index
     ) external view override returns (bytes32 id) {
@@ -146,22 +137,25 @@ contract VestingPayments is IVestingPayments, PaymentBase, TempleElevatedAccess 
         id = _activeVestingIds.at(_index);
     }
 
-    /**
-     * @notice Release tokens vested at current block timestamp. Caller must be recipient of vest
-     * @param _vestingId Vesting Id
-     */
+    /// @inheritdoc IVestingPayments
     function release(bytes32 _vestingId) external override {
-        if(!isActiveVestingId(_vestingId)) { revert CommonEventsAndErrors.InvalidParam(); }
         VestingSchedule storage _schedule = schedules[_vestingId];
+        if (_schedule.start == 0) { revert CommonEventsAndErrors.InvalidParam(); }
         if (_schedule.recipient != msg.sender) { revert CommonEventsAndErrors.InvalidAccess(); }
+        if (_schedule.revoked && revokedAccountsReleasable[msg.sender] > 0) {
+            uint256 amount = revokedAccountsReleasable[msg.sender];
+            revokedAccountsReleasable[msg.sender] = 0;
+            _release(_schedule, amount);
+            emit Released(_vestingId, msg.sender, amount);
+            return;
+        }
+        if (!isActiveVestingId(_vestingId)) { revert CommonEventsAndErrors.InvalidParam(); }
         uint256 _releasableAmount = _calculateReleasableAmount(_schedule);
         _release(_schedule, _releasableAmount);
         emit Released(_vestingId, msg.sender, _releasableAmount);
     }
 
-    /**
-     * @dev Computes the vesting schedule identifier for an address and an index.
-     */
+    /// @inheritdoc IVestingPayments
     function computeVestingScheduleIdForAddressAndIndex(
         address holder,
         uint256 index
@@ -169,38 +163,22 @@ contract VestingPayments is IVestingPayments, PaymentBase, TempleElevatedAccess 
         return keccak256(abi.encodePacked(holder, index));
     }
 
-    /**
-     * @notice Check if vesting Id exists
-     * @param _id Vesting Id
-     * @return Bool
-     */
+    /// @inheritdoc IVestingPayments
      function isActiveVestingId(bytes32 _id) public view returns (bool) {
         return _activeVestingIds.contains(_id);
     }
 
-    /**
-     * @notice Check if vesting is revoked
-     * @param _vestingId Vesting Id
-     * @return Bool
-     */
+    /// @inheritdoc IVestingPayments
     function isVestingRevoked(bytes32 _vestingId) external view override returns (bool) {
         return schedules[_vestingId].revoked;
     }
 
-    /**
-     * @notice Get vesting schedule
-     * @param _vestingId Vesting Id
-     * @return schedule VestingSchedule 
-     */
+    /// @inheritdoc IVestingPayments
     function getSchedule(bytes32 _vestingId) external view override returns (VestingSchedule memory schedule) {
         schedule = schedules[_vestingId];
     }
 
-    /**
-     * @notice Returns the last vesting schedule for a given holder address.
-     * @param _recipient Recipient address
-     * @return schedule Vesting schedule
-     */
+    /// @inheritdoc IVestingPayments
     function getLastVestingScheduleForHolder(
         address _recipient
     ) external view override returns (VestingSchedule memory schedule) {
@@ -214,12 +192,7 @@ contract VestingPayments is IVestingPayments, PaymentBase, TempleElevatedAccess 
         ];
     }
 
-    /**
-     * @notice Returns vesting schedule by address and index
-     * @param recipient Recipient
-     * @param index Index
-     * @return VestingSchedule
-     */
+    /// @inheritdoc IVestingPayments
     function getVestingScheduleByAddressAndIndex(
         address recipient,
         uint256 index
@@ -227,17 +200,10 @@ contract VestingPayments is IVestingPayments, PaymentBase, TempleElevatedAccess 
         return schedules[computeVestingScheduleIdForAddressAndIndex(recipient, index)];
     }
 
-    /**
-     * @notice Get total vested amount at current block timestamp for vesting Id
-     * @param _vestingId Vesting Id
-     * @return Vested amount 
-     */
+    /// @inheritdoc IVestingPayments
     function getTotalVestingAtCurrentTime(bytes32 _vestingId) external view override returns (uint256) {
         VestingSchedule memory _schedule = schedules[_vestingId];
-        if (_schedule.amount == 0) { return 0; }
-        if (block.timestamp <= _schedule.start) { return 0; }
-        if (_schedule.revoked) { return 0; }
-        return _calculateTotalVestedAt(_schedule, uint40(block.timestamp));
+        return _getTotalVestingAtCurrentTime(_schedule);
     }
 
     /// @inheritdoc IVestingPayments
@@ -257,53 +223,44 @@ contract VestingPayments is IVestingPayments, PaymentBase, TempleElevatedAccess 
         }
     }
 
-    /**
-     * @notice Get vesting Ids
-     * @return ids Vesting Ids 
-     */
+    /// @inheritdoc IVestingPayments
     function getVestingIds() external view override returns (bytes32[] memory ids) {
         ids = _activeVestingIds.values();
     }
 
-    /**
-     * @notice Get releasable amount
-     * @param _vestingId Vesting Id
-     * @return Amount
-     */
+    /// @inheritdoc IVestingPayments
     function getReleasableAmount(bytes32 _vestingId) external view override returns (uint256) {
-        if(!isActiveVestingId(_vestingId)) { return 0; }
         VestingSchedule storage _schedule = schedules[_vestingId];
         return _calculateReleasableAmount(_schedule);
     }
 
-    /**
-     * @notice Get total amount vested for an Id at timestamp
-     * @param _vestingId Vesting Id
-     * @param _at At timestamp
-     * @return Total vested
-     */
+    /// @inheritdoc IVestingPayments
     function getTotalVestedAt(bytes32 _vestingId, uint40 _at) external view override returns (uint256) {
         VestingSchedule memory _schedule = schedules[_vestingId];
-        if (_schedule.amount == 0) { return 0; }
-        if (_at <= _schedule.start) { return 0; }
         return _calculateTotalVestedAt(_schedule, _at);
+    }
+
+    function _getTotalVestingAtCurrentTime(VestingSchedule memory _schedule) private view returns (uint256) {
+        return _calculateTotalVestedAt(_schedule, uint40(block.timestamp));
     }
 
     function _calculateReleasableAmount(
           VestingSchedule storage _schedule
     ) private view returns (uint256) {
-        if ((block.timestamp <= _schedule.cliff) || _schedule.revoked) {
-            return 0;
-        } else {
-            uint256 _vested = _calculateTotalVestedAt(_schedule, uint40(block.timestamp));
-            return _vested - _schedule.distributed;
-        }
+        return _calculateTotalVestedAt(_schedule, uint40(block.timestamp)) - _schedule.distributed;
     }
 
     function _calculateTotalVestedAt(
         VestingSchedule memory _schedule,
         uint40 _releaseTime
-    ) private pure returns (uint256) {
+    ) private view returns (uint256) {
+        if (_schedule.amount == 0) { return 0; }
+        if (_releaseTime <= _schedule.start) { return 0; }
+        // below cliff
+        if (_releaseTime <= _schedule.cliff) { return 0; }
+        // if revoked, return releasable amount at time of revoke
+        if (_schedule.revoked) { return revokedAccountsReleasable[_schedule.recipient]; }
+
         uint256 _elapsed = _getElapsedTime(_schedule.start, _releaseTime, _schedule.duration);
         uint256 _vested = TempleMath.mulDivRound(_schedule.amount, _elapsed, _schedule.duration, false);
         return _vested;
