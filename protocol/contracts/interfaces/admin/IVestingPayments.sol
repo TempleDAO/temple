@@ -25,9 +25,9 @@ interface IVestingPayments is IPaymentBase {
         uint40 start;
         /// @notice Duration of vesting
         uint40 duration;
-        /// @notice Amount of TGLD for whole vesting
+        /// @notice Amount of vesting token for whole vesting
         uint128 amount;
-        /// @notice Amount of TGLD distributed to recipient
+        /// @notice Amount of vesting token distributed to recipient
         uint128 distributed;
         /// @notice Recipient of vesting
         address recipient;
@@ -38,12 +38,10 @@ interface IVestingPayments is IPaymentBase {
     struct VestingSummary {
         /// @notice Recipient of vesting
         address recipient;
-        /// @notice distributed tgld
+        /// @notice distributed vesting token
         uint128 distributed;
         /// @notice total vested at current block.timestamp
         uint128 vested;
-        // /// @notice total vested at end time of summary
-        // uint128 vestedAtEnd;
     }
 
     /// @notice When an account is revoked, record the releasable amount for later when they claim

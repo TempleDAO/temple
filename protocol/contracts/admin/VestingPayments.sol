@@ -17,7 +17,8 @@ import { PaymentBase } from "contracts/admin/PaymentBase.sol";
 /**
  * @title Vesting Payments
  * @notice Vesting contract for contributors. Token is an arbitrary ERC20 token and allocations are set with createSchedules.
- *  An account can have multiple vesting schedules. Vesting schedules can be revoked and canceled.
+ *  An account can have multiple vesting schedules. Vesting schedules can be revoked and canceled. When revoked, contributor
+ * vest is updated at block timestamp. Contributor can later claim that amount.
  */
 contract VestingPayments is IVestingPayments, PaymentBase, TempleElevatedAccess {
     using SafeERC20 for IERC20;
@@ -151,6 +152,7 @@ contract VestingPayments is IVestingPayments, PaymentBase, TempleElevatedAccess 
         }
         if (!isActiveVestingId(_vestingId)) { revert CommonEventsAndErrors.InvalidParam(); }
         uint256 _releasableAmount = _calculateReleasableAmount(_schedule);
+        if (_releasableAmount == 0) { revert FullyVested(); }
         _release(_schedule, _releasableAmount);
         emit Released(_vestingId, msg.sender, _releasableAmount);
     }
@@ -164,7 +166,7 @@ contract VestingPayments is IVestingPayments, PaymentBase, TempleElevatedAccess 
     }
 
     /// @inheritdoc IVestingPayments
-     function isActiveVestingId(bytes32 _id) public view returns (bool) {
+    function isActiveVestingId(bytes32 _id) public view returns (bool) {
         return _activeVestingIds.contains(_id);
     }
 
@@ -247,7 +249,8 @@ contract VestingPayments is IVestingPayments, PaymentBase, TempleElevatedAccess 
     function _calculateReleasableAmount(
           VestingSchedule storage _schedule
     ) private view returns (uint256) {
-        return _calculateTotalVestedAt(_schedule, uint40(block.timestamp)) - _schedule.distributed;
+        // if account schedule is revoked, return the persisted checkpoint vested amount. This also avoids an arithmetic underflow
+        return _schedule.revoked ? revokedAccountsReleasable[_schedule.recipient] : _calculateTotalVestedAt(_schedule, uint40(block.timestamp)) - _schedule.distributed;
     }
 
     function _calculateTotalVestedAt(
