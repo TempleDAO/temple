@@ -70,6 +70,26 @@ contract EpochPayments is IEpochPayments, PaymentBase, TempleElevatedAccess {
         }
     }
 
+    /// @inheritdoc IEpochPayments
+    function updateEpochPayments(
+        address[] calldata recipients,
+        uint256[] calldata amounts
+    ) external override onlyElevatedAccess {
+        // use current epoch
+        uint256 currentEpochCache = currentEpoch;
+        // check min time between epochs has not passed
+        if (epochStartTimes[currentEpochCache] + minEpochDuration < block.timestamp) { revert EpochEnded(); }
+        uint256 _length = recipients.length;
+        if (_length != amounts.length) { revert AllocationsLengthMismatch(); }
+        address recipient;
+        for (uint256 i; i < _length; ++i) {
+            // check if recipient has already claimed before update
+            recipient = recipients[i];
+            if (claimedEpochs[recipient][currentEpochCache]) { revert AlreadyClaimed(recipient, currentEpochCache); }
+            _setEpochAllocation(currentEpochCache, recipient, amounts[i]);
+        }
+    }
+
     /// @notice Set minimum duration of an epoch. Used to check against before incrementing epoch
     /// @dev Made mutable so that admin can use as a way to enforce starting a new epoch at an earlier time.
     /// Eg. setting value to 28 from 30
@@ -77,17 +97,6 @@ contract EpochPayments is IEpochPayments, PaymentBase, TempleElevatedAccess {
         if (duration == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
         minEpochDuration = duration;
         emit MinimumEpochDurationSet(duration);
-    }
-
-    function _startNextEpoch() private returns (uint256 nextEpoch) {
-        uint256 currentEpochCache = currentEpoch;
-        uint256 startTime = epochStartTimes[currentEpochCache];
-        // For the first epoch allow immediate start; otherwise enforce minimum duration
-        if (currentEpoch != 0 && startTime + minEpochDuration >= block.timestamp) { revert CannotStartEpoch(currentEpochCache+1); }
-        nextEpoch = currentEpochCache + 1;
-        currentEpoch = nextEpoch;
-        epochStartTimes[nextEpoch] = block.timestamp;
-        emit NextEpochSet(nextEpoch);
     }
 
     /**
@@ -99,7 +108,7 @@ contract EpochPayments is IEpochPayments, PaymentBase, TempleElevatedAccess {
         if (recipient == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
         if (epoch == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
         // validate
-        if (claimedEpochs[recipient][epoch]) { revert AlreadyClaimed(); }
+        if (claimedEpochs[recipient][epoch]) { revert AlreadyClaimed(recipient, epoch); }
         uint256 _amount = epochPayments[recipient][epoch];
         if (_amount == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
         epochPayments[recipient][epoch] = 0;
@@ -113,7 +122,7 @@ contract EpochPayments is IEpochPayments, PaymentBase, TempleElevatedAccess {
      */
     function claimEpoch(uint256 epoch) external override {
         if (epoch == 0) { revert CommonEventsAndErrors.InvalidParam(); }
-        if (claimedEpochs[msg.sender][epoch]) { revert AlreadyClaimed(); }
+        if (claimedEpochs[msg.sender][epoch]) { revert AlreadyClaimed(msg.sender, epoch); }
         uint256 _amount = epochPayments[msg.sender][epoch];
         if (_amount == 0) { revert NothingClaimable(); }
 
@@ -130,10 +139,7 @@ contract EpochPayments is IEpochPayments, PaymentBase, TempleElevatedAccess {
     function _setEpochAllocation(uint256 _epoch, address _recipient, uint256 _amount) private {
         if (_amount == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
         if (_recipient == address(0)) { revert CommonEventsAndErrors.InvalidAddress();}
-        // revert if account already claimed for epoch
-        if (claimedEpochs[_recipient][_epoch]) { revert AlreadyClaimed(); }
-        // admin must revoke epoch first
-        if (epochPayments[_recipient][_epoch] != 0) revert EpochAlreadySet();
+        /// @dev not checking if recipient has already claimed because at this point, `currentEpoch` has incremented. So we are dealing with a new epoch
         epochPayments[_recipient][_epoch] = _amount;
         totalAllocation += _amount;
         emit EpochAllocationSet(_recipient, _epoch, _amount);
@@ -142,5 +148,16 @@ contract EpochPayments is IEpochPayments, PaymentBase, TempleElevatedAccess {
     function _updateAndTransfer(uint256 _amount) private {
         totalClaimed += _amount;
         paymentToken.safeTransferFrom(fundsOwner, msg.sender, _amount);
+    }
+
+    function _startNextEpoch() private returns (uint256 nextEpoch) {
+        uint256 currentEpochCache = currentEpoch;
+        uint256 startTime = epochStartTimes[currentEpochCache];
+        // For the first epoch allow immediate start; otherwise enforce minimum duration
+        if (currentEpochCache != 0 && startTime + minEpochDuration >= block.timestamp) { revert CannotStartEpoch(currentEpochCache+1); }
+        nextEpoch = currentEpochCache + 1;
+        currentEpoch = nextEpoch;
+        epochStartTimes[nextEpoch] = block.timestamp;
+        emit NextEpochSet(nextEpoch);
     }
 }
