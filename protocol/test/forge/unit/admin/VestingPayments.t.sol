@@ -270,7 +270,7 @@ contract VestingPaymentsViewTest is VestingPaymentsTestBase {
         schedule = _createVestingTwo();
         ids = vesting.getVestingIds();
         assertEq(ids.length, 2);
-        assertEq(ids[1], vesting.getVestingIdAtIndex(1));   
+        assertEq(ids[1], vesting.getVestingIdAtIndex(1));
     }
 
     function test_getReleasableAmount_zero_amount() public view {
@@ -391,6 +391,101 @@ contract VestingPaymentsViewTest is VestingPaymentsTestBase {
         // beyond duration
         assertEq(schedules[0].amount, vesting.getTotalVestedAt(ids[0], uint40(block.timestamp+48 weeks+1 seconds)));
         assertEq(schedules[0].amount, vesting.getTotalVestedAt(ids[0], uint40(block.timestamp+56 weeks)));
+    }
+
+    function test_getSchedule() public {
+        vm.startPrank(executor);
+        IVestingPayments.VestingSchedule[] memory schedules = new IVestingPayments.VestingSchedule[](1);
+        IVestingPayments.VestingSchedule memory _schedule = _getScheduleOne();
+        bytes32 _id;
+        {
+            // create vesting
+            _id = vesting.computeNextVestingScheduleIdForHolder(alice);
+            schedules[0] = _schedule;
+            vesting.createSchedules(schedules);
+        }
+        IVestingPayments.VestingSchedule memory schedule = vesting.getSchedule(_id);
+        assertEq(schedule.cliff, _schedule.cliff);
+        assertEq(schedule.duration, _schedule.duration);
+        assertEq(schedule.amount, _schedule.amount);
+        assertEq(schedule.revoked, _schedule.revoked);
+        assertEq(schedule.distributed, _schedule.distributed);
+    }
+
+    function test_computeNextVestingScheduleIdForHolder() public {
+        assertEq(vesting.holdersVestingCount(alice), 0);
+        bytes32 nextId = keccak256(abi.encodePacked(alice, uint(0)));
+        assertEq(vesting.computeNextVestingScheduleIdForHolder(alice), nextId);
+        assertEq(vesting.computeVestingScheduleIdForAddressAndIndex(alice, 0), nextId);
+        // create vesting
+        _createFirstSchedule();
+        assertEq(vesting.holdersVestingCount(alice), 1);
+        nextId = keccak256(abi.encodePacked(alice, uint(1)));
+        assertEq(vesting.computeNextVestingScheduleIdForHolder(alice), nextId);
+        assertEq(vesting.computeVestingScheduleIdForAddressAndIndex(alice, 1), nextId);
+    }
+
+    function test_isActiveVestingId_isVestingRevoked() public {
+        assertEq(vesting.isVestingRevoked(bytes32(0)), false);
+        bytes32 _id = _createFirstSchedule();
+        assertEq(vesting.isActiveVestingId(_id), true);
+        bytes32[] memory _ids = vesting.getVestingIds();
+        assertEq(_ids.length, 1);
+        assertEq(_ids[0], _id);
+        // revoke immediately
+        vesting.revokeVesting(_id);
+        assertEq(vesting.isVestingRevoked(_id), true);
+        assertEq(vesting.isActiveVestingId(_id), false);
+    }
+
+    function test_getVestingScheduleByAddressAndIndex() public {
+        bytes32 _id = _createFirstSchedule();
+        IVestingPayments.VestingSchedule memory schedule = vesting.getVestingScheduleByAddressAndIndex(alice, 0);
+        IVestingPayments.VestingSchedule memory schedule_ = vesting.getSchedule(_id);
+        assertEq(schedule_.amount, schedule.amount);
+        assertEq(schedule_.start, schedule.start);
+        assertEq(schedule_.cliff, schedule.cliff);
+        assertEq(schedule_.duration, schedule.duration);
+        assertEq(schedule_.revoked, schedule.revoked);
+    }
+
+    function test_getTotalVestedAtCurrentTime() public {
+        vm.startPrank(executor);
+        IVestingPayments.VestingSchedule[] memory schedules = new IVestingPayments.VestingSchedule[](1);
+        schedules[0] = _getScheduleOne();
+        vesting.createSchedules(schedules);
+        bytes32[] memory ids = vesting.getVestingIds();
+        assertEq(0, vesting.getTotalVestedAt(ids[0], uint40(schedules[0].start-1)));
+
+        bytes32 id = _createFirstSchedule();
+        IVestingPayments.VestingSchedule memory schedule = vesting.getSchedule(id);
+        
+        // no vest now
+        assertEq(vesting.getTotalVestedAtCurrentTime(id), 0);
+        // before start
+        vm.warp(schedule.start-1);
+        assertEq(vesting.getTotalVestedAtCurrentTime(id), 0);
+        // at start
+        skip(1 seconds);
+        assertEq(vesting.getTotalVestedAtCurrentTime(id), 0);
+        // before cliff
+        vm.warp(schedule.cliff-1);
+        assertEq(vesting.getTotalVestedAtCurrentTime(id), 0);
+        // at cliff
+        vm.warp(schedule.cliff);
+        assertEq(vesting.getTotalVestedAtCurrentTime(id), 0);
+        // after cliff
+        skip(1 seconds);
+        assertEq(vesting.getTotalVestedAtCurrentTime(id), (12 weeks+1 seconds)*schedule.amount/48 weeks);
+        // 8 weeks after
+        skip(8 weeks);
+        assertEq(vesting.getTotalVestedAtCurrentTime(id), (8 weeks + 12 weeks+1 seconds)*schedule.amount/48 weeks);
+        // at end
+        vm.warp(schedule.start + schedule.duration);
+        assertEq(vesting.getTotalVestedAtCurrentTime(id), schedule.amount);
+        // after. still same as amount vested at end
+        skip(1 weeks);
+        assertEq(vesting.getTotalVestedAtCurrentTime(id), schedule.amount);
     }
 }
 
@@ -679,50 +774,6 @@ contract VestingPaymentsTest is VestingPaymentsTestBase {
         vesting.recoverToken(address(fakeToken), alice, amount);
         assertEq(fakeToken.balanceOf(alice), amount);
         assertEq(fakeToken.balanceOf(address(vesting)), 0);
-    }
-
-    function test_computeNextVestingScheduleIdForHolder() public {
-        assertEq(vesting.holdersVestingCount(alice), 0);
-        bytes32 nextId = keccak256(abi.encodePacked(alice, uint(0)));
-        assertEq(vesting.computeNextVestingScheduleIdForHolder(alice), nextId);
-        assertEq(vesting.computeVestingScheduleIdForAddressAndIndex(alice, 0), nextId);
-        // create vesting
-        _createFirstSchedule();
-        assertEq(vesting.holdersVestingCount(alice), 1);
-        nextId = keccak256(abi.encodePacked(alice, uint(1)));
-        assertEq(vesting.computeNextVestingScheduleIdForHolder(alice), nextId);
-        assertEq(vesting.computeVestingScheduleIdForAddressAndIndex(alice, 1), nextId);
-    }
-
-    function test_isActiveVestingId() public {
-        assertEq(vesting.isVestingRevoked(bytes32(bytes(""))), false);
-        bytes32 _id = _createFirstSchedule();
-        assertEq(vesting.isActiveVestingId(_id), true);
-        bytes32[] memory _ids = vesting.getVestingIds();
-        assertEq(_ids.length, 1);
-        assertEq(_ids[0], _id);
-        // revoke immediately
-        vesting.revokeVesting(_id);
-        assertEq(vesting.isVestingRevoked(_id), true);
-    }
-
-    function test_getSchedule() public {
-        vm.startPrank(executor);
-        IVestingPayments.VestingSchedule[] memory schedules = new IVestingPayments.VestingSchedule[](1);
-        IVestingPayments.VestingSchedule memory _schedule = _getScheduleOne();
-        bytes32 _id;
-        {
-            // create vesting
-            _id = vesting.computeNextVestingScheduleIdForHolder(alice);
-            schedules[0] = _schedule;
-            vesting.createSchedules(schedules);
-        }
-        IVestingPayments.VestingSchedule memory schedule = vesting.getSchedule(_id);
-        assertEq(schedule.cliff, _schedule.cliff);
-        assertEq(schedule.duration, _schedule.duration);
-        assertEq(schedule.amount, _schedule.amount);
-        assertEq(schedule.revoked, _schedule.revoked);
-        assertEq(schedule.distributed, _schedule.distributed);
     }
 
     function test_release_invalid_id() public {
