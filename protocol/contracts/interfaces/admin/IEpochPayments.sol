@@ -14,9 +14,31 @@ interface IEpochPayments is IPaymentBase {
     error AllocationsLengthMismatch();
     error EpochAlreadySet();
     error CannotStartEpoch(uint256 epoch);
-    error NothingClaimable();
+    error ZeroClaimable();
     error AlreadyClaimed(address recipient, uint256 epoch);
     error EpochEnded();
+    error InvalidEpoch(uint256 epoch);
+
+    /// @notice Total allocation, claimed and unclaimed
+    function totalAllocation() external view returns (uint256);
+
+    /// @notice Total Claimed
+    function totalClaimed() external view returns (uint256);
+
+    /// @notice Keep track of the current active epoch
+    function currentEpoch() external view returns (uint256);
+
+    /// @notice Minimum epoch duration
+    function minEpochDuration() external view returns (uint256);
+
+    /// @notice Epoch payments. variable payments
+    function epochPayments(address recipient, uint256 epoch) external view returns (uint256);
+
+    /// @notice Mapping of claimed epochs for recipient/epoch pair
+    function claimedEpochs(address recipient, uint256 epoch) external view returns (bool);
+
+    /// @notice Epochs to start time mapping
+    function epochStartTimes(uint256 epoch) external view returns (uint256);
 
     /**
      * @notice Set initial epoch payments for the next epoch

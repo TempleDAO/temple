@@ -2,10 +2,13 @@ pragma solidity ^0.8.20;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (admin/PaymentBase.sol)
 
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { IPaymentBase } from "contracts/interfaces/admin/IPaymentBase.sol";
+
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+
+import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
+
 
 abstract contract PaymentBase is IPaymentBase {
     using SafeERC20 for IERC20;

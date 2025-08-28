@@ -21,26 +21,26 @@ import { PaymentBase } from "contracts/admin/PaymentBase.sol";
 contract EpochPayments is IEpochPayments, PaymentBase, TempleElevatedAccess {
     using SafeERC20 for IERC20;
 
-    /// @notice Total allocation, claimed and unclaimed
-    uint256 public totalAllocation;
+   /// @inheritdoc IEpochPayments
+    uint256 public override totalAllocation;
 
-    /// @notice Total Claimed
-    uint256 public totalClaimed;
+    /// @inheritdoc IEpochPayments
+    uint256 public override totalClaimed;
 
-    /// @notice Keep track of the current active epoch
-    uint256 public currentEpoch;
+    /// @inheritdoc IEpochPayments
+    uint256 public override currentEpoch;
 
-    /// @notice Minimum epoch duration
-    uint256 public minEpochDuration;
+    /// @inheritdoc IEpochPayments
+    uint256 public override minEpochDuration;
 
-    /// @notice Epoch payments. variable payments
-    mapping(address recipient => mapping(uint256 epoch => uint256 amount)) public epochPayments;
+    /// @inheritdoc IEpochPayments
+    mapping(address recipient => mapping(uint256 epoch => uint256 amount)) public override epochPayments;
 
-    /// @notice Claimed epochs
-    mapping(address recipient => mapping(uint256 epoch => bool claimed)) public claimedEpochs;
+    /// @inheritdoc IEpochPayments
+    mapping(address recipient => mapping(uint256 epoch => bool claimed)) public override claimedEpochs;
 
-    /// @notice Epochs
-    mapping(uint256 epoch => uint256 startTime) public epochStartTimes;
+    /// @inheritdoc IEpochPayments
+    mapping(uint256 epoch => uint256 startTime) public override epochStartTimes;
 
     constructor(
         address _rescuer,
@@ -107,6 +107,7 @@ contract EpochPayments is IEpochPayments, PaymentBase, TempleElevatedAccess {
     function revokeEpochPayment(uint256 epoch, address recipient) external override onlyElevatedAccess {
         if (recipient == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
         if (epoch == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
+        if (epoch > currentEpoch) { revert InvalidEpoch(epoch); }
         // validate
         if (claimedEpochs[recipient][epoch]) { revert AlreadyClaimed(recipient, epoch); }
         uint256 _amount = epochPayments[recipient][epoch];
@@ -121,10 +122,10 @@ contract EpochPayments is IEpochPayments, PaymentBase, TempleElevatedAccess {
      * @param epoch Epoch
      */
     function claimEpoch(uint256 epoch) external override {
-        if (epoch == 0) { revert CommonEventsAndErrors.InvalidParam(); }
+        if (epoch == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
         if (claimedEpochs[msg.sender][epoch]) { revert AlreadyClaimed(msg.sender, epoch); }
         uint256 _amount = epochPayments[msg.sender][epoch];
-        if (_amount == 0) { revert NothingClaimable(); }
+        if (_amount == 0) { revert ZeroClaimable(); }
 
         claimedEpochs[msg.sender][epoch] = true;
         _updateAndTransfer(_amount);
