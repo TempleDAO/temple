@@ -17,10 +17,10 @@ contract VestingPaymentsTestBase is TempleGoldCommon {
     event Revoked(bytes32 indexed _id, address indexed _recipient, uint256 _unreleased, uint256 _totalVested);
     event Released(bytes32 indexed _id, address indexed _recipient, uint256 _amount);
     event ScheduleCreated(
-        bytes32 _id, address indexed _recipient, uint40 _start,
+        bytes32 indexed _id, address indexed _recipient, uint40 _start,
         uint40 _cliff, uint40 _duration, uint128 _amount
     );
-    event RecipientChanged(bytes32 indexed _vestingId, address indexed _oldRecipient, address indexed _recipient);
+    event RecipientChanged(bytes32 indexed _id, address indexed _oldRecipient, address indexed _recipient);
     event FundsOwnerSet(address indexed _fundsOwner);
 
     FakeERC20 public fakeToken;
