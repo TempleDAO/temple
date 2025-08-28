@@ -87,6 +87,7 @@ contract TeamPaymentsAccessTest is EpochPaymentsTestBase {
 
     function test_access_success_setEpochPayments() public {
         vm.startPrank(executor);
+        payment.setMinimumEpochDuration(4 weeks);
         uint256[] memory amounts = new uint256[](1);
         address[] memory recipients = new address[](1);
         amounts[0] = 1e18;
