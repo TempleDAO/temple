@@ -14,13 +14,13 @@ import { StableGoldAuction } from "contracts/templegold/StableGoldAuction.sol";
 import { TempleGoldStaking } from "contracts/templegold/TempleGoldStaking.sol";
 
 contract VestingPaymentsTestBase is TempleGoldCommon {
-    event Revoked(bytes32 _id, address indexed _recipient, uint256 _unreleased, uint256 _totalVested);
-    event Released(bytes32 _id, address indexed _recipient, uint256 _amount);
+    event Revoked(bytes32 indexed _id, address indexed _recipient, uint256 _unreleased, uint256 _totalVested);
+    event Released(bytes32 indexed _id, address indexed _recipient, uint256 _amount);
     event ScheduleCreated(
         bytes32 _id, address indexed _recipient, uint40 _start,
         uint40 _cliff, uint40 _duration, uint128 _amount
     );
-    event RecipientChanged(bytes32 _vestingId, address indexed _oldRecipient, address indexed _recipient);
+    event RecipientChanged(bytes32 indexed _vestingId, address indexed _oldRecipient, address indexed _recipient);
     event FundsOwnerSet(address indexed _fundsOwner);
 
     FakeERC20 public fakeToken;
@@ -112,8 +112,8 @@ contract VestingPaymentsTestBase is TempleGoldCommon {
     }
 
     function _getScheduleTwo() internal view returns (IVestingPayments.VestingSchedule memory schedule) {
-        uint40 start = uint32(block.timestamp) + 1 weeks;
-        uint40 cliff = uint32(start + 16 weeks);
+        uint40 start = uint40(block.timestamp) + 1 weeks;
+        uint40 cliff = uint40(start + 16 weeks);
         uint40 duration = 56 weeks;
         schedule = IVestingPayments.VestingSchedule(
             cliff,
@@ -127,9 +127,9 @@ contract VestingPaymentsTestBase is TempleGoldCommon {
     }
 
     function _getScheduleThree() internal view returns (IVestingPayments.VestingSchedule memory schedule) {
-        uint32 start = uint32(block.timestamp) + 4 weeks;
-        uint32 cliff = uint32(start + 12 weeks);
-        uint32 duration = 56 weeks;
+        uint40 start = uint40(block.timestamp) + 4 weeks;
+        uint40 cliff = uint40(start + 12 weeks);
+        uint40 duration = 56 weeks;
         schedule = IVestingPayments.VestingSchedule(
             cliff,
             start,
@@ -185,7 +185,7 @@ contract VestingPaymentsAccessTest is VestingPaymentsTestBase {
 
     function test_access_fail_revokeVesting() public {
         expectElevatedAccess();
-        vesting.revokeVesting(bytes32(bytes("")));
+        vesting.revokeVesting(bytes32(0));
     }
 
     function test_access_fail_recoverToken() public {
@@ -246,7 +246,7 @@ contract VestingPaymentsViewTest is VestingPaymentsTestBase {
 
     function test_getVestingIdAtIndex_zero_ids() public {
         vm.expectRevert(abi.encodeWithSelector(IVestingPayments.NoVesting.selector));
-        vesting.getVestingIdAtIndex(1);
+        vesting.getVestingIdAtIndex(0);
     }
 
     function test_getVestingIdAtIndex() public {
@@ -331,7 +331,7 @@ contract VestingPaymentsViewTest is VestingPaymentsTestBase {
         ids = vesting.getVestingIds();
 
         schedule = vesting.getSchedule(ids[1]);
-        // 1 week + (cliff - start)) + 11 weeks
+        // 1 week + (cliff - start) + 12 weeks = 29 weeks total → 28 weeks vested since start
         skip(29 weeks);
         amount = 28 * schedule.amount / 56;
         assertEq(vesting.getReleasableAmount(ids[1]), amount);
@@ -436,11 +436,11 @@ contract VestingPaymentsTest is VestingPaymentsTestBase {
         vesting.createSchedules(schedules);
         _schedule.recipient = alice;
 
-        _schedule.start = uint32(block.timestamp - 1);
+        _schedule.start = uint40(block.timestamp - 1);
         schedules[0] = _schedule;
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
         vesting.createSchedules(schedules);
-        _schedule.start = uint32(block.timestamp);
+        _schedule.start = uint40(block.timestamp);
 
         _schedule.cliff = _schedule.start;
         schedules[0] = _schedule;
@@ -604,7 +604,7 @@ contract VestingPaymentsTest is VestingPaymentsTestBase {
         _mint();
         vm.startPrank(executor);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
-        vesting.revokeVesting(bytes32(bytes("")));
+        vesting.revokeVesting(bytes32(0));
     }
     
     function test_revoke_vesting_user_calls_release_immediately_after() public {
@@ -672,7 +672,7 @@ contract VestingPaymentsTest is VestingPaymentsTestBase {
         uint256 amount = 100 ether;
         deal(address(fakeToken), address(vesting), amount, true);
 
-        vm.expectEmit();
+        vm.expectEmit(address(vesting));
         emit CommonEventsAndErrors.TokenRecovered(alice, address(fakeToken), amount);
 
         vm.startPrank(executor);
@@ -682,7 +682,6 @@ contract VestingPaymentsTest is VestingPaymentsTestBase {
     }
 
     function test_computeNextVestingScheduleIdForHolder() public {
-        assertEq(vesting.holdersVestingCount(alice), 0);
         assertEq(vesting.holdersVestingCount(alice), 0);
         bytes32 nextId = keccak256(abi.encodePacked(alice, uint(0)));
         assertEq(vesting.computeNextVestingScheduleIdForHolder(alice), nextId);
@@ -733,7 +732,7 @@ contract VestingPaymentsTest is VestingPaymentsTestBase {
         vesting.release(bytes32(bytes("")));
 
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
-        vesting.release(bytes32(bytes("0x123")));
+        vesting.release(bytes32("0x123"));
     }
 
     function test_release_wrong_recipient() public {
@@ -790,14 +789,15 @@ contract VestingPaymentsTest is VestingPaymentsTestBase {
         assertEq(_schedule.distributed, releasable);
         assertEq(vesting.totalVestedAndUnclaimed(), totalVestedAndUnclaimed-releasable);
 
-        // revoke and release
-        skip(1 weeks);
-        vm.startPrank(executor);
-        balance = templeGold.balanceOf(alice);
-        totalVestedAndUnclaimed = vesting.totalVestedAndUnclaimed();
-        releasable = vesting.getReleasableAmount(_id);
+        // // revoke and release
+        // skip(1 weeks);
+        // vm.startPrank(executor);
+        // balance = templeGold.balanceOf(alice);
+        // totalVestedAndUnclaimed = vesting.totalVestedAndUnclaimed();
+        // releasable = vesting.getReleasableAmount(_id);
         
-        skip(3 weeks);
+        // Continue testing release after more time
+        skip(4 weeks);
         balance = templeGold.balanceOf(alice);
         totalVestedAndUnclaimed = vesting.totalVestedAndUnclaimed();
         releasable = vesting.getReleasableAmount(_id);
@@ -842,9 +842,11 @@ contract VestingPaymentsTest is VestingPaymentsTestBase {
         IVestingPayments.VestingSchedule memory _schedule2 = vesting.getSchedule(_id2);
 
         // alice: skip to below cliff
-        skip(_schedule1.cliff-1);
+        vm.warp(_schedule1.cliff-1);
         bytes32[] memory _ids = new bytes32[](2);
+        _ids[0] = _id1;
         uint256 releasable = vesting.getReleasableAmount(_id1);
+        assertEq(releasable, 0, "Should have zero releasable before cliff");
         IVestingPayments.VestingSummary[] memory summary = vesting.getVestingSummary(_ids);
         assertEq(summary[0].distributed, 0);
         assertEq(summary[0].vested, 0);

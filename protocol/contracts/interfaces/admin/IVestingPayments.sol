@@ -5,13 +5,13 @@ pragma solidity ^0.8.20;
 import { IPaymentBase } from "contracts/interfaces/admin/IPaymentBase.sol";
 
 interface IVestingPayments is IPaymentBase {
-    event Revoked(bytes32 _id, address indexed _recipient, uint256 _unreleased, uint256 _totalVested);
-    event Released(bytes32 _id, address indexed _recipient, uint256 _amount);
+    event Revoked(bytes32 indexed _id, address indexed _recipient, uint256 _unreleased, uint256 _totalVested);
+    event Released(bytes32 indexed _id, address indexed _recipient, uint256 _amount);
     event ScheduleCreated(
         bytes32 _id, address indexed _recipient, uint40 _start,
         uint40 _cliff, uint40 _duration, uint128 _amount
     );
-    event RecipientChanged(bytes32 _vestingId, address indexed _oldRecipient, address indexed _recipient);
+    event RecipientChanged(bytes32 indexed _vestingId, address indexed _oldRecipient, address indexed _recipient);
 
     error CannotRelease();
     error InvalidScheduleId();
@@ -45,13 +45,13 @@ interface IVestingPayments is IPaymentBase {
     }
 
     /// @notice When an account is revoked, record the releasable amount for later when they claim
-    function revokedAccountsReleasable(address account) external view returns (uint256);
+    function revokedAccountsReleasable(address _account) external view returns (uint256);
 
     /// @notice Total vesting token vested and unclaimed
     function totalVestedAndUnclaimed() external view returns (uint256);
 
     /// @notice Recipient vesting counts for generating IDs. An account can have multiple vesting schedules
-    function holdersVestingCount(address holder) external view returns (uint256);
+    function holdersVestingCount(address _holder) external view returns (uint256);
     
     /**
      * @notice Get vesting schedule
@@ -76,10 +76,10 @@ interface IVestingPayments is IPaymentBase {
 
     /**
      * @dev Computes the next vesting schedule identifier for a given account address.
-     * @param _recipient Recipient address
+     * @param _holder Recipient address
      */
     function computeNextVestingScheduleIdForHolder(
-        address _recipient
+        address _holder
     ) external view returns (bytes32);
 
     /**
@@ -103,8 +103,8 @@ interface IVestingPayments is IPaymentBase {
      * @dev Computes the vesting schedule identifier for an address and an index.
      */
     function computeVestingScheduleIdForAddressAndIndex(
-        address holder,
-        uint256 index
+        address _holder,
+        uint256 _index
     ) external pure returns (bytes32);
 
     /**
@@ -118,13 +118,13 @@ interface IVestingPayments is IPaymentBase {
 
     /**
      * @notice Returns vesting schedule by address and index
-     * @param recipient Recipient
-     * @param index Index
+     * @param _recipient Recipient
+     * @param _index Index
      * @return VestingSchedule
      */
     function getVestingScheduleByAddressAndIndex(
-        address recipient,
-        uint256 index
+        address _recipient,
+        uint256 _index
     ) external view returns (VestingSchedule memory);
 
     /**
@@ -133,7 +133,7 @@ interface IVestingPayments is IPaymentBase {
      * @param _vestingId Vesting Id
      * @return Total vest
      */
-    function getTotalVestingAtCurrentTime(bytes32 _vestingId) external view returns (uint256);
+    function getTotalVestedAtCurrentTime(bytes32 _vestingId) external view returns (uint256);
 
    /**
      * @notice Get vesting summary

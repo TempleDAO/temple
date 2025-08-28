@@ -93,7 +93,7 @@ contract VestingPayments is IVestingPayments, PaymentBase, TempleElevatedAccess 
         if (block.timestamp >= _schedule.duration + _schedule.start) { revert FullyVested(); }
         /// @dev No need to check if `_schedule.revoked` because id is removed from _activeVestingIds so it will fail `isActiveVestingId`
 
-        uint256 vestedNow = _getTotalVestingAtCurrentTime(_schedule);
+        uint256 vestedNow = _getTotalVestedAtCurrentTime(_schedule);
         revokedAccountsReleasable[_schedule.recipient] = vestedNow;
 
         uint256 unreleased = _schedule.amount - _schedule.distributed;
@@ -119,12 +119,12 @@ contract VestingPayments is IVestingPayments, PaymentBase, TempleElevatedAccess 
 
     /// @inheritdoc IVestingPayments
     function computeNextVestingScheduleIdForHolder(
-        address _recipient
+        address holder
     ) public view override returns (bytes32) {
         return
             computeVestingScheduleIdForAddressAndIndex(
-                _recipient,
-                holdersVestingCount[_recipient]
+                holder,
+                holdersVestingCount[holder]
             );
     }
 
@@ -203,14 +203,14 @@ contract VestingPayments is IVestingPayments, PaymentBase, TempleElevatedAccess 
     }
 
     /// @inheritdoc IVestingPayments
-    function getTotalVestingAtCurrentTime(bytes32 _vestingId) external view override returns (uint256) {
+    function getTotalVestedAtCurrentTime(bytes32 _vestingId) external view override returns (uint256) {
         VestingSchedule memory _schedule = schedules[_vestingId];
-        return _getTotalVestingAtCurrentTime(_schedule);
+        return _getTotalVestedAtCurrentTime(_schedule);
     }
 
     /// @inheritdoc IVestingPayments
     function getVestingSummary(
-        bytes32[] memory _ids
+        bytes32[] calldata _ids
     ) external view override returns (VestingSummary[] memory summary) {
         uint256 _length = _ids.length;
         summary = new VestingSummary[](_length);
@@ -242,7 +242,7 @@ contract VestingPayments is IVestingPayments, PaymentBase, TempleElevatedAccess 
         return _calculateTotalVestedAt(_schedule, _at);
     }
 
-    function _getTotalVestingAtCurrentTime(VestingSchedule memory _schedule) private view returns (uint256) {
+    function _getTotalVestedAtCurrentTime(VestingSchedule memory _schedule) private view returns (uint256) {
         return _calculateTotalVestedAt(_schedule, uint40(block.timestamp));
     }
 

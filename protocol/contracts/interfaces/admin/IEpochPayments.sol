@@ -5,14 +5,13 @@ pragma solidity ^0.8.20;
 import { IPaymentBase } from "contracts/interfaces/admin/IPaymentBase.sol";
 
 interface IEpochPayments is IPaymentBase {
-    event CancelledEpochPayment(address indexed recipient, uint256 epoch, uint256 amountRevoked);
-    event ClaimedEpoch(address indexed recipient, uint256 epoch, uint256 amount);
-    event EpochAllocationSet(address indexed recipient, uint256 epoch, uint256 amount);
+    event CancelledEpochPayment(address indexed recipient, uint256 indexed epoch, uint256 amountRevoked);
+    event ClaimedEpoch(address indexed recipient, uint256 indexed epoch, uint256 amount);
+    event EpochAllocationSet(address indexed recipient, uint256 indexed epoch, uint256 amount);
     event MinimumEpochDurationSet(uint256 duration);
     event NextEpochSet(uint256 epoch);
 
     error AllocationsLengthMismatch();
-    error EpochAlreadySet();
     error CannotStartEpoch(uint256 epoch);
     error ZeroClaimable();
     error AlreadyClaimed(address recipient, uint256 epoch);
@@ -31,13 +30,13 @@ interface IEpochPayments is IPaymentBase {
     /// @notice Minimum epoch duration
     function minEpochDuration() external view returns (uint256);
 
-    /// @notice Epoch payments. variable payments
+    /// @notice Per-recipient per-epoch allocations
     function epochPayments(address recipient, uint256 epoch) external view returns (uint256);
 
     /// @notice Mapping of claimed epochs for recipient/epoch pair
     function claimedEpochs(address recipient, uint256 epoch) external view returns (bool);
 
-    /// @notice Epochs to start time mapping
+    /// @notice Epoch start timestamps
     function epochStartTimes(uint256 epoch) external view returns (uint256);
 
     /**
@@ -59,6 +58,12 @@ interface IEpochPayments is IPaymentBase {
         address[] calldata recipients,
         uint256[] calldata amounts
     ) external;
+
+    /**
+     * @notice Set minimum duration of an epoch
+     * @param duration Minimum duration in seconds
+     */
+    function setMinimumEpochDuration(uint256 duration) external;
 
     /**
      * @notice Revoke epoch payment for contributor

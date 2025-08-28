@@ -11,11 +11,11 @@ import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.so
 
 contract EpochPaymentsTestBase is TempleTest {
     event FundsOwnerSet(address indexed fundOwner);
-    event CancelledEpochPayment(address indexed recipient, uint256 epoch, uint256 amountRevoked);
-    event ClaimedEpoch(address indexed recipient, uint256 epoch, uint256 amount);
-    event EpochAllocationSet(address indexed recipient, uint256 epoch, uint256 amount);
-    event MinimumEpochDurationSet(uint256 duration);
+    event CancelledEpochPayment(address indexed recipient, uint256 indexed epoch, uint256 amountRevoked);
+    event ClaimedEpoch(address indexed recipient, uint256 indexed epoch, uint256 amount);
+    event EpochAllocationSet(address indexed recipient, uint256 indexed epoch, uint256 amount);
     event NextEpochSet(uint256 epoch);
+    event MinimumEpochDurationSet(uint256 duration);
 
     FakeERC20 public paymentToken;
     FakeERC20 public fakeToken;
@@ -28,8 +28,8 @@ contract EpochPaymentsTestBase is TempleTest {
         fakeToken = new FakeERC20("FAKE", "Fake Token", executor, 10_000 ether);
         payment = new EpochPayments(rescuer, executor, fundsOwner, address(paymentToken));
         deal(address(paymentToken), fundsOwner, 1000e18, true);
-        vm.startPrank(fundsOwner);
-        paymentToken.approve(address(payment), type(uint).max);
+        vm.prank(fundsOwner);
+        paymentToken.approve(address(payment), type(uint256).max);
     }
 
     function test_initialization() public view {
@@ -45,7 +45,7 @@ contract EpochPaymentsTestBase is TempleTest {
     }
 }
 
-contract TeampPaymentsAccessTest is EpochPaymentsTestBase {
+contract TeamPaymentsAccessTest is EpochPaymentsTestBase {
     function test_access_fail_setFundsOwner() public {
         expectElevatedAccess();
         payment.setFundsOwner(alice);
@@ -81,7 +81,7 @@ contract TeampPaymentsAccessTest is EpochPaymentsTestBase {
     }
 
     function test_access_success_setFundsOwner() public {
-        vm.startPrank(executor);
+        vm.prank(executor);
         payment.setFundsOwner(alice);
     }
 
@@ -123,6 +123,7 @@ contract TeampPaymentsAccessTest is EpochPaymentsTestBase {
 contract EpochPaymentsViewTest is EpochPaymentsTestBase {
     function test_totalAllocation() public {
         vm.startPrank(executor);
+        payment.setMinimumEpochDuration(4 weeks);
         address[] memory recipients = new address[](1);
         uint256[] memory amounts = new uint256[](1);
         recipients[0] = alice;
@@ -157,7 +158,7 @@ contract EpochPaymentsViewTest is EpochPaymentsTestBase {
         vm.startPrank(mike);
         payment.claimEpoch(1);
         assertEq(payment.totalClaimed(), 6e18);
-         assertEq(payment.claimedEpochs(mike, 1), true);
+        assertEq(payment.claimedEpochs(mike, 1), true);
     }
 
     function test_currentEpoch_epochStartTimes() public {
@@ -183,7 +184,10 @@ contract EpochPaymentsViewTest is EpochPaymentsTestBase {
     }
 
     function test_minEpochDuration() public {
-
+        uint256 before_ = payment.minEpochDuration();
+        vm.prank(executor);
+        payment.setMinimumEpochDuration(before_ + 1);
+        assertEq(payment.minEpochDuration(), before_ + 1);
     }
 }
 
@@ -192,6 +196,7 @@ contract EpochPaymentsTest is EpochPaymentsTestBase {
         vm.startPrank(executor);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
         payment.setFundsOwner(address(0));
+        vm.stopPrank();
     }
 
     function test_setFundsOwner() public {
@@ -205,6 +210,7 @@ contract EpochPaymentsTest is EpochPaymentsTestBase {
         emit FundsOwnerSet(alice);
         payment.setFundsOwner(alice);
         assertEq(payment.fundsOwner(), alice);
+        vm.stopPrank();
     }
 
     function test_setMinimumEpochDuration_zero_value() public {
@@ -226,6 +232,7 @@ contract EpochPaymentsTest is EpochPaymentsTestBase {
         assertEq(payment.epochStartTimes(1), 0);
         assertEq(payment.epochStartTimes(0), 0);
         vm.startPrank(executor);
+        payment.setMinimumEpochDuration(4 weeks);
         address[] memory recipients = new address[](1);
         uint256[] memory amounts = new uint256[](1);
         recipients[0] = alice;
@@ -378,6 +385,22 @@ contract EpochPaymentsTest is EpochPaymentsTestBase {
         payment.updateEpochPayments(recipients, amounts);
     }
 
+    function test_updateEpochAllocations_single_call_duplicate_accounts() public {
+        // test case: [alice, alice], [amt, amt]
+        test_setEpochPayments_first_epoch();
+        address[] memory recipients = new address[](2);
+        uint256[] memory amounts = new uint256[](2);
+        recipients[0] = bob;
+        recipients[1] = bob;
+        amounts[0] = 1e18;
+        amounts[1] = 2e18;
+        // expected behaviour is to override
+        vm.startPrank(executor);
+        payment.updateEpochPayments(recipients, amounts);
+        assertEq(payment.epochPayments(bob, 1), 2e18);
+        vm.stopPrank();
+    }
+
     function test_updateEpochAllocations_new_allocation() public {
         test_setEpochPayments_first_epoch();
         address[] memory recipients = new address[](1);
@@ -392,6 +415,7 @@ contract EpochPaymentsTest is EpochPaymentsTestBase {
 
     function test_updateEpochAllocations_update_allocation() public {
         test_setEpochPayments_first_epoch();
+        uint256 totalBefore = payment.totalAllocation();
         address[] memory recipients = new address[](1);
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = 3e18;
@@ -401,6 +425,31 @@ contract EpochPaymentsTest is EpochPaymentsTestBase {
         emit EpochAllocationSet(alice, 1, 3e18);
         payment.updateEpochPayments(recipients, amounts);
         assertEq(payment.epochPayments(alice, 1), 3e18);
+        assertEq(payment.totalAllocation(), totalBefore - 1e18 + 3e18);
+    }
+
+    function test_updateEpochAllocations_update_allocation_larger_allocation() public {
+        test_setEpochPayments_first_epoch();
+        address[] memory recipients = new address[](1);
+        uint256[] memory amounts = new uint256[](1);
+        amounts[0] = 3e18;
+        recipients[0] = alice;
+        uint256 totalAllocation = payment.totalAllocation();
+        assertEq(payment.epochPayments(alice, 1), 1e18);
+        payment.updateEpochPayments(recipients, amounts);
+        assertEq(payment.totalAllocation(), totalAllocation+2e18);
+    }
+
+    function test_updateEpochAllocations_update_allocation_smaller_allocation() public {
+        test_setEpochPayments_first_epoch();
+        address[] memory recipients = new address[](1);
+        uint256[] memory amounts = new uint256[](1);
+        amounts[0] = 0.5e18;
+        recipients[0] = alice;
+        uint256 totalAllocation = payment.totalAllocation();
+        assertEq(payment.epochPayments(alice, 1), 1e18);
+        payment.updateEpochPayments(recipients, amounts);
+        assertEq(payment.totalAllocation(), totalAllocation-0.5e18);
     }
 
     function test_revokeEpochPayment_invalid_address() public {
@@ -457,9 +506,9 @@ contract EpochPaymentsTest is EpochPaymentsTestBase {
     function test_revokeEpochPayment_add_later() public {
         uint256 amount = 1_000 ether;
         _createEpochPayment(alice, amount);
-
-        // revoke epoch payment
         vm.startPrank(executor);
+        payment.setMinimumEpochDuration(4 weeks);
+        // revoke epoch payment
         payment.revokeEpochPayment(1, alice);
 
         uint256[] memory amounts = new uint256[](1);
@@ -509,7 +558,7 @@ contract EpochPaymentsTest is EpochPaymentsTestBase {
         payment.claimEpoch(1);
     }
 
-    function test_recover_token_team_payments() public {
+    function test_recover_token_epoch_payments() public {
         uint256 amount = 100 ether;
         deal(address(fakeToken), address(payment), amount, true);
 
