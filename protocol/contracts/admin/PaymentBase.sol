@@ -8,9 +8,9 @@ import { IPaymentBase } from "contracts/interfaces/admin/IPaymentBase.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
+import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
 
-
-abstract contract PaymentBase is IPaymentBase {
+abstract contract PaymentBase is TempleElevatedAccess, IPaymentBase {
     using SafeERC20 for IERC20;
 
     /// @inheritdoc IPaymentBase
@@ -19,38 +19,23 @@ abstract contract PaymentBase is IPaymentBase {
     /// @inheritdoc IPaymentBase
     IERC20 public immutable paymentToken;
 
-    constructor(address _paymentToken) {
+    constructor(address _paymentToken, address _fundsOwner) {
         if (_paymentToken == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
         paymentToken = IERC20(_paymentToken);
+        fundsOwner = _fundsOwner;
     }
 
-    /**
-     * @notice Set funds owner
-     * @param _fundsOwner Funds owner
-     */
-    function _setFundsOwner(address _fundsOwner) internal {
+    /// @inheritdoc IPaymentBase
+    function setFundsOwner(address _fundsOwner) external override onlyElevatedAccess {
         if (_fundsOwner == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
         /// @dev Elevated access should revoke approval from old `fundsOwner` for this contract
         fundsOwner = _fundsOwner;
         emit FundsOwnerSet(_fundsOwner);
     }
 
-    /**
-     * @notice Recover ERC20 token
-     * @param _token Token address
-     * @param _to Recipient address
-     * @param _amount Amount to recover
-     */
-    function _recoverToken(address _token, address _to, uint256 _amount) internal {
+    /// @inheritdoc IPaymentBase
+    function recoverToken(address _token, address _to, uint256 _amount) external override onlyElevatedAccess {
         emit CommonEventsAndErrors.TokenRecovered(_to, _token, _amount);
         IERC20(_token).safeTransfer(_to, _amount);
-    }
-
-    function _getElapsedTime(uint40 _start, uint40 _end, uint40 _duration) internal pure returns (uint40) {
-        if (_end <= _start) {
-            return 0;
-        }
-        uint40 elapsed = _end - _start;
-        return elapsed > _duration ? _duration : elapsed;
     }
 }

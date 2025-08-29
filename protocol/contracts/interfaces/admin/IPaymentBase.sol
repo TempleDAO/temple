@@ -16,10 +16,10 @@ interface IPaymentBase {
     /// @notice Payment token address
     function paymentToken() external view returns(IERC20);
 
-     /**
-     * @notice Set funds owner
-     * @param _fundsOwner Funds owner
-     */
+    /**
+    * @notice Set funds owner
+    * @param _fundsOwner Funds owner
+    */
     function setFundsOwner(address _fundsOwner) external;
 
     /**
