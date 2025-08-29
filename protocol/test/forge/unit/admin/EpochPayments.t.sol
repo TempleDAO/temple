@@ -10,8 +10,7 @@ import { EpochPayments } from "contracts/admin/EpochPayments.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 
 contract EpochPaymentsTestBase is TempleTest {
-    event FundsOwnerSet(address indexed fundOwner);
-    event CancelledEpochPayment(address indexed recipient, uint256 indexed epoch, uint256 amountRevoked);
+    event FundsOwnerSet(address indexed fundsOwner);
     event ClaimedEpoch(address indexed recipient, uint256 indexed epoch, uint256 amount);
     event EpochAllocationSet(address indexed recipient, uint256 indexed epoch, uint256 amount);
     event NextEpochSet(uint256 epoch);

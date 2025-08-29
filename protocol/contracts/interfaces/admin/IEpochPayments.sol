@@ -6,7 +6,7 @@ import { IPaymentBase } from "contracts/interfaces/admin/IPaymentBase.sol";
 
 /**
  * @title Epoch Payments contract.
- * @notice Epoch increase incrementally. Epoch allocations are set once for an epoch and subsequent updates
+ * @notice Epochs increase incrementally. Epoch allocations are set once for an epoch and subsequent updates
  * for the same epoch are done using `updateEpochPayments`. Updating can set new allocations or update existing allocations.
  */
 interface IEpochPayments is IPaymentBase {
