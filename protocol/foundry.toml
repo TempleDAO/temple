@@ -12,7 +12,7 @@
   evm_version = "paris"           # See https://www.evmdiff.com/features?name=PUSH0&kind=opcode
   legacy_assertions = true
   assertions_revert = false
-  dynamic_test_linking = true # Required foundry >= 1.1.0
+  dynamic_test_linking = true # Required in foundry >= 1.1.0
   extra_output = ["storageLayout"]
 
 [profile.default.fuzz]

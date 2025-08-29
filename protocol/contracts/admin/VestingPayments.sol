@@ -239,7 +239,7 @@ contract VestingPayments is IVestingPayments, PaymentBase {
         if (_schedule.revoked) { return revokedAccountsReleasable[_schedule.recipient]; }
 
         // cliff is guaranteed to be greater than start from the checks in createSchedules
-        // cap it to the vestion duration. Therefore _releaseTime is always greater than start.
+        // cap it to the vesting duration. Therefore _releaseTime is always greater than start.
         uint40 _elapsed = _releaseTime - _schedule.start;
         if (_elapsed > _schedule.duration) _elapsed = _schedule.duration;
 
