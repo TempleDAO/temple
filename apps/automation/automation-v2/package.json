@@ -8,27 +8,35 @@
     "typechain": "typechain --target=ethers-v6 --out-dir src/typechain abi/*.json",
     "clean": "rm -rf dist",
     "build": "yarn clean && yarn tsc --noEmit &&  yarn esbuild --platform=node --bundle --outfile=dist/main.js src/main.ts",
-    "dev": "yarn build && source .env && node ./dist/main.js",
+    "build:localtest": "yarn tsc --noEmit &&  yarn esbuild --platform=node --bundle --outfile=dist/main-localtest.js src/main-localtest.ts",
     "build:image": "docker build --tag temple-tasks .",
-    "anvil:mainnet-fork": "anvil -f https://eth-mainnet.g.alchemy.com/v2/LjzU7NEw1jfJZSDBP10rGeg53cSlzscP --config-out anvil.json --fork-block-number 18189826",
-    "anvil:sepolia-fork": "anvil -f https://eth-sepolia.g.alchemy.com/v2/sRSoYgR6rmun89HW6_0Ec09w70ztNvsN --config-out anvil.json --fork-block-number 4419527",
-    "local-fork:mainnet-test:tlc": "(cd ../../protocol && forge script --fork-url http://127.0.0.1:8545 scripts/deploys/localhost/v2/999-localhost-tlc-mainnet-test.s.sol)"
+    "dev": "yarn build && node ./dist/main.js",
+    "dev:local": "yarn build:localtest && node ./dist/main-localtest.js",
+    "install-abis": "./src/scripts/install-abis.sh"
   },
   "dependencies": {
-    "@mountainpath9/overlord-core": "^1.1.2",
-    "@mountainpath9/overlord-ethers": "^1.1.0",
     "axios": "^1.5.1",
+    "cron-parser": "^4.9.0",
+    "crypto-random-string": "^5.0.0",
     "date-fns": "^2.30.0",
-    "discord.js": "^14.13.0",
-    "exponential-backoff": "^3.1.1"
+    "discord.js": "^14.14.1",
+    "ethers": "~6.13.1",
+    "exponential-backoff": "^3.1.1",
+    "@mountainpath9/big-rational": "^0.2.0",
+    "@mountainpath9/overlord-core": "^1.4.0",
+    "@mountainpath9/overlord-ethers": "^1.1.0",
+    "@mountainpath9/overlord-viem": "^1.4.4",
+    "viem": "^2.30.5",
+    "zod": "^3.22.4"
   },
   "devDependencies": {
-    "@typechain/ethers-v6": "^0.5.0",
-    "@types/jquery": "^3.5.19",
     "esbuild": "^0.19.4",
     "tsc-alias": "^1.8.3",
+    "tsx": "^4.7.2",
     "typechain": "^8.1.1",
-    "typescript": "^5.1.6"
+    "@typechain/ethers-v6": "^0.5.0",
+    "typescript": "^5.1.6",
+    "@types/jquery": "^3.5.19"
   },
   "lint-staged": {
     "*.{js,ts,tsx}": [

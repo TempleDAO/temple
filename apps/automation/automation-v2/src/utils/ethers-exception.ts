@@ -1,5 +1,4 @@
 import { CallExceptionError, EthersError, Interface } from "ethers";
-import { ITempleLineOfCredit__factory } from "../typechain";
 
 /// Given evm custom errors as per the specified interfaces, attempt to parse
 /// an ethers CallException, if successful throw a new error that decodes the custom
@@ -28,15 +27,9 @@ export function mapParsedEthersException(e: unknown, errorInterfaces: Interface[
     const err = ei.parseError(data);
     if (err) {
       const args = err.args.toArray().map(v => v.toString());
-      return new Error(`CALL_EXCEPTION: ${err.signature} ${args}\nCause: ${e}`);
+      return new Error(`CALL_EXCEPTION: ${err.signature} ${args}`, { cause: e });
     }
   }
   return e;
 }
-
-
-export const ERROR_INTERFACES: Interface[] = [
-  ITempleLineOfCredit__factory.createInterface(),
-];
-
 
