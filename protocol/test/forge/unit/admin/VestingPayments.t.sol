@@ -33,6 +33,7 @@ contract VestingPaymentsTestBase is TempleGoldCommon {
     uint256 public arbitrumOneForkId;
 
     function setUp() public {
+        vm.warp(1000);
         arbitrumOneForkId = fork("arbitrum_one");
         ITempleGold.InitArgs memory initArgs = _getTempleGoldInitArgs();
         templeGold = new TempleGold(initArgs);
@@ -245,8 +246,14 @@ contract VestingPaymentsViewTest is VestingPaymentsTestBase {
     }
 
     function test_getVestingIdAtIndex_zero_ids() public {
-        vm.expectRevert(abi.encodeWithSelector(IVestingPayments.NoVesting.selector));
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
         vesting.getVestingIdAtIndex(0);
+    }
+
+    function test_getVestingIdAtIndex_invalidIndex() public {
+        _createVestingOne();
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
+        vesting.getVestingIdAtIndex(1);
     }
 
     function test_getVestingIdAtIndex() public {
@@ -371,6 +378,27 @@ contract VestingPaymentsViewTest is VestingPaymentsTestBase {
         bytes32[] memory ids = vesting.getVestingIds();
         assertEq(0, vesting.getTotalVestedAt(ids[0], uint40(schedules[0].start-1)));
     }
+
+    function test_getTotalVestedAt_revoked() public {
+        vm.startPrank(executor);
+        IVestingPayments.VestingSchedule[] memory schedules = new IVestingPayments.VestingSchedule[](1);
+        schedules[0] = _getScheduleOne();
+        vesting.createSchedules(schedules);
+
+        skip(16 weeks);
+        bytes32[] memory ids = vesting.getVestingIds();
+        uint256 expectedReleasable = 16 * schedules[0].amount / 48;
+        assertEq(vesting.getTotalVestedAt(ids[0], uint40(vm.getBlockTimestamp())), expectedReleasable);
+        assertEq(vesting.getTotalVestedAt(ids[0], uint40(vm.getBlockTimestamp() + 100 weeks)), schedules[0].amount);
+        
+        vesting.revokeVesting(ids[0]);
+        assertEq(vesting.isVestingRevoked(ids[0]), true);
+        assertEq(vesting.isActiveVestingId(ids[0]), false);
+        assertEq(vesting.revokedAccountsReleasable(alice), expectedReleasable);
+        assertEq(vesting.getTotalVestedAt(ids[0], uint40(vm.getBlockTimestamp())), expectedReleasable);
+        assertEq(vesting.getTotalVestedAt(ids[0], uint40(vm.getBlockTimestamp() + 1 weeks)), expectedReleasable);
+        assertEq(vesting.getTotalVestedAt(ids[0], uint40(vm.getBlockTimestamp() + 100 weeks)), expectedReleasable);
+    }    
 
     function test_getTotalVestedAt_weeks() public {
         vm.startPrank(executor);
@@ -503,56 +531,62 @@ contract VestingPaymentsTest is VestingPaymentsTestBase {
         assertEq(vesting.fundsOwner(), mike);
     }
 
-    function test_createSchedules() public {
+    function test_createSchedules_fail_badSchedule() public {
         vm.startPrank(executor);
         IVestingPayments.VestingSchedule[] memory schedules = new IVestingPayments.VestingSchedule[](0);
-        // error length
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
         vesting.createSchedules(schedules);
 
         schedules = new IVestingPayments.VestingSchedule[](1);
-        IVestingPayments.VestingSchedule memory _schedule = _getScheduleOne();
-        _schedule.distributed = uint128(1);
-        schedules[0] = _schedule;
-        // error distributed and revoked
-        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
-        vesting.createSchedules(schedules);
-        _schedule.distributed = 0;
-        _schedule.revoked = true;
-        schedules[0] = _schedule;
-        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
-        vesting.createSchedules(schedules);
-        _schedule.revoked = false;
+        schedules[0] = IVestingPayments.VestingSchedule({
+            cliff: 0,
+            start: 0,
+            duration: 0,
+            amount: 0,
+            distributed: 1e18,
+            recipient: address(0),
+            revoked: true
+        });
 
-        // error recipient
-        _schedule.recipient = address(0);
-        schedules[0] = _schedule;
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
+        vesting.createSchedules(schedules);
+
+        schedules[0].distributed = 0;
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
+        vesting.createSchedules(schedules);
+
+        schedules[0].revoked = false;
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
         vesting.createSchedules(schedules);
-        _schedule.recipient = alice;
 
-        _schedule.start = uint40(block.timestamp - 1);
-        schedules[0] = _schedule;
+        schedules[0].recipient = alice;
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
         vesting.createSchedules(schedules);
-        _schedule.start = uint40(block.timestamp);
 
-        _schedule.cliff = _schedule.start;
-        schedules[0] = _schedule;
+        schedules[0].start = uint40(vm.getBlockTimestamp() + 1);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
         vesting.createSchedules(schedules);
-        _schedule.cliff = _schedule.start + 12 weeks;
-        _schedule.duration = 12 weeks - 1;
-        schedules[0] = _schedule;
+
+        schedules[0].cliff = schedules[0].start + 10;
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
         vesting.createSchedules(schedules);
-        _schedule.duration = 24 weeks;
-        _schedule.amount = 0;
-        schedules[0] = _schedule;
+
+        schedules[0].duration = 11;
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
         vesting.createSchedules(schedules);
 
-        _schedule = _getScheduleOne();
+        schedules[0].amount = 1e18;
+        vesting.createSchedules(schedules);
+
+        // success
+        assertEq(vesting.holdersVestingCount(alice), 1);
+    }
+
+    function test_createSchedules_success() public {
+        vm.startPrank(executor);
+
+        IVestingPayments.VestingSchedule[] memory schedules = new IVestingPayments.VestingSchedule[](1);
+        IVestingPayments.VestingSchedule memory _schedule = _getScheduleOne();
         schedules[0] = _schedule;
         bytes32 _id = vesting.computeNextVestingScheduleIdForHolder(_schedule.recipient);
         vm.expectEmit(address(vesting));

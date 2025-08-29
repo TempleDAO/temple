@@ -4,6 +4,12 @@ pragma solidity ^0.8.20;
 
 import { IPaymentBase } from "contracts/interfaces/admin/IPaymentBase.sol";
 
+/**
+ * @title Vesting Payments
+ * @notice Vesting contract for contributors. Token is an arbitrary ERC20 token and allocations are set with createSchedules.
+ * An account can have multiple vesting schedules. Vesting schedules can be revoked and canceled. When revoked, contributor
+ * vest is updated at block timestamp. Contributor can later claim that amount.
+ */
 interface IVestingPayments is IPaymentBase {
     event Revoked(bytes32 indexed _id, address indexed _recipient, uint256 _unreleased, uint256 _totalVested);
     event Released(bytes32 indexed _id, address indexed _recipient, uint256 _amount);
@@ -16,7 +22,6 @@ interface IVestingPayments is IPaymentBase {
     error CannotRelease();
     error InvalidScheduleId();
     error FullyVested();
-    error NoVesting();
 
     struct VestingSchedule {
         /// @notice cliff
@@ -39,20 +44,31 @@ interface IVestingPayments is IPaymentBase {
         /// @notice Recipient of vesting
         address recipient;
         /// @notice distributed vesting token
-        uint128 distributed;
+        uint256 distributed;
         /// @notice total vested at current block.timestamp
-        uint128 vested;
+        uint256 vested;
     }
-
-    /// @notice When an account is revoked, record the releasable amount for later when they claim
-    function revokedAccountsReleasable(address _account) external view returns (uint256);
 
     /// @notice Total vesting token vested and unclaimed
     function totalVestedAndUnclaimed() external view returns (uint256);
 
+    /// @notice Schedules for recipients
+    function schedules(bytes32 id) external view returns (
+        uint40 cliff,
+        uint40 start,
+        uint40 duration,
+        uint128 amount,
+        uint128 distributed,
+        address recipient,
+        bool revoked
+    );
+    
     /// @notice Recipient vesting counts for generating IDs. An account can have multiple vesting schedules
     function holdersVestingCount(address _holder) external view returns (uint256);
     
+    /// @notice When an account is revoked, record the releasable amount for later when they claim
+    function revokedAccountsReleasable(address _account) external view returns (uint256);
+
     /**
      * @notice Get vesting schedule
      * @param _vestingId Vesting Id
