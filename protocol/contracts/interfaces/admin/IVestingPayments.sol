@@ -38,6 +38,8 @@ interface IVestingPayments is IPaymentBase {
         address recipient;
         /// @notice If vesting is revoked
         bool revoked;
+        /// @notice Releasable amount at time of revoke
+        uint128 revokedReleasable;
     }
 
     struct VestingSummary {
@@ -60,14 +62,12 @@ interface IVestingPayments is IPaymentBase {
         uint128 amount,
         uint128 distributed,
         address recipient,
-        bool revoked
+        bool revoked,
+        uint128 revokedReleasable
     );
     
     /// @notice Recipient vesting counts for generating IDs. An account can have multiple vesting schedules
     function holdersVestingCount(address _holder) external view returns (uint256);
-    
-    /// @notice When an account is revoked, record the releasable amount for later when they claim
-    function revokedAccountsReleasable(address _account) external view returns (uint256);
 
     /**
      * @notice Get vesting schedule

@@ -34,9 +34,6 @@ contract VestingPayments is IVestingPayments, PaymentBase {
     /// @inheritdoc IVestingPayments
     mapping(address => uint256) public override holdersVestingCount;
 
-    /// @inheritdoc IVestingPayments
-    mapping(address account => uint256 amount) public override revokedAccountsReleasable;
-
     /// @notice Vesting Ids
     EnumerableSet.Bytes32Set private _activeVestingIds;
 
@@ -86,7 +83,14 @@ contract VestingPayments is IVestingPayments, PaymentBase {
         /// @dev No need to check if `_schedule.revoked` because id is removed from _activeVestingIds so it will fail `isActiveVestingId`
 
         uint256 vestedNow = _getTotalVestedAtCurrentTime(_schedule);
-        revokedAccountsReleasable[_schedule.recipient] = vestedNow;
+        uint256 unvested = _schedule.amount - vestedNow;
+        if (unvested > 0) {
+            totalVestedAndUnclaimed -= unvested;
+        }
+        // Claimable delta at revoke time
+        uint256 releasableNow = vestedNow - _schedule.distributed;
+        // Persist per-schedule claimable checkpoint
+        _schedule.revokedReleasable = releasableNow.encodeUInt128();
 
         uint256 unreleased = _schedule.amount - _schedule.distributed;
         _schedule.revoked = true;
@@ -117,9 +121,9 @@ contract VestingPayments is IVestingPayments, PaymentBase {
         if (_schedule.start == 0) { revert CommonEventsAndErrors.InvalidParam(); }
         if (_schedule.recipient != msg.sender) { revert CommonEventsAndErrors.InvalidAccess(); }
         if (_schedule.revoked) {
-            uint256 amount = revokedAccountsReleasable[msg.sender];
+            uint256 amount = _schedule.revokedReleasable;
             if (amount > 0) {
-                revokedAccountsReleasable[msg.sender] = 0;
+                _schedule.revokedReleasable = 0;
                 _release(_schedule, amount);
                 emit Released(_vestingId, msg.sender, amount);
                 return;
@@ -224,19 +228,19 @@ contract VestingPayments is IVestingPayments, PaymentBase {
     function _calculateReleasableAmount(
           VestingSchedule storage _schedule
     ) private view returns (uint256) {
-        // if account schedule is revoked, return the persisted checkpoint vested amount. This also avoids an arithmetic underflow
-        return _schedule.revoked ? revokedAccountsReleasable[_schedule.recipient] : _calculateTotalVestedAt(_schedule, uint40(block.timestamp)) - _schedule.distributed;
+        // if account schedule is revoked, return the persisted checkpoint claimable vested delta. This also avoids an arithmetic underflow
+        return _schedule.revoked ? _schedule.revokedReleasable : _calculateTotalVestedAt(_schedule, uint40(block.timestamp)) - _schedule.distributed;
     }
 
     function _calculateTotalVestedAt(
         VestingSchedule memory _schedule,
         uint40 _releaseTime
-    ) private view returns (uint256) {
+    ) private pure returns (uint256) {
         if (_schedule.amount == 0) { return 0; }
         // below cliff
         if (_releaseTime <= _schedule.cliff) { return 0; }
-        // if revoked, return releasable amount at time of revoke
-        if (_schedule.revoked) { return revokedAccountsReleasable[_schedule.recipient]; }
+        // if revoked, return total vested at time of revoke (distributed + checkpointed delta)
+        if (_schedule.revoked) { return _schedule.revokedReleasable + _schedule.distributed; }
 
         // cliff is guaranteed to be greater than start from the checks in createSchedules
         // cap it to the vesting duration. Therefore _releaseTime is always greater than start.
