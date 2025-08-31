@@ -146,7 +146,7 @@ contract VestingPayments is IVestingPayments, PaymentBase {
     }
 
     /// @inheritdoc IVestingPayments
-    function isActiveVestingId(bytes32 _id) public view returns (bool) {
+    function isActiveVestingId(bytes32 _id) public view override returns (bool) {
         return _activeVestingIds.contains(_id);
     }
 
