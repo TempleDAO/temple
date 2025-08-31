@@ -12,29 +12,27 @@ import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.s
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { TempleMath } from "contracts/common/TempleMath.sol";
 import { PaymentBase } from "contracts/admin/PaymentBase.sol";
-
+import { SafeCast } from "contracts/common/SafeCast.sol";
 
 /**
  * @title Vesting Payments
  * @notice Vesting contract for contributors. Token is an arbitrary ERC20 token and allocations are set with createSchedules.
- *  An account can have multiple vesting schedules. Vesting schedules can be revoked and canceled. When revoked, contributor
+ * An account can have multiple vesting schedules. Vesting schedules can be revoked and canceled. When revoked, contributor
  * vest is updated at block timestamp. Contributor can later claim that amount.
  */
-contract VestingPayments is IVestingPayments, PaymentBase, TempleElevatedAccess {
+contract VestingPayments is IVestingPayments, PaymentBase {
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.Bytes32Set;
+    using SafeCast for uint256;
 
     /// @inheritdoc IVestingPayments
     uint256 public override totalVestedAndUnclaimed;
 
-    /// @notice Schdules for recipients
-    mapping(bytes32 id => VestingSchedule schedule) public schedules;
+    /// @inheritdoc IVestingPayments
+    mapping(bytes32 id => VestingSchedule schedule) public override schedules;
 
     /// @inheritdoc IVestingPayments
-    mapping(address => uint256) public holdersVestingCount;
-
-    /// @inheritdoc IVestingPayments
-    mapping(address account => uint256 amount) public revokedAccountsReleasable;
+    mapping(address => uint256) public override holdersVestingCount;
 
     /// @notice Vesting Ids
     EnumerableSet.Bytes32Set private _activeVestingIds;
@@ -44,16 +42,7 @@ contract VestingPayments is IVestingPayments, PaymentBase, TempleElevatedAccess 
         address _executor,
         address _fundsOwner,
         address _paymentToken
-    ) TempleElevatedAccess(_rescuer, _executor) PaymentBase(_paymentToken) {
-        fundsOwner = _fundsOwner;
-    }
-
-    /**
-     * @notice Set funds owner
-     * @param _fundsOwner Funds owner
-     */
-    function setFundsOwner(address _fundsOwner) external override onlyElevatedAccess {
-        _setFundsOwner(_fundsOwner);
+    ) PaymentBase(_paymentToken, _fundsOwner, _rescuer, _executor) {
     }
 
     /// @inheritdoc IVestingPayments
@@ -68,6 +57,7 @@ contract VestingPayments is IVestingPayments, PaymentBase, TempleElevatedAccess 
             // distributed and revoked should be default values
             if (_schedule.distributed != 0) { revert CommonEventsAndErrors.InvalidParam(); }
             if (_schedule.revoked) { revert CommonEventsAndErrors.InvalidParam(); }
+            if (_schedule.revokedReleasable != 0) { revert CommonEventsAndErrors.InvalidParam(); }
             if (_schedule.recipient == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
             if (_schedule.start < block.timestamp) { revert CommonEventsAndErrors.InvalidParam(); }
             if (_schedule.cliff <= _schedule.start) { revert CommonEventsAndErrors.InvalidParam(); }
@@ -80,7 +70,7 @@ contract VestingPayments is IVestingPayments, PaymentBase, TempleElevatedAccess 
             schedules[vestingId] = _schedule;
             totalVestedAndUnclaimed += _schedule.amount;
             /// @dev very low possibility of duplicate vesting IDs generated but still checking. 
-            if(!_activeVestingIds.add(vestingId)) { revert InvalidScheduleId(); }
+            if (!_activeVestingIds.add(vestingId)) { revert InvalidScheduleId(); }
             holdersVestingCount[_schedule.recipient] += 1;
             emit ScheduleCreated(vestingId, _schedule.recipient, _schedule.start, _schedule.cliff, _schedule.duration, _schedule.amount);
         }
@@ -94,27 +84,19 @@ contract VestingPayments is IVestingPayments, PaymentBase, TempleElevatedAccess 
         /// @dev No need to check if `_schedule.revoked` because id is removed from _activeVestingIds so it will fail `isActiveVestingId`
 
         uint256 vestedNow = _getTotalVestedAtCurrentTime(_schedule);
-        revokedAccountsReleasable[_schedule.recipient] = vestedNow;
+        uint256 unvested = _schedule.amount - vestedNow;
+        if (unvested > 0) {
+            totalVestedAndUnclaimed -= unvested;
+        }
+        // Claimable delta at revoke time
+        uint256 releasableNow = vestedNow - _schedule.distributed;
+        // Persist per-schedule claimable checkpoint
+        _schedule.revokedReleasable = releasableNow.encodeUInt128();
 
         uint256 unreleased = _schedule.amount - _schedule.distributed;
         _schedule.revoked = true;
-        if(!_activeVestingIds.remove(_vestingId)) { revert CommonEventsAndErrors.InvalidParam(); }
+        if (!_activeVestingIds.remove(_vestingId)) { revert CommonEventsAndErrors.InvalidParam(); }
         emit Revoked(_vestingId, _schedule.recipient, unreleased, totalVestedAndUnclaimed);
-    }
-
-    /**
-     * @notice Recover ERC20 token
-     * @dev function visibility made public to match parent function
-     * @param _token Token address
-     * @param _to Recipient address
-     * @param _amount Amount to recover
-     */
-    function recoverToken(
-        address _token,
-        address _to,
-        uint256 _amount
-    ) external override onlyElevatedAccess {
-        _recoverToken(_token, _to, _amount);
     }
 
     /// @inheritdoc IVestingPayments
@@ -129,12 +111,8 @@ contract VestingPayments is IVestingPayments, PaymentBase, TempleElevatedAccess 
     }
 
     /// @inheritdoc IVestingPayments
-    function getVestingIdAtIndex(
-        uint256 _index
-    ) external view override returns (bytes32 id) {
-        /// @dev revert if zero vesting Ids length
-        if (_activeVestingIds.length() == 0) { revert NoVesting(); }
-        /// @dev revert with an array out-of-bounds access if only `id = _activeVestingIds.at(_index);` is used
+    function getVestingIdAtIndex(uint256 _index) external view override returns (bytes32 id) {
+        if (_index >= _activeVestingIds.length()) { revert CommonEventsAndErrors.InvalidParam(); }
         id = _activeVestingIds.at(_index);
     }
 
@@ -143,12 +121,14 @@ contract VestingPayments is IVestingPayments, PaymentBase, TempleElevatedAccess 
         VestingSchedule storage _schedule = schedules[_vestingId];
         if (_schedule.start == 0) { revert CommonEventsAndErrors.InvalidParam(); }
         if (_schedule.recipient != msg.sender) { revert CommonEventsAndErrors.InvalidAccess(); }
-        if (_schedule.revoked && revokedAccountsReleasable[msg.sender] > 0) {
-            uint256 amount = revokedAccountsReleasable[msg.sender];
-            revokedAccountsReleasable[msg.sender] = 0;
-            _release(_schedule, amount);
-            emit Released(_vestingId, msg.sender, amount);
-            return;
+        if (_schedule.revoked) {
+            uint256 amount = _schedule.revokedReleasable;
+            if (amount > 0) {
+                _schedule.revokedReleasable = 0;
+                _release(_schedule, amount);
+                emit Released(_vestingId, msg.sender, amount);
+                return;
+            }
         }
         if (!isActiveVestingId(_vestingId)) { revert CommonEventsAndErrors.InvalidParam(); }
         uint256 _releasableAmount = _calculateReleasableAmount(_schedule);
@@ -220,7 +200,7 @@ contract VestingPayments is IVestingPayments, PaymentBase, TempleElevatedAccess 
             summary[i] = VestingSummary(
                 _schedule.recipient,
                 _schedule.distributed,
-                uint128(_calculateTotalVestedAt(_schedule, uint32(block.timestamp)))
+                _calculateTotalVestedAt(_schedule, uint40(block.timestamp))
             );
         }
     }
@@ -249,28 +229,30 @@ contract VestingPayments is IVestingPayments, PaymentBase, TempleElevatedAccess 
     function _calculateReleasableAmount(
           VestingSchedule storage _schedule
     ) private view returns (uint256) {
-        // if account schedule is revoked, return the persisted checkpoint vested amount. This also avoids an arithmetic underflow
-        return _schedule.revoked ? revokedAccountsReleasable[_schedule.recipient] : _calculateTotalVestedAt(_schedule, uint40(block.timestamp)) - _schedule.distributed;
+        // if account schedule is revoked, return the persisted checkpoint claimable vested delta. This also avoids an arithmetic underflow
+        return _schedule.revoked ? _schedule.revokedReleasable : _calculateTotalVestedAt(_schedule, uint40(block.timestamp)) - _schedule.distributed;
     }
 
     function _calculateTotalVestedAt(
         VestingSchedule memory _schedule,
         uint40 _releaseTime
-    ) private view returns (uint256) {
+    ) private pure returns (uint256) {
         if (_schedule.amount == 0) { return 0; }
-        if (_releaseTime <= _schedule.start) { return 0; }
         // below cliff
         if (_releaseTime <= _schedule.cliff) { return 0; }
-        // if revoked, return releasable amount at time of revoke
-        if (_schedule.revoked) { return revokedAccountsReleasable[_schedule.recipient]; }
+        // if revoked, return total vested at time of revoke (distributed + checkpointed delta)
+        if (_schedule.revoked) { return _schedule.revokedReleasable + _schedule.distributed; }
 
-        uint256 _elapsed = _getElapsedTime(_schedule.start, _releaseTime, _schedule.duration);
-        uint256 _vested = TempleMath.mulDivRound(_schedule.amount, _elapsed, _schedule.duration, false);
-        return _vested;
+        // cliff is guaranteed to be greater than start from the checks in createSchedules
+        // cap it to the vesting duration. Therefore _releaseTime is always greater than start.
+        uint40 _elapsed = _releaseTime - _schedule.start;
+        if (_elapsed > _schedule.duration) _elapsed = _schedule.duration;
+
+        return TempleMath.mulDivRound(_schedule.amount, _elapsed, _schedule.duration, false);
     }
 
     function _release(VestingSchedule storage _schedule, uint256 _amount) private {
-        _schedule.distributed += uint128(_amount);
+        _schedule.distributed += _amount.encodeUInt128();
         totalVestedAndUnclaimed -= _amount;
         paymentToken.safeTransferFrom(fundsOwner, _schedule.recipient, _amount);
     }

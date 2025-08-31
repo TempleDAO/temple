@@ -4,8 +4,12 @@ pragma solidity ^0.8.20;
 
 import { IPaymentBase } from "contracts/interfaces/admin/IPaymentBase.sol";
 
+/**
+ * @title Epoch Payments contract.
+ * @notice Epochs increase incrementally. Epoch allocations are set once for an epoch and subsequent updates
+ * for the same epoch are done using `updateEpochPayments`. Updating can set new allocations or update existing allocations.
+ */
 interface IEpochPayments is IPaymentBase {
-    event CancelledEpochPayment(address indexed recipient, uint256 indexed epoch, uint256 amountRevoked);
     event ClaimedEpoch(address indexed recipient, uint256 indexed epoch, uint256 amount);
     event EpochAllocationSet(address indexed recipient, uint256 indexed epoch, uint256 amount);
     event MinimumEpochDurationSet(uint256 duration);
@@ -15,13 +19,13 @@ interface IEpochPayments is IPaymentBase {
     error CannotStartEpoch(uint256 epoch);
     error ZeroClaimable();
     error AlreadyClaimed(address recipient, uint256 epoch);
-    error EpochEnded();
+    error SameAllocationAmount();
     error InvalidEpoch(uint256 epoch);
 
-    /// @notice Total allocation, claimed and unclaimed
+    /// @notice Total allocation, claimed and unclaimed across all epochs
     function totalAllocation() external view returns (uint256);
 
-    /// @notice Total Claimed
+    /// @notice Total claimed across all epochs
     function totalClaimed() external view returns (uint256);
 
     /// @notice Keep track of the current active epoch
@@ -55,6 +59,7 @@ interface IEpochPayments is IPaymentBase {
      * @param amounts Amounts array to set
      */
     function updateEpochPayments(
+        uint256 epoch,
         address[] calldata recipients,
         uint256[] calldata amounts
     ) external;
@@ -64,13 +69,6 @@ interface IEpochPayments is IPaymentBase {
      * @param duration Minimum duration in seconds
      */
     function setMinimumEpochDuration(uint256 duration) external;
-
-    /**
-     * @notice Revoke epoch payment for contributor
-     * @param epoch Epoch to revoke
-     * @param recipient Recipient
-     */
-    function revokeEpochPayment(uint256 epoch, address recipient) external;
 
     /**
      * @notice Claim for epoch

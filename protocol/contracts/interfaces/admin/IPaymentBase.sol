@@ -5,10 +5,7 @@ pragma solidity ^0.8.20;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 interface IPaymentBase {
-    event FundsOwnerSet(address indexed fundOwner);
-    event PaymentTokenSet(address token);
-
-    error NotImplemented();
+    event FundsOwnerSet(address indexed fundsOwner);
 
     /// @notice The owner of the payment asset funds
     function fundsOwner() external view returns(address);
@@ -16,10 +13,10 @@ interface IPaymentBase {
     /// @notice Payment token address
     function paymentToken() external view returns(IERC20);
 
-     /**
-     * @notice Set funds owner
-     * @param _fundsOwner Funds owner
-     */
+    /**
+    * @notice Set funds owner
+    * @param _fundsOwner Funds owner
+    */
     function setFundsOwner(address _fundsOwner) external;
 
     /**

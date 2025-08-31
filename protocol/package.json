@@ -77,7 +77,9 @@
     "local-fork:test:templev2": "hardhat run --network localhost scripts/deploys/localhost/v2/999-localhost-fork-test.ts",
     "forge-test": "forge test",
     "forge-coverage": "forge coverage",
-    "forge-coverage-html": "forge coverage --report summary --report lcov && lcov --remove lcov.info 'contracts/fakes/*' 'contracts/deprecated/*' 'test/*' 'script/*' 'node_modules/*' --output-file lcov.info --rc lcov_branch_coverage=1 && genhtml lcov.info -o report --branch-coverage --legend"
+    "forge-coverage-html-1": "forge coverage --lcov-version 2 --offline --no-match-test \"fuzz\" --no-match-path \"contracts/deprecated/**/*\" --report summary --report lcov",
+    "forge-coverage-html-2": "genhtml lcov.info -o report --exclude 'contracts/fakes/*' --exclude 'test/*' --branch-coverage --rc branch_coverage=1 --rc derive_function_end_line=0 --legend --ignore-errors inconsistent --ignore-errors category --ignore-errors unused",
+    "forge-coverage-html": "yarn forge-coverage-html-1 && yarn forge-coverage-html-2"
   },
   "engines": {
     "node": ">=16.0.0"
