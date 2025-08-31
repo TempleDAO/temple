@@ -42,7 +42,7 @@ contract VestingPayments is IVestingPayments, PaymentBase {
         address _executor,
         address _fundsOwner,
         address _paymentToken
-    ) TempleElevatedAccess(_rescuer, _executor) PaymentBase(_paymentToken, _fundsOwner) {
+    ) PaymentBase(_paymentToken, _fundsOwner, _rescuer, _executor) {
     }
 
     /// @inheritdoc IVestingPayments
@@ -57,6 +57,7 @@ contract VestingPayments is IVestingPayments, PaymentBase {
             // distributed and revoked should be default values
             if (_schedule.distributed != 0) { revert CommonEventsAndErrors.InvalidParam(); }
             if (_schedule.revoked) { revert CommonEventsAndErrors.InvalidParam(); }
+            if (_schedule.revokedReleasable != 0) { revert CommonEventsAndErrors.InvalidParam(); }
             if (_schedule.recipient == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
             if (_schedule.start < block.timestamp) { revert CommonEventsAndErrors.InvalidParam(); }
             if (_schedule.cliff <= _schedule.start) { revert CommonEventsAndErrors.InvalidParam(); }
@@ -199,7 +200,7 @@ contract VestingPayments is IVestingPayments, PaymentBase {
             summary[i] = VestingSummary(
                 _schedule.recipient,
                 _schedule.distributed,
-                _calculateTotalVestedAt(_schedule, uint32(block.timestamp))
+                _calculateTotalVestedAt(_schedule, uint40(block.timestamp))
             );
         }
     }

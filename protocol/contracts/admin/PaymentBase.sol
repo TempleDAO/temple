@@ -19,7 +19,7 @@ abstract contract PaymentBase is TempleElevatedAccess, IPaymentBase {
     /// @inheritdoc IPaymentBase
     IERC20 public immutable paymentToken;
 
-    constructor(address _paymentToken, address _fundsOwner) {
+    constructor(address _paymentToken, address _fundsOwner, address _rescuer, address _executor) TempleElevatedAccess(_rescuer, _executor) {
         if (_paymentToken == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
         paymentToken = IERC20(_paymentToken);
         fundsOwner = _fundsOwner;

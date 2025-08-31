@@ -551,7 +551,7 @@ contract VestingPaymentsTest is VestingPaymentsTestBase {
             distributed: 1e18,
             recipient: address(0),
             revoked: true,
-            revokedReleasable: 0
+            revokedReleasable: 1
         });
 
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
@@ -562,6 +562,10 @@ contract VestingPaymentsTest is VestingPaymentsTestBase {
         vesting.createSchedules(schedules);
 
         schedules[0].revoked = false;
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
+        vesting.createSchedules(schedules);
+
+        schedules[0].revokedReleasable = 0;
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
         vesting.createSchedules(schedules);
 

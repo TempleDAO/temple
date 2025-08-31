@@ -46,7 +46,7 @@ contract EpochPayments is IEpochPayments, PaymentBase {
         address _executor,
         address _fundsOwner,
         address _paymentToken
-    ) TempleElevatedAccess(_rescuer, _executor) PaymentBase(_paymentToken, _fundsOwner) {
+    ) PaymentBase(_paymentToken, _fundsOwner, _rescuer, _executor) {
     }
 
     /// @inheritdoc IEpochPayments
