@@ -5,7 +5,7 @@ import {
 } from 'ethers';
 import { format } from 'date-fns';
 import { Chain } from './batch-liquidate';
-import { DiscordMesage } from '@/utils/discord';
+import { DiscordMessage } from '@/utils/discord';
 
 export async function getBlockTimestamp(provider: Provider): Promise<bigint> {
   const latestBlock = await provider.getBlock('latest');
@@ -138,7 +138,7 @@ export async function buildTempleTasksDiscordMessage(
   provider: Provider,
   chain: Chain,
   metadata: TempleTaskDiscordMetadata
-): Promise<DiscordMesage> {
+): Promise<DiscordMessage> {
   const { title, submittedAt, txReceipt, txUrl, events } = metadata;
 
   const content = [
@@ -163,7 +163,7 @@ export async function buildDiscordMessageCheckEth(
     watchAddress: string,
     ethBalance: bigint,
     minBalance: bigint
-  ): Promise<DiscordMesage> {
+  ): Promise<DiscordMessage> {
     const content = [
       `**TEMPLE LOW ETH ALERT [${chain.name}]**`,
       ``,
