@@ -5,7 +5,7 @@ set -e
 REPO_ROOT=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )/../../../../.." &> /dev/null && pwd )
 
 PROTOCOL_DIR=$REPO_ROOT/protocol
-VIEM_ABI_DIR=$REPO_ROOT/apps/automation/automations-v2/src/abi
+VIEM_ABI_DIR=$REPO_ROOT/apps/automation/automation-v2/src/abi
 
 mk_viem_abi() {
    name=$1
