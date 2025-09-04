@@ -334,10 +334,10 @@
   resolved "https://registry.yarnpkg.com/@mountainpath9/big-rational/-/big-rational-0.2.0.tgz#a1e0d4b918e87df01fe989a068764a55825d2b6d"
   integrity sha512-fyKH4IjTlfkqZGd1j81HSpqISLr+E+ykEJQxWxmX28cwRKKmrGLf6/dueeKHwVH2PtWDaIKBLKFmTTHWwWL17g==
 
-"@mountainpath9/overlord-core@1.1.0":
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/@mountainpath9/overlord-core/-/overlord-core-1.1.0.tgz#cd903566bcc3924c77c29f918c7e720b5776e6b2"
-  integrity sha512-suLoDdKBiIKrsldc0zVg/7u9/5amSguL2uvBoQK3uCqoGfLoPB2e0z23zV8BZEyQJYFxXyZWV0AyKBzqny0hdQ==
+"@mountainpath9/overlord-core@1.5.0", "@mountainpath9/overlord-core@^1.5.0":
+  version "1.5.0"
+  resolved "https://registry.yarnpkg.com/@mountainpath9/overlord-core/-/overlord-core-1.5.0.tgz#7f2ef9e40ace2ee7076e6a416d212e861366fc35"
+  integrity sha512-t5lJgJgQCvglWS5nxcTzDfZcNuqjB/Jh6vjvexgQB0g6nCz22/dY6wDaR8T3B8A5QitrcC/lLjoF7xU+RMUYHQ==
   dependencies:
     "@adllang/adl-runtime" "^0.0.2"
     "@types/estree" "^1.0.0"
@@ -356,44 +356,22 @@
     koa-router "^12.0.0"
     uuid "^9.0.0"
 
-"@mountainpath9/overlord-core@1.4.0", "@mountainpath9/overlord-core@^1.4.0":
-  version "1.4.0"
-  resolved "https://registry.yarnpkg.com/@mountainpath9/overlord-core/-/overlord-core-1.4.0.tgz#4231dac2279948cb63a3a6a464d96841c3c13eda"
-  integrity sha512-CcLVasCgqfoQ3donDk14EuwHXFj6eijpa+JnLO9smpRW5X97gLqX6ucDrQ5b7w9Z6hXWm8UaRMuI9g+Zd44XSg==
+"@mountainpath9/overlord-ethers@^1.5.0":
+  version "1.5.0"
+  resolved "https://registry.yarnpkg.com/@mountainpath9/overlord-ethers/-/overlord-ethers-1.5.0.tgz#d43fb80586fcb6eada468dbed23036777112a292"
+  integrity sha512-1KeiTeDVoqEmpeGP0idTB4aCj0wbCNl5tweonQuk8+w8S/z7KPHeYotfNIOtn6i7R84M6+ZeiZHvJNDpjPkyVg==
   dependencies:
-    "@adllang/adl-runtime" "^0.0.2"
-    "@types/estree" "^1.0.0"
-    "@types/koa" "^2.13.5"
-    "@types/koa-logger" "^3.1.2"
-    "@types/koa-router" "^7.4.4"
-    "@types/node" "^18.16.3"
-    "@types/uuid" "^9.0.1"
-    async-mutex "^0.4.0"
-    base64-js "^1.5.1"
-    builtin-modules "^3.3.0"
-    cron-parser "^4.7.1"
-    jwt-decode "^3.1.2"
-    koa "^2.14.1"
-    koa-logger "^3.2.1"
-    koa-router "^12.0.0"
-    uuid "^9.0.0"
-
-"@mountainpath9/overlord-ethers@^1.1.0":
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/@mountainpath9/overlord-ethers/-/overlord-ethers-1.1.0.tgz#be8bace6087dc4bc97daaca901ce9c8f12ff7833"
-  integrity sha512-UFwCiAslS6GmDN4mCI3vHW+NPDbTZrYyYdFuPpUDVw+Q9QCYKqqIff71mY6cj4IVce5/pV0sEhCusDNtYYc1+w==
-  dependencies:
-    "@mountainpath9/overlord-core" "1.1.0"
+    "@mountainpath9/overlord-core" "1.5.0"
     "@types/node" "^18.16.3"
     async-mutex "^0.4.0"
     ethers "~6.13.1"
 
-"@mountainpath9/overlord-viem@^1.4.4":
-  version "1.4.5"
-  resolved "https://registry.yarnpkg.com/@mountainpath9/overlord-viem/-/overlord-viem-1.4.5.tgz#35ec56c463a87142eec84f16f3d8a8b892c33552"
-  integrity sha512-1xBJsOdMcBiaXJY0tvnIVAOEqi3szUv9HfH1eoX9EQCVq8KC9DfDCcQE6UsLzGEOB/SbJCq2NcDoJHj2FzNaTA==
+"@mountainpath9/overlord-viem@^1.5.0":
+  version "1.5.0"
+  resolved "https://registry.yarnpkg.com/@mountainpath9/overlord-viem/-/overlord-viem-1.5.0.tgz#302a30312379b098ac1e51933bfa0315a4720b57"
+  integrity sha512-I5rsEhwTqwjmFmCF/UNSWi2BvXt7q+iAeEeeMZdqYj0G/+GuRQrrj9lXW6wTqyrdIJ8d8mY9hQhKDceCd4xNXw==
   dependencies:
-    "@mountainpath9/overlord-core" "1.4.0"
+    "@mountainpath9/overlord-core" "1.5.0"
     "@types/node" "^18.16.3"
     async-mutex "^0.4.0"
     viem "^2.23.2"

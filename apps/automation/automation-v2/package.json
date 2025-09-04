@@ -23,9 +23,9 @@
     "ethers": "~6.13.1",
     "exponential-backoff": "^3.1.1",
     "@mountainpath9/big-rational": "^0.2.0",
-    "@mountainpath9/overlord-core": "^1.4.0",
-    "@mountainpath9/overlord-ethers": "^1.1.0",
-    "@mountainpath9/overlord-viem": "^1.4.4",
+    "@mountainpath9/overlord-core": "^1.5.0",
+    "@mountainpath9/overlord-ethers": "^1.5.0",
+    "@mountainpath9/overlord-viem": "^1.5.0",
     "viem": "^2.30.5",
     "zod": "^3.22.4"
   },
