@@ -8,7 +8,6 @@ import { IVestingPayments } from "contracts/interfaces/admin/IVestingPayments.so
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { TempleMath } from "contracts/common/TempleMath.sol";
 import { PaymentBase } from "contracts/admin/PaymentBase.sol";
@@ -95,7 +94,8 @@ contract VestingPayments is IVestingPayments, PaymentBase {
 
         uint256 unreleased = _schedule.amount - _schedule.distributed;
         _schedule.revoked = true;
-        if (!_activeVestingIds.remove(_vestingId)) { revert CommonEventsAndErrors.InvalidParam(); }
+        // We check `isActiveVestingId` first so next line is guaranteed to remove vesting id. No need to check for false and revert
+        _activeVestingIds.remove(_vestingId);
         emit Revoked(_vestingId, _schedule.recipient, unreleased, totalVestedAndUnclaimed);
     }
 
@@ -229,8 +229,8 @@ contract VestingPayments is IVestingPayments, PaymentBase {
     function _calculateReleasableAmount(
           VestingSchedule storage _schedule
     ) private view returns (uint256) {
-        // if account schedule is revoked, return the persisted checkpoint claimable vested delta. This also avoids an arithmetic underflow
-        return _schedule.revoked ? _schedule.revokedReleasable : _calculateTotalVestedAt(_schedule, uint40(block.timestamp)) - _schedule.distributed;
+        // if account schedule is revoked, the persisted checkpoint claimable vested delta is returned from `_calculateTotalVestedAt`. This also avoids an arithmetic underflow
+        return _calculateTotalVestedAt(_schedule, uint40(block.timestamp)) - _schedule.distributed;
     }
 
     function _calculateTotalVestedAt(

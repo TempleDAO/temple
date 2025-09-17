@@ -3,13 +3,11 @@ pragma solidity ^0.8.20;
 // Temple (admin/EpochPayments.sol)
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
 import { IEpochPayments } from "contracts/interfaces/admin/IEpochPayments.sol";
 
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
-import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
 import { PaymentBase } from "contracts/admin/PaymentBase.sol";
 
 /**

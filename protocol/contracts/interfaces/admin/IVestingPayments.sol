@@ -32,14 +32,14 @@ interface IVestingPayments is IPaymentBase {
         uint40 duration;
         /// @notice Amount of vesting token for whole vesting
         uint128 amount;
-        /// @notice Amount of vesting token distributed to recipient
-        uint128 distributed;
-        /// @notice Recipient of vesting
-        address recipient;
         /// @notice If vesting is revoked
         bool revoked;
+        /// @notice Amount of vesting token distributed to recipient
+        uint128 distributed;
         /// @notice Releasable amount at time of revoke
         uint128 revokedReleasable;
+        /// @notice Recipient of vesting
+        address recipient;
     }
 
     struct VestingSummary {
@@ -60,10 +60,10 @@ interface IVestingPayments is IPaymentBase {
         uint40 start,
         uint40 duration,
         uint128 amount,
-        uint128 distributed,
-        address recipient,
         bool revoked,
-        uint128 revokedReleasable
+        uint128 distributed,
+        uint128 revokedReleasable,
+        address recipient
     );
     
     /// @notice Recipient vesting counts for generating IDs. An account can have multiple vesting schedules
