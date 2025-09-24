@@ -229,6 +229,7 @@ contract VestingPaymentsAccessTest is VestingPaymentsTestBase {
 
 contract VestingPaymentsViewTest is VestingPaymentsTestBase {
     function test_getLastVestingScheduleForHolder_zero_vesting_count() public view {
+        assertEq(vesting.holdersVestingCount(alice), 0);
         IVestingPayments.VestingSchedule memory schedule = vesting.getLastVestingScheduleForHolder(alice);
         // empty schedule
         assertEq(schedule.amount, 0);
