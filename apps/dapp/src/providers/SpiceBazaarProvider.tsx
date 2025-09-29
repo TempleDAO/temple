@@ -49,6 +49,7 @@ interface SpiceBazaarContextValue {
   stakePageMetrics: {
     data: StakePageMetrics;
     loading: boolean;
+    error: boolean;
     fetch: () => Promise<void>;
   };
   staking: {
@@ -93,6 +94,7 @@ const INITIAL_STATE: SpiceBazaarContextValue = {
       yourRewards: 0,
     },
     loading: false,
+    error: false,
     fetch: asyncNoop,
   },
   staking: {
@@ -252,7 +254,13 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
   }, [wallet, papi]);
 
   const fetchMetrics = useCallback(async (): Promise<StakePageMetrics> => {
-    const allMetrics = await Promise.allSettled([
+    const [
+      stakedTemple,
+      circulatingSupply,
+      totalEpochRewards,
+      yourStake,
+      yourRewards,
+    ] = await Promise.all([
       getStakedTemple(),
       getCirculatingSupply(),
       getTotalEpochRewards(),
@@ -260,24 +268,12 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
       getYourRewards(),
     ]);
 
-    const metricValues = allMetrics.map((metric, index) => {
-      if (metric.status === 'fulfilled') {
-        return metric.value;
-      }
-      // TODO: This is not ideal. Need a better solution
-      if (index === 3) {
-        // getYourStake returns BigNumber
-        return BigNumber.from(0);
-      }
-      return 0;
-    });
-
     return {
-      stakedTemple: metricValues[0] as number,
-      circulatingSupply: metricValues[1] as number,
-      totalEpochRewards: metricValues[2] as number,
-      yourStake: metricValues[3] as BigNumber,
-      yourRewards: metricValues[4] as number,
+      stakedTemple,
+      circulatingSupply,
+      totalEpochRewards,
+      yourStake,
+      yourRewards,
     };
   }, [
     getStakedTemple,
@@ -290,6 +286,7 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
   const {
     data: stakePageMetricsData,
     isLoading: stakePageMetricsLoading,
+    isError: stakePageMetricsError,
     refetch: refetchStakePageMetrics,
   } = useQuery({
     queryKey: ['stakePageMetrics', wallet ? wallet : 'no-wallet'],
@@ -980,6 +977,7 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
       stakePageMetrics: {
         data: stakePageMetrics,
         loading: stakePageMetricsLoading,
+        error: stakePageMetricsError,
         fetch: fetchStakePageMetrics,
       },
       staking: {

@@ -63,6 +63,7 @@ export const StakeTemple = () => {
   const {
     data: stakePageMetricsData,
     loading: stakePageMetricsLoading,
+    error: stakePageMetricsError,
     fetch: fetchStakePageMetrics,
   } = stakePageMetrics;
 
@@ -119,7 +120,7 @@ export const StakeTemple = () => {
           <StatusContainer>
             <BoxContainer>
               <Box>
-                {stakePageMetricsLoading ? (
+                {stakePageMetricsLoading || stakePageMetricsError ? (
                   <Loader iconSize={32} />
                 ) : (
                   <>
@@ -134,7 +135,7 @@ export const StakeTemple = () => {
                 )}
               </Box>
               <Box>
-                {stakePageMetricsLoading ? (
+                {stakePageMetricsLoading || stakePageMetricsError ? (
                   <Loader iconSize={32} />
                 ) : (
                   <>
@@ -149,7 +150,7 @@ export const StakeTemple = () => {
                 )}
               </Box>
               <Box>
-                {stakePageMetricsLoading ? (
+                {stakePageMetricsLoading || stakePageMetricsError ? (
                   <Loader iconSize={32} />
                 ) : (
                   <>
@@ -166,7 +167,7 @@ export const StakeTemple = () => {
             </BoxContainer>
             <BoxContainer>
               <Box>
-                {stakePageMetricsLoading ? (
+                {stakePageMetricsLoading || stakePageMetricsError ? (
                   <Loader iconSize={32} />
                 ) : (
                   <>
@@ -209,7 +210,7 @@ export const StakeTemple = () => {
                 )}
               </Box>
               <Box>
-                {stakePageMetricsLoading ? (
+                {stakePageMetricsLoading || stakePageMetricsError ? (
                   <Loader iconSize={32} />
                 ) : (
                   <>
