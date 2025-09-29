@@ -28,7 +28,7 @@ export type StakePageMetrics = {
   stakedTemple: number;
   circulatingSupply: number;
   totalEpochRewards: number;
-  yourStake: number;
+  yourStake: BigNumber;
   yourRewards: number;
 };
 
@@ -89,7 +89,7 @@ const INITIAL_STATE: SpiceBazaarContextValue = {
       stakedTemple: 0,
       circulatingSupply: 0,
       totalEpochRewards: 0,
-      yourStake: 0,
+      yourStake: BigNumber.from(0),
       yourRewards: 0,
     },
     loading: false,
@@ -217,7 +217,7 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
 
   const getYourStake = useCallback(async () => {
     if (!wallet) {
-      return 0;
+      return BigNumber.from(0);
     }
 
     try {
@@ -226,10 +226,10 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
       )) as TempleGoldStaking;
 
       const balance = await templeGoldStakingContract.balanceOf(wallet);
-      return fromAtto(balance);
+      return balance;
     } catch (error) {
       console.error('Error fetching stake balance:', error);
-      return 0;
+      return BigNumber.from(0);
     }
   }, [wallet, papi]);
 
@@ -260,16 +260,24 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
       getYourRewards(),
     ]);
 
-    const metricValues = allMetrics.map((metric) =>
-      metric.status === 'fulfilled' ? metric.value : 0
-    );
+    const metricValues = allMetrics.map((metric, index) => {
+      if (metric.status === 'fulfilled') {
+        return metric.value;
+      }
+      // TODO: This is not ideal. Need a better solution
+      if (index === 3) {
+        // getYourStake returns BigNumber
+        return BigNumber.from(0);
+      }
+      return 0;
+    });
 
     return {
-      stakedTemple: metricValues[0],
-      circulatingSupply: metricValues[1],
-      totalEpochRewards: metricValues[2],
-      yourStake: metricValues[3],
-      yourRewards: metricValues[4],
+      stakedTemple: metricValues[0] as number,
+      circulatingSupply: metricValues[1] as number,
+      totalEpochRewards: metricValues[2] as number,
+      yourStake: metricValues[3] as BigNumber,
+      yourRewards: metricValues[4] as number,
     };
   }, [
     getStakedTemple,

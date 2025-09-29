@@ -9,6 +9,7 @@ import wallet from 'assets/icons/wallet.svg?react';
 import { useSpiceBazaar } from 'providers/SpiceBazaarProvider';
 import Loader from 'components/Loader/Loader';
 import { formatNumberWithCommas } from 'utils/formatter';
+import { fromAtto } from 'utils/bigNumber';
 import * as breakpoints from 'styles/breakpoints';
 import { useMediaQuery } from 'react-responsive';
 import { queryPhone } from 'styles/breakpoints';
@@ -170,16 +171,18 @@ export const StakeTemple = () => {
                 ) : (
                   <>
                     <Sum>
-                      {formatNumberWithCommas(stakePageMetricsData.yourStake)}
+                      {formatNumberWithCommas(
+                        fromAtto(stakePageMetricsData.yourStake)
+                      )}
                       &nbsp;TEMPLE
                     </Sum>
                     <Title>
                       Your Stake{' '}
-                      {stakePageMetricsData.yourStake > 0 && (
+                      {!stakePageMetricsData.yourStake.isZero() && (
                         <>
                           (
                           {(
-                            (stakePageMetricsData.yourStake /
+                            (fromAtto(stakePageMetricsData.yourStake) /
                               stakePageMetricsData.stakedTemple) *
                             100
                           ).toFixed(2)}
