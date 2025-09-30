@@ -10,7 +10,7 @@ type NotificationLevel =
   | 'defcon5'; // success notifications
 
 interface DiscordChannel {
-  postMessage(mesasge: DiscordMesage): Promise<void>;
+  postMessage(mesasge: DiscordMessage): Promise<void>;
 }
 
 export interface DiscordTarget {
@@ -20,14 +20,14 @@ export interface DiscordTarget {
 }
 
 
-export type DiscordMesage = WebhookMessageCreateOptions;
+export type DiscordMessage = WebhookMessageCreateOptions;
 
 
 export async function connectDiscord(webhookUrl: string, logger: Logger): Promise<DiscordChannel> {
   const params = decodeWebhookUrl(webhookUrl);
   const webhookClient = new WebhookClient(params);
 
-  async function postMessage(message: DiscordMesage): Promise<void> {
+  async function postMessage(message: DiscordMessage): Promise<void> {
     logger.info(`sending message to discord webhook ${params.id}`);
     await webhookClient.send(message);
   }

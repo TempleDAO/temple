@@ -1,4 +1,4 @@
-import { connectDiscord } from '@/common/discord';
+import { connectDiscord } from '@/utils/discord';
 import {
   TempleTaskDiscordEvent,
   TempleTaskDiscordMetadata,
@@ -17,7 +17,7 @@ import {
 import { getProvider, getSigner } from '@mountainpath9/overlord-ethers';
 import { subgraphRequest } from './subgraph/subgraph-request';
 import { GetUserResponse } from './subgraph/types';
-import { matchAndDecodeEvent } from '@/common/filters';
+import { matchAndDecodeEvent } from '@/utils/filters';
 import { backOff } from 'exponential-backoff';
 import { tlc_discord_webhook_url } from './variables';
 

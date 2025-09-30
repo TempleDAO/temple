@@ -9,6 +9,7 @@ import wallet from 'assets/icons/wallet.svg?react';
 import { useSpiceBazaar } from 'providers/SpiceBazaarProvider';
 import Loader from 'components/Loader/Loader';
 import { formatNumberWithCommas } from 'utils/formatter';
+import { fromAtto } from 'utils/bigNumber';
 import * as breakpoints from 'styles/breakpoints';
 import { useMediaQuery } from 'react-responsive';
 import { queryPhone } from 'styles/breakpoints';
@@ -62,6 +63,7 @@ export const StakeTemple = () => {
   const {
     data: stakePageMetricsData,
     loading: stakePageMetricsLoading,
+    error: stakePageMetricsError,
     fetch: fetchStakePageMetrics,
   } = stakePageMetrics;
 
@@ -118,7 +120,7 @@ export const StakeTemple = () => {
           <StatusContainer>
             <BoxContainer>
               <Box>
-                {stakePageMetricsLoading ? (
+                {stakePageMetricsLoading || stakePageMetricsError ? (
                   <Loader iconSize={32} />
                 ) : (
                   <>
@@ -133,7 +135,7 @@ export const StakeTemple = () => {
                 )}
               </Box>
               <Box>
-                {stakePageMetricsLoading ? (
+                {stakePageMetricsLoading || stakePageMetricsError ? (
                   <Loader iconSize={32} />
                 ) : (
                   <>
@@ -148,7 +150,7 @@ export const StakeTemple = () => {
                 )}
               </Box>
               <Box>
-                {stakePageMetricsLoading ? (
+                {stakePageMetricsLoading || stakePageMetricsError ? (
                   <Loader iconSize={32} />
                 ) : (
                   <>
@@ -165,21 +167,23 @@ export const StakeTemple = () => {
             </BoxContainer>
             <BoxContainer>
               <Box>
-                {stakePageMetricsLoading ? (
+                {stakePageMetricsLoading || stakePageMetricsError ? (
                   <Loader iconSize={32} />
                 ) : (
                   <>
                     <Sum>
-                      {formatNumberWithCommas(stakePageMetricsData.yourStake)}
+                      {formatNumberWithCommas(
+                        fromAtto(stakePageMetricsData.yourStake)
+                      )}
                       &nbsp;TEMPLE
                     </Sum>
                     <Title>
                       Your Stake{' '}
-                      {stakePageMetricsData.yourStake > 0 && (
+                      {!stakePageMetricsData.yourStake.isZero() && (
                         <>
                           (
                           {(
-                            (stakePageMetricsData.yourStake /
+                            (fromAtto(stakePageMetricsData.yourStake) /
                               stakePageMetricsData.stakedTemple) *
                             100
                           ).toFixed(2)}
@@ -206,7 +210,7 @@ export const StakeTemple = () => {
                 )}
               </Box>
               <Box>
-                {stakePageMetricsLoading ? (
+                {stakePageMetricsLoading || stakePageMetricsError ? (
                   <Loader iconSize={32} />
                 ) : (
                   <>

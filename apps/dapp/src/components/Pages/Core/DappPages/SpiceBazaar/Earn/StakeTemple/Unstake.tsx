@@ -13,6 +13,8 @@ import { useMediaQuery } from 'react-responsive';
 import { queryPhone } from 'styles/breakpoints';
 import Loader from 'components/Loader/Loader';
 import { useUnstakeTime } from 'hooks/spicebazaar/use-unstake-time';
+import { formatEther } from 'ethers/lib/utils';
+import { fromAtto } from 'utils/bigNumber';
 
 export const Unstake = () => {
   const isPhoneOrAbove = useMediaQuery({
@@ -32,10 +34,10 @@ export const Unstake = () => {
   };
 
   const handleHintClick = () => {
-    const amount =
-      stakePageMetrics.data.yourStake === 0
-        ? ''
-        : String(stakePageMetrics.data.yourStake);
+    // Use the BigNumber directly to avoid precision loss
+    const amount = stakePageMetrics.data.yourStake.isZero()
+      ? ''
+      : formatEther(stakePageMetrics.data.yourStake);
     setInputValue(amount);
   };
 
@@ -64,7 +66,9 @@ export const Unstake = () => {
               <StakedTempleIcon />
               <StakedAmountText>
                 <StakedAmount>
-                  {formatNumberWithCommas(stakePageMetrics.data.yourStake)}{' '}
+                  {formatNumberWithCommas(
+                    fromAtto(stakePageMetrics.data.yourStake)
+                  )}{' '}
                   TEMPLE
                 </StakedAmount>
                 <StakedText>STAKED</StakedText>
@@ -80,7 +84,7 @@ export const Unstake = () => {
               value: TICKER_SYMBOL.TEMPLE_TOKEN,
             }}
             hint={`Max amount: ${formatNumberWithCommas(
-              stakePageMetrics.data.yourStake
+              fromAtto(stakePageMetrics.data.yourStake)
             )}`}
             handleChange={handleInputChange}
             onHintClick={handleHintClick}
