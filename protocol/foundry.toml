@@ -10,6 +10,10 @@
   cache_path = 'cache-foundry'
   gas_reports = ["*"]
   evm_version = "paris"           # See https://www.evmdiff.com/features?name=PUSH0&kind=opcode
+  legacy_assertions = true
+  assertions_revert = false
+  dynamic_test_linking = true # Required in foundry >= 1.1.0
+  extra_output = ["storageLayout"]
 
 [profile.default.fuzz]
   max_test_rejects = 20000
@@ -22,6 +26,7 @@
   # Number of calls executed in one run. Be mindful that all Handler fns are (unevenly) split over this total depth
   depth = 80
   runs = 500
+  corpus_dir = "fuzz-corpus"
 
 [profile.lite]
   fuzz = { runs = 50 }
@@ -45,3 +50,14 @@
   single_line_statement_blocks = "single"
   tab_width = 4
   wrap_comments = true
+
+[lint]
+  exclude_lints = [
+    "asm-keccak256",
+    "mixed-case-variable",
+    "mixed-case-function",
+    "screaming-snake-case-immutable",
+    "screaming-snake-case-const",
+    "pascal-case-struct"
+  ]
+  ignore = ["test/**/*", "contracts/test/**/*", "**/node_modules/**/*", "lib/**/*"]
