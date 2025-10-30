@@ -169,7 +169,7 @@ module.exports = {
       accounts: process.env.MAINNET_ADDRESS_PRIVATE_KEY
         ? [process.env.MAINNET_ADDRESS_PRIVATE_KEY]
         : [],
-      // gasPrice: parseInt(process.env.MAINNET_GAS_IN_GWEI || '0') * 1000000000,
+      gasPrice: parseInt(process.env.MAINNET_GAS_IN_GWEI || '0') * 1000000000,
     },
     matic: {
       url: process.env.MATIC_RPC_URL || '',
