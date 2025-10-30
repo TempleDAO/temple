@@ -44,10 +44,15 @@ export interface ContractAddresses {
         SKY: {
             USDS: string,
         }
-    }
+    },
     SPICE_AUCTIONS: {
         SPICE_TGLD: string,
         DAI_TGLD: string,
+    },
+    ADMIN: {
+        VESTING: {
+            TGLD: string,
+        }
     }
 }
 
@@ -89,6 +94,11 @@ export const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} =
             SPICE_TGLD: "0x",
             DAI_TGLD: "0x",
         },
+        ADMIN: {
+            VESTING: {
+                TGLD: "0x",
+            }
+        }
     },
     bepolia: {
         TEMPLE_GOLD: {
@@ -127,6 +137,11 @@ export const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} =
             SPICE_TGLD: "0x72D7C9c5E0A187A06E4D1508ceA77dE17db07953",
             DAI_TGLD: "0x",
         },
+        ADMIN: {
+            VESTING: {
+                TGLD: "0x",
+            }
+        }
     },
     arbitrumOne: {
         TEMPLE_GOLD: {
@@ -165,6 +180,11 @@ export const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} =
             SPICE_TGLD: "0x",
             DAI_TGLD: "0x",
         },
+        ADMIN: {
+            VESTING: {
+                TGLD: "0x",
+            }
+        }
     },
     mainnet: {
         TEMPLE_GOLD: {
@@ -203,6 +223,11 @@ export const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} =
             SPICE_TGLD: "0x",
             DAI_TGLD: "0x",
         },
+        ADMIN: {
+            VESTING: {
+                TGLD: "0x",
+            }
+        }
     },
     sepolia: {
         TEMPLE_GOLD: {
@@ -241,6 +266,11 @@ export const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} =
             SPICE_TGLD: "0x",
             DAI_TGLD: "0xee46c5826cb312b1a80f7a6d1af795488941dbd0",
         },
+        ADMIN: {
+            VESTING: {
+                TGLD: "0xD96595caDE5AADa556F34F546b2992E702aA43e3",
+            }
+        }
     },
     arbitrumSepolia: {
         TEMPLE_GOLD: {
@@ -279,6 +309,11 @@ export const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} =
             SPICE_TGLD: "0x41fFE184C981cA5A9F1453e707c179079aC3A551",
             DAI_TGLD: "0x",
         },
+        ADMIN: {
+            VESTING: {
+                TGLD: "0x",
+            }
+        }
     },
     localhost: {
         TEMPLE_GOLD: {
@@ -317,6 +352,11 @@ export const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} =
             SPICE_TGLD: "0x",
             DAI_TGLD: "0x",
         },
+        ADMIN: {
+            VESTING: {
+                TGLD: "0x",
+            }
+        }
     }
 }
 
