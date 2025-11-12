@@ -28,7 +28,7 @@ export type StakePageMetrics = {
   stakedTemple: number;
   circulatingSupply: number;
   totalEpochRewards: number;
-  yourStake: BigNumber;
+  yourStake: number;
   yourRewards: number;
 };
 
@@ -49,7 +49,6 @@ interface SpiceBazaarContextValue {
   stakePageMetrics: {
     data: StakePageMetrics;
     loading: boolean;
-    error: boolean;
     fetch: () => Promise<void>;
   };
   staking: {
@@ -90,11 +89,10 @@ const INITIAL_STATE: SpiceBazaarContextValue = {
       stakedTemple: 0,
       circulatingSupply: 0,
       totalEpochRewards: 0,
-      yourStake: BigNumber.from(0),
+      yourStake: 0,
       yourRewards: 0,
     },
     loading: false,
-    error: false,
     fetch: asyncNoop,
   },
   staking: {
@@ -219,7 +217,7 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
 
   const getYourStake = useCallback(async () => {
     if (!wallet) {
-      return BigNumber.from(0);
+      return 0;
     }
 
     try {
@@ -228,10 +226,10 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
       )) as TempleGoldStaking;
 
       const balance = await templeGoldStakingContract.balanceOf(wallet);
-      return balance;
+      return fromAtto(balance);
     } catch (error) {
       console.error('Error fetching stake balance:', error);
-      return BigNumber.from(0);
+      return 0;
     }
   }, [wallet, papi]);
 
@@ -254,13 +252,7 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
   }, [wallet, papi]);
 
   const fetchMetrics = useCallback(async (): Promise<StakePageMetrics> => {
-    const [
-      stakedTemple,
-      circulatingSupply,
-      totalEpochRewards,
-      yourStake,
-      yourRewards,
-    ] = await Promise.all([
+    const allMetrics = await Promise.allSettled([
       getStakedTemple(),
       getCirculatingSupply(),
       getTotalEpochRewards(),
@@ -268,12 +260,16 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
       getYourRewards(),
     ]);
 
+    const metricValues = allMetrics.map((metric) =>
+      metric.status === 'fulfilled' ? metric.value : 0
+    );
+
     return {
-      stakedTemple,
-      circulatingSupply,
-      totalEpochRewards,
-      yourStake,
-      yourRewards,
+      stakedTemple: metricValues[0],
+      circulatingSupply: metricValues[1],
+      totalEpochRewards: metricValues[2],
+      yourStake: metricValues[3],
+      yourRewards: metricValues[4],
     };
   }, [
     getStakedTemple,
@@ -286,7 +282,6 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
   const {
     data: stakePageMetricsData,
     isLoading: stakePageMetricsLoading,
-    isError: stakePageMetricsError,
     refetch: refetchStakePageMetrics,
   } = useQuery({
     queryKey: ['stakePageMetrics', wallet ? wallet : 'no-wallet'],
@@ -977,7 +972,6 @@ export const SpiceBazaarProvider = ({ children }: PropsWithChildren) => {
       stakePageMetrics: {
         data: stakePageMetrics,
         loading: stakePageMetricsLoading,
-        error: stakePageMetricsError,
         fetch: fetchStakePageMetrics,
       },
       staking: {

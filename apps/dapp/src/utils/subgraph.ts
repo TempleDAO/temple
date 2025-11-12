@@ -629,8 +629,11 @@ async function _rawSubgraphQuery(
     console.log('subgraph-response', label, rawResults);
   }
   if (rawResults.errors !== undefined) {
+    console.error(`Subgraph errors for ${label}:`, rawResults.errors);
     throw new Error(
-      `Unable to fetch ${label} from subgraph: ${rawResults.errors}`
+      `Unable to fetch ${label} from subgraph: ${JSON.stringify(
+        rawResults.errors
+      )}`
     );
   }
 
@@ -1046,6 +1049,254 @@ export type SpiceAuctionFactoriesResp = z.infer<
 
 //----------------------------------------------------------------------------------------------------
 
+export function vestingSchedules(
+  walletAddress: string
+): SubGraphQuery<VestingSchedulesResp> {
+  const label = 'vestingSchedules';
+  const request = `
+  {
+    schedules(where: { recipient: "${walletAddress.toLowerCase()}" }) {
+      id
+      start
+      cliff
+      duration
+      vested
+      released
+      revoked
+    }
+  }`;
+  return {
+    label,
+    request,
+    parse: VestingSchedulesResp.parse,
+  };
+}
+
+const VestingSchedulesResp = z.object({
+  schedules: z.array(
+    z.object({
+      id: z.string(),
+      start: z.string(),
+      cliff: z.string(),
+      duration: z.string(),
+      vested: z.string(),
+      released: z.string(),
+      revoked: z.boolean(),
+    })
+  ),
+});
+
+export type VestingSchedulesResp = z.infer<typeof VestingSchedulesResp>;
+
+//----------------------------------------------------------------------------------------------------
+
+export function vestingUser(
+  walletAddress: string
+): SubGraphQuery<VestingUserResp> {
+  const label = 'vestingUser';
+  const request = `
+  {
+    user(id: "${walletAddress.toLowerCase()}") {
+      vestedAmount
+      releasedAmount
+    }
+  }`;
+  return {
+    label,
+    request,
+    parse: VestingUserResp.parse,
+  };
+}
+
+const VestingUserResp = z.object({
+  user: z
+    .object({
+      vestedAmount: z.string(),
+      releasedAmount: z.string(),
+    })
+    .nullable(),
+});
+
+export type VestingUserResp = z.infer<typeof VestingUserResp>;
+
+//----------------------------------------------------------------------------------------------------
+
+export function vestingMetrics(): SubGraphQuery<VestingMetricsResp> {
+  const label = 'vestingMetrics';
+  const request = `
+  {
+    metrics {
+      totalVestedAndUnclaimed
+      totalReleased
+    }
+  }`;
+  return {
+    label,
+    request,
+    parse: VestingMetricsResp.parse,
+  };
+}
+
+const VestingMetricsResp = z.object({
+  metrics: z.array(
+    z.object({
+      totalVestedAndUnclaimed: z.string(),
+      totalReleased: z.string(),
+    })
+  ),
+});
+
+export type VestingMetricsResp = z.infer<typeof VestingMetricsResp>;
+
+//----------------------------------------------------------------------------------------------------
+
+export function allReleaseTransactions(): SubGraphQuery<AllReleaseTransactionsResp> {
+  const label = 'allReleaseTransactions';
+  const request = `
+  {
+    releaseTransactions(orderBy: timestamp, orderDirection: desc, first: 100) {
+      id
+      timestamp
+      hash
+      releasedAmount
+      user {
+        id
+      }
+      schedule {
+        start
+      }
+    }
+  }`;
+  return {
+    label,
+    request,
+    parse: AllReleaseTransactionsResp.parse,
+  };
+}
+
+//----------------------------------------------------------------------------------------------------
+
+export function allVestingSchedules(): SubGraphQuery<AllVestingSchedulesResp> {
+  const label = 'allVestingSchedules';
+  const request = `
+  {
+    schedules(first: 1000, where: { revoked: false }) {
+      id
+      start
+      cliff
+      duration
+      vested
+      released
+      revoked
+      recipient {
+        id
+      }
+    }
+  }`;
+  return {
+    label,
+    request,
+    parse: AllVestingSchedulesResp.parse,
+  };
+}
+
+const AllVestingSchedulesResp = z.object({
+  schedules: z.array(
+    z.object({
+      id: z.string(),
+      start: z.string(),
+      cliff: z.string(),
+      duration: z.string(),
+      vested: z.string(),
+      released: z.string(),
+      revoked: z.boolean(),
+      recipient: z.object({
+        id: z.string(),
+      }),
+    })
+  ),
+});
+
+export type AllVestingSchedulesResp = z.infer<typeof AllVestingSchedulesResp>;
+
+const AllReleaseTransactionsResp = z.object({
+  releaseTransactions: z.array(
+    z.object({
+      id: z.string(),
+      timestamp: z.string(),
+      hash: z.string(),
+      releasedAmount: z.string(),
+      user: z.object({
+        id: z.string(),
+      }),
+      schedule: z.object({
+        start: z.string(),
+      }),
+    })
+  ),
+});
+
+export type AllReleaseTransactionsResp = z.infer<
+  typeof AllReleaseTransactionsResp
+>;
+
+//----------------------------------------------------------------------------------------------------
+
+export function userReleaseTransactions(
+  walletAddress: string
+): SubGraphQuery<UserReleaseTransactionsResp> {
+  const label = 'userReleaseTransactions';
+  const request = `
+  {
+    user(id: "${walletAddress.toLowerCase()}") {
+      transactions(orderBy: timestamp, orderDirection: desc) {
+        ... on ReleaseTransaction {
+          id
+          timestamp
+          name
+          hash
+          releasedAmount
+          schedule {
+            start
+          }
+        }
+      }
+    }
+  }`;
+  return {
+    label,
+    request,
+    parse: UserReleaseTransactionsResp.parse,
+  };
+}
+
+const UserReleaseTransactionsResp = z.object({
+  user: z
+    .object({
+      transactions: z.array(
+        z.object({
+          id: z.string().optional(),
+          timestamp: z.string().optional(),
+          name: z.string().optional(),
+          hash: z.string().optional(),
+          releasedAmount: z.string().optional(),
+          schedule: z
+            .object({
+              start: z.string(),
+            })
+            .optional(),
+        })
+      ),
+    })
+    .nullable(),
+});
+
+export type UserReleaseTransactionsResp = z.infer<
+  typeof UserReleaseTransactionsResp
+>;
+
+//----------------------------------------------------------------------------------------------------
+
 export function userTransactionsSpiceAuctions(
   id: string
 ): SubGraphQuery<UserTransactionsSpiceAuctionsResp> {
@@ -1361,6 +1612,7 @@ export type SpiceAuctionResp = z.infer<typeof SpiceAuctionResp>;
 //----------------------------------------------------------------------------------------------------
 
 export const TTL_IN_SECONDS = 30;
+export const CACHE_TIME_IN_SECONDS = 5 * 60;
 
 export const cachedSubgraphQuery = async <T>(
   subgraphUrl: string,
@@ -1372,7 +1624,7 @@ export const cachedSubgraphQuery = async <T>(
     queryKey: [subgraphUrl, query.label] as const,
     queryFn: () => subgraphQuery(subgraphUrl, query),
     staleTime: TTL_IN_SECONDS * 1000,
-    cacheTime: TTL_IN_SECONDS * 1000,
+    cacheTime: CACHE_TIME_IN_SECONDS * 1000,
   });
 
   return result;
@@ -1381,12 +1633,15 @@ export const cachedSubgraphQuery = async <T>(
 // Hook version for use in React components
 export const useCachedSubgraphQuery = <T>(
   subgraphUrl: string,
-  query: SubGraphQuery<T>
+  query: SubGraphQuery<T>,
+  additionalKeys: readonly unknown[] = [],
+  options?: { enabled?: boolean }
 ) => {
   return useQuery<T>({
-    queryKey: [subgraphUrl, query.label] as const,
+    queryKey: [subgraphUrl, query.label, ...additionalKeys] as const,
     queryFn: () => subgraphQuery(subgraphUrl, query),
     staleTime: TTL_IN_SECONDS * 1000,
-    cacheTime: TTL_IN_SECONDS * 1000,
+    cacheTime: CACHE_TIME_IN_SECONDS * 1000,
+    enabled: options?.enabled !== false, // Default to true, only disable if explicitly false
   });
 };

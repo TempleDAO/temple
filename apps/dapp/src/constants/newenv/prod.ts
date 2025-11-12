@@ -16,6 +16,8 @@ import {
   TempleLineOfCredit__factory,
   TreasuryReservesVault,
   TreasuryReservesVault__factory,
+  VestingPayments,
+  VestingPayments__factory,
 } from 'types/typechain';
 import { TempleGoldStaking__factory } from 'types/typechain';
 
@@ -251,6 +253,12 @@ const prodEnv: AppConfig = {
     trv: TRV_ON_ETH_MAINNET,
     daiCircuitBreaker: DAICIRCUITBREAKER_ON_ETH_MAINNET,
     templeCircuitBreaker: TEMPLECIRCUITBREAKER_ON_ETH_MAINNET,
+    vestingPayments: {
+      // TODO: Add production VestingPayments contract address
+      chainId: ETH_MAINNET.id,
+      address: '0x0000000000000000000000000000000000000000',
+      contractFactory: VestingPayments__factory,
+    },
   },
   spiceBazaar: {
     spiceAuctions: [
@@ -270,6 +278,10 @@ const prodEnv: AppConfig = {
       altchainTgldTokenKey: TICKER_SYMBOL.TEMPLE_GOLD_TOKEN_BERACHAIN,
       altchainDisplayName: 'Berachain',
     },
+  },
+  vesting: {
+    // TODO: Add production vesting subgraph URL
+    subgraphUrl: '',
   },
 };
 

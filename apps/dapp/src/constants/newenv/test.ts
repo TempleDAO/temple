@@ -15,6 +15,8 @@ import {
   TempleLineOfCredit__factory,
   TreasuryReservesVault,
   TreasuryReservesVault__factory,
+  VestingPayments,
+  VestingPayments__factory,
 } from 'types/typechain';
 import { AppConfig, Chain, ContractConfig, TokenConfig } from './types';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
@@ -28,6 +30,10 @@ const RPC_KEY = ENV_VARS.VITE_RPC_KEY;
 //   "https://api.goldsky.com/api/public/project_clq1l1in2hoze01x1ha1q1bui/subgraphs/spice-bazaar-bepolia/main/gn";
 const ARBIBRUM_SPICE_BAZAAR_SUBGRAPH_URL =
   'https://subgraph.satsuma-prod.com/a912521dd162/templedao/spice-bazaar-arb-sepolia/api';
+
+// Vesting Payments Subgraph
+const VESTING_SUBGRAPH_URL =
+  'https://subgraph.satsuma-prod.com/a912521dd162/templedao/spice-bazaar-sepolia/api';
 
 const ETH_SEPOLIA: Chain = {
   name: 'Ethereum Sepolia',
@@ -309,6 +315,12 @@ const SPICE_TOKEN_ON_ARBITRUM_SEPOLIA: TokenConfig = {
   symbol: 'SPICE',
 };
 
+const VESTING_PAYMENTS_ON_ETH_SEPOLIA: ContractConfig<VestingPayments> = {
+  chainId: ETH_SEPOLIA.id,
+  address: '0xD96595caDE5AADa556F34F546b2992E702aA43e3',
+  contractFactory: VestingPayments__factory,
+};
+
 const testEnv: AppConfig = {
   chains: [ETH_SEPOLIA, BERACHAIN_BEPOLIA, ARB_SEPOLIA],
   tokens: {
@@ -340,6 +352,7 @@ const testEnv: AppConfig = {
     trv: TREASURY_RESERVES_VAULT_ON_ETH_SEPOLIA,
     daiCircuitBreaker: DAI_CIRCUIT_BREAKER_CONTRACT_ON_ETH_SEPOLIA,
     templeCircuitBreaker: TEMPLE_CIRCUIT_BREAKER_CONTRACT_ON_ETH_SEPOLIA,
+    vestingPayments: VESTING_PAYMENTS_ON_ETH_SEPOLIA,
   },
   spiceBazaar: {
     // TODO: For now, we only have one active spice auction. Eventually, could be many. So we use an array.
@@ -365,6 +378,9 @@ const testEnv: AppConfig = {
       altchainTgldTokenKey: TICKER_SYMBOL.TEMPLE_GOLD_TOKEN_ARBITRUM,
       altchainDisplayName: 'Arbitrum',
     },
+  },
+  vesting: {
+    subgraphUrl: VESTING_SUBGRAPH_URL,
   },
 };
 

@@ -69,6 +69,7 @@ export type AppConfig = {
     trv: ContractConfig<Contract>;
     daiCircuitBreaker: ContractConfig<Contract>;
     templeCircuitBreaker: ContractConfig<Contract>;
+    vestingPayments: ContractConfig<Contract>;
   };
   spiceBazaar: {
     spiceAuctions: SpiceAuctionConfig[];
@@ -81,6 +82,9 @@ export type AppConfig = {
       altchainTgldTokenKey: TICKER_SYMBOL;
       altchainDisplayName: string;
     };
+  };
+  vesting: {
+    subgraphUrl: string;
   };
 };
 
