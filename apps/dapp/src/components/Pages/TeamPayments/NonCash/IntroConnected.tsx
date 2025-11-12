@@ -4,54 +4,83 @@ import { Chart } from 'components/Pages/TeamPayments/NonCash/Chart/Chart';
 import { ClaimableTGLD } from 'components/Pages/TeamPayments/NonCash/Tables/ClaimableTable';
 import { ClaimHistory } from 'components/Pages/TeamPayments/NonCash/Tables/ClaimHistoryTable';
 import { GlobalChartStyles } from 'components/Pages/TeamPayments/NonCash/Chart/LineChart';
+import { useVestingMetrics } from 'components/Pages/TeamPayments/NonCash/hooks/use-vesting-metrics';
+import Loader from 'components/Loader/Loader';
 import InfoCircle from 'assets/icons/infocircle.svg?react';
 
 export default function IntroConnected() {
   const [hasClaimed, setHasClaimed] = useState(false);
   const [active, setActive] = useState<'current' | 'previous'>('current');
 
+  // Fetch all vesting data from subgraph
+  const { schedules, totalAllocated, totalVested, totalReleased, loading } =
+    useVestingMetrics();
+
+  // Calculate metrics from subgraph data
+  const totalUnvested = Math.max(0, totalAllocated - totalVested);
+  const totalClaimable = Math.max(0, totalVested - totalReleased);
+
   return (
     <PageContainer>
       <HeaderTitle>Non-Cash Compensation</HeaderTitle>
-      <Filter>
-        <ToggleButton
-          active={active === 'current'}
-          onClick={() => setActive('current')}
-        >
+      {/* Disabled Filter for now */}
+      {/* <Filter>
+        <ToggleButton active={active === "current"} onClick={() => setActive("current")}>
           Current
         </ToggleButton>
-        <ToggleButton
-          active={active === 'previous'}
-          onClick={() => setActive('previous')}
-        >
+        <ToggleButton active={active === "previous"} onClick={() => setActive("previous")}>
           Previous
         </ToggleButton>
-      </Filter>
+      </Filter> */}
       <StatusContainer>
         <BoxContainer>
           <Box>
-            <Sum>1,000,000</Sum>
-            <Title>
-              Total TGLD Reward
-              <InfoIcon />
-            </Title>
+            {loading ? (
+              <Loader iconSize={32} />
+            ) : (
+              <>
+                <Sum>{totalAllocated.toLocaleString()}</Sum>
+                <Title>
+                  Total TGLD Reward
+                  <InfoIcon />
+                </Title>
+              </>
+            )}
           </Box>
           <Box>
-            <Sum>500,000</Sum>
-            <Title>Unvested TGLD</Title>
+            {loading ? (
+              <Loader iconSize={32} />
+            ) : (
+              <>
+                <Sum>{totalUnvested.toLocaleString()}</Sum>
+                <Title>Unvested TGLD</Title>
+              </>
+            )}
           </Box>
         </BoxContainer>
         <BoxContainer>
           <Box>
-            <Sum>500,000</Sum>
-            <Title>Vested TGLD</Title>
+            {loading ? (
+              <Loader iconSize={32} />
+            ) : (
+              <>
+                <Sum>{totalVested.toLocaleString()}</Sum>
+                <Title>Vested TGLD</Title>
+              </>
+            )}
           </Box>
           <Box onClick={() => setHasClaimed(!hasClaimed)}>
-            <Sum>{hasClaimed ? '0' : '45,213'}</Sum>
-            <Title>
-              Unclaimed TGLD
-              <InfoIcon />
-            </Title>
+            {loading ? (
+              <Loader iconSize={32} />
+            ) : (
+              <>
+                <Sum>{hasClaimed ? '0' : totalClaimable.toLocaleString()}</Sum>
+                <Title>
+                  Unclaimed TGLD
+                  <InfoIcon />
+                </Title>
+              </>
+            )}
           </Box>
         </BoxContainer>
       </StatusContainer>
@@ -60,7 +89,7 @@ export default function IntroConnected() {
         <ChartTitle>Your Vests</ChartTitle>
         <Chart />
       </ChartContainer>
-      {!hasClaimed && <ClaimableTGLD />}
+      {totalClaimable > 0 && <ClaimableTGLD />}
       <ClaimHistory />
     </PageContainer>
   );
@@ -158,8 +187,8 @@ const ToggleButton = styled.button<{ active: boolean }>`
   color: ${({ active, theme }) =>
     active ? theme.palette.brandLight : theme.palette.brand};
   text-decoration: ${({ active }) => (active ? 'underline' : 'none')};
-t ext-decoration-color: ${({ theme }) =>
-  theme.palette.brandLight};  font-size: 16px;
+  text-decoration-color: ${({ theme }) => theme.palette.brandLight};
+  font-size: 16px;
   line-height: 19px;
   cursor: pointer;
   padding: 0;

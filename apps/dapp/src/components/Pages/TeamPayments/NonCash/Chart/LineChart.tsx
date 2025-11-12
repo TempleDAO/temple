@@ -34,6 +34,7 @@ type LineChartProps<T> = {
   tooltipValuesFormatter?: (value: number, name: string) => string[];
   legendFormatter?: (value: string) => string;
   yDomain?: AxisDomain;
+  yTicks?: number[];
 };
 
 export default function LineChart<T>(
@@ -49,6 +50,7 @@ export default function LineChart<T>(
     tooltipValuesFormatter,
     legendFormatter,
     yDomain,
+    yTicks,
   } = props;
 
   const theme = useTheme();
@@ -96,6 +98,7 @@ export default function LineChart<T>(
             stroke={line.color}
             strokeWidth={2}
             hide={hiddenLines[line.series.toString()]}
+            connectNulls={true}
             dot={false}
             activeDot={{
               r: 6,
@@ -104,7 +107,6 @@ export default function LineChart<T>(
               strokeWidth: 2,
             }}
             isAnimationActive={false}
-            connectNulls={false}
           />
         ))}
         <XAxis
@@ -173,6 +175,7 @@ export default function LineChart<T>(
           }}
           offset={10}
           domain={yDomain}
+          ticks={yTicks}
           tickMargin={20}
         />
         <Tooltip
@@ -180,11 +183,11 @@ export default function LineChart<T>(
           content={({ active, payload, label }) => {
             if (!active || !payload || !payload.length) return null;
 
-            const vest1 =
-              Number(payload.find((p) => p.dataKey === 'vest1')?.value) || 0;
-            const vest2 =
-              Number(payload.find((p) => p.dataKey === 'vest2')?.value) || 0;
-            const total = vest1 + vest2;
+            // Calculate total from all vests
+            const total = payload.reduce(
+              (sum, p) => sum + (Number(p.value) || 0),
+              0
+            );
 
             return (
               <div
@@ -206,8 +209,30 @@ export default function LineChart<T>(
                     marginBottom: '0.5rem',
                   }}
                 >
-                  {label} 2025
+                  {tooltipLabelFormatter ? tooltipLabelFormatter(label) : label}
                 </div>
+                {payload.map((p) => {
+                  const value = Number(p.value) || 0;
+                  const [formattedValue, formattedLabel] =
+                    tooltipValuesFormatter
+                      ? tooltipValuesFormatter(value, p.dataKey as string)
+                      : [value.toLocaleString(), p.dataKey];
+
+                  return (
+                    <div
+                      key={p.dataKey}
+                      style={{
+                        background: 'transparent',
+                        fontWeight: 700,
+                        fontSize: '12px',
+                        lineHeight: '18px',
+                        color: theme.palette.brandLight,
+                      }}
+                    >
+                      {formattedLabel}: {formattedValue}
+                    </div>
+                  );
+                })}
                 <div
                   style={{
                     background: 'transparent',
@@ -215,28 +240,9 @@ export default function LineChart<T>(
                     fontSize: '12px',
                     lineHeight: '18px',
                     color: theme.palette.brandLight,
-                  }}
-                >
-                  Vest 1: {vest1.toLocaleString()}
-                </div>
-                <div
-                  style={{
-                    background: 'transparent',
-                    fontWeight: 700,
-                    fontSize: '12px',
-                    lineHeight: '18px',
-                    color: theme.palette.brandLight,
-                  }}
-                >
-                  Vest 2: {vest2.toLocaleString()}
-                </div>
-                <div
-                  style={{
-                    background: 'transparent',
-                    fontWeight: 700,
-                    fontSize: '12px',
-                    lineHeight: '18px',
-                    color: theme.palette.brandLight,
+                    marginTop: '0.5rem',
+                    paddingTop: '0.5rem',
+                    borderTop: `1px solid ${theme.palette.brand}`,
                   }}
                 >
                   Total TGLD Vested: {total.toLocaleString()}
@@ -264,8 +270,8 @@ export default function LineChart<T>(
 
                   const key = entry.dataKey.toString();
                   const isHidden = hiddenLines[key];
-                  const color =
-                    key === 'vest1' ? theme.palette.brandLight : '#D0BE75';
+                  const color = entry.color || theme.palette.brandLight;
+                  const label = legendFormatter ? legendFormatter(key) : key;
 
                   return (
                     <div
@@ -288,7 +294,7 @@ export default function LineChart<T>(
                           color,
                         }}
                       >
-                        {key === 'vest1' ? 'VEST 1' : 'VEST 2'}
+                        {label}
                       </span>
                     </div>
                   );

@@ -19,6 +19,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({
     <SearchInputWrapper disabled={disabled}>
       <SearchIcon />
       <StyledInput
+        id="search"
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -37,7 +38,6 @@ const SearchInputWrapper = styled.div<{ disabled?: boolean }>`
   border-radius: 5px;
   padding: 5px 10px;
   gap: 10px;
-  width: 220px;
   box-sizing: border-box;
 
   ${({ disabled, theme }) =>
@@ -49,7 +49,7 @@ const SearchInputWrapper = styled.div<{ disabled?: boolean }>`
 `;
 
 const SearchIcon = styled(Search)`
-  widht: 18px;
+  width: 18px;
   height: 18px;
 `;
 
@@ -59,12 +59,11 @@ const StyledInput = styled.input`
   background-color: transparent;
   border: none;
   outline: none;
-  width: 100%;
   font-family: Caviar Dreams;
   font-weight: 400;
   font-size: 16px;
   line-height: 120%;
-  letter-spacing: 5%;
+  width: 165px;
 
   &::placeholder {
     color: ${({ theme }) => theme.palette.brand};

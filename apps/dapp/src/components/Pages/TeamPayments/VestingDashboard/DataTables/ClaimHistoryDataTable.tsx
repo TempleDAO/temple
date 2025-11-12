@@ -1,4 +1,3 @@
-import env from 'constants/env';
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import * as breakpoints from 'styles/breakpoints';
@@ -12,6 +11,7 @@ export type Transaction = {
   granteeAddress: string;
   transactionLink: string;
   transactionHash: string;
+  displayHash: string;
 };
 
 type TableHeader = { name: string };
@@ -104,9 +104,9 @@ export const DataTable: React.FC<TableProps> = ({
                     <a
                       target="_blank"
                       rel="noreferrer"
-                      href={`${env.etherscan}/tx/${transaction.transactionHash}`}
+                      href={transaction.transactionLink}
                     >
-                      {transaction.transactionLink}
+                      {transaction.displayHash}
                     </a>
                   </DataCell>
                 </DataRow>
@@ -178,6 +178,7 @@ const TableHeader = styled.th`
   font-weight: 700;
   line-height: 20px;
   text-align: left;
+  width: 25%;
   color: ${({ theme }) => theme.palette.brand};
   position: sticky;
   top: 0;
@@ -208,7 +209,8 @@ const DataCell = styled.td`
   font-weight: 700;
   line-height: 20px;
   text-align: left;
-  width: 33%;
+  width: 25%;
+  white-space: nowrap;
   color: ${({ theme }) => theme.palette.brandLight};
 
   a {
@@ -226,7 +228,7 @@ const DataCell = styled.td`
   }
 
   &:last-child {
-    padding: 20px 0px 20px 0px;
+    padding: 20px 0px 20px 16px;
   }
 `;
 

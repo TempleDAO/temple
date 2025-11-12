@@ -89,7 +89,7 @@ export const DataTable: React.FC<TableProps> = ({
               </DataRow>
             ) : (
               filteredTransactions.map((transaction) => (
-                <DataRow key={transaction.grantDate}>
+                <DataRow key={transaction.transactionHash}>
                   <DataCell>{transaction.grantDate}</DataCell>
                   <DataCell>{transaction.claimedTgld}</DataCell>
                   <DataCell>
@@ -218,7 +218,7 @@ const DataCell = styled.td`
   }
 
   &:last-child {
-    padding: 20px 0px 20px 0px;
+    padding: 20px 0px 20px 16px;
   }
 `;
 

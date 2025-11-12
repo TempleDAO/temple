@@ -19,6 +19,7 @@ export type BarChartProps<T> = {
   tooltipLabelFormatter: (value: any) => string;
   tooltipValuesFormatter?: (props: any) => string[];
   yDomain?: AxisDomain;
+  yTicks?: number[];
   series: { key: string; color: string }[];
   lineDataKey?: DataKey<T>;
 };
@@ -31,10 +32,29 @@ export default function CustomBarChart<T>({
   tooltipLabelFormatter,
   tooltipValuesFormatter,
   yDomain,
+  yTicks,
   series,
   lineDataKey,
 }: React.PropsWithChildren<BarChartProps<T>>) {
   const theme = useTheme();
+
+  // Calculate responsive bar size
+  // Max 60px, but shrink if there are many bars or on smaller screens
+  const dataPointCount = chartData.length;
+  const maxBarSize = 60;
+  const minBarSize = 20;
+
+  // Estimate available width (accounting for margins and gaps)
+  // On mobile: ~320px, desktop: wider
+  const estimatedAvailableWidth =
+    typeof window !== 'undefined'
+      ? Math.min(window.innerWidth - 100, 800) // Max 800px chart width
+      : 600;
+
+  const calculatedBarSize = Math.max(
+    minBarSize,
+    Math.min(maxBarSize, (estimatedAvailableWidth - 100) / dataPointCount)
+  );
 
   const activeBarStyle = {
     fill: series[series.length - 1].color,
@@ -87,8 +107,9 @@ export default function CustomBarChart<T>({
     <ResponsiveContainer minHeight={200} minWidth={320} height={280}>
       <ComposedChart
         data={chartData}
-        margin={{ top: 20, right: 30, left: 20, bottom: 10 }}
+        margin={{ top: 20, right: 0, left: 20, bottom: 10 }}
         barCategoryGap={15}
+        barSize={calculatedBarSize}
       >
         <CartesianGrid
           vertical={false}
@@ -114,17 +135,37 @@ export default function CustomBarChart<T>({
         <YAxis
           axisLine={false}
           tickLine={false}
-          tickFormatter={yTickFormatter}
-          tick={{ stroke: theme.palette.brandLight }}
-          domain={yDomain}
-          tickMargin={16}
-          style={{
-            fontFamily: 'Caviar Dreams',
-            fontSize: '12px',
-            fontWeight: '400',
-            fill: theme.palette.brandLight,
+          tick={({ x, y, payload }) => {
+            const formatted = yTickFormatter
+              ? yTickFormatter(payload.value, payload.index)
+              : String(payload.value);
+
+            const lines = formatted.split('\n');
+            return (
+              <text
+                x={x}
+                y={y}
+                textAnchor="end"
+                stroke={theme.palette.brandLight}
+                style={{
+                  fontFamily: 'Caviar Dreams',
+                  fontSize: '12px',
+                  fontWeight: '400',
+                  fill: theme.palette.brandLight,
+                }}
+              >
+                {lines.map((line, i) => (
+                  // eslint-disable-next-line react/no-array-index-key
+                  <tspan key={i} x={x} dy={i === 0 ? 0 : 15}>
+                    {line}
+                  </tspan>
+                ))}
+              </text>
+            );
           }}
-          ticks={[0, 500_000, 1_000_000, 1_500_000]}
+          domain={yDomain}
+          ticks={yTicks}
+          tickMargin={16}
         />
         <Tooltip content={<CustomTooltip />} offset={30} cursor={false} />
         {series.map((serie, index) => {

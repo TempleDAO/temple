@@ -24,6 +24,7 @@ type TableProps = {
   title: string;
   refetch?: () => void;
   dataRefetching?: boolean;
+  claimTgld: (transactionId: string) => Promise<void>;
 };
 
 export const DataTable: React.FC<TableProps> = ({
@@ -32,6 +33,7 @@ export const DataTable: React.FC<TableProps> = ({
   loading,
   title,
   refetch,
+  claimTgld,
 }) => {
   const [filter, setFilter] = useState('Last 5 Shown');
   const [filteredTransactions, setFilteredTransactions] =
@@ -39,9 +41,12 @@ export const DataTable: React.FC<TableProps> = ({
   const filterOptions = ['Last 5 Shown', 'Show All'];
 
   useEffect(() => {
-    const sortedTransactions = [...transactions].sort(
-      (a, b) => Number(b.id) - Number(a.id)
-    );
+    const sortedTransactions = [...transactions].sort((a, b) => {
+      // Sort by grant start date (most recent first)
+      const dateA = new Date(a.grantStartDate).getTime();
+      const dateB = new Date(b.grantStartDate).getTime();
+      return dateB - dateA;
+    });
 
     if (filter === 'Last 5 Shown') {
       setFilteredTransactions(sortedTransactions.slice(0, 5));
@@ -99,9 +104,16 @@ export const DataTable: React.FC<TableProps> = ({
                 </DataRow>
               ) : (
                 filteredTransactions.map((transaction) => {
+                  const shortenedId =
+                    transaction.id.length > 16
+                      ? `${transaction.id.slice(0, 8)}...${transaction.id.slice(
+                          -6
+                        )}`
+                      : transaction.id;
+
                   return (
                     <DataRow key={transaction.id}>
-                      <DataCell>{transaction.id}</DataCell>
+                      <DataCell>{shortenedId}</DataCell>
                       <DataCell>{transaction.grantStartDate}</DataCell>
                       <DataCell>{transaction.grantEndDate}</DataCell>
                       <DataCell>{transaction.cliff}</DataCell>
@@ -112,6 +124,9 @@ export const DataTable: React.FC<TableProps> = ({
                           {transaction.action === 'Claim' && (
                             <TradeButton
                               style={{ whiteSpace: 'nowrap', margin: 0 }}
+                              onClick={async () => {
+                                await claimTgld(transaction.id);
+                              }}
                             >
                               Claim
                             </TradeButton>

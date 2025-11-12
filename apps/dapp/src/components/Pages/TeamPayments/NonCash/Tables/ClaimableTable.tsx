@@ -1,5 +1,6 @@
 import styled from 'styled-components';
 import { DataTable } from '../DataTables/ClaimableDataTable';
+import { useClaimableTGLD } from '../hooks/use-claimable-tgld';
 
 enum TableHeaders {
   Id = 'ID',
@@ -21,35 +22,17 @@ const tableHeaders = [
   { name: TableHeaders.Action },
 ];
 
-const data = [
-  {
-    id: 'Sep 2025',
-    grantStartDate: 'Sep 2025',
-    grantEndDate: 'Sep 2026',
-    cliff: '3 months',
-    vestedAmount: 133000,
-    claimableAmount: 22000,
-    action: 'Claim',
-  },
-  {
-    id: 'Aug 2025',
-    grantStartDate: 'Aug 2025',
-    grantEndDate: 'Aug 2026',
-    cliff: '3 months',
-    vestedAmount: 200000,
-    claimableAmount: 22000,
-    action: 'Claim',
-  },
-];
-
 export const ClaimableTGLD = () => {
+  const { data, loading, claimTgld } = useClaimableTGLD();
+
   return (
     <AuctionsHistoryContainer>
       <DataTable
         transactions={data || []}
-        loading={false}
+        loading={loading}
         title="Claimable TGLD"
         tableHeaders={tableHeaders}
+        claimTgld={claimTgld}
       />
     </AuctionsHistoryContainer>
   );

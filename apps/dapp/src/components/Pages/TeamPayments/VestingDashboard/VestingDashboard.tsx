@@ -4,9 +4,46 @@ import styled from 'styled-components';
 import { SearchInput } from './components/Input';
 import { useState } from 'react';
 import { AllDatesDropdown } from './components/InputSelect';
+import { useVestingMetrics } from './hooks/use-vesting-metrics';
+import { useAddressValidation } from './hooks/use-address-validation';
+import Loader from 'components/Loader/Loader';
+
+interface MetricBoxProps {
+  value: number;
+  title: string;
+  loading: boolean;
+}
+
+function MetricBox({ value, title, loading }: MetricBoxProps) {
+  return (
+    <Box>
+      {loading ? (
+        <Loader iconSize={32} />
+      ) : (
+        <>
+          <Sum>{value.toLocaleString()}</Sum>
+          <Title>{title}</Title>
+        </>
+      )}
+    </Box>
+  );
+}
 
 export default function VestingDashboard() {
   const [searchValue, setSearchValue] = useState('');
+
+  // Validate search address
+  const addressValidation = useAddressValidation(searchValue);
+
+  // Fetch vesting metrics (global or filtered by validated address)
+  const {
+    data: metrics,
+    loading,
+    error,
+  } = useVestingMetrics(addressValidation.validatedAddress ?? undefined);
+
+  const totalClaimable = metrics?.totalVestedAndUnclaimed || 0;
+  const totalClaimed = metrics?.totalReleased || 0;
 
   return (
     <PageContainer>
@@ -14,21 +51,27 @@ export default function VestingDashboard() {
         <SearchInput value={searchValue} onChange={setSearchValue} />
       </SearchBar>
       <HeaderTitle>Vesting Dashboard</HeaderTitle>
-      <AllDatesDropdown />
+      {/* <AllDatesDropdown /> */}
       <StatusContainer>
         <BoxContainer>
-          <Box>
-            <Sum>1,000,000</Sum>
-            <Title>Total TGLD Vested / Claimable</Title>
-          </Box>
-          <Box>
-            <Sum>500,000</Sum>
-            <Title>Total TGLD Claimed</Title>
-          </Box>
+          <MetricBox
+            value={totalClaimable}
+            title="Total TGLD Vested / Claimable"
+            loading={loading}
+          />
+          <MetricBox
+            value={totalClaimed}
+            title="Total TGLD Claimed"
+            loading={loading}
+          />
         </BoxContainer>
       </StatusContainer>
-      <ProjectedTGLDVesting />
-      <ClaimHistory />
+      <ProjectedTGLDVesting
+        walletAddress={addressValidation.validatedAddress ?? undefined}
+      />
+      <ClaimHistory
+        walletAddress={addressValidation.validatedAddress ?? undefined}
+      />
     </PageContainer>
   );
 }
@@ -97,6 +140,6 @@ const Sum = styled.div`
 
 const SearchBar = styled.div`
   display: flex;
-  flex-direction: row;
   justify-content: flex-end;
+  width: 100%;
 `;

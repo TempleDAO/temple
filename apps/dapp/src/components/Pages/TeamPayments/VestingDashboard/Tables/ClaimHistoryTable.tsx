@@ -1,5 +1,6 @@
 import styled from 'styled-components';
 import { DataTable } from '../DataTables/ClaimHistoryDataTable';
+import { useAllClaimHistory } from '../hooks/use-all-claim-history';
 
 enum TableHeaders {
   GrantDate = 'Grant Date',
@@ -15,30 +16,16 @@ const tableHeaders = [
   { name: TableHeaders.TransactionLink },
 ];
 
-const data = [
-  {
-    grantDate: 'July 2025',
-    claimedTgld: '1222000',
-    granteeAddress: 'x112938091',
-    transactionLink: '0x192c453a2dbb0b...0e74a056',
-    transactionHash: '0x192c453a2dbb0b...0e74a056',
-  },
-  {
-    grantDate: 'Jan 2025',
-    claimedTgld: '700000',
-    granteeAddress: 'x817390910',
-    transactionLink: '0x342c4535430979a...0b6b8b25',
-    transactionHash: '0x342c4535430979a...0b6b8b25',
-  },
-];
+export const ClaimHistory = ({ walletAddress }: { walletAddress?: string }) => {
+  // Fetch claim transactions (all users or filtered by walletAddress)
+  const { transactions, loading } = useAllClaimHistory(walletAddress);
 
-export const ClaimHistory = () => {
   return (
     <AuctionsHistoryContainer>
       <DataTable
         tableHeaders={tableHeaders}
-        transactions={data || []}
-        loading={false}
+        transactions={transactions}
+        loading={loading}
       />
     </AuctionsHistoryContainer>
   );
