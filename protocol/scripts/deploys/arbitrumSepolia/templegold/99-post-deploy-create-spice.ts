@@ -1,5 +1,5 @@
 import '@nomiclabs/hardhat-ethers';
-import '@nomiclabs/hardhat-etherscan';
+import '@nomicfoundation/hardhat-verify';
 import { ethers, run } from 'hardhat';
 import {
   ensureExpectedEnvvars,
@@ -20,7 +20,7 @@ async function main() {
     const TEMPLEGOLD_ADDRESSES = getDeployedTempleGoldContracts();
 
     const TEMPLE_GOLD_INSTANCES = connectToContracts(owner);
-    const name = "TGLD_SPICE_SPICE"; // eg. "TGLD_TOKENNAME_SPICE";
+    const name = "TGLD_SPICE_SPICE"; // eg. "[TOKEN]/[TGLD]";
     const spiceToken = TEMPLEGOLD_ADDRESSES.TEMPLE_GOLD.SPICE_TOKEN;
 
     if(!name || !spiceToken) { throw new Error("Missing name or spice token!"); }
