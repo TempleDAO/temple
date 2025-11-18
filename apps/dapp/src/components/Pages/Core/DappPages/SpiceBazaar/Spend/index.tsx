@@ -262,7 +262,9 @@ export const Spend = () => {
             auctionConfig={modal.auction?.staticConfig}
             currentBidAmount={modal.currentBidAmount}
             onBidSuccess={async () => {
-              // Refetch metrics after bid success signalled by the provider
+              // Refetch all auction data to update metrics
+              await fetch();
+              // Refetch user metrics after bid success signalled by the provider
               await refetchUserMetrics();
               // Close modal after metrics are updated
               setModal({ type: 'closed' });

@@ -268,7 +268,7 @@ export const BidTGLD = ({
             <ReceiveAmountContainer fadeEffect={fadeEffect}>
               <ReceiveTextTop>You may receive up to a total of</ReceiveTextTop>
               <ReceiveContainer>
-                <TempleGoldIcon />
+                {!auctionLoading && <TempleGoldIcon />}
                 <ReceiveAmount fadeEffect={fadeEffect}>
                   {auctionLoading ? (
                     <Loader iconSize={32} />

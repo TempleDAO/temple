@@ -265,7 +265,9 @@ export const Details = () => {
             auctionConfig={modal.auction?.staticConfig}
             currentBidAmount={modal.currentBidAmount}
             onBidSuccess={async () => {
-              // Refetch metrics after bid success signalled by the provider
+              // Refetch all auction data to update metrics
+              await fetchAllSpiceAuctions();
+              // Refetch user metrics after bid success signalled by the provider
               await refetchUserMetrics();
               // Close modal after metrics are updated
               setModal({ type: 'closed' });
@@ -365,6 +367,7 @@ const Header = styled.div`
 
   ${breakpoints.phoneAndAbove(`
     flex-direction: row;
+    flex-wrap: wrap;
     align-items: center;
     gap: 20px;
   `)}
@@ -462,11 +465,11 @@ const Text = styled.p`
   line-height: 18px;
   color: ${({ theme }) => theme.palette.brand};
   margin: 0px;
+  white-space: nowrap;
 `;
 
 const Epoch = styled.div`
   display: flex;
-  width: 75px;
   align-items: center;
   padding: 8px;
   border-radius: 10px;
@@ -492,8 +495,7 @@ const StatusContent = styled.div`
   justify-content: center;
   align-items: center;
   height: 136px;
-  min-width: 270px;
-  width: 305px;
+  min-width: 300px;
   white-space: nowrap;
   border: solid 1px ${({ theme }) => theme.palette.brand};
   border-radius: 10px;
@@ -503,7 +505,7 @@ const StatusContent = styled.div`
   margin: auto;
 
   ${breakpoints.phoneAndAbove(`
-    min-width: 250px;
+    min-width: 300px;
     max-width: 50%;
   `)}
 `;
