@@ -27,8 +27,13 @@ async function main() {
             address: spiceAuction,
             constructorArguments: [],
         });
-    } catch {
-        console.log(`Spice auction contract already verified: ${spiceAuction}`);
+    } catch (error: any) {
+        if (error.message?.toLowerCase().includes('already verified')) {
+            console.log(`Spice auction contract already verified: ${spiceAuction}`);
+        } else {
+            console.error(`Verification failed: ${error.message}`);
+            throw error;
+        }
     }
 
     // Comment out lines below if want to find spice auction contract address
