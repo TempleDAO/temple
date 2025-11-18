@@ -22,6 +22,10 @@ import { TempleGoldStaking__factory } from 'types/typechain';
 const ENV_VARS = import.meta.env;
 const RPC_KEY = ENV_VARS.VITE_RPC_KEY;
 
+// TODO: Check this
+const ETH_SPICE_BAZAAR_SUBGRAPH_URL =
+  'https://subgraph.satsuma-prod.com/a912521dd162/templedao/spice-bazaar-mainnet/api';
+
 // chain config
 const ETH_MAINNET: Chain = {
   name: 'Ethereum Mainnet',
@@ -71,6 +75,14 @@ const BERACHAIN_MAINNET: Chain = {
 ////////////////////////////////////////////////////////////
 // TOKENS
 ////////////////////////////////////////////////////////////
+
+const ENA_TOKEN_ON_ETH_MAINNET: TokenConfig = {
+  chainId: ETH_MAINNET.id,
+  name: 'ENA',
+  address: '0x57e114b691db790c35207b2e685d4a43181e6061',
+  decimals: 18,
+  symbol: 'ENA',
+};
 
 const TGLD_TOKEN_ON_ETH_MAINNET: TokenConfig = {
   chainId: ETH_MAINNET.id,
@@ -216,10 +228,9 @@ const SPICE_AUCTION_FACTORY_ON_ETH_MAINNET: ContractConfig<SpiceAuctionFactory> 
     contractFactory: SpiceAuctionFactory__factory,
   };
 
-// TODO: Prod address
 const SPICE_AUCTION_ON_ETH_MAINNET: ContractConfig<SpiceAuction> = {
   chainId: ETH_MAINNET.id,
-  address: '0x0000000000000000000000000000000000000000',
+  address: '0xBb860920F493ba86a3122110260fd70980e0B2e5',
   contractFactory: SpiceAuction__factory,
 };
 
@@ -240,6 +251,7 @@ const prodEnv: AppConfig = {
     spiceTokenBerachain: TEMPLE_TOKEN_ON_ETH_MAINNET, // TODO: fix
     templeGoldTokenArbitrum: TGLD_TOKEN_ON_ETH_MAINNET, // TODO: fix
     spiceTokenArbitrum: TEMPLE_TOKEN_ON_ETH_MAINNET, // TODO: fix
+    // spiceTokenMainnet: ENA_TOKEN_ON_ETH_MAINNET,
   },
   contracts: {
     templeGoldStaking: TEMPLE_GOLD_STAKING_ON_ETH_MAINNET,
@@ -254,14 +266,19 @@ const prodEnv: AppConfig = {
   },
   spiceBazaar: {
     spiceAuctions: [
-      // { TODO
-      //   chainId: ETH_MAINNET.id,
-      //   address: "0x0000000000000000000000000000000000000000",
-      //   contractFactory: SpiceAuctionFactory__factory,
-      //   auctionTokenSymbol: "DAI",
-      // },
+      {
+        isActive: false,
+        name: '[TGLD]/[ENA]',
+        chainId: ETH_MAINNET.id,
+        auctionTokenSymbol: 'ENA',
+        templeGoldToken: TGLD_TOKEN_ON_ETH_MAINNET,
+        templeGoldTokenBalanceTickerSymbol: TICKER_SYMBOL.TEMPLE_GOLD_TOKEN,
+        contractConfig: SPICE_AUCTION_ON_ETH_MAINNET,
+        subgraphUrl: ETH_SPICE_BAZAAR_SUBGRAPH_URL,
+      },
     ],
     tgldBridge: {
+      // Disabled for now
       active: false,
       sourceLayer0EndpointId: ETH_MAINNET.layer0EndpointId,
       sourceTgldTokenContract: TEMPLE_GOLD_ON_ETH_MAINNET,
