@@ -10,8 +10,8 @@ import {
   BidTGLD,
   BidTGLDMode,
 } from 'components/Pages/Core/DappPages/SpiceBazaar/Spend/BidTGLD';
-import { useSpiceAuction } from 'providers/SpiceAuctionProvider';
 import { SpiceAuctionConfig } from 'constants/newenv/types';
+import { SpiceAuctionInfo } from 'providers/SpiceAuctionProvider';
 
 export type Transaction = {
   id: string;
@@ -36,6 +36,12 @@ type TableProps = {
   loading: boolean;
   title: string;
   refetch?: () => void;
+  onClaim?: (
+    auctionStaticConfig: SpiceAuctionConfig,
+    epoch: number
+  ) => Promise<void>;
+  allSpiceAuctionsData?: SpiceAuctionInfo[];
+  allSpiceAuctionsLoading?: boolean;
   dataRefetching?: boolean;
 };
 
@@ -46,6 +52,9 @@ export const DataTable: React.FC<TableProps> = ({
   loading,
   title,
   refetch,
+  onClaim,
+  allSpiceAuctionsData,
+  allSpiceAuctionsLoading,
 }) => {
   const [modalState, setModalState] = useState<'closed' | 'bidDai' | 'bidTgld'>(
     'closed'
@@ -57,19 +66,6 @@ export const DataTable: React.FC<TableProps> = ({
   const [filteredTransactions, setFilteredTransactions] =
     useState<Transaction[]>(transactions);
   const filterOptions = ['Last 5 Shown', 'Show All'];
-
-  const {
-    allSpiceAuctions: {
-      fetch: fetchAllSpiceAuctions,
-      data: allSpiceAuctionsData,
-      loading: allSpiceAuctionsLoading,
-    },
-    spiceAuctions: { claim: spiceAuctionClaim },
-  } = useSpiceAuction();
-
-  useEffect(() => {
-    fetchAllSpiceAuctions();
-  }, [fetchAllSpiceAuctions]);
 
   useEffect(() => {
     const sortedTransactions = [...transactions].sort(
@@ -191,13 +187,12 @@ export const DataTable: React.FC<TableProps> = ({
                           {action === 'Claim' &&
                             Number(transaction.claimableTokens) > 0 && (
                               <TradeButton
-                                onClick={async () => {
-                                  await spiceAuctionClaim(
+                                onClick={() =>
+                                  onClaim?.(
                                     transaction.auctionStaticConfig,
                                     Number(transaction.epoch)
-                                  );
-                                  refetch?.();
-                                }}
+                                  )
+                                }
                                 style={{ whiteSpace: 'nowrap', margin: 0 }}
                               >
                                 Claim

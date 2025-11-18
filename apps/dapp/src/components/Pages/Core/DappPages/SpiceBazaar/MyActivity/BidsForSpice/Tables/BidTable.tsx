@@ -4,6 +4,10 @@ import { queryPhone } from 'styles/breakpoints';
 import { DataTableMobile } from '../DataTables/BidDataTableMobile';
 import { DataTable } from '../DataTables/BidDataTable';
 import { useMyActivityBidsSpiceHistory } from '../hooks/use-myActivity-bidsSpiceHistory';
+import { useQueryClient } from '@tanstack/react-query';
+import { useSpiceAuction } from 'providers/SpiceAuctionProvider';
+import { SpiceAuctionConfig } from 'constants/newenv/types';
+import { useEffect } from 'react';
 
 enum TableHeaders {
   EpochId = 'EPOCH ID',
@@ -42,6 +46,33 @@ const tableHeadersMobile = [
 export const BidHistory = () => {
   const isPhoneOrAbove = useMediaQuery({ query: queryPhone });
   const { data, loading, refetch } = useMyActivityBidsSpiceHistory();
+  const queryClient = useQueryClient();
+  const {
+    spiceAuctions,
+    allSpiceAuctions: {
+      fetch: fetchAllSpiceAuctions,
+      data: allSpiceAuctionsData,
+      loading: allSpiceAuctionsLoading,
+    },
+  } = useSpiceAuction();
+
+  useEffect(() => {
+    fetchAllSpiceAuctions();
+  }, [fetchAllSpiceAuctions]);
+
+  const handleClaim = async (
+    auctionStaticConfig: SpiceAuctionConfig,
+    epoch: number
+  ) => {
+    await spiceAuctions.claim(auctionStaticConfig, epoch);
+    queryClient.invalidateQueries({
+      queryKey: ['currentUserMetrics'],
+    });
+    queryClient.invalidateQueries({
+      queryKey: ['spiceRedeemAmount'],
+    });
+    refetch?.();
+  };
 
   return (
     <AuctionsHistoryContainer>
@@ -50,6 +81,9 @@ export const BidHistory = () => {
           transactions={data || []}
           loading={loading}
           refetch={refetch}
+          onClaim={handleClaim}
+          allSpiceAuctionsData={allSpiceAuctionsData}
+          allSpiceAuctionsLoading={allSpiceAuctionsLoading}
           title="Bids for SPICE History"
           tableHeaders={tableHeadersMobile}
           modal="bidTgld"
@@ -59,6 +93,9 @@ export const BidHistory = () => {
           transactions={data || []}
           loading={loading}
           refetch={refetch}
+          onClaim={handleClaim}
+          allSpiceAuctionsData={allSpiceAuctionsData}
+          allSpiceAuctionsLoading={allSpiceAuctionsLoading}
           title="Bids for SPICE History"
           tableHeaders={tableHeaders}
           modal="bidTgld"
