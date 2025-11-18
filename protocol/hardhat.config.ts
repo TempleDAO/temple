@@ -2,9 +2,9 @@ require('dotenv').config();
 
 import '@nomicfoundation/hardhat-chai-matchers';
 import '@typechain/hardhat';
+import '@nomicfoundation/hardhat-verify';
 import '@nomiclabs/hardhat-ganache'; // for testing
 import '@nomiclabs/hardhat-ethers';
-import '@nomiclabs/hardhat-etherscan';
 import 'hardhat-contract-sizer';
 import 'hardhat-gas-reporter';
 import 'solidity-coverage';
@@ -221,17 +221,7 @@ module.exports = {
     },
   },
   etherscan: {
-    apiKey: {
-      mainnet: process.env.ETHERSCAN_API_KEY,
-      gnosis: process.env.GNOSISSCAN_API_KEY,
-      polygonMumbai: process.env.POLYGONSCAN_API_KEY,
-      polygon: process.env.POLYGONSCAN_API_KEY,
-      goerli: process.env.ETHERSCAN_API_KEY,
-      sepolia: process.env.ETHERSCAN_API_KEY,
-      arbitrumSepolia: process.env.ARBISCAN_API_KEY,
-      berachain: process.env.BERASCAN_API_KEY,
-      bepolia: "berachainbepolia", // unused
-    },
+    apiKey: process.env.ETHERSCAN_API_KEY,
     customChains: [
       {
         network: "arbitrumSepolia",
