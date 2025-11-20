@@ -22,7 +22,6 @@ export const MyActivitySpice = () => {
   } = currentUser;
 
   const { wallet } = useWallet();
-
   // if wallet is not connected, set redeemAmount to 0
   const redeemAmountIfConnected = useMemo(() => {
     if (!wallet) return '0';

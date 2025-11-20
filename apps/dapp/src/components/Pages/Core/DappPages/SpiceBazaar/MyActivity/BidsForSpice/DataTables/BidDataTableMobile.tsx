@@ -11,7 +11,6 @@ import {
   BidTGLDMode,
 } from 'components/Pages/Core/DappPages/SpiceBazaar/Spend/BidTGLD';
 import { SpiceAuctionConfig } from 'constants/newenv/types';
-import { SpiceAuctionInfo } from 'providers/SpiceAuctionProvider';
 
 export type Transaction = {
   id: string;
@@ -49,8 +48,6 @@ type TableProps = {
     auctionStaticConfig: SpiceAuctionConfig,
     epoch: number
   ) => Promise<void>;
-  allSpiceAuctionsData?: SpiceAuctionInfo[];
-  allSpiceAuctionsLoading?: boolean;
   dataRefetching?: boolean;
 };
 
@@ -62,8 +59,6 @@ export const DataTableMobile: React.FC<TableProps> = ({
   title,
   refetch,
   onClaim,
-  allSpiceAuctionsData,
-  allSpiceAuctionsLoading,
 }) => {
   const [modalState, setModalState] = useState<'closed' | 'bidDai' | 'bidTgld'>(
     'closed'

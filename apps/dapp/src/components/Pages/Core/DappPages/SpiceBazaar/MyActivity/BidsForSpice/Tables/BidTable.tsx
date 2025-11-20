@@ -82,8 +82,6 @@ export const BidHistory = () => {
           loading={loading}
           refetch={refetch}
           onClaim={handleClaim}
-          allSpiceAuctionsData={allSpiceAuctionsData}
-          allSpiceAuctionsLoading={allSpiceAuctionsLoading}
           title="Bids for SPICE History"
           tableHeaders={tableHeadersMobile}
           modal="bidTgld"
@@ -94,8 +92,6 @@ export const BidHistory = () => {
           loading={loading}
           refetch={refetch}
           onClaim={handleClaim}
-          allSpiceAuctionsData={allSpiceAuctionsData}
-          allSpiceAuctionsLoading={allSpiceAuctionsLoading}
           title="Bids for SPICE History"
           tableHeaders={tableHeaders}
           modal="bidTgld"

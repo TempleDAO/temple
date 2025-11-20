@@ -10,7 +10,7 @@ import { formatToken, formatNumberWithCommas } from 'utils/formatter';
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useSpiceAuction } from 'providers/SpiceAuctionProvider';
 import { SpiceAuctionConfig } from 'constants/newenv/types';
-import { ZERO, fromAtto } from 'utils/bigNumber';
+import { ZERO } from 'utils/bigNumber';
 import LargeRoundCheckBox from 'components/Pages/Core/DappPages/SpiceBazaar/components/LargeRoundCheckBox';
 import { useAudioPlayer } from 'react-use-audio-player';
 import marketSound from 'assets/sounds/Age of Empires 2 - Market Sound.mp3';
