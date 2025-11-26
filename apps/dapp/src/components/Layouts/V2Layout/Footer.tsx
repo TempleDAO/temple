@@ -18,7 +18,7 @@ const Footer: React.FC = () => {
         {
           text: 'Discord',
           image: socialDiscordIcon,
-          link: 'https://discord.gg/',
+          link: 'https://discord.gg/eBTDNjrAbJ',
         },
         {
           text: 'Twitter',
