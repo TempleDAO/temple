@@ -65,7 +65,7 @@ const FooterContent = [
       {
         text: 'Discord',
         image: socialDiscordIcon,
-        link: 'https://discord.gg/templedao',
+        link: 'https://discord.gg/',
       },
       {
         text: 'Twitter',
@@ -75,7 +75,7 @@ const FooterContent = [
       {
         text: 'Telegram',
         image: socialTelegramIcon,
-        link: 'https://t.me/templedao',
+        link: 'https://t.me/',
       },
     ],
   },
