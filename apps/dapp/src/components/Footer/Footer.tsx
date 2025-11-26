@@ -31,7 +31,7 @@ export const Footer = () => {
               <li>
                 {/* TODO: add no refere for SEO  */}
                 <a
-                  href={'https://discord.gg/templedao'}
+                  href={'https://discord.gg/'}
                   target={'_blank'}
                   rel="noreferrer"
                 >
@@ -61,7 +61,7 @@ export const Footer = () => {
               </li>
               <li>
                 <a
-                  href={'https://t.me/TempleDAOcommunity'}
+                  href={'https://t.me/'}
                   target={'_blank'}
                   rel="noreferrer"
                 >
