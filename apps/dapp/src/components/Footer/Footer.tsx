@@ -31,7 +31,7 @@ export const Footer = () => {
               <li>
                 {/* TODO: add no refere for SEO  */}
                 <a
-                  href={'https://discord.gg/eBTDNjrAbJ'}
+                  href={'https://discord.gg/'}
                   target={'_blank'}
                   rel="noreferrer"
                 >

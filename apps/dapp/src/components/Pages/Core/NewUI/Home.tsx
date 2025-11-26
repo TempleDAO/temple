@@ -65,7 +65,7 @@ const FooterContent = [
       {
         text: 'Discord',
         image: socialDiscordIcon,
-        link: 'https://discord.gg/eBTDNjrAbJ',
+        link: 'https://discord.gg/',
       },
       {
         text: 'Twitter',
