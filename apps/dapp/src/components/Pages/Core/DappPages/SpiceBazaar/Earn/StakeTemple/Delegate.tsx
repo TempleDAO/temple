@@ -9,7 +9,6 @@ import { useSpiceBazaar } from 'providers/SpiceBazaarProvider';
 import Loader from 'components/Loader/Loader';
 import { TradeButton } from './Stake';
 import { useNavigate } from 'react-router-dom';
-import { fromAtto } from 'utils/bigNumber';
 
 export const Delegate = () => {
   const [inputValue, setInputValue] = useState<string>('');
@@ -130,7 +129,7 @@ export const Delegate = () => {
 
   return (
     <PageContainer>
-      {!stakePageMetrics.data.yourStake.isZero() && (
+      {stakePageMetrics.data.yourStake > 0 && (
         <>
           <StakedTempleContainer>
             {isLoading ? (
@@ -140,9 +139,7 @@ export const Delegate = () => {
                 <StakeTempleIcon />
                 <StakedTempleText>
                   <StakedAmount>
-                    {formatNumberWithCommas(
-                      fromAtto(stakePageMetrics.data.yourStake)
-                    )}{' '}
+                    {formatNumberWithCommas(stakePageMetrics.data.yourStake)}{' '}
                     STAKED TEMPLE
                   </StakedAmount>
                   <StakedStatusText>
@@ -229,10 +226,8 @@ export const Delegate = () => {
             <StakedAmountContainer>
               <StakeTempleIcon />
               <Staked>
-                {formatNumberWithCommas(
-                  fromAtto(stakePageMetrics.data.yourStake)
-                )}{' '}
-                STAKED TEMPLE
+                {formatNumberWithCommas(stakePageMetrics.data.yourStake)} STAKED
+                TEMPLE
               </Staked>
             </StakedAmountContainer>
             <StakedTextBottom>
@@ -270,16 +265,14 @@ export const Delegate = () => {
           </TradeButton>
         </>
       )}
-      {stakePageMetrics.data.yourStake.isZero() && (
+      {stakePageMetrics.data.yourStake === 0 && (
         <>
           <StakedTempleContainer>
             <StakeTempleIcon />
             <StakedTempleText>
               <StakedAmount>
-                {formatNumberWithCommas(
-                  fromAtto(stakePageMetrics.data.yourStake)
-                )}{' '}
-                STAKED TEMPLE
+                {formatNumberWithCommas(stakePageMetrics.data.yourStake)} STAKED
+                TEMPLE
               </StakedAmount>
               <StakedStatusText>
                 YOU CURRENTLY HAVE NO STAKED TEMPLE

@@ -2,6 +2,7 @@ import React, { Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import styled from 'styled-components';
+
 import { GlobalStyle } from 'styles/GlobalStyle';
 import { AppProvider } from 'providers/AppProvider';
 import NotificationManager from 'components/Notification/NotificationManager';
@@ -9,6 +10,7 @@ import PageLayout from 'components/Layouts/Page';
 import Loader from 'components/Loader/Loader';
 import Disclaimer from 'components/Pages/Disclaimer';
 import Home from 'components/Pages/Core/NewUI/Home';
+
 import { AnalyticsService } from 'services/AnalyticsService';
 import { DashboardPage } from 'components/Pages/Core/DappPages/Dashboard';
 import { TradePage } from './components/Pages/Core/DappPages/TradePage';
@@ -36,9 +38,19 @@ import { getAppConfig } from 'constants/newenv';
 // new env configuration
 // add to constants/newenv
 const APP_CONFIG = getAppConfig();
+import TeamPayments from 'components/Pages/TeamPayments/index';
 
 // Separate Chunks
-const TeamPayments = React.lazy(() => import('components/Pages/TeamPayments'));
+const TeamPaymentsCash = React.lazy(
+  () => import('components/Pages/TeamPayments/Cash')
+);
+const TeamPaymentsNonCash = React.lazy(
+  () => import('components/Pages/TeamPayments/NonCash/NonCash')
+);
+const VestingDashboard = React.lazy(
+  () =>
+    import('components/Pages/TeamPayments/VestingDashboard/VestingDashboard')
+);
 const RamosAdmin = React.lazy(() => import('components/Pages/Ramos/admin'));
 const SafeAdmin = React.lazy(() => import('components/Pages/Safe/admin'));
 
@@ -89,9 +101,10 @@ root.render(
                   <Route path="*" element={<Navigate replace to="/" />} />
                   <Route path="disclaimer" element={<Disclaimer />} />
                   <Route
-                    path="team-payments"
-                    element={<LazyPage component={TeamPayments} />}
+                    path="/team-payments"
+                    element={<Navigate replace to="/team-payments/cash" />}
                   />
+
                   <Route
                     path="ramos"
                     element={<LazyPage component={RamosAdmin} />}
@@ -99,6 +112,20 @@ root.render(
                   <Route
                     path="safe"
                     element={<LazyPage component={SafeAdmin} />}
+                  />
+                </Route>
+                <Route path="/team-payments/*" element={<TeamPayments />}>
+                  <Route
+                    path="cash"
+                    element={<LazyPage component={TeamPaymentsCash} />}
+                  />
+                  <Route
+                    path="non-cash"
+                    element={<LazyPage component={TeamPaymentsNonCash} />}
+                  />
+                  <Route
+                    path="vesting-dashboard"
+                    element={<LazyPage component={VestingDashboard} />}
                   />
                 </Route>
                 <Route
