@@ -22,9 +22,8 @@ import { TempleGoldStaking__factory } from 'types/typechain';
 const ENV_VARS = import.meta.env;
 const RPC_KEY = ENV_VARS.VITE_RPC_KEY;
 
-// TODO: Check this
 const ETH_SPICE_BAZAAR_SUBGRAPH_URL =
-  'https://subgraph.satsuma-prod.com/a912521dd162/templedao/spice-bazaar-mainnet/api';
+  'https://api.goldsky.com/api/public/project_cmgzm4q1q009c5np2angrczxw/subgraphs/spice-bazaar-mainnet/prodnet/gn';
 
 // chain config
 const ETH_MAINNET: Chain = {
@@ -90,6 +89,14 @@ const TGLD_TOKEN_ON_ETH_MAINNET: TokenConfig = {
   address: '0x0E7B53dDe30754A94D4B10C9CdCaCA1C749ECd1b',
   decimals: 18,
   symbol: 'TGLD',
+};
+
+const PLACEHOLDER_NULL_ADDRESS_TOKEN: TokenConfig = {
+  chainId: ETH_MAINNET.id,
+  name: 'PLACEHOLDER',
+  address: '0x0000000000000000000000000000000000000000',
+  decimals: 18,
+  symbol: 'PLACEHOLDER',
 };
 
 const OG_TEMPLE_TOKEN_ON_ETH_MAINNET: TokenConfig = {
@@ -194,6 +201,12 @@ const TEMPLE_GOLD_ON_ETH_MAINNET: ContractConfig<TempleGold> = {
   contractFactory: TempleGold__factory,
 };
 
+const PLACEHOLDER_NULL_ADDRESS_TOKEN_CONTRACT: ContractConfig<TempleGold> = {
+  chainId: ETH_MAINNET.id,
+  address: '0x0000000000000000000000000000000000000000',
+  contractFactory: TempleGold__factory,
+};
+
 const TLC_ON_ETH_MAINNET: ContractConfig<TempleLineOfCredit> = {
   chainId: ETH_MAINNET.id,
   address: '0xcbc0A8d5C7352Fe3625614ea343019e6d6b89031',
@@ -220,17 +233,15 @@ const TEMPLECIRCUITBREAKER_ON_ETH_MAINNET: ContractConfig<TempleCircuitBreakerAl
     contractFactory: TempleCircuitBreakerAllUsersPerPeriod__factory,
   };
 
-// TODO: Prod address
-const SPICE_AUCTION_FACTORY_ON_ETH_MAINNET: ContractConfig<SpiceAuctionFactory> =
-  {
-    chainId: ETH_MAINNET.id,
-    address: '0x0000000000000000000000000000000000000000',
-    contractFactory: SpiceAuctionFactory__factory,
-  };
-
-const SPICE_AUCTION_ON_ETH_MAINNET: ContractConfig<SpiceAuction> = {
+const TGLD_SPICE_AUCTION_ON_ETH_MAINNET: ContractConfig<SpiceAuction> = {
   chainId: ETH_MAINNET.id,
-  address: '0xBb860920F493ba86a3122110260fd70980e0B2e5',
+  address: '0x49DabEC17025C2D06ac2Ad99Ab8369C902c4b2Ec',
+  contractFactory: SpiceAuction__factory,
+};
+
+const TGLD_ENA_AUCTION_ON_ETH_MAINNET: ContractConfig<SpiceAuction> = {
+  chainId: ETH_MAINNET.id,
+  address: '0xa68e1a9a93223f812191f35d102a4b2fb16b60f4',
   contractFactory: SpiceAuction__factory,
 };
 
@@ -247,18 +258,17 @@ const prodEnv: AppConfig = {
     usdsToken: USDS_TOKEN_ON_ETH_MAINNET,
     wethToken: WETH_TOKEN_ON_ETH_MAINNET,
     ohmToken: OHM_TOKEN_ON_ETH_MAINNET,
-    templeGoldTokenBerachain: TGLD_TOKEN_ON_ETH_MAINNET, // TODO: fix
-    spiceTokenBerachain: TEMPLE_TOKEN_ON_ETH_MAINNET, // TODO: fix
-    templeGoldTokenArbitrum: TGLD_TOKEN_ON_ETH_MAINNET, // TODO: fix
-    spiceTokenArbitrum: TEMPLE_TOKEN_ON_ETH_MAINNET, // TODO: fix
-    // spiceTokenMainnet: ENA_TOKEN_ON_ETH_MAINNET,
+    templeGoldTokenBerachain: PLACEHOLDER_NULL_ADDRESS_TOKEN,
+    spiceTokenBerachain: PLACEHOLDER_NULL_ADDRESS_TOKEN,
+    templeGoldTokenArbitrum: PLACEHOLDER_NULL_ADDRESS_TOKEN,
+    spiceTokenArbitrum: PLACEHOLDER_NULL_ADDRESS_TOKEN,
   },
   contracts: {
     templeGoldStaking: TEMPLE_GOLD_STAKING_ON_ETH_MAINNET,
     daiGoldAuction: DAIGOLD_AUCTION_ON_ETH_MAINNET,
     templeGold: TEMPLE_GOLD_ON_ETH_MAINNET,
-    templeGoldBerachain: TEMPLE_GOLD_ON_ETH_MAINNET, // TODO: fix
-    templeGoldArbitrum: TEMPLE_GOLD_ON_ETH_MAINNET, // TODO: fix
+    templeGoldBerachain: PLACEHOLDER_NULL_ADDRESS_TOKEN_CONTRACT,
+    templeGoldArbitrum: PLACEHOLDER_NULL_ADDRESS_TOKEN_CONTRACT,
     tlc: TLC_ON_ETH_MAINNET,
     trv: TRV_ON_ETH_MAINNET,
     daiCircuitBreaker: DAICIRCUITBREAKER_ON_ETH_MAINNET,
@@ -267,13 +277,23 @@ const prodEnv: AppConfig = {
   spiceBazaar: {
     spiceAuctions: [
       {
-        isActive: false,
+        isActive: true,
+        name: '[TGLD]/[SPICE]',
+        chainId: ETH_MAINNET.id,
+        auctionTokenSymbol: 'SPICE',
+        templeGoldToken: TGLD_TOKEN_ON_ETH_MAINNET,
+        templeGoldTokenBalanceTickerSymbol: TICKER_SYMBOL.TEMPLE_GOLD_TOKEN,
+        contractConfig: TGLD_SPICE_AUCTION_ON_ETH_MAINNET,
+        subgraphUrl: ETH_SPICE_BAZAAR_SUBGRAPH_URL,
+      },
+      {
+        isActive: true,
         name: '[TGLD]/[ENA]',
         chainId: ETH_MAINNET.id,
         auctionTokenSymbol: 'ENA',
         templeGoldToken: TGLD_TOKEN_ON_ETH_MAINNET,
         templeGoldTokenBalanceTickerSymbol: TICKER_SYMBOL.TEMPLE_GOLD_TOKEN,
-        contractConfig: SPICE_AUCTION_ON_ETH_MAINNET,
+        contractConfig: TGLD_ENA_AUCTION_ON_ETH_MAINNET,
         subgraphUrl: ETH_SPICE_BAZAAR_SUBGRAPH_URL,
       },
     ],
@@ -283,7 +303,7 @@ const prodEnv: AppConfig = {
       sourceLayer0EndpointId: ETH_MAINNET.layer0EndpointId,
       sourceTgldTokenContract: TEMPLE_GOLD_ON_ETH_MAINNET,
       altchainLayer0EndpointId: BERACHAIN_MAINNET.layer0EndpointId,
-      altchainTgldTokenContract: TEMPLE_GOLD_ON_ETH_MAINNET, // TODO: fix (berachain)
+      altchainTgldTokenContract: PLACEHOLDER_NULL_ADDRESS_TOKEN_CONTRACT,
       altchainTgldTokenKey: TICKER_SYMBOL.TEMPLE_GOLD_TOKEN_BERACHAIN,
       altchainDisplayName: 'Berachain',
     },
