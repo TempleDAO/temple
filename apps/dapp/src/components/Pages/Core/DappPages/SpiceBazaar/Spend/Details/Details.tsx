@@ -99,7 +99,7 @@ export const Details = () => {
               Back to all Spice Auctions
             </BackLink>
             <SpiceAuctionDetails>
-              <SpiceAuctionTitle>{auction?.name} Details</SpiceAuctionTitle>
+              <SpiceAuctionTitle>{auction?.name} Auction</SpiceAuctionTitle>
               <CurrentAuction>
                 <Header>
                   <HeaderLeft>

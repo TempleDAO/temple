@@ -296,7 +296,7 @@ export const WalletProvider = (props: PropsWithChildren<object>) => {
       if (getAppConfig().tokens.templeGoldTokenBerachain?.address) {
         const tgldBalance = await papi.getTokenBalance(
           walletAddress,
-          getAppConfig().tokens.templeGoldTokenBerachain
+          getAppConfig().tokens.templeGoldTokenBerachain!
         );
         response = { ...response, TGLD_BERA: tgldBalance };
       }
@@ -304,7 +304,7 @@ export const WalletProvider = (props: PropsWithChildren<object>) => {
       if (getAppConfig().tokens.templeGoldTokenArbitrum?.address) {
         const tgldBalance = await papi.getTokenBalance(
           walletAddress,
-          getAppConfig().tokens.templeGoldTokenArbitrum
+          getAppConfig().tokens.templeGoldTokenArbitrum!
         );
         response = { ...response, TGLD_ARB: tgldBalance };
       }
