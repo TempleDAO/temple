@@ -420,7 +420,7 @@ const Status = styled.div`
   ${breakpoints.phoneAndAbove(`
     flex-direction: row;
     flex-wrap: wrap;
-    justify-content: space-between;
+    justify-content: flex-start;
   `)}
 `;
 

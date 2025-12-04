@@ -54,17 +54,17 @@ export type AppConfig = {
     wethToken: TokenConfig;
     ohmToken: TokenConfig;
     templeGoldToken: TokenConfig; // TODO: Contract as a property
-    templeGoldTokenBerachain: TokenConfig;
-    spiceTokenBerachain: TokenConfig;
-    templeGoldTokenArbitrum: TokenConfig;
-    spiceTokenArbitrum: TokenConfig;
+    templeGoldTokenBerachain?: TokenConfig;
+    spiceTokenBerachain?: TokenConfig;
+    templeGoldTokenArbitrum?: TokenConfig;
+    spiceTokenArbitrum?: TokenConfig;
   };
   contracts: {
     templeGoldStaking: ContractConfig<Contract>;
     daiGoldAuction: ContractConfig<Contract>;
     templeGold: ContractConfig<Contract>;
-    templeGoldBerachain: ContractConfig<Contract>;
-    templeGoldArbitrum: ContractConfig<Contract>;
+    templeGoldBerachain?: ContractConfig<Contract>;
+    templeGoldArbitrum?: ContractConfig<Contract>;
     tlc: ContractConfig<Contract>;
     trv: ContractConfig<Contract>;
     daiCircuitBreaker: ContractConfig<Contract>;
