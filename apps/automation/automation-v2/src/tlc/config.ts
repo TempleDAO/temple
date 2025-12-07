@@ -21,6 +21,6 @@ export const TLC_BATCH_LIQUIDATE_CONFIG: TlcBatchLiquidateConfig = {
   MIN_ETH_BALANCE_WARNING: parseEther('0.1'),
   GAS_LIMIT: 1_000_000n,
   SUBGRAPH_URL:
-    'https://subgraph.satsuma-prod.com/a912521dd162/templedao/tlc-liquidations-mainnet/api',
+    'https://api.goldsky.com/api/public/project_cmgzm4q1q009c5np2angrczxw/subgraphs/tlc-liquidations-mainnet/prod/gn',
   SUBGRAPH_RETRY_LIMIT: 3,
 };

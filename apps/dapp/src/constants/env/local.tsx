@@ -67,16 +67,16 @@ const env: Environment = {
   subgraph: {
     templeCore: 'http://localhost:8000/subgraphs/name/templedao-core',
     protocolMetrics:
-      'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-metrics/version/v0.1.4/api',
+      'https://api.goldsky.com/api/public/project_cmgzm4q1q009c5np2angrczxw/subgraphs/temple-metrics/prod/gn',
     protocolMetricsArbitrum:
       'https://api.studio.thegraph.com/query/76011/temple-metrics-arbitrum/version/latest',
     balancerV2: `https://gateway.thegraph.com/api/${BALANCER_SUBGRAPH_API_KEY}/subgraphs/id/C4ayEZP2yTXRAB8vSaTrgN4m9anTe9Mdm2ViyiAuV9TV`,
     ramos:
-      'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-ramos/api',
+      'https://api.goldsky.com/api/public/project_cmgzm4q1q009c5np2angrczxw/subgraphs/temple-ramos/prod/gn',
     templeV2:
-      'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-v2-mainnet/api',
+      'https://api.goldsky.com/api/public/project_cmgzm4q1q009c5np2angrczxw/subgraphs/temple-v2-mainnet/prod/gn',
     templeV2Balances:
-      'https://subgraph.satsuma-prod.com/a912521dd162/templedao/temple-v2-balances/api',
+      'https://api.goldsky.com/api/public/project_cmgzm4q1q009c5np2angrczxw/subgraphs/temple-v2-balances/prod/gn',
     spiceBazaar: {
       eth: '',
       bera: '',
