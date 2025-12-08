@@ -22,6 +22,7 @@ import { SpiceAuctionInfo } from 'providers/SpiceAuctionProvider';
 import { useQuery } from '@tanstack/react-query';
 import { useWallet } from 'providers/WalletProvider';
 import { getAppConfig } from 'constants/newenv';
+import { formatNumberFixedDecimals } from 'utils/formatter';
 
 // Custom hook for auction-specific user metrics
 export const useAuctionUserMetrics = (
@@ -106,6 +107,15 @@ const AuctionCard = ({
           )}
         </AuctionStatus>
       </StatusBody>
+      <PriceRatio>
+        <PriceRatioValue>
+          1 {auction.auctionTokenSymbol} ={' '}
+          {auction.priceRatio < 0.001
+            ? '<0.001'
+            : formatNumberFixedDecimals(auction.priceRatio, 3)}{' '}
+          TGLD
+        </PriceRatioValue>
+      </PriceRatio>
       <ButtonsContainer>
         <TradeButton
           onClick={() => navigate(`details/${auction.address}`)}
@@ -591,4 +601,21 @@ const NoAuctions = styled.div`
   background: ${({ theme }) => theme.palette.gradients.grey};
   border-radius: 10px;
   border: 1px solid ${({ theme }) => theme.palette.brand};
+`;
+
+const PriceRatio = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  gap: 8px;
+`;
+
+const PriceRatioValue = styled.p`
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 19px;
+  text-align: center;
+  color: ${({ theme }) => theme.palette.gold};
+  margin: 0px;
 `;

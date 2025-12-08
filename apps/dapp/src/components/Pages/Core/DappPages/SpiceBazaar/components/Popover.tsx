@@ -81,7 +81,10 @@ const Wrapper = styled.div<{ isOpen: boolean }>`
   z-index: 20;
   padding-bottom: 32px;
   flex-direction: column;
-  // height: 707px;
+  max-height: 100vh; /* Fallback for older browsers */
+  max-height: 100dvh; /* Dynamic viewport height - adjusts when keyboard appears */
+  max-width: 100vw;
+  overflow-y: auto;
   box-shadow: 0 0 4rem rgba(0, 0, 0, 0.8);
   border-radius: 10px;
   border: 1px solid ${({ theme }) => theme.palette.brand};
