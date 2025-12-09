@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
 import expandLess from 'assets/icons/mobile_expand_less.svg?react';
 import expandMore from 'assets/icons/mobile_expand_more.svg?react';
+import { createPortal } from 'react-dom';
 
 interface NavCellProps {
   selected: boolean;
@@ -94,25 +95,28 @@ export const MobileTopNav = (props: TopNavProps) => {
                 </StyledIconWrapper>
               )} */}
             </NavCell>
-            {item.options && openDropdownIndex === index && (
-              <Dropdown
-                ref={dropdownRef}
-                style={{
-                  top: `${dropdownPosition.top}px`,
-                  left: `${dropdownPosition.left}px`,
-                }}
-              >
-                {item.options.map((option) => (
-                  <DropdownItem
-                    key={option.label}
-                    onClick={() => handleOptionClick(option)}
-                    isSelected={location.pathname === option.path}
-                  >
-                    {option.label}
-                  </DropdownItem>
-                ))}
-              </Dropdown>
-            )}
+            {item.options &&
+              openDropdownIndex === index &&
+              createPortal(
+                <Dropdown
+                  ref={dropdownRef}
+                  style={{
+                    top: `${dropdownPosition.top}px`,
+                    left: `${dropdownPosition.left}px`,
+                  }}
+                >
+                  {item.options.map((option) => (
+                    <DropdownItem
+                      key={option.label}
+                      onClick={() => handleOptionClick(option)}
+                      isSelected={location.pathname === option.path}
+                    >
+                      {option.label}
+                    </DropdownItem>
+                  ))}
+                </Dropdown>,
+                document.body
+              )}
           </NavCellWrapper>
         ))}
       </TopNavContainer>
@@ -127,8 +131,8 @@ const PageContainer = styled.div`
   margin-top: -25px;
   margin-left: -20px;
   margin-right: -20px;
-  // position: relative;
-  // z-index: 1000;
+  position: relative;
+  z-index: 1000;
 `;
 
 const TopNavContainer = styled.div`
@@ -203,7 +207,7 @@ const Dropdown = styled.div`
   left: 0;
   right: auto;
   width: 181px;
-  z-index: 1001;
+  z-index: 9999;
   background: linear-gradient(180deg, #353535 45.25%, #101010 87.55%);
   border-radius: 4px;
   box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.4);
