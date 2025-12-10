@@ -15,6 +15,7 @@ import * as AuctionBase from "@/abi/IAuctionBase";
 import { ExtractAbiFunction, AbiParametersToPrimitiveTypes } from "abitype";
 
 const EMPTY_BYTES32 = "0x0000000000000000000000000000000000000000000000000000000000000000";
+const UINT256_MAX = "115792089237316195423570985008687907853269984665640564039457584007913129639935";
 // avoid hot spots in code when iterating
 const MAX_BACKCHECK_LENGTH = 10;
 
@@ -60,6 +61,24 @@ export async function redeemTempleGold(ctx: TaskContext, params: Params): Promis
     client: pclient
   });
 
+  // Overlord EOA approves spice contract to spend max TGLD if current approval is less than amount
+  async function approveMaxTgld(amount: bigint): Promise<void> {
+    if (amount == BigInt(0)) return;
+    const accounts = await wclient.getAddresses();
+    const currentApproval = await templeGold.read.allowance([accounts[0], params.contracts.spice]);
+    if (amount <= currentApproval) return;
+    const data = encodeFunctionData({
+      abi: TempleGold.ABI,
+      functionName: 'approve',
+      args: [params.contracts.spice, BigInt(UINT256_MAX)],
+    });
+    const tx = { data, to: params.contracts.templeGold };
+    const txr = await transactionManager.submitAndWait(tx);
+
+    ctx.logger.info(`Successfully approved spice auction ${await spice.read.name()} for TGLD spend.
+      <${etherscanTransactionUrl(params.chainId, txr.transactionHash)}>`);
+  }
+
   async function getTotalBidTokenAmount(epochId: bigint) {
     const epochInfo = await auctionBase.read.getEpochInfo([epochId]);
     return epochInfo.totalBidTokenAmount;
@@ -103,6 +122,10 @@ export async function redeemTempleGold(ctx: TaskContext, params: Params): Promis
   // get current epoch and start checking from next eligible epoch
   const currentEpoch = await spice.read.currentEpoch();
   const epochInfo: EpochInfo = await auctionBase.read.getEpochInfo([currentEpoch]);
+
+  // Set approval
+  await approveMaxTgld(epochInfo.totalBidTokenAmount);
+
   let epochId = assertEpochNotEnded(ctx, epochInfo) ? currentEpoch - BigInt(1) : currentEpoch;
   const unredeemedEpochs = await gatherAllUnredeemedEpochs(epochId);
   for (epochId of unredeemedEpochs.sort((a, b) => Number(a-b))) {

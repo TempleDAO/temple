@@ -8,7 +8,7 @@ import { startAuction } from "./stable-gold-auction-start";
 import { checkSignersEthBalance } from "./check-signers-eth-balance";
 import { Client } from "discord.js";
 import { getOnchainTgldAuctionState, updateDiscordSidebarBot } from "./discord-sidebar-auction";
-import { redeemTempleGold } from "./spice-auction-burn-and-notify";
+import { redeemTempleGold as tgldRedemption} from "./spice-auction-burn-and-notify";
 import { getPublicClient } from "@mountainpath9/overlord-viem";
 
 ////////////////////////////
@@ -140,16 +140,31 @@ export async function updateAuctionSidebarBotTask(config: Config, ctx: TaskConte
 }
 
 export async function redeemTempleGoldSepolia(config: Config, ctx: TaskContext) {
-    return redeemTempleGold(ctx, {
+    return tgldRedemption(ctx, {
         chainId: config.chainId,
         signerId: config.stableGoldAuctionSignerId,
         contracts: { spice: config.contracts.TEMPLE_GOLD.SPICE_DAI_TGLD,
             templeGold: config.contracts.TEMPLE_GOLD.TEMPLE_GOLD },
         lastRunTime: kvPersistedValue(ctx, 'sepolia_tgld_redeem_tgld_last_run_time', JB_DATE),
         maxGasPrice: await vars.redeem_tgld_max_gas_price.requireValue(ctx),
-        checkPeriodMs:  await vars.redeem_tgld_check_period_ms.requireValue(ctx),
+        checkPeriodMs: await vars.redeem_tgld_check_period_ms.requireValue(ctx),
         lastCheckTime: kvPersistedValue(ctx, 'sepolia_tgld_redeem_tgld_last_check_time', JB_DATE),
         mint_source_lz_eid: await vars.sepolia_lz_eid.requireValue(ctx),
         mint_chain_id: await vars.mint_chain_id_sepolia.requireValue(ctx),
+    });
+}
+
+export async function redeemTempleGold(config: Config, ctx: TaskContext) {
+    return tgldRedemption(ctx, {
+        chainId: config.chainId,
+        signerId: config.stakingSignerId,
+        contracts: { spice: config.contracts.TEMPLE_GOLD.SPICE_ENA_TGLD,
+            templeGold: config.contracts.TEMPLE_GOLD.TEMPLE_GOLD }, 
+        lastRunTime: kvPersistedValue(ctx, 'tgld_redeem_tgld_last_run_time', JB_DATE),
+        maxGasPrice: await vars.redeem_tgld_max_gas_price.requireValue(ctx),
+        checkPeriodMs: await vars.redeem_tgld_check_period_ms.requireValue(ctx),
+        lastCheckTime: kvPersistedValue(ctx, 'tgld_redeem_tgld_last_check_time', JB_DATE),
+        mint_source_lz_eid: await vars.eth_mainnet_lz_eid.requireValue(ctx),
+        mint_chain_id: await vars.mint_chain_id.requireValue(ctx),
     });
 }

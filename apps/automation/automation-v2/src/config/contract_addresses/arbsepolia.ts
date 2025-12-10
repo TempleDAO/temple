@@ -10,6 +10,7 @@ export const CONTRACTS: ContractAddresses = {
     TEMPLE_GOLD_STAKING: '0x',
     SPICE_AUCTION_FACTORY: '0x',
     SPICE_DAI_TGLD: '0x',
+    SPICE_ENA_TGLD: '0x',
   },
   EXTERNAL: {
     MAKER_DAO: {
