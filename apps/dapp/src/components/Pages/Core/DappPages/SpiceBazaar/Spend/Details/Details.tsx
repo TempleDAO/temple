@@ -21,6 +21,7 @@ import Loader from 'components/Loader/Loader';
 import { DEVMODE_QUERY_PARAM } from '../../Bid';
 import { useAuctionUserMetrics } from 'components/Pages/Core/DappPages/SpiceBazaar/Spend';
 import { useWallet } from 'providers/WalletProvider';
+import { formatNumberWithCommasAndDecimals } from 'utils/formatter';
 
 export const Details = () => {
   // get the address from the path
@@ -236,7 +237,11 @@ export const Details = () => {
                           <>
                             <StatusTitle>Amount Submitted</StatusTitle>
                             <StatusValue>
-                              {auction?.totalBidTokenAmount} TGLD
+                              {formatNumberWithCommasAndDecimals(
+                                auction?.totalBidTokenAmount || 0,
+                                0
+                              )}{' '}
+                              TGLD
                             </StatusValue>
                           </>
                         )}

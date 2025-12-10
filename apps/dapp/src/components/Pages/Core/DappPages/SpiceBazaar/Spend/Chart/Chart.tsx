@@ -77,7 +77,7 @@ export const Chart = ({ auctionAddress }: ChartProps) => {
         yTickFormatter={(val: any) =>
           `$${formatNumberAbbreviated(val).number.toFixed(2)}`
         }
-        tooltipLabelFormatter={() => 'Auction ID'}
+        tooltipLabelFormatter={(value: any) => value}
         tooltipValuesFormatter={(value: any) => [
           `$${value.toFixed(2)}`,
           'Value',
