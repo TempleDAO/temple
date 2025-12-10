@@ -19,12 +19,14 @@ export const formatNumberWithCommas = (n: number | string): string => {
 };
 
 export const formatNumberWithCommasAndDecimals = (
-  n: number | string
+  n: number | string,
+  decimals = 2
 ): string => {
   if (typeof n === 'string') n = Number(n);
-  return formatNumber(n)
-    .toFixed(2)
-    .replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  const fixed = Number(n).toFixed(decimals);
+  const parts = fixed.split('.');
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return parts.join('.');
 };
 
 export const formatNumberFixedDecimals = (

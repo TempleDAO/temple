@@ -23,7 +23,7 @@ const ENV_VARS = import.meta.env;
 const RPC_KEY = ENV_VARS.VITE_RPC_KEY;
 
 const ETH_SPICE_BAZAAR_SUBGRAPH_URL =
-  'https://api.goldsky.com/api/public/project_cmgzm4q1q009c5np2angrczxw/subgraphs/spice-bazaar-mainnet/prodnet/gn';
+  'https://api.goldsky.com/api/public/project_cmgzm4q1q009c5np2angrczxw/subgraphs/spice-bazaar-mainnet/prod/gn';
 
 // chain config
 const ETH_MAINNET: Chain = {
