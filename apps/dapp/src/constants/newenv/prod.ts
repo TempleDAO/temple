@@ -278,7 +278,7 @@ const prodEnv: AppConfig = {
     spiceAuctions: [
       {
         isActive: true,
-        name: '[TGLD]/[SPICE]',
+        name: 'SPICE',
         chainId: ETH_MAINNET.id,
         auctionTokenSymbol: 'SPICE',
         templeGoldToken: TGLD_TOKEN_ON_ETH_MAINNET,
@@ -288,7 +288,7 @@ const prodEnv: AppConfig = {
       },
       {
         isActive: true,
-        name: '[TGLD]/[ENA]',
+        name: 'ENA',
         chainId: ETH_MAINNET.id,
         auctionTokenSymbol: 'ENA',
         templeGoldToken: TGLD_TOKEN_ON_ETH_MAINNET,
