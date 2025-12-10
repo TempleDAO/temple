@@ -15,7 +15,7 @@ import * as AuctionBase from "@/abi/IAuctionBase";
 import { ExtractAbiFunction, AbiParametersToPrimitiveTypes } from "abitype";
 
 const EMPTY_BYTES32 = "0x0000000000000000000000000000000000000000000000000000000000000000";
-const UINT256_MAX = "115792089237316195423570985008687907853269984665640564039457584007913129639935";
+const UINT256_MAX = (2n ** 256n) - 1n;
 // avoid hot spots in code when iterating
 const MAX_BACKCHECK_LENGTH = 10;
 
@@ -62,21 +62,21 @@ export async function redeemTempleGold(ctx: TaskContext, params: Params): Promis
   });
 
   // Overlord EOA approves spice contract to spend max TGLD if current approval is less than amount
-  async function approveMaxTgld(amount: bigint): Promise<void> {
-    if (amount == BigInt(0)) return;
+  async function approveMaxTgld(): Promise<void> {
     const accounts = await wclient.getAddresses();
     const currentApproval = await templeGold.read.allowance([accounts[0], params.contracts.spice]);
-    if (amount <= currentApproval) return;
-    const data = encodeFunctionData({
-      abi: TempleGold.ABI,
-      functionName: 'approve',
-      args: [params.contracts.spice, BigInt(UINT256_MAX)],
-    });
-    const tx = { data, to: params.contracts.templeGold };
-    const txr = await transactionManager.submitAndWait(tx);
+    if (BigInt(0) == currentApproval) {
+      const data = encodeFunctionData({
+        abi: TempleGold.ABI,
+        functionName: 'approve',
+        args: [params.contracts.spice, BigInt(UINT256_MAX)],
+      });
+      const tx = { data, to: params.contracts.templeGold };
+      const txr = await transactionManager.submitAndWait(tx);
 
-    ctx.logger.info(`Successfully approved spice auction ${await spice.read.name()} for TGLD spend.
-      <${etherscanTransactionUrl(params.chainId, txr.transactionHash)}>`);
+      ctx.logger.info(`Successfully approved spice auction ${await spice.read.name()} for TGLD spend.
+        <${etherscanTransactionUrl(params.chainId, txr.transactionHash)}>`);
+    }
   }
 
   async function getTotalBidTokenAmount(epochId: bigint) {
@@ -124,7 +124,7 @@ export async function redeemTempleGold(ctx: TaskContext, params: Params): Promis
   const epochInfo: EpochInfo = await auctionBase.read.getEpochInfo([currentEpoch]);
 
   // Set approval
-  await approveMaxTgld(epochInfo.totalBidTokenAmount);
+  await approveMaxTgld();
 
   let epochId = assertEpochNotEnded(ctx, epochInfo) ? currentEpoch - BigInt(1) : currentEpoch;
   const unredeemedEpochs = await gatherAllUnredeemedEpochs(epochId);
