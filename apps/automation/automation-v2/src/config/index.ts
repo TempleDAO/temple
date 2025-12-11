@@ -62,7 +62,7 @@ export async function getSubmissionParams(ctx: TaskContext): Promise<TxSubmissio
     t2Secs: 150,
     t2MaxPriorityFeePerGas: t2MaxPriorityFeePerGas?.toScaledBigInt(1n),
 
-    // Wait for another 300s before giving up on cancellation
+    // Wait for another minute before giving up on cancellation
     t3Secs: 210
   }
 }

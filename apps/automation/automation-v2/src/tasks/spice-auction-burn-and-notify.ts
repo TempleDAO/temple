@@ -33,8 +33,8 @@ export interface Params {
   maxGasPrice: BigRational,
   checkPeriodMs: number,
   lastCheckTime: KvPersistedValue<Date>,
-  mint_source_lz_eid: BigInt,
-  mint_chain_id: BigInt
+  mint_source_lz_eid: bigint,
+  mint_chain_id: bigint
 }
 
 export async function burnAndUpdateCirculatingSupply(ctx: TaskContext, params: Params): Promise<TaskResult> {
@@ -62,11 +62,11 @@ export async function burnAndUpdateCirculatingSupply(ctx: TaskContext, params: P
   // Overlord EOA approves spice auction contract to spend max TGLD if current approval is zero
   async function approveMaxTgld(): Promise<void> {
     const currentApproval = await templeGold.read.allowance([wclient.account.address, params.contracts.auction]);
-    if (BigInt(0) == currentApproval) {
+    if (currentApproval == 0n) {
       const data = encodeFunctionData({
         abi: TempleGold.ABI,
         functionName: 'approve',
-        args: [params.contracts.auction, BigInt(maxUint256)],
+        args: [params.contracts.auction, maxUint256],
       });
       const tx = { data, to: params.contracts.templeGold };
       const txr = await transactionManager.submitAndWait(tx);
