@@ -5,12 +5,11 @@ import { TLC_BATCH_LIQUIDATE_CONFIG } from '@/tlc/config';
 
 import { getConfig } from "@/config";
 import { taskExceptionHandler } from "./utils/task-exceptions";
-import * as vars from "./config/variables";
 import {
   distributeStakingRewards, startStableGoldAuction, checkSignersBalance, updateAuctionSidebarBotTask,
   startSepoliaStableGoldAuction, distributeSepoliaStakingRewards, checkSepoliaSignersBalance,
-  redeemTempleGoldSepolia,
-  redeemTempleGold
+  burnAndUpdateCirculatingSupplySepolia,
+  burnAndUpdateCirculatingSupply
 } from "./tasks";
 import { startSidebarBot } from "./tasks/discord-sidebar-auction";
 
@@ -61,7 +60,7 @@ async function main() {
   runner.addPeriodicTask({
     id: 'redeem-tgld',
     cronSchedule: '0 */8 * * *', // once every 8 hours
-    action: async (ctx, _time) => redeemTempleGold(config, ctx)
+    action: async (ctx, _time) => burnAndUpdateCirculatingSupply(config, ctx)
   });
 
   // Seploia tasks
@@ -89,7 +88,7 @@ async function main() {
   runner.addPeriodicTask({
     id: 'redeem-tgld-sepolia',
     cronSchedule: '0 */8 * * *', // once every 8 hours
-    action: async (ctx, _time) => redeemTempleGoldSepolia(sepoliaConfig, ctx)
+    action: async (ctx, _time) => burnAndUpdateCirculatingSupplySepolia(sepoliaConfig, ctx)
   });
 
   runner.main();

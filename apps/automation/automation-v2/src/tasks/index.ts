@@ -8,7 +8,7 @@ import { startAuction } from "./stable-gold-auction-start";
 import { checkSignersEthBalance } from "./check-signers-eth-balance";
 import { Client } from "discord.js";
 import { getOnchainTgldAuctionState, updateDiscordSidebarBot } from "./discord-sidebar-auction";
-import { redeemTempleGold as tgldRedemption} from "./spice-auction-burn-and-notify";
+import { burnAndUpdateCirculatingSupply as burnTempleGold } from "./spice-auction-burn-and-notify";
 import { getPublicClient } from "@mountainpath9/overlord-viem";
 
 ////////////////////////////
@@ -19,7 +19,7 @@ export async function daiGoldAuctionDistributeGold(config: Config, ctx: TaskCont
     return distributeGold(ctx, {
         chainId: config.chainId,
         signerId: config.stableGoldAuctionSignerId,
-        contracts: { stableGoldAuction: config.contracts.TEMPLE_GOLD.STABLE_GOLD_AUCTION, 
+        contracts: { auction: config.contracts.TEMPLE_GOLD.AUCTIONS.BID_FOR_TGLD, 
             templeGold: config.contracts.TEMPLE_GOLD.TEMPLE_GOLD, staking: config.contracts.TEMPLE_GOLD.TEMPLE_GOLD_STAKING },
         lastRunTime: kvPersistedValue(ctx, 'daigoldauction_distribute_gold_last_run_time', JB_DATE),
         maxGasPrice: await vars.stablegoldauction_start_auction_max_gas_price.requireValue(ctx),
@@ -32,8 +32,7 @@ export async function distributeStakingRewards(config: Config, ctx: TaskContext)
     return stakingDistributeRewards(ctx, {
         signerId: config.stakingSignerId,
         chainId: config.chainId,
-        contracts: { stableGoldAuction: config.contracts.TEMPLE_GOLD.STABLE_GOLD_AUCTION,
-            staking: config.contracts.TEMPLE_GOLD.TEMPLE_GOLD_STAKING, templeGold: config.contracts.TEMPLE_GOLD.TEMPLE_GOLD },
+        contracts: { staking: config.contracts.TEMPLE_GOLD.TEMPLE_GOLD_STAKING, templeGold: config.contracts.TEMPLE_GOLD.TEMPLE_GOLD },
         lastRunTime: kvPersistedValue(ctx, 'tgld_staking_distribute_rewards_last_run_time', JB_DATE),
         maxGasPrice: await vars.staking_distribute_rewards_max_gas_price.requireValue(ctx),
         checkPeriodFinish: true,
@@ -46,8 +45,7 @@ export async function distributeSepoliaStakingRewards(config: Config, ctx: TaskC
     return stakingDistributeRewards(ctx, {
         signerId: config.stakingSignerId,
         chainId: config.chainId,
-        contracts: { stableGoldAuction: config.contracts.TEMPLE_GOLD.STABLE_GOLD_AUCTION,
-            staking: config.contracts.TEMPLE_GOLD.TEMPLE_GOLD_STAKING, templeGold: config.contracts.TEMPLE_GOLD.TEMPLE_GOLD },
+        contracts: { staking: config.contracts.TEMPLE_GOLD.TEMPLE_GOLD_STAKING, templeGold: config.contracts.TEMPLE_GOLD.TEMPLE_GOLD },
         lastRunTime: kvPersistedValue(ctx, 'sepolia_tgld_staking_distribute_rewards_last_run_time', JB_DATE),
         maxGasPrice: await vars.sepolia_tgld_max_gas_price.requireValue(ctx),
         checkPeriodFinish: true,
@@ -60,7 +58,7 @@ export async function startStableGoldAuction(config: Config, ctx: TaskContext) {
     return startAuction(ctx, {
         chainId: config.chainId,
         signerId: config.stableGoldAuctionSignerId,
-        contracts: { stableGoldAuction: config.contracts.TEMPLE_GOLD.STABLE_GOLD_AUCTION },
+        contracts: { auction: config.contracts.TEMPLE_GOLD.AUCTIONS.BID_FOR_TGLD },
         lastRunTime: kvPersistedValue(ctx, 'tgld_start_daigold_auction_last_run_time', JB_DATE),
         maxGasPrice: await vars.stablegoldauction_start_auction_max_gas_price.requireValue(ctx),
         checkPeriodMs:  await vars.start_stable_gold_auction_check_period_ms.requireValue(ctx),
@@ -72,7 +70,7 @@ export async function startSepoliaStableGoldAuction(config: Config, ctx: TaskCon
     return startAuction(ctx, {
         chainId: config.chainId,
         signerId: config.stableGoldAuctionSignerId,
-        contracts: { stableGoldAuction: config.contracts.TEMPLE_GOLD.STABLE_GOLD_AUCTION },
+        contracts: { auction: config.contracts.TEMPLE_GOLD.AUCTIONS.BID_FOR_TGLD },
         lastRunTime: kvPersistedValue(ctx, 'sepolia_tgld_start_daigold_auction_last_run_time', JB_DATE),
         maxGasPrice: await vars.sepolia_tgld_max_gas_price.requireValue(ctx),
         checkPeriodMs:  await vars.start_stable_gold_auction_check_period_ms.requireValue(ctx),
@@ -130,7 +128,7 @@ export async function updateAuctionSidebarBotTask(config: Config, ctx: TaskConte
     }
     const chain = chainFromId(config.chainId);
     const pclient = await getPublicClient(ctx, chain);
-    const getTgldAuctionState = () => getOnchainTgldAuctionState(config.contracts.TEMPLE_GOLD.STABLE_GOLD_AUCTION, pclient)
+    const getTgldAuctionState = () => getOnchainTgldAuctionState(config.contracts.TEMPLE_GOLD.AUCTIONS.BID_FOR_TGLD, pclient)
 
     await updateDiscordSidebarBot({
         bot, getTgldAuctionState, logger: ctx.logger
@@ -139,32 +137,32 @@ export async function updateAuctionSidebarBotTask(config: Config, ctx: TaskConte
     return taskSuccessSilent();
 }
 
-export async function redeemTempleGoldSepolia(config: Config, ctx: TaskContext) {
-    return tgldRedemption(ctx, {
+export async function burnAndUpdateCirculatingSupplySepolia(config: Config, ctx: TaskContext) {
+    return burnTempleGold(ctx, {
         chainId: config.chainId,
         signerId: config.stableGoldAuctionSignerId,
-        contracts: { spice: config.contracts.TEMPLE_GOLD.SPICE_DAI_TGLD,
+        contracts: { auction: config.contracts.TEMPLE_GOLD.AUCTIONS.BID_FOR_SPICE.DAI,
             templeGold: config.contracts.TEMPLE_GOLD.TEMPLE_GOLD },
         lastRunTime: kvPersistedValue(ctx, 'sepolia_tgld_redeem_tgld_last_run_time', JB_DATE),
         maxGasPrice: await vars.redeem_tgld_max_gas_price.requireValue(ctx),
         checkPeriodMs: await vars.redeem_tgld_check_period_ms.requireValue(ctx),
         lastCheckTime: kvPersistedValue(ctx, 'sepolia_tgld_redeem_tgld_last_check_time', JB_DATE),
-        mint_source_lz_eid: await vars.sepolia_lz_eid.requireValue(ctx),
-        mint_chain_id: await vars.mint_chain_id_sepolia.requireValue(ctx),
+        mint_source_lz_eid: BigInt(await vars.sepolia_lz_eid.requireValue(ctx)),
+        mint_chain_id: BigInt(await vars.mint_chain_id_sepolia.requireValue(ctx)),
     });
 }
 
-export async function redeemTempleGold(config: Config, ctx: TaskContext) {
-    return tgldRedemption(ctx, {
+export async function burnAndUpdateCirculatingSupply(config: Config, ctx: TaskContext) {
+    return burnTempleGold(ctx, {
         chainId: config.chainId,
         signerId: config.stakingSignerId,
-        contracts: { spice: config.contracts.TEMPLE_GOLD.SPICE_ENA_TGLD,
+        contracts: { auction: config.contracts.TEMPLE_GOLD.AUCTIONS.BID_FOR_SPICE.ENA,
             templeGold: config.contracts.TEMPLE_GOLD.TEMPLE_GOLD }, 
         lastRunTime: kvPersistedValue(ctx, 'tgld_redeem_tgld_last_run_time', JB_DATE),
         maxGasPrice: await vars.redeem_tgld_max_gas_price.requireValue(ctx),
         checkPeriodMs: await vars.redeem_tgld_check_period_ms.requireValue(ctx),
         lastCheckTime: kvPersistedValue(ctx, 'tgld_redeem_tgld_last_check_time', JB_DATE),
-        mint_source_lz_eid: await vars.eth_mainnet_lz_eid.requireValue(ctx),
-        mint_chain_id: await vars.mint_chain_id.requireValue(ctx),
+        mint_source_lz_eid: BigInt(await vars.eth_mainnet_lz_eid.requireValue(ctx)),
+        mint_chain_id: BigInt(await vars.mint_chain_id.requireValue(ctx)),
     });
 }

@@ -3,19 +3,17 @@ import { KvPersistedValue } from "@/utils/kv";
 import { TaskContext, TaskResult,
   taskSuccess, taskSuccessSilent } from "@mountainpath9/overlord-core";
 import { getPublicClient, getWalletClient, createTransactionManager, PublicClient } from "@mountainpath9/overlord-viem";
-import { chainFromId, TX_SUBMISSION_PARAMS } from "@/config";
+import { chainFromId, getSubmissionParams } from "@/config";
 import { postDefconNotification } from "@/utils/discord";
 import { etherscanTransactionUrl } from "@/utils/etherscan";
 import { delayUntilNextCheckTime } from "@/utils/task-checks";
-import { BigNumberish } from "ethers";
-import { Address, encodeFunctionData, getContract } from "viem";
+import { Address, encodeFunctionData, getContract, maxUint256 } from "viem";
 import * as Spice from "@/abi/ISpiceAuction";
 import * as TempleGold from "@/abi/ITempleGold";
 import * as AuctionBase from "@/abi/IAuctionBase";
 import { ExtractAbiFunction, AbiParametersToPrimitiveTypes } from "abitype";
 
 const EMPTY_BYTES32 = "0x0000000000000000000000000000000000000000000000000000000000000000";
-const UINT256_MAX = (2n ** 256n) - 1n;
 // avoid hot spots in code when iterating
 const MAX_BACKCHECK_LENGTH = 10;
 
@@ -30,29 +28,29 @@ export const taskIdPrefix = 'tgldspiceauction-a-';
 export interface Params {
   signerId: string,
   chainId: number,
-  contracts: { spice: Address, templeGold: Address },
+  contracts: { auction: Address, templeGold: Address },
   lastRunTime: KvPersistedValue<Date>;
   maxGasPrice: BigRational,
   checkPeriodMs: number,
   lastCheckTime: KvPersistedValue<Date>,
-  mint_source_lz_eid: BigNumberish,
-  mint_chain_id: BigNumberish
+  mint_source_lz_eid: BigInt,
+  mint_chain_id: BigInt
 }
 
-export async function redeemTempleGold(ctx: TaskContext, params: Params): Promise<TaskResult> {
+export async function burnAndUpdateCirculatingSupply(ctx: TaskContext, params: Params): Promise<TaskResult> {
   const chain = chainFromId(params.chainId);
   const pclient = await getPublicClient(ctx, chain);
   const wclient = await getWalletClient(ctx, chain, params.signerId);
-  const transactionManager = await createTransactionManager(ctx, wclient, {...TX_SUBMISSION_PARAMS});
+  const transactionManager = await createTransactionManager(ctx, wclient, {...await getSubmissionParams(ctx)});
 
-  const spice = getContract({
-    address: params.contracts.spice,
+  const auction = getContract({
+    address: params.contracts.auction,
     abi: Spice.ABI,
     client: pclient
   });
   const auctionBase = getContract({
     abi: AuctionBase.ABI,
-    address: params.contracts.spice,
+    address: params.contracts.auction,
     client: pclient
   });
   const templeGold = getContract({
@@ -61,20 +59,19 @@ export async function redeemTempleGold(ctx: TaskContext, params: Params): Promis
     client: pclient
   });
 
-  // Overlord EOA approves spice contract to spend max TGLD if current approval is less than amount
+  // Overlord EOA approves spice auction contract to spend max TGLD if current approval is zero
   async function approveMaxTgld(): Promise<void> {
-    const accounts = await wclient.getAddresses();
-    const currentApproval = await templeGold.read.allowance([accounts[0], params.contracts.spice]);
+    const currentApproval = await templeGold.read.allowance([wclient.account.address, params.contracts.auction]);
     if (BigInt(0) == currentApproval) {
       const data = encodeFunctionData({
         abi: TempleGold.ABI,
         functionName: 'approve',
-        args: [params.contracts.spice, BigInt(UINT256_MAX)],
+        args: [params.contracts.auction, BigInt(maxUint256)],
       });
       const tx = { data, to: params.contracts.templeGold };
       const txr = await transactionManager.submitAndWait(tx);
 
-      ctx.logger.info(`Successfully approved spice auction ${await spice.read.name()} for TGLD spend.
+      ctx.logger.info(`Successfully approved spice auction ${await auction.read.name()} for TGLD spend.
         <${etherscanTransactionUrl(params.chainId, txr.transactionHash)}>`);
     }
   }
@@ -89,11 +86,11 @@ export async function redeemTempleGold(ctx: TaskContext, params: Params): Promis
     let epochId = sinceEpochId;
     let counter = 0;
     while (epochId > 0n) {
-      const redeemed = await spice.read.redeemedEpochs([epochId]);
+      const redeemed = await auction.read.redeemedEpochs([epochId]);
       if (!redeemed){
         // check auction token is TGLD
         let auctionTokenIsTgld = false;
-        const auctionConfig = await spice.read.getAuctionConfig([epochId]);
+        const auctionConfig = await auction.read.getAuctionConfig([epochId]);
         if (auctionConfig.isTempleGoldAuctionToken) {
           ctx.logger.info(`Auction token is TGLD for this epoch ${epochId}`);
           auctionTokenIsTgld = true;
@@ -120,7 +117,7 @@ export async function redeemTempleGold(ctx: TaskContext, params: Params): Promis
   if (await assertMaxGasPriceNotExceeded(ctx, params, pclient)) { return taskSuccessSilent(); }
 
   // get current epoch and start checking from next eligible epoch
-  const currentEpoch = await spice.read.currentEpoch();
+  const currentEpoch = await auction.read.currentEpoch();
   const epochInfo: EpochInfo = await auctionBase.read.getEpochInfo([currentEpoch]);
 
   // Set approval
@@ -132,7 +129,7 @@ export async function redeemTempleGold(ctx: TaskContext, params: Params): Promis
     // add gas fee if not on mainnet (source TGLD chain)
     let overrides = { value: 0n };
     console.log(`ChainId: ${params.chainId}, mint source: ${params.mint_chain_id}`);
-    if (params.chainId != params.mint_chain_id) {
+    if (BigInt(params.chainId) != params.mint_chain_id) {
       const totalBidTokenAmount = await getTotalBidTokenAmount(epochId);
       // get send quote
       const sendParam: SendParamOptions = {
@@ -152,10 +149,10 @@ export async function redeemTempleGold(ctx: TaskContext, params: Params): Promis
       functionName: 'burnAndNotify',
       args: [epochId, false],
     });
-    const tx = { ...overrides, data, to: params.contracts.spice };
+    const tx = { ...overrides, data, to: params.contracts.auction };
     const txr = await transactionManager.submitAndWait(tx);
 
-    ctx.logger.info(`Successfully redeemed TGLD for spice auction ${await spice.read.name()} for epoch ${epochId}`);
+    ctx.logger.info(`Successfully redeemed TGLD for spice auction ${await auction.read.name()} for epoch ${epochId}`);
 
     const message = `_transaction_: <${etherscanTransactionUrl(params.chainId, txr.transactionHash)}>`;
     if (await postDefconNotification('defcon5', message, ctx)) {
