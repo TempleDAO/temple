@@ -8,7 +8,7 @@ import { checkSignersEthBalance } from "./tasks/check-signers-eth-balance";
 import * as vars from "@/config/variables";
 import { JB_BIGRATIONAL, JB_DATE, kvPersistedValue } from "@/utils/kv";
 import * as stakingDistributeRewardsa from "./tasks/staking-distribute-rewards";
-import * as templeGoldRedeem from "./tasks/spice-auction-burn-and-notify";
+import * as burnAndNotify from "./tasks/spice-auction-burn-and-notify";
 import { startSidebarBot } from "./tasks/discord-sidebar-auction";
 import { updateAuctionSidebarBotTask } from "./tasks";
 
@@ -38,7 +38,7 @@ async function main() {
     });
 
     runner.addWebhookTask({
-        id: templeGoldRedeem.taskIdPrefix + 'redeem',
+        id: burnAndNotify.taskIdPrefix + 'burn-and-notify',
         action: (ctx) => burnTempleGold(config, ctx),
     });
 
@@ -118,15 +118,15 @@ export async function stakingDistributeRewards(config: Config, ctx: TaskContext)
 }
 
 export async function burnTempleGold(config: Config, ctx: TaskContext) {
-    return templeGoldRedeem.burnAndUpdateCirculatingSupply(ctx, {
+    return burnAndNotify.burnAndUpdateCirculatingSupply(ctx, {
         chainId: config.chainId,
         signerId: config.stableGoldAuctionSignerId,
         contracts: { auction: config.contracts.TEMPLE_GOLD.AUCTIONS.BID_FOR_SPICE.DAI,
             templeGold: config.contracts.TEMPLE_GOLD.TEMPLE_GOLD },
-        lastRunTime: kvPersistedValue(ctx, 'tgld_redeem_tgld_last_run_time', JB_DATE),
+        lastRunTime: kvPersistedValue(ctx, 'tgld_burn_tgld_last_run_time', JB_DATE),
         maxGasPrice: await vars.sepolia_tgld_max_gas_price.requireValue(ctx),
-        checkPeriodMs:  await vars.redeem_tgld_check_period_ms.requireValue(ctx),
-        lastCheckTime: kvPersistedValue(ctx, 'tgld_redeem_tgld_last_check_time', JB_DATE),
+        checkPeriodMs:  await vars.burn_tgld_check_period_ms.requireValue(ctx),
+        lastCheckTime: kvPersistedValue(ctx, 'tgld_burn_tgld_last_check_time', JB_DATE),
         mint_source_lz_eid: BigInt(await vars.eth_mainnet_lz_eid.requireValue(ctx)),
         mint_chain_id: BigInt(await vars.mint_chain_id.requireValue(ctx)),
     });

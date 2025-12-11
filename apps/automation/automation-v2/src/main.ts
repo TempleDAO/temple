@@ -58,7 +58,7 @@ async function main() {
   
   // burn and notify TGLD for redemption
   runner.addPeriodicTask({
-    id: 'redeem-tgld',
+    id: 'burn-and-notify-tgld',
     cronSchedule: '0 */8 * * *', // once every 8 hours
     action: async (ctx, _time) => burnAndUpdateCirculatingSupply(config, ctx)
   });
@@ -86,7 +86,7 @@ async function main() {
 
   // burn and notify TGLD for redemption
   runner.addPeriodicTask({
-    id: 'redeem-tgld-sepolia',
+    id: 'burn-and-notify-tgld-sepolia',
     cronSchedule: '0 */8 * * *', // once every 8 hours
     action: async (ctx, _time) => burnAndUpdateCirculatingSupplySepolia(sepoliaConfig, ctx)
   });

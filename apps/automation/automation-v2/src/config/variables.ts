@@ -123,17 +123,17 @@ export const webhook_url = new StringVariable({
   isSecret: true,
 });
 
-export const redeem_tgld_max_gas_price = new BigRationalVariable({
-    name: 'redeem_tgld_max_gas_price',
-    description: 'Max gas price for redeeming TGLD after auction',
+export const burn_tgld_max_gas_price = new BigRationalVariable({
+    name: 'burn_tgld_max_gas_price',
+    description: 'Max gas price for burning TGLD after auction',
     default: 0.2,
     min: 0,
     max: 2
 });
 
-export const redeem_tgld_check_period_ms = new NumberVariable({
-    name: 'redeem_tgld_check_period_ms ',
-    description: 'How many milliseconds to wait between redeem TGLD checks.',
+export const burn_tgld_check_period_ms = new NumberVariable({
+    name: 'burn_tgld_check_period_ms ',
+    description: 'How many milliseconds to wait between burn TGLD checks.',
     default: 1000 * 1200,
     min: 1000 * 600,
 });

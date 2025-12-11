@@ -81,13 +81,13 @@ export async function burnAndUpdateCirculatingSupply(ctx: TaskContext, params: P
     return epochInfo.totalBidTokenAmount;
   }
 
-  async function gatherAllUnredeemedEpochs(sinceEpochId: bigint){
-    const unredeemedEpochs: bigint[] = [];
+  async function gatherAllUnnotifiedEpochs(sinceEpochId: bigint){
+    const unnotifiedEpochs: bigint[] = [];
     let epochId = sinceEpochId;
     let counter = 0;
     while (epochId > 0n) {
-      const redeemed = await auction.read.redeemedEpochs([epochId]);
-      if (!redeemed){
+      const notified = await auction.read.redeemedEpochs([epochId]);
+      if (!notified){
         // check auction token is TGLD
         let auctionTokenIsTgld = false;
         const auctionConfig = await auction.read.getAuctionConfig([epochId]);
@@ -95,11 +95,11 @@ export async function burnAndUpdateCirculatingSupply(ctx: TaskContext, params: P
           ctx.logger.info(`Auction token is TGLD for this epoch ${epochId}`);
           auctionTokenIsTgld = true;
         }
-        // skip auctions with 0 bids. admin recovers and redeems these ones in single transaction
+        // skip auctions with 0 bids. admin recovers and pulls spice tokens in single transaction
         const totalBidTokenAmount = await getTotalBidTokenAmount(epochId);
         const totalBidAmountIsZero = assertTotalBidAmountNotZero(ctx, totalBidTokenAmount, Number(epochId));
         if (!auctionTokenIsTgld && !totalBidAmountIsZero) {
-          unredeemedEpochs.push(epochId);
+          unnotifiedEpochs.push(epochId);
         }
       }
       epochId -= 1n;
@@ -108,7 +108,7 @@ export async function burnAndUpdateCirculatingSupply(ctx: TaskContext, params: P
         break;
       }
     }
-    return unredeemedEpochs;
+    return unnotifiedEpochs;
   }
 
   // check last run time
@@ -124,8 +124,8 @@ export async function burnAndUpdateCirculatingSupply(ctx: TaskContext, params: P
   await approveMaxTgld();
 
   let epochId = assertEpochNotEnded(ctx, epochInfo) ? currentEpoch - BigInt(1) : currentEpoch;
-  const unredeemedEpochs = await gatherAllUnredeemedEpochs(epochId);
-  for (epochId of unredeemedEpochs.sort((a, b) => Number(a-b))) {
+  const unnotifiedEpochs = await gatherAllUnnotifiedEpochs(epochId);
+  for (epochId of unnotifiedEpochs.sort((a, b) => Number(a-b))) {
     // add gas fee if not on mainnet (source TGLD chain)
     let overrides = { value: 0n };
     console.log(`ChainId: ${params.chainId}, mint source: ${params.mint_chain_id}`);
@@ -152,7 +152,7 @@ export async function burnAndUpdateCirculatingSupply(ctx: TaskContext, params: P
     const tx = { ...overrides, data, to: params.contracts.auction };
     const txr = await transactionManager.submitAndWait(tx);
 
-    ctx.logger.info(`Successfully redeemed TGLD for spice auction ${await auction.read.name()} for epoch ${epochId}`);
+    ctx.logger.info(`Successfully burned TGLD for spice auction ${await auction.read.name()} for epoch ${epochId}`);
 
     const message = `_transaction_: <${etherscanTransactionUrl(params.chainId, txr.transactionHash)}>`;
     if (await postDefconNotification('defcon5', message, ctx)) {
