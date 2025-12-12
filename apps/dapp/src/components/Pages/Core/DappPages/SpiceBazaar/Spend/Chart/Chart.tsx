@@ -2,7 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 import styled from 'styled-components';
 import CustomBarChart from './BarChart';
 import Loader from 'components/Loader/Loader';
-import { formatNumberAbbreviated } from 'utils/formatter';
+import {
+  formatNumberAbbreviated,
+  formatNumberFixedDecimals,
+} from 'utils/formatter';
 import { InputSelect, Option } from '../../components/InputSelector';
 import * as breakpoints from 'styles/breakpoints';
 import { useClosingPriceHistory } from '../hooks/use-closing-price-history';
@@ -74,12 +77,11 @@ export const Chart = ({ auctionAddress }: ChartProps) => {
         xDataKey="date"
         yDataKey="value"
         xTickFormatter={(val: any) => val}
-        yTickFormatter={(val: any) =>
-          `$${formatNumberAbbreviated(val).number.toFixed(2)}`
-        }
-        tooltipLabelFormatter={() => 'Auction ID'}
+        tooltipLabelFormatter={(value: any) => value}
         tooltipValuesFormatter={(value: any) => [
-          `$${value.toFixed(2)}`,
+          `${
+            typeof value === 'number' ? formatNumberFixedDecimals(value, 2) : 0
+          } TGLD`,
           'Value',
         ]}
         xAxisTitle="Auction end date"

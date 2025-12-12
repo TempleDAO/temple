@@ -151,7 +151,6 @@ const Content = styled.div`
   flex-direction: column;
   gap: 60px;
   position: relative;
-  z-index: 0;
 `;
 
 const AllSpices = styled(allSpices)`

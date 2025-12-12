@@ -66,6 +66,12 @@ export const Input = ({
         event.preventDefault();
         return;
       }
+      // cap decimal places to 18 (ERC20 standard precision)
+      const parts = val.split('.');
+      if (parts.length === 2 && parts[1].length > 18) {
+        event.preventDefault();
+        return;
+      }
     }
     handleChange(val);
   };
