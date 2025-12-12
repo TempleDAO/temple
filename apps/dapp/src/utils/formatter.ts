@@ -89,21 +89,23 @@ export const formatNumberAbbreviated = (number: number) => {
       : number.toLocaleString('en-US');
 
   const thousandsSeparatorCount = localeFormatted.split(',').length - 1;
-  const shortenedString = localeFormatted.slice(0, 5);
 
   if (thousandsSeparatorCount > 0) {
+    const scaledNumber = number / Math.pow(1000, thousandsSeparatorCount);
+    const numericValue = parseFloat(scaledNumber.toFixed(3));
+    const displayString =
+      scaledNumber.toFixed(3).replace('.', ',') +
+      abbreviations[thousandsSeparatorCount - 1];
     return {
-      number: parseFloat(shortenedString),
+      number: numericValue,
       thousandsSuffix: abbreviations[thousandsSeparatorCount - 1],
-      string:
-        shortenedString.replace(',', '.') +
-        abbreviations[thousandsSeparatorCount - 1],
+      string: displayString,
     };
   } else {
     return {
-      number: parseFloat(shortenedString),
+      number: parseFloat(number.toString()),
       thousandsSuffix: '',
-      string: shortenedString.replace(',', '.'),
+      string: number.toString(),
     };
   }
 };

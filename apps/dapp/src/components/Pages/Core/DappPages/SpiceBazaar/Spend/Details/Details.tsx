@@ -152,23 +152,17 @@ export const Details = () => {
                     </Top>
                     <Bottom>
                       <TokenPill
-                        onClick={() => {
-                          window.open(
-                            `${env.etherscan}/token/${auction?.staticConfig.auctionToken.address}`,
-                            '_blank'
-                          );
-                        }}
+                        href={`${env.etherscan}/token/${auction?.staticConfig?.auctionToken?.address}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
                       >
                         <Text>{auction?.auctionTokenSymbol || 'ENA'} </Text>
                         <LinkIcon />
                       </TokenPill>
                       <TokenPill
-                        onClick={() =>
-                          window.open(
-                            `${env.etherscan}/token/${auction?.staticConfig?.templeGoldToken?.address}`,
-                            '_blank'
-                          )
-                        }
+                        href={`${env.etherscan}/token/${auction?.staticConfig?.templeGoldToken?.address}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
                       >
                         <Text>TGLD </Text>
                         <LinkIcon />
@@ -446,7 +440,6 @@ const CurrentAddress = styled.div`
 const Header = styled.div`
   display: flex;
   flex-direction: column;
-  justify-items: top;
   justify-content: space-between;
   gap: 32px;
 
@@ -593,7 +586,7 @@ const Text = styled.p`
   white-space: nowrap;
 `;
 
-const TokenPill = styled.div`
+const TokenPill = styled.a`
   display: flex;
   flex-grow: 1;
   align-items: center;
@@ -604,9 +597,15 @@ const TokenPill = styled.div`
   border: 1px solid ${({ theme }) => theme.palette.brand};
   background: ${({ theme }) => theme.palette.black};
   cursor: pointer;
+  text-decoration: none;
 
   &:hover {
     background: ${({ theme }) => theme.palette.brandDarker};
+  }
+
+  &:focus {
+    outline: 2px solid ${({ theme }) => theme.palette.brand};
+    outline-offset: 2px;
   }
 `;
 
@@ -628,7 +627,7 @@ const StatusContent = styled.div`
   justify-content: center;
   align-items: center;
   height: 136px;
-  min-width: 300px;
+  min-width: 0;
   white-space: nowrap;
   border: solid 1px ${({ theme }) => theme.palette.brand};
   border-radius: 10px;
@@ -664,12 +663,16 @@ const StatusValue = styled.p`
 const ChartContainer = styled.div`
   display: flex;
   flex-direction: column;
-  min-width: 270px;
+  min-width: 0;
   padding: 20px 20px 20px 20px;
   gap: 40px;
   background: ${({ theme }) => theme.palette.black};
   border: 1px solid ${({ theme }) => theme.palette.brand};
   border-radius: 10px;
+
+  ${breakpoints.phoneAndAbove(`
+    min-width: 270px;
+  `)}
 `;
 
 const ButtonsContainer = styled.div`
