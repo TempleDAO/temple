@@ -1,5 +1,6 @@
 import active from 'assets/icons/active.svg?react';
 import scheduled from 'assets/icons/scheduled.svg?react';
+import linkSvg from 'assets/icons/link.svg?react';
 import styled from 'styled-components';
 import { useEffect, useState, useMemo } from 'react';
 import { Button } from 'components/Button/Button';
@@ -85,6 +86,23 @@ export const Details = () => {
 
   const countdown = useSpiceAuctionCountdown(auction || null);
 
+  const formatDate = (timestamp: number | undefined) => {
+    if (!timestamp) return 'DD/MM/YYYY';
+    const date = new Date(timestamp);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
+  const formatTime = (timestamp: number | undefined) => {
+    if (!timestamp) return '00:00';
+    const date = new Date(timestamp);
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${hours}:${minutes}`;
+  };
+
   const MemoizedChart = useMemo(() => {
     if (!auction?.address) return null;
     return <Chart auctionAddress={auction.address} />;
@@ -100,13 +118,21 @@ export const Details = () => {
               Back to all Spice Auctions
             </BackLink>
             <SpiceAuctionDetails>
-              <SpiceAuctionTitle>{auction?.name} Auction</SpiceAuctionTitle>
+              <SpiceAuctionTitle>
+                {auction?.name} Auction Details
+              </SpiceAuctionTitle>
               <CurrentAuction>
                 <Header>
                   <HeaderLeft>
-                    <Left>
+                    <Top>
                       {/* // TODO: Conditionally show "Next Auction" */}
-                      <CurrentAuctionTitle>Current Auction</CurrentAuctionTitle>
+                      {allSpiceAuctionsLoading ? (
+                        <Loader iconSize={32} />
+                      ) : (
+                        <CurrentEpochNr>
+                          Epoch {auction?.currentEpoch}
+                        </CurrentEpochNr>
+                      )}
                       <CurrentAddress>
                         <a
                           href={`${env.etherscan}/address/${auction?.address}`}
@@ -123,57 +149,105 @@ export const Details = () => {
                             : ''}
                         </a>
                       </CurrentAddress>
-                    </Left>
-                    <Right>
-                      {allSpiceAuctionsLoading ? (
-                        <Loader iconSize={32} />
-                      ) : (
-                        <Epoch
-                          onClick={() => {
-                            if (
-                              window.location.search.includes(
-                                DEVMODE_QUERY_PARAM
-                              )
-                            ) {
-                              setShowChart(!showChart);
-                            }
-                          }}
-                        >
-                          <Text>EPOCH {auction?.currentEpoch}</Text>
-                        </Epoch>
-                      )}
-                    </Right>
+                    </Top>
+                    <Bottom>
+                      <TokenPill
+                        onClick={() => {
+                          window.open(
+                            `${env.etherscan}/token/${auction?.staticConfig.auctionToken.address}`,
+                            '_blank'
+                          );
+                        }}
+                      >
+                        <Text>{auction?.auctionTokenSymbol || 'ENA'} </Text>
+                        <LinkIcon />
+                      </TokenPill>
+                      <TokenPill
+                        onClick={() =>
+                          window.open(
+                            `${env.etherscan}/token/${auction?.staticConfig?.templeGoldToken?.address}`,
+                            '_blank'
+                          )
+                        }
+                      >
+                        <Text>TGLD </Text>
+                        <LinkIcon />
+                      </TokenPill>
+                    </Bottom>
                   </HeaderLeft>
                   <HeaderRight>
-                    <HeaderRightContainer
-                      isLive={!!auction?.currentEpochAuctionLive}
-                    >
-                      {allSpiceAuctionsLoading ? (
-                        <Loader iconSize={32} />
-                      ) : auction?.currentEpochAuctionLive ? (
-                        <>
-                          <AuctionStatus>
-                            <Active />
-                            ACTIVE
-                          </AuctionStatus>
-                          <TimeStamp>Ends in {countdown}</TimeStamp>
-                        </>
-                      ) : (
-                        <>
-                          <AuctionStatus>
-                            <Scheduled />
-                            UPCOMING
-                          </AuctionStatus>
-                          {countdown && (
-                            <TimeStamp>
-                              {countdown === 'Starts soon'
-                                ? countdown
-                                : `Starts in ${countdown}`}
-                            </TimeStamp>
+                    {allSpiceAuctionsLoading ? (
+                      <Loader iconSize={32} />
+                    ) : (
+                      <>
+                        <StatusBadge
+                          isLive={!!auction?.currentEpochAuctionLive}
+                        >
+                          {auction?.currentEpochAuctionLive ? (
+                            <>
+                              <Active />
+                              ACTIVE
+                            </>
+                          ) : (
+                            <>
+                              <Scheduled />
+                              UPCOMING
+                            </>
                           )}
-                        </>
-                      )}
-                    </HeaderRightContainer>
+                        </StatusBadge>
+                        <TimestampContainer>
+                          <TimeStampRow>
+                            <TimeStampLabel>Start</TimeStampLabel>
+                            {auction?.currentEpochAuctionLive ? (
+                              <>
+                                <TimeStampDate>
+                                  {formatDate(auction?.auctionStartTime)}
+                                </TimeStampDate>
+                                <TimeStampTime>
+                                  {formatTime(auction?.auctionStartTime)}
+                                </TimeStampTime>
+                              </>
+                            ) : auction?.nextAuctionStartTimestamp ? (
+                              <>
+                                <TimeStampDate>
+                                  {formatDate(
+                                    auction.nextAuctionStartTimestamp * 1000
+                                  )}
+                                </TimeStampDate>
+                                <TimeStampTime>
+                                  {formatTime(
+                                    auction.nextAuctionStartTimestamp * 1000
+                                  )}
+                                </TimeStampTime>
+                              </>
+                            ) : (
+                              <>
+                                <TimeStampDate>TBD</TimeStampDate>
+                                <TimeStampTime></TimeStampTime>
+                              </>
+                            )}
+                          </TimeStampRow>
+                          <TimeStampRow>
+                            <TimeStampLabel>End</TimeStampLabel>
+                            {auction?.currentEpochAuctionLive ? (
+                              <>
+                                <TimeStampDate>
+                                  {formatDate(auction?.auctionEndTime)}
+                                </TimeStampDate>
+                                <TimeStampTime>
+                                  {formatTime(auction?.auctionEndTime)}
+                                </TimeStampTime>
+                              </>
+                            ) : (
+                              <>
+                                <TimeStampDate>TBD</TimeStampDate>
+                                <TimeStampTime></TimeStampTime>
+                              </>
+                            )}
+                          </TimeStampRow>
+                        </TimestampContainer>
+                      </>
+                    )}
                   </HeaderRight>
                 </Header>
                 <ButtonsContainer>
@@ -362,13 +436,19 @@ const CurrentAddress = styled.div`
   line-height: 19px;
   color: ${({ theme }) => theme.palette.brandLight};
   text-decoration: underline;
+  text-align: center;
+
+  ${breakpoints.phoneAndAbove(`
+    text-align: left;
+  `)}
 `;
 
 const Header = styled.div`
   display: flex;
+  flex-direction: column;
+  justify-items: top;
   justify-content: space-between;
   gap: 32px;
-  flex-direction: column;
 
   ${breakpoints.phoneAndAbove(`
     flex-direction: row;
@@ -380,88 +460,128 @@ const Header = styled.div`
 
 const HeaderLeft = styled.div`
   display: flex;
-  align-items: center;
+  width: 100%;
+  flex-direction: column;
   gap: 20px;
   padding: 15px 0px;
+
+  ${breakpoints.phoneAndAbove(`
+    width: 280px;
+  `)}
 `;
 
-const Left = styled.div`
+const Top = styled.div`
   display: flex;
   flex-direction: column;
   gap: 6px;
-`;
-
-const Right = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  text-align: center;
 
   ${breakpoints.phoneAndAbove(`
-    flex-direction: row;
+    text-align: left;
   `)}
+`;
+
+const Bottom = styled.div`
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
 `;
 
 const HeaderRight = styled.div`
   display: flex;
-  justify-content: center;
+  width: 100%;
+  flex-direction: column;
+  gap: 12px;
+  align-items: stretch;
 
   ${breakpoints.phoneAndAbove(`
+    width: 200px;
     gap: 12px;
     justify-content: flex-end;
   `)}
 `;
 
-const HeaderRightContainer = styled.div<{ isLive: boolean }>`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background: ${({ theme }) => theme.palette.black};
-  border: solid 1px;
-  border-color: ${({ isLive }) => (isLive ? '#588f22' : '#EAB85B')};
-  border-radius: 10px;
-  padding: 16px 24px;
-  gap: 10px;
-  width: 305px;
-
-  ${breakpoints.phoneAndAbove(`
-    width: 240px;
-    padding: 8px 24px;
-  `)}
-`;
-
-const AuctionStatus = styled.div`
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  font-size: 16px;
-  line-height: 19px;
-  gap: 8px;
-  color: ${({ theme }) => theme.palette.brandLight};
-`;
-
-const TimeStamp = styled.div`
+const StatusBadge = styled.div<{ isLive: boolean }>`
   display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: center;
+  background: ${({ theme }) => theme.palette.black};
+  border: solid 1px;
+  border-color: ${({ isLive }) => (isLive ? '#588f22' : '#EAB85B')};
+  border-radius: 10px;
+  padding: 8px 24px;
+  gap: 10px;
   font-size: 16px;
   line-height: 19px;
-  text-align: center;
   color: ${({ theme }) => theme.palette.brandLight};
+  width: 100%;
+
+  ${breakpoints.phoneAndAbove(`
+    padding: 16px 24px;
+  `)}
+`;
+
+const TimestampContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+`;
+
+const TimeStampRow = styled.div`
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  background: ${({ theme }) => theme.palette.black};
+  border-radius: 10px;
+  padding: 12px 14px;
+  gap: 14px;
+`;
+
+const TimeStampLabel = styled.div`
+  font-size: 14px;
+  line-height: 17px;
+  color: ${({ theme }) => theme.palette.brandLight};
+  font-weight: 400;
+`;
+
+const TimeStampDate = styled.div`
+  font-size: 14px;
+  line-height: 17px;
+  color: ${({ theme }) => theme.palette.brand};
+  font-weight: 400;
+`;
+
+const TimeStampTime = styled.div`
+  font-size: 14px;
+  line-height: 17px;
+  color: ${({ theme }) => theme.palette.brand};
+  font-weight: 400;
+  text-align: right;
 `;
 
 const Active = styled(active)``;
 
 const Scheduled = styled(scheduled)``;
 
-const CurrentAuctionTitle = styled.h3`
+const CurrentEpochNr = styled.h3`
   display: flex;
+  justify-content: center;
   white-space: nowrap;
-  font-size: 24px;
-  line-height: 44px;
-  text-align: left;
+  font-size: 20px;
+  line-height: 32px;
+  text-align: center;
   color: ${({ theme }) => theme.palette.brandLight};
   margin: 0px;
+
+  ${breakpoints.phoneAndAbove(`
+    font-size: 24px;
+    line-height: 44px;
+    text-align: left;
+    justify-content: flex-start;
+  `)}
 `;
 
 const Text = styled.p`
@@ -473,13 +593,21 @@ const Text = styled.p`
   white-space: nowrap;
 `;
 
-const Epoch = styled.div`
+const TokenPill = styled.div`
   display: flex;
+  flex-grow: 1;
   align-items: center;
+  justify-content: center;
   padding: 8px;
+  gap: 8px;
   border-radius: 10px;
   border: 1px solid ${({ theme }) => theme.palette.brand};
   background: ${({ theme }) => theme.palette.black};
+  cursor: pointer;
+
+  &:hover {
+    background: ${({ theme }) => theme.palette.brandDarker};
+  }
 `;
 
 const Status = styled.div`
@@ -561,7 +689,7 @@ const ButtonsContainer = styled.div`
 
 export const TradeButton = styled(Button)<{ gradient?: boolean }>`
   padding: 12px 20px 12px 20px;
-  width: ${(props) => props.width || 'min-content'};
+  width: 100%;
   height: min-content;
   background: ${({ theme, gradient }) =>
     gradient
@@ -575,6 +703,10 @@ export const TradeButton = styled(Button)<{ gradient?: boolean }>`
   font-weight: 700;
   color: ${({ theme }) => theme.palette.brandLight};
 
+  ${breakpoints.phoneAndAbove(`
+    width: 280px;
+  `)}
+
   /* Flex settings for centering button content */
   display: flex;
   align-items: center;
@@ -587,4 +719,11 @@ export const TradeButton = styled(Button)<{ gradient?: boolean }>`
     justify-content: center;
     gap: 12px;
   }
+`;
+
+const LinkIcon = styled(linkSvg)`
+  fill: ${({ theme }) => theme.palette.brand};
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
 `;

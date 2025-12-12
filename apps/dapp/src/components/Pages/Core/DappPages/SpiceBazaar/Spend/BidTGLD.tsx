@@ -336,8 +336,8 @@ export const BidTGLD = ({
                   onToggle={handleCheckboxToggle1}
                 />
                 <Text>
-                  Current {auction?.auctionTokenSymbol || 'TOKEN'} price may
-                  rise before the end of the auction.
+                  Current TGLD/{auction?.auctionTokenSymbol || 'TOKEN'} price
+                  may rise before the end of the auction.
                 </Text>
               </MessageText>
               <MessageText>

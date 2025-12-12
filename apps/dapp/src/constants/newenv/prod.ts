@@ -5,8 +5,6 @@ import {
   DaiGoldAuction__factory,
   SpiceAuction,
   SpiceAuction__factory,
-  SpiceAuctionFactory,
-  SpiceAuctionFactory__factory,
   TempleCircuitBreakerAllUsersPerPeriod,
   TempleCircuitBreakerAllUsersPerPeriod__factory,
   TempleGold,
@@ -74,6 +72,14 @@ const BERACHAIN_MAINNET: Chain = {
 ////////////////////////////////////////////////////////////
 // TOKENS
 ////////////////////////////////////////////////////////////
+
+const SPICE_TOKEN_ON_ETH_MAINNET: TokenConfig = {
+  chainId: ETH_MAINNET.id,
+  name: 'SPICE',
+  address: '0xBD61837DD6261580B2F0aC41B544AC67BedA4361',
+  decimals: 18,
+  symbol: 'SPICE',
+};
 
 const ENA_TOKEN_ON_ETH_MAINNET: TokenConfig = {
   chainId: ETH_MAINNET.id,
@@ -280,7 +286,8 @@ const prodEnv: AppConfig = {
         isActive: true,
         name: 'SPICE',
         chainId: ETH_MAINNET.id,
-        auctionTokenSymbol: 'SPICE',
+        auctionTokenSymbol: 'SPICE', // TODO: Consolidate after launch
+        auctionToken: SPICE_TOKEN_ON_ETH_MAINNET,
         templeGoldToken: TGLD_TOKEN_ON_ETH_MAINNET,
         templeGoldTokenBalanceTickerSymbol: TICKER_SYMBOL.TEMPLE_GOLD_TOKEN,
         contractConfig: TGLD_SPICE_AUCTION_ON_ETH_MAINNET,
@@ -290,7 +297,8 @@ const prodEnv: AppConfig = {
         isActive: true,
         name: 'ENA',
         chainId: ETH_MAINNET.id,
-        auctionTokenSymbol: 'ENA',
+        auctionTokenSymbol: 'ENA', // TODO: After launch, consolidate with below token config
+        auctionToken: ENA_TOKEN_ON_ETH_MAINNET,
         templeGoldToken: TGLD_TOKEN_ON_ETH_MAINNET,
         templeGoldTokenBalanceTickerSymbol: TICKER_SYMBOL.TEMPLE_GOLD_TOKEN,
         contractConfig: TGLD_ENA_AUCTION_ON_ETH_MAINNET,

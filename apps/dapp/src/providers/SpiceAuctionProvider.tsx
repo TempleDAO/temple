@@ -18,7 +18,7 @@ import { asyncNoop } from 'utils/helpers';
 import { useApiManager } from 'hooks/use-api-manager';
 import { useQuery } from '@tanstack/react-query';
 import { getAppConfig } from 'constants/newenv';
-import { SpiceAuctionConfig } from 'constants/newenv/types';
+import { SpiceAuctionConfig, TokenConfig } from 'constants/newenv/types';
 import {
   subgraphQuery,
   spiceAuctionInfoQuery,
@@ -99,6 +99,7 @@ const EMPTY_SPICE_AUCTION_CONFIG: SpiceAuctionConfig = {
   name: '',
   chainId: 0,
   auctionTokenSymbol: '',
+  auctionToken: {} as TokenConfig,
   contractConfig: {
     address: '',
     contractFactory: {} as Contract,
@@ -289,7 +290,7 @@ export const SpiceAuctionProvider = ({ children }: PropsWithChildren) => {
       },
       staleTime: 30 * 1000,
       refetchOnWindowFocus: false,
-      enabled: !!auctionStaticConfig, // only enable if we have an auction config
+      enabled: !!auctionStaticConfig && !!wallet, // only enable if we have an auction config and wallet
     });
   };
 
@@ -299,14 +300,6 @@ export const SpiceAuctionProvider = ({ children }: PropsWithChildren) => {
     isLoading: currentUserMetricsLoading,
     refetch: refetchCurrentUserMetrics,
   } = useUserMetrics(getAppConfig().spiceBazaar.spiceAuctions[0]);
-
-  // Manually trigger fetch when wallet changes
-  useEffect(() => {
-    if (wallet) {
-      refetchCurrentUserMetrics();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [wallet]);
 
   const getEpochInfo = useCallback(
     async (auctionStaticConfig: SpiceAuctionConfig, epoch: number) => {
@@ -435,13 +428,8 @@ export const SpiceAuctionProvider = ({ children }: PropsWithChildren) => {
     queryFn: () => fetchAuctionInfo(),
     staleTime: 30 * 1000,
     refetchOnWindowFocus: false,
-    enabled: false, // automatic fetching disabled
+    enabled: !!wallet,
   });
-
-  useEffect(() => {
-    refetchSpiceAuctionInfo();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [wallet]);
 
   // Create a wrapper for the refetch function to match the existing API
   const fetchSpiceAuctionInfo = useCallback(async (): Promise<void> => {
@@ -719,13 +707,8 @@ export const SpiceAuctionProvider = ({ children }: PropsWithChildren) => {
     queryFn: fetchAllSpiceAuctions,
     staleTime: 30 * 1000,
     refetchOnWindowFocus: false,
-    enabled: false, // automatic fetching disabled
+    enabled: !!wallet,
   });
-
-  useEffect(() => {
-    refetchAllSpiceAuctions();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [wallet]);
 
   // Create a wrapper for the refetch function
   const fetchAllSpiceAuctionsInfo = useCallback(

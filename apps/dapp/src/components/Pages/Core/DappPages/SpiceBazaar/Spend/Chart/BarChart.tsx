@@ -62,7 +62,7 @@ export default function CustomBarChart<T>({
           barSize={56}
           barCategoryGap={20}
           margin={{
-            left: isPhoneOrAbove ? 12 : 5,
+            left: isPhoneOrAbove ? 40 : 20,
             top: 20,
             right: isPhoneOrAbove ? 30 : 5,
             bottom: isPhoneOrAbove ? 30 : 35,
@@ -141,7 +141,7 @@ export default function CustomBarChart<T>({
                   }}
                 >
                   <tspan x={x} dy={0}>
-                    {`$${string}`}
+                    {`${string} TGLD`}
                   </tspan>
                 </text>
               );
