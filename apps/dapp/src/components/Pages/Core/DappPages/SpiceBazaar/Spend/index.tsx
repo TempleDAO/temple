@@ -612,9 +612,9 @@ const PriceRatio = styled.div`
 `;
 
 const PriceRatioValue = styled.p`
-  font-size: 16px;
+  font-size: 12px;
   font-weight: 700;
-  line-height: 19px;
+  line-height: 153%;
   text-align: center;
   color: ${({ theme }) => theme.palette.gold};
   margin: 0px;

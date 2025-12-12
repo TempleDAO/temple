@@ -74,12 +74,9 @@ export const Chart = ({ auctionAddress }: ChartProps) => {
         xDataKey="date"
         yDataKey="value"
         xTickFormatter={(val: any) => val}
-        yTickFormatter={(val: any) =>
-          `$${formatNumberAbbreviated(val).number.toFixed(2)}`
-        }
         tooltipLabelFormatter={(value: any) => value}
         tooltipValuesFormatter={(value: any) => [
-          `$${value.toFixed(2)}`,
+          `${value.toFixed(2)} TGLD`,
           'Value',
         ]}
         xAxisTitle="Auction end date"

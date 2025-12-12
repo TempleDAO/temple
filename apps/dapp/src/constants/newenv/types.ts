@@ -35,6 +35,7 @@ export type SpiceAuctionConfig = {
   name: string;
   chainId: ChainId;
   auctionTokenSymbol: string;
+  auctionToken: TokenConfig;
   templeGoldToken: TokenConfig;
   templeGoldTokenBalanceTickerSymbol: TICKER_SYMBOL;
   contractConfig: ContractConfig<Contract>;
