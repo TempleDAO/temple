@@ -59,8 +59,8 @@ export default function CustomBarChart<T>({
       <ResponsiveContainer minHeight={200} minWidth={250} height={350}>
         <BarChart
           data={chartData}
-          barSize={56}
-          barCategoryGap={20}
+          barSize={isPhoneOrAbove ? 56 : 24}
+          barCategoryGap={isPhoneOrAbove ? 20 : 10}
           margin={{
             left: isPhoneOrAbove ? 40 : 20,
             top: 20,
