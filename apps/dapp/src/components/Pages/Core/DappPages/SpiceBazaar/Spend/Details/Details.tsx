@@ -511,7 +511,7 @@ const StatusBadge = styled.div<{ isLive: boolean }>`
   width: 100%;
 
   ${breakpoints.phoneAndAbove(`
-    padding: 16px 24px;
+    padding: 8px 24px;
   `)}
 `;
 
@@ -622,7 +622,7 @@ const Status = styled.div`
 
 const StatusContent = styled.div`
   display: flex;
-  flex: 1 1 30%;
+  flex: 1 1 100%;
   flex-direction: column;
   justify-content: center;
   align-items: center;
@@ -632,6 +632,11 @@ const StatusContent = styled.div`
   border: solid 1px ${({ theme }) => theme.palette.brand};
   border-radius: 10px;
   background: ${({ theme }) => theme.palette.black};
+
+  ${breakpoints.phoneAndAbove(`
+    flex: 1 1 30%;
+  `)}
+
   padding: 20px 10px 20px 10px;
   gap: 12px;
   margin: auto;
