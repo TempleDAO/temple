@@ -1,8 +1,9 @@
-import { parseEther } from 'ethers';
+import { parseEther } from 'viem';
 import { Chain, TlcBatchLiquidateConfig } from '@/tlc/batch-liquidate';
+import { mainnet } from 'viem/chains';
 
 export const MAINNET: Chain = {
-  id: 1,
+  chain: mainnet,
   name: 'Mainnet',
   transactionUrl(txhash: string) {
     return `https://etherscan.io/tx/${txhash}`;
@@ -11,7 +12,6 @@ export const MAINNET: Chain = {
     return `https://etherscan.io/address/${address}`;
   },
 };
-
 
 export const TLC_BATCH_LIQUIDATE_CONFIG: TlcBatchLiquidateConfig = {
   CHAIN: MAINNET,
