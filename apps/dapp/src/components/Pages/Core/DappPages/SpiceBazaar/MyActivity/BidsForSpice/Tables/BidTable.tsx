@@ -17,7 +17,6 @@ enum TableHeaders {
   Price = 'Unit Price\n(TGLD)',
   BidTotal = 'Bid Total\n(TGLD)',
   Action = 'Action',
-  Token = 'Token',
 }
 
 const tableHeaders = [
@@ -25,7 +24,6 @@ const tableHeaders = [
   { name: TableHeaders.AuctionName },
   { name: TableHeaders.AuctionEndDateTime },
   { name: TableHeaders.Claimable },
-  { name: TableHeaders.Token },
   { name: TableHeaders.Price },
   { name: TableHeaders.BidTotal },
   { name: TableHeaders.Action },

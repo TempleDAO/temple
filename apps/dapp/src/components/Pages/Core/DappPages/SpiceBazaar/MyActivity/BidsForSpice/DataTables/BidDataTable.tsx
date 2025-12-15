@@ -160,7 +160,6 @@ export const DataTable: React.FC<TableProps> = ({
                           ? formatNumberWithCommas(transaction.claimableTokens)
                           : '-'}
                       </DataCell>
-                      <DataCell>{transaction.token}</DataCell>
                       <DataCell>{transaction.unitPrice}</DataCell>
                       <DataCell>{transaction.bidTotal}</DataCell>
                       <DataCell>
