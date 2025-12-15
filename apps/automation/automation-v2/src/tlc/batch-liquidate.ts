@@ -43,9 +43,9 @@ export interface TlcBatchLiquidateConfig {
 
 interface LiquidationStatus {
   hasExceededMaxLtv: boolean,
-  collateral: BigInt,
-  collateralValue: BigInt,
-  currentDebt: BigInt
+  collateral: bigint,
+  collateralValue: bigint,
+  currentDebt: bigint
 }
 
 export async function batchLiquidate(
@@ -112,7 +112,7 @@ export async function batchLiquidate(
       functionName: 'batchLiquidate',
       args: [accBatch]
     });
-    const tx = { ...{gasLimit: config.GAS_LIMIT}, data, to: config.TLC_ADDRESS };
+    const tx = { data, to: config.TLC_ADDRESS };
     const txr = await transactionManager.submitAndWait(tx);
     if (!txr) throw Error('undefined tx receipt');
 
@@ -158,8 +158,8 @@ export async function batchLiquidate(
       }
     });
 
-    // if no liquidation happened, success silently
-    if (events.length === 0) return taskSuccessSilent();
+    // Skip posting if no liquidation happened in this chunk
+    if (events.length === 0) continue;
 
     const txUrl = config.CHAIN.transactionUrl(txr.transactionHash);
     const metadata: TempleTaskDiscordMetadata = {
@@ -180,7 +180,7 @@ export async function batchLiquidate(
   }
 
   // Send discord alert warning if signer wallet doesn't have sufficient eth balance
-  const ethBalance = await pclient.getBalance(walletAddress);
+  const ethBalance = await pclient.getBalance({ address: walletAddress.address });
   if (ethBalance < config.MIN_ETH_BALANCE_WARNING) {
     const ethBalanceMessage = await buildDiscordMessageCheckEth(
       config.CHAIN,
