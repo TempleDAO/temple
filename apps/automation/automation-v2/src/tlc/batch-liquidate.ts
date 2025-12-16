@@ -1,6 +1,5 @@
 import { connectDiscord } from '@/utils/discord';
 import {
-  TempleTaskDiscordEvent,
   TempleTaskDiscordMetadata,
   buildDiscordMessageCheckEth,
   buildTempleTasksDiscordMessage,
@@ -111,8 +110,8 @@ export async function batchLiquidate(
     const txr = await transactionManager.submitAndWait(tx);
     if (!txr) throw Error('undefined tx receipt');
 
-    // Grab the events
-    const events: TempleTaskDiscordEvent[] = [];
+    // Track number of events
+    let numberOfEvents = 0;
 
     txr.logs.forEach((log) => {
       const decodedLog = decodeEventLog({
@@ -123,38 +122,38 @@ export async function batchLiquidate(
 
       // check if this is the liquidated event
       if (decodedLog.eventName === 'Liquidated') {
-        const args = decodedLog.args as any;
-        events.push({
-          what: 'Liquidated',
-          details: [
-            `account = \`${args.account}\``,
-            `collateralValue = \`${formatBigNumber(
-              args.collateralValue,
-              18,
-              4
-            )}\``,
-            `collateralSeized = \`${formatBigNumber(
-              args.collateralSeized,
-              18,
-              4
-            )}\``,
-            `daiDebtWiped = \`${formatBigNumber(
-              args.daiDebtWiped,
-              18,
-              4
-            )}\``,
-          ],
-        });
+        const args = decodedLog.args;
+        const details = [
+          `account = \`${args.account}\``,
+          `collateralValue = \`${formatBigNumber(
+            args.collateralValue,
+            18,
+            4
+          )}\``,
+          `collateralSeized = \`${formatBigNumber(
+            args.collateralSeized,
+            18,
+            4
+          )}\``,
+          `daiDebtWiped = \`${formatBigNumber(
+            args.daiDebtWiped,
+            18,
+            4
+          )}\``,
+        ];
+        numberOfEvents += 1;
+        // Log the event details. Avoid bloating discord messages due to set 1k character limit
+        ctx.logger.info( `\n_What_: Liquidated` + `${details.map((d) => `\n\t\t\t\t• ${d}`)}`);
       }
     });
 
     // Skip adding to discord messages if no liquidation happened in this chunk
-    if (events.length === 0) continue;
+    if (numberOfEvents === 0) continue;
 
     const txUrl = config.CHAIN.transactionUrl(txr.transactionHash);
     const metadata: TempleTaskDiscordMetadata = {
       title: 'TLC Batch Liquidate',
-      events,
+      numberOfEvents,
       submittedAt,
       txReceipt: txr,
       txUrl,
@@ -172,12 +171,10 @@ export async function batchLiquidate(
   // Post discord messages if any. Truncate messages to 1k characters
   if (messages.length > 0) {
     for (const message of messages) {
-      let truncated = message.content;
-      if (truncated && truncated.length > 1000) {
-        truncated = `${truncated.slice(0, 1000)} ...`;
-        message.content = truncated;
+       if (message.content){
+        message.content = `${message.content.slice(0, 996)} ...`
+        await discord.postMessage(message)
       }
-      await discord.postMessage(message);
     }
   }
 

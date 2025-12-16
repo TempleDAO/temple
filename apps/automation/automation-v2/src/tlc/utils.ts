@@ -121,7 +121,7 @@ export interface TempleTaskDiscordEvent {
 }
 export interface TempleTaskDiscordMetadata {
   title: string;
-  events: TempleTaskDiscordEvent[];
+  numberOfEvents: number;
   submittedAt: Date;
   txReceipt: TransactionReceipt;
   txUrl: string;
@@ -137,15 +137,12 @@ export async function buildTempleTasksDiscordMessage(
   chainName: string,
   metadata: TempleTaskDiscordMetadata
 ): Promise<DiscordMessage> {
-  const { title, submittedAt, txReceipt, txUrl, events } = metadata;
+  const { title, submittedAt, txReceipt, txUrl, numberOfEvents } = metadata;
 
+  // Reduce event details in message to avoid bloating up to character limits
   const content = [
     `**TEMPLE ${title} Event [${chainName}]**`,
-    ...events.map((ev) => {
-      return (
-        `\n_What_: ${ev.what}` + `${ev.details.map((d) => `\n\t\t\t\t• ${d}`)}`
-      );
-    }),
+    `\n${numberOfEvents} liquidation events in this transaction`,
     ``,
     ...(await txReceiptMarkdown(provider, submittedAt, txReceipt, txUrl)),
   ];
