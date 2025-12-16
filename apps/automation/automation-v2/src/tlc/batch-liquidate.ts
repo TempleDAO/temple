@@ -21,6 +21,7 @@ import { tlc_discord_webhook_url } from './variables';
 import { Address, Chain as ViemChain, getContract, getAddress,
   encodeFunctionData, decodeEventLog } from 'viem';
 import { getSubmissionParams } from "@/config";
+import { WebhookMessageCreateOptions } from 'discord.js';
 
 
 export interface Chain {
@@ -96,6 +97,7 @@ export async function batchLiquidate(
   });
   if (accsToLiquidate.length === 0) return taskSuccessSilent();
 
+  const messages: Array<WebhookMessageCreateOptions> = [];
   // chunk compLiquidityAccs to a max number of requests per batchLiquidate
   // e.g. try to liquidate 1000 accounts at once could use too much gas and fail
   const accListChunks = chunkify(accsToLiquidate, config.ACC_LIQ_MAX_CHUNK_NO);
@@ -146,7 +148,7 @@ export async function batchLiquidate(
       }
     });
 
-    // Skip posting if no liquidation happened in this chunk
+    // Skip adding to discord messages if no liquidation happened in this chunk
     if (events.length === 0) continue;
 
     const txUrl = config.CHAIN.transactionUrl(txr.transactionHash);
@@ -158,13 +160,25 @@ export async function batchLiquidate(
       txUrl,
     };
 
-    // Send notification
+    // Add to messages for later notification
     const message = await buildTempleTasksDiscordMessage(
       pclient,
       config.CHAIN.name,
       metadata
     );
-    await discord.postMessage(message);
+    messages.push(message);
+  }
+
+  // Post discord messages if any. Truncate messages to 1k characters
+  if (messages.length > 0) {
+    for (const message of messages) {
+      let truncated = message.content;
+      if (truncated && truncated.length > 1000) {
+        truncated = `${truncated.slice(0, 1000)} ...`;
+        message.content = truncated;
+      }
+      await discord.postMessage(message);
+    }
   }
 
   // Send discord alert warning if signer wallet doesn't have sufficient eth balance
