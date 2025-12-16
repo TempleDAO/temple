@@ -18,7 +18,7 @@ mk_viem_abi() {
 rm -f $VIEM_ABI_DIR/*.ts
 
 # Build artifacts
-(cd $PROTOCOL_DIR; forge build contracts/templegold contracts/interfaces/templegold)
+(cd $PROTOCOL_DIR; forge build contracts)
 
 mk_viem_abi IAuctionBase
 mk_viem_abi IERC20
@@ -29,3 +29,4 @@ mk_viem_abi IStableGoldAuction
 mk_viem_abi ITempleGold
 mk_viem_abi ITempleGoldAdmin
 mk_viem_abi ITempleGoldStaking
+mk_viem_abi ITempleLineOfCredit

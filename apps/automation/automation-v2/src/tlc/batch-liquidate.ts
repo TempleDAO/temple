@@ -41,13 +41,6 @@ export interface TlcBatchLiquidateConfig {
   SUBGRAPH_RETRY_LIMIT: number;
 }
 
-interface LiquidationStatus {
-  hasExceededMaxLtv: boolean,
-  collateral: bigint,
-  collateralValue: bigint,
-  currentDebt: bigint
-}
-
 export async function batchLiquidate(
   ctx: TaskContext,
   config: TlcBatchLiquidateConfig
@@ -96,7 +89,7 @@ export async function batchLiquidate(
   if (accountsToCheck.length === 0) return taskSuccessSilent();
 
   // only liquidate the accounts which have exceeded the max ltv
-  const compLiquidityAccs = await tlc.read.computeLiquidity([accountsToCheck]) as LiquidationStatus[];
+  const compLiquidityAccs = await tlc.read.computeLiquidity([accountsToCheck]);
   const accsToLiquidate: Array<Address> = [];
   compLiquidityAccs.map((acc, i) => {
     if (acc.hasExceededMaxLtv) accsToLiquidate.push(accountsToCheck[i]);
@@ -120,41 +113,36 @@ export async function batchLiquidate(
     const events: TempleTaskDiscordEvent[] = [];
 
     txr.logs.forEach((log) => {
-      try {
-        const decodedLog = decodeEventLog({
-          abi: TLC_ABI,
-          data: log.data,
-          topics: log.topics,
-        });
+      const decodedLog = decodeEventLog({
+        abi: TLC_ABI,
+        data: log.data,
+        topics: log.topics,
+      });
 
-        // check if this is the liquidated event
-        if (decodedLog.eventName === 'Liquidated') {
-          const args = decodedLog.args as any;
-          events.push({
-            what: 'Liquidated',
-            details: [
-              `account = \`${args.account}\``,
-              `collateralValue = \`${formatBigNumber(
-                args.collateralValue,
-                18,
-                4
-              )}\``,
-              `collateralSeized = \`${formatBigNumber(
-                args.collateralSeized,
-                18,
-                4
-              )}\``,
-              `daiDebtWiped = \`${formatBigNumber(
-                args.daiDebtWiped,
-                18,
-                4
-              )}\``,
-            ],
-          });
-        }
-      } catch (e: any) {
-        // Log what happend while decoding event log
-        ctx.logger.error(`Error while decoding event log: ${e}`);
+      // check if this is the liquidated event
+      if (decodedLog.eventName === 'Liquidated') {
+        const args = decodedLog.args as any;
+        events.push({
+          what: 'Liquidated',
+          details: [
+            `account = \`${args.account}\``,
+            `collateralValue = \`${formatBigNumber(
+              args.collateralValue,
+              18,
+              4
+            )}\``,
+            `collateralSeized = \`${formatBigNumber(
+              args.collateralSeized,
+              18,
+              4
+            )}\``,
+            `daiDebtWiped = \`${formatBigNumber(
+              args.daiDebtWiped,
+              18,
+              4
+            )}\``,
+          ],
+        });
       }
     });
 

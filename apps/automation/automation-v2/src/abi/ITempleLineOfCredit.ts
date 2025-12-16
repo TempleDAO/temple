@@ -1,819 +1,819 @@
 export const ABI = [
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "totalDebtAmount",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "repayAmount",
-          "type": "uint256"
-        }
-      ],
-      "name": "ExceededBorrowedAmount",
-      "type": "error"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "collateralAmount",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "collateralValue",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "currentDaiDebt",
-          "type": "uint256"
-        }
-      ],
-      "name": "ExceededMaxLtv",
-      "type": "error"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "required",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "provided",
-          "type": "uint256"
-        }
-      ],
-      "name": "InsufficientAmount",
-      "type": "error"
-    },
-    {
-      "inputs": [],
-      "name": "Paused",
-      "type": "error"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "account",
-          "type": "address"
-        },
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "recipient",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint128",
-          "name": "amount",
-          "type": "uint128"
-        }
-      ],
-      "name": "Borrow",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": false,
-          "internalType": "bool",
-          "name": "isPaused",
-          "type": "bool"
-        }
-      ],
-      "name": "BorrowPausedSet",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "fundedBy",
-          "type": "address"
-        },
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "onBehalfOf",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint128",
-          "name": "collateralAmount",
-          "type": "uint128"
-        }
-      ],
-      "name": "CollateralAdded",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "account",
-          "type": "address"
-        },
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "recipient",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint128",
-          "name": "collateralAmount",
-          "type": "uint128"
-        }
-      ],
-      "name": "CollateralRemoved",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "interestRateModel",
-          "type": "address"
-        }
-      ],
-      "name": "InterestRateModelSet",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": false,
-          "internalType": "uint96",
-          "name": "newInterestRate",
-          "type": "uint96"
-        }
-      ],
-      "name": "InterestRateUpdate",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "account",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint128",
-          "name": "collateralSeized",
-          "type": "uint128"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "collateralValue",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint128",
-          "name": "daiDebtWiped",
-          "type": "uint128"
-        }
-      ],
-      "name": "Liquidated",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": false,
-          "internalType": "bool",
-          "name": "isPaused",
-          "type": "bool"
-        }
-      ],
-      "name": "LiquidationsPausedSet",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "maxLtvRatio",
-          "type": "uint256"
-        }
-      ],
-      "name": "MaxLtvRatioSet",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": false,
-          "internalType": "uint128",
-          "name": "amount",
-          "type": "uint128"
-        }
-      ],
-      "name": "MinBorrowAmountSet",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "fundedBy",
-          "type": "address"
-        },
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "onBehalfOf",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint128",
-          "name": "repayAmount",
-          "type": "uint128"
-        }
-      ],
-      "name": "Repay",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "strategy",
-          "type": "address"
-        },
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "treasuryReservesVault",
-          "type": "address"
-        }
-      ],
-      "name": "TlcStrategySet",
-      "type": "event"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "account",
-          "type": "address"
-        }
-      ],
-      "name": "accountData",
-      "outputs": [
-        {
-          "components": [
-            {
-              "internalType": "uint128",
-              "name": "collateral",
-              "type": "uint128"
-            },
-            {
-              "internalType": "uint128",
-              "name": "debtCheckpoint",
-              "type": "uint128"
-            },
-            {
-              "internalType": "uint256",
-              "name": "interestAccumulator",
-              "type": "uint256"
-            }
-          ],
-          "internalType": "struct ITlcDataTypes.AccountData",
-          "name": "data",
-          "type": "tuple"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "account",
-          "type": "address"
-        }
-      ],
-      "name": "accountPosition",
-      "outputs": [
-        {
-          "components": [
-            {
-              "internalType": "uint128",
-              "name": "collateral",
-              "type": "uint128"
-            },
-            {
-              "internalType": "uint128",
-              "name": "currentDebt",
-              "type": "uint128"
-            },
-            {
-              "internalType": "uint128",
-              "name": "maxBorrow",
-              "type": "uint128"
-            },
-            {
-              "internalType": "uint256",
-              "name": "healthFactor",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "loanToValueRatio",
-              "type": "uint256"
-            }
-          ],
-          "internalType": "struct ITlcDataTypes.AccountPosition",
-          "name": "position",
-          "type": "tuple"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint128",
-          "name": "collateralAmount",
-          "type": "uint128"
-        },
-        {
-          "internalType": "address",
-          "name": "onBehalfOf",
-          "type": "address"
-        }
-      ],
-      "name": "addCollateral",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address[]",
-          "name": "accounts",
-          "type": "address[]"
-        }
-      ],
-      "name": "batchLiquidate",
-      "outputs": [
-        {
-          "internalType": "uint128",
-          "name": "totalCollateralClaimed",
-          "type": "uint128"
-        },
-        {
-          "internalType": "uint128",
-          "name": "totalDaiDebtWiped",
-          "type": "uint128"
-        }
-      ],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint128",
-          "name": "amount",
-          "type": "uint128"
-        },
-        {
-          "internalType": "address",
-          "name": "recipient",
-          "type": "address"
-        }
-      ],
-      "name": "borrow",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "circuitBreakerProxy",
-      "outputs": [
-        {
-          "internalType": "contract ITempleCircuitBreakerProxy",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address[]",
-          "name": "accounts",
-          "type": "address[]"
-        }
-      ],
-      "name": "computeLiquidity",
-      "outputs": [
-        {
-          "components": [
-            {
-              "internalType": "bool",
-              "name": "hasExceededMaxLtv",
-              "type": "bool"
-            },
-            {
-              "internalType": "uint128",
-              "name": "collateral",
-              "type": "uint128"
-            },
-            {
-              "internalType": "uint256",
-              "name": "collateralValue",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint128",
-              "name": "currentDebt",
-              "type": "uint128"
-            }
-          ],
-          "internalType": "struct ITlcDataTypes.LiquidationStatus[]",
-          "name": "status",
-          "type": "tuple[]"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "daiToken",
-      "outputs": [
-        {
-          "internalType": "contract IERC20",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "debtTokenDetails",
-      "outputs": [
-        {
-          "components": [
-            {
-              "internalType": "uint96",
-              "name": "maxLtvRatio",
-              "type": "uint96"
-            },
-            {
-              "internalType": "contract IInterestRateModel",
-              "name": "interestRateModel",
-              "type": "address"
-            },
-            {
-              "internalType": "bool",
-              "name": "borrowsPaused",
-              "type": "bool"
-            }
-          ],
-          "internalType": "struct ITlcDataTypes.DebtTokenConfig",
-          "name": "config",
-          "type": "tuple"
-        },
-        {
-          "components": [
-            {
-              "internalType": "uint32",
-              "name": "interestAccumulatorUpdatedAt",
-              "type": "uint32"
-            },
-            {
-              "internalType": "uint128",
-              "name": "totalDebt",
-              "type": "uint128"
-            },
-            {
-              "internalType": "uint96",
-              "name": "interestRate",
-              "type": "uint96"
-            },
-            {
-              "internalType": "uint256",
-              "name": "interestAccumulator",
-              "type": "uint256"
-            }
-          ],
-          "internalType": "struct ITlcDataTypes.DebtTokenData",
-          "name": "data",
-          "type": "tuple"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "liquidationsPaused",
-      "outputs": [
-        {
-          "internalType": "bool",
-          "name": "",
-          "type": "bool"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "minBorrowAmount",
-      "outputs": [
-        {
-          "internalType": "uint128",
-          "name": "",
-          "type": "uint128"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "token",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "to",
-          "type": "address"
-        },
-        {
-          "internalType": "uint256",
-          "name": "amount",
-          "type": "uint256"
-        }
-      ],
-      "name": "recoverToken",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "refreshInterestRates",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint128",
-          "name": "amount",
-          "type": "uint128"
-        },
-        {
-          "internalType": "address",
-          "name": "recipient",
-          "type": "address"
-        }
-      ],
-      "name": "removeCollateral",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint128",
-          "name": "repayAmount",
-          "type": "uint128"
-        },
-        {
-          "internalType": "address",
-          "name": "onBehalfOf",
-          "type": "address"
-        }
-      ],
-      "name": "repay",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "onBehalfOf",
-          "type": "address"
-        }
-      ],
-      "name": "repayAll",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "bool",
-          "name": "isPaused",
-          "type": "bool"
-        }
-      ],
-      "name": "setBorrowPaused",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "interestRateModel",
-          "type": "address"
-        }
-      ],
-      "name": "setInterestRateModel",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "bool",
-          "name": "isPaused",
-          "type": "bool"
-        }
-      ],
-      "name": "setLiquidationsPaused",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "maxLtvRatio",
-          "type": "uint256"
-        }
-      ],
-      "name": "setMaxLtvRatio",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint128",
-          "name": "amount",
-          "type": "uint128"
-        }
-      ],
-      "name": "setMinBorrowAmount",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "_tlcStrategy",
-          "type": "address"
-        }
-      ],
-      "name": "setTlcStrategy",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "templeToken",
-      "outputs": [
-        {
-          "internalType": "contract IERC20",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "tlcStrategy",
-      "outputs": [
-        {
-          "internalType": "contract ITlcStrategy",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "totalCollateral",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "totalDebtPosition",
-      "outputs": [
-        {
-          "components": [
-            {
-              "internalType": "uint256",
-              "name": "utilizationRatio",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "borrowRate",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "totalDebt",
-              "type": "uint256"
-            }
-          ],
-          "internalType": "struct ITlcDataTypes.TotalDebtPosition",
-          "name": "daiPosition",
-          "type": "tuple"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "treasuryReservesVault",
-      "outputs": [
-        {
-          "internalType": "contract ITreasuryReservesVault",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    }
-];
+  {
+    "type": "function",
+    "name": "accountData",
+    "inputs": [
+      {
+        "name": "account",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "data",
+        "type": "tuple",
+        "internalType": "struct ITlcDataTypes.AccountData",
+        "components": [
+          {
+            "name": "collateral",
+            "type": "uint128",
+            "internalType": "uint128"
+          },
+          {
+            "name": "debtCheckpoint",
+            "type": "uint128",
+            "internalType": "uint128"
+          },
+          {
+            "name": "interestAccumulator",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "accountPosition",
+    "inputs": [
+      {
+        "name": "account",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "position",
+        "type": "tuple",
+        "internalType": "struct ITlcDataTypes.AccountPosition",
+        "components": [
+          {
+            "name": "collateral",
+            "type": "uint128",
+            "internalType": "uint128"
+          },
+          {
+            "name": "currentDebt",
+            "type": "uint128",
+            "internalType": "uint128"
+          },
+          {
+            "name": "maxBorrow",
+            "type": "uint128",
+            "internalType": "uint128"
+          },
+          {
+            "name": "healthFactor",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "loanToValueRatio",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "addCollateral",
+    "inputs": [
+      {
+        "name": "collateralAmount",
+        "type": "uint128",
+        "internalType": "uint128"
+      },
+      {
+        "name": "onBehalfOf",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "batchLiquidate",
+    "inputs": [
+      {
+        "name": "accounts",
+        "type": "address[]",
+        "internalType": "address[]"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "totalCollateralClaimed",
+        "type": "uint128",
+        "internalType": "uint128"
+      },
+      {
+        "name": "totalDaiDebtWiped",
+        "type": "uint128",
+        "internalType": "uint128"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "borrow",
+    "inputs": [
+      {
+        "name": "amount",
+        "type": "uint128",
+        "internalType": "uint128"
+      },
+      {
+        "name": "recipient",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "circuitBreakerProxy",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract ITempleCircuitBreakerProxy"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "computeLiquidity",
+    "inputs": [
+      {
+        "name": "accounts",
+        "type": "address[]",
+        "internalType": "address[]"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "status",
+        "type": "tuple[]",
+        "internalType": "struct ITlcDataTypes.LiquidationStatus[]",
+        "components": [
+          {
+            "name": "hasExceededMaxLtv",
+            "type": "bool",
+            "internalType": "bool"
+          },
+          {
+            "name": "collateral",
+            "type": "uint128",
+            "internalType": "uint128"
+          },
+          {
+            "name": "collateralValue",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "currentDebt",
+            "type": "uint128",
+            "internalType": "uint128"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "daiToken",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IERC20"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "debtTokenDetails",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "config",
+        "type": "tuple",
+        "internalType": "struct ITlcDataTypes.DebtTokenConfig",
+        "components": [
+          {
+            "name": "maxLtvRatio",
+            "type": "uint96",
+            "internalType": "uint96"
+          },
+          {
+            "name": "interestRateModel",
+            "type": "address",
+            "internalType": "contract IInterestRateModel"
+          },
+          {
+            "name": "borrowsPaused",
+            "type": "bool",
+            "internalType": "bool"
+          }
+        ]
+      },
+      {
+        "name": "data",
+        "type": "tuple",
+        "internalType": "struct ITlcDataTypes.DebtTokenData",
+        "components": [
+          {
+            "name": "interestAccumulatorUpdatedAt",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "totalDebt",
+            "type": "uint128",
+            "internalType": "uint128"
+          },
+          {
+            "name": "interestRate",
+            "type": "uint96",
+            "internalType": "uint96"
+          },
+          {
+            "name": "interestAccumulator",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "liquidationsPaused",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "minBorrowAmount",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint128",
+        "internalType": "uint128"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "recoverToken",
+    "inputs": [
+      {
+        "name": "token",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "to",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "refreshInterestRates",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "removeCollateral",
+    "inputs": [
+      {
+        "name": "amount",
+        "type": "uint128",
+        "internalType": "uint128"
+      },
+      {
+        "name": "recipient",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "repay",
+    "inputs": [
+      {
+        "name": "repayAmount",
+        "type": "uint128",
+        "internalType": "uint128"
+      },
+      {
+        "name": "onBehalfOf",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "repayAll",
+    "inputs": [
+      {
+        "name": "onBehalfOf",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setBorrowPaused",
+    "inputs": [
+      {
+        "name": "isPaused",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setInterestRateModel",
+    "inputs": [
+      {
+        "name": "interestRateModel",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setLiquidationsPaused",
+    "inputs": [
+      {
+        "name": "isPaused",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setMaxLtvRatio",
+    "inputs": [
+      {
+        "name": "maxLtvRatio",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setMinBorrowAmount",
+    "inputs": [
+      {
+        "name": "amount",
+        "type": "uint128",
+        "internalType": "uint128"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setTlcStrategy",
+    "inputs": [
+      {
+        "name": "_tlcStrategy",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "templeToken",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IERC20"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "tlcStrategy",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract ITlcStrategy"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "totalCollateral",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "totalDebtPosition",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "daiPosition",
+        "type": "tuple",
+        "internalType": "struct ITlcDataTypes.TotalDebtPosition",
+        "components": [
+          {
+            "name": "utilizationRatio",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "borrowRate",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "totalDebt",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "treasuryReservesVault",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract ITreasuryReservesVault"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "event",
+    "name": "Borrow",
+    "inputs": [
+      {
+        "name": "account",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "recipient",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint128",
+        "indexed": false,
+        "internalType": "uint128"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "BorrowPausedSet",
+    "inputs": [
+      {
+        "name": "isPaused",
+        "type": "bool",
+        "indexed": false,
+        "internalType": "bool"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "CollateralAdded",
+    "inputs": [
+      {
+        "name": "fundedBy",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "onBehalfOf",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "collateralAmount",
+        "type": "uint128",
+        "indexed": false,
+        "internalType": "uint128"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "CollateralRemoved",
+    "inputs": [
+      {
+        "name": "account",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "recipient",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "collateralAmount",
+        "type": "uint128",
+        "indexed": false,
+        "internalType": "uint128"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "InterestRateModelSet",
+    "inputs": [
+      {
+        "name": "interestRateModel",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "InterestRateUpdate",
+    "inputs": [
+      {
+        "name": "newInterestRate",
+        "type": "uint96",
+        "indexed": false,
+        "internalType": "uint96"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "Liquidated",
+    "inputs": [
+      {
+        "name": "account",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "collateralSeized",
+        "type": "uint128",
+        "indexed": false,
+        "internalType": "uint128"
+      },
+      {
+        "name": "collateralValue",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "daiDebtWiped",
+        "type": "uint128",
+        "indexed": false,
+        "internalType": "uint128"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "LiquidationsPausedSet",
+    "inputs": [
+      {
+        "name": "isPaused",
+        "type": "bool",
+        "indexed": false,
+        "internalType": "bool"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "MaxLtvRatioSet",
+    "inputs": [
+      {
+        "name": "maxLtvRatio",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "MinBorrowAmountSet",
+    "inputs": [
+      {
+        "name": "amount",
+        "type": "uint128",
+        "indexed": false,
+        "internalType": "uint128"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "Repay",
+    "inputs": [
+      {
+        "name": "fundedBy",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "onBehalfOf",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "repayAmount",
+        "type": "uint128",
+        "indexed": false,
+        "internalType": "uint128"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "TlcStrategySet",
+    "inputs": [
+      {
+        "name": "strategy",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "treasuryReservesVault",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "error",
+    "name": "ExceededBorrowedAmount",
+    "inputs": [
+      {
+        "name": "totalDebtAmount",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "repayAmount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ExceededMaxLtv",
+    "inputs": [
+      {
+        "name": "collateralAmount",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "collateralValue",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "currentDaiDebt",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "InsufficientAmount",
+    "inputs": [
+      {
+        "name": "required",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "provided",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "Paused",
+    "inputs": []
+  }
+] as const;

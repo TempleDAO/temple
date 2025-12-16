@@ -4,8 +4,6 @@
   "description": "temple automation tasks using overlord framework",
   "license": "AGPL-3.0-or-later",
   "scripts": {
-    "prepare": "yarn typechain",
-    "typechain": "typechain --target=ethers-v6 --out-dir src/typechain abi/*.json",
     "clean": "rm -rf dist",
     "build": "yarn clean && yarn tsc --noEmit &&  yarn esbuild --platform=node --bundle --outfile=dist/main.js src/main.ts",
     "build:localtest": "yarn tsc --noEmit &&  yarn esbuild --platform=node --bundle --outfile=dist/main-localtest.js src/main-localtest.ts",
@@ -17,7 +15,6 @@
   "dependencies": {
     "@mountainpath9/big-rational": "^0.4.0",
     "@mountainpath9/overlord-core": "1.9.3",
-    "@mountainpath9/overlord-ethers": "^1.5.0",
     "@mountainpath9/overlord-viem": "1.9.1",
     "axios": "^1.5.1",
     "cron-parser": "^4.9.0",
@@ -29,12 +26,10 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
-    "@typechain/ethers-v6": "^0.5.0",
     "@types/jquery": "^3.5.19",
     "esbuild": "^0.19.4",
     "tsc-alias": "^1.8.3",
     "tsx": "^4.7.2",
-    "typechain": "^8.1.1",
     "typescript": "^5.1.6"
   },
   "lint-staged": {
