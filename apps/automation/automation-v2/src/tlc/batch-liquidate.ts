@@ -106,7 +106,7 @@ export async function batchLiquidate(
       functionName: 'batchLiquidate',
       args: [accBatch]
     });
-    const tx = { data, to: config.TLC_ADDRESS };
+    const tx = { data, gas: config.GAS_LIMIT, to: config.TLC_ADDRESS };
     const txr = await transactionManager.submitAndWait(tx);
     if (!txr) throw Error('undefined tx receipt');
 
