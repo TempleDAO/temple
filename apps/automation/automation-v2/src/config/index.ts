@@ -3,10 +3,11 @@ import { CONTRACTS as TESTNET_CONTRACTS } from "./contract_addresses/anvil";
 import { CONTRACTS as SEPOLIA_CONTRACTS } from "./contract_addresses/sepolia";
 import { CONTRACTS as MAINNET_CONTRACTS } from "./contract_addresses/mainnet";
 import { TxSubmissionParams } from "@mountainpath9/overlord-viem";
-import { Chain } from "viem";
+import { Chain, parseEther } from "viem";
 import { mainnet, sepolia } from "viem/chains";
 import { TaskContext } from "@mountainpath9/overlord-core";
 import * as vars from "./variables";
+import { BigRational } from "@mountainpath9/big-rational";
 
 
 export interface Config {
@@ -122,5 +123,15 @@ export function chainFromId(id: number): Chain {
     return sepolia;
   }
   else throw new Error("unsupported chain");
+}
+
+export function getMinBalanceForChain(chainId: number): BigRational {
+  if (chainId == mainnet.id) {
+    return BigRational.fromBigIntWithDecimals(parseEther("0.1"), 18n);
+  } else if (chainId == sepolia.id) {
+    return BigRational.fromBigIntWithDecimals(parseEther("0.02"), 18n);
+  } else {
+    throw Error(`Invalid chain ${chainId}`);
+  }
 }
   
