@@ -7,6 +7,7 @@ import { createTransactionManager, getPublicClient, getWalletClient } from "@mou
 import { delayUntilNextCheckTime } from "@/utils/task-checks";
 import { Address, encodeFunctionData, getContract } from "viem";
 import * as StableGoldAuction from "@/abi/IStableGoldAuction";
+import { isMaxGasPriceExceeded } from "@/utils/gas-checks";
 
 
 export const taskIdPrefix = 'tlgddaigoldauction-a-';
@@ -36,6 +37,8 @@ export async function startAuction(ctx: TaskContext, params: Params): Promise<Ta
         ctx.logger.info(`skipping as start auction not due`);
         return taskSuccessSilent();
     }
+
+    if (await isMaxGasPriceExceeded(ctx, pclient, params.chainId)) { return taskSuccessSilent(); }
 
     const currentEpoch = await auction.read.currentEpoch();
     ctx.logger.info(`Current epoch: ${currentEpoch}`);

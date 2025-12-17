@@ -3,7 +3,7 @@ import { CONTRACTS as TESTNET_CONTRACTS } from "./contract_addresses/anvil";
 import { CONTRACTS as SEPOLIA_CONTRACTS } from "./contract_addresses/sepolia";
 import { CONTRACTS as MAINNET_CONTRACTS } from "./contract_addresses/mainnet";
 import { TxSubmissionParams } from "@mountainpath9/overlord-viem";
-import { Chain, parseEther } from "viem";
+import { Chain } from "viem";
 import { mainnet, sepolia } from "viem/chains";
 import { TaskContext } from "@mountainpath9/overlord-core";
 import * as vars from "./variables";
@@ -68,15 +68,15 @@ async function getMainnetSubmissionParams(ctx: TaskContext): Promise<TxSubmissio
   }
 }
 
-async function getMainnetSepoliaSubmissionParams(ctx: TaskContext): Promise<TxSubmissionParams> {
+async function getSepoliaSubmissionParams(ctx: TaskContext): Promise<TxSubmissionParams> {
   const t0MaxPriorityFeePerGas =
-    await vars.mainnet_sepolia_t0_max_priority_fee_per_gas.requireValue(ctx);
+    await vars.sepolia_t0_max_priority_fee_per_gas.requireValue(ctx);
 
   const t1MaxPriorityFeePerGas =
-    await vars.mainnet_sepolia_t1_max_priority_fee_per_gas.getValue(ctx);
+    await vars.sepolia_t1_max_priority_fee_per_gas.getValue(ctx);
 
   const t2MaxPriorityFeePerGas =
-    await vars.mainnet_sepolia_t2_max_priority_fee_per_gas.getValue(ctx);
+    await vars.sepolia_t2_max_priority_fee_per_gas.getValue(ctx);
 
   return {
     // our initial gas tip
@@ -96,10 +96,10 @@ async function getMainnetSepoliaSubmissionParams(ctx: TaskContext): Promise<TxSu
 }
 
 export async function getSubmissionParams(ctx: TaskContext, chainId: Number): Promise<TxSubmissionParams> {
-  if (chainId == mainnet.id) {
+  if (chainId === mainnet.id) {
     return getMainnetSubmissionParams(ctx);
-  } else if (chainId == sepolia.id) {
-    return getMainnetSepoliaSubmissionParams(ctx);
+  } else if (chainId === sepolia.id) {
+    return getSepoliaSubmissionParams(ctx);
   } else {
     throw Error(`Invalid chain ${chainId}`);
   }
@@ -119,17 +119,28 @@ export function getConfig(env: string): Config {
 export function chainFromId(id: number): Chain {
   if (id === mainnet.id) {
     return mainnet;
-  } else if (id == sepolia.id) {
+  } else if (id === sepolia.id) {
     return sepolia;
   }
   else throw new Error("unsupported chain");
 }
 
 export function getMinBalanceForChain(chainId: number): BigRational {
-  if (chainId == mainnet.id) {
-    return BigRational.fromBigIntWithDecimals(parseEther("0.1"), 18n);
-  } else if (chainId == sepolia.id) {
-    return BigRational.fromBigIntWithDecimals(parseEther("0.02"), 18n);
+  if (chainId === mainnet.id) {
+    return BigRational.fromDecimalString("0.1");
+  } else if (chainId === sepolia.id) {
+    return BigRational.fromDecimalString("0.02");
+  } else {
+    throw Error(`Invalid chain ${chainId}`);
+  }
+}
+
+export function getMaxGasPriceForChain(chainId: number): BigRational {
+  // Returns max gas price in gwei
+  if (chainId === mainnet.id) {
+    return BigRational.fromDecimalString("0.2");
+  } else if (chainId === sepolia.id) {
+    return BigRational.fromDecimalString("0.2");
   } else {
     throw Error(`Invalid chain ${chainId}`);
   }

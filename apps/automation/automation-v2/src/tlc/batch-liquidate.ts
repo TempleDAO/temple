@@ -21,6 +21,7 @@ import { Address, Chain as ViemChain, getContract, getAddress,
   encodeFunctionData, decodeEventLog } from 'viem';
 import { getSubmissionParams } from "@/config";
 import { WebhookMessageCreateOptions } from 'discord.js';
+import { isMaxGasPriceExceeded } from '@/utils/gas-checks';
 
 
 export interface Chain {
@@ -51,6 +52,8 @@ export async function batchLiquidate(
   const walletAddress = wclient.account;
   const webhookUrl = await tlc_discord_webhook_url.requireValue(ctx);
   const discord = await connectDiscord(webhookUrl, ctx.logger);
+
+  if (await isMaxGasPriceExceeded(ctx, pclient, config.CHAIN.chain.id)) { return taskSuccessSilent(); }
 
   const tlc = getContract({
       address: config.TLC_ADDRESS,
@@ -106,7 +109,7 @@ export async function batchLiquidate(
       functionName: 'batchLiquidate',
       args: [accBatch]
     });
-    const tx = { data, gas: config.GAS_LIMIT, to: config.TLC_ADDRESS };
+    const tx = { data, to: config.TLC_ADDRESS };
     const txr = await transactionManager.submitAndWait(tx);
     if (!txr) throw Error('undefined tx receipt');
 

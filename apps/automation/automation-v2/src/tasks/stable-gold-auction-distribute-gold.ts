@@ -8,6 +8,7 @@ import { etherscanTransactionUrl } from "@/utils/etherscan";
 import { getMsSinceLastDistribution } from "@/utils/distribute";
 import { Address, encodeFunctionData, getContract } from "viem";
 import * as TempleGold from "@/abi/ITempleGold";
+import { isMaxGasPriceExceeded } from "@/utils/gas-checks";
 
 export const taskIdPrefix = 'tlgddaigoldauction-distribute-gold-a-';
 
@@ -31,6 +32,8 @@ export async function distributeGold(ctx: TaskContext, params: Params): Promise<
     abi: TempleGold.ABI,
     client: pclient
   });
+
+  if (await isMaxGasPriceExceeded(ctx, pclient, params.chainId)) {  return taskSuccessSilent(); }
 
   // check last distribution
   const now = new Date();

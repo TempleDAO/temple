@@ -1,7 +1,7 @@
 import { KvPersistedValue } from "@/utils/kv";
 import { TaskContext, TaskResult,
   taskSuccess, taskSuccessSilent } from "@mountainpath9/overlord-core";
-import { getPublicClient, getWalletClient, createTransactionManager, PublicClient } from "@mountainpath9/overlord-viem";
+import { getPublicClient, getWalletClient, createTransactionManager } from "@mountainpath9/overlord-viem";
 import { chainFromId, getSubmissionParams } from "@/config";
 import { postDefconNotification } from "@/utils/discord";
 import { etherscanTransactionUrl } from "@/utils/etherscan";
@@ -11,6 +11,7 @@ import * as Spice from "@/abi/ISpiceAuction";
 import * as TempleGold from "@/abi/ITempleGold";
 import * as AuctionBase from "@/abi/IAuctionBase";
 import { ExtractAbiFunction, AbiParametersToPrimitiveTypes } from "abitype";
+import { isMaxGasPriceExceeded } from "@/utils/gas-checks";
 
 const EMPTY_BYTES32 = "0x0000000000000000000000000000000000000000000000000000000000000000";
 // avoid hot spots in code when iterating
@@ -111,6 +112,8 @@ export async function burnAndUpdateCirculatingSupply(ctx: TaskContext, params: P
 
   // check last run time
   if (await assertLastRuntime(ctx, params)) { return taskSuccessSilent(); }
+  // check max gas price
+  if (await isMaxGasPriceExceeded(ctx, pclient, params.chainId)) { return taskSuccessSilent(); }
 
   // get current epoch and start checking from next eligible epoch
   const currentEpoch = await auction.read.currentEpoch();

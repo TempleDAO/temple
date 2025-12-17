@@ -8,6 +8,7 @@ import { delayUntilNextCheckTime } from "@/utils/task-checks";
 import { getPublicClient, getWalletClient } from "@mountainpath9/overlord-viem";
 import { Address, encodeFunctionData, getContract } from "viem";
 import * as TempleGoldStaking from "@/abi/ITempleGoldStaking"
+import { isMaxGasPriceExceeded } from "@/utils/gas-checks";
 
 
 export const taskIdPrefix = 'tlgdstaking-a-';
@@ -46,6 +47,8 @@ export async function stakingDistributeRewards(ctx: TaskContext, params: Params)
         ctx.logger.info(`skipping as distribute staking not due`);
         return taskSuccessSilent();
     }
+
+    if (await isMaxGasPriceExceeded(ctx, pclient, params.chainId)) { return taskSuccessSilent(); }
 
     // check reward period finish
     
