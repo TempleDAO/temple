@@ -8,7 +8,7 @@ export async function isMaxGasPriceExceeded(ctx: TaskContext, provider: PublicCl
     const gasPrice = BigRational.fromBigIntWithDecimals(estimate.maxFeePerGas || 0n, 9n);
     const maxGasPrice = getMaxGasPriceForChain(chainId);
     if (gasPrice.gt(maxGasPrice)) {
-        ctx.logger.info(`skipping due to high gas price (${gasPrice.toDecimalString(0)} > (${maxGasPrice.toDecimalString(0)}`);
+        ctx.logger.info(`skipping due to high gas price (${gasPrice.toDecimalString(0)} > ${maxGasPrice.toDecimalString(0)})`);
         return true;
     }
     return false;
