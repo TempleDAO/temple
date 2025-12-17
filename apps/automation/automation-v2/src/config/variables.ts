@@ -125,21 +125,21 @@ export const mainnet_t2_max_priority_fee_per_gas = new BigRationalVariable({
 });
 
 export const mainnet_sepolia_t0_max_priority_fee_per_gas = new BigRationalVariable({
-  name: 'tx_config_mainnet/t0_max_priority_fee_per_gas',
+  name: 'tx_config_sepolia/t0_max_priority_fee_per_gas',
   description:
     'Base priority fee (gas tip). Used directly if no factor is provided, or as the minimum when scaling is applied.',
   default: Number(1_000_000_000),
 });
 
 export const mainnet_sepolia_t1_max_priority_fee_per_gas = new BigRationalVariable({
-  name: 'tx_config_mainnet/t1_max_priority_fee_per_gas',
+  name: 'tx_config_sepolia/t1_max_priority_fee_per_gas',
   description:
     'Base tip for retry after t1 seconds (optional). Used directly if no factor is provided, or as the minimum when scaling is applied.',
   default: Number(3_000_000_000),
 });
 
 export const mainnet_sepolia_t2_max_priority_fee_per_gas = new BigRationalVariable({
-  name: 'tx_config_mainnet/t2_max_priority_fee_per_gas',
+  name: 'tx_config_sepolia/t2_max_priority_fee_per_gas',
   description:
     'Tip used for cancellation after t2 seconds (optional). Used directly if no factor is provided, or as the minimum when scaling is applied.',
   default: Number(5_000_000_000),

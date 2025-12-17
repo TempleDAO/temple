@@ -4,7 +4,7 @@ import { CONTRACTS as SEPOLIA_CONTRACTS } from "./contract_addresses/sepolia";
 import { CONTRACTS as MAINNET_CONTRACTS } from "./contract_addresses/mainnet";
 import { TxSubmissionParams } from "@mountainpath9/overlord-viem";
 import { Chain } from "viem";
-import { mainnet, berachain, sepolia } from "viem/chains";
+import { mainnet, sepolia } from "viem/chains";
 import { TaskContext } from "@mountainpath9/overlord-core";
 import * as vars from "./variables";
 
@@ -118,8 +118,6 @@ export function getConfig(env: string): Config {
 export function chainFromId(id: number): Chain {
   if (id === mainnet.id) {
     return mainnet;
-  } else if (id === berachain.id) {
-    return berachain;
   } else if (id == sepolia.id) {
     return sepolia;
   }
