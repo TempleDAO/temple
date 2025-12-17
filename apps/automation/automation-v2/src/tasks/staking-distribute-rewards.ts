@@ -26,7 +26,7 @@ export async function stakingDistributeRewards(ctx: TaskContext, params: Params)
     const chain = chainFromId(params.chainId);
     const pclient = await getPublicClient(ctx, chain);
     const wclient = await getWalletClient(ctx, chain, params.signerId);
-    const transactionManager = await createTransactionManager(ctx, wclient, await getSubmissionParams(ctx, chain));
+    const transactionManager = await createTransactionManager(ctx, wclient, await getSubmissionParams(ctx, chain.id));
 
     const staking = getContract({
         address: params.contracts.staking,

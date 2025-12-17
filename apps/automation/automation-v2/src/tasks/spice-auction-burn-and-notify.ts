@@ -39,7 +39,7 @@ export async function burnAndUpdateCirculatingSupply(ctx: TaskContext, params: P
   const chain = chainFromId(params.chainId);
   const pclient = await getPublicClient(ctx, chain);
   const wclient = await getWalletClient(ctx, chain, params.signerId);
-  const transactionManager = await createTransactionManager(ctx, wclient, await getSubmissionParams(ctx, chain));
+  const transactionManager = await createTransactionManager(ctx, wclient, await getSubmissionParams(ctx, chain.id));
 
   const auction = getContract({
     address: params.contracts.auction,

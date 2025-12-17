@@ -94,13 +94,13 @@ async function getMainnetSepoliaSubmissionParams(ctx: TaskContext): Promise<TxSu
   }
 }
 
-export async function getSubmissionParams(ctx: TaskContext, chain: Chain): Promise<TxSubmissionParams> {
-  if (chain.id == mainnet.id) {
+export async function getSubmissionParams(ctx: TaskContext, chainId: Number): Promise<TxSubmissionParams> {
+  if (chainId == mainnet.id) {
     return getMainnetSubmissionParams(ctx);
-  } else if (chain.id == sepolia.id) {
+  } else if (chainId == sepolia.id) {
     return getMainnetSepoliaSubmissionParams(ctx);
   } else {
-    throw Error(`Invalid chain ${chain.id}`);
+    throw Error(`Invalid chain ${chainId}`);
   }
 }
 
