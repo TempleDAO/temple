@@ -51,11 +51,11 @@ export const DataTable: React.FC<TableProps> = ({
   refetch,
   onClaim,
 }) => {
-  const [modalState, setModalState] = useState<'closed' | 'bidDai' | 'bidTgld'>(
-    'closed'
-  );
-
-  const [currentBidAmount, setCurrentBidAmount] = useState<string>('');
+  const [modalState, setModalState] = useState<{
+    type: 'closed' | 'bidDai' | 'bidTgld';
+    transaction?: Transaction;
+    currentBidAmount?: string;
+  }>({ type: 'closed' });
 
   const [filter, setFilter] = useState('Last 5 Shown');
   const [filteredTransactions, setFilteredTransactions] =
@@ -80,7 +80,7 @@ export const DataTable: React.FC<TableProps> = ({
 
   const onBidSubmitted = () => {
     refetch?.();
-    setModalState('closed');
+    setModalState({ type: 'closed' });
   };
 
   useEffect(() => {
@@ -167,11 +167,13 @@ export const DataTable: React.FC<TableProps> = ({
                           {action === 'Bid' && (
                             <TradeButton
                               onClick={() => {
-                                // TODO: Have to fix this and pass numeric values
-                                setCurrentBidAmount(
-                                  Number(transaction.bidTotal).toString()
-                                );
-                                setModalState(modal);
+                                setModalState({
+                                  type: modal,
+                                  transaction: transaction,
+                                  currentBidAmount: Number(
+                                    transaction.bidTotal
+                                  ).toString(),
+                                });
                               }}
                               style={{ whiteSpace: 'nowrap', margin: 0 }}
                             >
@@ -203,34 +205,28 @@ export const DataTable: React.FC<TableProps> = ({
         </ScrollBar>
       </PageContainer>
       <Popover
-        isOpen={modalState != 'closed'}
-        onClose={() => setModalState('closed')}
+        isOpen={modalState.type !== 'closed'}
+        onClose={() => setModalState({ type: 'closed' })}
         closeOnClickOutside
         showCloseButton
       >
-        {modal === 'bidDai' && (
+        {modalState.type === 'bidDai' && (
           <BidUSDS
             onBidSubmitted={onBidSubmitted}
             mode={BidUSDSMode.IncreaseBid}
-            currentBidAmount={currentBidAmount}
+            currentBidAmount={modalState.currentBidAmount}
           />
         )}
-        {modal === 'bidTgld' && (
+        {modalState.type === 'bidTgld' && (
           <BidTGLD
             mode={BidTGLDMode.IncreaseBid}
-            currentBidAmount={currentBidAmount}
+            currentBidAmount={modalState.currentBidAmount}
             onBidSuccess={async () => {
               await refetch?.();
-              setModalState('closed');
+              setModalState({ type: 'closed' });
             }}
             isLoadingUserMetrics={false}
-            auctionConfig={(() => {
-              const transaction = transactions.find(
-                (t) => Number(t.bidTotal) === Number(currentBidAmount)
-              );
-
-              return transaction?.auctionStaticConfig;
-            })()}
+            auctionConfig={modalState.transaction?.auctionStaticConfig}
           />
         )}
       </Popover>
