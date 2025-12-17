@@ -95,7 +95,7 @@ async function getSepoliaSubmissionParams(ctx: TaskContext): Promise<TxSubmissio
   }
 }
 
-export async function getSubmissionParams(ctx: TaskContext, chainId: Number): Promise<TxSubmissionParams> {
+export async function getSubmissionParams(ctx: TaskContext, chainId: number): Promise<TxSubmissionParams> {
   if (chainId === mainnet.id) {
     return getMainnetSubmissionParams(ctx);
   } else if (chainId === sepolia.id) {

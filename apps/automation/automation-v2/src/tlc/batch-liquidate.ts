@@ -116,38 +116,40 @@ export async function batchLiquidate(
     // Track number of events
     let numberOfEvents = 0;
 
-    txr.logs.forEach((log) => {
-      const decodedLog = decodeEventLog({
-        abi: TLC_ABI,
-        data: log.data,
-        topics: log.topics,
-      });
+    txr.logs
+      .filter((log) => log.address.toLowerCase() === config.TLC_ADDRESS.toLowerCase())
+      .forEach((log) => {
+        const decodedLog = decodeEventLog({
+          abi: TLC_ABI,
+          data: log.data,
+          topics: log.topics,
+        });
 
-      // check if this is the liquidated event
-      if (decodedLog.eventName === 'Liquidated') {
-        const args = decodedLog.args;
-        const details = [
-          `account = \`${args.account}\``,
-          `collateralValue = \`${formatBigNumber(
-            args.collateralValue,
-            18,
-            4
-          )}\``,
-          `collateralSeized = \`${formatBigNumber(
-            args.collateralSeized,
-            18,
-            4
-          )}\``,
-          `daiDebtWiped = \`${formatBigNumber(
-            args.daiDebtWiped,
-            18,
-            4
-          )}\``,
-        ];
-        numberOfEvents += 1;
-        // Log the event details. Avoid bloating discord messages due to set 1k character limit
-        ctx.logger.info( `\n_What_: Liquidated` + `${details.map((d) => `\n\t\t\t\t• ${d}`)}`);
-      }
+        // check if this is the liquidated event
+        if (decodedLog.eventName === 'Liquidated') {
+          const args = decodedLog.args;
+          const details = [
+            `account = \`${args.account}\``,
+            `collateralValue = \`${formatBigNumber(
+              args.collateralValue,
+              18,
+              4
+            )}\``,
+            `collateralSeized = \`${formatBigNumber(
+              args.collateralSeized,
+              18,
+              4
+            )}\``,
+            `daiDebtWiped = \`${formatBigNumber(
+              args.daiDebtWiped,
+              18,
+              4
+            )}\``,
+          ];
+          numberOfEvents += 1;
+          // Log the event details. Avoid bloating discord messages due to set 1k character limit
+          ctx.logger.info( `\n_What_: Liquidated` + `${details.map((d) => `\n\t\t\t\t• ${d}`)}`);
+        }
     });
 
     // Skip adding to discord messages if no liquidation happened in this chunk
