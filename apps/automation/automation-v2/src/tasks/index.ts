@@ -11,9 +11,6 @@ import { getOnchainTgldAuctionState, updateDiscordSidebarBot } from "./discord-s
 import { burnAndUpdateCirculatingSupply as burnTempleGold } from "./spice-auction-burn-and-notify";
 import { getPublicClient } from "@mountainpath9/overlord-viem";
 
-////////////////////////////
-// stable-gold-auction     //
-////////////////////////////
 
 export async function daiGoldAuctionDistributeGold(config: Config, ctx: TaskContext) {
     return distributeGold(ctx, {
@@ -88,7 +85,6 @@ export async function checkSignersBalance(config: Config, ctx: TaskContext) {
         chainId: config.chainId,
         signersWithPrevBalance: signers,
         lastRunTime: kvPersistedValue(ctx, 'tgld_check_signers_balance_last_run_time', JB_DATE),
-        minBalance: await vars.check_signers_balance_min_balance.requireValue(ctx),
         checkPeriodMs:  await vars.check_signers_balance_check_period_ms.requireValue(ctx),
         lastCheckTime: kvPersistedValue(ctx, 'tgld_check_signers_balance_last_check_time', JB_DATE),
     });
@@ -110,7 +106,6 @@ export async function checkSepoliaSignersBalance(config: Config, ctx: TaskContex
         chainId: config.chainId,
         signersWithPrevBalance: signers,
         lastRunTime: kvPersistedValue(ctx, 'sepolia_tgld_check_signers_balance_last_run_time', JB_DATE),
-        minBalance: await vars.check_signers_balance_min_balance.requireValue(ctx),
         checkPeriodMs:  await vars.check_signers_balance_check_period_ms.requireValue(ctx),
         lastCheckTime: kvPersistedValue(ctx, 'sepolia_tgld_check_signers_balance_last_check_time', JB_DATE),
     });

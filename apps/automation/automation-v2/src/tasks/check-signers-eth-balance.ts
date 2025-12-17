@@ -2,6 +2,7 @@ import { checkSignerBalance } from "./check-signer-balance";
 import { BigRational } from "@mountainpath9/big-rational";
 import { KvPersistedValue } from "@/utils/kv";
 import { TaskContext, TaskResult, taskSuccessSilent } from "@mountainpath9/overlord-core";
+import { parseEther } from "viem";
 
 
 export const taskIdPrefix = 'tlgdchecksignersethbalance-';
@@ -10,7 +11,6 @@ export interface Params {
     signersWithPrevBalance: Array<SignerWithPrevBalance>,
     chainId: number,
     lastRunTime: KvPersistedValue<Date>;
-    minBalance: BigRational,
     checkPeriodMs: number,
     lastCheckTime: KvPersistedValue<Date>,
 }
@@ -22,12 +22,13 @@ export interface SignerWithPrevBalance {
 
 export async function checkSignersEthBalance(ctx: TaskContext, params: Params): Promise<TaskResult> {
     const signers = params.signersWithPrevBalance;
+    const minBalance = BigRational.fromBigIntWithDecimals(parseEther("0.1"), 18n);
     for(let _signer of signers) {
         await checkSignerBalance(
             ctx, {
             signerId: _signer.signer,
             chainId: params.chainId,
-            minBalance: params.minBalance,
+            minBalance: minBalance,
             prevBalance: _signer.prevBalance
         });
     }

@@ -26,14 +26,6 @@ export const staking_distribute_rewards_check_period_ms = new NumberVariable({
     min: 1000 * 600,
 });
 
-export const check_signers_balance_min_balance = new BigRationalVariable({
-    name: 'check_signers_balance_min_balance',
-    description: 'Min balance for signers',
-    default: 0.1,
-    min: 0,
-    max: 2
-});
-
 export const check_signers_balance_check_period_ms = new NumberVariable({
     name: 'check_signers_balance_check_period_ms ',
     description: 'How many milliseconds to wait between signers balance checks.',

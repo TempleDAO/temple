@@ -73,7 +73,6 @@ export async function checkSignersBalance(config: Config, ctx: TaskContext) {
         chainId: config.chainId,
         signersWithPrevBalance: signers,
         lastRunTime: kvPersistedValue(ctx, 'tgld_check_signers_balance_last_run_time', JB_DATE),
-        minBalance: await vars.check_signers_balance_min_balance.requireValue(ctx),
         checkPeriodMs:  await vars.check_signers_balance_check_period_ms.requireValue(ctx),
         lastCheckTime: kvPersistedValue(ctx, 'tgld_check_signers_balance_last_check_time', JB_DATE),
     });
