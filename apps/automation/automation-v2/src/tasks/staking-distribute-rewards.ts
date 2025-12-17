@@ -1,7 +1,6 @@
 import { TaskContext, TaskResult, taskSuccess, taskSuccessSilent } from "@mountainpath9/overlord-core";
 import { createTransactionManager } from "@mountainpath9/overlord-viem";
 import { KvPersistedValue } from "@/utils/kv";
-import { BigRational } from "@mountainpath9/big-rational";
 import { etherscanTransactionUrl } from "@/utils/etherscan";
 import { postDefconNotification } from "@/utils/discord";
 import { chainFromId, getSubmissionParams } from "@/config";
@@ -18,7 +17,6 @@ interface Params {
     chainId: number,
     contracts: { templeGold: Address, staking: Address },
     lastRunTime: KvPersistedValue<Date>;
-    maxGasPrice: BigRational,
     checkPeriodFinish: boolean,
     checkPeriodMs: number,
     lastCheckTime: KvPersistedValue<Date>,
@@ -28,7 +26,7 @@ export async function stakingDistributeRewards(ctx: TaskContext, params: Params)
     const chain = chainFromId(params.chainId);
     const pclient = await getPublicClient(ctx, chain);
     const wclient = await getWalletClient(ctx, chain, params.signerId);
-    const transactionManager = await createTransactionManager(ctx, wclient, {...await getSubmissionParams(ctx)});
+    const transactionManager = await createTransactionManager(ctx, wclient, await getSubmissionParams(ctx, chain));
 
     const staking = getContract({
         address: params.contracts.staking,

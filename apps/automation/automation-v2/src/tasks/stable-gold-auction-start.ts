@@ -1,5 +1,4 @@
 import { chainFromId, getSubmissionParams } from "@/config";
-import { BigRational } from "@mountainpath9/big-rational";
 import { etherscanTransactionUrl } from "@/utils/etherscan";
 import { postDefconNotification } from "@/utils/discord";
 import { KvPersistedValue } from "@/utils/kv";
@@ -17,7 +16,6 @@ export interface Params {
     chainId: number,
     contracts: { auction: Address },
     lastRunTime: KvPersistedValue<Date>,
-    maxGasPrice: BigRational,
     checkPeriodMs: number,
     lastCheckTime: KvPersistedValue<Date>,
 }
@@ -26,7 +24,7 @@ export async function startAuction(ctx: TaskContext, params: Params): Promise<Ta
     const chain = chainFromId(params.chainId);
     const pclient = await getPublicClient(ctx, chain);
     const wclient = await getWalletClient(ctx, chain, params.signerId);
-    const transactionManager = await createTransactionManager(ctx, wclient, {...await getSubmissionParams(ctx)});
+    const transactionManager = await createTransactionManager(ctx, wclient, await getSubmissionParams(ctx, chain));
     const auction = getContract({
         abi: StableGoldAuction.ABI,
         address: params.contracts.auction,
@@ -41,13 +39,6 @@ export async function startAuction(ctx: TaskContext, params: Params): Promise<Ta
 
     const currentEpoch = await auction.read.currentEpoch();
     ctx.logger.info(`Current epoch: ${currentEpoch}`);
-
-    const estimate = await pclient.estimateFeesPerGas();
-    const gasPrice = BigRational.fromBigIntWithDecimals(estimate.maxFeePerGas || 0n, 9n);
-    if (gasPrice.gt(params.maxGasPrice)) {
-      ctx.logger.info(`skipping due to high gas price (${gasPrice.toDecimalString(0)} > (${params.maxGasPrice.toDecimalString(0)}`);
-      return taskSuccessSilent();
-    }
 
     // checks
     if (currentEpoch != BigInt(0)) {

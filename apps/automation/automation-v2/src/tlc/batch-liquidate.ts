@@ -47,7 +47,7 @@ export async function batchLiquidate(
 ): Promise<TaskResult> {
   const pclient = await getPublicClient(ctx, config.CHAIN.chain);
   const wclient = await getWalletClient(ctx, config.CHAIN.chain, config.WALLET_NAME);
-  const transactionManager = await createTransactionManager(ctx, wclient, {...await getSubmissionParams(ctx)});
+  const transactionManager = await createTransactionManager(ctx, wclient, await getSubmissionParams(ctx, config.CHAIN.chain));
   const walletAddress = wclient.account;
   const webhookUrl = await tlc_discord_webhook_url.requireValue(ctx);
   const discord = await connectDiscord(webhookUrl, ctx.logger);

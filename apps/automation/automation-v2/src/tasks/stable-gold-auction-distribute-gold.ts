@@ -1,4 +1,3 @@
-import { BigRational } from "@mountainpath9/big-rational";
 import { KvPersistedValue } from "@/utils/kv";
 import { TaskContext, TaskResult,
   taskSuccess, taskSuccessSilent } from "@mountainpath9/overlord-core";
@@ -17,7 +16,6 @@ export interface Params {
     chainId: number,
     contracts: { auction: Address, templeGold: Address, staking: Address },
     lastRunTime: KvPersistedValue<Date>;
-    maxGasPrice: BigRational,
     checkPeriodMs: number,
     lastCheckTime: KvPersistedValue<Date>,
 }
@@ -26,7 +24,7 @@ export async function distributeGold(ctx: TaskContext, params: Params): Promise<
   const chain = chainFromId(params.chainId);
   const pclient = await getPublicClient(ctx, chain);
   const wclient = await getWalletClient(ctx, chain, params.signerId);
-  const transactionManager = await createTransactionManager(ctx, wclient, {...await getSubmissionParams(ctx)});
+  const transactionManager = await createTransactionManager(ctx, wclient, await getSubmissionParams(ctx, chain));
   
   const templeGold = getContract({
     address: params.contracts.templeGold,
@@ -39,13 +37,6 @@ export async function distributeGold(ctx: TaskContext, params: Params): Promise<
   const ms = await getMsSinceLastDistribution(params.lastRunTime, now);
   if (ms && ms < params.checkPeriodMs) {
     ctx.logger.info(`skipping as checked recently`);
-    return taskSuccessSilent();
-  }
-
-  const estimate = await pclient.estimateFeesPerGas();
-  const gasPrice = BigRational.fromBigIntWithDecimals(estimate.maxFeePerGas || 0n, 9n);
-  if (gasPrice.gt(params.maxGasPrice)) {
-    ctx.logger.info(`skipping due to high gas price (${gasPrice.toDecimalString(0)} > (${params.maxGasPrice.toDecimalString(0)}`);
     return taskSuccessSilent();
   }
   

@@ -40,7 +40,7 @@ const MAINNET_CONFIG: Config = {
   contracts: MAINNET_CONTRACTS,
 }
 
-export async function getSubmissionParams(ctx: TaskContext): Promise<TxSubmissionParams> {
+async function getMainnetSubmissionParams(ctx: TaskContext): Promise<TxSubmissionParams> {
   const t0MaxPriorityFeePerGas =
     await vars.mainnet_t0_max_priority_fee_per_gas.requireValue(ctx);
 
@@ -64,6 +64,43 @@ export async function getSubmissionParams(ctx: TaskContext): Promise<TxSubmissio
 
     // Wait for another minute before giving up on cancellation
     t3Secs: 210
+  }
+}
+
+async function getMainnetSepoliaSubmissionParams(ctx: TaskContext): Promise<TxSubmissionParams> {
+  const t0MaxPriorityFeePerGas =
+    await vars.mainnet_sepolia_t0_max_priority_fee_per_gas.requireValue(ctx);
+
+  const t1MaxPriorityFeePerGas =
+    await vars.mainnet_sepolia_t1_max_priority_fee_per_gas.getValue(ctx);
+
+  const t2MaxPriorityFeePerGas =
+    await vars.mainnet_sepolia_t2_max_priority_fee_per_gas.getValue(ctx);
+
+  return {
+    // our initial gas tip
+    t0MaxPriorityFeePerGas: t0MaxPriorityFeePerGas.toScaledBigInt(1n),
+    
+    // Wait for 30 secs before increasing tip
+    t1Secs: 30,
+    t1MaxPriorityFeePerGas: t1MaxPriorityFeePerGas?.toScaledBigInt(1n),
+
+    // Wait for another two minutes minute before cancelling
+    t2Secs: 150,
+    t2MaxPriorityFeePerGas: t2MaxPriorityFeePerGas?.toScaledBigInt(1n),
+
+    // Wait for another minute before giving up on cancellation
+    t3Secs: 210
+  }
+}
+
+export async function getSubmissionParams(ctx: TaskContext, chain: Chain): Promise<TxSubmissionParams> {
+  if (chain.id == mainnet.id) {
+    return getMainnetSubmissionParams(ctx);
+  } else if (chain.id == sepolia.id) {
+    return getMainnetSepoliaSubmissionParams(ctx);
+  } else {
+    throw Error(`Invalid chain ${chain.id}`);
   }
 }
 
