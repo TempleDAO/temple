@@ -1,14 +1,11 @@
-import {
-  formatUnits,
-  ContractTransactionReceipt,
-  Provider,
-} from 'ethers';
 import { format } from 'date-fns';
 import { Chain } from './batch-liquidate';
 import { DiscordMessage } from '@/utils/discord';
+import { TransactionReceipt, formatUnits } from 'viem';
+import { PublicClient } from '@mountainpath9/overlord-viem';
 
-export async function getBlockTimestamp(provider: Provider): Promise<bigint> {
-  const latestBlock = await provider.getBlock('latest');
+export async function getBlockTimestamp(provider: PublicClient): Promise<bigint> {
+  const latestBlock = await provider.getBlock();
   if (!latestBlock) throw Error('undefined block');
   return BigInt(latestBlock.timestamp);
 }
@@ -89,17 +86,18 @@ export const one_gwei = 1000000000n;
  * Generate markdown for standard tx receipt fields
  */
 export async function txReceiptMarkdown(
-  provider: Provider,
+  provider: PublicClient,
   submittedAt: Date,
-  txReceipt: ContractTransactionReceipt,
+  txReceipt: TransactionReceipt,
   txUrl: string
 ): Promise<string[]> {
-  const effectiveGasPrice = txReceipt.gasPrice; // In wei
+  const effectiveGasPrice = txReceipt.effectiveGasPrice; // In wei
   const gasUsed = txReceipt.gasUsed;
   const totalFee = (effectiveGasPrice * gasUsed) / one_gwei;
-  const block = await provider.getBlock(txReceipt.blockNumber);
+  const block = await provider.getBlock({ blockNumber: txReceipt.blockNumber });
   if (!block) throw Error('undefined block');
-  const minedAt = new Date(block.timestamp * 1000);
+  const timestampMs = Number(block.timestamp * 1000n);
+  const minedAt = new Date(timestampMs);
 
   return [
     `_Gas Price (GWEI):_ \`${formatBigNumber(effectiveGasPrice, 9, 4)}\``,
@@ -123,9 +121,9 @@ export interface TempleTaskDiscordEvent {
 }
 export interface TempleTaskDiscordMetadata {
   title: string;
-  events: TempleTaskDiscordEvent[];
+  numberOfEvents: number;
   submittedAt: Date;
-  txReceipt: ContractTransactionReceipt;
+  txReceipt: TransactionReceipt;
   txUrl: string;
 }
 
@@ -135,19 +133,16 @@ export interface TempleTaskDiscordMetadata {
  */
 
 export async function buildTempleTasksDiscordMessage(
-  provider: Provider,
-  chain: Chain,
+  provider: PublicClient,
+  chainName: string,
   metadata: TempleTaskDiscordMetadata
 ): Promise<DiscordMessage> {
-  const { title, submittedAt, txReceipt, txUrl, events } = metadata;
+  const { title, submittedAt, txReceipt, txUrl, numberOfEvents } = metadata;
 
+  // Reduce event details in message to avoid bloating up to character limits
   const content = [
-    `**TEMPLE ${title} Event [${chain.name}]**`,
-    ...events.map((ev) => {
-      return (
-        `\n_What_: ${ev.what}` + `${ev.details.map((d) => `\n\t\t\t\t• ${d}`)}`
-      );
-    }),
+    `**TEMPLE ${title} Event [${chainName}]**`,
+    `\n${numberOfEvents} liquidation events in this transaction`,
     ``,
     ...(await txReceiptMarkdown(provider, submittedAt, txReceipt, txUrl)),
   ];
