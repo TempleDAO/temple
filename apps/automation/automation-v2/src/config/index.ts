@@ -136,13 +136,13 @@ export function getMinBalanceForChain(chainId: number): BigRational {
 }
 
 export function getMaxGasPriceForChain(chainId: number): BigRational {
-  // Returns max gas price
+  // Returns max gas price in gwei. The result is compared to estimated maxFeePerGas in gwei units
   if (chainId === mainnet.id) {
     // 6 gwei
-    return BigRational.fromNumber(6_000_000_000);
+    return BigRational.fromNumber(6);
   } else if (chainId === sepolia.id) {
     // 6 gwei
-    return BigRational.fromNumber(6_000_000_000);
+    return BigRational.fromNumber(6);
   } else {
     throw Error(`Invalid chain ${chainId}`);
   }
