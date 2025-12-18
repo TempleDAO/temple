@@ -3,7 +3,7 @@ import { CONTRACTS as TESTNET_CONTRACTS } from "./contract_addresses/anvil";
 import { CONTRACTS as SEPOLIA_CONTRACTS } from "./contract_addresses/sepolia";
 import { CONTRACTS as MAINNET_CONTRACTS } from "./contract_addresses/mainnet";
 import { TxSubmissionParams } from "@mountainpath9/overlord-viem";
-import { Chain } from "viem";
+import { Chain, parseEther } from "viem";
 import { mainnet, sepolia } from "viem/chains";
 import { TaskContext } from "@mountainpath9/overlord-core";
 import * as vars from "./variables";
@@ -127,20 +127,22 @@ export function chainFromId(id: number): Chain {
 
 export function getMinBalanceForChain(chainId: number): BigRational {
   if (chainId === mainnet.id) {
-    return BigRational.fromDecimalString("0.1");
+    return BigRational.fromBigIntWithDecimals(parseEther("0.1"), 18n);
   } else if (chainId === sepolia.id) {
-    return BigRational.fromDecimalString("0.02");
+    return BigRational.fromBigIntWithDecimals(parseEther("0.02"), 18n);
   } else {
     throw Error(`Invalid chain ${chainId}`);
   }
 }
 
 export function getMaxGasPriceForChain(chainId: number): BigRational {
-  // Returns max gas price in gwei
+  // Returns max gas price
   if (chainId === mainnet.id) {
-    return BigRational.fromDecimalString("0.2");
+    // 6 gwei
+    return BigRational.fromNumber(6_000_000_000);
   } else if (chainId === sepolia.id) {
-    return BigRational.fromDecimalString("0.2");
+    // 6 gwei
+    return BigRational.fromNumber(6_000_000_000);
   } else {
     throw Error(`Invalid chain ${chainId}`);
   }

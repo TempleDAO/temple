@@ -3,13 +3,19 @@ import { PublicClient } from "viem";
 import { TaskContext } from "@mountainpath9/overlord-core";
 import { getMaxGasPriceForChain } from "@/config";
 
-export async function isMaxGasPriceExceeded(ctx: TaskContext, provider: PublicClient, chainId: number): Promise<Boolean> {
-    const estimate = await provider.estimateFeesPerGas();
-    const gasPrice = BigRational.fromBigIntWithDecimals(estimate.maxFeePerGas || 0n, 9n);
-    const maxGasPrice = getMaxGasPriceForChain(chainId);
-    if (gasPrice.gt(maxGasPrice)) {
-        ctx.logger.info(`skipping due to high gas price (${gasPrice.toDecimalString(0)} > ${maxGasPrice.toDecimalString(0)})`);
-        return true;
+export async function isMaxGasPriceExceeded(ctx: TaskContext, provider: PublicClient, chainId: number): Promise<boolean> {
+    try {
+        const estimate = await provider.estimateFeesPerGas();
+        const gasPrice = BigRational.fromBigIntWithDecimals(estimate.maxFeePerGas || 0n, 9n);
+        // If gasPrice is 0 because maxFeePerGas is undefined, return true
+        if (gasPrice.eq(BigRational.ZERO)) return true;
+        const maxGasPrice = getMaxGasPriceForChain(chainId);
+        if (gasPrice.gt(maxGasPrice)) {
+            ctx.logger.info(`skipping due to high gas price (${gasPrice.toDecimalString(0)} > ${maxGasPrice.toDecimalString(0)})`);
+            return true;
+        }
+        return false;
+    } catch (error) {
+        throw Error(`Error fetching estimateFeesPerGas ${error}`);
     }
-    return false;
 }
