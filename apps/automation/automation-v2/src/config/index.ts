@@ -127,9 +127,9 @@ export function chainFromId(id: number): Chain {
 
 export function getMinBalanceForChain(chainId: number): BigRational {
   if (chainId === mainnet.id) {
-    return BigRational.fromBigIntWithDecimals(parseEther("0.1"), 18n);
+    return BigRational.fromDecimalString("0.1");
   } else if (chainId === sepolia.id) {
-    return BigRational.fromBigIntWithDecimals(parseEther("0.02"), 18n);
+    return BigRational.fromDecimalString("0.02");
   } else {
     throw Error(`Invalid chain ${chainId}`);
   }
