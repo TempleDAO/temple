@@ -21,6 +21,7 @@ import { Address, Chain as ViemChain, getContract, getAddress,
   encodeFunctionData, decodeEventLog } from 'viem';
 import { getSubmissionParams } from "@/config";
 import { WebhookMessageCreateOptions } from 'discord.js';
+import { BigRational } from '@mountainpath9/big-rational';
 
 
 export interface Chain {
@@ -36,7 +37,6 @@ export interface TlcBatchLiquidateConfig {
   TLC_ADDRESS: Address;
   ACC_LIQ_MAX_CHUNK_NO: number;
   MIN_ETH_BALANCE_WARNING: bigint;
-  GAS_LIMIT: bigint;
   SUBGRAPH_URL: string;
   SUBGRAPH_RETRY_LIMIT: number;
 }
@@ -49,8 +49,8 @@ export async function batchLiquidate(
   const wclient = await getWalletClient(ctx, config.CHAIN.chain, config.WALLET_NAME);
   const transactionManager = await createTransactionManager(ctx, wclient, {...await getSubmissionParams(ctx)});
   const walletAddress = wclient.account;
-  const webhookUrl = await tlc_discord_webhook_url.requireValue(ctx);
-  const discord = await connectDiscord(webhookUrl, ctx.logger);
+  const webhookUrl = await tlc_discord_webhook_url.getValue(ctx);
+  const discordTarget = webhookUrl && await connectDiscord(webhookUrl, ctx.logger);
 
   const tlc = getContract({
       address: config.TLC_ADDRESS,
@@ -83,10 +83,14 @@ export async function batchLiquidate(
 
   const tlcUsers = res.data.data?.tlcUsers;
   ctx.logger.info(`tlcUsers to check: ${JSON.stringify(tlcUsers)}`);
-  // if undefined or zero users returned from subgraph, success silently
-  if (!tlcUsers || tlcUsers.length === 0) return taskSuccessSilent();
+  if (!tlcUsers) throw new Error("Could not find 'tlcUsers' in subgraph data");
+
+  // If no accounts to check, silent success
   const accountsToCheck = tlcUsers.flatMap((u) => getAddress(u.id));
-  if (accountsToCheck.length === 0) return taskSuccessSilent();
+  if (accountsToCheck.length === 0) {
+    ctx.logger.info(`No TLC users found`);
+    return taskSuccessSilent();
+  }
 
   // only liquidate the accounts which have exceeded the max ltv
   const compLiquidityAccs = await tlc.read.computeLiquidity([accountsToCheck]);
@@ -94,7 +98,11 @@ export async function batchLiquidate(
   compLiquidityAccs.map((acc, i) => {
     if (acc.hasExceededMaxLtv) accsToLiquidate.push(accountsToCheck[i]);
   });
-  if (accsToLiquidate.length === 0) return taskSuccessSilent();
+
+  if (accsToLiquidate.length === 0) {
+    ctx.logger.info(`No TLC users can be liquidated`);
+    return taskSuccessSilent();
+  }
 
   const messages: Array<WebhookMessageCreateOptions> = [];
   // chunk compLiquidityAccs to a max number of requests per batchLiquidate
@@ -106,45 +114,51 @@ export async function batchLiquidate(
       functionName: 'batchLiquidate',
       args: [accBatch]
     });
-    const tx = { data, gas: config.GAS_LIMIT, to: config.TLC_ADDRESS };
+    const tx = { data, to: config.TLC_ADDRESS };
     const txr = await transactionManager.submitAndWait(tx);
-    if (!txr) throw Error('undefined tx receipt');
+    if (!txr) throw new Error('undefined tx receipt');
 
     // Track number of events
     let numberOfEvents = 0;
+    let totalCollateralSeized = 0n;
+    let totalDebtWiped = 0n;
 
-    txr.logs.forEach((log) => {
-      const decodedLog = decodeEventLog({
-        abi: TLC_ABI,
-        data: log.data,
-        topics: log.topics,
-      });
+    txr.logs
+      .filter((log) => log.address.toLowerCase() === config.TLC_ADDRESS.toLowerCase())
+      .forEach((log) => {
+        const decodedLog = decodeEventLog({
+          abi: TLC_ABI,
+          data: log.data,
+          topics: log.topics,
+        });
 
-      // check if this is the liquidated event
-      if (decodedLog.eventName === 'Liquidated') {
-        const args = decodedLog.args;
-        const details = [
-          `account = \`${args.account}\``,
-          `collateralValue = \`${formatBigNumber(
-            args.collateralValue,
-            18,
-            4
-          )}\``,
-          `collateralSeized = \`${formatBigNumber(
-            args.collateralSeized,
-            18,
-            4
-          )}\``,
-          `daiDebtWiped = \`${formatBigNumber(
-            args.daiDebtWiped,
-            18,
-            4
-          )}\``,
-        ];
-        numberOfEvents += 1;
-        // Log the event details. Avoid bloating discord messages due to set 1k character limit
-        ctx.logger.info( `\n_What_: Liquidated` + `${details.map((d) => `\n\t\t\t\t• ${d}`)}`);
-      }
+        // check if this is the liquidated event
+        if (decodedLog.eventName === 'Liquidated') {
+          const args = decodedLog.args;
+          const details = [
+            `account = \`${args.account}\``,
+            `collateralValue = \`${formatBigNumber(
+              args.collateralValue,
+              18,
+              4
+            )}\``,
+            `collateralSeized = \`${formatBigNumber(
+              args.collateralSeized,
+              18,
+              4
+            )}\``,
+            `daiDebtWiped = \`${formatBigNumber(
+              args.daiDebtWiped,
+              18,
+              4
+            )}\``,
+          ];
+          numberOfEvents += 1;
+          totalCollateralSeized += args.collateralSeized;
+          totalDebtWiped += args.daiDebtWiped;
+          // Log the event details. Avoid bloating discord messages due to set 1k character limit
+          ctx.logger.info( `\n_What_: Liquidated` + `${details.map((d) => `\n\t\t\t\t• ${d}`)}`);
+        }
     });
 
     // Skip adding to discord messages if no liquidation happened in this chunk
@@ -154,6 +168,8 @@ export async function batchLiquidate(
     const metadata: TempleTaskDiscordMetadata = {
       title: 'TLC Batch Liquidate',
       numberOfEvents,
+      totalCollateralSeized: BigRational.fromBigIntWithDecimals(totalCollateralSeized, 18n),
+      totalDebtWiped: BigRational.fromBigIntWithDecimals(totalDebtWiped, 18n),
       submittedAt,
       txReceipt: txr,
       txUrl,
@@ -169,18 +185,18 @@ export async function batchLiquidate(
   }
 
   // Post discord messages if any. Truncate messages to 1k characters
-  if (messages.length > 0) {
+  if (discordTarget && messages.length > 0) {
     for (const message of messages) {
        if (message.content){
-        message.content = `${message.content.slice(0, 996)} ...`
-        await discord.postMessage(message)
+        message.content = `${message.content.slice(0, 996)} ...`;
+        await discordTarget.postMessage(message);
       }
     }
   }
 
   // Send discord alert warning if signer wallet doesn't have sufficient eth balance
   const ethBalance = await pclient.getBalance({ address: walletAddress.address });
-  if (ethBalance < config.MIN_ETH_BALANCE_WARNING) {
+  if (discordTarget && ethBalance < config.MIN_ETH_BALANCE_WARNING) {
     const ethBalanceMessage = await buildDiscordMessageCheckEth(
       config.CHAIN,
       submittedAt,
@@ -188,7 +204,7 @@ export async function batchLiquidate(
       ethBalance,
       config.MIN_ETH_BALANCE_WARNING
     );
-    await discord.postMessage(ethBalanceMessage);
+    await discordTarget.postMessage(ethBalanceMessage);
   }
   return taskSuccess();
 }

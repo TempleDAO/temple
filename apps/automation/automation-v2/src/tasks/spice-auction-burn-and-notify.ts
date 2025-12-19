@@ -192,7 +192,7 @@ async function assertMaxGasPriceNotExceeded(ctx: TaskContext, params: Params, pr
   const estimate = await provider.estimateFeesPerGas();
   const gasPrice = BigRational.fromBigIntWithDecimals(estimate.maxFeePerGas || 0n, 9n);
   if (gasPrice.gt(params.maxGasPrice)) {
-    ctx.logger.info(`skipping due to high gas price (${gasPrice.toDecimalString(0)} > (${params.maxGasPrice.toDecimalString(0)}`);
+    ctx.logger.info(`skipping due to high gas price (${gasPrice.toDecimalString(5)} > (${params.maxGasPrice.toDecimalString(5)}`);
     return true;
   }
   return false;

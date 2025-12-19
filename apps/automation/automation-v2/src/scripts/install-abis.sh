@@ -30,3 +30,5 @@ mk_viem_abi ITempleGold
 mk_viem_abi ITempleGoldAdmin
 mk_viem_abi ITempleGoldStaking
 mk_viem_abi ITempleLineOfCredit
+mk_viem_abi ITreasuryPriceIndexOracle
+mk_viem_abi ITempleElevatedAccess
