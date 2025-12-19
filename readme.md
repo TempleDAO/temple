@@ -125,7 +125,7 @@ The integration with Vercel has changed. Because this is a monorepo, we have one
 
   6. Go to Github > TempleDAO/temple > settings > secrets, and add a new repository secret. Name: `[NAME]_PROJECT_ID` Value: projectid
 
-  7. Setup a GitHub action to deploy. Go into the .github/workflows folde. Copy an existing workflow, and edit the `vercel-project-id` entry to use the new GitHub secret env name you created (`[NAME]_PROJECT_ID`)
+  7. Setup a GitHub action to deploy. Go into the .github/workflows folder. Copy an existing workflow, and edit the `vercel-project-id` entry to use the new GitHub secret env name you created (`[NAME]_PROJECT_ID`)
 
   8. Tweak the workflow as needed; what branch/pr triggers, what aliases/urls to use, etc... 
 
