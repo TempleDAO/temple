@@ -13,11 +13,14 @@ import { startSidebarBot } from "../tasks/discord-sidebar-auction";
 import { updateAuctionSidebarBotTask } from "../tasks";
 import { batchLiquidate } from "@/tlc/batch-liquidate";
 import { TLC_BATCH_LIQUIDATE_CONFIG } from '@/tlc/config';
-import { Address, BaseError, ContractFunctionRevertedError, createTestClient, formatEther, getContract, http, parseEther, publicActions, toHex, walletActions } from "viem";
+import { Address, BaseError, ContractFunctionRevertedError, createTestClient, formatEther, getContract, Hex, http, parseEther, publicActions, TestClient, toHex, walletActions } from "viem";
 import { getAccount } from "@mountainpath9/overlord-viem";
 import { mainnet } from "viem/chains";
 import * as ITreasuryPriceIndexOracle from '@/abi/ITreasuryPriceIndexOracle';
 import * as ITempleElevatedAccess from '@/abi/ITempleElevatedAccess';
+import * as IStableGoldAuction from "@/abi/IStableGoldAuction";
+import * as ISpiceAuction from "@/abi/ISpiceAuction";
+import * as ITempleGoldStaking from "@/abi/ITempleGoldStaking";
 
 const ANVIL_URL = 'http://127.0.0.1:8545';
 const ANVIL_PRIVATE_KEY_0 =
@@ -36,6 +39,7 @@ const TASK_RUNNER_CONFIG = makeTaskRunnerConfig({
         link('owner', ANVIL_PRIVATE_KEY_0),
         link('tgld_daigold_auction_signer', ANVIL_PRIVATE_KEY_0),
         link('temple_automation', ANVIL_PRIVATE_KEY_0),
+        link('tgld_staking_signer', ANVIL_PRIVATE_KEY_0),
       ],
       vars: {
         env: 'mainnet',
@@ -76,6 +80,11 @@ async function main() {
     });
 
     runner.addWebhookTask({
+      id: 'stable-auction-test-setup',
+      action: (ctx) => stableAuctionTestSetup(config, ctx),
+    });
+
+    runner.addWebhookTask({
         id: stableGoldAuctionStart.taskIdPrefix + 'start',
         action: (ctx) => stableGoldAuctionStartAuction(config, ctx),
     });
@@ -86,10 +95,19 @@ async function main() {
     });
 
     runner.addWebhookTask({
+      id: 'staking-test-setup',
+      action: (ctx) => stakingTestSetup(config, ctx),
+    });
+
+    runner.addWebhookTask({
         id: stakingDistributeRewardsa.taskIdPrefix + 'distribute',
         action: (ctx) => stakingDistributeRewards(config, ctx),
     });
 
+    runner.addWebhookTask({
+      id: 'spice-auction-test-setup',
+      action: (ctx) => spiceAuctionTestSetup(config, ctx),
+    });
     runner.addWebhookTask({
         id: burnAndNotify.taskIdPrefix + 'burn-and-notify',
         action: (ctx) => burnTempleGold(config, ctx),
@@ -146,6 +164,140 @@ export async function withTxError<T>(
     logger.error(message);
     throw e;
   }
+}
+
+async function stableAuctionTestSetup(config: Config, ctx: TaskContext) {
+  // Handover operations to test client wallet address
+  const tclient = createTestClient({
+    account: await getAccount(ctx, 'owner'),
+    chain: mainnet,
+    mode: 'anvil',
+    transport: http(await ctx.getProviderUrl(mainnet.id)),
+  })
+    .extend(publicActions)
+    .extend(walletActions);
+
+  const executorAddress = await tclient.readContract({
+    abi: ITempleElevatedAccess.ABI,
+    address: config.contracts.TEMPLE_GOLD.AUCTIONS.BID_FOR_TGLD as Address,
+    functionName: 'executor',
+  });
+  await impersonateExecutor(tclient, executorAddress);
+
+  // Set auction starter
+  const auction = getContract({
+    address: config.contracts.TEMPLE_GOLD.AUCTIONS.BID_FOR_TGLD as Address,
+    abi: IStableGoldAuction.ABI,
+    client: tclient
+  });
+
+  // Fast forward to end of epoch
+  const skipForward = async (secs: bigint) => {
+    await tclient.request({
+      method: 'anvil_mine',
+      params: [toHex(1), toHex(secs)],
+    });
+  }
+  const currentEpoch = await auction.read.currentEpoch();
+  const epochInfo = await auction.read.getEpochInfo([currentEpoch]);
+  const epochEnd = new Date(Number(epochInfo.endTime * 1000n));
+  const now = new Date();
+  if (epochEnd > now) {
+    await skipForward(epochInfo.endTime);
+  }
+  
+  ctx.logger.info(`Setting auction starter to: ${tclient.account.address}`);
+
+  const hash = await tclient.writeContract({
+    abi: IStableGoldAuction.ABI,
+    address: config.contracts.TEMPLE_GOLD.AUCTIONS.BID_FOR_TGLD,
+    functionName: 'setAuctionStarter',
+    args: [tclient.account.address],
+    account: executorAddress,
+  });
+  const txReceipt = await tclient.waitForTransactionReceipt({ hash });
+  console.log(txReceipt);
+
+  return taskSuccess();
+}
+
+async function stakingTestSetup(config: Config, ctx: TaskContext) {
+  // Handover operations to test client wallet address
+  const tclient = createTestClient({
+    account: await getAccount(ctx, 'owner'),
+    chain: mainnet,
+    mode: 'anvil',
+    transport: http(await ctx.getProviderUrl(mainnet.id)),
+  })
+    .extend(publicActions)
+    .extend(walletActions);
+
+  const executorAddress = await tclient.readContract({
+    abi: ITempleElevatedAccess.ABI,
+    address: config.contracts.TEMPLE_GOLD.TEMPLE_GOLD_STAKING as Address,
+    functionName: 'executor',
+  });
+  await impersonateExecutor(tclient, executorAddress);
+
+  ctx.logger.info(`Setting staking distribution starter to: ${tclient.account.address}`);
+  // Set staking distribution starter
+  const hash = await tclient.writeContract({
+    abi: ITempleGoldStaking.ABI,
+    address: config.contracts.TEMPLE_GOLD.TEMPLE_GOLD_STAKING,
+    functionName: 'setDistributionStarter',
+    args: [tclient.account.address],
+    account: executorAddress,
+  });
+  const txReceipt = await tclient.waitForTransactionReceipt({ hash });
+  console.log(txReceipt);
+
+  return taskSuccess();
+}
+
+async function spiceAuctionTestSetup(config: Config, ctx: TaskContext) {
+  // Handover operations to test client wallet address
+  const tclient = createTestClient({
+    account: await getAccount(ctx, 'owner'),
+    chain: mainnet,
+    mode: 'anvil',
+    transport: http(await ctx.getProviderUrl(mainnet.id)),
+  })
+    .extend(publicActions)
+    .extend(walletActions);
+
+  const executorAddress = await tclient.readContract({
+    abi: ITempleElevatedAccess.ABI,
+    address: config.contracts.TEMPLE_GOLD.TEMPLE_GOLD_STAKING as Address,
+    functionName: 'executor',
+  });
+  await impersonateExecutor(tclient, executorAddress);
+
+  // Set operator
+  ctx.logger.info(`Setting auction starter to: ${tclient.account.address}`);
+
+  const hash = await tclient.writeContract({
+    abi: ISpiceAuction.ABI,
+    address: config.contracts.TEMPLE_GOLD.AUCTIONS.BID_FOR_SPICE.ENA,
+    functionName: 'setOperator',
+    args: [tclient.account.address],
+    account: executorAddress,
+  });
+  const txReceipt = await tclient.waitForTransactionReceipt({ hash });
+  console.log(txReceipt);
+
+  return taskSuccess();
+}
+
+async function impersonateExecutor(client: TestClient, executorAddress: Address) {
+  await client.impersonateAccount({
+    address: executorAddress,
+  });
+
+  // Make sure the executor has some gas
+  await client.setBalance({
+    address: executorAddress,
+    value: parseEther('100'),
+  });
 }
 
 async function tlcSetupLiquidations(config: Config, ctx: TaskContext) {
