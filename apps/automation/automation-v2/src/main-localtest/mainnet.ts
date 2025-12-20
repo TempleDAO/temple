@@ -200,10 +200,11 @@ async function stableAuctionTestSetup(config: Config, ctx: TaskContext) {
   }
   const currentEpoch = await auction.read.currentEpoch();
   const epochInfo = await auction.read.getEpochInfo([currentEpoch]);
-  const epochEnd = new Date(Number(epochInfo.endTime * 1000n));
-  const now = new Date();
-  if (epochEnd > now) {
-    await skipForward(epochInfo.endTime);
+  const nowSecs = Math.floor(Date.now() / 1000);
+  const diff = epochInfo.endTime > nowSecs ? epochInfo.endTime - BigInt(nowSecs) : BigInt(0);
+  
+  if (diff > 0) {
+    await skipForward(diff);
   }
   
   ctx.logger.info(`Setting auction starter to: ${tclient.account.address}`);
@@ -267,7 +268,7 @@ async function spiceAuctionTestSetup(config: Config, ctx: TaskContext) {
 
   const executorAddress = await tclient.readContract({
     abi: ITempleElevatedAccess.ABI,
-    address: config.contracts.TEMPLE_GOLD.TEMPLE_GOLD_STAKING as Address,
+    address: config.contracts.TEMPLE_GOLD.AUCTIONS.BID_FOR_SPICE.ENA as Address,
     functionName: 'executor',
   });
   await impersonateExecutor(tclient, executorAddress);
