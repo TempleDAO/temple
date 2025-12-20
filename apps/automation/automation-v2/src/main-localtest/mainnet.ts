@@ -274,7 +274,7 @@ async function spiceAuctionTestSetup(config: Config, ctx: TaskContext) {
   await impersonateExecutor(tclient, executorAddress);
 
   // Set operator
-  ctx.logger.info(`Setting auction starter to: ${tclient.account.address}`);
+  ctx.logger.info(`Setting operator to: ${tclient.account.address}`);
 
   const hash = await tclient.writeContract({
     abi: ISpiceAuction.ABI,
