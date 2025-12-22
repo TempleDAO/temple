@@ -4,7 +4,7 @@ import { KvPersistedValue } from "@/utils/kv";
 import { BigRational } from "@mountainpath9/big-rational";
 import { etherscanTransactionUrl } from "@/utils/etherscan";
 import { postDefconNotification } from "@/utils/discord";
-import { chainFromId, getSubmissionParams } from "@/config";
+import { chainFromId, getMainnetSubmissionParams } from "@/config";
 import { delayUntilNextCheckTime } from "@/utils/task-checks";
 import { getPublicClient, getWalletClient } from "@mountainpath9/overlord-viem";
 import { Address, encodeFunctionData, getContract } from "viem";
@@ -28,7 +28,7 @@ export async function stakingDistributeRewards(ctx: TaskContext, params: Params)
     const chain = chainFromId(params.chainId);
     const pclient = await getPublicClient(ctx, chain);
     const wclient = await getWalletClient(ctx, chain, params.signerId);
-    const transactionManager = await createTransactionManager(ctx, wclient, {...await getSubmissionParams(ctx)});
+    const transactionManager = await createTransactionManager(ctx, wclient, {...await getMainnetSubmissionParams(ctx)});
 
     const staking = getContract({
         address: params.contracts.staking,

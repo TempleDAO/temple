@@ -329,10 +329,10 @@
   resolved "https://registry.yarnpkg.com/@mountainpath9/big-rational/-/big-rational-0.4.0.tgz#a7d65a6954de2ed5f9f41320cfb8755097af05f9"
   integrity sha512-MhIOX1KU0SmM7Uoa1jp3hnMdCQELqVe84Gaj9jb4YkZdFNDh98G3++0M7GTrvhDUD3n7KFNDSUVMOPgQbDevQA==
 
-"@mountainpath9/overlord-core@1.9.1":
-  version "1.9.1"
-  resolved "https://registry.yarnpkg.com/@mountainpath9/overlord-core/-/overlord-core-1.9.1.tgz#334bb641f8cf13591353712d57afa51e242349cd"
-  integrity sha512-OZNxmKXu/7xEsv7kSWfVnN9ZCNcMmu2v2X7JXsiLpNwj55gCsapPyhalj4PKyql2DRxuzFSjKG0SK2qWmuJW+g==
+"@mountainpath9/overlord-core@1.9.2":
+  version "1.9.2"
+  resolved "https://registry.yarnpkg.com/@mountainpath9/overlord-core/-/overlord-core-1.9.2.tgz#dfe8db155c00c0d6027cabde0288af43441f1798"
+  integrity sha512-LrpLNMbetIGUgNaaNclKngjvGiAnHBsOWigZNy1Ei9zC7mWEWWKbj6/uA8VkRat5O1vVf0taRisBaGZkman9Gw==
   dependencies:
     "@adllang/adl-runtime" "^0.0.2"
     "@types/estree" "^1.0.0"
@@ -344,7 +344,7 @@
     async-mutex "^0.4.0"
     base64-js "^1.5.1"
     builtin-modules "^3.3.0"
-    cron-parser "^4.7.1"
+    cron-parser "^5.4.0"
     jwt-decode "^3.1.2"
     koa "^2.14.1"
     koa-logger "^3.2.1"
@@ -373,12 +373,12 @@
     koa-router "^12.0.0"
     uuid "^9.0.0"
 
-"@mountainpath9/overlord-viem@1.9.1":
-  version "1.9.1"
-  resolved "https://registry.yarnpkg.com/@mountainpath9/overlord-viem/-/overlord-viem-1.9.1.tgz#7cdc6254809800f117fe028241d3d3300aa6d70e"
-  integrity sha512-lBXWjrIZucHZXlWye3QX1c9eJf3RvucrAp9DR2I3e4svXkovYmqonCym512P0OG5cZxjByUk+8zdTC2EYAZ+SA==
+"@mountainpath9/overlord-viem@1.9.2":
+  version "1.9.2"
+  resolved "https://registry.yarnpkg.com/@mountainpath9/overlord-viem/-/overlord-viem-1.9.2.tgz#76123e1a431ffa5976a8421ac4731e0ce5909da6"
+  integrity sha512-gbVm1gc94uLevT2taxCCIHu6tzgNmlJhWq9az8V+ehuHxBrnyoomjfi0/MHzOx6Hlnv74bnQYPJB9WD9OuM8SA==
   dependencies:
-    "@mountainpath9/overlord-core" "1.9.1"
+    "@mountainpath9/overlord-core" "1.9.2"
     "@types/node" "^18.16.3"
     async-mutex "^0.4.0"
 
@@ -824,7 +824,7 @@ cookies@~0.9.0:
     depd "~2.0.0"
     keygrip "~1.1.0"
 
-cron-parser@^4.7.1, cron-parser@^4.9.0:
+cron-parser@^4.9.0:
   version "4.9.0"
   resolved "https://registry.yarnpkg.com/cron-parser/-/cron-parser-4.9.0.tgz#0340694af3e46a0894978c6f52a6dbb5c0f11ad5"
   integrity sha512-p0SaNjrHOnQeR8/VnfGbmg9te2kfyYSQ7Sc/j/6DtPL3JQvKxmjO9TSjNFpujqV3vEYYBvNNvXSxzyksBWAx1Q==

@@ -15,7 +15,7 @@
   "dependencies": {
     "@mountainpath9/big-rational": "^0.4.0",
     "@mountainpath9/overlord-core": "1.9.3",
-    "@mountainpath9/overlord-viem": "1.9.1",
+    "@mountainpath9/overlord-viem": "1.9.2",
     "axios": "^1.5.1",
     "cron-parser": "^4.9.0",
     "crypto-random-string": "^5.0.0",

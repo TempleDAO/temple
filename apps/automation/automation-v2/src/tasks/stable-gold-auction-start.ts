@@ -1,4 +1,4 @@
-import { chainFromId, getSubmissionParams } from "@/config";
+import { chainFromId, getMainnetSubmissionParams } from "@/config";
 import { BigRational } from "@mountainpath9/big-rational";
 import { etherscanTransactionUrl } from "@/utils/etherscan";
 import { postDefconNotification } from "@/utils/discord";
@@ -26,7 +26,7 @@ export async function startAuction(ctx: TaskContext, params: Params): Promise<Ta
     const chain = chainFromId(params.chainId);
     const pclient = await getPublicClient(ctx, chain);
     const wclient = await getWalletClient(ctx, chain, params.signerId);
-    const transactionManager = await createTransactionManager(ctx, wclient, {...await getSubmissionParams(ctx)});
+    const transactionManager = await createTransactionManager(ctx, wclient, {...await getMainnetSubmissionParams(ctx)});
     const auction = getContract({
         abi: StableGoldAuction.ABI,
         address: params.contracts.auction,

@@ -19,7 +19,7 @@ import { backOff } from 'exponential-backoff';
 import { tlc_discord_webhook_url } from './variables';
 import { Address, Chain as ViemChain, getContract, getAddress,
   encodeFunctionData, decodeEventLog } from 'viem';
-import { getSubmissionParams } from "@/config";
+import { getMainnetSubmissionParams } from "@/config";
 import { WebhookMessageCreateOptions } from 'discord.js';
 import { BigRational } from '@mountainpath9/big-rational';
 
@@ -47,7 +47,7 @@ export async function batchLiquidate(
 ): Promise<TaskResult> {
   const pclient = await getPublicClient(ctx, config.CHAIN.chain);
   const wclient = await getWalletClient(ctx, config.CHAIN.chain, config.WALLET_NAME);
-  const transactionManager = await createTransactionManager(ctx, wclient, {...await getSubmissionParams(ctx)});
+  const transactionManager = await createTransactionManager(ctx, wclient, {...await getMainnetSubmissionParams(ctx)});
   const walletAddress = wclient.account;
   const webhookUrl = await tlc_discord_webhook_url.getValue(ctx);
   const discordTarget = webhookUrl && await connectDiscord(webhookUrl, ctx.logger);

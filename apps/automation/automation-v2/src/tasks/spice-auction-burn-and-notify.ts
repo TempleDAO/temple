@@ -3,7 +3,7 @@ import { KvPersistedValue } from "@/utils/kv";
 import { TaskContext, TaskResult,
   taskSuccess, taskSuccessSilent } from "@mountainpath9/overlord-core";
 import { getPublicClient, getWalletClient, createTransactionManager, PublicClient } from "@mountainpath9/overlord-viem";
-import { chainFromId, getSubmissionParams } from "@/config";
+import { chainFromId, getMainnetSubmissionParams } from "@/config";
 import { postDefconNotification } from "@/utils/discord";
 import { etherscanTransactionUrl } from "@/utils/etherscan";
 import { delayUntilNextCheckTime } from "@/utils/task-checks";
@@ -41,7 +41,7 @@ export async function burnAndUpdateCirculatingSupply(ctx: TaskContext, params: P
   const chain = chainFromId(params.chainId);
   const pclient = await getPublicClient(ctx, chain);
   const wclient = await getWalletClient(ctx, chain, params.signerId);
-  const transactionManager = await createTransactionManager(ctx, wclient, {...await getSubmissionParams(ctx)});
+  const transactionManager = await createTransactionManager(ctx, wclient, {...await getMainnetSubmissionParams(ctx)});
 
   const auction = getContract({
     address: params.contracts.auction,
