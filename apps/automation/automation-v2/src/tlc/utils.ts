@@ -1,12 +1,13 @@
 import { format } from 'date-fns';
 import { Chain } from './batch-liquidate';
-import { DiscordMessage } from '@/utils/discord';
+import { DISCORD_TSY_OPS_TAG, DiscordMessage } from '@/utils/discord';
 import { TransactionReceipt, formatUnits } from 'viem';
 import { PublicClient } from '@mountainpath9/overlord-viem';
+import { BigRational } from '@mountainpath9/big-rational';
 
 export async function getBlockTimestamp(provider: PublicClient): Promise<bigint> {
   const latestBlock = await provider.getBlock();
-  if (!latestBlock) throw Error('undefined block');
+  if (!latestBlock) throw new Error('undefined block');
   return BigInt(latestBlock.timestamp);
 }
 
@@ -95,13 +96,13 @@ export async function txReceiptMarkdown(
   const gasUsed = txReceipt.gasUsed;
   const totalFee = (effectiveGasPrice * gasUsed) / one_gwei;
   const block = await provider.getBlock({ blockNumber: txReceipt.blockNumber });
-  if (!block) throw Error('undefined block');
+  if (!block) throw new Error('undefined block');
   const timestampMs = Number(block.timestamp * 1000n);
   const minedAt = new Date(timestampMs);
 
   return [
     `_Gas Price (GWEI):_ \`${formatBigNumber(effectiveGasPrice, 9, 4)}\``,
-    `_Gas Used:_ \` ${formatBigNumber(gasUsed, 0, 0)}\``,
+    `_Gas Used:_ \`${formatBigNumber(gasUsed, 0, 0)}\``,
     `_Total Fee (ETH):_ \`${formatBigNumber(totalFee, 9, 8)}\``,
     `_Mined At (Local):_ \`${format(minedAt.getTime(), 'd MMMM Y HH:mm')}\``,
     `_Mined At Unix:_ \`${minedAt.getTime()}\``,
@@ -122,6 +123,8 @@ export interface TempleTaskDiscordEvent {
 export interface TempleTaskDiscordMetadata {
   title: string;
   numberOfEvents: number;
+  totalCollateralSeized: BigRational;
+  totalDebtWiped: BigRational;
   submittedAt: Date;
   txReceipt: TransactionReceipt;
   txUrl: string;
@@ -137,12 +140,15 @@ export async function buildTempleTasksDiscordMessage(
   chainName: string,
   metadata: TempleTaskDiscordMetadata
 ): Promise<DiscordMessage> {
-  const { title, submittedAt, txReceipt, txUrl, numberOfEvents } = metadata;
+  const { title, submittedAt, txReceipt, txUrl, numberOfEvents, totalCollateralSeized, totalDebtWiped } = metadata;
 
   // Reduce event details in message to avoid bloating up to character limits
   const content = [
+    DISCORD_TSY_OPS_TAG,
     `**TEMPLE ${title} Event [${chainName}]**`,
     `\n${numberOfEvents} liquidation events in this transaction`,
+    `\n${totalCollateralSeized.toDecimalString(2)} total TEMPLE collateral seized`,
+    `\n${totalDebtWiped.toDecimalString(2)} total DAI debt wiped`,
     ``,
     ...(await txReceiptMarkdown(provider, submittedAt, txReceipt, txUrl)),
   ];
@@ -160,6 +166,7 @@ export async function buildDiscordMessageCheckEth(
     minBalance: bigint
   ): Promise<DiscordMessage> {
     const content = [
+      DISCORD_TSY_OPS_TAG,
       `**TEMPLE LOW ETH ALERT [${chain.name}]**`,
       ``,
       `_address:_ ${watchAddress}`,

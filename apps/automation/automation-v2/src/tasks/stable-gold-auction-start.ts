@@ -1,4 +1,4 @@
-import { chainFromId, getSubmissionParams } from "@/config";
+import { chainFromId, getMainnetSubmissionParams } from "@/config";
 import { BigRational } from "@mountainpath9/big-rational";
 import { etherscanTransactionUrl } from "@/utils/etherscan";
 import { postDefconNotification } from "@/utils/discord";
@@ -26,7 +26,7 @@ export async function startAuction(ctx: TaskContext, params: Params): Promise<Ta
     const chain = chainFromId(params.chainId);
     const pclient = await getPublicClient(ctx, chain);
     const wclient = await getWalletClient(ctx, chain, params.signerId);
-    const transactionManager = await createTransactionManager(ctx, wclient, {...await getSubmissionParams(ctx)});
+    const transactionManager = await createTransactionManager(ctx, wclient, {...await getMainnetSubmissionParams(ctx)});
     const auction = getContract({
         abi: StableGoldAuction.ABI,
         address: params.contracts.auction,
@@ -45,7 +45,7 @@ export async function startAuction(ctx: TaskContext, params: Params): Promise<Ta
     const estimate = await pclient.estimateFeesPerGas();
     const gasPrice = BigRational.fromBigIntWithDecimals(estimate.maxFeePerGas || 0n, 9n);
     if (gasPrice.gt(params.maxGasPrice)) {
-      ctx.logger.info(`skipping due to high gas price (${gasPrice.toDecimalString(0)} > (${params.maxGasPrice.toDecimalString(0)}`);
+      ctx.logger.info(`skipping due to high gas price (${gasPrice.toDecimalString(5)} > ${params.maxGasPrice.toDecimalString(5)})`);
       return taskSuccessSilent();
     }
 

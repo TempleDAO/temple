@@ -4,6 +4,12 @@ export interface ContractAddresses {
   CORE: {
     MULTISIG: Address;
   },
+  TREASURY_RESERVES_VAULT: {
+      ADDRESS: Address;
+      D_USD_TOKEN: Address;
+      D_TEMPLE_TOKEN: Address;
+      TPI_ORACLE: Address;
+  };
   TEMPLE_GOLD: {
     TEMPLE_GOLD: Address;
     TEMPLE_GOLD_STAKING: Address;

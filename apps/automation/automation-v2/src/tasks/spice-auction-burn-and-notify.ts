@@ -3,7 +3,7 @@ import { KvPersistedValue } from "@/utils/kv";
 import { TaskContext, TaskResult,
   taskSuccess, taskSuccessSilent } from "@mountainpath9/overlord-core";
 import { getPublicClient, getWalletClient, createTransactionManager, PublicClient } from "@mountainpath9/overlord-viem";
-import { chainFromId, getSubmissionParams } from "@/config";
+import { chainFromId, getMainnetSubmissionParams } from "@/config";
 import { postDefconNotification } from "@/utils/discord";
 import { etherscanTransactionUrl } from "@/utils/etherscan";
 import { delayUntilNextCheckTime } from "@/utils/task-checks";
@@ -41,7 +41,7 @@ export async function burnAndUpdateCirculatingSupply(ctx: TaskContext, params: P
   const chain = chainFromId(params.chainId);
   const pclient = await getPublicClient(ctx, chain);
   const wclient = await getWalletClient(ctx, chain, params.signerId);
-  const transactionManager = await createTransactionManager(ctx, wclient, {...await getSubmissionParams(ctx)});
+  const transactionManager = await createTransactionManager(ctx, wclient, {...await getMainnetSubmissionParams(ctx)});
 
   const auction = getContract({
     address: params.contracts.auction,
@@ -192,7 +192,7 @@ async function assertMaxGasPriceNotExceeded(ctx: TaskContext, params: Params, pr
   const estimate = await provider.estimateFeesPerGas();
   const gasPrice = BigRational.fromBigIntWithDecimals(estimate.maxFeePerGas || 0n, 9n);
   if (gasPrice.gt(params.maxGasPrice)) {
-    ctx.logger.info(`skipping due to high gas price (${gasPrice.toDecimalString(0)} > (${params.maxGasPrice.toDecimalString(0)}`);
+    ctx.logger.info(`skipping due to high gas price (${gasPrice.toDecimalString(5)} > ${params.maxGasPrice.toDecimalString(5)})`);
     return true;
   }
   return false;
