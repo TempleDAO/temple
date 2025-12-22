@@ -43,7 +43,7 @@ const TASK_RUNNER_CONFIG = makeTaskRunnerConfig({
       ],
       vars: {
         env: 'mainnet',
-        stablegoldauction_start_auction_max_gas_price: 0.123,
+        stablegoldauction_start_auction_max_gas_price: 420.69,
         // Create your own personal discord server and create a webhook
         // tlc_discord_webhook_url: 'https://discord.com/api/webhooks/xxx/yyy',
       },
