@@ -1,5 +1,5 @@
 import { useWallet } from 'providers/WalletProvider';
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { cachedSubgraphQuery, user } from 'utils/subgraph';
 import { Auction } from '../../BidsForTGLD/hooks/use-myActivity-bidsTGLDHistory';
 import { formatNumberWithCommasAndDecimals } from 'utils/formatter';
@@ -7,11 +7,11 @@ import { getAllSpiceBazaarSubgraphEndpoints } from 'constants/env/getSpiceBazaar
 
 export const useMyActivityRedeemAmountSpice = () => {
   const { wallet } = useWallet();
-  const [redeemAmount, setRedeemAmount] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchRedeem = async () => {
-      if (!wallet) return;
+  const { data: redeemAmount } = useQuery({
+    queryKey: ['spiceRedeemAmount', wallet],
+    queryFn: async () => {
+      if (!wallet) return null;
 
       try {
         const responses = await Promise.all(
@@ -29,15 +29,16 @@ export const useMyActivityRedeemAmountSpice = () => {
           return acc + value;
         }, 0);
 
-        setRedeemAmount(formatNumberWithCommasAndDecimals(total));
+        return formatNumberWithCommasAndDecimals(total);
       } catch (err) {
         console.error('Failed to fetch redeemAmount', err);
-        setRedeemAmount('0');
+        return '0';
       }
-    };
-
-    fetchRedeem();
-  }, [wallet]);
+    },
+    staleTime: 30 * 1000,
+    refetchOnWindowFocus: false,
+    enabled: !!wallet,
+  });
 
   return redeemAmount;
 };

@@ -10,7 +10,6 @@ import {
   BidTGLD,
   BidTGLDMode,
 } from 'components/Pages/Core/DappPages/SpiceBazaar/Spend/BidTGLD';
-import { useSpiceAuction } from 'providers/SpiceAuctionProvider';
 import { SpiceAuctionConfig } from 'constants/newenv/types';
 
 export type Transaction = {
@@ -36,6 +35,10 @@ type TableProps = {
   loading: boolean;
   title: string;
   refetch?: () => void;
+  onClaim?: (
+    auctionStaticConfig: SpiceAuctionConfig,
+    epoch: number
+  ) => Promise<void>;
   dataRefetching?: boolean;
 };
 
@@ -46,30 +49,18 @@ export const DataTable: React.FC<TableProps> = ({
   loading,
   title,
   refetch,
+  onClaim,
 }) => {
-  const [modalState, setModalState] = useState<'closed' | 'bidDai' | 'bidTgld'>(
-    'closed'
-  );
-
-  const [currentBidAmount, setCurrentBidAmount] = useState<string>('');
+  const [modalState, setModalState] = useState<{
+    type: 'closed' | 'bidDai' | 'bidTgld';
+    transaction?: Transaction;
+    currentBidAmount?: string;
+  }>({ type: 'closed' });
 
   const [filter, setFilter] = useState('Last 5 Shown');
   const [filteredTransactions, setFilteredTransactions] =
     useState<Transaction[]>(transactions);
   const filterOptions = ['Last 5 Shown', 'Show All'];
-
-  const {
-    allSpiceAuctions: {
-      fetch: fetchAllSpiceAuctions,
-      data: allSpiceAuctionsData,
-      loading: allSpiceAuctionsLoading,
-    },
-    spiceAuctions: { claim: spiceAuctionClaim },
-  } = useSpiceAuction();
-
-  useEffect(() => {
-    fetchAllSpiceAuctions();
-  }, [fetchAllSpiceAuctions]);
 
   useEffect(() => {
     const sortedTransactions = [...transactions].sort(
@@ -89,7 +80,7 @@ export const DataTable: React.FC<TableProps> = ({
 
   const onBidSubmitted = () => {
     refetch?.();
-    setModalState('closed');
+    setModalState({ type: 'closed' });
   };
 
   useEffect(() => {
@@ -169,7 +160,6 @@ export const DataTable: React.FC<TableProps> = ({
                           ? formatNumberWithCommas(transaction.claimableTokens)
                           : '-'}
                       </DataCell>
-                      <DataCell>{transaction.token}</DataCell>
                       <DataCell>{transaction.unitPrice}</DataCell>
                       <DataCell>{transaction.bidTotal}</DataCell>
                       <DataCell>
@@ -177,11 +167,13 @@ export const DataTable: React.FC<TableProps> = ({
                           {action === 'Bid' && (
                             <TradeButton
                               onClick={() => {
-                                // TODO: Have to fix this and pass numeric values
-                                setCurrentBidAmount(
-                                  Number(transaction.bidTotal).toString()
-                                );
-                                setModalState(modal);
+                                setModalState({
+                                  type: modal,
+                                  transaction: transaction,
+                                  currentBidAmount: Number(
+                                    transaction.bidTotal
+                                  ).toString(),
+                                });
                               }}
                               style={{ whiteSpace: 'nowrap', margin: 0 }}
                             >
@@ -191,13 +183,12 @@ export const DataTable: React.FC<TableProps> = ({
                           {action === 'Claim' &&
                             Number(transaction.claimableTokens) > 0 && (
                               <TradeButton
-                                onClick={async () => {
-                                  await spiceAuctionClaim(
+                                onClick={() =>
+                                  onClaim?.(
                                     transaction.auctionStaticConfig,
                                     Number(transaction.epoch)
-                                  );
-                                  refetch?.();
-                                }}
+                                  )
+                                }
                                 style={{ whiteSpace: 'nowrap', margin: 0 }}
                               >
                                 Claim
@@ -214,34 +205,28 @@ export const DataTable: React.FC<TableProps> = ({
         </ScrollBar>
       </PageContainer>
       <Popover
-        isOpen={modalState != 'closed'}
-        onClose={() => setModalState('closed')}
+        isOpen={modalState.type !== 'closed'}
+        onClose={() => setModalState({ type: 'closed' })}
         closeOnClickOutside
         showCloseButton
       >
-        {modal === 'bidDai' && (
+        {modalState.type === 'bidDai' && (
           <BidUSDS
             onBidSubmitted={onBidSubmitted}
             mode={BidUSDSMode.IncreaseBid}
-            currentBidAmount={currentBidAmount}
+            currentBidAmount={modalState.currentBidAmount}
           />
         )}
-        {modal === 'bidTgld' && (
+        {modalState.type === 'bidTgld' && (
           <BidTGLD
             mode={BidTGLDMode.IncreaseBid}
-            currentBidAmount={currentBidAmount}
+            currentBidAmount={modalState.currentBidAmount}
             onBidSuccess={async () => {
               await refetch?.();
-              setModalState('closed');
+              setModalState({ type: 'closed' });
             }}
             isLoadingUserMetrics={false}
-            auctionConfig={(() => {
-              const transaction = transactions.find(
-                (t) => Number(t.bidTotal) === Number(currentBidAmount)
-              );
-
-              return transaction?.auctionStaticConfig;
-            })()}
+            auctionConfig={modalState.transaction?.auctionStaticConfig}
           />
         )}
       </Popover>

@@ -349,6 +349,7 @@ const testEnv: AppConfig = {
         name: 'Test ARB TGLD Auction',
         chainId: ARB_SEPOLIA.id,
         auctionTokenSymbol: 'SPICE',
+        auctionToken: SPICE_TOKEN_ON_ARBITRUM_SEPOLIA,
         templeGoldToken: TGLD_TOKEN_ON_ARBITRUM_SEPOLIA,
         templeGoldTokenBalanceTickerSymbol:
           TICKER_SYMBOL.TEMPLE_GOLD_TOKEN_ARBITRUM,
