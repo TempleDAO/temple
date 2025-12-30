@@ -14,6 +14,11 @@ export const getAllSpiceBazaarSubgraphEndpoints = (): SpiceBazaarEndpoint[] => {
     label: auction.chainId.toString(),
   }));
 
-  // return only unique endpoints
-  return [...new Set(allEndpoints)];
+  const uniqueEndpointsMap = new Map<string, SpiceBazaarEndpoint>();
+  allEndpoints.forEach((endpoint) => {
+    if (!uniqueEndpointsMap.has(endpoint.url)) {
+      uniqueEndpointsMap.set(endpoint.url, endpoint);
+    }
+  });
+  return Array.from(uniqueEndpointsMap.values());
 };
