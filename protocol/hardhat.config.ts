@@ -37,6 +37,11 @@ subtask(TASK_COMPILE_SOLIDITY_GET_SOURCE_PATHS).setAction(
   }
 );
 
+function getGasPrice(envValue: string | undefined): number | undefined {
+  if (!envValue) return undefined;
+  return parseInt(envValue) * 1000000000;
+}
+
 /*task('verify-contract', `Verify a task's deployment on a block explorer`)
   .addParam('id', 'Deployment task ID')
   .addParam('name', 'Contract name')
@@ -169,7 +174,7 @@ module.exports = {
       accounts: process.env.MAINNET_ADDRESS_PRIVATE_KEY
         ? [process.env.MAINNET_ADDRESS_PRIVATE_KEY]
         : [],
-      gasPrice: parseInt(process.env.MAINNET_GAS_IN_GWEI || '0') * 1000000000,
+      gasPrice: getGasPrice(process.env.MAINNET_GAS_IN_GWEI),
     },
     matic: {
       url: process.env.MATIC_RPC_URL || '',
