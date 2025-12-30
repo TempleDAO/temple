@@ -5,11 +5,11 @@ import { TLC_BATCH_LIQUIDATE_CONFIG } from '@/tlc/config';
 
 import { getConfig } from "@/config";
 import { taskExceptionHandler } from "./utils/task-exceptions";
-import * as vars from "./config/variables";
 import {
   distributeStakingRewards, startStableGoldAuction, checkSignersBalance, updateAuctionSidebarBotTask,
   startSepoliaStableGoldAuction, distributeSepoliaStakingRewards, checkSepoliaSignersBalance,
-  redeemTempleGoldSepolia
+  burnAndUpdateCirculatingSupplySepolia,
+  burnAndUpdateCirculatingSupply
 } from "./tasks";
 import { startSidebarBot } from "./tasks/discord-sidebar-auction";
 
@@ -55,6 +55,13 @@ async function main() {
     cronSchedule: '*/15 * * * *', // every 15 minutes
     action: (ctx) => updateAuctionSidebarBotTask(config, ctx, sidebarBot)
   });
+  
+  // burn and notify TGLD for redemption
+  runner.addPeriodicTask({
+    id: 'burn-and-notify-tgld',
+    cronSchedule: '0 */8 * * *', // once every 8 hours
+    action: async (ctx, _time) => burnAndUpdateCirculatingSupply(config, ctx)
+  });
 
   // Seploia tasks
   // dai gold auction start
@@ -77,11 +84,11 @@ async function main() {
     action: async (ctx, _time) => checkSepoliaSignersBalance(sepoliaConfig, ctx)
   });
 
-  // burn and notify to redeem bid TGLD
+  // burn and notify TGLD for redemption
   runner.addPeriodicTask({
-    id: 'redeem-tgld-sepolia',
+    id: 'burn-and-notify-tgld-sepolia',
     cronSchedule: '0 */8 * * *', // once every 8 hours
-    action: async (ctx, _time) => redeemTempleGoldSepolia(sepoliaConfig, ctx)
+    action: async (ctx, _time) => burnAndUpdateCirculatingSupplySepolia(sepoliaConfig, ctx)
   });
 
   runner.main();

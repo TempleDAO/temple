@@ -1,4 +1,4 @@
-import { chainFromId, TX_SUBMISSION_PARAMS } from "@/config";
+import { chainFromId, getMainnetSubmissionParams } from "@/config";
 import { BigRational } from "@mountainpath9/big-rational";
 import { etherscanTransactionUrl } from "@/utils/etherscan";
 import { postDefconNotification } from "@/utils/discord";
@@ -15,7 +15,7 @@ export const taskIdPrefix = 'tlgddaigoldauction-a-';
 export interface Params {
     signerId: string,
     chainId: number,
-    contracts: { stableGoldAuction: Address },
+    contracts: { auction: Address },
     lastRunTime: KvPersistedValue<Date>,
     maxGasPrice: BigRational,
     checkPeriodMs: number,
@@ -26,10 +26,10 @@ export async function startAuction(ctx: TaskContext, params: Params): Promise<Ta
     const chain = chainFromId(params.chainId);
     const pclient = await getPublicClient(ctx, chain);
     const wclient = await getWalletClient(ctx, chain, params.signerId);
-    const transactionManager = await createTransactionManager(ctx, wclient, {...TX_SUBMISSION_PARAMS});
-    const stableGoldAuction = getContract({
+    const transactionManager = await createTransactionManager(ctx, wclient, {...await getMainnetSubmissionParams(ctx)});
+    const auction = getContract({
         abi: StableGoldAuction.ABI,
-        address: params.contracts.stableGoldAuction,
+        address: params.contracts.auction,
         client: pclient
     });
 
@@ -39,20 +39,20 @@ export async function startAuction(ctx: TaskContext, params: Params): Promise<Ta
         return taskSuccessSilent();
     }
 
-    const currentEpoch = await stableGoldAuction.read.currentEpoch();
+    const currentEpoch = await auction.read.currentEpoch();
     ctx.logger.info(`Current epoch: ${currentEpoch}`);
 
     const estimate = await pclient.estimateFeesPerGas();
     const gasPrice = BigRational.fromBigIntWithDecimals(estimate.maxFeePerGas || 0n, 9n);
     if (gasPrice.gt(params.maxGasPrice)) {
-      ctx.logger.info(`skipping due to high gas price (${gasPrice.toDecimalString(0)} > (${params.maxGasPrice.toDecimalString(0)}`);
+      ctx.logger.info(`skipping due to high gas price (${gasPrice.toDecimalString(5)} > ${params.maxGasPrice.toDecimalString(5)})`);
       return taskSuccessSilent();
     }
 
     // checks
     if (currentEpoch != BigInt(0)) {
-        const prevAuctionInfo = await stableGoldAuction.read.getEpochInfo([currentEpoch]);
-        const config = await stableGoldAuction.read.getAuctionConfig();
+        const prevAuctionInfo = await auction.read.getEpochInfo([currentEpoch]);
+        const config = await auction.read.getAuctionConfig();
         const ts = (await pclient.getBlock()).timestamp;
         const auctionsTimeDiff = BigInt(config.auctionsTimeDiff);
         if (prevAuctionInfo.endTime + auctionsTimeDiff > ts) {
@@ -61,7 +61,7 @@ export async function startAuction(ctx: TaskContext, params: Params): Promise<Ta
             return taskSuccessSilent();
         }
         
-        const totalGoldAmount = await stableGoldAuction.read.nextAuctionGoldAmount();
+        const totalGoldAmount = await auction.read.nextAuctionGoldAmount();
         if (totalGoldAmount < config.auctionMinimumDistributedGold) {
             // low distributed temple gold
             ctx.logger.info('Skipping due to low distributed Temple Gold');
@@ -72,7 +72,7 @@ export async function startAuction(ctx: TaskContext, params: Params): Promise<Ta
         abi: StableGoldAuction.ABI,
         functionName: 'startAuction'
     });
-    const tx = { data, to: params.contracts.stableGoldAuction };
+    const tx = { data, to: params.contracts.auction };
     const txr = await transactionManager.submitAndWait(tx);
 
     await params.lastRunTime.set(now);
@@ -81,7 +81,7 @@ export async function startAuction(ctx: TaskContext, params: Params): Promise<Ta
     if (await postDefconNotification('defcon5', message, ctx)) {
         ctx.logger.info(`StableGold auction start discord notification sent`);
     }
-    ctx.logger.info(`Current epoch, after auction start: ${await stableGoldAuction.read.currentEpoch()}`);
+    ctx.logger.info(`Current epoch, after auction start: ${await auction.read.currentEpoch()}`);
 
     return taskSuccess();
 }

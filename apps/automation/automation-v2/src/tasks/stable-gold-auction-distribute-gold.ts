@@ -3,7 +3,7 @@ import { KvPersistedValue } from "@/utils/kv";
 import { TaskContext, TaskResult,
   taskSuccess, taskSuccessSilent } from "@mountainpath9/overlord-core";
 import { createTransactionManager, getPublicClient, getWalletClient } from "@mountainpath9/overlord-viem";
-import { chainFromId, TX_SUBMISSION_PARAMS } from "@/config";
+import { chainFromId, getMainnetSubmissionParams } from "@/config";
 import { postDefconNotification } from "@/utils/discord";
 import { etherscanTransactionUrl } from "@/utils/etherscan";
 import { getMsSinceLastDistribution } from "@/utils/distribute";
@@ -15,7 +15,7 @@ export const taskIdPrefix = 'tlgddaigoldauction-distribute-gold-a-';
 export interface Params {
     signerId: string,
     chainId: number,
-    contracts: { stableGoldAuction: Address, templeGold: Address, staking: Address },
+    contracts: { auction: Address, templeGold: Address, staking: Address },
     lastRunTime: KvPersistedValue<Date>;
     maxGasPrice: BigRational,
     checkPeriodMs: number,
@@ -26,7 +26,7 @@ export async function distributeGold(ctx: TaskContext, params: Params): Promise<
   const chain = chainFromId(params.chainId);
   const pclient = await getPublicClient(ctx, chain);
   const wclient = await getWalletClient(ctx, chain, params.signerId);
-  const transactionManager = await createTransactionManager(ctx, wclient, {...TX_SUBMISSION_PARAMS});
+  const transactionManager = await createTransactionManager(ctx, wclient, {...await getMainnetSubmissionParams(ctx)});
   
   const templeGold = getContract({
     address: params.contracts.templeGold,
@@ -45,11 +45,11 @@ export async function distributeGold(ctx: TaskContext, params: Params): Promise<
   const estimate = await pclient.estimateFeesPerGas();
   const gasPrice = BigRational.fromBigIntWithDecimals(estimate.maxFeePerGas || 0n, 9n);
   if (gasPrice.gt(params.maxGasPrice)) {
-    ctx.logger.info(`skipping due to high gas price (${gasPrice.toDecimalString(0)} > (${params.maxGasPrice.toDecimalString(0)}`);
+    ctx.logger.info(`skipping due to high gas price (${gasPrice.toDecimalString(5)} > ${params.maxGasPrice.toDecimalString(5)})`);
     return taskSuccessSilent();
   }
   
-  ctx.logger.info(`Gold amount before ${await templeGold.read.balanceOf([params.contracts.stableGoldAuction])}`);
+  ctx.logger.info(`Gold amount before ${await templeGold.read.balanceOf([params.contracts.auction])}`);
   const mintAmount = await templeGold.read.getMintAmount();
   ctx.logger.info(`Mint amount: ${mintAmount}`);
 
@@ -60,7 +60,7 @@ export async function distributeGold(ctx: TaskContext, params: Params): Promise<
   const tx = { data, to: params.contracts.templeGold };
   const txr = await transactionManager.submitAndWait(tx);
   ctx.logger.info(`Mint amount: ${await templeGold.read.getMintAmount()}`);
-  ctx.logger.info(`Gold auction tgld amount after ${await templeGold.read.balanceOf([params.contracts.stableGoldAuction])}`);
+  ctx.logger.info(`Gold auction tgld amount after ${await templeGold.read.balanceOf([params.contracts.auction])}`);
 
   await params.lastRunTime.set(now);
 

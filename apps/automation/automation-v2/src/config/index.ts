@@ -3,9 +3,10 @@ import { CONTRACTS as TESTNET_CONTRACTS } from "./contract_addresses/anvil";
 import { CONTRACTS as SEPOLIA_CONTRACTS } from "./contract_addresses/sepolia";
 import { CONTRACTS as MAINNET_CONTRACTS } from "./contract_addresses/mainnet";
 import { TxSubmissionParams } from "@mountainpath9/overlord-viem";
-import { ethers } from "ethers";
 import { Chain } from "viem";
 import { mainnet, berachain, sepolia } from "viem/chains";
+import { TaskContext } from "@mountainpath9/overlord-core";
+import * as vars from "./variables";
 
 
 export interface Config {
@@ -39,21 +40,45 @@ const MAINNET_CONFIG: Config = {
   contracts: MAINNET_CONTRACTS,
 }
 
-export const TX_SUBMISSION_PARAMS: TxSubmissionParams = {
-  // our initial gas tip
-  t0MaxPriorityFeePerGas: ethers.parseUnits('1', 'gwei'),
+export async function getMainnetSubmissionParams(
+  ctx: TaskContext
+): Promise<TxSubmissionParams> {
+  const t0MaxPriorityFeePerGas =
+    await vars.mainnet_t0_max_priority_fee_per_gas.requireValue(ctx);
+  const t0MaxPriorityFeePerGasFactor =
+    await vars.mainnet_t0_max_priority_fee_per_gas_factor.getValue(ctx);
 
-  // Wait for 30 secs before increasing tip
-  t1Secs: 30,
-  t1MaxPriorityFeePerGas: ethers.parseUnits('3', 'gwei'),
+  const t1MaxPriorityFeePerGas =
+    await vars.mainnet_t1_max_priority_fee_per_gas.getValue(ctx);
+  const t1MaxPriorityFeePerGasFactor =
+    await vars.mainnet_t1_max_priority_fee_per_gas_factor.getValue(ctx);
 
-  // Don't bother cancelling, as flashbots does this automatically
-  // at 300 seconds
-  t2Secs: 300,
-  t2MaxPriorityFeePerGas: undefined,
+  const t2MaxPriorityFeePerGas =
+    await vars.mainnet_t2_max_priority_fee_per_gas.getValue(ctx);
+  const t2MaxPriorityFeePerGasFactor =
+    await vars.mainnet_t2_max_priority_fee_per_gas_factor.getValue(ctx);
 
-  // Wait for another 300s before giving up on cancellation
-  t3Secs: 300
+  return {
+    // our initial gas tip
+    t0MaxPriorityFeePerGas: t0MaxPriorityFeePerGas.toScaledBigInt(1n),
+    t0MaxPriorityFeePerGasFactor:
+      t0MaxPriorityFeePerGasFactor?.toScaledBigInt(1n),
+
+    // Wait for 30 secs before increasing tip
+    t1Secs: 30,
+    t1MaxPriorityFeePerGas: t1MaxPriorityFeePerGas?.toScaledBigInt(1n),
+    t1MaxPriorityFeePerGasFactor:
+      t1MaxPriorityFeePerGasFactor?.toScaledBigInt(1n),
+
+    // Wait for another two minutes minute before cancelling
+    t2Secs: 150,
+    t2MaxPriorityFeePerGas: t2MaxPriorityFeePerGas?.toScaledBigInt(1n),
+    t2MaxPriorityFeePerGasFactor:
+      t2MaxPriorityFeePerGasFactor?.toScaledBigInt(1n),
+
+    // Wait for another minute before giving up on cancellation
+    t3Secs: 210,
+  };
 }
 
 export function getConfig(env: string): Config {

@@ -1,5 +1,6 @@
 import { StringVariable, NumberVariable } from "@mountainpath9/overlord-core";
 import { BigRationalVariable } from "./types";
+import { parseUnits } from "viem";
 
 export const env = new StringVariable({
     name: 'env',
@@ -123,17 +124,60 @@ export const webhook_url = new StringVariable({
   isSecret: true,
 });
 
-export const redeem_tgld_max_gas_price = new BigRationalVariable({
-    name: 'redeem_tgld_max_gas_price',
-    description: 'Max gas price for redeeming TGLD after auction',
+export const burn_tgld_max_gas_price = new BigRationalVariable({
+    name: 'burn_tgld_max_gas_price',
+    description: 'Max gas price for burning TGLD after auction',
     default: 0.2,
     min: 0,
     max: 2
 });
 
-export const redeem_tgld_check_period_ms = new NumberVariable({
-    name: 'redeem_tgld_check_period_ms ',
-    description: 'How many milliseconds to wait between redeem TGLD checks.',
+export const burn_tgld_check_period_ms = new NumberVariable({
+    name: 'burn_tgld_check_period_ms ',
+    description: 'How many milliseconds to wait between burn TGLD checks.',
     default: 1000 * 1200,
     min: 1000 * 600,
 });
+
+//-------------------------------------------------------------------------------------------------------
+// Transaction configs
+
+export const mainnet_t0_max_priority_fee_per_gas = new BigRationalVariable({
+  name: 'tx_config_mainnet/t0_max_priority_fee_per_gas',
+  description:
+    'Base priority fee (gas tip). Used directly if no factor is provided, or as the minimum when scaling is applied.',
+  default: Number(parseUnits('1', 9)),
+});
+
+export const mainnet_t0_max_priority_fee_per_gas_factor =
+  new BigRationalVariable({
+    name: 'tx_config_mainnet/t0_max_priority_fee_per_gas_factor',
+    description:
+      'Optional scaling percentage applied to the estimated priority fee (e.g. 120 = 1.2x).',
+  });
+
+export const mainnet_t1_max_priority_fee_per_gas = new BigRationalVariable({
+  name: 'tx_config_mainnet/t1_max_priority_fee_per_gas',
+  description:
+    'Base tip for retry after t1 seconds (optional). Used directly if no factor is provided, or as the minimum when scaling is applied.',
+  default: Number(parseUnits('3', 9)),
+});
+
+export const mainnet_t1_max_priority_fee_per_gas_factor =
+  new BigRationalVariable({
+    name: 'tx_config_mainnet/t1_max_priority_fee_per_gas_factor',
+    description: 'Scale factor for t1 updated tip.',
+  });
+
+export const mainnet_t2_max_priority_fee_per_gas = new BigRationalVariable({
+  name: 'tx_config_mainnet/t2_max_priority_fee_per_gas',
+  description:
+    'Tip used for cancellation after t2 seconds (optional). Used directly if no factor is provided, or as the minimum when scaling is applied.',
+  default: Number(parseUnits('5', 9)),
+});
+
+export const mainnet_t2_max_priority_fee_per_gas_factor =
+  new BigRationalVariable({
+    name: 'tx_config_mainnet/t2_max_priority_fee_per_gas_factor',
+    description: 'Scale factor for the t2 cancellation transaction tip.',
+  });

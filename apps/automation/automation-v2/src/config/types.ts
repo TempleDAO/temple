@@ -13,8 +13,7 @@ export class BigRationalVariable extends VariableBase<BigRational> {
       return undefined;
     }
 
-    const configDecimals = 15;   // When parsing numbers from config, assume at most 15 decimal places
-    return BigRational.fromNumber(v, configDecimals);
+    return BigRational.fromNumber(v);
   }
 
   metadata(): ConfigureVariableMeta {

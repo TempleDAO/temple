@@ -4,39 +4,33 @@
   "description": "temple automation tasks using overlord framework",
   "license": "AGPL-3.0-or-later",
   "scripts": {
-    "prepare": "yarn typechain",
-    "typechain": "typechain --target=ethers-v6 --out-dir src/typechain abi/*.json",
     "clean": "rm -rf dist",
     "build": "yarn clean && yarn tsc --noEmit &&  yarn esbuild --platform=node --bundle --outfile=dist/main.js src/main.ts",
-    "build:localtest": "yarn tsc --noEmit &&  yarn esbuild --platform=node --bundle --outfile=dist/main-localtest.js src/main-localtest.ts",
+    "build:localtest:mainnet": "yarn tsc --noEmit &&  yarn esbuild --platform=node --bundle --outfile=dist/mainnet-localtest.js src/main-localtest/mainnet.ts",
     "build:image": "docker build --tag temple-tasks .",
     "dev": "yarn build && node ./dist/main.js",
-    "dev:local": "yarn build:localtest && node ./dist/main-localtest.js",
+    "dev:local:mainnet": "yarn build:localtest:mainnet && node ./dist/mainnet-localtest.js",
     "install-abis": "./src/scripts/install-abis.sh"
   },
   "dependencies": {
+    "@mountainpath9/big-rational": "^0.4.0",
+    "@mountainpath9/overlord-core": "1.9.3",
+    "@mountainpath9/overlord-viem": "1.9.2",
     "axios": "^1.5.1",
     "cron-parser": "^4.9.0",
     "crypto-random-string": "^5.0.0",
     "date-fns": "^2.30.0",
     "discord.js": "^14.14.1",
-    "ethers": "~6.13.1",
     "exponential-backoff": "^3.1.1",
-    "@mountainpath9/big-rational": "^0.2.0",
-    "@mountainpath9/overlord-core": "^1.5.0",
-    "@mountainpath9/overlord-ethers": "^1.5.0",
-    "@mountainpath9/overlord-viem": "^1.5.0",
     "viem": "^2.30.5",
     "zod": "^3.22.4"
   },
   "devDependencies": {
+    "@types/jquery": "^3.5.19",
     "esbuild": "^0.19.4",
     "tsc-alias": "^1.8.3",
     "tsx": "^4.7.2",
-    "typechain": "^8.1.1",
-    "@typechain/ethers-v6": "^0.5.0",
-    "typescript": "^5.1.6",
-    "@types/jquery": "^3.5.19"
+    "typescript": "^5.1.6"
   },
   "lint-staged": {
     "*.{js,ts,tsx}": [

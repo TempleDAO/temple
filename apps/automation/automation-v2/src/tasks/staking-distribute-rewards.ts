@@ -4,7 +4,7 @@ import { KvPersistedValue } from "@/utils/kv";
 import { BigRational } from "@mountainpath9/big-rational";
 import { etherscanTransactionUrl } from "@/utils/etherscan";
 import { postDefconNotification } from "@/utils/discord";
-import { chainFromId, TX_SUBMISSION_PARAMS } from "@/config";
+import { chainFromId, getMainnetSubmissionParams } from "@/config";
 import { delayUntilNextCheckTime } from "@/utils/task-checks";
 import { getPublicClient, getWalletClient } from "@mountainpath9/overlord-viem";
 import { Address, encodeFunctionData, getContract } from "viem";
@@ -16,7 +16,7 @@ export const taskIdPrefix = 'tlgdstaking-a-';
 interface Params {
     signerId: string,
     chainId: number,
-    contracts: { stableGoldAuction: Address, templeGold: Address, staking: Address },
+    contracts: { templeGold: Address, staking: Address },
     lastRunTime: KvPersistedValue<Date>;
     maxGasPrice: BigRational,
     checkPeriodFinish: boolean,
@@ -28,7 +28,7 @@ export async function stakingDistributeRewards(ctx: TaskContext, params: Params)
     const chain = chainFromId(params.chainId);
     const pclient = await getPublicClient(ctx, chain);
     const wclient = await getWalletClient(ctx, chain, params.signerId);
-    const transactionManager = await createTransactionManager(ctx, wclient, {...TX_SUBMISSION_PARAMS});
+    const transactionManager = await createTransactionManager(ctx, wclient, {...await getMainnetSubmissionParams(ctx)});
 
     const staking = getContract({
         address: params.contracts.staking,
