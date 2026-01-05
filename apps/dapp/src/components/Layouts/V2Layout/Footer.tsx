@@ -8,6 +8,7 @@ import socialDocsIcon from 'assets/images/social-docs.png';
 import socialMediumIcon from 'assets/images/social-medium.png';
 import socialTelegramIcon from 'assets/images/social-telegram.png';
 import socialTwitterIcon from 'assets/images/social-twitter.png';
+import socialSnapshotIcon from 'assets/images/social-snapshot.svg';
 import footerTexture from 'assets/images/newui-images/footerTexture.svg';
 
 const Footer: React.FC = () => {
@@ -44,6 +45,11 @@ const Footer: React.FC = () => {
           text: 'Medium',
           image: socialMediumIcon,
           link: 'https://templedao.medium.com/',
+        },
+        {
+          text: 'Snapshot',
+          image: socialSnapshotIcon,
+          link: 'https://snapshot.box/#/s:templedao.eth',
         },
       ],
     },

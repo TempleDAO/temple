@@ -12,6 +12,7 @@ import socialDocsIcon from 'assets/images/social-docs.png';
 import socialMediumIcon from 'assets/images/social-medium.png';
 import socialTelegramIcon from 'assets/images/social-telegram.png';
 import socialTwitterIcon from 'assets/images/social-twitter.png';
+import socialSnapshotIcon from 'assets/images/social-snapshot.svg';
 import { Link } from 'react-router-dom';
 import { TemplePriceChart } from './PriceChart';
 import { RAMOSMetrics } from './RAMOSMetrics';
@@ -91,6 +92,11 @@ const FooterContent = [
         text: 'Medium',
         image: socialMediumIcon,
         link: 'https://templedao.medium.com/',
+      },
+      {
+        text: 'Snapshot',
+        image: socialSnapshotIcon,
+        link: 'https://snapshot.box/#/s:templedao.eth',
       },
     ],
   },
