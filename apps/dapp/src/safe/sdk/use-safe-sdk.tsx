@@ -9,20 +9,33 @@ import {
   getTransactionHash,
   isSafeMultisigTransactionResponse,
   toSafeTransactionType,
+  encodeMultiSendData,
+  standardizeMetaTransactionData,
+  ZERO_ADDRESS,
 } from './utils/utils';
-import { V1Service, SafeMultisigConfirmation } from 'safe/open-api/client';
+import {
+  V1Service,
+  SafeMultisigConfirmation,
+  SafeMultisigTransaction,
+} from 'safe/open-api/client';
 import { Nullable } from 'types/util';
 import {
   SafeMultisigTransactionResponse,
   TransactionOptions,
   TransactionResult,
+  MetaTransactionData,
+  OperationType,
 } from '@safe-global/safe-core-sdk-types';
 import {
   adjustVInSignature,
   generatePreValidatedSignature,
 } from './signatures/utils';
-import { getSafeContract } from './contracts/safeDeploymentContracts';
+import {
+  getSafeContract,
+  getMultiSendContract,
+} from './contracts/safeDeploymentContracts';
 import { DEFAULT_SAFE_VERSION } from './contracts/config';
+import EthSafeTransaction from './transactions/SafeTransaction';
 
 export const useSafeSdk = (signer: Nullable<Signer>, safeAddress: string) => {
   const signSafeTx = async (safeTxHash: string) => {
@@ -160,8 +173,128 @@ export const useSafeSdk = (signer: Nullable<Signer>, safeAddress: string) => {
     }
   };
 
+  const proposeTransaction = async (
+    transactions: MetaTransactionData[],
+    targetSafeAddress?: string
+  ): Promise<void> => {
+    if (!signer) {
+      throw new Error('signer undefined');
+    }
+
+    // Use provided address or fall back to context address
+    const addressToUse = targetSafeAddress || safeAddress;
+
+    // Validate address is not empty
+    if (!addressToUse || addressToUse.trim() === '') {
+      throw new Error('Safe address not provided');
+    }
+
+    const safeContract = (await getSafeContract({
+      signer,
+      safeVersion: DEFAULT_SAFE_VERSION,
+      customSafeAddress: addressToUse,
+    })) as SafeMasterCopy_V1_3_0;
+
+    const signerAddress = await signer.getAddress();
+    const nonce = (await safeContract.nonce()).toNumber();
+
+    // Build transaction data
+    let transactionData: {
+      to: string;
+      value: string;
+      data: string;
+      operation: OperationType;
+    };
+
+    if (transactions.length === 0) {
+      throw new Error('No transactions provided');
+    } else if (transactions.length === 1) {
+      // Single transaction
+      const tx = standardizeMetaTransactionData(transactions[0]);
+      transactionData = {
+        to: tx.to,
+        value: tx.value || '0',
+        data: tx.data || '0x',
+        operation: tx.operation ?? OperationType.Call,
+      };
+    } else {
+      // Multiple transactions - use MultiSend
+      const multiSendContract = await getMultiSendContract({
+        signer,
+        safeVersion: DEFAULT_SAFE_VERSION,
+      });
+
+      const multiSendData = encodeMultiSendData(
+        transactions.map(standardizeMetaTransactionData)
+      );
+
+      transactionData = {
+        to: multiSendContract.address,
+        value: '0',
+        data: multiSendContract.interface.encodeFunctionData('multiSend', [
+          multiSendData,
+        ]),
+        operation: OperationType.DelegateCall,
+      };
+    }
+
+    // Create SafeTransaction for hashing
+    const safeTransaction = new EthSafeTransaction({
+      to: transactionData.to,
+      value: transactionData.value,
+      data: transactionData.data,
+      operation: transactionData.operation,
+      safeTxGas: '0',
+      baseGas: '0',
+      gasPrice: '0',
+      gasToken: ZERO_ADDRESS,
+      refundReceiver: ZERO_ADDRESS,
+      nonce,
+    });
+
+    // Get transaction hash
+    const txHash = await getTransactionHash(safeContract, safeTransaction);
+
+    // Sign the transaction hash
+    const messageArray = ethers.utils.arrayify(txHash);
+    let signature = await signer.signMessage(messageArray);
+    signature = adjustVInSignature(
+      'eth_sign',
+      signature,
+      txHash,
+      signerAddress
+    );
+
+    // Submit to Safe Transaction Service
+    const safeMultisigTx: SafeMultisigTransaction = {
+      safe: addressToUse,
+      to: transactionData.to,
+      // Use string value directly to preserve precision for large wei amounts.
+      // The HTTP client will serialize this correctly to JSON integer.
+      value: transactionData.value as any,
+      data: transactionData.data,
+      operation: transactionData.operation,
+      gasToken: ZERO_ADDRESS,
+      safeTxGas: 0,
+      baseGas: 0,
+      gasPrice: 0,
+      refundReceiver: ZERO_ADDRESS,
+      nonce,
+      contractTransactionHash: txHash,
+      sender: signerAddress,
+      signature,
+      origin: 'Spice Auction Admin',
+    };
+
+    await V1Service.v1SafesMultisigTransactionsCreate(
+      addressToUse,
+      safeMultisigTx
+    );
+  };
+
   return {
     signSafeTx,
     executeSafeTx,
+    proposeTransaction,
   };
 };

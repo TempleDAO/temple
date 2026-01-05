@@ -358,6 +358,12 @@ const env: Environment = {
   },
   featureFlags: {
     enableAscend: false,
+    enableGnosisSafeAdmin: false,
+    enableSpiceAuctionAdmin: false,
+  },
+  spiceAuctionAdmin: {
+    multisigAddress: '0x94b62A27a2f23CBdc0220826a8452fB5055cF273',
+    cosechaSegundaAddress: '0xA1f01d98d60273ED562eE79fEb718bbdB85E1d9C',
   },
   posthog: {
     token: 'phc_pa9tsK76qoRqgsvMh9rDLtBKbOaawlwvJTLkcNDtxab',
@@ -382,8 +388,8 @@ const env: Environment = {
     //   address: '0x94b62A27a2f23CBdc0220826a8452fB5055cF273',
     // },
     // {
-    //   name: 'Temple Rescuers',
-    //   address: '0x9f90430179D9b67341BFa50559bc7B8E35629f1b',
+    //   name: "Temple Rescuers",
+    //   address: "0x9f90430179D9b67341BFa50559bc7B8E35629f1b",
     // },
   ],
   enableSubgraphLogs: ENABLE_SUBGRAPH_LOGS,

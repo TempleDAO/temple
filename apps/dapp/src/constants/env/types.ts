@@ -140,6 +140,12 @@ export interface Environment {
   etherscan: string;
   featureFlags: {
     enableAscend: boolean;
+    enableGnosisSafeAdmin: boolean;
+    enableSpiceAuctionAdmin: boolean;
+  };
+  spiceAuctionAdmin: {
+    multisigAddress: string;
+    cosechaSegundaAddress: string;
   };
   safes: SafeWallet[];
   enableSubgraphLogs: boolean;

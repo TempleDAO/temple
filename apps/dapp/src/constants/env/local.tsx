@@ -155,6 +155,12 @@ const env: Environment = {
   network: 30001,
   featureFlags: {
     enableAscend: true,
+    enableGnosisSafeAdmin: true,
+    enableSpiceAuctionAdmin: true,
+  },
+  spiceAuctionAdmin: {
+    multisigAddress: '0x0',
+    cosechaSegundaAddress: '0x0',
   },
   templeMultisig: '0x3a320fF715dCBbF097e15257B7051dd08fdfb7A2',
   safes: [

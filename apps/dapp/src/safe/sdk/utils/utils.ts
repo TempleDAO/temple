@@ -289,11 +289,11 @@ export function isMetaTransactionArray(
   return (safeTransactions as MetaTransactionData[])?.length !== undefined;
 }
 
-function encodeMultiSendData(txs: MetaTransactionData[]): string {
+export function encodeMultiSendData(txs: MetaTransactionData[]): string {
   return '0x' + txs.map((tx) => encodeMetaTransaction(tx)).join('');
 }
 
-function encodeMetaTransaction(tx: MetaTransactionData): string {
+export function encodeMetaTransaction(tx: MetaTransactionData): string {
   const data = arrayify(tx.data);
   const encoded = solidityPack(
     ['uint8', 'address', 'uint256', 'uint256', 'bytes'],
