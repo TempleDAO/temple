@@ -174,8 +174,8 @@ const env: Environment = {
     enableSpiceAuctionAdmin: true,
   },
   spiceAuctionAdmin: {
-    multisigAddress: '0x7d1e9012aA41278349791f29C2cdaa3DF4ceDcEd', // Sepolia Safe: Multisig Temple V2
-    cosechaSegundaAddress: '0x5CE28cAE5aAb002DcBc076d5A551A473a7C9dF89', // Sepolia Safe: Multisig Test Fostrich
+    multisigAddress: '0x94b62A27a2f23CBdc0220826a8452fB5055cF273',
+    cosechaSegundaAddress: '0xA1f01d98d60273ED562eE79fEb718bbdB85E1d9C',
   },
   templeMultisig: '0x3a320fF715dCBbF097e15257B7051dd08fdfb7A2',
   safes: [

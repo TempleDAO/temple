@@ -359,7 +359,7 @@ const env: Environment = {
   featureFlags: {
     enableAscend: false,
     enableGnosisSafeAdmin: false,
-    enableSpiceAuctionAdmin: false,
+    enableSpiceAuctionAdmin: true,
   },
   spiceAuctionAdmin: {
     multisigAddress: '0x94b62A27a2f23CBdc0220826a8452fB5055cF273',

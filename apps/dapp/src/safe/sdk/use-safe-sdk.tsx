@@ -269,9 +269,13 @@ export const useSafeSdk = (signer: Nullable<Signer>, safeAddress: string) => {
     const safeMultisigTx: SafeMultisigTransaction = {
       safe: addressToUse,
       to: transactionData.to,
-      // Use string value directly to preserve precision for large wei amounts.
-      // The HTTP client will serialize this correctly to JSON integer.
-      value: transactionData.value as any,
+      // Type assertion required: OpenAPI spec incorrectly defines value as 'number',
+      // but we must use string to preserve precision for large wei amounts.
+      // Token amounts with 18 decimals produce 25-digit numbers that exceed
+      // JavaScript's safe integer range (2^53-1 = 16 digits). The Safe Transaction
+      // Service API accepts string values despite the spec (response types use string).
+      // The HTTP client serializes this as a JSON string, which the API handles correctly.
+      value: transactionData.value as unknown as number,
       data: transactionData.data,
       operation: transactionData.operation,
       gasToken: ZERO_ADDRESS,
