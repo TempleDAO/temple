@@ -38,30 +38,19 @@ export const BatchAuctionForm = () => {
   const { openNotification } = useNotification();
   const { wallet } = useWallet();
 
-  // Wallet selections
+  // Config
   const configWallet = env.spiceAuctionAdmin.multisigAddress;
   const fundWallet = env.spiceAuctionAdmin.cosechaSegundaAddress;
-
-  // Shared auction selection
-  const [selectedAuctionAddress, setSelectedAuctionAddress] = useState<string>(
-    String(AUCTION_OPTIONS[0]?.value || '')
-  );
-
-  // Helper to get full auction config
-  const getSelectedAuctionConfig = () => {
-    return getAppConfig().spiceBazaar.spiceAuctions.find(
-      (a) => a.contractConfig.address === selectedAuctionAddress
-    );
-  };
+  const recipientWallet = env.spiceAuctionAdmin.defaultRecipientAddress;
+  const auctionAddress = env.spiceAuctionAdmin.auctionAddress;
+  const templeGoldAddress = env.spiceAuctionAdmin.templeGoldAddress;
 
   // Config form state
   const [duration, setDuration] = useState<string>('');
   const [waitPeriod, setWaitPeriod] = useState<string>('');
   const [minimumDistributedAmount, setMinimumDistributedAmount] =
     useState<string>('');
-  const [isTempleGoldAuctionToken, setIsTempleGoldAuctionToken] =
-    useState<boolean>(false);
-  const [recipient, setRecipient] = useState<string>('');
+  const isTempleGoldAuctionToken = false;
 
   // Funding form state
   const [tokenAmount, setTokenAmount] = useState<string>('');
@@ -71,17 +60,6 @@ export const BatchAuctionForm = () => {
     if (!proposeTransaction) {
       openNotification({
         title: 'Please connect your wallet',
-        hash: '',
-        isError: true,
-      });
-      return;
-    }
-
-    const auctionConfig = getSelectedAuctionConfig();
-
-    if (!auctionConfig) {
-      openNotification({
-        title: 'No auction selected',
         hash: '',
         isError: true,
       });
@@ -105,7 +83,7 @@ export const BatchAuctionForm = () => {
                 18
               ).toString(),
               isTempleGoldAuctionToken: false,
-              recipient: recipient,
+              recipient: recipientWallet,
             },
           ]
         );
@@ -113,7 +91,7 @@ export const BatchAuctionForm = () => {
         await proposeTransaction(
           [
             {
-              to: auctionConfig.contractConfig.address,
+              to: auctionAddress,
               value: '0',
               data: configData,
               operation: OperationType.Call,
@@ -128,13 +106,13 @@ export const BatchAuctionForm = () => {
         });
       } else {
         // Fund tab - encode approve + fundNextAuction
-        const bidTokenAddress = auctionConfig.templeGoldToken.address;
+        const bidTokenAddress = templeGoldAddress;
         const amountWei = parseUnits(tokenAmount, 18).toString();
         const startTimeUnix = Math.floor(new Date(startTime).getTime() / 1000);
 
         // Approve transaction
         const approveData = erc20Interface.encodeFunctionData('approve', [
-          auctionConfig.contractConfig.address,
+          auctionAddress,
           amountWei,
         ]);
 
@@ -153,7 +131,7 @@ export const BatchAuctionForm = () => {
               operation: OperationType.Call,
             },
             {
-              to: auctionConfig.contractConfig.address,
+              to: auctionAddress,
               value: '0',
               data: fundData,
               operation: OperationType.Call,
@@ -197,13 +175,10 @@ export const BatchAuctionForm = () => {
 
         <FormRow>
           <Label>Auction Contract</Label>
-          <InputSelect
-            options={AUCTION_OPTIONS}
-            defaultValue={AUCTION_OPTIONS[0]}
-            onChange={(e) => setSelectedAuctionAddress(e.value)}
-            isSearchable={false}
-            width="250px"
-          />
+          <StaticField>
+            <StaticFieldLabel>ENA Auction</StaticFieldLabel>
+            <StaticFieldValue>{auctionAddress}</StaticFieldValue>
+          </StaticField>
         </FormRow>
 
         <FormRowDouble>
@@ -240,12 +215,10 @@ export const BatchAuctionForm = () => {
 
         <FormRow>
           <Label>Recipient Address</Label>
-          <Input
-            type="text"
-            placeholder="0x..."
-            value={recipient}
-            onChange={(e) => setRecipient(e.target.value)}
-          />
+          <StaticField>
+            <StaticFieldLabel>Overlord Bot</StaticFieldLabel>
+            <StaticFieldValue>{recipientWallet}</StaticFieldValue>
+          </StaticField>
         </FormRow>
 
         <PreviewBox>
@@ -258,8 +231,7 @@ export const BatchAuctionForm = () => {
             1. setAuctionConfig({`{`}
             duration: {duration || '0'}, waitPeriod: {waitPeriod || '0'},
             minAmount: {minAmountWei}, isTGLD:{' '}
-            {isTempleGoldAuctionToken.toString()}, recipient:{' '}
-            {recipient || '0x...'}
+            {isTempleGoldAuctionToken.toString()}, recipient: {recipientWallet}
             {`}`})
           </PreviewItem>
         </PreviewBox>
@@ -270,11 +242,7 @@ export const BatchAuctionForm = () => {
             onClick={handleCreateBatch}
             isSmall
             disabled={
-              !wallet ||
-              !duration ||
-              !waitPeriod ||
-              !minimumDistributedAmount ||
-              !recipient
+              !wallet || !duration || !waitPeriod || !minimumDistributedAmount
             }
           />
         </ButtonContainer>
@@ -283,10 +251,15 @@ export const BatchAuctionForm = () => {
   };
 
   const renderFundTab = () => {
-    const amount = tokenAmount || '0';
+    const amountWei = tokenAmount
+      ? parseUnits(tokenAmount, 18).toString()
+      : '0';
     const time = startTime
       ? Math.floor(new Date(startTime).getTime() / 1000)
       : 0;
+    const isStartTimeInPast = startTime
+      ? new Date(startTime) < new Date()
+      : false;
 
     return (
       <TabContent>
@@ -301,24 +274,18 @@ export const BatchAuctionForm = () => {
         <FormRowDouble>
           <FormRow>
             <Label>Auction Contract</Label>
-            <InputSelect
-              options={AUCTION_OPTIONS}
-              defaultValue={AUCTION_OPTIONS[0]}
-              onChange={(e) => setSelectedAuctionAddress(e.value)}
-              isSearchable={false}
-              width="250px"
-            />
+            <StaticField>
+              <StaticFieldLabel>ENA Auction</StaticFieldLabel>
+              <StaticFieldValue>{auctionAddress}</StaticFieldValue>
+            </StaticField>
           </FormRow>
 
           <FormRow>
             <Label>Bid Token</Label>
-            <InputSelect
-              options={BID_TOKEN_OPTIONS}
-              defaultValue={BID_TOKEN_OPTIONS[0]}
-              isDisabled={true}
-              isSearchable={false}
-              width="250px"
-            />
+            <StaticField>
+              <StaticFieldLabel>TGLD</StaticFieldLabel>
+              <StaticFieldValue>{templeGoldAddress}</StaticFieldValue>
+            </StaticField>
           </FormRow>
         </FormRowDouble>
 
@@ -339,6 +306,11 @@ export const BatchAuctionForm = () => {
             value={startTime}
             onChange={(e) => setStartTime(e.target.value)}
           />
+          {isStartTimeInPast && (
+            <HelperText style={{ color: 'red' }}>
+              Start time must be in the future
+            </HelperText>
+          )}
         </FormRow>
 
         <PreviewBox>
@@ -347,9 +319,9 @@ export const BatchAuctionForm = () => {
             Wallet: Cosecha Segunda ({fundWallet.slice(0, 8)}...
             {fundWallet.slice(-6)})
           </WalletInfo>
-          <PreviewItem>1. approve(spiceAuction, {amount})</PreviewItem>
+          <PreviewItem>1. approve(spiceAuction, {amountWei})</PreviewItem>
           <PreviewItem>
-            2. fundNextAuction({amount}, {time})
+            2. fundNextAuction({amountWei}, {time})
           </PreviewItem>
         </PreviewBox>
 
@@ -358,7 +330,9 @@ export const BatchAuctionForm = () => {
             label="Create Batch Transaction"
             onClick={handleCreateBatch}
             isSmall
-            disabled={!wallet || !tokenAmount || !startTime}
+            disabled={
+              !wallet || !tokenAmount || !startTime || isStartTimeInPast
+            }
           />
         </ButtonContainer>
       </TabContent>

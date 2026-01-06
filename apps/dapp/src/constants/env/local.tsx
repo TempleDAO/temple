@@ -161,6 +161,9 @@ const env: Environment = {
   spiceAuctionAdmin: {
     multisigAddress: '0x0',
     cosechaSegundaAddress: '0x0',
+    defaultRecipientAddress: '0x0',
+    auctionAddress: '0x0',
+    templeGoldAddress: '0x0',
   },
   templeMultisig: '0x3a320fF715dCBbF097e15257B7051dd08fdfb7A2',
   safes: [

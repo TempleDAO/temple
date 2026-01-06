@@ -146,6 +146,9 @@ export interface Environment {
   spiceAuctionAdmin: {
     multisigAddress: string;
     cosechaSegundaAddress: string;
+    defaultRecipientAddress: string;
+    auctionAddress: string;
+    templeGoldAddress: string;
   };
   safes: SafeWallet[];
   enableSubgraphLogs: boolean;
