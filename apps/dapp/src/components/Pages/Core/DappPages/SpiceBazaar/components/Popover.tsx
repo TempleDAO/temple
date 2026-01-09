@@ -78,11 +78,11 @@ const Wrapper = styled.div<{ isOpen: boolean }>`
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  z-index: 20;
+  z-index: 2000;
   padding-bottom: 32px;
   flex-direction: column;
-  max-height: 100vh; /* Fallback for older browsers */
-  max-height: 100dvh; /* Dynamic viewport height - adjusts when keyboard appears */
+  max-height: 95vh; /* Fallback for older browsers */
+  max-height: 95dvh; /* Dynamic viewport height - adjusts when keyboard appears */
   max-width: 100vw;
   overflow-y: auto;
   box-shadow: 0 0 4rem rgba(0, 0, 0, 0.8);
@@ -98,5 +98,5 @@ const Dimmer = styled.div`
   left: 0;
   height: 100%;
   width: 100%;
-  z-index: 19;
+  z-index: 1100;
 `;

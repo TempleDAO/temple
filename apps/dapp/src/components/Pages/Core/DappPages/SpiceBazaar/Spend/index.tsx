@@ -23,6 +23,8 @@ import { useQuery } from '@tanstack/react-query';
 import { useWallet } from 'providers/WalletProvider';
 import { getAppConfig } from 'constants/newenv';
 import { formatNumberFixedDecimals } from 'utils/formatter';
+import { SpiceBazaarTOS } from 'components/Pages/Core/DappPages/SpiceBazaar/components/SpiceBazaarTOS';
+import { useConnectWallet } from '@web3-onboard/react';
 
 // Custom hook for auction-specific user metrics
 export const useAuctionUserMetrics = (
@@ -58,6 +60,7 @@ const AuctionCard = ({
 }) => {
   const navigate = useNavigate();
   const { wallet } = useWallet();
+  const [{}, connect] = useConnectWallet();
 
   const { data: userMetrics, isLoading: userMetricsLoading } =
     useAuctionUserMetrics(auction.address, wallet);
@@ -124,23 +127,35 @@ const AuctionCard = ({
           Details
         </TradeButton>
         {auction.currentEpochAuctionLive &&
-          (userMetricsLoading ? (
-            <Loader iconSize={32} />
-          ) : userMetrics?.currentEpochBidAmount ? (
-            <TradeButton
-              onClick={() => onOpenBidModal(auction, BidTGLDMode.IncreaseBid)}
-              style={{ whiteSpace: 'nowrap', margin: 0 }}
-              gradient={true}
-            >
-              INCREASE BID
-            </TradeButton>
+          (wallet ? (
+            userMetricsLoading ? (
+              <Loader iconSize={32} />
+            ) : userMetrics?.currentEpochBidAmount ? (
+              <TradeButton
+                onClick={() => onOpenBidModal(auction, BidTGLDMode.IncreaseBid)}
+                style={{ whiteSpace: 'nowrap', margin: 0 }}
+                gradient={true}
+              >
+                INCREASE BID
+              </TradeButton>
+            ) : (
+              <TradeButton
+                onClick={() => onOpenBidModal(auction, BidTGLDMode.Bid)}
+                style={{ whiteSpace: 'nowrap', margin: 0 }}
+                gradient={true}
+              >
+                BID NOW
+              </TradeButton>
+            )
           ) : (
             <TradeButton
-              onClick={() => onOpenBidModal(auction, BidTGLDMode.Bid)}
+              onClick={() => {
+                connect();
+              }}
               style={{ whiteSpace: 'nowrap', margin: 0 }}
               gradient={true}
             >
-              BID NOW
+              CONNECT WALLET
             </TradeButton>
           ))}
       </ButtonsContainer>
@@ -159,9 +174,10 @@ export const Spend = () => {
   const { updateBalance, wallet } = useWallet();
 
   const [modal, setModal] = useState<{
-    type: 'closed' | 'bidTgld' | 'bridgeTgld';
+    type: 'closed' | 'bidTgld' | 'bridgeTgld' | 'spiceTos';
     auction?: SpiceAuctionInfo;
     currentBidAmount?: string;
+    pendingBid?: { auction: SpiceAuctionInfo; mode: BidTGLDMode };
   }>({ type: 'closed' });
   const [modalMode, setModalMode] = useState<BidTGLDMode>(BidTGLDMode.Bid);
 
@@ -189,15 +205,32 @@ export const Spend = () => {
     auction: SpiceAuctionInfo,
     mode: BidTGLDMode
   ) => {
-    // Set the modal first so the hook can use the auction address
+    // Check if TOS has been signed
+    if (wallet) {
+      const tosSigned =
+        window.localStorage[
+          `templedao.spicebazaar.tos.${wallet?.toLowerCase()}`
+        ];
+
+      if (!tosSigned) {
+        // Show TOS modal first, store the pending bid
+        setModal({
+          type: 'spiceTos',
+          pendingBid: { auction, mode },
+        });
+        return;
+      }
+    }
+
+    // TOS already signed, proceed with bid modal
     setModal({
       type: 'bidTgld',
       auction,
-      currentBidAmount: '0', // We'll update this after fetching
+      currentBidAmount: '0',
     });
     setModalMode(mode);
 
-    // Then fetch the latest metrics
+    // Fetch the latest metrics
     const { data: metrics } = await refetchUserMetrics();
 
     // Update the modal with the fetched metrics
@@ -205,6 +238,19 @@ export const Spend = () => {
       ...prev,
       currentBidAmount: metrics?.currentEpochBidAmount?.toString() || '0',
     }));
+  };
+
+  const handleTOSSuccess = async () => {
+    // TOS signed successfully, now open the bid modal with the pending bid
+    if (modal.pendingBid) {
+      const { auction, mode } = modal.pendingBid;
+      await handleOpenBidModal(auction, mode);
+    }
+  };
+
+  const handleTOSCancel = () => {
+    // User rejected TOS, close modal
+    setModal({ type: 'closed' });
   };
 
   const activeAuctions = useMemo(
@@ -263,20 +309,23 @@ export const Spend = () => {
       <Popover
         isOpen={modal.type !== 'closed'}
         onClose={() => setModal({ type: 'closed' })}
-        closeOnClickOutside
-        showCloseButton
+        closeOnClickOutside={modal.type !== 'spiceTos'}
+        showCloseButton={modal.type !== 'spiceTos'}
       >
+        {modal.type === 'spiceTos' && (
+          <SpiceBazaarTOS
+            onSuccess={handleTOSSuccess}
+            onCancel={handleTOSCancel}
+          />
+        )}
         {modal.type === 'bidTgld' && (
           <BidTGLD
             mode={modalMode}
             auctionConfig={modal.auction?.staticConfig}
             currentBidAmount={modal.currentBidAmount}
             onBidSuccess={async () => {
-              // Refetch all auction data to update metrics
               await fetch();
-              // Refetch user metrics after bid success signalled by the provider
               await refetchUserMetrics();
-              // Close modal after metrics are updated
               setModal({ type: 'closed' });
             }}
             isLoadingUserMetrics={userMetricsLoading}
