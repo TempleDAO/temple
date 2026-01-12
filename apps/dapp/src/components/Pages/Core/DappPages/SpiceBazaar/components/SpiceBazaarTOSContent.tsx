@@ -810,7 +810,7 @@ export const SpiceBazaarTOSContent = () => {
       <Paragraph style={{ marginLeft: '20px' }}>
         <Strong>22.4 Entire Agreement</Strong>. These Terms and the{' '}
         <ExternalLink
-          href="https://docs.google.com/document/d/1l-obh1JejyimcIb4ud63wyOHyw9a3cILTlVppHwZqtM/edit?tab=t.0"
+          href="/privacypolicy"
           target="_blank"
           rel="noopener noreferrer"
         >

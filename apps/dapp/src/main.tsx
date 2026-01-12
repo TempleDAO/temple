@@ -8,6 +8,7 @@ import NotificationManager from 'components/Notification/NotificationManager';
 import PageLayout from 'components/Layouts/Page';
 import Loader from 'components/Loader/Loader';
 import Disclaimer from 'components/Pages/Disclaimer';
+import PrivacyPolicy from 'components/Pages/Core/DappPages/SpiceBazaar/components/PrivacyPolicy';
 import Home from 'components/Pages/Core/NewUI/Home';
 import { AnalyticsService } from 'services/AnalyticsService';
 import { DashboardPage } from 'components/Pages/Core/DappPages/Dashboard';
@@ -86,6 +87,7 @@ root.render(
                 <Route path="/tlc" element={<Home tlc={true} />} />
                 <Route path="/" element={<PageLayout />}>
                   <Route path="disclaimer" element={<Disclaimer />} />
+                  <Route path="privacypolicy" element={<PrivacyPolicy />} />
                   <Route
                     path="team-payments"
                     element={<LazyPage component={TeamPayments} />}
