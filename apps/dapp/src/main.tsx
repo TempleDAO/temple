@@ -85,8 +85,6 @@ root.render(
                 <Route path="/" element={<Home />} />
                 <Route path="/tlc" element={<Home tlc={true} />} />
                 <Route path="/" element={<PageLayout />}>
-                  {/* Redirect everything else to the home page */}
-                  <Route path="*" element={<Navigate replace to="/" />} />
                   <Route path="disclaimer" element={<Disclaimer />} />
                   <Route
                     path="team-payments"
@@ -139,6 +137,8 @@ root.render(
                     <Route path="spice/analytics" element={<Analytics />} />
                   </Route>
                 </Route>
+                {/* Redirect everything else to the home page */}
+                <Route path="*" element={<Navigate replace to="/" />} />
               </>
             </Routes>
             <NotificationManager />

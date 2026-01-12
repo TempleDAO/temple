@@ -23,6 +23,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useWallet } from 'providers/WalletProvider';
 import { getAppConfig } from 'constants/newenv';
 import { formatNumberFixedDecimals } from 'utils/formatter';
+import { useTOSVerification } from 'hooks/spicebazaar/use-tos-verification';
 import { SpiceBazaarTOS } from 'components/Pages/Core/DappPages/SpiceBazaar/components/SpiceBazaarTOS';
 import { useConnectWallet } from '@web3-onboard/react';
 
@@ -60,7 +61,7 @@ const AuctionCard = ({
 }) => {
   const navigate = useNavigate();
   const { wallet } = useWallet();
-  const [{}, connect] = useConnectWallet();
+  const [, connect] = useConnectWallet();
 
   const { data: userMetrics, isLoading: userMetricsLoading } =
     useAuctionUserMetrics(auction.address, wallet);
@@ -178,8 +179,9 @@ export const Spend = () => {
     auction?: SpiceAuctionInfo;
     currentBidAmount?: string;
     pendingBid?: { auction: SpiceAuctionInfo; mode: BidTGLDMode };
+    mode?: BidTGLDMode;
   }>({ type: 'closed' });
-  const [modalMode, setModalMode] = useState<BidTGLDMode>(BidTGLDMode.Bid);
+  const { isTOSSigned } = useTOSVerification();
 
   // Get user metrics for the selected auction
   const {
@@ -206,20 +208,13 @@ export const Spend = () => {
     mode: BidTGLDMode
   ) => {
     // Check if TOS has been signed
-    if (wallet) {
-      const tosSigned =
-        window.localStorage[
-          `templedao.spicebazaar.tos.${wallet?.toLowerCase()}`
-        ];
-
-      if (!tosSigned) {
-        // Show TOS modal first, store the pending bid
-        setModal({
-          type: 'spiceTos',
-          pendingBid: { auction, mode },
-        });
-        return;
-      }
+    if (!isTOSSigned(wallet)) {
+      // Show TOS modal first, store the pending bid
+      setModal({
+        type: 'spiceTos',
+        pendingBid: { auction, mode },
+      });
+      return;
     }
 
     // TOS already signed, proceed with bid modal
@@ -227,8 +222,8 @@ export const Spend = () => {
       type: 'bidTgld',
       auction,
       currentBidAmount: '0',
+      mode,
     });
-    setModalMode(mode);
 
     // Fetch the latest metrics
     const { data: metrics } = await refetchUserMetrics();
@@ -320,7 +315,7 @@ export const Spend = () => {
         )}
         {modal.type === 'bidTgld' && (
           <BidTGLD
-            mode={modalMode}
+            mode={modal.mode || BidTGLDMode.Bid}
             auctionConfig={modal.auction?.staticConfig}
             currentBidAmount={modal.currentBidAmount}
             onBidSuccess={async () => {

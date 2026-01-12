@@ -1,12 +1,18 @@
 // src/components/Pages/Core/DappPages/SpiceBazaar/components/SpiceBazaarTOS.tsx
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import styled from 'styled-components';
-import { utils } from 'ethers';
-import LargeRoundCheckBox from './LargeRoundCheckBox';
 import { Button } from 'components/Button/Button';
 import { useWallet } from 'providers/WalletProvider';
 import * as breakpoints from 'styles/breakpoints';
+import { backgroundImage, buttonResets } from 'styles/mixins';
+import close from 'assets/icons/close.svg';
+import { SpiceBazaarTOSContent } from './SpiceBazaarTOSContent';
+import {
+  buildSpiceBazaarTosMessage,
+  getSpiceBazaarTosStorageKey,
+  isSpiceBazaarTosSignatureValid,
+} from 'utils/spiceBazaarTos';
 
 interface SpiceBazaarTOSProps {
   onSuccess: () => void;
@@ -17,110 +23,145 @@ export const SpiceBazaarTOS = ({
   onSuccess,
   onCancel,
 }: SpiceBazaarTOSProps) => {
-  const { signer, wallet: walletAddress } = useWallet();
-  const [checkbox1, setCheckbox1] = useState(false);
-  const [checkbox2, setCheckbox2] = useState(false);
-  const [checkbox3, setCheckbox3] = useState(false);
+  const { signer, wallet: walletAddress, getConnectedSigner } = useWallet();
+  const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  const handleScroll = () => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const threshold = 10;
+    const isBottom =
+      container.scrollHeight - container.scrollTop - container.clientHeight <
+      threshold;
+
+    if (isBottom && !hasScrolledToBottom) {
+      setHasScrolledToBottom(true);
+    }
+  };
+
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    // Check if content is already fully visible (no scrolling needed)
+    if (container.scrollHeight <= container.clientHeight) {
+      setHasScrolledToBottom(true);
+    }
+  }, []);
 
   const handleSign = async () => {
-    if (!signer || !walletAddress) {
-      console.error('No signer or wallet address');
+    if (!walletAddress) {
+      setError('Connect a wallet to sign the Terms.');
       return;
     }
 
+    // Clear any previous error when retrying
+    setError(null);
     setIsLoading(true);
 
     try {
-      const message = `I agree to the Spice Bazaar Terms & Conditions at:\n\nhttps://templedao.link/spice-bazaar-disclaimer`;
-      const signature = await signer.signMessage(message);
+      const activeSigner = signer ?? getConnectedSigner();
+      if (!activeSigner?.provider) {
+        throw new Error('No signer provider');
+      }
 
-      // Verify and store
-      // Store signature
-      window.localStorage[
-        `templedao.spicebazaar.tos.${walletAddress?.toLowerCase()}`
-      ] = signature;
+      const normalizedWallet = walletAddress.toLowerCase();
+      const messageWallet = walletAddress;
+      const timestamp = new Date().toISOString();
+      const message = buildSpiceBazaarTosMessage(messageWallet, timestamp);
+      const signature = await activeSigner.signMessage(message);
+
+      if (!signature) {
+        throw new Error('Empty signature');
+      }
+
+      const isValid = isSpiceBazaarTosSignatureValid(
+        messageWallet,
+        timestamp,
+        signature
+      );
+      if (!isValid) {
+        throw new Error('Signature does not match connected wallet');
+      }
+
+      // Store signature with timestamp only after a valid signature
+      const tosData = JSON.stringify({
+        signature,
+        timestamp,
+        walletAddress: messageWallet,
+      });
+      window.localStorage[getSpiceBazaarTosStorageKey(normalizedWallet)] =
+        tosData;
       onSuccess();
-    } catch (error) {
-      console.error('TOS signature failed:', error);
-      onCancel();
+    } catch (err: any) {
+      console.error('TOS signature failed:', err);
+      // Show error message instead of closing the modal
+      const errorMessage =
+        err?.code === 'ACTION_REJECTED' || err?.code === 4001
+          ? 'Signature rejected. Please try again.'
+          : err?.message || 'Signature failed. Please try again.';
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const canSign = checkbox1 && checkbox2 && checkbox3;
-
   return (
     <Container>
-      <Title>Welcome to TempleDAO</Title>
+      <CloseIcon onClick={onCancel} />
+      <TitleContainer>
+        <Title>Spice Bazaar Terms</Title>
+      </TitleContainer>
 
-      <ScrollContainer>
-        <IntroText>
-          By accessing or using TempleDAO, I agree to the{' '}
-          <Link
-            href="https://templedao.link/terms"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Terms Of Service
-          </Link>{' '}
-          and confirm that I have read and understood the{' '}
-          <Link
-            href="https://templedao.link/disclaimer"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            TempleDAO Disclaimer
-          </Link>{' '}
-          and the{' '}
-          <Link
-            href="https://templedao.link/privacy"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Privacy Policy
-          </Link>
-          . I hereby further represent and warrant that:
-        </IntroText>
-
-        <CheckboxSection>
-          <CheckboxItem>
-            <LargeRoundCheckBox checked={checkbox1} onToggle={setCheckbox1} />
-            <CheckboxText>
-              I am not a resident of or located in the United States of America
-              (including its territories) or any other jurisdiction where the
-              provision or use of TempleDAO would be contrary to applicable
-              laws, rules or regulations of any governmental authority.
-            </CheckboxText>
-          </CheckboxItem>
-
-          <CheckboxItem>
-            <LargeRoundCheckBox checked={checkbox2} onToggle={setCheckbox2} />
-            <CheckboxText>
-              I understand that for leveraged Spice Bazaar auctions there may be
-              a delay or suspension in the access to my deposited tokens{' '}
-              <Underline>until a rebalance or liquidity event occurs</Underline>{' '}
-              and that any such restricted access or delay may result in such
-              tokens or assets diminishing in value.
-            </CheckboxText>
-          </CheckboxItem>
-
-          <CheckboxItem>
-            <LargeRoundCheckBox checked={checkbox3} onToggle={setCheckbox3} />
-            <CheckboxText>
-              I acknowledge that TempleDAO and related software are experimental
-              and subject to change at any time without notice. I understand and
-              accept <Underline>all the inherent risks</Underline> associated
-              with TempleDAO, including (but not limited to) hacking risks,
-              third-party risks and future technological development.
-            </CheckboxText>
-          </CheckboxItem>
-        </CheckboxSection>
+      <ScrollContainer ref={scrollContainerRef} onScroll={handleScroll}>
+        <TOSText>
+          <SpiceBazaarTOSContent />
+        </TOSText>
       </ScrollContainer>
 
-      <SignButton onClick={handleSign} disabled={!canSign || isLoading}>
-        {isLoading ? 'SIGNING...' : 'SIGN'}
+      <ConfirmationText>
+        <ConfirmationTitle>
+          BY CLICKING &quot;I AGREE&quot;, YOU:
+        </ConfirmationTitle>
+        <ConfirmationList>
+          <li>
+            confirm you have read and agree to be bound by these Terms and the
+            Privacy Policy;
+          </li>
+          <li>
+            confirm you are not a Restricted Person and are not using VPN/proxy
+            to evade controls;
+          </li>
+          <li>
+            acknowledge Spice Bazaar is not your broker/dealer/adviser/custodian
+            and provides no advice;
+          </li>
+          <li>
+            acknowledge on-chain transactions are final and you assume all
+            risks;
+          </li>
+          <li>
+            agree to the disclaimers, limitation of liability, indemnity, and
+            dispute resolution provisions
+          </li>
+        </ConfirmationList>
+      </ConfirmationText>
+
+      {error && (
+        <ErrorMessage>
+          <ErrorText>{error}</ErrorText>
+        </ErrorMessage>
+      )}
+
+      <SignButton
+        onClick={handleSign}
+        disabled={!hasScrolledToBottom || isLoading}
+      >
+        {isLoading ? 'SIGNING...' : 'I AGREE'}
       </SignButton>
     </Container>
   );
@@ -131,86 +172,159 @@ const Container = styled.div`
   flex-direction: column;
   width: 90vw;
   max-width: 600px;
-  padding: 32px 24px 24px 24px;
+  padding: 0px 24px 10px 24px;
   gap: 24px;
   background: ${({ theme }) => theme.palette.black};
+  position: relative;
 
   ${breakpoints.phoneAndAbove(`
-    padding: 40px 32px 32px 32px;
+    padding: 0px 32px 10px 32px;
   `)}
 `;
 
-const Title = styled.h2`
-  font-size: 32px;
-  line-height: 1.2;
-  text-align: center;
-  color: ${({ theme }) => theme.palette.brandLight};
-  margin: 0;
+const CloseIcon = styled.button`
+  ${backgroundImage(close)}
+  ${buttonResets}
+  width: 24px;
+  height: 24px;
+  position: absolute;
+  right: 2rem;
+  top: 26.5px;
+  z-index: 10;
+`;
 
-  ${breakpoints.phoneAndAbove(`
-    font-size: 36px;
-  `)}
+const TitleContainer = styled.div`
+  display: flex;
+  flex-direction: row;
+  height: 77px;
+  width: 100%;
+  justify-content: center;
+  align-items: center;
+  background: ${({ theme }) => theme.palette.gradients.grey};
+`;
+
+const Title = styled.h3`
+  display: flex;
+  color: ${({ theme }) => theme.palette.brandLight};
+  font-size: 24px;
+  line-height: 44px;
+  text-align: center;
+  margin: 0px;
 `;
 
 const ScrollContainer = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  overflow-y: visible;
-  padding-right: 8px;
-`;
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 12px;
+  border: 1px solid ${({ theme }) => theme.palette.brand};
+  border-radius: 10px;
+  background: ${({ theme }) => theme.palette.brandDarker};
+  padding: 20px;
 
-const IntroText = styled.p`
-  font-size: 14px;
-  line-height: 1.6;
-  color: ${({ theme }) => theme.palette.brandLight};
-  margin: 0;
+  /* Custom scrollbar styling */
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
 
-  ${breakpoints.phoneAndAbove(`
-    font-size: 16px;
-  `)}
-`;
+  &::-webkit-scrollbar-track {
+    background: ${({ theme }) => theme.palette.black};
+    border-radius: 4px;
+  }
 
-const Link = styled.a`
-  color: ${({ theme }) => theme.palette.brand};
-  text-decoration: underline;
-  cursor: pointer;
+  &::-webkit-scrollbar-thumb {
+    background: ${({ theme }) => theme.palette.brand};
+    border-radius: 4px;
+  }
 
-  &:hover {
-    color: ${({ theme }) => theme.palette.brandLight};
+  &::-webkit-scrollbar-thumb:hover {
+    background: ${({ theme }) => theme.palette.brandLight};
   }
 `;
 
-const Underline = styled.span`
-  text-decoration: underline;
-`;
-
-const CheckboxSection = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-`;
-
-const CheckboxItem = styled.div`
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
-`;
-
-const CheckboxText = styled.p`
-  font-size: 13px;
-  line-height: 1.5;
+const TOSText = styled.div`
   color: ${({ theme }) => theme.palette.brandLight};
-  margin: 0;
-  flex: 1;
+  font-size: 14px;
+  line-height: 1.6;
 
   ${breakpoints.phoneAndAbove(`
-    font-size: 14px;
+    font-size: 15px;
   `)}
 `;
 
+const ConfirmationText = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  border: 2px solid transparent;
+  border-image-source: linear-gradient(
+    180deg,
+    rgba(149, 97, 63, 0.1) 0%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  border-image-slice: 1;
+  border-radius: 6px;
+  padding: 16px 10px 16px 10px;
+  gap: 12px;
+  background: #24272c;
+`;
+
+const ConfirmationTitle = styled.div`
+  font-size: 12px;
+  font-weight: 700;
+  color: ${({ theme }) => theme.palette.brandLight};
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  line-height: 18px;
+`;
+
+const ConfirmationList = styled.ul`
+  margin: 0;
+  padding-left: 20px;
+  color: ${({ theme }) => theme.palette.brandLight};
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 700;
+
+  li {
+    margin-bottom: 8px;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+`;
+
+const ErrorMessage = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: rgba(220, 38, 38, 0.1);
+  border: 1px solid rgba(220, 38, 38, 0.3);
+  border-radius: 8px;
+  width: 100%;
+`;
+
+const ErrorIcon = styled.span`
+  font-size: 18px;
+  line-height: 1;
+`;
+
+const ErrorText = styled.p`
+  margin: 0;
+  color: #fca5a5;
+  font-size: 14px;
+  line-height: 18px;
+  font-weight: 600;
+`;
+
 const SignButton = styled(Button)`
-  width: 200px;
+  padding: 10px 20px;
+  width: auto;
+  height: min-content;
   align-self: center;
   background: linear-gradient(90deg, #58321a 20%, #95613f 84.5%);
   border: 1px solid ${({ theme }) => theme.palette.brandDark};

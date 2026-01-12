@@ -22,7 +22,9 @@ import Loader from 'components/Loader/Loader';
 import { DEVMODE_QUERY_PARAM } from '../../Bid';
 import { useAuctionUserMetrics } from 'components/Pages/Core/DappPages/SpiceBazaar/Spend';
 import { useWallet } from 'providers/WalletProvider';
+import { useTOSVerification } from 'hooks/spicebazaar/use-tos-verification';
 import { formatNumberWithCommasAndDecimals } from 'utils/formatter';
+import { SpiceBazaarTOS } from 'components/Pages/Core/DappPages/SpiceBazaar/components/SpiceBazaarTOS';
 
 export const Details = () => {
   // get the address from the path
@@ -38,11 +40,13 @@ export const Details = () => {
   } = useSpiceAuction();
 
   const [modal, setModal] = useState<{
-    type: 'closed' | 'bidTgld' | 'bridgeTgld';
+    type: 'closed' | 'bidTgld' | 'bridgeTgld' | 'spiceTos';
     auction?: SpiceAuctionInfo;
     currentBidAmount?: string;
+    pendingBid?: { auction: SpiceAuctionInfo; mode: BidTGLDMode };
   }>({ type: 'closed' });
   const [modalMode, setModalMode] = useState<BidTGLDMode>(BidTGLDMode.Bid);
+  const { isTOSSigned } = useTOSVerification();
 
   const auction = useMemo(
     () => allSpiceAuctionsData.find((auction) => auction.address === address),
@@ -64,13 +68,36 @@ export const Details = () => {
     auction: SpiceAuctionInfo,
     mode: BidTGLDMode
   ) => {
-    // Set the modal first so the hook can use the auction address
+    // Check if TOS has been signed
+    if (!isTOSSigned(wallet)) {
+      // Show TOS modal first, store the pending bid
+      setModal({
+        type: 'spiceTos',
+        pendingBid: { auction, mode },
+      });
+      return;
+    }
+
+    // TOS already signed, proceed with bid modal
     setModal({
       type: 'bidTgld',
       auction,
       currentBidAmount: userMetrics?.currentEpochBidAmount?.toString() || '0',
     });
     setModalMode(mode);
+  };
+
+  const handleTOSSuccess = async () => {
+    // TOS signed successfully, now open the bid modal with the pending bid
+    if (modal.pendingBid) {
+      const { auction, mode } = modal.pendingBid;
+      await onOpenBidModal(auction, mode);
+    }
+  };
+
+  const handleTOSCancel = () => {
+    // User rejected TOS, close modal
+    setModal({ type: 'closed' });
   };
 
   const shortenAddress = (address: string) => {
@@ -329,20 +356,23 @@ export const Details = () => {
       <Popover
         isOpen={modal.type !== 'closed'}
         onClose={() => setModal({ type: 'closed' })}
-        closeOnClickOutside
-        showCloseButton
+        closeOnClickOutside={modal.type !== 'spiceTos'}
+        showCloseButton={modal.type !== 'spiceTos'}
       >
+        {modal.type === 'spiceTos' && (
+          <SpiceBazaarTOS
+            onSuccess={handleTOSSuccess}
+            onCancel={handleTOSCancel}
+          />
+        )}
         {modal.type === 'bidTgld' && (
           <BidTGLD
             mode={modalMode}
             auctionConfig={modal.auction?.staticConfig}
             currentBidAmount={modal.currentBidAmount}
             onBidSuccess={async () => {
-              // Refetch all auction data to update metrics
               await fetchAllSpiceAuctions();
-              // Refetch user metrics after bid success signalled by the provider
               await refetchUserMetrics();
-              // Close modal after metrics are updated
               setModal({ type: 'closed' });
             }}
             isLoadingUserMetrics={userMetricsLoading}

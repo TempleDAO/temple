@@ -155,6 +155,8 @@ export const WalletProvider = (props: PropsWithChildren<object>) => {
       }
     } else {
       setWalletAddress(undefined);
+      setSigner(null);
+      setEthersProvider(null);
     }
   }, [wallet, connecting]);
 
