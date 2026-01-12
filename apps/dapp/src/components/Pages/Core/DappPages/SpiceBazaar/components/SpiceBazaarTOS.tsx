@@ -129,8 +129,11 @@ export const SpiceBazaarTOS = ({
         </ConfirmationTitle>
         <ConfirmationList>
           <li>
-            confirm you have read and agree to be bound by these Terms and the
-            Privacy Policy;
+            confirm you have read and agree to be bound by these Terms and the{' '}
+            <a href="/privacypolicy" target="_blank" rel="noopener noreferrer">
+              Privacy Policy
+            </a>
+            ;
           </li>
           <li>
             confirm you are not a Restricted Person and are not using VPN/proxy
