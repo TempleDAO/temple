@@ -24,6 +24,8 @@ import { queryPhone } from 'styles/breakpoints';
 import { useWallet } from 'providers/WalletProvider';
 import { Button } from 'components/Button/Button';
 import { useGoldAuctionCountdown } from 'hooks/spicebazaar/use-gold-auction-countdown';
+import { useTOSVerification } from 'hooks/spicebazaar/use-tos-verification';
+import { SpiceBazaarTOS } from 'components/Pages/Core/DappPages/SpiceBazaar/components/SpiceBazaarTOS';
 
 export const DEVMODE_QUERY_PARAM = 'devmode';
 
@@ -37,8 +39,11 @@ export const Bid = () => {
   const isPhoneOrAbove = useMediaQuery({
     query: queryPhone,
   });
-  const [modal, setModal] = useState<'closed' | 'bidDai'>('closed');
-  const [modalMode, setModalMode] = useState<BidUSDSMode>(BidUSDSMode.Bid);
+  const [modal, setModal] = useState<{
+    type: 'closed' | 'bidDai' | 'tos';
+    pendingMode?: BidUSDSMode;
+    mode?: BidUSDSMode;
+  }>({ type: 'closed' });
   const [openPopover, setOpenPopover] = useState<boolean>(false);
 
   const { wallet } = useWallet();
@@ -74,6 +79,34 @@ export const Bid = () => {
   }, [wallet]);
 
   const [showChart, setShowChart] = useState(false);
+  const { isTOSSigned } = useTOSVerification();
+
+  const handleBidButtonClick = (mode: BidUSDSMode) => {
+    // Check TOS signature first
+    if (!isTOSSigned(wallet)) {
+      // Show TOS modal first, store the pending bid mode
+      setModal({
+        type: 'tos',
+        pendingMode: mode,
+      });
+      return;
+    }
+
+    // TOS already signed, proceed with bid modal
+    setModal({ type: 'bidDai', mode });
+  };
+
+  const handleTOSSuccess = () => {
+    // TOS signed, now show the bid modal with the pending mode
+    if (modal.pendingMode) {
+      setModal({ type: 'bidDai', mode: modal.pendingMode });
+    }
+  };
+
+  const handleTOSCancel = () => {
+    // User cancelled TOS, close everything
+    setModal({ type: 'closed' });
+  };
 
   return (
     <>
@@ -168,20 +201,16 @@ export const Bid = () => {
                     <Loader iconSize={32} />
                   ) : currentUserInfo?.currentEpochBidAmount ? (
                     <TradeButton
-                      onClick={() => {
-                        setModal('bidDai');
-                        setModalMode(BidUSDSMode.IncreaseBid);
-                      }}
+                      onClick={() =>
+                        handleBidButtonClick(BidUSDSMode.IncreaseBid)
+                      }
                       style={{ whiteSpace: 'nowrap', margin: 0 }}
                     >
                       INCREASE BID
                     </TradeButton>
                   ) : (
                     <TradeButton
-                      onClick={() => {
-                        setModal('bidDai');
-                        setModalMode(BidUSDSMode.Bid);
-                      }}
+                      onClick={() => handleBidButtonClick(BidUSDSMode.Bid)}
                       style={{ whiteSpace: 'nowrap', margin: 0 }}
                       width={isPhoneOrAbove ? 'min-content' : '255px'}
                     >
@@ -255,16 +284,23 @@ export const Bid = () => {
         </ContentContainer>
       </PageContainer>
       <Popover
-        isOpen={modal != 'closed'}
-        onClose={() => setModal('closed')}
-        closeOnClickOutside
-        showCloseButton
+        isOpen={modal.type !== 'closed'}
+        onClose={() => setModal({ type: 'closed' })}
+        closeOnClickOutside={modal.type !== 'tos'}
+        showCloseButton={modal.type !== 'tos'}
       >
-        <BidUSDS
-          mode={modalMode}
-          onBidSubmitted={() => setModal('closed')}
-          currentBidAmount={currentUserInfo?.currentEpochBidAmount.toString()}
-        />
+        {modal.type === 'tos' ? (
+          <SpiceBazaarTOS
+            onSuccess={handleTOSSuccess}
+            onCancel={handleTOSCancel}
+          />
+        ) : (
+          <BidUSDS
+            mode={modal.mode || BidUSDSMode.Bid}
+            onBidSubmitted={() => setModal({ type: 'closed' })}
+            currentBidAmount={currentUserInfo?.currentEpochBidAmount.toString()}
+          />
+        )}
       </Popover>
     </>
   );
