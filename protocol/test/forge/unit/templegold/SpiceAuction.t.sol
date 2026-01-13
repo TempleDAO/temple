@@ -45,7 +45,7 @@ contract SpiceAuctionTestBase is TempleGoldCommon {
 
     TempleGoldStaking internal staking;
 
-    /// @notice Auctions run for minimum 1 week
+    /// @notice Auctions run for minimum 1 day
     uint32 internal constant MINIMUM_AUCTION_DURATION = 1 days;
 
     ISpiceAuction internal spice;
@@ -373,7 +373,7 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         assertEq(spice.strategyGnosis(), alice);
     }
 
-    function test_setSpciceAuctionConfig_below_minimum_duration() public {
+    function test_setSpiceAuctionConfig_below_minimum_duration() public {
         vm.startPrank(daoExecutor);
         ISpiceAuction.SpiceAuctionConfig memory config = _getAuctionConfig();
         config.duration = 1;
@@ -385,7 +385,7 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         spice.setAuctionConfig(config);
     }
 
-    function test_setSpciceAuctionConfig_arbitrary_large_number() public {
+    function test_setSpiceAuctionConfig_arbitrary_large_number() public {
         // This test is to confirm maximum auction duration is removed
         // Realistically, admin would set an appropriate duration for auctions
         vm.startPrank(daoExecutor);
@@ -1122,7 +1122,7 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         uint256 etherAmount = 5 ether;
         vm.deal(address(spice), etherAmount);
 
-        // start spcie auction with TGLD as bid token
+        // start spice auction with TGLD as bid token
         ISpiceAuction.SpiceAuctionConfig memory _config = _createSpiceAuctionWithTGLDAsAuctionToken(cssGnosis);
 
         uint256 bidAmount = 100 ether;
