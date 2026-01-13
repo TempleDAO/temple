@@ -99,7 +99,7 @@ contract SpiceAuctionTestBase is TempleGoldCommon {
     }
 
     function _getAuctionConfig() internal view returns (ISpiceAuction.SpiceAuctionConfig memory config) {
-        config.duration = 7 days;
+        config.duration = 3 days;
         config.waitPeriod = 2 weeks;
         config.minimumDistributedAuctionToken = 1 ether;
         config.isTempleGoldAuctionToken = true;
@@ -397,14 +397,14 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         assertEq(spice.currentEpoch(), 0);
     }
 
-    function test_setSpiceAuctionConfig_check() public {
+    function test_setSpiceAuctionConfig() public {
         ISpiceAuction.SpiceAuctionConfig memory config = _getAuctionConfig();
         config.duration = 1;
         vm.startPrank(daoExecutor);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
         spice.setAuctionConfig(config);
 
-        config.duration = 7 days;
+        config.duration = 1 days;
         // wait period error
         config.waitPeriod = 0;
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
@@ -431,7 +431,7 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         assertEq(_config.recipient, treasury);
         assertEq(_config.minimumDistributedAuctionToken, 1 ether);
         assertEq(_config.waitPeriod, 60 hours);
-        assertEq(_config.duration, 7 days);
+        assertEq(_config.duration, 1 days);
 
         _startAuction(false, true);
         // trying to set config for ongoing auction error
