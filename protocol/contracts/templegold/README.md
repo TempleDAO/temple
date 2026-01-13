@@ -135,7 +135,7 @@ After a spice auction (epoch), `burnAndNotify()` is called to perform a call to 
 #### Constants
 ```solidity
 /// @notice Spice auctions run for minimum 1 day
-uint32 public constant MINIMUM_AUCTION_PERIOD = 1 days;
+uint32 public constant MINIMUM_AUCTION_DURATION = 1 days;
 /// @notice Maximum auction duration of 30 days
 uint32 public constant MAXIMUM_AUCTION_DURATION = 30 days;
 
