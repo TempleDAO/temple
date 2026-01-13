@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   ResponsiveContainer,
   BarChart,
@@ -37,12 +37,52 @@ export default function CustomBarChart<T>({
   yAxisDomain,
   yAxisTicks,
   xTickFormatter,
+  yTickFormatter,
   tooltipLabelFormatter,
   tooltipValuesFormatter,
 }: React.PropsWithChildren<BarChartProps<T>>) {
   const theme = useTheme();
   const isPhoneOrAbove = useMediaQuery({ query: queryPhone });
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const yAxisNumberFormatter = useMemo(
+    () => new Intl.NumberFormat('en-US', { maximumSignificantDigits: 6 }),
+    []
+  );
+
+  const getYAxisLabel = useCallback(
+    (value: number, index: number) => {
+      if (yTickFormatter) return yTickFormatter(value, index);
+      const abbreviated = formatNumberAbbreviated(value);
+      if (abbreviated.thousandsSuffix) {
+        return `${abbreviated.string} TGLD`;
+      }
+      return `${yAxisNumberFormatter.format(value)} TGLD`;
+    },
+    [yTickFormatter, yAxisNumberFormatter]
+  );
+
+  const yAxisWidth = useMemo(() => {
+    const values =
+      yAxisTicks && yAxisTicks.length
+        ? yAxisTicks
+        : chartData.map((entry) => Number(entry[yDataKey] ?? 0));
+    let maxLength = 0;
+
+    values.forEach((value, index) => {
+      const numericValue = typeof value === 'number' ? value : Number(value);
+      if (Number.isNaN(numericValue)) return;
+      const label = getYAxisLabel(numericValue, index);
+      maxLength = Math.max(maxLength, label.length);
+    });
+
+    const estimatedCharWidth = isPhoneOrAbove ? 7 : 6;
+    const padding = isPhoneOrAbove ? 22 : 16;
+    const maxWidth = isPhoneOrAbove ? 220 : 160;
+    return Math.min(
+      maxWidth,
+      Math.max(60, maxLength * estimatedCharWidth + padding)
+    );
+  }, [chartData, yAxisTicks, yDataKey, getYAxisLabel, isPhoneOrAbove]);
 
   const barColors = [
     '#FFE3D4',
@@ -122,8 +162,9 @@ export default function CustomBarChart<T>({
             ticks={yAxisTicks}
             axisLine={false}
             tickLine={false}
-            tick={({ x, y, payload }) => {
-              const { string } = formatNumberAbbreviated(payload.value);
+            width={yAxisWidth}
+            tick={({ x, y, payload, index }) => {
+              const label = getYAxisLabel(payload.value, index);
               return (
                 <text
                   key={`y-axis-tick-${payload.value}`}
@@ -141,7 +182,7 @@ export default function CustomBarChart<T>({
                   }}
                 >
                   <tspan x={x} dy={0}>
-                    {`${string} TGLD`}
+                    {label}
                   </tspan>
                 </text>
               );
