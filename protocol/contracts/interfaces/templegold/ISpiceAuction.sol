@@ -47,6 +47,9 @@ interface ISpiceAuction is IAuctionBase {
         uint256 amount;
     }
 
+    /// @notice Minimum auction duration
+    function MINIMUM_AUCTION_DURATION() external view returns (uint32);
+
     /// @notice Temple GOLD
     function templeGold() external view returns (address);
 
