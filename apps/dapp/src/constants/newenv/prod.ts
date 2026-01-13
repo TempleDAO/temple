@@ -245,7 +245,7 @@ const TGLD_SPICE_AUCTION_ON_ETH_MAINNET: ContractConfig<SpiceAuction> = {
   contractFactory: SpiceAuction__factory,
 };
 
-const TGLD_ENA_AUCTION_ON_ETH_MAINNET: ContractConfig<SpiceAuction> = {
+const TGLD_S_ENA_AUCTION_ON_ETH_MAINNET: ContractConfig<SpiceAuction> = {
   chainId: ETH_MAINNET.id,
   address: '0x9c6badfda8854135d316344f196487583f0974c7',
   contractFactory: SpiceAuction__factory,
@@ -290,7 +290,7 @@ const prodEnv: AppConfig = {
         auctionToken: S_ENA_TOKEN_ON_ETH_MAINNET,
         templeGoldToken: TGLD_TOKEN_ON_ETH_MAINNET,
         templeGoldTokenBalanceTickerSymbol: TICKER_SYMBOL.TEMPLE_GOLD_TOKEN,
-        contractConfig: TGLD_ENA_AUCTION_ON_ETH_MAINNET,
+        contractConfig: TGLD_S_ENA_AUCTION_ON_ETH_MAINNET,
         subgraphUrl: ETH_SPICE_BAZAAR_SUBGRAPH_URL,
       },
     ],
