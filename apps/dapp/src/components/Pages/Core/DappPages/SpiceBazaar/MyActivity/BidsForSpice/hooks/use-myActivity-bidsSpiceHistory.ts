@@ -132,7 +132,8 @@ export const useMyActivityBidsSpiceHistory = (): {
 
   useEffect(() => {
     fetchData();
-  }, [wallet, fetchData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wallet]);
 
   return {
     data,

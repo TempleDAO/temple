@@ -21,9 +21,9 @@ export const INITIAL_STATE: AppProviderState = {};
 export const AppContext = createContext<AppProviderState>(INITIAL_STATE);
 
 // eslint-disable-next-line @typescript-eslint/ban-types
-export const AppProvider = (props: PropsWithChildren<{}>) => {
-  const queryClient = new QueryClient();
+const queryClient = new QueryClient();
 
+export const AppProvider = (props: PropsWithChildren<object>) => {
   return (
     <NotificationProvider>
       <QueryClientProvider client={queryClient}>

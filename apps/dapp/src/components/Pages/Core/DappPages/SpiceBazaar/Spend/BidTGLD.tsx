@@ -7,10 +7,12 @@ import { queryPhone } from 'styles/breakpoints';
 import { useWallet } from 'providers/WalletProvider';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { formatToken, formatNumberWithCommas } from 'utils/formatter';
+import { formatBigNumber, getTokenInfo } from 'components/Vault/utils';
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useSpiceAuction } from 'providers/SpiceAuctionProvider';
 import { SpiceAuctionConfig } from 'constants/newenv/types';
-import { ZERO, fromAtto } from 'utils/bigNumber';
+import { ZERO } from 'utils/bigNumber';
+import { parseUnits } from 'ethers/lib/utils';
 import LargeRoundCheckBox from 'components/Pages/Core/DappPages/SpiceBazaar/components/LargeRoundCheckBox';
 import { useAudioPlayer } from 'react-use-audio-player';
 import marketSound from 'assets/sounds/Age of Empires 2 - Market Sound.mp3';
@@ -110,10 +112,20 @@ export const BidTGLD = ({
   };
 
   const handleHintClick = () => {
-    const amount = balanceToken.eq(ZERO)
-      ? ''
-      : formatToken(balanceToken, TICKER_SYMBOL.TEMPLE_GOLD_TOKEN);
-    setInputValue(amount);
+    if (!auctionConfig) return;
+
+    try {
+      const decimals = getTokenInfo(
+        auctionConfig.templeGoldTokenBalanceTickerSymbol
+      ).decimals;
+      const amount = balanceToken.eq(ZERO)
+        ? ''
+        : formatBigNumber(balanceToken, decimals);
+      setInputValue(amount);
+    } catch (error) {
+      console.error('Error getting token decimals:', error);
+      setInputValue('');
+    }
   };
 
   const calculateTokenAmount = useCallback(
@@ -170,6 +182,20 @@ export const BidTGLD = ({
 
     return balance[auctionConfig.templeGoldTokenBalanceTickerSymbol];
   }, [balance, auctionConfig]);
+
+  const inputExceedsBalance = useMemo(() => {
+    if (!inputValue || !auctionConfig) return false;
+    try {
+      const decimals = getTokenInfo(
+        auctionConfig.templeGoldTokenBalanceTickerSymbol
+      ).decimals;
+      const inputAsBigNumber = parseUnits(inputValue, decimals);
+      return inputAsBigNumber.gt(balanceToken);
+    } catch {
+      // If parsing fails (invalid input), consider it as not exceeding
+      return false;
+    }
+  }, [inputValue, balanceToken, auctionConfig]);
 
   const priceRatioAfterBid = useMemo(() => {
     if (!auction) return 0;
@@ -268,7 +294,7 @@ export const BidTGLD = ({
             <ReceiveAmountContainer fadeEffect={fadeEffect}>
               <ReceiveTextTop>You may receive up to a total of</ReceiveTextTop>
               <ReceiveContainer>
-                <TempleGoldIcon />
+                {!auctionLoading && <TempleGoldIcon />}
                 <ReceiveAmount fadeEffect={fadeEffect}>
                   {auctionLoading ? (
                     <Loader iconSize={32} />
@@ -310,8 +336,8 @@ export const BidTGLD = ({
                   onToggle={handleCheckboxToggle1}
                 />
                 <Text>
-                  Current {auction?.auctionTokenSymbol || 'TOKEN'} price may
-                  rise before the end of the auction.
+                  Current TGLD/{auction?.auctionTokenSymbol || 'TOKEN'} price
+                  may rise before the end of the auction.
                 </Text>
               </MessageText>
               <MessageText>
@@ -334,10 +360,7 @@ export const BidTGLD = ({
               disabled={
                 !inputValue ||
                 Number(inputValue) <= 0 ||
-                Number(inputValue) >
-                  Number(
-                    formatToken(balanceToken, TICKER_SYMBOL.TEMPLE_GOLD_TOKEN)
-                  ) ||
+                inputExceedsBalance ||
                 // exceededAmount ||
                 !isCheckboxChecked1 ||
                 !isCheckboxChecked2 ||
