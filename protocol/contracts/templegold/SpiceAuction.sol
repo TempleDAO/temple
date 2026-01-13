@@ -53,6 +53,9 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard, Initializa
     /// @inheritdoc ISpiceAuction
     uint32 public constant MINIMUM_AUCTION_DURATION = 1 days;
 
+    /// @inheritdoc ISpiceAuction
+    uint32 public constant MAXIMUM_AUCTION_DURATION = 30 days;
+
     /// @notice layer zero EID of mint chain
     uint32 private _mintChainEid;
 
@@ -146,7 +149,8 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard, Initializa
             if (epochs[currentEpochIdCache].startTime > block.timestamp) { revert AuctionFunded(); }
         }
         
-        if (_config.duration < MINIMUM_AUCTION_DURATION) { revert CommonEventsAndErrors.InvalidParam(); }
+        if (_config.duration < MINIMUM_AUCTION_DURATION
+            || _config.duration > MAXIMUM_AUCTION_DURATION) { revert CommonEventsAndErrors.InvalidParam(); }
         if (_config.waitPeriod == 0
             || _config.minimumDistributedAuctionToken == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
         if (_config.recipient == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }

@@ -48,6 +48,9 @@ contract SpiceAuctionTestBase is TempleGoldCommon {
     /// @notice Auctions run for minimum 1 day
     uint32 internal constant MINIMUM_AUCTION_DURATION = 1 days;
 
+    /// @notice Maximum auction duration
+    uint32 internal constant MAXIMUM_AUCTION_DURATION = 30 days;
+
     ISpiceAuction internal spice;
 
     SpiceAuctionFactory internal factory;
@@ -96,6 +99,7 @@ contract SpiceAuctionTestBase is TempleGoldCommon {
         assertEq(spice.daoExecutor(), daoExecutor);
         assertEq(spice.operator(), mike);
         assertEq(spice.MINIMUM_AUCTION_DURATION(), MINIMUM_AUCTION_DURATION);
+        assertEq(spice.MAXIMUM_AUCTION_DURATION(), MAXIMUM_AUCTION_DURATION);
     }
 
     function _getAuctionConfig() internal view returns (ISpiceAuction.SpiceAuctionConfig memory config) {
@@ -385,16 +389,16 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         spice.setAuctionConfig(config);
     }
 
-    function test_setSpiceAuctionConfig_arbitrary_large_number() public {
-        // This test is to confirm maximum auction duration is removed
-        // Realistically, admin would set an appropriate duration for auctions
+    function test_setSpiceAuctionConfig_above_maximum_duration() public {
         vm.startPrank(daoExecutor);
         ISpiceAuction.SpiceAuctionConfig memory config = _getAuctionConfig();
         config.duration = type(uint32).max;
-        vm.expectEmit(address(spice));
-        emit AuctionConfigSet(1, config);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
         spice.setAuctionConfig(config);
-        assertEq(spice.currentEpoch(), 0);
+
+        config.duration = MAXIMUM_AUCTION_DURATION + 1;
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
+        spice.setAuctionConfig(config);
     }
 
     function test_setSpiceAuctionConfig() public {
@@ -403,7 +407,10 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         vm.startPrank(daoExecutor);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
         spice.setAuctionConfig(config);
-
+        // exceeds max duration
+        config.duration = MAXIMUM_AUCTION_DURATION + 1;
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
+        spice.setAuctionConfig(config);
         config.duration = 1 days;
         // wait period error
         config.waitPeriod = 0;
