@@ -45,11 +45,6 @@ contract SpiceAuctionTestBase is TempleGoldCommon {
 
     TempleGoldStaking internal staking;
 
-    /// @notice Auctions run for minimum 1 week
-    uint32 internal constant MINIMUM_AUCTION_DURATION = 604_800;
-
-    uint32 internal constant MAXIMUM_AUCTION_DURATION = 30 days;
-
     ISpiceAuction internal spice;
 
     SpiceAuctionFactory internal factory;
@@ -97,8 +92,6 @@ contract SpiceAuctionTestBase is TempleGoldCommon {
         assertEq(spice.spiceToken(), daiToken);
         assertEq(spice.daoExecutor(), daoExecutor);
         assertEq(spice.operator(), mike);
-        assertEq(spice.MINIMUM_AUCTION_DURATION(), MINIMUM_AUCTION_DURATION);
-        assertEq(spice.MAXIMUM_AUCTION_DURATION(), MAXIMUM_AUCTION_DURATION);
     }
 
     function _getAuctionConfig() internal view returns (ISpiceAuction.SpiceAuctionConfig memory config) {
@@ -374,6 +367,30 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         emit StrategyGnosisSet(alice);
         spice.setStrategyGnosis(alice);
         assertEq(spice.strategyGnosis(), alice);
+    }
+
+    function test_setSpciceAuctionConfig_arbitrary_small_number() public {
+        // This test is to confirm minimum auction duration is removed
+        // Realistically, admin would set an appropriate duration for auctions
+        vm.startPrank(daoExecutor);
+        ISpiceAuction.SpiceAuctionConfig memory config = _getAuctionConfig();
+        config.duration = 1;
+        vm.expectEmit(address(spice));
+        emit AuctionConfigSet(1, config);
+        spice.setAuctionConfig(config);
+        assertEq(spice.currentEpoch(), 0);
+    }
+
+    function test_setSpciceAuctionConfig_arbitrary_large_number() public {
+        // This test is to confirm maximum auction duration is removed
+        // Realistically, admin would set an appropriate duration for auctions
+        vm.startPrank(daoExecutor);
+        ISpiceAuction.SpiceAuctionConfig memory config = _getAuctionConfig();
+        config.duration = type(uint32).max;
+        vm.expectEmit(address(spice));
+        emit AuctionConfigSet(1, config);
+        spice.setAuctionConfig(config);
+        assertEq(spice.currentEpoch(), 0);
     }
 
     function test_setSpiceAuctionConfig() public {

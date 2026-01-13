@@ -27,12 +27,6 @@ contract SpiceAuctionMock {
     /// @notice Temple GOLD
     address public immutable templeGold;
 
-    /// @notice Auctions run for minimum 1 week
-    uint32 public constant MINIMUM_AUCTION_PERIOD = 1 weeks;
-    /// @notice Maximum wait period between last and next auctions
-    uint32 public constant MAXIMUM_AUCTION_WAIT_PERIOD = 90 days;
-    /// @notice Maximum auction duration
-    uint32 public constant MAXIMUM_AUCTION_DURATION = 30 days;
     uint32 private immutable _arbitrumOneLzEid;
     uint32 private immutable _mintChainId;
     uint32 public lzReceiveExecutorGas;
