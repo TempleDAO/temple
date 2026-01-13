@@ -51,7 +51,7 @@ contract SpiceAuction is ISpiceAuction, AuctionBase, ReentrancyGuard, Initializa
     address public override strategyGnosis;
 
     /// @inheritdoc ISpiceAuction
-    uint32 public constant MINIMUM_AUCTION_DURATION = 1 weeks;
+    uint32 public constant MINIMUM_AUCTION_DURATION = 1 days;
 
     /// @inheritdoc ISpiceAuction
     uint32 public constant MAXIMUM_AUCTION_DURATION = 30 days;

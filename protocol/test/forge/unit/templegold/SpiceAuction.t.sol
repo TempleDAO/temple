@@ -45,9 +45,10 @@ contract SpiceAuctionTestBase is TempleGoldCommon {
 
     TempleGoldStaking internal staking;
 
-    /// @notice Auctions run for minimum 1 week
-    uint32 internal constant MINIMUM_AUCTION_DURATION = 604_800;
+    /// @notice Auctions run for minimum 1 day
+    uint32 internal constant MINIMUM_AUCTION_DURATION = 1 days;
 
+    /// @notice Maximum auction duration
     uint32 internal constant MAXIMUM_AUCTION_DURATION = 30 days;
 
     ISpiceAuction internal spice;
@@ -102,7 +103,7 @@ contract SpiceAuctionTestBase is TempleGoldCommon {
     }
 
     function _getAuctionConfig() internal view returns (ISpiceAuction.SpiceAuctionConfig memory config) {
-        config.duration = 7 days;
+        config.duration = 3 days;
         config.waitPeriod = 2 weeks;
         config.minimumDistributedAuctionToken = 1 ether;
         config.isTempleGoldAuctionToken = true;
@@ -376,6 +377,30 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         assertEq(spice.strategyGnosis(), alice);
     }
 
+    function test_setSpiceAuctionConfig_below_minimum_duration() public {
+        vm.startPrank(daoExecutor);
+        ISpiceAuction.SpiceAuctionConfig memory config = _getAuctionConfig();
+        config.duration = 1;
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
+        spice.setAuctionConfig(config);
+
+        config.duration = 1 days - 1;
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
+        spice.setAuctionConfig(config);
+    }
+
+    function test_setSpiceAuctionConfig_above_maximum_duration() public {
+        vm.startPrank(daoExecutor);
+        ISpiceAuction.SpiceAuctionConfig memory config = _getAuctionConfig();
+        config.duration = type(uint32).max;
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
+        spice.setAuctionConfig(config);
+
+        config.duration = MAXIMUM_AUCTION_DURATION + 1;
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
+        spice.setAuctionConfig(config);
+    }
+
     function test_setSpiceAuctionConfig() public {
         ISpiceAuction.SpiceAuctionConfig memory config = _getAuctionConfig();
         config.duration = 1;
@@ -383,10 +408,10 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
         spice.setAuctionConfig(config);
         // exceeds max duration
-        config.duration = 31 days;
+        config.duration = MAXIMUM_AUCTION_DURATION + 1;
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidParam.selector));
         spice.setAuctionConfig(config);
-        config.duration = 7 days;
+        config.duration = 1 days;
         // wait period error
         config.waitPeriod = 0;
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
@@ -413,7 +438,7 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         assertEq(_config.recipient, treasury);
         assertEq(_config.minimumDistributedAuctionToken, 1 ether);
         assertEq(_config.waitPeriod, 60 hours);
-        assertEq(_config.duration, 7 days);
+        assertEq(_config.duration, 1 days);
 
         _startAuction(false, true);
         // trying to set config for ongoing auction error
@@ -1104,7 +1129,7 @@ contract SpiceAuctionTest is SpiceAuctionTestBase {
         uint256 etherAmount = 5 ether;
         vm.deal(address(spice), etherAmount);
 
-        // start spcie auction with TGLD as bid token
+        // start spice auction with TGLD as bid token
         ISpiceAuction.SpiceAuctionConfig memory _config = _createSpiceAuctionWithTGLDAsAuctionToken(cssGnosis);
 
         uint256 bidAmount = 100 ether;
