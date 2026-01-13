@@ -81,12 +81,12 @@ const SPICE_TOKEN_ON_ETH_MAINNET: TokenConfig = {
   symbol: 'SPICE',
 };
 
-const ENA_TOKEN_ON_ETH_MAINNET: TokenConfig = {
+const S_ENA_TOKEN_ON_ETH_MAINNET: TokenConfig = {
   chainId: ETH_MAINNET.id,
-  name: 'ENA',
-  address: '0x57e114b691db790c35207b2e685d4a43181e6061',
+  name: 'sENA',
+  address: '0x8bE3460A480c80728a8C4D7a5D5303c85ba7B3b9',
   decimals: 18,
-  symbol: 'ENA',
+  symbol: 'sENA',
 };
 
 const TGLD_TOKEN_ON_ETH_MAINNET: TokenConfig = {
@@ -247,7 +247,7 @@ const TGLD_SPICE_AUCTION_ON_ETH_MAINNET: ContractConfig<SpiceAuction> = {
 
 const TGLD_ENA_AUCTION_ON_ETH_MAINNET: ContractConfig<SpiceAuction> = {
   chainId: ETH_MAINNET.id,
-  address: '0xa68e1a9a93223f812191f35d102a4b2fb16b60f4',
+  address: '0x9c6badfda8854135d316344f196487583f0974c7',
   contractFactory: SpiceAuction__factory,
 };
 
@@ -284,21 +284,10 @@ const prodEnv: AppConfig = {
     spiceAuctions: [
       {
         isActive: true,
-        name: 'SPICE',
+        name: 'sENA',
         chainId: ETH_MAINNET.id,
-        auctionTokenSymbol: 'SPICE', // TODO: Consolidate after launch
-        auctionToken: SPICE_TOKEN_ON_ETH_MAINNET,
-        templeGoldToken: TGLD_TOKEN_ON_ETH_MAINNET,
-        templeGoldTokenBalanceTickerSymbol: TICKER_SYMBOL.TEMPLE_GOLD_TOKEN,
-        contractConfig: TGLD_SPICE_AUCTION_ON_ETH_MAINNET,
-        subgraphUrl: ETH_SPICE_BAZAAR_SUBGRAPH_URL,
-      },
-      {
-        isActive: true,
-        name: 'ENA',
-        chainId: ETH_MAINNET.id,
-        auctionTokenSymbol: 'ENA', // TODO: After launch, consolidate with below token config
-        auctionToken: ENA_TOKEN_ON_ETH_MAINNET,
+        auctionTokenSymbol: 'sENA', // TODO: After launch, consolidate with below token config
+        auctionToken: S_ENA_TOKEN_ON_ETH_MAINNET,
         templeGoldToken: TGLD_TOKEN_ON_ETH_MAINNET,
         templeGoldTokenBalanceTickerSymbol: TICKER_SYMBOL.TEMPLE_GOLD_TOKEN,
         contractConfig: TGLD_ENA_AUCTION_ON_ETH_MAINNET,
