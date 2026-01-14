@@ -75,12 +75,12 @@ export default function CustomBarChart<T>({
       maxLength = Math.max(maxLength, label.length);
     });
 
-    const estimatedCharWidth = isPhoneOrAbove ? 7 : 6;
+    const estimatedChartWidth = isPhoneOrAbove ? 7 : 6;
     const padding = isPhoneOrAbove ? 22 : 16;
     const maxWidth = isPhoneOrAbove ? 220 : 160;
     return Math.min(
       maxWidth,
-      Math.max(60, maxLength * estimatedCharWidth + padding)
+      Math.max(60, maxLength * estimatedChartWidth + padding)
     );
   }, [chartData, yAxisTicks, yDataKey, getYAxisLabel, isPhoneOrAbove]);
 
