@@ -19,12 +19,14 @@ export const formatNumberWithCommas = (n: number | string): string => {
 };
 
 export const formatNumberWithCommasAndDecimals = (
-  n: number | string
+  n: number | string,
+  decimals = 2
 ): string => {
   if (typeof n === 'string') n = Number(n);
-  return formatNumber(n)
-    .toFixed(2)
-    .replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  const fixed = Number(n).toFixed(decimals);
+  const parts = fixed.split('.');
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return parts.join('.');
 };
 
 export const formatNumberFixedDecimals = (
@@ -87,21 +89,23 @@ export const formatNumberAbbreviated = (number: number) => {
       : number.toLocaleString('en-US');
 
   const thousandsSeparatorCount = localeFormatted.split(',').length - 1;
-  const shortenedString = localeFormatted.slice(0, 5);
 
   if (thousandsSeparatorCount > 0) {
+    const scaledNumber = number / Math.pow(1000, thousandsSeparatorCount);
+    const numericValue = parseFloat(scaledNumber.toFixed(3));
+    const displayString =
+      scaledNumber.toFixed(3).replace('.', ',') +
+      abbreviations[thousandsSeparatorCount - 1];
     return {
-      number: parseFloat(shortenedString),
+      number: numericValue,
       thousandsSuffix: abbreviations[thousandsSeparatorCount - 1],
-      string:
-        shortenedString.replace(',', '.') +
-        abbreviations[thousandsSeparatorCount - 1],
+      string: displayString,
     };
   } else {
     return {
-      number: parseFloat(shortenedString),
+      number: parseFloat(number.toString()),
       thousandsSuffix: '',
-      string: shortenedString.replace(',', '.'),
+      string: number.toString(),
     };
   }
 };
