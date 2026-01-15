@@ -7,7 +7,7 @@ import { chainFromId, getMainnetSubmissionParams } from "@/config";
 import { postDefconNotification } from "@/utils/discord";
 import { etherscanTransactionUrl } from "@/utils/etherscan";
 import { delayUntilNextCheckTime } from "@/utils/task-checks";
-import { Address, encodeFunctionData, getContract, maxUint256 } from "viem";
+import { Address, encodeFunctionData, getContract, GetContractReturnType, maxUint256 } from "viem";
 import * as Spice from "@/abi/ISpiceAuction";
 import * as TempleGold from "@/abi/ITempleGold";
 import * as AuctionBase from "@/abi/IAuctionBase";
@@ -23,12 +23,16 @@ type EpochInfo =
 type SendParamOptions =
   AbiParametersToPrimitiveTypes<ExtractAbiFunction<typeof TempleGold.ABI, "quoteSend">["inputs"]>[0];
 
+type Auction = GetContractReturnType<typeof Spice.ABI, PublicClient>;
+type AuctionBase = GetContractReturnType<typeof AuctionBase.ABI, PublicClient>;
+type TempleGold = GetContractReturnType<typeof TempleGold.ABI, PublicClient>;
+
 export const taskIdPrefix = 'tgldspiceauction-a-';
 
 export interface Params {
   signerId: string,
   chainId: number,
-  contracts: { auction: Address, templeGold: Address },
+  contracts: { auctions: Address[], templeGold: Address },
   lastRunTime: KvPersistedValue<Date>;
   maxGasPrice: BigRational,
   checkPeriodMs: number,
@@ -43,16 +47,6 @@ export async function burnAndUpdateCirculatingSupply(ctx: TaskContext, params: P
   const wclient = await getWalletClient(ctx, chain, params.signerId);
   const transactionManager = await createTransactionManager(ctx, wclient, {...await getMainnetSubmissionParams(ctx)});
 
-  const auction = getContract({
-    address: params.contracts.auction,
-    abi: Spice.ABI,
-    client: pclient
-  });
-  const auctionBase = getContract({
-    abi: AuctionBase.ABI,
-    address: params.contracts.auction,
-    client: pclient
-  });
   const templeGold = getContract({
     address: params.contracts.templeGold,
     abi: TempleGold.ABI,
@@ -60,13 +54,13 @@ export async function burnAndUpdateCirculatingSupply(ctx: TaskContext, params: P
   });
 
   // Overlord EOA approves spice auction contract to spend max TGLD if current approval is zero
-  async function approveMaxTgld(): Promise<void> {
-    const currentApproval = await templeGold.read.allowance([wclient.account.address, params.contracts.auction]);
+  async function approveMaxTgld(auction: Auction): Promise<void> {
+    const currentApproval = await templeGold.read.allowance([wclient.account.address, auction.address]);
     if (currentApproval == 0n) {
       const data = encodeFunctionData({
         abi: TempleGold.ABI,
         functionName: 'approve',
-        args: [params.contracts.auction, maxUint256],
+        args: [auction.address, maxUint256],
       });
       const tx = { data, to: params.contracts.templeGold };
       const txr = await transactionManager.submitAndWait(tx);
@@ -76,17 +70,18 @@ export async function burnAndUpdateCirculatingSupply(ctx: TaskContext, params: P
     }
   }
 
-  async function getTotalBidTokenAmount(epochId: bigint) {
+  async function getTotalBidTokenAmount(auctionBase: AuctionBase, epochId: bigint) {
     const epochInfo = await auctionBase.read.getEpochInfo([epochId]);
     return epochInfo.totalBidTokenAmount;
   }
 
-  async function gatherAllUnnotifiedEpochs(sinceEpochId: bigint){
+  async function gatherAllUnnotifiedEpochs(auction: Auction, auctionBase: AuctionBase, sinceEpochId: bigint){
     const unnotifiedEpochs: bigint[] = [];
     let epochId = sinceEpochId;
     let counter = 0;
     while (epochId > 0n) {
       const notified = await auction.read.redeemedEpochs([epochId]);
+      ctx.logger.info(`Epoch ${epochId} burn status: ${notified}`);
       if (!notified){
         // check auction token is TGLD
         let auctionTokenIsTgld = false;
@@ -96,7 +91,7 @@ export async function burnAndUpdateCirculatingSupply(ctx: TaskContext, params: P
           auctionTokenIsTgld = true;
         }
         // skip auctions with 0 bids. admin recovers and pulls spice tokens in single transaction
-        const totalBidTokenAmount = await getTotalBidTokenAmount(epochId);
+        const totalBidTokenAmount = await getTotalBidTokenAmount(auctionBase, epochId);
         const totalBidAmountIsZero = assertTotalBidAmountNotZero(ctx, totalBidTokenAmount, Number(epochId));
         if (!auctionTokenIsTgld && !totalBidAmountIsZero) {
           unnotifiedEpochs.push(epochId);
@@ -110,53 +105,68 @@ export async function burnAndUpdateCirculatingSupply(ctx: TaskContext, params: P
     }
     return unnotifiedEpochs;
   }
-
   // check last run time
   if (await assertLastRuntime(ctx, params)) { return taskSuccessSilent(); }
   // check max gas price
   if (await assertMaxGasPriceNotExceeded(ctx, params, pclient)) { return taskSuccessSilent(); }
 
-  // get current epoch and start checking from next eligible epoch
-  const currentEpoch = await auction.read.currentEpoch();
-  const epochInfo: EpochInfo = await auctionBase.read.getEpochInfo([currentEpoch]);
-
-  // Set approval
-  await approveMaxTgld();
-
-  let epochId = assertEpochNotEnded(ctx, epochInfo) ? currentEpoch - BigInt(1) : currentEpoch;
-  const unnotifiedEpochs = await gatherAllUnnotifiedEpochs(epochId);
-  for (epochId of unnotifiedEpochs.sort((a, b) => Number(a-b))) {
-    // add gas fee if not on mainnet (source TGLD chain)
-    let overrides = { value: 0n };
-    console.log(`ChainId: ${params.chainId}, mint source: ${params.mint_chain_id}`);
-    if (BigInt(params.chainId) != params.mint_chain_id) {
-      const totalBidTokenAmount = await getTotalBidTokenAmount(epochId);
-      // get send quote
-      const sendParam: SendParamOptions = {
-        dstEid: Number(params.mint_source_lz_eid),
-        to: EMPTY_BYTES32,
-        amountLD: totalBidTokenAmount,
-        minAmountLD: 0n,
-        extraOptions: "0x", // assumes extraOptions has been set on TGLD
-        composeMsg: "0x",
-        oftCmd: "0x"
-      };
-      const fee = await templeGold.read.quoteSend([sendParam, false]);
-      overrides.value = fee.nativeFee;
-    }
-    const data = encodeFunctionData({
+  ctx.logger.info(`Auctions to check: ${params.contracts.auctions}`);
+  for (const auctionAddress of params.contracts.auctions) {
+    const auction = getContract({
+      address: auctionAddress,
       abi: Spice.ABI,
-      functionName: 'burnAndNotify',
-      args: [epochId, false],
+      client: pclient
     });
-    const tx = { ...overrides, data, to: params.contracts.auction };
-    const txr = await transactionManager.submitAndWait(tx);
 
-    ctx.logger.info(`Successfully burned TGLD for spice auction ${await auction.read.name()} for epoch ${epochId}`);
+    const auctionBase = getContract({
+      abi: AuctionBase.ABI,
+      address: auctionAddress,
+      client: pclient
+    });
 
-    const message = `_transaction_: <${etherscanTransactionUrl(params.chainId, txr.transactionHash)}>`;
-    if (await postDefconNotification('defcon5', message, ctx)) {
-      ctx.logger.info(`Staking distribution discord notification sent`);
+    // get current epoch and start checking from next eligible epoch
+    const currentEpoch = await auction.read.currentEpoch();
+    const epochInfo: EpochInfo = await auctionBase.read.getEpochInfo([currentEpoch]);
+
+    // Set approval
+    await approveMaxTgld(auction);
+
+    let epochId = assertEpochNotEnded(ctx, epochInfo) ? currentEpoch - BigInt(1) : currentEpoch;
+    const unnotifiedEpochs = await gatherAllUnnotifiedEpochs(auction, auctionBase, epochId);
+    ctx.logger.info(`Unnotified epochs for auction ${auctionAddress} ${unnotifiedEpochs.length}`);
+    for (epochId of unnotifiedEpochs.sort((a, b) => Number(a-b))) {
+      // add gas fee if not on mainnet (source TGLD chain)
+      let overrides = { value: 0n };
+      ctx.logger.info(`ChainId: ${params.chainId}, mint source: ${params.mint_chain_id}`);
+      if (BigInt(params.chainId) != params.mint_chain_id) {
+        const totalBidTokenAmount = await getTotalBidTokenAmount(auctionBase, epochId);
+        // get send quote
+        const sendParam: SendParamOptions = {
+          dstEid: Number(params.mint_source_lz_eid),
+          to: EMPTY_BYTES32,
+          amountLD: totalBidTokenAmount,
+          minAmountLD: 0n,
+          extraOptions: "0x", // assumes extraOptions has been set on TGLD
+          composeMsg: "0x",
+          oftCmd: "0x"
+        };
+        const fee = await templeGold.read.quoteSend([sendParam, false]);
+        overrides.value = fee.nativeFee;
+      }
+      const data = encodeFunctionData({
+        abi: Spice.ABI,
+        functionName: 'burnAndNotify',
+        args: [epochId, false],
+      });
+      const tx = { ...overrides, data, to: auctionAddress };
+      const txr = await transactionManager.submitAndWait(tx);
+
+      ctx.logger.info(`Successfully burned TGLD for spice auction ${await auction.read.name()} for epoch ${epochId}`);
+
+      const message = `_transaction_: <${etherscanTransactionUrl(params.chainId, txr.transactionHash)}>`;
+      if (await postDefconNotification('defcon5', message, ctx)) {
+        ctx.logger.info(`TGLD burn discord notification sent`);
+      }
     }
   }
   return taskSuccess();

@@ -10,10 +10,10 @@ import { JB_DATE, kvPersistedValue } from "@/utils/kv";
 import * as stakingDistributeRewardsa from "../tasks/staking-distribute-rewards";
 import * as burnAndNotify from "../tasks/spice-auction-burn-and-notify";
 import { startSidebarBot } from "../tasks/discord-sidebar-auction";
-import { updateAuctionSidebarBotTask } from "../tasks";
+import { updateAuctionSidebarBotTask, getSpiceAuctions } from "../tasks";
 import { batchLiquidate } from "@/tlc/batch-liquidate";
 import { TLC_BATCH_LIQUIDATE_CONFIG } from '@/tlc/config';
-import { Address, BaseError, ContractFunctionRevertedError, createTestClient, formatEther, getContract, Hex, http, parseEther, publicActions, TestClient, toHex, walletActions } from "viem";
+import { Address, BaseError, Client, ContractFunctionRevertedError, createTestClient, formatEther, getContract, Hex, http, parseEther, publicActions, TestClient, TestClientConfig, toHex, walletActions } from "viem";
 import { getAccount } from "@mountainpath9/overlord-viem";
 import { mainnet } from "viem/chains";
 import * as ITreasuryPriceIndexOracle from '@/abi/ITreasuryPriceIndexOracle';
@@ -44,6 +44,7 @@ const TASK_RUNNER_CONFIG = makeTaskRunnerConfig({
       vars: {
         env: 'mainnet',
         stablegoldauction_start_auction_max_gas_price: 420.69,
+        burn_tgld_max_gas_price: 100,
         // Create your own personal discord server and create a webhook
         // tlc_discord_webhook_url: 'https://discord.com/api/webhooks/xxx/yyy',
       },
@@ -266,26 +267,30 @@ async function spiceAuctionTestSetup(config: Config, ctx: TaskContext) {
     .extend(publicActions)
     .extend(walletActions);
 
+  // Executor is same across auctions
   const executorAddress = await tclient.readContract({
-    abi: ITempleElevatedAccess.ABI,
+    abi: ISpiceAuction.ABI,
     address: config.contracts.TEMPLE_GOLD.AUCTIONS.BID_FOR_SPICE.ENA as Address,
-    functionName: 'executor',
+    functionName: 'daoExecutor',
   });
   await impersonateExecutor(tclient, executorAddress);
 
   // Set operator
   ctx.logger.info(`Setting operator to: ${tclient.account.address}`);
-
-  const hash = await tclient.writeContract({
-    abi: ISpiceAuction.ABI,
-    address: config.contracts.TEMPLE_GOLD.AUCTIONS.BID_FOR_SPICE.ENA,
-    functionName: 'setOperator',
-    args: [tclient.account.address],
-    account: executorAddress,
-  });
-  const txReceipt = await tclient.waitForTransactionReceipt({ hash });
-  console.log(txReceipt);
-
+  
+  const auctionAddresses = getSpiceAuctions(config.contracts);
+  for (const auctionAddress of auctionAddresses) {
+    const hash = await tclient.writeContract({
+      abi: ISpiceAuction.ABI,
+      address: auctionAddress,
+      functionName: 'setOperator',
+      args: [tclient.account.address],
+      account: executorAddress,
+    });
+    const txReceipt = await tclient.waitForTransactionReceipt({ hash });
+    console.log(txReceipt);
+  }
+  
   return taskSuccess();
 }
 
@@ -424,10 +429,10 @@ async function burnTempleGold(config: Config, ctx: TaskContext) {
     return burnAndNotify.burnAndUpdateCirculatingSupply(ctx, {
         chainId: config.chainId,
         signerId: config.stableGoldAuctionSignerId,
-        contracts: { auction: config.contracts.TEMPLE_GOLD.AUCTIONS.BID_FOR_SPICE.DAI,
+        contracts: { auctions: getSpiceAuctions(config.contracts),
             templeGold: config.contracts.TEMPLE_GOLD.TEMPLE_GOLD },
         lastRunTime: kvPersistedValue(ctx, 'tgld_burn_tgld_last_run_time', JB_DATE),
-        maxGasPrice: await vars.sepolia_tgld_max_gas_price.requireValue(ctx),
+        maxGasPrice: await vars.burn_tgld_max_gas_price.requireValue(ctx),
         checkPeriodMs:  await vars.burn_tgld_check_period_ms.requireValue(ctx),
         lastCheckTime: kvPersistedValue(ctx, 'tgld_burn_tgld_last_check_time', JB_DATE),
         mint_source_lz_eid: BigInt(await vars.eth_mainnet_lz_eid.requireValue(ctx)),
