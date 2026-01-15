@@ -49,6 +49,7 @@ export interface ContractAddresses {
         SPICE_TGLD: string,
         DAI_TGLD: string,
         ENA_TGLD: string,
+        SENA_TGLD: string,
     }
 }
 
@@ -90,6 +91,7 @@ export const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} =
             SPICE_TGLD: "0x",
             DAI_TGLD: "0x",
             ENA_TGLD: "0x",
+            SENA_TGLD: "0x",
         },
     },
     bepolia: {
@@ -129,6 +131,7 @@ export const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} =
             SPICE_TGLD: "0x72D7C9c5E0A187A06E4D1508ceA77dE17db07953",
             DAI_TGLD: "0x",
             ENA_TGLD: "0x",
+            SENA_TGLD: "0x",
         },
     },
     arbitrumOne: {
@@ -168,6 +171,7 @@ export const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} =
             SPICE_TGLD: "0x",
             DAI_TGLD: "0x",
             ENA_TGLD: "0x",
+            SENA_TGLD: "0x",
         },
     },
     mainnet: {
@@ -183,7 +187,7 @@ export const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} =
             SPICE_AUCTION_FACTORY: "0x915f8a22715aA064c95390542F56366a1d5D4933",
             STABLE_GOLD_AUCTION: "0x0bC14503c467CB675b6B30da05Dbed80C83d154e",
             TEAM_GNOSIS: "0x4D6175d58C5AceEf30F546C0d5A557efFa53A950",
-            SPICE_AUCTION_IMPLEMENTATION: "0xBb860920F493ba86a3122110260fd70980e0B2e5",
+            SPICE_AUCTION_IMPLEMENTATION: "0x6fdbFf6AD159a7FD2435C84aeDEb7A94FcB2a139",
             STRATEGY_GNOSIS: "0x",
             SPICE_TOKEN: "0x",
         },
@@ -207,6 +211,7 @@ export const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} =
             SPICE_TGLD: "0x",
             DAI_TGLD: "0x",
             ENA_TGLD: "0xa68e1a9A93223f812191f35d102a4b2FB16b60f4",
+            SENA_TGLD: "0x9c6badfDa8854135D316344f196487583F0974C7",
         },
     },
     sepolia: {
@@ -246,6 +251,7 @@ export const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} =
             SPICE_TGLD: "0x",
             DAI_TGLD: "0xee46c5826cb312b1a80f7a6d1af795488941dbd0",
             ENA_TGLD: "0x",
+            SENA_TGLD: "0x",
         },
     },
     arbitrumSepolia: {
@@ -285,6 +291,7 @@ export const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} =
             SPICE_TGLD: "0x41fFE184C981cA5A9F1453e707c179079aC3A551",
             DAI_TGLD: "0x",
             ENA_TGLD: "0x",
+            SENA_TGLD: "0x",
         },
     },
     localhost: {
@@ -324,6 +331,7 @@ export const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} =
             SPICE_TGLD: "0x",
             DAI_TGLD: "0x",
             ENA_TGLD: "0x",
+            SENA_TGLD: "0x",
         },
     }
 }
