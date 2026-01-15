@@ -1,6 +1,7 @@
 import { Logger, SignerConfig, TaskContext, TaskResult,
     createTaskRunnerWithConfig,
-    getAllVariableMetadata, makeLocalManagerConfig, makeManagerConfig, makeSignerKind, makeTaskRunnerConfig, taskSuccess } from "@mountainpath9/overlord-core";
+    getAllVariableMetadata, makeLocalManagerConfig, makeManagerConfig, makeSignerKind,
+    makeTaskRunnerConfig, taskSuccess } from "@mountainpath9/overlord-core";
 import { Config, getConfig } from "@/config";
 import { taskExceptionHandler } from "../utils/task-exceptions";
 import * as stableGoldAuctionStart from "../tasks/stable-gold-auction-start";
@@ -13,7 +14,8 @@ import { startSidebarBot } from "../tasks/discord-sidebar-auction";
 import { updateAuctionSidebarBotTask, getSpiceAuctions } from "../tasks";
 import { batchLiquidate } from "@/tlc/batch-liquidate";
 import { TLC_BATCH_LIQUIDATE_CONFIG } from '@/tlc/config';
-import { Address, BaseError, Client, ContractFunctionRevertedError, createTestClient, formatEther, getContract, Hex, http, parseEther, publicActions, TestClient, TestClientConfig, toHex, walletActions } from "viem";
+import { Address, BaseError, ContractFunctionRevertedError, createTestClient, formatEther, getContract, http,
+  parseEther, publicActions, TestClient, toHex, walletActions } from "viem";
 import { getAccount } from "@mountainpath9/overlord-viem";
 import { mainnet } from "viem/chains";
 import * as ITreasuryPriceIndexOracle from '@/abi/ITreasuryPriceIndexOracle';
