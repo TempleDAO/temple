@@ -11,7 +11,7 @@ import { SpiceBazaarTOSContent } from './SpiceBazaarTOSContent';
 import {
   buildSpiceBazaarTosMessage,
   getSpiceBazaarTosStorageKey,
-  isSpiceBazaarTosSignatureValid,
+  isSpiceBazaarTosSignatureValidAsync,
 } from 'utils/spiceBazaarTos';
 
 interface SpiceBazaarTOSProps {
@@ -79,11 +79,18 @@ export const SpiceBazaarTOS = ({
         throw new Error('Empty signature');
       }
 
-      const isValid = isSpiceBazaarTosSignatureValid(
-        messageWallet,
-        timestamp,
-        signature
-      );
+      const provider = activeSigner.provider;
+      if (!provider) {
+        throw new Error('No provider available');
+      }
+
+      const { isValid, isContractWallet } =
+        await isSpiceBazaarTosSignatureValidAsync(
+          messageWallet,
+          timestamp,
+          signature,
+          provider
+        );
       if (!isValid) {
         throw new Error('Signature does not match connected wallet');
       }
@@ -93,6 +100,7 @@ export const SpiceBazaarTOS = ({
         signature,
         timestamp,
         walletAddress: messageWallet,
+        isContractWallet,
       });
       window.localStorage[getSpiceBazaarTosStorageKey(normalizedWallet)] =
         tosData;
