@@ -23,7 +23,6 @@ type SendParamOptions =
   AbiParametersToPrimitiveTypes<ExtractAbiFunction<typeof TempleGold.ABI, "quoteSend">["inputs"]>[0];
 
 type Auction = GetContractReturnType<typeof Spice.ABI, PublicClient>;
-type TempleGold = GetContractReturnType<typeof TempleGold.ABI, PublicClient>;
 
 export const taskIdPrefix = 'tgldspiceauction-a-';
 
@@ -125,8 +124,8 @@ export async function burnAndUpdateCirculatingSupply(ctx: TaskContext, params: P
 
     let epochId = assertEpochNotEnded(ctx, epochInfo) ? currentEpoch - BigInt(1) : currentEpoch;
     const unnotifiedEpochs = await gatherAllUnnotifiedEpochs(auction, epochId);
-    ctx.logger.info(`Unnotified epochs for auction ${auctionAddress} ${unnotifiedEpochs.keys.length}`);
-    for (epochId of Array.from(unnotifiedEpochs.keys()).sort((a, b) => Number(a-b))) {
+    ctx.logger.info(`Unnotified epochs for auction ${auctionAddress} ${unnotifiedEpochs.size}`);
+    for (epochId of Array.from(unnotifiedEpochs.keys()).sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))) {
       // add gas fee if not on mainnet (source TGLD chain)
       let overrides = { value: 0n };
       ctx.logger.info(`ChainId: ${params.chainId}, mint source: ${params.mint_chain_id}`);
