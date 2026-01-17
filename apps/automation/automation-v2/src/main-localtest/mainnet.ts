@@ -15,7 +15,7 @@ import { updateAuctionSidebarBotTask, getSpiceAuctions } from "../tasks";
 import { batchLiquidate } from "@/tlc/batch-liquidate";
 import { TLC_BATCH_LIQUIDATE_CONFIG } from '@/tlc/config';
 import { Address, BaseError, ContractFunctionRevertedError, createTestClient, formatEther, getContract, http,
-  parseEther, publicActions, TestClient, toHex, walletActions } from "viem";
+  parseEther, publicActions, TestClient, toHex, walletActions, maxUint256 } from "viem";
 import { getAccount } from "@mountainpath9/overlord-viem";
 import { mainnet } from "viem/chains";
 import * as ITreasuryPriceIndexOracle from '@/abi/ITreasuryPriceIndexOracle';
@@ -23,6 +23,7 @@ import * as ITempleElevatedAccess from '@/abi/ITempleElevatedAccess';
 import * as IStableGoldAuction from "@/abi/IStableGoldAuction";
 import * as ISpiceAuction from "@/abi/ISpiceAuction";
 import * as ITempleGoldStaking from "@/abi/ITempleGoldStaking";
+import * as ITempleGold from "@/abi/ITempleGold";
 
 const ANVIL_URL = 'http://127.0.0.1:8545';
 const ANVIL_PRIVATE_KEY_0 =
@@ -259,7 +260,6 @@ async function stakingTestSetup(config: Config, ctx: TaskContext) {
 }
 
 async function spiceAuctionTestSetup(config: Config, ctx: TaskContext) {
-  // Handover operations to test client wallet address
   const tclient = createTestClient({
     account: await getAccount(ctx, 'owner'),
     chain: mainnet,
@@ -268,26 +268,27 @@ async function spiceAuctionTestSetup(config: Config, ctx: TaskContext) {
   })
     .extend(publicActions)
     .extend(walletActions);
-
-  // Executor is same across auctions
-  const executorAddress = await tclient.readContract({
-    abi: ISpiceAuction.ABI,
-    address: config.contracts.TEMPLE_GOLD.AUCTIONS.BID_FOR_SPICE.ENA as Address,
-    functionName: 'daoExecutor',
-  });
-  await impersonateExecutor(tclient, executorAddress);
-
-  // Set operator
-  ctx.logger.info(`Setting operator to: ${tclient.account.address}`);
   
   const auctionAddresses = getSpiceAuctions(config.contracts);
   for (const auctionAddress of auctionAddresses) {
-    const hash = await tclient.writeContract({
+    // As TGLD tokens are already sent to recipient and `burnAndNotify` is public,
+    // Ensure recipient has given (new) auction enough allowance to spend
+    // Impersonate TGLD recipient and approve
+    const recipient = await tclient.readContract({
       abi: ISpiceAuction.ABI,
       address: auctionAddress,
-      functionName: 'setOperator',
-      args: [tclient.account.address],
-      account: executorAddress,
+      functionName: 'operator',
+    });
+    await tclient.impersonateAccount({
+      address: recipient,
+    });
+
+    const hash = await tclient.writeContract({
+      abi: ITempleGold.ABI,
+      address: config.contracts.TEMPLE_GOLD.TEMPLE_GOLD,
+      functionName: 'approve',
+      args: [auctionAddress, maxUint256],
+      account: recipient
     });
     const txReceipt = await tclient.waitForTransactionReceipt({ hash });
     console.log(txReceipt);

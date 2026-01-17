@@ -10,7 +10,6 @@ import { delayUntilNextCheckTime } from "@/utils/task-checks";
 import { Address, encodeFunctionData, getContract, GetContractReturnType, maxUint256 } from "viem";
 import * as Spice from "@/abi/ISpiceAuction";
 import * as TempleGold from "@/abi/ITempleGold";
-import * as AuctionBase from "@/abi/IAuctionBase";
 import { ExtractAbiFunction, AbiParametersToPrimitiveTypes } from "abitype";
 
 const EMPTY_BYTES32 = "0x0000000000000000000000000000000000000000000000000000000000000000";
@@ -18,13 +17,12 @@ const EMPTY_BYTES32 = "0x0000000000000000000000000000000000000000000000000000000
 const MAX_BACKCHECK_LENGTH = 10;
 
 type EpochInfo = 
-  AbiParametersToPrimitiveTypes<ExtractAbiFunction<typeof AuctionBase.ABI, "getEpochInfo">["outputs"]>[0];
+  AbiParametersToPrimitiveTypes<ExtractAbiFunction<typeof Spice.ABI, "getEpochInfo">["outputs"]>[0];
 
 type SendParamOptions =
   AbiParametersToPrimitiveTypes<ExtractAbiFunction<typeof TempleGold.ABI, "quoteSend">["inputs"]>[0];
 
 type Auction = GetContractReturnType<typeof Spice.ABI, PublicClient>;
-type AuctionBase = GetContractReturnType<typeof AuctionBase.ABI, PublicClient>;
 type TempleGold = GetContractReturnType<typeof TempleGold.ABI, PublicClient>;
 
 export const taskIdPrefix = 'tgldspiceauction-a-';
@@ -70,13 +68,13 @@ export async function burnAndUpdateCirculatingSupply(ctx: TaskContext, params: P
     }
   }
 
-  async function getTotalBidTokenAmount(auctionBase: AuctionBase, epochId: bigint) {
-    const epochInfo = await auctionBase.read.getEpochInfo([epochId]);
+  async function getTotalBidTokenAmount(auction: Auction, epochId: bigint) {
+    const epochInfo = await auction.read.getEpochInfo([epochId]);
     return epochInfo.totalBidTokenAmount;
   }
 
-  async function gatherAllUnnotifiedEpochs(auction: Auction, auctionBase: AuctionBase, sinceEpochId: bigint){
-    const unnotifiedEpochs: bigint[] = [];
+  async function gatherAllUnnotifiedEpochs(auction: Auction, sinceEpochId: bigint){
+    const unnotifiedEpochs: Map<bigint, bigint> = new Map();
     let epochId = sinceEpochId;
     let counter = 0;
     while (epochId > 0n) {
@@ -91,10 +89,10 @@ export async function burnAndUpdateCirculatingSupply(ctx: TaskContext, params: P
           auctionTokenIsTgld = true;
         }
         // skip auctions with 0 bids. admin recovers and pulls spice tokens in single transaction
-        const totalBidTokenAmount = await getTotalBidTokenAmount(auctionBase, epochId);
+        const totalBidTokenAmount = await getTotalBidTokenAmount(auction, epochId);
         const totalBidAmountIsZero = assertTotalBidAmountNotZero(ctx, totalBidTokenAmount, Number(epochId));
         if (!auctionTokenIsTgld && !totalBidAmountIsZero) {
-          unnotifiedEpochs.push(epochId);
+          unnotifiedEpochs.set(epochId, totalBidTokenAmount);
         }
       }
       epochId -= 1n;
@@ -118,28 +116,22 @@ export async function burnAndUpdateCirculatingSupply(ctx: TaskContext, params: P
       client: pclient
     });
 
-    const auctionBase = getContract({
-      abi: AuctionBase.ABI,
-      address: auctionAddress,
-      client: pclient
-    });
-
     // get current epoch and start checking from next eligible epoch
     const currentEpoch = await auction.read.currentEpoch();
-    const epochInfo: EpochInfo = await auctionBase.read.getEpochInfo([currentEpoch]);
+    const epochInfo: EpochInfo = await auction.read.getEpochInfo([currentEpoch]);
 
     // Set approval
     await approveMaxTgld(auction);
 
     let epochId = assertEpochNotEnded(ctx, epochInfo) ? currentEpoch - BigInt(1) : currentEpoch;
-    const unnotifiedEpochs = await gatherAllUnnotifiedEpochs(auction, auctionBase, epochId);
-    ctx.logger.info(`Unnotified epochs for auction ${auctionAddress} ${unnotifiedEpochs.length}`);
-    for (epochId of unnotifiedEpochs.sort((a, b) => Number(a-b))) {
+    const unnotifiedEpochs = await gatherAllUnnotifiedEpochs(auction, epochId);
+    ctx.logger.info(`Unnotified epochs for auction ${auctionAddress} ${unnotifiedEpochs.keys.length}`);
+    for (epochId of Array.from(unnotifiedEpochs.keys()).sort((a, b) => Number(a-b))) {
       // add gas fee if not on mainnet (source TGLD chain)
       let overrides = { value: 0n };
       ctx.logger.info(`ChainId: ${params.chainId}, mint source: ${params.mint_chain_id}`);
       if (BigInt(params.chainId) != params.mint_chain_id) {
-        const totalBidTokenAmount = await getTotalBidTokenAmount(auctionBase, epochId);
+        const totalBidTokenAmount = unnotifiedEpochs.get(epochId) as bigint;
         // get send quote
         const sendParam: SendParamOptions = {
           dstEid: Number(params.mint_source_lz_eid),
@@ -158,6 +150,7 @@ export async function burnAndUpdateCirculatingSupply(ctx: TaskContext, params: P
         functionName: 'burnAndNotify',
         args: [epochId, false],
       });
+
       const tx = { ...overrides, data, to: auctionAddress };
       const txr = await transactionManager.submitAndWait(tx);
 
