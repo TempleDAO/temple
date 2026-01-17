@@ -19,6 +19,7 @@ export interface ContractAddresses {
       BID_FOR_SPICE: {
         ENA: Address;
         DAI: Address;
+        SENA: Address;
       },
     },
   },

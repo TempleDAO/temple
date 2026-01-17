@@ -18,7 +18,8 @@ export const CONTRACTS: ContractAddresses = {
       BID_FOR_TGLD:  '0x99aA73dA6309b8eC484eF2C95e96C131C1BBF7a0',
       BID_FOR_SPICE: {
         ENA: '0x',
-        DAI: '0xBd90822a325c234881C0197B15e3f391f26F79Ef'
+        DAI: '0xBd90822a325c234881C0197B15e3f391f26F79Ef',
+        SENA: '0x',
       },
     },
   },
