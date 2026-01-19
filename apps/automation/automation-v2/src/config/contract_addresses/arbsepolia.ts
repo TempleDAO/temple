@@ -19,6 +19,7 @@ export const CONTRACTS: ContractAddresses = {
       BID_FOR_SPICE: {
         ENA: '0x',
         DAI: '0x',
+        SENA: '0x',
       },
     },
   },

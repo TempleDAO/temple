@@ -10,6 +10,8 @@ import { Client } from "discord.js";
 import { getOnchainTgldAuctionState, updateDiscordSidebarBot } from "./discord-sidebar-auction";
 import { burnAndUpdateCirculatingSupply as burnTempleGold } from "./spice-auction-burn-and-notify";
 import { getPublicClient } from "@mountainpath9/overlord-viem";
+import { ContractAddresses } from "@/config/contract_addresses/types";
+import { Address, isAddress } from "viem";
 
 ////////////////////////////
 // stable-gold-auction     //
@@ -141,7 +143,7 @@ export async function burnAndUpdateCirculatingSupplySepolia(config: Config, ctx:
     return burnTempleGold(ctx, {
         chainId: config.chainId,
         signerId: config.stableGoldAuctionSignerId,
-        contracts: { auction: config.contracts.TEMPLE_GOLD.AUCTIONS.BID_FOR_SPICE.DAI,
+        contracts: { auctions: getSpiceAuctions(config.contracts),
             templeGold: config.contracts.TEMPLE_GOLD.TEMPLE_GOLD },
         lastRunTime: kvPersistedValue(ctx, 'sepolia_tgld_redeem_tgld_last_run_time', JB_DATE),
         maxGasPrice: await vars.burn_tgld_max_gas_price.requireValue(ctx),
@@ -156,7 +158,7 @@ export async function burnAndUpdateCirculatingSupply(config: Config, ctx: TaskCo
     return burnTempleGold(ctx, {
         chainId: config.chainId,
         signerId: config.stakingSignerId,
-        contracts: { auction: config.contracts.TEMPLE_GOLD.AUCTIONS.BID_FOR_SPICE.ENA,
+        contracts: { auctions: getSpiceAuctions(config.contracts),
             templeGold: config.contracts.TEMPLE_GOLD.TEMPLE_GOLD }, 
         lastRunTime: kvPersistedValue(ctx, 'tgld_redeem_tgld_last_run_time', JB_DATE),
         maxGasPrice: await vars.burn_tgld_max_gas_price.requireValue(ctx),
@@ -165,4 +167,9 @@ export async function burnAndUpdateCirculatingSupply(config: Config, ctx: TaskCo
         mint_source_lz_eid: BigInt(await vars.eth_mainnet_lz_eid.requireValue(ctx)),
         mint_chain_id: BigInt(await vars.mint_chain_id.requireValue(ctx)),
     });
+}
+
+export function getSpiceAuctions(contracts: ContractAddresses): Address[] {
+    let auctions = Object.values(contracts.TEMPLE_GOLD.AUCTIONS.BID_FOR_SPICE) as Address[];
+    return auctions.filter((auction) => isAddress(auction));
 }
