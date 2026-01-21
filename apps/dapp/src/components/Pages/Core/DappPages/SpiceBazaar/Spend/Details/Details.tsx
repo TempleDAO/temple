@@ -1,6 +1,8 @@
 import active from 'assets/icons/active.svg?react';
 import scheduled from 'assets/icons/scheduled.svg?react';
+import closed from 'assets/icons/closed.svg?react';
 import linkSvg from 'assets/icons/link.svg?react';
+import { AuctionState, getAuctionState } from 'utils/spice-auction-state';
 import styled from 'styled-components';
 import { useEffect, useState, useMemo } from 'react';
 import { Button } from 'components/Button/Button';
@@ -111,7 +113,7 @@ export const Details = () => {
     query: queryPhone,
   });
 
-  const countdown = useSpiceAuctionCountdown(auction || null);
+  const { state } = useSpiceAuctionCountdown(auction || null);
 
   const formatDate = (timestamp: number | undefined) => {
     if (!timestamp) return 'DD/MM/YYYY';
@@ -201,13 +203,16 @@ export const Details = () => {
                       <Loader iconSize={32} />
                     ) : (
                       <>
-                        <StatusBadge
-                          isLive={!!auction?.currentEpochAuctionLive}
-                        >
-                          {auction?.currentEpochAuctionLive ? (
+                        <StatusBadge state={state}>
+                          {state === AuctionState.LIVE ? (
                             <>
                               <Active />
                               ACTIVE
+                            </>
+                          ) : state === AuctionState.ENDED ? (
+                            <>
+                              <Closed />
+                              ENDED
                             </>
                           ) : (
                             <>
@@ -219,7 +224,8 @@ export const Details = () => {
                         <TimestampContainer>
                           <TimeStampRow>
                             <TimeStampLabel>Start</TimeStampLabel>
-                            {auction?.currentEpochAuctionLive ? (
+                            {state === AuctionState.LIVE ||
+                            state === AuctionState.ENDED ? (
                               <>
                                 <TimeStampDate>
                                   {formatDate(auction?.auctionStartTime)}
@@ -250,7 +256,8 @@ export const Details = () => {
                           </TimeStampRow>
                           <TimeStampRow>
                             <TimeStampLabel>End</TimeStampLabel>
-                            {auction?.currentEpochAuctionLive ? (
+                            {state === AuctionState.LIVE ||
+                            state === AuctionState.ENDED ? (
                               <>
                                 <TimeStampDate>
                                   {formatDate(auction?.auctionEndTime)}
@@ -524,14 +531,27 @@ const HeaderRight = styled.div`
   `)}
 `;
 
-const StatusBadge = styled.div<{ isLive: boolean }>`
+const getStatusBadgeBorderColor = (state: AuctionState): string => {
+  switch (state) {
+    case AuctionState.LIVE:
+      return '#588f22';
+    case AuctionState.ENDED:
+      return '#6B7280';
+    case AuctionState.SCHEDULED:
+    case AuctionState.NOT_SCHEDULED:
+    default:
+      return '#EAB85B';
+  }
+};
+
+const StatusBadge = styled.div<{ state: AuctionState }>`
   display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: center;
   background: ${({ theme }) => theme.palette.black};
   border: solid 1px;
-  border-color: ${({ isLive }) => (isLive ? '#588f22' : '#EAB85B')};
+  border-color: ${({ state }) => getStatusBadgeBorderColor(state)};
   border-radius: 10px;
   padding: 8px 24px;
   gap: 10px;
@@ -588,6 +608,8 @@ const TimeStampTime = styled.div`
 const Active = styled(active)``;
 
 const Scheduled = styled(scheduled)``;
+
+const Closed = styled(closed)``;
 
 const CurrentEpochNr = styled.h3`
   display: flex;

@@ -3,7 +3,9 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import active from 'assets/icons/active.svg?react';
 import scheduled from 'assets/icons/scheduled.svg?react';
+import closed from 'assets/icons/closed.svg?react';
 import * as breakpoints from 'styles/breakpoints';
+import { AuctionState, getAuctionState } from 'utils/spice-auction-state';
 import ena from 'assets/icons/ena_logo.svg?react';
 import kami from 'assets/icons/kami_logo.svg?react';
 import ori from 'assets/icons/ori_logo.svg?react';
@@ -62,6 +64,7 @@ const AuctionCard = ({
   const navigate = useNavigate();
   const { wallet } = useWallet();
   const [, connect] = useConnectWallet();
+  const state = getAuctionState(auction);
 
   const { data: userMetrics, isLoading: userMetricsLoading } =
     useAuctionUserMetrics(auction.address, wallet);
@@ -92,21 +95,29 @@ const AuctionCard = ({
           </AmountInActionSum>
         </AmountInAuction>
         <TotalAmountText>
-          {auction.currentEpochAuctionLive
+          {state === AuctionState.LIVE
             ? 'Total amount currently in auction'
+            : state === AuctionState.ENDED
+            ? 'Total amount was in auction'
             : 'Total amount scheduled for bidding'}
         </TotalAmountText>
         <AuctionStatus>
-          {auction.currentEpochAuctionLive ? (
+          {state === AuctionState.LIVE ? (
             <ActiveContainer>
               <Active />
               <ActiveText>Active</ActiveText>
-              <AuctionCountdown auction={auction} isLive={true} />
+              <AuctionCountdown auction={auction} />
             </ActiveContainer>
+          ) : state === AuctionState.ENDED ? (
+            <EndedContainer>
+              <Closed />
+              <EndedText>Ended</EndedText>
+              <AuctionCountdown auction={auction} />
+            </EndedContainer>
           ) : (
             <ScheduledContainer>
               <Scheduled />
-              <AuctionCountdown auction={auction} isLive={false} />
+              <AuctionCountdown auction={auction} />
             </ScheduledContainer>
           )}
         </AuctionStatus>
@@ -588,6 +599,8 @@ const Active = styled(active)``;
 
 const Scheduled = styled(scheduled)``;
 
+const Closed = styled(closed)``;
+
 const ActiveContainer = styled.div`
   display: flex;
   flex-direction: row;
@@ -608,6 +621,21 @@ const ScheduledContainer = styled.div`
   flex-direction: row;
   align-items: center;
   gap: 8px;
+`;
+
+const EndedContainer = styled.div`
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+`;
+
+const EndedText = styled.p`
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 15px;
+  color: ${({ theme }) => theme.palette.brand};
+  margin: 0px;
 `;
 
 const ButtonsContainer = styled.div`
