@@ -19,6 +19,7 @@ export const CONTRACTS: ContractAddresses = {
       BID_FOR_SPICE: {
         ENA: '0xa68e1a9A93223f812191f35d102a4b2FB16b60f4',
         DAI: '0x',
+        SENA: '0x9c6badfDa8854135D316344f196487583F0974C7',
       },
     },
   },

@@ -35,6 +35,13 @@ export const useTOSVerification = () => {
         return false;
       }
 
+      // For contract wallets (multisigs), we validated via EIP-1271 at sign time.
+      // Trust the stored validation since we can't re-verify without a provider.
+      if (parsed.isContractWallet === true) {
+        return true;
+      }
+
+      // For EOA wallets, verify the signature using ecrecover
       return (
         isSpiceBazaarTosSignatureValid(
           storedWallet,
