@@ -17,6 +17,7 @@ export interface SelectTempleDaoProps {
   // use to limit the number of elements shown in the menu at anytime
   maxMenuItems?: number;
   isSearchable?: boolean;
+  isDisabled?: boolean;
   width?: CSS.Property.Width;
   fontSize?: CSS.Property.FontSize;
   fontWeight?: CSS.Property.FontWeight;
@@ -52,7 +53,7 @@ export const InputSelect = (props: SelectTempleDaoProps) => {
         borderRadius: 0,
       })}
       styles={{
-        control: (base) => ({
+        control: (base, state) => ({
           ...base,
           border: `0.0625rem  /* 1/16 */ solid ${theme.palette.brand}`,
           borderRadius: `calc(${selectHeight} / 4)`,
@@ -60,10 +61,14 @@ export const InputSelect = (props: SelectTempleDaoProps) => {
           fontSize: '1rem',
           textAlign: 'left',
           padding: '0 0.5rem',
-          cursor: 'pointer',
+          cursor: state.isDisabled ? 'not-allowed' : 'pointer',
           height: selectHeight,
           zIndex: props.zIndex ? Number(props.zIndex) + 1 : 2, // place it above the menu 👇
           width: props.width ?? '100%',
+          backgroundColor: state.isDisabled
+            ? theme.palette.brand25 || `${theme.palette.brand}40`
+            : theme.palette.dark,
+          opacity: state.isDisabled ? 0.7 : 1,
         }),
         menu: (base, state) => ({
           ...base,
@@ -111,12 +116,15 @@ export const InputSelect = (props: SelectTempleDaoProps) => {
           padding: 0,
         }),
         dropdownIndicator: (base, state) => ({
-          color: state.isFocused
+          color: state.isDisabled
+            ? theme.palette.brandDark
+            : state.isFocused
             ? theme.palette.brandLight
             : theme.palette.brand,
           display: 'flex',
           transform: state.isFocused ? 'rotateX(180deg)' : 'none',
           transition: 'transform 250ms linear',
+          opacity: state.isDisabled ? 0.5 : 1,
         }),
       }}
     />
