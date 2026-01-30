@@ -629,8 +629,14 @@ async function _rawSubgraphQuery(
     console.log('subgraph-response', label, rawResults);
   }
   if (rawResults.errors !== undefined) {
+    console.error(
+      '[Subgraph] GraphQL Errors:',
+      JSON.stringify(rawResults.errors, null, 2)
+    );
     throw new Error(
-      `Unable to fetch ${label} from subgraph: ${rawResults.errors}`
+      `Unable to fetch ${label} from subgraph: ${JSON.stringify(
+        rawResults.errors
+      )}`
     );
   }
 
@@ -787,6 +793,78 @@ const BidsHistoryGoldAuctionResp = z.object({
 export type BidsHistoryGoldAuctionResp = z.infer<
   typeof BidsHistoryGoldAuctionResp
 >;
+
+//----------------------------------------------------------------------------------------------------
+
+export function spiceBidHistoryQuery(
+  auctionToken: string
+): SubGraphQuery<SpiceBidHistoryResp> {
+  const label = 'SpiceBidHistory';
+  const request = `
+  {
+    bidTransactions(
+      orderBy: timestamp
+      orderDirection: asc
+      where: {
+        auctionInstance_: {
+          auctionType: SpiceAuction
+          auctionToken: "${auctionToken.toLowerCase()}"
+        }
+      }
+    ) {
+      price
+      bidAmount
+      hash
+      timestamp
+      auctionInstance {
+        id
+        epoch
+        startTime
+        endTime
+        ... on SpiceAuctionInstance {
+          spiceAuction {
+            id
+            spiceToken {
+              symbol
+            }
+          }
+        }
+      }
+    }
+  }`;
+  return {
+    label,
+    request,
+    parse: SpiceBidHistoryResp.parse,
+  };
+}
+
+const SpiceBidHistoryResp = z.object({
+  bidTransactions: z.array(
+    z.object({
+      price: z.string(),
+      bidAmount: z.string(),
+      hash: z.string(),
+      timestamp: z.string(),
+      auctionInstance: z.object({
+        id: z.string(),
+        epoch: z.string(),
+        startTime: z.string(),
+        endTime: z.string(),
+        spiceAuction: z
+          .object({
+            id: z.string(),
+            spiceToken: z.object({
+              symbol: z.string(),
+            }),
+          })
+          .nullable(),
+      }),
+    })
+  ),
+});
+
+export type SpiceBidHistoryResp = z.infer<typeof SpiceBidHistoryResp>;
 
 //----------------------------------------------------------------------------------------------------
 
