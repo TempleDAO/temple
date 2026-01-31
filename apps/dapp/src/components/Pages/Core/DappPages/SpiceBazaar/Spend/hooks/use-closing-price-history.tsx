@@ -58,8 +58,9 @@ export const useClosingPriceHistory = (
           date: new Date(Number(instance.endTime) * 1000).toLocaleDateString(
             'en-GB',
             {
-              month: 'short',
               day: 'numeric',
+              month: 'short',
+              year: 'numeric',
             }
           ),
           value: parseFloat(instance.priceRatio),
