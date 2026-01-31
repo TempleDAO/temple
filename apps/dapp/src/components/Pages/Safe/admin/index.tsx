@@ -3,6 +3,7 @@ import { useState } from 'react';
 import env from 'constants/env';
 import { InputSelect, Option } from 'components/InputSelect/InputSelect';
 import { SafeTxsDataTable } from './SafeTxDataTable';
+import { BatchAuctionForm } from './BatchAuctionForm';
 import { queryPhone } from 'styles/breakpoints';
 import { useMediaQuery } from 'react-responsive';
 import {
@@ -15,7 +16,7 @@ import { Copy } from 'components/Copy/Copy';
 
 const SafeAdminWithContext = () => {
   const [safeWalletAddress, setSafeWalletAddress] = useState<string>(
-    env.safes[0].address
+    env.safes[0]?.address || ''
   );
   return (
     <SafeTransactionsContextProvider safeAddress={safeWalletAddress}>
@@ -46,54 +47,65 @@ const SafeAdmin = ({ setSafeWalletAddress }: SafeAdminProps) => {
     <Container>
       <AreaDelimiter>
         <div>
-          <h3>Safe App</h3>
-          <Section label="Select Gnosis Safe Wallet">
-            <FlexContainer>
-              <InputSelect
-                options={safeWalletOptions}
-                defaultValue={safeWalletOptions[0]}
-                onChange={(e) => setSafeWalletAddress(e.value)}
-                isSearchable={false}
-                width={isAbovePhone ? '450px' : '300px'}
-              />
-              <Copy value={safeAddress} />
-            </FlexContainer>
-          </Section>
+          <h3>Safe Admin</h3>
         </div>
-        <Section
-          label="Queued Transactions"
-          safeTxCategoryLink="queue"
-          overflowX
-        >
-          <SafeTxsDataTable
-            safeTxCategory="queue"
-            tableHeaders={[
-              'Action',
-              'Nonce',
-              'Status',
-              'Type',
-              'Confirmations',
-              'Date',
-            ]}
-          />
-        </Section>
-        <Section
-          label="History Transactions"
-          safeTxCategoryLink="history"
-          overflowX
-        >
-          <SafeTxsDataTable
-            safeTxCategory="history"
-            tableHeaders={[
-              'Action',
-              'Nonce',
-              'Status',
-              'Type',
-              'Confirmations',
-              'Date',
-            ]}
-          />
-        </Section>
+        {env.featureFlags.enableSpiceAuctionAdmin && (
+          <>
+            <Section label="Spice Auction Admin">
+              <BatchAuctionForm />
+            </Section>
+          </>
+        )}
+        {env.featureFlags.enableGnosisSafeAdmin && (
+          <>
+            <Section label="Select Gnosis Safe Wallet">
+              <FlexContainer>
+                <InputSelect
+                  options={safeWalletOptions}
+                  defaultValue={safeWalletOptions[0]}
+                  onChange={(e) => setSafeWalletAddress(e.value)}
+                  isSearchable={false}
+                  width={isAbovePhone ? '450px' : '300px'}
+                />
+                <Copy value={safeAddress} />
+              </FlexContainer>
+            </Section>
+            <Section
+              label="Queued Transactions"
+              safeTxCategoryLink="queue"
+              overflowX
+            >
+              <SafeTxsDataTable
+                safeTxCategory="queue"
+                tableHeaders={[
+                  'Action',
+                  'Nonce',
+                  'Status',
+                  'Type',
+                  'Confirmations',
+                  'Date',
+                ]}
+              />
+            </Section>
+            <Section
+              label="History Transactions"
+              safeTxCategoryLink="history"
+              overflowX
+            >
+              <SafeTxsDataTable
+                safeTxCategory="history"
+                tableHeaders={[
+                  'Action',
+                  'Nonce',
+                  'Status',
+                  'Type',
+                  'Confirmations',
+                  'Date',
+                ]}
+              />
+            </Section>
+          </>
+        )}
       </AreaDelimiter>
     </Container>
   );

@@ -169,7 +169,16 @@ const env: Environment = {
   network: 11155111,
   etherscan: 'https://sepolia.etherscan.io',
   featureFlags: {
-    enableAscend: true,
+    enableAscend: false,
+    enableGnosisSafeAdmin: false,
+    enableSpiceAuctionAdmin: true,
+  },
+  spiceAuctionAdmin: {
+    multisigAddress: '0x94b62A27a2f23CBdc0220826a8452fB5055cF273',
+    cosechaSegundaAddress: '0xA1f01d98d60273ED562eE79fEb718bbdB85E1d9C',
+    defaultRecipientAddress: '0x9821338bc318E87147Efef3Cafa917d7484A33fb',
+    auctionAddress: '0x41fFE184C981cA5A9F1453e707c179079aC3A551',
+    templeGoldAddress: '0x2ae6318e34bb97ae3755AFcE75559452aA223A5D',
   },
   templeMultisig: '0x3a320fF715dCBbF097e15257B7051dd08fdfb7A2',
   safes: [

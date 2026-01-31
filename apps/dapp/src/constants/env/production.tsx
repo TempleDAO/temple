@@ -362,6 +362,15 @@ const env: Environment = {
   },
   featureFlags: {
     enableAscend: false,
+    enableGnosisSafeAdmin: false,
+    enableSpiceAuctionAdmin: true,
+  },
+  spiceAuctionAdmin: {
+    multisigAddress: '0x94b62A27a2f23CBdc0220826a8452fB5055cF273',
+    cosechaSegundaAddress: '0xA1f01d98d60273ED562eE79fEb718bbdB85E1d9C',
+    defaultRecipientAddress: '0x9821338bc318E87147Efef3Cafa917d7484A33fb',
+    auctionAddress: '0xa68e1a9a93223f812191f35d102a4b2fb16b60f4',
+    templeGoldAddress: '0x0E7B53dDe30754A94D4B10C9CdCaCA1C749ECd1b',
   },
   posthog: {
     token: 'phc_pa9tsK76qoRqgsvMh9rDLtBKbOaawlwvJTLkcNDtxab',
@@ -386,8 +395,8 @@ const env: Environment = {
     //   address: '0x94b62A27a2f23CBdc0220826a8452fB5055cF273',
     // },
     // {
-    //   name: 'Temple Rescuers',
-    //   address: '0x9f90430179D9b67341BFa50559bc7B8E35629f1b',
+    //   name: "Temple Rescuers",
+    //   address: "0x9f90430179D9b67341BFa50559bc7B8E35629f1b",
     // },
   ],
   enableSubgraphLogs: ENABLE_SUBGRAPH_LOGS,
