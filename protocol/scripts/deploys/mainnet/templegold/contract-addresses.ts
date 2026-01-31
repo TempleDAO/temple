@@ -227,9 +227,9 @@ export const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} =
             SPICE_AUCTION_FACTORY: "0x3c84E8848C2D78107630c367500d79E8E6975be4",
             STABLE_GOLD_AUCTION: "0x8d3671d794d511Bb0E3D28e260F8E2233C0653aB",
             TEAM_GNOSIS: "0x",
-            SPICE_AUCTION_IMPLEMENTATION: "0xC8E5D9B2f53Ae2180bf39F2738c9c9F4cE713138",
+            SPICE_AUCTION_IMPLEMENTATION: "0xaa0a239FbCDEe30dD14e2D35F53Ee28BA8c44875",
             STRATEGY_GNOSIS: "0x",
-            SPICE_TOKEN: "0x",
+            SPICE_TOKEN: "0x34772E1683288fC2671BbfB4FD5B705ae04e5c29",
         },
         CORE: {
             TEMPLE_TOKEN: "0x98c5E61b1B3731A1f379E8770861164d23118cdc",
@@ -248,7 +248,7 @@ export const TEMPLEGOLD_DEPLOYED_CONTRACTS: {[key: string]: ContractAddresses} =
             }
         },
         SPICE_AUCTIONS: {
-            SPICE_TGLD: "0x",
+            SPICE_TGLD: "0x5354a7d29ee96fd32D0a4Efb459ee57193165b21",
             DAI_TGLD: "0xee46c5826cb312b1a80f7a6d1af795488941dbd0",
             ENA_TGLD: "0x",
             SENA_TGLD: "0x",
