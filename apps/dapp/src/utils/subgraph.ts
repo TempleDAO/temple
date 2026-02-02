@@ -628,7 +628,7 @@ async function _rawSubgraphQuery(
   if (env.enableSubgraphLogs) {
     console.log('subgraph-response', label, rawResults);
   }
-  if (rawResults.errors !== undefined) {
+  if (rawResults.errors && rawResults.errors.length > 0) {
     console.error(
       '[Subgraph] GraphQL Errors:',
       JSON.stringify(rawResults.errors, null, 2)
@@ -797,7 +797,9 @@ export type BidsHistoryGoldAuctionResp = z.infer<
 //----------------------------------------------------------------------------------------------------
 
 export function spiceBidHistoryQuery(
-  auctionToken: string
+  auctionToken: string,
+  first = 1000,
+  skip = 0
 ): SubGraphQuery<SpiceBidHistoryResp> {
   const label = 'SpiceBidHistory';
   const request = `
@@ -805,6 +807,8 @@ export function spiceBidHistoryQuery(
     bidTransactions(
       orderBy: timestamp
       orderDirection: asc
+      first: ${first}
+      skip: ${skip}
       where: {
         auctionInstance_: {
           auctionType: SpiceAuction

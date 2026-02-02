@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import styled from 'styled-components';
 import {
   InputSelect as MultiSelect,
@@ -52,6 +52,14 @@ export const Charts = ({
     Option[]
   >([]);
   const [bidHistoryOptions, setBidHistoryOptions] = useState<Option[]>([]);
+
+  // Reset state when auction changes to prevent stale filters
+  useEffect(() => {
+    setSelectedChartType(chartTypeOptions[0]);
+    setChartSpecificFilters([]);
+    setSpiceFinalPriceOptions([]);
+    setBidHistoryOptions([]);
+  }, [auctionAddress, auctionTokenAddress, chartTypeOptions]);
 
   // Get options for the second dropdown based on selected chart type
   const getChartSpecificOptions = useCallback((): Option[] => {
@@ -150,7 +158,7 @@ export const Charts = ({
           {/* First Dropdown: Chart Type Selector (Single Select) */}
           <SingleSelect
             options={chartTypeOptions}
-            defaultValue={selectedChartType}
+            value={selectedChartType}
             onChange={handleChartTypeChange}
             width="200px"
             fontSize="1rem"
