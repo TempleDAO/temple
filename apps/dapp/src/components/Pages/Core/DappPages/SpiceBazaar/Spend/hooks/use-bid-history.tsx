@@ -4,6 +4,7 @@ import { getAllSpiceBazaarSubgraphEndpoints } from 'constants/env/getSpiceBazaar
 
 // Constants for bid history processing
 const BUCKET_SIZE_HOURS = 24; // Group bids into 24-hour time buckets
+const PAGE_SIZE = 1000; // The Graph's maximum page size
 
 export type BidData = {
   price: number;
@@ -56,17 +57,41 @@ export const useBidHistory = (
     try {
       const endpoints = getAllSpiceBazaarSubgraphEndpoints();
 
-      let bidTransactions = null;
+      let bidTransactions: any[] = [];
 
       // Try each endpoint until we find data
       for (const entry of endpoints) {
         try {
-          const response = await subgraphQuery(
-            entry.url,
-            spiceBidHistoryQuery(auctionTokenAddress)
-          );
-          if (response.bidTransactions && response.bidTransactions.length > 0) {
-            bidTransactions = response.bidTransactions;
+          // Fetch all pages for this endpoint
+          let skip = 0;
+          let hasMore = true;
+          const allBids: any[] = [];
+
+          while (hasMore) {
+            const response = await subgraphQuery(
+              entry.url,
+              spiceBidHistoryQuery(auctionTokenAddress, PAGE_SIZE, skip)
+            );
+
+            if (
+              response.bidTransactions &&
+              response.bidTransactions.length > 0
+            ) {
+              allBids.push(...response.bidTransactions);
+
+              // If we got fewer results than PAGE_SIZE, we've reached the end
+              if (response.bidTransactions.length < PAGE_SIZE) {
+                hasMore = false;
+              } else {
+                skip += PAGE_SIZE;
+              }
+            } else {
+              hasMore = false;
+            }
+          }
+
+          if (allBids.length > 0) {
+            bidTransactions = allBids;
             break;
           }
         } catch (endpointError) {
@@ -78,7 +103,7 @@ export const useBidHistory = (
         }
       }
 
-      if (!bidTransactions || bidTransactions.length === 0) {
+      if (bidTransactions.length === 0) {
         setData([]);
         return;
       }
