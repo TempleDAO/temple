@@ -66,16 +66,52 @@ export const BidHistoryChart = ({
     return <NoDataContainer>No bids found for this epoch</NoDataContainer>;
   }
 
-  // Group bids by bucket for chart display
-  // Each bucket will have multiple dots at the same X position (vertically aligned)
-  const chartData = epochData.bids.map((bid) => ({
-    bucket: bid.bucket,
-    bucketIndex: bid.bucketIndex,
-    price: bid.price,
-    bidAmount: bid.bidAmount,
-    timestamp: bid.timestamp,
-    isFinalBid: bid.isFinalBid,
-    hash: bid.hash,
+  // Aggregate bids by bucket: one dot per bucket, sized by bid count.
+  // Average the prices, sum bid amounts, track count for radius scaling.
+  const bucketMap = new Map<
+    number,
+    {
+      bucket: string;
+      bucketIndex: number;
+      prices: number[];
+      totalBidAmount: number;
+      count: number;
+      isFinalBid: boolean;
+    }
+  >();
+  epochData.bids.forEach((bid) => {
+    const existing = bucketMap.get(bid.bucketIndex);
+    if (existing) {
+      existing.prices.push(bid.price);
+      existing.totalBidAmount += parseFloat(bid.bidAmount);
+      existing.count += 1;
+      if (bid.isFinalBid) existing.isFinalBid = true;
+    } else {
+      bucketMap.set(bid.bucketIndex, {
+        bucket: bid.bucket,
+        bucketIndex: bid.bucketIndex,
+        prices: [bid.price],
+        totalBidAmount: parseFloat(bid.bidAmount),
+        count: 1,
+        isFinalBid: bid.isFinalBid,
+      });
+    }
+  });
+
+  const maxCount = Math.max(
+    ...Array.from(bucketMap.values()).map((b) => b.count)
+  );
+
+  const chartData = Array.from(bucketMap.values()).map((b) => ({
+    bucket: b.bucket,
+    bucketIndex: b.bucketIndex,
+    price: b.prices.reduce((sum, p) => sum + p, 0) / b.prices.length,
+    minPrice: Math.min(...b.prices),
+    maxPrice: Math.max(...b.prices),
+    totalBidAmount: b.totalBidAmount,
+    count: b.count,
+    maxCount,
+    isFinalBid: b.isFinalBid,
   }));
 
   // Get all unique bucket indices (numeric) for X-axis ticks
@@ -91,8 +127,8 @@ export const BidHistoryChart = ({
     }
   });
 
-  // Get all prices for Y-axis calculation
-  const prices = chartData.map((d) => d.price);
+  // Use all individual bid prices (not averages) for Y-axis range
+  const prices = epochData.bids.map((b) => b.price);
 
   // Calculate Y-axis domain and ticks (starts at 0, ends slightly above max)
   // Explicit ticks ensure exactly 5 evenly spaced grid lines
@@ -112,14 +148,27 @@ export const BidHistoryChart = ({
         tooltipLabelFormatter={(bucketIndex: number) =>
           `Time: ${bucketIndexToLabel.get(bucketIndex) || ''}`
         }
-        tooltipValuesFormatter={(value: any, name: string, props: any) => {
-          const bid = props.payload;
-          const priceFormatted = formatNumberFixedDecimals(bid.price, 6);
-          const bidAmountFormatted = formatNumberFixedDecimals(
-            parseFloat(bid.bidAmount),
-            2
-          );
-          return `Bid Amount: ${bidAmountFormatted} TGLD\nPrice Ratio: ${priceFormatted} TGLD/${epochData.auctionTokenSymbol}`;
+        tooltipValuesFormatter={(_value: any, _name: string, props: any) => {
+          const d = props.payload;
+          const avgFormatted = formatNumberFixedDecimals(d.price, 6);
+          const totalFormatted = formatNumberFixedDecimals(d.totalBidAmount, 2);
+          const lines = [
+            `Bids: ${d.count}`,
+            `Total Amount: ${totalFormatted} TGLD`,
+          ];
+          if (d.count > 1) {
+            const minFormatted = formatNumberFixedDecimals(d.minPrice, 6);
+            const maxFormatted = formatNumberFixedDecimals(d.maxPrice, 6);
+            lines.push(
+              `Avg Price: ${avgFormatted} TGLD/${epochData.auctionTokenSymbol}`
+            );
+            lines.push(`Price Range: ${minFormatted} – ${maxFormatted}`);
+          } else {
+            lines.push(
+              `Price: ${avgFormatted} TGLD/${epochData.auctionTokenSymbol}`
+            );
+          }
+          return lines.join('\n');
         }}
         xAxisTitle="Time"
         yAxisTitle={`TGLD/${epochData.auctionTokenSymbol}`}

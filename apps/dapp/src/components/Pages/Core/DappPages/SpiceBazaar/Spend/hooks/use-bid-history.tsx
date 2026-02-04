@@ -3,7 +3,7 @@ import { spiceBidHistoryQuery, subgraphQuery } from 'utils/subgraph';
 import { getAllSpiceBazaarSubgraphEndpoints } from 'constants/env/getSpiceBazaarEndpoints';
 
 // Constants for bid history processing
-const BUCKET_SIZE_HOURS = 24; // Group bids into 24-hour time buckets
+const BUCKET_SIZE_HOURS = 12; // Group bids into 12-hour time buckets
 const PAGE_SIZE = 1000; // The Graph's maximum page size
 
 export type BidData = {
