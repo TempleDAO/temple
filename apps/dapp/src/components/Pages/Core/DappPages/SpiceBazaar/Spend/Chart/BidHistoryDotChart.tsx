@@ -29,26 +29,34 @@ type DotChartProps<T> = {
   tooltipValuesFormatter?: (value: number, name: string, props: any) => string;
 };
 
-// Custom dot component
+// Radius scales with bid count using sqrt so dot *area* is proportional to count.
+const MIN_RADIUS = 5;
+const MAX_RADIUS = 16;
+
+const getScaledRadius = (count: number, maxCount: number) => {
+  if (maxCount <= 1) return MIN_RADIUS;
+  // sqrt scale: area ∝ count
+  const t = Math.sqrt(count) / Math.sqrt(maxCount);
+  return MIN_RADIUS + t * (MAX_RADIUS - MIN_RADIUS);
+};
+
+// Custom dot component — radius driven by count/maxCount in payload
 const CustomDot = (props: any) => {
   const { cx, cy, payload, isFinalBidKey, dotColor, finalBidColor } = props;
   const isFinalBid = payload[isFinalBidKey];
+  const r = getScaledRadius(payload.count ?? 1, payload.maxCount ?? 1);
 
   if (isFinalBid) {
-    // Final bid: solid gold circle
     return (
       <g>
-        {/* Main gold dot */}
-        <circle cx={cx} cy={cy} r={9} fill={finalBidColor} opacity={1} />
+        <circle cx={cx} cy={cy} r={r} fill={finalBidColor} opacity={1} />
       </g>
     );
   }
 
-  // Regular bid: solid white dot (no glow)
   return (
     <g>
-      {/* Main white dot */}
-      <circle cx={cx} cy={cy} r={9} fill={dotColor} opacity={1} />
+      <circle cx={cx} cy={cy} r={r} fill={dotColor} opacity={1} />
     </g>
   );
 };
