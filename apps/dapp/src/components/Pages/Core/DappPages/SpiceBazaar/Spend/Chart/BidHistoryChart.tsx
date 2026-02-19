@@ -1,11 +1,11 @@
 import { useEffect, useMemo } from 'react';
 import styled from 'styled-components';
-import BidHistoryDotChart from './BidHistoryDotChart';
+import { DotChart } from '../../components/Charts';
 import Loader from 'components/Loader/Loader';
 import { formatNumberFixedDecimals } from 'utils/formatter';
 import { Option } from '../../components/InputSelector';
 import { useBidHistory } from '../hooks/use-bid-history';
-import { getBidHistoryYAxisConfig } from './bidHistoryYAxisDomain';
+import { getBidHistoryYAxisConfig } from '../../components/Charts';
 
 type BidHistoryChartProps = {
   auctionTokenAddress?: string;
@@ -136,11 +136,11 @@ export const BidHistoryChart = ({
 
   return (
     <ChartContainer>
-      <BidHistoryDotChart
+      <DotChart
         chartData={chartData}
         xDataKey="bucketIndex"
         yDataKey="price"
-        isFinalBidKey="isFinalBid"
+        highlightKey="isFinalBid"
         xTicks={uniqueBucketIndices}
         xTickFormatter={(bucketIndex: number) =>
           bucketIndexToLabel.get(bucketIndex) || ''

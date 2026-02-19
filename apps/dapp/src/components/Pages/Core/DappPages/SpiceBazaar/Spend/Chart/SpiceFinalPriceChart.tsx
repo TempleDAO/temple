@@ -1,11 +1,11 @@
 import { useEffect, useMemo } from 'react';
 import styled from 'styled-components';
-import CustomBarChart from './BarChart';
+import { BarChart as CustomBarChart } from '../../components/Charts';
 import Loader from 'components/Loader/Loader';
 import { formatNumberFixedDecimals } from 'utils/formatter';
 import { Option } from '../../components/InputSelector';
 import { useClosingPriceHistory } from '../hooks/use-closing-price-history';
-import { getYAxisDomainAndTicks } from 'components/Pages/Core/DappPages/SpiceBazaar/components/GetYAxisDomainAndTicks';
+import { getYAxisDomainAndTicks } from '../../components/Charts';
 
 type SpiceFinalPriceChartProps = {
   auctionAddress: string;

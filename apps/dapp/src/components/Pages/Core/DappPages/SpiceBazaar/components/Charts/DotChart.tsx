@@ -7,27 +7,12 @@ import {
   YAxis,
   Tooltip,
   Scatter,
-  Cell,
 } from 'recharts';
 import { useTheme } from 'styled-components';
 import { useMediaQuery } from 'react-responsive';
 import { formatNumberAbbreviated } from 'utils/formatter';
 import { queryPhone } from 'styles/breakpoints';
-
-type DotChartProps<T> = {
-  chartData: T[];
-  xDataKey: keyof T;
-  yDataKey: keyof T;
-  isFinalBidKey: keyof T;
-  xTicks?: number[]; // Unique X-axis tick values (numeric bucket indices)
-  xAxisTitle?: string;
-  yAxisTitle?: string;
-  yAxisDomain?: [number, number];
-  yAxisTicks?: number[];
-  xTickFormatter: (xValue: number) => string;
-  tooltipLabelFormatter: (value: number) => string;
-  tooltipValuesFormatter?: (value: number, name: string, props: any) => string;
-};
+import type { DotChartProps } from './types';
 
 // Radius scales with bid count using sqrt so dot *area* is proportional to count.
 const MIN_RADIUS = 5;
@@ -35,37 +20,37 @@ const MAX_RADIUS = 16;
 
 const getScaledRadius = (count: number, maxCount: number) => {
   if (maxCount <= 1) return MIN_RADIUS;
-  // sqrt scale: area ∝ count
   const t = Math.sqrt(count) / Math.sqrt(maxCount);
   return MIN_RADIUS + t * (MAX_RADIUS - MIN_RADIUS);
 };
 
-// Custom dot component — radius driven by count/maxCount in payload
 const CustomDot = (props: any) => {
-  const { cx, cy, payload, isFinalBidKey, dotColor, finalBidColor } = props;
-  const isFinalBid = payload[isFinalBidKey];
-  const r = getScaledRadius(payload.count ?? 1, payload.maxCount ?? 1);
-
-  if (isFinalBid) {
-    return (
-      <g>
-        <circle cx={cx} cy={cy} r={r} fill={finalBidColor} opacity={1} />
-      </g>
-    );
-  }
+  const {
+    cx,
+    cy,
+    payload,
+    highlightKey,
+    dotColor,
+    highlightColor,
+    fixedRadius,
+  } = props;
+  const isHighlighted = highlightKey ? payload[highlightKey] : false;
+  const fill = isHighlighted ? highlightColor : dotColor;
+  const r =
+    fixedRadius ?? getScaledRadius(payload.count ?? 1, payload.maxCount ?? 1);
 
   return (
     <g>
-      <circle cx={cx} cy={cy} r={r} fill={dotColor} opacity={1} />
+      <circle cx={cx} cy={cy} r={r} fill={fill} opacity={1} />
     </g>
   );
 };
 
-export default function BidHistoryDotChart<T>({
+export default function DotChart<T>({
   chartData,
   xDataKey,
   yDataKey,
-  isFinalBidKey,
+  highlightKey,
   xTicks,
   xAxisTitle,
   yAxisTitle,
@@ -74,14 +59,15 @@ export default function BidHistoryDotChart<T>({
   xTickFormatter,
   tooltipLabelFormatter,
   tooltipValuesFormatter,
+  colors,
+  dotRadius,
 }: React.PropsWithChildren<DotChartProps<T>>) {
   const theme = useTheme();
   const isPhoneOrAbove = useMediaQuery({ query: queryPhone });
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
-  // Use theme colors for dots
-  const dotColor = theme.palette.light; // White for regular bids
-  const finalBidColor = theme.palette.gold; // Gold for final bid
+  const dotColor = colors?.dot ?? theme.palette.light;
+  const highlightColor = colors?.highlight ?? theme.palette.gold;
 
   // Calculate min and max X values for proper domain using both chartData and xTicks
   const dataIndices = chartData.map((d: any) => Number(d[xDataKey]) || 0);
@@ -94,7 +80,6 @@ export default function BidHistoryDotChart<T>({
   const minBucketIndex = allIndices.length > 0 ? Math.min(...allIndices) : 0;
   const maxBucketIndex = allIndices.length > 0 ? Math.max(...allIndices) : 1;
 
-  // Fixed margin for consistent spacing (smaller than gap between buckets for tighter layout)
   const margin = 0.6;
 
   return (
@@ -122,7 +107,6 @@ export default function BidHistoryDotChart<T>({
             tickLine={false}
             ticks={xTicks}
             tick={({ x, y, payload }) => {
-              // payload.value is the bucketIndex, format it using the formatter
               const formatted = xTickFormatter(payload.value);
               return (
                 <text
@@ -155,7 +139,6 @@ export default function BidHistoryDotChart<T>({
             axisLine={false}
             tickLine={false}
             tick={({ x, y, payload }) => {
-              // Format small decimals with appropriate precision
               const value = payload.value;
               let formatted: string;
 
@@ -196,7 +179,7 @@ export default function BidHistoryDotChart<T>({
             }}
             width={isPhoneOrAbove ? 100 : 60}
             label={{
-              value: yAxisTitle || 'TGLD',
+              value: yAxisTitle || '',
               angle: -90,
               position: 'insideLeft',
               style: {
@@ -221,7 +204,6 @@ export default function BidHistoryDotChart<T>({
 
               const data = payload[0].payload;
               const bucketIndex = data[xDataKey];
-              // Pass the bucketIndex (numeric) to the formatter
               const label = tooltipLabelFormatter(bucketIndex);
               const content = tooltipValuesFormatter?.(data[yDataKey], '', {
                 payload: data,
@@ -269,9 +251,10 @@ export default function BidHistoryDotChart<T>({
             fill={dotColor}
             shape={
               <CustomDot
-                isFinalBidKey={isFinalBidKey as string}
+                highlightKey={highlightKey as string}
                 dotColor={dotColor}
-                finalBidColor={finalBidColor}
+                highlightColor={highlightColor}
+                fixedRadius={dotRadius}
               />
             }
             onMouseEnter={(_, index) => setActiveIndex(index)}
