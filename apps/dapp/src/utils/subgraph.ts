@@ -761,6 +761,8 @@ export function bidsHistoryGoldAuction(
   {
     stableGoldAuctionInstance(id: "${id}") {
       id
+      startTime
+      endTime
       bidTransaction(orderBy: timestamp, orderDirection: desc) {
         bidAmount
         timestamp
@@ -779,6 +781,8 @@ export function bidsHistoryGoldAuction(
 const BidsHistoryGoldAuctionResp = z.object({
   stableGoldAuctionInstance: z.object({
     id: z.string(),
+    startTime: z.string(),
+    endTime: z.string(),
     bidTransaction: z.array(
       z.object({
         bidAmount: z.string(),

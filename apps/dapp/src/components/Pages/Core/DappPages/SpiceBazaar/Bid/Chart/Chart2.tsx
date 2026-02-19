@@ -1,34 +1,84 @@
 import { useEffect, useMemo, useState } from 'react';
 import styled from 'styled-components';
-import CustomBarChart from './BarChart';
+import { BarChart as CustomBarChart, DotChart } from '../../components/Charts';
 import Loader from 'components/Loader/Loader';
-import { formatNumberAbbreviated } from 'utils/formatter';
+import {
+  formatNumberAbbreviated,
+  formatNumberFixedDecimals,
+} from 'utils/formatter';
 import {
   InputSelect as MultiInputSelect,
   Option,
 } from '../../components/InputSelector';
 import { InputSelect as SingleInputSelect } from 'components/InputSelect/InputSelect';
+import type { Option as SingleOption } from 'components/InputSelect/InputSelect';
 import * as breakpoints from 'styles/breakpoints';
 import {
   useStableGoldAuctionMetrics,
   MetricType,
 } from '../hooks/use-stableGold-auction-metrics';
-import { getYAxisDomainAndTicks } from 'components/Pages/Core/DappPages/SpiceBazaar/components/GetYAxisDomainAndTicks';
+import {
+  getYAxisDomainAndTicks,
+  getBidHistoryYAxisConfig,
+} from '../../components/Charts';
+import { useAuctionsHistory } from '../hooks/use-auctions-history';
+import { useBidsHistory } from '../hooks/use-bids-history';
 
-// Metric options for the dropdown
 const metricOptions: { value: MetricType; label: string }[] = [
   { value: 'tgldFinalPrice', label: 'TGLD Final Price' },
   { value: 'totalUsdsBid', label: 'Total USDS Bid' },
   { value: 'tgldInCirculation', label: 'TGLD in Circulation' },
+  { value: 'bidHistory', label: 'Bid History' },
 ];
 
 export const Chart = () => {
-  const { data: metrics, loading } = useStableGoldAuctionMetrics();
+  const { data: metrics, loading: metricsLoading } =
+    useStableGoldAuctionMetrics();
+  const { data: auctionsData } = useAuctionsHistory();
 
-  // State for selected metric type
   const [selectedMetric, setSelectedMetric] =
     useState<MetricType>('tgldFinalPrice');
 
+  const isBidHistory = selectedMetric === 'bidHistory';
+
+  // --- Epoch options for bid history single-select ---
+  const epochOptions: SingleOption[] = useMemo(() => {
+    if (!auctionsData) return [];
+    return auctionsData
+      .sort((a, b) => Number(b.epoch) - Number(a.epoch))
+      .map((a) => {
+        const endDate = new Date(Number(a.endTime) * 1000).toLocaleDateString(
+          'en-GB',
+          { day: 'numeric', month: 'short', year: 'numeric' }
+        );
+        return {
+          value: a.epoch,
+          label: `Epoch ${a.epoch} - ${endDate}`,
+        };
+      });
+  }, [auctionsData]);
+
+  const [selectedEpoch, setSelectedEpoch] = useState<SingleOption | undefined>(
+    undefined
+  );
+
+  // Default to most recent epoch once data loads
+  useEffect(() => {
+    if (epochOptions.length > 0 && !selectedEpoch) {
+      setSelectedEpoch(epochOptions[0]);
+    }
+  }, [epochOptions, selectedEpoch]);
+
+  const handleEpochChange = (selected: SingleOption) => {
+    setSelectedEpoch(selected);
+  };
+
+  // Fetch bids for the selected epoch (only triggers when epoch changes)
+  const epochStr = isBidHistory ? (selectedEpoch?.value as string) : undefined;
+  const { chartData: bidChartData, loading: bidsLoading } =
+    useBidsHistory(epochStr);
+
+  // --- Multi-select auctions (for bar charts) ---
   const auctionOptions: Option[] = useMemo(() => {
     const seen = new Set();
     return (metrics ?? [])
@@ -46,7 +96,6 @@ export const Chart = () => {
 
   const [selectedAuctions, setSelectedAuctions] = useState<Option[]>([]);
 
-  // Set default selected auctions on initial load
   useEffect(() => {
     if (auctionOptions.length && selectedAuctions.length === 0) {
       setSelectedAuctions(auctionOptions);
@@ -64,24 +113,107 @@ export const Chart = () => {
     setSelectedMetric(selected.value);
   };
 
-  const chartData = useMemo(() => {
-    if (loading || !metrics?.length) return [];
+  // --- Bar chart data (for non-bidHistory metrics) ---
+  const barChartData = useMemo(() => {
+    if (metricsLoading || !metrics?.length || isBidHistory) return [];
 
-    const data = metrics
+    return metrics
       .filter((d) => selectedAuctions.some((option) => option.label === d.date))
       .sort((a, b) => a.timestamp - b.timestamp)
       .map((d) => ({
         ...d,
-        value: d[selectedMetric], // Dynamic value based on selected metric
+        value: d[selectedMetric] as number,
       }));
+  }, [metrics, selectedAuctions, selectedMetric, metricsLoading, isBidHistory]);
 
-    return data;
-  }, [metrics, selectedAuctions, selectedMetric, loading]);
+  const barValues = useMemo(
+    () => barChartData.map((d) => d.value),
+    [barChartData]
+  );
+  const { yDomain: barYDomain, yTicks: barYTicks } =
+    getYAxisDomainAndTicks(barValues);
 
-  const values = useMemo(() => chartData.map((d) => d.value), [chartData]);
-  const { yDomain, yTicks } = getYAxisDomainAndTicks(values);
+  // --- Dot chart data (for bidHistory, single-epoch bucketed) ---
+  const dotAggregated = useMemo(() => {
+    if (!bidChartData?.bids.length) {
+      return {
+        chartData: [],
+        bucketIndices: [] as number[],
+        bucketMap: new Map<number, string>(),
+      };
+    }
 
-  // Dynamic chart configuration based on selected metric
+    const bucketMap = new Map<
+      number,
+      {
+        bucket: string;
+        bucketIndex: number;
+        prices: number[];
+        totalBidAmount: number;
+        count: number;
+        isFinalBid: boolean;
+      }
+    >();
+
+    bidChartData.bids.forEach((bid) => {
+      const amount = parseFloat(bid.bidAmount);
+      const existing = bucketMap.get(bid.bucketIndex);
+      if (existing) {
+        existing.prices.push(bid.price);
+        existing.totalBidAmount += amount;
+        existing.count += 1;
+        if (bid.isFinalBid) existing.isFinalBid = true;
+      } else {
+        bucketMap.set(bid.bucketIndex, {
+          bucket: bid.bucket,
+          bucketIndex: bid.bucketIndex,
+          prices: [bid.price],
+          totalBidAmount: amount,
+          count: 1,
+          isFinalBid: bid.isFinalBid,
+        });
+      }
+    });
+
+    const maxCount = Math.max(
+      ...Array.from(bucketMap.values()).map((b) => b.count)
+    );
+
+    // Sort by original bucket index then re-index sequentially to eliminate gaps
+    const sorted = Array.from(bucketMap.values()).sort(
+      (a, b) => a.bucketIndex - b.bucketIndex
+    );
+
+    const chartData = sorted.map((b, idx) => ({
+      bucket: b.bucket,
+      bucketIndex: idx,
+      price: b.prices.reduce((sum, p) => sum + p, 0) / b.prices.length,
+      minPrice: Math.min(...b.prices),
+      maxPrice: Math.max(...b.prices),
+      totalBidAmount: b.totalBidAmount,
+      count: b.count,
+      maxCount,
+      isFinalBid: b.isFinalBid,
+    }));
+
+    const bucketIndices = chartData.map((d) => d.bucketIndex);
+
+    const labelMap = new Map<number, string>();
+    chartData.forEach((d) => {
+      labelMap.set(d.bucketIndex, d.bucket);
+    });
+
+    return { chartData, bucketIndices, bucketMap: labelMap };
+  }, [bidChartData]);
+
+  const dotPrices = useMemo(
+    () => dotAggregated.chartData.map((d) => d.price),
+    [dotAggregated]
+  );
+  const { yDomain: dotYDomain, yTicks: dotYTicks } =
+    getBidHistoryYAxisConfig(dotPrices);
+
+  // --- Chart config for bar metrics ---
   const getChartConfig = () => {
     switch (selectedMetric) {
       case 'totalUsdsBid':
@@ -130,12 +262,13 @@ export const Chart = () => {
 
   const chartConfig = getChartConfig();
 
-  if (loading || !metrics?.length) return <Loader />;
+  const loading = isBidHistory ? bidsLoading : metricsLoading;
+
+  if (loading || (!isBidHistory && !metrics?.length)) return <Loader />;
 
   return (
     <PageContainer>
       <HeaderContainer>
-        {/* Metrics Dropdown */}
         <SingleInputSelect
           options={metricOptions}
           defaultValue={metricOptions.find(
@@ -148,33 +281,94 @@ export const Chart = () => {
           isSearchable={false}
         />
 
-        {/* Epochs Dropdown */}
-        <MultiInputSelect
-          options={auctionOptions}
-          value={selectedAuctions}
-          onChange={handleAuctionChange}
-          width="200px"
-          fontSize="1rem"
-          maxMenuItems={7}
-          textAlloptions="All Epochs"
-        />
+        {isBidHistory ? (
+          <SingleInputSelect
+            options={epochOptions}
+            value={selectedEpoch}
+            onChange={handleEpochChange}
+            width="280px"
+            fontSize="1rem"
+            maxMenuItems={7}
+            isSearchable={false}
+          />
+        ) : (
+          <MultiInputSelect
+            options={auctionOptions}
+            value={selectedAuctions}
+            onChange={handleAuctionChange}
+            width="200px"
+            fontSize="1rem"
+            maxMenuItems={7}
+            textAlloptions="All Epochs"
+          />
+        )}
       </HeaderContainer>
-      <CustomBarChart
-        chartData={chartData}
-        xDataKey="date"
-        yDataKey="value"
-        xTickFormatter={(val: any) => val}
-        yTickFormatter={chartConfig.yTickFormatter}
-        tooltipLabelFormatter={(value: string) => {
-          const found = chartData.find((d) => d.date === value);
-          return found?.id ? `Auction ID: ${found.id}` : value;
-        }}
-        tooltipValuesFormatter={chartConfig.tooltipValuesFormatter}
-        xAxisTitle="Auction end date"
-        yAxisTitle={chartConfig.yAxisTitle}
-        yAxisDomain={yDomain}
-        yAxisTicks={yTicks}
-      />
+
+      {isBidHistory ? (
+        dotAggregated.chartData.length === 0 ? (
+          <NoDataContainer>No bids found for this epoch</NoDataContainer>
+        ) : (
+          <DotChart
+            chartData={dotAggregated.chartData}
+            xDataKey="bucketIndex"
+            yDataKey="price"
+            highlightKey="isFinalBid"
+            xTicks={dotAggregated.bucketIndices}
+            xTickFormatter={(idx: number) =>
+              dotAggregated.bucketMap.get(idx) || ''
+            }
+            tooltipLabelFormatter={(idx: number) =>
+              `Time: ${dotAggregated.bucketMap.get(idx) || ''}`
+            }
+            tooltipValuesFormatter={(
+              _value: any,
+              _name: string,
+              props: any
+            ) => {
+              const d = props.payload;
+              const avgFormatted = formatNumberFixedDecimals(d.price, 6);
+              const totalFormatted = formatNumberFixedDecimals(
+                d.totalBidAmount,
+                2
+              );
+              const lines = [
+                `Bids: ${d.count}`,
+                `Total Amount: ${totalFormatted} USDS`,
+              ];
+              if (d.count > 1) {
+                const minFormatted = formatNumberFixedDecimals(d.minPrice, 6);
+                const maxFormatted = formatNumberFixedDecimals(d.maxPrice, 6);
+                lines.push(`Avg Price: ${avgFormatted} USDS/TGLD`);
+                lines.push(`Price Range: ${minFormatted} – ${maxFormatted}`);
+              } else {
+                lines.push(`Price: ${avgFormatted} USDS/TGLD`);
+              }
+              return lines.join('\n');
+            }}
+            xAxisTitle="Time"
+            yAxisTitle="USDS/TGLD"
+            yAxisDomain={dotYDomain}
+            yAxisTicks={dotYTicks}
+          />
+        )
+      ) : (
+        <CustomBarChart
+          chartData={barChartData}
+          xDataKey="date"
+          yDataKey="value"
+          xTickFormatter={(val: any) => val}
+          yTickFormatter={chartConfig.yTickFormatter}
+          tooltipLabelFormatter={(value: string) => {
+            const found = barChartData.find((d) => d.date === value);
+            return found?.id ? `Auction ID: ${found.id}` : value;
+          }}
+          tooltipValuesFormatter={chartConfig.tooltipValuesFormatter}
+          xAxisTitle="Auction end date"
+          yAxisTitle={chartConfig.yAxisTitle}
+          yAxisDomain={barYDomain}
+          yAxisTicks={barYTicks}
+        />
+      )}
     </PageContainer>
   );
 };
@@ -196,4 +390,13 @@ const HeaderContainer = styled.div`
     gap: 40px;
     align-items: center;
   `)}
+`;
+
+const NoDataContainer = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 350px;
+  color: ${({ theme }) => theme.palette.brand};
+  font-size: 16px;
 `;
