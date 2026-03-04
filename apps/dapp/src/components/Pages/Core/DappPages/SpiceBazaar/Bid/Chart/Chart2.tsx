@@ -176,6 +176,7 @@ export const Chart = () => {
     });
 
     const maxCount = Math.max(
+      1,
       ...Array.from(bucketMap.values()).map((b) => b.count)
     );
 
