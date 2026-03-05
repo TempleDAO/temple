@@ -44,7 +44,7 @@ export const Chart = () => {
   // --- Epoch options for bid history single-select ---
   const epochOptions: SingleOption[] = useMemo(() => {
     if (!auctionsData) return [];
-    return auctionsData
+    return [...auctionsData]
       .sort((a, b) => Number(b.epoch) - Number(a.epoch))
       .map((a) => {
         const endDate = new Date(Number(a.endTime) * 1000).toLocaleDateString(

@@ -43,7 +43,7 @@ export const SpiceFinalPriceChart = ({
 
   // Expose available options to parent component
   useEffect(() => {
-    if (auctionOptions.length > 0 && onFilterOptionsChange) {
+    if (onFilterOptionsChange) {
       onFilterOptionsChange(auctionOptions);
     }
   }, [auctionOptions, onFilterOptionsChange]);

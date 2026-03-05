@@ -58,6 +58,8 @@ export const useBidHistory = (
       const endpoints = getAllSpiceBazaarSubgraphEndpoints();
 
       let bidTransactions: any[] = [];
+      let anyEndpointSucceeded = false;
+      let lastEndpointError: unknown = null;
 
       // Try each endpoint until we find data
       for (const entry of endpoints) {
@@ -90,6 +92,8 @@ export const useBidHistory = (
             }
           }
 
+          anyEndpointSucceeded = true;
+
           if (allBids.length > 0) {
             bidTransactions = allBids;
             break;
@@ -99,11 +103,15 @@ export const useBidHistory = (
             `[BidHistory] Failed to fetch from endpoint ${entry.url}:`,
             endpointError
           );
+          lastEndpointError = endpointError;
           // Continue to next endpoint
         }
       }
 
       if (bidTransactions.length === 0) {
+        if (!anyEndpointSucceeded) {
+          throw lastEndpointError ?? new Error('All subgraph endpoints failed');
+        }
         setData([]);
         return;
       }
