@@ -33,7 +33,7 @@ const metricOptions: { value: ChartView; label: string }[] = [
   { value: 'bidHistory', label: 'Bid History' },
 ];
 
-export const Chart = () => {
+export const TgldAuctionChart = () => {
   const { data: metrics, loading: metricsLoading } =
     useStableGoldAuctionMetrics();
   const { data: auctionsData, loading: auctionsLoading } = useAuctionsHistory();
