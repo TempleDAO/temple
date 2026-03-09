@@ -39,7 +39,7 @@ const metricOptions: { value: ChartView; label: string }[] = [
 export const Chart = () => {
   const { data: metrics, loading: metricsLoading } =
     useStableGoldAuctionMetrics();
-  const { data: auctionsData } = useAuctionsHistory();
+  const { data: auctionsData, loading: auctionsLoading } = useAuctionsHistory();
 
   const [selectedMetric, setSelectedMetric] =
     useState<ChartView>('tgldFinalPrice');
@@ -202,7 +202,9 @@ export const Chart = () => {
 
   const chartConfig = getChartConfig();
 
-  const loading = isBidHistory ? bidsLoading : metricsLoading;
+  const loading = isBidHistory
+    ? bidsLoading || auctionsLoading
+    : metricsLoading;
 
   if (loading || (!isBidHistory && !metrics?.length)) return <Loader />;
 

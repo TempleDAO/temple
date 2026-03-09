@@ -47,6 +47,7 @@ export const useBidHistory = (
   const fetchData = useCallback(async () => {
     if (!auctionTokenAddress) {
       setData([]);
+      setError(null);
       setLoading(false);
       return;
     }
