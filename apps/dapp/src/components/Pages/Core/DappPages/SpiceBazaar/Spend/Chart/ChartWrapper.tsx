@@ -62,26 +62,16 @@ export const Charts = ({
   }, [auctionAddress, auctionTokenAddress, chartTypeOptions]);
 
   // Get options for the second dropdown based on selected chart type
-  const getChartSpecificOptions = useCallback((): Option[] => {
+  const chartSpecificOptions = useMemo((): Option[] => {
     switch (selectedChartType.value) {
       case ChartType.BidHistory:
-        // Return epoch options from the BidHistoryChart
         return bidHistoryOptions;
       case ChartType.SpiceFinalPrice:
-        // Return auction date options from the SpiceFinalPriceChart
         return spiceFinalPriceOptions;
-      // case ChartType.TotalTGLDBid:
-      // TBD - will be defined later
-      // return [];
       default:
         return [];
     }
   }, [selectedChartType.value, spiceFinalPriceOptions, bidHistoryOptions]);
-
-  const chartSpecificOptions = useMemo(
-    () => getChartSpecificOptions(),
-    [getChartSpecificOptions]
-  );
 
   // Handle chart type change (single select)
   const handleChartTypeChange = (selected: Option) => {
