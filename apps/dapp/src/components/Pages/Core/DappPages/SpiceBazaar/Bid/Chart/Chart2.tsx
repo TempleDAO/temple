@@ -20,11 +20,16 @@ import {
 import {
   getYAxisDomainAndTicks,
   getBidHistoryYAxisConfig,
+  aggregateBidsByBucket,
 } from '../../components/Charts';
 import { useAuctionsHistory } from '../hooks/use-auctions-history';
 import { useBidsHistory } from '../hooks/use-bids-history';
 
-const metricOptions: { value: MetricType; label: string }[] = [
+// ChartView extends the data-layer MetricType with the UI-only 'bidHistory'
+// mode, which uses a separate data source and cannot be used to index Metric.
+type ChartView = MetricType | 'bidHistory';
+
+const metricOptions: { value: ChartView; label: string }[] = [
   { value: 'tgldFinalPrice', label: 'TGLD Final Price' },
   { value: 'totalUsdsBid', label: 'Total USDS Bid' },
   { value: 'tgldInCirculation', label: 'TGLD in Circulation' },
@@ -37,7 +42,7 @@ export const Chart = () => {
   const { data: auctionsData } = useAuctionsHistory();
 
   const [selectedMetric, setSelectedMetric] =
-    useState<MetricType>('tgldFinalPrice');
+    useState<ChartView>('tgldFinalPrice');
 
   const isBidHistory = selectedMetric === 'bidHistory';
 
@@ -107,7 +112,7 @@ export const Chart = () => {
   };
 
   const handleMetricChange = (selected: {
-    value: MetricType;
+    value: ChartView;
     label: string;
   }) => {
     setSelectedMetric(selected.value);
@@ -117,12 +122,14 @@ export const Chart = () => {
   const barChartData = useMemo(() => {
     if (metricsLoading || !metrics?.length || isBidHistory) return [];
 
+    // isBidHistory guard above ensures selectedMetric is a valid MetricType key
+    const metricKey = selectedMetric as MetricType;
     return metrics
       .filter((d) => selectedAuctions.some((option) => option.label === d.date))
       .sort((a, b) => a.timestamp - b.timestamp)
       .map((d) => ({
         ...d,
-        value: d[selectedMetric] as number,
+        value: d[metricKey] as number,
       }));
   }, [metrics, selectedAuctions, selectedMetric, metricsLoading, isBidHistory]);
 
@@ -134,78 +141,10 @@ export const Chart = () => {
     getYAxisDomainAndTicks(barValues);
 
   // --- Dot chart data (for bidHistory, single-epoch bucketed) ---
-  const dotAggregated = useMemo(() => {
-    if (!bidChartData?.bids.length) {
-      return {
-        chartData: [],
-        bucketIndices: [] as number[],
-        bucketMap: new Map<number, string>(),
-      };
-    }
-
-    const bucketMap = new Map<
-      number,
-      {
-        bucket: string;
-        bucketIndex: number;
-        prices: number[];
-        totalBidAmount: number;
-        count: number;
-        isFinalBid: boolean;
-      }
-    >();
-
-    bidChartData.bids.forEach((bid) => {
-      const amount = parseFloat(bid.bidAmount);
-      const existing = bucketMap.get(bid.bucketIndex);
-      if (existing) {
-        existing.prices.push(bid.price);
-        existing.totalBidAmount += amount;
-        existing.count += 1;
-        if (bid.isFinalBid) existing.isFinalBid = true;
-      } else {
-        bucketMap.set(bid.bucketIndex, {
-          bucket: bid.bucket,
-          bucketIndex: bid.bucketIndex,
-          prices: [bid.price],
-          totalBidAmount: amount,
-          count: 1,
-          isFinalBid: bid.isFinalBid,
-        });
-      }
-    });
-
-    const maxCount = Math.max(
-      1,
-      ...Array.from(bucketMap.values()).map((b) => b.count)
-    );
-
-    // Sort by original bucket index then re-index sequentially to eliminate gaps
-    const sorted = Array.from(bucketMap.values()).sort(
-      (a, b) => a.bucketIndex - b.bucketIndex
-    );
-
-    const chartData = sorted.map((b, idx) => ({
-      bucket: b.bucket,
-      bucketIndex: idx,
-      price: b.prices.reduce((sum, p) => sum + p, 0) / b.prices.length,
-      minPrice: Math.min(...b.prices),
-      maxPrice: Math.max(...b.prices),
-      totalBidAmount: b.totalBidAmount,
-      count: b.count,
-      maxCount,
-      isFinalBid: b.isFinalBid,
-    }));
-
-    const bucketIndices = chartData.map((d) => d.bucketIndex);
-
-    const labelMap = new Map<number, string>();
-    chartData.forEach((d) => {
-      labelMap.set(d.bucketIndex, d.bucket);
-    });
-
-    return { chartData, bucketIndices, bucketMap: labelMap };
-  }, [bidChartData]);
+  const dotAggregated = useMemo(
+    () => aggregateBidsByBucket(bidChartData?.bids ?? []),
+    [bidChartData]
+  );
 
   const dotPrices = useMemo(
     () => dotAggregated.chartData.map((d) => d.price),
@@ -316,10 +255,10 @@ export const Chart = () => {
             highlightKey="isFinalBid"
             xTicks={dotAggregated.bucketIndices}
             xTickFormatter={(idx: number) =>
-              dotAggregated.bucketMap.get(idx) || ''
+              dotAggregated.labelMap.get(idx) || ''
             }
             tooltipLabelFormatter={(idx: number) =>
-              `Time: ${dotAggregated.bucketMap.get(idx) || ''}`
+              `Time: ${dotAggregated.labelMap.get(idx) || ''}`
             }
             tooltipValuesFormatter={(
               _value: any,

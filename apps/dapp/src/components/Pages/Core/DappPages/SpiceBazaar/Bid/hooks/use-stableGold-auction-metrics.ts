@@ -6,8 +6,7 @@ import env from 'constants/env';
 export type MetricType =
   | 'totalUsdsBid'
   | 'tgldFinalPrice'
-  | 'tgldInCirculation'
-  | 'bidHistory';
+  | 'tgldInCirculation';
 
 export type Metric = {
   id: string;

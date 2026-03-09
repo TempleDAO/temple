@@ -2,7 +2,6 @@ import env from 'constants/env';
 import { nullable, z } from 'zod';
 import { backOff } from 'exponential-backoff';
 import { SpiceAuction } from 'types/typechain';
-import { timeStamp } from 'console';
 import { useQuery, QueryClient } from '@tanstack/react-query';
 
 /** A typed query to subgraph  */
