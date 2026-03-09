@@ -2,10 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import styled from 'styled-components';
 import { BarChart as CustomBarChart, DotChart } from '../../components/Charts';
 import Loader from 'components/Loader/Loader';
-import {
-  formatNumberAbbreviated,
-  formatNumberFixedDecimals,
-} from 'utils/formatter';
+import { formatNumberAbbreviated } from 'utils/formatter';
 import {
   InputSelect as MultiInputSelect,
   Option,
@@ -268,22 +265,19 @@ export const Chart = () => {
               props: any
             ) => {
               const d = props.payload;
-              const avgFormatted = formatNumberFixedDecimals(d.price, 6);
-              const totalFormatted = formatNumberFixedDecimals(
-                d.totalBidAmount,
-                2
-              );
               const lines = [
                 `Bids: ${d.count}`,
-                `Total Amount: ${totalFormatted} USDS`,
+                `Total Amount: ${d.totalBidAmount.toFixed(2)} USDS`,
               ];
               if (d.count > 1) {
-                const minFormatted = formatNumberFixedDecimals(d.minPrice, 6);
-                const maxFormatted = formatNumberFixedDecimals(d.maxPrice, 6);
-                lines.push(`Avg Price: ${avgFormatted} USDS/TGLD`);
-                lines.push(`Price Range: ${minFormatted} – ${maxFormatted}`);
+                lines.push(`Avg Price: ${d.price.toFixed(6)} USDS/TGLD`);
+                lines.push(
+                  `Price Range: ${d.minPrice.toFixed(6)} – ${d.maxPrice.toFixed(
+                    6
+                  )}`
+                );
               } else {
-                lines.push(`Price: ${avgFormatted} USDS/TGLD`);
+                lines.push(`Price: ${d.price.toFixed(6)} USDS/TGLD`);
               }
               return lines.join('\n');
             }}
