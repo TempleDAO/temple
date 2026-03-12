@@ -2,7 +2,6 @@ import env from 'constants/env';
 import { nullable, z } from 'zod';
 import { backOff } from 'exponential-backoff';
 import { SpiceAuction } from 'types/typechain';
-import { timeStamp } from 'console';
 import { useQuery, QueryClient } from '@tanstack/react-query';
 
 /** A typed query to subgraph  */
@@ -628,9 +627,15 @@ async function _rawSubgraphQuery(
   if (env.enableSubgraphLogs) {
     console.log('subgraph-response', label, rawResults);
   }
-  if (rawResults.errors !== undefined) {
+  if (rawResults.errors && rawResults.errors.length > 0) {
+    console.error(
+      '[Subgraph] GraphQL Errors:',
+      JSON.stringify(rawResults.errors, null, 2)
+    );
     throw new Error(
-      `Unable to fetch ${label} from subgraph: ${rawResults.errors}`
+      `Unable to fetch ${label} from subgraph: ${JSON.stringify(
+        rawResults.errors
+      )}`
     );
   }
 
@@ -755,6 +760,8 @@ export function bidsHistoryGoldAuction(
   {
     stableGoldAuctionInstance(id: "${id}") {
       id
+      startTime
+      endTime
       bidTransaction(orderBy: timestamp, orderDirection: desc) {
         bidAmount
         timestamp
@@ -773,6 +780,8 @@ export function bidsHistoryGoldAuction(
 const BidsHistoryGoldAuctionResp = z.object({
   stableGoldAuctionInstance: z.object({
     id: z.string(),
+    startTime: z.string(),
+    endTime: z.string(),
     bidTransaction: z.array(
       z.object({
         bidAmount: z.string(),
@@ -787,6 +796,82 @@ const BidsHistoryGoldAuctionResp = z.object({
 export type BidsHistoryGoldAuctionResp = z.infer<
   typeof BidsHistoryGoldAuctionResp
 >;
+
+//----------------------------------------------------------------------------------------------------
+
+export function spiceBidHistoryQuery(
+  auctionToken: string,
+  first = 1000,
+  skip = 0
+): SubGraphQuery<SpiceBidHistoryResp> {
+  const label = 'SpiceBidHistory';
+  const request = `
+  {
+    bidTransactions(
+      orderBy: timestamp
+      orderDirection: asc
+      first: ${first}
+      skip: ${skip}
+      where: {
+        auctionInstance_: {
+          auctionType: SpiceAuction
+          auctionToken: "${auctionToken.toLowerCase()}"
+        }
+      }
+    ) {
+      price
+      bidAmount
+      hash
+      timestamp
+      auctionInstance {
+        id
+        epoch
+        startTime
+        endTime
+        ... on SpiceAuctionInstance {
+          spiceAuction {
+            id
+            spiceToken {
+              symbol
+            }
+          }
+        }
+      }
+    }
+  }`;
+  return {
+    label,
+    request,
+    parse: SpiceBidHistoryResp.parse,
+  };
+}
+
+const SpiceBidHistoryResp = z.object({
+  bidTransactions: z.array(
+    z.object({
+      price: z.string(),
+      bidAmount: z.string(),
+      hash: z.string(),
+      timestamp: z.string(),
+      auctionInstance: z.object({
+        id: z.string(),
+        epoch: z.string(),
+        startTime: z.string(),
+        endTime: z.string(),
+        spiceAuction: z
+          .object({
+            id: z.string(),
+            spiceToken: z.object({
+              symbol: z.string(),
+            }),
+          })
+          .nullable(),
+      }),
+    })
+  ),
+});
+
+export type SpiceBidHistoryResp = z.infer<typeof SpiceBidHistoryResp>;
 
 //----------------------------------------------------------------------------------------------------
 

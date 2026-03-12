@@ -6,7 +6,7 @@ import { AuctionState, getAuctionState } from 'utils/spice-auction-state';
 import styled from 'styled-components';
 import { useEffect, useState, useMemo } from 'react';
 import { Button } from 'components/Button/Button';
-import { Chart } from '../Chart/Chart';
+import { Charts } from '../Chart/ChartWrapper';
 import { BidTGLD, BidTGLDMode } from '../BidTGLD';
 import { Popover } from 'components/Pages/Core/DappPages/SpiceBazaar/components/Popover';
 import * as breakpoints from 'styles/breakpoints';
@@ -107,8 +107,6 @@ export const Details = () => {
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
-  const [showChart, setShowChart] = useState(false);
-
   const isPhoneOrAbove = useMediaQuery({
     query: queryPhone,
   });
@@ -134,8 +132,16 @@ export const Details = () => {
 
   const MemoizedChart = useMemo(() => {
     if (!auction?.address) return null;
-    return <Chart auctionAddress={auction.address} />;
-  }, [auction?.address]);
+
+    const tokenAddress = auction.staticConfig?.auctionToken?.address;
+
+    return (
+      <Charts
+        auctionAddress={auction.address}
+        auctionTokenAddress={tokenAddress}
+      />
+    );
+  }, [auction?.address, auction?.staticConfig?.auctionToken?.address]);
 
   return (
     <>
@@ -300,58 +306,54 @@ export const Details = () => {
                       </TradeButton>
                     ))}
                 </ButtonsContainer>
-                {(auction?.currentEpochAuctionLive || showChart) && (
-                  <>
-                    <Status>
-                      <StatusContent>
-                        {allSpiceAuctionsLoading ? (
-                          <Loader iconSize={32} />
-                        ) : (
-                          <>
-                            <StatusTitle>Price Ratio</StatusTitle>
-                            <StatusValue>
-                              1 TOKEN ={' '}
-                              {Number(auction?.priceRatio) < 0.01
-                                ? '<0.01'
-                                : auction?.priceRatio.toFixed(4)}{' '}
-                              TGLD
-                            </StatusValue>
-                          </>
-                        )}
-                      </StatusContent>
-                      <StatusContent>
-                        {allSpiceAuctionsLoading ? (
-                          <Loader iconSize={32} />
-                        ) : (
-                          <>
-                            <StatusTitle>Amount to be auctioned</StatusTitle>
-                            <StatusValue>
-                              {auction?.totalAuctionTokenAmount}{' '}
-                              {auction?.auctionTokenSymbol}
-                            </StatusValue>
-                          </>
-                        )}
-                      </StatusContent>
-                      <StatusContent>
-                        {allSpiceAuctionsLoading ? (
-                          <Loader iconSize={32} />
-                        ) : (
-                          <>
-                            <StatusTitle>Amount Submitted</StatusTitle>
-                            <StatusValue>
-                              {formatNumberWithCommasAndDecimals(
-                                auction?.totalBidTokenAmount || 0,
-                                0
-                              )}{' '}
-                              TGLD
-                            </StatusValue>
-                          </>
-                        )}
-                      </StatusContent>
-                    </Status>
-                    <ChartContainer>{MemoizedChart}</ChartContainer>
-                  </>
-                )}
+                <Status>
+                  <StatusContent>
+                    {allSpiceAuctionsLoading ? (
+                      <Loader iconSize={32} />
+                    ) : (
+                      <>
+                        <StatusTitle>Price Ratio</StatusTitle>
+                        <StatusValue>
+                          1 TOKEN ={' '}
+                          {Number(auction?.priceRatio) < 0.01
+                            ? '<0.01'
+                            : auction?.priceRatio.toFixed(4)}{' '}
+                          TGLD
+                        </StatusValue>
+                      </>
+                    )}
+                  </StatusContent>
+                  <StatusContent>
+                    {allSpiceAuctionsLoading ? (
+                      <Loader iconSize={32} />
+                    ) : (
+                      <>
+                        <StatusTitle>Amount to be auctioned</StatusTitle>
+                        <StatusValue>
+                          {auction?.totalAuctionTokenAmount}{' '}
+                          {auction?.auctionTokenSymbol}
+                        </StatusValue>
+                      </>
+                    )}
+                  </StatusContent>
+                  <StatusContent>
+                    {allSpiceAuctionsLoading ? (
+                      <Loader iconSize={32} />
+                    ) : (
+                      <>
+                        <StatusTitle>Amount Submitted</StatusTitle>
+                        <StatusValue>
+                          {formatNumberWithCommasAndDecimals(
+                            auction?.totalBidTokenAmount || 0,
+                            0
+                          )}{' '}
+                          TGLD
+                        </StatusValue>
+                      </>
+                    )}
+                  </StatusContent>
+                </Status>
+                <ChartContainer>{MemoizedChart}</ChartContainer>
               </CurrentAuction>
             </SpiceAuctionDetails>
           </SpiceAuction>

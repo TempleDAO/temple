@@ -13,20 +13,17 @@ import { useTheme } from 'styled-components';
 import { useMediaQuery } from 'react-responsive';
 import { formatNumberAbbreviated } from 'utils/formatter';
 import { queryPhone } from 'styles/breakpoints';
+import type { BarChartProps } from './types';
 
-type BarChartProps<T> = {
-  chartData: T[];
-  xDataKey: keyof T;
-  yDataKey: keyof T;
-  xAxisTitle?: string;
-  yAxisTitle?: string;
-  yAxisDomain?: [number, number];
-  yAxisTicks?: number[];
-  xTickFormatter: (xValue: any, index: number) => string;
-  yTickFormatter?: (yValue: any, index: number) => string;
-  tooltipLabelFormatter: (value: any) => string;
-  tooltipValuesFormatter?: (value: number, name: string) => string[];
-};
+const DEFAULT_BAR_COLORS = [
+  '#FFE3D4',
+  '#DCD28B',
+  '#C38557',
+  '#8F5F3B',
+  '#9882C1',
+  '#4E87A0',
+  '#348877',
+];
 
 export default function CustomBarChart<T>({
   chartData,
@@ -40,10 +37,12 @@ export default function CustomBarChart<T>({
   yTickFormatter,
   tooltipLabelFormatter,
   tooltipValuesFormatter,
+  barColors = DEFAULT_BAR_COLORS,
 }: React.PropsWithChildren<BarChartProps<T>>) {
   const theme = useTheme();
   const isPhoneOrAbove = useMediaQuery({ query: queryPhone });
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
+
   const yAxisNumberFormatter = useMemo(
     () => new Intl.NumberFormat('en-US', { maximumSignificantDigits: 6 }),
     []
@@ -54,9 +53,9 @@ export default function CustomBarChart<T>({
       if (yTickFormatter) return yTickFormatter(value, index);
       const abbreviated = formatNumberAbbreviated(value);
       if (abbreviated.thousandsSuffix) {
-        return `${abbreviated.string} TGLD`;
+        return abbreviated.string;
       }
-      return `${yAxisNumberFormatter.format(value)} TGLD`;
+      return yAxisNumberFormatter.format(value);
     },
     [yTickFormatter, yAxisNumberFormatter]
   );
@@ -75,24 +74,14 @@ export default function CustomBarChart<T>({
       maxLength = Math.max(maxLength, label.length);
     });
 
-    const estimatedChartWidth = isPhoneOrAbove ? 7 : 6;
+    const estimatedCharWidth = isPhoneOrAbove ? 7 : 6;
     const padding = isPhoneOrAbove ? 22 : 16;
     const maxWidth = isPhoneOrAbove ? 220 : 160;
     return Math.min(
       maxWidth,
-      Math.max(60, maxLength * estimatedChartWidth + padding)
+      Math.max(60, maxLength * estimatedCharWidth + padding)
     );
   }, [chartData, yAxisTicks, yDataKey, getYAxisLabel, isPhoneOrAbove]);
-
-  const barColors = [
-    '#FFE3D4',
-    '#DCD28B',
-    '#C38557',
-    '#8F5F3B',
-    '#9882C1',
-    '#4E87A0',
-    '#348877',
-  ];
 
   return (
     <>
@@ -196,7 +185,6 @@ export default function CustomBarChart<T>({
               outline: 'none',
               visibility: activeIndex === null ? 'hidden' : 'visible',
             }}
-            // separator={isPhoneOrAbove ? ": " : ":\n  "}
             cursor={false}
             contentStyle={{
               background:
@@ -224,10 +212,8 @@ export default function CustomBarChart<T>({
             labelFormatter={tooltipLabelFormatter}
             formatter={
               tooltipValuesFormatter
-                ? (value, name, _props) => {
-                    //@ts-ignore
-                    return tooltipValuesFormatter(value, name);
-                  }
+                ? (value: any, name: any) =>
+                    tooltipValuesFormatter(value as number, name as string)
                 : undefined
             }
           />

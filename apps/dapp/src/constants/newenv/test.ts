@@ -3,8 +3,6 @@ import {
   DaiGoldAuction__factory,
   SpiceAuction,
   SpiceAuction__factory,
-  SpiceAuctionFactory,
-  SpiceAuctionFactory__factory,
   TempleCircuitBreakerAllUsersPerPeriod,
   TempleCircuitBreakerAllUsersPerPeriod__factory,
   TempleGold,
@@ -26,8 +24,10 @@ const RPC_KEY = ENV_VARS.VITE_RPC_KEY;
 //   "https://api.goldsky.com/api/public/project_cmgzm4q1q009c5np2angrczxw/subgraphs/spice-bazaar-sepolia/test/gn";
 // const BERACHAIN_SPICE_BAZAAR_SUBGRAPH_URL =
 //   "https://api.goldsky.com/api/public/project_clq1l1in2hoze01x1ha1q1bui/subgraphs/spice-bazaar-bepolia/main/gn";
-const ARBIBRUM_SPICE_BAZAAR_SUBGRAPH_URL =
-  'https://api.goldsky.com/api/public/project_cmgzm4q1q009c5np2angrczxw/subgraphs/spice-bazaar-arb-sepolia/test/gn';
+// const ARBIBRUM_SPICE_BAZAAR_SUBGRAPH_URL =
+//   'https://api.goldsky.com/api/public/project_cmgzm4q1q009c5np2angrczxw/subgraphs/spice-bazaar-arb-sepolia/test/gn';
+const ETH_SEPOLIA_SPICE_BAZAAR_SUBGRAPH_URL =
+  'https://api.goldsky.com/api/public/project_cmgzm4q1q009c5np2angrczxw/subgraphs/spice-bazaar-sepolia/test/gn';
 
 const ETH_SEPOLIA: Chain = {
   name: 'Ethereum Sepolia',
@@ -264,28 +264,9 @@ const TEMPLE_CIRCUIT_BREAKER_CONTRACT_ON_ETH_SEPOLIA: ContractConfig<TempleCircu
     contractFactory: TempleCircuitBreakerAllUsersPerPeriod__factory,
   };
 
-const SPICE_AUCTION_FACTORY_ON_ETH_SEPOLIA: ContractConfig<SpiceAuctionFactory> =
-  {
-    chainId: ETH_SEPOLIA.id,
-    address: '0x3c84E8848C2D78107630c367500d79E8E6975be4',
-    contractFactory: SpiceAuctionFactory__factory,
-  };
-
 const SPICE_AUCTION_ON_ETH_SEPOLIA: ContractConfig<SpiceAuction> = {
   chainId: ETH_SEPOLIA.id,
-  address: '0xee46c5826cb312b1a80f7a6d1af795488941dbd0',
-  contractFactory: SpiceAuction__factory,
-};
-
-const SPICE_AUCTION_ON_BERACHAIN_BEPOLIA: ContractConfig<SpiceAuction> = {
-  chainId: BERACHAIN_BEPOLIA.id,
-  address: '0x72D7C9c5E0A187A06E4D1508ceA77dE17db07953',
-  contractFactory: SpiceAuction__factory,
-};
-
-const SPICE_AUCTION_ON_ARBITRUM_SEPOLIA: ContractConfig<SpiceAuction> = {
-  chainId: ARB_SEPOLIA.id,
-  address: '0x41fFE184C981cA5A9F1453e707c179079aC3A551',
+  address: '0x5354a7d29ee96fd32D0a4Efb459ee57193165b21',
   contractFactory: SpiceAuction__factory,
 };
 
@@ -301,10 +282,18 @@ const TEMPLE_GOLD_ON_ARBITRUM_SEPOLIA: ContractConfig<TempleGold> = {
   contractFactory: TempleGold__factory,
 };
 
-const SPICE_TOKEN_ON_ARBITRUM_SEPOLIA: TokenConfig = {
-  chainId: ARB_SEPOLIA.id,
-  name: 'Spice',
-  address: '0xe56B2431198CabFaBc1aF5D413c8239c8615E816',
+// const SPICE_TOKEN_ON_ARBITRUM_SEPOLIA: TokenConfig = {
+//   chainId: ARB_SEPOLIA.id,
+//   name: 'Spice',
+//   address: '0xe56B2431198CabFaBc1aF5D413c8239c8615E816',
+//   decimals: 18,
+//   symbol: 'SPICE',
+// };
+
+const SPICE_TOKEN_ON_ETH_SEPOLIA: TokenConfig = {
+  chainId: ETH_SEPOLIA.id,
+  name: 'SPICE',
+  address: '0x34772E1683288fC2671BbfB4FD5B705ae04e5c29',
   decimals: 18,
   symbol: 'SPICE',
 };
@@ -327,8 +316,8 @@ const testEnv: AppConfig = {
     templeGoldTokenBerachain: TGLD_TOKEN_ON_BERACHAIN_BEPOLIA,
     spiceTokenBerachain: SPICE_TOKEN_ON_BERACHAIN_BEPOLIA,
     // Arbitrum
-    templeGoldTokenArbitrum: TGLD_TOKEN_ON_ARBITRUM_SEPOLIA,
-    spiceTokenArbitrum: SPICE_TOKEN_ON_ARBITRUM_SEPOLIA,
+    // templeGoldTokenArbitrum: TGLD_TOKEN_ON_ARBITRUM_SEPOLIA,
+    // spiceTokenArbitrum: SPICE_TOKEN_ON_ARBITRUM_SEPOLIA,
   },
   contracts: {
     templeGoldStaking: TEMPLE_GOLD_STAKING_ON_ETH_SEPOLIA,
@@ -346,19 +335,18 @@ const testEnv: AppConfig = {
     spiceAuctions: [
       {
         isActive: true,
-        name: 'Test ARB TGLD Auction',
-        chainId: ARB_SEPOLIA.id,
+        name: 'Test TGLD Auction',
+        chainId: ETH_SEPOLIA.id,
         auctionTokenSymbol: 'SPICE',
-        auctionToken: SPICE_TOKEN_ON_ARBITRUM_SEPOLIA,
-        templeGoldToken: TGLD_TOKEN_ON_ARBITRUM_SEPOLIA,
-        templeGoldTokenBalanceTickerSymbol:
-          TICKER_SYMBOL.TEMPLE_GOLD_TOKEN_ARBITRUM,
-        contractConfig: SPICE_AUCTION_ON_ARBITRUM_SEPOLIA,
-        subgraphUrl: ARBIBRUM_SPICE_BAZAAR_SUBGRAPH_URL,
+        auctionToken: SPICE_TOKEN_ON_ETH_SEPOLIA,
+        templeGoldToken: TGLD_TOKEN_ON_ETH_SEPOLIA,
+        templeGoldTokenBalanceTickerSymbol: TICKER_SYMBOL.TEMPLE_GOLD_TOKEN,
+        contractConfig: SPICE_AUCTION_ON_ETH_SEPOLIA,
+        subgraphUrl: ETH_SEPOLIA_SPICE_BAZAAR_SUBGRAPH_URL,
       },
     ],
     tgldBridge: {
-      active: true,
+      active: false,
       sourceLayer0EndpointId: ETH_SEPOLIA.layer0EndpointId,
       sourceTgldTokenContract: TEMPLE_GOLD_ON_ETH_SEPOLIA,
       altchainLayer0EndpointId: ARB_SEPOLIA.layer0EndpointId, // TODO: Possibly other altchains? Object?
