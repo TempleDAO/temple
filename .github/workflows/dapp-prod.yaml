@@ -1,7 +1,7 @@
 name: dapp => prod
 on:
   push:
-    branches:    
+    branches:
       - 'main'
     paths:
       - "apps/dapp/**"
@@ -11,14 +11,14 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: amondnet/vercel-action@v20
+      - uses: actions/checkout@v4
+      - uses: amondnet/vercel-action@v25
         id: deploy_step
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }} # Required
           vercel-args: '--prod -A apps/dapp/vercel.json' #Optional
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}  #Required
-          vercel-project-id: ${{ secrets.DAPP_PROJECT_ID }} #Required 
+          vercel-project-id: ${{ secrets.DAPP_PROJECT_ID }} #Required
           github-token: ${{ secrets.CI_TOKEN }}
           github-comment: false
           scope: ${{ secrets.VERCEL_ORG_ID }}
