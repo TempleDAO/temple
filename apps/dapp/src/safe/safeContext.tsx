@@ -21,6 +21,10 @@ interface ISafeTransactionsContext {
     safeTxCategory: SafeTransactionCategory,
     updateSafeTableRow: (safeTxHash: string, newValue?: SafeTableRow) => void
   ) => Promise<SafeTableRow[]>;
+  proposeTransaction?: (
+    transactions: any[],
+    targetSafeAddress?: string
+  ) => Promise<void>;
 }
 const SafeTransactionsContext = createContext<
   ISafeTransactionsContext | undefined
@@ -37,7 +41,10 @@ export function SafeTransactionsContextProvider({
   const safeHistoryTableRows: SafeTableRow[] = [];
   const { walletAddress, signer } = useWallet();
   const { data: isSafeOwner } = useSafeCheckOwner(safeAddress, walletAddress);
-  const { signSafeTx, executeSafeTx } = useSafeSdk(signer, safeAddress);
+  const { signSafeTx, executeSafeTx, proposeTransaction } = useSafeSdk(
+    signer,
+    safeAddress
+  );
 
   const safeQueuedTransactions = useSafeTxs(
     safeAddress,
@@ -203,6 +210,7 @@ export function SafeTransactionsContextProvider({
     safeAddress,
     tableRows,
     isLoading,
+    proposeTransaction,
   };
 
   return (
