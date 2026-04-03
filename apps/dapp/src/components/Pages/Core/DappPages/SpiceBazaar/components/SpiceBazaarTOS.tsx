@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import styled from 'styled-components';
 import { Button } from 'components/Button/Button';
 import { useWallet } from 'providers/WalletProvider';
+import { useConnectWallet } from '@web3-onboard/react';
 import * as breakpoints from 'styles/breakpoints';
 import { backgroundImage, buttonResets } from 'styles/mixins';
 import close from 'assets/icons/close.svg';
@@ -19,15 +20,19 @@ interface SpiceBazaarTOSProps {
   onCancel: () => void;
 }
 
+const WALLET_CONNECTION_ERROR = 'Connect a wallet to sign the Terms.';
+
 export const SpiceBazaarTOS = ({
   onSuccess,
   onCancel,
 }: SpiceBazaarTOSProps) => {
   const { signer, wallet: walletAddress, getConnectedSigner } = useWallet();
+  const [{}, connect] = useConnectWallet();
   const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const isWalletConnected = !!walletAddress;
 
   const handleScroll = () => {
     const container = scrollContainerRef.current;
@@ -55,7 +60,7 @@ export const SpiceBazaarTOS = ({
 
   const handleSign = async () => {
     if (!walletAddress) {
-      setError('Connect a wallet to sign the Terms.');
+      setError(WALLET_CONNECTION_ERROR);
       return;
     }
 
@@ -105,13 +110,14 @@ export const SpiceBazaarTOS = ({
       window.localStorage[getSpiceBazaarTosStorageKey(normalizedWallet)] =
         tosData;
       onSuccess();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('TOS signature failed:', err);
+      const typedError = err as { code?: number | string; message?: string };
       // Show error message instead of closing the modal
       const errorMessage =
-        err?.code === 'ACTION_REJECTED' || err?.code === 4001
+        typedError?.code === 'ACTION_REJECTED' || typedError?.code === 4001
           ? 'Signature rejected. Please try again.'
-          : err?.message || 'Signature failed. Please try again.';
+          : typedError?.message || 'Signature failed. Please try again.';
       setError(errorMessage);
     } finally {
       setIsLoading(false);
@@ -168,12 +174,22 @@ export const SpiceBazaarTOS = ({
         </ErrorMessage>
       )}
 
-      <SignButton
-        onClick={handleSign}
-        disabled={!hasScrolledToBottom || isLoading}
-      >
-        {isLoading ? 'SIGNING...' : 'I AGREE'}
-      </SignButton>
+      {isWalletConnected ? (
+        <SignButton
+          onClick={handleSign}
+          disabled={!hasScrolledToBottom || isLoading}
+        >
+          {isLoading ? 'SIGNING...' : 'I AGREE'}
+        </SignButton>
+      ) : (
+        <SignButton
+          onClick={() => {
+            connect();
+          }}
+        >
+          CONNECT WALLET
+        </SignButton>
+      )}
     </Container>
   );
 };
@@ -317,11 +333,6 @@ const ErrorMessage = styled.div`
   border: 1px solid rgba(220, 38, 38, 0.3);
   border-radius: 8px;
   width: 100%;
-`;
-
-const ErrorIcon = styled.span`
-  font-size: 18px;
-  line-height: 1;
 `;
 
 const ErrorText = styled.p`

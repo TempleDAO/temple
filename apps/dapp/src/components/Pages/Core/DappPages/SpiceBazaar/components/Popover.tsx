@@ -1,4 +1,4 @@
-import { useRef, FC, ReactNode, useEffect } from 'react';
+import { useRef, FC, ReactNode, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
 import { backgroundImage, buttonResets } from 'styles/mixins';
 import { useOutsideClick } from 'hooks/use-outside-click';
@@ -25,10 +25,12 @@ export const Popover: FC<Props> = ({
 }) => {
   const ref = useRef<HTMLDivElement>(null);
 
-  useOutsideClick(ref, () => {
+  const handleOutsideClick = useCallback(() => {
     if (!closeOnClickOutside) return;
     onClose();
-  });
+  }, [closeOnClickOutside, onClose]);
+
+  useOutsideClick(ref, handleOutsideClick);
 
   // Close modal on escape
   useEffect(() => {
