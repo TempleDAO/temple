@@ -7,6 +7,9 @@ jobs:
   vercel-deploy:
     if: contains(github.event.pull_request.labels.*.name, 'preview-deploy')
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - name: checkout code
         uses: actions/checkout@v4
@@ -15,7 +18,7 @@ jobs:
         uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          github-token: ${{ secrets.CI_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           vercel-args: '-A apps/dapp/vercel.json'
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID}}
           scope: ${{ secrets.VERCEL_ORG_ID }}
