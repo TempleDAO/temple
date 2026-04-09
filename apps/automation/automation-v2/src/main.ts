@@ -1,17 +1,29 @@
-import { createTaskRunner, getAllVariableMetadata } from "@mountainpath9/overlord-core";
+import {
+  createTaskRunner,
+  getAllVariableMetadata,
+} from '@mountainpath9/overlord-core';
 
 import { batchLiquidate } from '@/tlc/batch-liquidate';
 import { TLC_BATCH_LIQUIDATE_CONFIG } from '@/tlc/config';
 
-import { getConfig } from "@/config";
-import { taskExceptionHandler } from "./utils/task-exceptions";
+import { getConfig } from '@/config';
+import { taskExceptionHandler } from './utils/task-exceptions';
 import {
-  distributeStakingRewards, startStableGoldAuction, checkSignersBalance, updateAuctionSidebarBotTask,
-  startSepoliaStableGoldAuction, distributeSepoliaStakingRewards, checkSepoliaSignersBalance,
+  distributeStakingRewards,
+  startStableGoldAuction,
+  checkSignersBalance,
+  updateTgldAuctionBotTask,
+  updateTemplePriceSidebarBotTask,
+  updateSpiceSenaSidebarBotTask,
+  startSepoliaStableGoldAuction,
+  distributeSepoliaStakingRewards,
+  checkSepoliaSignersBalance,
   burnAndUpdateCirculatingSupplySepolia,
-  burnAndUpdateCirculatingSupply
-} from "./tasks";
-import { startSidebarBot } from "./tasks/discord-sidebar-auction";
+  burnAndUpdateCirculatingSupply,
+} from './tasks';
+import { startAuctionSidebarBot } from './tasks/discord-bots/tgld-auction';
+import { startTemplePriceSidebarBot } from './tasks/discord-bots/temple-price';
+import { startSpiceSenaSidebarBot } from './tasks/discord-bots/spice';
 
 async function main() {
   const runner = createTaskRunner();
@@ -29,7 +41,9 @@ async function main() {
   const config = getConfig('mainnet');
   const sepoliaConfig = getConfig('sepolia');
 
-  const sidebarBot = await startSidebarBot(runner);
+  const tgldAuctionBot = await startAuctionSidebarBot(runner);
+  const templePriceSidebarBot = await startTemplePriceSidebarBot(runner);
+  const spiceSenaSidebarBot = await startSpiceSenaSidebarBot(runner);
   // dai gold auction start
   runner.addPeriodicTask({
     id: 'start-stable-gold-auction',
@@ -51,11 +65,26 @@ async function main() {
   });
 
   runner.addPeriodicTask({
-    id: 'update-auction-sidebar-bot',
-    cronSchedule: '*/15 * * * *', // every 15 minutes
-    action: (ctx) => updateAuctionSidebarBotTask(config, ctx, sidebarBot)
+    id: 'update-tgld-auction-sidebar-bot',
+    cronSchedule: '*/10 * * * *', // every 15 minutes
+    action: (ctx) =>
+      updateTgldAuctionBotTask(config, ctx, tgldAuctionBot),
   });
-  
+
+  runner.addPeriodicTask({
+    id: 'update-temple-price-sidebar-bot',
+    cronSchedule: '*/10 * * * *',
+    action: (ctx) =>
+      updateTemplePriceSidebarBotTask(config, ctx, templePriceSidebarBot),
+  });
+
+  runner.addPeriodicTask({
+    id: 'update-spice-sena-sidebar-bot',
+    cronSchedule: '*/10 * * * *',
+    action: (ctx) =>
+      updateSpiceSenaSidebarBotTask(config, ctx, spiceSenaSidebarBot),
+  });
+
   // burn and notify TGLD for redemption
   runner.addPeriodicTask({
     id: 'burn-and-notify-tgld',

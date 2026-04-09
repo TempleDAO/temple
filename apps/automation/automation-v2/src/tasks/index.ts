@@ -1,5 +1,5 @@
 import { chainFromId, Config } from "@/config";
-import { TaskContext, taskSuccessSilent } from "@mountainpath9/overlord-core";
+import { TaskContext, taskSuccess, taskSuccessSilent } from "@mountainpath9/overlord-core";
 import * as vars from "@/config/variables";
 import { JB_DATE, JB_BIGRATIONAL, kvPersistedValue } from "@/utils/kv";
 import { distributeGold } from "./stable-gold-auction-distribute-gold";
@@ -7,7 +7,9 @@ import { stakingDistributeRewards } from "./staking-distribute-rewards";
 import { startAuction } from "./stable-gold-auction-start";
 import { checkSignersEthBalance } from "./check-signers-eth-balance";
 import { Client } from "discord.js";
-import { getOnchainTgldAuctionState, updateDiscordSidebarBot } from "./discord-sidebar-auction";
+import { getOnchainTgldAuctionState, updateTgldAuctionBot } from "./discord-bots/tgld-auction";
+import { updateTemplePriceSidebarBot } from "./discord-bots/temple-price";
+import { updateSpiceSidebarBot } from "./discord-bots/spice";
 import { burnAndUpdateCirculatingSupply as burnTempleGold } from "./spice-auction-burn-and-notify";
 import { getPublicClient } from "@mountainpath9/overlord-viem";
 import { ContractAddresses } from "@/config/contract_addresses/types";
@@ -123,20 +125,58 @@ export async function checkSepoliaSignersBalance(config: Config, ctx: TaskContex
     });
 }
 
-export async function updateAuctionSidebarBotTask(config: Config, ctx: TaskContext, bot: Client | undefined) {
+export async function updateTgldAuctionBotTask(config: Config, ctx: TaskContext, bot: Client | undefined) {
     if (!bot) {
-        ctx.logger.info(`Discord sidebar bot not provided.`)
+        ctx.logger.info(`Discord tgld auction bot not provided.`)
         return taskSuccessSilent()
     }
     const chain = chainFromId(config.chainId);
     const pclient = await getPublicClient(ctx, chain);
     const getTgldAuctionState = () => getOnchainTgldAuctionState(config.contracts.TEMPLE_GOLD.AUCTIONS.BID_FOR_TGLD, pclient)
 
-    await updateDiscordSidebarBot({
+    await updateTgldAuctionBot({
         bot, getTgldAuctionState, logger: ctx.logger
     })
 
-    return taskSuccessSilent();
+    return taskSuccess();
+}
+
+export async function updateTemplePriceSidebarBotTask(config: Config, ctx: TaskContext, bot: Client | undefined) {
+    if (!bot) {
+        ctx.logger.info(`Temple price sidebar bot not provided.`)
+        return taskSuccessSilent()
+    }
+
+    const chain = chainFromId(config.chainId);
+    const pclient = await getPublicClient(ctx, chain);
+
+    await updateTemplePriceSidebarBot({
+        bot,
+        logger: ctx.logger,
+        client: pclient,
+    })
+
+    return taskSuccess();
+}
+
+export async function updateSpiceSenaSidebarBotTask(config: Config, ctx: TaskContext, bot: Client | undefined) {
+    if (!bot) {
+        ctx.logger.info(`Spice sENA sidebar bot not provided.`)
+        return taskSuccessSilent()
+    }
+
+    const chain = chainFromId(config.chainId);
+    const pclient = await getPublicClient(ctx, chain);
+
+    await updateSpiceSidebarBot({
+        bot,
+        client: pclient,
+        logger: ctx.logger,
+        ticker: "TGLD/sENA",
+        address: config.contracts.TEMPLE_GOLD.AUCTIONS.BID_FOR_SPICE.SENA,
+    })
+
+    return taskSuccess();
 }
 
 export async function burnAndUpdateCirculatingSupplySepolia(config: Config, ctx: TaskContext) {
