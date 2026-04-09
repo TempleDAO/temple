@@ -10,16 +10,13 @@ jobs:
     name: Dapp Build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '20'
-      - name: Cache Dependencies
-        uses: actions/cache@v3
-        with:
-          path: 'apps/dapp/node_modules'
-          key: ${{ runner.os }}-modules-${{ hashFiles('apps/dapp/yarn.lock') }}
+          node-version: '24'
+          cache: 'yarn'
+          cache-dependency-path: apps/dapp/yarn.lock
       - name: Install Dependencies
         run: yarn install
         working-directory: apps/dapp
