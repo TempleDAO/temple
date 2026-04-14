@@ -7,8 +7,10 @@ import {
   InputSelect as MultiInputSelect,
   Option,
 } from '../../components/InputSelector';
-import { InputSelect as SingleInputSelect } from 'components/InputSelect/InputSelect';
-import type { Option as SingleOption } from 'components/InputSelect/InputSelect';
+import {
+  InputSelect as SingleInputSelect,
+  type Option as SingleOption,
+} from 'components/InputSelect/InputSelect';
 import * as breakpoints from 'styles/breakpoints';
 import {
   useStableGoldAuctionMetrics,
@@ -82,18 +84,10 @@ export const TgldAuctionChart = () => {
 
   // --- Multi-select auctions (for bar charts) ---
   const auctionOptions: Option[] = useMemo(() => {
-    const seen = new Set();
-    return (metrics ?? [])
-      .filter((m) => {
-        const key = m.date;
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      })
-      .map((m) => ({
-        label: m.date,
-        value: m.date.toLowerCase().replace(/\s/g, '-'),
-      }));
+    return [...new Set((metrics ?? []).map((m) => m.date))].map((date) => ({
+      label: date,
+      value: date.toLowerCase().replace(/\s/g, '-'),
+    }));
   }, [metrics]);
 
   const [selectedAuctions, setSelectedAuctions] = useState<Option[]>([]);

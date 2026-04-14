@@ -20,12 +20,6 @@ import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 const ENV_VARS = import.meta.env;
 const RPC_KEY = ENV_VARS.VITE_RPC_KEY;
 
-// const ETH_SPICE_BAZAAR_SUBGRAPH_URL =
-//   "https://api.goldsky.com/api/public/project_cmgzm4q1q009c5np2angrczxw/subgraphs/spice-bazaar-sepolia/test/gn";
-// const BERACHAIN_SPICE_BAZAAR_SUBGRAPH_URL =
-//   "https://api.goldsky.com/api/public/project_clq1l1in2hoze01x1ha1q1bui/subgraphs/spice-bazaar-bepolia/main/gn";
-// const ARBIBRUM_SPICE_BAZAAR_SUBGRAPH_URL =
-//   'https://api.goldsky.com/api/public/project_cmgzm4q1q009c5np2angrczxw/subgraphs/spice-bazaar-arb-sepolia/test/gn';
 const ETH_SEPOLIA_SPICE_BAZAAR_SUBGRAPH_URL =
   'https://api.goldsky.com/api/public/project_cmgzm4q1q009c5np2angrczxw/subgraphs/spice-bazaar-sepolia/test/gn';
 

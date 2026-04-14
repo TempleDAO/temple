@@ -95,25 +95,21 @@ export const BidHistoryChart = ({
         }
         tooltipValuesFormatter={(_value: number, _name: string, props: any) => {
           const d = props.payload;
-          const avgFormatted = formatNumberFixedDecimals(d.price, 6);
-          const totalFormatted = formatNumberFixedDecimals(d.totalBidAmount, 2);
-          const lines = [
+          const avg = formatNumberFixedDecimals(d.price, 6);
+          const total = formatNumberFixedDecimals(d.totalBidAmount, 2);
+          const fmt = (n: number, decimals: number) =>
+            formatNumberFixedDecimals(n, decimals);
+          const symbol = epochData.auctionTokenSymbol;
+          return [
             `Bids: ${d.count}`,
-            `Total Amount: ${totalFormatted} TGLD`,
-          ];
-          if (d.count > 1) {
-            const minFormatted = formatNumberFixedDecimals(d.minPrice, 6);
-            const maxFormatted = formatNumberFixedDecimals(d.maxPrice, 6);
-            lines.push(
-              `Avg Price: ${avgFormatted} TGLD/${epochData.auctionTokenSymbol}`
-            );
-            lines.push(`Price Range: ${minFormatted} – ${maxFormatted}`);
-          } else {
-            lines.push(
-              `Price: ${avgFormatted} TGLD/${epochData.auctionTokenSymbol}`
-            );
-          }
-          return lines.join('\n');
+            `Total Amount: ${total} TGLD`,
+            d.count > 1
+              ? `Avg Price: ${avg} TGLD/${symbol}`
+              : `Price: ${avg} TGLD/${symbol}`,
+            ...(d.count > 1
+              ? [`Price Range: ${fmt(d.minPrice, 6)} – ${fmt(d.maxPrice, 6)}`]
+              : []),
+          ].join('\n');
         }}
         xAxisTitle="Time"
         yAxisTitle={`TGLD/${epochData.auctionTokenSymbol}`}

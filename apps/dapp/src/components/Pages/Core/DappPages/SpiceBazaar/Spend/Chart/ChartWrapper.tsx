@@ -9,9 +9,6 @@ import * as breakpoints from 'styles/breakpoints';
 import { SpiceFinalPriceChart } from './SpiceFinalPriceChart';
 import { BidHistoryChart } from './BidHistoryChart';
 
-// We'll create these components in the next steps
-// import { TotalTGLDBidChart } from './TotalTGLDBidChart';
-
 type ChartsProps = {
   auctionAddress: string;
   auctionTokenAddress?: string;
@@ -129,13 +126,6 @@ export const Charts = ({
             onFilterOptionsChange={handleSpiceFinalPriceOptionsChange}
           />
         );
-      // case ChartType.TotalTGLDBid:
-      //   return (
-      //     <EmptyChartContainer>
-      //       <EmptyChartText>Total TGLD Bid Chart - Coming Soon</EmptyChartText>
-      //     </EmptyChartContainer>
-      //     // Will be: <TotalTGLDBidChart auctionAddress={auctionAddress} selectedFilters={chartSpecificFilters} />
-      //   );
       default:
         return null;
     }
