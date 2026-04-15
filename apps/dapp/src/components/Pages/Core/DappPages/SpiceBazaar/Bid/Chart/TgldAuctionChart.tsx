@@ -197,7 +197,8 @@ export const TgldAuctionChart = () => {
     ? bidsLoading || auctionsLoading
     : metricsLoading;
 
-  if (loading || (!isBidHistory && !metrics?.length)) return <Loader />;
+  if (loading) return <Loader />;
+  if (!isBidHistory && !metrics?.length) return <p>No data available.</p>;
 
   return (
     <PageContainer>
