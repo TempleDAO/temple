@@ -1,5 +1,5 @@
 import { BigRational } from '@mountainpath9/big-rational';
-import { Logger, TaskRunner} from '@mountainpath9/overlord-core';
+import { Logger, TaskRunner } from '@mountainpath9/overlord-core';
 import { Client } from 'discord.js';
 import * as vars from '@/config/variables';
 import { Address, getContract, PublicClient } from 'viem';
@@ -9,6 +9,7 @@ import {
   applyDiscordSidebarState,
   startDiscordSidebarBot,
 } from './runtime';
+import { ONE_DAY_MS, ONE_HOUR_MS, ONE_MINUTE_MS } from '@/constants';
 
 //  TYPES
 export type TGLDAuctionState =
@@ -73,6 +74,7 @@ export async function updateTgldAuctionBot({
         },
       },
     });
+    throw error;
   }
 }
 
@@ -80,9 +82,6 @@ export function formatAuctionTimeDelta(now: Date, futureDate: Date) {
   const msLeft = Math.abs(now.getTime() - futureDate.getTime());
 
   let delta = '???'; // if >24 h then x days, else {hours}
-  const ONE_DAY_MS = 24 * 60 * 60 * 1000;
-  const ONE_HOUR_MS = 60 * 60 * 1000;
-  const ONE_MINUTE_MS = 60 * 1000;
   if (msLeft > ONE_DAY_MS) {
     delta = `${(msLeft / ONE_DAY_MS).toFixed(1)} days`;
   } else if (msLeft > ONE_HOUR_MS) {

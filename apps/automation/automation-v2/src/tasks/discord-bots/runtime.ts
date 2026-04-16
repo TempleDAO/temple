@@ -1,3 +1,4 @@
+import { assertNever } from "@/tlc/utils";
 import { Logger, StringVariable, TaskRunner } from "@mountainpath9/overlord-core";
 import { ActivityType, Client, GatewayIntentBits } from "discord.js";
 
@@ -97,5 +98,7 @@ function formatDiscordActivity(activity: SidebarActivity) {
         type: ActivityType.Custom,
         url: activity.url,
       };
+    default:
+      assertNever(activity)
   }
 }

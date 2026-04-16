@@ -51,12 +51,13 @@ export async function updateTemplePriceSidebarBot({
     });
   } catch (error) {
     logger.error(`Error refreshing TEMPLE price sidebar bot: ${String(error)}`);
-    logger.exceptionDetail(error)
+    logger.exceptionDetail(error);
     await applyDiscordSidebarState({
       bot,
       state: formatTemplePriceErrorSidebarState(),
       logger,
     });
+    throw error
   }
 }
 
@@ -87,6 +88,9 @@ function formatTemplePriceErrorSidebarState(): SidebarState {
 }
 
 export function computeTemplePricePremium(spotPrice: number, tpi: number) {
+  if (tpi === 0) {
+    return 0;
+  }
   return spotPrice / tpi;
 }
 

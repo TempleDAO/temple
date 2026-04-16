@@ -8,7 +8,7 @@ import {
   formatAuctionTimeDelta,
   formatTgldAuctionSidebarState,
 } from "./tgld-auction";
-import { formatSpiceAuctionActivity } from "./spice";
+import { formatSpiceAuctionActivity, formatSpiceErrorSidebarState } from "./spice";
 
 test("formats Temple price sidebar state", () => {
   const state = formatTemplePriceSidebarState({
@@ -63,6 +63,14 @@ test("formats spice activity for pre-start active and ended epochs", () => {
     ),
     "Epoch 9 ended 1.5 days ago"
   );
+});
+
+test("formats spice error sidebar state", () => {
+  const state = formatSpiceErrorSidebarState("TGLD/sENA");
+
+  assert.equal(state.nickname, "TGLD/sENA");
+  assert.equal(state.activity.type, "watching");
+  assert.equal(state.activity.name, "ERROR");
 });
 
 test("formats auction sidebar state", () => {

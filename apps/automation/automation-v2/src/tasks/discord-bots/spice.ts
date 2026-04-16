@@ -10,7 +10,6 @@ import {
   startDiscordSidebarBot,
 } from "./runtime";
 
-const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
 export interface SpiceAuctionEpoch {
   id: bigint;
@@ -40,13 +39,26 @@ export async function updateSpiceSidebarBot({
   client: PublicClient;
   logger: Logger;
 }) {
-  logger.info(`Updating ${ticker} spice sidebar bot`);
-  const epoch = await getCurrentSpiceAuctionEpoch(address, client);
-  await applyDiscordSidebarState({
-    bot,
-    state: formatSpiceSidebarState(epoch, ticker),
-    logger,
-  });
+  try {
+    logger.info(`Updating ${ticker} spice sidebar bot`);
+    const epoch = await getCurrentSpiceAuctionEpoch(address, client);
+    await applyDiscordSidebarState({
+      bot,
+      state: formatSpiceSidebarState(epoch, ticker),
+      logger,
+    });
+  } catch (error) {
+    logger.error(
+      `Error refreshing ${ticker} spice sidebar bot: ${String(error)}`
+    );
+    logger.exceptionDetail(error);
+    await applyDiscordSidebarState({
+      bot,
+      state: formatSpiceErrorSidebarState(ticker),
+      logger,
+    });
+    throw error;
+  }
 }
 
 export function formatSpiceSidebarState(
@@ -76,6 +88,16 @@ export function formatSpiceAuctionActivity(
     activity += ` ended ${formatDayDelta(now, epoch.endsAt)} ago`;
   }
   return activity;
+}
+
+export function formatSpiceErrorSidebarState(ticker: string): SidebarState {
+  return {
+    nickname: ticker,
+    activity: {
+      type: 'watching',
+      name: 'ERROR',
+    },
+  };
 }
 
 async function getCurrentSpiceAuctionEpoch(

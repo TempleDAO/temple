@@ -66,7 +66,7 @@ async function main() {
 
   runner.addPeriodicTask({
     id: 'update-tgld-auction-sidebar-bot',
-    cronSchedule: '*/10 * * * *', // every 15 minutes
+    cronSchedule: '*/10 * * * *', // every 10 minutes
     action: (ctx) =>
       updateTgldAuctionBotTask(config, ctx, tgldAuctionBot),
   });
