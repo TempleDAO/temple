@@ -3,7 +3,7 @@ import active from 'assets/icons/active.svg?react';
 import scheduled from 'assets/icons/scheduled.svg?react';
 import styled from 'styled-components';
 import { useEffect, useState } from 'react';
-import { Chart } from './Chart/Chart2';
+import { TgldAuctionChart } from './Chart/TgldAuctionChart';
 import { BidUSDS, BidUSDSMode } from './BidUSDS';
 import calendar from 'assets/icons/calendar.svg?react';
 import { Popover } from 'components/Pages/Core/DappPages/SpiceBazaar/components/Popover';
@@ -272,7 +272,7 @@ export const Bid = () => {
                     </StatusContent>
                   </Status>
                   <ChartContainer>
-                    <Chart />
+                    <TgldAuctionChart />
                   </ChartContainer>
                 </>
               )}
