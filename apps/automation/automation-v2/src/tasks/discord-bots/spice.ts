@@ -9,6 +9,7 @@ import {
   applyDiscordSidebarState,
   startDiscordSidebarBot,
 } from "./runtime";
+import { ONE_DAY_MS } from "@/constants";
 
 
 export interface SpiceAuctionEpoch {
