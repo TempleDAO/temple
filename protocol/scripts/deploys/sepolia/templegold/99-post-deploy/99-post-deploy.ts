@@ -8,16 +8,17 @@ import {
 import {
     getDeployedContracts
 } from '../contract-addresses';
-import { Constants as ARBITRUM_SEPOLIA_CONSTANTS } from '../../arbitrumSepolia/constants';
-import { Constants as BEPOLIA_CONSTANTS } from '../../bepolia/constants';
+import { Constants as ARBITRUM_SEPOLIA_CONSTANTS } from '../../../arbitrumSepolia/constants';
+import { Constants as BEPOLIA_CONSTANTS } from '../../../bepolia/constants';
 import { TempleGold, TempleGold__factory } from '../../../../../typechain';
 import { EnforcedOptionParamStruct } from '../../../../../typechain/@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/libs/OAppOptionsType3';
+import { DEFAULT_SETTINGS } from '../default-settings';
 
 async function setTempleGoldEnforcedOptionsArbitrumSepolia(templeGold: TempleGold) {
   const options: EnforcedOptionParamStruct[] = [{
     eid: ARBITRUM_SEPOLIA_CONSTANTS.LAYER_ZERO.EID,
-    msgType: 1, // SEND
-    options: "0x00030100110100000000000000000000000000030d40", // 200k gas limit
+    msgType: DEFAULT_SETTINGS.LAYER_ZERO.ENFORCED_OPTIONS.MSG_TYPE,
+    options: DEFAULT_SETTINGS.LAYER_ZERO.ENFORCED_OPTIONS.OPTIONS, // 200k gas limit
   }];
   await mine(templeGold.setEnforcedOptions(options));
 }
@@ -25,8 +26,8 @@ async function setTempleGoldEnforcedOptionsArbitrumSepolia(templeGold: TempleGol
 async function setTempleGoldEnforcedOptionsBepolia(templeGold: TempleGold) {
   const options: EnforcedOptionParamStruct[] = [{
     eid: BEPOLIA_CONSTANTS.LAYER_ZERO.EID,
-    msgType: 1, // SEND
-    options: "0x00030100110100000000000000000000000000030d40", // 200k gas limit
+    msgType: DEFAULT_SETTINGS.LAYER_ZERO.ENFORCED_OPTIONS.MSG_TYPE,
+    options: DEFAULT_SETTINGS.LAYER_ZERO.ENFORCED_OPTIONS.OPTIONS, // 200k gas limit
   }];
   await mine(templeGold.setEnforcedOptions(options));
 }

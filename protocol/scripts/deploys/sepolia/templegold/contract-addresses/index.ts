@@ -11,8 +11,8 @@ import {
     TempleERC20Token__factory
 } from '../../../../../typechain';
 import { Signer } from "ethers";
-import { ContractAddresses, ContractInstances } from "./types";
 import { CONTRACTS as SEPOLIA_CONTRACTS } from "./sepolia";
+import { ContractAddresses, ContractInstances } from "./types";
 
 export function getDeployedContracts(): ContractAddresses {
     if (network.name === 'sepolia') {

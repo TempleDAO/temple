@@ -6,22 +6,22 @@ import {
   ensureExpectedEnvvars,
 } from '../../../helpers';
 import { getDeployedContracts } from '../contract-addresses';
+import { DEFAULT_SETTINGS } from '../default-settings';
 
 async function main() {
   ensureExpectedEnvvars();
   const [owner] = await ethers.getSigners();
   const ownerAddress = await owner.getAddress();
   const TEMPLEGOLD_ADDRESSES = getDeployedContracts();
-  const SEPOLIA_CHAIN_ID = 11155111;
-  const SEPOLIA_LZ_EID = 40161;
+
   const _initArgs =  {
     // Changed in transfer ownership to TempleAdmin
     executor: ownerAddress, // executor is also used as delegate in LayerZero Endpoint.
     layerZeroEndpoint: TEMPLEGOLD_ADDRESSES.EXTERNAL.LAYER_ZERO.ENDPOINT, // local endpoint address
-    mintChainId: SEPOLIA_CHAIN_ID,
-    mintChainLzEid: SEPOLIA_LZ_EID,
-    name: "TEMPLE GOLD",
-    symbol: "TGLD"
+    mintChainId: DEFAULT_SETTINGS.GLOBAL.CHAIN_ID,
+    mintChainLzEid: DEFAULT_SETTINGS.GLOBAL.LZ_EID,
+    name: DEFAULT_SETTINGS.TEMPLE_GOLD.NAME,
+    symbol: DEFAULT_SETTINGS.TEMPLE_GOLD.SYMBOL
   };
   const factory = new TempleGold__factory(owner);
   await deployAndMine(

@@ -6,6 +6,7 @@ import {
   ensureExpectedEnvvars,
   toAtto,
 } from '../../../helpers';
+import { DEFAULT_SETTINGS } from '../default-settings';
 
 async function main() {
     ensureExpectedEnvvars();
@@ -16,10 +17,10 @@ async function main() {
         'SPICE_TOKEN_A',
         factory,
         factory.deploy,
-        "Spice Token A",
-        "SPICEA",
+        DEFAULT_SETTINGS.SPICE.TOKEN_A.NAME,
+        DEFAULT_SETTINGS.SPICE.TOKEN_A.SYMBOL,
         await owner.getAddress(),
-        toAtto(100_000)
+        toAtto(Number(DEFAULT_SETTINGS.SPICE.TOKEN_A.INITIAL_MINT))
     );
 }
 

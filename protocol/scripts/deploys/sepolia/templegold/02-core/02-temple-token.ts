@@ -7,6 +7,7 @@ import {
   toAtto,
 } from '../../../helpers';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { DEFAULT_SETTINGS } from '../default-settings';
 
 async function main() {
     ensureExpectedEnvvars();
@@ -21,10 +22,10 @@ async function _deployTempleToken(owner: SignerWithAddress) {
         'TEMPLE_TOKEN',
         factory,
         factory.deploy,
-        "Temple Token",
-        "TEMPLE",
+        DEFAULT_SETTINGS.TEMPLE_TOKEN.NAME,
+        DEFAULT_SETTINGS.TEMPLE_TOKEN.SYMBOL,
         await owner.getAddress(),
-        toAtto(100_000)
+        toAtto(Number(DEFAULT_SETTINGS.TEMPLE_TOKEN.INITIAL_MINT))
     );
 }
 

@@ -6,6 +6,7 @@ import {
   ensureExpectedEnvvars,
 } from '../../../helpers';
 import { getDeployedContracts } from '../contract-addresses';
+import { DEFAULT_SETTINGS } from '../default-settings';
 
 async function main() {
   ensureExpectedEnvvars();
@@ -21,7 +22,7 @@ async function main() {
     TEMPLEGOLD_ADDRESSES.TEMPLE_GOLD.TEMPLE_GOLD,
     TEMPLEGOLD_ADDRESSES.EXTERNAL.MAKER_DAO.DAI_TOKEN,
     ownerAddress, // treasury
-    "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720", // rescuer can't be executor. using placeholder
+    DEFAULT_SETTINGS.GLOBAL.RESCUER_PLACEHOLDER, // rescuer can't be executor. using placeholder
     ownerAddress, // executor
     ownerAddress // auction automation eoa
   );

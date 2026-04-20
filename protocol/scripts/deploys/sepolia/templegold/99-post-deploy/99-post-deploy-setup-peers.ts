@@ -4,10 +4,10 @@ import {
     mine,
 } from '../../../helpers';
 import { connectToContracts } from '../contract-addresses';
-import { TEMPLEGOLD_DEPLOYED_CONTRACTS } from '../../mainnet/templegold/contract-addresses';
+import { TEMPLEGOLD_DEPLOYED_CONTRACTS } from '../../../mainnet/templegold/contract-addresses';
 import { TempleGold } from '../../../../../typechain';
-import { Constants as BEPOLIA_CONSTANTS } from '../../bepolia/constants';
-import { Constants as ARBITRUM_SEPOLIA_CONSTANTS } from '../../arbitrumSepolia/constants';
+import { Constants as BEPOLIA_CONSTANTS } from '../../../bepolia/constants';
+import { Constants as ARBITRUM_SEPOLIA_CONSTANTS } from '../../../arbitrumSepolia/constants';
 
 async function setBepoliaPeer(templeGold: TempleGold) {
     const BEPOLIA_LZ_EID = BEPOLIA_CONSTANTS.LAYER_ZERO.EID;

@@ -12,6 +12,7 @@ import {
     ContractInstances
 } from '../contract-addresses';
 import { SpiceAuction, SpiceAuction__factory } from '../../../../../typechain';
+import { DEFAULT_SETTINGS } from '../default-settings';
 
 async function main() {
     ensureExpectedEnvvars();
@@ -48,9 +49,9 @@ async function main() {
 
 async function _setAuctionConfig(ownerAddress: string, spiceInstance: SpiceAuction) {
     const config = {
-        duration: 3600 * 24 * 7,
-        waitPeriod: 60,
-        minimumDistributedAuctionToken: ethers.utils.parseEther("1000"),
+        duration: DEFAULT_SETTINGS.SPICE.AUCTION.DURATION,
+        waitPeriod: DEFAULT_SETTINGS.SPICE.AUCTION.WAIT_PERIOD,
+        minimumDistributedAuctionToken: DEFAULT_SETTINGS.SPICE.AUCTION.MIN_DISTRIBUTED,
         isTempleGoldAuctionToken: false,
         recipient: ownerAddress
     }

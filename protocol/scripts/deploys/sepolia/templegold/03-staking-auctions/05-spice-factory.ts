@@ -6,16 +6,13 @@ import {
   ensureExpectedEnvvars,
 } from '../../../helpers';
 import { getDeployedContracts } from '../contract-addresses';
+import { DEFAULT_SETTINGS } from '../default-settings';
 
 async function main() {
   ensureExpectedEnvvars();
   const [owner] = await ethers.getSigners();
   const ownerAddress = await owner.getAddress();
   const TEMPLEGOLD_ADDRESSES = getDeployedContracts();
-  const SEPOLIA_CHAIN_ID = 11155111;
-  const SEPOLIA_LZ_EID = 40161;
-  // rescuer can't be executor. using placeholder
-  const RESCUER = "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720"; 
 
   const factory = new SpiceAuctionFactory__factory(owner);
   await deployAndMine(
@@ -23,14 +20,14 @@ async function main() {
     factory,
     factory.deploy,
     TEMPLEGOLD_ADDRESSES.TEMPLE_GOLD.SPICE_AUCTION_IMPLEMENTATION,
-    RESCUER,
+    DEFAULT_SETTINGS.GLOBAL.RESCUER_PLACEHOLDER,
     ownerAddress, // executor
     ownerAddress, // dao executor, placeholder
     ownerAddress, // spice auction operator
     ownerAddress, // strategy gnosis funds auctions
     TEMPLEGOLD_ADDRESSES.TEMPLE_GOLD.TEMPLE_GOLD,
-    SEPOLIA_LZ_EID,
-    SEPOLIA_CHAIN_ID
+    DEFAULT_SETTINGS.GLOBAL.LZ_EID,
+    DEFAULT_SETTINGS.GLOBAL.CHAIN_ID
   );
 }
 
