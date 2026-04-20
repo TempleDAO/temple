@@ -5,23 +5,23 @@ import {
   ensureExpectedEnvvars,
   mine,
   toAtto
-} from '../../helpers';
+} from '../../../helpers';
 import {
-    getDeployedTempleGoldContracts,
+    getDeployedContracts,
     connectToContracts,
     ContractInstances
-} from '../../mainnet/templegold/contract-addresses';
-import { SpiceAuction, SpiceAuction__factory } from '../../../../typechain';
+} from '../contract-addresses';
+import { SpiceAuction, SpiceAuction__factory } from '../../../../../typechain';
 
 async function main() {
     ensureExpectedEnvvars();
     const [owner] = await ethers.getSigners();
     const ownerAddress = await owner.getAddress();
-    const TEMPLEGOLD_ADDRESSES = getDeployedTempleGoldContracts();
+    const TEMPLE_GOLD_ADDRS = getDeployedContracts();
 
     const TEMPLE_GOLD_INSTANCES = connectToContracts(owner);
     const name = "TGLD_DAI_SPICE"; // eg. "TGLD_TOKENNAME_SPICE";
-    const spiceToken = TEMPLEGOLD_ADDRESSES.EXTERNAL.MAKER_DAO.DAI_TOKEN;
+    const spiceToken = TEMPLE_GOLD_ADDRS.EXTERNAL.MAKER_DAO.DAI_TOKEN;
 
     if(!name || !spiceToken) { throw new Error("Missing name or spice token!"); }
 

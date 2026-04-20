@@ -2,9 +2,10 @@ import { ethers } from 'hardhat';
 import {
     ensureExpectedEnvvars,
     mine,
-} from '../../helpers';
-import { connectToContracts, TEMPLEGOLD_DEPLOYED_CONTRACTS } from '../../mainnet/templegold/contract-addresses';
-import { TempleGold } from '../../../../typechain';
+} from '../../../helpers';
+import { connectToContracts } from '../contract-addresses';
+import { TEMPLEGOLD_DEPLOYED_CONTRACTS } from '../../mainnet/templegold/contract-addresses';
+import { TempleGold } from '../../../../../typechain';
 import { Constants as BEPOLIA_CONSTANTS } from '../../bepolia/constants';
 import { Constants as ARBITRUM_SEPOLIA_CONSTANTS } from '../../arbitrumSepolia/constants';
 

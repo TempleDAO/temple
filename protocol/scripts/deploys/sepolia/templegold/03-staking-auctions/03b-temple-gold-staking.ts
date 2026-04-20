@@ -1,19 +1,19 @@
 import '@nomiclabs/hardhat-ethers';
 import { ethers } from 'hardhat';
-import { TempleGoldStaking__factory } from '../../../../typechain';
+import { TempleGoldStaking__factory } from '../../../../../typechain';
 import {
   deployAndMine,
   ensureExpectedEnvvars,
-} from '../../helpers';
-import { getDeployedTempleGoldContracts } from '../../mainnet/templegold/contract-addresses';
-import { getDeployedContracts } from '../../sepolia/v2/contract-addresses';
+} from '../../../helpers';
+import { getDeployedContracts } from '../contract-addresses';
+import { getDeployedContracts as getDeployedContractsV2 } from '../../v2/contract-addresses';
 
 async function main() {
   ensureExpectedEnvvars();
   const [owner] = await ethers.getSigners();
   const ownerAddress = await owner.getAddress();
-  const SEPOLIA_TEMPLEGOLD_ADDRESSES = getDeployedTempleGoldContracts();
-  const SEPOLIA_V2_ADDRESSES = getDeployedContracts();
+  const SEPOLIA_TEMPLEGOLD_ADDRESSES = getDeployedContracts();
+  const SEPOLIA_V2_ADDRESSES = getDeployedContractsV2();
 
   const factory = new TempleGoldStaking__factory(owner);
   await deployAndMine(

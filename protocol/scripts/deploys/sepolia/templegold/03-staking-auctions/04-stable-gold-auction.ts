@@ -1,17 +1,17 @@
 import '@nomiclabs/hardhat-ethers';
 import { ethers } from 'hardhat';
-import { StableGoldAuction__factory } from '../../../../typechain';
+import { StableGoldAuction__factory } from '../../../../../typechain';
 import {
   deployAndMine,
   ensureExpectedEnvvars,
-} from '../../helpers';
-import { getDeployedTempleGoldContracts } from '../../mainnet/templegold/contract-addresses';
+} from '../../../helpers';
+import { getDeployedContracts } from '../contract-addresses';
 
 async function main() {
   ensureExpectedEnvvars();
   const [owner] = await ethers.getSigners();
   const ownerAddress = await owner.getAddress();
-  const TEMPLEGOLD_ADDRESSES = getDeployedTempleGoldContracts();
+  const TEMPLEGOLD_ADDRESSES = getDeployedContracts();
 
   const factory = new StableGoldAuction__factory(owner);
   await deployAndMine(

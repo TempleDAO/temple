@@ -4,14 +4,14 @@ import { ethers } from 'hardhat';
 import {
   ensureExpectedEnvvars,
   mine
-} from '../../helpers';
+} from '../../../helpers';
 import {
-    getDeployedTempleGoldContracts
-} from '../../mainnet/templegold/contract-addresses';
+    getDeployedContracts
+} from '../contract-addresses';
 import { Constants as ARBITRUM_SEPOLIA_CONSTANTS } from '../../arbitrumSepolia/constants';
 import { Constants as BEPOLIA_CONSTANTS } from '../../bepolia/constants';
-import { TempleGold, TempleGold__factory } from '../../../../typechain';
-import { EnforcedOptionParamStruct } from '../../../../typechain/@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/libs/OAppOptionsType3';
+import { TempleGold, TempleGold__factory } from '../../../../../typechain';
+import { EnforcedOptionParamStruct } from '../../../../../typechain/@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/libs/OAppOptionsType3';
 
 async function setTempleGoldEnforcedOptionsArbitrumSepolia(templeGold: TempleGold) {
   const options: EnforcedOptionParamStruct[] = [{
@@ -34,7 +34,7 @@ async function setTempleGoldEnforcedOptionsBepolia(templeGold: TempleGold) {
 async function main() {
   ensureExpectedEnvvars();
   const [owner] = await ethers.getSigners();
-  const TEMPLEGOLD_ADDRESSES = getDeployedTempleGoldContracts();
+  const TEMPLEGOLD_ADDRESSES = getDeployedContracts();
   const templeGold = TempleGold__factory.connect(TEMPLEGOLD_ADDRESSES.TEMPLE_GOLD.TEMPLE_GOLD, owner);
   await setTempleGoldEnforcedOptionsArbitrumSepolia(templeGold);
   await setTempleGoldEnforcedOptionsBepolia(templeGold);
