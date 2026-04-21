@@ -26,7 +26,7 @@ jobs:
           npx vercel@latest build --prod -A apps/dapp/vercel.json
           DEPLOYMENT_URL=$(npx vercel@latest deploy --prebuilt --prod -A apps/dapp/vercel.json | tail -1)
           echo "deployment_url=$DEPLOYMENT_URL" >> $GITHUB_OUTPUT
-          npx vercel@latest alias set "$DEPLOYMENT_URL" "templedao.link" --scope "$VERCEL_ORG_ID"
+          [ -n "$DEPLOYMENT_URL" ] && npx vercel@latest alias set "$DEPLOYMENT_URL" "templedao.link" --scope "$VERCEL_ORG_ID" || exit 1
         continue-on-error: true
       - name: "notify failure"
         if: steps.deploy_step.outcome == 'failure'
