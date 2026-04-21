@@ -5,28 +5,29 @@ import {
   ensureExpectedEnvvars,
   mine,
   toAtto
-} from '../../helpers';
+} from '../../../helpers';
 import {
-    getDeployedTempleGoldContracts,
+    getDeployedContracts,
     connectToContracts,
     ContractInstances
-} from '../../mainnet/templegold/contract-addresses';
-import { SpiceAuction, SpiceAuction__factory } from '../../../../typechain';
+} from '../contract-addresses';
+import { SpiceAuction, SpiceAuction__factory } from '../../../../../typechain';
+import { DEFAULT_SETTINGS } from '../default-settings';
 
 async function main() {
     ensureExpectedEnvvars();
     const [owner] = await ethers.getSigners();
     const ownerAddress = await owner.getAddress();
-    const TEMPLEGOLD_ADDRESSES = getDeployedTempleGoldContracts();
+    const ADDRS = getDeployedContracts();
 
-    const TEMPLE_GOLD_INSTANCES = connectToContracts(owner);
+    const INSTANCES = connectToContracts(owner);
     const name = "TGLD_SPICE_SPICE"; // eg. "TGLD_TOKENNAME_SPICE";
-    const spiceToken = TEMPLEGOLD_ADDRESSES.TEMPLE_GOLD.SPICE_TOKEN;
+    const spiceToken = ADDRS.TEMPLE_GOLD.SPICE_TOKEN;
 
     if(!name || !spiceToken) { throw new Error("Missing name or spice token!"); }
 
-    // await mine(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.SPICE_AUCTION_FACTORY.createAuction(spiceToken, name));
-    const spiceAuction = await TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.SPICE_AUCTION_FACTORY.findAuctionForSpiceToken(spiceToken);
+    // await mine(INSTANCES.TEMPLE_GOLD.SPICE_AUCTION_FACTORY.createAuction(spiceToken, name));
+    const spiceAuction = await INSTANCES.TEMPLE_GOLD.SPICE_AUCTION_FACTORY.findAuctionForSpiceToken(spiceToken);
     
     // If etherscan knows the contract bytecode, it may already have automatically been verified.
     try {
@@ -42,14 +43,14 @@ async function main() {
     // Otherwise run them one after the next.
     // const spiceInstance = SpiceAuction__factory.connect(spiceAuction, owner);
     // await _setAuctionConfig(ownerAddress, spiceInstance);
-    // await _fundAuction(TEMPLE_GOLD_INSTANCES, spiceInstance);
+    // await _fundAuction(INSTANCES, spiceInstance);
 }
 
 async function _setAuctionConfig(ownerAddress: string, spiceInstance: SpiceAuction) {
     const config = {
-        duration: 3600 * 24 * 2, // 2 days
-        waitPeriod: 60,
-        minimumDistributedAuctionToken: ethers.utils.parseEther("1000"),
+        duration: DEFAULT_SETTINGS.SPICE.AUCTION.DURATION,
+        waitPeriod: DEFAULT_SETTINGS.SPICE.AUCTION.WAIT_PERIOD,
+        minimumDistributedAuctionToken: DEFAULT_SETTINGS.SPICE.AUCTION.MIN_DISTRIBUTED,
         isTempleGoldAuctionToken: false,
         recipient: ownerAddress
     }
