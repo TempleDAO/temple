@@ -1,24 +1,24 @@
 import '@nomiclabs/hardhat-ethers';
 import { ethers } from 'hardhat';
-import { TempleGold__factory } from '../../../../typechain';
+import { TempleGold__factory } from '../../../../../typechain';
 import {
   deployAndMine,
   ensureExpectedEnvvars,
-} from '../../helpers';
-import { getDeployedTempleGoldContracts } from '../../mainnet/templegold/contract-addresses';
-import { Constants as SEPOLIA_CONSTANTS } from '../../sepolia/constants';
+} from '../../../helpers';
+import { getDeployedContracts } from '../contract-addresses';
+import { DEFAULT_SETTINGS } from '../default-settings';
 
 async function main() {
   ensureExpectedEnvvars();
   const [owner] = await ethers.getSigners();
-  const TEMPLEGOLD_ADDRESSES = getDeployedTempleGoldContracts();
+  const TEMPLEGOLD_ADDRESSES = getDeployedContracts();
   const initArgs =  {
     executor: await owner.getAddress(),
     layerZeroEndpoint: TEMPLEGOLD_ADDRESSES.EXTERNAL.LAYER_ZERO.ENDPOINT, // local endpoint address
-    mintChainId: SEPOLIA_CONSTANTS.CHAIN_ID, // only mint on mint chain id
-    mintChainLzEid: SEPOLIA_CONSTANTS.LAYER_ZERO.EID,
-    name: "TEMPLE GOLD",
-    symbol: "TGLD"
+    mintChainId: DEFAULT_SETTINGS.GLOBAL.MINT_CHAIN_ID, // only mint on mint chain id
+    mintChainLzEid: DEFAULT_SETTINGS.GLOBAL.MINT_CHAIN_LZ_EID,
+    name: DEFAULT_SETTINGS.TEMPLE_GOLD.NAME,
+    symbol: DEFAULT_SETTINGS.TEMPLE_GOLD.SYMBOL
   };
   const factory = new TempleGold__factory(owner);
   await deployAndMine(

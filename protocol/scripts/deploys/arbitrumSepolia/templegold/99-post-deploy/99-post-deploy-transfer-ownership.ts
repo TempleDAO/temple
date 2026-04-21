@@ -2,19 +2,19 @@ import { ethers } from 'hardhat';
 import {
     ensureExpectedEnvvars,
     mine,
-} from '../../helpers';
-import { connectToContracts, getDeployedTempleGoldContracts } from '../../mainnet/templegold/contract-addresses';
+} from '../../../helpers';
+import { connectToContracts, getDeployedContracts } from '../contract-addresses';
 
 async function main() {
     ensureExpectedEnvvars();
     const [owner] = await ethers.getSigners();
     const TEMPLE_GOLD_INSTANCES = connectToContracts(owner);
-    const ADDRESSES = getDeployedTempleGoldContracts();
+    const ADDRS = getDeployedContracts();
 
     // Transfer ownership of TGLD to executor msig
-    await mine(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.TEMPLE_GOLD.transferOwnership(ADDRESSES.CORE.EXECUTOR_MSIG));
+    await mine(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.TEMPLE_GOLD.transferOwnership(ADDRS.CORE.EXECUTOR_MSIG));
     // Transfer ownership of Spice factory to executor msig
-    await mine(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.SPICE_AUCTION_FACTORY.proposeNewExecutor(ADDRESSES.CORE.EXECUTOR_MSIG));
+    await mine(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.SPICE_AUCTION_FACTORY.proposeNewExecutor(ADDRS.CORE.EXECUTOR_MSIG));
 }
   
 // We recommend this pattern to be able to use async/await everywhere

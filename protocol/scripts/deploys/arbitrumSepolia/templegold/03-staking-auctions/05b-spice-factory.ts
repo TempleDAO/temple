@@ -1,19 +1,18 @@
 import '@nomiclabs/hardhat-ethers';
 import { ethers } from 'hardhat';
-import { SpiceAuctionFactory__factory } from '../../../../typechain';
+import { SpiceAuctionFactory__factory } from '../../../../../typechain';
 import {
   deployAndMine,
   ensureExpectedEnvvars,
-} from '../../helpers';
-import { getDeployedTempleGoldContracts } from '../../mainnet/templegold/contract-addresses';
-import { Constants as SEPOLIA_CONSTANTS } from '../../sepolia/constants';
+} from '../../../helpers';
+import { getDeployedContracts } from '../contract-addresses';
+import { DEFAULT_SETTINGS } from '../default-settings';
 
 async function main() {
   ensureExpectedEnvvars();
   const [owner] = await ethers.getSigners();
   const ownerAddress = await owner.getAddress();
-  const TEMPLEGOLD_ADDRESSES = getDeployedTempleGoldContracts();
-  const RESCUER = "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720"; // rescuer can't be executor. using placeholder
+  const TEMPLEGOLD_ADDRESSES = getDeployedContracts();
 
   const factory = new SpiceAuctionFactory__factory(owner);
   await deployAndMine(
@@ -21,14 +20,14 @@ async function main() {
     factory,
     factory.deploy,
     TEMPLEGOLD_ADDRESSES.TEMPLE_GOLD.SPICE_AUCTION_IMPLEMENTATION,
-    RESCUER,
+    DEFAULT_SETTINGS.GLOBAL.RESCUER_PLACEHOLDER,
     ownerAddress, // executor
     ownerAddress, // dao executor, placeholder
     ownerAddress, // spice auction operator
     ownerAddress, // strategy gnosis funds auctions
     TEMPLEGOLD_ADDRESSES.TEMPLE_GOLD.TEMPLE_GOLD,
-    SEPOLIA_CONSTANTS.LAYER_ZERO.EID,
-    SEPOLIA_CONSTANTS.CHAIN_ID
+    DEFAULT_SETTINGS.GLOBAL.MINT_CHAIN_LZ_EID,
+    DEFAULT_SETTINGS.GLOBAL.MINT_CHAIN_ID
   );
 }
 

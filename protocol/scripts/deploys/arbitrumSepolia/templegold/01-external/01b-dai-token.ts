@@ -1,11 +1,11 @@
 import '@nomiclabs/hardhat-ethers';
 import { ethers } from 'hardhat';
-import { FakeERC20__factory } from '../../../../typechain';
+import { FakeERC20__factory } from '../../../../../typechain';
 import {
   deployAndMine,
   ensureExpectedEnvvars,
   toAtto,
-} from '../../helpers';
+} from '../../../helpers';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
 async function main() {

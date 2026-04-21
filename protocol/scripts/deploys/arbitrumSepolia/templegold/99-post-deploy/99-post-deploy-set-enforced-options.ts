@@ -4,19 +4,19 @@ import { ethers } from 'hardhat';
 import {
   ensureExpectedEnvvars,
   mine
-} from '../../helpers';
+} from '../../../helpers';
 import {
-    getDeployedTempleGoldContracts
-} from '../../mainnet/templegold/contract-addresses';
-import { Constants as SEPOLIA_CONSTANTS } from '../../sepolia/constants';
-import { TempleGold, TempleGold__factory } from '../../../../typechain';
-import { EnforcedOptionParamStruct } from '../../../../typechain/@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/libs/OAppOptionsType3';
+    getDeployedContracts
+} from '../contract-addresses';
+import { TempleGold, TempleGold__factory } from '../../../../../typechain';
+import { EnforcedOptionParamStruct } from '../../../../../typechain/@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/libs/OAppOptionsType3';
+import { DEFAULT_SETTINGS } from '../default-settings';
 
 async function setTempleGoldEnforcedOptionsSepolia(templeGold: TempleGold) {
   const options: EnforcedOptionParamStruct[] = [{
-    eid: SEPOLIA_CONSTANTS.LAYER_ZERO.EID,
-    msgType: 1, // SEND
-    options: "0x00030100110100000000000000000000000000030d40", // 200k gas limit
+    eid: DEFAULT_SETTINGS.GLOBAL.MINT_CHAIN_LZ_EID,
+    msgType: DEFAULT_SETTINGS.LAYER_ZERO.ENFORCED_OPTIONS.MSG_TYPE,
+    options: DEFAULT_SETTINGS.LAYER_ZERO.ENFORCED_OPTIONS.OPTIONS, // 200k gas limit
   }];
   await mine(templeGold.setEnforcedOptions(options));
 }
@@ -24,7 +24,7 @@ async function setTempleGoldEnforcedOptionsSepolia(templeGold: TempleGold) {
 async function main() {
   ensureExpectedEnvvars();
   const [owner] = await ethers.getSigners();
-  const TEMPLEGOLD_ADDRESSES = getDeployedTempleGoldContracts();
+  const TEMPLEGOLD_ADDRESSES = getDeployedContracts();
   const templeGold = TempleGold__factory.connect(TEMPLEGOLD_ADDRESSES.TEMPLE_GOLD.TEMPLE_GOLD, owner);
 
   await setTempleGoldEnforcedOptionsSepolia(templeGold);

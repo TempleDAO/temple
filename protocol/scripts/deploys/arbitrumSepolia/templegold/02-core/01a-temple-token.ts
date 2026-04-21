@@ -1,25 +1,31 @@
 import '@nomiclabs/hardhat-ethers';
 import { ethers } from 'hardhat';
-import { FakeERC20__factory } from '../../../../typechain';
+import { FakeERC20__factory } from '../../../../../typechain';
 import {
   deployAndMine,
   ensureExpectedEnvvars,
   toAtto,
-} from '../../helpers';
+} from '../../../helpers';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { DEFAULT_SETTINGS } from '../default-settings';
 
 async function main() {
     ensureExpectedEnvvars();
     const [owner] = await ethers.getSigners();
     
+    await _deployTempleToken(owner);
+}
+  
+async function _deployTempleToken(owner: SignerWithAddress) {
     const factory = new FakeERC20__factory(owner);
     await deployAndMine(
-        'SPICE_TOKEN',
+        'TEMPLE_TOKEN',
         factory,
         factory.deploy,
-        "Spice Token",
-        "SPICE",
+        DEFAULT_SETTINGS.TEMPLE_TOKEN.NAME,
+        DEFAULT_SETTINGS.TEMPLE_TOKEN.SYMBOL,
         await owner.getAddress(),
-        toAtto(100_000)
+        toAtto(Number(DEFAULT_SETTINGS.TEMPLE_TOKEN.INITIAL_MINT))
     );
 }
 

@@ -2,14 +2,16 @@ import { ethers } from 'hardhat';
 import {
     ensureExpectedEnvvars,
     mine,
-} from '../../helpers';
-import { connectToContracts, TEMPLEGOLD_DEPLOYED_CONTRACTS } from '../../mainnet/templegold/contract-addresses';
-import { TempleGold } from '../../../../typechain';
-import { Constants as SEPOLIA_CONSTANTS } from '../../sepolia/constants';
+} from '../../../helpers';
+import { connectToContracts } from '../contract-addresses';
+import { getDeployedContracts as getSepoliaDeployedContracts } from '../../../sepolia/templegold/contract-addresses';
+import { TempleGold } from '../../../../../typechain';
+import { DEFAULT_SETTINGS } from '../default-settings';
 
 async function setSepoliaPeer(templeGold: TempleGold) {
-    const SEPOLIA_TGLD = TEMPLEGOLD_DEPLOYED_CONTRACTS['sepolia'].TEMPLE_GOLD.TEMPLE_GOLD;
-    await mine(templeGold.setPeer(SEPOLIA_CONSTANTS.LAYER_ZERO.EID, ethers.utils.zeroPad(SEPOLIA_TGLD, 32)));
+    const SEPOLIA_DEPLOYED_CONTRACTS = getSepoliaDeployedContracts();
+    const SEPOLIA_TGLD = SEPOLIA_DEPLOYED_CONTRACTS.TEMPLE_GOLD.TEMPLE_GOLD;
+    await mine(templeGold.setPeer(DEFAULT_SETTINGS.GLOBAL.MINT_CHAIN_LZ_EID, ethers.utils.zeroPad(SEPOLIA_TGLD, 32)));
 }
 
 async function main() {
