@@ -10,6 +10,7 @@
     "build:image": "docker build --tag temple-tasks .",
     "dev": "yarn build && node ./dist/main.js",
     "dev:local:mainnet": "yarn build:localtest:mainnet && node ./dist/mainnet-localtest.js",
+    "test": "vitest",
     "install-abis": "./src/scripts/install-abis.sh"
   },
   "dependencies": {
@@ -30,6 +31,7 @@
     "esbuild": "^0.19.4",
     "tsc-alias": "^1.8.3",
     "tsx": "^4.7.2",
+    "vitest": "^4.1.4",
     "typescript": "^5.1.6"
   },
   "lint-staged": {
