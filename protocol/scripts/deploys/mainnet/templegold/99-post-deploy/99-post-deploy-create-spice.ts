@@ -1,25 +1,28 @@
-import '@nomicfoundation/hardhat-verify';
+import '@nomiclabs/hardhat-ethers';
 import { ethers, run } from 'hardhat';
 import {
   ensureExpectedEnvvars,
-  mine
-} from '../../helpers';
+  mine,
+} from '../../../helpers';
 import {
-    connectToContracts
-} from '../../mainnet/templegold/contract-addresses';
+    getDeployedContracts,
+    connectToContracts,
+} from '../contract-addresses';
 
 async function main() {
     ensureExpectedEnvvars();
     const [owner] = await ethers.getSigners();
+    const ADDRS = getDeployedContracts();
 
-    const TEMPLE_GOLD_INSTANCES = connectToContracts(owner);
+    const INSTANCES = connectToContracts(owner);
+    
     const name = "[TGLD]/[ENA]";
     const spiceToken = "0x57e114b691db790c35207b2e685d4a43181e6061"; // ENA
 
     if(!name || !spiceToken) { throw new Error("Missing name or spice token!"); }
 
-    await mine(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.SPICE_AUCTION_FACTORY.createAuction(spiceToken, name));
-    const spiceAuction = await TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.SPICE_AUCTION_FACTORY.findAuctionForSpiceToken(spiceToken);
+    await mine(INSTANCES.TEMPLE_GOLD.SPICE_AUCTION_FACTORY.createAuction(spiceToken, name));
+    const spiceAuction = await INSTANCES.TEMPLE_GOLD.SPICE_AUCTION_FACTORY.findAuctionForSpiceToken(spiceToken);
     
     // If etherscan knows the contract bytecode, it may already have automatically been verified.
     try {
