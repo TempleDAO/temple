@@ -8,7 +8,7 @@ import {
     StableGoldAuction,
     TempleTeleporter,
     TempleERC20Token
-} from '../../../../typechain';
+} from '../../../../../typechain';
 
 export interface ContractAddresses {
     TEMPLE_GOLD: {
