@@ -1,10 +1,10 @@
 import '@nomiclabs/hardhat-ethers';
 import { ethers } from 'hardhat';
-import { SpiceAuction__factory } from '../../../../typechain';
+import { SpiceAuction__factory } from '../../../../../typechain';
 import {
   deployAndMine,
   ensureExpectedEnvvars,
-} from '../../helpers';
+} from '../../../helpers';
 
 async function main() {
   ensureExpectedEnvvars();
