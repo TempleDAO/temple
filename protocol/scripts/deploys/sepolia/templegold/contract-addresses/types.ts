@@ -57,7 +57,6 @@ export interface ContractInstances {
         TEMPLE_GOLD_ADMIN: TempleGoldAdmin,
         TEMPLE_GOLD_STAKING: TempleGoldStaking,
         TEMPLE_TELEPORTER: TempleTeleporter,
-        SPICE_AUCTION: SpiceAuction,
         SPICE_AUCTION_FACTORY: SpiceAuctionFactory,
         STABLE_GOLD_AUCTION: StableGoldAuction,
         SPICE_TOKEN: FakeERC20,

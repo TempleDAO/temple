@@ -9,7 +9,6 @@ export const CONTRACTS: ContractAddresses = {
         TEMPLE_GOLD_ADMIN: "0x",
         TEMPLE_GOLD_STAKING: "0x",
         TEMPLE_TELEPORTER: "0x",
-        SPICE_AUCTION: "0x",
         SPICE_AUCTION_FACTORY: "0xD5e60Dbc43A76EaB01bdC3d320d8e4bbAc3b9191",
         STABLE_GOLD_AUCTION: "0x",
         TEAM_GNOSIS: "0x",

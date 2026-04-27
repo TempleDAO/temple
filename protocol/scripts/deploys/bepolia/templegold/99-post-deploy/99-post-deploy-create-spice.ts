@@ -1,5 +1,4 @@
 import '@nomiclabs/hardhat-ethers';
-import '@nomiclabs/hardhat-etherscan';
 import { ethers, run } from 'hardhat';
 import {
   ensureExpectedEnvvars,

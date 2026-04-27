@@ -34,7 +34,6 @@ export function connectToContractsUsingAddr(owner: Signer, ADDRS: ContractAddres
             TEMPLE_GOLD: TempleGold__factory.connect(ADDRS.TEMPLE_GOLD.TEMPLE_GOLD, owner),
             TEMPLE_GOLD_ADMIN: TempleGoldAdmin__factory.connect(ADDRS.TEMPLE_GOLD.TEMPLE_GOLD_ADMIN, owner),
             TEMPLE_GOLD_STAKING: TempleGoldStaking__factory.connect(ADDRS.TEMPLE_GOLD.TEMPLE_GOLD_STAKING, owner),
-            SPICE_AUCTION: SpiceAuction__factory.connect(ADDRS.TEMPLE_GOLD.SPICE_AUCTION, owner),
             SPICE_AUCTION_FACTORY: SpiceAuctionFactory__factory.connect(ADDRS.TEMPLE_GOLD.SPICE_AUCTION_FACTORY, owner),
             STABLE_GOLD_AUCTION: StableGoldAuction__factory.connect(ADDRS.TEMPLE_GOLD.STABLE_GOLD_AUCTION, owner),
             TEMPLE_TELEPORTER: TempleTeleporter__factory.connect(ADDRS.TEMPLE_GOLD.TEMPLE_TELEPORTER, owner),

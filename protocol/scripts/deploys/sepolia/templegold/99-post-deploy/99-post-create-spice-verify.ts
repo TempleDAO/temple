@@ -1,5 +1,4 @@
 import '@nomiclabs/hardhat-ethers';
-import '@nomiclabs/hardhat-etherscan';
 import { ethers, run } from 'hardhat';
 import {
   ensureExpectedEnvvars,
@@ -8,11 +7,11 @@ import {
 } from '../../../helpers';
 import {
     getDeployedContracts,
-    connectToContracts,
-    ContractInstances
+    connectToContracts
 } from '../contract-addresses';
 import { SpiceAuction, SpiceAuction__factory } from '../../../../../typechain';
 import { DEFAULT_SETTINGS } from '../default-settings';
+import { ContractInstances } from '../../../sepolia/templegold/contract-addresses/types';
 
 async function main() {
     ensureExpectedEnvvars();
