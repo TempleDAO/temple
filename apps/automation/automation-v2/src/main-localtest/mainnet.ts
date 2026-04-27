@@ -10,8 +10,10 @@ import * as vars from "@/config/variables";
 import { JB_DATE, kvPersistedValue } from "@/utils/kv";
 import * as stakingDistributeRewardsa from "../tasks/staking-distribute-rewards";
 import * as burnAndNotify from "../tasks/spice-auction-burn-and-notify";
-import { startSidebarBot } from "../tasks/discord-sidebar-auction";
-import { updateAuctionSidebarBotTask, getSpiceAuctions } from "../tasks";
+import { startAuctionSidebarBot } from "../tasks/discord-bots/tgld-auction";
+import { startTemplePriceSidebarBot } from "../tasks/discord-bots/temple-price";
+import { startSpiceSenaSidebarBot } from "../tasks/discord-bots/spice";
+import { updateTgldAuctionBotTask, updateTemplePriceSidebarBotTask, updateSpiceSenaSidebarBotTask, getSpiceAuctions } from "../tasks";
 import { batchLiquidate } from "@/tlc/batch-liquidate";
 import { TLC_BATCH_LIQUIDATE_CONFIG } from '@/tlc/config';
 import { Address, BaseError, ContractFunctionRevertedError, createTestClient, formatEther, getContract, http,
@@ -50,6 +52,12 @@ const TASK_RUNNER_CONFIG = makeTaskRunnerConfig({
         burn_tgld_max_gas_price: 100,
         // Create your own personal discord server and create a webhook
         // tlc_discord_webhook_url: 'https://discord.com/api/webhooks/xxx/yyy',
+        // https://discord.com/developers/applications/1346122719355342868/bot
+        tgld_auction_bot_token: process.env.TGLD_AUCTION_BOT_TOKEN || '',
+        // https://discord.com/developers/applications/892794514413072405/information
+        spice_sena_bot_token: process.env.SPICE_SENA_BOT_TOKEN || '',
+        // https://discord.com/developers/applications/889590177369063494/information
+        temple_price_bot_token: process.env.TEMPLE_PRICE_BOT_TOKEN || ''
       },
     })
   ),
@@ -69,10 +77,11 @@ async function main() {
     const config = getConfig(env);
 
     runner.setTaskExceptionHandler(taskExceptionHandler);
-    console.log("setting variables");
     runner.setConfigVariables(getAllVariableMetadata());
 
-    const discordAuctionBot = await startSidebarBot(runner);
+    const tgldAuctionBot = await startAuctionSidebarBot(runner);
+    const templePriceBot = await startTemplePriceSidebarBot(runner);
+    const spiceSenaBot = await startSpiceSenaSidebarBot(runner);
 
     runner.addWebhookTask({
         id: 'tlc-setup-liquidations',
@@ -127,9 +136,17 @@ async function main() {
     });
 
     runner.addWebhookTask({
-        id: 'refresh-auction-bot',
-        action: (ctx)=> updateAuctionSidebarBotTask(config, ctx, discordAuctionBot)
-    })
+        id: 'refresh-tgld-auction-bot',
+        action: (ctx)=> updateTgldAuctionBotTask(config, ctx, tgldAuctionBot)
+    });
+    runner.addWebhookTask({
+        id: 'refresh-temple-price-bot',
+        action: (ctx)=> updateTemplePriceSidebarBotTask(config, ctx, templePriceBot)
+    });
+    runner.addWebhookTask({
+        id: 'refresh-spice-sena-bot',
+        action: (ctx)=> updateSpiceSenaSidebarBotTask(config, ctx, spiceSenaBot)
+    });
     runner.main();
 }
 
