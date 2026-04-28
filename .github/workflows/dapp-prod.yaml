@@ -22,11 +22,13 @@ jobs:
       - name: Deploy to Vercel
         id: deploy_step
         run: |
-          npx vercel@52.0.0 pull --yes --environment=production -A apps/dapp/vercel.json
-          npx vercel@52.0.0 build --prod -A apps/dapp/vercel.json
-          DEPLOYMENT_URL=$(npx vercel@52.0.0 deploy --prebuilt --prod -A apps/dapp/vercel.json | tail -1)
+          set -euo pipefail
+          vcl() { npx --yes vercel@52.0.0 -A apps/dapp/vercel.json "$@"; }
+          vcl pull --yes --environment=production
+          vcl build --prod
+          DEPLOYMENT_URL=$(vcl deploy --prebuilt --prod)
           echo "deployment_url=$DEPLOYMENT_URL" >> $GITHUB_OUTPUT
-          [ -n "$DEPLOYMENT_URL" ] && npx vercel@52.0.0 alias set "$DEPLOYMENT_URL" "templedao.link" --scope "$VERCEL_ORG_ID" || exit 1
+          vcl alias set "$DEPLOYMENT_URL" "templedao.link" --scope "$VERCEL_ORG_ID"
         continue-on-error: true
       - name: "notify failure"
         if: steps.deploy_step.outcome == 'failure'
