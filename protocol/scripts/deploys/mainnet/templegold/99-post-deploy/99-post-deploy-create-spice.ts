@@ -4,15 +4,11 @@ import {
   ensureExpectedEnvvars,
   mine,
 } from '../../../helpers';
-import {
-    getDeployedContracts,
-    connectToContracts,
-} from '../contract-addresses';
+import {connectToContracts } from '../contract-addresses';
 
 async function main() {
     ensureExpectedEnvvars();
     const [owner] = await ethers.getSigners();
-    const ADDRS = getDeployedContracts();
 
     const INSTANCES = connectToContracts(owner);
     

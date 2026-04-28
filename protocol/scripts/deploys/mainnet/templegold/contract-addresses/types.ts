@@ -24,7 +24,6 @@ export interface ContractAddresses {
         TEAM_GNOSIS: string,
         SPICE_AUCTION_IMPLEMENTATION: string,
         STRATEGY_GNOSIS: string,
-        SPICE_TOKEN: string,
     },
     CORE: {
         TEMPLE_TOKEN: string,
@@ -58,7 +57,6 @@ export interface ContractInstances {
         TEMPLE_TELEPORTER: TempleTeleporter,
         SPICE_AUCTION_FACTORY: SpiceAuctionFactory,
         STABLE_GOLD_AUCTION: StableGoldAuction,
-        SPICE_TOKEN: FakeERC20,
     },
     CORE: {
         TEMPLE_TOKEN: TempleERC20Token

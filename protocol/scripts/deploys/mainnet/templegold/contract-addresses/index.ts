@@ -16,7 +16,7 @@ import { CONTRACTS as MAINNET_CONTRACTS } from "./mainnet";
 export { ContractAddresses, ContractInstances } from "./types";
 
 export function getDeployedContracts(): ContractAddresses {
-    if (network.name === 'mainnet') {
+    if (network.name === 'mainnet' || network.name === 'localhost') {
         return MAINNET_CONTRACTS;
     }
     console.log(`No contracts configured for ${network.name} in this local directory.`);
@@ -36,7 +36,6 @@ export function connectToContractsUsingAddr(owner: Signer, ADDRS: ContractAddres
             SPICE_AUCTION_FACTORY: SpiceAuctionFactory__factory.connect(ADDRS.TEMPLE_GOLD.SPICE_AUCTION_FACTORY, owner),
             STABLE_GOLD_AUCTION: StableGoldAuction__factory.connect(ADDRS.TEMPLE_GOLD.STABLE_GOLD_AUCTION, owner),
             TEMPLE_TELEPORTER: TempleTeleporter__factory.connect(ADDRS.TEMPLE_GOLD.TEMPLE_TELEPORTER, owner),
-            SPICE_TOKEN: FakeERC20__factory.connect(ADDRS.TEMPLE_GOLD.SPICE_TOKEN, owner),
         },
         CORE: {
             TEMPLE_TOKEN: TempleERC20Token__factory.connect(ADDRS.CORE.TEMPLE_TOKEN, owner),
