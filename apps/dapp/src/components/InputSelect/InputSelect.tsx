@@ -13,7 +13,8 @@ export interface SelectTempleDaoProps {
   onChange?(event: any): void;
 
   options: SelectTempleDaoOptions | [];
-  defaultValue?: Option;
+  value?: Option | null;
+  defaultValue?: Option | null;
   // use to limit the number of elements shown in the menu at anytime
   maxMenuItems?: number;
   isSearchable?: boolean;

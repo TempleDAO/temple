@@ -8,7 +8,9 @@ export const BidHistory = ({
 }: {
   auctionInfo: DaiGoldAuctionInfo;
 }) => {
-  const { data, loading, error, refetch } = useBidsHistory(auctionInfo);
+  const { data, loading, error, refetch } = useBidsHistory(
+    auctionInfo.currentEpoch.toString()
+  );
 
   return (
     <BidHistoryContainer>

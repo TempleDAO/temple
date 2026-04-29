@@ -7,22 +7,59 @@ jobs:
   vercel-deploy:
     if: contains(github.event.pull_request.labels.*.name, 'preview-deploy')
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.DAPP_PROJECT_ID }}
     steps:
       - name: checkout code
         uses: actions/checkout@v4
-      - name: "deploy"
-        id: deploy_step
-        uses: amondnet/vercel-action@v25
+      - uses: actions/setup-node@v4
         with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          github-token: ${{ secrets.CI_TOKEN }}
-          vercel-args: '-A apps/dapp/vercel.json'
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID}}
-          scope: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.DAPP_PROJECT_ID}}
-          alias-domains: |
-            pr-{{PR_NUMBER}}-preview.templedao.link
+          node-version: '24'
+      - name: Deploy to Vercel
+        id: deploy_step
+        run: |
+          set -euo pipefail
+          vcl() { npx --yes vercel@52.0.0 -A apps/dapp/vercel.json "$@"; }
+          vcl pull --yes --environment=preview
+          vcl build
+          DEPLOYMENT_URL=$(vcl deploy --prebuilt)
+          echo "deployment_url=$DEPLOYMENT_URL" >> $GITHUB_OUTPUT
+          vcl alias set "$DEPLOYMENT_URL" "pr-${{ github.event.number }}-preview.templedao.link" --scope "$VERCEL_ORG_ID"
         continue-on-error: true
+      - name: Comment on PR
+        if: steps.deploy_step.outcome == 'success'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const marker = '<!-- vercel-preview-comment -->';
+            const sha = context.payload.pull_request.head.sha.substring(0, 7);
+            const body = `${marker}\nDeploy preview for core ready!\n\n✅ Preview\n${{ steps.deploy_step.outputs.deployment_url }}\nhttps://pr-${{ github.event.number }}-preview.templedao.link\n\nBuilt with commit ${sha}.`;
+            const comments = await github.rest.issues.listComments({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+            const existing = comments.data.find(c => c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                comment_id: existing.id,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body,
+              });
+            }
       - name: "notify failure"
         if: steps.deploy_step.outcome == 'failure'
         uses: rjstone/discord-webhook-notify@v1
@@ -40,6 +77,6 @@ jobs:
         with:
           severity: info
           description: (Dapp) PREVIEW Deploy to Vercel succeeded!
-          details: "[View Preview](${{ steps.deploy_step.outputs['preview-url'] }}) | [PR Details](${{ github.event.pull_request._links.html.href }})"
+          details: "[View Preview](https://pr-${{ github.event.number }}-preview.templedao.link) | [PR Details](${{ github.event.pull_request._links.html.href }})"
           footer: PR ${{ github.event.number }}
           webhookUrl: ${{ secrets.DISCORD_WEBHOOK_URL }}
