@@ -114,24 +114,33 @@ export default function CustomBarChart<T>({
 
   return (
     <>
-      <div style={{ position: 'relative', paddingLeft: '40px' }}>
+      <div style={{ position: 'relative', paddingLeft: '90px' }}>
         {yAxisTitle && (
           <div
             style={{
               position: 'absolute',
               left: 0,
-              top: '50%',
-              transform: 'translateY(-50%) rotate(-90deg)',
-              transformOrigin: 'center',
-              whiteSpace: 'nowrap',
-              fontFamily: 'Caviar Dreams',
-              fontSize: isPhoneOrAbove ? '14px' : '12px',
-              fontWeight: 500,
-              letterSpacing: '0.05em',
-              color: theme.palette.brandLight,
+              top: 0,
+              bottom: 0,
+              width: '90px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
-            {yAxisTitle}
+            <div
+              style={{
+                transform: 'rotate(-90deg)',
+                whiteSpace: 'nowrap',
+                fontFamily: 'Caviar Dreams',
+                fontSize: isPhoneOrAbove ? '14px' : '12px',
+                fontWeight: 500,
+                letterSpacing: '0.05em',
+                color: theme.palette.brandLight,
+              }}
+            >
+              {yAxisTitle}
+            </div>
           </div>
         )}
         <div style={{ display: 'flex' }}>
