@@ -49,6 +49,7 @@ export default function CustomBarChart<T>({
   const theme = useTheme();
   const isPhoneOrAbove = useMediaQuery({ query: queryPhone });
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const [isTouchActive, setIsTouchActive] = useState(false);
 
   const yAxisNumberFormatter = useMemo(
     () => new Intl.NumberFormat('en-US', { maximumSignificantDigits: 6 }),
@@ -275,7 +276,10 @@ export default function CustomBarChart<T>({
                   <Tooltip
                     wrapperStyle={{
                       outline: 'none',
-                      visibility: activeIndex === null ? 'hidden' : 'visible',
+                      visibility:
+                        activeIndex === null && !isTouchActive
+                          ? 'hidden'
+                          : 'visible',
                     }}
                     cursor={false}
                     contentStyle={{
@@ -319,6 +323,8 @@ export default function CustomBarChart<T>({
                     barSize={minBarWidth}
                     onMouseEnter={(_, index) => setActiveIndex(index)}
                     onMouseLeave={() => setActiveIndex(null)}
+                    onTouchStart={() => setIsTouchActive(true)}
+                    onTouchEnd={() => setIsTouchActive(false)}
                   >
                     {chartData.map((entry: T, index) => {
                       const key =

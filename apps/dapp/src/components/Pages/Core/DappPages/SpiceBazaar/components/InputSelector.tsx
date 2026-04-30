@@ -86,10 +86,8 @@ export const InputSelect = (props: SelectTempleDaoProps) => {
         <SelectAllRow>
           {props.onSelectAll && (
             <SelectAllButton
-              onMouseDown={(e) => {
-                e.preventDefault();
-                props.onSelectAll!();
-              }}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => props.onSelectAll!()}
             >
               Select All
             </SelectAllButton>
@@ -99,10 +97,8 @@ export const InputSelect = (props: SelectTempleDaoProps) => {
           )}
           {props.onSelectNone && (
             <SelectAllButton
-              onMouseDown={(e) => {
-                e.preventDefault();
-                props.onSelectNone!();
-              }}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => props.onSelectNone!()}
             >
               Select None
             </SelectAllButton>
