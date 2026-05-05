@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { BarChart as CustomBarChart, DotChart } from '../../components/Charts';
 import Loader from 'components/Loader/Loader';
@@ -11,7 +11,6 @@ import {
   InputSelect as SingleInputSelect,
   type Option as SingleOption,
 } from 'components/InputSelect/InputSelect';
-import * as breakpoints from 'styles/breakpoints';
 import {
   useStableGoldAuctionMetrics,
   MetricType,
@@ -84,19 +83,24 @@ export const TgldAuctionChart = () => {
 
   // --- Multi-select auctions (for bar charts) ---
   const auctionOptions: Option[] = useMemo(() => {
-    return [...new Set((metrics ?? []).map((m) => m.date))].map((date) => ({
-      label: date,
-      value: date.toLowerCase().replace(/\s/g, '-'),
-    }));
+    return (metrics ?? [])
+      .slice()
+      .reverse()
+      .map((m) => ({
+        label: `${m.date} ${new Date(m.timestamp * 1000).getFullYear()}`,
+        value: m.timestamp.toString(),
+      }));
   }, [metrics]);
 
   const [selectedAuctions, setSelectedAuctions] = useState<Option[]>([]);
+  const initialized = useRef(false);
 
   useEffect(() => {
-    if (auctionOptions.length && selectedAuctions.length === 0) {
+    if (!initialized.current && auctionOptions.length) {
       setSelectedAuctions(auctionOptions);
+      initialized.current = true;
     }
-  }, [auctionOptions, selectedAuctions.length]);
+  }, [auctionOptions]);
 
   const handleAuctionChange = (selected: Option[]) => {
     setSelectedAuctions(selected);
@@ -116,7 +120,11 @@ export const TgldAuctionChart = () => {
     // isBidHistory guard above ensures selectedMetric is a valid MetricType key
     const metricKey = selectedMetric as MetricType;
     return metrics
-      .filter((d) => selectedAuctions.some((option) => option.label === d.date))
+      .filter((d) =>
+        selectedAuctions.some(
+          (option) => option.value === d.timestamp.toString()
+        )
+      )
       .sort((a, b) => a.timestamp - b.timestamp)
       .map((d) => ({
         ...d,
@@ -203,38 +211,48 @@ export const TgldAuctionChart = () => {
   return (
     <PageContainer>
       <HeaderContainer>
-        <SingleInputSelect
-          options={metricOptions}
-          defaultValue={metricOptions.find(
-            (option) => option.value === selectedMetric
-          )}
-          onChange={handleMetricChange}
-          width="280px"
-          fontSize="1rem"
-          maxMenuItems={7}
-          isSearchable={false}
-        />
-
-        {isBidHistory ? (
+        <SelectWrapper>
           <SingleInputSelect
-            options={epochOptions}
-            value={selectedEpoch}
-            onChange={handleEpochChange}
-            width="280px"
+            options={metricOptions}
+            defaultValue={metricOptions.find(
+              (option) => option.value === selectedMetric
+            )}
+            onChange={handleMetricChange}
             fontSize="1rem"
+            textAlign="left"
+            fontWeight="normal"
             maxMenuItems={7}
             isSearchable={false}
           />
+        </SelectWrapper>
+
+        {isBidHistory ? (
+          <SelectWrapper>
+            <SingleInputSelect
+              options={epochOptions}
+              value={selectedEpoch}
+              onChange={handleEpochChange}
+              width="280px"
+              fontSize="1rem"
+              maxMenuItems={7}
+              isSearchable={false}
+            />
+          </SelectWrapper>
         ) : (
-          <MultiInputSelect
-            options={auctionOptions}
-            value={selectedAuctions}
-            onChange={handleAuctionChange}
-            width="200px"
-            fontSize="1rem"
-            maxMenuItems={7}
-            textAlloptions="All Epochs"
-          />
+          <SelectWrapper>
+            <MultiInputSelect
+              options={auctionOptions}
+              value={selectedAuctions}
+              onChange={handleAuctionChange}
+              fontSize="1rem"
+              textAlign="left"
+              fontWeight="normal"
+              maxMenuItems={7}
+              textAlloptions="All Epochs"
+              onSelectAll={() => setSelectedAuctions(auctionOptions)}
+              onSelectNone={() => setSelectedAuctions([])}
+            />
+          </SelectWrapper>
         )}
       </HeaderContainer>
 
@@ -285,13 +303,28 @@ export const TgldAuctionChart = () => {
       ) : (
         <CustomBarChart
           chartData={barChartData}
-          xDataKey="date"
+          xDataKey="timestamp"
           yDataKey="value"
-          xTickFormatter={(val: any) => val}
+          xTickFormatter={(val: number) =>
+            new Date(val * 1000).toLocaleDateString('en-GB', {
+              month: 'short',
+              day: 'numeric',
+            })
+          }
           yTickFormatter={chartConfig.yTickFormatter}
-          tooltipLabelFormatter={(value: string) => {
-            const found = barChartData.find((d) => d.date === value);
-            return found?.id ? `Auction ID: ${found.id}` : value;
+          tooltipLabelFormatter={(value: number) => {
+            const found = barChartData.find((d) => d.timestamp === value);
+            const year = found
+              ? new Date(found.timestamp * 1000).getFullYear()
+              : '';
+            return (
+              <>
+                {found?.id && <div>Auction ID: {found.id}</div>}
+                <div>
+                  End Date: {found?.date} {year}
+                </div>
+              </>
+            );
           }}
           tooltipValuesFormatter={chartConfig.tooltipValuesFormatter}
           xAxisTitle="Auction end date"
@@ -305,6 +338,7 @@ export const TgldAuctionChart = () => {
 };
 
 const PageContainer = styled.div`
+  width: 100%;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -313,14 +347,14 @@ const PageContainer = styled.div`
 
 const HeaderContainer = styled.div`
   display: flex;
-  flex-direction: column;
-  gap: 15px;
+  flex-wrap: wrap;
+  width: 100%;
+  gap: 15px 40px;
+  align-items: center;
+`;
 
-  ${breakpoints.phoneAndAbove(`
-    flex-direction: row;
-    gap: 40px;
-    align-items: center;
-  `)}
+const SelectWrapper = styled.div`
+  width: 200px;
 `;
 
 const NoDataContainer = styled.div`
