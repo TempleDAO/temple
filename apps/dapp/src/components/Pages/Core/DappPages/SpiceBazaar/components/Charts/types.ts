@@ -1,3 +1,5 @@
+import React from 'react';
+
 export interface AxisConfig {
   title?: string;
   domain?: [number, number];
@@ -13,7 +15,7 @@ export interface BaseChartProps<T> {
   yAxisDomain?: [number, number];
   yAxisTicks?: number[];
   xTickFormatter: (xValue: any, index?: number) => string;
-  tooltipLabelFormatter: (value: any) => string;
+  tooltipLabelFormatter: (value: any) => React.ReactNode;
   tooltipValuesFormatter?: (
     value: number,
     name: string,
