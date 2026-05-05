@@ -6,7 +6,7 @@ export const DEFAULT_SETTINGS = {
         LZ_EID: 40231,    // Arbitrum Sepolia
         MINT_CHAIN_ID: 11155111, // Sepolia (Minting chain)
         MINT_CHAIN_LZ_EID: 40161, // Sepolia (Minting chain)
-        RESCUER_PLACEHOLDER: "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+        RESCUER_PLACEHOLDER: "0x57a57d976f73479f20B3Be7FE6ea20A23495b2F8",
     },
     TEMPLE_GOLD: {
         NAME: "TEMPLE GOLD",
