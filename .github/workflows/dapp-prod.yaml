@@ -10,20 +10,25 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.DAPP_PROJECT_ID }}
     steps:
       - uses: actions/checkout@v4
-      - uses: amondnet/vercel-action@v25
-        id: deploy_step
+      - uses: actions/setup-node@v4
         with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }} # Required
-          vercel-args: '--prod -A apps/dapp/vercel.json' #Optional
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}  #Required
-          vercel-project-id: ${{ secrets.DAPP_PROJECT_ID }} #Required
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          github-comment: false
-          scope: ${{ secrets.VERCEL_ORG_ID }}
-          alias-domains: | #Optional
-            templedao.link
+          node-version: '24'
+      - name: Deploy to Vercel
+        id: deploy_step
+        run: |
+          set -euo pipefail
+          vcl() { npx --yes vercel@52.0.0 -A apps/dapp/vercel.json "$@"; }
+          vcl pull --yes --environment=production
+          vcl build --prod
+          DEPLOYMENT_URL=$(vcl deploy --prebuilt --prod)
+          echo "deployment_url=$DEPLOYMENT_URL" >> $GITHUB_OUTPUT
+          vcl alias set "$DEPLOYMENT_URL" "templedao.link" --scope "$VERCEL_ORG_ID"
         continue-on-error: true
       - name: "notify failure"
         if: steps.deploy_step.outcome == 'failure'
