@@ -34,7 +34,7 @@ export const CONTRACTS: ContractAddresses = {
     SPICE_AUCTIONS: {
         SPICE_TGLD: "0x",
         DAI_TGLD: "0x",
-        ENA_TGLD: "0xa68e1a9A93223f812191f35d102a4b2FB16b60f4",
+        ENA_TGLD: "0x644c3e00c3062EDCB2f92BF51e935C5ead17213d",
         SENA_TGLD: "0x9c6badfDa8854135D316344f196487583F0974C7",
     },
 }
