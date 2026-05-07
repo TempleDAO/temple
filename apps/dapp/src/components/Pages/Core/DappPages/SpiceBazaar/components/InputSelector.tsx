@@ -25,6 +25,8 @@ export interface SelectTempleDaoProps {
   fontWeight?: CSS.Property.FontWeight;
   textAlign?: CSS.Property.TextAlign;
   zIndex?: CSS.Property.ZIndex;
+  onSelectAll?: () => void;
+  onSelectNone?: () => void;
 }
 
 const OptionRow = styled.div`
@@ -32,6 +34,25 @@ const OptionRow = styled.div`
   align-items: center;
   gap: 0.5rem;
   color: ${theme.palette.brand};
+`;
+
+const SelectAllRow = styled.div`
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.4rem 0.75rem;
+  border-bottom: 0.0625rem solid ${theme.palette.brand};
+`;
+
+const SelectAllButton = styled.button`
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: ${theme.palette.brand};
+  font-size: 0.75rem;
+  padding: 0;
+  &:hover {
+    color: ${theme.palette.brandLight};
+  }
 `;
 
 const ValueLabel = styled.div`
@@ -58,6 +79,35 @@ export const InputSelect = (props: SelectTempleDaoProps) => {
       </components.Option>
     );
   };
+
+  const CustomMenuList = ({ children, ...menuProps }: any) => (
+    <components.MenuList {...menuProps}>
+      {(props.onSelectAll || props.onSelectNone) && (
+        <SelectAllRow>
+          {props.onSelectAll && (
+            <SelectAllButton
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => props.onSelectAll!()}
+            >
+              Select All
+            </SelectAllButton>
+          )}
+          {props.onSelectAll && props.onSelectNone && (
+            <span style={{ color: theme.palette.brand }}>|</span>
+          )}
+          {props.onSelectNone && (
+            <SelectAllButton
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => props.onSelectNone!()}
+            >
+              Select None
+            </SelectAllButton>
+          )}
+        </SelectAllRow>
+      )}
+      {children}
+    </components.MenuList>
+  );
 
   const CustomValueContainer = ({ children, ...valueProps }: any) => {
     const selected = valueProps.getValue();
@@ -87,6 +137,7 @@ export const InputSelect = (props: SelectTempleDaoProps) => {
       menuPlacement={'auto'}
       components={{
         Option: CustomOption,
+        MenuList: CustomMenuList,
         ValueContainer: CustomValueContainer,
         MultiValue: () => null,
         ClearIndicator: () => null,
