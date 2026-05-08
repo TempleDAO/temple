@@ -11,21 +11,17 @@ import { Option } from '../../components/InputSelector';
 import { useBidHistory } from '../hooks/use-bid-history';
 
 type BidHistoryChartProps = {
-  auctionTokenAddress?: string;
+  auctionAddress?: string;
   selectedFilters: Option[];
   onFilterOptionsChange?: (options: Option[]) => void;
 };
 
 export const BidHistoryChart = ({
-  auctionTokenAddress,
+  auctionAddress,
   selectedFilters,
   onFilterOptionsChange,
 }: BidHistoryChartProps) => {
-  const {
-    data: historyData,
-    loading,
-    error,
-  } = useBidHistory(auctionTokenAddress);
+  const { data: historyData, loading, error } = useBidHistory(auctionAddress);
 
   // Build available epoch filter options from the data
   const epochOptions: Option[] = useMemo(() => {
