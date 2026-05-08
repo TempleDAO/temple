@@ -117,18 +117,6 @@ export const useBidHistory = (
         return;
       }
 
-      // Filter to only bids belonging to this specific auction contract
-      bidTransactions = bidTransactions.filter(
-        (bid: any) =>
-          bid.auctionInstance.spiceAuction?.id?.toLowerCase() ===
-          auctionAddress.toLowerCase()
-      );
-
-      if (bidTransactions.length === 0) {
-        setData([]);
-        return;
-      }
-
       // Group bids by epoch
       const bidsByEpoch = new Map<string, any[]>();
       bidTransactions.forEach((bid: any) => {
