@@ -231,26 +231,14 @@ export const Details = () => {
                           <TimeStampRow>
                             <TimeStampLabel>Start</TimeStampLabel>
                             {state === AuctionState.LIVE ||
-                            state === AuctionState.ENDED ? (
+                            state === AuctionState.ENDED ||
+                            state === AuctionState.SCHEDULED ? (
                               <>
                                 <TimeStampDate>
                                   {formatDate(auction?.auctionStartTime)}
                                 </TimeStampDate>
                                 <TimeStampTime>
                                   {formatTime(auction?.auctionStartTime)}
-                                </TimeStampTime>
-                              </>
-                            ) : auction?.nextAuctionStartTimestamp ? (
-                              <>
-                                <TimeStampDate>
-                                  {formatDate(
-                                    auction.nextAuctionStartTimestamp * 1000
-                                  )}
-                                </TimeStampDate>
-                                <TimeStampTime>
-                                  {formatTime(
-                                    auction.nextAuctionStartTimestamp * 1000
-                                  )}
                                 </TimeStampTime>
                               </>
                             ) : (
@@ -263,7 +251,8 @@ export const Details = () => {
                           <TimeStampRow>
                             <TimeStampLabel>End</TimeStampLabel>
                             {state === AuctionState.LIVE ||
-                            state === AuctionState.ENDED ? (
+                            state === AuctionState.ENDED ||
+                            state === AuctionState.SCHEDULED ? (
                               <>
                                 <TimeStampDate>
                                   {formatDate(auction?.auctionEndTime)}

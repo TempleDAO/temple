@@ -113,7 +113,7 @@ export const Charts = ({
       case ChartType.BidHistory:
         return (
           <BidHistoryChart
-            auctionTokenAddress={auctionTokenAddress}
+            auctionAddress={auctionAddress}
             selectedFilters={chartSpecificFilters}
             onFilterOptionsChange={handleBidHistoryOptionsChange}
           />

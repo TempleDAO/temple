@@ -38,14 +38,14 @@ type UseBidHistoryReturn = {
  * Groups bids into time buckets from auction start time
  */
 export const useBidHistory = (
-  auctionTokenAddress: string | undefined
+  auctionAddress: string | undefined
 ): UseBidHistoryReturn => {
   const [data, setData] = useState<BidHistoryMetrics[] | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
-    if (!auctionTokenAddress) {
+    if (!auctionAddress) {
       setData([]);
       setError(null);
       setLoading(false);
@@ -73,7 +73,7 @@ export const useBidHistory = (
           while (hasMore) {
             const response = await subgraphQuery(
               entry.url,
-              spiceBidHistoryQuery(auctionTokenAddress, PAGE_SIZE, skip)
+              spiceBidHistoryQuery(auctionAddress, PAGE_SIZE, skip)
             );
 
             if (
@@ -113,6 +113,18 @@ export const useBidHistory = (
         if (!anyEndpointSucceeded) {
           throw lastEndpointError ?? new Error('All subgraph endpoints failed');
         }
+        setData([]);
+        return;
+      }
+
+      // Filter to only bids belonging to this specific auction contract
+      bidTransactions = bidTransactions.filter(
+        (bid: any) =>
+          bid.auctionInstance.spiceAuction?.id?.toLowerCase() ===
+          auctionAddress.toLowerCase()
+      );
+
+      if (bidTransactions.length === 0) {
         setData([]);
         return;
       }
@@ -196,7 +208,7 @@ export const useBidHistory = (
     } finally {
       setLoading(false);
     }
-  }, [auctionTokenAddress]);
+  }, [auctionAddress]);
 
   useEffect(() => {
     fetchData();
