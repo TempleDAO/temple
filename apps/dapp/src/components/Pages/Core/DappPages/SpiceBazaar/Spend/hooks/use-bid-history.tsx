@@ -38,7 +38,8 @@ type UseBidHistoryReturn = {
  * Groups bids into time buckets from auction start time
  */
 export const useBidHistory = (
-  auctionAddress: string | undefined
+  auctionAddress: string | undefined,
+  totalAuctionTokenAmount: number | undefined
 ): UseBidHistoryReturn => {
   const [data, setData] = useState<BidHistoryMetrics[] | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -148,7 +149,9 @@ export const useBidHistory = (
           const bucketLabel = `${bucketStart}-${bucketEnd}h`;
 
           return {
-            price: parseFloat(bid.price),
+            price: totalAuctionTokenAmount
+              ? parseFloat(bid.bidAmount) / totalAuctionTokenAmount
+              : 0,
             bidAmount: bid.bidAmount,
             hash: bid.hash,
             timestamp: bidTimestamp,
@@ -159,11 +162,19 @@ export const useBidHistory = (
           };
         });
 
-        // Mark only the very last bid of the entire epoch as final
         if (processedBids.length > 0) {
-          // Sort by timestamp to find the last bid
           processedBids.sort((a, b) => a.timestamp - b.timestamp);
-          // Mark only the last bid of the epoch
+
+          // Replace per-bid price with running cumulative TGLD/ENA ratio
+          // (each bid's price = bidAmount/totalAuctionTokenAmount, so the
+          // cumulative sum equals totalBidTokenAmount/totalAuctionTokenAmount
+          // at that point in time — matching the "1 TOKEN = X TGLD" display)
+          let cumulative = 0;
+          processedBids.forEach((bid) => {
+            cumulative += bid.price;
+            bid.price = cumulative;
+          });
+
           processedBids[processedBids.length - 1].isFinalBid = true;
         }
 
@@ -196,7 +207,7 @@ export const useBidHistory = (
     } finally {
       setLoading(false);
     }
-  }, [auctionAddress]);
+  }, [auctionAddress, totalAuctionTokenAmount]);
 
   useEffect(() => {
     fetchData();

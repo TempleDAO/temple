@@ -12,6 +12,7 @@ import { BidHistoryChart } from './BidHistoryChart';
 type ChartsProps = {
   auctionAddress: string;
   auctionTokenAddress?: string;
+  totalAuctionTokenAmount?: number;
 };
 
 // Chart type options for the first dropdown
@@ -24,6 +25,7 @@ enum ChartType {
 export const Charts = ({
   auctionAddress,
   auctionTokenAddress,
+  totalAuctionTokenAmount,
 }: ChartsProps) => {
   // First dropdown: Chart type selection
   const chartTypeOptions: Option[] = useMemo(
@@ -114,6 +116,7 @@ export const Charts = ({
         return (
           <BidHistoryChart
             auctionAddress={auctionAddress}
+            totalAuctionTokenAmount={totalAuctionTokenAmount}
             selectedFilters={chartSpecificFilters}
             onFilterOptionsChange={handleBidHistoryOptionsChange}
           />

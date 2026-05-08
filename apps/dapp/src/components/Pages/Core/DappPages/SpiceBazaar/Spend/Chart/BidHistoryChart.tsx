@@ -12,16 +12,22 @@ import { useBidHistory } from '../hooks/use-bid-history';
 
 type BidHistoryChartProps = {
   auctionAddress?: string;
+  totalAuctionTokenAmount?: number;
   selectedFilters: Option[];
   onFilterOptionsChange?: (options: Option[]) => void;
 };
 
 export const BidHistoryChart = ({
   auctionAddress,
+  totalAuctionTokenAmount,
   selectedFilters,
   onFilterOptionsChange,
 }: BidHistoryChartProps) => {
-  const { data: historyData, loading, error } = useBidHistory(auctionAddress);
+  const {
+    data: historyData,
+    loading,
+    error,
+  } = useBidHistory(auctionAddress, totalAuctionTokenAmount);
 
   // Build available epoch filter options from the data
   const epochOptions: Option[] = useMemo(() => {

@@ -79,7 +79,7 @@ export function aggregateBidsByBucket(
     .map((b) => ({
       bucket: b.bucket,
       bucketIndex: b.bucketIndex,
-      price: b.prices.reduce((sum, p) => sum + p, 0) / b.prices.length,
+      price: Math.max(...b.prices),
       minPrice: Math.min(...b.prices),
       maxPrice: Math.max(...b.prices),
       totalBidAmount: b.totalBidAmount,
