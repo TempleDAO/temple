@@ -20,10 +20,11 @@ import {
   checkSepoliaSignersBalance,
   burnAndUpdateCirculatingSupplySepolia,
   burnAndUpdateCirculatingSupply,
+  updateSpiceEnaSidebarBotTask,
 } from './tasks';
 import { startAuctionSidebarBot } from './tasks/discord-bots/tgld-auction';
 import { startTemplePriceSidebarBot } from './tasks/discord-bots/temple-price';
-import { startSpiceSenaSidebarBot } from './tasks/discord-bots/spice';
+import { startSpiceSenaSidebarBot, startSpiceEnaSidebarBot  } from './tasks/discord-bots/spice';
 
 async function main() {
   const runner = createTaskRunner();
@@ -44,6 +45,7 @@ async function main() {
   const tgldAuctionBot = await startAuctionSidebarBot(runner);
   const templePriceSidebarBot = await startTemplePriceSidebarBot(runner);
   const spiceSenaSidebarBot = await startSpiceSenaSidebarBot(runner);
+  const spiceEnaSidebarBot = await startSpiceEnaSidebarBot(runner);
   // dai gold auction start
   runner.addPeriodicTask({
     id: 'start-stable-gold-auction',
@@ -83,6 +85,13 @@ async function main() {
     cronSchedule: '*/10 * * * *',
     action: (ctx) =>
       updateSpiceSenaSidebarBotTask(config, ctx, spiceSenaSidebarBot),
+  });
+
+  runner.addPeriodicTask({
+    id: 'update-spice-ena-sidebar-bot',
+    cronSchedule: '*/10 * * * *',
+    action: (ctx) =>
+      updateSpiceEnaSidebarBotTask(config, ctx, spiceEnaSidebarBot),
   });
 
   // burn and notify TGLD for redemption

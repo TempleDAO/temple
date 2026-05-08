@@ -27,6 +27,15 @@ export async function startSpiceSenaSidebarBot(runner: TaskRunner) {
   });
 }
 
+export async function startSpiceEnaSidebarBot(runner: TaskRunner) {
+  return startDiscordSidebarBot({
+    runner,
+    botLabel: "spice ENA sidebar bot",
+    tokenVariable: vars.spice_ena_bot_token,
+  });
+}
+
+
 export async function updateSpiceSidebarBot({
   bot,
   ticker,

@@ -179,6 +179,26 @@ export async function updateSpiceSenaSidebarBotTask(config: Config, ctx: TaskCon
     return taskSuccess();
 }
 
+export async function updateSpiceEnaSidebarBotTask(config: Config, ctx: TaskContext, bot: Client | undefined) {
+    if (!bot) {
+        ctx.logger.info(`Spice ENA sidebar bot not provided.`)
+        return taskSuccessSilent()
+    }
+
+    const chain = chainFromId(config.chainId);
+    const pclient = await getPublicClient(ctx, chain);
+
+    await updateSpiceSidebarBot({
+        bot,
+        client: pclient,
+        logger: ctx.logger,
+        ticker: "TGLD/ENA",
+        address: config.contracts.TEMPLE_GOLD.AUCTIONS.BID_FOR_SPICE.ENA,
+    })
+
+    return taskSuccess();
+}
+
 export async function burnAndUpdateCirculatingSupplySepolia(config: Config, ctx: TaskContext) {
     return burnTempleGold(ctx, {
         chainId: config.chainId,

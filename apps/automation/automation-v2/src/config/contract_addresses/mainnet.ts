@@ -17,7 +17,7 @@ export const CONTRACTS: ContractAddresses = {
     AUCTIONS: {
       BID_FOR_TGLD: '0x0bC14503c467CB675b6B30da05Dbed80C83d154e',
       BID_FOR_SPICE: {
-        ENA: '0xa68e1a9A93223f812191f35d102a4b2FB16b60f4',
+        ENA: '0x644c3e00c3062EDCB2f92BF51e935C5ead17213d',
         DAI: '0x',
         SENA: '0x9c6badfDa8854135D316344f196487583F0974C7',
       },
