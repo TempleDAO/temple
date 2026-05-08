@@ -800,7 +800,7 @@ export type BidsHistoryGoldAuctionResp = z.infer<
 //----------------------------------------------------------------------------------------------------
 
 export function spiceBidHistoryQuery(
-  auctionToken: string,
+  auctionAddress: string,
   first = 1000,
   skip = 0
 ): SubGraphQuery<SpiceBidHistoryResp> {
@@ -815,7 +815,6 @@ export function spiceBidHistoryQuery(
       where: {
         auctionInstance_: {
           auctionType: SpiceAuction
-          auctionToken: "${auctionToken.toLowerCase()}"
         }
       }
     ) {
