@@ -12,16 +12,22 @@ import { useBidHistory } from '../hooks/use-bid-history';
 
 type BidHistoryChartProps = {
   auctionAddress?: string;
+  totalAuctionTokenAmount?: number;
   selectedFilters: Option[];
   onFilterOptionsChange?: (options: Option[]) => void;
 };
 
 export const BidHistoryChart = ({
   auctionAddress,
+  totalAuctionTokenAmount,
   selectedFilters,
   onFilterOptionsChange,
 }: BidHistoryChartProps) => {
-  const { data: historyData, loading, error } = useBidHistory(auctionAddress);
+  const {
+    data: historyData,
+    loading,
+    error,
+  } = useBidHistory(auctionAddress, totalAuctionTokenAmount);
 
   // Build available epoch filter options from the data
   const epochOptions: Option[] = useMemo(() => {
@@ -91,7 +97,7 @@ export const BidHistoryChart = ({
         }
         tooltipValuesFormatter={(_value: number, _name: string, props: any) => {
           const d = props.payload;
-          const avg = formatNumberFixedDecimals(d.price, 6);
+          const price = formatNumberFixedDecimals(d.price, 6);
           const total = formatNumberFixedDecimals(d.totalBidAmount, 2);
           const fmt = (n: number, decimals: number) =>
             formatNumberFixedDecimals(n, decimals);
@@ -99,12 +105,7 @@ export const BidHistoryChart = ({
           return [
             `Bids: ${d.count}`,
             `Total Amount: ${total} TGLD`,
-            d.count > 1
-              ? `Avg Price: ${avg} TGLD/${symbol}`
-              : `Price: ${avg} TGLD/${symbol}`,
-            ...(d.count > 1
-              ? [`Price Range: ${fmt(d.minPrice, 6)} – ${fmt(d.maxPrice, 6)}`]
-              : []),
+            `Price: ${price} TGLD/${symbol}`,
           ].join('\n');
         }}
         xAxisTitle="Time"

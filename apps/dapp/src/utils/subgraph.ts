@@ -813,9 +813,7 @@ export function spiceBidHistoryQuery(
       first: ${first}
       skip: ${skip}
       where: {
-        auctionInstance_: {
-          auctionType: SpiceAuction
-        }
+        auctionInstance_starts_with: "${auctionAddress.toLowerCase()}"
       }
     ) {
       price

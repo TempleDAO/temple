@@ -139,6 +139,7 @@ export const Details = () => {
       <Charts
         auctionAddress={auction.address}
         auctionTokenAddress={tokenAddress}
+        totalAuctionTokenAmount={auction.totalAuctionTokenAmount}
       />
     );
   }, [auction?.address, auction?.staticConfig?.auctionToken?.address]);
