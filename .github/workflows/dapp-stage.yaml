@@ -15,24 +15,17 @@ jobs:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.DAPP_PROJECT_ID }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
         with:
           node-version: '24'
       - name: Deploy to Vercel
         id: deploy_step
-        run: |
-          set -euo pipefail
-          vcl() { npx --yes vercel@52.0.0 -A apps/dapp/vercel.json "$@"; }
-          vcl pull --yes --environment=preview
-          vcl build
-          DEPLOYMENT_URL=$(vcl deploy --prebuilt)
-          echo "deployment_url=$DEPLOYMENT_URL" >> $GITHUB_OUTPUT
-          vcl alias set "$DEPLOYMENT_URL" "stage.templedao.link" --scope "$VERCEL_ORG_ID"
+        run: bash .github/scripts/vercel-deploy.sh preview stage.templedao.link
         continue-on-error: true
       - name: "notify failure"
         if: steps.deploy_step.outcome == 'failure'
-        uses: rjstone/discord-webhook-notify@v1
+        uses: rjstone/discord-webhook-notify@1399c1b2d57cc05894d506d2cfdc33c5f012b993
         with:
           severity: error
           description: (Dapp) STAGE Deploy to Vercel failed!
@@ -42,7 +35,7 @@ jobs:
         if: steps.deploy_step.outcome == 'failure'
         run: exit 1
       - name: "notify success"
-        uses: rjstone/discord-webhook-notify@v1
+        uses: rjstone/discord-webhook-notify@1399c1b2d57cc05894d506d2cfdc33c5f012b993
         with:
           severity: info
           description: (Dapp) STAGE Deploy to Vercel succeeded!
