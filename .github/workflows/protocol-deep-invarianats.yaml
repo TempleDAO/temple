@@ -96,8 +96,8 @@ jobs:
 
       - name: "Add build summary"
         run: |
-          echo "## Build result" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Passed" >> $GITHUB_STEP_SUMMARY
+          echo "## Build result" >> "$GITHUB_STEP_SUMMARY"
+          echo "✅ Passed" >> "$GITHUB_STEP_SUMMARY"
 
   foundry-test-invariant:
     name: Foundry Invariant Tests
@@ -161,5 +161,5 @@ jobs:
 
       - name: "Add test summary"
         run: |
-          echo "## Deep Invariant tests result" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Passed" >> $GITHUB_STEP_SUMMARY
+          echo "## Deep Invariant tests result" >> "$GITHUB_STEP_SUMMARY"
+          echo "✅ Passed" >> "$GITHUB_STEP_SUMMARY"
