@@ -142,6 +142,12 @@ export const spice_sena_bot_token = new StringVariable({
   isSecret: true,
 });
 
+export const spice_ena_bot_token = new StringVariable({
+  name: "spice_ena_bot_token",
+  description: "Token for the TGLD/ENA sidebar bot.",
+  isSecret: true,
+});
+
 export const burn_tgld_max_gas_price = new BigRationalVariable({
     name: 'burn_tgld_max_gas_price',
     description: 'Max gas price for burning TGLD after auction',
