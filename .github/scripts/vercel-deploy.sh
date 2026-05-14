@@ -6,7 +6,11 @@ ENVIRONMENT="$1"
 ALIAS="$2"
 PROD_FLAG="${3:-}"
 
-vcl() { npx --yes vercel@52.0.0 -A apps/dapp/vercel.json "$@"; }
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+VERCEL_BIN="$REPO_ROOT/apps/dapp/node_modules/.bin/vercel"
+
+vcl() { "$VERCEL_BIN" -A "$REPO_ROOT/apps/dapp/vercel.json" "$@"; }
 args=()
 if [ -n "$PROD_FLAG" ]; then args+=("$PROD_FLAG"); fi
 

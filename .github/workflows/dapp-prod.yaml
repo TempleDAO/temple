@@ -19,6 +19,9 @@ jobs:
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
         with:
           node-version: '24'
+      - name: Install Dependencies
+        run: yarn install
+        working-directory: apps/dapp
       - name: Deploy to Vercel
         id: deploy_step
         run: bash .github/scripts/vercel-deploy.sh production templedao.link --prod
