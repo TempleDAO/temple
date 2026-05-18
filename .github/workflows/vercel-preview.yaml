@@ -14,6 +14,8 @@ jobs:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.DAPP_PROJECT_ID }}
+      PREVIEW_ALIAS: pr-${{ github.event.number }}-preview.templedao.link
+      PREVIEW_URL: https://pr-${{ github.event.number }}-preview.templedao.link
     steps:
       - name: checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
@@ -27,14 +29,13 @@ jobs:
         working-directory: apps/dapp
       - name: Deploy to Vercel
         id: deploy_step
-        run: bash .github/scripts/vercel-deploy.sh preview pr-${{ github.event.number }}-preview.templedao.link
+        run: bash .github/scripts/vercel-deploy.sh preview "$PREVIEW_ALIAS"
         continue-on-error: true
       - name: Comment on PR
         if: steps.deploy_step.outcome == 'success'
         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b
         env:
           DEPLOYMENT_URL: ${{ steps.deploy_step.outputs.deployment_url }}
-          PREVIEW_URL: https://pr-${{ github.event.number }}-preview.templedao.link
         with:
           script: |
             const marker = '<!-- vercel-preview-comment -->';
@@ -78,6 +79,6 @@ jobs:
         with:
           severity: info
           description: (Dapp) PREVIEW Deploy to Vercel succeeded!
-          details: "[View Preview](https://pr-${{ github.event.number }}-preview.templedao.link) | [PR Details](${{ github.event.pull_request._links.html.href }})"
+          details: "[View Preview](${{ env.PREVIEW_URL }}) | [PR Details](${{ github.event.pull_request._links.html.href }})"
           footer: PR ${{ github.event.number }}
           webhookUrl: ${{ secrets.DISCORD_WEBHOOK_URL }}
