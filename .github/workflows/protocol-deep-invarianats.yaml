@@ -35,12 +35,12 @@ jobs:
           - 20
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           submodules: recursive
 
       - name: Use Node.js ${{ matrix.node_version }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
         with:
           node-version: ${{ matrix.node_version }}
           cache: 'yarn'
@@ -51,7 +51,7 @@ jobs:
         working-directory: protocol
 
       - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
+        uses: foundry-rs/foundry-toolchain@c7450ba673e133f5ee30098b3b54f444d3a2ca2d
         with:
           version: stable
 
@@ -59,7 +59,7 @@ jobs:
         run: forge config
         env:
           FOUNDRY_PROFILE: ci
-      
+
       - name: Show the Foundry version
         run: forge --version
         working-directory: protocol
@@ -80,7 +80,7 @@ jobs:
           sudo swapon --show
 
       - name: "Cache the build and the node modules so that they can be re-used by the other jobs"
-        uses: "actions/cache/save@v3"
+        uses: "actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae"
         with:
           key: "build-and-modules-${{ github.sha }}"
           path: |
@@ -89,15 +89,15 @@ jobs:
             protocol/artifacts-foundry
 
       - name: "Store the contract artifacts in CI"
-        uses: "actions/upload-artifact@v4"
+        uses: "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a"
         with:
           name: "contract-artifacts"
           path: "protocol/artifacts-foundry"
 
       - name: "Add build summary"
         run: |
-          echo "## Build result" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Passed" >> $GITHUB_STEP_SUMMARY
+          echo "## Build result" >> "$GITHUB_STEP_SUMMARY"
+          echo "✅ Passed" >> "$GITHUB_STEP_SUMMARY"
 
   foundry-test-invariant:
     name: Foundry Invariant Tests
@@ -117,23 +117,23 @@ jobs:
           - 20
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           submodules: recursive
 
       - name: Use Node.js ${{ matrix.node_version }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
         with:
           node-version: ${{ matrix.node_version }}
           cache: 'yarn'
           cache-dependency-path: protocol/yarn.lock
 
       - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
+        uses: foundry-rs/foundry-toolchain@c7450ba673e133f5ee30098b3b54f444d3a2ca2d
         with:
           version: stable
       - name: "Restore the cached build and the node modules"
-        uses: "actions/cache/restore@v3"
+        uses: "actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae"
         with:
           fail-on-cache-miss: true
           key: "build-and-modules-${{ github.sha }}"
@@ -144,10 +144,10 @@ jobs:
 
       - name: "Generate fuzz seed"
         run: echo "FOUNDRY_FUZZ_SEED=$EPOCHSECONDS" >> $GITHUB_ENV
-      
+
       - name: "Log fuzz seed"
         run: echo "FOUNDRY_FUZZ_SEED=$FOUNDRY_FUZZ_SEED"
-        
+
       - name: Foundry invariant tests
         run: "forge test --match-path \"test/foundry/invariant/**/*.sol\""
         working-directory: protocol
@@ -158,8 +158,8 @@ jobs:
           FOUNDRY_FUZZ_RUNS: ${{ inputs.fuzzRuns || '2000' }}
           MAINNET_RPC_URL: ${{ secrets.TESTS_MAINNET_RPC_URL }}
           ARBITRUM_ONE_RPC_URL: ${{ secrets.TESTS_ARBITRUM_ONE_RPC_URL }}
-  
+
       - name: "Add test summary"
         run: |
-          echo "## Deep Invariant tests result" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Passed" >> $GITHUB_STEP_SUMMARY
+          echo "## Deep Invariant tests result" >> "$GITHUB_STEP_SUMMARY"
+          echo "✅ Passed" >> "$GITHUB_STEP_SUMMARY"
