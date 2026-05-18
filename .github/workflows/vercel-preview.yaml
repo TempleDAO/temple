@@ -27,6 +27,9 @@ jobs:
       - name: Install Dependencies
         run: yarn install
         working-directory: apps/dapp
+      - name: Generate typechain and API types
+        run: yarn typechain && yarn codegen:safe-api-v1
+        working-directory: apps/dapp
       - name: Deploy to Vercel
         id: deploy_step
         run: bash .github/scripts/vercel-deploy.sh preview "$PREVIEW_ALIAS"
