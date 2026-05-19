@@ -2,25 +2,24 @@ import { useCallback, useEffect, useState } from 'react';
 import { spiceAuction, subgraphQuery } from 'utils/subgraph';
 import { getAllSpiceBazaarSubgraphEndpoints } from 'constants/env/getSpiceBazaarEndpoints';
 
-export type Metric = {
-  id: string;
+export type AuctionOverviewMetric = {
   epoch: string;
   date: string;
-  value: number;
-  timestamp: number;
+  totalBidAmount: number;
+  totalOfferedAmount: number;
 };
 
-type UseClosingPriceHistoryReturn = {
-  data: Metric[] | null;
+type UseAuctionOverviewReturn = {
+  data: AuctionOverviewMetric[] | null;
   loading: boolean;
   error: string | null;
   refetch: () => void;
 };
 
-export const useClosingPriceHistory = (
+export const useAuctionOverview = (
   auctionAddress: string
-): UseClosingPriceHistoryReturn => {
-  const [data, setData] = useState<Metric[] | null>(null);
+): UseAuctionOverviewReturn => {
+  const [data, setData] = useState<AuctionOverviewMetric[] | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,27 +51,25 @@ export const useClosingPriceHistory = (
 
       const rawInstances = spiceAuctionData.auctionInstances ?? [];
 
-      const metrics: Metric[] = rawInstances
+      const metrics: AuctionOverviewMetric[] = rawInstances
         .map((instance: any) => ({
-          id: instance.id,
           epoch: instance.epoch,
-          timestamp: Number(instance.timestamp),
           date: new Date(Number(instance.endTime) * 1000).toLocaleDateString(
             'en-GB',
-            {
-              day: 'numeric',
-              month: 'short',
-              year: 'numeric',
-            }
+            { day: 'numeric', month: 'short', year: 'numeric' }
           ),
-          value: parseFloat(instance.priceRatio),
+          totalBidAmount: parseFloat(instance.totalBidTokenAmount),
+          totalOfferedAmount: parseFloat(instance.totalAuctionTokenAmount),
         }))
-        .sort((a, b) => a.timestamp - b.timestamp);
+        .sort(
+          (a: AuctionOverviewMetric, b: AuctionOverviewMetric) =>
+            Number(a.epoch) - Number(b.epoch)
+        );
 
       setData(metrics);
     } catch (err) {
-      console.error('Failed to fetch spice auction subgraph data', err);
-      setError('Failed to load spice auction subgraph data.');
+      console.error('Failed to fetch auction overview data', err);
+      setError('Failed to load auction overview data.');
       setData([]);
     } finally {
       setLoading(false);
