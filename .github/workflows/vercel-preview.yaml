@@ -14,24 +14,36 @@ jobs:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.DAPP_PROJECT_ID }}
+      PREVIEW_ALIAS: pr-${{ github.event.number }}-preview.templedao.link
+      PREVIEW_URL: https://pr-${{ github.event.number }}-preview.templedao.link
     steps:
       - name: checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
         with:
           node-version: '24'
+      - name: Install Dependencies
+        run: yarn install
+        working-directory: apps/dapp
+      - name: Generate typechain and API types
+        run: yarn typechain && yarn codegen:safe-api-v1
+        working-directory: apps/dapp
       - name: Deploy to Vercel
         id: deploy_step
-        run: bash .github/scripts/vercel-deploy.sh preview pr-${{ github.event.number }}-preview.templedao.link
+        run: bash .github/scripts/vercel-deploy.sh preview "$PREVIEW_ALIAS"
         continue-on-error: true
       - name: Comment on PR
         if: steps.deploy_step.outcome == 'success'
         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b
+        env:
+          DEPLOYMENT_URL: ${{ steps.deploy_step.outputs.deployment_url }}
         with:
           script: |
             const marker = '<!-- vercel-preview-comment -->';
             const sha = context.payload.pull_request.head.sha.substring(0, 7);
-            const body = `${marker}\nDeploy preview for core ready!\n\n✅ Preview\n${{ steps.deploy_step.outputs.deployment_url }}\nhttps://pr-${{ github.event.number }}-preview.templedao.link\n\nBuilt with commit ${sha}.`;
+            const body = `${marker}\nDeploy preview for core ready!\n\n✅ Preview\n${process.env.DEPLOYMENT_URL}\n${process.env.PREVIEW_URL}\n\nBuilt with commit ${sha}.`;
             const comments = await github.rest.issues.listComments({
               issue_number: context.issue.number,
               owner: context.repo.owner,
@@ -70,6 +82,6 @@ jobs:
         with:
           severity: info
           description: (Dapp) PREVIEW Deploy to Vercel succeeded!
-          details: "[View Preview](https://pr-${{ github.event.number }}-preview.templedao.link) | [PR Details](${{ github.event.pull_request._links.html.href }})"
+          details: "[View Preview](${{ env.PREVIEW_URL }}) | [PR Details](${{ github.event.pull_request._links.html.href }})"
           footer: PR ${{ github.event.number }}
           webhookUrl: ${{ secrets.DISCORD_WEBHOOK_URL }}
