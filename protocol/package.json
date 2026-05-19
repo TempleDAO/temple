@@ -2,6 +2,7 @@
   "name": "@temple/protocol",
   "version": "1.0.0",
   "description": "temple DOA smart contracts",
+  "packageManager": "yarn@1.22.21",
   "main": "index.js",
   "author": "templeDOA",
   "license": "AGPL-3.0-or-later",

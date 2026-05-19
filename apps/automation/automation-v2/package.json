@@ -2,6 +2,7 @@
   "name": "@temple/tasks",
   "version": "0.0.1",
   "description": "temple automation tasks using overlord framework",
+  "packageManager": "yarn@1.22.21",
   "license": "AGPL-3.0-or-later",
   "scripts": {
     "clean": "rm -rf dist",
