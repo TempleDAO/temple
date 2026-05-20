@@ -33,13 +33,17 @@ export const useAuctionOverview = (
       let spiceAuctionData = null;
 
       for (const entry of endpoints) {
-        const response = await subgraphQuery(
-          entry.url,
-          spiceAuction(auctionAddress)
-        );
-        if (response.spiceAuction) {
-          spiceAuctionData = response.spiceAuction;
-          break;
+        try {
+          const response = await subgraphQuery(
+            entry.url,
+            spiceAuction(auctionAddress)
+          );
+          if (response.spiceAuction) {
+            spiceAuctionData = response.spiceAuction;
+            break;
+          }
+        } catch (err) {
+          console.warn(`subgraphQuery failed for endpoint ${entry.url}`, err);
         }
       }
 

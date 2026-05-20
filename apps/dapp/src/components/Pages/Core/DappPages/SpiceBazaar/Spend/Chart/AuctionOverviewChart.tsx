@@ -98,7 +98,7 @@ export const AuctionOverviewChart = ({
             stroke={theme.palette.brandDarker}
           />
           <XAxis
-            dataKey="date"
+            dataKey="epoch"
             axisLine={false}
             tickLine={false}
             tick={{
