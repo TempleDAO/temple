@@ -33,7 +33,7 @@ export const Charts = ({
     () => [
       { label: 'Bid History', value: ChartType.BidHistory },
       { label: 'Spice Final Price', value: ChartType.SpiceFinalPrice },
-      { label: 'Auction Overview', value: ChartType.AuctionOverview },
+      { label: 'Token Totals', value: ChartType.AuctionOverview },
     ],
     []
   );

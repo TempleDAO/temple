@@ -125,6 +125,7 @@ export const InputSelect = (props: SelectTempleDaoProps) => {
     return (
       <components.ValueContainer {...valueProps}>
         <ValueLabel>{text}</ValueLabel>
+        <span style={{ position: 'absolute' }}>{children}</span>
       </components.ValueContainer>
     );
   };
@@ -133,6 +134,7 @@ export const InputSelect = (props: SelectTempleDaoProps) => {
     <Select
       {...props}
       isMulti
+      isSearchable={false}
       closeMenuOnSelect={false}
       hideSelectedOptions={false}
       classNamePrefix={'Select'}
