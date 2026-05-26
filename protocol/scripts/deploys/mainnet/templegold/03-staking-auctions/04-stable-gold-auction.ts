@@ -1,16 +1,13 @@
 import '@nomiclabs/hardhat-ethers';
-import { ethers } from 'hardhat';
 import { StableGoldAuction__factory } from '../../../../../typechain';
 import {
   deployAndMine,
-  ensureExpectedEnvvars,
+  runAsyncMain,
 } from '../../../helpers';
-import { getDeployedContracts } from '../contract-addresses';
+import { getDeployContext } from '../deploy-context';
 
 async function main() {
-  ensureExpectedEnvvars();
-  const [owner] = await ethers.getSigners();
-  const ADDRS = getDeployedContracts();
+  const { owner, ADDRS } = await getDeployContext(__dirname);
   const treasury = ADDRS.TEMPLE_GOLD.TEAM_GNOSIS;
 
   const factory = new StableGoldAuction__factory(owner);
@@ -27,11 +24,4 @@ async function main() {
   );
 }
 
-// We recommend this pattern to be able to use async/await everywhere
-// and properly handle errors.
-main()
-  .then(() => process.exit(0))
-  .catch(error => {
-    console.error(error);
-    process.exit(1);
-  });
+runAsyncMain(main);

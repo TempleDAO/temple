@@ -1,16 +1,12 @@
-import { ethers } from 'hardhat';
 import {
-    ensureExpectedEnvvars,
     mine,
+    runAsyncMain,
 } from '../../../helpers';
-import { connectToContracts, getDeployedContracts } from '../contract-addresses';
 import { DEFAULT_SETTINGS } from '../default-settings';
+import { getDeployContext } from '../deploy-context';
 
 async function main() {
-    ensureExpectedEnvvars();
-    const [owner] = await ethers.getSigners();
-    const ADDRS = getDeployedContracts();
-    const INSTANCES = connectToContracts(owner);
+    const { ADDRS, INSTANCES } = await getDeployContext(__dirname);
     
     const auctionConfig = {
         /// Time diff between two auctions. Usually 2 weeks
@@ -26,11 +22,4 @@ async function main() {
     await mine(INSTANCES.TEMPLE_GOLD.STABLE_GOLD_AUCTION.setAuctionConfig(auctionConfig));
 }
   
-// We recommend this pattern to be able to use async/await everywhere
-// and properly handle errors.
-main()
-    .then(() => process.exit(0))
-    .catch(error => {
-        console.error(error);
-        process.exit(1);
-    });
+runAsyncMain(main);
