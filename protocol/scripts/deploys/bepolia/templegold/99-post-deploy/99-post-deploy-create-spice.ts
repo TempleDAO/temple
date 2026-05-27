@@ -1,23 +1,21 @@
 import '@nomiclabs/hardhat-ethers';
-import { ethers, run } from 'hardhat';
+import { run } from 'hardhat';
 import {
-  ensureExpectedEnvvars,
+  runAsyncMain,
   mine,
   toAtto
 } from '../../../helpers';
 import {
-    getDeployedContracts,
     connectToContracts,
     ContractInstances
 } from '../contract-addresses';
 import { SpiceAuction, SpiceAuction__factory } from '../../../../../typechain';
 import { DEFAULT_SETTINGS } from '../default-settings';
+import { getDeployContext } from '../deploy-context';
 
 async function main() {
-    ensureExpectedEnvvars();
-    const [owner] = await ethers.getSigners();
+    const { owner, ADDRS } = await getDeployContext(__dirname);
     const ownerAddress = await owner.getAddress();
-    const ADDRS = getDeployedContracts();
 
     const INSTANCES = connectToContracts(owner);
     const name = "TGLD_SPICE_SPICE"; // eg. "TGLD_TOKENNAME_SPICE";
@@ -66,11 +64,4 @@ async function _fundAuction(instances: ContractInstances, spiceInstance: SpiceAu
     await mine(spiceInstance.fundNextAuction(amount, startTime));
 }
 
-// We recommend this pattern to be able to use async/await everywhere
-// and properly handle errors.
-main()
-  .then(() => process.exit(0))
-  .catch(error => {
-    console.error(error);
-    process.exit(1);
-  });
+runAsyncMain(main);
