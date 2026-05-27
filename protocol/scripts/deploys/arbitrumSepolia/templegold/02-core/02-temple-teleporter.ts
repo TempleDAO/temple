@@ -1,16 +1,13 @@
 import '@nomiclabs/hardhat-ethers';
-import { ethers } from 'hardhat';
 import { TempleTeleporter__factory } from '../../../../../typechain';
 import {
   deployAndMine,
-  ensureExpectedEnvvars,
+  runAsyncMain,
 } from '../../../helpers';
-import { getDeployedContracts } from '../contract-addresses';
+import { getDeployContext } from '../deploy-context';
 
 async function main() {
-  ensureExpectedEnvvars();
-  const [owner] = await ethers.getSigners();
-  const TEMPLEGOLD_ADDRESSES = getDeployedContracts();
+  const { owner, ADDRS } = await getDeployContext(__dirname);
 
   const factory = new TempleTeleporter__factory(owner);
   await deployAndMine(
@@ -18,16 +15,9 @@ async function main() {
     factory,
     factory.deploy,
     await owner.getAddress(),
-    TEMPLEGOLD_ADDRESSES.CORE.TEMPLE_TOKEN,
-    TEMPLEGOLD_ADDRESSES.EXTERNAL.LAYER_ZERO.ENDPOINT
+    ADDRS.CORE.TEMPLE_TOKEN,
+    ADDRS.EXTERNAL.LAYER_ZERO.ENDPOINT
   );
 }
 
-// We recommend this pattern to be able to use async/await everywhere
-// and properly handle errors.
-main()
-  .then(() => process.exit(0))
-  .catch(error => {
-    console.error(error);
-    process.exit(1);
-  });
+runAsyncMain(main);
