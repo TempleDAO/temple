@@ -22,7 +22,7 @@ async function applyOverrides(addrs: ContractAddresses, dirname: string) {
   const dirs = dirname.split("/");
   let scriptDir = "";
   for (let i = dirs.length-1; i >= 0; i--) {
-    if (dirs[i] == "mainnet" || dirs[i] == "scripts") {
+    if (dirs[i] == "sepolia" || dirs[i] == "scripts") {
       scriptDir = dirs[i+1];
       break;
     }

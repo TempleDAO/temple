@@ -14,10 +14,9 @@ import { DEFAULT_SETTINGS } from '../default-settings';
 import { getDeployContext } from '../deploy-context';
 
 async function main() {
-    const { owner, ADDRS } = await getDeployContext(__dirname);
+    const { owner, ADDRS, INSTANCES } = await getDeployContext(__dirname);
     const ownerAddress = await owner.getAddress();
 
-    const INSTANCES = connectToContracts(owner);
     const name = "TGLD_SPICE_SPICE"; // eg. "TGLD_TOKENNAME_SPICE";
     const spiceToken = ADDRS.TEMPLE_GOLD.SPICE_TOKEN;
 

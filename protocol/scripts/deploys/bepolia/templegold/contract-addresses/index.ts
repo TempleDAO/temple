@@ -31,7 +31,7 @@ async function applyOverrides(addrs: ContractAddresses, dirname: string) {
   const dirs = dirname.split("/");
   let scriptDir = "";
   for (let i = dirs.length-1; i >= 0; i--) {
-    if (dirs[i] == "mainnet" || dirs[i] == "scripts") {
+    if (dirs[i] == "bepolia" || dirs[i] == "scripts") {
       scriptDir = dirs[i+1];
       break;
     }
@@ -44,7 +44,7 @@ async function applyOverrides(addrs: ContractAddresses, dirname: string) {
 export async function getDeployedContractsUsingOverrides(
   applyOverridesPath: string
 ): Promise<ContractAddresses> {
-  if (network.name === 'sepolia') {
+  if (network.name === 'bepolia') {
     return BEPOLIA_CONTRACTS;
   } else if (network.name === 'localhost') {
     return await applyOverrides(BEPOLIA_CONTRACTS, applyOverridesPath);

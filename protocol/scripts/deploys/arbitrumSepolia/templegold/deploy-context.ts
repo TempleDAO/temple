@@ -2,9 +2,10 @@ import { ethers } from "hardhat";
 import { ensureExpectedEnvvars } from "../../helpers";
 import { ContractInstances, connectToContractsUsingAddr, getDeployedContractsUsingOverrides } from "./contract-addresses";
 import { ContractAddresses } from "./contract-addresses/types";
+import { Signer } from "ethers";
 
 export interface DeployContext {
-  owner: string;
+  owner: Signer;
   ADDRS: ContractAddresses,
   INSTANCES: ContractInstances,
 }
