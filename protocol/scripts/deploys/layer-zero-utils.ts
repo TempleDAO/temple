@@ -102,7 +102,7 @@ export async function reportDvns(owner: SignerWithAddress, oftAddress: string, d
 
 export async function setPeer(srcOft: TempleGold, destEid: number, destOftAddress: string) {
   console.log(`${srcOft.address}.setPeer(${destEid}, "${ethers.utils.hexlify(ethers.utils.zeroPad(destOftAddress, 32))}")`);
-  // await mine(srcOft.setPeer(Expand commentComment on line R104Resolved
+  // await mine(srcOft.setPeer(
   //   destEid,
   //   ethers.utils.zeroPad(destOftAddress, 32)
   // ));

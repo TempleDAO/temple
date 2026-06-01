@@ -1,14 +1,11 @@
 import '@nomiclabs/hardhat-ethers';
-import { ethers } from 'hardhat';
-import { ensureExpectedEnvvars } from '../../../helpers';
-import { getDeployedContracts } from '../contract-addresses';
+import { runAsyncMain } from '../../../helpers';
 import { DEFAULT_SETTINGS as MAINNET_DEFAULT_SETTINGS } from '../../../mainnet/templegold/default-settings';
 import { setDvnConfig } from '../../../layer-zero-utils';
+import { getDeployContext } from '../deploy-context';
 
 async function main() {
-    ensureExpectedEnvvars();
-    const [owner] = await ethers.getSigners();
-    const ADDRS = getDeployedContracts();
+    const { owner, ADDRS } = await getDeployContext(__dirname);
 
     const oftAddress = ADDRS.TEMPLE_GOLD.TEMPLE_GOLD;
     const destEid = MAINNET_DEFAULT_SETTINGS.GLOBAL.LZ_EID;
@@ -27,11 +24,4 @@ async function main() {
     });
 }
 
-// We recommend this pattern to be able to use async/await everywhere
-// and properly handle errors.
-main()
-  .then(() => process.exit(0))
-  .catch(error => {
-    console.error(error);
-    process.exit(1);
-  });
+runAsyncMain(main);
