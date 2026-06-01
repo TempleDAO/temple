@@ -1,32 +1,26 @@
 import '@nomiclabs/hardhat-ethers';
-import { ethers, run } from 'hardhat';
+import { run } from 'hardhat';
 import {
-  ensureExpectedEnvvars,
+  runAsyncMain,
   mine,
   toAtto
 } from '../../../helpers';
-import {
-    getDeployedContracts,
-    connectToContracts
-} from '../contract-addresses';
 import { SpiceAuction, SpiceAuction__factory } from '../../../../../typechain';
 import { DEFAULT_SETTINGS } from '../default-settings';
 import { ContractInstances } from '../../../sepolia/templegold/contract-addresses/types';
+import { getDeployContext } from '../deploy-context';
 
 async function main() {
-    ensureExpectedEnvvars();
-    const [owner] = await ethers.getSigners();
+    const { owner, ADDRS, INSTANCES } = await getDeployContext(__dirname);
     const ownerAddress = await owner.getAddress();
-    const TEMPLE_GOLD_ADDRS = getDeployedContracts();
 
-    const TEMPLE_GOLD_INSTANCES = connectToContracts(owner);
     const name = "TGLD_DAI_SPICE"; // eg. "TGLD_TOKENNAME_SPICE";
-    const spiceToken = TEMPLE_GOLD_ADDRS.EXTERNAL.MAKER_DAO.DAI_TOKEN;
+    const spiceToken = ADDRS.EXTERNAL.MAKER_DAO.DAI_TOKEN;
 
     if(!name || !spiceToken) { throw new Error("Missing name or spice token!"); }
 
-    await mine(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.SPICE_AUCTION_FACTORY.createAuction(spiceToken, name));
-    const spiceAuction = await TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.SPICE_AUCTION_FACTORY.findAuctionForSpiceToken(spiceToken);
+    await mine(INSTANCES.TEMPLE_GOLD.SPICE_AUCTION_FACTORY.createAuction(spiceToken, name));
+    const spiceAuction = await INSTANCES.TEMPLE_GOLD.SPICE_AUCTION_FACTORY.findAuctionForSpiceToken(spiceToken);
     
     // If etherscan knows the contract bytecode, it may already have automatically been verified.
     try {
@@ -43,7 +37,7 @@ async function main() {
     // Otherwise run them one after the next.
     const spiceInstance = SpiceAuction__factory.connect(spiceAuction, owner);
     await _setAuctionConfig(ownerAddress, spiceInstance);
-    await _fundAuction(TEMPLE_GOLD_INSTANCES, spiceInstance);
+    await _fundAuction(INSTANCES, spiceInstance);
 }
 
 async function _setAuctionConfig(ownerAddress: string, spiceInstance: SpiceAuction) {
@@ -67,11 +61,4 @@ async function _fundAuction(instances: ContractInstances, spiceInstance: SpiceAu
     await mine(spiceInstance.fundNextAuction(amount, startTime));
 }
 
-// We recommend this pattern to be able to use async/await everywhere
-// and properly handle errors.
-main()
-  .then(() => process.exit(0))
-  .catch(error => {
-    console.error(error);
-    process.exit(1);
-  });
+runAsyncMain(main);

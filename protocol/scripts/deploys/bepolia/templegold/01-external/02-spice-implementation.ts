@@ -1,14 +1,13 @@
 import '@nomiclabs/hardhat-ethers';
-import { ethers } from 'hardhat';
 import { SpiceMock__factory } from '../../../../../typechain';
 import {
   deployAndMine,
-  ensureExpectedEnvvars,
+  runAsyncMain,
 } from '../../../helpers';
+import { getDeployContext } from '../deploy-context';
 
 async function main() {
-    ensureExpectedEnvvars();
-    const [owner] = await ethers.getSigners();
+    const { owner } = await getDeployContext(__dirname);
     // use testnet version for frequent and small time auctions
     const factory = new SpiceMock__factory(owner);
     await deployAndMine(
@@ -18,11 +17,4 @@ async function main() {
     );
 }
 
-// We recommend this pattern to be able to use async/await everywhere
-// and properly handle errors.
-main()
-  .then(() => process.exit(0))
-  .catch(error => {
-    console.error(error);
-    process.exit(1);
-  });
+runAsyncMain(main);
