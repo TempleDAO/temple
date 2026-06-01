@@ -1,17 +1,14 @@
 import '@nomiclabs/hardhat-ethers';
-import { ethers } from 'hardhat';
 import {
-  ensureExpectedEnvvars,
-  mine
+  mine,
+  runAsyncMain
 } from '../../../helpers';
-import {
-    getDeployedContracts
-} from '../contract-addresses';
 import { Constants as ARBITRUM_SEPOLIA_CONSTANTS } from '../../../arbitrumSepolia/constants';
 import { Constants as BEPOLIA_CONSTANTS } from '../../../bepolia/constants';
 import { TempleGold, TempleGold__factory } from '../../../../../typechain';
 import { EnforcedOptionParamStruct } from '../../../../../typechain/@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/libs/OAppOptionsType3';
 import { DEFAULT_SETTINGS } from '../default-settings';
+import { getDeployContext } from '../deploy-context';
 
 async function setTempleGoldEnforcedOptionsArbitrumSepolia(templeGold: TempleGold) {
   const options: EnforcedOptionParamStruct[] = [{
@@ -32,19 +29,10 @@ async function setTempleGoldEnforcedOptionsBepolia(templeGold: TempleGold) {
 }
 
 async function main() {
-  ensureExpectedEnvvars();
-  const [owner] = await ethers.getSigners();
-  const TEMPLEGOLD_ADDRESSES = getDeployedContracts();
-  const templeGold = TempleGold__factory.connect(TEMPLEGOLD_ADDRESSES.TEMPLE_GOLD.TEMPLE_GOLD, owner);
+  const { owner, ADDRS } = await getDeployContext(__dirname);
+  const templeGold = TempleGold__factory.connect(ADDRS.TEMPLE_GOLD.TEMPLE_GOLD, owner);
   await setTempleGoldEnforcedOptionsArbitrumSepolia(templeGold);
   await setTempleGoldEnforcedOptionsBepolia(templeGold);
 }
 
-// We recommend this pattern to be able to use async/await everywhere
-// and properly handle errors.
-main()
-  .then(() => process.exit(0))
-  .catch(error => {
-    console.error(error);
-    process.exit(1);
-  });
+runAsyncMain(main);

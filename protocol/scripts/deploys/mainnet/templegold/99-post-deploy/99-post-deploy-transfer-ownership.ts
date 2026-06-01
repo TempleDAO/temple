@@ -1,15 +1,11 @@
-import { ethers } from 'hardhat';
 import {
-    ensureExpectedEnvvars,
+    runAsyncMain,
     mine,
 } from '../../../helpers';
-import { connectToContracts, getDeployedContracts } from '../contract-addresses';
+import { getDeployContext } from '../deploy-context';
 
 async function main() {
-    ensureExpectedEnvvars();
-    const [owner] = await ethers.getSigners();
-    const INSTANCES = connectToContracts(owner);
-    const ADDRS = getDeployedContracts();
+    const { ADDRS, INSTANCES } = await getDeployContext(__dirname);
 
     // Transfer ownership of TGLD to executor msig
     // Originally, ownership was intended for the TempleGoldAdmin contract. But executor is handling this well now.
@@ -18,11 +14,4 @@ async function main() {
     await mine(INSTANCES.TEMPLE_GOLD.SPICE_AUCTION_FACTORY.proposeNewExecutor(ADDRS.CORE.EXECUTOR_MSIG));
 }
   
-// We recommend this pattern to be able to use async/await everywhere
-// and properly handle errors.
-main()
-    .then(() => process.exit(0))
-    .catch(error => {
-        console.error(error);
-        process.exit(1);
-    });
+runAsyncMain(main);

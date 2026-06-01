@@ -1,16 +1,13 @@
 import '@nomiclabs/hardhat-ethers';
-import { ethers, run } from 'hardhat';
+import { run } from 'hardhat';
 import {
-  ensureExpectedEnvvars,
+  runAsyncMain,
   mine,
 } from '../../../helpers';
-import {connectToContracts } from '../contract-addresses';
+import { getDeployContext } from '../deploy-context';
 
 async function main() {
-    ensureExpectedEnvvars();
-    const [owner] = await ethers.getSigners();
-
-    const INSTANCES = connectToContracts(owner);
+    const { INSTANCES } = await getDeployContext(__dirname);
     
     const name = "[TGLD]/[ENA]";
     const spiceToken = "0x57e114b691db790c35207b2e685d4a43181e6061"; // ENA
@@ -39,11 +36,4 @@ async function main() {
     // const spiceInstance = SpiceAuction__factory.connect(spiceAuction, owner);
 }
 
-// We recommend this pattern to be able to use async/await everywhere
-// and properly handle errors.
-main()
-  .then(() => process.exit(0))
-  .catch(error => {
-    console.error(error);
-    process.exit(1);
-  });
+runAsyncMain(main);
