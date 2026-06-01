@@ -108,7 +108,8 @@
     "basic-ftp": "5.2.0",
     "gh-pages": "5.0.0",
     "underscore": "1.12.1",
-    "handlebars": "4.7.9"
+    "handlebars": "4.7.9",
+    "crypto-es": "2.1.0"
   },
   "packageManager": "yarn@1.22.21"
 }
