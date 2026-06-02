@@ -3,7 +3,7 @@ import { ethers } from "ethers";
 export const DEFAULT_SETTINGS = {
     GLOBAL: {
         CHAIN_ID: 80094, // Berachain
-        LZ_EID: 30262,    // Berachain
+        LZ_EID: 30362,    // Berachain
         MINT_CHAIN_ID: 1, // Mainnet (Minting chain)
         MINT_CHAIN_LZ_EID: 30101, // Mainnet (Minting chain)
     },
