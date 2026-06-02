@@ -2,23 +2,22 @@ import { ethers } from 'hardhat';
 import {
     ensureExpectedEnvvars,
     mine,
+    runAsyncMain,
 } from '../../../helpers';
 import { connectToContracts, ContractInstances, getDeployedContracts, ContractAddresses } from '../contract-addresses';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { EnforcedOptionParamStruct } from '../../../../../typechain/@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/libs/OAppOptionsType3';
 import { DEFAULT_SETTINGS } from '../default-settings';
+import { getDeployContext } from '../deploy-context';
 
 async function main() {
-    ensureExpectedEnvvars();
-    const [owner] = await ethers.getSigners();
-    const ADDRS = getDeployedContracts();
-    const INSTANCES = connectToContracts(owner);
+    const { owner, ADDRS, INSTANCES } = await getDeployContext(__dirname);
     
     // await _templeGoldPostDeploy(owner, ADDRS, INSTANCES);
     // await _stakingPostDeploy(owner, INSTANCES);
     // await _daiGoldPostDeploy(owner, INSTANCES);
     // await _templeTeleporterPostDeploy();
-    // await _setSpiceAuctionConfig(owner, INSTANCES);
+    // await _setSpiceAuctionConfig(INSTANCES);
 }
 
 async function _templeGoldPostDeploy(
@@ -92,7 +91,6 @@ async function _templeTeleporterPostDeploy() {
 }
 
 async function _setSpiceAuctionConfig(
-    owner: SignerWithAddress,
     INSTANCES: ContractInstances
 ) {
     const config = {
@@ -108,11 +106,4 @@ async function _setSpiceAuctionConfig(
     await mine(INSTANCES.TEMPLE_GOLD.SPICE_AUCTION.setAuctionConfig(config));
 }
 
-// We recommend this pattern to be able to use async/await everywhere
-// and properly handle errors.
-main()
-    .then(() => process.exit(0))
-    .catch(error => {
-        console.error(error);
-        process.exit(1);
-    });
+runAsyncMain(main);

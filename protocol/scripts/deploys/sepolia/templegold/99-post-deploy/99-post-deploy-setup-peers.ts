@@ -1,14 +1,14 @@
 import { ethers } from 'hardhat';
 import {
-    ensureExpectedEnvvars,
     mine,
+    runAsyncMain,
 } from '../../../helpers';
-import { connectToContracts } from '../contract-addresses';
 import { CONTRACTS as BEPOLIA_CONTRACTS } from '../../../bepolia/templegold/contract-addresses/bepolia';
 import { CONTRACTS as ARB_SEPOLIA_CONTRACTS } from '../../../arbitrumSepolia/templegold/contract-addresses/arbitrumSepolia';
 import { TempleGold } from '../../../../../typechain';
 import { Constants as BEPOLIA_CONSTANTS } from '../../../bepolia/constants';
 import { Constants as ARBITRUM_SEPOLIA_CONSTANTS } from '../../../arbitrumSepolia/constants';
+import { getDeployContext } from '../deploy-context';
 
 async function setBepoliaPeer(templeGold: TempleGold) {
     const BEPOLIA_LZ_EID = BEPOLIA_CONSTANTS.LAYER_ZERO.EID;
@@ -22,20 +22,10 @@ async function setArbitrumSepoliaPeer(templeGold: TempleGold) {
 }
 
 async function main() {
-    ensureExpectedEnvvars();
-    const [owner] = await ethers.getSigners();
-    const TEMPLE_GOLD_INSTANCES = connectToContracts(owner);
-
-    await setBepoliaPeer(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.TEMPLE_GOLD);
-    await setArbitrumSepoliaPeer(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.TEMPLE_GOLD);
+    const { INSTANCES } = await getDeployContext(__dirname);
+    await setBepoliaPeer(INSTANCES.TEMPLE_GOLD.TEMPLE_GOLD);
+    await setArbitrumSepoliaPeer(INSTANCES.TEMPLE_GOLD.TEMPLE_GOLD);
 }
 
   
-// We recommend this pattern to be able to use async/await everywhere
-// and properly handle errors.
-main()
-    .then(() => process.exit(0))
-    .catch(error => {
-        console.error(error);
-        process.exit(1);
-    });
+runAsyncMain(main);

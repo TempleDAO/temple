@@ -1,16 +1,12 @@
-import { ethers } from 'hardhat';
 import {
-    ensureExpectedEnvvars,
     mine,
+    runAsyncMain,
 } from '../../../helpers';
-import { connectToContracts, getDeployedContracts } from '../contract-addresses';
 import { DEFAULT_SETTINGS } from '../default-settings';
+import { getDeployContext } from '../deploy-context';
 
 async function main() {
-    ensureExpectedEnvvars();
-    const [owner] = await ethers.getSigners();
-    const ADDRS = getDeployedContracts();
-    const INSTANCES = connectToContracts(owner);
+    const { ADDRS, INSTANCES } = await getDeployContext(__dirname);
 
     // reward duration
     await mine(INSTANCES.TEMPLE_GOLD.TEMPLE_GOLD_STAKING.setRewardDuration(DEFAULT_SETTINGS.STAKING.REWARDS_DURATION));
@@ -21,12 +17,5 @@ async function main() {
     // unstake cool down
     await mine(INSTANCES.TEMPLE_GOLD.TEMPLE_GOLD_STAKING.setUnstakeCooldown(DEFAULT_SETTINGS.STAKING.UNSTAKE_COOLDOWN));
 }
-  
-// We recommend this pattern to be able to use async/await everywhere
-// and properly handle errors.
-main()
-    .then(() => process.exit(0))
-    .catch(error => {
-        console.error(error);
-        process.exit(1);
-    });
+
+runAsyncMain(main);
