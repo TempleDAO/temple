@@ -710,20 +710,15 @@ export function expectAddressWithPrivateKey() {
 
 const expectedEnvvars: { [key: string]: string[] } = {
   mainnet: [
-    'MAINNET_ADDRESS_PRIVATE_KEY',
     'MAINNET_RPC_URL',
-    'MAINNET_GAS_IN_GWEI',
   ],
-  rinkeby: ['RINKEBY_ADDRESS_PRIVATE_KEY', 'RINKEBY_RPC_URL'],
-  goerli: ['GOERLI_ADDRESS_PRIVATE_KEY', 'GOERLI_RPC_URL'],
-  matic: ['MATIC_ADDRESS_PRIVATE_KEY', 'MATIC_RPC_URL'],
-  gnosis: ['GNOSIS_ADDRESS_PRIVATE_KEY', 'GNOSIS_RPC_URL'],
-  gnosisChiado: ['GNOSIS_CHIADO_ADDRESS_PRIVATE_KEY', 'GNOSIS_CHIADO_RPC_URL'],
-  polygonMumbai: ['MUMBAI_ADDRESS_PRIVATE_KEY', 'MUMBAI_RPC_URL'],
-  sepolia: ['SEPOLIA_ADDRESS_PRIVATE_KEY', 'SEPOLIA_RPC_URL'],
-  arbitrumSepolia: ['ARBITRUM_SEPOLIA_ADDRESS_PRIVATE_KEY', 'ARBITRUM_SEPOLIA_RPC_URL'],
-  berachain: ['BERACHAIN_ADDRESS_PRIVATE_KEY', 'BERACHAIN_RPC_URL'],
-  bepolia: ['BEPOLIA_ADDRESS_PRIVATE_KEY', 'BEPOLIA_RPC_URL'],
+  goerli: ['GOERLI_RPC_URL'],
+  gnosis: ['GNOSIS_RPC_URL'],
+  gnosisChiado: ['GNOSIS_CHIADO_RPC_URL'],
+  sepolia: ['SEPOLIA_RPC_URL'],
+  arbitrumSepolia: ['ARBITRUM_SEPOLIA_RPC_URL'],
+  berachain: ['BERACHAIN_RPC_URL'],
+  bepolia: ['BEPOLIA_RPC_URL'],
   anvil: [],
   localhost: [],
 };
