@@ -8,7 +8,6 @@ import '@nomiclabs/hardhat-ethers';
 import 'hardhat-contract-sizer';
 import 'hardhat-gas-reporter';
 import 'solidity-coverage';
-import { EndpointId } from '@layerzerolabs/lz-definitions';
 import { ANVIL_SIGNER_PRIVATE_KEYS } from './scripts/deploys/anvil';
 
 // NOTE: Any tasks that depend on the generated typechain makes the build flaky.

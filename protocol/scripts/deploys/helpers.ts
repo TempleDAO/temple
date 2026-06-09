@@ -713,8 +713,6 @@ const expectedEnvvars: { [key: string]: string[] } = {
     'MAINNET_RPC_URL',
   ],
   goerli: ['GOERLI_RPC_URL'],
-  gnosis: ['GNOSIS_RPC_URL'],
-  gnosisChiado: ['GNOSIS_CHIADO_RPC_URL'],
   sepolia: ['SEPOLIA_RPC_URL'],
   arbitrumSepolia: ['ARBITRUM_SEPOLIA_RPC_URL'],
   berachain: ['BERACHAIN_RPC_URL'],
