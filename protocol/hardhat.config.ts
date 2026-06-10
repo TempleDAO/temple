@@ -53,13 +53,16 @@ function getNetworkConfig(network: string) {
   }
 
   // Use the env set private key, otherwise fallback to the first anvil signer.
-  function getPrivateKey(envVar: string) {
+  function getPrivateKey(envVar: string, allowFallback: boolean) {
       const pk = getEnvVar(envVar);
-      return pk ? pk : ANVIL_SIGNER_PRIVATE_KEYS[0];
+      if (pk) return pk;
+      if (allowFallback) return ANVIL_SIGNER_PRIVATE_KEYS[0];
+      throw new Error(`Missing required environment variable ${envVar}`);
   }
   
   const networkUpper = network.toUpperCase();
-  const pk = getPrivateKey(`${networkUpper}_ADDRESS_PRIVATE_KEY`);
+  const allowFallback = ['hardhat', 'localhost', 'anvil'].includes(network);
+  const pk = getPrivateKey(`${networkUpper}_ADDRESS_PRIVATE_KEY`, allowFallback);
   const rpc = getEnvVar(`${networkUpper}_RPC_URL`) || '';
   const gasPrice = getMaxGasInWei(`${networkUpper}_GAS_IN_GWEI`);
   

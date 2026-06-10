@@ -616,8 +616,8 @@ export function expectAddressWithPrivateKey() {
     );
   }
 
-  if (network.name == 'arbitrumSepolia' && !process.env.ARBITRUM_SEPOLIA_ADDRESS_PRIVATE_KEY) {
-    throw new Error("Missing environment variable ARBITRUM_SEPOLIA_ADDRESS_PRIVATE_KEY. An arbitrum sepolia address private key with eth is required to deploy/manage contracts");
+  if (network.name == 'arbitrumSepolia' && !process.env.ARBITRUMSEPOLIA_ADDRESS_PRIVATE_KEY) {
+    throw new Error("Missing environment variable ARBITRUMSEPOLIA_ADDRESS_PRIVATE_KEY. An arbitrum sepolia address private key with eth is required to deploy/manage contracts");
   }
 }
 
@@ -627,7 +627,7 @@ const expectedEnvvars: { [key: string]: string[] } = {
   ],
   goerli: ['GOERLI_RPC_URL'],
   sepolia: ['SEPOLIA_RPC_URL'],
-  arbitrumSepolia: ['ARBITRUM_SEPOLIA_RPC_URL'],
+  arbitrumSepolia: ['ARBITRUMSEPOLIA_RPC_URL'],
   berachain: ['BERACHAIN_RPC_URL'],
   bepolia: ['BEPOLIA_RPC_URL'],
   anvil: [],
