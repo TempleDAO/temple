@@ -145,78 +145,6 @@ export interface DeployedContracts {
 }
 
 export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
-  rinkeby: {
-    // From network/environment
-    FRAX: '0x5eD8BD53B0c3fa3dEaBd345430B1A3a6A4e8BD7C',
-
-    TEMPLE: '0x359655dcB8A32479680Af81Eb38eA3Bb2B42Af54',
-
-    TEMPLE_TEAM_PAYMENTS_IMPLEMENTATION: '',
-    TEMPLE_TEAM_PAYMENTS_FACTORY: '',
-
-    TEMPLE_V2_FRAX_PAIR: '0x57fd5b0CcC0Ad528050a2D5e3b3935c08F058Dca',
-    TEMPLE_V2_FEI_PAIR: '', // TODO: Update
-    TEMPLE_V2_ROUTER: '', // TOTO: Update with current router
-
-    OPS_MANAGER_LIB: '0xCA3Af256aBe5B11989c8069e1892a4eed8C85c17',
-    OPS_MANAGER: '0x0647b5CFC9e9B03629Db83E7Aa4d1E25283DD9Cb',
-    JOINING_FEE: '0x28089129bFc5d0279468D08844969c7cbDc9fe78',
-    VAULT_PROXY: '0x8adcc775251362B4E03e0437805BE3154C56b3F5',
-    VAULT_EARLY_WITHDRAW: '',
-    TREASURY_IV: '',
-
-    MULTISIG: '0x577BB87962b76e60d3d930c1B9Ddd6DFD64d24A2',
-    FARM_MULTISIG: '0x577BB87962b76e60d3d930c1B9Ddd6DFD64d24A2',
-    GENERIC_ZAPS: '',
-    TEMPLE_ZAPS: '',
-
-    // RAMOS (BB-A-USD)
-    RAMOS_BB_A_USD: '',
-    RAMOS_BB_A_USD_POOL_HELPER: '',
-    RAMOS_BB_A_USD_AURA_STAKING: '',
-
-    // RAMOS (BB-E-USD)
-    RAMOS_BB_E_USD: '',
-    RAMOS_BB_E_USD_POOL_HELPER: '',
-    RAMOS_BB_E_USD_AURA_STAKING: '',
-
-    // RAMOS (DAI)
-    RAMOS_DAI: '',
-    RAMOS_DAI_POOL_HELPER: '',
-    RAMOS_DAI_AURA_STAKING: '',
-
-    // Balancer
-    BALANCER_TOKEN: '',
-    BALANCER_VAULT: '',
-    BB_A_USD_TOKEN: '',
-    BB_E_USD_TOKEN: '',
-    DAI_TOKEN: '',
-
-    // Aura
-    AURA_TOKEN: '',
-    AURA_BOOSTER: '',
-
-    // RAMOS dependencies (BB-A-USD)
-    TEMPLE_BB_A_USD_LP_TOKEN: '',
-    TEMPLE_BB_A_USD_BALANCER_POOL_ID: '',
-    TEMPLE_BB_A_USD_AURA_POOL_ID: '',
-    TEMPLE_BB_A_USD_REWARDS: '',
-    TEMPLE_BB_A_USD_AURA_STAKING_DEPOSIT_TOKEN: '',
-
-    // RAMOS dependencies (BB-E-USD)
-    TEMPLE_BB_E_USD_LP_TOKEN: '',
-    TEMPLE_BB_E_USD_BALANCER_POOL_ID: '',
-    TEMPLE_BB_E_USD_AURA_POOL_ID: '',
-    TEMPLE_BB_E_USD_REWARDS: '',
-    TEMPLE_BB_E_USD_AURA_STAKING_DEPOSIT_TOKEN: '',
-
-    // RAMOS dependencies (DAI)
-    TEMPLE_DAI_LP_TOKEN: '',
-    TEMPLE_DAI_BALANCER_POOL_ID: '',
-    TEMPLE_DAI_AURA_POOL_ID: '',
-    TEMPLE_DAI_REWARDS: '',
-    TEMPLE_DAI_AURA_STAKING_DEPOSIT_TOKEN: '',
-  },
   goerli: {
     // No longer active/unused
 
@@ -682,21 +610,6 @@ export function expectAddressWithPrivateKey() {
     );
   }
 
-  if (network.name == 'rinkeby' && !process.env.RINKEBY_ADDRESS_PRIVATE_KEY) {
-    throw new Error(
-      'Missing environment variable RINKEBY_ADDRESS_PRIVATE_KEY. A mainnet address private key with eth is required to deploy/manage contracts'
-    );
-  }
-
-  if (
-    network.name == 'polygonMumbai' &&
-    !process.env.MUMBAI_ADDRESS_PRIVATE_KEY
-  ) {
-    throw new Error(
-      'Missing environment variable MUMBAI_ADDRESS_PRIVATE_KEY. A mumbai address private key with eth is required to deploy/manage contracts'
-    );
-  }
-
   if (network.name == 'sepolia' && !process.env.SEPOLIA_ADDRESS_PRIVATE_KEY) {
     throw new Error(
       'Missing environment variable SEPOLIA_ADDRESS_PRIVATE_KEY. A mumbai address private key with eth is required to deploy/manage contracts'
@@ -714,12 +627,7 @@ const expectedEnvvars: { [key: string]: string[] } = {
     'MAINNET_RPC_URL',
     'MAINNET_GAS_IN_GWEI',
   ],
-  rinkeby: ['RINKEBY_ADDRESS_PRIVATE_KEY', 'RINKEBY_RPC_URL'],
   goerli: ['GOERLI_ADDRESS_PRIVATE_KEY', 'GOERLI_RPC_URL'],
-  matic: ['MATIC_ADDRESS_PRIVATE_KEY', 'MATIC_RPC_URL'],
-  gnosis: ['GNOSIS_ADDRESS_PRIVATE_KEY', 'GNOSIS_RPC_URL'],
-  gnosisChiado: ['GNOSIS_CHIADO_ADDRESS_PRIVATE_KEY', 'GNOSIS_CHIADO_RPC_URL'],
-  polygonMumbai: ['MUMBAI_ADDRESS_PRIVATE_KEY', 'MUMBAI_RPC_URL'],
   sepolia: ['SEPOLIA_ADDRESS_PRIVATE_KEY', 'SEPOLIA_RPC_URL'],
   arbitrumSepolia: ['ARBITRUM_SEPOLIA_ADDRESS_PRIVATE_KEY', 'ARBITRUM_SEPOLIA_RPC_URL'],
   berachain: ['BERACHAIN_ADDRESS_PRIVATE_KEY', 'BERACHAIN_RPC_URL'],
