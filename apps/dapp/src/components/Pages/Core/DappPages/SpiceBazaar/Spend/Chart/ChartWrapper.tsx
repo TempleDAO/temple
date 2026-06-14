@@ -8,6 +8,7 @@ import { InputSelect as SingleSelect } from 'components/InputSelect/InputSelect'
 import * as breakpoints from 'styles/breakpoints';
 import { SpiceFinalPriceChart } from './SpiceFinalPriceChart';
 import { BidHistoryChart } from './BidHistoryChart';
+import { AuctionOverviewChart } from './AuctionOverviewChart';
 
 type ChartsProps = {
   auctionAddress: string;
@@ -19,7 +20,7 @@ type ChartsProps = {
 enum ChartType {
   BidHistory = 'bid-history',
   SpiceFinalPrice = 'spice-final-price',
-  // TotalTGLDBid = 'total-tgld-bid',
+  AuctionOverview = 'auction-overview',
 }
 
 export const Charts = ({
@@ -32,7 +33,7 @@ export const Charts = ({
     () => [
       { label: 'Bid History', value: ChartType.BidHistory },
       { label: 'Spice Final Price', value: ChartType.SpiceFinalPrice },
-      // { label: 'Total TGLD Bid', value: ChartType.TotalTGLDBid },
+      { label: 'Token Totals', value: ChartType.AuctionOverview },
     ],
     []
   );
@@ -51,6 +52,9 @@ export const Charts = ({
     Option[]
   >([]);
   const [bidHistoryOptions, setBidHistoryOptions] = useState<Option[]>([]);
+  const [auctionOverviewOptions, setAuctionOverviewOptions] = useState<
+    Option[]
+  >([]);
 
   // Reset state when auction changes to prevent stale filters
   useEffect(() => {
@@ -58,6 +62,7 @@ export const Charts = ({
     setChartSpecificFilters([]);
     setSpiceFinalPriceOptions([]);
     setBidHistoryOptions([]);
+    setAuctionOverviewOptions([]);
   }, [auctionAddress, auctionTokenAddress, chartTypeOptions]);
 
   // Get options for the second dropdown based on selected chart type
@@ -67,10 +72,17 @@ export const Charts = ({
         return bidHistoryOptions;
       case ChartType.SpiceFinalPrice:
         return spiceFinalPriceOptions;
+      case ChartType.AuctionOverview:
+        return auctionOverviewOptions;
       default:
         return [];
     }
-  }, [selectedChartType.value, spiceFinalPriceOptions, bidHistoryOptions]);
+  }, [
+    selectedChartType.value,
+    spiceFinalPriceOptions,
+    bidHistoryOptions,
+    auctionOverviewOptions,
+  ]);
 
   // Handle chart type change (single select)
   const handleChartTypeChange = (selected: Option) => {
@@ -85,6 +97,17 @@ export const Charts = ({
     (options: Option[]) => {
       setSpiceFinalPriceOptions(options);
       // Auto-select all options by default if none are selected
+      if (chartSpecificFilters.length === 0) {
+        setChartSpecificFilters(options);
+      }
+    },
+    [chartSpecificFilters.length]
+  );
+
+  // Callback to receive filter options from AuctionOverviewChart
+  const handleAuctionOverviewOptionsChange = useCallback(
+    (options: Option[]) => {
+      setAuctionOverviewOptions(options);
       if (chartSpecificFilters.length === 0) {
         setChartSpecificFilters(options);
       }
@@ -129,6 +152,14 @@ export const Charts = ({
             onFilterOptionsChange={handleSpiceFinalPriceOptionsChange}
           />
         );
+      case ChartType.AuctionOverview:
+        return (
+          <AuctionOverviewChart
+            auctionAddress={auctionAddress}
+            selectedFilters={chartSpecificFilters}
+            onFilterOptionsChange={handleAuctionOverviewOptionsChange}
+          />
+        );
       default:
         return null;
     }
@@ -161,7 +192,7 @@ export const Charts = ({
                 onChange={(selected: Option) => {
                   setChartSpecificFilters([selected]);
                 }}
-                width="220px"
+                width="280px"
                 fontSize="1rem"
                 maxMenuItems={7}
               />
@@ -171,7 +202,7 @@ export const Charts = ({
                 options={chartSpecificOptions}
                 value={chartSpecificFilters}
                 onChange={handleChartSpecificFilterChange}
-                width="180px"
+                width="280px"
                 fontSize="1rem"
                 maxMenuItems={7}
                 textAlloptions="All Auctions"

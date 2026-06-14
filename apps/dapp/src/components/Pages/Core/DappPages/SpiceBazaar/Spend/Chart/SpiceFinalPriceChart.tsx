@@ -36,7 +36,7 @@ export const SpiceFinalPriceChart = ({
         return true;
       })
       .map((m) => ({
-        label: m.date, // Display formatted date (e.g., "30 Jan")
+        label: `Epoch ${m.epoch} - ${m.date}`,
         value: m.timestamp.toString(), // Use timestamp as unique value
       }));
   }, [metrics]);
