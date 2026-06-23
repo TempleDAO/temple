@@ -11,7 +11,7 @@ import {
   ensureExpectedEnvvars,
   toAtto,
 } from '../../helpers';
-import { getDeployedTempleGoldContracts, connectToContracts } from '../../mainnet/templegold/contract-addresses';
+import { getDeployedContracts, connectToContracts } from '../../mainnet/templegold/contract-addresses';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
 async function main() {
@@ -35,7 +35,7 @@ async function main() {
 
 async function _deployDaiTgldSpice(owner: SignerWithAddress) {
     const INSTANCES = connectToContracts(owner);
-    const CONTRACTS = getDeployedTempleGoldContracts();
+    const CONTRACTS = getDeployedContracts();
     const name = 'DAI_TGLD_SPICE_AUCTION';
     await mine(INSTANCES.TEMPLE_GOLD.SPICE_AUCTION_FACTORY.createAuction(CONTRACTS.EXTERNAL.MAKER_DAO.DAI_TOKEN, name));
     console.log(`${name} = ${await INSTANCES.TEMPLE_GOLD.SPICE_AUCTION_FACTORY.deployedAuctions(CONTRACTS.EXTERNAL.MAKER_DAO.DAI_TOKEN, 1)}`);
@@ -52,7 +52,7 @@ async function _deploySpiceImplementation(owner: SignerWithAddress) {
 
 async function _deploySpiceFactory(owner: SignerWithAddress, rescuer: SignerWithAddress) {
     const factory = new SpiceAuctionFactory__factory(owner);
-    const TEMPLEGOLD_ADDRESSES = getDeployedTempleGoldContracts();
+    const TEMPLEGOLD_ADDRESSES = getDeployedContracts();
     await deployAndMine(
         'SPICE_AUCTION_FACTORY',
         factory,
@@ -83,7 +83,7 @@ async function _deployTempleToken(owner: SignerWithAddress) {
 }
 
 async function _deployTempleGold(owner: SignerWithAddress) {
-    const TEMPLEGOLD_ADDRESSES = getDeployedTempleGoldContracts();
+    const TEMPLEGOLD_ADDRESSES = getDeployedContracts();
     // const ARBITRUM_ONE_CHAIN_ID = 42161;
     // const ARBITRUM_ONE_LZ_EID = 30110;
     const MINT_CHAIN_ID = 1;
@@ -108,7 +108,7 @@ async function _deployTempleGold(owner: SignerWithAddress) {
 
 async function _deployTempleGoldAdmin(owner: SignerWithAddress, rescuer: SignerWithAddress) {
     const factory = new TempleGoldAdmin__factory(owner);
-    const TEMPLEGOLD_ADDRESSES = getDeployedTempleGoldContracts();
+    const TEMPLEGOLD_ADDRESSES = getDeployedContracts();
     await deployAndMine(
         'TEMPLE_GOLD_ADMIN',
         factory,
@@ -120,7 +120,7 @@ async function _deployTempleGoldAdmin(owner: SignerWithAddress, rescuer: SignerW
 }
 
 async function _deployTempleGoldStaking(owner: SignerWithAddress, rescuer: SignerWithAddress) {
-    const TEMPLEGOLD_ADDRESSES = getDeployedTempleGoldContracts();
+    const TEMPLEGOLD_ADDRESSES = getDeployedContracts();
   
     const factory = new TempleGoldStaking__factory(owner);
     await deployAndMine(
@@ -135,7 +135,7 @@ async function _deployTempleGoldStaking(owner: SignerWithAddress, rescuer: Signe
 }
 
 async function _deployTempleTeleporter(owner: SignerWithAddress) {
-    const TEMPLEGOLD_ADDRESSES = getDeployedTempleGoldContracts();
+    const TEMPLEGOLD_ADDRESSES = getDeployedContracts();
 
     const factory = new TempleTeleporter__factory(owner);
     await deployAndMine(
@@ -149,8 +149,7 @@ async function _deployTempleTeleporter(owner: SignerWithAddress) {
 }
 
 async function _deployStableGoldAuction(owner: SignerWithAddress, rescuer: SignerWithAddress): Promise<void> {
-    const TEMPLEGOLD_ADDRESSES = getDeployedTempleGoldContracts();
-    // const arbDaiToken = "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1";
+    const TEMPLEGOLD_ADDRESSES = getDeployedContracts();
     const factory = new StableGoldAuction__factory(owner);
     await deployAndMine(
         'STABLE_GOLD_AUCTION',

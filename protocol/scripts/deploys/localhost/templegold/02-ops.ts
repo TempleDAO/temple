@@ -7,12 +7,12 @@ import {
   toAtto,
   mine
 } from '../../helpers';
-import { getDeployedTempleGoldContracts } from '../../mainnet/templegold/contract-addresses';
+import { getDeployedContracts } from '../../mainnet/templegold/contract-addresses';
 
 async function main() {
     ensureExpectedEnvvars();
     const [owner] = await ethers.getSigners();
-    const TEMPLE_GOLD_ADDRESSES = getDeployedTempleGoldContracts();
+    const TEMPLE_GOLD_ADDRESSES = getDeployedContracts();
     const staking = TempleGoldStaking__factory.connect(TEMPLE_GOLD_ADDRESSES.TEMPLE_GOLD.TEMPLE_GOLD_STAKING, owner);
     const templeToken = FakeERC20__factory.connect(TEMPLE_GOLD_ADDRESSES.CORE.TEMPLE_TOKEN, owner);
 

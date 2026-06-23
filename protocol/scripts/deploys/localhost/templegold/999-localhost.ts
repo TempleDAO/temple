@@ -5,7 +5,7 @@ import {
     mine,
     toAtto,
 } from '../../helpers';
-import { connectToContracts, ContractAddresses, ContractInstances, getDeployedTempleGoldContracts } from '../../mainnet/templegold/contract-addresses';
+import { connectToContracts, ContractAddresses, ContractInstances, getDeployedContracts } from '../../mainnet/templegold/contract-addresses';
 import { TempleGold__factory, TempleGoldStaking__factory, StableGoldAuction__factory, ISpiceAuction__factory, FakeERC20__factory } from '../../../../typechain';
 import { EnforcedOptionParamStruct, TempleGold } from '../../../../typechain/contracts/templegold/TempleGold';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
@@ -15,7 +15,7 @@ import { BigNumberish } from 'ethers';
 async function main() {
     ensureExpectedEnvvars();
     const [owner, recipient] = await ethers.getSigners();
-    const TEMPLE_GOLD_ADDRESSES = getDeployedTempleGoldContracts();
+    const TEMPLE_GOLD_ADDRESSES = getDeployedContracts();
     const TEMPLE_GOLD_INSTANCES = connectToContracts(owner);
     // signer 0
     const teamGnosis = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
