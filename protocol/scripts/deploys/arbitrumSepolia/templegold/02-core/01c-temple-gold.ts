@@ -4,7 +4,6 @@ import {
   deployAndMine,
   runAsyncMain,
 } from '../../../helpers';
-import { getDeployedContracts } from '../contract-addresses';
 import { DEFAULT_SETTINGS } from '../default-settings';
 import { getDeployContext } from '../deploy-context';
 

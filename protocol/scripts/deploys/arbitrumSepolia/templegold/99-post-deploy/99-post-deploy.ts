@@ -1,10 +1,8 @@
-import { ethers } from 'hardhat';
 import {
-    ensureExpectedEnvvars,
     mine,
     runAsyncMain,
 } from '../../../helpers';
-import { connectToContracts, ContractInstances, getDeployedContracts, ContractAddresses } from '../contract-addresses';
+import { ContractInstances, ContractAddresses } from '../contract-addresses';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { EnforcedOptionParamStruct } from '../../../../../typechain/@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/libs/OAppOptionsType3';
 import { DEFAULT_SETTINGS } from '../default-settings';
