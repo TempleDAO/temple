@@ -1,4 +1,5 @@
 import { network } from "hardhat";
+import path from "path";
 import {
     FakeERC20__factory,
     TempleGold__factory,
@@ -19,20 +20,41 @@ export function createContractAddressModule(
     networkName: string,
     contractsMap: ContractAddresses,
 ) {
-    // dirname is expected to be the path of the hardhat deploy script
-    // This will crudely search for the `scripts/${dir}/address-overrides.ts` module
-    // and apply the overrides to addrs
+    // dirname is expected to be the absolute path of the hardhat deploy script
+    // This will resolve the address-overrides module relative to the network directory
     async function applyOverrides(addrs: ContractAddresses, dirname: string) {
+        // Find the network directory in the path
         const dirs = dirname.split("/");
-        let scriptDir = "";
+        let networkDirIndex = -1;
         for (let i = dirs.length - 1; i >= 0; i--) {
-            if (dirs[i] == networkName || dirs[i] == "scripts" || dirs[i] == "templegold") {
-                scriptDir = dirs[i + 1];
+            if (dirs[i] == networkName) {
+                networkDirIndex = i;
                 break;
             }
         }
 
-        const module = await import(`../scripts/${scriptDir}/address-overrides`);
+        if (networkDirIndex === -1) {
+            throw new Error(`Could not find network directory "${networkName}" in path: ${dirname}`);
+        }
+
+        // Reconstruct the network directory path
+        const networkDir = dirs.slice(0, networkDirIndex + 1).join("/");
+
+        // Find the category directory (the segment after templegold)
+        // e.g., .../mainnet/templegold/01-external -> category = "01-external"
+        let category = "";
+        const templegoldIndex = dirs.indexOf("templegold", networkDirIndex);
+        if (templegoldIndex !== -1 && templegoldIndex + 1 < dirs.length) {
+            category = dirs[templegoldIndex + 1];
+        }
+
+        if (!category) {
+            throw new Error(`Could not determine category from path: ${dirname}. Expected path like .../templegold/{category}/...`);
+        }
+
+        // Build absolute path to the address-overrides module
+        const overridesPath = path.join(networkDir, "templegold", "scripts", category, "address-overrides");
+        const module = await import(overridesPath);
         return module.applyOverrides(addrs);
     }
 
