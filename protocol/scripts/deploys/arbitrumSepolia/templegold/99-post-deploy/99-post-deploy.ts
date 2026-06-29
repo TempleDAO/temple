@@ -101,7 +101,7 @@ async function _setSpiceAuctionConfig(
         recipient: DEFAULT_SETTINGS.SPICE.AUCTION.RECIPIENT
     }
 
-    await mine(INSTANCES.TEMPLE_GOLD.SPICE_AUCTION!.setAuctionConfig(config));
+    await mine(INSTANCES.TEMPLE_GOLD.SPICE_AUCTION.setAuctionConfig(config));
 }
 
 runAsyncMain(main);

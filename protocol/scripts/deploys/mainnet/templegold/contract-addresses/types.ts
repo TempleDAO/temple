@@ -1,1 +1,1 @@
-export { ContractAddresses, ContractInstances } from "../../../templegold/types";
+export { BaseContractAddresses as ContractAddresses, BaseContractInstances as ContractInstances } from "../../../templegold/types";

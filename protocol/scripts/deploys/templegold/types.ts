@@ -3,14 +3,13 @@ import {
     TempleGold,
     TempleGoldAdmin,
     TempleGoldStaking,
-    SpiceAuction,
     SpiceAuctionFactory,
     StableGoldAuction,
     TempleTeleporter,
     TempleERC20Token
 } from '../../../typechain';
 
-export interface ContractAddresses {
+export interface BaseContractAddresses {
     TEMPLE_GOLD: {
         AUCTION_AUTOMATION_EOA: string,
         STAKING_AUTOMATION_EOA: string,
@@ -24,8 +23,6 @@ export interface ContractAddresses {
         TEAM_GNOSIS: string,
         SPICE_AUCTION_IMPLEMENTATION: string,
         STRATEGY_GNOSIS: string,
-        SPICE_AUCTION?: string,
-        SPICE_TOKEN?: string,
     },
     CORE: {
         TEMPLE_TOKEN: string,
@@ -51,16 +48,14 @@ export interface ContractAddresses {
     }
 }
 
-export interface ContractInstances {
+export interface BaseContractInstances {
     TEMPLE_GOLD: {
         TEMPLE_GOLD: TempleGold,
         TEMPLE_GOLD_ADMIN: TempleGoldAdmin,
         TEMPLE_GOLD_STAKING: TempleGoldStaking,
         TEMPLE_TELEPORTER: TempleTeleporter,
-        SPICE_AUCTION?: SpiceAuction,
         SPICE_AUCTION_FACTORY: SpiceAuctionFactory,
         STABLE_GOLD_AUCTION: StableGoldAuction,
-        SPICE_TOKEN?: FakeERC20,
     },
     CORE: {
         TEMPLE_TOKEN: TempleERC20Token
@@ -71,3 +66,6 @@ export interface ContractInstances {
         },
     },
 }
+
+export type ContractAddresses = BaseContractAddresses;
+export type ContractInstances = BaseContractInstances;

@@ -55,7 +55,7 @@ async function _setAuctionConfig(ownerAddress: string, spiceInstance: SpiceAucti
 async function _fundAuction(instances: ContractInstances, spiceInstance: SpiceAuction) {
     const amount = toAtto(50_000);
     // approve spend
-    await mine(instances.TEMPLE_GOLD.SPICE_TOKEN!.approve(spiceInstance.address, amount));
+    await mine(instances.TEMPLE_GOLD.SPICE_TOKEN.approve(spiceInstance.address, amount));
     const now = (new Date()).getTime();
     const startTime = Math.floor((now / 1000) +  1 * 60 * 60); // 1 hour from now
  
