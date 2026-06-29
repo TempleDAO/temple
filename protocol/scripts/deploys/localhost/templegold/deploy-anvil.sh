@@ -24,3 +24,4 @@ npx hardhat --network localhost run scripts/deploys/localhost/templegold/03-stak
 
 # 4. Post-deploy setup
 npx hardhat --network localhost run scripts/deploys/localhost/templegold/99-post-deploy/99-post-deploy.ts
+npx hardhat --network localhost run scripts/deploys/localhost/templegold/99-post-deploy/02-ops.ts

@@ -1,6 +1,6 @@
 import { ethers } from "hardhat";
 import { ensureExpectedEnvvars } from "../../helpers";
-import { ContractInstances, connectToContractsUsingAddr, getDeployedContracts } from "./contract-addresses";
+import { ContractInstances, connectToContractsUsingAddr, getDeployedContractsUsingOverrides } from "./contract-addresses";
 import { ContractAddresses } from "./contract-addresses/types";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { anvilSignerIndex } from "../../anvil";
@@ -16,7 +16,7 @@ export async function getLocalhostDeployContext(dirname: string): Promise<Localh
   ensureExpectedEnvvars();
   const [owner, rescuer] = await ethers.getSigners();
   await logDeployer(owner);
-  const ADDRS = getDeployedContracts();
+  const ADDRS = await getDeployedContractsUsingOverrides(dirname);
   const INSTANCES = connectToContractsUsingAddr(owner, ADDRS);
   return {
     owner,
