@@ -1,8 +1,0 @@
-// sepolia: DAI_TOKEN=0x39fF9D2849875F1C89FE7700a358F29BE3D06179
-// yarn hardhat verify --network sepolia 0x39fF9D2849875F1C89FE7700a358F29BE3D06179 --constructor-args scripts/deploys/sepolia/deploymentArgs/0x39fF9D2849875F1C89FE7700a358F29BE3D06179.js
-module.exports = [
-  "Dai Token",
-  "DAI",
-  "0xC785695710292c042a2de8A0Ba16F3a054cC2eAD",
-  "100000000000000000000000"
-];
