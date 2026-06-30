@@ -1,26 +1,25 @@
 import { ethers } from 'hardhat';
 import {
-    ensureExpectedEnvvars,
-    impersonateSigner,
     mine,
+    runAsyncMain,
+    impersonateSigner,
     toAtto,
-} from '../../helpers';
-import { connectToContracts, ContractAddresses, ContractInstances, getDeployedContracts } from '../../mainnet/templegold/contract-addresses';
-import { TempleGold__factory, TempleGoldStaking__factory, StableGoldAuction__factory, ISpiceAuction__factory, FakeERC20__factory } from '../../../../typechain';
-import { EnforcedOptionParamStruct, TempleGold } from '../../../../typechain/contracts/templegold/TempleGold';
+} from '../../../helpers';
+import { getLocalhostDeployContext } from '../deploy-context';
+import { connectToContracts, ContractAddresses, ContractInstances } from '../contract-addresses';
+import { TempleGold__factory, TempleGoldStaking__factory, StableGoldAuction__factory, ISpiceAuction__factory, FakeERC20__factory } from '../../../../../typechain';
+import { EnforcedOptionParamStruct, TempleGold } from '../../../../../typechain/contracts/templegold/TempleGold';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BigNumberish } from 'ethers';
 
-
 async function main() {
-    ensureExpectedEnvvars();
-    const [owner, recipient] = await ethers.getSigners();
-    const TEMPLE_GOLD_ADDRESSES = getDeployedContracts();
-    const TEMPLE_GOLD_INSTANCES = connectToContracts(owner);
-    // signer 0
+    const { owner, rescuer, ADDRS, INSTANCES } = await getLocalhostDeployContext(__dirname);
+    const ownerAddress = await owner.getAddress();
     const teamGnosis = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
-    console.log(`OWNER ${await TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.TEMPLE_GOLD.owner()}`);
-    console.log(`OWNER ${await TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.TEMPLE_GOLD_STAKING.executor()}`);
+
+    console.log(`OWNER ${await INSTANCES.TEMPLE_GOLD.TEMPLE_GOLD.owner()}`);
+    console.log(`OWNER ${await INSTANCES.TEMPLE_GOLD.TEMPLE_GOLD_STAKING.executor()}`);
+
     const distributionParams = {
         staking: ethers.utils.parseEther("15"),
         auction: ethers.utils.parseEther("70"),
@@ -30,19 +29,22 @@ async function main() {
         value: 35,
         weekMultiplier: 3600 * 24 * 7 // 1 week
     }
+
     // TEMPLE GOLD
-    const templeGold = TempleGold__factory.connect(TEMPLE_GOLD_ADDRESSES.TEMPLE_GOLD.TEMPLE_GOLD, owner);
-    const staking = TempleGoldStaking__factory.connect(TEMPLE_GOLD_ADDRESSES.TEMPLE_GOLD.TEMPLE_GOLD_STAKING, owner);
-    const daiGoldAuction = StableGoldAuction__factory.connect(TEMPLE_GOLD_ADDRESSES.TEMPLE_GOLD.STABLE_GOLD_AUCTION, owner);
+    const templeGold = TempleGold__factory.connect(ADDRS.TEMPLE_GOLD.TEMPLE_GOLD, owner);
+    const staking = TempleGoldStaking__factory.connect(ADDRS.TEMPLE_GOLD.TEMPLE_GOLD_STAKING, owner);
+    const daiGoldAuction = StableGoldAuction__factory.connect(ADDRS.TEMPLE_GOLD.STABLE_GOLD_AUCTION, owner);
+
     // Set and whitelist contracts
     await mine(templeGold.setTeamGnosis(teamGnosis));
-    await mine(templeGold.setStableGoldAuction(TEMPLE_GOLD_ADDRESSES.TEMPLE_GOLD.STABLE_GOLD_AUCTION));
-    await mine(templeGold.setStaking(TEMPLE_GOLD_ADDRESSES.TEMPLE_GOLD.TEMPLE_GOLD_STAKING));
+    await mine(templeGold.setStableGoldAuction(ADDRS.TEMPLE_GOLD.STABLE_GOLD_AUCTION));
+    await mine(templeGold.setStaking(ADDRS.TEMPLE_GOLD.TEMPLE_GOLD_STAKING));
     await mine(templeGold.setVestingFactor(vestingFactor));
     await mine(templeGold.setDistributionParams(distributionParams));
+
     // authorize contracts
-    await mine(templeGold.authorizeContract(TEMPLE_GOLD_ADDRESSES.TEMPLE_GOLD.STABLE_GOLD_AUCTION, true));
-    await mine(templeGold.authorizeContract(TEMPLE_GOLD_ADDRESSES.TEMPLE_GOLD.TEMPLE_GOLD_STAKING, true));
+    await mine(templeGold.authorizeContract(ADDRS.TEMPLE_GOLD.STABLE_GOLD_AUCTION, true));
+    await mine(templeGold.authorizeContract(ADDRS.TEMPLE_GOLD.TEMPLE_GOLD_STAKING, true));
     await mine(templeGold.authorizeContract(teamGnosis, true));
 
     // Staking
@@ -50,6 +52,7 @@ async function main() {
     const duration = oneDay * 7; // 7 days
     const unstakeCooldown = oneDay; // 1 day
     const rewardsDistributionCooldown = 60; // 60 seconds
+
     // reward duration
     await mine(staking.setRewardDuration(duration));
     // distribution starter
@@ -62,31 +65,30 @@ async function main() {
     // DAI GOLD AUCTION
     const auctionsTimeDiff = 60;
     const auctionConfig = {
-        /// Time diff between two auctions. Usually 2 weeks
         auctionsTimeDiff: auctionsTimeDiff,
-        ///  Cooldown after auction start is triggered, to allow deposits
         auctionStartCooldown: 60,
-        /// Minimum Gold distributed to enable auction start
         auctionMinimumDistributedGold: ethers.utils.parseEther("0.01"),
     };
+
     // auction starter
     await mine(daiGoldAuction.setAuctionStarter(teamGnosis));
     // auction config
     await mine(daiGoldAuction.setAuctionConfig(auctionConfig));
-    // set enforced optons
+
+    // set enforced options
     await setEnforcedOptions(templeGold);
+
     // fund next auction
-    await fundNextAuction(TEMPLE_GOLD_INSTANCES, TEMPLE_GOLD_ADDRESSES, owner, recipient);
+    await fundNextAuction(INSTANCES, ADDRS, owner, rescuer);
 }
 
 async function setEnforcedOptions(templeGold: TempleGold) {
-    // set enforced options
-     const options: EnforcedOptionParamStruct[] = [{
+    const options: EnforcedOptionParamStruct[] = [{
         eid: 30362, // berachain
         msgType: 1, // SEND
         options: "0x00030100110100000000000000000000000000030d40", // 200k gas limit
     }];
-    await mine(templeGold.setEnforcedOptions(options))
+    await mine(templeGold.setEnforcedOptions(options));
 }
 
 async function fundNextAuction(
@@ -104,7 +106,7 @@ async function fundNextAuction(
         recipient: await recipient.getAddress()
     }
     const spice = ISpiceAuction__factory.connect(spiceAuction, owner);
-    // using owner instances
+
     // set config
     await mine(spice.setAuctionConfig(config));
 
@@ -114,7 +116,7 @@ async function fundNextAuction(
     // fund next auction
     const amount = toAtto(1_000);
     await fundDai(ADDRS.EXTERNAL.MAKER_DAO.DAI_TOKEN, await owner.getAddress(), amount);
-    const startTime = Math.floor((new Date()).getTime()/1000) + 120; // 2 minutes from now
+    const startTime = Math.floor((new Date()).getTime() / 1000) + 120; // 2 minutes from now
     await mine(INSTANCES.EXTERNAL.MAKER_DAO.DAI_TOKEN.approve(spiceAuction, toAtto(1_000_000)));
     await mine(spice.fundNextAuction(amount, startTime));
 
@@ -131,11 +133,4 @@ async function fundDai(contract: string, recipient: string, amount: BigNumberish
     await mine(daiInstance.transfer(recipient, amount));
 }
 
-// We recommend this pattern to be able to use async/await everywhere
-// and properly handle errors.
-main()
-    .then(() => process.exit(0))
-    .catch(error => {
-        console.error(error);
-        process.exit(1);
-    });
+runAsyncMain(main);
