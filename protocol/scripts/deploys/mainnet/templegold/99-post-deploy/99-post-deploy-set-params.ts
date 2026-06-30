@@ -1,19 +1,15 @@
-import { ethers } from 'hardhat';
 import {
-    ensureExpectedEnvvars,
     mine,
+    runAsyncMain,
 } from '../../../helpers';
-import { connectToContracts, getDeployedContracts } from '../contract-addresses';
 import { Constants as BERACHAIN_CONSTANTS } from '../../../berachain/constants';
 import { EnforcedOptionParamStruct } from '../../../../../typechain/@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/libs/OAppOptionsType3';
 import { TempleGold } from '../../../../../typechain';
 import { DEFAULT_SETTINGS } from '../default-settings';
+import { getDeployContext } from '../deploy-context';
 
 async function main() {
-    ensureExpectedEnvvars();
-    const [owner] = await ethers.getSigners();
-    const ADDRS = getDeployedContracts();
-    const INSTANCES = connectToContracts(owner);
+    const { ADDRS, INSTANCES } = await getDeployContext(__dirname);
     const teamGnosis = ADDRS.TEMPLE_GOLD.TEAM_GNOSIS;
     
     const distributionParams = {
@@ -50,11 +46,4 @@ async function setEnforcedOptionsBerachain(templeGold: TempleGold) {
     await mine(templeGold.setEnforcedOptions(options));
 }
   
-// We recommend this pattern to be able to use async/await everywhere
-// and properly handle errors.
-main()
-    .then(() => process.exit(0))
-    .catch(error => {
-        console.error(error);
-        process.exit(1);
-    });
+runAsyncMain(main);

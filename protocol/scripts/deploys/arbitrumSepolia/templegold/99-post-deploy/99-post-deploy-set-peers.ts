@@ -1,12 +1,12 @@
 import { ethers } from 'hardhat';
 import {
-    ensureExpectedEnvvars,
     mine,
+    runAsyncMain,
 } from '../../../helpers';
-import { connectToContracts } from '../contract-addresses';
 import { getDeployedContracts as getSepoliaDeployedContracts } from '../../../sepolia/templegold/contract-addresses';
 import { TempleGold } from '../../../../../typechain';
 import { DEFAULT_SETTINGS } from '../default-settings';
+import { getDeployContext } from '../deploy-context';
 
 async function setSepoliaPeer(templeGold: TempleGold) {
     const SEPOLIA_DEPLOYED_CONTRACTS = getSepoliaDeployedContracts();
@@ -15,18 +15,9 @@ async function setSepoliaPeer(templeGold: TempleGold) {
 }
 
 async function main() {
-    ensureExpectedEnvvars();
-    const [owner] = await ethers.getSigners();
-    const TEMPLE_GOLD_INSTANCES = connectToContracts(owner);
+    const { INSTANCES } = await getDeployContext(__dirname);
 
-    await setSepoliaPeer(TEMPLE_GOLD_INSTANCES.TEMPLE_GOLD.TEMPLE_GOLD);
+    await setSepoliaPeer(INSTANCES.TEMPLE_GOLD.TEMPLE_GOLD);
 }
 
-// We recommend this pattern to be able to use async/await everywhere
-// and properly handle errors.
-main()
-    .then(() => process.exit(0))
-    .catch(error => {
-        console.error(error);
-        process.exit(1);
-    });
+runAsyncMain(main);

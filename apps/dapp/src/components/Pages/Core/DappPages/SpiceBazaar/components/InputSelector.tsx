@@ -56,7 +56,9 @@ const SelectAllButton = styled.button`
 `;
 
 const ValueLabel = styled.div`
-  padding-left: 0.5rem;
+  width: 100%;
+  text-align: center;
+  font-weight: bold;
   color: ${theme.palette.brandLight};
 `;
 
@@ -123,6 +125,7 @@ export const InputSelect = (props: SelectTempleDaoProps) => {
     return (
       <components.ValueContainer {...valueProps}>
         <ValueLabel>{text}</ValueLabel>
+        <span style={{ position: 'absolute' }}>{children}</span>
       </components.ValueContainer>
     );
   };
@@ -131,6 +134,7 @@ export const InputSelect = (props: SelectTempleDaoProps) => {
     <Select
       {...props}
       isMulti
+      isSearchable={false}
       closeMenuOnSelect={false}
       hideSelectedOptions={false}
       classNamePrefix={'Select'}
@@ -165,7 +169,7 @@ export const InputSelect = (props: SelectTempleDaoProps) => {
           borderRadius: `calc(${selectHeight} / 4)`,
           boxShadow: 'none',
           fontSize: '1rem',
-          textAlign: 'left',
+          textAlign: 'center',
           padding: '0 0.5rem',
           cursor: 'pointer',
           height: selectHeight,

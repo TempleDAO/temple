@@ -1,26 +1,23 @@
 import '@nomiclabs/hardhat-ethers';
-import { ethers } from 'hardhat';
 import { StableGoldAuction__factory } from '../../../../../typechain';
 import {
   deployAndMine,
-  ensureExpectedEnvvars,
+  runAsyncMain,
 } from '../../../helpers';
-import { getDeployedContracts } from '../contract-addresses';
 import { DEFAULT_SETTINGS } from '../default-settings';
+import { getDeployContext } from '../deploy-context';
 
 async function main() {
-  ensureExpectedEnvvars();
-  const [owner] = await ethers.getSigners();
+  const { owner, ADDRS } = await getDeployContext(__dirname);
   const ownerAddress = await owner.getAddress();
-  const TEMPLEGOLD_ADDRESSES = getDeployedContracts();
 
   const factory = new StableGoldAuction__factory(owner);
   await deployAndMine(
     'DAI_GOLD_AUCTION',
     factory,
     factory.deploy,
-    TEMPLEGOLD_ADDRESSES.TEMPLE_GOLD.TEMPLE_GOLD,
-    TEMPLEGOLD_ADDRESSES.EXTERNAL.MAKER_DAO.DAI_TOKEN,
+    ADDRS.TEMPLE_GOLD.TEMPLE_GOLD,
+    ADDRS.EXTERNAL.MAKER_DAO.DAI_TOKEN,
     ownerAddress, // treasury
     DEFAULT_SETTINGS.GLOBAL.RESCUER_PLACEHOLDER, // rescuer can't be executor. using placeholder
     ownerAddress, // executor
@@ -28,11 +25,4 @@ async function main() {
   );
 }
 
-// We recommend this pattern to be able to use async/await everywhere
-// and properly handle errors.
-main()
-  .then(() => process.exit(0))
-  .catch(error => {
-    console.error(error);
-    process.exit(1);
-  });
+runAsyncMain(main);

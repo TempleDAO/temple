@@ -8,7 +8,7 @@ import '@nomiclabs/hardhat-ethers';
 import 'hardhat-contract-sizer';
 import 'hardhat-gas-reporter';
 import 'solidity-coverage';
-import { EndpointId } from '@layerzerolabs/lz-definitions'
+import { ANVIL_SIGNER_PRIVATE_KEYS } from './scripts/deploys/anvil';
 
 // NOTE: Any tasks that depend on the generated typechain makes the build flaky.
 //       Favour scripts instead
@@ -40,6 +40,34 @@ subtask(TASK_COMPILE_SOLIDITY_GET_SOURCE_PATHS).setAction(
 function getGasPrice(envValue: string | undefined): number | undefined {
   if (!envValue) return undefined;
   return parseInt(envValue) * 1000000000;
+}
+
+function getNetworkConfig(network: string) {
+  function getEnvVar(name: string): string | undefined {
+      return process.env[name];
+  }
+
+  function getMaxGasInWei(envVar: string): number | undefined {
+      const v = getEnvVar(envVar);
+      return v ? parseInt(v) * 1000000000 : undefined;
+  }
+
+  // Use the env set private key, otherwise fallback to the first anvil signer.
+  function getPrivateKey(envVar: string) {
+      const pk = getEnvVar(envVar);
+      return pk ? pk : ANVIL_SIGNER_PRIVATE_KEYS[0];
+  }
+  
+  const networkUpper = network.toUpperCase();
+  const pk = getPrivateKey(`${networkUpper}_ADDRESS_PRIVATE_KEY`);
+  const rpc = getEnvVar(`${networkUpper}_RPC_URL`) || '';
+  const gasPrice = getMaxGasInWei(`${networkUpper}_GAS_IN_GWEI`);
+  
+  return {
+      url: rpc,
+      accounts: [pk],
+      gasPrice,
+  };
 }
 
 /*task('verify-contract', `Verify a task's deployment on a block explorer`)
@@ -141,88 +169,26 @@ module.exports = {
               interval: 5000,
             },
     },
-    rinkeby: {
-      url: process.env.RINKEBY_RPC_URL || '',
-      accounts: process.env.RINKEBY_ADDRESS_PRIVATE_KEY
-        ? [process.env.RINKEBY_ADDRESS_PRIVATE_KEY]
-        : [],
-      gasPrice: 8000000000,
-    },
-    goerli: {
-      url: process.env.GOERLI_RPC_URL || '',
-      accounts: process.env.GOERLI_ADDRESS_PRIVATE_KEY 
-        ? [process.env.GOERLI_ADDRESS_PRIVATE_KEY]
-        : [],
-      gasPrice: parseInt(process.env.GOERLI_GAS_IN_GWEI || '8') * 1000000000,
-    },
-    gnosisChiado: {
-      url: process.env.GNOSIS_CHIADO_RPC_URL || '',
-      accounts: process.env.GNOSIS_CHIADO_ADDRESS_PRIVATE_KEY 
-        ? [process.env.GNOSIS_CHIADO_ADDRESS_PRIVATE_KEY]
-        : [],
-      gasPrice: 1000000000,  // 1 gwei xDAI
-    },
-    gnosis: {
-      url: process.env.GNOSIS_RPC_URL || '',
-      accounts: process.env.GNOSIS_ADDRESS_PRIVATE_KEY 
-        ? [process.env.GNOSIS_ADDRESS_PRIVATE_KEY]
-        : [],
-      gasPrice: parseInt(process.env.GNOSIS_GAS_IN_GWEI || '0') * 1000000000,
-    },
-    mainnet: {
-      url: process.env.MAINNET_RPC_URL || '',
-      accounts: process.env.MAINNET_ADDRESS_PRIVATE_KEY
-        ? [process.env.MAINNET_ADDRESS_PRIVATE_KEY]
-        : [],
-    },
-    matic: {
-      url: process.env.MATIC_RPC_URL || '',
-      accounts: process.env.MATIC_ADDRESS_PRIVATE_KEY
-        ? [process.env.MAINNET_ADDRESS_PRIVATE_KEY]
-        : [],
-      gasPrice: 40000000000,
-    },
-    polygonMumbai: {
-        url: process.env.MUMBAI_RPC_URL || '',
-        accounts: process.env.MUMBAI_ADDRESS_PRIVATE_KEY
-            ? [process.env.MUMBAI_ADDRESS_PRIVATE_KEY]
-            : [],
-        gasPrice: 2000000000,
-    },
-    sepolia: {
-        url: process.env.SEPOLIA_RPC_URL || '',
-        accounts: process.env.SEPOLIA_ADDRESS_PRIVATE_KEY
-            ? [process.env.SEPOLIA_ADDRESS_PRIVATE_KEY]
-            : [],
-        gasPrice: parseInt(process.env.SEPOLIA_GAS_IN_GWEI || '0') * 1000000000,
-        eid: EndpointId.SEPOLIA_V2_TESTNET
+    localhost: {
+        timeout: 100_000,
     },
     anvil: {
         url: "http://127.0.0.1:8545/",
         accounts: "remote",
     },
-    arbitrumSepolia: {
-      url: process.env.ARBITRUM_SEPOLIA_RPC_URL || '',
-      accounts: process.env.ARBITRUM_SEPOLIA_ADDRESS_PRIVATE_KEY
-        ? [process.env.ARBITRUM_SEPOLIA_ADDRESS_PRIVATE_KEY]
-        : [],
-      gasPrice: 2000000000,
-      eid: EndpointId.ARBITRUM_V2_TESTNET
-    },
+    arbitrum: getNetworkConfig('arbitrum'),
+    mainnet: getNetworkConfig('mainnet'),
+    sepolia: getNetworkConfig('sepolia'),
+    arbitrumSepolia: getNetworkConfig('arbitrumSepolia'),
     berachain: {
-      url: process.env.BERACHAIN_RPC_URL || '',
-      accounts: process.env.BERACHAIN_ADDRESS_PRIVATE_KEY
-          ? [process.env.BERACHAIN_ADDRESS_PRIVATE_KEY]
-          : [],
-      chainId: 80094,
+        chainId: 80094,
+        ...getNetworkConfig('berachain'),
     },
     bepolia: {
-      url: process.env.BEPOLIA_RPC_URL || '',
-      accounts: process.env.BEPOLIA_ADDRESS_PRIVATE_KEY
-          ? [process.env.BEPOLIA_ADDRESS_PRIVATE_KEY]
-          : [],
-      chainId: 80069,
+        chainId: 80069,
+        ...getNetworkConfig('bepolia'),
     },
+    goerli: getNetworkConfig('goerli'),
   },
   etherscan: {
     apiKey: process.env.ETHERSCAN_API_KEY,

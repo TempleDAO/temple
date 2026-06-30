@@ -4,6 +4,7 @@ import { getAllSpiceBazaarSubgraphEndpoints } from 'constants/env/getSpiceBazaar
 
 export type Metric = {
   id: string;
+  epoch: string;
   date: string;
   value: number;
   timestamp: number;
@@ -54,6 +55,7 @@ export const useClosingPriceHistory = (
       const metrics: Metric[] = rawInstances
         .map((instance: any) => ({
           id: instance.id,
+          epoch: instance.epoch,
           timestamp: Number(instance.timestamp),
           date: new Date(Number(instance.endTime) * 1000).toLocaleDateString(
             'en-GB',

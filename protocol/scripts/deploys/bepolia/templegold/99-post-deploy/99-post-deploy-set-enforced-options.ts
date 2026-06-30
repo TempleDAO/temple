@@ -1,15 +1,12 @@
 import '@nomiclabs/hardhat-ethers';
-import { ethers } from 'hardhat';
 import {
-  ensureExpectedEnvvars,
+  runAsyncMain,
   mine
 } from '../../../helpers';
-import {
-    getDeployedContracts
-} from '../contract-addresses';
 import { TempleGold, TempleGold__factory } from '../../../../../typechain';
 import { EnforcedOptionParamStruct } from '../../../../../typechain/@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/libs/OAppOptionsType3';
 import { DEFAULT_SETTINGS } from '../default-settings';
+import { getDeployContext } from '../deploy-context';
 
 async function setTempleGoldEnforcedOptionsSepolia(templeGold: TempleGold) {
   const options: EnforcedOptionParamStruct[] = [{
@@ -21,19 +18,10 @@ async function setTempleGoldEnforcedOptionsSepolia(templeGold: TempleGold) {
 }
 
 async function main() {
-  ensureExpectedEnvvars();
-  const [owner] = await ethers.getSigners();
-  const ADDRS = getDeployedContracts();
+  const { owner, ADDRS } = await getDeployContext(__dirname);
   const templeGold = TempleGold__factory.connect(ADDRS.TEMPLE_GOLD.TEMPLE_GOLD, owner);
 
   await setTempleGoldEnforcedOptionsSepolia(templeGold);
 }
 
-// We recommend this pattern to be able to use async/await everywhere
-// and properly handle errors.
-main()
-  .then(() => process.exit(0))
-  .catch(error => {
-    console.error(error);
-    process.exit(1);
-  });
+runAsyncMain(main);
