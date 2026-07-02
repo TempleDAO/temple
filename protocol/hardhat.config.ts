@@ -3,7 +3,6 @@ require('dotenv').config();
 import '@nomicfoundation/hardhat-chai-matchers';
 import '@typechain/hardhat';
 import '@nomicfoundation/hardhat-verify';
-import '@nomiclabs/hardhat-ganache'; // for testing
 import '@nomiclabs/hardhat-ethers';
 import 'hardhat-contract-sizer';
 import 'hardhat-gas-reporter';
