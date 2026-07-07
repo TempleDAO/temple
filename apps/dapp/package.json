@@ -20,7 +20,6 @@
     "codegen:safe-api-v1": "yarn safe-api-v1-host && openapi --input ./src/safe/open-api/apiV1.json --output ./src/safe/open-api/client"
   },
   "dependencies": {
-    "@balancer-labs/sdk": "^1.1.6",
     "@cowprotocol/widget-react": "^0.12.0",
     "@safe-global/safe-apps-provider": "^0.18.0",
     "@safe-global/safe-apps-sdk": "^8.1.0",
@@ -85,6 +84,7 @@
     "babel-plugin-macros": "^3.1.0",
     "babel-plugin-styled-components": "^2.1.4",
     "env-cmd": "^10.1.0",
+    "eslint": "^8.57.1",
     "eslint-plugin-react": "^7.35.0",
     "eslint-plugin-react-hooks": "^4.6.2",
     "husky": "^9.1.4",
@@ -118,7 +118,10 @@
     "h3": "1.15.6",
     "node-forge": "1.4.0",
     "rollup": "4.59.0",
-    "tar": "7.5.15"
+    "tar": "7.5.15",
+    "**/@ethersproject/providers/ws": "7.5.11",
+    "**/viem/ws": "8.21.0",
+    "**/@vercel/python-analysis/minimatch": "10.2.3"
   },
   "packageManager": "yarn@1.22.21"
 }
