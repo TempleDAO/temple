@@ -7,7 +7,7 @@ import {
 } from '../../../helpers';
 import { SpiceAuction, SpiceAuction__factory } from '../../../../../typechain';
 import { DEFAULT_SETTINGS } from '../default-settings';
-import { ContractInstances } from '../../../sepolia/templegold/contract-addresses/types';
+import { ContractInstances } from '../contract-addresses/types';
 import { getDeployContext } from '../deploy-context';
 
 async function main() {

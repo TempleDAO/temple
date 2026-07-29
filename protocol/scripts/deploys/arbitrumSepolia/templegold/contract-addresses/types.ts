@@ -1,73 +1,16 @@
-import {
-    FakeERC20,
-    TempleGold,
-    TempleGoldAdmin,
-    TempleGoldStaking,
-    SpiceAuction,
-    SpiceAuctionFactory,
-    StableGoldAuction,
-    TempleTeleporter,
-    TempleERC20Token
-} from '../../../../../typechain';
+import { SpiceAuction, FakeERC20 } from "../../../../../typechain";
+import { BaseContractAddresses, BaseContractInstances } from "../../../templegold/types";
 
-export interface ContractAddresses {
-    TEMPLE_GOLD: {
-        AUCTION_AUTOMATION_EOA: string,
-        STAKING_AUTOMATION_EOA: string,
-        SPICE_AUCTION_OPERATOR: string,
-        TEMPLE_GOLD: string,
-        TEMPLE_GOLD_ADMIN: string,
-        TEMPLE_GOLD_STAKING: string,
-        TEMPLE_TELEPORTER: string,
+export interface ContractAddresses extends BaseContractAddresses {
+    TEMPLE_GOLD: BaseContractAddresses['TEMPLE_GOLD'] & {
         SPICE_AUCTION: string,
-        SPICE_AUCTION_FACTORY: string,
-        STABLE_GOLD_AUCTION: string,
-        TEAM_GNOSIS: string,
-        SPICE_AUCTION_IMPLEMENTATION: string,
-        STRATEGY_GNOSIS: string,
         SPICE_TOKEN: string,
     },
-    CORE: {
-        TEMPLE_TOKEN: string,
-        EXECUTOR_MSIG: string,
-        RESCUER_MSIG: string,
-    },
-    EXTERNAL: {
-        LAYER_ZERO: {
-            ENDPOINT: string,
-        },
-        MAKER_DAO: {
-            DAI_TOKEN: string,
-        },
-        SKY: {
-            USDS: string,
-        }
-    }
-    SPICE_AUCTIONS: {
-        SPICE_TGLD: string,
-        DAI_TGLD: string,
-        ENA_TGLD: string,
-        SENA_TGLD: string,
-    }
 }
 
-export interface ContractInstances {
-    TEMPLE_GOLD: {
-        TEMPLE_GOLD: TempleGold,
-        TEMPLE_GOLD_ADMIN: TempleGoldAdmin,
-        TEMPLE_GOLD_STAKING: TempleGoldStaking,
-        TEMPLE_TELEPORTER: TempleTeleporter,
+export interface ContractInstances extends BaseContractInstances {
+    TEMPLE_GOLD: BaseContractInstances['TEMPLE_GOLD'] & {
         SPICE_AUCTION: SpiceAuction,
-        SPICE_AUCTION_FACTORY: SpiceAuctionFactory,
-        STABLE_GOLD_AUCTION: StableGoldAuction,
         SPICE_TOKEN: FakeERC20,
-    },
-    CORE: {
-        TEMPLE_TOKEN: TempleERC20Token
-    },
-    EXTERNAL: {
-        MAKER_DAO: {
-            DAI_TOKEN: FakeERC20,
-        },
     },
 }

@@ -1,28 +1,11 @@
 import styled from 'styled-components';
 import { TradeWidget } from './Trade/TradeWidget';
-import { useConnectWallet } from '@web3-onboard/react';
-import { useWallet } from 'providers/WalletProvider';
-import { TradeButton } from '../NewUI/Home';
 
 export const TradePage = () => {
-  const [{}, connect] = useConnectWallet();
-  const { wallet } = useWallet();
-
   return (
     <TradeContainer>
       <HeaderText>Trade</HeaderText>
-      {true ? (
-        <TradeWidget />
-      ) : (
-        <TradeButton
-          onClick={() => {
-            connect();
-          }}
-          style={{ whiteSpace: 'nowrap' }}
-        >
-          Connect Wallet
-        </TradeButton>
-      )}
+      <TradeWidget />
     </TradeContainer>
   );
 };

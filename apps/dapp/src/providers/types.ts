@@ -1,8 +1,7 @@
-import { BigNumber, ContractReceipt, ethers, Signer } from 'ethers';
+import { BigNumber, ethers, Signer } from 'ethers';
 import { Nullable } from 'types/util';
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
-import { Swaps, SwapInfo } from '@balancer-labs/sdk';
 
 export enum RitualKind {
   OFFERING_STAKING = 'OFFERING_STAKING',
@@ -80,36 +79,6 @@ export interface FaithService {
   faith: FaithBalance;
 
   updateFaith(): Promise<void>;
-}
-
-export interface SwapService {
-  buy(
-    quote: SwapInfo,
-    tokenIn: TICKER_SYMBOL,
-    deadline: number,
-    slippage: number
-  ): Promise<ContractReceipt | void>;
-
-  sell(
-    quote: SwapInfo,
-    tokenOut: TICKER_SYMBOL,
-    deadline: number,
-    slippage: number
-  ): Promise<ContractReceipt | void>;
-
-  getSellQuote(
-    amountToSell: BigNumber,
-    token?: TICKER_SYMBOL
-  ): Promise<SwapInfo | void>;
-
-  getBuyQuote(
-    amountIn: BigNumber,
-    token?: TICKER_SYMBOL
-  ): Promise<SwapInfo | void>;
-
-  error: Error | null;
-
-  balancerSwaps: Swaps;
 }
 
 export interface WalletState {

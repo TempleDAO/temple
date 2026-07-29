@@ -14,7 +14,6 @@ export const CONTRACTS: ContractAddresses = {
         TEAM_GNOSIS: "0x",
         SPICE_AUCTION_IMPLEMENTATION: "0xBe9162230D9e637218D74C7f41f62ef2385fEe64",
         STRATEGY_GNOSIS: "0x",
-        SPICE_TOKEN: "0x",
     },
     CORE: {
         TEMPLE_TOKEN: "0x",

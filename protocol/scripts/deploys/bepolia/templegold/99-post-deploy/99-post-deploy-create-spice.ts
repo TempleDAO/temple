@@ -6,7 +6,6 @@ import {
   toAtto
 } from '../../../helpers';
 import {
-    connectToContracts,
     ContractInstances
 } from '../contract-addresses';
 import { SpiceAuction, SpiceAuction__factory } from '../../../../../typechain';
