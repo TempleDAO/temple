@@ -21,6 +21,11 @@ fi
 
 output="${input%.*}.json"
 
+# Build in a sibling temp file so a rejected CSV can't leave a deployable-looking
+# .json behind. Same dir keeps the mv atomic.
+tmp_output="$(mktemp "${output}.tmp.XXXXXX")"
+trap 'rm -f "$tmp_output"' EXIT
+
 awk -F',' '
 BEGIN {
   print "{"
@@ -48,6 +53,17 @@ NR == 1 {
     next
   }
 
+  # A repeated address still counts once towards actual_total but only the last
+  # amount survives into the JSON, so the total check alone would pass while the
+  # allocation silently shrinks. EVM addresses are case-insensitive.
+  key = tolower(address)
+  if (key in seen) {
+    printf "ERROR: duplicate address: %s\n", address > "/dev/stderr"
+    failed = 1
+    exit 1
+  }
+  seen[key] = 1
+
   actual_total += amount
 
   if (!first) {
@@ -59,6 +75,9 @@ NR == 1 {
 }
 
 END {
+  # awk runs END even after `exit` in a rule; avoid stacking a second error on top.
+  if (failed) exit 1
+
   print ""
   print "}"
 
@@ -74,6 +93,8 @@ END {
 
   printf "OK: total verified: %s\n", actual_total > "/dev/stderr"
 }
-' "$input" > "$output"
+' "$input" > "$tmp_output"
+
+mv "$tmp_output" "$output"
 
 echo "Wrote $output"

@@ -10,7 +10,7 @@ Run commands from `protocol/`.
 
 The CSV arrives in this form, with the amounts and an empty address on the last row:
 
-```
+```csv
 total_usd,address
 6000,0xd8997EF690647d1B85aCF906e7Dd5cC6CAee43E0
 100,0xB8C400E4E9360ae7a3480A2F63e2A5aA85696148
@@ -18,7 +18,8 @@ total_usd,address
 ```
 
 Write it to `scripts/deploys/mainnet/team-payments/json/epoch33a.csv`, then convert it.
-The script rejects the file if the amounts miss the total on the last row:
+The script rejects the file, and writes no JSON, if the amounts miss the total on the
+last row or an address appears twice:
 
 ```bash
 cd scripts/deploys/mainnet/team-payments && ./csv-to-json.sh json/epoch33a.csv
