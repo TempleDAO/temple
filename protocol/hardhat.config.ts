@@ -8,6 +8,21 @@ import 'hardhat-contract-sizer';
 import 'hardhat-gas-reporter';
 import 'solidity-coverage';
 import { ANVIL_SIGNER_PRIVATE_KEYS } from './scripts/deploys/anvil';
+import { providers } from 'ethers';
+
+// Alchemy (and some other RPCs) return `"to": ""` rather than `"to": null` for a
+// contract creation tx. ethers v5.7.2 only normalises the TestRPC `0x0` variant, so
+// `Formatter.check` rejects the empty string and the deploy script throws *after* the
+// deployment has already mined. Normalise before ethers sees it — this must run before
+// the `to == null` check that populates `creates`.
+// ponytail: prototype shim over patch-package, so it survives `yarn install` and ethers
+// patch bumps. Delete if ethers ever handles "" upstream (see test/ethers-formatter-tests.ts).
+const formatTransactionResponse =
+  providers.Formatter.prototype.transactionResponse;
+providers.Formatter.prototype.transactionResponse = function (transaction) {
+  if (transaction.to === '') transaction.to = null;
+  return formatTransactionResponse.call(this, transaction);
+};
 
 // NOTE: Any tasks that depend on the generated typechain makes the build flaky.
 //       Favour scripts instead
