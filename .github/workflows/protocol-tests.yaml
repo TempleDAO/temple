@@ -96,6 +96,7 @@ jobs:
       
       - name: Show the Foundry CI config
         run: forge config
+        working-directory: protocol
         env:
           FOUNDRY_PROFILE: ci
         
@@ -153,6 +154,7 @@ jobs:
       
       - name: Show the Foundry CI config
         run: forge config
+        working-directory: protocol
         env:
           FOUNDRY_PROFILE: ci
         
