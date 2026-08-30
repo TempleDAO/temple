@@ -259,18 +259,19 @@ contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
 
     function test_addCollateral_gas() public {
         // With unoptmised solc FOUNDRY_PROFILE=lite
+        // forge 1.8 turned on isolate mode, raising the cold-start numbers
         (uint256 first, uint256 second, uint256 third) = _addCollateralIteration(makeAddr("acct1"));
         assertLt(first, 115_000, "acct1 1");
         assertLt(second, 61_200, "acct1 2");
         assertLt(third, 51_600, "acct1 3");
 
         (first, second, third) = _addCollateralIteration(makeAddr("acct2"));
-        assertLt(first, 78_300, "acct2 1");
+        assertLt(first, 80_800, "acct2 1");
         assertLt(second, 61_200, "acct2 2");
         assertLt(third, 51_600, "acct2 3");
         
         (first, second, third) = _addCollateralIteration(makeAddr("acct3"));
-        assertLt(first, 78_300, "acct3 1");
+        assertLt(first, 80_800, "acct3 1");
         assertLt(second, 61_200, "acct3 2");
         assertLt(third, 51_600, "acct3 3");
     }

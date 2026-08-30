@@ -52,12 +52,13 @@ jobs:
         working-directory: protocol
 
       - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@c7450ba673e133f5ee30098b3b54f444d3a2ca2d
+        uses: foundry-rs/foundry-toolchain@908c540300062bd5a7e473851cdb4282204cee09
         with:
           version: stable
 
       - name: Show the Foundry CI config
         run: forge config
+        working-directory: protocol
         env:
           FOUNDRY_PROFILE: ci
 
@@ -131,7 +132,7 @@ jobs:
           cache-dependency-path: protocol/yarn.lock
 
       - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@c7450ba673e133f5ee30098b3b54f444d3a2ca2d
+        uses: foundry-rs/foundry-toolchain@908c540300062bd5a7e473851cdb4282204cee09
         with:
           version: stable
       - name: "Restore the cached build and the node modules"
