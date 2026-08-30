@@ -18,6 +18,7 @@ import { LegacyPage } from 'components/Pages/Core/DappPages/LegacyPage';
 import V2Layout from 'components/Layouts/V2Layout';
 import { SpiceBazaarPage } from 'components/Pages/Core/DappPages/SpiceBazaar/index';
 import { SpiceBazaarTopNav } from 'components/Pages/Core/DappPages/SpiceBazaar/TopNav';
+import OverworldMap from 'components/Pages/Core/DappPages/OverworldMap';
 import { Overview } from 'components/Pages/Core/DappPages/SpiceBazaar/Overview';
 import { StakeTemple } from 'components/Pages/Core/DappPages/SpiceBazaar/Earn/StakeTemple';
 import { Stake } from 'components/Pages/Core/DappPages/SpiceBazaar/Earn/StakeTemple/Stake';
@@ -105,6 +106,7 @@ root.render(
                   path="/dapp"
                   element={<Navigate replace to="/dapp/spice" />}
                 />
+                <Route path="/dapp/overworld" element={<OverworldMap />} />
                 <Route path="/dapp/*" element={<V2Layout />}>
                   <Route path="dashboard/*" element={<DashboardPage />} />
                   <Route path="trade" element={<TradePage />} />
