@@ -50,13 +50,10 @@ contract WishingWellTestBase is TempleGoldCommon {
     string internal constant WELL_VERSION = "1.0";
 
     WishingWell well;
-    // address internal operator = mkAddr("mike");
 
     FakeERC20 internal TEMPLE_TOKEN;
     FakeERC20 internal TGLD;
     FakeERC20 internal USDS;
-    // address target = address(100);
-    // address payment = address(200);
     uint256 key = 12345;
 
     function setUp() public {
