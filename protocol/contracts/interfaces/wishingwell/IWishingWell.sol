@@ -5,7 +5,7 @@ pragma solidity ^0.8.20;
 /// @notice A persistent, non-custodial registry of potential demand for Treasury auctions.
 /// @dev Wishes do not move tokens, grant allowances, reserve liquidity or guarantee execution.
 /// There is one stored wish per account/target token, shared across directions and payment assets.
-/// Amounts are stated intent, not validated wallet balances. Token addresses identify assets;
+/// Amounts are stated intent, not validated wallet balances. Token addresses identify assets, that is,
 /// the registry does not certify their legitimacy or call their token contracts.
 interface IWishingWell {
     /// @notice Whether the account wants to sell the target token or buy into it.
@@ -19,7 +19,7 @@ interface IWishingWell {
     /// @notice The latest stored wish for an account/target-token pair.
     /// @dev Storage presence alone does not establish eligibility; use activeAmount to filter it.
     struct Wish {
-        /// @notice Target token for Sell; a different, nonzero payment asset for Buy.
+        /// @notice Target token for Sell: a different, nonzero payment asset for Buy.
         address amountAsset;
         /// @notice Desired quantity in amountAsset base units, without decimal normalization.
         uint128 amount;
@@ -90,15 +90,6 @@ interface IWishingWell {
     /// @param account Account whose wishes are included or ignored.
     /// @param excluded True to ignore the account's wish; false to apply normal eligibility checks.
     event ExclusionSet(address indexed targetToken, address indexed account, bool excluded);
-
-    /// @notice Emitted when an Operator is enabled or disabled, including initial setup.
-    /// @param operator Address receiving or losing Operator permission.
-    /// @param enabled Whether Operator permission is enabled.
-    event OperatorSet(address indexed operator, bool enabled);
-
-    /// @notice Emitted when the DAO executor is assigned, including initial setup.
-    /// @param daoExecutor New DAO executor address.
-    event DaoExecutorSet(address indexed daoExecutor);
 
     function MAX_ACCOUNTS() external view returns (uint256);
 
@@ -179,11 +170,11 @@ interface IWishingWell {
     function wishDigest(SignedWish calldata wish) external view returns (bytes32);
 
     /// @notice Include or exclude an account's wish from demand counting for one target token.
-    /// @dev Only the DAO executor or an enabled Operator may call. Does not delete or mutate the
+    /// @dev Only a permitted operator may call. Does not delete or mutate the
     /// wish or nonce. Unexcluding restores its contribution only if otherwise active. Does not block
     /// wish submission/revocation and grants no authority over auction participation or user assets.
     /// @param targetToken Nonzero token for which the exclusion applies, across directions/assets.
     /// @param account Nonzero account whose contribution is affected.
-    /// @param excluded True to ignore its contribution; false to restore normal eligibility checks.
+    /// @param excluded True to ignore its contribution, False to restore normal eligibility checks.
     function setExcluded(address targetToken, address account, bool excluded) external;
 }
