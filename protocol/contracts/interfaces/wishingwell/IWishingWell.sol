@@ -163,7 +163,8 @@ interface IWishingWell {
     ) external view returns (uint256);
 
     /// @notice Compute the EIP-712 digest to sign for a relayed wish.
-    /// @dev Uses domain name "WishingWell", version "1", current chain ID and this contract address.
+    /// @dev Uses the deployment-configured domain name and version, the current chain ID and this contract address.
+    /// Read the deployed values from name(), version() or eip712Domain()
     /// Hashing does not validate the payload, nonce, expiry or signature, and does not change state.
     /// @param wish Complete payload to hash, using EIP-712 primary type "Wish".
     /// @return Domain-separated digest for EOA signing or ERC-1271 verification.
