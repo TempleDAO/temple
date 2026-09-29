@@ -3,64 +3,125 @@ pragma solidity ^0.8.20;
 // (contracts/wishingwell/FixedPriceAuction.sol)
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Permit.sol";
+import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-import { IFixedPriceAuction } from "contracts/interfaces/wishingwell/IFixedPriceAuction.sol";
+import { IFixedPriceAuction, IAuctionTokenRegistry, IComplianceCheck } from "contracts/interfaces/wishingwell/IFixedPriceAuction.sol";
 
 import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
 import { TempleMath } from "contracts/common/TempleMath.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 
-contract FixedPriceAuction is IFixedPriceAuction, TempleElevatedAccess, ReentrancyGuard {
+contract FixedPriceAuction is IFixedPriceAuction, TempleElevatedAccess {
     using SafeERC20 for IERC20;
     using TempleMath for uint256;
 
+    /// @inheritdoc IFixedPriceAuction
+    uint64 public constant MIN_NOTICE = 1 hours;
+    /// @inheritdoc IFixedPriceAuction
+    uint64 public constant MAX_DURATION = 30 days;
+    /// @inheritdoc IFixedPriceAuction
+    uint64 public constant FROZEN_ACTION_DELAY = 7 days;
+
+    /// @inheritdoc IFixedPriceAuction
+    uint8 public immutable bidDecimals;
+    /// @inheritdoc IFixedPriceAuction
+    uint8 public immutable override fillDecimals;
+
     AuctionConfig private _config;
-    uint64 private _effectiveDepositEnd;
+    uint64 private _depositEnd;
     Phase private _finalOutcome;
     SettlementPreview private _settlement;
+    uint256 private immutable _priceDenominator;
 
     /// @inheritdoc IFixedPriceAuction
     mapping(address => uint256) public override deposits;
     /// @inheritdoc IFixedPriceAuction
     mapping(address => bool) public override claimed;
     /// @inheritdoc IFixedPriceAuction
+    mapping(address => bool) public override excluded;
+    /// @inheritdoc IFixedPriceAuction
+    mapping(address => uint256) public override frozenBid;
+    /// @inheritdoc IFixedPriceAuction
+    mapping(address => uint256) public override frozenFill;
+    mapping(address => ReleaseProposal) private _releases;
+
+    /// @inheritdoc IFixedPriceAuction
     bool public override treasuryClaimed;
     /// @inheritdoc IFixedPriceAuction
     uint256 public override totalDeposits;
-    /// @inheritdoc IFixedPriceAuction
-    uint256 public override remainingFunding;
 
+    /// @inheritdoc IFixedPriceAuction
+    address public override complianceCheck;
+    /// @inheritdoc IFixedPriceAuction
+    uint256 public override maxTotalDeposits;
+    /// @inheritdoc IFixedPriceAuction
+    bool public override depositsPaused;
+
+    uint256 private _bidLiability;
+    uint256 private _fillLiability;
+    uint256 public unclaimedBidders;
+    uint256 private _userBidBudget;
+    uint256 private _userFillBudget;
+
+    bool public override emergencyPauseUsed;
+    bool public override emergencyPaused;
+    
     constructor(
         AuctionConfig memory config_,
         address executor_,
         address rescuer_
     ) TempleElevatedAccess(rescuer_, executor_) {
-        uint256 end = uint256(config_.depositStart) + config_.depositDuration;
-        // Do validation
-        /// @dev An alternative to this approach would be using Initializable and calling contract.initialize(), but that adds
+        /// An alternative to this approach would be using Initializable and calling contract.initialize(), but that adds
         /// extra complexity for this single instance design
+        /// Assumes bidToken and fillToken are approved ERC20s with exact transfers: no taxes,
+        /// fee-on-transfer behavior, rebasing or callbacks, and no holder blacklisting/freezing
         if (
-            config_.depositToken.code.length == 0 || config_.fundingToken.code.length == 0
-                || config_.depositToken == config_.fundingToken || config_.treasury == address(0)
-                || config_.treasury == address(this) || config_.priceNumerator == 0 || config_.priceDenominator == 0
+            config_.bidToken.code.length == 0 || config_.fillToken.code.length == 0
+                || config_.bidToken == config_.fillToken || config_.funder == address(0)
+                || config_.proceedsRecipient == address(0)
+                || config_.frozenFundsReceiver == address(this) || config_.price == 0
                 || config_.depositStart < block.timestamp || config_.depositDuration == 0
-                || config_.fulfillmentDuration == 0 || end + config_.fulfillmentDuration > type(uint64).max
-        ) {
+                || config_.depositDuration > MAX_DURATION || config_.fulfillmentDuration == 0
+                || config_.fulfillmentDuration > MAX_DURATION || config_.noticePeriod < MIN_NOTICE
+                || config_.noticePeriod > config_.depositDuration
+                || config_.tokenRegistry.code.length == 0
+                || (config_.complianceCheck != address(0) && config_.complianceCheck.code.length == 0)
+        ) { revert InvalidConfig(); }
+
+        _requireSupported(config_.tokenRegistry, config_.bidToken);
+        _requireSupported(config_.tokenRegistry, config_.fillToken);
+
+        uint8 bd = IERC20Metadata(config_.bidToken).decimals();
+        uint8 fd = IERC20Metadata(config_.fillToken).decimals();
+        bidDecimals = bd;
+        fillDecimals = fd;
+        if (bd > 18 || fd > 18) {
             revert InvalidConfig();
         }
+        _priceDenominator = 10 ** (uint256(18) + bd - fd);
+        uint256 end = uint256(config_.depositStart) + config_.depositDuration;
         _config = config_;
-        _effectiveDepositEnd = uint64(end);
+        _depositEnd = uint64(end);
+
+        complianceCheck = config_.complianceCheck;
+        maxTotalDeposits = config_.maxTotalDeposits;
+        emit AuctionConfigured(config_, bd, fd);
     }
 
     /// @inheritdoc IFixedPriceAuction
     function endDeposit() external override onlyElevatedAccess {
+        // Cannot extend the window. Early closure remains blocked while paused.
+        _requireUnpaused();
         _requirePhase(Phase.Deposit);
 
-        _effectiveDepositEnd = uint64(block.timestamp);
+        uint256 newEndTime = block.timestamp + _config.noticePeriod;
+        if (newEndTime >= getTiming().effectiveDepositEnd) { revert NoEarlierEnd(); }
+        _depositEnd = uint64(newEndTime);
+        AuctionTiming memory timing = getTiming();
 
-        emit DepositEndedEarly(msg.sender, _effectiveDepositEnd, _fulfillmentEnd());
+        emit DepositEndScheduled(msg.sender, timing.effectiveDepositEnd, timing.fulfillmentEnd);
     }
 
     /// @inheritdoc IFixedPriceAuction
@@ -88,11 +149,17 @@ contract FixedPriceAuction is IFixedPriceAuction, TempleElevatedAccess, Reentran
     }
 
     /// @inheritdoc IFixedPriceAuction
+    function finalize() external override {
+        _ensureFinalized();
+    }
+
+    /// @inheritdoc IFixedPriceAuction
     function phase() public view override returns (Phase) {
         if (_finalOutcome == Phase.Settled || _finalOutcome == Phase.Cancelled) { return _finalOutcome; }
-        if (block.timestamp < _config.depositStart) { return Phase.Scheduled; }
-        if (block.timestamp < _effectiveDepositEnd) { return Phase.Deposit; }
-        if (block.timestamp < _fulfillmentEnd()) { return Phase.Fulfillment; }
+        AuctionTiming memory t = getTiming();
+        if (block.timestamp < t.depositStart) { return Phase.Scheduled; }
+        if (block.timestamp < t.effectiveDepositEnd) { return Phase.Deposit; }
+        if (block.timestamp < t.fulfillmentEnd) { return Phase.Fulfillment; }
 
         return Phase.Settled;
     }
@@ -103,116 +170,277 @@ contract FixedPriceAuction is IFixedPriceAuction, TempleElevatedAccess, Reentran
     }
 
     /// @inheritdoc IFixedPriceAuction
-    function getTiming() external view override returns (AuctionTiming memory) {
-        return AuctionTiming(
-            _config.depositStart,
-            _config.depositStart + _config.depositDuration,
-            _effectiveDepositEnd,
-            _effectiveDepositEnd,
-            _fulfillmentEnd()
-        );
+    function deposit(uint256 amount) external override {
+        _deposit(amount);
     }
 
     /// @inheritdoc IFixedPriceAuction
-    function deposit(uint256 amount) external override {
-        _requirePhase(Phase.Deposit);
+    function depositWithPermit(uint256 amount, uint256 deadline, uint8 v, bytes32 r, bytes32 s) external override {
+        // FPA-7/11/12/46: do not invoke permit during either pause or an invalid phase.
+        _checkDepositEntry();
 
-        if (amount == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
-        uint256 updatedTotal = totalDeposits + amount;
-        // Verify the resulting full-funding requirement remains representable before accepting assets.
-        _requiredFunding(updatedTotal);
-
-        IERC20(_config.depositToken).safeTransferFrom(msg.sender, address(this), amount);
-        totalDeposits = updatedTotal;
-        deposits[msg.sender] += amount;
-
-        emit Deposited(msg.sender, amount, deposits[msg.sender], updatedTotal);
+        try IERC20Permit(_config.bidToken).permit(msg.sender, address(this), amount, deadline, v, r, s) {
+            // Permit succeeded and allowance is set.
+        } catch {
+            // Permit may already have been submitted; rely on allowance
+        }
+        _deposit(amount);
     }
 
-    // @todo Reentrancy
     /// @inheritdoc IFixedPriceAuction
     function withdrawDeposit(uint256 amount) external override {
+        // Withdrawal is never screened, but excluded funds have already been frozen.
+        _requireUnpaused();
         _requirePhase(Phase.Deposit);
+        if (excluded[msg.sender]) { revert BidderIsExcluded(msg.sender); }
 
         if (amount == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
         if (amount > deposits[msg.sender]) { revert InsufficientDeposit(); }
 
-        deposits[msg.sender] -= amount;
+        uint256 remainder = deposits[msg.sender] - amount;
+        _checkMinimum(remainder);
+        deposits[msg.sender] = remainder;
         totalDeposits -= amount;
+        if (remainder == 0) { --unclaimedBidders; }
+        _account(0, amount, 0, 0);
 
-        IERC20(_config.depositToken).safeTransfer(msg.sender, amount);
+        IERC20(_config.bidToken).safeTransfer(msg.sender, amount);
 
-        emit DepositWithdrawn(msg.sender, amount, deposits[msg.sender], totalDeposits);
+        emit DepositWithdrawn(msg.sender, amount, remainder, totalDeposits);
     }
 
     /// @inheritdoc IFixedPriceAuction
-    function fund(uint256 amount) external override onlyTreasury {
+    function fund(uint256 amount) external override onlyFunder {
+        // Funding starts only after deposits close.
+        _requireUnpaused();
         _requirePhase(Phase.Fulfillment);
 
         if (amount == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
 
-        remainingFunding += amount;
+        IERC20(_config.fillToken).safeTransferFrom(msg.sender, address(this), amount);
+        _account(0, 0, amount, 0);
 
-        IERC20(_config.fundingToken).safeTransferFrom(msg.sender, address(this), amount);
-
-        emit Funded(msg.sender, amount, remainingFunding);
+        emit Funded(msg.sender, amount, remainingFunding());
     }
 
     /// @inheritdoc IFixedPriceAuction
-    function withdrawExcess(uint256 amount) external override onlyTreasury {
+    function withdrawExcess(uint256 amount) external override onlyFunder {
+        // Committed funds can only be recovered by cancelling the entire auction.
+        _requireUnpaused();
         _requirePhase(Phase.Fulfillment);
         if (amount == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
 
         uint256 available = withdrawableExcess();
         if (amount > available) { revert ExcessExceeded(amount, available); }
 
-        remainingFunding -= amount;
-        IERC20(_config.fundingToken).safeTransfer(_config.treasury, amount);
+        _account(0, 0, 0, amount);
+        IERC20(_config.fillToken).safeTransfer(_config.funder, amount);
 
-        emit ExcessWithdrawn(msg.sender, amount, remainingFunding);
-    }
-
-    /// @inheritdoc IFixedPriceAuction
-    function finalize() external override {
-        _requirePhase(Phase.Settled);
-        if (_finalOutcome != Phase.Settled) _settle(false);
+        emit ExcessWithdrawn(msg.sender, amount, remainingFunding());
     }
 
     /// @inheritdoc IFixedPriceAuction
     function claim() external override {
-        /// @notice First user claim can finaluize an expired auction automatically
+        // FPA-21–24/28/33: Freeze, rather than pay, a flagged account's immutable entitlement.
+        _requireUnpaused();
         _ensureFinalized();
 
+        if (excluded[msg.sender]) { revert BidderIsExcluded(msg.sender); }
         if (claimed[msg.sender]) { revert AlreadyClaimed(); }
         if (deposits[msg.sender] == 0) { revert NothingToClaim(); }
 
-        UserClaim memory amounts = claimable(msg.sender);
+        UserClaim memory userClaim = claimable(msg.sender);
+        bool blocked = _isBlocked(msg.sender);
         claimed[msg.sender] = true;
-        remainingFunding -= amounts.fundingTokenAmount;
-
-        if (amounts.fundingTokenAmount > 0) { IERC20(_config.fundingToken).safeTransfer(msg.sender, amounts.fundingTokenAmount); }
-        
-        if (amounts.depositTokenRefund > 0) { IERC20(_config.depositToken).safeTransfer(msg.sender, amounts.depositTokenRefund); }
-
-        emit UserClaimed(msg.sender, amounts.fundingTokenAmount, amounts.depositTokenRefund);
+        --unclaimedBidders;
+        _userBidBudget -= userClaim.bidTokenRefund;
+        _userFillBudget -= userClaim.fillTokenAmount;
+        if (blocked) {
+            frozenBid[msg.sender] += userClaim.bidTokenRefund;
+            frozenFill[msg.sender] += userClaim.fillTokenAmount;
+            // Total liabilities stay unchanged
+        } else {
+            _account(0, userClaim.bidTokenRefund, 0, userClaim.fillTokenAmount);
+        }
+        _releaseDust();
+        if (blocked) {
+            emit ClaimFrozen(msg.sender, userClaim.fillTokenAmount, userClaim.bidTokenRefund);
+        } else {
+            if (userClaim.bidTokenRefund > 0) {
+                IERC20(_config.bidToken).safeTransfer(msg.sender, userClaim.bidTokenRefund);
+            }
+            if (userClaim.fillTokenAmount > 0) {
+                IERC20(_config.fillToken).safeTransfer(msg.sender, userClaim.fillTokenAmount);
+            }
+            
+            emit UserClaimed(msg.sender, userClaim.fillTokenAmount, userClaim.bidTokenRefund);
+        }
     }
 
     /// @inheritdoc IFixedPriceAuction
     function claimTreasury() external override {
+        // Immutable, separate destinations. Calling is permissionless.
+        _requireUnpaused();
         _ensureFinalized();
+
         if (treasuryClaimed) { revert AlreadyClaimed(); }
 
-        TreasuryClaim memory amounts = treasuryClaimable();
+        TreasuryClaim memory treasuryClaim = treasuryClaimable();
         treasuryClaimed = true;
-        remainingFunding -= amounts.fundingTokenRefund;
-        if (amounts.fundingTokenRefund > 0) {
-            IERC20(_config.fundingToken).safeTransfer(_config.treasury, amounts.fundingTokenRefund);
-        }
-        if (amounts.depositTokenAmount > 0) {
-            IERC20(_config.depositToken).safeTransfer(_config.treasury,amounts.depositTokenAmount);
+        _account(0, treasuryClaim.bidTokenAmount, 0, treasuryClaim.fillTokenRefund);
+
+        if (treasuryClaim.bidTokenAmount > 0) {
+            IERC20(_config.bidToken).safeTransfer(_config.proceedsRecipient, treasuryClaim.bidTokenAmount);
         }
 
-        emit TreasuryClaimed(msg.sender, _config.treasury, amounts.depositTokenAmount, amounts.fundingTokenRefund);
+        if (treasuryClaim.fillTokenRefund > 0) {
+            IERC20(_config.fillToken).safeTransfer(_config.funder, treasuryClaim.fillTokenRefund);
+        }
+
+        emit TreasuryClaimed(msg.sender, _config.proceedsRecipient, _config.funder, treasuryClaim.bidTokenAmount, treasuryClaim.fillTokenRefund);
+    }
+
+    /// @inheritdoc IFixedPriceAuction
+    function excludeBidder(address account) external override onlyElevatedAccess {
+        // Only a source-flagged account, before any settlement, can leave the denominator.
+        Phase current = phase();
+
+        if (current != Phase.Deposit && current != Phase.Fulfillment) { revert InvalidPhase(Phase.Deposit, current); }
+        if (excluded[account]) { revert BidderIsExcluded(account); }
+        if (!_isBlocked(account)) { revert AccountNotBlocked(); }
+
+        uint256 amount = deposits[account];
+        if (amount == 0) { revert NothingToClaim(); }
+
+        excluded[account] = true;
+        deposits[account] = 0;
+        totalDeposits -= amount;
+        --unclaimedBidders;
+        frozenBid[account] += amount;
+
+        emit BidderExcluded(account, amount);
+    }
+
+    /// @inheritdoc IFixedPriceAuction
+    function proposeRelease(address account, address to) external override onlyElevatedAccess {
+        // FPA-34/D36: zero escrow never authorizes a zero-address release.
+        if (to == address(0) || (to != account && to != _config.frozenFundsReceiver)) { revert InvalidReleaseRecipient(); }
+        if (frozenBid[account] == 0 && frozenFill[account] == 0) { revert NothingToClaim(); }
+
+        uint256 executableAt = block.timestamp + FROZEN_ACTION_DELAY;
+        if (executableAt > type(uint64).max) { revert InvalidConfig(); }
+        _releases[account] = ReleaseProposal(to, uint64(executableAt));
+
+        emit ReleaseProposed(account, to, uint64(executableAt));
+    }
+
+    /// @inheritdoc IFixedPriceAuction
+    function executeRelease(address account) external override onlyElevatedAccess {
+        _requireUnpaused();
+
+        ReleaseProposal memory releaseProposal_ = _releases[account];
+        if (releaseProposal_.to == address(0)) { revert NoReleaseProposal(); }
+        if (block.timestamp < releaseProposal_.executableAt) { revert ReleaseNotReady(); }
+
+        uint256 bid = frozenBid[account];
+        uint256 fill = frozenFill[account];
+        delete _releases[account];
+        delete frozenBid[account];
+        delete frozenFill[account];
+        _account(0, bid, 0, fill);
+
+        if (bid > 0) { IERC20(_config.bidToken).safeTransfer(releaseProposal_.to, bid); }
+        if (fill > 0) { IERC20(_config.fillToken).safeTransfer(releaseProposal_.to, fill); }
+
+        emit FrozenReleased(account, releaseProposal_.to, bid, fill);
+    }
+
+    /// @inheritdoc IFixedPriceAuction
+    function vetoRelease(address account) external override onlyRescuer {
+        if (_releases[account].to == address(0)) { revert NoReleaseProposal(); }
+        delete _releases[account];
+
+        emit ReleaseVetoed(account);
+    }
+
+    /// @inheritdoc IFixedPriceAuction
+    function releaseProposal(address account) external view override returns (ReleaseProposal memory) {
+        return _releases[account];
+    }
+
+    /// @inheritdoc IFixedPriceAuction
+    function disableComplianceCheck() external override onlyElevatedAccess {
+        // FPA-31: There is deliberately no setter to restore or replace the source.
+        complianceCheck = address(0);
+
+        emit ComplianceCheckDisabled();
+    }
+
+    /// @inheritdoc IFixedPriceAuction
+    function setDepositsPaused(bool paused) external override onlyElevatedAccess {
+        // FPA-12: deposit-only pause leaves the schedule and every other operation unchanged.
+        depositsPaused = paused;
+
+        emit DepositsPaused(paused);
+    }
+
+     /// @inheritdoc IFixedPriceAuction
+    function setMaxTotalDeposits(uint256 newCap) external override onlyElevatedAccess {
+        // FPA-9a: Zero is unlimited, not a cap.
+        Phase current = phase();
+        if (current == Phase.Settled || current == Phase.Cancelled) { revert InvalidPhase(Phase.Deposit, current); }
+        if (newCap != 0 && (maxTotalDeposits == 0 || newCap < maxTotalDeposits)) { revert CannotLowerCap(); }
+        maxTotalDeposits = newCap;
+
+        emit MaxTotalDepositsSet(newCap);
+    }
+
+    /// @inheritdoc IFixedPriceAuction
+    function recoverToken(address token, address to, uint256 amount) external override onlyElevatedAccess {
+        // FPA-40: All phases, but never frozen/unclaimed liabilities or emergency-paused movements.
+        _requireUnpaused();
+        if (to == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
+        uint256 reserved = token == _config.bidToken ? _bidLiability : token == _config.fillToken ? _fillLiability : 0;
+        uint256 balance = IERC20(token).balanceOf(address(this));
+        if (balance < reserved || amount > balance - reserved) { revert InsufficientRecoverableBalance(); }
+
+        if (amount > 0) { IERC20(token).safeTransfer(to, amount); }
+
+        emit CommonEventsAndErrors.TokenRecovered(to, token, amount);
+    }
+
+    /// @inheritdoc IFixedPriceAuction
+    function emergencyPause() external override onlyRescuer {
+        // FPA-43/44/45/48 Revised: no timer may reopen potentially exploitable transfers.
+        // The rescuer must explicitly unpause after investigation. Deadlines keep running.
+        // Retain the existing one-use limit, a final outcome can also be paused.
+        if (emergencyPauseUsed) { revert EmergencyPauseAlreadyUsed(); }
+
+        emergencyPauseUsed = true;
+        emergencyPaused = true;
+
+        emit EmergencyPaused();
+    }
+
+    /// @inheritdoc IFixedPriceAuction
+    function emergencyUnpause() external override onlyRescuer {
+        // Explicit recovery decision: cancellation does not repair an exploit or an asset shortfall.
+        // Without this rescuer action, withdrawals, claims and refunds remain blocked indefinitely.
+        if (!emergencyPaused) { revert NotEmergencyPaused(); }
+
+        emergencyPaused = false;
+
+        emit EmergencyUnpaused();
+    }
+
+    /// @inheritdoc IFixedPriceAuction
+    function remainingFunding() public view override returns (uint256) {
+        return _fillLiability;
+    }
+
+    /// @inheritdoc IFixedPriceAuction
+    function liabilities() external view override returns (uint256 bid, uint256 fill) {
+        return (_bidLiability, _fillLiability);
     }
 
     /// @inheritdoc IFixedPriceAuction
@@ -225,7 +453,7 @@ contract FixedPriceAuction is IFixedPriceAuction, TempleElevatedAccess, Reentran
         if (phase() != Phase.Fulfillment) { return 0; }
 
         uint256 required = fullFundingRequired();
-        return remainingFunding > required ? remainingFunding - required : 0;
+        return _fillLiability > required ? _fillLiability - required : 0;
     }
 
     /// @inheritdoc IFixedPriceAuction
@@ -236,64 +464,77 @@ contract FixedPriceAuction is IFixedPriceAuction, TempleElevatedAccess, Reentran
     }
 
     /// @inheritdoc IFixedPriceAuction
-    function claimable(address account) public view override returns (UserClaim memory amounts) {
+    function claimable(address account) public view override returns (UserClaim memory userClaim) {
         Phase current = phase();
-
-        if ((current != Phase.Settled && current != Phase.Cancelled) || claimed[account]) { return amounts; }
+        if ((current != Phase.Settled && current != Phase.Cancelled) || claimed[account] || excluded[account]) { return userClaim; }
         if (current == Phase.Cancelled) {
-            amounts.depositTokenRefund = deposits[account];
+            userClaim.bidTokenRefund = deposits[account];
         } else if (totalDeposits != 0) {
-            SettlementPreview memory result = previewSettlement();
-            amounts.fundingTokenAmount = deposits[account].mulDivRound(result.userFunding, totalDeposits, false);
-            amounts.depositTokenRefund = deposits[account].mulDivRound(result.userDepositRefund, totalDeposits, false);
+            SettlementPreview memory preview = previewSettlement();
+            // FPA-22/30/39: independent downward-rounded allocations. Claim order does not matter.
+            userClaim.fillTokenAmount = deposits[account].mulDivRound(preview.userFunding, totalDeposits, false);
+            userClaim.bidTokenRefund = deposits[account].mulDivRound(preview.userRefund, totalDeposits, false);
         }
     }
 
     /// @inheritdoc IFixedPriceAuction
-    function treasuryClaimable() public view override returns (TreasuryClaim memory amounts) {
+    function treasuryClaimable() public view override returns (TreasuryClaim memory tsryClaim) {
         Phase current = phase();
-
-        if ((current != Phase.Settled && current != Phase.Cancelled) || treasuryClaimed) { return amounts; }
-        SettlementPreview memory result = previewSettlement();
-        amounts.depositTokenAmount = result.filledDeposits;
-        amounts.fundingTokenRefund = result.treasuryFundingRefund;
+        if ((current != Phase.Settled && current != Phase.Cancelled) || treasuryClaimed) { return tsryClaim; }
+        SettlementPreview memory preview = previewSettlement();
+        tsryClaim.bidTokenAmount = preview.filledDeposits;
+        tsryClaim.fillTokenRefund = preview.funderRefund;
     }
 
-    function _calculateSettlement() private view returns (SettlementPreview memory result) {
-        result.totalDeposits = totalDeposits;
+    /// @inheritdoc IFixedPriceAuction
+    function getTiming() public view override returns (AuctionTiming memory timing) {
+        // FPA-45: Emmergency pauses stop transfers not the auction clock.
+        // An incident should be investigated/aborted rather than extending the trading windows.
+        timing.depositStart = _config.depositStart;
+        timing.scheduledDepositEnd = _config.depositStart + _config.depositDuration;
+        timing.effectiveDepositEnd = _depositEnd;
+        timing.fulfillmentStart = _depositEnd;
+        timing.fulfillmentEnd = _depositEnd + _config.fulfillmentDuration;
+    }
+
+    function _calculateSettlement() private view returns (SettlementPreview memory preview) {
+        // FPA-18–20/22/26/30: zero deposits/funding, partial, full and overfunded outcomes.
         uint256 required = fullFundingRequired();
-        uint256 filled = remainingFunding >= required
-            ? totalDeposits
-            : remainingFunding.mulDivRound(_config.priceDenominator, _config.priceNumerator, false);
-        uint256 userFunding = filled.mulDivRound(_config.priceNumerator, _config.priceDenominator, false);
-        // Avoid exchanging a positive deposit quantity for zero aggregate payment.
+        uint256 filled =
+            _fillLiability >= required ? totalDeposits : _fillLiability.mulDivRound(_priceDenominator, _config.price, false);
+        uint256 userFunding = filled.mulDivRound(_config.price, _priceDenominator, false);
         if (userFunding == 0) { filled = 0; }
-        result.filledDeposits = filled;
-        result.userFunding = userFunding;
-        result.userDepositRefund = totalDeposits - filled;
-        result.treasuryFundingRefund = remainingFunding - userFunding;
+        preview = SettlementPreview(totalDeposits, filled, userFunding, totalDeposits - filled, _fillLiability - userFunding);
     }
 
     function _settle(bool early) private {
+        // FPA-21: snapshot before any claims, regardless of which entry point finalizes.
         _settlement = _calculateSettlement();
         _finalOutcome = Phase.Settled;
-        SettlementPreview memory settlement_ = _settlement;
+        _userBidBudget = _settlement.userRefund;
+        _userFillBudget = _settlement.userFunding;
+
+        _releaseDust();
+        SettlementPreview memory preview = _settlement;
         emit AuctionSettled(
-            msg.sender,
-            early,
-            settlement_.totalDeposits,
-            settlement_.filledDeposits,
-            settlement_.userFunding,
-            settlement_.userDepositRefund,
-            settlement_.treasuryFundingRefund
+            msg.sender, early, preview.totalDeposits, preview.filledDeposits,
+            preview.userFunding, preview.userRefund, preview.funderRefund
         );
     }
 
     function _cancel(Phase previousPhase) private {
-        _settlement = SettlementPreview(totalDeposits, 0, 0, totalDeposits, remainingFunding);
+        // FPA-46 revised: deliberately callable while paused, because cancellation moves no tokens.
+        // It records an abort only; refund/claim transfers still require explicit emergency unpause.
+        // Deadlines continue running. Once Settled (even lazily), cancellation remains forbidden.
+        // FPA-27–29: no trade, frozen exclusions stay frozen and are not reintroduced into D.
+        _settlement = SettlementPreview(totalDeposits, 0, 0, totalDeposits, _fillLiability);
         _finalOutcome = Phase.Cancelled;
+        _userBidBudget = totalDeposits;
+        _userFillBudget = 0;
 
-        emit AuctionCancelled(msg.sender, previousPhase, totalDeposits, remainingFunding);
+        _releaseDust();
+
+        emit AuctionCancelled(msg.sender, previousPhase, totalDeposits, _settlement.funderRefund);
     }
 
     function _ensureFinalized() private {
@@ -304,21 +545,82 @@ contract FixedPriceAuction is IFixedPriceAuction, TempleElevatedAccess, Reentran
     }
 
     function _requiredFunding(uint256 amount) private view returns (uint256) {
-        // Round up so funding covers all deposits at the fixed price. Any unused funding is refunded to Treasury.
-        return amount.mulDivRound(_config.priceNumerator, _config.priceDenominator, true);
+        // FPA-4/30: round up to fully cover the fixed price. Unused funding returns to the funder.
+        return amount.mulDivRound(_config.price, _priceDenominator, true);
     }
 
-    function _fulfillmentEnd() private view returns (uint64) {
-        return _effectiveDepositEnd + _config.fulfillmentDuration;
+    function _account(uint256 bidIn, uint256 bidOut, uint256 fillIn, uint256 fillOut) private {
+        // FPA-38a: Sole writer of total liabilities
+        _bidLiability = _bidLiability + bidIn - bidOut;
+        _fillLiability = _fillLiability + fillIn - fillOut;
+    }
+
+    function _releaseDust() private {
+        // FPA-38a/40: Only final claimant releases budget rounding residues, not frozen balances.
+        if (unclaimedBidders == 0) {
+            _account(0, _userBidBudget, 0, _userFillBudget);
+            _userBidBudget = 0;
+            _userFillBudget = 0;
+        }
+    }
+
+    function _requireUnpaused() private view {
+        if (emergencyPaused) { revert EmergencyPauseActive(); }
     }
 
     function _requirePhase(Phase expected) private view {
-        Phase current = phase();
-        if (current != expected) { revert InvalidPhase(expected, current); }
+        Phase actual = phase();
+        if (actual != expected) { revert InvalidPhase(expected, actual); }
     }
 
-    modifier onlyTreasury() {
-        if (msg.sender != _config.treasury) { revert OnlyTreasury(); }
+    function _checkMinimum(uint256 amount) private view {
+        if (amount != 0 && amount < _config.minDeposit) { revert DepositBelowMinimum(); }
+    }
+
+    function _isBlocked(address account) private view returns (bool) {
+        return complianceCheck != address(0) && IComplianceCheck(complianceCheck).isBlocked(account);
+    }
+
+    function _requireSupported(address registry, address token) private view {
+        if (!IAuctionTokenRegistry(registry).isSupported(token)) { revert InvalidConfig(); }
+    }
+
+    function _deposit(uint256 amount) private {
+        _checkDepositEntry();
+        if (amount == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
+
+        _checkMinimum(deposits[msg.sender] + amount);
+        if (maxTotalDeposits != 0 && totalDeposits + amount > maxTotalDeposits) { revert DepositCapExceeded(); }
+
+        _requiredFunding(totalDeposits + amount);
+        IERC20(_config.bidToken).safeTransferFrom(msg.sender, address(this), amount);
+
+        if (deposits[msg.sender] == 0) { ++unclaimedBidders; }
+        deposits[msg.sender] += amount;
+        totalDeposits += amount;
+        _account(amount, 0, 0, 0);
+
+        emit Deposited(msg.sender, amount, deposits[msg.sender], totalDeposits);
+    }
+
+    function _checkDepositEntry() private view {
+        _requireUnpaused();
+        _requirePhase(Phase.Deposit);
+
+        if (depositsPaused) { revert DepositsArePaused(); }
+        if (excluded[msg.sender]) { revert BidderIsExcluded(msg.sender); }
+        if (_isBlocked(msg.sender)) { revert BlockedAccount(msg.sender); }
+    }
+
+    // FPA-34/43/44/48: rescuer-only actions do not require rescue mode.
+    modifier onlyRescuer() {
+        if (msg.sender != rescuer) { revert OnlyRescuer(); }
+        _;
+    }
+
+    // FPA-36: funding authority is distinct from elevated lifecycle/compliance authority.
+    modifier onlyFunder() {
+        if (msg.sender != _config.funder) { revert OnlyFunder(); }
         _;
     }
 }
