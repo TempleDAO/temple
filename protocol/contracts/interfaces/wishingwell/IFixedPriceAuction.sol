@@ -56,37 +56,54 @@ interface IFixedPriceAuction {
         address tokenRegistry;
     }
 
+    /// @notice Auction times, expressed as Unix timestamps.
     struct AuctionTiming {
-        /// @notice Configured start; emergency pauses never shift the schedule.
+        /// @notice Time deposits open.
         uint64 depositStart;
-        /// @notice Original scheduled end, before any early closure.
+        /// @notice Originally scheduled deposit closing time.
         uint64 scheduledDepositEnd;
+        /// @notice Deposit closing time after any early close notice.
         uint64 effectiveDepositEnd;
+        /// @notice Time funding opens, equal to effectiveDepositEnd.
         uint64 fulfillmentStart;
+        /// @notice Funding deadline based on the effective deposit end.
         uint64 fulfillmentEnd;
     }
 
-    /// @notice Aggregate allocation budgets; individual payouts and refunds round down.
+    /// @notice All token amounts are in base units.
     struct SettlementPreview {
+        /// @notice Total eligible bid token deposits.
         uint256 totalDeposits;
+        /// @notice Bid tokens allocated to the proceeds recipient.
         uint256 filledDeposits;
+        /// @notice Fill token budget for bidder payouts.
         uint256 userFunding;
+        /// @notice Bid token budget for bidder refunds.
         uint256 userRefund;
+        /// @notice Unused fill tokens returned to the funder.
         uint256 funderRefund;
     }
 
+    /// @notice Bidder claim amounts, in token base units.
     struct UserClaim {
+        /// @notice Fill tokens owed to the bidder.
         uint256 fillTokenAmount;
+        /// @notice Unfilled bid tokens returned to the bidder.
         uint256 bidTokenRefund;
     }
 
+    /// @notice Proceeds and refund amounts, in token base units.
     struct TreasuryClaim {
+        /// @notice Filled bid tokens sent to the proceeds recipient.
         uint256 bidTokenAmount;
+        /// @notice Unused fill tokens returned to the funder.
         uint256 fillTokenRefund;
     }
 
     struct ReleaseProposal {
+        /// @notice Recipient of the frozen funds.
         address to;
+        /// @notice Earliest release time, as a Unix timestamp.
         uint64 executableAt;
     }
 
