@@ -18,11 +18,13 @@ contract FixedPriceAuction is IFixedPriceAuction, TempleElevatedAccess {
     using TempleMath for uint256;
 
     /// @inheritdoc IFixedPriceAuction
-    uint64 public constant MIN_NOTICE = 1 hours;
+    uint64 public constant override MIN_NOTICE = 1 hours;
     /// @inheritdoc IFixedPriceAuction
-    uint64 public constant MAX_DURATION = 30 days;
+    uint64 public constant override MAX_DURATION = 30 days;
     /// @inheritdoc IFixedPriceAuction
-    uint64 public constant FROZEN_ACTION_DELAY = 7 days;
+    uint64 public constant override FROZEN_ACTION_DELAY = 7 days;
+    /// @inheritdoc IFixedPriceAuction
+    uint256 public constant override EMERGENCY_PAUSE_DURATION = 14 days;
 
     /// @inheritdoc IFixedPriceAuction
     uint8 public immutable bidDecimals;
@@ -66,7 +68,7 @@ contract FixedPriceAuction is IFixedPriceAuction, TempleElevatedAccess {
     uint256 private _userFillBudget;
 
     bool public override emergencyPauseUsed;
-    bool public override emergencyPaused;
+    uint64 public override emergencyPausedUntil;
     
     constructor(
         AuctionConfig memory config_,
@@ -411,25 +413,22 @@ contract FixedPriceAuction is IFixedPriceAuction, TempleElevatedAccess {
 
     /// @inheritdoc IFixedPriceAuction
     function emergencyPause() external override onlyRescuer {
-        // FPA-43/44/45/48 Revised: no timer may reopen potentially exploitable transfers.
-        // The rescuer must explicitly unpause after investigation. Deadlines keep running.
-        // Retain the existing one-use limit, a final outcome can also be paused.
+        // FPA-43/44/45/48: Bound the freeze even if the rescuer becomes unavailable.
         if (emergencyPauseUsed) { revert EmergencyPauseAlreadyUsed(); }
 
-        emergencyPauseUsed = true;
-        emergencyPaused = true;
+        uint256 until = block.timestamp + EMERGENCY_PAUSE_DURATION;
+        if (until > type(uint64).max) revert InvalidConfig();
 
-        emit EmergencyPaused();
+        emergencyPauseUsed = true;
+        emergencyPausedUntil = uint64(until);
+        emit EmergencyPaused(emergencyPausedUntil);
     }
 
     /// @inheritdoc IFixedPriceAuction
     function emergencyUnpause() external override onlyRescuer {
-        // Explicit recovery decision: cancellation does not repair an exploit or an asset shortfall.
-        // Without this rescuer action, withdrawals, claims and refunds remain blocked indefinitely.
-        if (!emergencyPaused) { revert NotEmergencyPaused(); }
-
-        emergencyPaused = false;
-
+        // FPA-44: Early unpause restores transfers without resetting the one-use limit.
+        if (!emergencyPaused()) { revert NotEmergencyPaused(); }
+        emergencyPausedUntil = uint64(block.timestamp);
         emit EmergencyUnpaused();
     }
 
@@ -461,6 +460,12 @@ contract FixedPriceAuction is IFixedPriceAuction, TempleElevatedAccess {
         if (_finalOutcome == Phase.Settled || _finalOutcome == Phase.Cancelled) { return _settlement; }
 
         return _calculateSettlement();
+    }
+
+    /// @inheritdoc IFixedPriceAuction
+    function emergencyPaused() public view override returns (bool) {
+        // Lift the emergency pause without a transaction.
+        return block.timestamp < emergencyPausedUntil;
     }
 
     /// @inheritdoc IFixedPriceAuction
@@ -523,8 +528,8 @@ contract FixedPriceAuction is IFixedPriceAuction, TempleElevatedAccess {
     }
 
     function _cancel(Phase previousPhase) private {
-        // FPA-46 revised: deliberately callable while paused, because cancellation moves no tokens.
-        // It records an abort only; refund/claim transfers still require explicit emergency unpause.
+        // FPA-46: deliberately callable while paused, because cancellation moves no tokens.
+        // It records an abort only; refund/claim transfers stay blocked until early unpause or expiry.
         // Deadlines continue running. Once Settled (even lazily), cancellation remains forbidden.
         // FPA-27–29: no trade, frozen exclusions stay frozen and are not reintroduced into D.
         _settlement = SettlementPreview(totalDeposits, 0, 0, totalDeposits, _fillLiability);
@@ -565,7 +570,7 @@ contract FixedPriceAuction is IFixedPriceAuction, TempleElevatedAccess {
     }
 
     function _requireUnpaused() private view {
-        if (emergencyPaused) { revert EmergencyPauseActive(); }
+        if (emergencyPaused()) { revert EmergencyPauseActive(); }
     }
 
     function _requirePhase(Phase expected) private view {

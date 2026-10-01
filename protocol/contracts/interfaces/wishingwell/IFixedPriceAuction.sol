@@ -164,8 +164,9 @@ interface IFixedPriceAuction {
     event ComplianceCheckDisabled();
     event DepositsPaused(bool paused);
     event MaxTotalDepositsSet(uint256 newCap);
-    event EmergencyPaused();
     event EmergencyUnpaused();
+    event EmergencyPaused(uint64 until);
+
 
     /// @notice Deposit caller's bid tokens
     /// @param amount Amount to deposit
@@ -338,7 +339,7 @@ interface IFixedPriceAuction {
     /// @dev FPA-42.
     function depositsPaused() external view returns (bool);
 
-    /// @dev FPA-42.
+    /// @notice Check whether the current block timestamp is before the emergency pause expiry.
     function emergencyPaused() external view returns (bool);
 
     /// @dev FPA-42.
@@ -377,6 +378,12 @@ interface IFixedPriceAuction {
 
     /// @notice Delay before frozen funds can be released, in seconds.
     function FROZEN_ACTION_DELAY() external view returns (uint64);
+
+    /// @notice Maximum emergency pause duration in seconds.
+    function EMERGENCY_PAUSE_DURATION() external view returns (uint256);
+
+    /// @notice Emergency pause expiry timestamp; zero before use, shortened by early unpause.
+    function emergencyPausedUntil() external view returns (uint64);
 
     /// @notice Number of non-excluded bidders whose claims remain unprocessed.
     function unclaimedBidders() external view returns (uint256);
