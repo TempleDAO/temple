@@ -4,6 +4,7 @@ pragma solidity ^0.8.20;
 
 import { EIP712 } from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import { SignatureChecker } from "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
+mport {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import { IWishingWell } from "contracts/interfaces/wishingwell/IWishingWell.sol";
 
@@ -11,38 +12,79 @@ import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.so
 import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
 
 
+/// @notice Read-only compliance adapter. Reverts deliberately fail screening closed (FPA-31).
+interface IComplianceCheck {
+    /// @dev FPA-31.
+    /// @param account Account to check.
+    function isBlocked(address account) external view returns (bool);
+}
+
+/// @notice Auction construction only; later delisting does not affect existing auctions (FPA-1).
+interface IAuctionTokenRegistry {
+    /// @dev FPA-1, FPA-6.
+    /// @param token Token address.
+    function isSupported(address token) external view returns (bool);
+}
+
 /**
  * @title WishingWell
  * @notice Persistent, multi-token demand signals independent of auctions.
- * @dev Constructor deployment, not a proxy implementation. No token calls, custody,
- * price commitment, auction creation, or balance backing. The amount is stated intent.
+ * Balance-backed signals without custody, reserved tokens or auction calls.
+ * Registry administrators must approve tokens with reliable ERC-20 balances.
  * Sell amounts use target-token base units. Buy amounts use the selected payment asset.
  * One record per account/targetToken, shared across directions and payment assets.
  */
 contract WishingWell is IWishingWell, EIP712, TempleElevatedAccess {
+    /// @inheritdoc IWishingWell
+    uint64 public constant override MAX_WISH_DURATION = 365 days;
 
     /// @notice Maxumum number of accounts list for totalForAccounts()
-    uint256 public constant MAX_ACCOUNTS = 100;
+    uint256 public constant override MAX_ACCOUNTS = 100;
+
+    uint64 public constant override DEFAULT_QUORUM_DURATION = 3 days;
+    uint64 public constant override MIN_QUORUM_DURATION = 1 hours;
+    uint64 public constant override MAX_QUORUM_DURATION = 30 days;
 
     /// @notice Wishing Well type hash
     bytes32 public constant WISH_TYPEHASH = keccak256(
         "Wish(address account,address targetToken,address amountAsset,uint8 direction,uint128 amount,uint64 expiresAt,uint256 nonce,uint64 submissionDeadline)"
     );
 
-    /// @notice Nonces for account target amounts
-    mapping(address account => mapping(address targetToken => uint256)) public nonces;
+    /// @inheritdoc IWishingWell
+    address public immutable override tokenRegistry;
+    /// @inheritdoc IWishingWell
+    address public override complianceCheck;
+    /// @inheritdoc IWishingWell
+    mapping(address => address) public override buyPaymentAsset;
+    /// @inheritdoc IWishingWell
+    mapping(address => mapping(Direction => uint256)) public override threshold;
+
+    mapping(address => mapping(Direction => uint64)) private _quorumDuration;
+
+    /// @inheritdoc IWishingWell
+    mapping(address account => uint256) public override nonces;
 
     /// @notice Accounts excluded from making wishes
     mapping(address targetToken => mapping(address account => bool)) public excluded;
 
     mapping(address account => mapping(address targetToken => Wish)) private _wishes;
 
+    /// @notice Keep track of stored amounts grouped by market and expiry day rounded up.
+    mapping(bytes32 market => mapping(uint256 expiryDay => uint256)) private _expiryBuckets;
+    /// @notice Keep track of an account's  wish bucket contribution. This also inclides expired wishes awaiting removal.
+    mapping(address account => mapping(address targetToken => bool)) private _counted;
+
     constructor(
         address executor_,
         address rescuer_,
+        address tokenRegisty_,
+        address complianceCheck_,
         string memory name_,
         string memory version_
-    ) EIP712(name_, version_) TempleElevatedAccess(rescuer_, executor_) {}
+    ) EIP712(name_, version_) TempleElevatedAccess(rescuer_, executor_) {
+        tokenRegistry = tokenRegistry_;
+        _setComplianceCheck(complianceCheck_);
+    }
 
      /// @inheritdoc IWishingWell
     function setWish(
@@ -54,6 +96,7 @@ contract WishingWell is IWishingWell, EIP712, TempleElevatedAccess {
     ) external override {
         uint256 expiry = block.timestamp + uint256(duration);
         if (duration == 0 ) { revert CommonEventsAndErrors.ExpectedNonZero(); }
+        if (duration > MAX_WISH_DURATION) { revert InvalidWish(); }
         _setWish(msg.sender, targetToken, direction, amountAsset, amount, uint64(expiry));
     }
 
@@ -62,7 +105,7 @@ contract WishingWell is IWishingWell, EIP712, TempleElevatedAccess {
         if (wish.account == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
         if (block.timestamp >= wish.submissionDeadline) { revert SignatureExpired(); }
         if (wish.submissionDeadline > wish.expiresAt) { revert InvalidWish(); }
-        if (wish.nonce != nonces[wish.account][wish.targetToken]) { revert InvalidNonce(); }
+        if (wish.nonce != nonces[wish.account]) { revert InvalidNonce(); }
         if (!SignatureChecker.isValidSignatureNow(wish.account, wishDigest(wish), signature)) {
             revert InvalidSignature();
         }
@@ -72,9 +115,12 @@ contract WishingWell is IWishingWell, EIP712, TempleElevatedAccess {
     /// @inheritdoc IWishingWell
     function revokeWish(address targetToken) external override {
         if (targetToken == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
+        // Remove the old contribution
+        _removeContribution(msg.sender, targetToken);
         delete _wishes[msg.sender][targetToken];
-        // Advance even if no wish exists, invalidating pending off-chain authorizations.
-        uint256 nonce = nonces[msg.sender][targetToken]++;
+        // Invalidate pending signatures
+        uint256 nonce = nonces[msg.sender]++;
+
         emit WishRevoked(msg.sender, targetToken, nonce);
     }
 
@@ -96,7 +142,10 @@ contract WishingWell is IWishingWell, EIP712, TempleElevatedAccess {
                 || wish.amountAsset != amountAsset
         ) { return 0; }
 
-        return wish.amount;
+        if (!_marketEnabled(targetToken, direction, amountAsset) || _isBlocked(account)) { return 0; }
+
+        uint256 balance = IERC20(amountAsset).balanceOf(account);
+        return balance < wish.amount ? balance : wish.amount;
     }
 
     /// @inheritdoc IWishingWell
@@ -143,8 +192,67 @@ contract WishingWell is IWishingWell, EIP712, TempleElevatedAccess {
     ) external override onlyElevatedAccess {
         if (targetToken == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
         if (account == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
+        // Excluding account changes totals without changing the wish or nonce.
+        // Avoid double counting
+        _removeContribution(account, targetToken);
         excluded[targetToken][account] = excluded_;
+        _addContribution(account, targetToken);
+
         emit ExclusionSet(targetToken, account, excluded_);
+    }
+
+    /// @inheritdoc IWishingWell
+    function setBuyPaymentAsset(address targetToken, address asset) external override onlyElevatedAccess {
+        if (targetToken == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
+        if (asset == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
+        if (asset == targetToken) { revert InvalidWish(); }
+
+        _requireSupported(targetToken);
+        _requireSupported(asset);
+        
+        buyPaymentAsset[targetToken] = asset;
+        
+        emit BuyPaymentAssetSet(targetToken, asset);
+    }
+
+    /// @inheritdoc IWishingWell
+    function setThreshold(address targetToken, Direction direction, uint256 amount) external override onlyElevatedAccess {
+        if (targetToken == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
+        if (amount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
+
+        threshold[targetToken][direction] = amount;
+
+        emit ThresholdSet(targetToken, direction, amount);
+    }
+
+    /// @inheritdoc IWishingWell
+    function setMinQuorumDuration(address targetToken, Direction direction, uint64 duration) external override onlyElevatedAccess {
+        if (targetToken == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
+        if (duration == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
+        if (duration < MIN_QUORUM_DURATION || duration > MAX_QUORUM_DURATION) { revert InvalidQuorumDuration(); }
+
+        _quorumDuration[targetToken][direction] = duration;
+
+        emit MinQuorumDurationSet(targetToken, direction, duration);
+    }
+
+     /// @inheritdoc IWishingWell
+    function setComplianceCheck(address complianceCheck_) external override onlyElevatedAccess {
+        _setComplianceCheck(complianceCheck_);
+    }
+
+    // @inheritdoc IWishingWell
+    function minQuorumDuration(address targetToken, Direction direction) external view override returns (uint64) {
+        uint64 duration = _quorumDuration[targetToken][direction];
+        return duration == 0 : DEFAULT_QUORUM_DURATION : duration;
+    }
+
+    function totalStated(
+        address targetToken,
+        Direction direction,
+        address amountAsset
+    ) external view override returns (uint256 total) {
+        
     }
 
     function name() external view returns (string memory) {
