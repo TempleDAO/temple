@@ -157,10 +157,12 @@ contract WishingWell is IWishingWell, EIP712, TempleElevatedAccess {
     ) external view override returns (uint256 total) {
         if (accounts.length > MAX_ACCOUNTS) { revert InvalidAccountList(); }
         address previous;
-        for (uint256 i; i < accounts.length; ++i) {
+        uint256 i = 0;
+        for (i; i < accounts.length;) {
             if (accounts[i] <= previous) { revert InvalidAccountList(); }
             previous = accounts[i];
             total += activeAmount(accounts[i], targetToken, direction, amountAsset);
+            ++i;
         }
         // At most 100 uint128 amounts: the uint256 sum cannot overflow.
     }
@@ -203,15 +205,20 @@ contract WishingWell is IWishingWell, EIP712, TempleElevatedAccess {
 
     /// @inheritdoc IWishingWell
     function setBuyPaymentAsset(address targetToken, address asset) external override onlyElevatedAccess {
-        if (targetToken == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
-        if (asset == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
-        if (asset == targetToken) { revert InvalidWish(); }
+        if (targetToken == address(0)) {
+            revert CommonEventsAndErrors.InvalidAddress();
+        }
 
-        _requireSupported(targetToken);
-        _requireSupported(asset);
-        
+        // Zero disables Buy wishes
+        if (asset != address(0)) {
+            if (asset == targetToken) { revert InvalidWish(); }
+
+            _requireSupported(targetToken);
+            _requireSupported(asset);
+        }
+
         buyPaymentAsset[targetToken] = asset;
-        
+
         emit BuyPaymentAssetSet(targetToken, asset);
     }
 
@@ -252,7 +259,16 @@ contract WishingWell is IWishingWell, EIP712, TempleElevatedAccess {
         Direction direction,
         address amountAsset
     ) external view override returns (uint256 total) {
-        
+        if (!_marketEnabled(targetToken, direction, amountAsset)) { return 0; }
+        bytes32 market = _marketKey(targetToken, direction, amountAsset);
+        uint256 currentDay = block.timestamp / 1 days;
+        // Scan at most 366 buckets
+        uint256 lastDay = currentDay + MAX_WISH_DURATION / 1 days + 1;
+        uint256 day;
+        for (day = currentDay + 1; day <= lastDay;) {
+            total += _expiryBuckets[market][day];
+            ++day;
+        }
     }
 
     function name() external view returns (string memory) {
