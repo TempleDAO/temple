@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 
 import { EIP712 } from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import { SignatureChecker } from "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
-mport {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import { IWishingWell } from "contracts/interfaces/wishingwell/IWishingWell.sol";
 
@@ -77,7 +77,7 @@ contract WishingWell is IWishingWell, EIP712, TempleElevatedAccess {
     constructor(
         address executor_,
         address rescuer_,
-        address tokenRegisty_,
+        address tokenRegistry_,
         address complianceCheck_,
         string memory name_,
         string memory version_
@@ -244,7 +244,7 @@ contract WishingWell is IWishingWell, EIP712, TempleElevatedAccess {
     // @inheritdoc IWishingWell
     function minQuorumDuration(address targetToken, Direction direction) external view override returns (uint64) {
         uint64 duration = _quorumDuration[targetToken][direction];
-        return duration == 0 : DEFAULT_QUORUM_DURATION : duration;
+        return duration == 0 ? DEFAULT_QUORUM_DURATION : duration;
     }
 
     function totalStated(
@@ -263,6 +263,60 @@ contract WishingWell is IWishingWell, EIP712, TempleElevatedAccess {
         return _EIP712Version();
     }
 
+    function _setComplianceCheck(address source) private {
+        if (source == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
+
+        complianceCheck = source;
+        
+        emit ComplianceCheckSet(source);
+    }
+
+    function _isBlocked(address account) private view returns (bool) {
+        return complianceCheck != address(0) && IComplianceCheck(complianceCheck).isBlocked(account);
+    }
+
+    function _requireSupported(address token) private view {
+        if (!IAuctionTokenRegistry(tokenRegistry).isSupported(token)) { revert UnsupportedToken(token); }
+    }
+
+    function _marketEnabled(address targetToken, Direction direction, address amountAsset) private view returns (bool) {
+        if (!IAuctionTokenRegistry(tokenRegistry).isSupported(targetToken)) { return false; }
+        if (direction == Direction.Sell) { return amountAsset == targetToken; }
+
+        return amountAsset != address(0) && amountAsset == buyPaymentAsset[targetToken]
+            && IAuctionTokenRegistry(tokenRegistry).isSupported(amountAsset);
+    }
+
+    function _addContribution(address account, address targetToken) private {
+        Wish memory wish = _wishes[account][targetToken];
+        if (excluded[targetToken][account] || wish.amount == 0 || wish.expiresAt <= block.timestamp) { return; }
+
+        bytes32 market = _marketKey(targetToken, wish.direction, wish.amountAsset);
+        _expiryBuckets[market][_expiryDay(wish.expiresAt)] += wish.amount;
+        _counted[account][targetToken] = true;
+    }
+
+    function _removeContribution(address account, address targetToken) private {
+        if (!_counted[account][targetToken]) { return; }
+        Wish memory wish = _wishes[account][targetToken];
+        uint256 day = _expiryDay(wish.expiresAt);
+        // Past buckets are already ignored
+        if (day > block.timestamp / 1 days) {
+            bytes32 market = _marketKey(targetToken, wish.direction, wish.amountAsset);
+            _expiryBuckets[market][day] -= wish.amount;
+        }
+        delete _counted[account][targetToken];
+    }
+
+    function _expiryDay(uint64 expiresAt) private pure returns (uint256) {
+        // Rounding up keeps the stored total an upper bound until the next day
+        return (uint256(expiresAt) + 1 days - 1) / 1 days;
+    }
+
+    function _marketKey(address targetToken, Direction direction, address amountAsset) private pure returns (bytes32) {
+        return keccak256(abi.encode(targetToken, direction, amountAsset));
+    }
+
     function _setWish(
         address account,
         address targetToken,
@@ -275,12 +329,26 @@ contract WishingWell is IWishingWell, EIP712, TempleElevatedAccess {
         if (amountAsset == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
         if (amount == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
         if (expiresAt <= block.timestamp) { revert InvalidWish(); }
+        // Signed wishes have the same maximum remaining lifetime.
+        if (uint256(expiresAt) - block.timestamp > MAX_WISH_DURATION) { revert InvalidWish(); }
+
+        // Validate the target and the payment asset
+        _requireSupported(targetToken);
+        if (direction == Direction.Buy) { _requireSupported(amountAsset); }
         if (
             (direction == Direction.Sell && amountAsset != targetToken)
-                || (direction == Direction.Buy && amountAsset == targetToken)
+                || (direction == Direction.Buy
+                    && (amountAsset == targetToken || amountAsset != buyPaymentAsset[targetToken]))
         ) { revert InvalidWish(); }
-        uint256 nonce = nonces[account][targetToken]++;
+
+        if (_isBlocked(account)) { revert BlockedAccount(account); }
+        if (amount > IERC20(amountAsset).balanceOf(account)) { revert InsufficientWishBalance(); }
+        // Replacement removes the previous market's contribution first.
+        _removeContribution(account, targetToken);
+        uint256 nonce = nonces[account]++;
         _wishes[account][targetToken] = Wish(amountAsset, amount, expiresAt, direction);
+        _addContribution(account, targetToken);
+
         emit WishSet(account, targetToken, amountAsset, direction, amount, expiresAt, nonce);
     }
 }
