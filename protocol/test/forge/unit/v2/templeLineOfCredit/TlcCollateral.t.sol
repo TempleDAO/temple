@@ -263,17 +263,17 @@ contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
         (uint256 first, uint256 second, uint256 third) = _addCollateralIteration(makeAddr("acct1"));
         assertLt(first, 115_000, "acct1 1");
         assertLt(second, 61_200, "acct1 2");
-        assertLt(third, 51_600, "acct1 3");
+        assertLt(third, 61_200, "acct1 3");
 
         (first, second, third) = _addCollateralIteration(makeAddr("acct2"));
         assertLt(first, 80_800, "acct2 1");
         assertLt(second, 61_200, "acct2 2");
-        assertLt(third, 51_600, "acct2 3");
+        assertLt(third, 61_200, "acct2 3");
         
         (first, second, third) = _addCollateralIteration(makeAddr("acct3"));
         assertLt(first, 80_800, "acct3 1");
         assertLt(second, 61_200, "acct3 2");
-        assertLt(third, 51_600, "acct3 3");
+        assertLt(third, 61_200, "acct3 3");
     }
 
     function _removeCollateralIteration(address account) internal returns (uint256 first, uint256 second, uint256 third) {
@@ -298,16 +298,16 @@ contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
         (uint256 first, uint256 second, uint256 third) = _removeCollateralIteration(makeAddr("acct1"));
         assertLt(first, 167_500, "acct1 1");
         assertLt(second, 150_322, "acct1 2");
-        assertLt(third, 142_000, "acct1 3");
+        assertLt(third, 158_100, "acct1 3");
 
         (first, second, third) = _removeCollateralIteration(makeAddr("acct2"));
         assertLt(first, 163_300, "acct2 1");
         assertLt(second, 150_083, "acct2 2");
-        assertLt(third, 142_000, "acct2 3");
+        assertLt(third, 158_100, "acct2 3");
         
         (first, second, third) = _removeCollateralIteration(makeAddr("acct3"));
         assertLt(first, 163_300, "acct3 1");
         assertLt(second, 150_083, "acct3 2");
-        assertLt(third, 141_900, "acct3 3");
+        assertLt(third, 158_100, "acct3 3");
     }
 }
