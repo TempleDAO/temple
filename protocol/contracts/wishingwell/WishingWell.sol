@@ -211,7 +211,7 @@ contract WishingWell is IWishingWell, EIP712, TempleElevatedAccess {
 
         // Zero disables Buy wishes
         if (asset != address(0)) {
-            if (asset == targetToken) { revert InvalidWish(); }
+            if (asset == targetToken) { revert CommonEventsAndErrors.InvalidParam(); }
 
             _requireSupported(targetToken);
             _requireSupported(asset);
@@ -225,7 +225,7 @@ contract WishingWell is IWishingWell, EIP712, TempleElevatedAccess {
     /// @inheritdoc IWishingWell
     function setThreshold(address targetToken, Direction direction, uint256 amount) external override onlyElevatedAccess {
         if (targetToken == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
-        if (amount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
+        // Amount = 0 removes threshold
 
         threshold[targetToken][direction] = amount;
 
