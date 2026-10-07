@@ -525,6 +525,149 @@ contract WishingWellTestAdmin is WishingWellTestBase {
     }
 }
 
+contract WishingWellSellTest is WishingWellTestBase {
+    function test_sell_2500_tgld_for_usds() public {
+        setSupported(address(TGLD), true);
+        setSupported(address(USDS), true);
+       
+        deal(address(TGLD), alice, 3000e18, false);
+
+        // Alice wants a future USDS-funded auction. A Sell wish records TGLD only;
+        vm.startPrank(alice);
+        vm.expectEmit(address(well));
+        emit WishSet(
+            alice,
+            address(TGLD),
+            address(TGLD),
+            IWishingWell.Direction.Sell,
+            2_500 ether,
+            uint64(block.timestamp + 30 days),
+            0
+        );
+        well.setWish(address(TGLD), IWishingWell.Direction.Sell, address(TGLD), 2_500 ether, 30 days);
+
+        IWishingWell.Wish memory wish = well.getWish(alice, address(TGLD));
+        assertEq(wish.amountAsset, address(TGLD));
+        assertEq(wish.amount, 2_500 ether);
+        assertEq(uint256(wish.direction), uint256(IWishingWell.Direction.Sell));
+        assertEq(well.activeAmount(alice, address(TGLD), IWishingWell.Direction.Sell, address(TGLD)), 2_500 ether);
+        assertEq(well.totalStated(address(TGLD), IWishingWell.Direction.Sell, address(TGLD)), 2_500 ether);
+        assertEq(well.activeAmount(alice, address(TGLD), IWishingWell.Direction.Sell, address(USDS)), 0);
+        assertEq(TGLD.balanceOf(alice), 3_000 ether);
+        assertEq(TGLD.balanceOf(address(well)), 0);
+        assertEq(USDS.balanceOf(alice), 0);
+    }
+
+    function test_sell_1000_temple_for_usds() public {
+        setSupported(address(TEMPLE_TOKEN), true);
+        setSupported(address(USDS), true);
+       
+        deal(address(TEMPLE_TOKEN), alice, 1200e18, false);
+
+        // USDS is the intended target. The Sell amount is 1000 TEMPLE.
+        vm.startPrank(alice);
+        well.setWish(address(TEMPLE_TOKEN), IWishingWell.Direction.Sell, address(TEMPLE_TOKEN), 1_000 ether, 14 days);
+
+        IWishingWell.Wish memory wish = well.getWish(alice, address(TEMPLE_TOKEN));
+        assertEq(wish.amountAsset, address(TEMPLE_TOKEN));
+        assertEq(wish.amount, 1_000 ether);
+        assertEq(uint256(wish.direction), uint256(IWishingWell.Direction.Sell));
+        assertEq(
+            well.activeAmount(alice, address(TEMPLE_TOKEN), IWishingWell.Direction.Sell, address(TEMPLE_TOKEN)),
+            1_000 ether
+        );
+        assertEq(
+            well.totalStated(address(TEMPLE_TOKEN), IWishingWell.Direction.Sell, address(TEMPLE_TOKEN)), 1_000 ether
+        );
+        assertEq(TEMPLE_TOKEN.balanceOf(alice), 1_200 ether);
+        assertEq(TEMPLE_TOKEN.balanceOf(address(well)), 0);
+        assertEq(USDS.balanceOf(alice), 0);
+    }
+
+    function test_sell_same_user_sells_tgld_and_temple_independently() public {
+        setSupported(address(TEMPLE_TOKEN), true);
+        setSupported(address(USDS), true);
+        setSupported(address(TGLD), true);
+       
+        deal(address(TEMPLE_TOKEN), alice, 1000e18, false);
+        deal(address(TGLD), alice, 2500e18, false);
+
+        vm.startPrank(alice);
+        well.setWish(address(TGLD), IWishingWell.Direction.Sell, address(TGLD), 2_500 ether, 30 days);
+        well.setWish(address(TEMPLE_TOKEN), IWishingWell.Direction.Sell, address(TEMPLE_TOKEN), 1_000 ether, 30 days);
+        well.revokeWish(address(TGLD));
+
+        assertEq(well.totalStated(address(TGLD), IWishingWell.Direction.Sell, address(TGLD)), 0);
+        assertEq(
+            well.totalStated(address(TEMPLE_TOKEN), IWishingWell.Direction.Sell, address(TEMPLE_TOKEN)), 1_000 ether
+        );
+        assertEq(well.getWish(alice, address(TEMPLE_TOKEN)).amount, 1_000 ether);
+        assertEq(well.nonces(alice), 3);
+    }
+
+    function test_sell_two_accounts_offer_4000_usds_for_temple() public {
+        setSupported(address(TEMPLE_TOKEN), true);
+        setSupported(address(USDS), true);
+       
+        deal(address(USDS), alice, 1500e18, false);
+        deal(address(USDS), bob, 2500e18, false);
+
+        setBuyPaymentAsset(address(TEMPLE_TOKEN), address(USDS));
+
+        vm.startPrank(alice);
+        well.setWish(address(TEMPLE_TOKEN), IWishingWell.Direction.Buy, address(USDS), 1_500 ether, 30 days);
+
+        vm.startPrank(bob);
+        well.setWish(address(TEMPLE_TOKEN), IWishingWell.Direction.Buy, address(USDS), 2_500 ether, 30 days);
+
+        address[] memory accounts = new address[](2);
+        accounts[0] = bob;
+        accounts[1] = alice;
+
+        assertEq(
+            well.totalForAccounts(address(TEMPLE_TOKEN), IWishingWell.Direction.Buy, address(USDS), accounts),
+            4_000 ether
+        );
+        assertEq(well.totalStated(address(TEMPLE_TOKEN), IWishingWell.Direction.Buy, address(USDS)), 4_000 ether);
+
+        // Alice spends 1,000 USDS elsewhere but stored on-chain demand stays unchanged.
+        uint256 toSpend = 1000e18;
+        vm.startPrank(alice);
+        USDS.transfer(operator, toSpend);
+        assertEq(well.activeAmount(alice, address(TEMPLE_TOKEN), IWishingWell.Direction.Buy, address(USDS)), 500 ether);
+        assertEq(
+            well.totalForAccounts(address(TEMPLE_TOKEN), IWishingWell.Direction.Buy, address(USDS), accounts),
+            3_000 ether
+        );
+        assertEq(well.totalStated(address(TEMPLE_TOKEN), IWishingWell.Direction.Buy, address(USDS)), 4_000 ether);
+    }
+
+    function test_sell_reduce_usds_for_temple_wish_then_revoke() public {
+        setSupported(address(TEMPLE_TOKEN), true);
+        setSupported(address(USDS), true);
+       
+        deal(address(USDS), alice, 1500e18, false);
+        setBuyPaymentAsset(address(TEMPLE_TOKEN), address(USDS));
+
+        vm.startPrank(alice);
+        well.setWish(address(TEMPLE_TOKEN), IWishingWell.Direction.Buy, address(USDS), 1_500 ether, 30 days);
+        // Reduce
+        well.setWish(address(TEMPLE_TOKEN), IWishingWell.Direction.Buy, address(USDS), 600 ether, 7 days);
+
+        assertEq(well.totalStated(address(TEMPLE_TOKEN), IWishingWell.Direction.Buy, address(USDS)), 600 ether);
+        assertEq(well.activeAmount(alice, address(TEMPLE_TOKEN), IWishingWell.Direction.Buy, address(USDS)), 600 ether);
+
+        vm.startPrank(alice);
+        well.revokeWish(address(TEMPLE_TOKEN));
+        vm.stopPrank();
+
+        assertEq(well.totalStated(address(TEMPLE_TOKEN), IWishingWell.Direction.Buy, address(USDS)), 0);
+        assertEq(well.getWish(alice, address(TEMPLE_TOKEN)).amount, 0);
+        assertEq(well.nonces(alice), 3);
+        assertEq(USDS.balanceOf(alice), 1_500 ether);
+    }
+}
+
 contract WishingWellTest is WishingWellTestBase {
 
     function test_set_replace_and_expiry_boundary() public {
