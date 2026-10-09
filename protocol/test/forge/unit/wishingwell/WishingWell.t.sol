@@ -870,6 +870,49 @@ contract WishingWellTest is WishingWellTestBase {
         well.totalForAccounts(address(USDS), IWishingWell.Direction.Sell, address(USDS), accounts);
     }
 
+    function test_wish_by_signature_invalid_account() public {
+        IWishingWell.SignedWish memory wish = signedWish();
+        wish.account = address(0);
+        bytes memory sig = sign(wish);
+        vm.expectRevert(CommonEventsAndErrors.InvalidAddress.selector);
+        well.setWishBySignature(wish, sig);
+    }
+
+    function test_set_wish_by_signature_duration_over_maximum() public {
+        IWishingWell.SignedWish memory wish = signedWish();
+        wish.expiresAt = uint64(block.timestamp + uint256(well.MAX_WISH_DURATION()) + 1);
+
+        bytes memory signature = sign(wish);
+
+        vm.expectRevert(abi.encodeWithSelector(IWishingWell.InvalidWish.selector));
+        well.setWishBySignature(wish, signature);
+
+        assertEq(well.nonces(wish.account), wish.nonce);
+    }
+
+    function test_set_wish_blocked_account() public {
+        addSupportedAndDeal(1e18);
+        complianceCheck.setBlocked(alice, true);
+
+        vm.startPrank(alice);
+        vm.expectRevert(abi.encodeWithSelector(IWishingWell.BlockedAccount.selector, alice));
+        well.setWish(address(USDS), IWishingWell.Direction.Sell, address(USDS), 100, 1 days);
+
+        assertEq(well.nonces(alice), 0);
+        assertEq(well.getWish(alice, address(USDS)).amount, 0);
+    }
+
+    function test_set_wish_amount_exceeds_balance() public {
+        addSupportedAndDeal(100);
+
+        vm.startPrank(alice);
+        vm.expectRevert(abi.encodeWithSelector(IWishingWell.InsufficientWishBalance.selector));
+        well.setWish(address(USDS), IWishingWell.Direction.Sell, address(USDS), 101, 1 days);
+
+        assertEq(well.nonces(alice), 0);
+        assertEq(well.getWish(alice, address(USDS)).amount, 0);
+    }
+
     function test_set_wish_by_signature_signed_wish_and_replay() public {
         addSupportedAndDeal(1e18);
 
@@ -921,7 +964,7 @@ contract WishingWellTest is WishingWellTestBase {
         emit log_address(address(this));
     }
 
-    function test__set_wish_by_signature_deadline_boundary() public {
+    function test_set_wish_by_signature_deadline_boundary() public {
         addSupportedAndDeal(1e18);
 
         IWishingWell.SignedWish memory wish = signedWish();
@@ -1377,5 +1420,69 @@ contract WishingWellTest is WishingWellTestBase {
         wallet.approve(bytes32(0));
         vm.expectRevert(IWishingWell.InvalidSignature.selector);
         well.setWishBySignature(wish, hex"1234");
+    }
+
+    function test_maximum_duration_and_largest_representable_expiry() public {
+        addSupportedAndDeal(type(uint128).max);
+        setBuyPaymentAsset(address(USDS), address(TGLD));
+
+        // A maximum timestamp is valid only when the remaining duration is within one year.
+        sell(alice, type(uint128).max, 365 days);
+        assertEq(well.getWish(alice, address(USDS)).expiresAt, block.timestamp + 365 days);
+
+        vm.warp(uint256(type(uint64).max) - 365 days);
+        sell(alice, type(uint128).max, 365 days);
+        assertEq(well.getWish(alice, address(USDS)).expiresAt, type(uint64).max);
+        vm.warp(uint256(type(uint64).max) - 1);
+        assertEq(active(alice), type(uint128).max);
+        vm.startPrank(alice);
+        vm.expectRevert(abi.encodeWithSelector(IWishingWell.InvalidWish.selector));
+        well.setWish(address(USDS), IWishingWell.Direction.Sell, address(USDS), 1, 2);
+        
+        vm.warp(type(uint64).max);
+        assertEq(active(alice), 0);
+    }
+
+    function test_delist_and_relist_restores_existing_wish() public {
+        addSupportedAndDeal(type(uint128).max);
+
+        sell(alice, 100, 2 days);
+        tokenRegistry.setSupported(address(USDS), false);
+        assertEq(active(alice), 0);
+        assertEq(stated(), 0);
+        assertEq(well.getWish(alice, address(USDS)).amount, 100);
+        tokenRegistry.setSupported(address(USDS), true);
+        assertEq(active(alice), 100);
+        assertEq(stated(), 100);
+        tokenRegistry.setSupported(address(USDS), false);
+        vm.startPrank(alice);
+        well.revokeWish(address(USDS));
+
+        tokenRegistry.setSupported(address(USDS), true);
+        assertEq(stated(), 0);
+    }
+
+    function test_unsupported_buy_asset_rejects_and_suppresses_existing_demand() public {
+        addSupportedAndDeal(100);
+        setBuyPaymentAsset(address(USDS), address(TGLD));
+
+        vm.startPrank(alice);
+        well.setWish(address(USDS), IWishingWell.Direction.Buy, address(TGLD), 100, 2 days);
+
+        tokenRegistry.setSupported(address(TGLD), false);
+        assertEq(well.activeAmount(alice, address(USDS), IWishingWell.Direction.Buy, address(TGLD)), 0);
+        assertEq(well.totalStated(address(USDS), IWishingWell.Direction.Buy, address(TGLD)), 0);
+        vm.startPrank(bob);
+        vm.expectRevert(abi.encodeWithSelector(IWishingWell.UnsupportedToken.selector, address(TGLD)));
+        well.setWish(address(USDS), IWishingWell.Direction.Buy, address(TGLD), 100, 2 days);
+
+        IWishingWell.SignedWish memory wish = signedWish();
+        wish.direction = IWishingWell.Direction.Buy;
+        wish.amountAsset = address(TGLD);
+        bytes memory signature = sign(wish);
+        vm.expectRevert(abi.encodeWithSelector(IWishingWell.UnsupportedToken.selector, address(TGLD)));
+        well.setWishBySignature(wish, signature);
+        tokenRegistry.setSupported(address(TGLD), true);
+        assertEq(well.activeAmount(alice, address(USDS), IWishingWell.Direction.Buy, address(TGLD)), 100);
     }
 }
