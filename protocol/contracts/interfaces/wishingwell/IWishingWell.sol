@@ -6,8 +6,7 @@ pragma solidity ^0.8.20;
 /// @notice A persistent, non-custodial registry of potential demand for Treasury auctions.
 /// @dev Wishes do not move tokens, grant allowances, reserve liquidity or guarantee execution.
 /// There is one stored wish per account/target token, shared across directions and payment assets.
-/// Amounts are stated intent, not validated wallet balances. Token addresses identify assets, that is,
-/// the registry does not certify their legitimacy or call their token contracts.
+/// Amounts are stated intents, but setting a wish requires account has sufficient token balance. 
 interface IWishingWell {
     /// @notice Whether the account wants to sell the target token or buy into it.
     enum Direction {
@@ -36,7 +35,7 @@ interface IWishingWell {
     struct SignedWish {
         /// @notice Nonzero owner of the wish and EOA or ERC-1271 signer.
         address account;
-        /// @notice Nonzero target-token identifier; also determines the account's nonce scope.
+        /// @notice Nonzero target-token identifier
         address targetToken;
         /// @notice Asset denominating amount: target token for Sell, another asset for Buy.
         address amountAsset;
@@ -46,22 +45,35 @@ interface IWishingWell {
         uint128 amount;
         /// @notice Exclusive Unix expiry timestamp in seconds, strictly after submission time.
         uint64 expiresAt;
-        /// @notice Current nonce for account/targetToken; consumed on successful submission.
+        /// @notice Current account nonce, shared across all target tokens; consumed on successful submission.
         uint256 nonce;
         /// @notice Exclusive Unix submission deadline in seconds; must not exceed expiresAt.
         uint64 submissionDeadline;
     }
 
-    /// @notice Wish amount, duration, expiry, denomination or deadline relationship is invalid.
+    error UnsupportedToken(address token);
+    error InsufficientWishBalance();
     error InvalidWish();
-    /// @notice Signature fails EOA recovery or ERC-1271 verification for the stated account.
     error InvalidSignature();
-    /// @notice Signed nonce differs from the current nonce for the account/target-token pair.
     error InvalidNonce();
-    /// @notice Submission is at or after the signed submission deadline.
     error SignatureExpired();
-    /// @notice Account list exceeds the batch cap, contains zero, or is not strictly ascending.
     error InvalidAccountList();
+    error BlockedAccount(address account);
+    error InvalidQuorumDuration();
+
+    /// @param token Target token users want to buy.
+    /// @param asset Payment token, or zero to disable Buy wishes.
+    event BuyPaymentAssetSet(address indexed token, address indexed asset);
+    /// @param token Token whose demand is measured.
+    /// @param direction Sell or Buy.
+    /// @param threshold Threshold in the wish asset's base units; zero disables quorum.
+    event ThresholdSet(address indexed token, Direction indexed direction, uint256 threshold);
+    /// @param token Token whose demand is measured.
+    /// @param direction Sell or Buy.
+    /// @param duration Required sustained-quorum duration, in seconds.
+    event MinQuorumDurationSet(address indexed token, Direction indexed direction, uint64 duration);
+    /// @param source Compliance contract, or zero to disable screening.
+    event ComplianceCheckSet(address indexed source);
 
     /// @notice Emitted for every successful direct or signed wish creation/replacement.
     /// @param account Owner of the wish; not necessarily the transaction sender for relayed wishes.
@@ -117,9 +129,9 @@ interface IWishingWell {
     /// @param signature Signature accepted by the account's EOA or ERC-1271 validation mechanism.
     function setWishBySignature(SignedWish calldata wish, bytes calldata signature) external;
 
-    /// @notice Clear the caller's wish and invalidate its current signing nonce for a target token.
-    /// @dev Allowed while excluded and after expiry. Advances the nonce even if no record exists,
-    /// allowing pending off-chain signatures to be invalidated. Does not affect other tokens/accounts.
+    /// @notice Clear the caller's wish for a target token and advance the caller's shared signing nonce.
+    /// @dev Allowed while excluded and after expiry. Advances the nonce even if no record exists.
+    /// This invalidates all pending signatures of the caller, for every target token.
     /// @param targetToken Nonzero target token identifying the caller's record and nonce scope.
     function revokeWish(address targetToken) external;
 
@@ -134,7 +146,6 @@ interface IWishingWell {
     /// @notice Read an account's currently eligible amount for a specific market and direction.
     /// @dev Returns zero for missing, revoked, expired or excluded wishes, or mismatched direction
     /// or amount asset. Expiry is effective at block.timestamp >= expiresAt without a transaction.
-    /// Does not check wallet balances, token approvals, or eventual auction participation.
     /// @param account Owner of the wish to evaluate.
     /// @param targetToken Target-token identifier to query.
     /// @param direction Required sell or buy direction.
@@ -179,4 +190,70 @@ interface IWishingWell {
     /// @param account Nonzero account whose contribution is affected.
     /// @param excluded True to ignore its contribution, False to restore normal eligibility checks.
     function setExcluded(address targetToken, address account, bool excluded) external;
+
+    /// @notice WW-3a: set or clear the payment asset accepted for Buy wishes.
+    /// @dev Does not reset the Buy threshold; review its units when changing the payment asset.
+    /// @param targetToken Token users want to buy.
+    /// @param asset Supported payment token, or zero to disable Buy wishes.
+    function setBuyPaymentAsset(address targetToken, address asset) external;
+
+    /// @notice WW-11: set a threshold; sustained quorum is evaluated by the indexer.
+    /// @param targetToken Token whose demand is measured.
+    /// @param direction Sell or Buy.
+    /// @param amount Threshold in the wish asset's base units; zero disables quorum.
+    function setThreshold(address targetToken, Direction direction, uint256 amount) external;
+
+    /// @notice WW-11: set how long demand must continuously meet the threshold.
+    /// @param targetToken Token whose demand is measured.
+    /// @param direction Sell or Buy.
+    /// @param duration Required duration, from one hour to thirty days.
+    function setMinQuorumDuration(address targetToken, Direction direction, uint64 duration) external;
+
+    /// @notice WW-7: set the Well's compliance source using elevated access.
+    /// @param source Compliance contract, or zero to disable screening.
+    function setComplianceCheck(address source) external;
+
+    /// @notice WW-10: stored demand upper bound, with expiry rounded up to UTC day boundaries.
+    /// @dev Excludes manual exclusions and disabled markets; no deductions for balances, flags or fills.
+    /// Expiry is exact at day boundaries; up to 366 buckets are read without enumerating accounts.
+    /// @param targetToken Token whose demand is measured.
+    /// @param direction Sell or Buy.
+    /// @param amountAsset Token in which wish amounts are measured.
+    function totalStated(address targetToken, Direction direction, address amountAsset) external view returns (uint256);
+
+     /// @notice Shared supported-token registry.
+    function tokenRegistry() external view returns (address);
+
+    /// @notice Current compliance source; zero means disabled.
+    function complianceCheck() external view returns (address);
+
+    /// @notice Current signing nonce, shared across all target tokens for the account.
+    /// @param account Owner of the signed wish.
+    function nonces(address account) external view returns (uint256);
+
+    /// @notice Payment asset accepted for Buy wishes; zero means disabled.
+    /// @param targetToken Token users want to buy.
+    function buyPaymentAsset(address targetToken) external view returns (address);
+
+    /// @notice Configured quorum threshold; zero means quorum cannot be met.
+    /// @param targetToken Token whose demand is measured.
+    /// @param direction Sell or Buy.
+    function threshold(address targetToken, Direction direction) external view returns (uint256);
+
+    /// @notice Required sustained-quorum duration; defaults to three days.
+    /// @param targetToken Token whose demand is measured.
+    /// @param direction Sell or Buy.
+    function minQuorumDuration(address targetToken, Direction direction) external view returns (uint64);
+
+    /// @notice Default quorum duration
+    function DEFAULT_QUORUM_DURATION() external view returns (uint64);
+
+    /// @notice Maximum wish duration
+    function MAX_WISH_DURATION() external view returns (uint64);
+
+    /// @notice Minimum quorum duration
+    function MIN_QUORUM_DURATION() external view returns (uint64);
+
+    /// @notice Maximumm quorum duration
+    function MAX_QUORUM_DURATION() external view returns (uint64);
 }
