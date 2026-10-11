@@ -79,18 +79,7 @@ contract FixedPriceAuction is IFixedPriceAuction, TempleElevatedAccess {
         /// extra complexity for this single instance design
         /// Assumes bidToken and fillToken are approved ERC20s with exact transfers: no taxes,
         /// fee-on-transfer behavior, rebasing or callbacks, and no holder blacklisting/freezing
-        if (
-            config_.bidToken.code.length == 0 || config_.fillToken.code.length == 0
-                || config_.bidToken == config_.fillToken || config_.funder == address(0)
-                || config_.proceedsRecipient == address(0)
-                || config_.frozenFundsReceiver == address(this) || config_.price == 0
-                || config_.depositStart < block.timestamp || config_.depositDuration == 0
-                || config_.depositDuration > MAX_DURATION || config_.fulfillmentDuration == 0
-                || config_.fulfillmentDuration > MAX_DURATION || config_.noticePeriod < MIN_NOTICE
-                || config_.noticePeriod > config_.depositDuration
-                || config_.tokenRegistry.code.length == 0
-                || (config_.complianceCheck != address(0) && config_.complianceCheck.code.length == 0)
-        ) { revert InvalidConfig(); }
+        _validateConfig(config_);
 
         _requireSupported(config_.tokenRegistry, config_.bidToken);
         _requireSupported(config_.tokenRegistry, config_.fillToken);
@@ -615,6 +604,19 @@ contract FixedPriceAuction is IFixedPriceAuction, TempleElevatedAccess {
         if (depositsPaused) { revert DepositsArePaused(); }
         if (excluded[msg.sender]) { revert BidderIsExcluded(msg.sender); }
         if (_isBlocked(msg.sender)) { revert BlockedAccount(msg.sender); }
+    }
+
+    function _validateConfig(AuctionConfig memory config_) private {
+        if (
+            config_.bidToken == config_.fillToken || config_.funder == address(0)
+                || config_.proceedsRecipient == address(0)
+                || config_.frozenFundsReceiver == address(0)
+                || config_.frozenFundsReceiver == address(this) || config_.price == 0
+                || config_.depositStart < block.timestamp || config_.depositDuration == 0
+                || config_.depositDuration > MAX_DURATION || config_.fulfillmentDuration == 0
+                || config_.fulfillmentDuration > MAX_DURATION || config_.noticePeriod < MIN_NOTICE
+                || config_.noticePeriod > config_.depositDuration
+        ) { revert InvalidConfig(); }
     }
 
     // FPA-34/43/44/48: rescuer-only actions do not require rescue mode.
