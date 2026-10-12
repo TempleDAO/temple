@@ -5,6 +5,7 @@ pragma solidity ^0.8.20;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { IERC1271 } from "@openzeppelin/contracts/interfaces/IERC1271.sol";
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import { IERC20Errors } from "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
 import { ERC20Permit } from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 
 import { TempleTest } from "test/forge/unit/TempleTest.sol";
@@ -151,6 +152,12 @@ contract FixedPriceAuctionTestBase is TempleTest {
         vm.startPrank(funder);
         USDS.approve(address(auction), amount);
         auction.fund(amount);
+        vm.stopPrank();
+    }
+
+    function pauseAuction() internal {
+        vm.startPrank(rescuer);
+        auction.emergencyPause();
         vm.stopPrank();
     }
 
@@ -977,3 +984,235 @@ contract FixedPriceAuctionTest is FixedPriceAuctionTestBase {
         auction.setMaxTotalDeposits(0);
     }
 }
+
+contract FixedPriceAuctionTestPermit is FixedPriceAuctionTestBase {
+
+    function test_valid_permit_deposits_for_signer() public {
+        openDeposit();
+
+        address account = vm.addr(key);
+        deal(address(TEMPLE_TOKEN), account, 100e18, false);
+        uint256 deadline = block.timestamp + 1 days;
+        (uint8 v, bytes32 r, bytes32 s) = signPermit(account, 100e18, deadline);
+        vm.startPrank(account);
+        auction.depositWithPermit(100e18, deadline, v, r, s);
+
+        assertEq(auction.deposits(account), 100e18);
+        assertLiabilities(100e18, 0);
+    }
+
+    function test_failed_permit_without_allowance_reverts() public {
+        openDeposit();
+
+        deal(address(TEMPLE_TOKEN), alice, 100e18, false);
+        vm.startPrank(alice);
+        vm.expectRevert(abi.encodeWithSelector(IERC20Errors.ERC20InsufficientAllowance.selector, address(auction), 0, 100e18));
+        auction.depositWithPermit(100e18, 0, 0, bytes32(0), bytes32(0));
+
+        assertLiabilities(0, 0);
+    }
+
+    function test_failed_deposit_rolls_back_successful_permit() public {
+        openDeposit();
+
+        address account = vm.addr(key);
+        deal(address(TEMPLE_TOKEN), alice, 1e18, false);
+        uint256 deadline = block.timestamp + 1 days;
+        (uint8 v, bytes32 r, bytes32 s) = signPermit(account, 1e18, deadline);
+
+        vm.startPrank(account);
+        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.DepositBelowMinimum.selector));
+        auction.depositWithPermit(1e18, deadline, v, r, s);
+    
+        assertEq(TEMPLE_TOKEN.allowance(account, address(auction)), 0);
+    }
+
+    function test_deposit_with_permit_deposits_paused() public {
+        openDeposit();
+
+        vm.startPrank(executor);
+        auction.setDepositsPaused(true);
+
+        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.DepositsArePaused.selector));
+        auction.depositWithPermit(10e18, 0, 0, bytes32(0), bytes32(0));
+    }
+
+    function test_deposit_with_permit_emergency_pause() public {
+        openDeposit();
+        pauseAuction();
+
+        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.EmergencyPauseActive.selector));
+        auction.depositWithPermit(10e18, 0, 0, bytes32(0), bytes32(0));
+    }
+}
+
+contract FixedPriceAuctionTestFunding is FixedPriceAuctionTestBase {
+
+    function test_fund_emergency_paused() public {
+        openDeposit();
+
+        vm.startPrank(rescuer);
+        auction.emergencyPause();
+
+        vm.startPrank(funder);
+        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.EmergencyPauseActive.selector));
+        auction.fund(1);
+    }
+
+    function test_fund_no_funding_during_scheduled() public {
+        vm.startPrank(funder);
+        expectPhase(IFixedPriceAuction.Phase.Fulfillment, IFixedPriceAuction.Phase.Scheduled);
+        auction.fund(1);
+    }
+
+    function test_fund_no_funding_during_deposit() public {
+        openDeposit();
+
+        vm.startPrank(funder);
+        expectPhase(IFixedPriceAuction.Phase.Fulfillment, IFixedPriceAuction.Phase.Deposit);
+        auction.fund(1);
+    }
+
+    function test_fund_no_funding_during_settled() public {
+        finishAuction();
+
+        vm.startPrank(funder);
+        expectPhase(IFixedPriceAuction.Phase.Fulfillment, IFixedPriceAuction.Phase.Settled);
+        auction.fund(1);
+    }
+
+    function test_fund_zero_amount() public {
+        openFulfillment();
+
+        vm.startPrank(funder);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
+        auction.fund(0);
+    }
+
+    function test_fund_installments_and_excess_withdrawal() public {
+        openDeposit();
+        depositAs(alice, 100e18);
+        openFulfillment();
+        fundAuction(200e18);
+
+        assertEq(auction.withdrawableExcess(), 0);
+
+        fundAuction(300e18);
+        assertEq(auction.fullFundingRequired(), 400e18);
+        assertEq(auction.withdrawableExcess(), 100e18);
+
+        vm.startPrank(funder);
+        vm.expectEmit(true, true, true, true, address(auction));
+        emit ExcessWithdrawn(funder, 100e18, 400e18);
+        auction.withdrawExcess(100e18);
+
+        assertEq(USDS.balanceOf(funder), 100e18);
+        assertEq(auction.remainingFunding(), 400e18);
+        assertLiabilities(100e18, 400e18);
+    }
+
+    function test_fund_committed_funds_cannot_be_withdrawn() public {
+        openDeposit();
+        depositAs(alice, 100e18);
+        openFulfillment();
+        fundAuction(200e18);
+
+        vm.startPrank(funder);
+        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.ExcessExceeded.selector, 1, 0));
+        auction.withdrawExcess(1);
+
+        assertLiabilities(100e18, 200e18);
+    }
+
+    function test_donated_fill_tokens_are_not_funding() public {
+        openDeposit();
+        depositAs(alice, 100e18);
+
+        deal(address(USDS), address(auction), 400e18, false);
+        openFulfillment();
+
+        assertEq(auction.remainingFunding(), 0);
+        assertEq(auction.withdrawableExcess(), 0);
+
+        finishAuction();
+        assertUserClaim(alice, 0, 100e18);
+    }
+
+    function test_fund_no_deposits() public {
+        openFulfillment();
+        fundAuction(400e18);
+
+        assertEq(auction.withdrawableExcess(), 400e18);
+
+        vm.startPrank(funder);
+        auction.withdrawExcess(400e18);
+
+        assertLiabilities(0, 0);
+    }
+
+    // -------
+    function test_withdraw_excess_zero_excess() public {
+        openFulfillment();
+
+        vm.startPrank(funder);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
+        auction.withdrawExcess(0);
+    }
+
+    function test_withdraw_excess_zero_after_fulfillment() public {
+        assertEq(auction.withdrawableExcess(), 0);
+
+        openFulfillment();
+        fundAuction(400e18);
+        finishAuction();
+
+        assertEq(auction.withdrawableExcess(), 0);
+    }
+
+    function test_withdraw_excess_emergency_paused() public {
+        openDeposit();
+        openFulfillment();
+        fundAuction(400e18);
+
+        vm.startPrank(rescuer);
+        auction.emergencyPause();
+
+        vm.startPrank(funder);
+        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.EmergencyPauseActive.selector));
+        auction.withdrawExcess(1);
+
+        assertLiabilities(0, 400e18);
+    }
+
+    function test_withdraw_excess_phase() public {
+        finishAuction();
+        
+        vm.startPrank(funder);
+        expectPhase(IFixedPriceAuction.Phase.Fulfillment, IFixedPriceAuction.Phase.Settled);
+        auction.withdrawExcess(1);
+    }
+
+    function test_withdraw_excess_amount_exceeds_excess() public {
+        openDeposit();
+        depositAs(alice, 100e18);
+
+        deal(address(USDS), address(auction), 400e18, false);
+        openFulfillment();
+
+        vm.startPrank(funder);
+        uint256 withdrawableExcess = auction.withdrawableExcess();
+        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.ExcessExceeded.selector, withdrawableExcess+1, withdrawableExcess));
+        auction.withdrawExcess(withdrawableExcess+1);
+    }
+
+    function test_withdraw_excess() public {
+        openFulfillment();
+        fundAuction(400e18);
+
+        vm.startPrank(funder);
+        vm.expectEmit(address(auction));
+        emit ExcessWithdrawn(config.funder, 400e18, 0);
+        auction.withdrawExcess(400e18);
+    }
+}
+

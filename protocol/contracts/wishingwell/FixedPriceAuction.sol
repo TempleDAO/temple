@@ -167,7 +167,7 @@ contract FixedPriceAuction is IFixedPriceAuction, TempleElevatedAccess {
 
     /// @inheritdoc IFixedPriceAuction
     function depositWithPermit(uint256 amount, uint256 deadline, uint8 v, bytes32 r, bytes32 s) external override {
-        // FPA-7/11/12/46: do not invoke permit during either pause or an invalid phase.
+        // Do not invoke permit during either pause or an invalid phase.
         _checkDepositEntry();
 
         try IERC20Permit(_config.bidToken).permit(msg.sender, address(this), amount, deadline, v, r, s) {
