@@ -655,11 +655,25 @@ contract FixedPriceAuctionTestDeposits is FixedPriceAuctionTestBase {
     }
 
     function test_deposit_not_deposit_phase() public {
+        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.InvalidPhase.selector, IFixedPriceAuction.Phase.Deposit, IFixedPriceAuction.Phase.Scheduled));
+        auction.deposit(10e18);
 
+        openFulfillment();
+        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.InvalidPhase.selector, IFixedPriceAuction.Phase.Deposit, IFixedPriceAuction.Phase.Fulfillment));
+        auction.deposit(10e18);
+
+        finishAuction();
+        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.InvalidPhase.selector, IFixedPriceAuction.Phase.Deposit, IFixedPriceAuction.Phase.Settled));
+        auction.deposit(10e18);
     }
 
     function test_deposit_deposit_paused() public {
+        openDeposit();
 
+        vm.startPrank(executor);
+        auction.setDepositsPaused(true);
+        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.DepositsArePaused.selector));
+        auction.deposit(10e18);
     }
 
     function test_deposit_deposit_bidder_Blocked() public {
@@ -675,7 +689,15 @@ contract FixedPriceAuctionTestDeposits is FixedPriceAuctionTestBase {
     }
 
     function test_deposit_deposit_bidder_blocked() public {
-        
+        openDeposit();
+        deal(address(TEMPLE_TOKEN), alice, 100e18, false);
+        complianceCheck.setBlocked(alice, true);
+
+        vm.startPrank(alice);
+        TEMPLE_TOKEN.approve(address(auction), 100e18);
+
+        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.BlockedAccount.selector, alice));
+        auction.deposit(100e18);
     }
 
     function test_deposit_zero_amount() public {
@@ -708,8 +730,24 @@ contract FixedPriceAuctionTestDeposits is FixedPriceAuctionTestBase {
         assertEq(auction.totalDeposits(), 0);
     }
 
-    function test_deposit_not_funded() public {
-        
+    function test_deposit_required_funding_overflows() public {
+        config.price = type(uint256).max;
+        deployAuction();
+        openDeposit();
+        deal(address(TEMPLE_TOKEN), alice, 100e18, false);
+
+        vm.startPrank(alice);
+        TEMPLE_TOKEN.approve(address(auction), 100e18);
+
+        vm.expectRevert(
+            abi.encodeWithSignature(
+                "PRBMath_MulDiv_Overflow(uint256,uint256,uint256)",
+                uint256(100e18),
+                type(uint256).max,
+                uint256(1e18)
+            )
+        );
+        auction.deposit(100e18);
     }
 
     function test_deposit_reject_scheduled() public {
@@ -741,6 +779,42 @@ contract FixedPriceAuctionTestDeposits is FixedPriceAuctionTestBase {
         assertLiabilities(20e18 + 1, 0);
     }
 
+    function test_deposit_only_pause_allows_withdrawals_and_later_claims() public {
+        openDeposit();
+        depositAs(alice, 100e18);
+
+        vm.startPrank(executor);
+        auction.setDepositsPaused(true);
+    
+        vm.startPrank(alice);
+        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.DepositsArePaused.selector));
+        auction.deposit(10e18);
+        auction.withdrawDeposit(50e18);
+    
+        openFulfillment();
+        fundAuction(200e18);
+        finishAuction();
+        claimAs(alice);
+        assertEq(USDS.balanceOf(alice), 200e18);
+    }
+
+    function test_deposit_deposit_after_unpause() public {
+        openDeposit();
+
+        vm.startPrank(executor);
+        auction.setDepositsPaused(true);
+
+        vm.startPrank(alice);
+        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.DepositsArePaused.selector));
+        auction.deposit(10e18);
+
+        vm.startPrank(executor);
+        auction.setDepositsPaused(false);
+
+        depositAs(alice, 10e18);
+        assertEq(auction.deposits(alice), 10e18);
+    }
+
     function test_deposit() public {
         openDeposit();
         deal(address(TEMPLE_TOKEN), alice, 100e18, false);
@@ -761,16 +835,36 @@ contract FixedPriceAuctionTestDeposits is FixedPriceAuctionTestBase {
 
 contract FixedPriceAuctionTestWithdraws is FixedPriceAuctionTestBase {
 
-    function test_withdraw_paused() public {
+    function test_withdraw_emergency_pause_set() public {
+        vm.startPrank(rescuer);
+        auction.emergencyPause();
 
+        vm.startPrank(alice);
+        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.EmergencyPauseActive.selector));
+        auction.withdrawDeposit(10e18);
     }
 
     function test_withdraw_not_deposit_phase() public {
+        openDeposit();
+        depositAs(alice, 100e18);
+        openFulfillment();
 
+        vm.startPrank(alice);
+        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.InvalidPhase.selector,IFixedPriceAuction.Phase.Deposit,IFixedPriceAuction.Phase.Fulfillment));
+        auction.withdrawDeposit(100e18);
     }
 
     function test_withdraw_bidder_excluded() public {
+        openDeposit();
+        depositAs(alice, 100e18);
+        complianceCheck.setBlocked(alice, true);
 
+        vm.startPrank(executor);
+        auction.excludeBidder(alice);
+
+        vm.startPrank(alice);
+        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.BidderIsExcluded.selector, alice));
+        auction.withdrawDeposit(100e18);
     }
 
     function test_withdraw_zzero_amount() public {
@@ -835,7 +929,7 @@ contract FixedPriceAuctionTestWithdraws is FixedPriceAuctionTestBase {
 
         vm.startPrank(alice);
         auction.withdrawDeposit(100e18);
-        
+
         assertLiabilities(0, 0);
     }
 
@@ -858,5 +952,28 @@ contract FixedPriceAuctionTestWithdraws is FixedPriceAuctionTestBase {
         assertLiabilities(0, 0);
         depositAs(alice, 10e18);
         assertEq(auction.unclaimedBidders(), 1);
+    }
+}
+
+contract FixedPriceAuctionTest is FixedPriceAuctionTestBase {
+    function test_cap_cannot_decrease() public {
+        vm.startPrank(executor);
+        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.CannotLowerCap.selector));
+        auction.setMaxTotalDeposits(999e18);
+    }
+
+    function test_unlimited_cap_cannot_be_reintroduced() public {
+        vm.startPrank(executor);
+        auction.setMaxTotalDeposits(0);
+        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.CannotLowerCap.selector));
+        auction.setMaxTotalDeposits(1000e18);
+    }
+
+    function test_cap_cannot_change_after_settlement() public {
+        finishAuction();
+
+        vm.startPrank(executor);
+        expectPhase(IFixedPriceAuction.Phase.Deposit, IFixedPriceAuction.Phase.Settled);
+        auction.setMaxTotalDeposits(0);
     }
 }

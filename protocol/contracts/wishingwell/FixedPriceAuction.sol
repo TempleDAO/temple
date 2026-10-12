@@ -586,6 +586,7 @@ contract FixedPriceAuction is IFixedPriceAuction, TempleElevatedAccess {
         _checkMinimum(deposits[msg.sender] + amount);
         if (maxTotalDeposits != 0 && totalDeposits + amount > maxTotalDeposits) { revert DepositCapExceeded(); }
 
+        // Reject deposits that would make the funding calculation overflow and prevent settlement
         _requiredFunding(totalDeposits + amount);
         IERC20(_config.bidToken).safeTransferFrom(msg.sender, address(this), amount);
 
