@@ -167,6 +167,21 @@ contract FixedPriceAuctionTestBase is TempleTest {
         vm.stopPrank();
     }
 
+    function freezeAccount(address account) internal {
+        openDeposit();
+        depositAs(account, 100e18);
+        complianceCheck.setBlocked(account, true);
+        vm.startPrank(executor);
+        auction.excludeBidder(account);
+        vm.stopPrank();
+    }
+
+    function proposeAccountRelease(address account, address to) internal {
+        vm.startPrank(executor);
+        auction.proposeRelease(account, to);
+        vm.stopPrank();
+    }
+
     function expectPhase(IFixedPriceAuction.Phase expected, IFixedPriceAuction.Phase actual) internal {
         vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.InvalidPhase.selector, expected, actual));
     }
@@ -1216,3 +1231,720 @@ contract FixedPriceAuctionTestFunding is FixedPriceAuctionTestBase {
     }
 }
 
+contract FixedPriceAuctionTestSettlement is FixedPriceAuctionTestBase {
+
+    function test_partial_fill_at_four_usds_per_temple() public {
+        // Alice offers 100 TEMPLE, Bob 300; 800 USDS fills half at the fixed price of 4.
+        partialAuction();
+
+        assertSettlement(400e18, 200e18, 800e18, 200e18, 0);
+        assertUserClaim(alice, 200e18, 50e18);
+        assertUserClaim(bob, 600e18, 150e18);
+        claimAs(alice);
+        claimAs(bob);
+        vm.startPrank(unauthorizedUser);
+        auction.claimTreasury();
+
+        assertEq(USDS.balanceOf(alice), 200e18);
+        assertEq(TEMPLE_TOKEN.balanceOf(alice), 50e18);
+        assertEq(USDS.balanceOf(bob), 600e18);
+        assertEq(TEMPLE_TOKEN.balanceOf(bob), 150e18);
+        assertEq(TEMPLE_TOKEN.balanceOf(proceedsRecipient), 200e18);
+        assertEq(TEMPLE_TOKEN.balanceOf(unauthorizedUser), 0);
+        assertLiabilities(0, 0);
+    }
+
+    function test_full_fill() public {
+        openDeposit();
+        depositAs(alice, 100e18);
+        openFulfillment();
+        fundAuction(400e18);
+        finishAuction();
+        claimAs(alice);
+        auction.claimTreasury();
+
+        assertEq(USDS.balanceOf(alice), 400e18);
+        assertEq(TEMPLE_TOKEN.balanceOf(proceedsRecipient), 100e18);
+        assertLiabilities(0, 0);
+    }
+
+    function test_zero_fill_refunds_bid_tokens() public {
+        openDeposit();
+        depositAs(alice, 100e18);
+        finishAuction();
+        assertSettlement(100e18, 0, 0, 100e18, 0);
+        claimAs(alice);
+        auction.claimTreasury();
+
+        assertEq(TEMPLE_TOKEN.balanceOf(alice), 100e18);
+        assertLiabilities(0, 0);
+    }
+
+    // --- Claims ---- //
+
+    function test_claim() public {
+        partialAuction();
+
+        vm.startPrank(alice);
+        vm.expectEmit(true, true, true, true, address(auction));
+        emit AuctionSettled(alice, false, 400e18, 200e18, 800e18, 200e18, 0);
+        vm.expectEmit(true, true, true, true, address(auction));
+        emit UserClaimed(alice, 200e18, 50e18);
+        auction.claim();
+
+        assertTrue(auction.claimed(alice));
+        assertUserClaim(alice, 0, 0);
+    }
+
+    function test_claim_already_claimed() public {
+        partialAuction();
+        claimAs(alice);
+
+        vm.startPrank(alice);
+        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.AlreadyClaimed.selector));
+        auction.claim();
+    }
+
+    function test_claim_treasury_already_claimed() public {
+        partialAuction();
+        auction.claimTreasury();
+
+        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.AlreadyClaimed.selector));
+        auction.claimTreasury();
+
+        IFixedPriceAuction.TreasuryClaim memory result = auction.treasuryClaimable();
+        assertEq(result.bidTokenAmount, 0);
+        assertEq(result.fillTokenRefund, 0);
+    }
+
+    function test_claim_before_end() public {
+        openDeposit();
+        depositAs(alice, 100e18);
+
+        assertUserClaim(alice, 0, 0);
+        assertEq(auction.treasuryClaimable().bidTokenAmount, 0);
+
+        vm.startPrank(alice);
+        expectPhase(IFixedPriceAuction.Phase.Settled, IFixedPriceAuction.Phase.Deposit);
+        auction.claim();
+    }
+
+    function test_claim_no_expiry() public {
+        partialAuction();
+
+        vm.warp(block.timestamp + 10 * 365 days);
+        claimAs(alice);
+
+        assertEq(USDS.balanceOf(alice), 200e18);
+        assertUserClaim(bob, 600e18, 150e18);
+    }
+
+    function test_claim_emergency_paused() public {
+        openDeposit();
+        depositAs(alice, 100e18);
+
+        openFulfillment();
+        fundAuction(200e18);
+        finishAuction();
+
+        vm.startPrank(rescuer);
+        auction.emergencyPause();
+
+        vm.startPrank(alice);
+        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.EmergencyPauseActive.selector));
+        auction.claim();
+    }
+
+    function test_claim_ensure_finalized() public {
+        openDeposit();
+        depositAs(alice, 100e18);
+
+        openFulfillment();
+        fundAuction(200e18);
+
+        // Claims cannot finalize the auction before fulfillment ends.
+        vm.startPrank(alice);
+        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.InvalidPhase.selector, IFixedPriceAuction.Phase.Settled, IFixedPriceAuction.Phase.Fulfillment));
+        auction.claim();
+    }
+
+    function test_claim_zero_deposit() public {
+        finishAuction();
+
+        vm.startPrank(alice);
+        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.NothingToClaim.selector));
+        auction.claim();
+    }
+
+    function test_claim_account_excluded() public {
+        openDeposit();
+        depositAs(alice, 100e18);
+
+        complianceCheck.setBlocked(alice, true);
+
+        vm.startPrank(executor);
+        auction.excludeBidder(alice);
+
+        finishAuction();
+
+        uint256 bidBalanceBefore = TEMPLE_TOKEN.balanceOf(alice);
+        uint256 fillBalanceBefore = USDS.balanceOf(alice);
+
+        vm.startPrank(alice);
+        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.BidderIsExcluded.selector, alice));
+        auction.claim();
+
+        assertTrue(auction.excluded(alice));
+        assertFalse(auction.claimed(alice));
+        assertEq(auction.deposits(alice), 0);
+        assertUserClaim(alice, 0, 0);
+
+        // Exclusion freezes the entire deposit before settlement.
+        assertEq(auction.frozenBid(alice), 100e18);
+        assertEq(auction.frozenFill(alice), 0);
+        assertEq(TEMPLE_TOKEN.balanceOf(alice), bidBalanceBefore);
+        assertEq(USDS.balanceOf(alice), fillBalanceBefore);
+        assertLiabilities(100e18, 0);
+    }
+
+    function test_claim_account_blocked_freeze() public {
+        openDeposit();
+        depositAs(alice, 100e18);
+
+        openFulfillment();
+        fundAuction(200e18);
+        finishAuction();
+
+        // At 4 USDS per TEMPLE: 200 USDS payout and 50 TEMPLE refund.
+        assertUserClaim(alice, 200e18, 50e18);
+        complianceCheck.setBlocked(alice, true);
+
+        uint256 bidBalanceBefore = TEMPLE_TOKEN.balanceOf(alice);
+        uint256 fillBalanceBefore = USDS.balanceOf(alice);
+
+        vm.startPrank(alice);
+        vm.expectEmit(address(auction));
+        emit IFixedPriceAuction.ClaimFrozen(alice, 200e18, 50e18);
+        auction.claim();
+
+        // Claim is processed, but neither token is transferred to Alice.
+        assertTrue(auction.claimed(alice));
+        assertEq(auction.unclaimedBidders(), 0);
+        assertUserClaim(alice, 0, 0);
+        assertEq(TEMPLE_TOKEN.balanceOf(alice), bidBalanceBefore);
+        assertEq(USDS.balanceOf(alice), fillBalanceBefore);
+
+        assertEq(auction.frozenBid(alice), 50e18);
+        assertEq(auction.frozenFill(alice), 200e18);
+
+        // Reserves include Alice's frozen funds and the funder's bid proceeds.
+        assertLiabilities(100e18, 200e18);
+
+        auction.claimTreasury();
+
+        // Frozen funds stay reserved after the proceeds are claimed.
+        assertLiabilities(50e18, 200e18);
+    }
+
+    function test_claim_account_fill_and_bid_transfers() public {
+        openDeposit();
+        depositAs(alice, 100e18);
+
+        openFulfillment();
+        fundAuction(200e18);
+        finishAuction();
+
+        // At 4 USDS per TEMPLE, funding fills 50 of Alice's 100 TEMPLE.
+        assertUserClaim(alice, 200e18, 50e18);
+
+        uint256 bidBalanceBefore = TEMPLE_TOKEN.balanceOf(alice);
+        uint256 fillBalanceBefore = USDS.balanceOf(alice);
+
+        vm.startPrank(alice);
+        vm.expectEmit(address(auction));
+        emit IFixedPriceAuction.UserClaimed(alice, 200e18, 50e18);
+        auction.claim();
+
+        assertEq(TEMPLE_TOKEN.balanceOf(alice), bidBalanceBefore + 50e18);
+        assertEq(USDS.balanceOf(alice), fillBalanceBefore + 200e18);
+        assertTrue(auction.claimed(alice));
+        assertUserClaim(alice, 0, 0);
+
+        // The remaining bid tokens belong to the proceeds recipient.
+        assertLiabilities(50e18, 0);
+    }
+
+    function test_claim_dust_removed() public {
+        IFixedPriceAuction.AuctionConfig memory _config = getConfig();
+        _config.price = 1e18;
+        _config.minDeposit = 0;
+        auction = new FixedPriceAuction(_config, executor, rescuer);
+
+        // Use base units to produce rounding dust.
+        openDeposit();
+        depositAs(alice, 2);
+        depositAs(bob, 4);
+
+        openFulfillment();
+        fundAuction(4);
+        finishAuction();
+
+        // Total deposits: 6; filled: 4; refund budget: 2.
+        // Alice receives 1 fill token and 0 bid-token refund.
+        // Bob receives 2 fill tokens and 1 bid-token refund.
+        // This leaves 1 base unit of each token as dust.
+        assertUserClaim(alice, 1, 0);
+        assertUserClaim(bob, 2, 1);
+
+        auction.claimTreasury();
+        claimAs(alice);
+
+        // Dust remains reserved until Bob, the final bidder, claims.
+        assertEq(auction.unclaimedBidders(), 1);
+        assertLiabilities(2, 3);
+
+        vm.startPrank(executor);
+        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.InsufficientRecoverableBalance.selector));
+        auction.recoverToken(address(USDS), executor, 1);
+
+        claimAs(bob);
+
+        // The final claim releases both dust amounts from liabilities.
+        assertEq(auction.unclaimedBidders(), 0);
+        assertLiabilities(0, 0);
+        assertEq(TEMPLE_TOKEN.balanceOf(address(auction)), 1);
+        assertEq(USDS.balanceOf(address(auction)), 1);
+
+        vm.startPrank(executor);
+        auction.recoverToken(address(TEMPLE_TOKEN), executor, 1);
+        auction.recoverToken(address(USDS), executor, 1);
+
+        assertEq(TEMPLE_TOKEN.balanceOf(address(auction)), 0);
+        assertEq(USDS.balanceOf(address(auction)), 0);
+    }
+
+    // --- Claim Treasury --- //
+
+    function test_claim_treasury_paused() public {
+        openDeposit();
+        depositAs(alice, 100e18);
+
+        openFulfillment();
+        fundAuction(200e18);
+        finishAuction();
+
+        vm.startPrank(rescuer);
+        auction.emergencyPause();
+
+        vm.startPrank(funder);
+        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.EmergencyPauseActive.selector));
+        auction.claimTreasury();
+
+        assertFalse(auction.treasuryClaimed());
+        assertEq(TEMPLE_TOKEN.balanceOf(address(auction)), 100e18);
+        assertEq(USDS.balanceOf(address(auction)), 200e18);
+    }
+
+    function test_claim_treasury_ensure_finalized() public {
+        openDeposit();
+        depositAs(alice, 100e18);
+
+        openFulfillment();
+        fundAuction(200e18);
+
+        finishAuction();
+
+        uint256 balanceBefore = TEMPLE_TOKEN.balanceOf(proceedsRecipient);
+
+        vm.startPrank(funder);
+        vm.expectEmit(address(auction));
+        emit IFixedPriceAuction.AuctionSettled(funder, false, 100e18, 50e18, 200e18, 50e18, 0);
+        auction.claimTreasury();
+
+        assertTrue(auction.treasuryClaimed());
+        assertEq(TEMPLE_TOKEN.balanceOf(proceedsRecipient), balanceBefore + 50e18);
+
+        assertEq(USDS.balanceOf(address(auction)), 200e18);
+        assertEq(TEMPLE_TOKEN.balanceOf(address(auction)), 50e18);
+    }
+
+    function test_claim_treasury() public {
+        openDeposit();
+        depositAs(alice, 100e18);
+
+        openFulfillment();
+        fundAuction(500e18);
+        finishAuction();
+
+        uint256 proceedsBalanceBefore = TEMPLE_TOKEN.balanceOf(proceedsRecipient);
+        uint256 funderBalanceBefore = USDS.balanceOf(funder);
+
+        // Full fill costs 400 USDS; the remaining 100 USDS returns to the funder.
+        vm.startPrank(funder);
+        vm.expectEmit(address(auction));
+        emit IFixedPriceAuction.TreasuryClaimed(funder, proceedsRecipient, funder, 100e18, 100e18);
+        auction.claimTreasury();
+
+        assertTrue(auction.treasuryClaimed());
+        assertEq(TEMPLE_TOKEN.balanceOf(proceedsRecipient), proceedsBalanceBefore + 100e18);
+        assertEq(USDS.balanceOf(funder), funderBalanceBefore + 100e18);
+        assertEq(TEMPLE_TOKEN.balanceOf(address(auction)), 0);
+        assertEq(USDS.balanceOf(address(auction)), 400e18);
+        assertFalse(auction.claimed(alice));
+    }
+
+}
+
+contract FixedPriceAuctionTestCancellation is FixedPriceAuctionTestBase {
+
+    function test_cancel_scheduled_refunds_original_assets() public {
+        vm.startPrank(executor);
+        auction.cancelScheduled();
+
+        assertEq(uint256(auction.phase()), uint256(IFixedPriceAuction.Phase.Cancelled));
+        assertSettlement(0, 0, 0, 0, 0);
+        auction.finalize();
+        assertLiabilities(0, 0);
+    }
+
+    function test_cancel_deposit_refunds_original_assets() public {
+        openDeposit();
+        depositAs(alice, 100e18);
+        vm.startPrank(executor);
+        auction.cancelDeposit();
+    
+        assertEq(uint256(auction.phase()), uint256(IFixedPriceAuction.Phase.Cancelled));
+        assertUserClaim(alice, 0, 100e18);
+        claimAs(alice);
+        assertEq(TEMPLE_TOKEN.balanceOf(alice), 100e18);
+        auction.finalize();
+
+        assertLiabilities(0, 0);
+    }
+
+    function test_cancel_fulfillment_refunds_original_assets() public {
+        openDeposit();
+        depositAs(alice, 100e18);
+        openFulfillment();
+        fundAuction(400e18);
+
+        vm.startPrank(executor);
+        auction.cancelFulfillment();
+    
+        assertEq(uint256(auction.phase()), uint256(IFixedPriceAuction.Phase.Cancelled));
+        assertSettlement(100e18, 0, 0, 100e18, 400e18);
+        claimAs(alice);
+        auction.claimTreasury();
+
+        assertEq(USDS.balanceOf(funder), 400e18);
+        assertEq(TEMPLE_TOKEN.balanceOf(proceedsRecipient), 0);
+        auction.finalize();
+
+        assertLiabilities(0, 0);
+    }
+
+    function test_cancel_scheduled_cannot_cancel_after_natural_settlement() public {
+        finishAuction();
+
+        vm.startPrank(executor);
+        expectPhase(IFixedPriceAuction.Phase.Scheduled, IFixedPriceAuction.Phase.Settled);
+        auction.cancelScheduled();
+    }
+
+    function test_cancel_deposit_cannot_cancel_after_natural_settlement() public {
+        finishAuction();
+
+        vm.startPrank(executor);
+        expectPhase(IFixedPriceAuction.Phase.Deposit, IFixedPriceAuction.Phase.Settled);
+        auction.cancelDeposit();
+    }
+
+    function test_cancel_fulfillment_cannot_cancel_after_natural_settlement() public {
+        finishAuction();
+
+        vm.startPrank(executor);
+        expectPhase(IFixedPriceAuction.Phase.Fulfillment, IFixedPriceAuction.Phase.Settled);
+        auction.cancelFulfillment();
+    }
+
+    function test_cancel_preserves_excluded_funds() public {
+        freezeAccount(alice);
+
+        vm.startPrank(executor);
+        auction.cancelDeposit();
+ 
+        assertEq(auction.frozenBid(alice), 100e18);
+        assertUserClaim(alice, 0, 0);
+        assertLiabilities(100e18, 0);
+    }
+
+    function test_cancelled_auction_never_reopens() public {
+        vm.startPrank(executor);
+        auction.cancelScheduled();
+
+        finishAuction();
+        assertEq(uint256(auction.phase()), uint256(IFixedPriceAuction.Phase.Cancelled));
+        expectPhase(IFixedPriceAuction.Phase.Deposit, IFixedPriceAuction.Phase.Cancelled);
+        auction.deposit(1);
+    }
+}
+
+contract FixedPriceAuctionTestCompliance is FixedPriceAuctionTestBase {
+
+    function test_reverting_source_preserves_unclaimed_entitlement() public {
+        partialAuction();
+        complianceCheck.setFail(true);
+
+        vm.startPrank(alice);
+        vm.expectRevert(bytes("Compliance unavailable"));
+        auction.claim();
+
+        assertFalse(auction.claimed(alice));
+        assertEq(auction.unclaimedBidders(), 2);
+        assertLiabilities(400e18, 800e18);
+    }
+
+    function test_disable_compliance_restores_claims_and_preserves_config() public {
+        partialAuction();
+        complianceCheck.setFail(true);
+
+        vm.startPrank(executor);
+        vm.expectEmit(true, true, true, true, address(auction));
+        emit ComplianceCheckDisabled();
+        auction.disableComplianceCheck();
+    
+        assertEq(auction.complianceCheck(), address(0));
+        assertEq(auction.getConfig().complianceCheck, address(complianceCheck));
+    }
+
+    function test_exclusion_during_fulfillment_creates_excess() public {
+        openDeposit();
+        depositAs(alice, 100e18);
+        depositAs(bob, 100e18);
+        openFulfillment();
+        fundAuction(800e18);
+
+        complianceCheck.setBlocked(alice, true);
+        vm.startPrank(executor);
+        auction.excludeBidder(alice);
+
+        assertEq(auction.withdrawableExcess(), 400e18);
+        finishAuction();
+        assertUserClaim(bob, 400e18, 0);
+        claimAs(bob);
+        auction.claimTreasury();
+        assertEq(USDS.balanceOf(funder), 400e18);
+        assertLiabilities(100e18, 0);
+    }
+
+    function test_exclude_unflagged() public {
+        openDeposit();
+        depositAs(alice, 100e18);
+
+        vm.startPrank(executor);
+        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.AccountNotBlocked.selector));
+        auction.excludeBidder(alice);
+    }
+
+    function test_exclude_no_deposit() public {
+        openDeposit();
+        complianceCheck.setBlocked(alice, true);
+
+        vm.startPrank(executor);
+        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.NothingToClaim.selector));
+        auction.excludeBidder(alice);
+    }
+
+    function test_exclide_after_settlement() public {
+        partialAuction();
+        complianceCheck.setBlocked(alice, true);
+
+        vm.startPrank(executor);
+        expectPhase(IFixedPriceAuction.Phase.Deposit, IFixedPriceAuction.Phase.Settled);
+        auction.excludeBidder(alice);
+    }
+
+    function test_flagged_cancelled_claim_freezes_full_refund() public {
+        openDeposit();
+        depositAs(alice, 100e18);
+
+        vm.startPrank(executor);
+        auction.cancelDeposit();
+
+        complianceCheck.setBlocked(alice, true);
+        claimAs(alice);
+        assertEq(auction.frozenBid(alice), 100e18);
+        assertEq(auction.frozenFill(alice), 0);
+        assertLiabilities(100e18, 0);
+    }
+
+}
+
+contract FixedPriceAuctionTestFrozenRelease is FixedPriceAuctionTestBase {
+
+    function test_release_proposal_seven_day_delay() public {
+        freezeAccount(alice);
+        uint64 executableAt = uint64(block.timestamp + 7 days);
+        vm.startPrank(executor);
+        vm.expectEmit(true, true, true, true, address(auction));
+        emit ReleaseProposed(alice, escrow, executableAt);
+        auction.proposeRelease(alice, escrow);
+
+        IFixedPriceAuction.ReleaseProposal memory proposal = auction.releaseProposal(alice);
+        assertEq(proposal.to, escrow);
+        assertEq(proposal.executableAt, executableAt);
+        assertLiabilities(100e18, 0);
+    }
+
+    function test_release() public {
+        freezeAccount(alice);
+        proposeAccountRelease(alice, alice);
+
+        uint64 executableAt = auction.releaseProposal(alice).executableAt;
+        uint256 balanceBefore = TEMPLE_TOKEN.balanceOf(alice);
+
+        vm.warp(executableAt - 1);
+        vm.startPrank(executor);
+        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.ReleaseNotReady.selector));
+        auction.executeRelease(alice);
+
+        assertEq(TEMPLE_TOKEN.balanceOf(alice), balanceBefore);
+        assertEq(auction.frozenBid(alice), 100e18);
+        assertEq(auction.releaseProposal(alice).executableAt, executableAt);
+        assertLiabilities(100e18, 0);
+
+        vm.warp(executableAt);
+        vm.startPrank(executor);
+        vm.expectEmit(address(auction));
+        emit IFixedPriceAuction.FrozenReleased(alice, alice, 100e18, 0);
+        auction.executeRelease(alice);
+
+        assertEq(TEMPLE_TOKEN.balanceOf(alice), balanceBefore + 100e18);
+        assertEq(auction.frozenBid(alice), 0);
+        assertEq(auction.releaseProposal(alice).to, address(0));
+        assertEq(auction.releaseProposal(alice).executableAt, 0);
+        assertLiabilities(0, 0);
+    }
+
+    function test_execute_release() public {
+        freezeAccount(alice);
+        proposeAccountRelease(alice, escrow);
+
+        vm.warp(auction.releaseProposal(alice).executableAt);
+        vm.startPrank(executor);
+        vm.expectEmit(true, true, true, true, address(auction));
+        emit FrozenReleased(alice, escrow, 100e18, 0);
+        auction.executeRelease(alice);
+        vm.stopPrank();
+        assertEq(TEMPLE_TOKEN.balanceOf(escrow), 100e18);
+        assertEq(auction.frozenBid(alice), 0);
+        assertEq(auction.releaseProposal(alice).to, address(0));
+        assertLiabilities(0, 0);
+    }
+
+    function test_release_frozen_bid_and_fill_claim() public {
+        partialAuction();
+        complianceCheck.setBlocked(alice, true);
+        claimAs(alice);
+        proposeAccountRelease(alice, escrow);
+
+        vm.warp(auction.releaseProposal(alice).executableAt);
+        vm.startPrank(executor);
+        auction.executeRelease(alice);
+
+        assertEq(TEMPLE_TOKEN.balanceOf(escrow), 50e18);
+        assertEq(USDS.balanceOf(escrow), 200e18);
+        claimAs(bob);
+        auction.claimTreasury();
+        assertLiabilities(0, 0);
+    }
+
+    function test_propose_release_invalid_address() public {
+        freezeAccount(alice);
+        vm.startPrank(executor);
+        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.InvalidReleaseRecipient.selector));
+        auction.proposeRelease(alice, bob);
+    }
+
+    function test_propose_zero_address() public {
+        freezeAccount(alice);
+        vm.startPrank(executor);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
+        auction.proposeRelease(alice, address(0));
+    }
+
+    function test_proposal_zero_frozen_balance() public {
+        vm.startPrank(executor);
+        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.NothingToClaim.selector));
+        auction.proposeRelease(alice, alice);
+    }
+
+    function test_execute_release_no_proposal() public {
+        freezeAccount(alice);
+        vm.startPrank(executor);
+        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.NoReleaseProposal.selector));
+        auction.executeRelease(alice);
+    }
+}
+
+contract FixedPriceAuctionTestRecovery is FixedPriceAuctionTestBase {
+
+    function test_recover_token_zero_amount() public {
+        vm.startPrank(executor);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
+        auction.recoverToken(address(TEMPLE_TOKEN), executor, 0);
+    }
+
+    function test_recover_token_invalid_address() public {
+        vm.startPrank(executor);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector));
+        auction.recoverToken(address(TEMPLE_TOKEN), address(0), 1e18);
+    }
+
+    function test_recover_token_recovery_amount_exceeds_balance() public {
+        TEMPLE_TOKEN.mint(address(auction), 100e18);
+
+        vm.startPrank(executor);
+        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.InsufficientRecoverableBalance.selector));
+        auction.recoverToken(address(TEMPLE_TOKEN), executor, 100e18 + 1);
+
+        assertEq(TEMPLE_TOKEN.balanceOf(address(auction)), 100e18);
+    }
+
+    function test_recover_token_amount_exceeds_recoverable_balance() public {
+        openDeposit();
+        depositAs(alice, 100e18);
+
+        // Only additional 20 tokens are recoverable
+        TEMPLE_TOKEN.mint(address(auction), 20e18);
+
+        uint256 balanceBefore = TEMPLE_TOKEN.balanceOf(executor);
+
+        vm.startPrank(executor);
+        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.InsufficientRecoverableBalance.selector));
+        auction.recoverToken(address(TEMPLE_TOKEN), executor, 20e18+1);
+
+        assertEq(TEMPLE_TOKEN.balanceOf(executor), balanceBefore);
+        assertEq(TEMPLE_TOKEN.balanceOf(address(auction)), 120e18);
+        assertEq(auction.deposits(alice), 100e18);
+        assertLiabilities(100e18, 0);
+    }
+
+    function test_recover_token() public {
+        openDeposit();
+        depositAs(alice, 100e18);
+
+        // Only additional 20 tokens are recoverable
+        TEMPLE_TOKEN.mint(address(auction), 20e18);
+
+        uint256 balanceBefore = TEMPLE_TOKEN.balanceOf(executor);
+
+        vm.startPrank(executor);
+        auction.recoverToken(address(TEMPLE_TOKEN), executor, 20e18);
+
+        assertEq(TEMPLE_TOKEN.balanceOf(executor), balanceBefore + 20e18);
+        assertEq(TEMPLE_TOKEN.balanceOf(address(auction)), 100e18);
+        assertEq(auction.deposits(alice), 100e18);
+        assertLiabilities(100e18, 0);
+    }
+}

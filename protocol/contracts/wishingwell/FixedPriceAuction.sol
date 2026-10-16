@@ -315,7 +315,8 @@ contract FixedPriceAuction is IFixedPriceAuction, TempleElevatedAccess {
     /// @inheritdoc IFixedPriceAuction
     function proposeRelease(address account, address to) external override onlyElevatedAccess {
         // FPA-34/D36: zero escrow never authorizes a zero-address release.
-        if (to == address(0) || (to != account && to != _config.frozenFundsReceiver)) { revert InvalidReleaseRecipient(); }
+        if (to == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
+        if (to != account && to != _config.frozenFundsReceiver) { revert InvalidReleaseRecipient(); }
         if (frozenBid[account] == 0 && frozenFill[account] == 0) { revert NothingToClaim(); }
 
         uint256 executableAt = block.timestamp + FROZEN_ACTION_DELAY;
@@ -391,11 +392,12 @@ contract FixedPriceAuction is IFixedPriceAuction, TempleElevatedAccess {
         // FPA-40: All phases, but never frozen/unclaimed liabilities or emergency-paused movements.
         _requireUnpaused();
         if (to == address(0)) { revert CommonEventsAndErrors.InvalidAddress(); }
+        if (amount == 0) { revert CommonEventsAndErrors.ExpectedNonZero(); }
         uint256 reserved = token == _config.bidToken ? _bidLiability : token == _config.fillToken ? _fillLiability : 0;
         uint256 balance = IERC20(token).balanceOf(address(this));
         if (balance < reserved || amount > balance - reserved) { revert InsufficientRecoverableBalance(); }
 
-        if (amount > 0) { IERC20(token).safeTransfer(to, amount); }
+        IERC20(token).safeTransfer(to, amount);
 
         emit CommonEventsAndErrors.TokenRecovered(to, token, amount);
     }
