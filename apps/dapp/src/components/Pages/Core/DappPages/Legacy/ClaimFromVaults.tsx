@@ -1,5 +1,4 @@
 import styled from 'styled-components';
-import { useVaultContext } from '../../VaultContext';
 import {
   formatBigNumber,
   formatTemple,
@@ -7,13 +6,12 @@ import {
 } from 'components/Vault/utils';
 import { ZERO } from 'utils/bigNumber';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Vault, VaultGroup } from 'components/Vault/types';
 import { BigNumber, ethers } from 'ethers';
 import { useWithdrawFromVault } from 'hooks/core/use-withdraw-from-vault';
 import env from 'constants/env';
 import { useConnectWallet } from '@web3-onboard/react';
 import { TradeButton } from '../../NewUI/Home';
-import { ERC20__factory } from 'types/typechain';
+import { ERC20__factory, Vault__factory } from 'types/typechain';
 import { useWallet } from 'providers/WalletProvider';
 import { useNotification } from 'providers/NotificationProvider';
 import { VaultButton } from '../../VaultPages/VaultContent';
@@ -23,49 +21,76 @@ const EMPTY_CLAIM_STATE = {
   claimAmount: '',
 };
 
+const LEGACY_SUBVAULTS = [
+  { id: '0x402832eC42305cf7123BC9903f693E944484b9c1', label: 'A' },
+  { id: '0xa99980c64fc6c302377c39f21431217fcbaf39af', label: 'B' },
+  { id: '0xb6226ad4fef850dc8b85a83bdc0d4aff9c61cd39', label: 'C' },
+  { id: '0xd43cc1814bd87b67b318e4807cde50c090d01c1a', label: 'D' },
+] as const;
+
 export const ClaimFromVaults = () => {
   const [{ wallet }, connect] = useConnectWallet();
   const { walletAddress, signer } = useWallet();
-  const {
-    balances: { balances, isLoading: balancesIsLoading },
-    vaultGroups: { vaultGroups, isLoading: vaultGroupsIsLoading },
-    refreshVaultBalance,
-  } = useVaultContext();
+  const [claimState, setClaimState] = useState(EMPTY_CLAIM_STATE);
+  const [vaultBalances, setVaultBalances] = useState<
+    Record<string, BigNumber>
+  >({});
+
+  const fetchVaultBalances = useCallback(async () => {
+    if (!signer || !walletAddress) {
+      setVaultBalances({});
+      setClaimState(EMPTY_CLAIM_STATE);
+      return;
+    }
+
+    const balances = await Promise.all(
+      LEGACY_SUBVAULTS.map(async (vault) => {
+        const vaultContract = Vault__factory.connect(vault.id, signer);
+        const shares = await vaultContract.shareBalanceOf(walletAddress);
+        const balance = await vaultContract.toTokenAmount(shares);
+
+        return { vault, balance };
+      })
+    );
+    const balancesByVault = balances.reduce<Record<string, BigNumber>>(
+      (balances, { vault, balance }) => ({
+        ...balances,
+        [vault.id]: balance,
+      }),
+      {}
+    );
+    const selectedVault = balances.reduce((selected, candidate) =>
+      candidate.balance.gt(selected.balance) ? candidate : selected
+    );
+
+    setVaultBalances(balancesByVault);
+    setClaimState(
+      selectedVault.balance.gt(ZERO)
+        ? {
+            claimSubvaultAddress: selectedVault.vault.id,
+            claimAmount: formatBigNumber(selectedVault.balance),
+          }
+        : EMPTY_CLAIM_STATE
+    );
+  }, [signer, walletAddress]);
+
+  useEffect(() => {
+    fetchVaultBalances();
+  }, [fetchVaultBalances]);
+
   const { withdrawEarly: earlyWithdrawRequest } = useWithdrawFromVault(
     '',
     async () => {
-      await refreshVaultBalance(claimState.claimSubvaultAddress);
+      await fetchVaultBalances();
       // AnalyticsService.captureEvent(AnalyticsEvent.Vault.Claim, { name: vault.id, amount });
-      setClaimState(EMPTY_CLAIM_STATE);
     }
   );
   const [
     earlyWithdraw,
     { isLoading: earlyWithdrawIsLoading, error: earlyWithdrawError },
   ] = earlyWithdrawRequest;
-  const [assumedActiveVaultGroup, setAssumedActiveVaultGroup] = useState(
-    {} as VaultGroup
-  );
   const [allowance, setAllowance] = useState(ZERO);
   const { openNotification } = useNotification();
-
-  // Initialize assumedActiveVaultGroup, claimState, zeroVaultBalance
-  useEffect(() => {
-    if (!balancesIsLoading && !vaultGroupsIsLoading) {
-      const vaultGroup = vaultGroups[0];
-      setAssumedActiveVaultGroup(vaultGroup);
-      if (!vaultGroup) return;
-      const initialVault = vaultGroup.vaults[0];
-      setClaimState({
-        claimSubvaultAddress: initialVault.id,
-        claimAmount: formatBigNumber(
-          balances[vaultGroup.id][initialVault.id].balance || ZERO
-        ),
-      });
-    }
-  }, [balancesIsLoading, balances, vaultGroupsIsLoading, vaultGroups]);
-
-  const [claimState, setClaimState] = useState(EMPTY_CLAIM_STATE);
 
   const fetchAllowance = useCallback(async () => {
     if (!signer || !walletAddress) return;
@@ -123,12 +148,9 @@ export const ClaimFromVaults = () => {
   };
 
   // Return component for all subvault balances
-  const getVaultBalances = (vaults: Vault[] | undefined) => {
-    console.debug('getVaultBalances::vaults', vaults);
-    if (!vaults) return [];
-    return vaults.map((vault) => {
-      const vaultGroupBalances = balances[vaultGroups[0].id];
-      const vaultBalance = vaultGroupBalances[vault.id] || {};
+  const getVaultBalances = () => {
+    return LEGACY_SUBVAULTS.map((vault) => {
+      const vaultBalance = vaultBalances[vault.id] || ZERO;
 
       return (
         <div key={vault.id}>
@@ -136,11 +158,9 @@ export const ClaimFromVaults = () => {
             Subvault {vault.label}:{' '}
             <ClaimAmount
               isActive={vault.id == claimState.claimSubvaultAddress}
-              onClick={() =>
-                claimAmountHandler(vault.id, vaultBalance.balance || ZERO)
-              }
+              onClick={() => claimAmountHandler(vault.id, vaultBalance)}
             >
-              {formatTemple(vaultBalance.balance)} TEMPLE
+              {formatTemple(vaultBalance)} TEMPLE
             </ClaimAmount>
           </div>
         </div>
@@ -157,9 +177,7 @@ export const ClaimFromVaults = () => {
     <ClaimContainer>
       <ClaimTitle>Claim from Vaults</ClaimTitle>
       <ClaimSubtitle>Select Vault for Withdrawal</ClaimSubtitle>
-      <SubvaultContainer>
-        {getVaultBalances(assumedActiveVaultGroup?.vaults)}
-      </SubvaultContainer>
+      <SubvaultContainer>{getVaultBalances()}</SubvaultContainer>
 
       {!!earlyWithdrawError && (
         <ErrorLabel>
