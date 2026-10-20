@@ -12,20 +12,26 @@ import { FixedPriceAuctionTestBase } from "test/forge/unit/templegold/FixedPrice
 contract FixedPriceAuctionFuzzTest is FixedPriceAuctionTestBase {
     using TempleMath for uint256;
 
-    uint256 internal constant STEPS = 40;
+    uint256 internal constant STEPS = 60;
     address[3] internal actors;
+
+    /// @dev Who handovers can pass either role to. Shared, so a handover can try to give both roles to one address.
+    address[4] internal candidates;
 
     function _assertLiabilitiesHeld() internal view {
         assertEq(tgld.balanceOf(address(auction)), auction.bidOwed(), "bid balance != bidOwed");
         assertEq(usds.balanceOf(address(auction)), auction.fillOwed(), "fill balance != fillOwed");
+        assertTrue(auction.executor() != auction.rescuer(), "executor is the rescuer");
+        if (auction.inRescueMode()) assertEq(auction.proposedExecutor(), address(0), "executor proposal in rescue mode");
     }
 
     function _step(uint256 r) internal {
         address actor = actors[(r >> 8) % 3];
         uint256 amount = _bound(r >> 16, 1, 1e24);
-        // Deposits get 3 of 12 slots, so most runs build up deposits before the window closes.
-        uint256 op = r % 12;
-        if (op >= 10) op = 2;
+        // Deposits get 3 of 20 slots, so most runs build up deposits before the window closes.
+        uint256 op = r % 20;
+        if (op >= 18) op = 2;
+        if (op >= 10) return _brakeOrRoleStep(op, r, actor);
 
         if (op < 2) {
             vm.warp(block.timestamp + _bound(r >> 128, 1 hours, 2 days));
@@ -58,8 +64,60 @@ contract FixedPriceAuctionFuzzTest is FixedPriceAuctionTestBase {
             vm.prank(executor);
             try auction.endFulfillment() { } catch { }
         } else if ((r >> 200) % 4 == 0) {
-            vm.prank(executor);
+            vm.prank(auction.executor());
             try auction.cancel() { } catch { }
+        }
+    }
+
+    /// @dev Pause, rescue mode, compliance and role handovers, by whoever holds the role now.
+    function _brakeOrRoleStep(uint256 op, uint256 r, address actor) internal {
+        address exec = auction.executor();
+        address resc = auction.rescuer();
+        address candidate = candidates[(r >> 40) % 4];
+        bool flag = (r >> 48) % 2 == 0;
+        if (op == 10) {
+            // Pauses or unpauses, as the executor or (in rescue mode) the rescuer.
+            vm.prank(auction.inRescueMode() ? resc : exec);
+            auction.setPaused(flag);
+        } else if (op == 11) {
+            vm.prank(resc);
+            auction.setRescueMode(flag);
+        } else if (op == 12) {
+            if (!auction.inRescueMode() || (r >> 200) % 4 != 0) return;
+            vm.prank(resc);
+            try auction.cancel() { } catch { }
+        } else if (op == 13) {
+            _setBlocked(actor, flag);
+        } else if (op == 14) {
+            if ((r >> 200) % 8 != 0) return;
+            vm.prank(resc);
+            auction.disableComplianceCheck();
+        } else if (op == 15) {
+            vm.prank(exec);
+            try auction.proposeNewExecutor(candidate) { } catch { }
+        } else if (op == 16) {
+            vm.prank(resc);
+            auction.proposeNewRescuer(candidate);
+        } else {
+            // Whoever is proposed tries to accept; it reverts if that would make one address hold both roles.
+            address proposed = flag ? auction.proposedExecutor() : auction.proposedRescuer();
+            if (proposed == address(0)) return;
+            vm.prank(proposed);
+            if (flag) try auction.acceptExecutor() { } catch { }
+            else try auction.acceptRescuer() { } catch { }
+        }
+    }
+
+    /// @dev Lifts every brake, so whatever is owed can be claimed.
+    function _liftBrakes() internal {
+        if (auction.inRescueMode()) {
+            vm.prank(auction.rescuer());
+            auction.setRescueMode(false);
+        }
+        vm.prank(auction.executor());
+        auction.setPaused(false);
+        for (uint256 i; i < actors.length; ++i) {
+            _setBlocked(actors[i], false);
         }
     }
 
@@ -68,6 +126,7 @@ contract FixedPriceAuctionFuzzTest is FixedPriceAuctionTestBase {
         price = _bound(price, 1e12, 1e21);
         auction = _create(_config(address(tgld), address(usds), price, 0));
         actors = [alice, bob, makeAddr("carol")];
+        candidates = [makeAddr("candidate0"), makeAddr("candidate1"), executor, rescuer];
         _toDeposit(auction);
         // Random steps can close the deposit window before any deposit lands, so seed one.
         _deposit(auction, alice, _bound(seed, 1, 1e24));
@@ -77,7 +136,8 @@ contract FixedPriceAuctionFuzzTest is FixedPriceAuctionTestBase {
             _assertLiabilitiesHeld();
         }
 
-        // Finish: everyone still owed can claim.
+        // Finish: once the brakes are off, everyone still owed can claim.
+        _liftBrakes();
         if (block.timestamp < auction.getTiming().fulfillmentEnd) _toEnd(auction);
         for (uint256 i; i < actors.length; ++i) {
             if (auction.deposits(actors[i]) > 0 && !auction.claimed(actors[i])) {
