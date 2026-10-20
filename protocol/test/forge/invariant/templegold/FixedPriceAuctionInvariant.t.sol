@@ -45,21 +45,21 @@ abstract contract FixedPriceAuctionInvariantBase is FixedPriceAuctionTestBase {
 
     // A repeated selector is picked more often. Time, deposits, funding and claims are weighted up.
     function _weightedSelectors() internal pure returns (bytes4[] memory s) {
-        s = new bytes4[](28);
+        s = new bytes4[](33);
         uint256 i;
-        for (uint256 n; n < 4; ++n) {
+        for (uint256 n; n < 5; ++n) {
             s[i++] = FixedPriceAuctionHandler.warp.selector;
         }
         for (uint256 n; n < 3; ++n) {
             s[i++] = FixedPriceAuctionHandler.deposit.selector;
         }
-        for (uint256 n; n < 3; ++n) {
+        for (uint256 n; n < 5; ++n) {
             s[i++] = FixedPriceAuctionHandler.claim.selector;
         }
         for (uint256 n; n < 2; ++n) {
             s[i++] = FixedPriceAuctionHandler.claimTreasury.selector;
         }
-        for (uint256 n; n < 2; ++n) {
+        for (uint256 n; n < 4; ++n) {
             s[i++] = FixedPriceAuctionHandler.fund.selector;
         }
         s[i++] = FixedPriceAuctionHandler.withdrawDeposit.selector;
@@ -221,8 +221,8 @@ abstract contract FixedPriceAuctionInvariantBase is FixedPriceAuctionTestBase {
     }
 }
 
-/// forge-config: default.invariant.runs = 128
-/// forge-config: default.invariant.depth = 64
+/// forge-config: default.invariant.runs = 64
+/// forge-config: default.invariant.depth = 128
 contract FixedPriceAuctionInvariantTest is FixedPriceAuctionInvariantBase {
     /// @dev 18-decimal TGLD for 18-decimal USDS at 0.0466.
     function _auctionConfig() internal pure override returns (uint8, uint8, uint256) {
@@ -230,8 +230,8 @@ contract FixedPriceAuctionInvariantTest is FixedPriceAuctionInvariantBase {
     }
 }
 
-/// forge-config: default.invariant.runs = 128
-/// forge-config: default.invariant.depth = 64
+/// forge-config: default.invariant.runs = 64
+/// forge-config: default.invariant.depth = 128
 contract FixedPriceAuctionInvariantBid6Fill18Test is FixedPriceAuctionInvariantBase {
     /// @dev A USDC-style 6-decimal bid token buying an 18-decimal fill token at about 21.46 (1 / 0.0466).
     function _auctionConfig() internal pure override returns (uint8, uint8, uint256) {
@@ -239,8 +239,8 @@ contract FixedPriceAuctionInvariantBid6Fill18Test is FixedPriceAuctionInvariantB
     }
 }
 
-/// forge-config: default.invariant.runs = 128
-/// forge-config: default.invariant.depth = 64
+/// forge-config: default.invariant.runs = 64
+/// forge-config: default.invariant.depth = 128
 contract FixedPriceAuctionInvariantBid18Fill6Test is FixedPriceAuctionInvariantBase {
     /// @dev An 18-decimal bid token buying a 6-decimal fill token at 0.0001, so one bid token buys 100 fill wei and
     /// rounding dust is material.

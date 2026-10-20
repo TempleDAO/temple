@@ -47,7 +47,8 @@ contract FixedPriceAuctionHandler is Test {
     address[4] public bidders;
     /// @dev The auction's config as created. `complianceCheck` here is the initial pointer only.
     IFixedPriceAuction.AuctionConfig internal config;
-    uint256 internal constant MIN_DEPOSIT_PHASE_CALLS = 20;
+    uint256 internal constant MIN_DEPOSIT_PHASE_CALLS = 12;
+    uint256 internal constant MIN_FULFILLMENT_PHASE_CALLS = 12;
     /// @dev A billion bid tokens, in bid-token wei.
     uint256 internal immutable maxDeposit;
     /// @dev A little over full funding for one max deposit per bidder.
@@ -57,6 +58,7 @@ contract FixedPriceAuctionHandler is Test {
     uint256 public calls;
     /// @dev Calls made during the deposit phase. `warp` won't jump to `depositEnd` until there are enough.
     uint256 public depositPhaseCalls;
+    uint256 public fulfillmentPhaseCalls;
     mapping(string action => uint256 count) public successes;
     /// @dev Attempts made while the call should succeed: an unpaused, unblocked, eligible account in the right phase.
     uint256 public depositChances;
@@ -115,7 +117,9 @@ contract FixedPriceAuctionHandler is Test {
     modifier step() {
         vm.warp(currentTime);
         ++calls;
-        if (auction.phase() == IFixedPriceAuction.Phase.Deposit) ++depositPhaseCalls;
+        IFixedPriceAuction.Phase current = auction.phase();
+        if (current == IFixedPriceAuction.Phase.Deposit) ++depositPhaseCalls;
+        else if (current == IFixedPriceAuction.Phase.Fulfillment) ++fulfillmentPhaseCalls;
         _;
         _recordOutcome();
     }
@@ -198,7 +202,14 @@ contract FixedPriceAuctionHandler is Test {
     /****** FUNDER ******/
 
     function fund(uint256 amount) external step {
-        amount = _bound(amount, 1, maxFund);
+        // Half the time exactly the shortfall to full funding, a quarter of the time half of it (a partial fill),
+        // otherwise random. Steers runs onto the funded settlement path.
+        uint256 required = auction.totalDeposits().mulDivRound(config.price, auction.priceDenominator(), true);
+        uint256 shortfall = required > auction.fillOwed() ? required - auction.fillOwed() : 0;
+        uint256 mode = amount % 4;
+        if (mode < 2 && shortfall > 0) amount = shortfall;
+        else if (mode == 2 && shortfall > 1) amount = shortfall / 2;
+        else amount = _bound(amount, 1, maxFund);
         address funder = config.funder;
         fill.mint(funder, amount);
         vm.prank(funder);
@@ -273,7 +284,10 @@ contract FixedPriceAuctionHandler is Test {
 
     /****** MSIG ******/
 
-    function endFulfillment() external step {
+    function endFulfillment(uint256 seed) external step {
+        // Gated on a hashed seed: about one call in four tries once something is funded, one in sixteen before (an
+        // early end before funding fills nothing).
+        if (uint256(keccak256(abi.encode(seed))) % (successes["fund"] == 0 ? 16 : 4) != 0) return;
         State memory before = _state();
         vm.prank(msig);
         bool ok;
@@ -285,8 +299,8 @@ contract FixedPriceAuctionHandler is Test {
     }
 
     function cancel(uint256 seed) external step {
-        // Gated on a hashed seed, so about one call in eight tries to cancel.
-        if (uint256(keccak256(abi.encode(seed))) % 8 != 0) return;
+        // Gated on a hashed seed, so about one call in sixteen tries to cancel.
+        if (uint256(keccak256(abi.encode(seed))) % 16 != 0) return;
         State memory before = _state();
         vm.prank(msig);
         bool ok;
@@ -366,7 +380,9 @@ contract FixedPriceAuctionHandler is Test {
         _check(_same(before, _state()), "rescuer setPaused changed more than the pause");
     }
 
-    function setRescueMode(bool value) external step {
+    /// @dev Switches rescue mode on a quarter of the time and off otherwise, so runs aren't mostly locked.
+    function setRescueMode(uint256 seed) external step {
+        bool value = seed % 4 == 0;
         State memory before = _state();
         vm.prank(rescuer);
         bool ok;
@@ -453,14 +469,19 @@ contract FixedPriceAuctionHandler is Test {
         ++successes["strayTransfer"];
     }
 
-    /// @dev Moves time forward only. Half the time it lands on, or one second either side of, the next phase
+    /// @dev Moves time forward only. Three times in four it lands on, or one second either side of, the next phase
     /// boundary, so every run passes through each phase in order. Otherwise it steps forward 1 second to 12 hours.
-    /// It skips the `depositEnd` jump until the deposit phase has had MIN_DEPOSIT_PHASE_CALLS calls, so runs build
-    /// deposits first.
+    /// It skips the `depositEnd` jump until the deposit phase has had MIN_DEPOSIT_PHASE_CALLS calls, and the
+    /// `fulfillmentEnd` jump until a fund succeeds or the fulfillment phase has had MIN_FULFILLMENT_PHASE_CALLS, so
+    /// runs build deposits and funding first.
     function warp(uint256 which, uint256 offset) external step {
         uint256 target;
         bool depositsOpen = currentTime >= config.depositStart + 1 && currentTime < config.depositEnd + 1;
-        if (which % 2 == 0 && !(depositsOpen && depositPhaseCalls < MIN_DEPOSIT_PHASE_CALLS)) {
+        bool fundingOpen = currentTime >= config.depositEnd + 1 && currentTime < config.fulfillmentEnd + 1;
+        if (
+            which % 4 != 0 && !(depositsOpen && depositPhaseCalls < MIN_DEPOSIT_PHASE_CALLS)
+                && !(fundingOpen && successes["fund"] == 0 && fulfillmentPhaseCalls < MIN_FULFILLMENT_PHASE_CALLS)
+        ) {
             uint256 milestone = currentTime < config.depositStart + 1
                 ? config.depositStart
                 : currentTime < config.depositEnd + 1 ? config.depositEnd : config.fulfillmentEnd;
