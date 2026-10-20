@@ -70,6 +70,9 @@ contract FixedPriceAuctionHandler is Test {
     uint256 public depositChances;
     uint256 public claimChances;
 
+    uint256 internal fundCalls;
+    bool internal partialRun;
+
     // Ghost books
     uint256 public funded;
     uint256 public excessWithdrawn;
@@ -230,11 +233,13 @@ contract FixedPriceAuctionHandler is Test {
     /****** FUNDER ******/
 
     function fund(uint256 amount) external step {
-        // Half the time exactly the shortfall to full funding, a quarter of the time half of it (a partial fill),
-        // otherwise random. Steers runs onto the funded settlement path.
+        // Steers runs onto the funded settlement path. Half the time exactly the shortfall to full funding, a quarter
+        // of the time half of it, otherwise random. One run in five, fixed at its first fund call, only ever funds
+        // half the shortfall, so it settles partly filled.
         uint256 required = auction.totalDeposits().mulDivRound(config.price, auction.priceDenominator(), true);
         uint256 shortfall = required > auction.fillOwed() ? required - auction.fillOwed() : 0;
-        uint256 mode = amount % 4;
+        if (fundCalls++ == 0) partialRun = amount % 5 == 0;
+        uint256 mode = partialRun ? 2 : amount % 4;
         if (mode < 2 && shortfall > 0) amount = shortfall;
         else if (mode == 2 && shortfall > 1) amount = shortfall / 2;
         else amount = _bound(amount, 1, maxFund);
@@ -323,9 +328,9 @@ contract FixedPriceAuctionHandler is Test {
     /****** MSIG ******/
 
     function endFulfillment(uint256 seed) external step {
-        // Gated on a hashed seed: about one call in four tries once something is funded, one in sixteen before (an
+        // Gated on a hashed seed: about one call in four tries once something is funded, one in 32 before (an
         // early end before funding fills nothing).
-        if (uint256(keccak256(abi.encode(seed))) % (successes["fund"] == 0 ? 16 : 4) != 0) return;
+        if (uint256(keccak256(abi.encode(seed))) % (successes["fund"] == 0 ? 32 : 4) != 0) return;
         State memory before = _state();
         vm.prank(msig);
         bool ok;

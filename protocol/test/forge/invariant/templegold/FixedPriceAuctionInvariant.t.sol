@@ -56,10 +56,10 @@ abstract contract FixedPriceAuctionInvariantBase is FixedPriceAuctionTestBase {
         s = new bytes4[](64);
         uint256 i;
         i = _add(s, i, FixedPriceAuctionHandler.warp.selector, 5);
-        i = _add(s, i, FixedPriceAuctionHandler.deposit.selector, 3);
-        i = _add(s, i, FixedPriceAuctionHandler.claim.selector, 5);
+        i = _add(s, i, FixedPriceAuctionHandler.deposit.selector, 6);
+        i = _add(s, i, FixedPriceAuctionHandler.claim.selector, 6);
         i = _add(s, i, FixedPriceAuctionHandler.claimTreasury.selector, 2);
-        i = _add(s, i, FixedPriceAuctionHandler.fund.selector, 4);
+        i = _add(s, i, FixedPriceAuctionHandler.fund.selector, 6);
         i = _add(s, i, FixedPriceAuctionHandler.withdrawDeposit.selector, 1);
         i = _add(s, i, FixedPriceAuctionHandler.withdrawExcess.selector, 1);
         i = _add(s, i, FixedPriceAuctionHandler.endFulfillment.selector, 1);
