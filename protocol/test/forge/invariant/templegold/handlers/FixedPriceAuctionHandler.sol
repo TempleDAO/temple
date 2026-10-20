@@ -592,22 +592,23 @@ contract FixedPriceAuctionHandler is Test {
         for (uint256 i; i < logs.length; ++i) {
             if (logs[i].emitter != address(auction)) continue;
             bytes32 topic = logs[i].topics[0];
-            IFixedPriceAuction.Settlement memory s = auction.previewSettlement();
             if (topic == IFixedPriceAuction.AuctionSettled.selector) {
                 ++settledEvents;
-                (uint64 at, uint256 total, uint256 filled, uint256 userFunding, uint256 userRefund, uint256 funderRefund)
-                = abi.decode(logs[i].data, (uint64, uint256, uint256, uint256, uint256, uint256));
+                IFixedPriceAuction.Settlement memory s = auction.previewSettlement();
+                bytes memory stored = abi.encode(
+                    auction.settledAt(), auction.totalDeposits(), s.filledDeposits, s.userFunding, s.userRefund,
+                    s.funderRefund
+                );
                 _check(
-                    at == auction.settledAt() && total == auction.totalDeposits() && filled == s.filledDeposits
-                        && userFunding == s.userFunding && userRefund == s.userRefund && funderRefund == s.funderRefund,
-                    "AuctionSettled fields differ from the stored settlement"
+                    keccak256(logs[i].data) == keccak256(stored), "AuctionSettled differs from the stored settlement"
                 );
             } else if (topic == IFixedPriceAuction.AuctionCancelled.selector) {
                 ++cancelledEvents;
-                (uint256 total, uint256 funderRefund) = abi.decode(logs[i].data, (uint256, uint256));
+                IFixedPriceAuction.Settlement memory s = auction.previewSettlement();
+                bytes memory stored = abi.encode(s.userRefund, s.funderRefund);
                 _check(
-                    total == auction.totalDeposits() && total == s.userRefund && funderRefund == s.funderRefund,
-                    "AuctionCancelled fields differ from the stored settlement"
+                    keccak256(logs[i].data) == keccak256(stored) && s.userRefund == auction.totalDeposits(),
+                    "AuctionCancelled differs from the stored settlement"
                 );
             }
         }
