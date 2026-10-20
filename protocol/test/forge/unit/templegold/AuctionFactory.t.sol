@@ -9,6 +9,7 @@ import { FixedPriceAuction } from "contracts/templegold/FixedPriceAuction.sol";
 import { IAuctionFactory } from "contracts/interfaces/templegold/IAuctionFactory.sol";
 import { AuctionFactory } from "contracts/templegold/AuctionFactory.sol";
 import { FixedPriceAuctionTestBase } from "test/forge/unit/templegold/FixedPriceAuction.t.sol";
+import { LibClone } from "solady/src/utils/LibClone.sol";
 
 contract FixedPriceAuctionV2 is FixedPriceAuction {
     function version() external pure returns (uint256) {
@@ -355,5 +356,131 @@ contract AuctionFactoryTest is FixedPriceAuctionTestBase {
         vm.prank(bob);
         factory.setRescueMode(true);
         assertTrue(factory.inRescueMode());
+    }
+}
+
+/// @dev Random sequences of factory actions by whoever holds each role, with the factory's rules checked after
+/// every step: implementations move only by acceptance, rescue mode locks the msig out and kills proposals, the
+/// rescuer never gets msig powers, the roles never merge, and every auction is a clone of an accepted
+/// implementation with the roles of its day.
+contract AuctionFactoryFuzzTest is FixedPriceAuctionTestBase {
+    uint256 internal constant STEPS = 40;
+
+    address[3] internal impls;
+    mapping(address impl => bool accepted) internal accepted;
+    address[4] internal candidates;
+    /// @dev The implementation the factory should have: changed only by a successful accept.
+    address internal ghostImplementation;
+
+    function test_fuzz_factoryRulesHold(uint256 seed) public {
+        impls = [address(implementation), address(new FixedPriceAuctionV2()), address(new FixedPriceAuctionV2())];
+        accepted[address(implementation)] = true;
+        ghostImplementation = address(implementation);
+        candidates = [executor, rescuer, alice, bob];
+
+        for (uint256 i; i < STEPS; ++i) {
+            _step(uint256(keccak256(abi.encode(seed, i))));
+            assertEq(factory.implementation(), ghostImplementation, "implementation moved without an accept");
+            assertTrue(factory.executor() != factory.rescuer(), "executor is the rescuer");
+            if (factory.inRescueMode()) {
+                assertEq(factory.proposedExecutor(), address(0), "executor proposal in rescue mode");
+                assertEq(factory.proposedImplementation(), address(0), "implementation proposal in rescue mode");
+            }
+        }
+    }
+
+    function _step(uint256 r) internal {
+        address exec = factory.executor();
+        address resc = factory.rescuer();
+        address impl = impls[(r >> 8) % 3];
+        address candidate = candidates[(r >> 16) % 4];
+        bool rescueMode = factory.inRescueMode();
+        bool ok;
+        uint256 op = r % 9;
+
+        if (op == 0) {
+            vm.prank(exec);
+            try factory.proposeImplementation(impl) {
+                ok = true;
+            } catch { }
+            assertEq(ok, !rescueMode, "msig proposal not gated on rescue mode");
+            if (ok) assertEq(factory.proposedImplementation(), impl);
+        } else if (op == 1) {
+            // The rescuer accepts the proposal half the time, otherwise a random implementation.
+            address target = (r >> 24) % 2 == 0 ? factory.proposedImplementation() : impl;
+            address proposed = factory.proposedImplementation();
+            vm.prank(resc);
+            try factory.acceptImplementation(target) {
+                ok = true;
+            } catch { }
+            assertEq(ok, target != address(0) && target == proposed, "accept not exactly the proposal");
+            if (ok) {
+                ghostImplementation = target;
+                accepted[target] = true;
+                assertEq(factory.proposedImplementation(), address(0), "proposal survived its accept");
+            }
+        } else if (op == 2) {
+            vm.prank(resc);
+            factory.setRescueMode((r >> 24) % 3 == 0);
+        } else if (op == 3) {
+            vm.prank(exec);
+            try factory.createAuction(abi.encode(_config(address(tgld), address(usds), PRICE, 0))) returns (
+                address created
+            ) {
+                ok = true;
+                _checkCreated(FixedPriceAuction(created), exec, resc);
+            } catch { }
+            assertEq(ok, !rescueMode, "createAuction not gated on rescue mode");
+        } else if (op == 4) {
+            // The rescuer never has the msig's factory powers, in or out of rescue mode.
+            vm.startPrank(resc);
+            try factory.createAuction(abi.encode(_config(address(tgld), address(usds), PRICE, 0))) {
+                ok = true;
+            } catch { }
+            try factory.proposeImplementation(impl) {
+                ok = true;
+            } catch { }
+            try factory.proposeNewExecutor(resc) {
+                ok = true;
+            } catch { }
+            vm.stopPrank();
+            assertFalse(ok, "rescuer used an msig power");
+        } else if (op == 5) {
+            vm.prank(exec);
+            try factory.proposeNewExecutor(candidate) {
+                ok = true;
+            } catch { }
+            assertEq(ok, !rescueMode, "executor proposal not gated on rescue mode");
+        } else if (op == 6) {
+            address proposed = factory.proposedExecutor();
+            if (proposed == address(0)) return;
+            vm.prank(proposed);
+            try factory.acceptExecutor() {
+                ok = true;
+            } catch { }
+            assertEq(ok, proposed != resc, "acceptExecutor: only the rescuer is refused");
+        } else if (op == 7) {
+            vm.prank(resc);
+            factory.proposeNewRescuer(candidate);
+        } else {
+            address proposed = factory.proposedRescuer();
+            if (proposed == address(0)) return;
+            vm.prank(proposed);
+            try factory.acceptRescuer() {
+                ok = true;
+            } catch { }
+            assertEq(ok, proposed != exec, "acceptRescuer: only the executor is refused");
+        }
+    }
+
+    function _checkCreated(FixedPriceAuction created, address exec, address resc) internal {
+        assertTrue(factory.isAuction(address(created)), "created auction not recorded");
+        address impl = LibClone.implementationOf(address(created));
+        assertEq(impl, factory.implementation(), "auction not a clone of the current implementation");
+        assertTrue(accepted[impl], "auction cloned from an implementation nobody accepted");
+        assertEq(created.executor(), exec, "auction executor isn't the factory's");
+        assertEq(created.rescuer(), resc, "auction rescuer isn't the factory's");
+        vm.expectRevert(IFixedPriceAuction.AlreadyInitialized.selector);
+        created.initialize(alice, bob);
     }
 }

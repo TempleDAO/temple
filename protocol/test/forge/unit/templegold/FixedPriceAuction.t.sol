@@ -1548,6 +1548,42 @@ contract FixedPriceAuctionAdminTest is FixedPriceAuctionTestBase {
         implementation.initialize(executor, rescuer);
     }
 
+    /// @dev The implementation has no config of its own, so no token-moving call can run on it, even with tokens
+    /// approved to it and sitting in it.
+    function test_implementation_neverMovesTokens() public {
+        tgld.mint(alice, 1e18);
+        usds.mint(funder, 1e18);
+        tgld.mint(address(implementation), 1e18);
+        vm.prank(alice);
+        tgld.approve(address(implementation), 1e18);
+        vm.prank(funder);
+        usds.approve(address(implementation), 1e18);
+
+        vm.startPrank(alice);
+        vm.expectRevert();
+        implementation.deposit(1e18);
+        vm.expectRevert();
+        implementation.withdrawDeposit(1e18);
+        vm.expectRevert();
+        implementation.claim();
+        vm.stopPrank();
+        vm.startPrank(funder);
+        vm.expectRevert();
+        implementation.fund(1e18);
+        vm.expectRevert();
+        implementation.withdrawExcess(1e18);
+        vm.stopPrank();
+        vm.expectRevert();
+        implementation.claimTreasury();
+        vm.prank(executor);
+        vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
+        implementation.recoverToken(address(tgld), executor, 1e18);
+
+        assertEq(tgld.balanceOf(alice), 1e18);
+        assertEq(usds.balanceOf(funder), 1e18);
+        assertEq(tgld.balanceOf(address(implementation)), 1e18);
+    }
+
     function test_initialize_fail_twice() public {
         vm.expectRevert(IFixedPriceAuction.AlreadyInitialized.selector);
         auction.initialize(alice, bob);
