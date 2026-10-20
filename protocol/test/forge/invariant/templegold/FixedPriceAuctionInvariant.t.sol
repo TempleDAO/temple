@@ -224,6 +224,26 @@ abstract contract FixedPriceAuctionInvariantBase is FixedPriceAuctionTestBase {
         }
     }
 
+    /// @dev After a cancel, every unpaid bidder is owed exactly their deposit and no fill tokens, and the funder
+    /// exactly the funding it left in.
+    function invariant_cancelRefundsExactly() public view {
+        if (auction.phase() != IFixedPriceAuction.Phase.Cancelled) return;
+        for (uint256 i; i < handler.bidderCount(); ++i) {
+            address account = handler.bidders(i);
+            if (auction.claimed(account)) continue;
+            IFixedPriceAuction.UserClaim memory c = auction.claimable(account);
+            assertEq(c.bidTokenRefund, auction.deposits(account), "cancel doesn't refund the whole deposit");
+            assertEq(c.fillTokenAmount, 0, "cancel pays fill tokens");
+        }
+        IFixedPriceAuction.Settlement memory s = auction.previewSettlement();
+        assertEq(s.funderRefund, handler.funded() - handler.excessWithdrawn(), "cancel doesn't refund all funding");
+        if (!auction.treasuryClaimed()) {
+            IFixedPriceAuction.TreasuryClaim memory t = auction.treasuryClaimable();
+            assertEq(t.bidTokenAmount, 0, "cancel pays proceeds");
+            assertEq(t.fillTokenRefund, s.funderRefund, "cancel doesn't refund the funder");
+        }
+    }
+
     /// @dev The pointer is never zero; once disabled, it stays disabled and frozen.
     function invariant_compliancePointer() public view {
         assertTrue(auction.complianceCheck() != address(0), "zero pointer");
@@ -249,7 +269,8 @@ abstract contract FixedPriceAuctionInvariantBase is FixedPriceAuctionTestBase {
         assertTrue(auction.treasuryClaimed(), "treasury not paid out");
         invariant_balancesCoverOwed();
         invariant_outcomeEmittedOnceAndMatchesSnapshot();
-        uint256 maxDust = claimants == 0 ? 0 : claimants - 1;
+        // A cancel refunds exactly, so it leaves no dust at all.
+        uint256 maxDust = claimants == 0 || auction.phase() == IFixedPriceAuction.Phase.Cancelled ? 0 : claimants - 1;
         assertLe(auction.bidOwed(), maxDust, "bid dust >= claimants");
         assertLe(auction.fillOwed(), maxDust, "fill dust >= claimants");
     }

@@ -92,6 +92,9 @@ contract FixedPriceAuctionHandler is Test {
     /// @dev Bidders blocked at the fill-token level. Only set when the fill token is a FakeBlocklistERC20.
     mapping(address account => bool blocked) public fillTokenBlocked;
 
+    /// @dev Hash of the settlement preview first seen at or after `fulfillmentEnd` with no outcome stored.
+    bytes32 internal endPreview;
+
     // Outcome events seen from the auction
     uint256 public settledEvents;
     uint256 public cancelledEvents;
@@ -137,6 +140,7 @@ contract FixedPriceAuctionHandler is Test {
         vm.recordLogs();
         _;
         _countOutcomeEvents();
+        _checkPreviewAfterEnd();
         _recordOutcome();
     }
 
@@ -161,6 +165,7 @@ contract FixedPriceAuctionHandler is Test {
             ++successes["deposit"];
         } catch {}
         _post(account, ok, before, blocked, deposit_, claimed_);
+        _checkPhase(ok, before.phase, IFixedPriceAuction.Phase.Deposit, "deposit outside Deposit");
     }
 
     function withdrawDeposit(uint256 seed, uint256 amount) external step {
@@ -176,6 +181,7 @@ contract FixedPriceAuctionHandler is Test {
             ++successes["withdrawDeposit"];
         } catch {}
         _post(account, ok, before, blocked, deposit_, claimed_);
+        _checkPhase(ok, before.phase, IFixedPriceAuction.Phase.Deposit, "withdrawDeposit outside Deposit");
     }
 
     function claim(uint256 seed) external step {
@@ -200,6 +206,7 @@ contract FixedPriceAuctionHandler is Test {
             _discardLogs();
         }
         _post(account, ok, before, blocked, deposit_, claimed_);
+        _check(!ok || _final(before.phase), "claim before an outcome");
         if (tokenBlocked) _check(!ok, "claim paid fill tokens to a token-blocked account");
         if (ok) _bookClaim(account, expected, fillBefore, bidBefore);
     }
@@ -245,6 +252,9 @@ contract FixedPriceAuctionHandler is Test {
             funded += amount;
         } catch {}
         _checkPaused(ok, before);
+        _checkPhase(ok, before.phase, IFixedPriceAuction.Phase.Fulfillment, "fund outside Fulfillment");
+        // Never screened: the funder's own block status can't stop it.
+        _check(ok || before.paused || before.phase != IFixedPriceAuction.Phase.Fulfillment, "fund refused while open");
     }
 
     function withdrawExcess(uint256 seed, uint256 amount) external step {
@@ -266,6 +276,7 @@ contract FixedPriceAuctionHandler is Test {
             excessWithdrawn += amount;
         } catch {}
         _checkPaused(ok, before);
+        _checkPhase(ok, before.phase, IFixedPriceAuction.Phase.Fulfillment, "withdrawExcess outside Fulfillment");
         // The view is zero whenever the call must revert (paused or outside Fulfillment), and amount is never zero.
         _check(ok == (amount <= view_), "withdrawExcess disagrees with withdrawableExcess");
         if (ok && fullBefore && amount == view_) {
@@ -285,6 +296,7 @@ contract FixedPriceAuctionHandler is Test {
         uint256 bidBefore = bid.balanceOf(config.proceedsRecipient);
         uint256 fillBefore = fill.balanceOf(config.funder);
 
+        bool claimedBefore = auction.treasuryClaimed();
         State memory before = _state();
         vm.prank(outsider);
         bool ok;
@@ -295,6 +307,9 @@ contract FixedPriceAuctionHandler is Test {
             _discardLogs();
         }
         _checkPaused(ok, before);
+        _check(!ok || _final(before.phase), "claimTreasury before an outcome");
+        // Never screened: whoever calls, and whatever the treasury addresses' block status, it pays once due.
+        _check(ok || before.paused || !_final(before.phase) || claimedBefore, "claimTreasury refused while due");
         if (ok) _bookTreasuryClaim(bidBefore, fillBefore);
     }
 
@@ -319,6 +334,7 @@ contract FixedPriceAuctionHandler is Test {
             ++successes["endFulfillment"];
         } catch {}
         _checkRescueMode(ok, before);
+        _checkPhase(ok, before.phase, IFixedPriceAuction.Phase.Fulfillment, "endFulfillment outside Fulfillment");
     }
 
     function cancel(uint256 seed) external step {
@@ -332,6 +348,7 @@ contract FixedPriceAuctionHandler is Test {
             ++successes["cancel"];
         } catch {}
         _checkRescueMode(ok, before);
+        _check(!ok || !_final(before.phase), "cancel after an outcome or fulfillmentEnd");
     }
 
     function recoverToken(uint256 which, uint256 amount, bool exact) external step {
@@ -448,6 +465,7 @@ contract FixedPriceAuctionHandler is Test {
             ok = true;
             ++successes["cancelByRescuer"];
         } catch {}
+        _check(!ok || !_final(before.phase), "cancel after an outcome or fulfillmentEnd");
         _check(!ok || before.inRescueMode, "rescuer cancelled outside rescue mode");
         if (!ok) _check(_same(before, _state()), "failed rescuer cancel changed state");
     }
@@ -527,7 +545,9 @@ contract FixedPriceAuctionHandler is Test {
 
     function setBlocked(uint256 seed, bool value) external step {
         address[] memory accounts = new address[](1);
-        accounts[0] = bidders[seed % 4];
+        // Bidders, and also the funder and the treasury caller, whose paths must stay unscreened.
+        uint256 which = seed % 6;
+        accounts[0] = which < 4 ? bidders[which] : which == 4 ? config.funder : outsider;
         vm.startPrank(blocker);
         compliance.setBlocked(accounts, value);
         compliance2.setBlocked(accounts, value);
@@ -597,10 +617,12 @@ contract FixedPriceAuctionHandler is Test {
         }
         vm.prank(msig);
         auction.setPaused(false);
-        address[] memory accounts = new address[](4);
+        address[] memory accounts = new address[](6);
         for (uint256 i; i < 4; ++i) {
             accounts[i] = bidders[i];
         }
+        accounts[4] = config.funder;
+        accounts[5] = outsider;
         vm.startPrank(blocker);
         compliance.setBlocked(accounts, false);
         compliance2.setBlocked(accounts, false);
@@ -632,6 +654,7 @@ contract FixedPriceAuctionHandler is Test {
             _bookTreasuryClaim(bidBefore, fillBefore);
         }
         _countOutcomeEvents();
+        _checkPreviewAfterEnd();
         _recordOutcome();
     }
 
@@ -674,6 +697,16 @@ contract FixedPriceAuctionHandler is Test {
                 );
             }
         }
+    }
+
+    /// @dev From `fulfillmentEnd` until an outcome is stored, the preview never moves, so the snapshot the auction
+    /// stores lazily is the preview everyone saw. Called before `_recordOutcome`, so the step that stores the
+    /// snapshot compares it too.
+    function _checkPreviewAfterEnd() internal {
+        if (hasOutcome || currentTime < config.fulfillmentEnd) return;
+        bytes32 preview = keccak256(abi.encode(auction.previewSettlement()));
+        if (endPreview == bytes32(0)) endPreview = preview;
+        else _check(preview == endPreview, "settlement preview moved after fulfillmentEnd");
     }
 
     /// @dev Recorded logs include those of a reverted call, and a claim emits its lazy `AuctionSettled` before it
@@ -742,6 +775,20 @@ contract FixedPriceAuctionHandler is Test {
                 auction.deposits(account) == deposit_ && auction.claimed(account) == claimed_, "blocked state changed"
             );
         }
+    }
+
+    function _final(IFixedPriceAuction.Phase phase_) internal pure returns (bool) {
+        return phase_ == IFixedPriceAuction.Phase.Settled || phase_ == IFixedPriceAuction.Phase.Cancelled;
+    }
+
+    /// @dev A call that succeeded ran in the phase it belongs to.
+    function _checkPhase(
+        bool ok,
+        IFixedPriceAuction.Phase actual,
+        IFixedPriceAuction.Phase expected,
+        string memory why
+    ) internal {
+        _check(!ok || actual == expected, why);
     }
 
     /// @dev A token-moving call reverts while paused, and nothing changes.
