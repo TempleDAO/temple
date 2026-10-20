@@ -9,6 +9,7 @@ import { ITempleElevatedAccess } from "contracts/interfaces/v2/access/ITempleEle
 import { ComplianceCheck } from "contracts/templegold/ComplianceCheck.sol";
 import { FixedPriceAuctionTestBase } from "test/forge/unit/templegold/FixedPriceAuction.t.sol";
 import { FixedPriceAuctionHandler } from "./handlers/FixedPriceAuctionHandler.sol";
+import { FakeBlocklistERC20 } from "./handlers/FakeBlocklistERC20.sol";
 
 /// @dev The suite, for one auction configuration. Each concrete contract below picks the decimals and price.
 abstract contract FixedPriceAuctionInvariantBase is FixedPriceAuctionTestBase {
@@ -22,12 +23,19 @@ abstract contract FixedPriceAuctionInvariantBase is FixedPriceAuctionTestBase {
     /// @dev The configuration under test: token decimals and the fixed price.
     function _auctionConfig() internal pure virtual returns (uint8 bidDecimals, uint8 fillDecimals, uint256 price_);
 
+    /// @dev Whether the fill token has a USDC-style blocklist the handler can block bidders on.
+    function _blocklistFill() internal pure virtual returns (bool) {
+        return false;
+    }
+
     function setUp() public override {
         super.setUp();
         (uint8 bidDecimals, uint8 fillDecimals, uint256 price_) = _auctionConfig();
         price = price_;
         bid = new FakeERC20CustomDecimals("Bid", "BID", address(0), 0, bidDecimals);
-        fill = new FakeERC20CustomDecimals("Fill", "FILL", address(0), 0, fillDecimals);
+        fill = _blocklistFill()
+            ? new FakeBlocklistERC20("Fill", "FILL", fillDecimals, blocker)
+            : new FakeERC20CustomDecimals("Fill", "FILL", address(0), 0, fillDecimals);
         auction = _create(_config(address(bid), address(fill), price, 100));
         ComplianceCheck compliance2 = new ComplianceCheck(executor);
         ITempleElevatedAccess.ExplicitAccess[] memory access = new ITempleElevatedAccess.ExplicitAccess[](1);
@@ -45,37 +53,39 @@ abstract contract FixedPriceAuctionInvariantBase is FixedPriceAuctionTestBase {
 
     // A repeated selector is picked more often. Time, deposits, funding and claims are weighted up.
     function _weightedSelectors() internal pure returns (bytes4[] memory s) {
-        s = new bytes4[](33);
+        s = new bytes4[](64);
         uint256 i;
-        for (uint256 n; n < 5; ++n) {
-            s[i++] = FixedPriceAuctionHandler.warp.selector;
+        i = _add(s, i, FixedPriceAuctionHandler.warp.selector, 5);
+        i = _add(s, i, FixedPriceAuctionHandler.deposit.selector, 3);
+        i = _add(s, i, FixedPriceAuctionHandler.claim.selector, 5);
+        i = _add(s, i, FixedPriceAuctionHandler.claimTreasury.selector, 2);
+        i = _add(s, i, FixedPriceAuctionHandler.fund.selector, 4);
+        i = _add(s, i, FixedPriceAuctionHandler.withdrawDeposit.selector, 1);
+        i = _add(s, i, FixedPriceAuctionHandler.withdrawExcess.selector, 1);
+        i = _add(s, i, FixedPriceAuctionHandler.endFulfillment.selector, 1);
+        i = _add(s, i, FixedPriceAuctionHandler.cancel.selector, 1);
+        i = _add(s, i, FixedPriceAuctionHandler.recoverToken.selector, 1);
+        i = _add(s, i, FixedPriceAuctionHandler.setPausedByMsig.selector, 1);
+        i = _add(s, i, FixedPriceAuctionHandler.setComplianceCheck.selector, 1);
+        i = _add(s, i, FixedPriceAuctionHandler.setPausedByRescuer.selector, 1);
+        i = _add(s, i, FixedPriceAuctionHandler.setRescueMode.selector, 1);
+        i = _add(s, i, FixedPriceAuctionHandler.cancelByRescuer.selector, 1);
+        i = _add(s, i, FixedPriceAuctionHandler.disableComplianceCheck.selector, 1);
+        i = _add(s, i, FixedPriceAuctionHandler.rescuerOverreach.selector, 1);
+        i = _add(s, i, FixedPriceAuctionHandler.setBlocked.selector, 1);
+        i = _add(s, i, FixedPriceAuctionHandler.strayTransfer.selector, 1);
+        if (_blocklistFill()) i = _add(s, i, FixedPriceAuctionHandler.setFillTokenBlocked.selector, 1);
+        // Trim the array to the selectors added.
+        assembly {
+            mstore(s, i)
         }
-        for (uint256 n; n < 3; ++n) {
-            s[i++] = FixedPriceAuctionHandler.deposit.selector;
+    }
+
+    function _add(bytes4[] memory s, uint256 i, bytes4 selector, uint256 weight) private pure returns (uint256) {
+        for (uint256 n; n < weight; ++n) {
+            s[i++] = selector;
         }
-        for (uint256 n; n < 5; ++n) {
-            s[i++] = FixedPriceAuctionHandler.claim.selector;
-        }
-        for (uint256 n; n < 2; ++n) {
-            s[i++] = FixedPriceAuctionHandler.claimTreasury.selector;
-        }
-        for (uint256 n; n < 4; ++n) {
-            s[i++] = FixedPriceAuctionHandler.fund.selector;
-        }
-        s[i++] = FixedPriceAuctionHandler.withdrawDeposit.selector;
-        s[i++] = FixedPriceAuctionHandler.withdrawExcess.selector;
-        s[i++] = FixedPriceAuctionHandler.endFulfillment.selector;
-        s[i++] = FixedPriceAuctionHandler.cancel.selector;
-        s[i++] = FixedPriceAuctionHandler.recoverToken.selector;
-        s[i++] = FixedPriceAuctionHandler.setPausedByMsig.selector;
-        s[i++] = FixedPriceAuctionHandler.setComplianceCheck.selector;
-        s[i++] = FixedPriceAuctionHandler.setPausedByRescuer.selector;
-        s[i++] = FixedPriceAuctionHandler.setRescueMode.selector;
-        s[i++] = FixedPriceAuctionHandler.cancelByRescuer.selector;
-        s[i++] = FixedPriceAuctionHandler.disableComplianceCheck.selector;
-        s[i++] = FixedPriceAuctionHandler.rescuerOverreach.selector;
-        s[i++] = FixedPriceAuctionHandler.setBlocked.selector;
-        s[i++] = FixedPriceAuctionHandler.strayTransfer.selector;
+        return i;
     }
 
     function _settled() internal view returns (bool) {
@@ -246,5 +256,10 @@ contract FixedPriceAuctionInvariantBid18Fill6Test is FixedPriceAuctionInvariantB
     /// rounding dust is material.
     function _auctionConfig() internal pure override returns (uint8, uint8, uint256) {
         return (18, 6, 0.0001e18);
+    }
+
+    /// @dev The fill token blocks addresses like USDC.
+    function _blocklistFill() internal pure override returns (bool) {
+        return true;
     }
 }

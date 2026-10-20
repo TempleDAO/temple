@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import { Test } from "forge-std/Test.sol";
 import { FakeERC20CustomDecimals } from "contracts/fakes/FakeERC20CustomDecimals.sol";
+import { FakeBlocklistERC20 } from "./FakeBlocklistERC20.sol";
 import { TempleMath } from "contracts/common/TempleMath.sol";
 
 import { IFixedPriceAuction } from "contracts/interfaces/templegold/IFixedPriceAuction.sol";
@@ -82,6 +83,9 @@ contract FixedPriceAuctionHandler is Test {
     IFixedPriceAuction.Settlement internal _snapshot;
     uint64 public ghostSettledAt;
     IFixedPriceAuction.Phase public ghostOutcome;
+
+    /// @dev Bidders blocked at the fill-token level. Only set when the fill token is a FakeBlocklistERC20.
+    mapping(address account => bool blocked) public fillTokenBlocked;
 
     // Compliance
     bool public disabledSeen;
@@ -169,9 +173,11 @@ contract FixedPriceAuctionHandler is Test {
         uint256 bidBefore = bid.balanceOf(account);
 
         (State memory before, bool blocked, uint256 deposit_, bool claimed_) = _pre(account);
+        // A fill token that blocks the account blocks the whole claim, refund leg included.
+        bool tokenBlocked = fillTokenBlocked[account] && expected.fillTokenAmount > 0;
         if (
             (before.phase == IFixedPriceAuction.Phase.Settled || before.phase == IFixedPriceAuction.Phase.Cancelled)
-                && !before.paused && !blocked && deposit_ > 0 && !claimed_
+                && !before.paused && !blocked && !tokenBlocked && deposit_ > 0 && !claimed_
         ) ++claimChances;
         vm.prank(account);
         bool ok;
@@ -180,6 +186,7 @@ contract FixedPriceAuctionHandler is Test {
             ++successes["claim"];
         } catch {}
         _post(account, ok, before, blocked, deposit_, claimed_);
+        if (tokenBlocked) _check(!ok, "claim paid fill tokens to a token-blocked account");
         if (ok) _bookClaim(account, expected, fillBefore, bidBefore);
     }
 
@@ -455,6 +462,15 @@ contract FixedPriceAuctionHandler is Test {
         ++successes["setBlocked"];
     }
 
+    /// @dev Only targeted when the fill token is a FakeBlocklistERC20: blocks or unblocks a bidder at the token.
+    function setFillTokenBlocked(uint256 seed, bool value) external step {
+        address account = bidders[seed % 4];
+        vm.prank(blocker);
+        FakeBlocklistERC20(address(fill)).setBlocked(account, value);
+        fillTokenBlocked[account] = value;
+        ++successes["setFillTokenBlocked"];
+    }
+
     /****** WORLD ******/
 
     function strayTransfer(uint256 which, uint256 amount) external step {
@@ -496,8 +512,9 @@ contract FixedPriceAuctionHandler is Test {
     /****** END OF RUN ******/
 
     /// @dev Not a fuzzed action: the suite calls it once a run ends. Lifts every brake (rescue mode, pause, both
-    /// blocklists), moves past `fulfillmentEnd`, then pays out every bidder still owed and the treasury. Any revert
-    /// fails the run, so this proves everyone can get their money out, not just that the books balance.
+    /// compliance lists, the fill token's blocklist), moves past `fulfillmentEnd`, then pays out every bidder still
+    /// owed and the treasury. Any revert fails the run, so this proves everyone can get their money out, not just
+    /// that the books balance.
     function drain() external {
         vm.warp(currentTime);
         if (auction.inRescueMode()) {
@@ -513,6 +530,10 @@ contract FixedPriceAuctionHandler is Test {
         vm.startPrank(blocker);
         compliance.setBlocked(accounts, false);
         compliance2.setBlocked(accounts, false);
+        for (uint256 i; i < 4; ++i) {
+            if (fillTokenBlocked[accounts[i]]) FakeBlocklistERC20(address(fill)).setBlocked(accounts[i], false);
+            fillTokenBlocked[accounts[i]] = false;
+        }
         vm.stopPrank();
         if (currentTime < config.fulfillmentEnd) {
             currentTime = config.fulfillmentEnd;
