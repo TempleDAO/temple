@@ -10,16 +10,25 @@ import { ComplianceCheck } from "contracts/templegold/ComplianceCheck.sol";
 import { FixedPriceAuctionTestBase } from "test/forge/unit/templegold/FixedPriceAuction.t.sol";
 import { FixedPriceAuctionHandler } from "./handlers/FixedPriceAuctionHandler.sol";
 
-/// forge-config: default.invariant.runs = 256
-/// forge-config: default.invariant.depth = 64
-contract FixedPriceAuctionInvariantTest is FixedPriceAuctionTestBase {
+/// @dev The suite, for one auction configuration. Each concrete contract below picks the decimals and price.
+abstract contract FixedPriceAuctionInvariantBase is FixedPriceAuctionTestBase {
     using TempleMath for uint256;
 
     FixedPriceAuctionHandler internal handler;
+    FakeERC20CustomDecimals internal bid;
+    FakeERC20CustomDecimals internal fill;
+    uint256 internal price;
+
+    /// @dev The configuration under test: token decimals and the fixed price.
+    function _auctionConfig() internal pure virtual returns (uint8 bidDecimals, uint8 fillDecimals, uint256 price_);
 
     function setUp() public override {
         super.setUp();
-        auction = _create(_config(address(tgld), address(usds), PRICE, 100));
+        (uint8 bidDecimals, uint8 fillDecimals, uint256 price_) = _auctionConfig();
+        price = price_;
+        bid = new FakeERC20CustomDecimals("Bid", "BID", address(0), 0, bidDecimals);
+        fill = new FakeERC20CustomDecimals("Fill", "FILL", address(0), 0, fillDecimals);
+        auction = _create(_config(address(bid), address(fill), price, 100));
         ComplianceCheck compliance2 = new ComplianceCheck(executor);
         ITempleElevatedAccess.ExplicitAccess[] memory access = new ITempleElevatedAccess.ExplicitAccess[](1);
         access[0] = ITempleElevatedAccess.ExplicitAccess(ComplianceCheck.setBlocked.selector, true);
@@ -80,8 +89,8 @@ contract FixedPriceAuctionInvariantTest is FixedPriceAuctionTestBase {
 
     /// @dev The auction holds what it owes, plus exactly the stray transfers not yet recovered.
     function invariant_balancesCoverOwed() public view {
-        uint256 bidBalance = tgld.balanceOf(address(auction));
-        uint256 fillBalance = usds.balanceOf(address(auction));
+        uint256 bidBalance = bid.balanceOf(address(auction));
+        uint256 fillBalance = fill.balanceOf(address(auction));
         assertGe(bidBalance, auction.bidOwed(), "bid balance < bidOwed");
         assertGe(fillBalance, auction.fillOwed(), "fill balance < fillOwed");
         assertEq(bidBalance - handler.strayBid(), auction.bidOwed(), "bid balance - stray != bidOwed");
@@ -147,19 +156,20 @@ contract FixedPriceAuctionInvariantTest is FixedPriceAuctionTestBase {
         IFixedPriceAuction.Settlement memory s = auction.previewSettlement();
         uint256 fundingHeld = handler.funded() - handler.excessWithdrawn();
         uint256 total = auction.totalDeposits();
+        uint256 denominator = auction.priceDenominator();
 
         // The split adds up.
         assertLe(s.filledDeposits, total, "filled > total");
         assertEq(s.userRefund, total - s.filledDeposits, "userRefund != total - filled");
         assertEq(s.funderRefund, fundingHeld - s.userFunding, "funderRefund != funding - userFunding");
         // Bidders never get more than their filled deposits buy.
-        assertLe(s.userFunding, s.filledDeposits.mulDivRound(PRICE, 1e18, false), "userFunding > filled value");
+        assertLe(s.userFunding, s.filledDeposits.mulDivRound(price, denominator, false), "userFunding > filled value");
         // Full funding fills everything, unless all deposits together buy under one fill wei (then the zero-fill
         // guard wins).
         if (
             auction.phase() == IFixedPriceAuction.Phase.Settled
-                && fundingHeld >= total.mulDivRound(PRICE, 1e18, true)
-                && total.mulDivRound(PRICE, 1e18, false) > 0
+                && fundingHeld >= total.mulDivRound(price, denominator, true)
+                && total.mulDivRound(price, denominator, false) > 0
         ) assertEq(s.filledDeposits, total, "full funding didn't fill everything");
         // No fill tokens, no bid tokens taken.
         if (s.userFunding == 0) assertEq(s.filledDeposits, 0, "bid tokens filled for no fill tokens");
@@ -208,5 +218,33 @@ contract FixedPriceAuctionInvariantTest is FixedPriceAuctionTestBase {
         if (handler.calls() < 64) return;
         if (handler.depositChances() > 0) assertGt(handler.successes("deposit"), 0, "no deposit succeeded");
         if (handler.claimChances() > 0) assertGt(handler.successes("claim"), 0, "no claim succeeded");
+    }
+}
+
+/// forge-config: default.invariant.runs = 128
+/// forge-config: default.invariant.depth = 64
+contract FixedPriceAuctionInvariantTest is FixedPriceAuctionInvariantBase {
+    /// @dev 18-decimal TGLD for 18-decimal USDS at 0.0466.
+    function _auctionConfig() internal pure override returns (uint8, uint8, uint256) {
+        return (18, 18, PRICE);
+    }
+}
+
+/// forge-config: default.invariant.runs = 128
+/// forge-config: default.invariant.depth = 64
+contract FixedPriceAuctionInvariantBid6Fill18Test is FixedPriceAuctionInvariantBase {
+    /// @dev A USDC-style 6-decimal bid token buying an 18-decimal fill token at about 21.46 (1 / 0.0466).
+    function _auctionConfig() internal pure override returns (uint8, uint8, uint256) {
+        return (6, 18, 21.4592e18);
+    }
+}
+
+/// forge-config: default.invariant.runs = 128
+/// forge-config: default.invariant.depth = 64
+contract FixedPriceAuctionInvariantBid18Fill6Test is FixedPriceAuctionInvariantBase {
+    /// @dev An 18-decimal bid token buying a 6-decimal fill token at 0.0001, so one bid token buys 100 fill wei and
+    /// rounding dust is material.
+    function _auctionConfig() internal pure override returns (uint8, uint8, uint256) {
+        return (18, 6, 0.0001e18);
     }
 }

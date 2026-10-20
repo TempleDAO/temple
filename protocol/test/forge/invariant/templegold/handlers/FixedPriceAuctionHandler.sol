@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import { Test } from "forge-std/Test.sol";
 import { FakeERC20CustomDecimals } from "contracts/fakes/FakeERC20CustomDecimals.sol";
+import { TempleMath } from "contracts/common/TempleMath.sol";
 
 import { IFixedPriceAuction } from "contracts/interfaces/templegold/IFixedPriceAuction.sol";
 import { IComplianceCheck } from "contracts/interfaces/templegold/IComplianceCheck.sol";
@@ -13,6 +14,8 @@ import { ComplianceCheck } from "contracts/templegold/ComplianceCheck.sol";
 /// only make sense at the moment of an action run here and record the first failure: pause, rescue mode, rescuer
 /// powers, screening and claim-once.
 contract FixedPriceAuctionHandler is Test {
+    using TempleMath for uint256;
+
     struct State {
         uint256 bidBalance;
         uint256 fillBalance;
@@ -45,6 +48,10 @@ contract FixedPriceAuctionHandler is Test {
     /// @dev The auction's config as created. `complianceCheck` here is the initial pointer only.
     IFixedPriceAuction.AuctionConfig internal config;
     uint256 internal constant MIN_DEPOSIT_PHASE_CALLS = 20;
+    /// @dev A billion bid tokens, in bid-token wei.
+    uint256 internal immutable maxDeposit;
+    /// @dev A little over full funding for one max deposit per bidder.
+    uint256 internal immutable maxFund;
 
     uint256 public currentTime;
     uint256 public calls;
@@ -101,6 +108,8 @@ contract FixedPriceAuctionHandler is Test {
         blocker = blocker_;
         bidders = [makeAddr("bidder0"), makeAddr("bidder1"), makeAddr("bidder2"), makeAddr("bidder3")];
         currentTime = block.timestamp;
+        maxDeposit = 1e9 * 10 ** bid.decimals();
+        maxFund = (4 * maxDeposit).mulDivRound(config.price, auction_.priceDenominator(), true) * 107 / 100 + 1;
     }
 
     modifier step() {
@@ -115,7 +124,7 @@ contract FixedPriceAuctionHandler is Test {
 
     function deposit(uint256 seed, uint256 amount) external step {
         address account = bidders[seed % 4];
-        amount = _bound(amount, 1, 1e27);
+        amount = _bound(amount, 1, maxDeposit);
         bid.mint(account, amount);
         vm.prank(account);
         bid.approve(address(auction), amount);
@@ -189,8 +198,7 @@ contract FixedPriceAuctionHandler is Test {
     /****** FUNDER ******/
 
     function fund(uint256 amount) external step {
-        // Up to 2e26 fill: about full funding for one max deposit per bidder at 0.0466.
-        amount = _bound(amount, 1, 2e26);
+        amount = _bound(amount, 1, maxFund);
         address funder = config.funder;
         fill.mint(funder, amount);
         vm.prank(funder);
@@ -213,7 +221,7 @@ contract FixedPriceAuctionHandler is Test {
         uint256 mode = seed % 4;
         if (mode < 2) amount = view_;
         else if (mode == 2) amount = view_ + 1;
-        else amount = _bound(amount, 1, 2e26);
+        else amount = _bound(amount, 1, maxFund);
         if (amount == 0) amount = 1;
 
         State memory before = _state();
