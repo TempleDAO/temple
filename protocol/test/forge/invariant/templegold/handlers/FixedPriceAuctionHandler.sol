@@ -335,6 +335,11 @@ contract FixedPriceAuctionHandler is Test {
         } catch {}
         _checkRescueMode(ok, before);
         _checkPhase(ok, before.phase, IFixedPriceAuction.Phase.Fulfillment, "endFulfillment outside Fulfillment");
+        // Pause doesn't stop it: outside rescue mode it works whenever the auction is in Fulfillment.
+        _check(
+            ok || before.inRescueMode || before.phase != IFixedPriceAuction.Phase.Fulfillment,
+            "endFulfillment refused in Fulfillment"
+        );
     }
 
     function cancel(uint256 seed) external step {
@@ -348,7 +353,8 @@ contract FixedPriceAuctionHandler is Test {
             ++successes["cancel"];
         } catch {}
         _checkRescueMode(ok, before);
-        _check(!ok || !_final(before.phase), "cancel after an outcome or fulfillmentEnd");
+        // Pause doesn't stop it: outside rescue mode it works until an outcome or fulfillmentEnd.
+        _check(ok == (!before.inRescueMode && !_final(before.phase)), "msig cancel not exactly while open");
     }
 
     function recoverToken(uint256 which, uint256 amount, bool exact) external step {
@@ -386,7 +392,7 @@ contract FixedPriceAuctionHandler is Test {
             ok = true;
             ++successes["setPausedByMsig"];
         } catch {}
-        _checkRescueMode(ok, before);
+        _check(ok != before.inRescueMode, "msig setPaused not exactly outside rescue mode");
     }
 
     /// @dev A third of the time it tries the zero address, which must revert.
@@ -399,8 +405,11 @@ contract FixedPriceAuctionHandler is Test {
             ok = true;
             ++successes["setComplianceCheck"];
         } catch {}
-        _checkRescueMode(ok, before);
-        if (target == address(0)) _check(!ok, "setComplianceCheck accepted the zero address");
+        // Works while paused; refused in rescue mode, once disabled, and for the zero address.
+        _check(
+            ok == (!before.inRescueMode && !before.complianceDisabled && target != address(0)),
+            "setComplianceCheck not exactly when allowed"
+        );
     }
 
     /****** RESCUER ******/
