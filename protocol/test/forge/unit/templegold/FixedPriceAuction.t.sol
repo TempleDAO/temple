@@ -14,11 +14,18 @@ import { ComplianceCheck } from "contracts/templegold/ComplianceCheck.sol";
 import { IExecutorAccess } from "contracts/interfaces/templegold/IExecutorAccess.sol";
 import { IRescuableAccess } from "contracts/interfaces/templegold/IRescuableAccess.sol";
 import { PRBMath_MulDiv_Overflow } from "@prb/math/src/Common.sol";
+import { TempleGold } from "contracts/templegold/TempleGold.sol";
+import { ITempleGold } from "contracts/interfaces/templegold/ITempleGold.sol";
 
 contract RevertingComplianceCheck {
     function isBlocked(address) external pure returns (bool) {
         revert("Compliance unavailable");
     }
+}
+
+/// @dev All the TempleGold constructor needs from a LayerZero endpoint, so real TGLD deploys without a fork.
+contract LayerZeroEndpointStub {
+    function setDelegate(address) external { }
 }
 
 contract FixedPriceAuctionTestBase is TempleTest {
@@ -1767,5 +1774,99 @@ contract FixedPriceAuctionDecimalsTest is FixedPriceAuctionTestBase {
         assertEq(auction.bidOwed(), 2);
         assertEq(usdc.balanceOf(address(auction)), 1);
         assertEq(tgld.balanceOf(address(auction)), 2);
+    }
+}
+
+/// @dev Real TempleGold as the bid token. Its transfers need the sender or the receiver authorized.
+contract FixedPriceAuctionTempleGoldTest is FixedPriceAuctionTestBase {
+    TempleGold internal templeGold;
+
+    function setUp() public override {
+        super.setUp();
+        templeGold = new TempleGold(
+            ITempleGold.InitArgs({
+                executor: executor,
+                layerZeroEndpoint: address(new LayerZeroEndpointStub()),
+                mintChainId: uint128(block.chainid),
+                mintChainLzEid: 30_110,
+                name: "TEMPLE GOLD",
+                symbol: "TGLD"
+            })
+        );
+        auction = _create(_config(address(templeGold), address(usds), PRICE, 0));
+        deal(address(templeGold), alice, 60_000_000e18);
+        deal(address(templeGold), bob, 40_000_000e18);
+    }
+
+    function _authorize(bool value) internal {
+        vm.prank(executor);
+        templeGold.authorizeContract(address(auction), value);
+    }
+
+    function _depositTgld(address account, uint256 amount) internal {
+        vm.startPrank(account);
+        templeGold.approve(address(auction), amount);
+        auction.deposit(amount);
+        vm.stopPrank();
+    }
+
+    /// @dev Alice 60mm and Bob 40mm TGLD, funded to half, so every claim has both legs.
+    function _halfFundedAuction() internal {
+        _authorize(true);
+        _toDeposit(auction);
+        _depositTgld(alice, 60_000_000e18);
+        _depositTgld(bob, 40_000_000e18);
+        _toFulfillment(auction);
+        _fund(auction, 2_330_000e18);
+        _toEnd(auction);
+    }
+
+    function _assertHalfFundedPayouts() internal view {
+        assertEq(templeGold.balanceOf(alice), 30_000_000e18);
+        assertEq(usds.balanceOf(alice), 1_398_000e18);
+        assertEq(templeGold.balanceOf(bob), 20_000_000e18);
+        assertEq(usds.balanceOf(bob), 932_000e18);
+        assertEq(templeGold.balanceOf(proceedsRecipient), 50_000_000e18);
+        assertEq(templeGold.balanceOf(address(auction)), auction.bidOwed());
+        assertEq(usds.balanceOf(address(auction)), auction.fillOwed());
+    }
+
+    function test_templeGold_depositsRevertUntilAuctionAuthorized() public {
+        _toDeposit(auction);
+        vm.startPrank(alice);
+        templeGold.approve(address(auction), 1e18);
+        vm.expectRevert(abi.encodeWithSelector(ITempleGold.NonTransferrable.selector, alice, address(auction)));
+        auction.deposit(1e18);
+        vm.stopPrank();
+
+        _authorize(true);
+        _depositTgld(alice, 1e18);
+        assertEq(auction.deposits(alice), 1e18);
+    }
+
+    function test_templeGold_fullLifecycleOnceAuthorized() public {
+        _halfFundedAuction();
+        _claimAll(auction);
+        _assertHalfFundedPayouts();
+    }
+
+    /// @dev De-authorizing a live auction makes every TGLD leg revert, and each user's USDS leg is stranded with it,
+    /// until TempleGold's owner authorizes the auction again.
+    function test_templeGold_deauthorizedMidLife_claimsRevertUntilReauthorized() public {
+        _halfFundedAuction();
+        _authorize(false);
+
+        vm.prank(alice);
+        vm.expectRevert(abi.encodeWithSelector(ITempleGold.NonTransferrable.selector, address(auction), alice));
+        auction.claim();
+        vm.expectRevert(
+            abi.encodeWithSelector(ITempleGold.NonTransferrable.selector, address(auction), proceedsRecipient)
+        );
+        auction.claimTreasury();
+        assertEq(usds.balanceOf(alice), 0, "USDS leg paid without the TGLD leg");
+
+        _authorize(true);
+        _claimAll(auction);
+        _assertHalfFundedPayouts();
     }
 }
