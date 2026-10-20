@@ -141,6 +141,37 @@ uint32 public constant MAXIMUM_AUCTION_DURATION = 30 days;
 
 ```
 
+### Fixed price auctions
+
+In a fixed price auction, bidders deposit a bid token (for example TGLD) and a funder supplies a fill token (for example USDS) at a fixed price set at creation. Each auction is a Solady clone created by `AuctionFactory`; its terms (tokens, price, times, `minDeposit`, funder, proceeds recipient) live in the clone's code and never change.
+
+An auction moves through these phases:
+- `Scheduled`: before `depositStart`.
+- `Deposit`: bidders `deposit` and `withdrawDeposit`; a remaining deposit must be zero or at least `minDeposit`.
+- `Fulfillment`: the funder calls `fund`, and `withdrawExcess` returns anything above what fills every deposit.
+- `Settled`: from `fulfillmentEnd`, or earlier when the msig calls `endFulfillment`. Bidders `claim` their fill tokens and any unfilled bid tokens; `claimTreasury` sends filled bid tokens to the proceeds recipient and unused fill tokens to the funder.
+- `Cancelled`: the msig, or the rescuer in rescue mode, calls `cancel` while unsettled and before `fulfillmentEnd`. No trade happens; deposits and funding are refunded through the same claims.
+
+Roles:
+- executor (msig): creates auctions, ends fulfillment early, cancels, pauses, repoints compliance, recovers stray tokens and calls `proposeImplementation` on the factory.
+- rescuer: switches rescue mode on and off, pauses and cancels while it is on, accepts a proposed implementation on the factory, and can disable compliance for good.
+- funder: the only account that can `fund` and `withdrawExcess`.
+- proceedsRecipient: receives the filled bid tokens.
+
+Pausing stops every token-moving call; `endFulfillment`, `cancel` and the setters still work. In rescue mode the msig is locked out of every elevated call and only the rescuer can pause, unpause or cancel. Rescue mode is per contract: the factory and each auction have their own, and switching it on cancels that contract's pending executor proposal, and on the factory its pending implementation proposal too.
+
+All auctions share one `ComplianceCheck`. The msig can point an auction at another list, and the rescuer can disable compliance on an auction for good. A blocked account's `deposit`, `withdrawDeposit` and `claim` revert, and its funds stay in the auction until it is unblocked or compliance is disabled.
+
+Settlement never owes more than it holds: the funding needed to fill every deposit rounds up, each fill and pro-rata share rounds down, and the dust stays in the auction.
+
+`AuctionFactory` clones its current implementation. The msig proposes a new implementation and the rescuer accepts it by address; existing auctions keep their code. `isAuction` is the only proof an auction is genuine.
+
+A TGLD auction must be authorized on `TempleGold` (`authorizeContract`) before any TGLD can move in or out of it.
+
+Both tokens must be standard ERC-20s with at most 18 decimals; fee-on-transfer and rebasing tokens are not supported.
+
+`WishingWell` only records wishes; the indexer does the counting.
+
 ## Layer Zero Interactions
 
 Minting of Temple Gold tokens happens on arbitrum. This is the source chain. Minted Temple Gold tokens are transferred to Staking, DaiGold auction contract and gnosis team multisig according to set configuration percentages. Staking and DaiGold contracts are both deployed on arbitrum.

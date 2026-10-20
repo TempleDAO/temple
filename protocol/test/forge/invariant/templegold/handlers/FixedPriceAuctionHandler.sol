@@ -1,0 +1,549 @@
+pragma solidity ^0.8.20;
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
+import { Test } from "forge-std/Test.sol";
+import { FakeERC20CustomDecimals } from "contracts/fakes/FakeERC20CustomDecimals.sol";
+
+import { IFixedPriceAuction } from "contracts/interfaces/templegold/IFixedPriceAuction.sol";
+import { IComplianceCheck } from "contracts/interfaces/templegold/IComplianceCheck.sol";
+import { FixedPriceAuction } from "contracts/templegold/FixedPriceAuction.sol";
+import { ComplianceCheck } from "contracts/templegold/ComplianceCheck.sol";
+
+/// @dev Drives one auction through random, bounded actions and keeps ghost books of everything paid. Checks that
+/// only make sense at the moment of an action run here and record the first failure: pause, rescue mode, rescuer
+/// powers, screening and claim-once.
+contract FixedPriceAuctionHandler is Test {
+    struct State {
+        uint256 bidBalance;
+        uint256 fillBalance;
+        uint256 strayBalance;
+        uint256 totalDeposits;
+        uint256 bidOwed;
+        uint256 fillOwed;
+        bool paused;
+        bool inRescueMode;
+        bool complianceDisabled;
+        address complianceCheck;
+        address executor;
+        address rescuer;
+        IFixedPriceAuction.Phase phase;
+        uint64 settledAt;
+    }
+
+    FixedPriceAuction public immutable auction;
+    FakeERC20CustomDecimals public immutable bid;
+    FakeERC20CustomDecimals public immutable fill;
+    FakeERC20CustomDecimals public immutable stray;
+    ComplianceCheck public immutable compliance;
+    ComplianceCheck public immutable compliance2;
+    address public immutable msig;
+    address public immutable rescuer;
+    /// @dev Granted `setBlocked` on both lists.
+    address public immutable blocker;
+    address public immutable outsider = makeAddr("outsider");
+    address[4] public bidders;
+    /// @dev The auction's config as created. `complianceCheck` here is the initial pointer only.
+    IFixedPriceAuction.AuctionConfig internal config;
+    uint256 internal constant MIN_DEPOSIT_PHASE_CALLS = 20;
+
+    uint256 public currentTime;
+    uint256 public calls;
+    /// @dev Calls made during the deposit phase. `warp` won't jump to `depositEnd` until there are enough.
+    uint256 public depositPhaseCalls;
+    mapping(string action => uint256 count) public successes;
+    /// @dev Attempts made while the call should succeed: an unpaused, unblocked, eligible account in the right phase.
+    uint256 public depositChances;
+    uint256 public claimChances;
+
+    // Ghost books
+    uint256 public funded;
+    uint256 public excessWithdrawn;
+    uint256 public userFillPaid;
+    uint256 public userRefundPaid;
+    uint256 public treasuryBidPaid;
+    uint256 public treasuryFillPaid;
+    mapping(address account => bool claimed) public ghostClaimed;
+    bool public ghostTreasuryClaimed;
+    uint256 public strayBid;
+    uint256 public strayFill;
+    uint256 public strayOther;
+
+    // Frozen at the first outcome
+    bool public hasOutcome;
+    IFixedPriceAuction.Settlement internal _snapshot;
+    uint64 public ghostSettledAt;
+    IFixedPriceAuction.Phase public ghostOutcome;
+
+    // Compliance
+    bool public disabledSeen;
+    address public frozenComplianceCheck;
+
+    string public failure;
+
+    constructor(
+        FixedPriceAuction auction_,
+        ComplianceCheck compliance_,
+        ComplianceCheck compliance2_,
+        FakeERC20CustomDecimals stray_,
+        address msig_,
+        address rescuer_,
+        address blocker_
+    ) {
+        auction = auction_;
+        config = auction_.getConfig();
+        bid = FakeERC20CustomDecimals(config.bidToken);
+        fill = FakeERC20CustomDecimals(config.fillToken);
+        stray = stray_;
+        compliance = compliance_;
+        compliance2 = compliance2_;
+        msig = msig_;
+        rescuer = rescuer_;
+        blocker = blocker_;
+        bidders = [makeAddr("bidder0"), makeAddr("bidder1"), makeAddr("bidder2"), makeAddr("bidder3")];
+        currentTime = block.timestamp;
+    }
+
+    modifier step() {
+        vm.warp(currentTime);
+        ++calls;
+        if (auction.phase() == IFixedPriceAuction.Phase.Deposit) ++depositPhaseCalls;
+        _;
+        _recordOutcome();
+    }
+
+    /****** BIDDERS ******/
+
+    function deposit(uint256 seed, uint256 amount) external step {
+        address account = bidders[seed % 4];
+        amount = _bound(amount, 1, 1e27);
+        bid.mint(account, amount);
+        vm.prank(account);
+        bid.approve(address(auction), amount);
+
+        (State memory before, bool blocked, uint256 deposit_, bool claimed_) = _pre(account);
+        if (
+            before.phase == IFixedPriceAuction.Phase.Deposit && !before.paused && !blocked
+                && deposit_ + amount >= config.minDeposit
+        ) ++depositChances;
+        vm.prank(account);
+        bool ok;
+        try auction.deposit(amount) {
+            ok = true;
+            ++successes["deposit"];
+        } catch {}
+        _post(account, ok, before, blocked, deposit_, claimed_);
+    }
+
+    function withdrawDeposit(uint256 seed, uint256 amount) external step {
+        address account = bidders[seed % 4];
+        uint256 held = auction.deposits(account);
+        amount = _bound(amount, 1, held == 0 ? 1 : held);
+
+        (State memory before, bool blocked, uint256 deposit_, bool claimed_) = _pre(account);
+        vm.prank(account);
+        bool ok;
+        try auction.withdrawDeposit(amount) {
+            ok = true;
+            ++successes["withdrawDeposit"];
+        } catch {}
+        _post(account, ok, before, blocked, deposit_, claimed_);
+    }
+
+    function claim(uint256 seed) external step {
+        address account = bidders[seed % 4];
+        IFixedPriceAuction.UserClaim memory expected = auction.claimable(account);
+        uint256 fillBefore = fill.balanceOf(account);
+        uint256 bidBefore = bid.balanceOf(account);
+
+        (State memory before, bool blocked, uint256 deposit_, bool claimed_) = _pre(account);
+        if (
+            (before.phase == IFixedPriceAuction.Phase.Settled || before.phase == IFixedPriceAuction.Phase.Cancelled)
+                && !before.paused && !blocked && deposit_ > 0 && !claimed_
+        ) ++claimChances;
+        vm.prank(account);
+        bool ok;
+        try auction.claim() {
+            ok = true;
+            ++successes["claim"];
+        } catch {}
+        _post(account, ok, before, blocked, deposit_, claimed_);
+        if (!ok) return;
+
+        _check(!ghostClaimed[account], "account claimed twice");
+        ghostClaimed[account] = true;
+        uint256 gotFill = fill.balanceOf(account) - fillBefore;
+        uint256 gotBid = bid.balanceOf(account) - bidBefore;
+        // `claimable` is a preview of what `claim` pays, live until the snapshot is taken.
+        _check(gotFill == expected.fillTokenAmount && gotBid == expected.bidTokenRefund, "claim != claimable");
+        userFillPaid += gotFill;
+        userRefundPaid += gotBid;
+    }
+
+    /****** FUNDER ******/
+
+    function fund(uint256 amount) external step {
+        // Up to 2e26 fill: about full funding for one max deposit per bidder at 0.0466.
+        amount = _bound(amount, 1, 2e26);
+        address funder = config.funder;
+        fill.mint(funder, amount);
+        vm.prank(funder);
+        fill.approve(address(auction), amount);
+
+        State memory before = _state();
+        vm.prank(funder);
+        bool ok;
+        try auction.fund(amount) {
+            ok = true;
+            ++successes["fund"];
+            funded += amount;
+        } catch {}
+        _checkPaused(ok, before);
+    }
+
+    function withdrawExcess(uint256 seed, uint256 amount) external step {
+        uint256 view_ = auction.withdrawableExcess();
+        // Half the time exactly the view, otherwise one wei more or a random amount.
+        uint256 mode = seed % 4;
+        if (mode < 2) amount = view_;
+        else if (mode == 2) amount = view_ + 1;
+        else amount = _bound(amount, 1, 2e26);
+        if (amount == 0) amount = 1;
+
+        State memory before = _state();
+        bool fullBefore = auction.previewSettlement().filledDeposits == before.totalDeposits;
+        vm.prank(config.funder);
+        bool ok;
+        try auction.withdrawExcess(amount) {
+            ok = true;
+            ++successes["withdrawExcess"];
+            excessWithdrawn += amount;
+        } catch {}
+        _checkPaused(ok, before);
+        // The view is zero whenever the call must revert (paused or outside Fulfillment), and amount is never zero.
+        _check(ok == (amount <= view_), "withdrawExcess disagrees with withdrawableExcess");
+        if (ok && fullBefore && amount == view_) {
+            _check(
+                auction.previewSettlement().filledDeposits == before.totalDeposits,
+                "withdrawing the excess left deposits unfilled"
+            );
+            // Recomputed here, so a rounding slip shared by the view and the settlement still shows.
+            _check(
+                auction.fillOwed() * auction.priceDenominator() >= before.totalDeposits * config.price,
+                "withdrawing the excess left funding short of every deposit"
+            );
+        }
+    }
+
+    function claimTreasury() external step {
+        address funder = config.funder;
+        address recipient = config.proceedsRecipient;
+        uint256 bidBefore = bid.balanceOf(recipient);
+        uint256 fillBefore = fill.balanceOf(funder);
+
+        State memory before = _state();
+        vm.prank(outsider);
+        bool ok;
+        try auction.claimTreasury() {
+            ok = true;
+            ++successes["claimTreasury"];
+        } catch {}
+        _checkPaused(ok, before);
+        if (!ok) return;
+
+        _check(!ghostTreasuryClaimed, "treasury claimed twice");
+        ghostTreasuryClaimed = true;
+        treasuryBidPaid += bid.balanceOf(recipient) - bidBefore;
+        treasuryFillPaid += fill.balanceOf(funder) - fillBefore;
+    }
+
+    /****** MSIG ******/
+
+    function endFulfillment() external step {
+        State memory before = _state();
+        vm.prank(msig);
+        bool ok;
+        try auction.endFulfillment() {
+            ok = true;
+            ++successes["endFulfillment"];
+        } catch {}
+        _checkRescueMode(ok, before);
+    }
+
+    function cancel(uint256 seed) external step {
+        // Gated on a hashed seed, so about one call in eight tries to cancel.
+        if (uint256(keccak256(abi.encode(seed))) % 8 != 0) return;
+        State memory before = _state();
+        vm.prank(msig);
+        bool ok;
+        try auction.cancel() {
+            ok = true;
+            ++successes["cancel"];
+        } catch {}
+        _checkRescueMode(ok, before);
+    }
+
+    function recoverToken(uint256 which, uint256 amount, bool exact) external step {
+        FakeERC20CustomDecimals token = which % 3 == 0 ? stray : which % 3 == 1 ? bid : fill;
+        uint256 tally = token == stray ? strayOther : token == bid ? strayBid : strayFill;
+        // Exactly the stray tally (all that's recoverable), or a random amount that's usually too much.
+        amount = exact && tally > 0 ? tally : _bound(amount, 1, 1e27);
+
+        State memory before = _state();
+        vm.prank(msig);
+        bool ok;
+        try auction.recoverToken(address(token), msig, amount) {
+            ok = true;
+            ++successes["recoverToken"];
+        } catch {}
+        // Checked before the books move, so an over-recovery is reported, not hidden by an underflow revert.
+        _check(!ok || amount <= tally, "recoverToken took owed funds");
+        if (ok && amount <= tally) {
+            if (token == stray) strayOther -= amount;
+            else if (token == bid) strayBid -= amount;
+            else strayFill -= amount;
+        }
+        _checkPaused(ok, before);
+        _checkRescueMode(ok, before);
+        if (!before.paused && !before.inRescueMode) _check(ok == (amount <= tally), "recoverToken != stray tally");
+    }
+
+    /// @dev Pauses a quarter of the time and unpauses otherwise, so runs aren't mostly paused.
+    function setPausedByMsig(uint256 seed) external step {
+        bool value = seed % 4 == 0;
+        State memory before = _state();
+        vm.prank(msig);
+        bool ok;
+        try auction.setPaused(value) {
+            ok = true;
+            ++successes["setPausedByMsig"];
+        } catch {}
+        _checkRescueMode(ok, before);
+    }
+
+    /// @dev A third of the time it tries the zero address, which must revert.
+    function setComplianceCheck(uint256 which) external step {
+        address target = which % 3 == 0 ? address(0) : which % 3 == 1 ? address(compliance) : address(compliance2);
+        State memory before = _state();
+        vm.prank(msig);
+        bool ok;
+        try auction.setComplianceCheck(target) {
+            ok = true;
+            ++successes["setComplianceCheck"];
+        } catch {}
+        _checkRescueMode(ok, before);
+        if (target == address(0)) _check(!ok, "setComplianceCheck accepted the zero address");
+    }
+
+    /****** RESCUER ******/
+
+    function setPausedByRescuer(uint256 seed) external step {
+        bool value = seed % 4 == 0;
+        State memory before = _state();
+        vm.prank(rescuer);
+        bool ok;
+        try auction.setPaused(value) {
+            ok = true;
+            ++successes["setPausedByRescuer"];
+        } catch {}
+        // Only in rescue mode, and only the pause changes.
+        _check(!ok || before.inRescueMode, "rescuer paused outside rescue mode");
+        if (ok) before.paused = value;
+        _check(_same(before, _state()), "rescuer setPaused changed more than the pause");
+    }
+
+    function setRescueMode(bool value) external step {
+        State memory before = _state();
+        vm.prank(rescuer);
+        bool ok;
+        try auction.setRescueMode(value) {
+            ok = true;
+            ++successes["setRescueMode"];
+        } catch {}
+        _check(ok, "setRescueMode reverted for the rescuer");
+        before.inRescueMode = value;
+        _check(_same(before, _state()), "setRescueMode changed more than rescue mode");
+    }
+
+    function disableComplianceCheck(uint256 seed) external step {
+        // Gated on a hashed seed, so about one call in sixteen disables screening.
+        if (uint256(keccak256(abi.encode(seed))) % 16 != 0) return;
+        State memory before = _state();
+        vm.prank(rescuer);
+        bool ok;
+        try auction.disableComplianceCheck() {
+            ok = true;
+            ++successes["disableComplianceCheck"];
+        } catch {}
+        _check(ok, "disableComplianceCheck reverted for the rescuer");
+        before.complianceDisabled = true;
+        _check(_same(before, _state()), "disableComplianceCheck changed more than the flag");
+        if (!disabledSeen) {
+            disabledSeen = true;
+            frozenComplianceCheck = auction.complianceCheck();
+        }
+    }
+
+    /// @dev The rescuer can cancel only in rescue mode.
+    function cancelByRescuer(uint256 seed) external step {
+        // Gated on a hashed seed, so about one call in eight tries to cancel.
+        if (uint256(keccak256(abi.encode(seed))) % 8 != 0) return;
+        State memory before = _state();
+        vm.prank(rescuer);
+        bool ok;
+        try auction.cancel() {
+            ok = true;
+            ++successes["cancelByRescuer"];
+        } catch {}
+        _check(!ok || before.inRescueMode, "rescuer cancelled outside rescue mode");
+        if (!ok) _check(_same(before, _state()), "failed rescuer cancel changed state");
+    }
+
+    /// @dev Beyond pause and cancel, the rescuer has none of the msig's powers, in or out of rescue mode.
+    function rescuerOverreach(uint256 op) external step {
+        State memory before = _state();
+        vm.startPrank(rescuer);
+        bool ok = true;
+        op = op % 4;
+        if (op == 0) try auction.endFulfillment() {} catch { ok = false; }
+        else if (op == 1) try auction.recoverToken(address(stray), rescuer, 1) {} catch { ok = false; }
+        else if (op == 2) try auction.setComplianceCheck(address(compliance2)) {} catch { ok = false; }
+        else try auction.proposeNewExecutor(rescuer) {} catch { ok = false; }
+        vm.stopPrank();
+        _check(!ok && _same(before, _state()), "rescuer used an msig power");
+    }
+
+    /****** COMPLIANCE ******/
+
+    function setBlocked(uint256 seed, bool value) external step {
+        address[] memory accounts = new address[](1);
+        accounts[0] = bidders[seed % 4];
+        vm.startPrank(blocker);
+        compliance.setBlocked(accounts, value);
+        compliance2.setBlocked(accounts, value);
+        vm.stopPrank();
+        ++successes["setBlocked"];
+    }
+
+    /****** WORLD ******/
+
+    function strayTransfer(uint256 which, uint256 amount) external step {
+        amount = _bound(amount, 1, 1e24);
+        FakeERC20CustomDecimals token = which % 3 == 0 ? stray : which % 3 == 1 ? bid : fill;
+        token.mint(outsider, amount);
+        vm.prank(outsider);
+        token.transfer(address(auction), amount);
+        if (token == stray) strayOther += amount;
+        else if (token == bid) strayBid += amount;
+        else strayFill += amount;
+        ++successes["strayTransfer"];
+    }
+
+    /// @dev Moves time forward only. Half the time it lands on, or one second either side of, the next phase
+    /// boundary, so every run passes through each phase in order. Otherwise it steps forward 1 second to 12 hours.
+    /// It skips the `depositEnd` jump until the deposit phase has had MIN_DEPOSIT_PHASE_CALLS calls, so runs build
+    /// deposits first.
+    function warp(uint256 which, uint256 offset) external step {
+        uint256 target;
+        bool depositsOpen = currentTime >= config.depositStart + 1 && currentTime < config.depositEnd + 1;
+        if (which % 2 == 0 && !(depositsOpen && depositPhaseCalls < MIN_DEPOSIT_PHASE_CALLS)) {
+            uint256 milestone = currentTime < config.depositStart + 1
+                ? config.depositStart
+                : currentTime < config.depositEnd + 1 ? config.depositEnd : config.fulfillmentEnd;
+            target = milestone + (offset % 3) - 1;
+        }
+        if (target <= currentTime) target = currentTime + _bound(offset, 1, 12 hours);
+        currentTime = target;
+        vm.warp(target);
+        ++successes["warp"];
+    }
+
+    /****** VIEWS ******/
+
+    function snapshot() external view returns (IFixedPriceAuction.Settlement memory) {
+        return _snapshot;
+    }
+
+    function bidderCount() external pure returns (uint256) {
+        return 4;
+    }
+
+    /****** INTERNALS ******/
+
+    function _recordOutcome() internal {
+        if (hasOutcome) return;
+        IFixedPriceAuction.Phase current = auction.phase();
+        if (current != IFixedPriceAuction.Phase.Settled && current != IFixedPriceAuction.Phase.Cancelled) {
+            IFixedPriceAuction.TreasuryClaim memory t = auction.treasuryClaimable();
+            _check(t.bidTokenAmount == 0 && t.fillTokenRefund == 0, "treasuryClaimable nonzero before settlement");
+        }
+        if (auction.settledAt() == 0 && current != IFixedPriceAuction.Phase.Cancelled) return;
+        hasOutcome = true;
+        _snapshot = auction.previewSettlement();
+        ghostSettledAt = auction.settledAt();
+        ghostOutcome = auction.phase();
+    }
+
+    function _state() internal view returns (State memory s) {
+        s.bidBalance = bid.balanceOf(address(auction));
+        s.fillBalance = fill.balanceOf(address(auction));
+        s.strayBalance = stray.balanceOf(address(auction));
+        s.totalDeposits = auction.totalDeposits();
+        s.bidOwed = auction.bidOwed();
+        s.fillOwed = auction.fillOwed();
+        s.paused = auction.paused();
+        s.inRescueMode = auction.inRescueMode();
+        s.complianceDisabled = auction.complianceDisabled();
+        s.complianceCheck = auction.complianceCheck();
+        s.executor = auction.executor();
+        s.rescuer = auction.rescuer();
+        s.phase = auction.phase();
+        s.settledAt = auction.settledAt();
+    }
+
+    function _same(State memory a, State memory b) internal pure returns (bool) {
+        return keccak256(abi.encode(a)) == keccak256(abi.encode(b));
+    }
+
+    function _pre(
+        address account
+    ) internal view returns (State memory s, bool blocked, uint256 deposit_, bool claimed_) {
+        s = _state();
+        blocked = !s.complianceDisabled && IComplianceCheck(s.complianceCheck).isBlocked(account);
+        deposit_ = auction.deposits(account);
+        claimed_ = auction.claimed(account);
+    }
+
+    function _post(
+        address account,
+        bool ok,
+        State memory before,
+        bool blocked,
+        uint256 deposit_,
+        bool claimed_
+    ) internal {
+        _checkPaused(ok, before);
+        // A blocked account can't move its deposit or claim.
+        if (blocked) {
+            _check(!ok, "blocked call succeeded");
+            _check(
+                auction.deposits(account) == deposit_ && auction.claimed(account) == claimed_, "blocked state changed"
+            );
+        }
+    }
+
+    /// @dev A token-moving call reverts while paused, and nothing changes.
+    function _checkPaused(bool ok, State memory before) internal {
+        if (!before.paused) return;
+        _check(!ok, "token-moving call succeeded while paused");
+        _check(_same(before, _state()), "state changed while paused");
+    }
+
+    /// @dev Every msig call reverts in rescue mode.
+    function _checkRescueMode(bool ok, State memory before) internal {
+        if (before.inRescueMode) _check(!ok, "msig call succeeded in rescue mode");
+    }
+
+    function _check(bool condition, string memory why) internal {
+        if (!condition && bytes(failure).length == 0) failure = why;
+    }
+}
