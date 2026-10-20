@@ -193,6 +193,22 @@ abstract contract FixedPriceAuctionInvariantBase is FixedPriceAuctionTestBase {
         assertEq(uint256(auction.phase()), uint256(handler.ghostOutcome()), "outcome changed");
     }
 
+    /// @dev `AuctionSettled` is emitted exactly when the settlement is stored, once; `AuctionCancelled` exactly on
+    /// cancel, once; never both. The handler checks each event's fields against the stored snapshot.
+    function invariant_outcomeEmittedOnceAndMatchesSnapshot() public view {
+        uint256 settled = handler.settledEvents();
+        uint256 cancelled = handler.cancelledEvents();
+        assertLe(settled, 1, "AuctionSettled emitted more than once");
+        assertLe(cancelled, 1, "AuctionCancelled emitted more than once");
+        assertTrue(settled == 0 || cancelled == 0, "both settled and cancelled");
+        assertEq(settled == 1, auction.settledAt() != 0, "AuctionSettled not emitted exactly when settled");
+        assertEq(
+            cancelled == 1,
+            auction.phase() == IFixedPriceAuction.Phase.Cancelled,
+            "AuctionCancelled not emitted exactly when cancelled"
+        );
+    }
+
     /// @dev The pointer is never zero; once disabled, it stays disabled and frozen.
     function invariant_compliancePointer() public view {
         assertTrue(auction.complianceCheck() != address(0), "zero pointer");
@@ -217,6 +233,7 @@ abstract contract FixedPriceAuctionInvariantBase is FixedPriceAuctionTestBase {
         }
         assertTrue(auction.treasuryClaimed(), "treasury not paid out");
         invariant_balancesCoverOwed();
+        invariant_outcomeEmittedOnceAndMatchesSnapshot();
         uint256 maxDust = claimants == 0 ? 0 : claimants - 1;
         assertLe(auction.bidOwed(), maxDust, "bid dust >= claimants");
         assertLe(auction.fillOwed(), maxDust, "fill dust >= claimants");

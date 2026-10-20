@@ -2,6 +2,7 @@ pragma solidity ^0.8.20;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { Test } from "forge-std/Test.sol";
+import { Vm } from "forge-std/Vm.sol";
 import { FakeERC20CustomDecimals } from "contracts/fakes/FakeERC20CustomDecimals.sol";
 import { FakeBlocklistERC20 } from "./FakeBlocklistERC20.sol";
 import { TempleMath } from "contracts/common/TempleMath.sol";
@@ -87,6 +88,10 @@ contract FixedPriceAuctionHandler is Test {
     /// @dev Bidders blocked at the fill-token level. Only set when the fill token is a FakeBlocklistERC20.
     mapping(address account => bool blocked) public fillTokenBlocked;
 
+    // Outcome events seen from the auction
+    uint256 public settledEvents;
+    uint256 public cancelledEvents;
+
     // Compliance
     bool public disabledSeen;
     address public frozenComplianceCheck;
@@ -124,7 +129,9 @@ contract FixedPriceAuctionHandler is Test {
         IFixedPriceAuction.Phase current = auction.phase();
         if (current == IFixedPriceAuction.Phase.Deposit) ++depositPhaseCalls;
         else if (current == IFixedPriceAuction.Phase.Fulfillment) ++fulfillmentPhaseCalls;
+        vm.recordLogs();
         _;
+        _countOutcomeEvents();
         _recordOutcome();
     }
 
@@ -184,7 +191,9 @@ contract FixedPriceAuctionHandler is Test {
         try auction.claim() {
             ok = true;
             ++successes["claim"];
-        } catch {}
+        } catch {
+            _discardLogs();
+        }
         _post(account, ok, before, blocked, deposit_, claimed_);
         if (tokenBlocked) _check(!ok, "claim paid fill tokens to a token-blocked account");
         if (ok) _bookClaim(account, expected, fillBefore, bidBefore);
@@ -277,7 +286,9 @@ contract FixedPriceAuctionHandler is Test {
         try auction.claimTreasury() {
             ok = true;
             ++successes["claimTreasury"];
-        } catch {}
+        } catch {
+            _discardLogs();
+        }
         _checkPaused(ok, before);
         if (ok) _bookTreasuryClaim(bidBefore, fillBefore);
     }
@@ -517,6 +528,7 @@ contract FixedPriceAuctionHandler is Test {
     /// that the books balance.
     function drain() external {
         vm.warp(currentTime);
+        vm.recordLogs();
         if (auction.inRescueMode()) {
             vm.prank(rescuer);
             auction.setRescueMode(false);
@@ -557,6 +569,7 @@ contract FixedPriceAuctionHandler is Test {
             auction.claimTreasury();
             _bookTreasuryClaim(bidBefore, fillBefore);
         }
+        _countOutcomeEvents();
         _recordOutcome();
     }
 
@@ -571,6 +584,40 @@ contract FixedPriceAuctionHandler is Test {
     }
 
     /****** INTERNALS ******/
+
+    /// @dev Counts the outcome events the last call emitted, and checks an `AuctionSettled` against the stored
+    /// snapshot and `settledAt`, and an `AuctionCancelled` against the cancel snapshot.
+    function _countOutcomeEvents() internal {
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+        for (uint256 i; i < logs.length; ++i) {
+            if (logs[i].emitter != address(auction)) continue;
+            bytes32 topic = logs[i].topics[0];
+            IFixedPriceAuction.Settlement memory s = auction.previewSettlement();
+            if (topic == IFixedPriceAuction.AuctionSettled.selector) {
+                ++settledEvents;
+                (uint64 at, uint256 total, uint256 filled, uint256 userFunding, uint256 userRefund, uint256 funderRefund)
+                = abi.decode(logs[i].data, (uint64, uint256, uint256, uint256, uint256, uint256));
+                _check(
+                    at == auction.settledAt() && total == auction.totalDeposits() && filled == s.filledDeposits
+                        && userFunding == s.userFunding && userRefund == s.userRefund && funderRefund == s.funderRefund,
+                    "AuctionSettled fields differ from the stored settlement"
+                );
+            } else if (topic == IFixedPriceAuction.AuctionCancelled.selector) {
+                ++cancelledEvents;
+                (uint256 total, uint256 funderRefund) = abi.decode(logs[i].data, (uint256, uint256));
+                _check(
+                    total == auction.totalDeposits() && total == s.userRefund && funderRefund == s.funderRefund,
+                    "AuctionCancelled fields differ from the stored settlement"
+                );
+            }
+        }
+    }
+
+    /// @dev Recorded logs include those of a reverted call, and a claim emits its lazy `AuctionSettled` before it
+    /// can revert, so a failed claim's logs are dropped.
+    function _discardLogs() internal {
+        vm.getRecordedLogs();
+    }
 
     function _recordOutcome() internal {
         if (hasOutcome) return;
