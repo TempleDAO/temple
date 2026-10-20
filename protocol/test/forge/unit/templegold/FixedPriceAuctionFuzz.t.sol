@@ -5,6 +5,7 @@ import { IFixedPriceAuction } from "contracts/interfaces/templegold/IFixedPriceA
 import { FixedPriceAuction } from "contracts/templegold/FixedPriceAuction.sol";
 import { FakeERC20CustomDecimals } from "contracts/fakes/FakeERC20CustomDecimals.sol";
 import { TempleMath } from "contracts/common/TempleMath.sol";
+import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { PRBMath_MulDiv_Overflow } from "@prb/math/src/Common.sol";
 import { FixedPriceAuctionTestBase } from "test/forge/unit/templegold/FixedPriceAuction.t.sol";
 
@@ -210,6 +211,10 @@ contract FixedPriceAuctionFuzzTest is FixedPriceAuctionTestBase {
             uint256 refund = c.bid.balanceOf(c.accounts[i]);
             assertLe(refund, c.amounts[i], "refund > deposit");
             assertLe(got, (c.amounts[i] - refund).mulDivRound(c.price, c.denominator, false), "fill > paid x price");
+            // Each share is the exact pro-rata share of its pool rounded down: within one wei of it and never above.
+            // OpenZeppelin's 512-bit mulDiv, so the check doesn't share the contract's maths library.
+            assertEq(got, Math.mulDiv(c.amounts[i], s.userFunding, c.total), "fill share != pro-rata share");
+            assertEq(refund, Math.mulDiv(c.amounts[i], s.userRefund, c.total), "refund share != pro-rata share");
             sumFill += got;
             sumRefund += refund;
         }
