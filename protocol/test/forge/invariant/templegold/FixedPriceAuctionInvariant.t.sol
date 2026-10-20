@@ -74,6 +74,10 @@ abstract contract FixedPriceAuctionInvariantBase is FixedPriceAuctionTestBase {
         i = _add(s, i, FixedPriceAuctionHandler.rescuerOverreach.selector, 1);
         i = _add(s, i, FixedPriceAuctionHandler.setBlocked.selector, 1);
         i = _add(s, i, FixedPriceAuctionHandler.strayTransfer.selector, 1);
+        i = _add(s, i, FixedPriceAuctionHandler.proposeExecutor.selector, 1);
+        i = _add(s, i, FixedPriceAuctionHandler.acceptExecutor.selector, 1);
+        i = _add(s, i, FixedPriceAuctionHandler.proposeRescuer.selector, 1);
+        i = _add(s, i, FixedPriceAuctionHandler.acceptRescuer.selector, 1);
         if (_blocklistFill()) i = _add(s, i, FixedPriceAuctionHandler.setFillTokenBlocked.selector, 1);
         // Trim the array to the selectors added.
         assembly {
@@ -207,6 +211,17 @@ abstract contract FixedPriceAuctionInvariantBase is FixedPriceAuctionTestBase {
             auction.phase() == IFixedPriceAuction.Phase.Cancelled,
             "AuctionCancelled not emitted exactly when cancelled"
         );
+    }
+
+    /// @dev Under any order of handovers, the executor and the rescuer are two addresses, and the handler's view of
+    /// who holds each role is right. Rescue mode leaves no executor proposal standing.
+    function invariant_rolesStaySeparate() public view {
+        assertTrue(auction.executor() != auction.rescuer(), "executor is the rescuer");
+        assertEq(auction.executor(), handler.msig(), "executor moved outside a handover");
+        assertEq(auction.rescuer(), handler.rescuer(), "rescuer moved outside a handover");
+        if (auction.inRescueMode()) {
+            assertEq(auction.proposedExecutor(), address(0), "executor proposal standing in rescue mode");
+        }
     }
 
     /// @dev The pointer is never zero; once disabled, it stays disabled and frozen.

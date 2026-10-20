@@ -41,8 +41,12 @@ contract FixedPriceAuctionHandler is Test {
     FakeERC20CustomDecimals public immutable stray;
     ComplianceCheck public immutable compliance;
     ComplianceCheck public immutable compliance2;
-    address public immutable msig;
-    address public immutable rescuer;
+    /// @dev The current executor and rescuer. Handovers move them.
+    address public msig;
+    address public rescuer;
+    /// @dev Who handovers pass either role to: shared and including both initial holders, so a handover can try to
+    /// give both roles to one address.
+    address[5] internal roleCandidates;
     /// @dev Granted `setBlocked` on both lists.
     address public immutable blocker;
     address public immutable outsider = makeAddr("outsider");
@@ -116,6 +120,7 @@ contract FixedPriceAuctionHandler is Test {
         compliance2 = compliance2_;
         msig = msig_;
         rescuer = rescuer_;
+        roleCandidates = [makeAddr("candidate0"), makeAddr("candidate1"), makeAddr("candidate2"), msig_, rescuer_];
         blocker = blocker_;
         bidders = [makeAddr("bidder0"), makeAddr("bidder1"), makeAddr("bidder2"), makeAddr("bidder3")];
         currentTime = block.timestamp;
@@ -459,6 +464,63 @@ contract FixedPriceAuctionHandler is Test {
         else try auction.proposeNewExecutor(rescuer) {} catch { ok = false; }
         vm.stopPrank();
         _check(!ok && _same(before, _state()), "rescuer used an msig power");
+    }
+
+    /****** HANDOVERS ******/
+
+    function proposeExecutor(uint256 seed) external step {
+        address candidate = roleCandidates[seed % 5];
+        State memory before = _state();
+        vm.prank(msig);
+        bool ok;
+        try auction.proposeNewExecutor(candidate) {
+            ok = true;
+            ++successes["proposeExecutor"];
+        } catch {}
+        _checkRescueMode(ok, before);
+        _check(!ok || auction.proposedExecutor() == candidate, "executor proposal not recorded");
+    }
+
+    /// @dev The proposed executor accepts. Only being the rescuer can stop it.
+    function acceptExecutor() external step {
+        address proposed = auction.proposedExecutor();
+        if (proposed == address(0)) return;
+        vm.prank(proposed);
+        bool ok;
+        try auction.acceptExecutor() {
+            ok = true;
+            ++successes["acceptExecutor"];
+            msig = proposed;
+        } catch {}
+        _check(ok != (proposed == rescuer), "acceptExecutor: only the rescuer is refused");
+        _check(auction.executor() == msig, "executor handover misrecorded");
+    }
+
+    /// @dev The rescuer can always propose its successor, in rescue mode too.
+    function proposeRescuer(uint256 seed) external step {
+        address candidate = roleCandidates[seed % 5];
+        vm.prank(rescuer);
+        bool ok;
+        try auction.proposeNewRescuer(candidate) {
+            ok = true;
+            ++successes["proposeRescuer"];
+        } catch {}
+        _check(ok && auction.proposedRescuer() == candidate, "rescuer proposal refused or not recorded");
+    }
+
+    /// @dev The proposed rescuer accepts. Only being the executor can stop it.
+    function acceptRescuer() external step {
+        address proposed = auction.proposedRescuer();
+        if (proposed == address(0)) return;
+        vm.prank(proposed);
+        bool ok;
+        try auction.acceptRescuer() {
+            ok = true;
+            ++successes["acceptRescuer"];
+            rescuer = proposed;
+        } catch {}
+        _check(ok != (proposed == msig), "acceptRescuer: only the executor is refused");
+        _check(auction.rescuer() == rescuer, "rescuer handover misrecorded");
     }
 
     /****** COMPLIANCE ******/
