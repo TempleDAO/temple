@@ -182,6 +182,26 @@ contract FixedPriceAuctionInvariantTest is FixedPriceAuctionTestBase {
         }
     }
 
+    /// @dev Liveness: once every brake is lifted, every bidder and the treasury can claim, nothing reverts, and only
+    /// rounding dust stays behind: under one wei per claimant per token.
+    function afterInvariant() public {
+        handler.drain();
+        assertEq(handler.failure(), "");
+
+        uint256 claimants;
+        for (uint256 i; i < handler.bidderCount(); ++i) {
+            address account = handler.bidders(i);
+            if (auction.deposits(account) == 0) continue;
+            ++claimants;
+            assertTrue(auction.claimed(account), "bidder not paid out");
+        }
+        assertTrue(auction.treasuryClaimed(), "treasury not paid out");
+        invariant_balancesCoverOwed();
+        uint256 maxDust = claimants == 0 ? 0 : claimants - 1;
+        assertLe(auction.bidOwed(), maxDust, "bid dust >= claimants");
+        assertLe(auction.fillOwed(), maxDust, "fill dust >= claimants");
+    }
+
     /// @dev The run did something, judged at the end of a full run: deposits and claims succeeded whenever the run
     /// gave an eligible bidder the chance. A run that stays paused or blocked throughout has no chance to judge.
     function invariant_progress() public view {

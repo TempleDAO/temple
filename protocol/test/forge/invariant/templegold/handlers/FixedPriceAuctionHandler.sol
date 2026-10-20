@@ -167,8 +167,15 @@ contract FixedPriceAuctionHandler is Test {
             ++successes["claim"];
         } catch {}
         _post(account, ok, before, blocked, deposit_, claimed_);
-        if (!ok) return;
+        if (ok) _bookClaim(account, expected, fillBefore, bidBefore);
+    }
 
+    function _bookClaim(
+        address account,
+        IFixedPriceAuction.UserClaim memory expected,
+        uint256 fillBefore,
+        uint256 bidBefore
+    ) internal {
         _check(!ghostClaimed[account], "account claimed twice");
         ghostClaimed[account] = true;
         uint256 gotFill = fill.balanceOf(account) - fillBefore;
@@ -235,10 +242,8 @@ contract FixedPriceAuctionHandler is Test {
     }
 
     function claimTreasury() external step {
-        address funder = config.funder;
-        address recipient = config.proceedsRecipient;
-        uint256 bidBefore = bid.balanceOf(recipient);
-        uint256 fillBefore = fill.balanceOf(funder);
+        uint256 bidBefore = bid.balanceOf(config.proceedsRecipient);
+        uint256 fillBefore = fill.balanceOf(config.funder);
 
         State memory before = _state();
         vm.prank(outsider);
@@ -248,12 +253,14 @@ contract FixedPriceAuctionHandler is Test {
             ++successes["claimTreasury"];
         } catch {}
         _checkPaused(ok, before);
-        if (!ok) return;
+        if (ok) _bookTreasuryClaim(bidBefore, fillBefore);
+    }
 
+    function _bookTreasuryClaim(uint256 bidBefore, uint256 fillBefore) internal {
         _check(!ghostTreasuryClaimed, "treasury claimed twice");
         ghostTreasuryClaimed = true;
-        treasuryBidPaid += bid.balanceOf(recipient) - bidBefore;
-        treasuryFillPaid += fill.balanceOf(funder) - fillBefore;
+        treasuryBidPaid += bid.balanceOf(config.proceedsRecipient) - bidBefore;
+        treasuryFillPaid += fill.balanceOf(config.funder) - fillBefore;
     }
 
     /****** MSIG ******/
@@ -455,6 +462,52 @@ contract FixedPriceAuctionHandler is Test {
         currentTime = target;
         vm.warp(target);
         ++successes["warp"];
+    }
+
+    /****** END OF RUN ******/
+
+    /// @dev Not a fuzzed action: the suite calls it once a run ends. Lifts every brake (rescue mode, pause, both
+    /// blocklists), moves past `fulfillmentEnd`, then pays out every bidder still owed and the treasury. Any revert
+    /// fails the run, so this proves everyone can get their money out, not just that the books balance.
+    function drain() external {
+        vm.warp(currentTime);
+        if (auction.inRescueMode()) {
+            vm.prank(rescuer);
+            auction.setRescueMode(false);
+        }
+        vm.prank(msig);
+        auction.setPaused(false);
+        address[] memory accounts = new address[](4);
+        for (uint256 i; i < 4; ++i) {
+            accounts[i] = bidders[i];
+        }
+        vm.startPrank(blocker);
+        compliance.setBlocked(accounts, false);
+        compliance2.setBlocked(accounts, false);
+        vm.stopPrank();
+        if (currentTime < config.fulfillmentEnd) {
+            currentTime = config.fulfillmentEnd;
+            vm.warp(currentTime);
+        }
+
+        for (uint256 i; i < 4; ++i) {
+            address account = bidders[i];
+            if (auction.deposits(account) == 0 || auction.claimed(account)) continue;
+            IFixedPriceAuction.UserClaim memory expected = auction.claimable(account);
+            uint256 fillBefore = fill.balanceOf(account);
+            uint256 bidBefore = bid.balanceOf(account);
+            vm.prank(account);
+            auction.claim();
+            _bookClaim(account, expected, fillBefore, bidBefore);
+        }
+        if (!auction.treasuryClaimed()) {
+            uint256 bidBefore = bid.balanceOf(config.proceedsRecipient);
+            uint256 fillBefore = fill.balanceOf(config.funder);
+            vm.prank(outsider);
+            auction.claimTreasury();
+            _bookTreasuryClaim(bidBefore, fillBefore);
+        }
+        _recordOutcome();
     }
 
     /****** VIEWS ******/
