@@ -22,7 +22,9 @@ contract FixedPriceAuctionFuzzTest is FixedPriceAuctionTestBase {
         assertEq(tgld.balanceOf(address(auction)), auction.bidOwed(), "bid balance != bidOwed");
         assertEq(usds.balanceOf(address(auction)), auction.fillOwed(), "fill balance != fillOwed");
         assertTrue(auction.executor() != auction.rescuer(), "executor is the rescuer");
-        if (auction.inRescueMode()) assertEq(auction.proposedExecutor(), address(0), "executor proposal in rescue mode");
+        if (auction.inRescueMode()) {
+            assertEq(auction.proposedExecutor(), address(0), "executor proposal in rescue mode");
+        }
     }
 
     function _step(uint256 r) internal {
