@@ -84,15 +84,15 @@ contract FixedPriceAuctionTestBase is TempleTest {
     }
 
     function _toDeposit(FixedPriceAuction a) internal {
-        vm.warp(a.getTiming().depositStart);
+        vm.warp(a.getConfig().depositStart);
     }
 
     function _toFulfillment(FixedPriceAuction a) internal {
-        vm.warp(a.getTiming().depositEnd);
+        vm.warp(a.getConfig().depositEnd);
     }
 
     function _toEnd(FixedPriceAuction a) internal {
-        vm.warp(a.getTiming().fulfillmentEnd);
+        vm.warp(a.getConfig().fulfillmentEnd);
     }
 
     function _deposit(FixedPriceAuction a, address account, uint256 amount) internal {
@@ -327,10 +327,9 @@ contract FixedPriceAuctionSettlementTest is FixedPriceAuctionTestBase {
         _claimAll(auction);
         _assertBalances(alice, 0, 1);
         _assertBalances(bob, 0, 2);
-        // The rounding dust stays put and stays owed.
-        assertEq(auction.bidOwed(), 1);
-        assertEq(auction.fillOwed(), 0);
+        // The rounding dust stays put.
         assertEq(tgld.balanceOf(address(auction)), 1);
+        assertEq(usds.balanceOf(address(auction)), 0);
     }
 
     function test_minDeposit_appliesToDepositsAndRemainders() public {
@@ -463,15 +462,15 @@ contract FixedPriceAuctionSettlementTest is FixedPriceAuctionTestBase {
 contract FixedPriceAuctionLifecycleTest is FixedPriceAuctionTestBase {
     function test_phase_transitions() public {
         assertEq(uint256(auction.phase()), uint256(IFixedPriceAuction.Phase.Scheduled));
-        vm.warp(auction.getTiming().depositStart - 1);
+        vm.warp(auction.getConfig().depositStart - 1);
         assertEq(uint256(auction.phase()), uint256(IFixedPriceAuction.Phase.Scheduled));
         _toDeposit(auction);
         assertEq(uint256(auction.phase()), uint256(IFixedPriceAuction.Phase.Deposit));
-        vm.warp(auction.getTiming().depositEnd - 1);
+        vm.warp(auction.getConfig().depositEnd - 1);
         assertEq(uint256(auction.phase()), uint256(IFixedPriceAuction.Phase.Deposit));
         _toFulfillment(auction);
         assertEq(uint256(auction.phase()), uint256(IFixedPriceAuction.Phase.Fulfillment));
-        vm.warp(auction.getTiming().fulfillmentEnd - 1);
+        vm.warp(auction.getConfig().fulfillmentEnd - 1);
         assertEq(uint256(auction.phase()), uint256(IFixedPriceAuction.Phase.Fulfillment));
         _toEnd(auction);
         assertEq(uint256(auction.phase()), uint256(IFixedPriceAuction.Phase.Settled));
@@ -530,7 +529,7 @@ contract FixedPriceAuctionLifecycleTest is FixedPriceAuctionTestBase {
         auction.endFulfillment();
 
         assertEq(uint256(auction.phase()), uint256(IFixedPriceAuction.Phase.Settled));
-        assertEq(auction.getTiming().settledAt, block.timestamp);
+        assertEq(auction.endedAt(), block.timestamp);
 
         // Funding is closed and claims are open.
         usds.mint(funder, 1);
@@ -564,29 +563,29 @@ contract FixedPriceAuctionLifecycleTest is FixedPriceAuctionTestBase {
         auction.endFulfillment();
     }
 
-    function test_claim_settlesLazilyAtFulfillmentEnd() public {
+    function test_claim_atFulfillmentEnd_emitsNoSettlement() public {
         _workedExample(2_330_000e18);
         _toEnd(auction);
-        // Preview is live before the snapshot.
         assertEq(auction.previewSettlement().filledDeposits, 50_000_000e18);
-        assertEq(auction.getTiming().settledAt, 0);
         vm.warp(block.timestamp + 10 days);
 
-        vm.expectEmit(address(auction));
-        emit IFixedPriceAuction.AuctionSettled(
-            auction.getTiming().fulfillmentEnd, 100_000_000e18, 50_000_000e18, 2_330_000e18, 50_000_000e18, 0
-        );
+        // A settlement by the clock writes nothing and emits nothing: the claim emits only its own event.
+        vm.recordLogs();
         vm.prank(alice);
         auction.claim();
-        assertEq(auction.getTiming().settledAt, auction.getTiming().fulfillmentEnd);
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+        for (uint256 i; i < logs.length; ++i) {
+            assertNotEq(logs[i].topics[0], IFixedPriceAuction.AuctionSettled.selector);
+        }
+        assertEq(auction.endedAt(), 0);
+        assertEq(auction.previewSettlement().filledDeposits, 50_000_000e18);
     }
 
-    function test_claimTreasury_settlesLazily_anyone() public {
+    function test_claimTreasury_anyone() public {
         _workedExample(4_660_000e18);
         _toEnd(auction);
         vm.prank(unauthorizedUser);
         auction.claimTreasury();
-        assertEq(auction.getTiming().settledAt, auction.getTiming().fulfillmentEnd);
         _assertBalances(proceedsRecipient, 100_000_000e18, 0);
     }
 
@@ -654,7 +653,7 @@ contract FixedPriceAuctionLifecycleTest is FixedPriceAuctionTestBase {
 
         vm.revertToState(snapshot);
         _workedExample(1e18);
-        vm.warp(auction.getTiming().fulfillmentEnd - 1);
+        vm.warp(auction.getConfig().fulfillmentEnd - 1);
         vm.expectEmit(address(auction));
         emit IFixedPriceAuction.AuctionCancelled(100_000_000e18, 1e18);
         vm.prank(executor);
@@ -728,7 +727,7 @@ contract FixedPriceAuctionLifecycleTest is FixedPriceAuctionTestBase {
         _toDeposit(auction);
         _deposit(auction, alice, 10e18);
 
-        vm.warp(auction.getTiming().depositStart - 1);
+        vm.warp(auction.getConfig().depositStart - 1);
         vm.prank(alice);
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -742,7 +741,7 @@ contract FixedPriceAuctionLifecycleTest is FixedPriceAuctionTestBase {
         _toDeposit(auction);
         vm.prank(alice);
         auction.withdrawDeposit(1);
-        vm.warp(auction.getTiming().depositEnd - 1);
+        vm.warp(auction.getConfig().depositEnd - 1);
         vm.prank(alice);
         auction.withdrawDeposit(1);
 
@@ -762,7 +761,7 @@ contract FixedPriceAuctionLifecycleTest is FixedPriceAuctionTestBase {
     function test_withdrawExcess_fail_outsideFulfillment() public {
         _toDeposit(auction);
         _deposit(auction, alice, 10e18);
-        vm.warp(auction.getTiming().depositEnd - 1);
+        vm.warp(auction.getConfig().depositEnd - 1);
         vm.prank(funder);
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -777,7 +776,7 @@ contract FixedPriceAuctionLifecycleTest is FixedPriceAuctionTestBase {
         _fund(auction, 1e18);
         vm.prank(funder);
         auction.withdrawExcess(1);
-        vm.warp(auction.getTiming().fulfillmentEnd - 1);
+        vm.warp(auction.getConfig().fulfillmentEnd - 1);
         vm.prank(funder);
         auction.withdrawExcess(1);
 
@@ -1246,9 +1245,7 @@ contract FixedPriceAuctionComplianceTest is FixedPriceAuctionTestBase {
 
         // Alice's share waits in the auction and can't be recovered.
         vm.prank(executor);
-        vm.expectRevert(
-            abi.encodeWithSelector(CommonEventsAndErrors.InsufficientBalance.selector, address(usds), 1, 0)
-        );
+        vm.expectRevert(CommonEventsAndErrors.InvalidParam.selector);
         auction.recoverToken(address(usds), executor, 1);
 
         _setBlocked(alice, false);
@@ -1372,38 +1369,32 @@ contract FixedPriceAuctionRecoverTokenTest is FixedPriceAuctionTestBase {
         assertEq(stray.balanceOf(alice), 5e18);
     }
 
-    function test_recoverToken_onlyExcessAboveOwed() public {
-        _workedExample(4_660_000e18);
+    /// @dev A donation of either auction token can't be recovered, and changes no one's payout.
+    function test_recoverToken_ownTokensNever_donationChangesNoPayout() public {
+        _workedExample(2_330_000e18);
+        IFixedPriceAuction.Settlement memory before = auction.previewSettlement();
         tgld.mint(address(auction), 7);
         usds.mint(address(auction), 3);
+        assertEq(abi.encode(auction.previewSettlement()), abi.encode(before));
+        assertEq(auction.withdrawableExcess(), 0);
 
         vm.startPrank(executor);
-        vm.expectRevert(
-            abi.encodeWithSelector(CommonEventsAndErrors.InsufficientBalance.selector, address(tgld), 8, 7)
-        );
-        auction.recoverToken(address(tgld), executor, 8);
-        vm.expectRevert(
-            abi.encodeWithSelector(CommonEventsAndErrors.InsufficientBalance.selector, address(usds), 4, 3)
-        );
-        auction.recoverToken(address(usds), executor, 4);
-        auction.recoverToken(address(tgld), executor, 7);
-        auction.recoverToken(address(usds), executor, 3);
+        vm.expectRevert(CommonEventsAndErrors.InvalidParam.selector);
+        auction.recoverToken(address(tgld), executor, 1);
+        vm.expectRevert(CommonEventsAndErrors.InvalidParam.selector);
+        auction.recoverToken(address(usds), executor, 1);
         vm.stopPrank();
 
-        // What's left is exactly what's owed, and it all pays out.
         _toEnd(auction);
         _claimAll(auction);
-        _assertBalances(address(auction), 0, 0);
-    }
-
-    function test_recoverToken_neverUnclaimedShares() public {
-        _workedExample(4_660_000e18);
-        _toEnd(auction);
-        auction.claimTreasury();
+        _assertBalances(alice, 30_000_000e18, 1_398_000e18);
+        _assertBalances(bob, 20_000_000e18, 932_000e18);
+        _assertBalances(proceedsRecipient, 50_000_000e18, 0);
+        _assertBalances(funder, 0, 0);
+        // The donation stays for good, even once everything is paid.
+        _assertBalances(address(auction), 7, 3);
         vm.prank(executor);
-        vm.expectRevert(
-            abi.encodeWithSelector(CommonEventsAndErrors.InsufficientBalance.selector, address(usds), 1, 0)
-        );
+        vm.expectRevert(CommonEventsAndErrors.InvalidParam.selector);
         auction.recoverToken(address(usds), executor, 1);
     }
 
@@ -1433,9 +1424,6 @@ contract FixedPriceAuctionAdminTest is FixedPriceAuctionTestBase {
         assertEq(config.depositStart, 1_000_000 + 1 days);
         assertEq(config.depositEnd, 1_000_000 + 6 days);
         assertEq(config.fulfillmentEnd, 1_000_000 + 9 days);
-        assertEq(auction.getTiming().depositStart, 1_000_000 + 1 days);
-        assertEq(auction.getTiming().depositEnd, 1_000_000 + 6 days);
-        assertEq(auction.getTiming().fulfillmentEnd, 1_000_000 + 9 days);
         assertEq(config.minDeposit, 0);
         assertEq(auction.complianceCheck(), address(compliance));
         assertFalse(auction.complianceDisabled());
@@ -1445,10 +1433,9 @@ contract FixedPriceAuctionAdminTest is FixedPriceAuctionTestBase {
         assertEq(auction.proposedExecutor(), address(0));
         assertEq(auction.rescuer(), rescuer);
         assertEq(auction.proposedRescuer(), address(0));
-        assertEq(auction.settledAt(), 0);
+        assertEq(auction.endedAt(), 0);
         assertEq(auction.totalDeposits(), 0);
-        assertEq(auction.bidOwed(), 0);
-        assertEq(auction.fillOwed(), 0);
+        assertEq(auction.funding(), 0);
         assertFalse(auction.treasuryClaimed());
         assertEq(auction.withdrawableExcess(), 0);
         assertEq(uint256(auction.phase()), uint256(IFixedPriceAuction.Phase.Scheduled));
@@ -1806,8 +1793,6 @@ contract FixedPriceAuctionDecimalsTest is FixedPriceAuctionTestBase {
             assertEq(tgld.balanceOf(accounts[i]), 284_685_264_663_805_436);
         }
         // 99,999 paid of 100,000: 1 wei of fill dust and 2 wei of bid dust stay, both under 3.
-        assertEq(auction.fillOwed(), 1);
-        assertEq(auction.bidOwed(), 2);
         assertEq(usdc.balanceOf(address(auction)), 1);
         assertEq(tgld.balanceOf(address(auction)), 2);
     }
@@ -1863,8 +1848,8 @@ contract FixedPriceAuctionTempleGoldTest is FixedPriceAuctionTestBase {
         assertEq(templeGold.balanceOf(bob), 20_000_000e18);
         assertEq(usds.balanceOf(bob), 932_000e18);
         assertEq(templeGold.balanceOf(proceedsRecipient), 50_000_000e18);
-        assertEq(templeGold.balanceOf(address(auction)), auction.bidOwed());
-        assertEq(usds.balanceOf(address(auction)), auction.fillOwed());
+        assertEq(templeGold.balanceOf(address(auction)), 0);
+        assertEq(usds.balanceOf(address(auction)), 0);
     }
 
     function test_templeGold_depositsRevertUntilAuctionAuthorized() public {

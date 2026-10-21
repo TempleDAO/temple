@@ -41,8 +41,8 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
     bool public override paused;
 
     /// @inheritdoc IFixedPriceAuction
-    uint64 public override settledAt;
-    /// @dev Set by `_settle` or `cancel`. `phase()` reads Settled from `fulfillmentEnd` even while this is `None`.
+    uint64 public override endedAt;
+    /// @dev Set by `endFulfillment` or `cancel`. `phase()` reads Settled from `fulfillmentEnd` while this is `None`.
     Outcome private _outcome;
     /// @dev True on the implementation from deployment, and on a clone once `initialize` runs.
     bool private _initialized;
@@ -57,12 +57,7 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
     uint256 public override totalDeposits;
 
     /// @inheritdoc IFixedPriceAuction
-    uint256 public override bidOwed;
-    /// @inheritdoc IFixedPriceAuction
-    uint256 public override fillOwed;
-
-    /// @dev The settlement snapshot, written with `_outcome`. All zero while `_outcome` is `None`.
-    Settlement private _settlement;
+    uint256 public override funding;
 
     constructor() {
         _initialized = true;
@@ -110,7 +105,6 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
 
         deposits[msg.sender] = newDeposit;
         totalDeposits += amount;
-        bidOwed += amount;
 
         emit Deposited(msg.sender, amount, newDeposit, totalDeposits);
         IERC20(config.bidToken).safeTransferFrom(msg.sender, address(this), amount);
@@ -129,7 +123,6 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
 
         deposits[msg.sender] = remainder;
         totalDeposits -= amount;
-        bidOwed -= amount;
 
         emit DepositWithdrawn(msg.sender, amount, remainder, totalDeposits);
         IERC20(config.bidToken).safeTransfer(msg.sender, amount);
@@ -142,9 +135,9 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
         _requirePhase(config, Phase.Fulfillment);
         if (amount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
 
-        fillOwed += amount;
+        funding += amount;
 
-        emit Funded(msg.sender, amount, fillOwed);
+        emit Funded(msg.sender, amount, funding);
         IERC20(config.fillToken).safeTransferFrom(msg.sender, address(this), amount);
     }
 
@@ -158,9 +151,9 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
         uint256 available = _withdrawableExcess(config);
         if (amount > available) revert CommonEventsAndErrors.InsufficientBalance(config.fillToken, amount, available);
 
-        fillOwed -= amount;
+        funding -= amount;
 
-        emit ExcessWithdrawn(msg.sender, amount, fillOwed);
+        emit ExcessWithdrawn(msg.sender, amount, funding);
         IERC20(config.fillToken).safeTransfer(msg.sender, amount);
     }
 
@@ -168,9 +161,13 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
     function endFulfillment() external override onlyElevatedAccess {
         AuctionConfig memory config = _config();
         _requirePhase(config, Phase.Fulfillment);
+        _outcome = Outcome.Settled;
         // Safe: unix seconds fit in uint64.
         // forge-lint: disable-next-line(unsafe-typecast)
-        _settle(uint64(block.timestamp), config.price);
+        endedAt = uint64(block.timestamp);
+
+        Settlement memory s = _calculateSettlement(config.price);
+        emit AuctionSettled(endedAt, totalDeposits, s.filledDeposits, s.userFunding, s.userRefund, s.funderRefund);
     }
 
     /// @inheritdoc IFixedPriceAuction
@@ -181,23 +178,20 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
             revert InvalidPhase(Phase.Fulfillment, _phase(config));
         }
 
-        _settlement = Settlement(0, 0, totalDeposits, fillOwed);
         _outcome = Outcome.Cancelled;
 
-        emit AuctionCancelled(totalDeposits, fillOwed);
+        emit AuctionCancelled(totalDeposits, funding);
     }
 
     /// @inheritdoc IFixedPriceAuction
     function claim() external override whenNotPaused notBlocked {
         AuctionConfig memory config = _config();
-        _settleIfDue(config);
+        _requireFinal(config);
         if (claimed[msg.sender]) revert AlreadyClaimed();
         if (deposits[msg.sender] == 0) revert NothingToClaim();
 
         UserClaim memory userClaim = _claimable(msg.sender, config);
         claimed[msg.sender] = true;
-        bidOwed -= userClaim.bidTokenRefund;
-        fillOwed -= userClaim.fillTokenAmount;
 
         emit UserClaimed(msg.sender, userClaim.fillTokenAmount, userClaim.bidTokenRefund);
         if (userClaim.bidTokenRefund > 0) {
@@ -211,13 +205,11 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
     /// @inheritdoc IFixedPriceAuction
     function claimTreasury() external override whenNotPaused {
         AuctionConfig memory config = _config();
-        _settleIfDue(config);
+        _requireFinal(config);
         if (treasuryClaimed) revert AlreadyClaimed();
 
         TreasuryClaim memory treasuryClaim = _treasuryClaimable(config);
         treasuryClaimed = true;
-        bidOwed -= treasuryClaim.bidTokenAmount;
-        fillOwed -= treasuryClaim.fillTokenRefund;
 
         emit TreasuryClaimed(
             config.proceedsRecipient, config.funder, treasuryClaim.bidTokenAmount, treasuryClaim.fillTokenRefund
@@ -240,10 +232,8 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
         if (amount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
 
         AuctionConfig memory config = _config();
-        uint256 owed = token == config.bidToken ? bidOwed : token == config.fillToken ? fillOwed : 0;
-        uint256 balance = IERC20(token).balanceOf(address(this));
-        uint256 recoverable = balance > owed ? balance - owed : 0;
-        if (amount > recoverable) revert CommonEventsAndErrors.InsufficientBalance(token, amount, recoverable);
+        // Without liability counters there's no telling what's still owed, so the auction's own tokens stay put.
+        if (token == config.bidToken || token == config.fillToken) revert CommonEventsAndErrors.InvalidParam();
 
         emit CommonEventsAndErrors.TokenRecovered(to, token, amount);
         IERC20(token).safeTransfer(to, amount);
@@ -279,12 +269,6 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
     function getConfig() external view override returns (AuctionConfig memory config) {
         config = _config();
         config.complianceCheck = complianceCheck;
-    }
-
-    /// @inheritdoc IFixedPriceAuction
-    function getTiming() external view override returns (AuctionTiming memory) {
-        AuctionConfig memory config = _config();
-        return AuctionTiming(config.depositStart, config.depositEnd, config.fulfillmentEnd, settledAt);
     }
 
     /// @inheritdoc IFixedPriceAuction
@@ -324,11 +308,11 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
     function _withdrawableExcess(AuctionConfig memory config) private view returns (uint256) {
         if (paused || _phase(config) != Phase.Fulfillment) return 0;
         uint256 required = _requiredFunding(totalDeposits, config.price);
-        return fillOwed > required ? fillOwed - required : 0;
+        return funding > required ? funding - required : 0;
     }
 
     function _previewSettlement(uint256 price) private view returns (Settlement memory) {
-        if (_outcome != Outcome.None) return _settlement;
+        if (_outcome == Outcome.Cancelled) return Settlement(0, 0, totalDeposits, funding);
         return _calculateSettlement(price);
     }
 
@@ -351,32 +335,21 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
         treasuryClaim.fillTokenRefund = preview.funderRefund;
     }
 
+    /// @dev A pure function of `totalDeposits` and `funding`, which stop changing once Fulfillment ends.
     function _calculateSettlement(uint256 price) private view returns (Settlement memory) {
         uint256 denominator = priceDenominator;
         // Fills, and the fill tokens they buy, round down, so bidders never get more than the funding covers.
-        uint256 filled = fillOwed >= _requiredFunding(totalDeposits, price)
+        uint256 filled = funding >= _requiredFunding(totalDeposits, price)
             ? totalDeposits
-            : fillOwed.mulDivRound(denominator, price, false);
+            : funding.mulDivRound(denominator, price, false);
         uint256 userFunding = filled.mulDivRound(price, denominator, false);
         // A fill too small to buy one fill-token wei takes no bid tokens.
         if (userFunding == 0) filled = 0;
-        return Settlement(filled, userFunding, totalDeposits - filled, fillOwed - userFunding);
+        return Settlement(filled, userFunding, totalDeposits - filled, funding - userFunding);
     }
 
-    function _settle(uint64 timestamp, uint256 price) private {
-        _settlement = _calculateSettlement(price);
-        _outcome = Outcome.Settled;
-        settledAt = timestamp;
-
-        Settlement memory s = _settlement;
-        emit AuctionSettled(timestamp, totalDeposits, s.filledDeposits, s.userFunding, s.userRefund, s.funderRefund);
-    }
-
-    function _settleIfDue(AuctionConfig memory config) private {
-        Phase current = _phase(config);
-        if (current == Phase.Cancelled) return;
-        if (current != Phase.Settled) revert InvalidPhase(Phase.Settled, current);
-        if (_outcome == Outcome.None) _settle(config.fulfillmentEnd, config.price);
+    function _requireFinal(AuctionConfig memory config) private view {
+        if (!_isFinal(config)) revert InvalidPhase(Phase.Settled, _phase(config));
     }
 
     function _isFinal(AuctionConfig memory config) private view returns (bool) {

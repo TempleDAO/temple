@@ -23,8 +23,7 @@ contract FixedPriceAuctionHandler is Test {
         uint256 fillBalance;
         uint256 strayBalance;
         uint256 totalDeposits;
-        uint256 bidOwed;
-        uint256 fillOwed;
+        uint256 funding;
         bool paused;
         bool inRescueMode;
         bool complianceDisabled;
@@ -32,7 +31,7 @@ contract FixedPriceAuctionHandler is Test {
         address executor;
         address rescuer;
         IFixedPriceAuction.Phase phase;
-        uint64 settledAt;
+        uint64 endedAt;
     }
 
     FixedPriceAuction public immutable auction;
@@ -86,17 +85,14 @@ contract FixedPriceAuctionHandler is Test {
     uint256 public strayFill;
     uint256 public strayOther;
 
-    // Frozen at the first outcome
+    // Frozen once the phase is first Settled or Cancelled, by the clock or a call
     bool public hasOutcome;
     IFixedPriceAuction.Settlement internal _snapshot;
-    uint64 public ghostSettledAt;
+    uint64 public ghostEndedAt;
     IFixedPriceAuction.Phase public ghostOutcome;
 
     /// @dev Bidders blocked at the fill-token level. Only set when the fill token is a FakeBlocklistERC20.
     mapping(address account => bool blocked) public fillTokenBlocked;
-
-    /// @dev Hash of the settlement preview first seen at or after `fulfillmentEnd` with no outcome stored.
-    bytes32 internal endPreview;
 
     // Outcome events seen from the auction
     uint256 public settledEvents;
@@ -143,7 +139,6 @@ contract FixedPriceAuctionHandler is Test {
         vm.recordLogs();
         _;
         _countOutcomeEvents();
-        _checkPreviewAfterEnd();
         _recordOutcome();
     }
 
@@ -205,9 +200,7 @@ contract FixedPriceAuctionHandler is Test {
         try auction.claim() {
             ok = true;
             ++successes["claim"];
-        } catch {
-            _discardLogs();
-        }
+        } catch {}
         _post(account, ok, before, blocked, deposit_, claimed_);
         _check(!ok || _final(before.phase), "claim before an outcome");
         if (tokenBlocked) _check(!ok, "claim paid fill tokens to a token-blocked account");
@@ -224,7 +217,7 @@ contract FixedPriceAuctionHandler is Test {
         ghostClaimed[account] = true;
         uint256 gotFill = fill.balanceOf(account) - fillBefore;
         uint256 gotBid = bid.balanceOf(account) - bidBefore;
-        // `claimable` is a preview of what `claim` pays, live until the snapshot is taken.
+        // `claimable` is a preview of what `claim` pays.
         _check(gotFill == expected.fillTokenAmount && gotBid == expected.bidTokenRefund, "claim != claimable");
         userFillPaid += gotFill;
         userRefundPaid += gotBid;
@@ -237,7 +230,7 @@ contract FixedPriceAuctionHandler is Test {
         // of the time half of it, otherwise random. One run in five, fixed at its first fund call, only ever funds
         // half the shortfall, so it settles partly filled.
         uint256 required = auction.totalDeposits().mulDivRound(config.price, auction.priceDenominator(), true);
-        uint256 shortfall = required > auction.fillOwed() ? required - auction.fillOwed() : 0;
+        uint256 shortfall = required > auction.funding() ? required - auction.funding() : 0;
         if (fundCalls++ == 0) partialRun = amount % 5 == 0;
         uint256 mode = partialRun ? 2 : amount % 4;
         if (mode < 2 && shortfall > 0) amount = shortfall;
@@ -291,7 +284,7 @@ contract FixedPriceAuctionHandler is Test {
             );
             // Recomputed here, so a rounding slip shared by the view and the settlement still shows.
             _check(
-                auction.fillOwed() * auction.priceDenominator() >= before.totalDeposits * config.price,
+                auction.funding() * auction.priceDenominator() >= before.totalDeposits * config.price,
                 "withdrawing the excess left funding short of every deposit"
             );
         }
@@ -308,9 +301,7 @@ contract FixedPriceAuctionHandler is Test {
         try auction.claimTreasury() {
             ok = true;
             ++successes["claimTreasury"];
-        } catch {
-            _discardLogs();
-        }
+        } catch {}
         _checkPaused(ok, before);
         _check(!ok || _final(before.phase), "claimTreasury before an outcome");
         // Never screened: whoever calls, and whatever the treasury addresses' block status, it pays once due.
@@ -365,8 +356,10 @@ contract FixedPriceAuctionHandler is Test {
     function recoverToken(uint256 which, uint256 amount, bool exact) external step {
         FakeERC20CustomDecimals token = which % 3 == 0 ? stray : which % 3 == 1 ? bid : fill;
         uint256 tally = token == stray ? strayOther : token == bid ? strayBid : strayFill;
-        // Exactly the stray tally (all that's recoverable), or a random amount that's usually too much.
+        // Exactly the stray tally, or a random amount that's usually too much.
         amount = exact && tally > 0 ? tally : _bound(amount, 1, 1e27);
+        // Only the unrelated token is recoverable; the auction's own tokens never are, stray or not.
+        bool recoverable = token == stray && amount <= tally;
 
         State memory before = _state();
         vm.prank(msig);
@@ -376,15 +369,11 @@ contract FixedPriceAuctionHandler is Test {
             ++successes["recoverToken"];
         } catch {}
         // Checked before the books move, so an over-recovery is reported, not hidden by an underflow revert.
-        _check(!ok || amount <= tally, "recoverToken took owed funds");
-        if (ok && amount <= tally) {
-            if (token == stray) strayOther -= amount;
-            else if (token == bid) strayBid -= amount;
-            else strayFill -= amount;
-        }
+        _check(!ok || recoverable, "recoverToken took the auction's own tokens or more than the stray");
+        if (ok && recoverable) strayOther -= amount;
         _checkPaused(ok, before);
         _checkRescueMode(ok, before);
-        if (!before.paused && !before.inRescueMode) _check(ok == (amount <= tally), "recoverToken != stray tally");
+        if (!before.paused && !before.inRescueMode) _check(ok == recoverable, "recoverToken != recoverable");
     }
 
     /// @dev Pauses a quarter of the time and unpauses otherwise, so runs aren't mostly paused.
@@ -668,7 +657,6 @@ contract FixedPriceAuctionHandler is Test {
             _bookTreasuryClaim(bidBefore, fillBefore);
         }
         _countOutcomeEvents();
-        _checkPreviewAfterEnd();
         _recordOutcome();
     }
 
@@ -684,8 +672,8 @@ contract FixedPriceAuctionHandler is Test {
 
     /****** INTERNALS ******/
 
-    /// @dev Counts the outcome events the last call emitted, and checks an `AuctionSettled` against the stored
-    /// snapshot and `settledAt`, and an `AuctionCancelled` against the cancel snapshot.
+    /// @dev Counts the outcome events the last call emitted, and checks an `AuctionSettled` against the settlement
+    /// and `endedAt`, and an `AuctionCancelled` against the cancel settlement.
     function _countOutcomeEvents() internal {
         Vm.Log[] memory logs = vm.getRecordedLogs();
         for (uint256 i; i < logs.length; ++i) {
@@ -695,11 +683,11 @@ contract FixedPriceAuctionHandler is Test {
                 ++settledEvents;
                 IFixedPriceAuction.Settlement memory s = auction.previewSettlement();
                 bytes memory stored = abi.encode(
-                    auction.settledAt(), auction.totalDeposits(), s.filledDeposits, s.userFunding, s.userRefund,
+                    auction.endedAt(), auction.totalDeposits(), s.filledDeposits, s.userFunding, s.userRefund,
                     s.funderRefund
                 );
                 _check(
-                    keccak256(logs[i].data) == keccak256(stored), "AuctionSettled differs from the stored settlement"
+                    keccak256(logs[i].data) == keccak256(stored), "AuctionSettled differs from the settlement"
                 );
             } else if (topic == IFixedPriceAuction.AuctionCancelled.selector) {
                 ++cancelledEvents;
@@ -707,26 +695,10 @@ contract FixedPriceAuctionHandler is Test {
                 bytes memory stored = abi.encode(s.userRefund, s.funderRefund);
                 _check(
                     keccak256(logs[i].data) == keccak256(stored) && s.userRefund == auction.totalDeposits(),
-                    "AuctionCancelled differs from the stored settlement"
+                    "AuctionCancelled differs from the settlement"
                 );
             }
         }
-    }
-
-    /// @dev From `fulfillmentEnd` until an outcome is stored, the preview never moves, so the snapshot the auction
-    /// stores lazily is the preview everyone saw. Called before `_recordOutcome`, so the step that stores the
-    /// snapshot compares it too.
-    function _checkPreviewAfterEnd() internal {
-        if (hasOutcome || currentTime < config.fulfillmentEnd) return;
-        bytes32 preview = keccak256(abi.encode(auction.previewSettlement()));
-        if (endPreview == bytes32(0)) endPreview = preview;
-        else _check(preview == endPreview, "settlement preview moved after fulfillmentEnd");
-    }
-
-    /// @dev Recorded logs include those of a reverted call, and a claim emits its lazy `AuctionSettled` before it
-    /// can revert, so a failed claim's logs are dropped.
-    function _discardLogs() internal {
-        vm.getRecordedLogs();
     }
 
     function _recordOutcome() internal {
@@ -736,10 +708,10 @@ contract FixedPriceAuctionHandler is Test {
             IFixedPriceAuction.TreasuryClaim memory t = auction.treasuryClaimable();
             _check(t.bidTokenAmount == 0 && t.fillTokenRefund == 0, "treasuryClaimable nonzero before settlement");
         }
-        if (auction.settledAt() == 0 && current != IFixedPriceAuction.Phase.Cancelled) return;
+        if (!_final(current)) return;
         hasOutcome = true;
         _snapshot = auction.previewSettlement();
-        ghostSettledAt = auction.settledAt();
+        ghostEndedAt = auction.endedAt();
         ghostOutcome = auction.phase();
     }
 
@@ -748,8 +720,7 @@ contract FixedPriceAuctionHandler is Test {
         s.fillBalance = fill.balanceOf(address(auction));
         s.strayBalance = stray.balanceOf(address(auction));
         s.totalDeposits = auction.totalDeposits();
-        s.bidOwed = auction.bidOwed();
-        s.fillOwed = auction.fillOwed();
+        s.funding = auction.funding();
         s.paused = auction.paused();
         s.inRescueMode = auction.inRescueMode();
         s.complianceDisabled = auction.complianceDisabled();
@@ -757,7 +728,7 @@ contract FixedPriceAuctionHandler is Test {
         s.executor = auction.executor();
         s.rescuer = auction.rescuer();
         s.phase = auction.phase();
-        s.settledAt = auction.settledAt();
+        s.endedAt = auction.endedAt();
     }
 
     function _same(State memory a, State memory b) internal pure returns (bool) {

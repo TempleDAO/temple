@@ -18,9 +18,53 @@ contract FixedPriceAuctionFuzzTest is FixedPriceAuctionTestBase {
     /// @dev Who handovers can pass either role to. Shared, so a handover can try to give both roles to one address.
     address[4] internal candidates;
 
+    /// @dev What `a` still has to pay, from its deposits, its claimed flags and the settlement split: every deposit
+    /// and all funding until it's final, then each unclaimed share and the unclaimed treasury legs.
+    function _unpaid(FixedPriceAuction a, address[] memory accounts) internal view returns (uint256 bid, uint256 fill) {
+        IFixedPriceAuction.Phase p = a.phase();
+        if (p != IFixedPriceAuction.Phase.Settled && p != IFixedPriceAuction.Phase.Cancelled) {
+            return (a.totalDeposits(), a.funding());
+        }
+        IFixedPriceAuction.Settlement memory s = a.previewSettlement();
+        for (uint256 i; i < accounts.length; ++i) {
+            uint256 amount = a.deposits(accounts[i]);
+            if (amount == 0 || a.claimed(accounts[i])) continue;
+            bid += Math.mulDiv(amount, s.userRefund, a.totalDeposits());
+            fill += Math.mulDiv(amount, s.userFunding, a.totalDeposits());
+        }
+        if (!a.treasuryClaimed()) {
+            bid += s.filledDeposits;
+            fill += s.funderRefund;
+        }
+    }
+
+    /// @dev The balances cover what's unpaid, and the surplus is rounding dust: under one wei per account per token
+    /// once settled, none before that or on a cancel.
+    function _assertUnpaidHeld(
+        FixedPriceAuction a,
+        FakeERC20CustomDecimals bid,
+        FakeERC20CustomDecimals fill,
+        address[] memory accounts
+    ) internal view {
+        (uint256 bidUnpaid, uint256 fillUnpaid) = _unpaid(a, accounts);
+        uint256 bidHeld = bid.balanceOf(address(a));
+        uint256 fillHeld = fill.balanceOf(address(a));
+        assertGe(bidHeld, bidUnpaid, "bid balance < unpaid");
+        assertGe(fillHeld, fillUnpaid, "fill balance < unpaid");
+        uint256 maxDust = a.phase() == IFixedPriceAuction.Phase.Settled ? accounts.length : 1;
+        assertLt(bidHeld - bidUnpaid, maxDust, "bid dust");
+        assertLt(fillHeld - fillUnpaid, maxDust, "fill dust");
+    }
+
+    function _actors() internal view returns (address[] memory accounts) {
+        accounts = new address[](actors.length);
+        for (uint256 i; i < actors.length; ++i) {
+            accounts[i] = actors[i];
+        }
+    }
+
     function _assertLiabilitiesHeld() internal view {
-        assertEq(tgld.balanceOf(address(auction)), auction.bidOwed(), "bid balance != bidOwed");
-        assertEq(usds.balanceOf(address(auction)), auction.fillOwed(), "fill balance != fillOwed");
+        _assertUnpaidHeld(auction, tgld, usds, _actors());
         assertTrue(auction.executor() != auction.rescuer(), "executor is the rescuer");
         if (auction.inRescueMode()) {
             assertEq(auction.proposedExecutor(), address(0), "executor proposal in rescue mode");
@@ -140,7 +184,7 @@ contract FixedPriceAuctionFuzzTest is FixedPriceAuctionTestBase {
 
         // Finish: once the brakes are off, everyone still owed can claim.
         _liftBrakes();
-        if (block.timestamp < auction.getTiming().fulfillmentEnd) _toEnd(auction);
+        if (block.timestamp < auction.getConfig().fulfillmentEnd) _toEnd(auction);
         for (uint256 i; i < actors.length; ++i) {
             if (auction.deposits(actors[i]) > 0 && !auction.claimed(actors[i])) {
                 vm.prank(actors[i]);
@@ -148,16 +192,10 @@ contract FixedPriceAuctionFuzzTest is FixedPriceAuctionTestBase {
             }
         }
         if (!auction.treasuryClaimed()) auction.claimTreasury();
+        // Everything is paid: only rounding dust stays, under one wei per claimant per token, and none on a cancel.
+        (uint256 bidUnpaid, uint256 fillUnpaid) = _unpaid(auction, _actors());
+        assertEq(bidUnpaid + fillUnpaid, 0, "unpaid after every claim");
         _assertLiabilitiesHeld();
-
-        // Only rounding dust stays: under one wei per claimant per token, and none on a cancel.
-        if (auction.phase() == IFixedPriceAuction.Phase.Cancelled) {
-            assertEq(auction.bidOwed(), 0);
-            assertEq(auction.fillOwed(), 0);
-        } else {
-            assertLt(auction.bidOwed(), actors.length);
-            assertLt(auction.fillOwed(), actors.length);
-        }
     }
 
     struct Case {
@@ -288,11 +326,8 @@ contract FixedPriceAuctionFuzzTest is FixedPriceAuctionTestBase {
         assertEq(c.bid.balanceOf(proceedsRecipient), s.filledDeposits, "proceeds");
         assertEq(c.fill.balanceOf(funder), s.funderRefund, "funder refund");
 
-        // The dust left is under one wei per claimant, per token, and still fully held.
-        assertLt(c.a.bidOwed(), c.accounts.length, "bid dust");
-        assertLt(c.a.fillOwed(), c.accounts.length, "fill dust");
-        assertEq(c.bid.balanceOf(address(c.a)), c.a.bidOwed(), "bid held");
-        assertEq(c.fill.balanceOf(address(c.a)), c.a.fillOwed(), "fill held");
+        // The dust left is under one wei per claimant, per token.
+        _assertUnpaidHeld(c.a, c.bid, c.fill, c.accounts);
     }
 
     /// @dev Deposits sit just under the bound where requiredFunding overflows uint256, so settlement and claims run
@@ -325,9 +360,9 @@ contract FixedPriceAuctionFuzzTest is FixedPriceAuctionTestBase {
         vm.prank(bob);
         a.claim();
         a.claimTreasury();
-        assertEq(tgld.balanceOf(address(a)), a.bidOwed());
-        assertEq(usds.balanceOf(address(a)), a.fillOwed());
-        assertLt(a.bidOwed(), 2);
-        assertLt(a.fillOwed(), 2);
+        address[] memory accounts = new address[](2);
+        accounts[0] = alice;
+        accounts[1] = bob;
+        _assertUnpaidHeld(a, tgld, usds, accounts);
     }
 }
