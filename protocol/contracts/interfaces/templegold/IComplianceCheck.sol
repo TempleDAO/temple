@@ -14,14 +14,15 @@ interface IComplianceCheck is IExecutorAccess {
     event ExplicitAccessSet(address indexed account, bytes4 indexed fnSelector, bool indexed value);
 
     /// @notice Grant or revoke the functions in `access` for `allowedCaller`. A `proposeNewExecutor` grant hands
-    /// over the executor role.
+    /// over the executor role. A `setBlocked` grant also lets the grantee exclude and reinstate bidders on every
+    /// auction pointing at this list, in rescue mode too, while compliance is enabled on that auction.
     /// @dev Executor only. Reverts on a zero `allowedCaller`.
     function setExplicitAccess(address allowedCaller, ITempleElevatedAccess.ExplicitAccess[] calldata access) external;
 
     /// @notice Block or unblock `accounts`. The executor, or a caller granted `setBlocked`.
     function setBlocked(address[] calldata accounts, bool value) external;
 
-    /// @notice True if `account` may not deposit, withdraw or claim.
+    /// @notice True if `account` may not deposit, withdraw, claim or withdraw an excluded balance, and can be excluded.
     function isBlocked(address account) external view returns (bool);
 
     /// @notice True if `allowedCaller` was granted `fnSelector` through `setExplicitAccess`.

@@ -55,6 +55,8 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
     bool public override treasuryClaimed;
     /// @inheritdoc IFixedPriceAuction
     uint256 public override totalDeposits;
+    /// @inheritdoc IFixedPriceAuction
+    mapping(address account => uint256 amount) public override excluded;
 
     /// @inheritdoc IFixedPriceAuction
     uint256 public override funding;
@@ -126,6 +128,50 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
 
         emit DepositWithdrawn(msg.sender, amount, remainder, totalDeposits);
         IERC20(config.bidToken).safeTransfer(msg.sender, amount);
+    }
+
+    /// @inheritdoc IFixedPriceAuction
+    function exclude(address account) external override {
+        _onlyExclusionAdmin();
+        AuctionConfig memory config = _config();
+        Phase current = _phase(config);
+        if (current != Phase.Deposit && current != Phase.Fulfillment) revert InvalidPhase(Phase.Fulfillment, current);
+        if (!_isBlocked(account)) revert AccountNotBlocked(account);
+        uint256 amount = deposits[account];
+        if (amount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
+
+        emit BidderExcluded(account, amount);
+        deposits[account] = 0;
+        excluded[account] += amount;
+        totalDeposits -= amount;
+    }
+
+    /// @inheritdoc IFixedPriceAuction
+    function reinstate(address account) external override {
+        _onlyExclusionAdmin();
+        AuctionConfig memory config = _config();
+        _requirePhase(config, Phase.Deposit);
+        if (_isBlocked(account)) revert BlockedAccount(account);
+        uint256 amount = excluded[account];
+        if (amount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
+        // Reject a reinstate that would make the funding calculation overflow and prevent settlement.
+        _requiredFunding(totalDeposits + amount, config.price);
+
+        emit BidderReinstated(account, amount);
+        excluded[account] = 0;
+        deposits[account] += amount;
+        totalDeposits += amount;
+    }
+
+    /// @inheritdoc IFixedPriceAuction
+    function withdrawExcluded() external override whenNotPaused notBlocked {
+        uint256 amount = excluded[msg.sender];
+        if (amount == 0) revert NothingToClaim();
+
+        excluded[msg.sender] = 0;
+
+        emit ExcludedWithdrawn(msg.sender, amount);
+        IERC20(_config().bidToken).safeTransfer(msg.sender, amount);
     }
 
     /// @inheritdoc IFixedPriceAuction
@@ -232,7 +278,6 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
         if (amount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
 
         AuctionConfig memory config = _config();
-        // Without liability counters there's no telling what's still owed, so the auction's own tokens stay put.
         if (token == config.bidToken || token == config.fillToken) revert CommonEventsAndErrors.InvalidParam();
 
         emit CommonEventsAndErrors.TokenRecovered(to, token, amount);
@@ -335,7 +380,7 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
         treasuryClaim.fillTokenRefund = preview.funderRefund;
     }
 
-    /// @dev A pure function of `totalDeposits` and `funding`, which stop changing once Fulfillment ends.
+    /// @dev Reads only totalDeposits and funding as state, which stop changing once the phase is final.
     function _calculateSettlement(uint256 price) private view returns (Settlement memory) {
         uint256 denominator = priceDenominator;
         // Fills, and the fill tokens they buy, round down, so bidders never get more than the funding covers.
@@ -367,6 +412,10 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
         if (current != expected) revert InvalidPhase(expected, current);
     }
 
+    function _isBlocked(address account) private view returns (bool) {
+        return !complianceDisabled && IComplianceCheck(complianceCheck).isBlocked(account);
+    }
+
     modifier whenNotPaused() {
         _requireNotPaused();
         _;
@@ -382,8 +431,16 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
     }
 
     function _requireNotBlocked() private view {
-        if (!complianceDisabled && IComplianceCheck(complianceCheck).isBlocked(msg.sender)) {
-            revert BlockedAccount(msg.sender);
+        if (_isBlocked(msg.sender)) revert BlockedAccount(msg.sender);
+    }
+
+    /// @dev The executor outside rescue mode, or, while compliance is enabled, a caller the current list grants
+    /// setBlocked (in rescue mode too).
+    function _onlyExclusionAdmin() private view {
+        if (_isElevatedAccess(msg.sender, msg.sig)) return;
+        bytes4 selector = IComplianceCheck.setBlocked.selector;
+        if (complianceDisabled || !IComplianceCheck(complianceCheck).explicitFunctionAccess(msg.sender, selector)) {
+            revert CommonEventsAndErrors.InvalidAccess();
         }
     }
 
