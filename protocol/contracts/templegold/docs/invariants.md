@@ -2,39 +2,39 @@
 
 The properties the contracts must always keep. The fuzz and invariant suites are built from this list: each property names where it's checked, and a property with no check is a test gap.
 
-"Owed" means the auction's liability counters, `bidOwed` and `fillOwed`. "Claimants" means the depositors plus the treasury. "Stray" means tokens sent to the auction by plain transfer rather than through `deposit` or `fund`.
+"Unpaid" means what the auction still has to pay, computed by the test from deposits, claimed flags and the settlement split: every deposit and all `funding` until the phase is final, then each unclaimed bidder's pro-rata shares and the unclaimed treasury legs. The auction keeps no liability counters. "Held" means the auction's balance of a token less its stray transfers. "Final" means the phase is Settled (by the clock or `endFulfillment`) or Cancelled. "Claimants" means the depositors plus the treasury. "Stray" means tokens sent to the auction by plain transfer rather than through `deposit` or `fund`.
 
 ## Solvency
 
 | ID | Property | Checked by |
 |---|---|---|
-| S1 | The auction's balance of each token is at least what it owes, and equals it once stray transfers are subtracted. | `invariant_balancesCoverOwed`; `afterInvariant` after the drain; fuzz `test_fuzz_liabilitiesAlwaysHeld` after every step and `_checkClaims` |
+| S1 | Held equals what came in less what was paid out, and is at least what's unpaid in each token; the surplus is rounding dust, none before final or on a cancel. | `invariant_balancesCoverOwed`; `afterInvariant` after the drain; fuzz `_assertUnpaidHeld` in `test_fuzz_liabilitiesAlwaysHeld` after every step, in `_checkClaims` and `test_settlement_atOverflowBound` |
 | S2 | `totalDeposits` equals the sum of every account's `deposits`. | `invariant_totalDepositsIsSumOfDeposits` |
-| S3 | Before an outcome, `bidOwed == totalDeposits` and `fillOwed` equals funding minus excess withdrawn. | `invariant_owedMatchesBooks` |
-| S4 | After an outcome, what's owed covers every unpaid claim (users and treasury) in each token, with a surplus under one wei per claimant. | `invariant_owedCoversClaims` |
-| S5 | `recoverToken` never takes the balance below what's owed. | handler `recoverToken` ("recoverToken took owed funds", "recoverToken != stray tally"); `invariant_balancesCoverOwed` |
-| S6 | Liveness: once unpaused, unblocked and past `fulfillmentEnd` (or cancelled), every depositor and the treasury can claim without a revert, and afterwards what's owed is under the number of claimants. | `afterInvariant` (handler `drain`: lifts rescue mode, pause, both compliance lists and the fill token's blocklist, then every depositor and the treasury claim with no try/catch); fuzz `test_fuzz_liabilitiesAlwaysHeld` finish |
+| S3 | `funding()` always equals what was funded minus the excess withdrawn; claims never move it. (The `bidOwed == totalDeposits` half is gone with the counter.) | `invariant_fundingMatchesBooks` |
+| S4 | Once final, held covers every unpaid claim as the `claimable` and `treasuryClaimable` views report it, with a surplus under one wei per claimant. | `invariant_owedCoversClaims` |
+| S5 | `recoverToken` always reverts for the bid and fill tokens, stray or not, and recovers any other token in full. A donation of either auction token changes no payout. | handler `recoverToken` ("recoverToken took the auction's own tokens or more than the stray", "recoverToken != recoverable"); `invariant_balancesCoverOwed`; unit `test_recoverToken_ownTokensNever_donationChangesNoPayout` |
+| S6 | Liveness: once unpaused, unblocked and past `fulfillmentEnd` (or cancelled), every depositor and the treasury can claim without a revert, and afterwards held is under the number of claimants. | `afterInvariant` (handler `drain`: lifts rescue mode, pause, both compliance lists and the fill token's blocklist, then every depositor and the treasury claim with no try/catch); fuzz `test_fuzz_liabilitiesAlwaysHeld` finish |
 
 ## Settlement maths
 
 | ID | Property | Checked by |
 |---|---|---|
-| M1 | `filledDeposits + userRefund == totalDeposits`, and `userFunding + funderRefund` equals `fillOwed` at settlement. | `invariant_settlementMaths`; fuzz `_checkSplit` |
+| M1 | `filledDeposits + userRefund == totalDeposits`, and `userFunding + funderRefund == funding`. | `invariant_settlementMaths`; fuzz `_checkSplit` |
 | M2 | Required funding rounds up; `userFunding` is at most `filledDeposits × price / priceDenominator`, rounded down. | `invariant_settlementMaths`; handler `withdrawExcess` (funding left after withdrawing the full excess still covers every deposit); fuzz `_checkSplit` |
 | M3 | Funding that covers the rounded-up requirement fills every deposit, unless all deposits together buy less than one fill-token wei. | `invariant_settlementMaths`; fuzz `_checkSplit` (a quarter of runs fund exactly the rounded-up requirement) |
 | M4 | `userFunding == 0` implies `filledDeposits == 0`: no bid tokens are taken for nothing. | `invariant_settlementMaths`; fuzz `_checkSplit` |
 | M5 | Each bidder's fill and refund are within one wei of their exact pro-rata share, and never above it. | fuzz `_checkClaims` in `test_fuzz_settlementMaths*`: each share equals OpenZeppelin `Math.mulDiv(deposit, pool, totalDeposits)`, the exact pro-rata share rounded down |
-| M6 | A cancel refunds exactly: every depositor gets their whole deposit and the funder all its funding, with no dust. | `invariant_cancelRefundsExactly`; `afterInvariant` (no dust after a cancel); fuzz `test_fuzz_liabilitiesAlwaysHeld` (owed is zero after a cancel) |
-| M7 | Once `fulfillmentEnd` passes, `previewSettlement` equals the snapshot the auction eventually stores. | handler `_checkPreviewAfterEnd` ("settlement preview moved after fulfillmentEnd"), run after every action and the drain |
+| M6 | A cancel refunds exactly: every depositor gets their whole deposit and the funder all its funding, with no dust. | `invariant_cancelRefundsExactly`; `afterInvariant` (no dust after a cancel); fuzz `_assertUnpaidHeld` (no surplus after a cancel) |
+| M7 | Folded into L1: there is no stored snapshot for the preview to differ from. Once `fulfillmentEnd` passes the phase is final, and L1 holds the preview fixed from then. | `invariant_outcomeFrozen` |
 
 ## Lifecycle
 
 | ID | Property | Checked by |
 |---|---|---|
-| L1 | Once set, the outcome, the settlement snapshot and `settledAt` never change, and Settled and Cancelled are exclusive. | `invariant_outcomeFrozen`; `invariant_outcomeEmittedOnceAndMatchesSnapshot` ("both settled and cancelled") |
+| L1 | Once the phase is final, by the clock or a call, the phase, `previewSettlement()` and `endedAt` never change, and Settled and Cancelled are exclusive. | `invariant_outcomeFrozen`; `invariant_outcomeEmittedOnceAndMatchesSnapshot` ("both settled and cancelled") |
 | L2 | Each action works only in its phase: deposits and withdrawals in Deposit, funding and excess withdrawal in Fulfillment, `cancel` while unsettled and before `fulfillmentEnd`, claims once Settled or Cancelled. | handler phase checks on every successful call (`_checkPhase`, "claim before an outcome", "cancel after an outcome or fulfillmentEnd", "msig cancel not exactly while open", "endFulfillment refused in Fulfillment"); unit `FixedPriceAuctionLifecycleTest` |
 | L3 | No account and no treasury claims twice. | handler `_bookClaim` ("account claimed twice") and `_bookTreasuryClaim` ("treasury claimed twice") |
-| L4 | `AuctionSettled` is emitted exactly once, with fields equal to the stored snapshot; `AuctionCancelled` exactly once on cancel; never both. | handler `_countOutcomeEvents` (each event's fields against the stored settlement; logs of reverted claims dropped); `invariant_outcomeEmittedOnceAndMatchesSnapshot`, also after the drain |
+| L4 | `AuctionSettled` is emitted only by `endFulfillment`, once, with `endedAt` and fields equal to `previewSettlement()`; a settlement by the clock emits nothing; `AuctionCancelled` exactly once on cancel; never both. | handler `_countOutcomeEvents` (each event's fields against the settlement); `invariant_outcomeEmittedOnceAndMatchesSnapshot` (`AuctionSettled` seen exactly when `endedAt` is set), also after the drain; unit `test_claim_atFulfillmentEnd_emitsNoSettlement` |
 | L5 | `withdrawableExcess()` is exactly what `withdrawExcess` accepts: one wei more reverts, and it's zero while paused or outside Fulfillment. | handler `withdrawExcess` ("withdrawExcess disagrees with withdrawableExcess", tries the view, the view plus one wei and random amounts) |
 
 ## Pause and rescue mode
