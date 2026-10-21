@@ -73,6 +73,9 @@ abstract contract FixedPriceAuctionInvariantBase is FixedPriceAuctionTestBase {
         i = _add(s, i, FixedPriceAuctionHandler.disableComplianceCheck.selector, 1);
         i = _add(s, i, FixedPriceAuctionHandler.rescuerOverreach.selector, 1);
         i = _add(s, i, FixedPriceAuctionHandler.setBlocked.selector, 1);
+        i = _add(s, i, FixedPriceAuctionHandler.exclude.selector, 6);
+        i = _add(s, i, FixedPriceAuctionHandler.reinstate.selector, 6);
+        i = _add(s, i, FixedPriceAuctionHandler.withdrawExcluded.selector, 2);
         i = _add(s, i, FixedPriceAuctionHandler.strayTransfer.selector, 1);
         i = _add(s, i, FixedPriceAuctionHandler.proposeExecutor.selector, 1);
         i = _add(s, i, FixedPriceAuctionHandler.acceptExecutor.selector, 1);
@@ -94,6 +97,12 @@ abstract contract FixedPriceAuctionInvariantBase is FixedPriceAuctionTestBase {
 
     function _settled() internal view returns (bool) {
         return handler.hasOutcome();
+    }
+
+    function _totalExcluded() internal view returns (uint256 sum) {
+        for (uint256 i; i < handler.bidderCount(); ++i) {
+            sum += auction.excluded(handler.bidders(i));
+        }
     }
 
     /// @dev Handler-side checks: pause, rescue mode, rescuer powers, screening and claim-once.
@@ -120,10 +129,14 @@ abstract contract FixedPriceAuctionInvariantBase is FixedPriceAuctionTestBase {
         assertEq(auction.totalDeposits(), sum);
     }
 
-    /// @dev Before an outcome, owed is what was deposited and funded. At any time, owed falls by exactly what's paid.
+    /// @dev Before an outcome, owed is what was deposited, excluded balances included, and funded. At any time, owed
+    /// falls by exactly what's paid.
     function invariant_owedMatchesBooks() public view {
+        uint256 excluded = _totalExcluded();
         if (!_settled()) {
-            assertEq(auction.bidOwed(), auction.totalDeposits(), "bidOwed != totalDeposits before outcome");
+            assertEq(
+                auction.bidOwed(), auction.totalDeposits() + excluded, "bidOwed != deposits + excluded before outcome"
+            );
             assertEq(
                 auction.fillOwed(),
                 handler.funded() - handler.excessWithdrawn(),
@@ -132,8 +145,8 @@ abstract contract FixedPriceAuctionInvariantBase is FixedPriceAuctionTestBase {
         }
         assertEq(
             auction.bidOwed(),
-            auction.totalDeposits() - handler.userRefundPaid() - handler.treasuryBidPaid(),
-            "bidOwed != deposits - paid"
+            auction.totalDeposits() + excluded - handler.userRefundPaid() - handler.treasuryBidPaid(),
+            "bidOwed != deposits + excluded - paid"
         );
         assertEq(
             auction.fillOwed(),
@@ -142,10 +155,11 @@ abstract contract FixedPriceAuctionInvariantBase is FixedPriceAuctionTestBase {
         );
     }
 
-    /// @dev After an outcome, what's owed covers every remaining claim, with at most a wei per claimant over.
+    /// @dev After an outcome, what's owed covers every remaining claim and excluded balance, with at most a wei per
+    /// claimant over.
     function invariant_owedCoversClaims() public view {
         if (!_settled()) return;
-        uint256 bidNeeded;
+        uint256 bidNeeded = _totalExcluded();
         uint256 fillNeeded;
         uint256 claimants;
         for (uint256 i; i < handler.bidderCount(); ++i) {
@@ -189,8 +203,15 @@ abstract contract FixedPriceAuctionInvariantBase is FixedPriceAuctionTestBase {
         if (s.userFunding == 0) assertEq(s.filledDeposits, 0, "bid tokens filled for no fill tokens");
     }
 
-    /// @dev The outcome, its snapshot and settledAt never change once set.
+    /// @dev From `fulfillmentEnd` the phase is final. The outcome, its snapshot and settledAt never change once set.
     function invariant_outcomeFrozen() public view {
+        if (block.timestamp >= auction.getConfig().fulfillmentEnd) {
+            IFixedPriceAuction.Phase p = auction.phase();
+            assertTrue(
+                p == IFixedPriceAuction.Phase.Settled || p == IFixedPriceAuction.Phase.Cancelled,
+                "not final at fulfillmentEnd"
+            );
+        }
         if (!_settled()) return;
         assertEq(abi.encode(auction.previewSettlement()), abi.encode(handler.snapshot()), "snapshot changed");
         assertEq(auction.settledAt(), handler.ghostSettledAt(), "settledAt changed");
@@ -267,6 +288,7 @@ abstract contract FixedPriceAuctionInvariantBase is FixedPriceAuctionTestBase {
             assertTrue(auction.claimed(account), "bidder not paid out");
         }
         assertTrue(auction.treasuryClaimed(), "treasury not paid out");
+        assertEq(_totalExcluded(), 0, "excluded balance not paid out");
         invariant_balancesCoverOwed();
         invariant_outcomeEmittedOnceAndMatchesSnapshot();
         // A cancel refunds exactly, so it leaves no dust at all.
