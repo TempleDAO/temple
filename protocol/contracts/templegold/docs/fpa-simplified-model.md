@@ -351,3 +351,11 @@ The record-only Well drops signed wishes and nonces, the on-chain balance and co
 12. Which `ComplianceCheck` does the indexer screen against? Does it stop screening when the rescuer disables compliance on the auctions? In this design, the rescuer's switch only reaches the auctions.
 13. Should the factory keep the supported-token check (`IAuctionTokenRegistry`) at `createAuction`?
 14. How does the rescuer rotate? Options: a handover on each auction plus a new factory, or a factory that reads the rescuer from a rescuer-owned slot instead of an immutable. When the msig rotates, do `ComplianceCheck` and the factory get a two-step executor handover, or do we redeploy them and repoint the auctions?
+15. **Pending renames**, agreed, to apply on whichever branch is kept:
+    - `endFulfillment()` → `settleEarly()`, because it only settles before `fulfillmentEnd`;
+    - `previewSettlement()` → `settlement()`, because once the auction is final it's the actual settlement;
+    - `Settlement.userFunding` → `userFill`, the fill tokens shared among bidders;
+    - `Settlement.filledDeposits` → `filledBids`, the bid tokens that were filled;
+    - `AuctionFactory` / `IAuctionFactory` → `FixedPriceAuctionFactory` / `IFixedPriceAuctionFactory`.
+
+    The `AuctionSettled` event keeps its name. `bidToken` / `fillToken`, `claimTreasury` and the Fulfillment phase names stay as they are.
