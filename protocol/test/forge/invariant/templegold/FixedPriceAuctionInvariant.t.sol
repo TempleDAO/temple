@@ -74,6 +74,9 @@ abstract contract FixedPriceAuctionInvariantBase is FixedPriceAuctionTestBase {
         i = _add(s, i, FixedPriceAuctionHandler.disableComplianceCheck.selector, 1);
         i = _add(s, i, FixedPriceAuctionHandler.rescuerOverreach.selector, 1);
         i = _add(s, i, FixedPriceAuctionHandler.setBlocked.selector, 1);
+        i = _add(s, i, FixedPriceAuctionHandler.exclude.selector, 6);
+        i = _add(s, i, FixedPriceAuctionHandler.reinstate.selector, 6);
+        i = _add(s, i, FixedPriceAuctionHandler.withdrawExcluded.selector, 2);
         i = _add(s, i, FixedPriceAuctionHandler.strayTransfer.selector, 1);
         i = _add(s, i, FixedPriceAuctionHandler.proposeExecutor.selector, 1);
         i = _add(s, i, FixedPriceAuctionHandler.acceptExecutor.selector, 1);
@@ -97,6 +100,12 @@ abstract contract FixedPriceAuctionInvariantBase is FixedPriceAuctionTestBase {
         return handler.hasOutcome();
     }
 
+    function _totalExcluded() internal view returns (uint256 sum) {
+        for (uint256 i; i < handler.bidderCount(); ++i) {
+            sum += auction.excluded(handler.bidders(i));
+        }
+    }
+
     /// @dev Handler-side checks: pause, rescue mode, rescuer powers, screening and claim-once.
     function invariant_handlerChecks() public view {
         assertEq(handler.failure(), "");
@@ -104,8 +113,10 @@ abstract contract FixedPriceAuctionInvariantBase is FixedPriceAuctionTestBase {
 
     /// @dev What the auction still has to pay, from the deposits, the claimed flags and the settlement split: every
     /// deposit and all funding until the phase is final, then each unclaimed share and the unclaimed treasury legs.
+    /// Excluded balances are unpaid in every phase.
     function _unpaid() internal view returns (uint256 bidUnpaid, uint256 fillUnpaid) {
-        if (!_settled()) return (auction.totalDeposits(), handler.funded() - handler.excessWithdrawn());
+        bidUnpaid = _totalExcluded();
+        if (!_settled()) return (bidUnpaid + auction.totalDeposits(), handler.funded() - handler.excessWithdrawn());
         IFixedPriceAuction.Settlement memory s = auction.previewSettlement();
         for (uint256 i; i < handler.bidderCount(); ++i) {
             address account = handler.bidders(i);
@@ -126,7 +137,9 @@ abstract contract FixedPriceAuctionInvariantBase is FixedPriceAuctionTestBase {
         uint256 bidHeld = bid.balanceOf(address(auction)) - handler.strayBid();
         uint256 fillHeld = fill.balanceOf(address(auction)) - handler.strayFill();
         assertEq(
-            bidHeld, auction.totalDeposits() - handler.userRefundPaid() - handler.treasuryBidPaid(), "bid held != books"
+            bidHeld,
+            auction.totalDeposits() + _totalExcluded() - handler.userRefundPaid() - handler.treasuryBidPaid(),
+            "bid held != books"
         );
         assertEq(
             fillHeld,
@@ -152,10 +165,11 @@ abstract contract FixedPriceAuctionInvariantBase is FixedPriceAuctionTestBase {
         assertEq(auction.funding(), handler.funded() - handler.excessWithdrawn(), "funding != funded - withdrawn");
     }
 
-    /// @dev Once final, what's held covers every remaining claim, with at most a wei per claimant over.
+    /// @dev Once final, what's held covers every remaining claim and excluded balance, with at most a wei per
+    /// claimant over.
     function invariant_owedCoversClaims() public view {
         if (!_settled()) return;
-        uint256 bidNeeded;
+        uint256 bidNeeded = _totalExcluded();
         uint256 fillNeeded;
         uint256 claimants;
         for (uint256 i; i < handler.bidderCount(); ++i) {
@@ -201,17 +215,25 @@ abstract contract FixedPriceAuctionInvariantBase is FixedPriceAuctionTestBase {
         if (s.userFunding == 0) assertEq(s.filledDeposits, 0, "bid tokens filled for no fill tokens");
     }
 
-    /// @dev Once the phase is final, by the clock or a call, it, the settlement and endedAt never change.
+    /// @dev From `fulfillmentEnd` the phase is final. Once final, by the clock or a call, it, the settlement and
+    /// endedAt never change.
     function invariant_outcomeFrozen() public view {
+        if (block.timestamp >= auction.getConfig().fulfillmentEnd) {
+            IFixedPriceAuction.Phase p = auction.phase();
+            assertTrue(
+                p == IFixedPriceAuction.Phase.Settled || p == IFixedPriceAuction.Phase.Cancelled,
+                "not final at fulfillmentEnd"
+            );
+        }
         if (!_settled()) return;
-        assertEq(abi.encode(auction.previewSettlement()), abi.encode(handler.snapshot()), "settlement changed");
+        assertEq(abi.encode(auction.previewSettlement()), abi.encode(handler.frozenSettlement()), "settlement changed");
         assertEq(auction.endedAt(), handler.ghostEndedAt(), "endedAt changed");
         assertEq(uint256(auction.phase()), uint256(handler.ghostOutcome()), "outcome changed");
     }
 
     /// @dev `AuctionSettled` is emitted exactly by `endFulfillment`, once, and never by the clock; `AuctionCancelled`
     /// exactly on cancel, once; never both. The handler checks each event's fields against the settlement.
-    function invariant_outcomeEmittedOnceAndMatchesSnapshot() public view {
+    function invariant_outcomeEmittedOnce() public view {
         uint256 settled = handler.settledEvents();
         uint256 cancelled = handler.cancelledEvents();
         assertLe(settled, 1, "AuctionSettled emitted more than once");
@@ -279,8 +301,9 @@ abstract contract FixedPriceAuctionInvariantBase is FixedPriceAuctionTestBase {
             assertTrue(auction.claimed(account), "bidder not paid out");
         }
         assertTrue(auction.treasuryClaimed(), "treasury not paid out");
+        assertEq(_totalExcluded(), 0, "excluded balance not paid out");
         invariant_balancesCoverOwed();
-        invariant_outcomeEmittedOnceAndMatchesSnapshot();
+        invariant_outcomeEmittedOnce();
         // A cancel refunds exactly, so it leaves no dust at all.
         uint256 maxDust = claimants == 0 || auction.phase() == IFixedPriceAuction.Phase.Cancelled ? 0 : claimants - 1;
         assertLe(bid.balanceOf(address(auction)) - handler.strayBid(), maxDust, "bid dust >= claimants");

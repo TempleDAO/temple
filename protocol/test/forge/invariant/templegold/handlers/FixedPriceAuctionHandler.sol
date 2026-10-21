@@ -23,6 +23,7 @@ contract FixedPriceAuctionHandler is Test {
         uint256 fillBalance;
         uint256 strayBalance;
         uint256 totalDeposits;
+        uint256 totalExcluded;
         uint256 funding;
         bool paused;
         bool inRescueMode;
@@ -87,7 +88,7 @@ contract FixedPriceAuctionHandler is Test {
 
     // Frozen once the phase is first Settled or Cancelled, by the clock or a call
     bool public hasOutcome;
-    IFixedPriceAuction.Settlement internal _snapshot;
+    IFixedPriceAuction.Settlement internal _frozenSettlement;
     uint64 public ghostEndedAt;
     IFixedPriceAuction.Phase public ghostOutcome;
 
@@ -221,6 +222,163 @@ contract FixedPriceAuctionHandler is Test {
         _check(gotFill == expected.fillTokenAmount && gotBid == expected.bidTokenRefund, "claim != claimable");
         userFillPaid += gotFill;
         userRefundPaid += gotBid;
+    }
+
+    /****** EXCLUSION ******/
+
+    /// @dev Prefers a bidder with a deposit, blocked if possible, and half the time blocks it first, so exclusions
+    /// happen often. The caller is the msig, the blocker (granted `setBlocked` on both lists), an outsider or the
+    /// rescuer (always refused).
+    function exclude(uint256 seed, uint256 by) external step {
+        address account = _pickBlocked(seed);
+        if ((seed >> 8) % 2 == 0) _block(account, true);
+        address caller = [msig, blocker, outsider, rescuer][by % 4];
+        (State memory before, bool blocked, uint256 deposit_,) = _pre(account);
+        uint256 excludedBefore = auction.excluded(account);
+        uint256[4] memory others = _deposits();
+
+        vm.prank(caller);
+        bool ok;
+        try auction.exclude(account) {
+            ok = true;
+            ++successes["exclude"];
+        } catch {}
+        bool open = before.phase == IFixedPriceAuction.Phase.Deposit
+            || before.phase == IFixedPriceAuction.Phase.Fulfillment;
+        // Paused or not.
+        bool allowed = _mayExclude(caller, before) && open && blocked && deposit_ > 0;
+        _check(ok == allowed, "exclude not exactly when allowed");
+        if (!ok) {
+            _check(_same(before, _state()), "failed exclude changed state");
+            return;
+        }
+        _check(
+            auction.deposits(account) == 0 && auction.excluded(account) == excludedBefore + deposit_
+                && auction.totalDeposits() == before.totalDeposits - deposit_,
+            "exclude didn't move exactly the deposit"
+        );
+        _checkOnlyMoved(account, others, before, "exclude");
+    }
+
+    /// @dev Prefers an unblocked bidder with an excluded balance, and half the time unblocks it first. Callers as for
+    /// `exclude`.
+    function reinstate(uint256 seed, uint256 by) external step {
+        address account = _pickExcluded(seed);
+        if ((seed >> 8) % 2 == 0) _block(account, false);
+        address caller = [msig, blocker, outsider, rescuer][by % 4];
+        (State memory before, bool blocked, uint256 deposit_,) = _pre(account);
+        uint256 excluded_ = auction.excluded(account);
+        uint256[4] memory others = _deposits();
+
+        vm.prank(caller);
+        bool ok;
+        try auction.reinstate(account) {
+            ok = true;
+            ++successes["reinstate"];
+        } catch {}
+        // Deposits are bounded, so the overflow guard never trips here.
+        _check(
+            ok == (_mayExclude(caller, before) && before.phase == IFixedPriceAuction.Phase.Deposit && !blocked
+                && excluded_ > 0),
+            "reinstate not exactly when allowed"
+        );
+        if (!ok) {
+            _check(_same(before, _state()), "failed reinstate changed state");
+            return;
+        }
+        _check(
+            auction.deposits(account) == deposit_ + excluded_ && auction.excluded(account) == 0
+                && auction.totalDeposits() == before.totalDeposits + excluded_,
+            "reinstate didn't move exactly the excluded balance"
+        );
+        _checkOnlyMoved(account, others, before, "reinstate");
+    }
+
+    /// @dev Prefers an unblocked bidder with an excluded balance, and half the time unblocks it first.
+    function withdrawExcluded(uint256 seed) external step {
+        address account = _pickExcluded(seed);
+        if ((seed >> 8) % 2 == 0) _block(account, false);
+        uint256 excluded_ = auction.excluded(account);
+        uint256 bidBefore = bid.balanceOf(account);
+        (State memory before, bool blocked, uint256 deposit_, bool claimed_) = _pre(account);
+
+        vm.prank(account);
+        bool ok;
+        try auction.withdrawExcluded() {
+            ok = true;
+            ++successes["withdrawExcluded"];
+        } catch {}
+        _post(account, ok, before, blocked, deposit_, claimed_);
+        _check(ok == (!before.paused && !blocked && excluded_ > 0), "withdrawExcluded not exactly when allowed");
+        if (!ok) {
+            _check(auction.excluded(account) == excluded_, "failed withdrawExcluded moved the balance");
+            return;
+        }
+        _check(
+            bid.balanceOf(account) - bidBefore == excluded_ && auction.excluded(account) == 0,
+            "withdrawExcluded didn't pay exactly the excluded balance"
+        );
+        _check(auction.totalDeposits() == before.totalDeposits, "withdrawExcluded moved deposits");
+    }
+
+    /// @dev The executor outside rescue mode, or the blocker, whose grant is on both lists, while compliance is
+    /// enabled.
+    function _mayExclude(address caller, State memory before) internal view returns (bool) {
+        return (caller == msig && !before.inRescueMode) || (caller == blocker && !before.complianceDisabled);
+    }
+
+    /// @dev Exclusion moves no tokens, leaves funding alone and touches no other bidder's deposit.
+    function _checkOnlyMoved(
+        address account,
+        uint256[4] memory depositsBefore,
+        State memory before,
+        string memory what
+    ) internal {
+        for (uint256 i; i < 4; ++i) {
+            if (bidders[i] == account) continue;
+            _check(auction.deposits(bidders[i]) == depositsBefore[i], string.concat(what, " moved another deposit"));
+        }
+        _check(
+            bid.balanceOf(address(auction)) == before.bidBalance
+                && fill.balanceOf(address(auction)) == before.fillBalance && auction.funding() == before.funding,
+            string.concat(what, " moved tokens")
+        );
+    }
+
+    function _deposits() internal view returns (uint256[4] memory d) {
+        for (uint256 i; i < 4; ++i) {
+            d[i] = auction.deposits(bidders[i]);
+        }
+    }
+
+    /// @dev Three times in four, the first bidder from `seed` with a deposit, preferring blocked ones.
+    function _pickBlocked(uint256 seed) internal view returns (address fallback_) {
+        fallback_ = bidders[seed % 4];
+        if (seed % 4 == 0) return fallback_;
+        bool found;
+        for (uint256 i; i < 4; ++i) {
+            address account = bidders[(seed + i) % 4];
+            if (auction.deposits(account) == 0) continue;
+            if (_blocked(account)) return account;
+            if (!found) (found, fallback_) = (true, account);
+        }
+    }
+
+    /// @dev Three times in four, the first bidder from `seed` with an excluded balance, preferring unblocked ones.
+    function _pickExcluded(uint256 seed) internal view returns (address fallback_) {
+        fallback_ = bidders[seed % 4];
+        if (seed % 4 == 0) return fallback_;
+        bool found;
+        for (uint256 i; i < 4; ++i) {
+            address account = bidders[(seed + i) % 4];
+            if (auction.excluded(account) == 0) continue;
+            if (!_blocked(account)) return account;
+            if (!found) (found, fallback_) = (true, account);
+        }
+    }
+
+    function _blocked(address account) internal view returns (bool) {
+        return !auction.complianceDisabled() && IComplianceCheck(auction.complianceCheck()).isBlocked(account);
     }
 
     /****** FUNDER ******/
@@ -547,10 +705,15 @@ contract FixedPriceAuctionHandler is Test {
     /****** COMPLIANCE ******/
 
     function setBlocked(uint256 seed, bool value) external step {
-        address[] memory accounts = new address[](1);
         // Bidders, and also the funder and the treasury caller, whose paths must stay unscreened.
         uint256 which = seed % 6;
-        accounts[0] = which < 4 ? bidders[which] : which == 4 ? config.funder : outsider;
+        _block(which < 4 ? bidders[which] : which == 4 ? config.funder : outsider, value);
+    }
+
+    /// @dev Sets `account` blocked or not on both lists, so whichever the auction points at agrees.
+    function _block(address account, bool value) internal {
+        address[] memory accounts = new address[](1);
+        accounts[0] = account;
         vm.startPrank(blocker);
         compliance.setBlocked(accounts, value);
         compliance2.setBlocked(accounts, value);
@@ -609,8 +772,8 @@ contract FixedPriceAuctionHandler is Test {
 
     /// @dev Not a fuzzed action: the suite calls it once a run ends. Lifts every brake (rescue mode, pause, both
     /// compliance lists, the fill token's blocklist), moves past `fulfillmentEnd`, then pays out every bidder still
-    /// owed and the treasury. Any revert fails the run, so this proves everyone can get their money out, not just
-    /// that the books balance.
+    /// owed, every excluded balance and the treasury. Any revert fails the run, so this proves everyone can get
+    /// their money out, not just that the books balance.
     function drain() external {
         vm.warp(currentTime);
         vm.recordLogs();
@@ -649,6 +812,13 @@ contract FixedPriceAuctionHandler is Test {
             auction.claim();
             _bookClaim(account, expected, fillBefore, bidBefore);
         }
+        for (uint256 i; i < 4; ++i) {
+            address account = bidders[i];
+            uint256 excluded_ = auction.excluded(account);
+            if (excluded_ == 0) continue;
+            vm.prank(account);
+            auction.withdrawExcluded();
+        }
         if (!auction.treasuryClaimed()) {
             uint256 bidBefore = bid.balanceOf(config.proceedsRecipient);
             uint256 fillBefore = fill.balanceOf(config.funder);
@@ -662,8 +832,8 @@ contract FixedPriceAuctionHandler is Test {
 
     /****** VIEWS ******/
 
-    function snapshot() external view returns (IFixedPriceAuction.Settlement memory) {
-        return _snapshot;
+    function frozenSettlement() external view returns (IFixedPriceAuction.Settlement memory) {
+        return _frozenSettlement;
     }
 
     function bidderCount() external pure returns (uint256) {
@@ -710,7 +880,7 @@ contract FixedPriceAuctionHandler is Test {
         }
         if (!_final(current)) return;
         hasOutcome = true;
-        _snapshot = auction.previewSettlement();
+        _frozenSettlement = auction.previewSettlement();
         ghostEndedAt = auction.endedAt();
         ghostOutcome = auction.phase();
     }
@@ -720,6 +890,9 @@ contract FixedPriceAuctionHandler is Test {
         s.fillBalance = fill.balanceOf(address(auction));
         s.strayBalance = stray.balanceOf(address(auction));
         s.totalDeposits = auction.totalDeposits();
+        for (uint256 i; i < 4; ++i) {
+            s.totalExcluded += auction.excluded(bidders[i]);
+        }
         s.funding = auction.funding();
         s.paused = auction.paused();
         s.inRescueMode = auction.inRescueMode();
@@ -739,7 +912,7 @@ contract FixedPriceAuctionHandler is Test {
         address account
     ) internal view returns (State memory s, bool blocked, uint256 deposit_, bool claimed_) {
         s = _state();
-        blocked = !s.complianceDisabled && IComplianceCheck(s.complianceCheck).isBlocked(account);
+        blocked = _blocked(account);
         deposit_ = auction.deposits(account);
         claimed_ = auction.claimed(account);
     }
