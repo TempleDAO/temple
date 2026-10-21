@@ -2,10 +2,10 @@
 
 | | |
 |---|---|
-| Scope | Branch `fpa-simplified` at **dbe701af** (the code commit on `2127d590`, the head of [TempleDAO/temple#1305](https://github.com/TempleDAO/temple/pull/1305)). The contract code is identical to 08747cdd, where round 2 ran; dbe701af changes only tests, natspec and the README. |
+| Scope | Branch `fpa-simplified`. Round 2 ran at **08747cdd** (round 1 at f1ccb404). Bidder exclusion (`exclude`, `reinstate`, `withdrawExcluded`) was added after round 2; the findings below were updated for it by review against that code, not by a third analysis round. |
 | Files | `protocol/contracts/templegold/{FixedPriceAuction,AuctionFactory,ComplianceCheck,WishingWell}.sol`, `templegold/access/{ExecutorAccess,RescuableAccess}.sol`, and their interfaces in `protocol/contracts/interfaces/templegold/`. Dependencies: Solady 0.1.26 `LibClone`, OZ 5.0.2 `SafeERC20`, `TempleMath`, `TempleGold` (TGLD only moves to or from authorized contracts). |
 | Method | Two rounds of five independent analyses: privileged-role compromise, the unprivileged attacker, integration and indexers, lifecycle and economics, and a cross-check. Round 1 ran at f1ccb404. Round 2 ran at 08747cdd and re-checked every claim in round 1 and in the original analysis of PRs 1304 and 1305, which isn't in this branch. Non-obvious claims were proven with forge tests in scratch copies of `protocol/`. Those tests aren't in the branch. The headline findings were re-checked against the code by hand. |
-| Source of truth | The branch code. The design proposal (`fpa-simplified-model.md`) was used only to say what the code is meant to do. Line numbers refer to 08747cdd and may be off by a line or two at dbe701af. |
+| Source of truth | The branch code. The design proposal (`fpa-simplified-model.md`) was used only to say what the code is meant to do. Line numbers refer to 08747cdd. Exclusion, added afterwards, shifts FixedPriceAuction.sol: lines before `fund` by 2, from `fund` to `_requirePhase` by 47, from `_requirePhase` to `_requireNotBlocked` by 51, and after it by 59. Search by function name. |
 | Date | 2026-10-20 |
 
 ## Trust model
@@ -18,7 +18,7 @@ Easy, hard-to-undo mistakes by trusted roles are listed separately under [Operat
 
 The attackers and failure sources in scope are:
 - unprivileged users, bidders, griefers and front-runners;
-- callers of the permissionless functions (`claim`, `claimTreasury`), and anyone cloning the implementation;
+- callers of the permissionless functions (`claim`, `claimTreasury`, `withdrawExcluded`), and anyone cloning the implementation;
 - token behaviour: 6-decimal and low-decimal tokens, blocklisting tokens such as USDC, TGLD's transfer restriction, and tokens outside the stated assumption;
 - the compliance list as an external dependency;
 - off-chain consumers (indexers and front-ends) that on-chain data could mislead.
@@ -45,6 +45,7 @@ The material risks sit in the designed checks:
 4. **A breached rescuer takes the factory's rescuer role for good** ([T-4](#t-4-a-breached-rescuer-takes-the-factorys-rescuer-role-for-good)), so every later auction carries the attacker as rescuer.
 5. **A hijacked msig can freeze every TGLD auction through TempleGold** ([T-19](#t-19-a-hijacked-msig-can-freeze-tgld-auctions-through-templegold)). The msig owns TempleGold and can de-authorize live auctions. The rescuer has no power over TempleGold.
 6. **Coupled payouts** ([T-6](#t-6-treasury-payouts-are-coupled-and-fixed), [T-7](#t-7-a-users-two-claim-legs-are-coupled)). One blocklisted or unauthorized leg blocks the other, in both `claim` and `claimTreasury`.
+7. **Exclusion is a new lever for whoever controls the compliance list** ([T-5](#t-5-compliance-control-under-compromise)). The msig, or any account granted `setBlocked` on the auction's list, can block and exclude bidders until `fulfillmentEnd`, taking away their fills. Excluding some bidders moves their share of a partial funding to the rest; see T-5. Excluded deposits stay in the auction and are refundable once the account is cleared. Grants still work in rescue mode, so against a rogue grant the rescuer's answer is disabling compliance (decision D13).
 
 Resolved since round 1: a pending executor proposal now dies when rescue mode switches on, and so does a pending implementation proposal on the factory. The rescuer can `cancel` in rescue mode, which ends the permanent-freeze case of unbounded windows ([T-3](#t-3-unbounded-windows-resolved-low)).
 
@@ -54,21 +55,22 @@ Resolved since round 1: a pending executor proposal now dies when rescue mode sw
 |---|---|---|---|
 | D1 | Guarantee the rescuer a reaction window: a minimum lead time (`depositStart ≥ now + MIN_LEAD`) and a minimum deposit window, checked in `FixedPriceAuction.initialize`? Optionally a maximum fulfillment window too. | T-8, T-3, T-15 | Yes. This reverses the earlier "drop `MIN_LEAD`" call, because the rescuer's `cancel` only helps if it lands before `depositEnd`. Make the bounds constants in the implementation, not factory settings or config fields: the msig controls both, and the bounds exist to stop a hijacked msig. Changing them means a new implementation, which needs the rescuer. |
 | D11 | Add a delay before `acceptExecutor` (for example 24 hours after the proposal), or let the rescuer propose an executor while rescue mode is on? | T-2, T-5 | Yes to the delay. Then rescue mode always has a window to cancel a hijacker's proposal, on the factory, auctions and `ComplianceCheck`. The rescuer-proposes option adds a power to the rescuer. |
-| D2 | Let claims ignore the pause once `block.timestamp > fulfillmentEnd + N days`, so a breached or lost rescuer can't freeze settled funds for good? | T-1 | Worth it. Claims only ever pay the depositor, so this can't redirect funds. |
+| D2 | Let claims (`claim`, `claimTreasury`, `withdrawExcluded`) ignore the pause once `block.timestamp > fulfillmentEnd + N days`, so a breached or lost rescuer can't freeze settled funds for good? | T-1 | Worth it. Claims only ever pay the depositor, so this can't redirect funds. |
 | D3 | Should the rescuer handover need a second key, or a delay? | T-4 | A delay on `acceptRescuer` lets the msig see a takeover coming. A second key gives a hijacked msig a veto. Otherwise document it. |
 | D4 | Pay each `claim`/`claimTreasury` leg separately, or add the decision-6 setters? | T-6, T-7 | At least split `claimTreasury`. Its addresses are fixed for the auction's life. |
 | D5 | Reject a code-less compliance pointer in `initialize` and `setComplianceCheck`? | T-14 | Yes. One line, and it turns a deploy typo into a revert. |
 | D6 | Reject `proposeNewExecutor` in `ComplianceCheck.setExplicitAccess`? | T-13 | Yes. Today only the natspec warns about it. |
 | D7 | Minimum token decimals (for example ≥ 6)? | T-11 | Yes, as a deploy check, or enforce it in `initialize`. |
 | D8 | Is "settled" defined by `phase()` or by `AuctionSettled`? Should `getTiming().settledAt` report `fulfillmentEnd` before the snapshot is written? | T-9 | Define it by `phase()` in the indexer spec. Optionally fix the view. |
-| D9 | Indexer rules: fills per pair or per bucket, the tie rule for "settled after the wish", the cap split across pairs, "held in auction" from `claimable` once final, which list to screen against, zero-address proposal events as cancellations, and implementation allowlisting. | T-10, T-16, T-17, T-18, T-20 | Decide decisions 9 and 12 in the proposal, and fail closed on unknown implementations. |
-| D10 | Who holds a standing `setBlocked` grant, so compliance control survives a lost Safe? | T-5 | A hardened ops key, which also sends blocks privately (T-12). |
+| D9 | Indexer rules: fills per pair or per bucket, the tie rule for "settled after the wish", the cap split across pairs, "held in auction" from `claimable` once final, which list to screen against, zero-address proposal events as cancellations, and implementation allowlisting. Does an excluded balance count as demand, or only as held? | T-10, T-16, T-17, T-18, T-20 | Decide decisions 9 and 12 in the proposal, and fail closed on unknown implementations. |
+| D10 | Who holds a standing `setBlocked` grant, so compliance control survives a lost Safe? | T-5 | A hardened ops key, which also sends blocks privately (T-12). That exclusion can move allocation to a colluding bidder (T-5) strengthens the case for hardening it. |
 | D12 | Who controls TempleGold authorization for live auctions? | T-19 | At minimum a runbook rule: never de-authorize an auction until its claims are done. Moving TempleGold ownership is out of scope here. |
+| D13 | Should a `setBlocked` grant's power to exclude be locked while the auction is in rescue mode, like the msig? | T-5, T-2 | Worth considering. Today a hijacked msig that grants itself `setBlocked` on the list can still exclude bidders in an auction under rescue mode; the only answer is the rescuer disabling compliance, which ends screening for that auction. Exclusion can move allocation to a colluding bidder (T-5), not just grief, which strengthens the case for locking grants in rescue mode. |
 
 ## Findings
 
 ### T-1 A breached rescuer can freeze or cancel auctions
-**High (accepted risk).** Proven. `RescuableAccess.sol:31-42`, `FixedPriceAuction.sol:177-188`, `:253-257`, `:417-420`. `claim` and `claimTreasury` are `whenNotPaused` (`:191`, `:212`).
+**High (accepted risk).** Proven. `RescuableAccess.sol:31-42`, `FixedPriceAuction.sol:177-188`, `:253-257`, `:417-420`. `claim`, `claimTreasury` and `withdrawExcluded` are `whenNotPaused`.
 - **Freeze:** the attacker switches rescue mode on, then `setPaused(true)` on each auction. The msig can't unpause, cancel or `endFulfillment`. After `fulfillmentEnd` the auction is Settled, but every claim reverts for as long as the attacker holds the key. A lost rescuer key while paused in rescue mode has the same effect.
 - **Cancel:** the attacker batches `setRescueMode(true)` and `cancel()`. It can do this to a fully funded auction one block before `fulfillmentEnd`. The msig has no window to `endFulfillment` first. Everyone is refunded; the sale is lost.
 - **What stops it:** nothing on-chain. The msig's only levers (`cancel`, `endFulfillment`) must land before the rescuer's first transaction.
@@ -79,6 +81,7 @@ Resolved since round 1: a pending executor proposal now dies when rescue mode sw
 - **Resolved part:** a proposal the hijacked msig leaves *pending* now dies when rescue mode switches on (`RescuableAccess.sol:35-39`), and nobody can propose during rescue mode. On the factory, rescue mode also cancels a pending implementation proposal (`AuctionFactory.sol:57-62`).
 - **Open part:** the hijacked msig batches `proposeNewExecutor(thief)` and `acceptExecutor()` from the thief in one Safe transaction, on the factory, every live auction and `ComplianceCheck`. Nothing is left pending to cancel. Only the executor can propose a successor, so neither the rescuer nor the recovered Safe can take the role back.
 - **Impact:** a Safe that was hijacked for one transaction becomes a Safe lost for good. The team needs a new factory and `ComplianceCheck`. Live auctions finish under permanent rescue mode, and the rescuer must keep the old factory in rescue mode forever. There is no fund loss.
+- **With exclusion:** the thief who takes `ComplianceCheck`'s executor role can grant itself `setBlocked`, then block and exclude bidders in every auction pointing at that list, even under rescue mode (D13). The rescuer's answer is disabling compliance on each auction, which also makes every excluded balance withdrawable.
 - **Fix:** D11, a delay before `acceptExecutor`.
 
 ### T-3 Unbounded windows (resolved, Low)
@@ -95,10 +98,11 @@ Resolved since round 1: a pending executor proposal now dies when rescue mode sw
 - **Mitigation:** the msig checks `factory.rescuer()` in every `createAuction` batch. D3 is the code option.
 
 ### T-5 Compliance control under compromise
-**Medium.** Code. `ComplianceCheck.sol:26-49`, `FixedPriceAuction.sol:260-271`.
+**Medium.** Code. `ComplianceCheck.sol:26-49`, `FixedPriceAuction.sol:260-271`, and `exclude`, `reinstate` and `_onlyExclusionAdmin` in FixedPriceAuction.sol.
 - **A hijacked msig on `ComplianceCheck`:** the contract has no rescue mode, so the msig can hand over its executor role for good, in one transaction (T-2). If it blocks everyone, the rescuer's only answer is `disableComplianceCheck` on each auction, which is one-way and ends screening. Unblocking a sanctioned address can't be stopped on-chain. Recovery is a new `ComplianceCheck` and repointing each auction, which needs each auction's executor.
 - **A breached rescuer:** it can disable compliance on every auction for good, one transaction each. The msig's only answer is to `cancel` before the rescuer switches rescue mode on for that auction.
-- **A rogue granted account:** the msig revokes it (`setExplicitAccess` is executor-only and can't be granted) and repairs the list. Bidders blocked through `depositEnd` are locked into the sale.
+- **A rogue granted account:** it can block any bidder and, with exclusion, exclude them from every auction using the list until `fulfillmentEnd`, so they get no fill (refund only once cleared, or reinstated if cleared during Deposit). No deposits are taken, but in a partially funded auction an excluded bidder's share of the funding goes to the remaining bidders at the auction price. A grantee or hijacked msig with a colluding bidder therefore gains allocation it wouldn't otherwise get. Example: Alice and Bob bid 100 TEMPLE each and 400 of 800 USDS is funded; excluding Alice during Fulfillment gives Bob all 400 USDS instead of 200. The msig revokes the grant (`setExplicitAccess` is executor-only and can't be granted), repairs the list and reinstates bidders still in their deposit window. Bidders excluded after `depositEnd` can't be put back.
+- **In rescue mode:** the msig is locked out of the auction, but a grant on the list isn't, so a rogue grantee can keep excluding. The rescuer's only answer is `disableComplianceCheck` on that auction (D13), which also ends list grants' `exclude` and `reinstate` powers there.
 - **Mitigation:** design-accepted. D10 and D11.
 
 ### T-6 Treasury payouts are coupled and fixed
@@ -119,6 +123,7 @@ Resolved since round 1: a pending executor proposal now dies when rescue mode sw
 - **Scenario:** a hijacked msig calls `createAuction` with itself as funder and proceeds recipient and a worthless fill token. `initialize` only requires `depositStart > block.timestamp`, so the auction can open a second later. `isAuction` is true, so front-ends list it as genuine. From `depositEnd` the msig funds with junk and calls `endFulfillment` in one block, and `claimTreasury` pays the deposits to it.
 - **The check:** the rescuer switches rescue mode on the factory (no more creations), then on each rogue auction switches rescue mode on and calls `cancel`. That refunds every depositor. It must land **before `depositEnd`**, because from then the msig can settle first, and a settled auction can't be cancelled. It takes two transactions per auction, and the attacker can create one auction per transaction.
 - **Can't revoke:** `isAuction` stays true for a rogue auction, even after a cancel.
+- **Against a genuine auction:** with exclusion, a hijacked msig can block and exclude every bidder in a genuine auction before `fulfillmentEnd`, so nobody fills and the funder pays nothing. Excluding some bidders moves their share of a partial funding to the rest; see T-5. Every excluded deposit stays refundable once the rescuer disables compliance or the accounts are cleared.
 - **Mitigation:**
   - D1 guarantees the rescuer a reaction window.
   - Alert on `AuctionCreated` with an unknown funder, proceeds recipient or compliance pointer.
@@ -142,6 +147,7 @@ Resolved since round 1: a pending executor proposal now dies when rescue mode sw
   - **Deposit then wish:** depositing, then wishing for more, undercounts the extra demand.
   - **Address hopping:** a user who wishes from one address and bids from another keeps the wish counted after being filled.
 - **Cancels reverse preview fills:** `AuctionCancelled` carries no `userRefund`, and fills drop to zero. The event doesn't say whether the rescuer cancelled.
+- **Exclusion events:** `BidderExcluded` removes a deposit from the fill and lowers `totalDeposits`; `BidderReinstated` puts it back (Deposit only); `ExcludedWithdrawn` refunds it. Preview fills must be recomputed on each, and an excluded account's wish keeps counting unless the indexer drops it.
 - **Mitigation:** D9. Pin the tie rule (block, logIndex), decide per-pair versus per-bucket matching, and reverse preview fills on `AuctionCancelled`.
 
 ### T-11 Low-decimal tokens lose each bidder's fractional fill
@@ -152,7 +158,7 @@ Resolved since round 1: a pending executor proposal now dies when rescue mode sw
 
 ### T-12 A target can front-run its own block
 **Low** (higher if legal treats the freeze as mandatory). Design. `ComplianceCheck.sol:39-44`, `FixedPriceAuction.sol:120-136`, `:191-209`, `:411-415`.
-- **Scenario:** queued Safe transactions are public before they execute. The target sees `setBlocked` coming and withdraws during Deposit, or claims after settlement. A blocked person can also use a fresh address.
+- **Scenario:** queued Safe transactions are public before they execute. The target sees `setBlocked` (and the `exclude` batched with it) coming and withdraws during Deposit, or claims after settlement. During Fulfillment it can't withdraw, so exclusion lands. A blocked person can also use a fresh address.
 - **Mitigation:** process only. A granted hot key sends `setBlocked` directly through a private relay, and known addresses are blocked before `depositStart`.
 
 ### T-13 A `proposeNewExecutor` grant on `ComplianceCheck` hands over the list
@@ -164,7 +170,7 @@ Resolved since round 1: a pending executor proposal now dies when rescue mode sw
 
 ### T-14 A code-less or reverting compliance pointer halts the auction
 **Low.** Proven (`test_XC_codelessCompliancePointer`). `FixedPriceAuction.sol:80`, `:262`, `:411-415`.
-- **Scenario:** `initialize` and `setComplianceCheck` reject only zero. An EOA or a non-conforming contract makes every `deposit`, `withdrawDeposit` and `claim` revert (it fails closed).
+- **Scenario:** `initialize` and `setComplianceCheck` reject only zero. An EOA or a non-conforming contract makes every `deposit`, `withdrawDeposit` and `claim` revert (it fails closed), and also `exclude`, `reinstate` and `withdrawExcluded`, which read the list.
 - **Recovery:** one transaction, either the msig repoints or the rescuer disables.
 - **Mitigation:** D5.
 
@@ -210,7 +216,7 @@ Resolved since round 1: a pending executor proposal now dies when rescue mode sw
 ### T-20 `deposits()` doesn't drop when an account claims
 **Low.** Proven (`test_poc_depositsPersistAfterClaim`). `FixedPriceAuction.sol:51`, `:191-209`.
 - **Scenario:** an indexer that counts held tokens as wallet balance plus `deposits(account)` double-counts after a claim: the refund is in the wallet and `deposits()` still shows the full amount. The filled part has already gone to the proceeds recipient.
-- **Mitigation:** D9. Held in auction is `deposits` while the auction is live, and `claimable(account).bidTokenRefund` once it's final.
+- **Mitigation:** D9. Held in auction is `deposits` plus `excluded(account)` while the auction is live, and `claimable(account).bidTokenRefund` plus `excluded(account)` once it's final.
 
 ### Info
 - **Rounding dust is locked for good:** at most one wei per claimant per token stays counted in `bidOwed`/`fillOwed`, out of `recoverToken`'s reach. Intended. Proven.
@@ -233,26 +239,28 @@ These are easy, hard-to-undo mistakes by trusted roles:
    - Calling `endFulfillment` while paused "to end the incident" settles with whatever was funded.
    - `endFulfillment` can land before the funder's pending top-up; batch them. The funder can't pre-fund during Deposit.
 3. **Stale implementation proposal:** a breached rescuer can still accept a stale `proposedImplementation` outside rescue mode. Clear it by overwriting it with the current implementation, or by switching rescue mode on and off.
-4. **Grants:** granting any selector other than `setBlocked`. A mistyped selector silently grants nothing.
+4. **Grants:** granting any selector other than `setBlocked`. A mistyped selector silently grants nothing. A `setBlocked` grant also carries the power to `exclude` and `reinstate` on every auction pointing at the list.
 5. **Partial rotations:** rotating the rescuer or executor on the factory but not on live auctions or `ComplianceCheck`. Rescue mode is per contract too: switching it on at the factory leaves each auction's executor proposal live.
 6. **Wrong values at creation:** a wrong `funder`, `proceedsRecipient`, price units, `minDeposit` or schedule in `createAuction`. All are fixed in the clone args; the only exit is `cancel` before `fulfillmentEnd`. A wrong compliance pointer is fixable with `setComplianceCheck`.
-7. **Late admin transactions:** `cancel` and `endFulfillment` revert from the `fulfillmentEnd` second onward.
+7. **Late admin transactions:** `cancel`, `endFulfillment` and `exclude` revert from the `fulfillmentEnd` second onward.
 8. **Rescue mode left on with the rescuer key lost:** the msig is locked out for good, and if paused, funds are frozen for good.
 9. **Over-funding:** excess funding during Fulfillment is at risk if the funder is compromised (T-6). Plain-transferred fill tokens aren't counted in `fillOwed` and can be recovered.
 10. **TGLD:** authorize after `createAuction` from the emitted address, before `depositStart`; never de-authorize before claims are done (T-19); use the burner as `proceedsRecipient` (decision 11; nothing enforces it).
 11. **Tokens with two addresses:** `recoverToken` only reserves the configured addresses.
 12. **Wrong-chain TGLD:** TGLD on a chain where it can't be burned or moved back needs a deploy check.
+13. **Excluding by mistake:** after `depositEnd` an exclusion can't be undone; the bidder only gets its bid back.
 
 ## Checked and found closed
 
 - **Stealing others' funds:** claims pay `msg.sender` only. Each share is `floor(d·X/T)`, so the shares sum to at most the snapshot. The treasury takes exactly `filledDeposits` and `funderRefund`.
 - **Solvency at extremes:** holds for decimals 0–18 both ways, prices up to 2^200, and funding up to 2^250. The deposit-time `_requiredFunding` guard bounds every later `mulDiv`. The branch now has a test at the overflow bound.
-- **Lazy settlement can't drift:** after `fulfillmentEnd`, no state-changing function works until settlement, so whoever settles first computes the same numbers.
+- **Lazy settlement can't drift:** after `fulfillmentEnd` nothing can change `totalDeposits` or `fillOwed` until the snapshot is written, so whoever settles first computes the same numbers.
 - **Phase boundaries:** `depositEnd` and `fulfillmentEnd` each start the next phase, consistently across `_phase`, `cancel` and `_settleIfDue`.
 - **Front-running bidders:** deposits close before any funding, and `withdrawExcess` is computed against a fixed requirement.
 - **Reentrancy:** state is written before every transfer, and a recipient-hook token re-entering `claim` hits `AlreadyClaimed`. `isBlocked` is a view and runs as a STATICCALL.
 - **Claims can't be DoS'd:** there are no loops. A claim whose shares both round to zero still succeeds.
 - **Donations:** settlement and `recoverToken` use the owed counters, not balances, so a stray transfer changes nothing.
+- **Exclusion accounting** (unit and invariant tests, not the analysis rounds): an excluded balance is never in the fill, stays held in the auction, and only its owner can withdraw it, once not flagged. `reinstate` works only during Deposit and re-runs the deposit overflow guard. `recoverToken` can't reach excluded balances.
 - **Rescuer cancel:** refunds exactly (`amount·T/T`) and can't redirect funds. It closes cleanly against `endFulfillment` in both directions and moves with a rescuer handover. The rescuer still can't `endFulfillment`, `recoverToken`, `setComplianceCheck`, `createAuction` or `proposeImplementation`.
 - **Factory and clones:**
   - **Swap safety:** acceptance is by address, so a proposal swapped after review reverts. Rescue mode on the factory cancels a pending proposal.
@@ -287,7 +295,7 @@ The original analysis (not in this branch) covered PRs 1304 and 1305. Every find
 | L-11 Short-notice auctions | Still applies, with a weaker guard | T-15, T-8 |
 | L-12 No chain-id check | Still applies | Info, Operational 12 |
 | I-1 Dust and zero fills | Changed: the dust is now locked for good | Info, T-11 |
-| I-2 Front-running exclusion | Changed: now front-running `setBlocked` | T-12 |
+| I-2 Front-running exclusion | Still applies: exclusion is back, and a target can front-run `setBlocked` plus `exclude` during Deposit | T-12, T-5 |
 | I-3 Pause natspec | Resolved; it matches now | — |
 | I-4 A wish carries no price | Still applies | Info |
 | I-5, I-6 Nonces and ERC-1271 | Not applicable (no signatures) | — |
@@ -313,10 +321,8 @@ The simplified design brings back three original threat classes in new places:
 
 The branch now has tests for the rescuer's cancel, proposal cancellation on rescue mode, settlement at the overflow bound, and 226 hand-written mutants of which only behaviour-equivalent ones survive. What's still missing:
 - **Invariant suite:**
-  - one configuration only: 18/18 decimals, one price, fake tokens with no TGLD restriction or blocklisting;
-  - no end-of-run drain (unpause, unblock, everyone claims, nothing reverts);
-  - timing and role rotation never vary, and there's no factory rescue mode or multi-auction run;
-  - only about 1–3% of runs reach a funded settlement followed by a claim.
-- **Fuzz suite:** the decimal-mix fuzz covers settlement maths only, without pause, cancel, rescue or compliance interleavings. Fairness is checked as an upper bound only, not that each user gets at least their pro-rata share minus one wei.
-- **Events:** nothing checks that `AuctionSettled` is emitted exactly once and matches the snapshot.
-- **TGLD:** no test uses real TGLD; T-7 and T-19 are proven with a mock that has the same transfer rule.
+  - one price per configuration, and timing never varies;
+  - no factory rescue mode or multi-auction run;
+  - funded settlement followed by a claim is thin, reached in only about 25–30% of runs;
+  - `reinstate` is rarely reached in the handler (unit tests cover it).
+- **Fuzz suite:** the fairness lower bound (each user gets at least their pro-rata share minus one wei) is checked only in the stateless fuzz.
