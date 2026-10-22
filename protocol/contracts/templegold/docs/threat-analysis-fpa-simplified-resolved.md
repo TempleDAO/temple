@@ -46,7 +46,7 @@ A later round ran slither-mutate over the six contracts (962 compiled mutants) a
   - **Clone args:** they're read from code, not calldata. Malformed args revert, and dirty upper bits are rejected.
   - **No puppet rescuer or executor** can be passed in, and a pending rescuer handover doesn't leak into new auctions.
 - **Access bases:** the executor and rescuer can't collide under any order of handovers. Rescue mode locks every `onlyElevatedAccess` function on both the factory and the auction. No executor proposal can exist in rescue mode, so `acceptExecutor` needs no rescue check.
-- **Packed storage slot:** all six fields survived interleaved writes in round 2. `treasuryClaimed` has since joined the slot (with `settledAt` narrowed to `uint40`); the invariant suite exercises it alongside the others.
+- **Packed storage slot:** all six fields then in the slot survived interleaved writes in round 2. `treasuryClaimed` has since joined the slot, making seven (with `settledAt` narrowed to `uint40`); the invariant suite exercises it alongside the others.
 - **Grants:** a grantee can't widen its own grant, and `setExplicitAccess` and `acceptExecutor` aren't grantable.
 - **Both keys breached:** new code reaches only new auctions, and owed funds in existing clones still can't be redirected. With both keys an attacker can put arbitrary code behind `isAuction` for new auctions; that's the two-key design's limit. A delay between propose and accept would make a swap public before it takes effect.
 

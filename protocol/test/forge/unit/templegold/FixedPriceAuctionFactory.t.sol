@@ -1,4 +1,4 @@
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.21;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
@@ -50,7 +50,8 @@ contract FixedPriceAuctionFactoryTest is FixedPriceAuctionTestBase {
         vm.prank(rescuer);
         vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
         factory.createAuction(config);
-        expectElevatedAccess();
+        vm.prank(unauthorizedUser);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         factory.createAuction(config);
     }
 
@@ -222,7 +223,8 @@ contract FixedPriceAuctionFactoryTest is FixedPriceAuctionTestBase {
         vm.prank(rescuer);
         vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
         factory.proposeImplementation(address(v2));
-        expectElevatedAccess();
+        vm.prank(unauthorizedUser);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         factory.proposeImplementation(address(v2));
 
         vm.prank(rescuer);

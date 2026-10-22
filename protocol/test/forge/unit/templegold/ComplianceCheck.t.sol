@@ -1,4 +1,4 @@
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.21;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { TempleTest } from "test/forge/unit/TempleTest.sol";
@@ -48,12 +48,14 @@ contract ComplianceCheckTest is TempleTest {
     }
 
     function test_access_setFlagged() public {
-        expectElevatedAccess();
+        vm.prank(unauthorizedUser);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         compliance.setFlagged(_accounts(), true);
     }
 
     function test_access_setExplicitAccess() public {
-        expectElevatedAccess();
+        vm.prank(unauthorizedUser);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         compliance.setExplicitAccess(flagger, _access(ComplianceCheck.setFlagged.selector, true));
 
         // A grantee can't widen its own access.
