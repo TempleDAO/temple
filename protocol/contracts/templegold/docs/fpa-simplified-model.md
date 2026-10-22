@@ -194,6 +194,8 @@ Settlement keeps today's maths. Required funding rounds up, and fills and shares
 | Cancelled | Its refund, or its excluded balance, stays frozen | claim for a refund, withdrawExcluded for an excluded balance | Same |
 | Deposit or Fulfillment, `exclude` not called | Still in the fill, filled at settlement, payout frozen | Ordinary bidder | Claims when cleared |
 
+**Legal (confirmed 2026-10-23):** once Fulfillment ends and the auction settles, the filled bid tokens (TEMPLE) are the treasury's proceeds, even if the bidder is blocked afterwards. The bidder's unpaid fill tokens (USDS) stay frozen until the block is removed: a freeze, not a confiscation, and fill tokens already claimed can't be frozen. Bought-back TEMPLE is unbacked, and its only use is being burnt. See decision 16 for the one case legal hasn't covered.
+
 The rescuer's answer to a rogue list is `disableComplianceCheck`: afterwards nobody is flagged, so nothing more can be excluded and every excluded balance becomes withdrawable once the auction is unpaused.
 
 **Events:** `Deposited`, `DepositWithdrawn`, `BidderExcluded`, `BidderReinstated`, `ExcludedWithdrawn`, `Funded`, `ExcessWithdrawn`, `AuctionSettled(settledAt, …)`, `AuctionCancelled`, `UserClaimed`, `TreasuryClaimed`, `PausedSet(bool)`, `RescueModeSet`, `ComplianceCheckSet`, `ComplianceCheckDisabled`, and `FunderSet`/`ProceedsRecipientSet` if decision 6 says yes. `initialize` emits `ComplianceCheckSet` for the initial pointer.
@@ -379,3 +381,4 @@ The record-only Well drops signed wishes and nonces, the on-chain balance and co
     - `AuctionFactory` / `IAuctionFactory` → `FixedPriceAuctionFactory` / `IFixedPriceAuctionFactory`.
 
     The `AuctionSettled` event keeps its name. `bidToken` / `fillToken`, `claimTreasury` and the Fulfillment phase names stay as they are.
+16. **Legal:** with partial funding, a bidder blocked after the fill also has an unfilled bid-token refund, and `claim` pays the fill and the refund together, so the refund is frozen too. Legal's answer covered the filled TEMPLE and the USDS; confirm that freezing the unfilled TEMPLE refund until the block is removed is acceptable.
