@@ -213,6 +213,60 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
         _assertPaid(address(auction), 0, 0);
     }
 
+    /// @dev Exclusion lowers full funding from 800 to 400 USDS. With 600 held, Bob fills in full and the funder
+    /// can withdraw 200 excess, even though the auction was underfunded before exclusion.
+    function test_excludeInFulfillment_fundingAboveReducedRequirement() public {
+        _bothDeposit();
+        _toFulfillment(auction);
+        _fund(auction, 600e18);
+        assertEq(auction.withdrawableExcess(), 0);
+
+        _setBlocked(alice, true);
+        _exclude(overlord, alice);
+        assertEq(auction.totalDeposits(), 100e18);
+        assertEq(auction.withdrawableExcess(), 200e18);
+
+        vm.prank(funder);
+        auction.withdrawExcess(200e18);
+
+        assertEq(auction.funding(), 400e18);
+        _toEnd(auction);
+        vm.prank(bob);
+        auction.claim();
+        auction.claimTreasury();
+
+        _assertPaid(bob, 0, 400e18);
+        _assertPaid(funder, 0, 200e18);
+        _assertPaid(proceedsRecipient, 100e18, 0);
+        _assertPaid(address(auction), 100e18, 0);
+        assertEq(auction.excluded(alice), 100e18);
+    }
+
+    /// @dev Exclusion leaves 200 USDS above the reduced requirement. If the funder leaves it in the auction,
+    /// claimTreasury refunds it at settlement while Alice's excluded TEMPLE stays held.
+    function test_excludeInFulfillment_excessLeftUntilSettlement() public {
+        _bothDeposit();
+        _toFulfillment(auction);
+        _fund(auction, 600e18);
+        _setBlocked(alice, true);
+        _exclude(overlord, alice);
+
+        // Leave the excess in the auction instead of withdrawing it during Fulfillment.
+        _toEnd(auction);
+        IFixedPriceAuction.TreasuryClaim memory expected = auction.treasuryClaimable();
+        assertEq(expected.bidTokenAmount, 100e18);
+        assertEq(expected.fillTokenRefund, 200e18);
+        auction.claimTreasury();
+        vm.prank(bob);
+        auction.claim();
+
+        _assertPaid(funder, 0, 200e18);
+        _assertPaid(bob, 0, 400e18);
+        _assertPaid(proceedsRecipient, 100e18, 0);
+        _assertPaid(address(auction), 100e18, 0);
+        assertEq(auction.excluded(alice), 100e18);
+    }
+
     /// @dev Excluded in Fulfillment and still flagged at settlement: the excluded balance waits, frozen.
     function test_excludeInFulfillment_frozenUntilCleared() public {
         _bothDeposit();
