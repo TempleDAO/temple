@@ -1234,7 +1234,26 @@ contract FixedPriceAuctionRescueModeTest is FixedPriceAuctionTestBase {
         vm.prank(bob);
         vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
         auction.acceptExecutor();
+        uint256 readyAt = block.timestamp + auction.EXECUTOR_HANDOVER_DELAY();
+        assertEq(auction.proposedExecutorAt(), block.timestamp);
+        vm.prank(alice);
+        vm.expectRevert(abi.encodeWithSelector(IExecutorAccess.ExecutorHandoverNotReady.selector, readyAt));
+        auction.acceptExecutor();
+        vm.warp(readyAt - 1);
+        vm.prank(alice);
+        vm.expectRevert(abi.encodeWithSelector(IExecutorAccess.ExecutorHandoverNotReady.selector, readyAt));
+        auction.acceptExecutor();
 
+        // A re-proposal restarts the clock.
+        vm.prank(executor);
+        auction.proposeNewExecutor(alice);
+        vm.warp(readyAt);
+        readyAt = readyAt - 1 + auction.EXECUTOR_HANDOVER_DELAY();
+        vm.prank(alice);
+        vm.expectRevert(abi.encodeWithSelector(IExecutorAccess.ExecutorHandoverNotReady.selector, readyAt));
+        auction.acceptExecutor();
+
+        vm.warp(readyAt);
         vm.expectEmit(address(auction));
         emit IExecutorAccess.NewExecutorAccepted(executor, alice);
         vm.prank(alice);
@@ -1664,6 +1683,7 @@ contract FixedPriceAuctionAdminTest is FixedPriceAuctionTestBase {
         emit IExecutorAccess.NewExecutorProposed(executor, bob, alice);
         auction.proposeNewExecutor(alice);
         vm.stopPrank();
+        vm.warp(block.timestamp + auction.EXECUTOR_HANDOVER_DELAY());
         vm.expectEmit(address(auction));
         emit IExecutorAccess.NewExecutorAccepted(executor, alice);
         vm.prank(alice);

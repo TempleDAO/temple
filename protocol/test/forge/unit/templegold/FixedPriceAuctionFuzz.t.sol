@@ -148,6 +148,7 @@ contract FixedPriceAuctionFuzzTest is FixedPriceAuctionTestBase {
             // Whoever is proposed tries to accept; it reverts if that would make one address hold both roles.
             address proposed = flag ? auction.proposedExecutor() : auction.proposedRescuer();
             if (proposed == address(0)) return;
+            if (flag) vm.warp(block.timestamp + auction.EXECUTOR_HANDOVER_DELAY());
             vm.prank(proposed);
             if (flag) try auction.acceptExecutor() { } catch { }
             else try auction.acceptRescuer() { } catch { }

@@ -14,6 +14,12 @@ abstract contract ExecutorAccess is IExecutorAccess {
     /// @inheritdoc IExecutorAccess
     address public override proposedExecutor;
 
+    /// @inheritdoc IExecutorAccess
+    uint40 public override proposedExecutorAt;
+
+    /// @inheritdoc IExecutorAccess
+    uint256 public constant override EXECUTOR_HANDOVER_DELAY = 1 days;
+
     /// @dev Call once, from the inheriting contract's constructor or initializer.
     function _initExecutorAccess(address initialExecutor) internal {
         if (initialExecutor == address(0)) revert CommonEventsAndErrors.InvalidAddress();
@@ -25,6 +31,9 @@ abstract contract ExecutorAccess is IExecutorAccess {
         if (account == address(0)) revert CommonEventsAndErrors.InvalidAddress();
         emit NewExecutorProposed(executor, proposedExecutor, account);
         proposedExecutor = account;
+        // Safe: unix seconds fit in uint40 until the year 36812.
+        // forge-lint: disable-next-line(unsafe-typecast)
+        proposedExecutorAt = uint40(block.timestamp);
     }
 
     /// @inheritdoc IExecutorAccess
@@ -34,6 +43,8 @@ abstract contract ExecutorAccess is IExecutorAccess {
 
     function _acceptExecutor() internal {
         if (msg.sender != proposedExecutor) revert CommonEventsAndErrors.InvalidAccess();
+        uint256 readyAt = proposedExecutorAt + EXECUTOR_HANDOVER_DELAY;
+        if (block.timestamp < readyAt) revert ExecutorHandoverNotReady(readyAt);
         emit NewExecutorAccepted(executor, msg.sender);
         executor = msg.sender;
         delete proposedExecutor;
