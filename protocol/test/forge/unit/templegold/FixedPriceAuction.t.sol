@@ -1406,6 +1406,25 @@ contract FixedPriceAuctionComplianceTest is FixedPriceAuctionTestBase {
         vm.stopPrank();
     }
 
+    /// @dev An invalid replacement leaves the existing compliance source and screening the same.
+    function test_setComplianceCheck_fail_withoutCode() public {
+        _toDeposit(auction);
+        _deposit(auction, alice, 10e18);
+        _setFlagged(alice, true);
+
+        vm.prank(executor);
+        vm.expectRevert(CommonEventsAndErrors.InvalidAddress.selector);
+        auction.setComplianceCheck(bob);
+        assertEq(auction.complianceCheck(), address(compliance));
+        assertEq(auction.getConfig().complianceCheck, address(compliance));
+        assertFalse(auction.complianceDisabled());
+
+        vm.prank(alice);
+        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.FlaggedAccount.selector, alice));
+        auction.withdrawDeposit(1);
+        assertEq(auction.deposits(alice), 10e18);
+    }
+
     function test_access_setComplianceCheck() public {
         vm.prank(unauthorizedUser);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
