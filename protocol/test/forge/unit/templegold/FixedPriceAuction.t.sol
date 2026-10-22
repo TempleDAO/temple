@@ -1,4 +1,4 @@
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.21;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { LibClone } from "solady/src/utils/LibClone.sol";
@@ -558,7 +558,8 @@ contract FixedPriceAuctionLifecycleTest is FixedPriceAuctionTestBase {
         auction.endFulfillment();
 
         _toFulfillment(auction);
-        expectElevatedAccess();
+        vm.prank(unauthorizedUser);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         auction.endFulfillment();
     }
 
@@ -703,7 +704,8 @@ contract FixedPriceAuctionLifecycleTest is FixedPriceAuctionTestBase {
     }
 
     function test_access_cancel() public {
-        expectElevatedAccess();
+        vm.prank(unauthorizedUser);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         auction.cancel();
     }
 
@@ -846,7 +848,8 @@ contract FixedPriceAuctionPauseTest is FixedPriceAuctionTestBase {
     }
 
     function test_access_setPaused() public {
-        expectElevatedAccess();
+        vm.prank(unauthorizedUser);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         auction.setPaused(true);
         vm.prank(rescuer);
         vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
@@ -1278,7 +1281,8 @@ contract FixedPriceAuctionComplianceTest is FixedPriceAuctionTestBase {
     }
 
     function test_access_setComplianceCheck() public {
-        expectElevatedAccess();
+        vm.prank(unauthorizedUser);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         auction.setComplianceCheck(alice);
     }
 
@@ -1413,7 +1417,8 @@ contract FixedPriceAuctionRecoverTokenTest is FixedPriceAuctionTestBase {
         vm.expectRevert(CommonEventsAndErrors.ExpectedNonZero.selector);
         auction.recoverToken(address(usds), executor, 0);
         vm.stopPrank();
-        expectElevatedAccess();
+        vm.prank(unauthorizedUser);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         auction.recoverToken(address(usds), executor, 1);
     }
 }
@@ -1810,6 +1815,26 @@ contract FixedPriceAuctionTempleGoldTest is FixedPriceAuctionTestBase {
         _authorize(true);
         _depositTgld(alice, 1e18);
         assertEq(auction.deposits(alice), 1e18);
+    }
+
+    /// @dev TempleGold checks only that the sender or the receiver is authorized, so an authorized depositor moves TGLD
+    /// into and out of an unauthorized auction while an unauthorized one can't.
+    function test_templeGold_authorizedDepositor_usesUnauthorizedAuction() public {
+        vm.prank(executor);
+        templeGold.authorizeContract(alice, true);
+        _toDeposit(auction);
+        _depositTgld(alice, 2e18);
+        assertEq(templeGold.balanceOf(address(auction)), 2e18);
+
+        vm.startPrank(bob);
+        templeGold.approve(address(auction), 1e18);
+        vm.expectRevert(abi.encodeWithSelector(ITempleGold.NonTransferrable.selector, bob, address(auction)));
+        auction.deposit(1e18);
+        vm.stopPrank();
+
+        vm.prank(alice);
+        auction.withdrawDeposit(1e18);
+        assertEq(templeGold.balanceOf(address(auction)), 1e18);
     }
 
     function test_templeGold_fullLifecycleOnceAuthorized() public {

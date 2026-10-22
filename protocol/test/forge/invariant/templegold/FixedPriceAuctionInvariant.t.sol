@@ -184,7 +184,7 @@ abstract contract FixedPriceAuctionInvariantBase is FixedPriceAuctionTestBase {
         IFixedPriceAuction.Settlement memory s = auction.previewSettlement();
         uint256 fundingHeld = handler.funded() - handler.excessWithdrawn();
         uint256 total = auction.totalDeposits();
-        uint256 denominator = auction.priceDenominator();
+        uint256 denominator = 10 ** (18 + uint256(bid.decimals()) - fill.decimals());
 
         // The split adds up.
         assertLe(s.filledDeposits, total, "filled > total");
