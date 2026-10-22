@@ -17,7 +17,7 @@ A proposal the hijacked msig leaves *pending* now dies when rescue mode switches
 - **Mitigation:** a maximum fulfillment window is optional insurance, part of D1.
 
 ### T-9 A clock-settled auction emits no event (resolved)
-**Resolved on this branch.** Code. There is no stored settlement: the settlement is a view over `totalDeposits` and `funding`, which freeze once the phase is final. `settleEarly` emits `AuctionSettled`; for a settlement by the clock the first successful `claim` or `claimTreasury` emits it, with `settledAt` set to `fulfillmentEnd`, and anyone can call `emitSettlement` to emit it sooner. It goes out once either way. Indexers can still read `settlement()` once `phase()` is Settled, and it can't drift from then. D8 asks the indexer spec to pin this.
+**Resolved on this branch.** Code. There is no stored settlement: the settlement is a view over `totalDeposits` and `funding`, which freeze once the phase is final. `settleEarly` emits `AuctionSettled`; for a settlement by the clock the first successful `claim` or `claimTreasury` emits it, with `settledAt` set to `fulfillmentEnd`, and anyone can call `emitSettlement` to emit it sooner. It goes out once either way. Indexers can still read `settlement()` once `phase()` is Settlement, and it can't drift from then. D8 asks the indexer spec to pin this.
 
 ### Test gaps closed
 
@@ -34,7 +34,7 @@ A later round ran slither-mutate over the six contracts (962 compiled mutants) a
 - **Settlement can't drift:** `totalDeposits` and `funding` freeze once the phase is final, so the settlement is fixed from then.
 - **Phase boundaries:** `depositEnd` and `fulfillmentEnd` each start the next phase, consistently across `_phase`, `cancel` and `_requireFinal`.
 - **Front-running bidders:** deposits close before any funding, and `withdrawExcess` is computed against a fixed requirement.
-- **Reentrancy:** state is written before every transfer, and a recipient-hook token re-entering `claim` hits `AlreadyClaimed`. `isBlocked` is a view and runs as a STATICCALL.
+- **Reentrancy:** state is written before every transfer, and a recipient-hook token re-entering `claim` hits `AlreadyClaimed`. `isFlagged` is a view and runs as a STATICCALL.
 - **Claims can't be DoS'd:** there are no loops. A claim whose shares both round to zero still succeeds.
 - **Donations:** settlement uses `totalDeposits` and `funding`, not balances, so a stray transfer changes no payout. `recoverToken` can send it back out: the balance above `liabilities()`, which counts every deposit, excluded balance and funding less what claims paid, so it never reaches owed funds or dust.
 - **Exclusion accounting** (unit and invariant tests, not the analysis rounds): an excluded balance is never in the fill, stays held in the auction, and only its owner can withdraw it, once not flagged. `reinstate` works only during Deposit and re-runs the deposit overflow guard. `recoverToken` can't reach excluded balances: `liabilities()` counts them through `totalExcluded`.
@@ -64,7 +64,7 @@ The original analysis (not in this branch) covered PRs 1304 and 1305. Every find
 | L-3 A failed claim leg blocks the other | Still applies, wider | T-6, T-7 |
 | L-4 Cap squatting | Not applicable (no cap) | Pro-rata dilution, Info |
 | L-5 Natspec claims a burner is enforced | Changed: the false claim is gone, but nothing enforces a burner | Operational 10 |
-| L-6 Lazy settlement misplaces fills in time | Resolved: there is no stored settlement; indexers read `settlement()` once Settled | T-9 |
+| L-6 Lazy settlement misplaces fills in time | Resolved: there is no stored settlement; indexers read `settlement()` once in Settlement | T-9 |
 | L-7 The Well and auctions screen different people | Changed | T-17 |
 | L-8 Registry reads | Not applicable | — |
 | L-9 State changes without `WishSet` | Resolved | — |
@@ -72,7 +72,7 @@ The original analysis (not in this branch) covered PRs 1304 and 1305. Every find
 | L-11 Short-notice auctions | Still applies, with a weaker guard | T-15, T-8 |
 | L-12 No chain-id check | Still applies | Info, Operational 12 |
 | I-1 Dust and zero fills | Changed: the dust is now locked for good | Info, T-11 |
-| I-2 Front-running exclusion | Still applies: exclusion is back, and a target can front-run `setBlocked` plus `exclude` during Deposit | T-12, T-5 |
+| I-2 Front-running exclusion | Still applies: exclusion is back, and a target can front-run `setFlagged` plus `exclude` during Deposit | T-12, T-5 |
 | I-3 Pause natspec | Resolved; it matches now | — |
 | I-4 A wish carries no price | Still applies | Info |
 | I-5, I-6 Nonces and ERC-1271 | Not applicable (no signatures) | — |

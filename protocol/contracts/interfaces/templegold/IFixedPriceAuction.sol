@@ -146,8 +146,8 @@ interface IFixedPriceAuction is IRescuableAccess {
     /// phase only; at most `withdrawableExcess()`.
     function withdrawExcess(uint256 amount) external;
 
-    /// @notice Settle now with the funding held so far, emitting `AuctionSettled`. Msig only, fulfillment phase,
-    /// allowed while paused.
+    /// @notice End Fulfillment early: Settlement begins with the funding held so far, emitting `AuctionSettled`.
+    /// Msig only, Fulfillment phase, allowed while paused.
     function settleEarly() external;
 
     /// @notice Emit `AuctionSettled` for an auction the clock settled at `fulfillmentEnd`, if no claim has emitted it
@@ -159,9 +159,10 @@ interface IFixedPriceAuction is IRescuableAccess {
     /// while rescue mode is on. Before settlement and fulfillmentEnd; allowed while paused.
     function cancel() external;
 
-    /// @notice Once settled or cancelled, pay the caller their fill tokens and unfilled refund. An excluded balance
-    /// comes back through withdrawExcluded. The first successful `claim` or `claimTreasury` after a settlement by the
-    /// clock emits `AuctionSettled` and sets `settledAt`.
+    /// @notice Once settled or cancelled, pay the caller their fill tokens and unfilled refund. A flagged caller's
+    /// claim is frozen until the flag is removed. An excluded balance comes back through withdrawExcluded. The first
+    /// successful `claim` or `claimTreasury` after a settlement by the clock emits `AuctionSettled` and sets
+    /// `settledAt`.
     function claim() external;
 
     /// @notice Once settled or cancelled, pay filled deposits to `proceedsRecipient` and unused funding to `funder`.

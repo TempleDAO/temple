@@ -7,7 +7,7 @@ These roles appear throughout:
 | Role | Who it is |
 |---|---|
 | **msig** | The team multisig, the `executor` in code. |
-| **granted account** | An account the msig grants `setBlocked` with `setExplicitAccess`, as in `TempleElevatedAccess`. |
+| **granted account** | An account the msig grants `setFlagged` with `setExplicitAccess`, as in `TempleElevatedAccess`. |
 | **rescuer** | A guardian held by a separate, well-secured multisig. It has narrow powers, and the msig can't change it. |
 | **funder**, **proceedsRecipient** | Treasury addresses. |
 
@@ -15,7 +15,7 @@ A FixedPriceAuction sells `fillToken` for deposited `bidToken` at a fixed price.
 
 The requirements are:
 
-- if an account is blocked, its funds stay in the auction, and nothing moves them to escrow or releases them after a delay;
+- if an account is flagged, its funds stay in the auction, and nothing moves them to escrow or releases them after a delay;
 - a compliance list that the msig or a granted account can edit, with a pointer the msig can update;
 - a rescuer-only, one-way switch to disable compliance, as a check on a rogue msig;
 - a way to stop everything in an incident, which the msig controls and the rescuer can take over.
@@ -26,7 +26,7 @@ Numbered decisions refer to the list at the end.
 
 ## The design in brief
 
-`ComplianceCheck` blocks addresses. Each auction has its own pause that stops every function that moves tokens. Blocked or paused means the call reverts and the money stays put. The rescuer can disable compliance for good. It can also switch on rescue mode, which locks the msig out of the auction and lets the rescuer pause and unpause until it switches rescue mode off.
+`ComplianceCheck` flags addresses. Each auction has its own pause that stops every function that moves tokens. Flagged or paused means the call reverts and the money stays put. The rescuer can disable compliance for good. It can also switch on rescue mode, which locks the msig out of the auction and lets the rescuer pause and unpause until it switches rescue mode off.
 
 ## Who can call what
 
@@ -34,8 +34,8 @@ Numbered decisions refer to the list at the end.
 |---|---|---|
 | **msig** (factory) | `executor`; locked out while the factory's rescue mode is on | `createAuction`, `proposeImplementation`, `proposeNewExecutor` |
 | **msig** (auction) | `executor`; locked out while rescue mode is on | `cancel`, `settleEarly`, `setPaused`, `setComplianceCheck`, `recoverToken`, `exclude`, `reinstate`, `proposeNewExecutor`, and the proposed `setFunder`/`setProceedsRecipient` (decision 6) |
-| **msig** (`ComplianceCheck`) | `executor` | `setBlocked`, `setExplicitAccess` |
-| **granted account** | an address the msig grants with `setExplicitAccess` | the functions granted, normally `setBlocked`. A `setBlocked` grant also lets it `exclude` and `reinstate` on every auction pointing at that list, in rescue mode too, while compliance is enabled |
+| **msig** (`ComplianceCheck`) | `executor` | `setFlagged`, `setExplicitAccess` |
+| **granted account** | an address the msig grants with `setExplicitAccess` | the functions granted, normally `setFlagged`. A `setFlagged` grant also lets it `exclude` and `reinstate` on every auction pointing at that list, in rescue mode too, while compliance is enabled |
 | **rescuer** | `rescuer` (each auction takes the factory's current one) | factory: `acceptImplementation`, `setRescueMode`, and the two-step rescuer handover. Auction: `disableComplianceCheck` (one-way, any time), `setRescueMode`, `setPaused` and `cancel` while rescue mode is on, and the two-step rescuer handover. Nothing else. |
 | **funder** | `funder` (fixed at deploy, see decision 6) | `fund`, `withdrawExcess` |
 | **anyone** | — | `deposit`, `withdrawDeposit`, `claim`, `withdrawExcluded`, `claimTreasury` (pays the funder and proceeds addresses), `emitSettlement` |
@@ -46,17 +46,17 @@ Numbered decisions refer to the list at the end.
 
 ```solidity
 contract ComplianceCheck is IComplianceCheck, ExecutorAccess {
-    mapping(address account => bool blocked) public isBlocked;
+    mapping(address account => bool flagged) public isFlagged;
     mapping(address caller => mapping(bytes4 fnSelector => bool allowed)) public explicitFunctionAccess;
 
-    event BlockedSet(address indexed account, bool blocked);
+    event FlaggedSet(address indexed account, bool flagged);
 
     function setExplicitAccess(address allowedCaller, ExplicitAccess[] calldata access) external { /* msig only */ }
-    function setBlocked(address[] calldata accounts, bool value) external onlyElevatedAccess {}
+    function setFlagged(address[] calldata accounts, bool value) external onlyElevatedAccess {}
 }
 ```
 
-`ComplianceCheck` uses the same per-function grants as `TempleElevatedAccess`: the `executor`, and any account the msig grants `setBlocked`, can edit the list. There's no rescuer and no rescue mode. A grant of `proposeNewExecutor` would hand over the executor role, so the msig only ever grants `setBlocked`.
+`ComplianceCheck` uses the same per-function grants as `TempleElevatedAccess`: the `executor`, and any account the msig grants `setFlagged`, can edit the list. There's no rescuer and no rescue mode. A grant of `proposeNewExecutor` would hand over the executor role, so the msig only ever grants `setFlagged`.
 
 If you later want a Chainalysis sanctions feed, deploy a new `ComplianceCheck` that wraps it and have the msig repoint each auction.
 
@@ -84,9 +84,9 @@ State:      priceDenominator (set once in initialize)
             funding, which stop changing once the phase is final.
 ```
 
-Bidders deposit `bidToken`, and the funder supplies `fillToken`. `price` is fill tokens per whole bid token, scaled by 1e18; `priceDenominator` is derived from the tokens' decimals at deploy. Phases: Scheduled before `depositStart`, Deposit until `depositEnd`, Fulfillment until `fulfillmentEnd`, then Settled (or Settled early when the msig calls `settleEarly`). If `funding` covers only part of the deposits, every depositor fills the same fraction and gets the rest of their bid tokens back.
+Bidders deposit `bidToken`, and the funder supplies `fillToken`. `price` is fill tokens per whole bid token, scaled by 1e18; `priceDenominator` is derived from the tokens' decimals at deploy. Phases: Scheduled before `depositStart`, Deposit until `depositEnd`, Fulfillment until `fulfillmentEnd`, then Settlement (which begins early when the msig calls `settleEarly`). If `funding` covers only part of the deposits, every depositor fills the same fraction and gets the rest of their bid tokens back.
 
-| Function | What it does | Caller | Phase | Blocked address | Paused |
+| Function | What it does | Caller | Phase | Flagged address | Paused |
 |---|---|---|---|---|---|
 | `deposit(amount)` | Pulls bid tokens from the caller and adds them to their deposit. Enforces `minDeposit`. | anyone | Deposit | revert | revert |
 | `withdrawDeposit(amount)` | Returns part or all of the caller's deposit. What's left must be zero or at least `minDeposit`. | depositor | Deposit | revert | revert |
@@ -94,12 +94,12 @@ Bidders deposit `bidToken`, and the funder supplies `fillToken`. `price` is fill
 | `withdrawExcess(amount)` | Returns fill tokens above what's needed to fill every deposit. | funder | Fulfillment | — | revert |
 | `settleEarly()` | Settles the auction now, with the funding held so far. | msig | Fulfillment | — | allowed |
 | `cancel()` | Aborts the auction: no trade, all deposits and funding become refundable. | msig; the rescuer instead while rescue mode is on | unsettled, before `fulfillmentEnd` | — | allowed |
-| `exclude(account)` | Moves a blocked bidder's whole deposit out of the fill into `excluded[account]`, lowering `totalDeposits`. No tokens move. | msig (locked out in rescue mode), or an account the current list grants `setBlocked` | Deposit or Fulfillment | the target must be blocked; reverts once compliance is disabled | allowed |
-| `reinstate(account)` | Puts a cleared account's excluded balance back into its deposit. Re-runs the deposit overflow guard. | as `exclude`; a list grant stops counting once compliance is disabled | Deposit | the target must not be blocked | allowed |
+| `exclude(account)` | Moves a flagged bidder's whole deposit out of the fill into `excluded[account]`, lowering `totalDeposits`. No tokens move. | msig (locked out in rescue mode), or an account the current list grants `setFlagged` | Deposit or Fulfillment | the target must be flagged; reverts once compliance is disabled | allowed |
+| `reinstate(account)` | Puts a cleared account's excluded balance back into its deposit. Re-runs the deposit overflow guard. | as `exclude`; a list grant stops counting once compliance is disabled | Deposit | the target must not be flagged | allowed |
 | `withdrawExcluded()` | Returns the caller's whole excluded balance. | excluded bidder | any | revert; withdraw later | revert |
-| `claim()` | Pays the caller their pro-rata fill tokens and the unfilled refund. On a cancelled auction it refunds the whole deposit. | depositor | Settled or Cancelled | revert; claim later | revert |
-| `claimTreasury()` | Pays `filledBids` to `proceedsRecipient` and `funderRefund` to `funder` from the settlement. | anyone | Settled or Cancelled | — | revert |
-| `emitSettlement()` | Emits `AuctionSettled` for a settlement by the clock, if no claim has yet, and records `fulfillmentEnd` in `settledAt`. Once. | anyone | Settled | — | allowed |
+| `claim()` | Pays the caller their pro-rata fill tokens and the unfilled refund. On a cancelled auction it refunds the whole deposit. | depositor | Settlement or Cancelled | revert; claim later | revert |
+| `claimTreasury()` | Pays `filledBids` to `proceedsRecipient` and `funderRefund` to `funder` from the settlement. | anyone | Settlement or Cancelled | — | revert |
+| `emitSettlement()` | Emits `AuctionSettled` for a settlement by the clock, if no claim has yet, and records `fulfillmentEnd` in `settledAt`. Once. | anyone | Settlement | — | allowed |
 | `recoverToken(token, to, amount)` | Sends out a token's surplus, such as tokens sent by mistake: the balance less `liabilities()` for the bid and fill tokens, the whole balance for any other token. | msig | any | — | revert |
 | `setPaused(bool)` | Pauses or unpauses the auction. | msig; the rescuer instead while rescue mode is on | any | — | allowed |
 | `setRescueMode(bool)` | Switches rescue mode on or off. While it's on, the msig can't call any msig function on that auction and the rescuer controls the pause. | rescuer | any | — | allowed |
@@ -112,8 +112,8 @@ Bidders deposit `bidToken`, and the funder supplies `fillToken`. `price` is fill
 `fund`, `withdrawExcess` and `claimTreasury` aren't screened, because they only pay Treasury addresses.
 
 ```solidity
-function _isBlocked(address a) private view returns (bool) {
-    return !complianceDisabled && IComplianceCheck(complianceCheck).isBlocked(a);
+function _isFlagged(address a) private view returns (bool) {
+    return !complianceDisabled && IComplianceCheck(complianceCheck).isFlagged(a);
 }
 ```
 
@@ -170,12 +170,12 @@ stateDiagram-v2
 
 | State | Bidders (deposit, withdraw, claim) | msig functions | Who controls the pause |
 |---|---|---|---|
-| Running · msig | work, unless the account is blocked | work | msig |
+| Running · msig | work, unless the account is flagged | work | msig |
 | Paused · msig | revert; funds stay put | work, except `recoverToken`; `cancel` only before `fulfillmentEnd` | msig |
-| Running · rescue mode | work, unless the account is blocked | locked out | rescuer |
+| Running · rescue mode | work, unless the account is flagged | locked out | rescuer |
 | Paused · rescue mode | revert; funds stay put | locked out | rescuer |
 
-`disableComplianceCheck` sits outside these states. The rescuer can call it in any state; it's one-way, and afterwards nobody is blocked.
+`disableComplianceCheck` sits outside these states. The rescuer can call it in any state; it's one-way, and afterwards nobody is flagged.
 
 In rescue mode the rescuer can `cancel`, under the same rule as the msig: unsettled and before `fulfillmentEnd`. Cancelling only ever refunds, so it can't redirect funds, and it gives the rescuer a way to end an incident without the msig. The rescuer can't `settleEarly`, because settling a rogue auction with the attacker's junk funding would pay the deposits to the attacker. After `fulfillmentEnd` nobody can abort (decision 10).
 
@@ -185,20 +185,22 @@ Settlement keeps today's maths. Required funding rounds up, and fills and shares
 
 `AuctionSettled` goes out once per settlement, carrying `settledAt` and the settlement. `settleEarly` emits it. For a settlement by the clock, the first successful `claim` or `claimTreasury` emits it, with `settledAt` set to `fulfillmentEnd`; anyone can call `emitSettlement` to emit it sooner, and it reverts `AlreadySettled` once the event has gone out. `settledAt` is the once-only flag, so `initialize` rejects a `fulfillmentEnd` above `type(uint40).max`.
 
-`recoverToken` sends only surplus. Three payout counters track what's left to pay: `totalExcluded` (up in `exclude`, down in `reinstate` and `withdrawExcluded`), and `bidPaid` and `fillPaid` (up in `claim` and `claimTreasury`). `liabilities()` is `totalDeposits + totalExcluded − bidPaid` in bid tokens and `funding − fillPaid` in fill tokens. A bid or fill token balance above that is a donation and can be recovered; anything else, including a blocked account's unclaimed share, an excluded balance and rounding dust, stays counted until paid; rounding dust stays counted for good. Any other token can be recovered in full.
+`recoverToken` sends only surplus. Three payout counters track what's left to pay: `totalExcluded` (up in `exclude`, down in `reinstate` and `withdrawExcluded`), and `bidPaid` and `fillPaid` (up in `claim` and `claimTreasury`). `liabilities()` is `totalDeposits + totalExcluded − bidPaid` in bid tokens and `funding − fillPaid` in fill tokens. A bid or fill token balance above that is a donation and can be recovered; anything else, including a flagged account's unclaimed share, an excluded balance and rounding dust, stays counted until paid; rounding dust stays counted for good. Any other token can be recovered in full.
 
 #### Excluding flagged bidders
 
-"Flagged" means the auction's current compliance list blocks the account, with compliance enabled. A flagged bidder's deposit stays in the fill unless the msig or a `setBlocked` grantee calls `exclude`. Exclusion is a balance, `excluded[account]`, not a sticky flag: settlement, claims and `withdrawableExcess` use `totalDeposits`, which no longer counts it, so they need no exclusion logic. Exclusion zeroes deposits. An account cleared during Deposit can deposit again; unless the msig or a grantee calls reinstate, only that new deposit is filled.
+"Flagged" means the auction's current compliance list flags the account, with compliance enabled. A flagged bidder's deposit stays in the fill unless the msig or a `setFlagged` grantee calls `exclude`. Exclusion is a balance, `excluded[account]`, not a sticky flag: settlement, claims and `withdrawableExcess` use `totalDeposits`, which no longer counts it, so they need no exclusion logic. Exclusion zeroes deposits. An account cleared during Deposit can deposit again; unless the msig or a grantee calls reinstate, only that new deposit is filled.
 
 | Flagged during | At the flag | Cleared in the same phase | Cleared later |
 |---|---|---|---|
 | Scheduled | Nothing to exclude; can't deposit while flagged | Deposits normally | Same |
 | Deposit | Excluded: the deposit leaves the fill and is frozen; the treasury neither gets nor pays for it | back in as a full participant only if the msig or a grantee calls `reinstate` | `withdrawExcluded` only, never a fill |
 | Fulfillment | Excluded, same treatment; funding already sent for it becomes withdrawable excess if the rest is fully funded; under partial funding the remaining bidders fill more | `withdrawExcluded` only | `withdrawExcluded` only |
-| Settled | Not excluded: the fill stands; fill tokens and unfilled refund frozen; the filled bid tokens go to the treasury | Claims normally | Claims whenever cleared |
+| Settlement | Not excluded: the fill stands; fill tokens and unfilled refund frozen; the filled bid tokens go to the treasury | Claims normally | Claims whenever cleared |
 | Cancelled | Its refund, or its excluded balance, stays frozen | claim for a refund, withdrawExcluded for an excluded balance | Same |
 | Deposit or Fulfillment, `exclude` not called | Still in the fill, filled at settlement, payout frozen | Ordinary bidder | Claims when cleared |
+
+**Legal (confirmed 2026-10-23):** once Fulfillment ends and Settlement begins, the filled bid tokens (TEMPLE) are the treasury's proceeds, even if the bidder is flagged afterwards. The bidder's unpaid fill tokens (USDS) stay frozen until the flag is removed: a freeze, not a confiscation, and fill tokens already claimed can't be frozen. Bought-back TEMPLE is unbacked, and its only use is being burnt. See decision 16 for the one case legal hasn't covered.
 
 The rescuer's answer to a rogue list is `disableComplianceCheck`: afterwards nobody is flagged, so nothing more can be excluded and every excluded balance becomes withdrawable once the auction is unpaused.
 
@@ -291,11 +293,11 @@ With a record-only Well, all judgement about demand happens off-chain. The index
 | The wish | `WishSet(account, from, to, amount, expiresAt)` |
 | Which auctions are genuine, and their market | `AuctionCreated` from the factory |
 | Who bid, and how much | `Deposited`, `DepositWithdrawn` |
-| How much filled, and when | `settlement()` once `phase()` is Settled; `AuctionSettled` (carrying `settledAt`), which a settlement by the clock emits only at its first claim or `emitSettlement` |
+| How much filled, and when | `settlement()` once `phase()` is Settlement; `AuctionSettled` (carrying `settledAt`), which a settlement by the clock emits only at its first claim or `emitSettlement` |
 | Cancelled auctions (no fills, deposits refundable) | `AuctionCancelled` |
 | Each auction's screening | `ComplianceCheckSet`, `ComplianceCheckDisabled` |
 | Balances | ERC-20 `Transfer`, or `balanceOf` at a pinned block |
-| Who is blocked | `BlockedSet` from `ComplianceCheck` |
+| Who is flagged | `FlaggedSet` from `ComplianceCheck` |
 
 Rules:
 - A wish matches an auction when `bidToken == from` and `fillToken == to`.
@@ -304,7 +306,7 @@ Rules:
 - **One balance cap per `from` asset.** The sum of an account's counted wishes that give the same asset can't exceed what it holds of it.
 - **Buckets** are indexer config that group pairs into markets, for example USDS and USDC as "stables". The team reads demand per bucket. Summing across a bucket normalises decimals (USDS has 18, USDC has 6).
 - Expired wishes and wishes with amount 0 count zero.
-- **Blocked accounts count zero.**
+- **Flagged accounts count zero.**
 - **Every batch of reads uses one pinned block,** so one balance can't be counted twice by moving it between reads.
 
 Open choices for the indexer (decision 9):
@@ -315,11 +317,11 @@ Open choices for the indexer (decision 9):
 
 | Incident | Response |
 |---|---|
-| One address must be blocked | msig or a granted account blocks it. Its deposit, withdrawal and claim revert, and its funds stay put. Before settlement, either can also `exclude` it, so its deposit is refunded once it's cleared and never filled. |
+| One address must be flagged | msig or a granted account flags it. Its deposit, withdrawal and claim revert, and its funds stay put. Before settlement, either can also `exclude` it, so its deposit is refunded once it's cleared and never filled. |
 | Accounting bug, or a rush of depositors to withdraw | msig pauses the affected auction: every function that moves tokens stops. Investigate, then unpause, or `cancel` before `fulfillmentEnd`. |
 | Compromised `funder` or `proceedsRecipient` | If decision 6 adds the setters: msig pauses, replaces the address with `setFunder` or `setProceedsRecipient`, then unpauses. Without them, for `proceedsRecipient`: pause, then cancel before `fulfillmentEnd`, so no proceeds accrue. For `funder`, don't cancel, because cancelling returns all funding to the compromised address. Let the auction settle, so fills go to depositors and only the unused funding reaches the funder. |
 | Rogue granted account | msig revokes its grant and fixes the list, or repoints the auctions to a new `ComplianceCheck`. |
-| Rogue msig pauses for good, or blocks everyone | rescuer switches rescue mode on, which locks the msig out. It unpauses and/or calls `disableComplianceCheck`, and switches rescue mode off once the msig can be trusted again. If the Safe can't be recovered, rescue mode stays on until the auction settles by the clock. |
+| Rogue msig pauses for good, or flags everyone | rescuer switches rescue mode on, which locks the msig out. It unpauses and/or calls `disableComplianceCheck`, and switches rescue mode off once the msig can be trusted again. If the Safe can't be recovered, rescue mode stays on until the auction settles by the clock. |
 | Hijacked msig deploys rogue auctions through the factory | (1) The rescuer switches rescue mode on in the factory, which stops new auctions and code proposals, and in every live auction, which locks the hijacked msig out. It calls `disableComplianceCheck` on any auction whose list the msig has abused. (2) For each rogue auction already created, the rescuer switches rescue mode on and cancels it as soon as `AuctionCreated` appears, ideally before `depositStart` and at the latest before `depositEnd`: from `depositEnd` the hijacked msig can fund with junk and settle in one block, and a settled auction can't be cancelled. Anyone who already deposited gets a full refund at once, whatever the auction's windows. (3) If the Safe's signers recover it, the rescuer switches rescue mode off. If the Safe is lost for good, the team deploys a new Safe, `ComplianceCheck` and factory, and the indexer and front-ends add the new factory and stop counting new auctions from the old one. Genuine auctions finish under rescue mode, because they settle by the clock at fulfillmentEnd. |
 | Incident while the msig can't act | rescuer switches rescue mode on and pauses. To abort, it cancels before `fulfillmentEnd`, which refunds everyone. |
 
@@ -331,7 +333,7 @@ Open choices for the indexer (decision 9):
 
 | Removed | Why it's safe |
 |---|---|
-| Frozen escrow and the release flow: `frozenBid`/`frozenFill`, `proposeRelease`/`executeRelease`/`vetoRelease`, the 7-day delay, `frozenFundsReceiver` | blocked now means it stays put and is claimable once unblocked |
+| Frozen escrow and the release flow: `frozenBid`/`frozenFill`, `proposeRelease`/`executeRelease`/`vetoRelease`, the 7-day delay, `frozenFundsReceiver` | flagged now means it stays put and is claimable once unflagged |
 | `excludeBidder`'s escrow | replaced by `exclude`, which only moves the deposit out of the fill into a balance the bidder withdraws once cleared (decision 2) |
 | `emergencyPause`/`emergencyUnpause` with their 14-day timer and single-use flag | replaced by a plain pause over every function that moves tokens, toggled by the msig, or by the rescuer in rescue mode |
 | `setDepositsPaused` | the auction pause, or `cancel` |
@@ -342,7 +344,7 @@ Open choices for the indexer (decision 9):
 | Three cancel functions | merged into `cancel()` |
 | Supported-token registry check (`IAuctionTokenRegistry`) and the notice and maximum-duration rules | the msig chooses the tokens and schedule in `createAuction`; the auction relies on standard ERC-20s with exact transfers (decision 13) |
 | The `remainingFunding` and `fullFundingRequired` views | folded into `settlement` and `claimable`. `liabilities()` now exists, backed by the payout counters |
-| `disableComplianceCheck` callable by the msig | now rescuer-only, so the rescuer can lift a rogue msig's blocks for good. The msig can still repoint to a permissive list, which the requirements allow, since the msig can update the pointer. |
+| `disableComplianceCheck` callable by the msig | now rescuer-only, so the rescuer can lift a rogue msig's flags for good. The msig can still repoint to a permissive list, which the requirements allow, since the msig can update the pointer. |
 
 About 35 external functions shrink to 24, counting `initialize` and the views but not access-control-base functions or public getters (26 with the decision 6 setters; 39 in `IFixedPriceAuction` with the getters). Of 20 events and 23 errors, roughly half remain. These threats go away with the code that caused them:
 - frozen-release snapshot bugs
@@ -364,8 +366,8 @@ The record-only Well drops signed wishes and nonces, the on-chain balance and co
 ## Decisions for the team
 
 1. Are these cuts acceptable? That covers the timed emergency pause, the deposit pause (`setDepositsPaused`), the cap, early close (`endDeposit`) and permit.
-2. ~~**Legal:** can a blocked account's deposit be filled, with its fill waiting until it's unblocked?~~ **Resolved** by the exclusion rules in [Excluding flagged bidders](#excluding-flagged-bidders): before settlement, `exclude` takes a flagged deposit out of the fill and it's refund-only; after settlement the fill stands and the payout waits.
-3. Should `withdrawDeposit` revert for blocked accounts? This proposal assumes yes, to match "funds stay where they are".
+2. ~~**Legal:** can a flagged account's deposit be filled, with its fill waiting until it's unflagged?~~ **Resolved** by the exclusion rules in [Excluding flagged bidders](#excluding-flagged-bidders): before settlement, `exclude` takes a flagged deposit out of the fill and it's refund-only; after settlement the fill stands and the payout waits.
+3. Should `withdrawDeposit` revert for flagged accounts? This proposal assumes yes, to match "funds stay where they are".
 4. The pause is per auction, so stopping everything takes one transaction per live auction. Is that acceptable, given only a few auctions run at once?
 5. Should a granted account also be able to pause? That needs per-function grants in the auction's access-control base, locked out in rescue mode like the msig.
 6. Should the msig be able to change `funder` and `proceedsRecipient`? Today both are fixed. If yes, TGLD auctions must keep the burner. Without the setters, a compromised funder can't be recovered from. A hijacked msig could point both addresses at itself before the rescuer reacts, and the rescuer can't change them back.
@@ -384,6 +386,9 @@ The record-only Well drops signed wishes and nonces, the on-chain balance and co
     - `Settlement.filledDeposits` → `filledBids`, the bid tokens that were filled;
     - `emitSettled()` → `emitSettlement()`, since it emits the settlement;
     - `endedAt` → `settledAt`, in storage, its getter and the `AuctionSettled` event;
-    - `AuctionFactory` / `IAuctionFactory` → `FixedPriceAuctionFactory` / `IFixedPriceAuctionFactory`.
+    - `AuctionFactory` / `IAuctionFactory` → `FixedPriceAuctionFactory` / `IFixedPriceAuctionFactory`;
+    - `UserClaim` and `UserClaimed`: `fillTokenAmount` / `bidTokenRefund` → `fill` / `refund`; `TreasuryClaim` and `TreasuryClaimed`: `bidTokenAmount` / `fillTokenRefund` → `proceeds` / `funderRefund`, to match `Settlement`;
+    - legal's terms: `setBlocked` / `isBlocked` / `BlockedSet` → `setFlagged` / `isFlagged` / `FlaggedSet` on `ComplianceCheck`, and `BlockedAccount` / `AccountNotBlocked` → `FlaggedAccount` / `AccountNotFlagged` on the auction; `Phase.Settled` → `Phase.Settlement`; a flagged bidder's unpaid funds are called frozen.
 
-    The `AuctionSettled` event keeps its name. `bidToken` / `fillToken`, `claimTreasury` and the Fulfillment phase names stay as they are.
+    The `AuctionSettled` event keeps its name. `bidToken` / `fillToken`, `claimTreasury` and the other phase names stay as they are. A token's own blocklist (USDC-style) is still called blocking.
+16. **Legal:** with partial funding, a bidder flagged after the fill also has an unfilled bid-token refund, and `claim` pays the fill and the refund together, so the refund is frozen too. Legal's answer covered the filled TEMPLE and the USDS; confirm that freezing the unfilled TEMPLE refund until the flag is removed is acceptable.
