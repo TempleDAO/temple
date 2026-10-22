@@ -167,7 +167,8 @@ interface IFixedPriceAuction is IRescuableAccess {
     /// Anyone, once.
     function claimTreasury() external;
 
-    /// @notice Send tokens not owed to anyone. Msig only.
+    /// @notice Send tokens the auction holds above what it owes on that token address. Msig only, outside rescue mode,
+    /// while unpaused.
     function recoverToken(address token, address to, uint256 amount) external;
 
     /// @notice Pause or unpause every token-moving function. The msig, or the rescuer instead in rescue mode.
