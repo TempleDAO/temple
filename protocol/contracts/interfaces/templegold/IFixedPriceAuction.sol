@@ -180,9 +180,6 @@ interface IFixedPriceAuction is IRescuableAccess {
     /// @notice Switch screening off for good. Rescuer only.
     function disableComplianceCheck() external;
 
-    /// @notice The most decimals either token may have.
-    function MAX_TOKEN_DECIMALS() external view returns (uint8);
-
     /// @notice 10**(18 + bidDecimals - fillDecimals): a bid amount (bid token base units) times `price`, divided by
     /// this, gives fill token base units.
     function priceDenominator() external view returns (uint256);
