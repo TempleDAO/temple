@@ -1579,13 +1579,18 @@ contract FixedPriceAuctionRecoverTokenTest is FixedPriceAuctionTestBase {
         assertEq(bidOwed + fillOwed, 0);
     }
 
-    function test_recoverToken_strayTokenAboveBalance_reverts() public {
+    /// @dev Another token owes nothing: all of it is recoverable while the auction holds deposits and funding.
+    function test_recoverToken_strayToken_wholeBalanceWhileOwing() public {
+        _workedExample(2_330_000e18);
         FakeERC20CustomDecimals stray = new FakeERC20CustomDecimals("Stray", "STRAY", address(auction), 5e18, 18);
         vm.prank(executor);
         vm.expectRevert(
             abi.encodeWithSelector(CommonEventsAndErrors.InsufficientBalance.selector, stray, 5e18 + 1, 5e18)
         );
         auction.recoverToken(address(stray), alice, 5e18 + 1);
+        vm.prank(executor);
+        auction.recoverToken(address(stray), alice, 5e18);
+        assertEq(stray.balanceOf(alice), 5e18);
     }
 
     function test_recoverToken_validation() public {
