@@ -160,11 +160,13 @@ interface IFixedPriceAuction is IRescuableAccess {
     function cancel() external;
 
     /// @notice Once settled or cancelled, pay the caller their fill tokens and unfilled refund. An excluded balance
-    /// comes back through withdrawExcluded.
+    /// comes back through withdrawExcluded. The first successful `claim` or `claimTreasury` after a settlement by the
+    /// clock emits `AuctionSettled` and sets `endedAt`.
     function claim() external;
 
     /// @notice Once settled or cancelled, pay filled deposits to `proceedsRecipient` and unused funding to `funder`.
-    /// Anyone, once.
+    /// Anyone, once. The first successful `claim` or `claimTreasury` after a settlement by the clock emits
+    /// `AuctionSettled` and sets `endedAt`.
     function claimTreasury() external;
 
     /// @notice Send `amount` of the auction's surplus of `token`: its balance less `liabilities()` for the bid and

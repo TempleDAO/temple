@@ -18,7 +18,7 @@ Easy, hard-to-undo mistakes by trusted roles are listed separately under [Operat
 
 The attackers and failure sources in scope are:
 - unprivileged users, bidders, griefers and front-runners;
-- callers of the permissionless functions (`claim`, `claimTreasury`, `withdrawExcluded`), and anyone cloning the implementation;
+- callers of the permissionless functions (`claim`, `claimTreasury`, `withdrawExcluded`, `emitSettled`), and anyone cloning the implementation;
 - token behaviour: 6-decimal and low-decimal tokens, blocklisting tokens such as USDC, TGLD's transfer restriction, and tokens outside the stated assumption;
 - the compliance list as an external dependency;
 - off-chain consumers (indexers and front-ends) that on-chain data could mislead.
