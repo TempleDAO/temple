@@ -48,12 +48,14 @@ contract ComplianceCheckTest is TempleTest {
     }
 
     function test_access_setBlocked() public {
-        expectElevatedAccess();
+        vm.prank(unauthorizedUser);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         compliance.setBlocked(_accounts(), true);
     }
 
     function test_access_setExplicitAccess() public {
-        expectElevatedAccess();
+        vm.prank(unauthorizedUser);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         compliance.setExplicitAccess(blocker, _access(ComplianceCheck.setBlocked.selector, true));
 
         // A grantee can't widen its own access.

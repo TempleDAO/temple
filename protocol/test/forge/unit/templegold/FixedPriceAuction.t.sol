@@ -558,7 +558,8 @@ contract FixedPriceAuctionLifecycleTest is FixedPriceAuctionTestBase {
         auction.endFulfillment();
 
         _toFulfillment(auction);
-        expectElevatedAccess();
+        vm.prank(unauthorizedUser);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         auction.endFulfillment();
     }
 
@@ -703,7 +704,8 @@ contract FixedPriceAuctionLifecycleTest is FixedPriceAuctionTestBase {
     }
 
     function test_access_cancel() public {
-        expectElevatedAccess();
+        vm.prank(unauthorizedUser);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         auction.cancel();
     }
 
@@ -846,7 +848,8 @@ contract FixedPriceAuctionPauseTest is FixedPriceAuctionTestBase {
     }
 
     function test_access_setPaused() public {
-        expectElevatedAccess();
+        vm.prank(unauthorizedUser);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         auction.setPaused(true);
         vm.prank(rescuer);
         vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
@@ -1278,7 +1281,8 @@ contract FixedPriceAuctionComplianceTest is FixedPriceAuctionTestBase {
     }
 
     function test_access_setComplianceCheck() public {
-        expectElevatedAccess();
+        vm.prank(unauthorizedUser);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         auction.setComplianceCheck(alice);
     }
 
@@ -1413,7 +1417,8 @@ contract FixedPriceAuctionRecoverTokenTest is FixedPriceAuctionTestBase {
         vm.expectRevert(CommonEventsAndErrors.ExpectedNonZero.selector);
         auction.recoverToken(address(usds), executor, 0);
         vm.stopPrank();
-        expectElevatedAccess();
+        vm.prank(unauthorizedUser);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         auction.recoverToken(address(usds), executor, 1);
     }
 }
