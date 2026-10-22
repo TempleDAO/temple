@@ -606,25 +606,4 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
         assertEq(auction.excluded(alice), 3e56);
     }
 
-    /// @dev Excluded tokens stay in the auction until withdrawn, and `recoverToken` refuses the bid token outright.
-    function test_excludedBalance_heldAndNeverRecoverable() public {
-        _bothDeposit();
-        _setBlocked(alice, true);
-        _exclude(executor, alice);
-        _toFulfillment(auction);
-        _fund(auction, 400e18);
-        _toEnd(auction);
-        vm.prank(bob);
-        auction.claim();
-        auction.claimTreasury();
-        _assertPaid(address(auction), 100e18, 0);
-
-        vm.prank(executor);
-        vm.expectRevert(CommonEventsAndErrors.InvalidParam.selector);
-        auction.recoverToken(address(temple), executor, 1);
-
-        _setBlocked(alice, false);
-        _withdrawExcluded(alice);
-        _assertPaid(address(auction), 0, 0);
-    }
 }

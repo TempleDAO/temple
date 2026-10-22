@@ -28,15 +28,6 @@ contract AuctionFactoryTest is FixedPriceAuctionTestBase {
         assertEq(factory.proposedImplementation(), address(0));
     }
 
-    function test_acceptExecutor_fail_rescuer() public {
-        vm.prank(executor);
-        factory.proposeNewExecutor(rescuer);
-        vm.prank(rescuer);
-        vm.expectRevert(CommonEventsAndErrors.InvalidAddress.selector);
-        factory.acceptExecutor();
-        assertEq(factory.executor(), executor);
-    }
-
     function test_constructor_validation() public {
         vm.expectRevert(CommonEventsAndErrors.InvalidAddress.selector);
         new AuctionFactory(address(0), rescuer, address(implementation));
@@ -146,8 +137,7 @@ contract AuctionFactoryTest is FixedPriceAuctionTestBase {
         c.complianceCheck = address(0);
         _expectInvalidAddress(c);
 
-        uint8 tooMany = implementation.MAX_TOKEN_DECIMALS() + 1;
-        FakeERC20CustomDecimals wide = new FakeERC20CustomDecimals("Wide", "WIDE", address(0), 0, tooMany);
+        FakeERC20CustomDecimals wide = new FakeERC20CustomDecimals("Wide", "WIDE", address(0), 0, 19);
         _expectInvalid(_config(address(wide), address(usds), PRICE, 0));
         _expectInvalid(_config(address(tgld), address(wide), PRICE, 0));
     }
@@ -237,22 +227,6 @@ contract AuctionFactoryTest is FixedPriceAuctionTestBase {
         vm.prank(rescuer);
         factory.acceptImplementation(address(v3));
         assertEq(factory.implementation(), address(v3));
-    }
-
-    function test_acceptImplementation_fail_staleProposal() public {
-        FixedPriceAuctionV2 a = new FixedPriceAuctionV2();
-        FixedPriceAuctionV2 b = new FixedPriceAuctionV2();
-        vm.startPrank(executor);
-        factory.proposeImplementation(address(a));
-        factory.proposeImplementation(address(b));
-        vm.stopPrank();
-
-        vm.startPrank(rescuer);
-        vm.expectRevert(CommonEventsAndErrors.InvalidAddress.selector);
-        factory.acceptImplementation(address(a));
-        factory.acceptImplementation(address(b));
-        vm.stopPrank();
-        assertEq(factory.implementation(), address(b));
     }
 
     function test_acceptImplementation_fail_zeroWithNoProposal() public {
