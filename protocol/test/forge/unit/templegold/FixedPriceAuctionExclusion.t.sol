@@ -295,8 +295,8 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
         // Leave the excess in the auction instead of withdrawing it during Fulfillment.
         _toEnd(auction);
         IFixedPriceAuction.TreasuryClaim memory expected = auction.treasuryClaimable();
-        assertEq(expected.bidTokenAmount, 100e18);
-        assertEq(expected.fillTokenRefund, 200e18);
+        assertEq(expected.proceeds, 100e18);
+        assertEq(expected.funderRefund, 200e18);
         auction.claimTreasury();
         vm.prank(bob);
         auction.claim();
@@ -392,7 +392,7 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
         auction.claim();
         auction.claimTreasury();
         _assertPaid(proceedsRecipient, 200e18, 0);
-        assertEq(auction.claimable(alice).fillTokenAmount, 400e18);
+        assertEq(auction.claimable(alice).fill, 400e18);
 
         _setBlocked(alice, false);
         vm.prank(alice);

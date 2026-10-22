@@ -191,12 +191,12 @@ abstract contract FixedPriceAuctionInvariantBase is FixedPriceAuctionTestBase {
             address account = handler.bidders(i);
             if (auction.deposits(account) > 0) ++claimants;
             IFixedPriceAuction.UserClaim memory c = auction.claimable(account);
-            bidNeeded += c.bidTokenRefund;
-            fillNeeded += c.fillTokenAmount;
+            bidNeeded += c.refund;
+            fillNeeded += c.fill;
         }
         IFixedPriceAuction.TreasuryClaim memory t = auction.treasuryClaimable();
-        bidNeeded += t.bidTokenAmount;
-        fillNeeded += t.fillTokenRefund;
+        bidNeeded += t.proceeds;
+        fillNeeded += t.funderRefund;
 
         uint256 bidHeld = bid.balanceOf(address(auction)) - handler.strayBid();
         uint256 fillHeld = fill.balanceOf(address(auction)) - handler.strayFill();
@@ -287,15 +287,15 @@ abstract contract FixedPriceAuctionInvariantBase is FixedPriceAuctionTestBase {
             address account = handler.bidders(i);
             if (auction.claimed(account)) continue;
             IFixedPriceAuction.UserClaim memory c = auction.claimable(account);
-            assertEq(c.bidTokenRefund, auction.deposits(account), "cancel doesn't refund the whole deposit");
-            assertEq(c.fillTokenAmount, 0, "cancel pays fill tokens");
+            assertEq(c.refund, auction.deposits(account), "cancel doesn't refund the whole deposit");
+            assertEq(c.fill, 0, "cancel pays fill tokens");
         }
         IFixedPriceAuction.Settlement memory s = auction.settlement();
         assertEq(s.funderRefund, handler.funded() - handler.excessWithdrawn(), "cancel doesn't refund all funding");
         if (!auction.treasuryClaimed()) {
             IFixedPriceAuction.TreasuryClaim memory t = auction.treasuryClaimable();
-            assertEq(t.bidTokenAmount, 0, "cancel pays proceeds");
-            assertEq(t.fillTokenRefund, s.funderRefund, "cancel doesn't refund the funder");
+            assertEq(t.proceeds, 0, "cancel pays proceeds");
+            assertEq(t.funderRefund, s.funderRefund, "cancel doesn't refund the funder");
         }
     }
 

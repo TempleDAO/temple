@@ -309,7 +309,7 @@ Rules:
 
 Open choices for the indexer (decision 9):
 - Does a new wish reset the fills already subtracted? Recommended: yes, because the latest wish replaces the old one.
-- Do tokens sitting in a live auction, or an unclaimed refund, count as held? Recommended: yes, otherwise demand drops to zero the moment a wisher bids. Count `deposits(account)` while the auction is live and `claimable(account).bidTokenRefund` once it's final, plus `excluded(account)`: `deposits()` doesn't drop when an account claims, so using it after a claim double-counts the refund.
+- Do tokens sitting in a live auction, or an unclaimed refund, count as held? Recommended: yes, otherwise demand drops to zero the moment a wisher bids. Count `deposits(account)` while the auction is live and `claimable(account).refund` once it's final, plus `excluded(account)`: `deposits()` doesn't drop when an account claims, so using it after a claim double-counts the refund.
 
 ## What happens when something goes wrong
 

@@ -729,8 +729,8 @@ contract FixedPriceAuctionLifecycleTest is FixedPriceAuctionTestBase {
     function test_claimable_zeroBeforeSettlement() public {
         _workedExample(4_660_000e18);
         IFixedPriceAuction.UserClaim memory c = auction.claimable(alice);
-        assertEq(c.fillTokenAmount, 0);
-        assertEq(c.bidTokenRefund, 0);
+        assertEq(c.fill, 0);
+        assertEq(c.refund, 0);
     }
 
     function test_claim_twiceReverts() public {
@@ -743,8 +743,8 @@ contract FixedPriceAuctionLifecycleTest is FixedPriceAuctionTestBase {
         auction.claim();
         vm.expectRevert(IFixedPriceAuction.AlreadyClaimed.selector);
         auction.claimTreasury();
-        assertEq(auction.claimable(alice).fillTokenAmount, 0);
-        assertEq(auction.treasuryClaimable().bidTokenAmount, 0);
+        assertEq(auction.claimable(alice).fill, 0);
+        assertEq(auction.treasuryClaimable().proceeds, 0);
     }
 
     function test_claim_nothingToClaim() public {
@@ -1528,7 +1528,7 @@ contract FixedPriceAuctionRecoverTokenTest is FixedPriceAuctionTestBase {
         (bidOwed, fillOwed) = auction.liabilities();
         assertEq(auction.bidPaid(), 100_000_000e18 + 5e18 - tgld.balanceOf(address(auction)));
         assertEq(auction.fillPaid(), 1_553_333_333_333_333_333_333 + 7e18 - usds.balanceOf(address(auction)));
-        assertEq(tgld.balanceOf(bob), bobClaim.bidTokenRefund);
+        assertEq(tgld.balanceOf(bob), bobClaim.refund);
         assertGt(bidOwed, 0, "bid dust left");
         assertGt(fillOwed, 0, "fill dust left");
         assertEq(tgld.balanceOf(address(auction)) - bidOwed, 5e18, "only the bid donation is surplus");

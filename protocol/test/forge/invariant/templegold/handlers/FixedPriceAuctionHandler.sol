@@ -191,7 +191,7 @@ contract FixedPriceAuctionHandler is Test {
 
         (State memory before, bool blocked, uint256 deposit_, bool claimed_) = _pre(account);
         // A fill token that blocks the account blocks the whole claim, refund leg included.
-        bool tokenBlocked = fillTokenBlocked[account] && expected.fillTokenAmount > 0;
+        bool tokenBlocked = fillTokenBlocked[account] && expected.fill > 0;
         if (
             (before.phase == IFixedPriceAuction.Phase.Settled || before.phase == IFixedPriceAuction.Phase.Cancelled)
                 && !before.paused && !blocked && !tokenBlocked && deposit_ > 0 && !claimed_
@@ -222,7 +222,7 @@ contract FixedPriceAuctionHandler is Test {
         uint256 gotFill = fill.balanceOf(account) - fillBefore;
         uint256 gotBid = bid.balanceOf(account) - bidBefore;
         // `claimable` is a preview of what `claim` pays.
-        _check(gotFill == expected.fillTokenAmount && gotBid == expected.bidTokenRefund, "claim != claimable");
+        _check(gotFill == expected.fill && gotBid == expected.refund, "claim != claimable");
         userFillPaid += gotFill;
         userRefundPaid += gotBid;
     }
@@ -918,7 +918,7 @@ contract FixedPriceAuctionHandler is Test {
         IFixedPriceAuction.Phase current = auction.phase();
         if (current != IFixedPriceAuction.Phase.Settled && current != IFixedPriceAuction.Phase.Cancelled) {
             IFixedPriceAuction.TreasuryClaim memory t = auction.treasuryClaimable();
-            _check(t.bidTokenAmount == 0 && t.fillTokenRefund == 0, "treasuryClaimable nonzero before settlement");
+            _check(t.proceeds == 0 && t.funderRefund == 0, "treasuryClaimable nonzero before settlement");
         }
         if (!_final(current)) return;
         hasOutcome = true;

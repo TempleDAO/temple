@@ -258,15 +258,15 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
 
         UserClaim memory userClaim = _claimable(msg.sender, config);
         claimed[msg.sender] = true;
-        bidPaid += userClaim.bidTokenRefund;
-        fillPaid += userClaim.fillTokenAmount;
+        bidPaid += userClaim.refund;
+        fillPaid += userClaim.fill;
 
-        emit UserClaimed(msg.sender, userClaim.fillTokenAmount, userClaim.bidTokenRefund);
-        if (userClaim.bidTokenRefund > 0) {
-            IERC20(config.bidToken).safeTransfer(msg.sender, userClaim.bidTokenRefund);
+        emit UserClaimed(msg.sender, userClaim.fill, userClaim.refund);
+        if (userClaim.refund > 0) {
+            IERC20(config.bidToken).safeTransfer(msg.sender, userClaim.refund);
         }
-        if (userClaim.fillTokenAmount > 0) {
-            IERC20(config.fillToken).safeTransfer(msg.sender, userClaim.fillTokenAmount);
+        if (userClaim.fill > 0) {
+            IERC20(config.fillToken).safeTransfer(msg.sender, userClaim.fill);
         }
     }
 
@@ -279,17 +279,17 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
 
         TreasuryClaim memory treasuryClaim = _treasuryClaimable(config);
         treasuryClaimed = true;
-        bidPaid += treasuryClaim.bidTokenAmount;
-        fillPaid += treasuryClaim.fillTokenRefund;
+        bidPaid += treasuryClaim.proceeds;
+        fillPaid += treasuryClaim.funderRefund;
 
         emit TreasuryClaimed(
-            config.proceedsRecipient, config.funder, treasuryClaim.bidTokenAmount, treasuryClaim.fillTokenRefund
+            config.proceedsRecipient, config.funder, treasuryClaim.proceeds, treasuryClaim.funderRefund
         );
-        if (treasuryClaim.bidTokenAmount > 0) {
-            IERC20(config.bidToken).safeTransfer(config.proceedsRecipient, treasuryClaim.bidTokenAmount);
+        if (treasuryClaim.proceeds > 0) {
+            IERC20(config.bidToken).safeTransfer(config.proceedsRecipient, treasuryClaim.proceeds);
         }
-        if (treasuryClaim.fillTokenRefund > 0) {
-            IERC20(config.fillToken).safeTransfer(config.funder, treasuryClaim.fillTokenRefund);
+        if (treasuryClaim.funderRefund > 0) {
+            IERC20(config.fillToken).safeTransfer(config.funder, treasuryClaim.funderRefund);
         }
     }
 
@@ -423,15 +423,15 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
         Settlement memory s = _settlement(config.price);
         uint256 amount = deposits[account];
         // Independent, rounded-down shares, so claim order doesn't matter. The dust stays put.
-        userClaim.fillTokenAmount = amount.mulDivRound(s.userFill, totalDeposits, false);
-        userClaim.bidTokenRefund = amount.mulDivRound(s.userRefund, totalDeposits, false);
+        userClaim.fill = amount.mulDivRound(s.userFill, totalDeposits, false);
+        userClaim.refund = amount.mulDivRound(s.userRefund, totalDeposits, false);
     }
 
     function _treasuryClaimable(AuctionConfig memory config) private view returns (TreasuryClaim memory treasuryClaim) {
         if (!_isFinal(config) || treasuryClaimed) return treasuryClaim;
         Settlement memory s = _settlement(config.price);
-        treasuryClaim.bidTokenAmount = s.filledBids;
-        treasuryClaim.fillTokenRefund = s.funderRefund;
+        treasuryClaim.proceeds = s.filledBids;
+        treasuryClaim.funderRefund = s.funderRefund;
     }
 
     /// @dev Reads only totalDeposits and funding as state, which stop changing once the phase is final.

@@ -57,16 +57,16 @@ interface IFixedPriceAuction is IRescuableAccess {
 
     struct UserClaim {
         /// @notice Fill tokens owed to the bidder.
-        uint256 fillTokenAmount;
+        uint256 fill;
         /// @notice Unfilled bid tokens returned to the bidder.
-        uint256 bidTokenRefund;
+        uint256 refund;
     }
 
     struct TreasuryClaim {
         /// @notice Filled bid tokens sent to the proceeds recipient.
-        uint256 bidTokenAmount;
+        uint256 proceeds;
         /// @notice Unused fill tokens returned to the funder.
-        uint256 fillTokenRefund;
+        uint256 funderRefund;
     }
 
     /// @dev expected is the phase the call needs; cancel and exclude report Fulfillment, the last phase they're
@@ -99,12 +99,12 @@ interface IFixedPriceAuction is IRescuableAccess {
         uint256 funderRefund
     );
     event AuctionCancelled(uint256 totalDeposits, uint256 funderRefund);
-    event UserClaimed(address indexed account, uint256 fillTokenAmount, uint256 bidTokenRefund);
+    event UserClaimed(address indexed account, uint256 fill, uint256 refund);
     event TreasuryClaimed(
         address indexed proceedsRecipient,
         address indexed funder,
-        uint256 bidTokenAmount,
-        uint256 fillTokenRefund
+        uint256 proceeds,
+        uint256 funderRefund
     );
     event BidderExcluded(address indexed account, uint256 amount);
     event BidderReinstated(address indexed account, uint256 amount);

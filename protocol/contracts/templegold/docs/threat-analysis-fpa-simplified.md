@@ -199,7 +199,7 @@ Findings that are resolved, properties checked and found to hold, and the cross-
 ### T-20 `deposits()` doesn't drop when an account claims
 **Low.** Proven (`test_poc_depositsPersistAfterClaim`). `FixedPriceAuction.sol:51`, `:191-209`.
 - **Scenario:** an indexer that counts held tokens as wallet balance plus `deposits(account)` double-counts after a claim: the refund is in the wallet and `deposits()` still shows the full amount. The filled part has already gone to the proceeds recipient.
-- **Mitigation:** D9. Held in auction is `deposits` plus `excluded(account)` while the auction is live, and `claimable(account).bidTokenRefund` plus `excluded(account)` once it's final.
+- **Mitigation:** D9. Held in auction is `deposits` plus `excluded(account)` while the auction is live, and `claimable(account).refund` plus `excluded(account)` once it's final.
 
 ### Info
 - **Rounding dust is locked for good:** at most one wei per claimant per token stays in the auction. `liabilities()` keeps counting it, so `recoverToken` can't take it and the dust just stays. Intended. Proven.
