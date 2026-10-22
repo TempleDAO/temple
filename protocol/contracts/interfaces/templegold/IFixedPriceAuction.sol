@@ -171,7 +171,8 @@ interface IFixedPriceAuction is IRescuableAccess {
     function claimTreasury() external;
 
     /// @notice Send `amount` of the auction's surplus of `token`: its balance less `liabilities()` for the bid and
-    /// fill tokens, the whole balance for any other token. Msig only. Reverts `InsufficientBalance` above that.
+    /// fill tokens, the whole balance for any other token. Msig only, outside rescue mode, while unpaused. Reverts
+    /// `InsufficientBalance` above that.
     function recoverToken(address token, address to, uint256 amount) external;
 
     /// @notice Pause or unpause every token-moving function. The msig, or the rescuer instead in rescue mode.
