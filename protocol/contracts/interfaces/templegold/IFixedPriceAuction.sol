@@ -31,7 +31,7 @@ interface IFixedPriceAuction is IRescuableAccess {
         uint64 depositStart;
         /// @notice Unix seconds.
         uint64 depositEnd;
-        /// @notice Unix seconds.
+        /// @notice Unix seconds, at most `type(uint40).max`.
         uint64 fulfillmentEnd;
         /// @notice Minimum nonzero deposit balance per bidder, in bid token base units; zero disables it.
         uint256 minDeposit;
@@ -81,11 +81,15 @@ interface IFixedPriceAuction is IRescuableAccess {
     error NothingToClaim();
     error ComplianceCheckIsDisabled();
     error AlreadyInitialized();
+    /// @dev `AuctionSettled` was already emitted, by `endFulfillment`, a claim or `emitSettled`.
+    error AlreadySettled();
 
     event Deposited(address indexed account, uint256 amount, uint256 accountDeposit, uint256 totalDeposits);
     event DepositWithdrawn(address indexed account, uint256 amount, uint256 accountDeposit, uint256 totalDeposits);
     event Funded(address indexed funder, uint256 amount, uint256 fundingHeld);
     event ExcessWithdrawn(address indexed funder, uint256 amount, uint256 fundingHeld);
+    /// @notice Once per settlement: from `endFulfillment`, or for a settlement by the clock from the first successful
+    /// `claim` or `claimTreasury`, or `emitSettled` if that comes first, with `endedAt` = `fulfillmentEnd`.
     event AuctionSettled(
         uint64 endedAt,
         uint256 totalDeposits,
@@ -142,9 +146,14 @@ interface IFixedPriceAuction is IRescuableAccess {
     /// phase only; at most `withdrawableExcess()`.
     function withdrawExcess(uint256 amount) external;
 
-    /// @notice Settle now with the funding held so far. Msig only, fulfillment phase, allowed while paused. The only
-    /// settlement that emits `AuctionSettled`; a settlement by the clock emits nothing, so read `previewSettlement()`.
+    /// @notice Settle now with the funding held so far, emitting `AuctionSettled`. Msig only, fulfillment phase,
+    /// allowed while paused.
     function endFulfillment() external;
+
+    /// @notice Emit `AuctionSettled` for an auction the clock settled at `fulfillmentEnd`, if no claim has emitted it
+    /// yet, and record `fulfillmentEnd` in `endedAt`. Anyone, once; Settled phase only. Moves no tokens and changes
+    /// no payout. Reverts `AlreadySettled` once the event has gone out.
+    function emitSettled() external;
 
     /// @notice Abort: no trade, and all deposits and funding become refundable. Msig only; the rescuer instead
     /// while rescue mode is on. Before settlement and fulfillmentEnd; allowed while paused.
@@ -158,9 +167,8 @@ interface IFixedPriceAuction is IRescuableAccess {
     /// Anyone, once.
     function claimTreasury() external;
 
-    /// @notice Send any token other than the bid and fill tokens. Msig only. The auction can't tell its own tokens'
-    /// surplus from what's owed, so those revert; a donation of either stays in the auction for good and changes no
-    /// payout.
+    /// @notice Send `amount` of the auction's surplus of `token`: its balance less `liabilities()` for the bid and
+    /// fill tokens, the whole balance for any other token. Msig only. Reverts `InsufficientBalance` above that.
     function recoverToken(address token, address to, uint256 amount) external;
 
     /// @notice Pause or unpause every token-moving function. The msig, or the rescuer instead in rescue mode.
@@ -209,9 +217,23 @@ interface IFixedPriceAuction is IRescuableAccess {
     /// withdrawable once unpaused and list grants can no longer exclude or reinstate.
     function complianceDisabled() external view returns (bool);
 
-    /// @notice When endFulfillment settled the auction early (unix seconds). Zero for a settlement by the clock at
-    /// fulfillmentEnd, and after a cancel.
+    /// @notice When the auction settled (unix seconds): set by `endFulfillment`, or to `fulfillmentEnd` by the first
+    /// claim or `emitSettled` after a settlement by the clock. Zero until then, and after a cancel.
     function endedAt() external view returns (uint40);
+
+    /// @notice The sum of every `excluded` balance, in bid token base units.
+    function totalExcluded() external view returns (uint256);
+
+    /// @notice Bid tokens paid out by `claim` and `claimTreasury`, in bid token base units.
+    function bidPaid() external view returns (uint256);
+
+    /// @notice Fill tokens paid out by `claim` and `claimTreasury`, in fill token base units.
+    function fillPaid() external view returns (uint256);
+
+    /// @notice What the auction still owes, in each token's base units, to bidders (including excluded balances),
+    /// the proceeds recipient and the funder: `totalDeposits() + totalExcluded() - bidPaid()` and
+    /// `funding() - fillPaid()`. Only a balance above this is recoverable. Rounding dust stays counted for good.
+    function liabilities() external view returns (uint256 bidToken, uint256 fillToken);
 
     /// @notice The current phase. Settled from `fulfillmentEnd` or `endFulfillment`; Cancelled after `cancel`.
     function phase() external view returns (Phase);

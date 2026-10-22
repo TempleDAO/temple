@@ -204,6 +204,7 @@ contract FixedPriceAuctionHandler is Test {
         } catch {}
         _post(account, ok, before, blocked, deposit_, claimed_);
         _check(!ok || _final(before.phase), "claim before an outcome");
+        _checkClockSettlementRecorded(ok, before);
         if (tokenBlocked) _check(!ok, "claim paid fill tokens to a token-blocked account");
         if (ok) _bookClaim(account, expected, fillBefore, bidBefore);
     }
@@ -462,6 +463,7 @@ contract FixedPriceAuctionHandler is Test {
         } catch {}
         _checkPaused(ok, before);
         _check(!ok || _final(before.phase), "claimTreasury before an outcome");
+        _checkClockSettlementRecorded(ok, before);
         // Never screened: whoever calls, and whatever the treasury addresses' block status, it pays once due.
         _check(ok || before.paused || !_final(before.phase) || claimedBefore, "claimTreasury refused while due");
         if (ok) _bookTreasuryClaim(bidBefore, fillBefore);
@@ -472,6 +474,33 @@ contract FixedPriceAuctionHandler is Test {
         ghostTreasuryClaimed = true;
         treasuryBidPaid += bid.balanceOf(config.proceedsRecipient) - bidBefore;
         treasuryFillPaid += fill.balanceOf(config.funder) - fillBefore;
+    }
+
+    /// @dev Anyone may emit `AuctionSettled` for a settlement by the clock, exactly when Settled and no event has gone
+    /// out (endedAt still 0). Pause, rescue mode and the compliance lists don't stop it.
+    function emitSettled() external step {
+        State memory before = _state();
+        vm.prank(outsider);
+        bool ok;
+        try auction.emitSettled() {
+            ok = true;
+            ++successes["emitSettled"];
+        } catch {}
+        _check(
+            ok == (before.phase == IFixedPriceAuction.Phase.Settled && before.endedAt == 0),
+            "emitSettled not exactly once after a clock settlement"
+        );
+        if (ok) _check(auction.endedAt() == config.fulfillmentEnd, "emitSettled didn't record fulfillmentEnd");
+    }
+
+    /// @dev Once Settled, a successful claim leaves endedAt set: from `endFulfillment`, or `fulfillmentEnd` recorded by
+    /// this or an earlier claim or `emitSettled`.
+    function _checkClockSettlementRecorded(bool ok, State memory before) internal {
+        if (!ok || before.phase != IFixedPriceAuction.Phase.Settled) return;
+        _check(
+            auction.endedAt() == (before.endedAt == 0 ? config.fulfillmentEnd : before.endedAt),
+            "claim after a clock settlement didn't record fulfillmentEnd once"
+        );
     }
 
     /****** MSIG ******/
@@ -516,8 +545,8 @@ contract FixedPriceAuctionHandler is Test {
         uint256 tally = token == stray ? strayOther : token == bid ? strayBid : strayFill;
         // Exactly the stray tally, or a random amount that's usually too much.
         amount = exact && tally > 0 ? tally : _bound(amount, 1, 1e27);
-        // Only the unrelated token is recoverable; the auction's own tokens never are, stray or not.
-        bool recoverable = token == stray && amount <= tally;
+        // Only what was transferred in outside the auction's books is surplus, for any token.
+        bool recoverable = amount <= tally;
 
         State memory before = _state();
         vm.prank(msig);
@@ -527,8 +556,12 @@ contract FixedPriceAuctionHandler is Test {
             ++successes["recoverToken"];
         } catch {}
         // Checked before the books move, so an over-recovery is reported, not hidden by an underflow revert.
-        _check(!ok || recoverable, "recoverToken took the auction's own tokens or more than the stray");
-        if (ok && recoverable) strayOther -= amount;
+        _check(!ok || recoverable, "recoverToken took more than the stray");
+        if (ok && recoverable) {
+            if (token == stray) strayOther -= amount;
+            else if (token == bid) strayBid -= amount;
+            else strayFill -= amount;
+        }
         _checkPaused(ok, before);
         _checkRescueMode(ok, before);
         if (!before.paused && !before.inRescueMode) _check(ok == recoverable, "recoverToken != recoverable");
@@ -850,6 +883,8 @@ contract FixedPriceAuctionHandler is Test {
             if (logs[i].emitter != address(auction)) continue;
             bytes32 topic = logs[i].topics[0];
             if (topic == IFixedPriceAuction.AuctionSettled.selector) {
+                // recordLogs keeps logs from a reverted call; a reverted clock emission leaves endedAt at 0.
+                if (auction.endedAt() == 0) continue;
                 ++settledEvents;
                 IFixedPriceAuction.Settlement memory s = auction.previewSettlement();
                 bytes memory stored = abi.encode(

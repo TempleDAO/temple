@@ -138,6 +138,13 @@ contract AuctionFactoryTest is FixedPriceAuctionTestBase {
         _expectInvalid(_config(address(tgld), address(tgld), PRICE, 0));
         _expectInvalid(_config(address(tgld), address(usds), 0, 0));
 
+        // endedAt is a uint40 and may hold fulfillmentEnd, so fulfillmentEnd must fit; the bound itself is allowed.
+        c = _config(address(tgld), address(usds), PRICE, 0);
+        c.fulfillmentEnd = uint64(type(uint40).max) + 1;
+        _expectInvalid(c);
+        c.fulfillmentEnd = type(uint40).max;
+        _create(c);
+
         c = _config(address(tgld), address(usds), PRICE, 0);
         c.funder = address(0);
         _expectInvalidAddress(c);

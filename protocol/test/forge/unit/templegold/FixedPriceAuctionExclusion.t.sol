@@ -33,24 +33,33 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
 
     function _exclude(address by, address account) internal {
         vm.expectEmit(address(auction));
-        emit IFixedPriceAuction.BidderExcluded(account, auction.deposits(account));
+        uint256 amount = auction.deposits(account);
+        emit IFixedPriceAuction.BidderExcluded(account, amount);
+        uint256 totalExcluded = auction.totalExcluded();
         vm.prank(by);
         auction.exclude(account);
+        assertEq(auction.totalExcluded(), totalExcluded + amount, "totalExcluded");
     }
 
     function _reinstate(address by, address account) internal {
         vm.expectEmit(address(auction));
-        emit IFixedPriceAuction.BidderReinstated(account, auction.excluded(account));
+        uint256 amount = auction.excluded(account);
+        emit IFixedPriceAuction.BidderReinstated(account, amount);
+        uint256 totalExcluded = auction.totalExcluded();
         vm.prank(by);
         auction.reinstate(account);
+        assertEq(auction.totalExcluded(), totalExcluded - amount, "totalExcluded");
     }
 
     function _withdrawExcluded(address account) internal {
         vm.expectEmit(address(auction));
-        emit IFixedPriceAuction.ExcludedWithdrawn(account, auction.excluded(account));
+        uint256 amount = auction.excluded(account);
+        emit IFixedPriceAuction.ExcludedWithdrawn(account, amount);
+        uint256 totalExcluded = auction.totalExcluded();
         vm.prank(account);
         auction.withdrawExcluded();
         assertEq(auction.excluded(account), 0);
+        assertEq(auction.totalExcluded(), totalExcluded - amount, "totalExcluded");
     }
 
     function _expectNothingToClaim(address account) internal {
@@ -89,6 +98,38 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
         vm.prank(alice);
         auction.deposit(100e18);
         assertEq(auction.deposits(alice), 100e18);
+    }
+
+    /// @dev An excluded balance stays owed, so recovery can take only a donation, even once everyone else is paid;
+    /// after the blocked bidder is cleared and withdraws, nothing of theirs is left counted.
+    function test_excludedBalance_notRecoverable() public {
+        _bothDeposit();
+        _setBlocked(alice, true);
+        _exclude(executor, alice);
+        _toFulfillment(auction);
+        _fund(auction, 400e18);
+        _toEnd(auction);
+        vm.prank(bob);
+        auction.claim();
+        auction.claimTreasury();
+        temple.mint(address(auction), 1e18);
+        (uint256 bidOwed,) = auction.liabilities();
+        assertEq(bidOwed, 100e18);
+
+        vm.startPrank(executor);
+        vm.expectRevert(
+            abi.encodeWithSelector(CommonEventsAndErrors.InsufficientBalance.selector, temple, 1e18 + 1, 1e18)
+        );
+        auction.recoverToken(address(temple), executor, 1e18 + 1);
+        auction.recoverToken(address(temple), executor, 1e18);
+        vm.stopPrank();
+
+        _setBlocked(alice, false);
+        _withdrawExcluded(alice);
+        _assertPaid(alice, 100e18, 0);
+        (bidOwed,) = auction.liabilities();
+        assertEq(bidOwed, 0);
+        _assertPaid(address(auction), 0, 0);
     }
 
     /// @dev Excluded in Deposit and cleared in Deposit: reinstated, and both fill in full.

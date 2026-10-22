@@ -64,6 +64,7 @@ abstract contract FixedPriceAuctionInvariantBase is FixedPriceAuctionTestBase {
         i = _add(s, i, FixedPriceAuctionHandler.withdrawDeposit.selector, 1);
         i = _add(s, i, FixedPriceAuctionHandler.withdrawExcess.selector, 1);
         i = _add(s, i, FixedPriceAuctionHandler.endFulfillment.selector, 1);
+        i = _add(s, i, FixedPriceAuctionHandler.emitSettled.selector, 1);
         i = _add(s, i, FixedPriceAuctionHandler.cancel.selector, 1);
         i = _add(s, i, FixedPriceAuctionHandler.recoverToken.selector, 1);
         i = _add(s, i, FixedPriceAuctionHandler.setPausedByMsig.selector, 1);
@@ -131,8 +132,8 @@ abstract contract FixedPriceAuctionInvariantBase is FixedPriceAuctionTestBase {
         }
     }
 
-    /// @dev The auction's balance less the stray transfers (none of its own tokens are recoverable) is what came in
-    /// less what was paid out, and covers everything unpaid.
+    /// @dev The auction's balance less the stray transfers still held is what came in less what was paid out, and
+    /// covers everything unpaid.
     function invariant_balancesCoverOwed() public view {
         uint256 bidHeld = bid.balanceOf(address(auction)) - handler.strayBid();
         uint256 fillHeld = fill.balanceOf(address(auction)) - handler.strayFill();
@@ -149,6 +150,22 @@ abstract contract FixedPriceAuctionInvariantBase is FixedPriceAuctionTestBase {
         (uint256 bidUnpaid, uint256 fillUnpaid) = _unpaid();
         assertGe(bidHeld, bidUnpaid, "bid held < unpaid");
         assertGe(fillHeld, fillUnpaid, "fill held < unpaid");
+    }
+
+    /// @dev The payout counters match the books, so the balance above `liabilities()` is exactly the stray transfers
+    /// still held: recovery can take those and nothing owed. Liabilities cover every unpaid claim and excluded balance.
+    function invariant_liabilitiesAreBalanceLessStray() public view {
+        assertEq(auction.totalExcluded(), _totalExcluded(), "totalExcluded != sum of excluded");
+        assertEq(auction.bidPaid(), handler.userRefundPaid() + handler.treasuryBidPaid(), "bidPaid != books");
+        assertEq(auction.fillPaid(), handler.userFillPaid() + handler.treasuryFillPaid(), "fillPaid != books");
+        (uint256 bidOwed, uint256 fillOwed) = auction.liabilities();
+        assertEq(bid.balanceOf(address(auction)) - bidOwed, handler.strayBid(), "bid balance - liabilities != stray");
+        assertEq(
+            fill.balanceOf(address(auction)) - fillOwed, handler.strayFill(), "fill balance - liabilities != stray"
+        );
+        (uint256 bidUnpaid, uint256 fillUnpaid) = _unpaid();
+        assertGe(bidOwed, bidUnpaid, "bid liabilities < unpaid");
+        assertGe(fillOwed, fillUnpaid, "fill liabilities < unpaid");
     }
 
     /// @dev totalDeposits is the sum of deposits.
@@ -215,8 +232,8 @@ abstract contract FixedPriceAuctionInvariantBase is FixedPriceAuctionTestBase {
         if (s.userFunding == 0) assertEq(s.filledDeposits, 0, "bid tokens filled for no fill tokens");
     }
 
-    /// @dev From `fulfillmentEnd` the phase is final. Once final, by the clock or a call, it, the settlement and
-    /// endedAt never change.
+    /// @dev From `fulfillmentEnd` the phase is final. Once final, by the clock or a call, it and the settlement never
+    /// change, and endedAt changes at most once: from 0 to `fulfillmentEnd` after a settlement by the clock.
     function invariant_outcomeFrozen() public view {
         if (block.timestamp >= auction.getConfig().fulfillmentEnd) {
             IFixedPriceAuction.Phase p = auction.phase();
@@ -227,19 +244,25 @@ abstract contract FixedPriceAuctionInvariantBase is FixedPriceAuctionTestBase {
         }
         if (!_settled()) return;
         assertEq(abi.encode(auction.previewSettlement()), abi.encode(handler.frozenSettlement()), "settlement changed");
-        assertEq(auction.endedAt(), handler.ghostEndedAt(), "endedAt changed");
+        // A clock settlement may later record fulfillmentEnd, once, via a claim or emitSettled.
+        if (auction.endedAt() != handler.ghostEndedAt()) {
+            assertEq(handler.ghostEndedAt(), 0, "endedAt changed");
+            assertEq(uint256(handler.ghostOutcome()), uint256(IFixedPriceAuction.Phase.Settled), "endedAt on cancel");
+            assertEq(auction.endedAt(), auction.getConfig().fulfillmentEnd, "endedAt changed");
+        }
         assertEq(uint256(auction.phase()), uint256(handler.ghostOutcome()), "outcome changed");
     }
 
-    /// @dev `AuctionSettled` is emitted exactly by `endFulfillment`, once, and never by the clock; `AuctionCancelled`
-    /// exactly on cancel, once; never both. The handler checks each event's fields against the settlement.
+    /// @dev `AuctionSettled` is emitted at most once, exactly when endedAt is set: by `endFulfillment`, or for a
+    /// settlement by the clock by the first claim or `emitSettled`; `AuctionCancelled` exactly on cancel, once; never
+    /// both. The handler checks each event's fields against the settlement.
     function invariant_outcomeEmittedOnce() public view {
         uint256 settled = handler.settledEvents();
         uint256 cancelled = handler.cancelledEvents();
         assertLe(settled, 1, "AuctionSettled emitted more than once");
         assertLe(cancelled, 1, "AuctionCancelled emitted more than once");
         assertTrue(settled == 0 || cancelled == 0, "both settled and cancelled");
-        assertEq(settled == 1, auction.endedAt() != 0, "AuctionSettled not emitted exactly on endFulfillment");
+        assertEq(settled == 1, auction.endedAt() != 0, "AuctionSettled not emitted exactly when endedAt is set");
         assertEq(
             cancelled == 1,
             auction.phase() == IFixedPriceAuction.Phase.Cancelled,
@@ -303,7 +326,10 @@ abstract contract FixedPriceAuctionInvariantBase is FixedPriceAuctionTestBase {
         assertTrue(auction.treasuryClaimed(), "treasury not paid out");
         assertEq(_totalExcluded(), 0, "excluded balance not paid out");
         invariant_balancesCoverOwed();
+        invariant_liabilitiesAreBalanceLessStray();
         invariant_outcomeEmittedOnce();
+        // Settled with any claimant or the treasury paid, so the clock settlement's event has gone out.
+        if (auction.phase() == IFixedPriceAuction.Phase.Settled) assertGt(auction.endedAt(), 0, "no AuctionSettled");
         // A cancel refunds exactly, so it leaves no dust at all.
         uint256 maxDust = claimants == 0 || auction.phase() == IFixedPriceAuction.Phase.Cancelled ? 0 : claimants - 1;
         assertLe(bid.balanceOf(address(auction)) - handler.strayBid(), maxDust, "bid dust >= claimants");

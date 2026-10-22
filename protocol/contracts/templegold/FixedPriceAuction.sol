@@ -61,6 +61,13 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
     /// @inheritdoc IFixedPriceAuction
     uint256 public override funding;
 
+    /// @inheritdoc IFixedPriceAuction
+    uint256 public override totalExcluded;
+    /// @inheritdoc IFixedPriceAuction
+    uint256 public override bidPaid;
+    /// @inheritdoc IFixedPriceAuction
+    uint256 public override fillPaid;
+
     constructor() {
         _initialized = true;
     }
@@ -79,6 +86,7 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
             config.depositStart <= block.timestamp
                 || config.depositStart >= config.depositEnd
                 || config.depositEnd >= config.fulfillmentEnd
+                || config.fulfillmentEnd > type(uint40).max
                 || config.bidToken == config.fillToken
                 || config.price == 0
         ) revert CommonEventsAndErrors.InvalidParam();
@@ -143,6 +151,7 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
         emit BidderExcluded(account, amount);
         deposits[account] = 0;
         excluded[account] += amount;
+        totalExcluded += amount;
         totalDeposits -= amount;
     }
 
@@ -159,6 +168,7 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
 
         emit BidderReinstated(account, amount);
         excluded[account] = 0;
+        totalExcluded -= amount;
         deposits[account] += amount;
         totalDeposits += amount;
     }
@@ -169,6 +179,7 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
         if (amount == 0) revert NothingToClaim();
 
         excluded[msg.sender] = 0;
+        totalExcluded -= amount;
 
         emit ExcludedWithdrawn(msg.sender, amount);
         IERC20(_config().bidToken).safeTransfer(msg.sender, amount);
@@ -230,14 +241,25 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
     }
 
     /// @inheritdoc IFixedPriceAuction
+    function emitSettled() external override {
+        AuctionConfig memory config = _config();
+        _requirePhase(config, Phase.Settled);
+        if (endedAt != 0) revert AlreadySettled();
+        _emitClockSettlement(config);
+    }
+
+    /// @inheritdoc IFixedPriceAuction
     function claim() external override whenNotPaused notBlocked {
         AuctionConfig memory config = _config();
         _requireFinal(config);
         if (claimed[msg.sender]) revert AlreadyClaimed();
         if (deposits[msg.sender] == 0) revert NothingToClaim();
+        _emitClockSettlementIfDue(config);
 
         UserClaim memory userClaim = _claimable(msg.sender, config);
         claimed[msg.sender] = true;
+        bidPaid += userClaim.bidTokenRefund;
+        fillPaid += userClaim.fillTokenAmount;
 
         emit UserClaimed(msg.sender, userClaim.fillTokenAmount, userClaim.bidTokenRefund);
         if (userClaim.bidTokenRefund > 0) {
@@ -253,9 +275,12 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
         AuctionConfig memory config = _config();
         _requireFinal(config);
         if (treasuryClaimed) revert AlreadyClaimed();
+        _emitClockSettlementIfDue(config);
 
         TreasuryClaim memory treasuryClaim = _treasuryClaimable(config);
         treasuryClaimed = true;
+        bidPaid += treasuryClaim.bidTokenAmount;
+        fillPaid += treasuryClaim.fillTokenRefund;
 
         emit TreasuryClaimed(
             config.proceedsRecipient, config.funder, treasuryClaim.bidTokenAmount, treasuryClaim.fillTokenRefund
@@ -278,7 +303,11 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
         if (amount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
 
         AuctionConfig memory config = _config();
-        if (token == config.bidToken || token == config.fillToken) revert CommonEventsAndErrors.InvalidParam();
+        (uint256 bidLiability, uint256 fillLiability) = _liabilities();
+        uint256 owed = token == config.bidToken ? bidLiability : token == config.fillToken ? fillLiability : 0;
+        uint256 balance = IERC20(token).balanceOf(address(this));
+        uint256 recoverable = balance > owed ? balance - owed : 0;
+        if (amount > recoverable) revert CommonEventsAndErrors.InsufficientBalance(token, amount, recoverable);
 
         emit CommonEventsAndErrors.TokenRecovered(to, token, amount);
         IERC20(token).safeTransfer(to, amount);
@@ -336,9 +365,34 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
         return _treasuryClaimable(_config());
     }
 
+    /// @inheritdoc IFixedPriceAuction
+    function liabilities() external view override returns (uint256 bidToken, uint256 fillToken) {
+        return _liabilities();
+    }
+
     /// @dev The config the factory appended to this clone's code.
     function _config() internal view returns (AuctionConfig memory) {
         return abi.decode(LibClone.argsOnClone(address(this)), (AuctionConfig));
+    }
+
+    /// @dev Deposits, excluded balances and funding, less what claims have already paid out.
+    function _liabilities() private view returns (uint256 bidToken, uint256 fillToken) {
+        bidToken = totalDeposits + totalExcluded - bidPaid;
+        fillToken = funding - fillPaid;
+    }
+
+    /// @dev The first claim after the clock settles emits `AuctionSettled`, unless `emitSettled` already has.
+    function _emitClockSettlementIfDue(AuctionConfig memory config) private {
+        if (_outcome == Outcome.None && endedAt == 0) _emitClockSettlement(config);
+    }
+
+    /// @dev `endedAt` doubles as the once-only flag, since `endFulfillment` sets it too.
+    function _emitClockSettlement(AuctionConfig memory config) private {
+        // Safe: initialize caps fulfillmentEnd at type(uint40).max.
+        // forge-lint: disable-next-line(unsafe-typecast)
+        endedAt = uint40(config.fulfillmentEnd);
+        Settlement memory s = _calculateSettlement(config.price);
+        emit AuctionSettled(endedAt, totalDeposits, s.filledDeposits, s.userFunding, s.userRefund, s.funderRefund);
     }
 
     function _phase(AuctionConfig memory config) private view returns (Phase) {

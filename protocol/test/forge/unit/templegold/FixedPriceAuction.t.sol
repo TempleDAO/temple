@@ -196,6 +196,28 @@ contract FixedPriceAuctionSettlementTest is FixedPriceAuctionTestBase {
         assertGt(auction.endedAt(), type(uint32).max);
     }
 
+    /// @dev A clock settlement records a fulfillmentEnd past 2^32 whole, and one at the uint40 bound.
+    function test_emitSettled_fulfillmentEndAfter2106() public {
+        vm.warp(uint256(type(uint32).max) + 1);
+        auction = _create(_config(address(tgld), address(usds), PRICE, 0));
+        _toDeposit(auction);
+        _deposit(auction, alice, 100e18);
+        _toEnd(auction);
+        auction.emitSettled();
+        assertEq(auction.endedAt(), auction.getConfig().fulfillmentEnd);
+        assertGt(auction.endedAt(), type(uint32).max);
+
+        IFixedPriceAuction.AuctionConfig memory c = _config(address(tgld), address(usds), PRICE, 0);
+        c.fulfillmentEnd = type(uint40).max;
+        auction = _create(c);
+        _toDeposit(auction);
+        _deposit(auction, alice, 100e18);
+        _toEnd(auction);
+        vm.prank(alice);
+        auction.claim();
+        assertEq(auction.endedAt(), type(uint40).max);
+    }
+
     function test_workedExample_fullFunding() public {
         _workedExample(4_660_000e18);
         _toEnd(auction);
@@ -554,22 +576,135 @@ contract FixedPriceAuctionLifecycleTest is FixedPriceAuctionTestBase {
         auction.endFulfillment();
     }
 
-    function test_claim_atFulfillmentEnd_emitsNoSettlement() public {
+    /// @dev A settlement by the clock: the first claim, however late, emits `AuctionSettled` at `fulfillmentEnd`
+    /// before its own event, and later calls don't emit it again.
+    function test_claim_atFulfillmentEnd_emitsClockSettlementOnce() public {
         _workedExample(2_330_000e18);
         _toEnd(auction);
-        assertEq(auction.previewSettlement().filledDeposits, 50_000_000e18);
+        uint64 end = auction.getConfig().fulfillmentEnd;
+        assertEq(auction.endedAt(), 0);
         vm.warp(block.timestamp + 10 days);
 
-        // A settlement by the clock writes nothing and emits nothing: the claim emits only its own event.
+        vm.expectEmit(address(auction));
+        emit IFixedPriceAuction.AuctionSettled(end, 100_000_000e18, 50_000_000e18, 2_330_000e18, 50_000_000e18, 0);
+        vm.expectEmit(address(auction));
+        emit IFixedPriceAuction.UserClaimed(alice, 1_398_000e18, 30_000_000e18);
+        vm.prank(alice);
+        auction.claim();
+        assertEq(auction.endedAt(), end);
+        assertEq(auction.previewSettlement().filledDeposits, 50_000_000e18);
+
+        vm.recordLogs();
+        vm.prank(bob);
+        auction.claim();
+        auction.claimTreasury();
+        _assertNoSettledEvent(vm.getRecordedLogs());
+        vm.expectRevert(IFixedPriceAuction.AlreadySettled.selector);
+        auction.emitSettled();
+        _assertBalances(alice, 30_000_000e18, 1_398_000e18);
+    }
+
+    function test_claimTreasury_atFulfillmentEnd_emitsClockSettlement() public {
+        _workedExample(5_000_000e18);
+        _toEnd(auction);
+        uint64 end = auction.getConfig().fulfillmentEnd;
+        vm.expectEmit(address(auction));
+        emit IFixedPriceAuction.AuctionSettled(end, 100_000_000e18, 100_000_000e18, 4_660_000e18, 0, 340_000e18);
+        vm.expectEmit(address(auction));
+        emit IFixedPriceAuction.TreasuryClaimed(proceedsRecipient, funder, 100_000_000e18, 340_000e18);
+        auction.claimTreasury();
+        assertEq(auction.endedAt(), end);
+
         vm.recordLogs();
         vm.prank(alice);
         auction.claim();
-        Vm.Log[] memory logs = vm.getRecordedLogs();
+        _assertNoSettledEvent(vm.getRecordedLogs());
+    }
+
+    /// @dev Neither an early settlement nor a cancel gets a second event or an endedAt from a claim.
+    function test_claim_afterEndFulfillmentOrCancel_emitsNoSettlement() public {
+        _workedExample(2_330_000e18);
+        vm.prank(executor);
+        auction.endFulfillment();
+        uint256 ended = block.timestamp;
+        _toEnd(auction);
+        vm.recordLogs();
+        _claimAll(auction);
+        _assertNoSettledEvent(vm.getRecordedLogs());
+        assertEq(auction.endedAt(), ended);
+
+        auction = _create(_config(address(tgld), address(usds), PRICE, 0));
+        _workedExample(2_330_000e18);
+        vm.prank(executor);
+        auction.cancel();
+        vm.recordLogs();
+        _claimAll(auction);
+        _assertNoSettledEvent(vm.getRecordedLogs());
+        assertEq(auction.endedAt(), 0);
+    }
+
+    function test_emitSettled_clockOnce() public {
+        _workedExample(1_000_000e18);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IFixedPriceAuction.InvalidPhase.selector,
+                IFixedPriceAuction.Phase.Settled,
+                IFixedPriceAuction.Phase.Fulfillment
+            )
+        );
+        auction.emitSettled();
+
+        _toEnd(auction);
+        IFixedPriceAuction.Settlement memory s = auction.previewSettlement();
+        uint64 end = auction.getConfig().fulfillmentEnd;
+        vm.warp(block.timestamp + 1 days);
+        vm.expectEmit(address(auction));
+        emit IFixedPriceAuction.AuctionSettled(
+            end, 100_000_000e18, s.filledDeposits, s.userFunding, s.userRefund, s.funderRefund
+        );
+        vm.prank(unauthorizedUser);
+        auction.emitSettled();
+        assertEq(auction.endedAt(), end);
+        assertEq(abi.encode(auction.previewSettlement()), abi.encode(s));
+
+        vm.expectRevert(IFixedPriceAuction.AlreadySettled.selector);
+        auction.emitSettled();
+        // Claims after it emit nothing more and pay as before.
+        vm.recordLogs();
+        _claimAll(auction);
+        _assertNoSettledEvent(vm.getRecordedLogs());
+        _assertBalances(proceedsRecipient, s.filledDeposits, 0);
+    }
+
+    function test_emitSettled_afterEndFulfillment_reverts() public {
+        _workedExample(1_000_000e18);
+        vm.prank(executor);
+        auction.endFulfillment();
+        vm.expectRevert(IFixedPriceAuction.AlreadySettled.selector);
+        auction.emitSettled();
+        _toEnd(auction);
+        vm.expectRevert(IFixedPriceAuction.AlreadySettled.selector);
+        auction.emitSettled();
+    }
+
+    function test_emitSettled_cancelled_reverts() public {
+        _workedExample(0);
+        vm.prank(executor);
+        auction.cancel();
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IFixedPriceAuction.InvalidPhase.selector,
+                IFixedPriceAuction.Phase.Settled,
+                IFixedPriceAuction.Phase.Cancelled
+            )
+        );
+        auction.emitSettled();
+    }
+
+    function _assertNoSettledEvent(Vm.Log[] memory logs) internal pure {
         for (uint256 i; i < logs.length; ++i) {
             assertNotEq(logs[i].topics[0], IFixedPriceAuction.AuctionSettled.selector);
         }
-        assertEq(auction.endedAt(), 0);
-        assertEq(auction.previewSettlement().filledDeposits, 50_000_000e18);
     }
 
     function test_claimTreasury_anyone() public {
@@ -1348,8 +1483,8 @@ contract FixedPriceAuctionRecoverTokenTest is FixedPriceAuctionTestBase {
         assertEq(stray.balanceOf(alice), 5e18);
     }
 
-    /// @dev A donation of either auction token can't be recovered, and changes no one's payout.
-    function test_recoverToken_ownTokensNever_donationChangesNoPayout() public {
+    /// @dev Only a donation of either auction token is recoverable, at any time, and it changes no one's payout.
+    function test_recoverToken_ownTokensDonationOnly_donationChangesNoPayout() public {
         _workedExample(2_330_000e18);
         IFixedPriceAuction.Settlement memory before = auction.previewSettlement();
         tgld.mint(address(auction), 7);
@@ -1358,10 +1493,13 @@ contract FixedPriceAuctionRecoverTokenTest is FixedPriceAuctionTestBase {
         assertEq(auction.withdrawableExcess(), 0);
 
         vm.startPrank(executor);
-        vm.expectRevert(CommonEventsAndErrors.InvalidParam.selector);
-        auction.recoverToken(address(tgld), executor, 1);
-        vm.expectRevert(CommonEventsAndErrors.InvalidParam.selector);
-        auction.recoverToken(address(usds), executor, 1);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InsufficientBalance.selector, tgld, 8, 7));
+        auction.recoverToken(address(tgld), executor, 8);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InsufficientBalance.selector, usds, 4, 3));
+        auction.recoverToken(address(usds), executor, 4);
+        vm.expectEmit(address(auction));
+        emit CommonEventsAndErrors.TokenRecovered(executor, address(tgld), 2);
+        auction.recoverToken(address(tgld), executor, 2);
         vm.stopPrank();
 
         _toEnd(auction);
@@ -1370,11 +1508,84 @@ contract FixedPriceAuctionRecoverTokenTest is FixedPriceAuctionTestBase {
         _assertBalances(bob, 20_000_000e18, 932_000e18);
         _assertBalances(proceedsRecipient, 50_000_000e18, 0);
         _assertBalances(funder, 0, 0);
-        // The donation stays for good, even once everything is paid.
-        _assertBalances(address(auction), 7, 3);
+        // Everything paid: the rest of the donation is the whole balance, and all of it is recoverable.
+        _assertBalances(address(auction), 5, 3);
+        vm.startPrank(executor);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InsufficientBalance.selector, usds, 4, 3));
+        auction.recoverToken(address(usds), executor, 4);
+        auction.recoverToken(address(tgld), executor, 5);
+        auction.recoverToken(address(usds), executor, 3);
+        vm.stopPrank();
+        _assertBalances(address(auction), 0, 0);
+        _assertBalances(executor, 7, 3);
+    }
+
+    /// @dev The counters follow every payout; rounding dust stays owed, so only a donation is surplus.
+    function test_liabilities_trackClaimsAndGateRecovery() public {
+        // 1/3 of the funding needed: alice's and bob's shares round down and leave dust in both tokens.
+        _workedExample(1_553_333_333_333_333_333_333);
+        (uint256 bidOwed, uint256 fillOwed) = auction.liabilities();
+        assertEq(bidOwed, 100_000_000e18);
+        assertEq(fillOwed, 1_553_333_333_333_333_333_333);
+        usds.mint(address(auction), 7e18);
+        tgld.mint(address(auction), 5e18);
+        _toEnd(auction);
+
+        vm.prank(alice);
+        auction.claim();
+        IFixedPriceAuction.UserClaim memory bobClaim = auction.claimable(bob);
+        (bidOwed, fillOwed) = auction.liabilities();
+        assertEq(auction.bidPaid(), tgld.balanceOf(alice));
+        assertEq(auction.fillPaid(), usds.balanceOf(alice));
+        assertEq(bidOwed, 100_000_000e18 - tgld.balanceOf(alice));
+        assertEq(fillOwed, 1_553_333_333_333_333_333_333 - usds.balanceOf(alice));
+
+        vm.prank(bob);
+        auction.claim();
+        auction.claimTreasury();
+        (bidOwed, fillOwed) = auction.liabilities();
+        assertEq(auction.bidPaid(), 100_000_000e18 + 5e18 - tgld.balanceOf(address(auction)));
+        assertEq(auction.fillPaid(), 1_553_333_333_333_333_333_333 + 7e18 - usds.balanceOf(address(auction)));
+        assertEq(tgld.balanceOf(bob), bobClaim.bidTokenRefund);
+        assertGt(bidOwed + fillOwed, 0, "dust left");
+        assertEq(tgld.balanceOf(address(auction)) - bidOwed, 5e18, "only the bid donation is surplus");
+        assertEq(usds.balanceOf(address(auction)) - fillOwed, 7e18, "only the fill donation is surplus");
+
+        vm.startPrank(executor);
+        vm.expectRevert(
+            abi.encodeWithSelector(CommonEventsAndErrors.InsufficientBalance.selector, usds, 7e18 + 1, 7e18)
+        );
+        auction.recoverToken(address(usds), executor, 7e18 + 1);
+        vm.expectRevert(
+            abi.encodeWithSelector(CommonEventsAndErrors.InsufficientBalance.selector, tgld, 5e18 + 1, 5e18)
+        );
+        auction.recoverToken(address(tgld), executor, 5e18 + 1);
+        auction.recoverToken(address(usds), executor, 7e18);
+        auction.recoverToken(address(tgld), executor, 5e18);
+        vm.stopPrank();
+        assertEq(usds.balanceOf(address(auction)), fillOwed);
+        assertEq(tgld.balanceOf(address(auction)), bidOwed);
+    }
+
+    /// @dev A cancel refunds everything: the counters reach every deposit and the funding, liabilities reach zero.
+    function test_liabilities_cancelled_allPaid() public {
+        _workedExample(2_330_000e18);
         vm.prank(executor);
-        vm.expectRevert(CommonEventsAndErrors.InvalidParam.selector);
-        auction.recoverToken(address(usds), executor, 1);
+        auction.cancel();
+        _claimAll(auction);
+        assertEq(auction.bidPaid(), 100_000_000e18);
+        assertEq(auction.fillPaid(), 2_330_000e18);
+        (uint256 bidOwed, uint256 fillOwed) = auction.liabilities();
+        assertEq(bidOwed + fillOwed, 0);
+    }
+
+    function test_recoverToken_strayTokenAboveBalance_reverts() public {
+        FakeERC20CustomDecimals stray = new FakeERC20CustomDecimals("Stray", "STRAY", address(auction), 5e18, 18);
+        vm.prank(executor);
+        vm.expectRevert(
+            abi.encodeWithSelector(CommonEventsAndErrors.InsufficientBalance.selector, stray, 5e18 + 1, 5e18)
+        );
+        auction.recoverToken(address(stray), alice, 5e18 + 1);
     }
 
     function test_recoverToken_validation() public {
