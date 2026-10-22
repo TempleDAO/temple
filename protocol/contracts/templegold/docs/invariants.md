@@ -46,6 +46,7 @@ The properties the contracts must always keep. The fuzz and invariant suites are
 | P3 | In rescue mode the rescuer can only pause, unpause, `cancel`, disable compliance, switch rescue mode, and hand over its own role. It can never `endFulfillment`, `recoverToken`, repoint compliance, `exclude`, `reinstate`, create auctions or propose code. | handler `setPausedByRescuer`, `cancelByRescuer`, `setRescueMode`, `disableComplianceCheck`, `proposeRescuer`, `rescuerOverreach`; handler `exclude` and `reinstate`, which include the rescuer among their callers; unit `test_exclude_access`, `test_exclude_access_rescueMode`; factory: fuzz `test_fuzz_factoryRulesHold` ("rescuer used an msig power") |
 | P4 | No executor proposal exists while rescue mode is on, and on the factory no implementation proposal either. | `invariant_rolesStaySeparate`; fuzz `test_fuzz_liabilitiesAlwaysHeld` and `test_fuzz_factoryRulesHold` after every step |
 | P5 | The executor and the rescuer are never the same address, under any order of handovers. | `invariant_rolesStaySeparate` (handler `proposeExecutor`/`acceptExecutor`/`proposeRescuer`/`acceptRescuer` over a candidate pool shared by both roles); fuzz `test_fuzz_liabilitiesAlwaysHeld` and `test_fuzz_factoryRulesHold` |
+| P6 | A proposed executor can accept only `EXECUTOR_HANDOVER_DELAY` (1 day) after the latest proposal; a re-proposal restarts the clock. | unit `test_executorHandover`; handler `acceptExecutor` ("acceptExecutor: refused other than for the rescuer or the delay") |
 
 ## Compliance
 

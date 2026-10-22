@@ -76,6 +76,7 @@ contract AuctionFactoryTest is FixedPriceAuctionTestBase {
     function test_createAuction_executorIsTheCaller() public {
         vm.prank(executor);
         factory.proposeNewExecutor(alice);
+        vm.warp(block.timestamp + factory.EXECUTOR_HANDOVER_DELAY());
         vm.prank(alice);
         factory.acceptExecutor();
 
@@ -464,6 +465,7 @@ contract AuctionFactoryFuzzTest is FixedPriceAuctionTestBase {
         } else if (op == 6) {
             address proposed = factory.proposedExecutor();
             if (proposed == address(0)) return;
+            vm.warp(block.timestamp + factory.EXECUTOR_HANDOVER_DELAY());
             vm.prank(proposed);
             try factory.acceptExecutor() {
                 ok = true;

@@ -148,6 +148,11 @@ contract ComplianceCheckTest is TempleTest {
         vm.prank(bob);
         vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
         compliance.acceptExecutor();
+        uint256 readyAt = block.timestamp + compliance.EXECUTOR_HANDOVER_DELAY();
+        vm.prank(alice);
+        vm.expectRevert(abi.encodeWithSelector(IExecutorAccess.ExecutorHandoverNotReady.selector, readyAt));
+        compliance.acceptExecutor();
+        vm.warp(readyAt);
         vm.prank(alice);
         compliance.acceptExecutor();
         assertEq(compliance.executor(), alice);
@@ -165,6 +170,7 @@ contract ComplianceCheckTest is TempleTest {
         emit IExecutorAccess.NewExecutorProposed(executor, address(0), blocker);
         vm.prank(blocker);
         compliance.proposeNewExecutor(blocker);
+        vm.warp(block.timestamp + compliance.EXECUTOR_HANDOVER_DELAY());
         vm.prank(blocker);
         compliance.acceptExecutor();
 

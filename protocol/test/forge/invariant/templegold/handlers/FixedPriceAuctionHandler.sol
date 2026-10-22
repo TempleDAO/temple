@@ -672,10 +672,11 @@ contract FixedPriceAuctionHandler is Test {
         _check(!ok || auction.proposedExecutor() == candidate, "executor proposal not recorded");
     }
 
-    /// @dev The proposed executor accepts. Only being the rescuer can stop it.
+    /// @dev The proposed executor accepts. Only being the rescuer, or the handover delay not yet passed, stops it.
     function acceptExecutor() external step {
         address proposed = auction.proposedExecutor();
         if (proposed == address(0)) return;
+        bool ready = block.timestamp >= auction.proposedExecutorAt() + auction.EXECUTOR_HANDOVER_DELAY();
         vm.prank(proposed);
         bool ok;
         try auction.acceptExecutor() {
@@ -683,7 +684,7 @@ contract FixedPriceAuctionHandler is Test {
             ++successes["acceptExecutor"];
             msig = proposed;
         } catch {}
-        _check(ok != (proposed == rescuer), "acceptExecutor: only the rescuer is refused");
+        _check(ok == (proposed != rescuer && ready), "acceptExecutor: refused other than for the rescuer or the delay");
         _check(auction.executor() == msig, "executor handover misrecorded");
     }
 
