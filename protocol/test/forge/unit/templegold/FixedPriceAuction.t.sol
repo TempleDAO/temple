@@ -6,6 +6,7 @@ import { Vm } from "forge-std/Vm.sol";
 import { TempleTest } from "test/forge/unit/TempleTest.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { FakeERC20CustomDecimals } from "contracts/fakes/FakeERC20CustomDecimals.sol";
+import { FakeBlocklistERC20 } from "test/forge/invariant/templegold/handlers/FakeBlocklistERC20.sol";
 
 import { IFixedPriceAuction } from "contracts/interfaces/templegold/IFixedPriceAuction.sol";
 import { FixedPriceAuction } from "contracts/templegold/FixedPriceAuction.sol";
@@ -1340,6 +1341,14 @@ contract FixedPriceAuctionRecoverTokenTest is FixedPriceAuctionTestBase {
         vm.prank(executor);
         auction.recoverToken(address(stray), alice, 5e18);
         assertEq(stray.balanceOf(alice), 5e18);
+
+        // A stray token whose address sorts above the auction's own tokens owes nothing either.
+        _workedExample(4_660_000e18);
+        address high = address(type(uint160).max);
+        deployCodeTo("FakeERC20CustomDecimals.sol", abi.encode("High", "HIGH", address(auction), 5e18, 18), high);
+        vm.prank(executor);
+        auction.recoverToken(high, alice, 5e18);
+        assertEq(FakeERC20CustomDecimals(high).balanceOf(alice), 5e18);
     }
 
     function test_recoverToken_onlyExcessAboveOwed() public {
@@ -1807,5 +1816,49 @@ contract FixedPriceAuctionTempleGoldTest is FixedPriceAuctionTestBase {
         _authorize(true);
         _claimAll(auction);
         _assertHalfFundedPayouts();
+    }
+}
+
+/// @dev Both auction tokens blocklist recipients, as USDC does, even for a zero amount.
+contract FixedPriceAuctionBlocklistTokenTest is FixedPriceAuctionTestBase {
+    FakeBlocklistERC20 internal bidToken;
+    FakeBlocklistERC20 internal fillToken;
+
+    function setUp() public override {
+        super.setUp();
+        bidToken = new FakeBlocklistERC20("Bid", "BID", 18, address(this));
+        fillToken = new FakeBlocklistERC20("Fill", "FILL", 18, address(this));
+        auction = _create(_config(address(bidToken), address(fillToken), PRICE, 0));
+        _toDeposit(auction);
+        _deposit(auction, alice, 60_000_000e18);
+        _deposit(auction, bob, 40_000_000e18);
+        _toFulfillment(auction);
+    }
+
+    /// @dev Fully filled: no bid refund and no funder refund, so blocking those recipients mustn't block the claims.
+    function test_claims_skipZeroLegs_fullyFilled() public {
+        _fund(auction, 4_660_000e18);
+        _toEnd(auction);
+        bidToken.setBlocked(alice, true);
+        fillToken.setBlocked(funder, true);
+
+        vm.prank(alice);
+        auction.claim();
+        assertEq(fillToken.balanceOf(alice), 2_796_000e18);
+        auction.claimTreasury();
+        assertEq(bidToken.balanceOf(proceedsRecipient), 100_000_000e18);
+    }
+
+    /// @dev Unfunded: no fill and no proceeds, so blocking those recipients mustn't block the refunds.
+    function test_claims_skipZeroLegs_unfunded() public {
+        _toEnd(auction);
+        fillToken.setBlocked(alice, true);
+        bidToken.setBlocked(proceedsRecipient, true);
+
+        vm.prank(alice);
+        auction.claim();
+        assertEq(bidToken.balanceOf(alice), 60_000_000e18);
+        auction.claimTreasury();
+        assertTrue(auction.treasuryClaimed());
     }
 }
