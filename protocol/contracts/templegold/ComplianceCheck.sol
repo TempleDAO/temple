@@ -4,6 +4,7 @@ pragma solidity ^0.8.20;
 
 import { IComplianceCheck } from "contracts/interfaces/templegold/IComplianceCheck.sol";
 import { ITempleElevatedAccess } from "contracts/interfaces/v2/access/ITempleElevatedAccess.sol";
+import { IExecutorAccess } from "contracts/interfaces/templegold/IExecutorAccess.sol";
 import { ExecutorAccess } from "contracts/templegold/access/ExecutorAccess.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 
@@ -30,6 +31,9 @@ contract ComplianceCheck is IComplianceCheck, ExecutorAccess {
         if (msg.sender != executor) revert CommonEventsAndErrors.InvalidAccess();
         if (allowedCaller == address(0)) revert CommonEventsAndErrors.InvalidAddress();
         for (uint256 i; i < access.length; ++i) {
+            if (access[i].allowed && access[i].fnSelector == IExecutorAccess.proposeNewExecutor.selector) {
+                revert CommonEventsAndErrors.InvalidParam();
+            }
             emit ExplicitAccessSet(allowedCaller, access[i].fnSelector, access[i].allowed);
             explicitFunctionAccess[allowedCaller][access[i].fnSelector] = access[i].allowed;
         }

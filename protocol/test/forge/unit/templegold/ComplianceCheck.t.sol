@@ -155,21 +155,23 @@ contract ComplianceCheckTest is TempleTest {
         compliance.setBlocked(_accounts(), true);
     }
 
-    /// @dev A proposeNewExecutor grant lets the grantee take the executor role.
-    function test_setExplicitAccess_proposeNewExecutorGrantHandsOverExecutor() public {
-        _grant(blocker, IExecutorAccess.proposeNewExecutor.selector, true);
-
-        vm.expectEmit(address(compliance));
-        emit IExecutorAccess.NewExecutorProposed(executor, address(0), blocker);
-        vm.prank(blocker);
-        compliance.proposeNewExecutor(blocker);
-        vm.prank(blocker);
-        compliance.acceptExecutor();
-
-        assertEq(compliance.executor(), blocker);
+    /// @dev The executor cannot delegate handover, including to itself.
+    function test_setExplicitAccess_fail_proposeNewExecutorGrant() public {
         vm.prank(executor);
+        vm.expectRevert(CommonEventsAndErrors.InvalidParam.selector);
+        compliance.setExplicitAccess(blocker, _access(IExecutorAccess.proposeNewExecutor.selector, true));
+        assertFalse(compliance.explicitFunctionAccess(blocker, IExecutorAccess.proposeNewExecutor.selector));
+
+        vm.prank(executor);
+        vm.expectRevert(CommonEventsAndErrors.InvalidParam.selector);
+        compliance.setExplicitAccess(executor, _access(IExecutorAccess.proposeNewExecutor.selector, true));
+
+        _grant(blocker, ComplianceCheck.setBlocked.selector, true);
+        vm.prank(blocker);
         vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
-        compliance.setBlocked(_accounts(), true);
+        compliance.proposeNewExecutor(blocker);
+        assertEq(compliance.executor(), executor);
+        assertEq(compliance.proposedExecutor(), address(0));
     }
 
     function test_proposeNewExecutor_selfReplacesPendingProposal() public {
