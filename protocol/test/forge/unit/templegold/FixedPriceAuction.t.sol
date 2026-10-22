@@ -183,6 +183,19 @@ contract FixedPriceAuctionTestBase is TempleTest {
 }
 
 contract FixedPriceAuctionSettlementTest is FixedPriceAuctionTestBase {
+    /// @dev endedAt is a uint40: a timestamp past 2^32 (the year 2106) is stored whole.
+    function test_endedAt_after2106() public {
+        vm.warp(uint256(type(uint32).max) + 1);
+        auction = _create(_config(address(tgld), address(usds), PRICE, 0));
+        _toDeposit(auction);
+        _deposit(auction, alice, 100e18);
+        _toFulfillment(auction);
+        vm.prank(executor);
+        auction.endFulfillment();
+        assertEq(auction.endedAt(), block.timestamp);
+        assertGt(auction.endedAt(), type(uint32).max);
+    }
+
     function test_workedExample_fullFunding() public {
         _workedExample(4_660_000e18);
         _toEnd(auction);

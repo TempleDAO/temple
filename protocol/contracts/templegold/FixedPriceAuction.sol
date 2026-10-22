@@ -41,18 +41,18 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
     bool public override paused;
 
     /// @inheritdoc IFixedPriceAuction
-    uint64 public override endedAt;
+    uint40 public override endedAt;
     /// @dev Set by `endFulfillment` or `cancel`. `phase()` reads Settled from `fulfillmentEnd` while this is `None`.
     Outcome private _outcome;
     /// @dev True on the implementation from deployment, and on a clone once `initialize` runs.
     bool private _initialized;
+    /// @inheritdoc IFixedPriceAuction
+    bool public override treasuryClaimed;
 
     /// @inheritdoc IFixedPriceAuction
     mapping(address account => uint256 amount) public override deposits;
     /// @inheritdoc IFixedPriceAuction
     mapping(address account => bool hasClaimed) public override claimed;
-    /// @inheritdoc IFixedPriceAuction
-    bool public override treasuryClaimed;
     /// @inheritdoc IFixedPriceAuction
     uint256 public override totalDeposits;
     /// @inheritdoc IFixedPriceAuction
@@ -208,9 +208,9 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
         AuctionConfig memory config = _config();
         _requirePhase(config, Phase.Fulfillment);
         _outcome = Outcome.Settled;
-        // Safe: unix seconds fit in uint64.
+        // Safe: unix seconds fit in uint40 until the year 36812.
         // forge-lint: disable-next-line(unsafe-typecast)
-        endedAt = uint64(block.timestamp);
+        endedAt = uint40(block.timestamp);
 
         Settlement memory s = _calculateSettlement(config.price);
         emit AuctionSettled(endedAt, totalDeposits, s.filledDeposits, s.userFunding, s.userRefund, s.funderRefund);

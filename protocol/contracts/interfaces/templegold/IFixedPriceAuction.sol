@@ -211,7 +211,7 @@ interface IFixedPriceAuction is IRescuableAccess {
 
     /// @notice When endFulfillment settled the auction early (unix seconds). Zero for a settlement by the clock at
     /// fulfillmentEnd, and after a cancel.
-    function endedAt() external view returns (uint64);
+    function endedAt() external view returns (uint40);
 
     /// @notice The current phase. Settled from `fulfillmentEnd` or `endFulfillment`; Cancelled after `cancel`.
     function phase() external view returns (Phase);
