@@ -31,7 +31,7 @@ interface IFixedPriceAuction is IRescuableAccess {
         uint64 depositStart;
         /// @notice Unix seconds.
         uint64 depositEnd;
-        /// @notice Unix seconds.
+        /// @notice Unix seconds, at most `type(uint40).max`.
         uint64 fulfillmentEnd;
         /// @notice Minimum nonzero deposit balance per bidder, in bid token base units; zero disables it.
         uint256 minDeposit;
@@ -222,7 +222,7 @@ interface IFixedPriceAuction is IRescuableAccess {
 
     /// @notice When the auction settled (unix seconds). Zero until settled, and always zero if cancelled; the phase
     /// reads Settled from fulfillmentEnd even before this is set.
-    function settledAt() external view returns (uint64);
+    function settledAt() external view returns (uint40);
 
     /// @notice The current phase. Settled from `fulfillmentEnd` or `endFulfillment`; Cancelled after `cancel`.
     function phase() external view returns (Phase);

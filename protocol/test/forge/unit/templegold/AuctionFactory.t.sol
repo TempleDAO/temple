@@ -135,6 +135,11 @@ contract AuctionFactoryTest is FixedPriceAuctionTestBase {
         c.fulfillmentEnd = c.depositEnd - 1;
         _expectInvalid(c);
 
+        // settledAt stores fulfillmentEnd as a uint40.
+        c = _config(address(tgld), address(usds), PRICE, 0);
+        c.fulfillmentEnd = uint64(type(uint40).max) + 1;
+        _expectInvalid(c);
+
         _expectInvalid(_config(address(tgld), address(tgld), PRICE, 0));
         _expectInvalid(_config(address(tgld), address(usds), 0, 0));
 

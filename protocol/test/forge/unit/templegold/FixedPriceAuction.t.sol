@@ -183,6 +183,26 @@ contract FixedPriceAuctionTestBase is TempleTest {
 }
 
 contract FixedPriceAuctionSettlementTest is FixedPriceAuctionTestBase {
+    /// @dev settledAt is a uint40: timestamps past 2^32 (the year 2106) are stored whole, early or by the clock.
+    function test_settledAt_after2106() public {
+        vm.warp(uint256(type(uint32).max) + 1);
+        FixedPriceAuction early = _create(_config(address(tgld), address(usds), PRICE, 0));
+        FixedPriceAuction byClock = _create(_config(address(tgld), address(usds), PRICE, 0));
+        _toDeposit(early);
+        _deposit(early, alice, 100e18);
+        _deposit(byClock, alice, 100e18);
+        _toFulfillment(early);
+        vm.prank(executor);
+        early.endFulfillment();
+        assertEq(early.settledAt(), block.timestamp);
+        assertGt(early.settledAt(), type(uint32).max);
+
+        _toEnd(byClock);
+        vm.prank(alice);
+        byClock.claim();
+        assertEq(byClock.settledAt(), byClock.getConfig().fulfillmentEnd);
+    }
+
     function test_workedExample_fullFunding() public {
         _workedExample(4_660_000e18);
         _toEnd(auction);

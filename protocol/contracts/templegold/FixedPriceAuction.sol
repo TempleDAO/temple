@@ -41,18 +41,18 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
     bool public override paused;
 
     /// @inheritdoc IFixedPriceAuction
-    uint64 public override settledAt;
+    uint40 public override settledAt;
     /// @dev Set by `_settle` or `cancel`. `phase()` reads Settled from `fulfillmentEnd` even while this is `None`.
     Outcome private _outcome;
     /// @dev True on the implementation from deployment, and on a clone once `initialize` runs.
     bool private _initialized;
+    /// @inheritdoc IFixedPriceAuction
+    bool public override treasuryClaimed;
 
     /// @inheritdoc IFixedPriceAuction
     mapping(address account => uint256 amount) public override deposits;
     /// @inheritdoc IFixedPriceAuction
     mapping(address account => bool hasClaimed) public override claimed;
-    /// @inheritdoc IFixedPriceAuction
-    bool public override treasuryClaimed;
     /// @inheritdoc IFixedPriceAuction
     uint256 public override totalDeposits;
     /// @inheritdoc IFixedPriceAuction
@@ -84,6 +84,7 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
             config.depositStart <= block.timestamp
                 || config.depositStart >= config.depositEnd
                 || config.depositEnd >= config.fulfillmentEnd
+                || config.fulfillmentEnd > type(uint40).max
                 || config.bidToken == config.fillToken
                 || config.price == 0
         ) revert CommonEventsAndErrors.InvalidParam();
@@ -215,9 +216,9 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
     function endFulfillment() external override onlyElevatedAccess {
         AuctionConfig memory config = _config();
         _requirePhase(config, Phase.Fulfillment);
-        // Safe: unix seconds fit in uint64.
+        // Safe: unix seconds fit in uint40 until the year 36812.
         // forge-lint: disable-next-line(unsafe-typecast)
-        _settle(uint64(block.timestamp), config.price);
+        _settle(uint40(block.timestamp), config.price);
     }
 
     /// @inheritdoc IFixedPriceAuction
@@ -410,7 +411,7 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
         return Settlement(filled, userFunding, totalDeposits - filled, fillOwed - userFunding);
     }
 
-    function _settle(uint64 timestamp, uint256 price) private {
+    function _settle(uint40 timestamp, uint256 price) private {
         _settlement = _calculateSettlement(price);
         _outcome = Outcome.Settled;
         settledAt = timestamp;
@@ -423,7 +424,9 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
         Phase current = _phase(config);
         if (current == Phase.Cancelled) return;
         if (current != Phase.Settled) revert InvalidPhase(Phase.Settled, current);
-        if (_outcome == Outcome.None) _settle(config.fulfillmentEnd, config.price);
+        // Safe: initialize caps fulfillmentEnd at type(uint40).max.
+        // forge-lint: disable-next-line(unsafe-typecast)
+        if (_outcome == Outcome.None) _settle(uint40(config.fulfillmentEnd), config.price);
     }
 
     function _isFinal(AuctionConfig memory config) private view returns (bool) {
