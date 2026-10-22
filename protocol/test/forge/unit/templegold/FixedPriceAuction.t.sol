@@ -1547,7 +1547,8 @@ contract FixedPriceAuctionRecoverTokenTest is FixedPriceAuctionTestBase {
         assertEq(auction.bidPaid(), 100_000_000e18 + 5e18 - tgld.balanceOf(address(auction)));
         assertEq(auction.fillPaid(), 1_553_333_333_333_333_333_333 + 7e18 - usds.balanceOf(address(auction)));
         assertEq(tgld.balanceOf(bob), bobClaim.bidTokenRefund);
-        assertGt(bidOwed + fillOwed, 0, "dust left");
+        assertGt(bidOwed, 0, "bid dust left");
+        assertGt(fillOwed, 0, "fill dust left");
         assertEq(tgld.balanceOf(address(auction)) - bidOwed, 5e18, "only the bid donation is surplus");
         assertEq(usds.balanceOf(address(auction)) - fillOwed, 7e18, "only the fill donation is surplus");
 
@@ -2039,5 +2040,30 @@ contract FixedPriceAuctionBlocklistTokenTest is FixedPriceAuctionTestBase {
         assertEq(bidToken.balanceOf(alice), 60_000_000e18);
         auction.claimTreasury();
         assertTrue(auction.treasuryClaimed());
+    }
+
+    /// @dev A first claim after a clock settlement that reverts on a blocked transfer takes its `AuctionSettled` and
+    /// `endedAt` with it, so the next successful claim emits the event once.
+    function test_claim_revertedClockSettlement_nextClaimEmits() public {
+        _fund(auction, 4_660_000e18);
+        _toEnd(auction);
+        uint64 end = auction.getConfig().fulfillmentEnd;
+        fillToken.setBlocked(alice, true);
+
+        vm.prank(alice);
+        vm.expectRevert(abi.encodeWithSelector(FakeBlocklistERC20.BlockedAddress.selector, alice));
+        auction.claim();
+        assertEq(auction.endedAt(), 0);
+
+        vm.recordLogs();
+        vm.prank(bob);
+        auction.claim();
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+        uint256 settledEvents;
+        for (uint256 i; i < logs.length; ++i) {
+            if (logs[i].topics[0] == IFixedPriceAuction.AuctionSettled.selector) ++settledEvents;
+        }
+        assertEq(settledEvents, 1);
+        assertEq(auction.endedAt(), end);
     }
 }

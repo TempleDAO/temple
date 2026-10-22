@@ -72,6 +72,10 @@ contract FixedPriceAuctionHandler is Test {
 
     uint256 internal fundCalls;
     bool internal partialRun;
+    /// @dev Set when this step's `claim` or `claimTreasury` reverted: the only calls that can emit `AuctionSettled`
+    /// and then revert (on a blocklisted transfer). recordLogs keeps a reverted call's logs. `_countOutcomeEvents`
+    /// clears it, so `drain`, whose calls can't revert, starts clear.
+    bool internal claimReverted;
 
     // Ghost books
     uint256 public funded;
@@ -201,7 +205,9 @@ contract FixedPriceAuctionHandler is Test {
         try auction.claim() {
             ok = true;
             ++successes["claim"];
-        } catch {}
+        } catch {
+            claimReverted = true;
+        }
         _post(account, ok, before, blocked, deposit_, claimed_);
         _check(!ok || _final(before.phase), "claim before an outcome");
         _checkClockSettlementRecorded(ok, before);
@@ -460,7 +466,9 @@ contract FixedPriceAuctionHandler is Test {
         try auction.claimTreasury() {
             ok = true;
             ++successes["claimTreasury"];
-        } catch {}
+        } catch {
+            claimReverted = true;
+        }
         _checkPaused(ok, before);
         _check(!ok || _final(before.phase), "claimTreasury before an outcome");
         _checkClockSettlementRecorded(ok, before);
@@ -883,8 +891,7 @@ contract FixedPriceAuctionHandler is Test {
             if (logs[i].emitter != address(auction)) continue;
             bytes32 topic = logs[i].topics[0];
             if (topic == IFixedPriceAuction.AuctionSettled.selector) {
-                // recordLogs keeps logs from a reverted call; a reverted clock emission leaves endedAt at 0.
-                if (auction.endedAt() == 0) continue;
+                if (claimReverted) continue;
                 ++settledEvents;
                 IFixedPriceAuction.Settlement memory s = auction.previewSettlement();
                 bytes memory stored = abi.encode(
@@ -904,6 +911,7 @@ contract FixedPriceAuctionHandler is Test {
                 );
             }
         }
+        claimReverted = false;
     }
 
     function _recordOutcome() internal {
