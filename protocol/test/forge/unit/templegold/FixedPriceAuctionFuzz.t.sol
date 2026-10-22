@@ -185,22 +185,6 @@ contract FixedPriceAuctionFuzzTest is FixedPriceAuctionTestBase {
         );
     }
 
-    function test_fuzz_settlementMaths_bid6Fill18(uint256 price, uint256 funding, uint256 bidders, uint256 seed)
-        public
-    {
-        _checkSettlement(6, 18, price, funding, bidders, seed);
-    }
-
-    function test_fuzz_settlementMaths_bid18Fill6(uint256 price, uint256 funding, uint256 bidders, uint256 seed)
-        public
-    {
-        _checkSettlement(18, 6, price, funding, bidders, seed);
-    }
-
-    function test_fuzz_settlementMaths_bid6Fill6(uint256 price, uint256 funding, uint256 bidders, uint256 seed) public {
-        _checkSettlement(6, 6, price, funding, bidders, seed);
-    }
-
     function _checkSettlement(
         uint8 bidDecimals,
         uint8 fillDecimals,

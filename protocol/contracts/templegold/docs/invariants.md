@@ -78,4 +78,4 @@ The properties the contracts must always keep. The fuzz and invariant suites are
 
 | ID | Property | Checked by |
 |---|---|---|
-| W1 | `wishOf(account, from, to)` equals the values in the last `WishSet` for that key, and only `account` can change it. | fuzz `test_fuzz_wishMatchesLastWishSet` |
+| W1 | `wishOf(account, from, to)` and its `WishSet` event equal the inputs of the last wish for that key, and only `account` can change it. | fuzz `test_fuzz_wishMatchesInputs` |
