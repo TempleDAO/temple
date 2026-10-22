@@ -17,11 +17,13 @@ A proposal the hijacked msig leaves *pending* now dies when rescue mode switches
 - **Mitigation:** a maximum fulfillment window is optional insurance, part of D1.
 
 ### T-9 A clock-settled auction emits no event (resolved)
-**Resolved on this branch.** Code. There is no stored settlement and no `settledAt`: the settlement is a view over `totalDeposits` and `funding`, which freeze once the phase is final. A settlement by the clock emits nothing, by design; only `endFulfillment` emits `AuctionSettled`. Indexers read `previewSettlement()` once `phase()` is Settled, and it can't drift from then. D8 asks the indexer spec to pin this.
+**Resolved on this branch.** Code. There is no stored settlement and no `settledAt`: the settlement is a view over `totalDeposits` and `funding`, which freeze once the phase is final. `endFulfillment` emits `AuctionSettled`; for a settlement by the clock the first successful `claim` or `claimTreasury` emits it, with `endedAt` set to `fulfillmentEnd`, and anyone can call `emitSettled` to emit it sooner. It goes out once either way. Indexers can still read `previewSettlement()` once `phase()` is Settled, and it can't drift from then. D8 asks the indexer spec to pin this.
 
 ### Test gaps closed
 
 The branch now has tests for the rescuer's cancel, proposal cancellation on rescue mode, settlement at the overflow bound, the outcome events (L4, `invariant_outcomeEmittedOnce`), and 226 hand-written mutants on fpa-simplified before frozen inputs and exclusion; on this branch, 108 mutants of the settlement view, funding, endedAt, recoverToken and exclusion, of which only a behaviour-equivalent one survives.
+
+Surplus recovery and the clock settlement event had 56 hand-written mutants: each payout counter update, the `liabilities()` terms, the `recoverToken` cap, the `emitSettled` guards, the auto-emit condition and placement, and the `uint40` bound and casts. Four survive, all equivalent: `balance >= owed` for `balance > owed` (both give 0 when equal), emitting before a claim's `AlreadyClaimed`/`NothingToClaim` checks (in `claim` and `claimTreasury`; the revert discards it), and emitting `config.fulfillmentEnd` for the `endedAt` just set from it. One survivor, the owed amount for an unrelated token, led to a new test (`test_recoverToken_strayToken_wholeBalanceWhileOwing`).
 
 A later round ran slither-mutate over the six contracts (962 compiled mutants) and applied every operand of every `||`/`&&` chain and ternary by hand, at the gate's full fuzz and invariant settings. Every survivor that changes behaviour now has a test: deposit timings strictly out of order (a start in the past, a start after the end, an end after fulfillment); zero-amount claim legs to a recipient blocklisted on that token. Duplicated tests were removed only where running the suite without them showed every mutant they killed is still killed by another test.
 
@@ -34,8 +36,8 @@ A later round ran slither-mutate over the six contracts (962 compiled mutants) a
 - **Front-running bidders:** deposits close before any funding, and `withdrawExcess` is computed against a fixed requirement.
 - **Reentrancy:** state is written before every transfer, and a recipient-hook token re-entering `claim` hits `AlreadyClaimed`. `isBlocked` is a view and runs as a STATICCALL.
 - **Claims can't be DoS'd:** there are no loops. A claim whose shares both round to zero still succeeds.
-- **Donations:** settlement uses `totalDeposits` and `funding`, not balances, and `recoverToken` refuses both auction tokens, so a stray transfer changes nothing.
-- **Exclusion accounting** (unit and invariant tests, not the analysis rounds): an excluded balance is never in the fill, stays held in the auction, and only its owner can withdraw it, once not flagged. `reinstate` works only during Deposit and re-runs the deposit overflow guard. `recoverToken` can't reach excluded balances.
+- **Donations:** settlement uses `totalDeposits` and `funding`, not balances, so a stray transfer changes no payout. `recoverToken` can send it back out: the balance above `liabilities()`, which counts every deposit, excluded balance and funding less what claims paid, so it never reaches owed funds or dust.
+- **Exclusion accounting** (unit and invariant tests, not the analysis rounds): an excluded balance is never in the fill, stays held in the auction, and only its owner can withdraw it, once not flagged. `reinstate` works only during Deposit and re-runs the deposit overflow guard. `recoverToken` can't reach excluded balances: `liabilities()` counts them through `totalExcluded`.
 - **Rescuer cancel:** refunds exactly (`amount·T/T`) and can't redirect funds. It closes cleanly against `endFulfillment` in both directions and moves with a rescuer handover. The rescuer still can't `endFulfillment`, `recoverToken`, `setComplianceCheck`, `createAuction` or `proposeImplementation`.
 - **Factory and clones:**
   - **Swap safety:** acceptance is by address, so a proposal swapped after review reverts. Rescue mode on the factory cancels a pending proposal.

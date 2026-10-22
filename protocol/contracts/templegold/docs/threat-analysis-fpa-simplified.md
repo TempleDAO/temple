@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Scope | Branch `fpa-frozen-inputs`, which settles as a view over frozen deposits and funding. Rounds 1 and 2 ran on `fpa-simplified` at **08747cdd**, before this branch existed. Bidder exclusion (`exclude`, `reinstate`, `withdrawExcluded`) was added after round 2; the findings below were updated for it by review against that code, not by a third analysis round. On this branch there is no stored settlement or `settledAt` (T-9 is resolved), there are no `bidOwed`/`fillOwed` counters (funding is `funding()`), and `recoverToken` refuses the auction's own bid and fill tokens, so donated TEMPLE or USDS can't be recovered. |
+| Scope | Branch `fpa-frozen-inputs`, which settles as a view over frozen deposits and funding. Rounds 1 and 2 ran on `fpa-simplified` at **08747cdd**, before this branch existed. Bidder exclusion (`exclude`, `reinstate`, `withdrawExcluded`) was added after round 2; the findings below were updated for it by review against that code, not by a third analysis round. On this branch there is no stored settlement or `settledAt` (T-9 is resolved), there are no `bidOwed`/`fillOwed` counters (funding is `funding()`). Payout counters (`totalExcluded`, `bidPaid`, `fillPaid`) back `liabilities()`, and `recoverToken` sends only a token's balance above it, so donated TEMPLE or USDS can be recovered and owed funds can't. A settlement by the clock emits `AuctionSettled` at its first claim or `emitSettled`. Both were added after the analysis rounds and reviewed against the code, not re-analysed. |
 | Files | `protocol/contracts/templegold/{FixedPriceAuction,AuctionFactory,ComplianceCheck,WishingWell}.sol`, `templegold/access/{ExecutorAccess,RescuableAccess}.sol`, and their interfaces in `protocol/contracts/interfaces/templegold/`. Dependencies: Solady 0.1.26 `LibClone`, OZ 5.0.2 `SafeERC20`, `TempleMath`, `TempleGold` (TGLD only moves to or from authorized contracts). |
 | Method | Two rounds of five independent analyses: privileged-role compromise, the unprivileged attacker, integration and indexers, lifecycle and economics, and a cross-check. Round 1 ran at f1ccb404. Round 2 ran at 08747cdd and re-checked every claim in round 1 and in the original analysis of PRs 1304 and 1305, which isn't in this branch. Non-obvious claims were proven with forge tests in scratch copies of `protocol/`. Those tests aren't in the branch. The headline findings were re-checked against the code by hand. |
 | Source of truth | The branch code. The design proposal (`fpa-simplified-model.md`) was used only to say what the code is meant to do. Line numbers refer to 08747cdd. The frozen-inputs change and exclusion, added afterwards, shift FixedPriceAuction.sol, so search by function name. |
@@ -34,7 +34,7 @@ The attackers and failure sources in scope are:
 **No unprivileged party can take or lock other users' funds.** Every analysis, in both rounds, held on these points:
 - **Solvency** held across bid and fill decimals 0–18, prices from 1e-18 to 2^200 fill per bid, and funding up to 2^250. After every claim the balances equal what's owed, and the dust is under one wei per claimant per token.
 - **No double payment:** claims pay only `msg.sender` and the fixed treasury addresses.
-- **`recoverToken` can't reach owed funds,** including a blocked account's unclaimed share, and including after a cancel.
+- **`recoverToken` can't reach owed funds,** including a blocked account's unclaimed share, an excluded balance and rounding dust, and including after a cancel: it sends only the balance above `liabilities()`.
 - **The clone factory holds:** no clone listed in `isAuction` runs code the rescuer didn't accept, or has roles the design forbids.
 
 The material risks sit in the designed checks:
@@ -61,7 +61,7 @@ Findings that are resolved, properties checked and found to hold, and the cross-
 | D5 | Reject a code-less compliance pointer in `initialize` and `setComplianceCheck`? | T-14 | Yes. One line, and it turns a deploy typo into a revert. |
 | D6 | Reject `proposeNewExecutor` in `ComplianceCheck.setExplicitAccess`? | T-13 | Yes. Today only the natspec warns about it. |
 | D7 | Minimum token decimals (for example ≥ 6)? | T-11 | Yes, as a deploy check, or enforce it in `initialize`. |
-| D8 | Is "settled" defined by `phase()` or by `AuctionSettled`? | T-9 ([resolved](threat-analysis-fpa-simplified-resolved.md)) | Define it by `phase()` in the indexer spec: a settlement by the clock emits no event. |
+| D8 | Is "settled" defined by `phase()` or by `AuctionSettled`? | T-9 ([resolved](threat-analysis-fpa-simplified-resolved.md)) | Define it by `phase()` in the indexer spec: a settlement by the clock emits `AuctionSettled` only at its first claim or `emitSettled`, possibly long after `fulfillmentEnd`. |
 | D9 | Indexer rules: fills per pair or per bucket, the tie rule for "settled after the wish", the cap split across pairs, "held in auction" from `claimable` once final, which list to screen against, zero-address proposal events as cancellations, and implementation allowlisting. Does an excluded balance count as demand, or only as held? | T-10, T-16, T-17, T-18, T-20 | Decide decisions 9 and 12 in the proposal, and fail closed on unknown implementations. |
 | D10 | Who holds a standing `setBlocked` grant, so compliance control survives a lost Safe? | T-5 | A hardened ops key, which also sends blocks privately (T-12). That exclusion can move allocation to a colluding bidder (T-5) strengthens the case for hardening it. |
 | D12 | Who controls TempleGold authorization for live auctions? | T-19 | At minimum a runbook rule: never de-authorize an auction until its claims are done. Moving TempleGold ownership is out of scope here. |
@@ -99,7 +99,7 @@ Findings that are resolved, properties checked and found to hold, and the cross-
 
 ### T-6 Treasury payouts are coupled and fixed
 **Medium for a compromised proceeds recipient; Low otherwise.** Proven (`test_UA_blocklistedBidderAndRecipient`, `test_PR5_proceedsRecipient_payoutIsPermissionlessAfterClock`). `FixedPriceAuction.sol:212-231`.
-- **Coupling:** `claimTreasury` pays `filledDeposits` to `proceedsRecipient` and `funderRefund` to `funder` in one call. If a blocklisting token (USDC) blocks either address, or blocks the auction itself, both legs are stuck. Both addresses are fixed in the clone args, and `recoverToken` refuses both auction tokens, so this is permanent.
+- **Coupling:** `claimTreasury` pays `filledDeposits` to `proceedsRecipient` and `funderRefund` to `funder` in one call. If a blocklisting token (USDC) blocks either address, or blocks the auction itself, both legs are stuck. Both addresses are fixed in the clone args, and `recoverToken` can't send what's owed, so this is permanent.
 - **A compromised `proceedsRecipient` after `fulfillmentEnd`:** `cancel` is no longer possible, and the attacker can call `claimTreasury` itself. Pausing stops it, but also stops every depositor's claim. Before `fulfillmentEnd`, pause and cancel works.
 - **A compromised `funder`** can only lose its own tokens: `withdrawExcess` can't go below what fills every deposit. Any excess funding is lost whatever the msig does, because it reaches the same address as `funderRefund`. Fund exactly the requirement after `depositEnd`.
 - **Mitigation:** D4, either separate legs or the decision-6 setters.
@@ -123,7 +123,7 @@ Findings that are resolved, properties checked and found to hold, and the cross-
 
 ### T-10 Indexer ordering and semantics
 **Low.** Code and Design. `FixedPriceAuction.sol:173`, `:379`, `WishingWell.sol:14-17`.
-- **Timing:** a settlement by the clock emits no event. Compare `endedAt` if non-zero, else `fulfillmentEnd`, against the wish. `endFulfillment` ties with a wish in the same block. `wishOf` stores no timestamp, so the rule needs logs.
+- **Timing:** a settlement by the clock emits `AuctionSettled` only at its first claim or `emitSettled`, and `endedAt` is 0 until then. Compare `endedAt` if non-zero, else `fulfillmentEnd`, against the wish. `endFulfillment` ties with a wish in the same block. `wishOf` stores no timestamp, so the rule needs logs.
 - **Gaming the fill subtraction:**
   - **Fills via another pair go uncounted:** fills through a different pair in the same bucket are never subtracted.
   - **Wish resets:** under "a new wish resets fills", one transaction restores a filled wish.
@@ -202,7 +202,7 @@ Findings that are resolved, properties checked and found to hold, and the cross-
 - **Mitigation:** D9. Held in auction is `deposits` plus `excluded(account)` while the auction is live, and `claimable(account).bidTokenRefund` plus `excluded(account)` once it's final.
 
 ### Info
-- **Rounding dust is locked for good:** at most one wei per claimant per token stays in the auction. There are no counters, and `recoverToken` refuses both auction tokens, so the dust just stays. Intended. Proven.
+- **Rounding dust is locked for good:** at most one wei per claimant per token stays in the auction. `liabilities()` keeps counting it, so `recoverToken` can't take it and the dust just stays. Intended. Proven.
 - **Fee-on-transfer and rebasing tokens break solvency,** so the last claimer reverts. Excluded by the stated assumption (`IFixedPriceAuction.sol:11`); the msig picks the tokens.
 - **Pro-rata timing:**
   - splitting deposits never gains: at most 1 wei lost per extra piece (proven by fuzz);
@@ -227,9 +227,9 @@ These are easy, hard-to-undo mistakes by trusted roles:
 6. **Wrong values at creation:** a wrong `funder`, `proceedsRecipient`, price units, `minDeposit` or schedule in `createAuction`. All are fixed in the clone args; the only exit is `cancel` before `fulfillmentEnd`. A wrong compliance pointer is fixable with `setComplianceCheck`.
 7. **Late admin transactions:** `cancel`, `endFulfillment` and `exclude` revert from the `fulfillmentEnd` second onward.
 8. **Rescue mode left on with the rescuer key lost:** the msig is locked out for good, and if paused, funds are frozen for good.
-9. **Over-funding:** excess funding during Fulfillment is at risk if the funder is compromised (T-6). A plain transfer of either auction token stays in the auction for good; fund exactly.
+9. **Over-funding:** excess funding during Fulfillment is at risk if the funder is compromised (T-6). A plain transfer of either auction token is recoverable only by the msig with `recoverToken` (the balance above `liabilities()`); fund exactly.
 10. **TGLD:** authorize after `createAuction` from the emitted address, before `depositStart`; never de-authorize before claims are done (T-19); use the burner as `proceedsRecipient` (decision 11; nothing enforces it).
-11. **Tokens with two addresses:** `recoverToken` only reserves the configured addresses.
+11. **Tokens with two addresses:** `recoverToken` only counts liabilities against the configured addresses; through the other address the whole balance is recoverable.
 12. **Wrong-chain TGLD:** TGLD on a chain where it can't be burned or moved back needs a deploy check.
 13. **Excluding by mistake:** after `depositEnd` an exclusion can't be undone; the bidder only gets its bid back.
 

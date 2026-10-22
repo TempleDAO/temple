@@ -72,13 +72,16 @@ Clone args: bidToken, fillToken, price, depositStart, depositEnd, fulfillmentEnd
 State:      priceDenominator (set once in initialize)
             complianceCheck (msig-settable), complianceDisabled (one-way)
             paused
-            outcome (None | Settled | Cancelled), endedAt (set only by endFulfillment)
+            outcome (None | Settled | Cancelled)
+            endedAt (set by endFulfillment, or to fulfillmentEnd by the first claim or
+            emitSettled after a settlement by the clock)
             deposits[account], claimed[account], treasuryClaimed
             totalDeposits (excluded balances aren't in it)
             excluded[account] (bid tokens taken out of the fill; never filled)
             funding (fill tokens funded, net of withdrawExcess; fixed once Fulfillment ends)
-            No settlement snapshot and no liability counters: the settlement is a view
-            over totalDeposits and funding, which stop changing once the phase is final.
+            totalExcluded, bidPaid, fillPaid (payout counters, read only by liabilities())
+            No settlement snapshot: the settlement is a view over totalDeposits and
+            funding, which stop changing once the phase is final.
 ```
 
 Bidders deposit `bidToken`, and the funder supplies `fillToken`. `price` is fill tokens per whole bid token, scaled by 1e18; `priceDenominator` is derived from the tokens' decimals at deploy. Phases: Scheduled before `depositStart`, Deposit until `depositEnd`, Fulfillment until `fulfillmentEnd`, then Settled (or Settled early when the msig calls `endFulfillment`). If `funding` covers only part of the deposits, every depositor fills the same fraction and gets the rest of their bid tokens back.
@@ -96,14 +99,15 @@ Bidders deposit `bidToken`, and the funder supplies `fillToken`. `price` is fill
 | `withdrawExcluded()` | Returns the caller's whole excluded balance. | excluded bidder | any | revert; withdraw later | revert |
 | `claim()` | Pays the caller their pro-rata fill tokens and the unfilled refund. On a cancelled auction it refunds the whole deposit. | depositor | Settled or Cancelled | revert; claim later | revert |
 | `claimTreasury()` | Pays `filledDeposits` to `proceedsRecipient` and `funderRefund` to `funder` from the settlement. | anyone | Settled or Cancelled | — | revert |
-| `recoverToken(token, to, amount)` | Sends out any token other than the bid and fill tokens, such as tokens sent by mistake. | msig | any | — | revert |
+| `emitSettled()` | Emits `AuctionSettled` for a settlement by the clock, if no claim has yet, and records `fulfillmentEnd` in `endedAt`. Once. | anyone | Settled | — | allowed |
+| `recoverToken(token, to, amount)` | Sends out a token's surplus, such as tokens sent by mistake: the balance less `liabilities()` for the bid and fill tokens, the whole balance for any other token. | msig | any | — | revert |
 | `setPaused(bool)` | Pauses or unpauses the auction. | msig; the rescuer instead while rescue mode is on | any | — | allowed |
 | `setRescueMode(bool)` | Switches rescue mode on or off. While it's on, the msig can't call any msig function on that auction and the rescuer controls the pause. | rescuer | any | — | allowed |
 | `proposeNewExecutor`/`acceptExecutor`, `proposeNewRescuer`/`acceptRescuer` | Two-step role handovers (see the rescue-mode callout). | propose: msig (locked out in rescue mode) or rescuer; accept: the proposed address | any | — | allowed |
 | `setComplianceCheck(addr)` | Points the auction at a `ComplianceCheck` contract, for example to replace a broken or rogue one. Reverts on `address(0)`. Only `disableComplianceCheck` turns screening off. | msig | any, until disabled | — | allowed |
 | `disableComplianceCheck()` | Switches screening off for good. Afterwards `setComplianceCheck` reverts. | rescuer | any | — | allowed |
 | `setFunder(addr)`, `setProceedsRecipient(addr)` | Proposed (decision 6). Replace a compromised Treasury address. | msig | any | — | allowed |
-| views: `phase`, `getConfig`, `previewSettlement`, `claimable`, `treasuryClaimable`, `withdrawableExcess` | Read the current phase, the deployment terms and schedule, the settlement maths, what each party can claim, and how much funding the funder can withdraw now. | anyone | any | — | allowed |
+| views: `phase`, `getConfig`, `previewSettlement`, `claimable`, `treasuryClaimable`, `withdrawableExcess`, `liabilities` | Read the current phase, the deployment terms and schedule, the settlement maths, what each party can claim, how much funding the funder can withdraw now, and what the auction still owes in each token. | anyone | any | — | allowed |
 
 `fund`, `withdrawExcess` and `claimTreasury` aren't screened, because they only pay Treasury addresses.
 
@@ -177,9 +181,11 @@ In rescue mode the rescuer can `cancel`, under the same rule as the msig: unsett
 
 #### Settlement, recovery and events
 
-Settlement keeps today's maths. Required funding rounds up, and fills and shares round down. The `Settlement` (`filledDeposits`, `userFunding`, `userRefund` and `funderRefund`) is a view over `totalDeposits` and `funding`. Both stop changing once the phase is final, at `fulfillmentEnd` or on `endFulfillment` or `cancel`, so nothing is stored at settlement and claims never move them. If all the deposits together would buy less than one fill-token wei, nothing fills: `filledDeposits` is 0 and every depositor gets a full refund, even at full funding. `claimTreasury` is permissionless and pays `filledDeposits` to `proceedsRecipient` and `funderRefund` to `funder`. Only `endFulfillment` emits `AuctionSettled`, carrying `endedAt`; a settlement by the clock emits nothing.
+Settlement keeps today's maths. Required funding rounds up, and fills and shares round down. The `Settlement` (`filledDeposits`, `userFunding`, `userRefund` and `funderRefund`) is a view over `totalDeposits` and `funding`. Both stop changing once the phase is final, at `fulfillmentEnd` or on `endFulfillment` or `cancel`, so nothing is stored at settlement and claims never move them. If all the deposits together would buy less than one fill-token wei, nothing fills: `filledDeposits` is 0 and every depositor gets a full refund, even at full funding. `claimTreasury` is permissionless and pays `filledDeposits` to `proceedsRecipient` and `funderRefund` to `funder`.
 
-`recoverToken` refuses the bid and fill tokens outright. Without liability counters the auction can't tell their surplus from what's owed, so it never touches a blocked account's unclaimed share or an excluded balance, and a donation of either token stays in the auction for good.
+`AuctionSettled` goes out once per settlement, carrying `endedAt` and the settlement. `endFulfillment` emits it. For a settlement by the clock, the first successful `claim` or `claimTreasury` emits it, with `endedAt` set to `fulfillmentEnd`; anyone can call `emitSettled` to emit it sooner, and it reverts `AlreadySettled` once the event has gone out. `endedAt` is the once-only flag, so `initialize` rejects a `fulfillmentEnd` above `type(uint40).max`.
+
+`recoverToken` sends only surplus. Three payout counters track what's left to pay: `totalExcluded` (up in `exclude`, down in `reinstate` and `withdrawExcluded`), and `bidPaid` and `fillPaid` (up in `claim` and `claimTreasury`). `liabilities()` is `totalDeposits + totalExcluded − bidPaid` in bid tokens and `funding − fillPaid` in fill tokens. A bid or fill token balance above that is a donation and can be recovered; anything else, including a blocked account's unclaimed share, an excluded balance and rounding dust, stays counted for good. Any other token can be recovered in full.
 
 #### Excluding flagged bidders
 
@@ -196,7 +202,7 @@ Settlement keeps today's maths. Required funding rounds up, and fills and shares
 
 The rescuer's answer to a rogue list is `disableComplianceCheck`: afterwards nobody is flagged, so nothing more can be excluded and every excluded balance becomes withdrawable once the auction is unpaused.
 
-**Events:** `Deposited`, `DepositWithdrawn`, `BidderExcluded`, `BidderReinstated`, `ExcludedWithdrawn`, `Funded`, `ExcessWithdrawn`, `AuctionSettled(endedAt, …)` (only from `endFulfillment`), `AuctionCancelled`, `UserClaimed`, `TreasuryClaimed`, `PausedSet(bool)`, `RescueModeSet`, `ComplianceCheckSet`, `ComplianceCheckDisabled`, and `FunderSet`/`ProceedsRecipientSet` if decision 6 says yes. `initialize` emits `ComplianceCheckSet` for the initial pointer.
+**Events:** `Deposited`, `DepositWithdrawn`, `BidderExcluded`, `BidderReinstated`, `ExcludedWithdrawn`, `Funded`, `ExcessWithdrawn`, `AuctionSettled(endedAt, …)` (from `endFulfillment`, or once after a settlement by the clock from the first claim or `emitSettled`), `AuctionCancelled`, `UserClaimed`, `TreasuryClaimed`, `PausedSet(bool)`, `RescueModeSet`, `ComplianceCheckSet`, `ComplianceCheckDisabled`, and `FunderSet`/`ProceedsRecipientSet` if decision 6 says yes. `initialize` emits `ComplianceCheckSet` for the initial pointer.
 
 ### 3. `WishingWell`: record-only, keyed by (account, from, to)
 
@@ -285,7 +291,7 @@ With a record-only Well, all judgement about demand happens off-chain. The index
 | The wish | `WishSet(account, from, to, amount, expiresAt)` |
 | Which auctions are genuine, and their market | `AuctionCreated` from the factory |
 | Who bid, and how much | `Deposited`, `DepositWithdrawn` |
-| How much filled, and when | `previewSettlement()` once `phase()` is Settled; `AuctionSettled` (carrying `endedAt`) only for an early settlement |
+| How much filled, and when | `previewSettlement()` once `phase()` is Settled; `AuctionSettled` (carrying `endedAt`), which a settlement by the clock emits only at its first claim or `emitSettled` |
 | Cancelled auctions (no fills, deposits refundable) | `AuctionCancelled` |
 | Each auction's screening | `ComplianceCheckSet`, `ComplianceCheckDisabled` |
 | Balances | ERC-20 `Transfer`, or `balanceOf` at a pinned block |
@@ -294,7 +300,7 @@ With a record-only Well, all judgement about demand happens off-chain. The index
 Rules:
 - A wish matches an auction when `bidToken == from` and `fillToken == to`.
 - **A wish counts the smaller of two numbers.** One is its amount minus fills from matching auctions settled after the wish. The other is the account's balance of `from`.
-- An account's fill is `deposit − floor(deposit × userRefund / totalDeposits)` in `from` units. Take `userRefund` from `previewSettlement` and `totalDeposits` from `totalDeposits()`; both are fixed once `phase()` is final. A settlement by the clock emits no event.
+- An account's fill is `deposit − floor(deposit × userRefund / totalDeposits)` in `from` units. Take `userRefund` from `previewSettlement` and `totalDeposits` from `totalDeposits()`; both are fixed once `phase()` is final. A settlement by the clock emits its event late, at the first claim or `emitSettled`, with `endedAt` = `fulfillmentEnd`.
 - **One balance cap per `from` asset.** The sum of an account's counted wishes that give the same asset can't exceed what it holds of it.
 - **Buckets** are indexer config that group pairs into markets, for example USDS and USDC as "stables". The team reads demand per bucket. Summing across a bucket normalises decimals (USDS has 18, USDC has 6).
 - Expired wishes and wishes with amount 0 count zero.
@@ -353,7 +359,7 @@ The record-only Well drops signed wishes and nonces, the on-chain balance and co
 
 - **Fixed price, pro-rata fill, partial funding, refunds and cancellation.** The auction exists to provide these.
 - **`minDeposit`.** It stops dust deposits.
-- **`recoverToken` for unrelated tokens.** Stray tokens other than the bid and fill tokens can be recovered. There are no liability counters and no budgets.
+- **`recoverToken` for surplus.** Stray tokens can be recovered: any other token in full, and the bid and fill tokens above `liabilities()`. Three payout counters back it; there are no budgets.
 
 ## Decisions for the team
 
