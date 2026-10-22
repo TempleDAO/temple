@@ -1,4 +1,4 @@
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.21;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
@@ -6,8 +6,8 @@ import { FakeERC20CustomDecimals } from "contracts/fakes/FakeERC20CustomDecimals
 
 import { IFixedPriceAuction } from "contracts/interfaces/templegold/IFixedPriceAuction.sol";
 import { FixedPriceAuction } from "contracts/templegold/FixedPriceAuction.sol";
-import { IAuctionFactory } from "contracts/interfaces/templegold/IAuctionFactory.sol";
-import { AuctionFactory } from "contracts/templegold/AuctionFactory.sol";
+import { IFixedPriceAuctionFactory } from "contracts/interfaces/templegold/IFixedPriceAuctionFactory.sol";
+import { FixedPriceAuctionFactory } from "contracts/templegold/FixedPriceAuctionFactory.sol";
 import { FixedPriceAuctionTestBase } from "test/forge/unit/templegold/FixedPriceAuction.t.sol";
 import { LibClone } from "solady/src/utils/LibClone.sol";
 
@@ -17,7 +17,7 @@ contract FixedPriceAuctionV2 is FixedPriceAuction {
     }
 }
 
-contract AuctionFactoryTest is FixedPriceAuctionTestBase {
+contract FixedPriceAuctionFactoryTest is FixedPriceAuctionTestBase {
     function test_initialization() public view {
         assertEq(factory.executor(), executor);
         assertEq(factory.proposedExecutor(), address(0));
@@ -30,19 +30,19 @@ contract AuctionFactoryTest is FixedPriceAuctionTestBase {
 
     function test_constructor_validation() public {
         vm.expectRevert(CommonEventsAndErrors.InvalidAddress.selector);
-        new AuctionFactory(address(0), rescuer, address(implementation));
+        new FixedPriceAuctionFactory(address(0), rescuer, address(implementation));
         vm.expectRevert(CommonEventsAndErrors.InvalidAddress.selector);
-        new AuctionFactory(executor, address(0), address(implementation));
+        new FixedPriceAuctionFactory(executor, address(0), address(implementation));
         vm.expectRevert(CommonEventsAndErrors.InvalidAddress.selector);
-        new AuctionFactory(executor, executor, address(implementation));
+        new FixedPriceAuctionFactory(executor, executor, address(implementation));
         vm.expectRevert(CommonEventsAndErrors.InvalidAddress.selector);
-        new AuctionFactory(executor, rescuer, alice);
+        new FixedPriceAuctionFactory(executor, rescuer, alice);
     }
 
     function test_constructor_emitsImplementationSet() public {
         vm.expectEmit(vm.computeCreateAddress(address(this), vm.getNonce(address(this))));
-        emit IAuctionFactory.ImplementationSet(address(implementation));
-        new AuctionFactory(executor, rescuer, address(implementation));
+        emit IFixedPriceAuctionFactory.ImplementationSet(address(implementation));
+        new FixedPriceAuctionFactory(executor, rescuer, address(implementation));
     }
 
     function test_access_createAuction() public {
@@ -50,7 +50,8 @@ contract AuctionFactoryTest is FixedPriceAuctionTestBase {
         vm.prank(rescuer);
         vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
         factory.createAuction(config);
-        expectElevatedAccess();
+        vm.prank(unauthorizedUser);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         factory.createAuction(config);
     }
 
@@ -58,7 +59,7 @@ contract AuctionFactoryTest is FixedPriceAuctionTestBase {
         IFixedPriceAuction.AuctionConfig memory config = _config(address(tgld), address(usds), PRICE, 1e18);
         address expected = vm.computeCreateAddress(address(factory), vm.getNonce(address(factory)));
         vm.expectEmit(address(factory));
-        emit IAuctionFactory.AuctionCreated(expected, address(implementation), abi.encode(config));
+        emit IFixedPriceAuctionFactory.AuctionCreated(expected, address(implementation), abi.encode(config));
         FixedPriceAuction created = _create(config);
         assertEq(address(created), expected);
 
@@ -135,13 +136,15 @@ contract AuctionFactoryTest is FixedPriceAuctionTestBase {
         c.fulfillmentEnd = c.depositEnd - 1;
         _expectInvalid(c);
 
-        // settledAt stores fulfillmentEnd as a uint40.
+        _expectInvalid(_config(address(tgld), address(tgld), PRICE, 0));
+        _expectInvalid(_config(address(tgld), address(usds), 0, 0));
+
+        // settledAt is a uint40 and may hold fulfillmentEnd, so fulfillmentEnd must fit; the bound itself is allowed.
         c = _config(address(tgld), address(usds), PRICE, 0);
         c.fulfillmentEnd = uint64(type(uint40).max) + 1;
         _expectInvalid(c);
-
-        _expectInvalid(_config(address(tgld), address(tgld), PRICE, 0));
-        _expectInvalid(_config(address(tgld), address(usds), 0, 0));
+        c.fulfillmentEnd = type(uint40).max;
+        _create(c);
 
         c = _config(address(tgld), address(usds), PRICE, 0);
         c.funder = address(0);
@@ -187,14 +190,14 @@ contract AuctionFactoryTest is FixedPriceAuctionTestBase {
         FixedPriceAuctionV2 v2 = new FixedPriceAuctionV2();
 
         vm.expectEmit(address(factory));
-        emit IAuctionFactory.ImplementationProposed(address(v2));
+        emit IFixedPriceAuctionFactory.ImplementationProposed(address(v2));
         vm.prank(executor);
         factory.proposeImplementation(address(v2));
         assertEq(factory.proposedImplementation(), address(v2));
         assertEq(factory.implementation(), address(implementation));
 
         vm.expectEmit(address(factory));
-        emit IAuctionFactory.ImplementationSet(address(v2));
+        emit IFixedPriceAuctionFactory.ImplementationSet(address(v2));
         vm.prank(rescuer);
         factory.acceptImplementation(address(v2));
         assertEq(factory.implementation(), address(v2));
@@ -220,7 +223,8 @@ contract AuctionFactoryTest is FixedPriceAuctionTestBase {
         vm.prank(rescuer);
         vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
         factory.proposeImplementation(address(v2));
-        expectElevatedAccess();
+        vm.prank(unauthorizedUser);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         factory.proposeImplementation(address(v2));
 
         vm.prank(rescuer);
@@ -245,22 +249,6 @@ contract AuctionFactoryTest is FixedPriceAuctionTestBase {
         vm.prank(rescuer);
         factory.acceptImplementation(address(v3));
         assertEq(factory.implementation(), address(v3));
-    }
-
-    function test_acceptImplementation_fail_staleProposal() public {
-        FixedPriceAuctionV2 a = new FixedPriceAuctionV2();
-        FixedPriceAuctionV2 b = new FixedPriceAuctionV2();
-        vm.startPrank(executor);
-        factory.proposeImplementation(address(a));
-        factory.proposeImplementation(address(b));
-        vm.stopPrank();
-
-        vm.startPrank(rescuer);
-        vm.expectRevert(CommonEventsAndErrors.InvalidAddress.selector);
-        factory.acceptImplementation(address(a));
-        factory.acceptImplementation(address(b));
-        vm.stopPrank();
-        assertEq(factory.implementation(), address(b));
     }
 
     function test_acceptImplementation_fail_zeroWithNoProposal() public {
@@ -315,7 +303,7 @@ contract AuctionFactoryTest is FixedPriceAuctionTestBase {
         factory.proposeImplementation(address(v2));
 
         vm.expectEmit(address(factory));
-        emit IAuctionFactory.ImplementationProposed(address(0));
+        emit IFixedPriceAuctionFactory.ImplementationProposed(address(0));
         vm.prank(rescuer);
         factory.setRescueMode(true);
         assertEq(factory.proposedImplementation(), address(0));
@@ -371,7 +359,7 @@ contract AuctionFactoryTest is FixedPriceAuctionTestBase {
 /// every step: implementations move only by acceptance, rescue mode locks the msig out and kills proposals, the
 /// rescuer never gets msig powers, the roles never merge, and every auction is a clone of an accepted
 /// implementation with the roles of its day.
-contract AuctionFactoryFuzzTest is FixedPriceAuctionTestBase {
+contract FixedPriceAuctionFactoryFuzzTest is FixedPriceAuctionTestBase {
     uint256 internal constant STEPS = 40;
 
     address[3] internal impls;

@@ -1,24 +1,24 @@
 pragma solidity ^0.8.20;
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Temple (templegold/AuctionFactory.sol)
+// Temple (templegold/FixedPriceAuctionFactory.sol)
 
 import { LibClone } from "solady/src/utils/LibClone.sol";
 
 import { IFixedPriceAuction } from "contracts/interfaces/templegold/IFixedPriceAuction.sol";
-import { IAuctionFactory } from "contracts/interfaces/templegold/IAuctionFactory.sol";
+import { IFixedPriceAuctionFactory } from "contracts/interfaces/templegold/IFixedPriceAuctionFactory.sol";
 import { RescuableAccess } from "contracts/templegold/access/RescuableAccess.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 
-/// @title AuctionFactory
-/// @notice See IAuctionFactory.
-contract AuctionFactory is IAuctionFactory, RescuableAccess {
-    /// @inheritdoc IAuctionFactory
+/// @title FixedPriceAuctionFactory
+/// @notice See IFixedPriceAuctionFactory.
+contract FixedPriceAuctionFactory is IFixedPriceAuctionFactory, RescuableAccess {
+    /// @inheritdoc IFixedPriceAuctionFactory
     address public override implementation;
 
-    /// @inheritdoc IAuctionFactory
+    /// @inheritdoc IFixedPriceAuctionFactory
     address public override proposedImplementation;
 
-    /// @inheritdoc IAuctionFactory
+    /// @inheritdoc IFixedPriceAuctionFactory
     mapping(address auction => bool genuine) public override isAuction;
 
     constructor(address initialExecutor, address initialRescuer, address initialImplementation) {
@@ -28,7 +28,7 @@ contract AuctionFactory is IAuctionFactory, RescuableAccess {
         implementation = initialImplementation;
     }
 
-    /// @inheritdoc IAuctionFactory
+    /// @inheritdoc IFixedPriceAuctionFactory
     function createAuction(bytes calldata config) external override onlyElevatedAccess returns (address auction) {
         address impl = implementation;
         auction = LibClone.clone(impl, config);
@@ -37,14 +37,14 @@ contract AuctionFactory is IAuctionFactory, RescuableAccess {
         IFixedPriceAuction(auction).initialize(executor, rescuer);
     }
 
-    /// @inheritdoc IAuctionFactory
+    /// @inheritdoc IFixedPriceAuctionFactory
     function proposeImplementation(address newImplementation) external override onlyElevatedAccess {
         if (newImplementation.code.length == 0) revert CommonEventsAndErrors.InvalidAddress();
         emit ImplementationProposed(newImplementation);
         proposedImplementation = newImplementation;
     }
 
-    /// @inheritdoc IAuctionFactory
+    /// @inheritdoc IFixedPriceAuctionFactory
     function acceptImplementation(address newImplementation) external override onlyRescuer {
         if (newImplementation == address(0) || newImplementation != proposedImplementation) {
             revert CommonEventsAndErrors.InvalidAddress();

@@ -11,7 +11,7 @@ import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.so
 /// @notice See IComplianceCheck.
 contract ComplianceCheck is IComplianceCheck, ExecutorAccess {
     /// @inheritdoc IComplianceCheck
-    mapping(address account => bool blocked) public override isBlocked;
+    mapping(address account => bool flagged) public override isFlagged;
 
     /// @inheritdoc IComplianceCheck
     mapping(address allowedCaller => mapping(bytes4 fnSelector => bool allowed)) public override
@@ -36,10 +36,10 @@ contract ComplianceCheck is IComplianceCheck, ExecutorAccess {
     }
 
     /// @inheritdoc IComplianceCheck
-    function setBlocked(address[] calldata accounts, bool value) external override onlyElevatedAccess {
+    function setFlagged(address[] calldata accounts, bool value) external override onlyElevatedAccess {
         for (uint256 i; i < accounts.length; ++i) {
-            emit BlockedSet(accounts[i], value);
-            isBlocked[accounts[i]] = value;
+            emit FlaggedSet(accounts[i], value);
+            isFlagged[accounts[i]] = value;
         }
     }
 

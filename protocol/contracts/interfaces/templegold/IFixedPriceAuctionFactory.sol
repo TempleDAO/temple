@@ -1,17 +1,17 @@
 pragma solidity ^0.8.20;
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Temple (interfaces/templegold/IAuctionFactory.sol)
+// Temple (interfaces/templegold/IFixedPriceAuctionFactory.sol)
 
 import { IRescuableAccess } from "contracts/interfaces/templegold/IRescuableAccess.sol";
 
-/// @title IAuctionFactory
+/// @title IFixedPriceAuctionFactory
 /// @notice Clones the current auction implementation and records every clone, so indexers and front-ends can tell
 /// genuine auctions from look-alikes. Every auction gets the calling msig as executor and this factory's current
 /// rescuer. New auction code needs two keys: the msig proposes an implementation and the rescuer accepts it.
 /// @dev An implementation must expose initialize(address executor, address rescuer), revert on any second call,
 /// lock itself in its constructor, read its config from its clone args, and keep IFixedPriceAuction's events.
 /// A TGLD auction must be authorized on TempleGold by its owner before any TGLD moves.
-interface IAuctionFactory is IRescuableAccess {
+interface IFixedPriceAuctionFactory is IRescuableAccess {
     /// @notice `config` is the clone's immutable args; its layout is set by `implementation`.
     event AuctionCreated(address indexed auction, address indexed implementation, bytes config);
     /// @notice A zero implementation means the proposal was cancelled (rescue mode switched on).

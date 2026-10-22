@@ -27,8 +27,8 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
         Cancelled
     }
 
-    /// @inheritdoc IFixedPriceAuction
-    uint8 public constant override MAX_TOKEN_DECIMALS = 18;
+    /// @dev The most decimals either token may have.
+    uint8 private constant MAX_TOKEN_DECIMALS = 18;
 
     /// @inheritdoc IFixedPriceAuction
     uint256 public override priceDenominator;
@@ -42,7 +42,7 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
 
     /// @inheritdoc IFixedPriceAuction
     uint40 public override settledAt;
-    /// @dev Set by `_settle` or `cancel`. `phase()` reads Settled from `fulfillmentEnd` even while this is `None`.
+    /// @dev Set by `settleEarly` or `cancel`. `phase()` reads Settled from `fulfillmentEnd` while this is `None`.
     Outcome private _outcome;
     /// @dev True on the implementation from deployment, and on a clone once `initialize` runs.
     bool private _initialized;
@@ -59,12 +59,14 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
     mapping(address account => uint256 amount) public override excluded;
 
     /// @inheritdoc IFixedPriceAuction
-    uint256 public override bidOwed;
-    /// @inheritdoc IFixedPriceAuction
-    uint256 public override fillOwed;
+    uint256 public override funding;
 
-    /// @dev The settlement snapshot, written with `_outcome`. All zero while `_outcome` is `None`.
-    Settlement private _settlement;
+    /// @inheritdoc IFixedPriceAuction
+    uint256 public override totalExcluded;
+    /// @inheritdoc IFixedPriceAuction
+    uint256 public override bidPaid;
+    /// @inheritdoc IFixedPriceAuction
+    uint256 public override fillPaid;
 
     constructor() {
         _initialized = true;
@@ -101,7 +103,7 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
     }
 
     /// @inheritdoc IFixedPriceAuction
-    function deposit(uint256 amount) external override whenNotPaused notBlocked {
+    function deposit(uint256 amount) external override whenNotPaused notFlagged {
         AuctionConfig memory config = _config();
         _requirePhase(config, Phase.Deposit);
         if (amount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
@@ -113,14 +115,13 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
 
         deposits[msg.sender] = newDeposit;
         totalDeposits += amount;
-        bidOwed += amount;
 
         emit Deposited(msg.sender, amount, newDeposit, totalDeposits);
         IERC20(config.bidToken).safeTransferFrom(msg.sender, address(this), amount);
     }
 
     /// @inheritdoc IFixedPriceAuction
-    function withdrawDeposit(uint256 amount) external override whenNotPaused notBlocked {
+    function withdrawDeposit(uint256 amount) external override whenNotPaused notFlagged {
         AuctionConfig memory config = _config();
         _requirePhase(config, Phase.Deposit);
         if (amount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
@@ -132,7 +133,6 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
 
         deposits[msg.sender] = remainder;
         totalDeposits -= amount;
-        bidOwed -= amount;
 
         emit DepositWithdrawn(msg.sender, amount, remainder, totalDeposits);
         IERC20(config.bidToken).safeTransfer(msg.sender, amount);
@@ -144,13 +144,14 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
         AuctionConfig memory config = _config();
         Phase current = _phase(config);
         if (current != Phase.Deposit && current != Phase.Fulfillment) revert InvalidPhase(Phase.Fulfillment, current);
-        if (!_isBlocked(account)) revert AccountNotBlocked(account);
+        if (!_isFlagged(account)) revert AccountNotFlagged(account);
         uint256 amount = deposits[account];
         if (amount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
 
         emit BidderExcluded(account, amount);
         deposits[account] = 0;
         excluded[account] += amount;
+        totalExcluded += amount;
         totalDeposits -= amount;
     }
 
@@ -159,7 +160,7 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
         _onlyExclusionAdmin();
         AuctionConfig memory config = _config();
         _requirePhase(config, Phase.Deposit);
-        if (_isBlocked(account)) revert BlockedAccount(account);
+        if (_isFlagged(account)) revert FlaggedAccount(account);
         uint256 amount = excluded[account];
         if (amount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
         // Reject a reinstate that would make the funding calculation overflow and prevent settlement.
@@ -167,17 +168,18 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
 
         emit BidderReinstated(account, amount);
         excluded[account] = 0;
+        totalExcluded -= amount;
         deposits[account] += amount;
         totalDeposits += amount;
     }
 
     /// @inheritdoc IFixedPriceAuction
-    function withdrawExcluded() external override whenNotPaused notBlocked {
+    function withdrawExcluded() external override whenNotPaused notFlagged {
         uint256 amount = excluded[msg.sender];
         if (amount == 0) revert NothingToClaim();
 
         excluded[msg.sender] = 0;
-        bidOwed -= amount;
+        totalExcluded -= amount;
 
         emit ExcludedWithdrawn(msg.sender, amount);
         IERC20(_config().bidToken).safeTransfer(msg.sender, amount);
@@ -190,9 +192,9 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
         _requirePhase(config, Phase.Fulfillment);
         if (amount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
 
-        fillOwed += amount;
+        funding += amount;
 
-        emit Funded(msg.sender, amount, fillOwed);
+        emit Funded(msg.sender, amount, funding);
         IERC20(config.fillToken).safeTransferFrom(msg.sender, address(this), amount);
     }
 
@@ -206,19 +208,23 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
         uint256 available = _withdrawableExcess(config);
         if (amount > available) revert CommonEventsAndErrors.InsufficientBalance(config.fillToken, amount, available);
 
-        fillOwed -= amount;
+        funding -= amount;
 
-        emit ExcessWithdrawn(msg.sender, amount, fillOwed);
+        emit ExcessWithdrawn(msg.sender, amount, funding);
         IERC20(config.fillToken).safeTransfer(msg.sender, amount);
     }
 
     /// @inheritdoc IFixedPriceAuction
-    function endFulfillment() external override onlyElevatedAccess {
+    function settleEarly() external override onlyElevatedAccess {
         AuctionConfig memory config = _config();
         _requirePhase(config, Phase.Fulfillment);
+        _outcome = Outcome.Settled;
         // Safe: unix seconds fit in uint40 until the year 36812.
         // forge-lint: disable-next-line(unsafe-typecast)
-        _settle(uint40(block.timestamp), config.price);
+        settledAt = uint40(block.timestamp);
+
+        Settlement memory s = _calculateSettlement(config.price);
+        emit AuctionSettled(settledAt, totalDeposits, s.filledBids, s.userFill, s.userRefund, s.funderRefund);
     }
 
     /// @inheritdoc IFixedPriceAuction
@@ -229,52 +235,61 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
             revert InvalidPhase(Phase.Fulfillment, _phase(config));
         }
 
-        _settlement = Settlement(0, 0, totalDeposits, fillOwed);
         _outcome = Outcome.Cancelled;
 
-        emit AuctionCancelled(totalDeposits, fillOwed);
+        emit AuctionCancelled(totalDeposits, funding);
     }
 
     /// @inheritdoc IFixedPriceAuction
-    function claim() external override whenNotPaused notBlocked {
+    function emitSettlement() external override {
         AuctionConfig memory config = _config();
-        _settleIfDue(config);
+        _requirePhase(config, Phase.Settlement);
+        if (settledAt != 0) revert AlreadySettled();
+        _emitClockSettlement(config);
+    }
+
+    /// @inheritdoc IFixedPriceAuction
+    function claim() external override whenNotPaused notFlagged {
+        AuctionConfig memory config = _config();
+        _requireFinal(config);
         if (claimed[msg.sender]) revert AlreadyClaimed();
         if (deposits[msg.sender] == 0) revert NothingToClaim();
+        _emitClockSettlementIfDue(config);
 
         UserClaim memory userClaim = _claimable(msg.sender, config);
         claimed[msg.sender] = true;
-        bidOwed -= userClaim.bidTokenRefund;
-        fillOwed -= userClaim.fillTokenAmount;
+        bidPaid += userClaim.refund;
+        fillPaid += userClaim.fill;
 
-        emit UserClaimed(msg.sender, userClaim.fillTokenAmount, userClaim.bidTokenRefund);
-        if (userClaim.bidTokenRefund > 0) {
-            IERC20(config.bidToken).safeTransfer(msg.sender, userClaim.bidTokenRefund);
+        emit UserClaimed(msg.sender, userClaim.fill, userClaim.refund);
+        if (userClaim.refund > 0) {
+            IERC20(config.bidToken).safeTransfer(msg.sender, userClaim.refund);
         }
-        if (userClaim.fillTokenAmount > 0) {
-            IERC20(config.fillToken).safeTransfer(msg.sender, userClaim.fillTokenAmount);
+        if (userClaim.fill > 0) {
+            IERC20(config.fillToken).safeTransfer(msg.sender, userClaim.fill);
         }
     }
 
     /// @inheritdoc IFixedPriceAuction
     function claimTreasury() external override whenNotPaused {
         AuctionConfig memory config = _config();
-        _settleIfDue(config);
+        _requireFinal(config);
         if (treasuryClaimed) revert AlreadyClaimed();
+        _emitClockSettlementIfDue(config);
 
         TreasuryClaim memory treasuryClaim = _treasuryClaimable(config);
         treasuryClaimed = true;
-        bidOwed -= treasuryClaim.bidTokenAmount;
-        fillOwed -= treasuryClaim.fillTokenRefund;
+        bidPaid += treasuryClaim.proceeds;
+        fillPaid += treasuryClaim.funderRefund;
 
         emit TreasuryClaimed(
-            config.proceedsRecipient, config.funder, treasuryClaim.bidTokenAmount, treasuryClaim.fillTokenRefund
+            config.proceedsRecipient, config.funder, treasuryClaim.proceeds, treasuryClaim.funderRefund
         );
-        if (treasuryClaim.bidTokenAmount > 0) {
-            IERC20(config.bidToken).safeTransfer(config.proceedsRecipient, treasuryClaim.bidTokenAmount);
+        if (treasuryClaim.proceeds > 0) {
+            IERC20(config.bidToken).safeTransfer(config.proceedsRecipient, treasuryClaim.proceeds);
         }
-        if (treasuryClaim.fillTokenRefund > 0) {
-            IERC20(config.fillToken).safeTransfer(config.funder, treasuryClaim.fillTokenRefund);
+        if (treasuryClaim.funderRefund > 0) {
+            IERC20(config.fillToken).safeTransfer(config.funder, treasuryClaim.funderRefund);
         }
     }
 
@@ -288,7 +303,8 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
         if (amount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
 
         AuctionConfig memory config = _config();
-        uint256 owed = token == config.bidToken ? bidOwed : token == config.fillToken ? fillOwed : 0;
+        (uint256 bidLiability, uint256 fillLiability) = _liabilities();
+        uint256 owed = token == config.bidToken ? bidLiability : token == config.fillToken ? fillLiability : 0;
         uint256 balance = IERC20(token).balanceOf(address(this));
         uint256 recoverable = balance > owed ? balance - owed : 0;
         if (amount > recoverable) revert CommonEventsAndErrors.InsufficientBalance(token, amount, recoverable);
@@ -330,19 +346,13 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
     }
 
     /// @inheritdoc IFixedPriceAuction
-    function getTiming() external view override returns (AuctionTiming memory) {
-        AuctionConfig memory config = _config();
-        return AuctionTiming(config.depositStart, config.depositEnd, config.fulfillmentEnd, settledAt);
-    }
-
-    /// @inheritdoc IFixedPriceAuction
     function withdrawableExcess() external view override returns (uint256) {
         return _withdrawableExcess(_config());
     }
 
     /// @inheritdoc IFixedPriceAuction
-    function previewSettlement() external view override returns (Settlement memory) {
-        return _previewSettlement(_config().price);
+    function settlement() external view override returns (Settlement memory) {
+        return _settlement(_config().price);
     }
 
     /// @inheritdoc IFixedPriceAuction
@@ -355,28 +365,53 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
         return _treasuryClaimable(_config());
     }
 
+    /// @inheritdoc IFixedPriceAuction
+    function liabilities() external view override returns (uint256 bidToken, uint256 fillToken) {
+        return _liabilities();
+    }
+
     /// @dev The config the factory appended to this clone's code.
     function _config() internal view returns (AuctionConfig memory) {
         return abi.decode(LibClone.argsOnClone(address(this)), (AuctionConfig));
     }
 
+    /// @dev Deposits, excluded balances and funding, less what claims have already paid out.
+    function _liabilities() private view returns (uint256 bidToken, uint256 fillToken) {
+        bidToken = totalDeposits + totalExcluded - bidPaid;
+        fillToken = funding - fillPaid;
+    }
+
+    /// @dev The first claim after the clock settles emits `AuctionSettled`, unless `emitSettlement` already has.
+    function _emitClockSettlementIfDue(AuctionConfig memory config) private {
+        if (_outcome == Outcome.None && settledAt == 0) _emitClockSettlement(config);
+    }
+
+    /// @dev `settledAt` doubles as the once-only flag, since `settleEarly` sets it too.
+    function _emitClockSettlement(AuctionConfig memory config) private {
+        // Safe: initialize caps fulfillmentEnd at type(uint40).max.
+        // forge-lint: disable-next-line(unsafe-typecast)
+        settledAt = uint40(config.fulfillmentEnd);
+        Settlement memory s = _calculateSettlement(config.price);
+        emit AuctionSettled(settledAt, totalDeposits, s.filledBids, s.userFill, s.userRefund, s.funderRefund);
+    }
+
     function _phase(AuctionConfig memory config) private view returns (Phase) {
-        if (_outcome == Outcome.Settled) return Phase.Settled;
+        if (_outcome == Outcome.Settled) return Phase.Settlement;
         if (_outcome == Outcome.Cancelled) return Phase.Cancelled;
         if (block.timestamp < config.depositStart) return Phase.Scheduled;
         if (block.timestamp < config.depositEnd) return Phase.Deposit;
         if (block.timestamp < config.fulfillmentEnd) return Phase.Fulfillment;
-        return Phase.Settled;
+        return Phase.Settlement;
     }
 
     function _withdrawableExcess(AuctionConfig memory config) private view returns (uint256) {
         if (paused || _phase(config) != Phase.Fulfillment) return 0;
         uint256 required = _requiredFunding(totalDeposits, config.price);
-        return fillOwed > required ? fillOwed - required : 0;
+        return funding > required ? funding - required : 0;
     }
 
-    function _previewSettlement(uint256 price) private view returns (Settlement memory) {
-        if (_outcome != Outcome.None) return _settlement;
+    function _settlement(uint256 price) private view returns (Settlement memory) {
+        if (_outcome == Outcome.Cancelled) return Settlement(0, 0, totalDeposits, funding);
         return _calculateSettlement(price);
     }
 
@@ -385,53 +420,40 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
         AuctionConfig memory config
     ) private view returns (UserClaim memory userClaim) {
         if (!_isFinal(config) || claimed[account] || totalDeposits == 0) return userClaim;
-        Settlement memory preview = _previewSettlement(config.price);
+        Settlement memory s = _settlement(config.price);
         uint256 amount = deposits[account];
         // Independent, rounded-down shares, so claim order doesn't matter. The dust stays put.
-        userClaim.fillTokenAmount = amount.mulDivRound(preview.userFunding, totalDeposits, false);
-        userClaim.bidTokenRefund = amount.mulDivRound(preview.userRefund, totalDeposits, false);
+        userClaim.fill = amount.mulDivRound(s.userFill, totalDeposits, false);
+        userClaim.refund = amount.mulDivRound(s.userRefund, totalDeposits, false);
     }
 
     function _treasuryClaimable(AuctionConfig memory config) private view returns (TreasuryClaim memory treasuryClaim) {
         if (!_isFinal(config) || treasuryClaimed) return treasuryClaim;
-        Settlement memory preview = _previewSettlement(config.price);
-        treasuryClaim.bidTokenAmount = preview.filledDeposits;
-        treasuryClaim.fillTokenRefund = preview.funderRefund;
+        Settlement memory s = _settlement(config.price);
+        treasuryClaim.proceeds = s.filledBids;
+        treasuryClaim.funderRefund = s.funderRefund;
     }
 
+    /// @dev Reads only totalDeposits and funding as state, which stop changing once the phase is final.
     function _calculateSettlement(uint256 price) private view returns (Settlement memory) {
         uint256 denominator = priceDenominator;
         // Fills, and the fill tokens they buy, round down, so bidders never get more than the funding covers.
-        uint256 filled = fillOwed >= _requiredFunding(totalDeposits, price)
+        uint256 filled = funding >= _requiredFunding(totalDeposits, price)
             ? totalDeposits
-            : fillOwed.mulDivRound(denominator, price, false);
-        uint256 userFunding = filled.mulDivRound(price, denominator, false);
+            : funding.mulDivRound(denominator, price, false);
+        uint256 userFill = filled.mulDivRound(price, denominator, false);
         // A fill too small to buy one fill-token wei takes no bid tokens.
-        if (userFunding == 0) filled = 0;
-        return Settlement(filled, userFunding, totalDeposits - filled, fillOwed - userFunding);
+        if (userFill == 0) filled = 0;
+        return Settlement(filled, userFill, totalDeposits - filled, funding - userFill);
     }
 
-    function _settle(uint40 timestamp, uint256 price) private {
-        _settlement = _calculateSettlement(price);
-        _outcome = Outcome.Settled;
-        settledAt = timestamp;
-
-        Settlement memory s = _settlement;
-        emit AuctionSettled(timestamp, totalDeposits, s.filledDeposits, s.userFunding, s.userRefund, s.funderRefund);
-    }
-
-    function _settleIfDue(AuctionConfig memory config) private {
-        Phase current = _phase(config);
-        if (current == Phase.Cancelled) return;
-        if (current != Phase.Settled) revert InvalidPhase(Phase.Settled, current);
-        // Safe: initialize caps fulfillmentEnd at type(uint40).max.
-        // forge-lint: disable-next-line(unsafe-typecast)
-        if (_outcome == Outcome.None) _settle(uint40(config.fulfillmentEnd), config.price);
+    function _requireFinal(AuctionConfig memory config) private view {
+        if (!_isFinal(config)) revert InvalidPhase(Phase.Settlement, _phase(config));
     }
 
     function _isFinal(AuctionConfig memory config) private view returns (bool) {
         Phase current = _phase(config);
-        return current == Phase.Settled || current == Phase.Cancelled;
+        return current == Phase.Settlement || current == Phase.Cancelled;
     }
 
     /// @dev Round up, so a fully funded auction always covers the fixed price.
@@ -439,13 +461,13 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
         return amount.mulDivRound(price, priceDenominator, true);
     }
 
-    function _isBlocked(address account) private view returns (bool) {
-        return !complianceDisabled && IComplianceCheck(complianceCheck).isBlocked(account);
-    }
-
     function _requirePhase(AuctionConfig memory config, Phase expected) private view {
         Phase current = _phase(config);
         if (current != expected) revert InvalidPhase(expected, current);
+    }
+
+    function _isFlagged(address account) private view returns (bool) {
+        return !complianceDisabled && IComplianceCheck(complianceCheck).isFlagged(account);
     }
 
     modifier whenNotPaused() {
@@ -457,20 +479,20 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
         if (paused) revert IsPaused();
     }
 
-    modifier notBlocked() {
-        _requireNotBlocked();
+    modifier notFlagged() {
+        _requireNotFlagged();
         _;
     }
 
-    function _requireNotBlocked() private view {
-        if (_isBlocked(msg.sender)) revert BlockedAccount(msg.sender);
+    function _requireNotFlagged() private view {
+        if (_isFlagged(msg.sender)) revert FlaggedAccount(msg.sender);
     }
 
     /// @dev The executor outside rescue mode, or, while compliance is enabled, a caller the current list grants
-    /// setBlocked (in rescue mode too).
+    /// setFlagged (in rescue mode too).
     function _onlyExclusionAdmin() private view {
         if (_isElevatedAccess(msg.sender, msg.sig)) return;
-        bytes4 selector = IComplianceCheck.setBlocked.selector;
+        bytes4 selector = IComplianceCheck.setFlagged.selector;
         if (complianceDisabled || !IComplianceCheck(complianceCheck).explicitFunctionAccess(msg.sender, selector)) {
             revert CommonEventsAndErrors.InvalidAccess();
         }
