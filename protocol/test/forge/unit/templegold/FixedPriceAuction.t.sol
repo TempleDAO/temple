@@ -1961,6 +1961,26 @@ contract FixedPriceAuctionTempleGoldTest is FixedPriceAuctionTestBase {
         assertEq(auction.deposits(alice), 1e18);
     }
 
+    /// @dev TempleGold checks only that the sender or the receiver is authorized, so an authorized depositor moves TGLD
+    /// into and out of an unauthorized auction while an unauthorized one can't.
+    function test_templeGold_authorizedDepositor_usesUnauthorizedAuction() public {
+        vm.prank(executor);
+        templeGold.authorizeContract(alice, true);
+        _toDeposit(auction);
+        _depositTgld(alice, 2e18);
+        assertEq(templeGold.balanceOf(address(auction)), 2e18);
+
+        vm.startPrank(bob);
+        templeGold.approve(address(auction), 1e18);
+        vm.expectRevert(abi.encodeWithSelector(ITempleGold.NonTransferrable.selector, bob, address(auction)));
+        auction.deposit(1e18);
+        vm.stopPrank();
+
+        vm.prank(alice);
+        auction.withdrawDeposit(1e18);
+        assertEq(templeGold.balanceOf(address(auction)), 1e18);
+    }
+
     function test_templeGold_fullLifecycleOnceAuthorized() public {
         _halfFundedAuction();
         _claimAll(auction);
