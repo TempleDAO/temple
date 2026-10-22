@@ -149,7 +149,7 @@ An auction moves through these phases:
 - `Scheduled`: before `depositStart`.
 - `Deposit`: bidders `deposit` and `withdrawDeposit`; a remaining deposit must be zero or at least `minDeposit`.
 - `Fulfillment`: the funder calls `fund`, and `withdrawExcess` returns anything above what fills every deposit.
-- `Settled`: from `fulfillmentEnd`, or earlier when the msig calls `settleEarly`. Bidders `claim` their fill tokens and any unfilled bid tokens; `claimTreasury` sends filled bid tokens to the proceeds recipient and unused fill tokens to the funder.
+- `Settlement`: from `fulfillmentEnd`, or earlier when the msig calls `settleEarly`, which ends Fulfillment early. The fill is fixed and the filled bid tokens become the treasury's proceeds. Bidders `claim` their fill tokens and any unfilled bid tokens; `claimTreasury` sends filled bid tokens to the proceeds recipient and unused fill tokens to the funder.
 - `Cancelled`: the msig, or the rescuer in rescue mode, calls `cancel` while unsettled and before `fulfillmentEnd`. No trade happens; deposits and funding are refunded through the same claims.
 
 Roles:
@@ -157,13 +157,13 @@ Roles:
 - rescuer: switches rescue mode on and off, pauses and cancels while it is on, accepts a proposed implementation on the factory, and can disable compliance for good.
 - funder: the only account that can `fund` and `withdrawExcess`.
 - proceedsRecipient: receives the filled bid tokens.
-- granted account: an account granted `setBlocked` on the compliance list; it can also exclude and reinstate on every auction pointing at that list, in rescue mode too, while compliance is enabled.
+- granted account: an account granted `setFlagged` on the compliance list; it can also exclude and reinstate on every auction pointing at that list, in rescue mode too, while compliance is enabled.
 
 Pausing stops every token-moving call; `settleEarly`, `cancel`, `exclude`, `reinstate` and the setters still work. In rescue mode the msig is locked out of every elevated call and only the rescuer can pause, unpause or cancel. Rescue mode is per contract: the factory and each auction have their own, and switching it on cancels that contract's pending executor proposal, and on the factory its pending implementation proposal too.
 
-All auctions share one `ComplianceCheck`. The msig can point an auction at another list, and the rescuer can disable compliance on an auction for good. A blocked account's `deposit`, `withdrawDeposit`, `claim` and `withdrawExcluded` revert, and its funds stay in the auction until it is unblocked or compliance is disabled.
+All auctions share one `ComplianceCheck`. The msig can point an auction at another list, and the rescuer can disable compliance on an auction for good. A flagged account's `deposit`, `withdrawDeposit`, `claim` and `withdrawExcluded` revert: its funds are frozen in the auction until the flag is removed or compliance is disabled.
 
-During Deposit or Fulfillment, the msig (outside rescue mode) or an account the current list grants `setBlocked` can `exclude` a blocked bidder: its whole deposit leaves the fill and moves to `excluded`, so it is never filled and the funder doesn't pay for it (funding already sent for it becomes withdrawable excess if the rest is fully funded; under partial funding the remaining bidders fill more). If the bidder is cleared during Deposit, `reinstate` puts it back in full; otherwise, once unblocked, the bidder takes it back with `withdrawExcluded`, in any phase. A bidder blocked but not excluded is still filled, and its payout waits until it is unblocked. Once settled or cancelled, nobody can be excluded. Disabling compliance makes every excluded balance withdrawable once the auction is unpaused.
+During Deposit or Fulfillment, the msig (outside rescue mode) or an account the current list grants `setFlagged` can `exclude` a flagged bidder: its whole deposit leaves the fill and moves to `excluded`, so it is never filled and the funder doesn't pay for it (funding already sent for it becomes withdrawable excess if the rest is fully funded; under partial funding the remaining bidders fill more). If the bidder is cleared during Deposit, `reinstate` puts it back in full; otherwise, once unflagged, the bidder takes it back with `withdrawExcluded`, in any phase. A bidder flagged but not excluded is still filled: its filled bid tokens go to the treasury, and its fill tokens and any refund stay frozen until the flag is removed. Once settled or cancelled, nobody can be excluded. Disabling compliance makes every excluded balance withdrawable once the auction is unpaused.
 
 Settlement never owes more than it holds: the funding needed to fill every deposit rounds up, each fill and pro-rata share rounds down, and the dust stays in the auction.
 

@@ -22,7 +22,7 @@ contract FixedPriceAuctionFuzzTest is FixedPriceAuctionTestBase {
     /// and all funding until it's final, then each unclaimed share and the unclaimed treasury legs.
     function _unpaid(FixedPriceAuction a, address[] memory accounts) internal view returns (uint256 bid, uint256 fill) {
         IFixedPriceAuction.Phase p = a.phase();
-        if (p != IFixedPriceAuction.Phase.Settled && p != IFixedPriceAuction.Phase.Cancelled) {
+        if (p != IFixedPriceAuction.Phase.Settlement && p != IFixedPriceAuction.Phase.Cancelled) {
             return (a.totalDeposits(), a.funding());
         }
         IFixedPriceAuction.Settlement memory s = a.settlement();
@@ -51,7 +51,7 @@ contract FixedPriceAuctionFuzzTest is FixedPriceAuctionTestBase {
         uint256 fillHeld = fill.balanceOf(address(a));
         assertGe(bidHeld, bidUnpaid, "bid balance < unpaid");
         assertGe(fillHeld, fillUnpaid, "fill balance < unpaid");
-        uint256 maxDust = a.phase() == IFixedPriceAuction.Phase.Settled ? accounts.length : 1;
+        uint256 maxDust = a.phase() == IFixedPriceAuction.Phase.Settlement ? accounts.length : 1;
         assertLt(bidHeld - bidUnpaid, maxDust, "bid dust");
         assertLt(fillHeld - fillUnpaid, maxDust, "fill dust");
     }
@@ -133,7 +133,7 @@ contract FixedPriceAuctionFuzzTest is FixedPriceAuctionTestBase {
             vm.prank(resc);
             try auction.cancel() { } catch { }
         } else if (op == 13) {
-            _setBlocked(actor, flag);
+            _setFlagged(actor, flag);
         } else if (op == 14) {
             if ((r >> 200) % 8 != 0) return;
             vm.prank(resc);
@@ -163,7 +163,7 @@ contract FixedPriceAuctionFuzzTest is FixedPriceAuctionTestBase {
         vm.prank(auction.executor());
         auction.setPaused(false);
         for (uint256 i; i < actors.length; ++i) {
-            _setBlocked(actors[i], false);
+            _setFlagged(actors[i], false);
         }
     }
 

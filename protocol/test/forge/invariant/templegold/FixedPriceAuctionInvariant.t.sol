@@ -35,19 +35,19 @@ abstract contract FixedPriceAuctionInvariantBase is FixedPriceAuctionTestBase {
         price = price_;
         bid = new FakeERC20CustomDecimals("Bid", "BID", address(0), 0, bidDecimals);
         fill = _blocklistFill()
-            ? new FakeBlocklistERC20("Fill", "FILL", fillDecimals, blocker)
+            ? new FakeBlocklistERC20("Fill", "FILL", fillDecimals, flagger)
             : new FakeERC20CustomDecimals("Fill", "FILL", address(0), 0, fillDecimals);
         auction = _create(_config(address(bid), address(fill), price, 100));
         ComplianceCheck compliance2 = new ComplianceCheck(executor);
         ITempleElevatedAccess.ExplicitAccess[] memory access = new ITempleElevatedAccess.ExplicitAccess[](1);
-        access[0] = ITempleElevatedAccess.ExplicitAccess(ComplianceCheck.setBlocked.selector, true);
+        access[0] = ITempleElevatedAccess.ExplicitAccess(ComplianceCheck.setFlagged.selector, true);
         vm.startPrank(executor);
-        compliance.setExplicitAccess(blocker, access);
-        compliance2.setExplicitAccess(blocker, access);
+        compliance.setExplicitAccess(flagger, access);
+        compliance2.setExplicitAccess(flagger, access);
         vm.stopPrank();
         FakeERC20CustomDecimals stray = new FakeERC20CustomDecimals("Stray", "STRAY", address(0), 0, 18);
 
-        handler = new FixedPriceAuctionHandler(auction, compliance, compliance2, stray, executor, rescuer, blocker);
+        handler = new FixedPriceAuctionHandler(auction, compliance, compliance2, stray, executor, rescuer, flagger);
         targetContract(address(handler));
         targetSelector(FuzzSelector({ addr: address(handler), selectors: _weightedSelectors() }));
     }
@@ -74,7 +74,7 @@ abstract contract FixedPriceAuctionInvariantBase is FixedPriceAuctionTestBase {
         i = _add(s, i, FixedPriceAuctionHandler.cancelByRescuer.selector, 1);
         i = _add(s, i, FixedPriceAuctionHandler.disableComplianceCheck.selector, 1);
         i = _add(s, i, FixedPriceAuctionHandler.rescuerOverreach.selector, 1);
-        i = _add(s, i, FixedPriceAuctionHandler.setBlocked.selector, 1);
+        i = _add(s, i, FixedPriceAuctionHandler.setFlagged.selector, 1);
         i = _add(s, i, FixedPriceAuctionHandler.exclude.selector, 6);
         i = _add(s, i, FixedPriceAuctionHandler.reinstate.selector, 6);
         i = _add(s, i, FixedPriceAuctionHandler.withdrawExcluded.selector, 2);
@@ -222,7 +222,7 @@ abstract contract FixedPriceAuctionInvariantBase is FixedPriceAuctionTestBase {
         // Full funding fills everything, unless all deposits together buy under one fill wei (then the zero-fill
         // guard wins).
         if (
-            auction.phase() == IFixedPriceAuction.Phase.Settled
+            auction.phase() == IFixedPriceAuction.Phase.Settlement
                 && fundingHeld >= total.mulDivRound(price, denominator, true)
                 && total.mulDivRound(price, denominator, false) > 0
         ) assertEq(s.filledBids, total, "full funding didn't fill everything");
@@ -236,7 +236,7 @@ abstract contract FixedPriceAuctionInvariantBase is FixedPriceAuctionTestBase {
         if (block.timestamp >= auction.getConfig().fulfillmentEnd) {
             IFixedPriceAuction.Phase p = auction.phase();
             assertTrue(
-                p == IFixedPriceAuction.Phase.Settled || p == IFixedPriceAuction.Phase.Cancelled,
+                p == IFixedPriceAuction.Phase.Settlement || p == IFixedPriceAuction.Phase.Cancelled,
                 "not final at fulfillmentEnd"
             );
         }
@@ -245,7 +245,9 @@ abstract contract FixedPriceAuctionInvariantBase is FixedPriceAuctionTestBase {
         // A clock settlement may later record fulfillmentEnd, once, via a claim or emitSettlement.
         if (auction.settledAt() != handler.ghostSettledAt()) {
             assertEq(handler.ghostSettledAt(), 0, "settledAt changed");
-            assertEq(uint256(handler.ghostOutcome()), uint256(IFixedPriceAuction.Phase.Settled), "settledAt on cancel");
+            assertEq(
+                uint256(handler.ghostOutcome()), uint256(IFixedPriceAuction.Phase.Settlement), "settledAt on cancel"
+            );
             assertEq(auction.settledAt(), auction.getConfig().fulfillmentEnd, "settledAt changed");
         }
         assertEq(uint256(auction.phase()), uint256(handler.ghostOutcome()), "outcome changed");
@@ -326,8 +328,10 @@ abstract contract FixedPriceAuctionInvariantBase is FixedPriceAuctionTestBase {
         invariant_balancesCoverOwed();
         invariant_liabilitiesAreBalanceLessStray();
         invariant_outcomeEmittedOnce();
-        // Settled with any claimant or the treasury paid, so the clock settlement's event has gone out.
-        if (auction.phase() == IFixedPriceAuction.Phase.Settled) assertGt(auction.settledAt(), 0, "no AuctionSettled");
+        // In Settlement with any claimant or the treasury paid, so the clock settlement's event has gone out.
+        if (auction.phase() == IFixedPriceAuction.Phase.Settlement) {
+            assertGt(auction.settledAt(), 0, "no AuctionSettled");
+        }
         // A cancel refunds exactly, so it leaves no dust at all.
         uint256 maxDust = claimants == 0 || auction.phase() == IFixedPriceAuction.Phase.Cancelled ? 0 : claimants - 1;
         assertLe(bid.balanceOf(address(auction)) - handler.strayBid(), maxDust, "bid dust >= claimants");
@@ -335,7 +339,7 @@ abstract contract FixedPriceAuctionInvariantBase is FixedPriceAuctionTestBase {
     }
 
     /// @dev The run did something, judged at the end of a full run: deposits and claims succeeded whenever the run
-    /// gave an eligible bidder the chance. A run that stays paused or blocked throughout has no chance to judge.
+    /// gave an eligible bidder the chance. A run that stays paused or flagged throughout has no chance to judge.
     function invariant_progress() public view {
         if (handler.calls() < 64) return;
         if (handler.depositChances() > 0) assertGt(handler.successes("deposit"), 0, "no deposit succeeded");

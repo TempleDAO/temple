@@ -10,7 +10,7 @@ import { ComplianceCheck } from "contracts/templegold/ComplianceCheck.sol";
 
 contract ComplianceCheckTest is TempleTest {
     ComplianceCheck internal compliance;
-    address internal blocker = makeAddr("blocker");
+    address internal flagger = makeAddr("flagger");
 
     function setUp() public {
         compliance = new ComplianceCheck(executor);
@@ -43,97 +43,97 @@ contract ComplianceCheckTest is TempleTest {
     function test_initialization() public view {
         assertEq(compliance.executor(), executor);
         assertEq(compliance.proposedExecutor(), address(0));
-        assertFalse(compliance.isBlocked(alice));
-        assertFalse(compliance.explicitFunctionAccess(blocker, ComplianceCheck.setBlocked.selector));
+        assertFalse(compliance.isFlagged(alice));
+        assertFalse(compliance.explicitFunctionAccess(flagger, ComplianceCheck.setFlagged.selector));
     }
 
-    function test_access_setBlocked() public {
+    function test_access_setFlagged() public {
         expectElevatedAccess();
-        compliance.setBlocked(_accounts(), true);
+        compliance.setFlagged(_accounts(), true);
     }
 
     function test_access_setExplicitAccess() public {
         expectElevatedAccess();
-        compliance.setExplicitAccess(blocker, _access(ComplianceCheck.setBlocked.selector, true));
+        compliance.setExplicitAccess(flagger, _access(ComplianceCheck.setFlagged.selector, true));
 
         // A grantee can't widen its own access.
-        _grant(blocker, ComplianceCheck.setBlocked.selector, true);
-        vm.prank(blocker);
+        _grant(flagger, ComplianceCheck.setFlagged.selector, true);
+        vm.prank(flagger);
         vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
-        compliance.setExplicitAccess(blocker, _access(ComplianceCheck.setExplicitAccess.selector, true));
+        compliance.setExplicitAccess(flagger, _access(ComplianceCheck.setExplicitAccess.selector, true));
 
         // Nor can a grant of setExplicitAccess itself reach it: only the executor can.
-        _grant(blocker, ComplianceCheck.setExplicitAccess.selector, true);
-        vm.prank(blocker);
+        _grant(flagger, ComplianceCheck.setExplicitAccess.selector, true);
+        vm.prank(flagger);
         vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
-        compliance.setExplicitAccess(alice, _access(ComplianceCheck.setBlocked.selector, true));
+        compliance.setExplicitAccess(alice, _access(ComplianceCheck.setFlagged.selector, true));
     }
 
     function test_setExplicitAccess_fail_zeroAddress() public {
         vm.prank(executor);
         vm.expectRevert(CommonEventsAndErrors.InvalidAddress.selector);
-        compliance.setExplicitAccess(address(0), _access(ComplianceCheck.setBlocked.selector, true));
+        compliance.setExplicitAccess(address(0), _access(ComplianceCheck.setFlagged.selector, true));
     }
 
     function test_setExplicitAccess_success_grantAndRevoke() public {
         ITempleElevatedAccess.ExplicitAccess[] memory access = new ITempleElevatedAccess.ExplicitAccess[](2);
-        access[0] = ITempleElevatedAccess.ExplicitAccess(ComplianceCheck.setBlocked.selector, true);
+        access[0] = ITempleElevatedAccess.ExplicitAccess(ComplianceCheck.setFlagged.selector, true);
         access[1] = ITempleElevatedAccess.ExplicitAccess(ComplianceCheck.setExplicitAccess.selector, false);
         vm.expectEmit(address(compliance));
-        emit IComplianceCheck.ExplicitAccessSet(blocker, ComplianceCheck.setBlocked.selector, true);
+        emit IComplianceCheck.ExplicitAccessSet(flagger, ComplianceCheck.setFlagged.selector, true);
         vm.expectEmit(address(compliance));
-        emit IComplianceCheck.ExplicitAccessSet(blocker, ComplianceCheck.setExplicitAccess.selector, false);
+        emit IComplianceCheck.ExplicitAccessSet(flagger, ComplianceCheck.setExplicitAccess.selector, false);
         vm.prank(executor);
-        compliance.setExplicitAccess(blocker, access);
-        assertTrue(compliance.explicitFunctionAccess(blocker, ComplianceCheck.setBlocked.selector));
+        compliance.setExplicitAccess(flagger, access);
+        assertTrue(compliance.explicitFunctionAccess(flagger, ComplianceCheck.setFlagged.selector));
 
         vm.expectEmit(address(compliance));
-        emit IComplianceCheck.ExplicitAccessSet(blocker, ComplianceCheck.setBlocked.selector, false);
-        _grant(blocker, ComplianceCheck.setBlocked.selector, false);
-        assertFalse(compliance.explicitFunctionAccess(blocker, ComplianceCheck.setBlocked.selector));
+        emit IComplianceCheck.ExplicitAccessSet(flagger, ComplianceCheck.setFlagged.selector, false);
+        _grant(flagger, ComplianceCheck.setFlagged.selector, false);
+        assertFalse(compliance.explicitFunctionAccess(flagger, ComplianceCheck.setFlagged.selector));
     }
 
-    function test_setBlocked_success_byExecutor() public {
+    function test_setFlagged_success_byExecutor() public {
         vm.expectEmit(address(compliance));
-        emit IComplianceCheck.BlockedSet(alice, true);
+        emit IComplianceCheck.FlaggedSet(alice, true);
         vm.expectEmit(address(compliance));
-        emit IComplianceCheck.BlockedSet(bob, true);
+        emit IComplianceCheck.FlaggedSet(bob, true);
         vm.prank(executor);
-        compliance.setBlocked(_accounts(), true);
-        assertTrue(compliance.isBlocked(alice));
-        assertTrue(compliance.isBlocked(bob));
+        compliance.setFlagged(_accounts(), true);
+        assertTrue(compliance.isFlagged(alice));
+        assertTrue(compliance.isFlagged(bob));
 
         vm.expectEmit(address(compliance));
-        emit IComplianceCheck.BlockedSet(alice, false);
+        emit IComplianceCheck.FlaggedSet(alice, false);
         vm.prank(executor);
-        compliance.setBlocked(_accounts(), false);
-        assertFalse(compliance.isBlocked(alice));
+        compliance.setFlagged(_accounts(), false);
+        assertFalse(compliance.isFlagged(alice));
     }
 
-    function test_setBlocked_success_byGranteeUntilRevoked() public {
-        vm.prank(blocker);
+    function test_setFlagged_success_byGranteeUntilRevoked() public {
+        vm.prank(flagger);
         vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
-        compliance.setBlocked(_accounts(), true);
+        compliance.setFlagged(_accounts(), true);
 
-        _grant(blocker, ComplianceCheck.setBlocked.selector, true);
-        vm.prank(blocker);
-        compliance.setBlocked(_accounts(), true);
-        assertTrue(compliance.isBlocked(bob));
-        vm.prank(blocker);
-        compliance.setBlocked(_accounts(), false);
-        assertFalse(compliance.isBlocked(bob));
+        _grant(flagger, ComplianceCheck.setFlagged.selector, true);
+        vm.prank(flagger);
+        compliance.setFlagged(_accounts(), true);
+        assertTrue(compliance.isFlagged(bob));
+        vm.prank(flagger);
+        compliance.setFlagged(_accounts(), false);
+        assertFalse(compliance.isFlagged(bob));
 
-        _grant(blocker, ComplianceCheck.setBlocked.selector, false);
-        vm.prank(blocker);
+        _grant(flagger, ComplianceCheck.setFlagged.selector, false);
+        vm.prank(flagger);
         vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
-        compliance.setBlocked(_accounts(), true);
+        compliance.setFlagged(_accounts(), true);
     }
 
-    function test_setBlocked_fail_otherSelectorGranted() public {
-        _grant(blocker, ComplianceCheck.setExplicitAccess.selector, true);
-        vm.prank(blocker);
+    function test_setFlagged_fail_otherSelectorGranted() public {
+        _grant(flagger, ComplianceCheck.setExplicitAccess.selector, true);
+        vm.prank(flagger);
         vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
-        compliance.setBlocked(_accounts(), true);
+        compliance.setFlagged(_accounts(), true);
     }
 
     function test_executorHandover() public {
@@ -152,24 +152,24 @@ contract ComplianceCheckTest is TempleTest {
 
         vm.prank(executor);
         vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
-        compliance.setBlocked(_accounts(), true);
+        compliance.setFlagged(_accounts(), true);
     }
 
     /// @dev A proposeNewExecutor grant lets the grantee take the executor role.
     function test_setExplicitAccess_proposeNewExecutorGrantHandsOverExecutor() public {
-        _grant(blocker, IExecutorAccess.proposeNewExecutor.selector, true);
+        _grant(flagger, IExecutorAccess.proposeNewExecutor.selector, true);
 
         vm.expectEmit(address(compliance));
-        emit IExecutorAccess.NewExecutorProposed(executor, address(0), blocker);
-        vm.prank(blocker);
-        compliance.proposeNewExecutor(blocker);
-        vm.prank(blocker);
+        emit IExecutorAccess.NewExecutorProposed(executor, address(0), flagger);
+        vm.prank(flagger);
+        compliance.proposeNewExecutor(flagger);
+        vm.prank(flagger);
         compliance.acceptExecutor();
 
-        assertEq(compliance.executor(), blocker);
+        assertEq(compliance.executor(), flagger);
         vm.prank(executor);
         vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
-        compliance.setBlocked(_accounts(), true);
+        compliance.setFlagged(_accounts(), true);
     }
 
     function test_proposeNewExecutor_selfReplacesPendingProposal() public {

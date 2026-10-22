@@ -103,7 +103,7 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
     }
 
     /// @inheritdoc IFixedPriceAuction
-    function deposit(uint256 amount) external override whenNotPaused notBlocked {
+    function deposit(uint256 amount) external override whenNotPaused notFlagged {
         AuctionConfig memory config = _config();
         _requirePhase(config, Phase.Deposit);
         if (amount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
@@ -121,7 +121,7 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
     }
 
     /// @inheritdoc IFixedPriceAuction
-    function withdrawDeposit(uint256 amount) external override whenNotPaused notBlocked {
+    function withdrawDeposit(uint256 amount) external override whenNotPaused notFlagged {
         AuctionConfig memory config = _config();
         _requirePhase(config, Phase.Deposit);
         if (amount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
@@ -144,7 +144,7 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
         AuctionConfig memory config = _config();
         Phase current = _phase(config);
         if (current != Phase.Deposit && current != Phase.Fulfillment) revert InvalidPhase(Phase.Fulfillment, current);
-        if (!_isBlocked(account)) revert AccountNotBlocked(account);
+        if (!_isFlagged(account)) revert AccountNotFlagged(account);
         uint256 amount = deposits[account];
         if (amount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
 
@@ -160,7 +160,7 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
         _onlyExclusionAdmin();
         AuctionConfig memory config = _config();
         _requirePhase(config, Phase.Deposit);
-        if (_isBlocked(account)) revert BlockedAccount(account);
+        if (_isFlagged(account)) revert FlaggedAccount(account);
         uint256 amount = excluded[account];
         if (amount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
         // Reject a reinstate that would make the funding calculation overflow and prevent settlement.
@@ -174,7 +174,7 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
     }
 
     /// @inheritdoc IFixedPriceAuction
-    function withdrawExcluded() external override whenNotPaused notBlocked {
+    function withdrawExcluded() external override whenNotPaused notFlagged {
         uint256 amount = excluded[msg.sender];
         if (amount == 0) revert NothingToClaim();
 
@@ -243,13 +243,13 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
     /// @inheritdoc IFixedPriceAuction
     function emitSettlement() external override {
         AuctionConfig memory config = _config();
-        _requirePhase(config, Phase.Settled);
+        _requirePhase(config, Phase.Settlement);
         if (settledAt != 0) revert AlreadySettled();
         _emitClockSettlement(config);
     }
 
     /// @inheritdoc IFixedPriceAuction
-    function claim() external override whenNotPaused notBlocked {
+    function claim() external override whenNotPaused notFlagged {
         AuctionConfig memory config = _config();
         _requireFinal(config);
         if (claimed[msg.sender]) revert AlreadyClaimed();
@@ -396,12 +396,12 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
     }
 
     function _phase(AuctionConfig memory config) private view returns (Phase) {
-        if (_outcome == Outcome.Settled) return Phase.Settled;
+        if (_outcome == Outcome.Settled) return Phase.Settlement;
         if (_outcome == Outcome.Cancelled) return Phase.Cancelled;
         if (block.timestamp < config.depositStart) return Phase.Scheduled;
         if (block.timestamp < config.depositEnd) return Phase.Deposit;
         if (block.timestamp < config.fulfillmentEnd) return Phase.Fulfillment;
-        return Phase.Settled;
+        return Phase.Settlement;
     }
 
     function _withdrawableExcess(AuctionConfig memory config) private view returns (uint256) {
@@ -448,12 +448,12 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
     }
 
     function _requireFinal(AuctionConfig memory config) private view {
-        if (!_isFinal(config)) revert InvalidPhase(Phase.Settled, _phase(config));
+        if (!_isFinal(config)) revert InvalidPhase(Phase.Settlement, _phase(config));
     }
 
     function _isFinal(AuctionConfig memory config) private view returns (bool) {
         Phase current = _phase(config);
-        return current == Phase.Settled || current == Phase.Cancelled;
+        return current == Phase.Settlement || current == Phase.Cancelled;
     }
 
     /// @dev Round up, so a fully funded auction always covers the fixed price.
@@ -466,8 +466,8 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
         if (current != expected) revert InvalidPhase(expected, current);
     }
 
-    function _isBlocked(address account) private view returns (bool) {
-        return !complianceDisabled && IComplianceCheck(complianceCheck).isBlocked(account);
+    function _isFlagged(address account) private view returns (bool) {
+        return !complianceDisabled && IComplianceCheck(complianceCheck).isFlagged(account);
     }
 
     modifier whenNotPaused() {
@@ -479,20 +479,20 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
         if (paused) revert IsPaused();
     }
 
-    modifier notBlocked() {
-        _requireNotBlocked();
+    modifier notFlagged() {
+        _requireNotFlagged();
         _;
     }
 
-    function _requireNotBlocked() private view {
-        if (_isBlocked(msg.sender)) revert BlockedAccount(msg.sender);
+    function _requireNotFlagged() private view {
+        if (_isFlagged(msg.sender)) revert FlaggedAccount(msg.sender);
     }
 
     /// @dev The executor outside rescue mode, or, while compliance is enabled, a caller the current list grants
-    /// setBlocked (in rescue mode too).
+    /// setFlagged (in rescue mode too).
     function _onlyExclusionAdmin() private view {
         if (_isElevatedAccess(msg.sender, msg.sig)) return;
-        bytes4 selector = IComplianceCheck.setBlocked.selector;
+        bytes4 selector = IComplianceCheck.setFlagged.selector;
         if (complianceDisabled || !IComplianceCheck(complianceCheck).explicitFunctionAccess(msg.sender, selector)) {
             revert CommonEventsAndErrors.InvalidAccess();
         }

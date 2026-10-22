@@ -9,15 +9,15 @@ import { IRescuableAccess } from "contracts/interfaces/templegold/IRescuableAcce
 /// window and the funder funds during the fulfillment window. If funding falls short, every depositor
 /// fills the same fraction and gets the rest of their bid back.
 /// @dev Assumes standard ERC-20s with exact transfers: no fee-on-transfer, rebasing or callbacks.
-/// A blocked or paused call reverts and the funds stay in the auction.
-/// Before settlement, a blocked bidder's deposit can be moved out of the fill into a refund-only balance; see
+/// A flagged or paused call reverts and the funds stay in the auction.
+/// Before settlement, a flagged bidder's deposit can be moved out of the fill into a refund-only balance; see
 /// exclude, reinstate and withdrawExcluded.
 interface IFixedPriceAuction is IRescuableAccess {
     enum Phase {
         Scheduled,
         Deposit,
         Fulfillment,
-        Settled,
+        Settlement,
         Cancelled
     }
 
@@ -73,9 +73,9 @@ interface IFixedPriceAuction is IRescuableAccess {
     /// allowed in.
     error InvalidPhase(Phase expected, Phase actual);
     error IsPaused();
-    error BlockedAccount(address account);
-    /// @dev `exclude` needs the account blocked on the current list, with compliance enabled.
-    error AccountNotBlocked(address account);
+    error FlaggedAccount(address account);
+    /// @dev `exclude` needs the account flagged on the current list, with compliance enabled.
+    error AccountNotFlagged(address account);
     error DepositBelowMinimum(uint256 deposit, uint256 minDeposit);
     error AlreadyClaimed();
     error NothingToClaim();
@@ -125,18 +125,18 @@ interface IFixedPriceAuction is IRescuableAccess {
     /// least `minDeposit`.
     function withdrawDeposit(uint256 amount) external;
 
-    /// @notice Move a blocked bidder's whole deposit out of the fill into `excluded[account]`, lowering
-    /// `totalDeposits`. The msig outside rescue mode, or a caller the current compliance list grants `setBlocked`
+    /// @notice Move a flagged bidder's whole deposit out of the fill into `excluded[account]`, lowering
+    /// `totalDeposits`. The msig outside rescue mode, or a caller the current compliance list grants `setFlagged`
     /// (in rescue mode too). Deposit or Fulfillment phase only; allowed while paused. Reverts unless compliance is
-    /// enabled and `account` is blocked with a nonzero deposit.
+    /// enabled and `account` is flagged with a nonzero deposit.
     function exclude(address account) external;
 
-    /// @notice Put an unblocked account's excluded balance back into its deposit. The msig outside rescue mode, or,
-    /// while compliance is enabled, a caller the current list grants `setBlocked`. Deposit phase only; allowed
-    /// while paused. Reverts if the account is still blocked or has nothing excluded.
+    /// @notice Put an unflagged account's excluded balance back into its deposit. The msig outside rescue mode, or,
+    /// while compliance is enabled, a caller the current list grants `setFlagged`. Deposit phase only; allowed
+    /// while paused. Reverts if the account is still flagged or has nothing excluded.
     function reinstate(address account) external;
 
-    /// @notice Return the caller's whole excluded balance. Any phase, once unpaused and the caller isn't blocked.
+    /// @notice Return the caller's whole excluded balance. Any phase, once unpaused and the caller isn't flagged.
     function withdrawExcluded() external;
 
     /// @notice Pull `amount` fill tokens from the funder. Funder only, fulfillment phase only.
@@ -212,10 +212,10 @@ interface IFixedPriceAuction is IRescuableAccess {
     /// @notice True while every token-moving function is stopped.
     function paused() external view returns (bool);
 
-    /// @notice The compliance list that screens bidders, and whose setBlocked grantees may exclude and reinstate.
+    /// @notice The compliance list that screens bidders, and whose setFlagged grantees may exclude and reinstate.
     function complianceCheck() external view returns (address);
 
-    /// @notice One-way: once true, nobody is blocked and the pointer can't change, so every excluded balance is
+    /// @notice One-way: once true, nobody is flagged and the pointer can't change, so every excluded balance is
     /// withdrawable once unpaused and list grants can no longer exclude or reinstate.
     function complianceDisabled() external view returns (bool);
 

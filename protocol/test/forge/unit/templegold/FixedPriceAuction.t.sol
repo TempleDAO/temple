@@ -19,7 +19,7 @@ import { TempleGold } from "contracts/templegold/TempleGold.sol";
 import { ITempleGold } from "contracts/interfaces/templegold/ITempleGold.sol";
 
 contract RevertingComplianceCheck {
-    function isBlocked(address) external pure returns (bool) {
+    function isFlagged(address) external pure returns (bool) {
         revert("Compliance unavailable");
     }
 }
@@ -42,7 +42,7 @@ contract FixedPriceAuctionTestBase is TempleTest {
 
     address internal funder = makeAddr("funder");
     address internal proceedsRecipient = makeAddr("proceedsRecipient");
-    address internal blocker = makeAddr("blocker");
+    address internal flagger = makeAddr("flagger");
 
     function setUp() public virtual {
         vm.warp(1_000_000);
@@ -114,11 +114,11 @@ contract FixedPriceAuctionTestBase is TempleTest {
         vm.stopPrank();
     }
 
-    function _setBlocked(address account, bool value) internal {
+    function _setFlagged(address account, bool value) internal {
         address[] memory accounts = new address[](1);
         accounts[0] = account;
         vm.prank(executor);
-        compliance.setBlocked(accounts, value);
+        compliance.setFlagged(accounts, value);
     }
 
     /// @dev Rescue mode cancels a pending executor proposal, so a hijacked msig's proposee can never accept it.
@@ -476,7 +476,7 @@ contract FixedPriceAuctionLifecycleTest is FixedPriceAuctionTestBase {
         vm.warp(auction.getConfig().fulfillmentEnd - 1);
         assertEq(uint256(auction.phase()), uint256(IFixedPriceAuction.Phase.Fulfillment));
         _toEnd(auction);
-        assertEq(uint256(auction.phase()), uint256(IFixedPriceAuction.Phase.Settled));
+        assertEq(uint256(auction.phase()), uint256(IFixedPriceAuction.Phase.Settlement));
     }
 
     function test_deposit_onlyInDepositPhase() public {
@@ -531,7 +531,7 @@ contract FixedPriceAuctionLifecycleTest is FixedPriceAuctionTestBase {
         vm.prank(executor);
         auction.settleEarly();
 
-        assertEq(uint256(auction.phase()), uint256(IFixedPriceAuction.Phase.Settled));
+        assertEq(uint256(auction.phase()), uint256(IFixedPriceAuction.Phase.Settlement));
         assertEq(auction.settledAt(), block.timestamp);
 
         // Funding is closed and claims are open.
@@ -541,7 +541,7 @@ contract FixedPriceAuctionLifecycleTest is FixedPriceAuctionTestBase {
             abi.encodeWithSelector(
                 IFixedPriceAuction.InvalidPhase.selector,
                 IFixedPriceAuction.Phase.Fulfillment,
-                IFixedPriceAuction.Phase.Settled
+                IFixedPriceAuction.Phase.Settlement
             )
         );
         auction.fund(1);
@@ -638,7 +638,7 @@ contract FixedPriceAuctionLifecycleTest is FixedPriceAuctionTestBase {
         vm.expectRevert(
             abi.encodeWithSelector(
                 IFixedPriceAuction.InvalidPhase.selector,
-                IFixedPriceAuction.Phase.Settled,
+                IFixedPriceAuction.Phase.Settlement,
                 IFixedPriceAuction.Phase.Fulfillment
             )
         );
@@ -684,7 +684,7 @@ contract FixedPriceAuctionLifecycleTest is FixedPriceAuctionTestBase {
         vm.expectRevert(
             abi.encodeWithSelector(
                 IFixedPriceAuction.InvalidPhase.selector,
-                IFixedPriceAuction.Phase.Settled,
+                IFixedPriceAuction.Phase.Settlement,
                 IFixedPriceAuction.Phase.Cancelled
             )
         );
@@ -711,7 +711,7 @@ contract FixedPriceAuctionLifecycleTest is FixedPriceAuctionTestBase {
         vm.expectRevert(
             abi.encodeWithSelector(
                 IFixedPriceAuction.InvalidPhase.selector,
-                IFixedPriceAuction.Phase.Settled,
+                IFixedPriceAuction.Phase.Settlement,
                 IFixedPriceAuction.Phase.Fulfillment
             )
         );
@@ -719,7 +719,7 @@ contract FixedPriceAuctionLifecycleTest is FixedPriceAuctionTestBase {
         vm.expectRevert(
             abi.encodeWithSelector(
                 IFixedPriceAuction.InvalidPhase.selector,
-                IFixedPriceAuction.Phase.Settled,
+                IFixedPriceAuction.Phase.Settlement,
                 IFixedPriceAuction.Phase.Fulfillment
             )
         );
@@ -785,7 +785,7 @@ contract FixedPriceAuctionLifecycleTest is FixedPriceAuctionTestBase {
             abi.encodeWithSelector(
                 IFixedPriceAuction.InvalidPhase.selector,
                 IFixedPriceAuction.Phase.Fulfillment,
-                IFixedPriceAuction.Phase.Settled
+                IFixedPriceAuction.Phase.Settlement
             )
         );
         auction.cancel();
@@ -799,7 +799,7 @@ contract FixedPriceAuctionLifecycleTest is FixedPriceAuctionTestBase {
             abi.encodeWithSelector(
                 IFixedPriceAuction.InvalidPhase.selector,
                 IFixedPriceAuction.Phase.Fulfillment,
-                IFixedPriceAuction.Phase.Settled
+                IFixedPriceAuction.Phase.Settlement
             )
         );
         auction.cancel();
@@ -902,7 +902,7 @@ contract FixedPriceAuctionLifecycleTest is FixedPriceAuctionTestBase {
             abi.encodeWithSelector(
                 IFixedPriceAuction.InvalidPhase.selector,
                 IFixedPriceAuction.Phase.Fulfillment,
-                IFixedPriceAuction.Phase.Settled
+                IFixedPriceAuction.Phase.Settlement
             )
         );
         auction.withdrawExcess(1);
@@ -1031,7 +1031,7 @@ contract FixedPriceAuctionPauseTest is FixedPriceAuctionTestBase {
         _pause();
         vm.prank(executor);
         auction.settleEarly();
-        assertEq(uint256(auction.phase()), uint256(IFixedPriceAuction.Phase.Settled));
+        assertEq(uint256(auction.phase()), uint256(IFixedPriceAuction.Phase.Settlement));
     }
 
     function test_paused_cancelAndSettersWork() public {
@@ -1155,7 +1155,7 @@ contract FixedPriceAuctionRescueModeTest is FixedPriceAuctionTestBase {
             abi.encodeWithSelector(
                 IFixedPriceAuction.InvalidPhase.selector,
                 IFixedPriceAuction.Phase.Fulfillment,
-                IFixedPriceAuction.Phase.Settled
+                IFixedPriceAuction.Phase.Settlement
             )
         );
         auction.cancel();
@@ -1325,16 +1325,16 @@ contract FixedPriceAuctionRescueModeTest is FixedPriceAuctionTestBase {
 }
 
 contract FixedPriceAuctionComplianceTest is FixedPriceAuctionTestBase {
-    function test_blocked_cannotDepositWithdrawOrClaim_untilUnblocked() public {
+    function test_flagged_cannotDepositWithdrawOrClaim_untilUnflagged() public {
         _toDeposit(auction);
         _deposit(auction, alice, 60_000_000e18);
         _deposit(auction, bob, 40_000_000e18);
-        _setBlocked(alice, true);
+        _setFlagged(alice, true);
 
         vm.startPrank(alice);
-        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.BlockedAccount.selector, alice));
+        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.FlaggedAccount.selector, alice));
         auction.deposit(1);
-        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.BlockedAccount.selector, alice));
+        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.FlaggedAccount.selector, alice));
         auction.withdrawDeposit(1);
         vm.stopPrank();
 
@@ -1342,17 +1342,17 @@ contract FixedPriceAuctionComplianceTest is FixedPriceAuctionTestBase {
         _fund(auction, 2_330_000e18);
         _toEnd(auction);
         vm.prank(alice);
-        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.BlockedAccount.selector, alice));
+        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.FlaggedAccount.selector, alice));
         auction.claim();
 
-        // The blocked deposit stays in the pro-rata split; everyone else settles as normal.
+        // The flagged deposit stays in the pro-rata split; everyone else settles as normal.
         vm.prank(bob);
         auction.claim();
         auction.claimTreasury();
         _assertBalances(bob, 20_000_000e18, 932_000e18);
         _assertBalances(proceedsRecipient, 50_000_000e18, 0);
 
-        _setBlocked(alice, false);
+        _setFlagged(alice, false);
         vm.prank(alice);
         auction.claim();
         _assertBalances(alice, 30_000_000e18, 1_398_000e18);
@@ -1370,19 +1370,19 @@ contract FixedPriceAuctionComplianceTest is FixedPriceAuctionTestBase {
         vm.stopPrank();
         assertEq(auction.getConfig().complianceCheck, address(other));
 
-        // Screening follows the new pointer: the old list no longer blocks, the new one does.
-        _setBlocked(alice, true);
+        // Screening follows the new pointer: the old list no longer flags, the new one does.
+        _setFlagged(alice, true);
         _toDeposit(auction);
         _deposit(auction, alice, 1);
 
         address[] memory accounts = new address[](1);
         accounts[0] = alice;
         vm.prank(executor);
-        other.setBlocked(accounts, true);
+        other.setFlagged(accounts, true);
         tgld.mint(alice, 1);
         vm.startPrank(alice);
         tgld.approve(address(auction), 1);
-        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.BlockedAccount.selector, alice));
+        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.FlaggedAccount.selector, alice));
         auction.deposit(1);
         vm.stopPrank();
     }
@@ -1397,7 +1397,7 @@ contract FixedPriceAuctionComplianceTest is FixedPriceAuctionTestBase {
         vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
         auction.disableComplianceCheck();
 
-        _setBlocked(alice, true);
+        _setFlagged(alice, true);
         vm.expectEmit(address(auction));
         emit IFixedPriceAuction.ComplianceCheckDisabled();
         vm.prank(rescuer);
@@ -1407,7 +1407,7 @@ contract FixedPriceAuctionComplianceTest is FixedPriceAuctionTestBase {
         vm.expectRevert(IFixedPriceAuction.ComplianceCheckIsDisabled.selector);
         auction.setComplianceCheck(address(compliance));
 
-        // Nobody is blocked any more.
+        // Nobody is flagged any more.
         _toDeposit(auction);
         _deposit(auction, alice, 1);
         assertEq(auction.deposits(alice), 1);
@@ -1999,7 +1999,8 @@ contract FixedPriceAuctionBlocklistTokenTest is FixedPriceAuctionTestBase {
         _toFulfillment(auction);
     }
 
-    /// @dev Fully filled: no bid refund and no funder refund, so blocking those recipients mustn't block the claims.
+    /// @dev Fully filled: no bid refund and no funder refund, so blocking those recipients at the token mustn't
+    /// stop the claims.
     function test_claims_skipZeroLegs_fullyFilled() public {
         _fund(auction, 4_660_000e18);
         _toEnd(auction);
@@ -2013,7 +2014,7 @@ contract FixedPriceAuctionBlocklistTokenTest is FixedPriceAuctionTestBase {
         assertEq(bidToken.balanceOf(proceedsRecipient), 100_000_000e18);
     }
 
-    /// @dev Unfunded: no fill and no proceeds, so blocking those recipients mustn't block the refunds.
+    /// @dev Unfunded: no fill and no proceeds, so blocking those recipients at the token mustn't stop the refunds.
     function test_claims_skipZeroLegs_unfunded() public {
         _toEnd(auction);
         fillToken.setBlocked(alice, true);

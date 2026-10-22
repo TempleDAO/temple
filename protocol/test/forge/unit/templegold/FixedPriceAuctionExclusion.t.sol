@@ -20,7 +20,7 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
         temple = new FakeERC20CustomDecimals("Temple", "TEMPLE", address(0), 0, 18);
         auction = _create(_config(address(temple), address(usds), 4e18, 0));
         ITempleElevatedAccess.ExplicitAccess[] memory access = new ITempleElevatedAccess.ExplicitAccess[](1);
-        access[0] = ITempleElevatedAccess.ExplicitAccess(ComplianceCheck.setBlocked.selector, true);
+        access[0] = ITempleElevatedAccess.ExplicitAccess(ComplianceCheck.setFlagged.selector, true);
         vm.prank(executor);
         compliance.setExplicitAccess(overlord, access);
     }
@@ -75,7 +75,7 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
 
     /// @dev Flagged while Scheduled: there's nothing to exclude, and the account can't deposit until cleared.
     function test_flaggedScheduled_nothingToExclude_depositsOnceCleared() public {
-        _setBlocked(alice, true);
+        _setFlagged(alice, true);
         vm.prank(executor);
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -90,21 +90,21 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
         temple.mint(alice, 100e18);
         vm.startPrank(alice);
         temple.approve(address(auction), 100e18);
-        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.BlockedAccount.selector, alice));
+        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.FlaggedAccount.selector, alice));
         auction.deposit(100e18);
         vm.stopPrank();
 
-        _setBlocked(alice, false);
+        _setFlagged(alice, false);
         vm.prank(alice);
         auction.deposit(100e18);
         assertEq(auction.deposits(alice), 100e18);
     }
 
     /// @dev An excluded balance stays owed, so recovery can take only a donation, even once everyone else is paid;
-    /// after the blocked bidder is cleared and withdraws, nothing of theirs is left counted.
+    /// after the flagged bidder is cleared and withdraws, nothing of theirs is left counted.
     function test_excludedBalance_notRecoverable() public {
         _bothDeposit();
-        _setBlocked(alice, true);
+        _setFlagged(alice, true);
         _exclude(executor, alice);
         _toFulfillment(auction);
         _fund(auction, 400e18);
@@ -124,7 +124,7 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
         auction.recoverToken(address(temple), executor, 1e18);
         vm.stopPrank();
 
-        _setBlocked(alice, false);
+        _setFlagged(alice, false);
         _withdrawExcluded(alice);
         _assertPaid(alice, 100e18, 0);
         (bidOwed,) = auction.liabilities();
@@ -135,13 +135,13 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
     /// @dev Excluded in Deposit and cleared in Deposit: reinstated, and both fill in full.
     function test_excludeInDeposit_reinstate_bothFillInFull() public {
         _bothDeposit();
-        _setBlocked(alice, true);
+        _setFlagged(alice, true);
         _exclude(overlord, alice);
         assertEq(auction.deposits(alice), 0);
         assertEq(auction.excluded(alice), 100e18);
         assertEq(auction.totalDeposits(), 100e18);
 
-        _setBlocked(alice, false);
+        _setFlagged(alice, false);
         _reinstate(executor, alice);
         assertEq(auction.deposits(alice), 100e18);
         assertEq(auction.excluded(alice), 0);
@@ -160,11 +160,11 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
     /// @dev Excluded in Deposit, cleared in Fulfillment: refund only. The funder funds just Bob's 400.
     function test_excludeInDeposit_clearedInFulfillment_refundOnly() public {
         _bothDeposit();
-        _setBlocked(alice, true);
+        _setFlagged(alice, true);
         _exclude(executor, alice);
 
         _toFulfillment(auction);
-        _setBlocked(alice, false);
+        _setFlagged(alice, false);
         vm.prank(executor);
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -194,9 +194,9 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
     /// @dev Excluded in Deposit, cleared and re-deposited: only the new deposit fills, the excluded bid is refund only.
     function test_excludeInDeposit_redeposit_onlyNewDepositFills() public {
         _bothDeposit();
-        _setBlocked(alice, true);
+        _setFlagged(alice, true);
         _exclude(executor, alice);
-        _setBlocked(alice, false);
+        _setFlagged(alice, false);
         _deposit(auction, alice, 50e18);
         assertEq(auction.totalDeposits(), 150e18);
 
@@ -222,7 +222,7 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
         _fund(auction, 800e18);
         assertEq(auction.withdrawableExcess(), 0);
 
-        _setBlocked(alice, true);
+        _setFlagged(alice, true);
         _exclude(overlord, alice);
         assertEq(auction.withdrawableExcess(), 400e18);
         vm.prank(funder);
@@ -230,7 +230,7 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
         _assertPaid(funder, 0, 400e18);
 
         // Cleared in the same phase: still refund only.
-        _setBlocked(alice, false);
+        _setFlagged(alice, false);
         vm.prank(overlord);
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -262,7 +262,7 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
         _fund(auction, 600e18);
         assertEq(auction.withdrawableExcess(), 0);
 
-        _setBlocked(alice, true);
+        _setFlagged(alice, true);
         _exclude(overlord, alice);
         assertEq(auction.totalDeposits(), 100e18);
         assertEq(auction.withdrawableExcess(), 200e18);
@@ -289,7 +289,7 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
         _bothDeposit();
         _toFulfillment(auction);
         _fund(auction, 600e18);
-        _setBlocked(alice, true);
+        _setFlagged(alice, true);
         _exclude(overlord, alice);
 
         // Leave the excess in the auction instead of withdrawing it during Fulfillment.
@@ -313,13 +313,13 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
         _bothDeposit();
         _toFulfillment(auction);
         _fund(auction, 400e18);
-        _setBlocked(alice, true);
+        _setFlagged(alice, true);
         _exclude(executor, alice);
         vm.prank(executor);
         auction.settleEarly();
 
         vm.prank(alice);
-        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.BlockedAccount.selector, alice));
+        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.FlaggedAccount.selector, alice));
         auction.withdrawExcluded();
         vm.prank(bob);
         auction.claim();
@@ -328,7 +328,7 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
         _assertPaid(proceedsRecipient, 100e18, 0);
         _assertPaid(address(auction), 100e18, 0);
 
-        _setBlocked(alice, false);
+        _setFlagged(alice, false);
         _withdrawExcluded(alice);
         _assertPaid(alice, 100e18, 0);
     }
@@ -341,14 +341,14 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
         _fund(auction, 800e18);
         vm.prank(executor);
         auction.settleEarly();
-        _setBlocked(alice, true);
+        _setFlagged(alice, true);
 
         vm.prank(executor);
         vm.expectRevert(
             abi.encodeWithSelector(
                 IFixedPriceAuction.InvalidPhase.selector,
                 IFixedPriceAuction.Phase.Fulfillment,
-                IFixedPriceAuction.Phase.Settled
+                IFixedPriceAuction.Phase.Settlement
             )
         );
         auction.exclude(alice);
@@ -358,13 +358,13 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
             abi.encodeWithSelector(
                 IFixedPriceAuction.InvalidPhase.selector,
                 IFixedPriceAuction.Phase.Fulfillment,
-                IFixedPriceAuction.Phase.Settled
+                IFixedPriceAuction.Phase.Settlement
             )
         );
         auction.exclude(alice);
 
         vm.prank(alice);
-        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.BlockedAccount.selector, alice));
+        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.FlaggedAccount.selector, alice));
         auction.claim();
         auction.claimTreasury();
         vm.prank(bob);
@@ -372,7 +372,7 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
         _assertPaid(proceedsRecipient, 200e18, 0);
         _assertPaid(bob, 0, 400e18);
 
-        _setBlocked(alice, false);
+        _setFlagged(alice, false);
         vm.prank(alice);
         auction.claim();
         _assertPaid(alice, 0, 400e18);
@@ -382,19 +382,19 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
     /// @dev Flagged during Deposit but never excluded: still in the fill, filled at settlement, payout frozen.
     function test_flaggedNotExcluded_filledAndFrozen() public {
         _bothDeposit();
-        _setBlocked(alice, true);
+        _setFlagged(alice, true);
         _toFulfillment(auction);
         _fund(auction, 800e18);
         _toEnd(auction);
 
         vm.prank(alice);
-        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.BlockedAccount.selector, alice));
+        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.FlaggedAccount.selector, alice));
         auction.claim();
         auction.claimTreasury();
         _assertPaid(proceedsRecipient, 200e18, 0);
         assertEq(auction.claimable(alice).fill, 400e18);
 
-        _setBlocked(alice, false);
+        _setFlagged(alice, false);
         vm.prank(alice);
         auction.claim();
         _assertPaid(alice, 0, 400e18);
@@ -406,13 +406,13 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
         _bothDeposit();
         _toFulfillment(auction);
         _fund(auction, 800e18);
-        _setBlocked(alice, true);
+        _setFlagged(alice, true);
         _exclude(executor, alice);
         vm.prank(executor);
         auction.cancel();
 
         vm.prank(alice);
-        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.BlockedAccount.selector, alice));
+        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.FlaggedAccount.selector, alice));
         auction.withdrawExcluded();
         vm.prank(executor);
         vm.expectRevert(
@@ -430,7 +430,7 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
         _assertPaid(bob, 100e18, 0);
         _assertPaid(funder, 0, 800e18);
 
-        _setBlocked(alice, false);
+        _setFlagged(alice, false);
         _expectNothingToClaim(alice);
         _withdrawExcluded(alice);
         _assertPaid(alice, 100e18, 0);
@@ -441,14 +441,14 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
     /// withdrawn, even by an account still on the list.
     function test_complianceDisabled_excludeReverts_withdrawExcludedWorks() public {
         _bothDeposit();
-        _setBlocked(alice, true);
+        _setFlagged(alice, true);
         _exclude(executor, alice);
-        _setBlocked(bob, true);
+        _setFlagged(bob, true);
 
         vm.prank(rescuer);
         auction.disableComplianceCheck();
         vm.prank(executor);
-        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.AccountNotBlocked.selector, bob));
+        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.AccountNotFlagged.selector, bob));
         auction.exclude(bob);
         vm.prank(overlord);
         vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
@@ -461,7 +461,7 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
     /// @dev Once compliance is disabled a list grant no longer authorizes reinstate; the msig still can.
     function test_complianceDisabled_grantCannotReinstate() public {
         _bothDeposit();
-        _setBlocked(alice, true);
+        _setFlagged(alice, true);
         _exclude(overlord, alice);
 
         vm.prank(rescuer);
@@ -476,7 +476,7 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
     /// @dev Rescue mode doesn't bring the grant back: once compliance is disabled it can't reinstate there either.
     function test_complianceDisabled_grantCannotReinstate_rescueMode() public {
         _bothDeposit();
-        _setBlocked(alice, true);
+        _setFlagged(alice, true);
         _exclude(overlord, alice);
 
         vm.startPrank(rescuer);
@@ -490,8 +490,8 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
 
     function test_exclude_access() public {
         _bothDeposit();
-        _setBlocked(alice, true);
-        _setBlocked(bob, true);
+        _setFlagged(alice, true);
+        _setFlagged(bob, true);
 
         vm.prank(unauthorizedUser);
         vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
@@ -502,8 +502,8 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
         _exclude(executor, alice);
         _exclude(overlord, bob);
 
-        _setBlocked(alice, false);
-        _setBlocked(bob, false);
+        _setFlagged(alice, false);
+        _setFlagged(bob, false);
         vm.prank(unauthorizedUser);
         vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
         auction.reinstate(alice);
@@ -514,16 +514,16 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
         _reinstate(overlord, bob);
     }
 
-    /// @dev Revoking the setBlocked grant takes exclude and reinstate away from the grantee, in rescue mode too.
+    /// @dev Revoking the setFlagged grant takes exclude and reinstate away from the grantee, in rescue mode too.
     function test_revokedGrant_losesExcludeAndReinstate() public {
         _bothDeposit();
-        _setBlocked(alice, true);
-        _setBlocked(bob, true);
+        _setFlagged(alice, true);
+        _setFlagged(bob, true);
         _exclude(overlord, alice);
-        _setBlocked(alice, false);
+        _setFlagged(alice, false);
 
         ITempleElevatedAccess.ExplicitAccess[] memory access = new ITempleElevatedAccess.ExplicitAccess[](1);
-        access[0] = ITempleElevatedAccess.ExplicitAccess(ComplianceCheck.setBlocked.selector, false);
+        access[0] = ITempleElevatedAccess.ExplicitAccess(ComplianceCheck.setFlagged.selector, false);
         vm.prank(executor);
         compliance.setExplicitAccess(overlord, access);
 
@@ -544,7 +544,7 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
     /// @dev Rescue mode locks the executor out, but a compliance-list grant still works.
     function test_exclude_access_rescueMode() public {
         _bothDeposit();
-        _setBlocked(alice, true);
+        _setFlagged(alice, true);
         vm.prank(rescuer);
         auction.setRescueMode(true);
 
@@ -556,7 +556,7 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
         auction.exclude(alice);
         _exclude(overlord, alice);
 
-        _setBlocked(alice, false);
+        _setFlagged(alice, false);
         vm.prank(executor);
         vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
         auction.reinstate(alice);
@@ -573,7 +573,7 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
         address[] memory accounts = new address[](1);
         accounts[0] = alice;
         vm.startPrank(executor);
-        other.setBlocked(accounts, true);
+        other.setFlagged(accounts, true);
         auction.setComplianceCheck(address(other));
         vm.stopPrank();
 
@@ -588,13 +588,13 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
         _bothDeposit();
         vm.prank(executor);
         auction.setPaused(true);
-        _setBlocked(alice, true);
+        _setFlagged(alice, true);
         _exclude(overlord, alice);
-        _setBlocked(alice, false);
+        _setFlagged(alice, false);
         _reinstate(overlord, alice);
-        _setBlocked(alice, true);
+        _setFlagged(alice, true);
         _exclude(overlord, alice);
-        _setBlocked(alice, false);
+        _setFlagged(alice, false);
 
         vm.prank(alice);
         vm.expectRevert(IFixedPriceAuction.IsPaused.selector);
@@ -607,17 +607,17 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
     function test_exclude_fail() public {
         _bothDeposit();
         vm.startPrank(executor);
-        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.AccountNotBlocked.selector, alice));
+        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.AccountNotFlagged.selector, alice));
         auction.exclude(alice);
         vm.stopPrank();
 
-        _setBlocked(carol, true);
+        _setFlagged(carol, true);
         vm.prank(executor);
         vm.expectRevert(CommonEventsAndErrors.ExpectedNonZero.selector);
         auction.exclude(carol);
 
         // A second exclude finds nothing left in the fill.
-        _setBlocked(alice, true);
+        _setFlagged(alice, true);
         _exclude(executor, alice);
         vm.prank(executor);
         vm.expectRevert(CommonEventsAndErrors.ExpectedNonZero.selector);
@@ -630,13 +630,13 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
         vm.expectRevert(CommonEventsAndErrors.ExpectedNonZero.selector);
         auction.reinstate(alice);
 
-        _setBlocked(alice, true);
+        _setFlagged(alice, true);
         _exclude(executor, alice);
         vm.prank(executor);
-        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.BlockedAccount.selector, alice));
+        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.FlaggedAccount.selector, alice));
         auction.reinstate(alice);
 
-        _setBlocked(alice, false);
+        _setFlagged(alice, false);
         vm.prank(executor);
         auction.cancel();
         vm.prank(executor);
@@ -660,9 +660,9 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
     /// @dev Cleared during Deposit, the account can deposit afresh and still reinstate: the balances add up.
     function test_reinstate_addsToNewDeposit() public {
         _bothDeposit();
-        _setBlocked(alice, true);
+        _setFlagged(alice, true);
         _exclude(executor, alice);
-        _setBlocked(alice, false);
+        _setFlagged(alice, false);
         _deposit(auction, alice, 50e18);
         _reinstate(executor, alice);
         assertEq(auction.deposits(alice), 150e18);
@@ -672,14 +672,14 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
     /// @dev A second exclusion adds to the excluded balance rather than overwriting it.
     function test_exclude_twice_accumulates() public {
         _bothDeposit();
-        _setBlocked(alice, true);
+        _setFlagged(alice, true);
         _exclude(executor, alice);
-        _setBlocked(alice, false);
+        _setFlagged(alice, false);
         _deposit(auction, alice, 50e18);
-        _setBlocked(alice, true);
+        _setFlagged(alice, true);
         _exclude(executor, alice);
         assertEq(auction.excluded(alice), 150e18);
-        _setBlocked(alice, false);
+        _setFlagged(alice, false);
         _withdrawExcluded(alice);
         assertEq(temple.balanceOf(address(auction)), 100e18);
     }
@@ -690,11 +690,11 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
         auction = _create(_config(address(temple), address(usds), hugePrice, 0));
         _toDeposit(auction);
         _deposit(auction, alice, 3e56);
-        _setBlocked(alice, true);
+        _setFlagged(alice, true);
         _exclude(executor, alice);
         _deposit(auction, bob, 3e56);
 
-        _setBlocked(alice, false);
+        _setFlagged(alice, false);
         vm.prank(executor);
         vm.expectRevert(abi.encodeWithSelector(PRBMath_MulDiv_Overflow.selector, 6e56, hugePrice, 1e18));
         auction.reinstate(alice);
