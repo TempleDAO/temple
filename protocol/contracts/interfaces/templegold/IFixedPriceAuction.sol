@@ -126,13 +126,13 @@ interface IFixedPriceAuction is IRescuableAccess {
     function withdrawDeposit(uint256 amount) external;
 
     /// @notice Move a flagged bidder's whole deposit out of the fill into `excluded[account]`, lowering
-    /// `totalDeposits`. The msig outside rescue mode, or a caller the current compliance list grants `setFlagged`
-    /// (in rescue mode too). Deposit or Fulfillment phase only; allowed while paused. Reverts unless compliance is
-    /// enabled and `account` is flagged with a nonzero deposit.
+    /// `totalDeposits`. The msig, or a caller the current compliance list grants `setFlagged`, both outside rescue
+    /// mode. Deposit or Fulfillment phase only; allowed while paused. Reverts unless compliance is enabled and
+    /// `account` is flagged with a nonzero deposit.
     function exclude(address account) external;
 
-    /// @notice Put an unflagged account's excluded balance back into its deposit. The msig outside rescue mode, or,
-    /// while compliance is enabled, a caller the current list grants `setFlagged`. Deposit phase only; allowed
+    /// @notice Put an unflagged account's excluded balance back into its deposit. The msig or, while compliance is
+    /// enabled, a caller the current list grants `setFlagged`, both outside rescue mode. Deposit phase only; allowed
     /// while paused. Reverts if the account is still flagged or has nothing excluded.
     function reinstate(address account) external;
 
