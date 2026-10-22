@@ -15,7 +15,7 @@ interface IComplianceCheck is IExecutorAccess {
 
     /// @notice Grant or revoke the functions in `access` for `allowedCaller`. A `proposeNewExecutor` grant hands
     /// over the executor role. A `setBlocked` grant also lets the grantee exclude and reinstate bidders on every
-    /// auction pointing at this list, in rescue mode too, while compliance is enabled on that auction.
+    /// auction pointing at this list, outside that auction's rescue mode, while compliance is enabled on it.
     /// @dev Executor only. Reverts on a zero `allowedCaller`.
     function setExplicitAccess(address allowedCaller, ITempleElevatedAccess.ExplicitAccess[] calldata access) external;
 

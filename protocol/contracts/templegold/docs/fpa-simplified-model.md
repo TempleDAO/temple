@@ -35,7 +35,7 @@ Numbered decisions refer to the list at the end.
 | **msig** (factory) | `executor`; locked out while the factory's rescue mode is on | `createAuction`, `proposeImplementation`, `proposeNewExecutor` |
 | **msig** (auction) | `executor`; locked out while rescue mode is on | `cancel`, `endFulfillment`, `setPaused`, `setComplianceCheck`, `recoverToken`, `exclude`, `reinstate`, `proposeNewExecutor`, and the proposed `setFunder`/`setProceedsRecipient` (decision 6) |
 | **msig** (`ComplianceCheck`) | `executor` | `setBlocked`, `setExplicitAccess` |
-| **granted account** | an address the msig grants with `setExplicitAccess` | the functions granted, normally `setBlocked`. A `setBlocked` grant also lets it `exclude` and `reinstate` on every auction pointing at that list, in rescue mode too, while compliance is enabled |
+| **granted account** | an address the msig grants with `setExplicitAccess` | the functions granted, normally `setBlocked`. A `setBlocked` grant also lets it `exclude` and `reinstate` on every auction pointing at that list, outside rescue mode, while compliance is enabled |
 | **rescuer** | `rescuer` (each auction takes the factory's current one) | factory: `acceptImplementation`, `setRescueMode`, and the two-step rescuer handover. Auction: `disableComplianceCheck` (one-way, any time), `setRescueMode`, `setPaused` and `cancel` while rescue mode is on, and the two-step rescuer handover. Nothing else. |
 | **funder** | `funder` (fixed at deploy, see decision 6) | `fund`, `withdrawExcess` |
 | **anyone** | — | `deposit`, `withdrawDeposit`, `claim`, `withdrawExcluded`, `claimTreasury` (pays the funder and proceeds addresses) |
@@ -91,7 +91,7 @@ Bidders deposit `bidToken`, and the funder supplies `fillToken`. `price` is fill
 | `withdrawExcess(amount)` | Returns fill tokens above what's needed to fill every deposit. | funder | Fulfillment | — | revert |
 | `endFulfillment()` | Settles the auction now, with the funding held so far. | msig | Fulfillment | — | allowed |
 | `cancel()` | Aborts the auction: no trade, all deposits and funding become refundable. | msig; the rescuer instead while rescue mode is on | unsettled, before `fulfillmentEnd` | — | allowed |
-| `exclude(account)` | Moves a blocked bidder's whole deposit out of the fill into `excluded[account]`, lowering `totalDeposits`. No tokens move. | msig (locked out in rescue mode), or an account the current list grants `setBlocked` | Deposit or Fulfillment | the target must be blocked; reverts once compliance is disabled | allowed |
+| `exclude(account)` | Moves a blocked bidder's whole deposit out of the fill into `excluded[account]`, lowering `totalDeposits`. No tokens move. | msig, or an account the current list grants `setBlocked`; both locked out in rescue mode | Deposit or Fulfillment | the target must be blocked; reverts once compliance is disabled | allowed |
 | `reinstate(account)` | Puts a cleared account's excluded balance back into its deposit. Re-runs the deposit overflow guard. | as `exclude`; a list grant stops counting once compliance is disabled | Deposit | the target must not be blocked | allowed |
 | `withdrawExcluded()` | Returns the caller's whole excluded balance. | excluded bidder | any | revert; withdraw later | revert |
 | `claim()` | Settles if needed, then pays the caller their pro-rata fill tokens and the unfilled refund. On a cancelled auction it refunds the whole deposit. | depositor | Settled or Cancelled | revert; claim later | revert |

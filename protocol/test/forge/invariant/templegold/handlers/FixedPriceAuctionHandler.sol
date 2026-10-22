@@ -328,10 +328,10 @@ contract FixedPriceAuctionHandler is Test {
         _check(auction.totalDeposits() == before.totalDeposits, "withdrawExcluded moved deposits");
     }
 
-    /// @dev The executor outside rescue mode, or the blocker, whose grant is on both lists, while compliance is
+    /// @dev Outside rescue mode: the executor, or the blocker, whose grant is on both lists, while compliance is
     /// enabled.
     function _mayExclude(address caller, State memory before) internal view returns (bool) {
-        return (caller == msig && !before.inRescueMode) || (caller == blocker && !before.complianceDisabled);
+        return !before.inRescueMode && (caller == msig || (caller == blocker && !before.complianceDisabled));
     }
 
     /// @dev Exclusion moves no tokens, leaves bidOwed and fillOwed alone and touches no other bidder's deposit.

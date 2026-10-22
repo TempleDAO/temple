@@ -436,21 +436,6 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
         assertEq(auction.deposits(alice), 100e18);
     }
 
-    /// @dev Rescue mode doesn't bring the grant back: once compliance is disabled it can't reinstate there either.
-    function test_complianceDisabled_grantCannotReinstate_rescueMode() public {
-        _bothDeposit();
-        _setBlocked(alice, true);
-        _exclude(overlord, alice);
-
-        vm.startPrank(rescuer);
-        auction.disableComplianceCheck();
-        auction.setRescueMode(true);
-        vm.stopPrank();
-        vm.prank(overlord);
-        vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
-        auction.reinstate(alice);
-    }
-
     function test_exclude_access() public {
         _bothDeposit();
         _setBlocked(alice, true);
@@ -477,7 +462,7 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
         _reinstate(overlord, bob);
     }
 
-    /// @dev Revoking the setBlocked grant takes exclude and reinstate away from the grantee, in rescue mode too.
+    /// @dev Revoking the setBlocked grant takes exclude and reinstate away from the grantee.
     function test_revokedGrant_losesExcludeAndReinstate() public {
         _bothDeposit();
         _setBlocked(alice, true);
@@ -490,43 +475,71 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
         vm.prank(executor);
         compliance.setExplicitAccess(overlord, access);
 
-        for (uint256 i; i < 2; ++i) {
-            if (i == 1) {
-                vm.prank(rescuer);
-                auction.setRescueMode(true);
-            }
-            vm.prank(overlord);
-            vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
-            auction.exclude(bob);
-            vm.prank(overlord);
-            vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
-            auction.reinstate(alice);
-        }
+        vm.prank(overlord);
+        vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
+        auction.exclude(bob);
+        vm.prank(overlord);
+        vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
+        auction.reinstate(alice);
     }
 
-    /// @dev Rescue mode locks the executor out, but a compliance-list grant still works.
+    /// @dev Rescue mode locks out the executor and every compliance-list grant, so a hijacked msig can't grant
+    /// itself back in on the list, which has no rescue mode.
     function test_exclude_access_rescueMode() public {
         _bothDeposit();
         _setBlocked(alice, true);
+        _exclude(overlord, alice);
+        _setBlocked(alice, false);
+        _setBlocked(bob, true);
         vm.prank(rescuer);
         auction.setRescueMode(true);
 
+        ITempleElevatedAccess.ExplicitAccess[] memory access = new ITempleElevatedAccess.ExplicitAccess[](1);
+        access[0] = ITempleElevatedAccess.ExplicitAccess(ComplianceCheck.setBlocked.selector, true);
         vm.prank(executor);
-        vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
-        auction.exclude(alice);
-        vm.prank(rescuer);
-        vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
-        auction.exclude(alice);
-        _exclude(overlord, alice);
+        compliance.setExplicitAccess(executor, access);
 
-        _setBlocked(alice, false);
-        vm.prank(executor);
-        vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
-        auction.reinstate(alice);
+        address[3] memory callers = [executor, rescuer, overlord];
+        for (uint256 i; i < callers.length; ++i) {
+            vm.prank(callers[i]);
+            vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
+            auction.exclude(bob);
+            vm.prank(callers[i]);
+            vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
+            auction.reinstate(alice);
+        }
+
         vm.prank(rescuer);
-        vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
-        auction.reinstate(alice);
+        auction.setRescueMode(false);
+        _exclude(overlord, bob);
         _reinstate(overlord, alice);
+    }
+
+    /// @dev A list the msig pointed at before rescue mode grants nothing once rescue mode is on, and the rescuer
+    /// can't point the auction back.
+    function test_exclude_access_rescueMode_repointedList() public {
+        _bothDeposit();
+        ComplianceCheck rogue = new ComplianceCheck(unauthorizedUser);
+        ITempleElevatedAccess.ExplicitAccess[] memory access = new ITempleElevatedAccess.ExplicitAccess[](1);
+        access[0] = ITempleElevatedAccess.ExplicitAccess(ComplianceCheck.setBlocked.selector, true);
+        address[] memory accounts = new address[](1);
+        accounts[0] = alice;
+        vm.startPrank(unauthorizedUser);
+        rogue.setExplicitAccess(unauthorizedUser, access);
+        rogue.setBlocked(accounts, true);
+        vm.stopPrank();
+        vm.prank(executor);
+        auction.setComplianceCheck(address(rogue));
+
+        vm.startPrank(rescuer);
+        auction.setRescueMode(true);
+        vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
+        auction.setComplianceCheck(address(compliance));
+        vm.stopPrank();
+
+        vm.prank(unauthorizedUser);
+        vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
+        auction.exclude(alice);
     }
 
     /// @dev A grant on a list the auction no longer points at counts for nothing.
