@@ -80,6 +80,7 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
         if (config.funder == address(0)) revert CommonEventsAndErrors.InvalidAddress();
         if (config.proceedsRecipient == address(0)) revert CommonEventsAndErrors.InvalidAddress();
         if (config.complianceCheck == address(0)) revert CommonEventsAndErrors.InvalidAddress();
+        if (config.complianceCheck.code.length == 0) revert CommonEventsAndErrors.InvalidAddress();
         if (
             config.depositStart <= block.timestamp
                 || config.depositStart >= config.depositEnd
@@ -308,6 +309,7 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
     function setComplianceCheck(address newComplianceCheck) external override onlyElevatedAccess {
         if (complianceDisabled) revert ComplianceCheckIsDisabled();
         if (newComplianceCheck == address(0)) revert CommonEventsAndErrors.InvalidAddress();
+        if (newComplianceCheck.code.length == 0) revert CommonEventsAndErrors.InvalidAddress();
         emit ComplianceCheckSet(newComplianceCheck);
         complianceCheck = newComplianceCheck;
     }
