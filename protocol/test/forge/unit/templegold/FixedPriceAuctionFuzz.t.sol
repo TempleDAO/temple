@@ -202,7 +202,7 @@ contract FixedPriceAuctionFuzzTest is FixedPriceAuctionTestBase {
         c.bid = new FakeERC20CustomDecimals("Bid", "BID", address(0), 0, bidDecimals);
         c.fill = new FakeERC20CustomDecimals("Fill", "FILL", address(0), 0, fillDecimals);
         c.a = _create(_config(address(c.bid), address(c.fill), c.price, 0));
-        c.denominator = c.a.priceDenominator();
+        c.denominator = 10 ** (18 + uint256(bidDecimals) - fillDecimals);
 
         _toDeposit(c.a);
         c.accounts = new address[](bidders);
