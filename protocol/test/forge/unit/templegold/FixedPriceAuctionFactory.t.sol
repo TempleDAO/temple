@@ -162,6 +162,9 @@ contract FixedPriceAuctionFactoryTest is FixedPriceAuctionTestBase {
         FakeERC20CustomDecimals wide = new FakeERC20CustomDecimals("Wide", "WIDE", address(0), 0, 19);
         _expectInvalid(_config(address(wide), address(usds), PRICE, 0));
         _expectInvalid(_config(address(tgld), address(wide), PRICE, 0));
+        FakeERC20CustomDecimals narrow = new FakeERC20CustomDecimals("Narrow", "NARROW", address(0), 0, 5);
+        _expectInvalid(_config(address(narrow), address(usds), PRICE, 0));
+        _expectInvalid(_config(address(tgld), address(narrow), PRICE, 0));
     }
 
     function test_createAuction_fail_malformedConfig() public {

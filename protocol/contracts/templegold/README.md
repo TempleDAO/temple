@@ -171,7 +171,7 @@ Settlement never owes more than it holds: the funding needed to fill every depos
 
 TGLD moves only when the sender or the receiver is authorized on `TempleGold`, so authorize every TGLD auction (`authorizeContract`) before `depositStart`. Otherwise an authorized depositor can move TGLD into the auction, and it can then leave only to authorized receivers until the auction is authorized.
 
-Both tokens must be standard ERC-20s with at most 18 decimals; fee-on-transfer and rebasing tokens are not supported.
+Both tokens must be standard ERC-20s with 6 to 18 decimals; fee-on-transfer and rebasing tokens are not supported.
 
 `WishingWell` only records wishes; the indexer does the counting.
 
