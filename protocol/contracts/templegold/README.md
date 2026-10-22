@@ -165,7 +165,7 @@ All auctions share one `ComplianceCheck`. The msig can point an auction at anoth
 
 During Deposit or Fulfillment, the msig or an account the current list grants `setBlocked`, both outside rescue mode, can `exclude` a blocked bidder: its whole deposit leaves the fill and moves to `excluded`, so it is never filled and the funder doesn't pay for it (funding already sent for it becomes withdrawable excess). If the bidder is cleared during Deposit, `reinstate` puts it back in full; otherwise, once unblocked, the bidder takes it back with `withdrawExcluded`, in any phase. A bidder blocked but not excluded is still filled, and its payout waits until it is unblocked. Once settled or cancelled, nobody can be excluded. Disabling compliance makes every excluded balance withdrawable once the auction is unpaused.
 
-Settlement never owes more than it holds: the funding needed to fill every deposit rounds up, each fill and pro-rata share rounds down, and the dust stays in the auction.
+Settlement never owes more than it holds: the funding needed to fill every deposit rounds up, `userFunding` and each pro-rata share round down, and the dust stays in the auction. In aggregate, bidders pay only for the whole fill-token wei they get: `filledDeposits` is the rounded-up cost of `userFunding`, and the bid tokens worth less than one fill-token wei are refunded. Each bidder's fill and refund round down separately, so a bidder can lose dust.
 
 `AuctionFactory` clones its current implementation. The msig proposes a new implementation and the rescuer accepts it by address; existing auctions keep their code. `isAuction` is the only proof an auction is genuine.
 

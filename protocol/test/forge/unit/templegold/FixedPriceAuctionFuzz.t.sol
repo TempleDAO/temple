@@ -235,14 +235,15 @@ contract FixedPriceAuctionFuzzTest is FixedPriceAuctionTestBase {
         assertLe(
             s.userFunding, s.filledDeposits.mulDivRound(c.price, c.denominator, false), "userFunding > filled value"
         );
-        // Full funding fills everything, unless every deposit together buys under one fill wei. Then the
-        // zero-fill guard wins and nothing fills.
+        // Bidders pay only for the fill tokens they get: filled deposits are the rounded-up cost of userFunding.
+        assertEq(
+            s.filledDeposits, s.userFunding.mulDivRound(c.denominator, c.price, true), "filled != cost of userFunding"
+        );
+        // Full funding fills every deposit but under one fill wei's worth, which is refunded. If every deposit
+        // together buys under one fill wei, nothing fills.
         if (c.funding >= c.total.mulDivRound(c.price, c.denominator, true)) {
-            if (c.total.mulDivRound(c.price, c.denominator, false) == 0) {
-                assertEq(s.filledDeposits, 0, "dust deposits filled");
-            } else {
-                assertEq(s.filledDeposits, c.total, "full funding didn't fill everything");
-            }
+            assertEq(s.userFunding, c.total.mulDivRound(c.price, c.denominator, false), "full funding short of fill");
+            assertEq(s.userRefund.mulDivRound(c.price, c.denominator, false), 0, "full funding refunded a fill wei");
         }
         // No fill tokens, no bid tokens taken.
         if (s.userFunding == 0) assertEq(s.filledDeposits, 0, "bid tokens filled for no fill tokens");

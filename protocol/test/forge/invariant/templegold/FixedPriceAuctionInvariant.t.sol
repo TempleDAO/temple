@@ -192,13 +192,16 @@ abstract contract FixedPriceAuctionInvariantBase is FixedPriceAuctionTestBase {
         assertEq(s.funderRefund, fundingHeld - s.userFunding, "funderRefund != funding - userFunding");
         // Bidders never get more than their filled deposits buy.
         assertLe(s.userFunding, s.filledDeposits.mulDivRound(price, denominator, false), "userFunding > filled value");
-        // Full funding fills everything, unless all deposits together buy under one fill wei (then the zero-fill
-        // guard wins).
+        // Bidders pay only for the fill tokens they get: filled deposits are the rounded-up cost of userFunding.
+        assertEq(s.filledDeposits, s.userFunding.mulDivRound(denominator, price, true), "filled != cost of userFunding");
+        // Full funding buys the whole fill-token wei of every deposit, and the refund is worth under one fill wei.
         if (
             auction.phase() == IFixedPriceAuction.Phase.Settled
                 && fundingHeld >= total.mulDivRound(price, denominator, true)
-                && total.mulDivRound(price, denominator, false) > 0
-        ) assertEq(s.filledDeposits, total, "full funding didn't fill everything");
+        ) {
+            assertEq(s.userFunding, total.mulDivRound(price, denominator, false), "full funding short of fill");
+            assertEq(s.userRefund.mulDivRound(price, denominator, false), 0, "full funding refunded a fill wei");
+        }
         // No fill tokens, no bid tokens taken.
         if (s.userFunding == 0) assertEq(s.filledDeposits, 0, "bid tokens filled for no fill tokens");
     }
