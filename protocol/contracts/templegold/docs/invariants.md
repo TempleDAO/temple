@@ -74,6 +74,8 @@ The properties the contracts must always keep. The fuzz and invariant suites are
 | F1 | Every auction with `isAuction` true is a clone of an implementation the rescuer accepted (or the constructor's), initialized once, with the factory's executor and its rescuer at creation. | fuzz `test_fuzz_factoryRulesHold` (`_checkCreated`: recorded, `LibClone.implementationOf` is the current and an accepted implementation, roles of the day, second `initialize` reverts) |
 | F2 | `implementation` changes only through `acceptImplementation`, and only to the address currently proposed. | fuzz `test_fuzz_factoryRulesHold` ("implementation moved without an accept", "accept not exactly the proposal") |
 | F3 | The implementation contract itself can never be initialized or move tokens. | unit `test_initialize_fail_implementation`, `test_implementation_neverMovesTokens`. Unit, not a property test: it is one fixed contract with no state to explore. The token-moving calls revert only incidentally (the implementation has no clone args, so `_config()` decodes its own runtime code and reverts with empty data, and every call that reads the config reverts), not through an explicit guard |
+| F4 | The implementation is never an address without code, in the constructor or at proposal. | unit `test_constructor_validation`, `test_swapImplementation_twoKeys` (a code-less proposal) |
+| F5 | Both tokens have 6 to 18 decimals; `initialize` rejects anything else. | factory `test_createAuction_configValidation` (19- and 5-decimal tokens) |
 
 ## Wishing Well
 

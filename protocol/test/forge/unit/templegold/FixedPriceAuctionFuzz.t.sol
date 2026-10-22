@@ -182,7 +182,7 @@ contract FixedPriceAuctionFuzzTest is FixedPriceAuctionTestBase {
         uint256 seed
     ) public {
         _checkSettlement(
-            uint8(_bound(bidDecimals, 0, 18)), uint8(_bound(fillDecimals, 0, 18)), price, funding, bidders, seed
+            uint8(_bound(bidDecimals, 6, 18)), uint8(_bound(fillDecimals, 6, 18)), price, funding, bidders, seed
         );
     }
 

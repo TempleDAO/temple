@@ -29,6 +29,9 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
 
     /// @dev The most decimals either token may have.
     uint8 private constant MAX_TOKEN_DECIMALS = 18;
+    /// @dev The fewest decimals either token may have. Below this, rounding each bidder's fill and refund down to
+    /// whole base units can cost them a material amount.
+    uint8 private constant MIN_TOKEN_DECIMALS = 6;
 
     /// @inheritdoc IFixedPriceAuction
     uint256 public override priceDenominator;
@@ -91,7 +94,10 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
 
         uint8 bidDecimals = IERC20Metadata(config.bidToken).decimals();
         uint8 fillDecimals = IERC20Metadata(config.fillToken).decimals();
-        if (bidDecimals > MAX_TOKEN_DECIMALS || fillDecimals > MAX_TOKEN_DECIMALS) {
+        if (
+            bidDecimals > MAX_TOKEN_DECIMALS || fillDecimals > MAX_TOKEN_DECIMALS || bidDecimals < MIN_TOKEN_DECIMALS
+                || fillDecimals < MIN_TOKEN_DECIMALS
+        ) {
             revert CommonEventsAndErrors.InvalidParam();
         }
         priceDenominator = 10 ** (18 + uint256(bidDecimals) - fillDecimals);
