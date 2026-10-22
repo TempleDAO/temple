@@ -72,10 +72,6 @@ contract FixedPriceAuctionHandler is Test {
 
     uint256 internal fundCalls;
     bool internal partialRun;
-    /// @dev Set when this step's `claim` or `claimTreasury` reverted: the only calls that can emit `AuctionSettled`
-    /// and then revert (on a blocklisted transfer). recordLogs keeps a reverted call's logs. `_countOutcomeEvents`
-    /// clears it, so `drain`, whose calls can't revert, starts clear.
-    bool internal claimReverted;
 
     // Ghost books
     uint256 public funded;
@@ -206,7 +202,7 @@ contract FixedPriceAuctionHandler is Test {
             ok = true;
             ++successes["claim"];
         } catch {
-            claimReverted = true;
+            _discardLogs();
         }
         _post(account, ok, before, blocked, deposit_, claimed_);
         _check(!ok || _final(before.phase), "claim before an outcome");
@@ -467,7 +463,7 @@ contract FixedPriceAuctionHandler is Test {
             ok = true;
             ++successes["claimTreasury"];
         } catch {
-            claimReverted = true;
+            _discardLogs();
         }
         _checkPaused(ok, before);
         _check(!ok || _final(before.phase), "claimTreasury before an outcome");
@@ -891,7 +887,6 @@ contract FixedPriceAuctionHandler is Test {
             if (logs[i].emitter != address(auction)) continue;
             bytes32 topic = logs[i].topics[0];
             if (topic == IFixedPriceAuction.AuctionSettled.selector) {
-                if (claimReverted) continue;
                 ++settledEvents;
                 IFixedPriceAuction.Settlement memory s = auction.previewSettlement();
                 bytes memory stored = abi.encode(
@@ -911,7 +906,11 @@ contract FixedPriceAuctionHandler is Test {
                 );
             }
         }
-        claimReverted = false;
+    }
+
+    /// @dev A reverted call's logs stay recorded; drop them so only logs from calls that took effect are counted.
+    function _discardLogs() internal {
+        vm.getRecordedLogs();
     }
 
     function _recordOutcome() internal {

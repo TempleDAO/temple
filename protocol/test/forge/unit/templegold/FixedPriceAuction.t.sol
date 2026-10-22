@@ -196,25 +196,15 @@ contract FixedPriceAuctionSettlementTest is FixedPriceAuctionTestBase {
         assertGt(auction.endedAt(), type(uint32).max);
     }
 
-    /// @dev A clock settlement records a fulfillmentEnd past 2^32 whole, and one at the uint40 bound.
-    function test_emitSettled_fulfillmentEndAfter2106() public {
-        vm.warp(uint256(type(uint32).max) + 1);
-        auction = _create(_config(address(tgld), address(usds), PRICE, 0));
-        _toDeposit(auction);
-        _deposit(auction, alice, 100e18);
-        _toEnd(auction);
-        auction.emitSettled();
-        assertEq(auction.endedAt(), auction.getConfig().fulfillmentEnd);
-        assertGt(auction.endedAt(), type(uint32).max);
-
+    /// @dev A clock settlement records fulfillmentEnd whole, up to the uint40 bound.
+    function test_emitSettled_fulfillmentEndAtUint40Max() public {
         IFixedPriceAuction.AuctionConfig memory c = _config(address(tgld), address(usds), PRICE, 0);
         c.fulfillmentEnd = type(uint40).max;
         auction = _create(c);
         _toDeposit(auction);
         _deposit(auction, alice, 100e18);
         _toEnd(auction);
-        vm.prank(alice);
-        auction.claim();
+        auction.emitSettled();
         assertEq(auction.endedAt(), type(uint40).max);
     }
 
@@ -1474,14 +1464,6 @@ contract FixedPriceAuctionComplianceTest is FixedPriceAuctionTestBase {
 }
 
 contract FixedPriceAuctionRecoverTokenTest is FixedPriceAuctionTestBase {
-    function test_recoverToken_strayToken() public {
-        FakeERC20CustomDecimals stray = new FakeERC20CustomDecimals("Stray", "STRAY", address(auction), 5e18, 18);
-        vm.expectEmit(address(auction));
-        emit CommonEventsAndErrors.TokenRecovered(alice, address(stray), 5e18);
-        vm.prank(executor);
-        auction.recoverToken(address(stray), alice, 5e18);
-        assertEq(stray.balanceOf(alice), 5e18);
-    }
 
     /// @dev Only a donation of either auction token is recoverable, at any time, and it changes no one's payout.
     function test_recoverToken_ownTokensDonationOnly_donationChangesNoPayout() public {
@@ -1589,6 +1571,8 @@ contract FixedPriceAuctionRecoverTokenTest is FixedPriceAuctionTestBase {
             abi.encodeWithSelector(CommonEventsAndErrors.InsufficientBalance.selector, stray, 5e18 + 1, 5e18)
         );
         auction.recoverToken(address(stray), alice, 5e18 + 1);
+        vm.expectEmit(address(auction));
+        emit CommonEventsAndErrors.TokenRecovered(alice, address(stray), 5e18);
         vm.prank(executor);
         auction.recoverToken(address(stray), alice, 5e18);
         assertEq(stray.balanceOf(alice), 5e18);
@@ -2042,28 +2026,4 @@ contract FixedPriceAuctionBlocklistTokenTest is FixedPriceAuctionTestBase {
         assertTrue(auction.treasuryClaimed());
     }
 
-    /// @dev A first claim after a clock settlement that reverts on a blocked transfer takes its `AuctionSettled` and
-    /// `endedAt` with it, so the next successful claim emits the event once.
-    function test_claim_revertedClockSettlement_nextClaimEmits() public {
-        _fund(auction, 4_660_000e18);
-        _toEnd(auction);
-        uint64 end = auction.getConfig().fulfillmentEnd;
-        fillToken.setBlocked(alice, true);
-
-        vm.prank(alice);
-        vm.expectRevert(abi.encodeWithSelector(FakeBlocklistERC20.BlockedAddress.selector, alice));
-        auction.claim();
-        assertEq(auction.endedAt(), 0);
-
-        vm.recordLogs();
-        vm.prank(bob);
-        auction.claim();
-        Vm.Log[] memory logs = vm.getRecordedLogs();
-        uint256 settledEvents;
-        for (uint256 i; i < logs.length; ++i) {
-            if (logs[i].topics[0] == IFixedPriceAuction.AuctionSettled.selector) ++settledEvents;
-        }
-        assertEq(settledEvents, 1);
-        assertEq(auction.endedAt(), end);
-    }
 }

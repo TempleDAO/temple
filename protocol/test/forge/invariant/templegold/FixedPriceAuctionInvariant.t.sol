@@ -153,7 +153,8 @@ abstract contract FixedPriceAuctionInvariantBase is FixedPriceAuctionTestBase {
     }
 
     /// @dev The payout counters match the books, so the balance above `liabilities()` is exactly the stray transfers
-    /// still held: recovery can take those and nothing owed. Liabilities cover every unpaid claim and excluded balance.
+    /// still held: recovery can take those and nothing owed. With invariant_balancesCoverOwed, liabilities cover every
+    /// unpaid claim and excluded balance.
     function invariant_liabilitiesAreBalanceLessStray() public view {
         assertEq(auction.totalExcluded(), _totalExcluded(), "totalExcluded != sum of excluded");
         assertEq(auction.bidPaid(), handler.userRefundPaid() + handler.treasuryBidPaid(), "bidPaid != books");
@@ -163,9 +164,6 @@ abstract contract FixedPriceAuctionInvariantBase is FixedPriceAuctionTestBase {
         assertEq(
             fill.balanceOf(address(auction)) - fillOwed, handler.strayFill(), "fill balance - liabilities != stray"
         );
-        (uint256 bidUnpaid, uint256 fillUnpaid) = _unpaid();
-        assertGe(bidOwed, bidUnpaid, "bid liabilities < unpaid");
-        assertGe(fillOwed, fillUnpaid, "fill liabilities < unpaid");
     }
 
     /// @dev totalDeposits is the sum of deposits.
