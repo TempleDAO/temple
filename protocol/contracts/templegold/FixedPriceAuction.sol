@@ -27,8 +27,8 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
         Cancelled
     }
 
-    /// @inheritdoc IFixedPriceAuction
-    uint8 public constant override MAX_TOKEN_DECIMALS = 18;
+    /// @dev The most decimals either token may have.
+    uint8 private constant MAX_TOKEN_DECIMALS = 18;
 
     /// @inheritdoc IFixedPriceAuction
     uint256 public override priceDenominator;
