@@ -169,7 +169,7 @@ Settlement never owes more than it holds: the funding needed to fill every depos
 
 `AuctionFactory` clones its current implementation. The msig proposes a new implementation and the rescuer accepts it by address; existing auctions keep their code. `isAuction` is the only proof an auction is genuine.
 
-A TGLD auction must be authorized on `TempleGold` (`authorizeContract`) before any TGLD can move in or out of it.
+TGLD moves only when the sender or the receiver is authorized on `TempleGold`, so authorize every TGLD auction (`authorizeContract`) before `depositStart`. Otherwise an authorized depositor can move TGLD into the auction, and it can then leave only to authorized receivers until the auction is authorized.
 
 Both tokens must be standard ERC-20s with at most 18 decimals; fee-on-transfer and rebasing tokens are not supported.
 
