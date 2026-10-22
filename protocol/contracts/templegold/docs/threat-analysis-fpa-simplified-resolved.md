@@ -1,16 +1,16 @@
 # Threat analysis, resolved and closed: simplified FixedPriceAuction, clone FixedPriceAuctionFactory, ComplianceCheck and WishingWell
 
-Companion to [threat-analysis-fpa-simplified.md](threat-analysis-fpa-simplified.md), which keeps only what's still open: the decisions for the team, the open findings, operational risks and test gaps. Everything here is resolved, checked and found to hold, or kept for traceability. Scope, method and line-number conventions are the same as there; finding numbers (T-n) and decision numbers (D-n) refer to that file.
+Companion to [threat-analysis-fpa-simplified.md](threat-analysis-fpa-simplified.md), which keeps the decisions for the team, the open and fixed findings, operational risks and test gaps. Everything here is resolved, checked and found to hold, or kept for traceability. Scope, method and line-number conventions are the same as there; finding numbers (T-n) and decision numbers (D-n) refer to that file.
 
 ## Resolved findings
 
 Resolved since round 1: a pending executor proposal now dies when rescue mode switches on, and so does a pending implementation proposal on the factory. The rescuer can `cancel` in rescue mode, which ends the permanent-freeze case of unbounded windows ([T-3](#t-3-unbounded-windows-resolved-low)).
 
 ### T-2 (resolved part) Pending proposals die in rescue mode
-A proposal the hijacked msig leaves *pending* now dies when rescue mode switches on (`RescuableAccess.sol:35-39`), and nobody can propose during rescue mode. On the factory, rescue mode also cancels a pending implementation proposal (`FixedPriceAuctionFactory.sol:57-62`). The open part of T-2, an atomic propose-and-accept, is still open.
+A proposal the hijacked msig leaves *pending* now dies when rescue mode switches on (`RescuableAccess.sol:35-41`), and nobody can propose during rescue mode. On the factory, rescue mode also cancels a pending implementation proposal (`FixedPriceAuctionFactory.sol:57-62`). The open part of T-2, an atomic propose-and-accept, is fixed on the factory and auctions by D11's one-day delay; on `ComplianceCheck` the msig can revoke grants and overwrite a proposal within the day (T-2).
 
 ### T-3 Unbounded windows (resolved, Low)
-**Low.** Proven (`test_XC_farFulfillmentEnd_rescuerCancels`, 100 years in). `FixedPriceAuction.sol:85-92`, `:228-238`.
+**Low.** Proven (`test_XC_farFulfillmentEnd_rescuerCancels`, 100 years in). `initialize` and `cancel` in FixedPriceAuction.sol.
 - **Before:** in round 1 a far-future `fulfillmentEnd` froze deposits for good, because the rescuer couldn't end an auction.
 - **Now:** the rescuer can `cancel` in rescue mode at any time before `fulfillmentEnd`, which refunds everyone. With a far-future `fulfillmentEnd` that's always available.
 - **Residual:** depositors have no exit between `depositEnd` and whenever a multisig acts. "Genuine auctions finish under rescue mode by the clock" is false for a long window: in rescue mode they can only be cancelled, never settled. A freeze is permanent only if the rescuer is lost too.
@@ -30,7 +30,7 @@ A later round ran slither-mutate over the six contracts (962 compiled mutants) a
 ## Checked and found closed
 
 - **Stealing others' funds:** claims pay `msg.sender` only. Each share is `floor(d·X/T)`, so the shares sum to at most the settlement's pools. The treasury takes exactly `filledBids` and `funderRefund`.
-- **Solvency at extremes:** holds for decimals 0–18 both ways, prices up to 2^200, and funding up to 2^250. The deposit-time `_requiredFunding` guard bounds every later `mulDiv`. The branch now has a test at the overflow bound.
+- **Solvency at extremes:** holds for decimals 0–18 both ways (`initialize` now requires 6–18), prices up to 2^200, and funding up to 2^250. The deposit-time `_requiredFunding` guard bounds every later `mulDiv`. The branch now has a test at the overflow bound.
 - **Settlement can't drift:** `totalDeposits` and `funding` freeze once the phase is final, so the settlement is fixed from then.
 - **Phase boundaries:** `depositEnd` and `fulfillmentEnd` each start the next phase, consistently across `_phase`, `cancel` and `_requireFinal`.
 - **Front-running bidders:** deposits close before any funding, and `withdrawExcess` is computed against a fixed requirement.
