@@ -122,7 +122,7 @@ Findings that are resolved, properties checked and found to hold, and the cross-
   - Front-ends list only announced auctions, and check `inRescueMode()`, `phase()` and the treasury addresses, not just `isAuction`.
 
 ### T-10 Indexer ordering and semantics
-**Low.** Code and Design. `FixedPriceAuction.sol:173`, `:379`, `WishingWell.sol:14-17`.
+**Low.** Code and Design. `FixedPriceAuction.sol:173`, `:379`, `WishingWell.sol:15-18`.
 - **Timing:** a settlement by the clock emits `AuctionSettled` only at its first claim or `emitSettlement`, and `settledAt` is 0 until then. Compare `settledAt` if non-zero, else `fulfillmentEnd`, against the wish. `settleEarly` ties with a wish in the same block. `wishOf` stores no timestamp, so the rule needs logs.
 - **Gaming the fill subtraction:**
   - **Fills via another pair go uncounted:** fills through a different pair in the same bucket are never subtracted.
@@ -179,10 +179,10 @@ Findings that are resolved, properties checked and found to hold, and the cross-
 - **Mitigation:** allowlist implementations and fail closed on `ImplementationSet` until a decoder exists. Decide decision 12.
 
 ### T-18 Demand inflation off-chain
-**Low** (it feeds decisions, not funds). Design. `WishingWell.sol:11`, `:14-17`.
-- **One balance, many wishes:** `wishOf[account][from][to]` lets one `from` balance back wishes to many `to` tokens, with no on-chain balance check. The indexer caps an account's total wishes from one asset at its balance, and must say how a capped balance splits across pairs.
+**Low** (it feeds decisions, not funds). Design. `WishingWell.sol:11-12`, `:15-18`.
+- **One balance, many wishes:** `wishOf[account][fromToken][toToken]` lets one `fromToken` balance back wishes to many `toToken`s, with no on-chain balance check. The indexer caps an account's total wishes from one asset at its balance, and must say how a capped balance splits across pairs.
 - **Borrowed or sampled balances:** an account borrows across the pinned balance block and wishes with the borrowed balance. A contract that makes arbitrary calls can be made to `wish()`, which attributes its balance to the attacker. TGLD bridged between per-chain snapshots can count twice.
-- **Input:** the Well validates nothing: `from == to`, zero or non-token addresses, `expiresAt` of 0 or in the past. Anyone can emit `WishSet` for any key, so an indexer that stores every key can be bloated.
+- **Input:** the Well validates nothing: `fromToken == toToken`, zero or non-token addresses, `expiresAt` of 0 or in the past. Anyone can emit `WishSet` for any key, so an indexer that stores every key can be bloated.
 - **Mitigation:**
   - an unpredictable snapshot block, or a minimum balance over a window;
   - count only bucket tokens with `from != to`, filtering at ingest;

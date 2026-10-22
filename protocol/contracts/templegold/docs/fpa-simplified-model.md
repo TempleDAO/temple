@@ -206,21 +206,23 @@ The rescuer's answer to a rogue list is `disableComplianceCheck`: afterwards nob
 
 **Events:** `Deposited`, `DepositWithdrawn`, `BidderExcluded`, `BidderReinstated`, `ExcludedWithdrawn`, `Funded`, `ExcessWithdrawn`, `AuctionSettled(settledAt, …)` (from `settleEarly`, or once after a settlement by the clock from the first claim or `emitSettlement`), `AuctionCancelled`, `UserClaimed`, `TreasuryClaimed`, `PausedSet(bool)`, `RescueModeSet`, `ComplianceCheckSet`, `ComplianceCheckDisabled`, and `FunderSet`/`ProceedsRecipientSet` if decision 6 says yes. `initialize` emits `ComplianceCheckSet` for the initial pointer.
 
-### 3. `WishingWell`: record-only, keyed by (account, from, to)
+### 3. `WishingWell`: record-only, keyed by (account, fromToken, toToken)
 
-A wish says an account would give up to `amount` of `from` to get `to`, until `expiresAt`.
+A wish says an account would give up to `fromAmount` of `fromToken` to get `toToken`, until `expiresAt`.
 
 ```solidity
 contract WishingWell {
-    struct Wish { uint192 amount; uint64 expiresAt; }
+    struct Wish { uint192 fromAmount; uint64 expiresAt; }
 
-    mapping(address account => mapping(address from => mapping(address to => Wish))) public wishOf;
+    mapping(address account => mapping(address fromToken => mapping(address toToken => Wish))) public wishOf;
 
-    event WishSet(address indexed account, address indexed from, address indexed to, uint256 amount, uint64 expiresAt);
+    event WishSet(
+        address indexed account, address indexed fromToken, address indexed toToken, uint256 fromAmount, uint64 expiresAt
+    );
 
-    function wish(address from, address to, uint192 amount, uint64 expiresAt) external {
-        wishOf[msg.sender][from][to] = Wish(amount, expiresAt); // amount 0 revokes
-        emit WishSet(msg.sender, from, to, amount, expiresAt);
+    function wish(address fromToken, address toToken, uint192 fromAmount, uint64 expiresAt) external {
+        wishOf[msg.sender][fromToken][toToken] = Wish(fromAmount, expiresAt); // fromAmount 0 revokes
+        emit WishSet(msg.sender, fromToken, toToken, fromAmount, expiresAt);
     }
 }
 ```
@@ -290,7 +292,7 @@ With a record-only Well, all judgement about demand happens off-chain. The index
 
 | Need | Event |
 |---|---|
-| The wish | `WishSet(account, from, to, amount, expiresAt)` |
+| The wish | `WishSet(account, fromToken, toToken, fromAmount, expiresAt)` |
 | Which auctions are genuine, and their market | `AuctionCreated` from the factory |
 | Who bid, and how much | `Deposited`, `DepositWithdrawn` |
 | How much filled, and when | `settlement()` once `phase()` is Settlement; `AuctionSettled` (carrying `settledAt`), which a settlement by the clock emits only at its first claim or `emitSettlement` |
@@ -300,12 +302,12 @@ With a record-only Well, all judgement about demand happens off-chain. The index
 | Who is flagged | `FlaggedSet` from `ComplianceCheck` |
 
 Rules:
-- A wish matches an auction when `bidToken == from` and `fillToken == to`.
-- **A wish counts the smaller of two numbers.** One is its amount minus fills from matching auctions settled after the wish. The other is the account's balance of `from`.
-- An account's fill is `deposit − floor(deposit × userRefund / totalDeposits)` in `from` units. Take `userRefund` from `settlement()` and `totalDeposits` from `totalDeposits()`; both are fixed once `phase()` is final. A settlement by the clock emits its event late, at the first claim or `emitSettlement`, with `settledAt` = `fulfillmentEnd`.
-- **One balance cap per `from` asset.** The sum of an account's counted wishes that give the same asset can't exceed what it holds of it.
+- A wish matches an auction when `bidToken == fromToken` and `fillToken == toToken`.
+- **A wish counts the smaller of two numbers.** One is its `fromAmount` minus fills from matching auctions settled after the wish. The other is the account's balance of `fromToken`.
+- An account's fill is `deposit − floor(deposit × userRefund / totalDeposits)` in `fromToken` units. Take `userRefund` from `settlement()` and `totalDeposits` from `totalDeposits()`; both are fixed once `phase()` is final. A settlement by the clock emits its event late, at the first claim or `emitSettlement`, with `settledAt` = `fulfillmentEnd`.
+- **One balance cap per `fromToken` asset.** The sum of an account's counted wishes that give the same asset can't exceed what it holds of it.
 - **Buckets** are indexer config that group pairs into markets, for example USDS and USDC as "stables". The team reads demand per bucket. Summing across a bucket normalises decimals (USDS has 18, USDC has 6).
-- Expired wishes and wishes with amount 0 count zero.
+- Expired wishes and wishes with `fromAmount` 0 count zero.
 - **Flagged accounts count zero.**
 - **Every batch of reads uses one pinned block,** so one balance can't be counted twice by moving it between reads.
 
