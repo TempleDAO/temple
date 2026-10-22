@@ -438,13 +438,13 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
     /// @dev Reads only totalDeposits and funding as state, which stop changing once the phase is final.
     function _calculateSettlement(uint256 price) private view returns (Settlement memory) {
         uint256 denominator = priceDenominator;
-        // Fills, and the fill tokens they buy, round down, so bidders never get more than the funding covers.
+        // The fill tokens bought round down, so bidders never get more than the funding covers.
         uint256 filled = funding >= _requiredFunding(totalDeposits, price)
             ? totalDeposits
             : funding.mulDivRound(denominator, price, false);
         uint256 userFill = filled.mulDivRound(price, denominator, false);
-        // A fill too small to buy one fill-token wei takes no bid tokens.
-        if (userFill == 0) filled = 0;
+        // Charge the rounded-up cost of userFill and refund the rest, so a zero userFill takes no bid tokens.
+        filled = userFill.mulDivRound(denominator, price, true);
         return Settlement(filled, userFill, totalDeposits - filled, funding - userFill);
     }
 
