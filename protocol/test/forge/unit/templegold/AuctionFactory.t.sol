@@ -122,6 +122,19 @@ contract AuctionFactoryTest is FixedPriceAuctionTestBase {
         c.fulfillmentEnd = c.depositEnd;
         _expectInvalid(c);
 
+        // Strictly out of order, not just equal: a start in the past, a start after the end, an end after fulfillment.
+        c = _config(address(tgld), address(usds), PRICE, 0);
+        c.depositStart = uint64(block.timestamp - 1);
+        _expectInvalid(c);
+
+        c = _config(address(tgld), address(usds), PRICE, 0);
+        c.depositEnd = c.depositStart - 1;
+        _expectInvalid(c);
+
+        c = _config(address(tgld), address(usds), PRICE, 0);
+        c.fulfillmentEnd = c.depositEnd - 1;
+        _expectInvalid(c);
+
         _expectInvalid(_config(address(tgld), address(tgld), PRICE, 0));
         _expectInvalid(_config(address(tgld), address(usds), 0, 0));
 
