@@ -151,7 +151,7 @@ interface IFixedPriceAuction is IRescuableAccess {
     function settleEarly() external;
 
     /// @notice Emit `AuctionSettled` for an auction the clock settled at `fulfillmentEnd`, if no claim has emitted it
-    /// yet, and record `fulfillmentEnd` in `settledAt`. Anyone, once; Settled phase only. Moves no tokens and changes
+    /// yet, and record `fulfillmentEnd` in `settledAt`. Anyone, once; Settlement phase only. Moves no tokens and changes
     /// no payout. Reverts `AlreadySettled` once the event has gone out.
     function emitSettlement() external;
 
@@ -234,9 +234,9 @@ interface IFixedPriceAuction is IRescuableAccess {
     /// @notice What the auction still owes, in each token's base units, to bidders (including excluded balances),
     /// the proceeds recipient and the funder: `totalDeposits() + totalExcluded() - bidPaid()` and
     /// `funding() - fillPaid()`. Only a balance above this is recoverable. Rounding dust stays counted for good.
-    function liabilities() external view returns (uint256 bidToken, uint256 fillToken);
+    function liabilities() external view returns (uint256 bidLiability, uint256 fillLiability);
 
-    /// @notice The current phase. Settled from `fulfillmentEnd` or `settleEarly`; Cancelled after `cancel`.
+    /// @notice The current phase. Settlement from `fulfillmentEnd` or `settleEarly`; Cancelled after `cancel`.
     function phase() external view returns (Phase);
 
     /// @notice The deployment terms read from the clone's code, with the current compliance list pointer.

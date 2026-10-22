@@ -8,11 +8,12 @@ import { IWishingWell } from "contracts/interfaces/templegold/IWishingWell.sol";
 /// @notice See IWishingWell.
 contract WishingWell is IWishingWell {
     /// @inheritdoc IWishingWell
-    mapping(address account => mapping(address from => mapping(address to => Wish wish))) public override wishOf;
+    mapping(address account => mapping(address fromToken => mapping(address toToken => Wish wish))) public override
+        wishOf;
 
     /// @inheritdoc IWishingWell
-    function wish(address from, address to, uint192 amount, uint64 expiresAt) external override {
-        emit WishSet(msg.sender, from, to, amount, expiresAt);
-        wishOf[msg.sender][from][to] = Wish(amount, expiresAt);
+    function wish(address fromToken, address toToken, uint192 fromAmount, uint64 expiresAt) external override {
+        emit WishSet(msg.sender, fromToken, toToken, fromAmount, expiresAt);
+        wishOf[msg.sender][fromToken][toToken] = Wish(fromAmount, expiresAt);
     }
 }

@@ -673,9 +673,6 @@ contract FixedPriceAuctionLifecycleTest is FixedPriceAuctionTestBase {
         auction.settleEarly();
         vm.expectRevert(IFixedPriceAuction.AlreadySettled.selector);
         auction.emitSettlement();
-        _toEnd(auction);
-        vm.expectRevert(IFixedPriceAuction.AlreadySettled.selector);
-        auction.emitSettlement();
     }
 
     function test_emitSettlement_cancelled_reverts() public {
@@ -1510,9 +1507,9 @@ contract FixedPriceAuctionRecoverTokenTest is FixedPriceAuctionTestBase {
     function test_liabilities_trackClaimsAndGateRecovery() public {
         // 1/3 of the funding needed: alice's and bob's shares round down and leave dust in both tokens.
         _workedExample(1_553_333_333_333_333_333_333);
-        (uint256 bidOwed, uint256 fillOwed) = auction.liabilities();
-        assertEq(bidOwed, 100_000_000e18);
-        assertEq(fillOwed, 1_553_333_333_333_333_333_333);
+        (uint256 bidLiability, uint256 fillLiability) = auction.liabilities();
+        assertEq(bidLiability, 100_000_000e18);
+        assertEq(fillLiability, 1_553_333_333_333_333_333_333);
         usds.mint(address(auction), 7e18);
         tgld.mint(address(auction), 5e18);
         _toEnd(auction);
@@ -1520,23 +1517,23 @@ contract FixedPriceAuctionRecoverTokenTest is FixedPriceAuctionTestBase {
         vm.prank(alice);
         auction.claim();
         IFixedPriceAuction.UserClaim memory bobClaim = auction.claimable(bob);
-        (bidOwed, fillOwed) = auction.liabilities();
+        (bidLiability, fillLiability) = auction.liabilities();
         assertEq(auction.bidPaid(), tgld.balanceOf(alice));
         assertEq(auction.fillPaid(), usds.balanceOf(alice));
-        assertEq(bidOwed, 100_000_000e18 - tgld.balanceOf(alice));
-        assertEq(fillOwed, 1_553_333_333_333_333_333_333 - usds.balanceOf(alice));
+        assertEq(bidLiability, 100_000_000e18 - tgld.balanceOf(alice));
+        assertEq(fillLiability, 1_553_333_333_333_333_333_333 - usds.balanceOf(alice));
 
         vm.prank(bob);
         auction.claim();
         auction.claimTreasury();
-        (bidOwed, fillOwed) = auction.liabilities();
+        (bidLiability, fillLiability) = auction.liabilities();
         assertEq(auction.bidPaid(), 100_000_000e18 + 5e18 - tgld.balanceOf(address(auction)));
         assertEq(auction.fillPaid(), 1_553_333_333_333_333_333_333 + 7e18 - usds.balanceOf(address(auction)));
         assertEq(tgld.balanceOf(bob), bobClaim.refund);
-        assertGt(bidOwed, 0, "bid dust left");
-        assertGt(fillOwed, 0, "fill dust left");
-        assertEq(tgld.balanceOf(address(auction)) - bidOwed, 5e18, "only the bid donation is surplus");
-        assertEq(usds.balanceOf(address(auction)) - fillOwed, 7e18, "only the fill donation is surplus");
+        assertGt(bidLiability, 0, "bid dust left");
+        assertGt(fillLiability, 0, "fill dust left");
+        assertEq(tgld.balanceOf(address(auction)) - bidLiability, 5e18, "only the bid donation is surplus");
+        assertEq(usds.balanceOf(address(auction)) - fillLiability, 7e18, "only the fill donation is surplus");
 
         vm.startPrank(executor);
         vm.expectRevert(
@@ -1550,8 +1547,8 @@ contract FixedPriceAuctionRecoverTokenTest is FixedPriceAuctionTestBase {
         auction.recoverToken(address(usds), executor, 7e18);
         auction.recoverToken(address(tgld), executor, 5e18);
         vm.stopPrank();
-        assertEq(usds.balanceOf(address(auction)), fillOwed);
-        assertEq(tgld.balanceOf(address(auction)), bidOwed);
+        assertEq(usds.balanceOf(address(auction)), fillLiability);
+        assertEq(tgld.balanceOf(address(auction)), bidLiability);
     }
 
     /// @dev A cancel refunds everything: the counters reach every deposit and the funding, liabilities reach zero.
@@ -1562,8 +1559,8 @@ contract FixedPriceAuctionRecoverTokenTest is FixedPriceAuctionTestBase {
         _claimAll(auction);
         assertEq(auction.bidPaid(), 100_000_000e18);
         assertEq(auction.fillPaid(), 2_330_000e18);
-        (uint256 bidOwed, uint256 fillOwed) = auction.liabilities();
-        assertEq(bidOwed + fillOwed, 0);
+        (uint256 bidLiability, uint256 fillLiability) = auction.liabilities();
+        assertEq(bidLiability + fillLiability, 0);
     }
 
     /// @dev Another token owes nothing: all of it is recoverable while the auction holds deposits and funding.

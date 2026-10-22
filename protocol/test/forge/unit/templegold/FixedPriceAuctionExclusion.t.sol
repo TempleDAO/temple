@@ -113,8 +113,8 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
         auction.claim();
         auction.claimTreasury();
         temple.mint(address(auction), 1e18);
-        (uint256 bidOwed,) = auction.liabilities();
-        assertEq(bidOwed, 100e18);
+        (uint256 bidLiability,) = auction.liabilities();
+        assertEq(bidLiability, 100e18);
 
         vm.startPrank(executor);
         vm.expectRevert(
@@ -127,8 +127,8 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
         _setFlagged(alice, false);
         _withdrawExcluded(alice);
         _assertPaid(alice, 100e18, 0);
-        (bidOwed,) = auction.liabilities();
-        assertEq(bidOwed, 0);
+        (bidLiability,) = auction.liabilities();
+        assertEq(bidLiability, 0);
         _assertPaid(address(auction), 0, 0);
     }
 

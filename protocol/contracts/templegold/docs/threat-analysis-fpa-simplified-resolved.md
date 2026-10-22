@@ -10,7 +10,7 @@ Resolved since round 1: a pending executor proposal now dies when rescue mode sw
 A proposal the hijacked msig leaves *pending* now dies when rescue mode switches on (`RescuableAccess.sol:35-39`), and nobody can propose during rescue mode. On the factory, rescue mode also cancels a pending implementation proposal (`FixedPriceAuctionFactory.sol:57-62`). The open part of T-2, an atomic propose-and-accept, is still open.
 
 ### T-3 Unbounded windows (resolved, Low)
-**Low.** Proven (`test_XC_farFulfillmentEnd_rescuerCancels`, 100 years in). `FixedPriceAuction.sol:81-87`, `:177-188`.
+**Low.** Proven (`test_XC_farFulfillmentEnd_rescuerCancels`, 100 years in). `FixedPriceAuction.sol:85-92`, `:228-238`.
 - **Before:** in round 1 a far-future `fulfillmentEnd` froze deposits for good, because the rescuer couldn't end an auction.
 - **Now:** the rescuer can `cancel` in rescue mode at any time before `fulfillmentEnd`, which refunds everyone. With a far-future `fulfillmentEnd` that's always available.
 - **Residual:** depositors have no exit between `depositEnd` and whenever a multisig acts. "Genuine auctions finish under rescue mode by the clock" is false for a long window: in rescue mode they can only be cancelled, never settled. A freeze is permanent only if the rescuer is lost too.

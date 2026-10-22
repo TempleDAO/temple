@@ -117,7 +117,7 @@ function _isFlagged(address a) private view returns (bool) {
 }
 ```
 
-The pause stops every function that moves tokens. `settleEarly` moves no tokens, so it works while paused, as `endFulfillment` does today. The pause has no timer and no single-use limit. The msig toggles the pause. The rescuer can take over the pause (see [Pause and rescue mode](#pause-and-rescue-mode)). The clock keeps running while paused, so a long pause can let the deposit or fulfillment window lapse.
+The pause stops every function that moves tokens. `settleEarly` moves no tokens, so it works while paused. The pause has no timer and no single-use limit. The msig toggles the pause. The rescuer can take over the pause (see [Pause and rescue mode](#pause-and-rescue-mode)). The clock keeps running while paused, so a long pause can let the deposit or fulfillment window lapse.
 
 > [!NOTE]
 > **A pause during the fulfillment window decides the funding.** `fund` and `withdrawExcess` revert while paused, and the clock doesn't stop. If the auction is still paused when `fulfillmentEnd` passes, it settles with whatever funding it held when the pause began: a partial fill, or no fill and a full refund for every depositor. Unpause before `fulfillmentEnd` if the funder still needs to top up. A pause held across `depositEnd` likewise takes away depositors' right to withdraw.
@@ -206,21 +206,23 @@ The rescuer's answer to a rogue list is `disableComplianceCheck`: afterwards nob
 
 **Events:** `Deposited`, `DepositWithdrawn`, `BidderExcluded`, `BidderReinstated`, `ExcludedWithdrawn`, `Funded`, `ExcessWithdrawn`, `AuctionSettled(settledAt, …)` (from `settleEarly`, or once after a settlement by the clock from the first claim or `emitSettlement`), `AuctionCancelled`, `UserClaimed`, `TreasuryClaimed`, `PausedSet(bool)`, `RescueModeSet`, `ComplianceCheckSet`, `ComplianceCheckDisabled`, and `FunderSet`/`ProceedsRecipientSet` if decision 6 says yes. `initialize` emits `ComplianceCheckSet` for the initial pointer.
 
-### 3. `WishingWell`: record-only, keyed by (account, from, to)
+### 3. `WishingWell`: record-only, keyed by (account, fromToken, toToken)
 
-A wish says an account would give up to `amount` of `from` to get `to`, until `expiresAt`.
+A wish says an account would give up to `fromAmount` of `fromToken` to get `toToken`, until `expiresAt`.
 
 ```solidity
 contract WishingWell {
-    struct Wish { uint192 amount; uint64 expiresAt; }
+    struct Wish { uint192 fromAmount; uint64 expiresAt; }
 
-    mapping(address account => mapping(address from => mapping(address to => Wish))) public wishOf;
+    mapping(address account => mapping(address fromToken => mapping(address toToken => Wish))) public wishOf;
 
-    event WishSet(address indexed account, address indexed from, address indexed to, uint256 amount, uint64 expiresAt);
+    event WishSet(
+        address indexed account, address indexed fromToken, address indexed toToken, uint256 fromAmount, uint64 expiresAt
+    );
 
-    function wish(address from, address to, uint192 amount, uint64 expiresAt) external {
-        wishOf[msg.sender][from][to] = Wish(amount, expiresAt); // amount 0 revokes
-        emit WishSet(msg.sender, from, to, amount, expiresAt);
+    function wish(address fromToken, address toToken, uint192 fromAmount, uint64 expiresAt) external {
+        wishOf[msg.sender][fromToken][toToken] = Wish(fromAmount, expiresAt); // fromAmount 0 revokes
+        emit WishSet(msg.sender, fromToken, toToken, fromAmount, expiresAt);
     }
 }
 ```
@@ -290,7 +292,7 @@ With a record-only Well, all judgement about demand happens off-chain. The index
 
 | Need | Event |
 |---|---|
-| The wish | `WishSet(account, from, to, amount, expiresAt)` |
+| The wish | `WishSet(account, fromToken, toToken, fromAmount, expiresAt)` |
 | Which auctions are genuine, and their market | `AuctionCreated` from the factory |
 | Who bid, and how much | `Deposited`, `DepositWithdrawn` |
 | How much filled, and when | `settlement()` once `phase()` is Settlement; `AuctionSettled` (carrying `settledAt`), which a settlement by the clock emits only at its first claim or `emitSettlement` |
@@ -300,12 +302,12 @@ With a record-only Well, all judgement about demand happens off-chain. The index
 | Who is flagged | `FlaggedSet` from `ComplianceCheck` |
 
 Rules:
-- A wish matches an auction when `bidToken == from` and `fillToken == to`.
-- **A wish counts the smaller of two numbers.** One is its amount minus fills from matching auctions settled after the wish. The other is the account's balance of `from`.
-- An account's fill is `deposit − floor(deposit × userRefund / totalDeposits)` in `from` units. Take `userRefund` from `settlement()` and `totalDeposits` from `totalDeposits()`; both are fixed once `phase()` is final. A settlement by the clock emits its event late, at the first claim or `emitSettlement`, with `settledAt` = `fulfillmentEnd`.
-- **One balance cap per `from` asset.** The sum of an account's counted wishes that give the same asset can't exceed what it holds of it.
+- A wish matches an auction when `bidToken == fromToken` and `fillToken == toToken`.
+- **A wish counts the smaller of two numbers.** One is its `fromAmount` minus fills from matching auctions settled after the wish. The other is the account's balance of `fromToken`.
+- An account's fill is `deposit − floor(deposit × userRefund / totalDeposits)` in `fromToken` units. Take `userRefund` from `settlement()` and `totalDeposits` from `totalDeposits()`; both are fixed once `phase()` is final. A settlement by the clock emits its event late, at the first claim or `emitSettlement`, with `settledAt` = `fulfillmentEnd`.
+- **One balance cap per `fromToken` asset.** The sum of an account's counted wishes that give the same asset can't exceed what it holds of it.
 - **Buckets** are indexer config that group pairs into markets, for example USDS and USDC as "stables". The team reads demand per bucket. Summing across a bucket normalises decimals (USDS has 18, USDC has 6).
-- Expired wishes and wishes with amount 0 count zero.
+- Expired wishes and wishes with `fromAmount` 0 count zero.
 - **Flagged accounts count zero.**
 - **Every batch of reads uses one pinned block,** so one balance can't be counted twice by moving it between reads.
 
@@ -346,7 +348,7 @@ Open choices for the indexer (decision 9):
 | The `remainingFunding` and `fullFundingRequired` views | folded into `settlement` and `claimable`. `liabilities()` now exists, backed by the payout counters |
 | `disableComplianceCheck` callable by the msig | now rescuer-only, so the rescuer can lift a rogue msig's flags for good. The msig can still repoint to a permissive list, which the requirements allow, since the msig can update the pointer. |
 
-About 35 external functions shrink to 24, counting `initialize` and the views but not access-control-base functions or public getters (26 with the decision 6 setters; 39 in `IFixedPriceAuction` with the getters). Of 20 events and 23 errors, roughly half remain. These threats go away with the code that caused them:
+About 35 external functions shrink to 24, counting `initialize` and the views but not access-control-base functions or public getters (26 with the decision 6 setters; 38 in `IFixedPriceAuction` with the getters). Of 20 events and 23 errors, roughly half remain. These threats go away with the code that caused them:
 - frozen-release snapshot bugs
 - dust-counter accounting
 - a timed pause outlasting the windows
