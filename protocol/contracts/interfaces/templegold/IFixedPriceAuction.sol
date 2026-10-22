@@ -46,9 +46,9 @@ interface IFixedPriceAuction is IRescuableAccess {
     /// @notice All amounts in token base units. Fixed once Fulfillment ends or the auction is cancelled.
     struct Settlement {
         /// @notice Bid tokens filled, paid to the proceeds recipient.
-        uint256 filledDeposits;
+        uint256 filledBids;
         /// @notice Fill tokens shared pro-rata between bidders.
-        uint256 userFunding;
+        uint256 userFill;
         /// @notice Bid tokens refunded pro-rata to bidders.
         uint256 userRefund;
         /// @notice Unused fill tokens returned to the funder.
@@ -81,20 +81,20 @@ interface IFixedPriceAuction is IRescuableAccess {
     error NothingToClaim();
     error ComplianceCheckIsDisabled();
     error AlreadyInitialized();
-    /// @dev `AuctionSettled` was already emitted, by `endFulfillment`, a claim or `emitSettled`.
+    /// @dev `AuctionSettled` was already emitted, by `settleEarly`, a claim or `emitSettlement`.
     error AlreadySettled();
 
     event Deposited(address indexed account, uint256 amount, uint256 accountDeposit, uint256 totalDeposits);
     event DepositWithdrawn(address indexed account, uint256 amount, uint256 accountDeposit, uint256 totalDeposits);
     event Funded(address indexed funder, uint256 amount, uint256 fundingHeld);
     event ExcessWithdrawn(address indexed funder, uint256 amount, uint256 fundingHeld);
-    /// @notice Once per settlement: from `endFulfillment`, or for a settlement by the clock from the first successful
-    /// `claim` or `claimTreasury`, or `emitSettled` if that comes first, with `endedAt` = `fulfillmentEnd`.
+    /// @notice Once per settlement: from `settleEarly`, or for a settlement by the clock from the first successful
+    /// `claim` or `claimTreasury`, or `emitSettlement` if that comes first, with `settledAt` = `fulfillmentEnd`.
     event AuctionSettled(
-        uint64 endedAt,
+        uint64 settledAt,
         uint256 totalDeposits,
-        uint256 filledDeposits,
-        uint256 userFunding,
+        uint256 filledBids,
+        uint256 userFill,
         uint256 userRefund,
         uint256 funderRefund
     );
@@ -148,12 +148,12 @@ interface IFixedPriceAuction is IRescuableAccess {
 
     /// @notice Settle now with the funding held so far, emitting `AuctionSettled`. Msig only, fulfillment phase,
     /// allowed while paused.
-    function endFulfillment() external;
+    function settleEarly() external;
 
     /// @notice Emit `AuctionSettled` for an auction the clock settled at `fulfillmentEnd`, if no claim has emitted it
-    /// yet, and record `fulfillmentEnd` in `endedAt`. Anyone, once; Settled phase only. Moves no tokens and changes
+    /// yet, and record `fulfillmentEnd` in `settledAt`. Anyone, once; Settled phase only. Moves no tokens and changes
     /// no payout. Reverts `AlreadySettled` once the event has gone out.
-    function emitSettled() external;
+    function emitSettlement() external;
 
     /// @notice Abort: no trade, and all deposits and funding become refundable. Msig only; the rescuer instead
     /// while rescue mode is on. Before settlement and fulfillmentEnd; allowed while paused.
@@ -161,12 +161,12 @@ interface IFixedPriceAuction is IRescuableAccess {
 
     /// @notice Once settled or cancelled, pay the caller their fill tokens and unfilled refund. An excluded balance
     /// comes back through withdrawExcluded. The first successful `claim` or `claimTreasury` after a settlement by the
-    /// clock emits `AuctionSettled` and sets `endedAt`.
+    /// clock emits `AuctionSettled` and sets `settledAt`.
     function claim() external;
 
     /// @notice Once settled or cancelled, pay filled deposits to `proceedsRecipient` and unused funding to `funder`.
     /// Anyone, once. The first successful `claim` or `claimTreasury` after a settlement by the clock emits
-    /// `AuctionSettled` and sets `endedAt`.
+    /// `AuctionSettled` and sets `settledAt`.
     function claimTreasury() external;
 
     /// @notice Send `amount` of the auction's surplus of `token`: its balance less `liabilities()` for the bid and
@@ -219,9 +219,9 @@ interface IFixedPriceAuction is IRescuableAccess {
     /// withdrawable once unpaused and list grants can no longer exclude or reinstate.
     function complianceDisabled() external view returns (bool);
 
-    /// @notice When the auction settled (unix seconds): set by `endFulfillment`, or to `fulfillmentEnd` by the first
-    /// claim or `emitSettled` after a settlement by the clock. Zero until then, and after a cancel.
-    function endedAt() external view returns (uint40);
+    /// @notice When the auction settled (unix seconds): set by `settleEarly`, or to `fulfillmentEnd` by the first
+    /// claim or `emitSettlement` after a settlement by the clock. Zero until then, and after a cancel.
+    function settledAt() external view returns (uint40);
 
     /// @notice The sum of every `excluded` balance, in bid token base units.
     function totalExcluded() external view returns (uint256);
@@ -237,7 +237,7 @@ interface IFixedPriceAuction is IRescuableAccess {
     /// `funding() - fillPaid()`. Only a balance above this is recoverable. Rounding dust stays counted for good.
     function liabilities() external view returns (uint256 bidToken, uint256 fillToken);
 
-    /// @notice The current phase. Settled from `fulfillmentEnd` or `endFulfillment`; Cancelled after `cancel`.
+    /// @notice The current phase. Settled from `fulfillmentEnd` or `settleEarly`; Cancelled after `cancel`.
     function phase() external view returns (Phase);
 
     /// @notice The deployment terms read from the clone's code, with the current compliance list pointer.
@@ -249,7 +249,7 @@ interface IFixedPriceAuction is IRescuableAccess {
 
     /// @notice The settlement as of now, computed from `totalDeposits()` and `funding()`; fixed once settled or
     /// cancelled, since neither changes after that. Pro-rata shares divide by `totalDeposits()`.
-    function previewSettlement() external view returns (Settlement memory);
+    function settlement() external view returns (Settlement memory);
 
     /// @notice What account can claim. Zero until the auction settles or is cancelled, and after claiming. Ignores the
     /// pause and the compliance list.

@@ -316,7 +316,7 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
         _setBlocked(alice, true);
         _exclude(executor, alice);
         vm.prank(executor);
-        auction.endFulfillment();
+        auction.settleEarly();
 
         vm.prank(alice);
         vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.BlockedAccount.selector, alice));
@@ -340,7 +340,7 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
         _toFulfillment(auction);
         _fund(auction, 800e18);
         vm.prank(executor);
-        auction.endFulfillment();
+        auction.settleEarly();
         _setBlocked(alice, true);
 
         vm.prank(executor);

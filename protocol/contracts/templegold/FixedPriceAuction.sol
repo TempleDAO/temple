@@ -41,8 +41,8 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
     bool public override paused;
 
     /// @inheritdoc IFixedPriceAuction
-    uint40 public override endedAt;
-    /// @dev Set by `endFulfillment` or `cancel`. `phase()` reads Settled from `fulfillmentEnd` while this is `None`.
+    uint40 public override settledAt;
+    /// @dev Set by `settleEarly` or `cancel`. `phase()` reads Settled from `fulfillmentEnd` while this is `None`.
     Outcome private _outcome;
     /// @dev True on the implementation from deployment, and on a clone once `initialize` runs.
     bool private _initialized;
@@ -215,16 +215,16 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
     }
 
     /// @inheritdoc IFixedPriceAuction
-    function endFulfillment() external override onlyElevatedAccess {
+    function settleEarly() external override onlyElevatedAccess {
         AuctionConfig memory config = _config();
         _requirePhase(config, Phase.Fulfillment);
         _outcome = Outcome.Settled;
         // Safe: unix seconds fit in uint40 until the year 36812.
         // forge-lint: disable-next-line(unsafe-typecast)
-        endedAt = uint40(block.timestamp);
+        settledAt = uint40(block.timestamp);
 
         Settlement memory s = _calculateSettlement(config.price);
-        emit AuctionSettled(endedAt, totalDeposits, s.filledDeposits, s.userFunding, s.userRefund, s.funderRefund);
+        emit AuctionSettled(settledAt, totalDeposits, s.filledBids, s.userFill, s.userRefund, s.funderRefund);
     }
 
     /// @inheritdoc IFixedPriceAuction
@@ -241,10 +241,10 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
     }
 
     /// @inheritdoc IFixedPriceAuction
-    function emitSettled() external override {
+    function emitSettlement() external override {
         AuctionConfig memory config = _config();
         _requirePhase(config, Phase.Settled);
-        if (endedAt != 0) revert AlreadySettled();
+        if (settledAt != 0) revert AlreadySettled();
         _emitClockSettlement(config);
     }
 
@@ -351,8 +351,8 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
     }
 
     /// @inheritdoc IFixedPriceAuction
-    function previewSettlement() external view override returns (Settlement memory) {
-        return _previewSettlement(_config().price);
+    function settlement() external view override returns (Settlement memory) {
+        return _settlement(_config().price);
     }
 
     /// @inheritdoc IFixedPriceAuction
@@ -381,18 +381,18 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
         fillToken = funding - fillPaid;
     }
 
-    /// @dev The first claim after the clock settles emits `AuctionSettled`, unless `emitSettled` already has.
+    /// @dev The first claim after the clock settles emits `AuctionSettled`, unless `emitSettlement` already has.
     function _emitClockSettlementIfDue(AuctionConfig memory config) private {
-        if (_outcome == Outcome.None && endedAt == 0) _emitClockSettlement(config);
+        if (_outcome == Outcome.None && settledAt == 0) _emitClockSettlement(config);
     }
 
-    /// @dev `endedAt` doubles as the once-only flag, since `endFulfillment` sets it too.
+    /// @dev `settledAt` doubles as the once-only flag, since `settleEarly` sets it too.
     function _emitClockSettlement(AuctionConfig memory config) private {
         // Safe: initialize caps fulfillmentEnd at type(uint40).max.
         // forge-lint: disable-next-line(unsafe-typecast)
-        endedAt = uint40(config.fulfillmentEnd);
+        settledAt = uint40(config.fulfillmentEnd);
         Settlement memory s = _calculateSettlement(config.price);
-        emit AuctionSettled(endedAt, totalDeposits, s.filledDeposits, s.userFunding, s.userRefund, s.funderRefund);
+        emit AuctionSettled(settledAt, totalDeposits, s.filledBids, s.userFill, s.userRefund, s.funderRefund);
     }
 
     function _phase(AuctionConfig memory config) private view returns (Phase) {
@@ -410,7 +410,7 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
         return funding > required ? funding - required : 0;
     }
 
-    function _previewSettlement(uint256 price) private view returns (Settlement memory) {
+    function _settlement(uint256 price) private view returns (Settlement memory) {
         if (_outcome == Outcome.Cancelled) return Settlement(0, 0, totalDeposits, funding);
         return _calculateSettlement(price);
     }
@@ -420,18 +420,18 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
         AuctionConfig memory config
     ) private view returns (UserClaim memory userClaim) {
         if (!_isFinal(config) || claimed[account] || totalDeposits == 0) return userClaim;
-        Settlement memory preview = _previewSettlement(config.price);
+        Settlement memory s = _settlement(config.price);
         uint256 amount = deposits[account];
         // Independent, rounded-down shares, so claim order doesn't matter. The dust stays put.
-        userClaim.fillTokenAmount = amount.mulDivRound(preview.userFunding, totalDeposits, false);
-        userClaim.bidTokenRefund = amount.mulDivRound(preview.userRefund, totalDeposits, false);
+        userClaim.fillTokenAmount = amount.mulDivRound(s.userFill, totalDeposits, false);
+        userClaim.bidTokenRefund = amount.mulDivRound(s.userRefund, totalDeposits, false);
     }
 
     function _treasuryClaimable(AuctionConfig memory config) private view returns (TreasuryClaim memory treasuryClaim) {
         if (!_isFinal(config) || treasuryClaimed) return treasuryClaim;
-        Settlement memory preview = _previewSettlement(config.price);
-        treasuryClaim.bidTokenAmount = preview.filledDeposits;
-        treasuryClaim.fillTokenRefund = preview.funderRefund;
+        Settlement memory s = _settlement(config.price);
+        treasuryClaim.bidTokenAmount = s.filledBids;
+        treasuryClaim.fillTokenRefund = s.funderRefund;
     }
 
     /// @dev Reads only totalDeposits and funding as state, which stop changing once the phase is final.
@@ -441,10 +441,10 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
         uint256 filled = funding >= _requiredFunding(totalDeposits, price)
             ? totalDeposits
             : funding.mulDivRound(denominator, price, false);
-        uint256 userFunding = filled.mulDivRound(price, denominator, false);
+        uint256 userFill = filled.mulDivRound(price, denominator, false);
         // A fill too small to buy one fill-token wei takes no bid tokens.
-        if (userFunding == 0) filled = 0;
-        return Settlement(filled, userFunding, totalDeposits - filled, funding - userFunding);
+        if (userFill == 0) filled = 0;
+        return Settlement(filled, userFill, totalDeposits - filled, funding - userFill);
     }
 
     function _requireFinal(AuctionConfig memory config) private view {

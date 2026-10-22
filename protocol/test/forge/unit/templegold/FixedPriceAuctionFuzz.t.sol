@@ -25,15 +25,15 @@ contract FixedPriceAuctionFuzzTest is FixedPriceAuctionTestBase {
         if (p != IFixedPriceAuction.Phase.Settled && p != IFixedPriceAuction.Phase.Cancelled) {
             return (a.totalDeposits(), a.funding());
         }
-        IFixedPriceAuction.Settlement memory s = a.previewSettlement();
+        IFixedPriceAuction.Settlement memory s = a.settlement();
         for (uint256 i; i < accounts.length; ++i) {
             uint256 amount = a.deposits(accounts[i]);
             if (amount == 0 || a.claimed(accounts[i])) continue;
             bid += Math.mulDiv(amount, s.userRefund, a.totalDeposits());
-            fill += Math.mulDiv(amount, s.userFunding, a.totalDeposits());
+            fill += Math.mulDiv(amount, s.userFill, a.totalDeposits());
         }
         if (!a.treasuryClaimed()) {
-            bid += s.filledDeposits;
+            bid += s.filledBids;
             fill += s.funderRefund;
         }
     }
@@ -108,7 +108,7 @@ contract FixedPriceAuctionFuzzTest is FixedPriceAuctionTestBase {
             try auction.claimTreasury() { } catch { }
         } else if (op == 8) {
             vm.prank(executor);
-            try auction.endFulfillment() { } catch { }
+            try auction.settleEarly() { } catch { }
         } else if ((r >> 200) % 4 == 0) {
             vm.prank(auction.executor());
             try auction.cancel() { } catch { }
@@ -274,31 +274,31 @@ contract FixedPriceAuctionFuzzTest is FixedPriceAuctionTestBase {
         _toFulfillment(c.a);
         if (c.funding > 0) _fund(c.a, c.funding);
         _toEnd(c.a);
-        IFixedPriceAuction.Settlement memory s = c.a.previewSettlement();
+        IFixedPriceAuction.Settlement memory s = c.a.settlement();
         _checkSplit(c, s);
         _checkClaims(c, s);
     }
 
     function _checkSplit(Case memory c, IFixedPriceAuction.Settlement memory s) internal pure {
         // The split adds up.
-        assertLe(s.filledDeposits, c.total, "filled > total");
-        assertEq(s.userRefund, c.total - s.filledDeposits, "userRefund");
-        assertEq(s.funderRefund, c.funding - s.userFunding, "funderRefund");
+        assertLe(s.filledBids, c.total, "filled > total");
+        assertEq(s.userRefund, c.total - s.filledBids, "userRefund");
+        assertEq(s.funderRefund, c.funding - s.userFill, "funderRefund");
         // Bidders never get more than their filled deposits buy.
         assertLe(
-            s.userFunding, s.filledDeposits.mulDivRound(c.price, c.denominator, false), "userFunding > filled value"
+            s.userFill, s.filledBids.mulDivRound(c.price, c.denominator, false), "userFill > filled value"
         );
         // Full funding fills everything, unless every deposit together buys under one fill wei. Then the
         // zero-fill guard wins and nothing fills.
         if (c.funding >= c.total.mulDivRound(c.price, c.denominator, true)) {
             if (c.total.mulDivRound(c.price, c.denominator, false) == 0) {
-                assertEq(s.filledDeposits, 0, "dust deposits filled");
+                assertEq(s.filledBids, 0, "dust deposits filled");
             } else {
-                assertEq(s.filledDeposits, c.total, "full funding didn't fill everything");
+                assertEq(s.filledBids, c.total, "full funding didn't fill everything");
             }
         }
         // No fill tokens, no bid tokens taken.
-        if (s.userFunding == 0) assertEq(s.filledDeposits, 0, "bid tokens filled for no fill tokens");
+        if (s.userFill == 0) assertEq(s.filledBids, 0, "bid tokens filled for no fill tokens");
     }
 
     function _checkClaims(Case memory c, IFixedPriceAuction.Settlement memory s) internal {
@@ -313,7 +313,7 @@ contract FixedPriceAuctionFuzzTest is FixedPriceAuctionTestBase {
             assertLe(got, (c.amounts[i] - refund).mulDivRound(c.price, c.denominator, false), "fill > paid x price");
             // Each share is the exact pro-rata share of its pool rounded down: within one wei of it and never above.
             // OpenZeppelin's 512-bit mulDiv, so the check doesn't share the contract's maths library.
-            assertEq(got, Math.mulDiv(c.amounts[i], s.userFunding, c.total), "fill share != pro-rata share");
+            assertEq(got, Math.mulDiv(c.amounts[i], s.userFill, c.total), "fill share != pro-rata share");
             assertEq(refund, Math.mulDiv(c.amounts[i], s.userRefund, c.total), "refund share != pro-rata share");
             sumFill += got;
             sumRefund += refund;
@@ -321,9 +321,9 @@ contract FixedPriceAuctionFuzzTest is FixedPriceAuctionTestBase {
         c.a.claimTreasury();
 
         // Pro-rata shares never exceed the pools they're cut from, and the treasury gets its legs exactly.
-        assertLe(sumFill, s.userFunding, "user fill shares > userFunding");
+        assertLe(sumFill, s.userFill, "user fill shares > userFill");
         assertLe(sumRefund, s.userRefund, "user refund shares > userRefund");
-        assertEq(c.bid.balanceOf(proceedsRecipient), s.filledDeposits, "proceeds");
+        assertEq(c.bid.balanceOf(proceedsRecipient), s.filledBids, "proceeds");
         assertEq(c.fill.balanceOf(funder), s.funderRefund, "funder refund");
 
         // The dust left is under one wei per claimant, per token.

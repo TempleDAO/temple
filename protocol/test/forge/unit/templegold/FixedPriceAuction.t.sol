@@ -10,7 +10,7 @@ import { FakeBlocklistERC20 } from "test/forge/invariant/templegold/handlers/Fak
 
 import { IFixedPriceAuction } from "contracts/interfaces/templegold/IFixedPriceAuction.sol";
 import { FixedPriceAuction } from "contracts/templegold/FixedPriceAuction.sol";
-import { AuctionFactory } from "contracts/templegold/AuctionFactory.sol";
+import { FixedPriceAuctionFactory } from "contracts/templegold/FixedPriceAuctionFactory.sol";
 import { ComplianceCheck } from "contracts/templegold/ComplianceCheck.sol";
 import { IExecutorAccess } from "contracts/interfaces/templegold/IExecutorAccess.sol";
 import { IRescuableAccess } from "contracts/interfaces/templegold/IRescuableAccess.sol";
@@ -37,7 +37,7 @@ contract FixedPriceAuctionTestBase is TempleTest {
     FakeERC20CustomDecimals internal usds;
     ComplianceCheck internal compliance;
     FixedPriceAuction internal implementation;
-    AuctionFactory internal factory;
+    FixedPriceAuctionFactory internal factory;
     FixedPriceAuction internal auction;
 
     address internal funder = makeAddr("funder");
@@ -50,7 +50,7 @@ contract FixedPriceAuctionTestBase is TempleTest {
         usds = new FakeERC20CustomDecimals("USDS", "USDS", address(0), 0, 18);
         compliance = new ComplianceCheck(executor);
         implementation = new FixedPriceAuction();
-        factory = new AuctionFactory(executor, rescuer, address(implementation));
+        factory = new FixedPriceAuctionFactory(executor, rescuer, address(implementation));
         auction = _create(_config(address(tgld), address(usds), PRICE, 0));
     }
 
@@ -183,29 +183,29 @@ contract FixedPriceAuctionTestBase is TempleTest {
 }
 
 contract FixedPriceAuctionSettlementTest is FixedPriceAuctionTestBase {
-    /// @dev endedAt is a uint40: a timestamp past 2^32 (the year 2106) is stored whole.
-    function test_endedAt_after2106() public {
+    /// @dev settledAt is a uint40: a timestamp past 2^32 (the year 2106) is stored whole.
+    function test_settledAt_after2106() public {
         vm.warp(uint256(type(uint32).max) + 1);
         auction = _create(_config(address(tgld), address(usds), PRICE, 0));
         _toDeposit(auction);
         _deposit(auction, alice, 100e18);
         _toFulfillment(auction);
         vm.prank(executor);
-        auction.endFulfillment();
-        assertEq(auction.endedAt(), block.timestamp);
-        assertGt(auction.endedAt(), type(uint32).max);
+        auction.settleEarly();
+        assertEq(auction.settledAt(), block.timestamp);
+        assertGt(auction.settledAt(), type(uint32).max);
     }
 
     /// @dev A clock settlement records fulfillmentEnd whole, up to the uint40 bound.
-    function test_emitSettled_fulfillmentEndAtUint40Max() public {
+    function test_emitSettlement_fulfillmentEndAtUint40Max() public {
         IFixedPriceAuction.AuctionConfig memory c = _config(address(tgld), address(usds), PRICE, 0);
         c.fulfillmentEnd = type(uint40).max;
         auction = _create(c);
         _toDeposit(auction);
         _deposit(auction, alice, 100e18);
         _toEnd(auction);
-        auction.emitSettled();
-        assertEq(auction.endedAt(), type(uint40).max);
+        auction.emitSettlement();
+        assertEq(auction.settledAt(), type(uint40).max);
     }
 
     function test_workedExample_fullFunding() public {
@@ -220,14 +220,14 @@ contract FixedPriceAuctionSettlementTest is FixedPriceAuctionTestBase {
         _assertBalances(address(auction), 0, 0);
     }
 
-    function test_endFulfillment_eventCarriesFunderRefund() public {
+    function test_settleEarly_eventCarriesFunderRefund() public {
         _workedExample(5_000_000e18);
         vm.expectEmit(address(auction));
         emit IFixedPriceAuction.AuctionSettled(
             uint64(block.timestamp), 100_000_000e18, 100_000_000e18, 4_660_000e18, 0, 340_000e18
         );
         vm.prank(executor);
-        auction.endFulfillment();
+        auction.settleEarly();
     }
 
     function test_workedExample_halfFunding() public {
@@ -286,10 +286,10 @@ contract FixedPriceAuctionSettlementTest is FixedPriceAuctionTestBase {
         _deposit(auction, bob, 2);
         _toFulfillment(auction);
         _fund(auction, 4);
-        assertEq(auction.previewSettlement().filledDeposits, 2, "4 wei is not full funding");
+        assertEq(auction.settlement().filledBids, 2, "4 wei is not full funding");
 
         _fund(auction, 1);
-        assertEq(auction.previewSettlement().filledDeposits, 3, "5 wei is full funding");
+        assertEq(auction.settlement().filledBids, 3, "5 wei is full funding");
         vm.prank(funder);
         vm.expectRevert(
             abi.encodeWithSelector(CommonEventsAndErrors.InsufficientBalance.selector, address(usds), 1, 0)
@@ -304,9 +304,9 @@ contract FixedPriceAuctionSettlementTest is FixedPriceAuctionTestBase {
         _toFulfillment(auction);
         _fund(auction, 2);
         _toEnd(auction);
-        IFixedPriceAuction.Settlement memory s = auction.previewSettlement();
-        assertEq(s.filledDeposits, 22);
-        assertEq(s.userFunding, 1);
+        IFixedPriceAuction.Settlement memory s = auction.settlement();
+        assertEq(s.filledBids, 22);
+        assertEq(s.userFill, 1);
         assertEq(s.funderRefund, 1);
     }
 
@@ -320,9 +320,9 @@ contract FixedPriceAuctionSettlementTest is FixedPriceAuctionTestBase {
         _toEnd(auction);
 
         // 4 wei fills floor(4 / 1.5) = 2 bid; those 2 buy floor(2 * 1.5) = 3 fill.
-        IFixedPriceAuction.Settlement memory s = auction.previewSettlement();
-        assertEq(s.filledDeposits, 2);
-        assertEq(s.userFunding, 3);
+        IFixedPriceAuction.Settlement memory s = auction.settlement();
+        assertEq(s.filledBids, 2);
+        assertEq(s.userFill, 3);
         assertEq(s.userRefund, 1);
         assertEq(s.funderRefund, 1);
 
@@ -396,7 +396,7 @@ contract FixedPriceAuctionSettlementTest is FixedPriceAuctionTestBase {
         _workedExample(6_000_000e18);
         uint256 snapshot = vm.snapshotState();
         vm.prank(executor);
-        auction.endFulfillment();
+        auction.settleEarly();
         assertEq(auction.withdrawableExcess(), 0);
 
         vm.revertToState(snapshot);
@@ -446,9 +446,9 @@ contract FixedPriceAuctionSettlementTest is FixedPriceAuctionTestBase {
         _toFulfillment(auction);
         _fund(auction, 1);
         // 1 wei fills floor(1 / 0.0466) = 21 bid wei, which buy floor(21 * 0.0466) = 0 fill wei.
-        IFixedPriceAuction.Settlement memory s = auction.previewSettlement();
-        assertEq(s.filledDeposits, 0);
-        assertEq(s.userFunding, 0);
+        IFixedPriceAuction.Settlement memory s = auction.settlement();
+        assertEq(s.filledBids, 0);
+        assertEq(s.userFill, 0);
         assertEq(s.userRefund, 100e18);
         assertEq(s.funderRefund, 1);
 
@@ -520,7 +520,7 @@ contract FixedPriceAuctionLifecycleTest is FixedPriceAuctionTestBase {
         auction.fund(1);
     }
 
-    function test_endFulfillment_settlesEarly() public {
+    function test_settleEarly_settlesEarly() public {
         _workedExample(2_330_000e18);
         vm.warp(block.timestamp + 1 hours);
 
@@ -529,10 +529,10 @@ contract FixedPriceAuctionLifecycleTest is FixedPriceAuctionTestBase {
             uint64(block.timestamp), 100_000_000e18, 50_000_000e18, 2_330_000e18, 50_000_000e18, 0
         );
         vm.prank(executor);
-        auction.endFulfillment();
+        auction.settleEarly();
 
         assertEq(uint256(auction.phase()), uint256(IFixedPriceAuction.Phase.Settled));
-        assertEq(auction.endedAt(), block.timestamp);
+        assertEq(auction.settledAt(), block.timestamp);
 
         // Funding is closed and claims are open.
         usds.mint(funder, 1);
@@ -549,7 +549,7 @@ contract FixedPriceAuctionLifecycleTest is FixedPriceAuctionTestBase {
         _assertBalances(alice, 30_000_000e18, 1_398_000e18);
     }
 
-    function test_endFulfillment_onlyMsigInFulfillment() public {
+    function test_settleEarly_onlyMsigInFulfillment() public {
         _toDeposit(auction);
         vm.prank(executor);
         vm.expectRevert(
@@ -559,11 +559,11 @@ contract FixedPriceAuctionLifecycleTest is FixedPriceAuctionTestBase {
                 IFixedPriceAuction.Phase.Deposit
             )
         );
-        auction.endFulfillment();
+        auction.settleEarly();
 
         _toFulfillment(auction);
         expectElevatedAccess();
-        auction.endFulfillment();
+        auction.settleEarly();
     }
 
     /// @dev A settlement by the clock: the first claim, however late, emits `AuctionSettled` at `fulfillmentEnd`
@@ -572,7 +572,7 @@ contract FixedPriceAuctionLifecycleTest is FixedPriceAuctionTestBase {
         _workedExample(2_330_000e18);
         _toEnd(auction);
         uint64 end = auction.getConfig().fulfillmentEnd;
-        assertEq(auction.endedAt(), 0);
+        assertEq(auction.settledAt(), 0);
         vm.warp(block.timestamp + 10 days);
 
         vm.expectEmit(address(auction));
@@ -581,8 +581,8 @@ contract FixedPriceAuctionLifecycleTest is FixedPriceAuctionTestBase {
         emit IFixedPriceAuction.UserClaimed(alice, 1_398_000e18, 30_000_000e18);
         vm.prank(alice);
         auction.claim();
-        assertEq(auction.endedAt(), end);
-        assertEq(auction.previewSettlement().filledDeposits, 50_000_000e18);
+        assertEq(auction.settledAt(), end);
+        assertEq(auction.settlement().filledBids, 50_000_000e18);
 
         vm.recordLogs();
         vm.prank(bob);
@@ -590,7 +590,7 @@ contract FixedPriceAuctionLifecycleTest is FixedPriceAuctionTestBase {
         auction.claimTreasury();
         _assertNoSettledEvent(vm.getRecordedLogs());
         vm.expectRevert(IFixedPriceAuction.AlreadySettled.selector);
-        auction.emitSettled();
+        auction.emitSettlement();
         _assertBalances(alice, 30_000_000e18, 1_398_000e18);
     }
 
@@ -603,7 +603,7 @@ contract FixedPriceAuctionLifecycleTest is FixedPriceAuctionTestBase {
         vm.expectEmit(address(auction));
         emit IFixedPriceAuction.TreasuryClaimed(proceedsRecipient, funder, 100_000_000e18, 340_000e18);
         auction.claimTreasury();
-        assertEq(auction.endedAt(), end);
+        assertEq(auction.settledAt(), end);
 
         vm.recordLogs();
         vm.prank(alice);
@@ -611,17 +611,17 @@ contract FixedPriceAuctionLifecycleTest is FixedPriceAuctionTestBase {
         _assertNoSettledEvent(vm.getRecordedLogs());
     }
 
-    /// @dev Neither an early settlement nor a cancel gets a second event or an endedAt from a claim.
-    function test_claim_afterEndFulfillmentOrCancel_emitsNoSettlement() public {
+    /// @dev Neither an early settlement nor a cancel gets a second event or a settledAt from a claim.
+    function test_claim_afterSettleEarlyOrCancel_emitsNoSettlement() public {
         _workedExample(2_330_000e18);
         vm.prank(executor);
-        auction.endFulfillment();
-        uint256 ended = block.timestamp;
+        auction.settleEarly();
+        uint256 settled = block.timestamp;
         _toEnd(auction);
         vm.recordLogs();
         _claimAll(auction);
         _assertNoSettledEvent(vm.getRecordedLogs());
-        assertEq(auction.endedAt(), ended);
+        assertEq(auction.settledAt(), settled);
 
         auction = _create(_config(address(tgld), address(usds), PRICE, 0));
         _workedExample(2_330_000e18);
@@ -630,10 +630,10 @@ contract FixedPriceAuctionLifecycleTest is FixedPriceAuctionTestBase {
         vm.recordLogs();
         _claimAll(auction);
         _assertNoSettledEvent(vm.getRecordedLogs());
-        assertEq(auction.endedAt(), 0);
+        assertEq(auction.settledAt(), 0);
     }
 
-    function test_emitSettled_clockOnce() public {
+    function test_emitSettlement_clockOnce() public {
         _workedExample(1_000_000e18);
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -642,42 +642,42 @@ contract FixedPriceAuctionLifecycleTest is FixedPriceAuctionTestBase {
                 IFixedPriceAuction.Phase.Fulfillment
             )
         );
-        auction.emitSettled();
+        auction.emitSettlement();
 
         _toEnd(auction);
-        IFixedPriceAuction.Settlement memory s = auction.previewSettlement();
+        IFixedPriceAuction.Settlement memory s = auction.settlement();
         uint64 end = auction.getConfig().fulfillmentEnd;
         vm.warp(block.timestamp + 1 days);
         vm.expectEmit(address(auction));
         emit IFixedPriceAuction.AuctionSettled(
-            end, 100_000_000e18, s.filledDeposits, s.userFunding, s.userRefund, s.funderRefund
+            end, 100_000_000e18, s.filledBids, s.userFill, s.userRefund, s.funderRefund
         );
         vm.prank(unauthorizedUser);
-        auction.emitSettled();
-        assertEq(auction.endedAt(), end);
-        assertEq(abi.encode(auction.previewSettlement()), abi.encode(s));
+        auction.emitSettlement();
+        assertEq(auction.settledAt(), end);
+        assertEq(abi.encode(auction.settlement()), abi.encode(s));
 
         vm.expectRevert(IFixedPriceAuction.AlreadySettled.selector);
-        auction.emitSettled();
+        auction.emitSettlement();
         // Claims after it emit nothing more and pay as before.
         vm.recordLogs();
         _claimAll(auction);
         _assertNoSettledEvent(vm.getRecordedLogs());
-        _assertBalances(proceedsRecipient, s.filledDeposits, 0);
+        _assertBalances(proceedsRecipient, s.filledBids, 0);
     }
 
-    function test_emitSettled_afterEndFulfillment_reverts() public {
+    function test_emitSettlement_afterSettleEarly_reverts() public {
         _workedExample(1_000_000e18);
         vm.prank(executor);
-        auction.endFulfillment();
+        auction.settleEarly();
         vm.expectRevert(IFixedPriceAuction.AlreadySettled.selector);
-        auction.emitSettled();
+        auction.emitSettlement();
         _toEnd(auction);
         vm.expectRevert(IFixedPriceAuction.AlreadySettled.selector);
-        auction.emitSettled();
+        auction.emitSettlement();
     }
 
-    function test_emitSettled_cancelled_reverts() public {
+    function test_emitSettlement_cancelled_reverts() public {
         _workedExample(0);
         vm.prank(executor);
         auction.cancel();
@@ -688,7 +688,7 @@ contract FixedPriceAuctionLifecycleTest is FixedPriceAuctionTestBase {
                 IFixedPriceAuction.Phase.Cancelled
             )
         );
-        auction.emitSettled();
+        auction.emitSettlement();
     }
 
     function _assertNoSettledEvent(Vm.Log[] memory logs) internal pure {
@@ -794,7 +794,7 @@ contract FixedPriceAuctionLifecycleTest is FixedPriceAuctionTestBase {
     function test_cancel_notAfterEarlySettlementOrTwice() public {
         _workedExample(1e18);
         vm.startPrank(executor);
-        auction.endFulfillment();
+        auction.settleEarly();
         vm.expectRevert(
             abi.encodeWithSelector(
                 IFixedPriceAuction.InvalidPhase.selector,
@@ -1026,11 +1026,11 @@ contract FixedPriceAuctionPauseTest is FixedPriceAuctionTestBase {
         _claimAll(auction);
     }
 
-    function test_paused_endFulfillmentWorks() public {
+    function test_paused_settleEarlyWorks() public {
         _workedExample(1e18);
         _pause();
         vm.prank(executor);
-        auction.endFulfillment();
+        auction.settleEarly();
         assertEq(uint256(auction.phase()), uint256(IFixedPriceAuction.Phase.Settled));
     }
 
@@ -1073,7 +1073,7 @@ contract FixedPriceAuctionRescueModeTest is FixedPriceAuctionTestBase {
         vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
         auction.cancel();
         vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
-        auction.endFulfillment();
+        auction.settleEarly();
         vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
         auction.setComplianceCheck(address(compliance));
         vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
@@ -1100,7 +1100,7 @@ contract FixedPriceAuctionRescueModeTest is FixedPriceAuctionTestBase {
         assertFalse(auction.paused());
 
         vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
-        auction.endFulfillment();
+        auction.settleEarly();
         vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
         auction.setComplianceCheck(address(compliance));
         vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
@@ -1468,10 +1468,10 @@ contract FixedPriceAuctionRecoverTokenTest is FixedPriceAuctionTestBase {
     /// @dev Only a donation of either auction token is recoverable, at any time, and it changes no one's payout.
     function test_recoverToken_ownTokensDonationOnly_donationChangesNoPayout() public {
         _workedExample(2_330_000e18);
-        IFixedPriceAuction.Settlement memory before = auction.previewSettlement();
+        IFixedPriceAuction.Settlement memory before = auction.settlement();
         tgld.mint(address(auction), 7);
         usds.mint(address(auction), 3);
-        assertEq(abi.encode(auction.previewSettlement()), abi.encode(before));
+        assertEq(abi.encode(auction.settlement()), abi.encode(before));
         assertEq(auction.withdrawableExcess(), 0);
 
         vm.startPrank(executor);
@@ -1820,7 +1820,7 @@ contract FixedPriceAuctionDecimalsTest is FixedPriceAuctionTestBase {
         vm.revertToState(snapshot);
         // Half: 2.33mm USDC fills 50mm TGLD.
         _fund(auction, 2.33e12);
-        assertEq(auction.previewSettlement().filledDeposits, 5e25);
+        assertEq(auction.settlement().filledBids, 5e25);
         _settleAndClaim(auction, _two());
         assertEq(usdc.balanceOf(alice), 1.398e12);
         assertEq(tgld.balanceOf(alice), 3e25);
@@ -1870,10 +1870,10 @@ contract FixedPriceAuctionDecimalsTest is FixedPriceAuctionTestBase {
         _fund(auction, 100_001);
 
         // filled = floor(100,001 x 1e30 / 0.0466e18) = 2,145,944,206,008,583,690 TGLD wei.
-        // userFunding = floor(filled x 0.0466e18 / 1e30) = 100,000, so 1 wei goes back to the funder.
-        IFixedPriceAuction.Settlement memory s = auction.previewSettlement();
-        assertEq(s.filledDeposits, 2_145_944_206_008_583_690);
-        assertEq(s.userFunding, 100_000);
+        // userFill = floor(filled x 0.0466e18 / 1e30) = 100,000, so 1 wei goes back to the funder.
+        IFixedPriceAuction.Settlement memory s = auction.settlement();
+        assertEq(s.filledBids, 2_145_944_206_008_583_690);
+        assertEq(s.userFill, 100_000);
         assertEq(s.userRefund, 3e18 - 2_145_944_206_008_583_690);
         assertEq(s.funderRefund, 1);
 

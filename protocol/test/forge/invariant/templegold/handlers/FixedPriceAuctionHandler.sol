@@ -32,7 +32,7 @@ contract FixedPriceAuctionHandler is Test {
         address executor;
         address rescuer;
         IFixedPriceAuction.Phase phase;
-        uint64 endedAt;
+        uint64 settledAt;
     }
 
     FixedPriceAuction public immutable auction;
@@ -89,7 +89,7 @@ contract FixedPriceAuctionHandler is Test {
     // Frozen once the phase is first Settled or Cancelled, by the clock or a call
     bool public hasOutcome;
     IFixedPriceAuction.Settlement internal _frozenSettlement;
-    uint64 public ghostEndedAt;
+    uint64 public ghostSettledAt;
     IFixedPriceAuction.Phase public ghostOutcome;
 
     /// @dev Bidders blocked at the fill-token level. Only set when the fill token is a FakeBlocklistERC20.
@@ -426,7 +426,7 @@ contract FixedPriceAuctionHandler is Test {
         if (amount == 0) amount = 1;
 
         State memory before = _state();
-        bool fullBefore = auction.previewSettlement().filledDeposits == before.totalDeposits;
+        bool fullBefore = auction.settlement().filledBids == before.totalDeposits;
         vm.prank(config.funder);
         bool ok;
         try auction.withdrawExcess(amount) {
@@ -440,7 +440,7 @@ contract FixedPriceAuctionHandler is Test {
         _check(ok == (amount <= view_), "withdrawExcess disagrees with withdrawableExcess");
         if (ok && fullBefore && amount == view_) {
             _check(
-                auction.previewSettlement().filledDeposits == before.totalDeposits,
+                auction.settlement().filledBids == before.totalDeposits,
                 "withdrawing the excess left deposits unfilled"
             );
             // Recomputed here, so a rounding slip shared by the view and the settlement still shows.
@@ -481,51 +481,51 @@ contract FixedPriceAuctionHandler is Test {
     }
 
     /// @dev Anyone may emit `AuctionSettled` for a settlement by the clock, exactly when Settled and no event has gone
-    /// out (endedAt still 0). Pause, rescue mode and the compliance lists don't stop it.
-    function emitSettled() external step {
+    /// out (settledAt still 0). Pause, rescue mode and the compliance lists don't stop it.
+    function emitSettlement() external step {
         State memory before = _state();
         vm.prank(outsider);
         bool ok;
-        try auction.emitSettled() {
+        try auction.emitSettlement() {
             ok = true;
-            ++successes["emitSettled"];
+            ++successes["emitSettlement"];
         } catch {}
         _check(
-            ok == (before.phase == IFixedPriceAuction.Phase.Settled && before.endedAt == 0),
-            "emitSettled not exactly once after a clock settlement"
+            ok == (before.phase == IFixedPriceAuction.Phase.Settled && before.settledAt == 0),
+            "emitSettlement not exactly once after a clock settlement"
         );
-        if (ok) _check(auction.endedAt() == config.fulfillmentEnd, "emitSettled didn't record fulfillmentEnd");
+        if (ok) _check(auction.settledAt() == config.fulfillmentEnd, "emitSettlement didn't record fulfillmentEnd");
     }
 
-    /// @dev Once Settled, a successful claim leaves endedAt set: from `endFulfillment`, or `fulfillmentEnd` recorded by
-    /// this or an earlier claim or `emitSettled`.
+    /// @dev Once Settled, a successful claim leaves settledAt set: from `settleEarly`, or `fulfillmentEnd` recorded by
+    /// this or an earlier claim or `emitSettlement`.
     function _checkClockSettlementRecorded(bool ok, State memory before) internal {
         if (!ok || before.phase != IFixedPriceAuction.Phase.Settled) return;
         _check(
-            auction.endedAt() == (before.endedAt == 0 ? config.fulfillmentEnd : before.endedAt),
+            auction.settledAt() == (before.settledAt == 0 ? config.fulfillmentEnd : before.settledAt),
             "claim after a clock settlement didn't record fulfillmentEnd once"
         );
     }
 
     /****** MSIG ******/
 
-    function endFulfillment(uint256 seed) external step {
+    function settleEarly(uint256 seed) external step {
         // Gated on a hashed seed: about one call in four tries once something is funded, one in 32 before (an
         // early end before funding fills nothing).
         if (uint256(keccak256(abi.encode(seed))) % (successes["fund"] == 0 ? 32 : 4) != 0) return;
         State memory before = _state();
         vm.prank(msig);
         bool ok;
-        try auction.endFulfillment() {
+        try auction.settleEarly() {
             ok = true;
-            ++successes["endFulfillment"];
+            ++successes["settleEarly"];
         } catch {}
         _checkRescueMode(ok, before);
-        _checkPhase(ok, before.phase, IFixedPriceAuction.Phase.Fulfillment, "endFulfillment outside Fulfillment");
+        _checkPhase(ok, before.phase, IFixedPriceAuction.Phase.Fulfillment, "settleEarly outside Fulfillment");
         // Pause doesn't stop it: outside rescue mode it works whenever the auction is in Fulfillment.
         _check(
             ok || before.inRescueMode || before.phase != IFixedPriceAuction.Phase.Fulfillment,
-            "endFulfillment refused in Fulfillment"
+            "settleEarly refused in Fulfillment"
         );
     }
 
@@ -674,7 +674,7 @@ contract FixedPriceAuctionHandler is Test {
         vm.startPrank(rescuer);
         bool ok = true;
         op = op % 4;
-        if (op == 0) try auction.endFulfillment() {} catch { ok = false; }
+        if (op == 0) try auction.settleEarly() {} catch { ok = false; }
         else if (op == 1) try auction.recoverToken(address(stray), rescuer, 1) {} catch { ok = false; }
         else if (op == 2) try auction.setComplianceCheck(address(compliance2)) {} catch { ok = false; }
         else try auction.proposeNewExecutor(rescuer) {} catch { ok = false; }
@@ -880,7 +880,7 @@ contract FixedPriceAuctionHandler is Test {
     /****** INTERNALS ******/
 
     /// @dev Counts the outcome events the last call emitted, and checks an `AuctionSettled` against the settlement
-    /// and `endedAt`, and an `AuctionCancelled` against the cancel settlement.
+    /// and `settledAt`, and an `AuctionCancelled` against the cancel settlement.
     function _countOutcomeEvents() internal {
         Vm.Log[] memory logs = vm.getRecordedLogs();
         for (uint256 i; i < logs.length; ++i) {
@@ -888,9 +888,9 @@ contract FixedPriceAuctionHandler is Test {
             bytes32 topic = logs[i].topics[0];
             if (topic == IFixedPriceAuction.AuctionSettled.selector) {
                 ++settledEvents;
-                IFixedPriceAuction.Settlement memory s = auction.previewSettlement();
+                IFixedPriceAuction.Settlement memory s = auction.settlement();
                 bytes memory stored = abi.encode(
-                    auction.endedAt(), auction.totalDeposits(), s.filledDeposits, s.userFunding, s.userRefund,
+                    auction.settledAt(), auction.totalDeposits(), s.filledBids, s.userFill, s.userRefund,
                     s.funderRefund
                 );
                 _check(
@@ -898,7 +898,7 @@ contract FixedPriceAuctionHandler is Test {
                 );
             } else if (topic == IFixedPriceAuction.AuctionCancelled.selector) {
                 ++cancelledEvents;
-                IFixedPriceAuction.Settlement memory s = auction.previewSettlement();
+                IFixedPriceAuction.Settlement memory s = auction.settlement();
                 bytes memory stored = abi.encode(s.userRefund, s.funderRefund);
                 _check(
                     keccak256(logs[i].data) == keccak256(stored) && s.userRefund == auction.totalDeposits(),
@@ -922,8 +922,8 @@ contract FixedPriceAuctionHandler is Test {
         }
         if (!_final(current)) return;
         hasOutcome = true;
-        _frozenSettlement = auction.previewSettlement();
-        ghostEndedAt = auction.endedAt();
+        _frozenSettlement = auction.settlement();
+        ghostSettledAt = auction.settledAt();
         ghostOutcome = auction.phase();
     }
 
@@ -943,7 +943,7 @@ contract FixedPriceAuctionHandler is Test {
         s.executor = auction.executor();
         s.rescuer = auction.rescuer();
         s.phase = auction.phase();
-        s.endedAt = auction.endedAt();
+        s.settledAt = auction.settledAt();
     }
 
     function _same(State memory a, State memory b) internal pure returns (bool) {
