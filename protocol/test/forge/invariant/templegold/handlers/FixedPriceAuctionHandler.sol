@@ -86,7 +86,7 @@ contract FixedPriceAuctionHandler is Test {
     uint256 public strayFill;
     uint256 public strayOther;
 
-    // Frozen once the phase is first Settled or Cancelled, by the clock or a call
+    // Frozen once the phase is first Settlement or Cancelled, by the clock or a call
     bool public hasOutcome;
     IFixedPriceAuction.Settlement internal _frozenSettlement;
     uint64 public ghostSettledAt;
@@ -480,7 +480,7 @@ contract FixedPriceAuctionHandler is Test {
         treasuryFillPaid += fill.balanceOf(config.funder) - fillBefore;
     }
 
-    /// @dev Anyone may emit `AuctionSettled` for a settlement by the clock, exactly when Settled and no event has gone
+    /// @dev Anyone may emit `AuctionSettled` for a settlement by the clock, exactly in Settlement while no event has gone
     /// out (settledAt still 0). Pause, rescue mode and the compliance lists don't stop it.
     function emitSettlement() external step {
         State memory before = _state();
@@ -497,7 +497,7 @@ contract FixedPriceAuctionHandler is Test {
         if (ok) _check(auction.settledAt() == config.fulfillmentEnd, "emitSettlement didn't record fulfillmentEnd");
     }
 
-    /// @dev Once Settled, a successful claim leaves settledAt set: from `settleEarly`, or `fulfillmentEnd` recorded by
+    /// @dev In Settlement, a successful claim leaves settledAt set: from `settleEarly`, or `fulfillmentEnd` recorded by
     /// this or an earlier claim or `emitSettlement`.
     function _checkClockSettlementRecorded(bool ok, State memory before) internal {
         if (!ok || before.phase != IFixedPriceAuction.Phase.Settlement) return;

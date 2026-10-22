@@ -117,7 +117,7 @@ function _isFlagged(address a) private view returns (bool) {
 }
 ```
 
-The pause stops every function that moves tokens. `settleEarly` moves no tokens, so it works while paused, as `endFulfillment` does today. The pause has no timer and no single-use limit. The msig toggles the pause. The rescuer can take over the pause (see [Pause and rescue mode](#pause-and-rescue-mode)). The clock keeps running while paused, so a long pause can let the deposit or fulfillment window lapse.
+The pause stops every function that moves tokens. `settleEarly` moves no tokens, so it works while paused. The pause has no timer and no single-use limit. The msig toggles the pause. The rescuer can take over the pause (see [Pause and rescue mode](#pause-and-rescue-mode)). The clock keeps running while paused, so a long pause can let the deposit or fulfillment window lapse.
 
 > [!NOTE]
 > **A pause during the fulfillment window decides the funding.** `fund` and `withdrawExcess` revert while paused, and the clock doesn't stop. If the auction is still paused when `fulfillmentEnd` passes, it settles with whatever funding it held when the pause began: a partial fill, or no fill and a full refund for every depositor. Unpause before `fulfillmentEnd` if the funder still needs to top up. A pause held across `depositEnd` likewise takes away depositors' right to withdraw.
@@ -346,7 +346,7 @@ Open choices for the indexer (decision 9):
 | The `remainingFunding` and `fullFundingRequired` views | folded into `settlement` and `claimable`. `liabilities()` now exists, backed by the payout counters |
 | `disableComplianceCheck` callable by the msig | now rescuer-only, so the rescuer can lift a rogue msig's flags for good. The msig can still repoint to a permissive list, which the requirements allow, since the msig can update the pointer. |
 
-About 35 external functions shrink to 24, counting `initialize` and the views but not access-control-base functions or public getters (26 with the decision 6 setters; 39 in `IFixedPriceAuction` with the getters). Of 20 events and 23 errors, roughly half remain. These threats go away with the code that caused them:
+About 35 external functions shrink to 24, counting `initialize` and the views but not access-control-base functions or public getters (26 with the decision 6 setters; 38 in `IFixedPriceAuction` with the getters). Of 20 events and 23 errors, roughly half remain. These threats go away with the code that caused them:
 - frozen-release snapshot bugs
 - dust-counter accounting
 - a timed pause outlasting the windows

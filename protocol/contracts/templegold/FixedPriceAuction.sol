@@ -42,7 +42,7 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
 
     /// @inheritdoc IFixedPriceAuction
     uint40 public override settledAt;
-    /// @dev Set by `settleEarly` or `cancel`. `phase()` reads Settled from `fulfillmentEnd` while this is `None`.
+    /// @dev Set by `settleEarly` or `cancel`. `phase()` reads Settlement from `fulfillmentEnd` while this is `None`.
     Outcome private _outcome;
     /// @dev True on the implementation from deployment, and on a clone once `initialize` runs.
     bool private _initialized;
@@ -221,10 +221,7 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
         _outcome = Outcome.Settled;
         // Safe: unix seconds fit in uint40 until the year 36812.
         // forge-lint: disable-next-line(unsafe-typecast)
-        settledAt = uint40(block.timestamp);
-
-        Settlement memory s = _calculateSettlement(config.price);
-        emit AuctionSettled(settledAt, totalDeposits, s.filledBids, s.userFill, s.userRefund, s.funderRefund);
+        _emitSettlement(uint40(block.timestamp), config.price);
     }
 
     /// @inheritdoc IFixedPriceAuction
@@ -366,7 +363,7 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
     }
 
     /// @inheritdoc IFixedPriceAuction
-    function liabilities() external view override returns (uint256 bidToken, uint256 fillToken) {
+    function liabilities() external view override returns (uint256 bidLiability, uint256 fillLiability) {
         return _liabilities();
     }
 
@@ -376,9 +373,9 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
     }
 
     /// @dev Deposits, excluded balances and funding, less what claims have already paid out.
-    function _liabilities() private view returns (uint256 bidToken, uint256 fillToken) {
-        bidToken = totalDeposits + totalExcluded - bidPaid;
-        fillToken = funding - fillPaid;
+    function _liabilities() private view returns (uint256 bidLiability, uint256 fillLiability) {
+        bidLiability = totalDeposits + totalExcluded - bidPaid;
+        fillLiability = funding - fillPaid;
     }
 
     /// @dev The first claim after the clock settles emits `AuctionSettled`, unless `emitSettlement` already has.
@@ -386,13 +383,17 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
         if (_outcome == Outcome.None && settledAt == 0) _emitClockSettlement(config);
     }
 
-    /// @dev `settledAt` doubles as the once-only flag, since `settleEarly` sets it too.
     function _emitClockSettlement(AuctionConfig memory config) private {
         // Safe: initialize caps fulfillmentEnd at type(uint40).max.
         // forge-lint: disable-next-line(unsafe-typecast)
-        settledAt = uint40(config.fulfillmentEnd);
-        Settlement memory s = _calculateSettlement(config.price);
-        emit AuctionSettled(settledAt, totalDeposits, s.filledBids, s.userFill, s.userRefund, s.funderRefund);
+        _emitSettlement(uint40(config.fulfillmentEnd), config.price);
+    }
+
+    /// @dev `settledAt` doubles as the once-only flag for the event.
+    function _emitSettlement(uint40 at, uint256 price) private {
+        settledAt = at;
+        Settlement memory s = _calculateSettlement(price);
+        emit AuctionSettled(at, totalDeposits, s.filledBids, s.userFill, s.userRefund, s.funderRefund);
     }
 
     function _phase(AuctionConfig memory config) private view returns (Phase) {

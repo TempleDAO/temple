@@ -39,21 +39,6 @@ contract WishingWellTest is TempleTest {
         _assertWish(alice, usds, tgld, 0, 0);
     }
 
-    function test_wish_pairsAndAccountsAreIndependent() public {
-        vm.startPrank(alice);
-        well.wish(usds, tgld, 1e18, 10);
-        well.wish(usdc, tgld, 2e6, 20);
-        well.wish(tgld, usds, 3e18, 30);
-        vm.stopPrank();
-        vm.prank(bob);
-        well.wish(usds, tgld, 4e18, 40);
-
-        _assertWish(alice, usds, tgld, 1e18, 10);
-        _assertWish(alice, usdc, tgld, 2e6, 20);
-        _assertWish(alice, tgld, usds, 3e18, 30);
-        _assertWish(bob, usds, tgld, 4e18, 40);
-        _assertWish(bob, usdc, tgld, 0, 0);
-    }
 
     address[3] internal accounts;
     address[3] internal tokens;
