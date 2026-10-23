@@ -5,7 +5,6 @@ import { TempleTest } from "test/forge/unit/TempleTest.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { IComplianceCheck } from "contracts/interfaces/templegold/IComplianceCheck.sol";
 import { IExecutorAccess } from "contracts/interfaces/templegold/IExecutorAccess.sol";
-import { ITempleElevatedAccess } from "contracts/interfaces/v2/access/ITempleElevatedAccess.sol";
 import { ComplianceCheck } from "contracts/templegold/ComplianceCheck.sol";
 
 contract ComplianceCheckTest is TempleTest {
@@ -27,24 +26,16 @@ contract ComplianceCheckTest is TempleTest {
         accounts[1] = bob;
     }
 
-    function _access(
-        bytes4 selector,
-        bool allowed
-    ) internal pure returns (ITempleElevatedAccess.ExplicitAccess[] memory access) {
-        access = new ITempleElevatedAccess.ExplicitAccess[](1);
-        access[0] = ITempleElevatedAccess.ExplicitAccess(selector, allowed);
-    }
-
-    function _grant(address account, bytes4 selector, bool allowed) internal {
+    function _setFlagger(address account, bool value) internal {
         vm.prank(executor);
-        compliance.setExplicitAccess(account, _access(selector, allowed));
+        compliance.setFlagger(account, value);
     }
 
     function test_initialization() public view {
         assertEq(compliance.executor(), executor);
         assertEq(compliance.proposedExecutor(), address(0));
         assertFalse(compliance.isFlagged(alice));
-        assertFalse(compliance.explicitFunctionAccess(flagger, ComplianceCheck.setFlagged.selector));
+        assertFalse(compliance.isFlagger(flagger));
     }
 
     function test_access_setFlagged() public {
@@ -53,46 +44,34 @@ contract ComplianceCheckTest is TempleTest {
         compliance.setFlagged(_accounts(), true);
     }
 
-    function test_access_setExplicitAccess() public {
+    function test_access_setFlagger() public {
         vm.prank(unauthorizedUser);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
-        compliance.setExplicitAccess(flagger, _access(ComplianceCheck.setFlagged.selector, true));
+        compliance.setFlagger(flagger, true);
 
-        // A grantee can't widen its own access.
-        _grant(flagger, ComplianceCheck.setFlagged.selector, true);
+        // A flagger can't add another.
+        _setFlagger(flagger, true);
         vm.prank(flagger);
         vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
-        compliance.setExplicitAccess(flagger, _access(ComplianceCheck.setExplicitAccess.selector, true));
-
-        // Nor can a grant of setExplicitAccess itself reach it: only the executor can.
-        _grant(flagger, ComplianceCheck.setExplicitAccess.selector, true);
-        vm.prank(flagger);
-        vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
-        compliance.setExplicitAccess(alice, _access(ComplianceCheck.setFlagged.selector, true));
+        compliance.setFlagger(alice, true);
     }
 
-    function test_setExplicitAccess_fail_zeroAddress() public {
+    function test_setFlagger_fail_zeroAddress() public {
         vm.prank(executor);
         vm.expectRevert(CommonEventsAndErrors.InvalidAddress.selector);
-        compliance.setExplicitAccess(address(0), _access(ComplianceCheck.setFlagged.selector, true));
+        compliance.setFlagger(address(0), true);
     }
 
-    function test_setExplicitAccess_success_grantAndRevoke() public {
-        ITempleElevatedAccess.ExplicitAccess[] memory access = new ITempleElevatedAccess.ExplicitAccess[](2);
-        access[0] = ITempleElevatedAccess.ExplicitAccess(ComplianceCheck.setFlagged.selector, true);
-        access[1] = ITempleElevatedAccess.ExplicitAccess(ComplianceCheck.setExplicitAccess.selector, false);
+    function test_setFlagger_success_addAndRemove() public {
         vm.expectEmit(address(compliance));
-        emit IComplianceCheck.ExplicitAccessSet(flagger, ComplianceCheck.setFlagged.selector, true);
-        vm.expectEmit(address(compliance));
-        emit IComplianceCheck.ExplicitAccessSet(flagger, ComplianceCheck.setExplicitAccess.selector, false);
-        vm.prank(executor);
-        compliance.setExplicitAccess(flagger, access);
-        assertTrue(compliance.explicitFunctionAccess(flagger, ComplianceCheck.setFlagged.selector));
+        emit IComplianceCheck.FlaggerSet(flagger, true);
+        _setFlagger(flagger, true);
+        assertTrue(compliance.isFlagger(flagger));
 
         vm.expectEmit(address(compliance));
-        emit IComplianceCheck.ExplicitAccessSet(flagger, ComplianceCheck.setFlagged.selector, false);
-        _grant(flagger, ComplianceCheck.setFlagged.selector, false);
-        assertFalse(compliance.explicitFunctionAccess(flagger, ComplianceCheck.setFlagged.selector));
+        emit IComplianceCheck.FlaggerSet(flagger, false);
+        _setFlagger(flagger, false);
+        assertFalse(compliance.isFlagger(flagger));
     }
 
     function test_setFlagged_success_byExecutor() public {
@@ -112,12 +91,12 @@ contract ComplianceCheckTest is TempleTest {
         assertFalse(compliance.isFlagged(alice));
     }
 
-    function test_setFlagged_success_byGranteeUntilRevoked() public {
+    function test_setFlagged_success_byFlaggerUntilRemoved() public {
         vm.prank(flagger);
         vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
         compliance.setFlagged(_accounts(), true);
 
-        _grant(flagger, ComplianceCheck.setFlagged.selector, true);
+        _setFlagger(flagger, true);
         vm.prank(flagger);
         compliance.setFlagged(_accounts(), true);
         assertTrue(compliance.isFlagged(bob));
@@ -125,14 +104,7 @@ contract ComplianceCheckTest is TempleTest {
         compliance.setFlagged(_accounts(), false);
         assertFalse(compliance.isFlagged(bob));
 
-        _grant(flagger, ComplianceCheck.setFlagged.selector, false);
-        vm.prank(flagger);
-        vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
-        compliance.setFlagged(_accounts(), true);
-    }
-
-    function test_setFlagged_fail_otherSelectorGranted() public {
-        _grant(flagger, ComplianceCheck.setExplicitAccess.selector, true);
+        _setFlagger(flagger, false);
         vm.prank(flagger);
         vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
         compliance.setFlagged(_accounts(), true);
@@ -162,22 +134,11 @@ contract ComplianceCheckTest is TempleTest {
         compliance.setFlagged(_accounts(), true);
     }
 
-    /// @dev A proposeNewExecutor grant lets the grantee take the executor role.
-    function test_setExplicitAccess_proposeNewExecutorGrantHandsOverExecutor() public {
-        _grant(flagger, IExecutorAccess.proposeNewExecutor.selector, true);
-
-        vm.expectEmit(address(compliance));
-        emit IExecutorAccess.NewExecutorProposed(executor, address(0), flagger);
+    function test_proposeNewExecutor_fail_flagger() public {
+        _setFlagger(flagger, true);
         vm.prank(flagger);
-        compliance.proposeNewExecutor(flagger);
-        vm.warp(block.timestamp + compliance.EXECUTOR_HANDOVER_DELAY());
-        vm.prank(flagger);
-        compliance.acceptExecutor();
-
-        assertEq(compliance.executor(), flagger);
-        vm.prank(executor);
         vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
-        compliance.setFlagged(_accounts(), true);
+        compliance.proposeNewExecutor(flagger);
     }
 
     function test_proposeNewExecutor_selfReplacesPendingProposal() public {

@@ -126,14 +126,14 @@ interface IFixedPriceAuction is IRescuableAccess {
     function withdrawDeposit(uint256 amount) external;
 
     /// @notice Move a flagged bidder's whole deposit out of the fill into `excluded[account]`, lowering
-    /// `totalDeposits`. The msig, or a caller the current compliance list grants `setFlagged`, both outside rescue
-    /// mode. Deposit or Fulfillment phase only; allowed while paused. Reverts unless compliance is enabled and
-    /// `account` is flagged with a nonzero deposit.
+    /// `totalDeposits`. The msig, or a flagger on the current compliance list, both outside rescue mode. Deposit or
+    /// Fulfillment phase only; allowed while paused. Reverts unless compliance is enabled and `account` is flagged
+    /// with a nonzero deposit.
     function exclude(address account) external;
 
     /// @notice Put an unflagged account's excluded balance back into its deposit. The msig or, while compliance is
-    /// enabled, a caller the current list grants `setFlagged`, both outside rescue mode. Deposit phase only; allowed
-    /// while paused. Reverts if the account is still flagged or has nothing excluded.
+    /// enabled, a flagger on the current list, both outside rescue mode. Deposit phase only; allowed while paused.
+    /// Reverts if the account is still flagged or has nothing excluded.
     function reinstate(address account) external;
 
     /// @notice Return the caller's whole excluded balance. Any phase, once unpaused and the caller isn't flagged.
@@ -211,11 +211,11 @@ interface IFixedPriceAuction is IRescuableAccess {
     /// @notice True while every token-moving function is stopped.
     function paused() external view returns (bool);
 
-    /// @notice The compliance list that screens bidders, and whose setFlagged grantees may exclude and reinstate.
+    /// @notice The compliance list that screens bidders, and whose flaggers may exclude and reinstate.
     function complianceCheck() external view returns (address);
 
     /// @notice One-way: once true, nobody is flagged and the pointer can't change, so every excluded balance is
-    /// withdrawable once unpaused and list grants can no longer exclude or reinstate.
+    /// withdrawable once unpaused and flaggers can no longer exclude or reinstate.
     function complianceDisabled() external view returns (bool);
 
     /// @notice When the auction settled (unix seconds): set by `settleEarly`, or to `fulfillmentEnd` by the first

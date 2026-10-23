@@ -47,7 +47,7 @@ contract FixedPriceAuctionHandler is Test {
     /// @dev Who handovers pass either role to: shared and including both initial holders, so a handover can try to
     /// give both roles to one address.
     address[5] internal roleCandidates;
-    /// @dev Granted `setFlagged` on both lists.
+    /// @dev A flagger on both lists.
     address public immutable flagger;
     address public immutable outsider = makeAddr("outsider");
     address[4] public bidders;
@@ -230,8 +230,7 @@ contract FixedPriceAuctionHandler is Test {
     /****** EXCLUSION ******/
 
     /// @dev Prefers a bidder with a deposit, flagged if possible, and half the time flags it first, so exclusions
-    /// happen often. The caller is the msig, the flagger (granted `setFlagged` on both lists), an outsider or the
-    /// rescuer (always refused).
+    /// happen often. The caller is the msig, the flagger (on both lists), an outsider or the rescuer (always refused).
     function exclude(uint256 seed, uint256 by) external step {
         address account = _pickFlagged(seed);
         if ((seed >> 8) % 2 == 0) _flag(account, true);
@@ -324,8 +323,7 @@ contract FixedPriceAuctionHandler is Test {
         _check(auction.totalDeposits() == before.totalDeposits, "withdrawExcluded moved deposits");
     }
 
-    /// @dev Outside rescue mode: the executor, or the flagger, whose grant is on both lists, while compliance is
-    /// enabled.
+    /// @dev Outside rescue mode: the executor, or the flagger (on both lists) while compliance is enabled.
     function _mayExclude(address caller, State memory before) internal view returns (bool) {
         return !before.inRescueMode && (caller == msig || (caller == flagger && !before.complianceDisabled));
     }
