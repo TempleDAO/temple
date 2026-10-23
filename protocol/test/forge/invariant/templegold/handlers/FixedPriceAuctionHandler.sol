@@ -48,7 +48,7 @@ contract FixedPriceAuctionHandler is Test {
     /// @dev Who handovers pass either role to: shared and including both initial holders, so a handover can try to
     /// give both roles to one address.
     address[5] internal roleCandidates;
-    /// @dev Granted `setBlocked` on both lists.
+    /// @dev A blocker on both lists.
     address public immutable blocker;
     address public immutable outsider = makeAddr("outsider");
     address[4] public bidders;
@@ -234,8 +234,7 @@ contract FixedPriceAuctionHandler is Test {
     /****** EXCLUSION ******/
 
     /// @dev Prefers a bidder with a deposit, blocked if possible, and half the time blocks it first, so exclusions
-    /// happen often. The caller is the msig, the blocker (granted `setBlocked` on both lists), an outsider or the
-    /// rescuer (always refused).
+    /// happen often. The caller is the msig, the blocker (on both lists), an outsider or the rescuer (always refused).
     function exclude(uint256 seed, uint256 by) external step {
         address account = _pickBlocked(seed);
         if ((seed >> 8) % 2 == 0) _block(account, true);
@@ -328,10 +327,9 @@ contract FixedPriceAuctionHandler is Test {
         _check(auction.totalDeposits() == before.totalDeposits, "withdrawExcluded moved deposits");
     }
 
-    /// @dev The executor outside rescue mode, or the blocker, whose grant is on both lists, while compliance is
-    /// enabled.
+    /// @dev Outside rescue mode: the executor, or the blocker (on both lists) while compliance is enabled.
     function _mayExclude(address caller, State memory before) internal view returns (bool) {
-        return (caller == msig && !before.inRescueMode) || (caller == blocker && !before.complianceDisabled);
+        return !before.inRescueMode && (caller == msig || (caller == blocker && !before.complianceDisabled));
     }
 
     /// @dev Exclusion moves no tokens, leaves bidOwed and fillOwed alone and touches no other bidder's deposit.
@@ -672,10 +670,11 @@ contract FixedPriceAuctionHandler is Test {
         _check(!ok || auction.proposedExecutor() == candidate, "executor proposal not recorded");
     }
 
-    /// @dev The proposed executor accepts. Only being the rescuer can stop it.
+    /// @dev The proposed executor accepts. Only being the rescuer, or the handover delay not yet passed, stops it.
     function acceptExecutor() external step {
         address proposed = auction.proposedExecutor();
         if (proposed == address(0)) return;
+        bool ready = block.timestamp >= auction.proposedExecutorAt() + auction.EXECUTOR_HANDOVER_DELAY();
         vm.prank(proposed);
         bool ok;
         try auction.acceptExecutor() {
@@ -683,7 +682,7 @@ contract FixedPriceAuctionHandler is Test {
             ++successes["acceptExecutor"];
             msig = proposed;
         } catch {}
-        _check(ok != (proposed == rescuer), "acceptExecutor: only the rescuer is refused");
+        _check(ok == (proposed != rescuer && ready), "acceptExecutor: refused other than for the rescuer or the delay");
         _check(auction.executor() == msig, "executor handover misrecorded");
     }
 

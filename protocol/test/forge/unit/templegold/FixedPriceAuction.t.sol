@@ -1120,7 +1120,26 @@ contract FixedPriceAuctionRescueModeTest is FixedPriceAuctionTestBase {
         vm.prank(bob);
         vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
         auction.acceptExecutor();
+        uint256 readyAt = block.timestamp + auction.EXECUTOR_HANDOVER_DELAY();
+        assertEq(auction.proposedExecutorAt(), block.timestamp);
+        vm.prank(alice);
+        vm.expectRevert(abi.encodeWithSelector(IExecutorAccess.ExecutorHandoverNotReady.selector, readyAt));
+        auction.acceptExecutor();
+        vm.warp(readyAt - 1);
+        vm.prank(alice);
+        vm.expectRevert(abi.encodeWithSelector(IExecutorAccess.ExecutorHandoverNotReady.selector, readyAt));
+        auction.acceptExecutor();
 
+        // A re-proposal restarts the clock.
+        vm.prank(executor);
+        auction.proposeNewExecutor(alice);
+        vm.warp(readyAt);
+        readyAt = readyAt - 1 + auction.EXECUTOR_HANDOVER_DELAY();
+        vm.prank(alice);
+        vm.expectRevert(abi.encodeWithSelector(IExecutorAccess.ExecutorHandoverNotReady.selector, readyAt));
+        auction.acceptExecutor();
+
+        vm.warp(readyAt);
         vm.expectEmit(address(auction));
         emit IExecutorAccess.NewExecutorAccepted(executor, alice);
         vm.prank(alice);
@@ -1280,6 +1299,37 @@ contract FixedPriceAuctionComplianceTest is FixedPriceAuctionTestBase {
         vm.stopPrank();
     }
 
+    /// @dev A rejected repoint leaves the current list in place and still screening.
+    function test_setComplianceCheck_fail_withoutCode() public {
+        _toDeposit(auction);
+        _deposit(auction, alice, 10e18);
+        _setBlocked(alice, true);
+
+        vm.prank(executor);
+        vm.expectRevert(CommonEventsAndErrors.InvalidAddress.selector);
+        auction.setComplianceCheck(bob);
+        assertEq(auction.complianceCheck(), address(compliance));
+        assertEq(auction.getConfig().complianceCheck, address(compliance));
+        assertFalse(auction.complianceDisabled());
+
+        vm.prank(alice);
+        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.BlockedAccount.selector, alice));
+        auction.withdrawDeposit(1);
+        assertEq(auction.deposits(alice), 10e18);
+    }
+
+    /// @dev A contract that doesn't answer `isBlocked` with a bool, such as a token or a precompile, is rejected.
+    function test_setComplianceCheck_fail_wrongContract() public {
+        vm.prank(executor);
+        vm.expectRevert(CommonEventsAndErrors.InvalidAddress.selector);
+        auction.setComplianceCheck(address(tgld));
+        // The sha256 precompile returns one word, but not a bool.
+        vm.prank(executor);
+        vm.expectRevert(CommonEventsAndErrors.InvalidAddress.selector);
+        auction.setComplianceCheck(address(2));
+        assertEq(auction.complianceCheck(), address(compliance));
+    }
+
     function test_access_setComplianceCheck() public {
         vm.prank(unauthorizedUser);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
@@ -1310,9 +1360,9 @@ contract FixedPriceAuctionComplianceTest is FixedPriceAuctionTestBase {
     function test_revertingComplianceCheck_failsClosed_disableFixes() public {
         _toDeposit(auction);
         _deposit(auction, alice, 10e18);
-        RevertingComplianceCheck broken = new RevertingComplianceCheck();
-        vm.prank(executor);
-        auction.setComplianceCheck(address(broken));
+        // The list's code changes after it was set, as a proxy or delegated list can; setComplianceCheck rejects one
+        // that reverts already.
+        vm.etch(address(compliance), address(new RevertingComplianceCheck()).code);
 
         vm.startPrank(alice);
         vm.expectRevert("Compliance unavailable");
@@ -1340,9 +1390,9 @@ contract FixedPriceAuctionComplianceTest is FixedPriceAuctionTestBase {
         _toDeposit(auction);
         _deposit(auction, alice, 60_000_000e18);
         _deposit(auction, bob, 40_000_000e18);
-        RevertingComplianceCheck broken = new RevertingComplianceCheck();
-        vm.prank(executor);
-        auction.setComplianceCheck(address(broken));
+        // The list's code changes after it was set, as a proxy or delegated list can; setComplianceCheck rejects one
+        // that reverts already.
+        vm.etch(address(compliance), address(new RevertingComplianceCheck()).code);
 
         _toFulfillment(auction);
         _fund(auction, 6_000_000e18);
@@ -1494,6 +1544,7 @@ contract FixedPriceAuctionAdminTest is FixedPriceAuctionTestBase {
         emit IExecutorAccess.NewExecutorProposed(executor, bob, alice);
         auction.proposeNewExecutor(alice);
         vm.stopPrank();
+        vm.warp(block.timestamp + auction.EXECUTOR_HANDOVER_DELAY());
         vm.expectEmit(address(auction));
         emit IExecutorAccess.NewExecutorAccepted(executor, alice);
         vm.prank(alice);
@@ -1728,25 +1779,42 @@ contract FixedPriceAuctionDecimalsTest is FixedPriceAuctionTestBase {
         // Full funding would be 3 TGLD x 0.0466 = 139,800 USDC wei; fund 100,001.
         _fund(auction, 100_001);
 
-        // filled = floor(100,001 x 1e30 / 0.0466e18) = 2,145,944,206,008,583,690 TGLD wei.
-        // userFunding = floor(filled x 0.0466e18 / 1e30) = 100,000, so 1 wei goes back to the funder.
+        // floor(100,001 x 1e30 / 0.0466e18) TGLD wei buys userFunding = 100,000 USDC wei, so 1 wei goes back to the
+        // funder. Bidders pay only for those 100,000: ceil(100,000 x 1e30 / 0.0466e18) = 2,145,922,746,781,115,880.
         IFixedPriceAuction.Settlement memory s = auction.previewSettlement();
-        assertEq(s.filledDeposits, 2_145_944_206_008_583_690);
+        assertEq(s.filledDeposits, 2_145_922_746_781_115_880);
         assertEq(s.userFunding, 100_000);
-        assertEq(s.userRefund, 3e18 - 2_145_944_206_008_583_690);
+        assertEq(s.userRefund, 3e18 - 2_145_922_746_781_115_880);
         assertEq(s.funderRefund, 1);
 
         _settleAndClaim(auction, accounts);
-        // Each third: floor(100,000 / 3) = 33,333 USDC wei and floor(854,055,793,991,416,310 / 3) TGLD wei.
+        // Each third: floor(100,000 / 3) = 33,333 USDC wei and 854,077,253,218,884,120 / 3 TGLD wei.
         for (uint256 i; i < 3; ++i) {
             assertEq(usdc.balanceOf(accounts[i]), 33_333);
-            assertEq(tgld.balanceOf(accounts[i]), 284_685_264_663_805_436);
+            assertEq(tgld.balanceOf(accounts[i]), 284_692_417_739_628_040);
         }
-        // 99,999 paid of 100,000: 1 wei of fill dust and 2 wei of bid dust stay, both under 3.
+        // 99,999 paid of 100,000: 1 wei of fill dust stays; the refund splits exactly in three.
         assertEq(auction.fillOwed(), 1);
-        assertEq(auction.bidOwed(), 2);
+        assertEq(auction.bidOwed(), 0);
         assertEq(usdc.balanceOf(address(auction)), 1);
-        assertEq(tgld.balanceOf(address(auction)), 2);
+        assertEq(tgld.balanceOf(address(auction)), 0);
+    }
+
+    /// @dev Full funding still charges only for whole fill-token wei: the bid tokens worth under one are refunded.
+    function test_decimals_fullFundingRefundsUnderOneFillWei() public {
+        auction = _create(_config(address(tgld), address(usdc), PRICE, 0));
+        _toDeposit(auction);
+        _deposit(auction, alice, 1e18 + 1e12);
+        _toFulfillment(auction);
+        // (1e18 + 1e12) x 0.0466 = 46,600.0466 USDC wei, so the requirement rounds up to 46,601.
+        _fund(auction, 46_601);
+
+        // 46,600 USDC wei cost exactly 1e18 TGLD wei; the 1e12 left over is refunded, not taken.
+        IFixedPriceAuction.Settlement memory s = auction.previewSettlement();
+        assertEq(s.userFunding, 46_600);
+        assertEq(s.filledDeposits, 1e18);
+        assertEq(s.userRefund, 1e12);
+        assertEq(s.funderRefund, 1);
     }
 }
 

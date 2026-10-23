@@ -69,8 +69,8 @@ abstract contract RescuableAccess is IRescuableAccess, ExecutorAccess {
     }
 
     /// @dev Rescue mode locks the executor out of every `onlyElevatedAccess` function.
-    function _isElevatedAccess(address caller, bytes4 fnSelector) internal view virtual override returns (bool) {
-        return !inRescueMode && super._isElevatedAccess(caller, fnSelector);
+    function _isElevatedAccess(address caller) internal view virtual override returns (bool) {
+        return !inRescueMode && super._isElevatedAccess(caller);
     }
 
     modifier onlyRescuer() {
