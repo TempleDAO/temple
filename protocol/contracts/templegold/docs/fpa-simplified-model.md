@@ -104,7 +104,7 @@ Bidders deposit `bidToken`, and the funder supplies `fillToken`. `price` is fill
 | `recoverToken(token, to, amount)` | Sends out a token's surplus, such as tokens sent by mistake: the balance less `liabilities()` for the bid and fill tokens, the whole balance for any other token. | msig | any | — | revert |
 | `setPaused(bool)` | Pauses or unpauses the auction. | msig; the rescuer instead while rescue mode is on | any | — | allowed |
 | `setRescueMode(bool)` | Switches rescue mode on or off. While it's on, the msig can't call any msig function on that auction and the rescuer controls the pause. | rescuer | any | — | allowed |
-| `proposeNewExecutor`/`acceptExecutor`, `proposeNewRescuer`/`acceptRescuer` | Two-step role handovers (see the rescue-mode callout). `acceptExecutor` waits `EXECUTOR_HANDOVER_DELAY` (1 day) after the proposal. | propose: msig (locked out in rescue mode) or rescuer; accept: the proposed address | any | — | allowed |
+| `proposeNewExecutor`/`acceptExecutor`, `proposeNewRescuer`/`acceptRescuer` | Two-step role handovers (see the rescue-mode callout). `acceptExecutor` waits `EXECUTOR_HANDOVER_DELAY` (1 day) after the proposal. | propose: `proposeNewExecutor` by the msig (locked out in rescue mode), `proposeNewRescuer` by the rescuer; accept: the proposed address | any | — | allowed |
 | `setComplianceCheck(addr)` | Points the auction at a `ComplianceCheck` contract, for example to replace a broken or rogue one. Reverts on `address(0)` and on an address that doesn't answer `isFlagged` (no code, or the wrong contract). Only `disableComplianceCheck` turns screening off. | msig | any, until disabled | — | allowed |
 | `disableComplianceCheck()` | Switches screening off for good. Afterwards `setComplianceCheck` reverts. | rescuer | any | — | allowed |
 | `setFunder(addr)`, `setProceedsRecipient(addr)` | Proposed (decision 6). Replace a compromised Treasury address. | msig | any | — | allowed |
@@ -320,7 +320,7 @@ Open choices for the indexer (decision 9):
 
 | Incident | Response |
 |---|---|
-| One address must be flagged | msig or a flagger flags it. Its deposit, withdrawal and claim revert, and its funds stay put. Before settlement, either can also `exclude` it, so its deposit is refunded once it's cleared and never filled. |
+| One address must be flagged | msig or a flagger flags it. Its deposit, withdrawal and claim revert, and its funds stay put. Before settlement, either can also `exclude` it, so its deposit leaves the fill and is refunded once it's cleared, unless it's reinstated during Deposit. |
 | Accounting bug, or a rush of depositors to withdraw | msig pauses the affected auction: every function that moves tokens stops. Investigate, then unpause, or `cancel` before `fulfillmentEnd`. |
 | Compromised `funder` or `proceedsRecipient` | If decision 6 adds the setters: msig pauses, replaces the address with `setFunder` or `setProceedsRecipient`, then unpauses. Without them, for `proceedsRecipient`: pause, then cancel before `fulfillmentEnd`, so no proceeds accrue. For `funder`, don't cancel, because cancelling returns all funding to the compromised address. Let the auction settle, so fills go to depositors and only the unused funding reaches the funder. |
 | Rogue flagger | msig removes it with `setFlagger` and fixes the list, or repoints the auctions to a new `ComplianceCheck`. |
