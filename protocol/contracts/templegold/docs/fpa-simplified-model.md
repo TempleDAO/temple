@@ -128,8 +128,8 @@ The pause stops every function that moves tokens. `settleEarly` moves no tokens,
 >
 > ```solidity
 > // ExecutorAccess: the executor passes; RescuableAccess narrows it.
-> function _isElevatedAccess(address caller, bytes4 fnSelector) internal view override returns (bool) {
->     return !inRescueMode && super._isElevatedAccess(caller, fnSelector);
+> function _isElevatedAccess(address caller) internal view override returns (bool) {
+>     return !inRescueMode && super._isElevatedAccess(caller);
 > }
 >
 > function setPaused(bool value) external {

@@ -50,18 +50,17 @@ abstract contract ExecutorAccess is IExecutorAccess {
         delete proposedExecutor;
     }
 
-    /// @dev Whether caller may call fnSelector: the executor, unless an inheriting contract narrows or widens it.
-    function _isElevatedAccess(address caller, bytes4 /* fnSelector */) internal view virtual returns (bool) {
+    /// @dev Whether caller has elevated access: the executor, unless an inheriting contract narrows it.
+    function _isElevatedAccess(address caller) internal view virtual returns (bool) {
         return caller == executor;
     }
 
-    /// @dev `msg.sig` is the top-level externally called function, even if this is reached internally.
     modifier onlyElevatedAccess() {
         _requireElevatedAccess();
         _;
     }
 
     function _requireElevatedAccess() internal view {
-        if (!_isElevatedAccess(msg.sender, msg.sig)) revert CommonEventsAndErrors.InvalidAccess();
+        if (!_isElevatedAccess(msg.sender)) revert CommonEventsAndErrors.InvalidAccess();
     }
 }
