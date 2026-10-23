@@ -476,7 +476,7 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
     /// ComplianceCheck has no rescue mode and the msig can repoint the list, so rescue mode must lock blockers out
     /// here.
     function _onlyExclusionAdmin() private view {
-        if (_isElevatedAccess(msg.sender, msg.sig)) return;
+        if (_isElevatedAccess(msg.sender)) return;
         if (inRescueMode) revert CommonEventsAndErrors.InvalidAccess();
         if (complianceDisabled || !IComplianceCheck(complianceCheck).isBlocker(msg.sender)) {
             revert CommonEventsAndErrors.InvalidAccess();
