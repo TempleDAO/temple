@@ -76,6 +76,7 @@ contract FixedPriceAuctionFactoryTest is FixedPriceAuctionTestBase {
     function test_createAuction_executorIsTheCaller() public {
         vm.prank(executor);
         factory.proposeNewExecutor(alice);
+        vm.warp(block.timestamp + factory.EXECUTOR_HANDOVER_DELAY());
         vm.prank(alice);
         factory.acceptExecutor();
 
@@ -157,10 +158,17 @@ contract FixedPriceAuctionFactoryTest is FixedPriceAuctionTestBase {
         c = _config(address(tgld), address(usds), PRICE, 0);
         c.complianceCheck = address(0);
         _expectInvalidAddress(c);
+        c.complianceCheck = alice;
+        _expectInvalidAddress(c);
+        c.complianceCheck = address(usds);
+        _expectInvalidAddress(c);
 
         FakeERC20CustomDecimals wide = new FakeERC20CustomDecimals("Wide", "WIDE", address(0), 0, 19);
         _expectInvalid(_config(address(wide), address(usds), PRICE, 0));
         _expectInvalid(_config(address(tgld), address(wide), PRICE, 0));
+        FakeERC20CustomDecimals narrow = new FakeERC20CustomDecimals("Narrow", "NARROW", address(0), 0, 5);
+        _expectInvalid(_config(address(narrow), address(usds), PRICE, 0));
+        _expectInvalid(_config(address(tgld), address(narrow), PRICE, 0));
     }
 
     function test_createAuction_fail_malformedConfig() public {
@@ -450,6 +458,7 @@ contract FixedPriceAuctionFactoryFuzzTest is FixedPriceAuctionTestBase {
         } else if (op == 6) {
             address proposed = factory.proposedExecutor();
             if (proposed == address(0)) return;
+            vm.warp(block.timestamp + factory.EXECUTOR_HANDOVER_DELAY());
             vm.prank(proposed);
             try factory.acceptExecutor() {
                 ok = true;
