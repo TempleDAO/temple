@@ -4,7 +4,6 @@ pragma solidity ^0.8.21;
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { FakeERC20CustomDecimals } from "contracts/fakes/FakeERC20CustomDecimals.sol";
 import { IFixedPriceAuction } from "contracts/interfaces/templegold/IFixedPriceAuction.sol";
-import { ITempleElevatedAccess } from "contracts/interfaces/v2/access/ITempleElevatedAccess.sol";
 import { ComplianceCheck } from "contracts/templegold/ComplianceCheck.sol";
 import { PRBMath_MulDiv_Overflow } from "@prb/math/src/Common.sol";
 import { FixedPriceAuctionTestBase } from "test/forge/unit/templegold/FixedPriceAuction.t.sol";
@@ -20,10 +19,8 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
         super.setUp();
         temple = new FakeERC20CustomDecimals("Temple", "TEMPLE", address(0), 0, 18);
         auction = _create(_config(address(temple), address(usds), 4e18, 0));
-        ITempleElevatedAccess.ExplicitAccess[] memory access = new ITempleElevatedAccess.ExplicitAccess[](1);
-        access[0] = ITempleElevatedAccess.ExplicitAccess(ComplianceCheck.setBlocked.selector, true);
         vm.prank(executor);
-        compliance.setExplicitAccess(overlord, access);
+        compliance.setBlocker(overlord, true);
     }
 
     function _bothDeposit() internal {
@@ -421,8 +418,8 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
         _assertPaid(alice, 100e18, 0);
     }
 
-    /// @dev Once compliance is disabled a list grant no longer authorizes reinstate; the msig still can.
-    function test_complianceDisabled_grantCannotReinstate() public {
+    /// @dev Once compliance is disabled a blocker can no longer reinstate; the msig still can.
+    function test_complianceDisabled_blockerCannotReinstate() public {
         _bothDeposit();
         _setBlocked(alice, true);
         _exclude(overlord, alice);
@@ -462,18 +459,16 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
         _reinstate(overlord, bob);
     }
 
-    /// @dev Revoking the setBlocked grant takes exclude and reinstate away from the grantee.
-    function test_revokedGrant_losesExcludeAndReinstate() public {
+    /// @dev Removing a blocker takes exclude and reinstate away from it.
+    function test_removedBlocker_losesExcludeAndReinstate() public {
         _bothDeposit();
         _setBlocked(alice, true);
         _setBlocked(bob, true);
         _exclude(overlord, alice);
         _setBlocked(alice, false);
 
-        ITempleElevatedAccess.ExplicitAccess[] memory access = new ITempleElevatedAccess.ExplicitAccess[](1);
-        access[0] = ITempleElevatedAccess.ExplicitAccess(ComplianceCheck.setBlocked.selector, false);
         vm.prank(executor);
-        compliance.setExplicitAccess(overlord, access);
+        compliance.setBlocker(overlord, false);
 
         vm.prank(overlord);
         vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
@@ -483,8 +478,8 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
         auction.reinstate(alice);
     }
 
-    /// @dev Rescue mode locks out the executor and every compliance-list grant, so a hijacked msig can't grant
-    /// itself back in on the list, which has no rescue mode.
+    /// @dev Rescue mode locks out the executor and every blocker, so a hijacked msig that makes itself a blocker on
+    /// the list, which has no rescue mode, still can't exclude or reinstate.
     function test_exclude_access_rescueMode() public {
         _bothDeposit();
         _setBlocked(alice, true);
@@ -494,10 +489,8 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
         vm.prank(rescuer);
         auction.setRescueMode(true);
 
-        ITempleElevatedAccess.ExplicitAccess[] memory access = new ITempleElevatedAccess.ExplicitAccess[](1);
-        access[0] = ITempleElevatedAccess.ExplicitAccess(ComplianceCheck.setBlocked.selector, true);
         vm.prank(executor);
-        compliance.setExplicitAccess(executor, access);
+        compliance.setBlocker(executor, true);
 
         address[3] memory callers = [executor, rescuer, overlord];
         for (uint256 i; i < callers.length; ++i) {
@@ -515,17 +508,15 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
         _reinstate(overlord, alice);
     }
 
-    /// @dev A list the msig pointed at before rescue mode grants nothing once rescue mode is on, and the rescuer
-    /// can't point the auction back.
+    /// @dev A blocker on a list the msig pointed at before rescue mode can't exclude once rescue mode is on, and the
+    /// rescuer can't point the auction back.
     function test_exclude_access_rescueMode_repointedList() public {
         _bothDeposit();
         ComplianceCheck rogue = new ComplianceCheck(unauthorizedUser);
-        ITempleElevatedAccess.ExplicitAccess[] memory access = new ITempleElevatedAccess.ExplicitAccess[](1);
-        access[0] = ITempleElevatedAccess.ExplicitAccess(ComplianceCheck.setBlocked.selector, true);
         address[] memory accounts = new address[](1);
         accounts[0] = alice;
         vm.startPrank(unauthorizedUser);
-        rogue.setExplicitAccess(unauthorizedUser, access);
+        rogue.setBlocker(unauthorizedUser, true);
         rogue.setBlocked(accounts, true);
         vm.stopPrank();
         vm.prank(executor);
@@ -542,7 +533,7 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
         auction.exclude(alice);
     }
 
-    /// @dev A grant on a list the auction no longer points at counts for nothing.
+    /// @dev A blocker on a list the auction no longer points at can't exclude.
     function test_exclude_access_followsCurrentList() public {
         _bothDeposit();
         ComplianceCheck other = new ComplianceCheck(executor);

@@ -7,13 +7,13 @@ This report is from a scan of `fpa-simplified` at `860ea95d` on 2026-10-22.
 | # | Finding | Fixed on this branch by | Note |
 | --- | --- | --- | --- |
 | 1 | An EIP-7702 EOA implementation lets its key holder rewrite every auction | Not fixed: accepted as operational risk | Any pointer can be a proxy or a delegated account whose code changes after review, and no on-chain check can rule that out. The rescuer's review before it accepts an implementation is the control. The factory still rejects an implementation with no code. |
-| 2 | A hijacked msig proposes and accepts a new executor in one transaction | `fix: make a proposed executor wait a day before it can accept` | On the factory and auctions rescue mode can now cancel the proposal. On `ComplianceCheck` the msig can revoke grants and overwrite a proposal within the day (T-2). |
+| 2 | A hijacked msig proposes and accepts a new executor in one transaction | `fix: make a proposed executor wait a day before it can accept` | On the factory and auctions rescue mode can now cancel the proposal. On `ComplianceCheck` the msig can overwrite a proposal within the day (T-2). |
 | 3 | A hijacked msig repoints the list, so rescue mode cannot stop exclude | `fix: lock compliance-list grants out of exclude and reinstate in rescue mode` | |
 | 4 | Settlement charges bidders for the funding, not the rounded-down fill | `fix: charge bidders only for the whole fill-token wei they get` | Option A of the report's fix. Option B was not used. |
 | 5 | A small bidder can pay bid tokens and get zero fill | `fix: require 6 to 18 decimals for both auction tokens` | Option A (decimals), for both tokens. |
 | 6 | Rescue mode does not stop a list grantee from calling exclude | `fix: lock compliance-list grants out of exclude and reinstate in rescue mode` | |
-| 7 | Exclusion in Fulfillment moves a partial fill to the other bidders | Not fixed: accepted, list grantees are trusted | The msig picks and revokes grantees, and trusts them as it trusts its own signers, so a grantee can still exclude in Fulfillment (T-5). |
-| 8 | A grantee gives a colluding bidder a free exit during Fulfillment | Not fixed: accepted, list grantees are trusted | As finding 7. A bidder that gets itself blocked in Fulfillment can still get a full refund once it is excluded and the block is cleared (T-5). |
+| 7 | Exclusion in Fulfillment moves a partial fill to the other bidders | Not fixed: accepted, blockers are trusted | The msig picks and removes blockers, and trusts them as it trusts its own signers, so a blocker can still exclude in Fulfillment (T-5). |
+| 8 | A grantee gives a colluding bidder a free exit during Fulfillment | Not fixed: accepted, blockers are trusted | As finding 7. A bidder that gets itself blocked in Fulfillment can still get a full refund once it is excluded and the block is cleared (T-5). |
 | Lead | Initialize accepts a deposit window of one second | Not fixed | Open decision D1. |
 
 Each fix commit applies alone on the report commit.

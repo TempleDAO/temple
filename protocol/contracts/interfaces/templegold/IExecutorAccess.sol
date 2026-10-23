@@ -16,14 +16,13 @@ interface IExecutorAccess {
     /// @dev `acceptExecutor` was called before `readyAt`.
     error ExecutorHandoverNotReady(uint256 readyAt);
 
-    /// @notice Propose `account` as the next executor; it must then call `acceptExecutor`. The executor, or a caller
-    /// granted it where grants exist; locked in rescue mode where there is one. Reverts on zero. Restarts the
-    /// `EXECUTOR_HANDOVER_DELAY` clock.
+    /// @notice Propose `account` as the next executor; it must then call `acceptExecutor`. The executor only; locked in
+    /// rescue mode where there is one. Reverts on zero. Restarts the `EXECUTOR_HANDOVER_DELAY` clock.
     function proposeNewExecutor(address account) external;
 
     /// @notice The proposed executor takes the role, no sooner than `EXECUTOR_HANDOVER_DELAY` after the proposal.
     /// Where there is a rescue mode, switching it on during the delay cancels the proposal.
-    /// ComplianceCheck has none; there the executor, or a `proposeNewExecutor` grantee, can re-propose during the delay to overwrite the proposal.
+    /// ComplianceCheck has none; there the executor can re-propose during the delay to overwrite the proposal.
     function acceptExecutor() external;
 
     /// @notice The address approved to run normal operations on behalf of the DAO.

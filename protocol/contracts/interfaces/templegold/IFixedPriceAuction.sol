@@ -132,13 +132,13 @@ interface IFixedPriceAuction is IRescuableAccess {
     function withdrawDeposit(uint256 amount) external;
 
     /// @notice Move a blocked bidder's whole deposit out of the fill into `excluded[account]`, lowering
-    /// `totalDeposits`. The msig, or a caller the current compliance list grants `setBlocked`, both outside rescue
-    /// mode. Deposit or Fulfillment phase only; allowed while paused. Reverts unless compliance is enabled and
-    /// `account` is blocked with a nonzero deposit.
+    /// `totalDeposits`. The msig, or a blocker on the current compliance list, both outside rescue mode. Deposit or
+    /// Fulfillment phase only; allowed while paused. Reverts unless compliance is enabled and `account` is blocked
+    /// with a nonzero deposit.
     function exclude(address account) external;
 
     /// @notice Put an unblocked account's excluded balance back into its deposit. The msig or, while compliance is
-    /// enabled, a caller the current list grants `setBlocked`, both outside rescue mode. Deposit phase only; allowed
+    /// enabled, a blocker on the current list, both outside rescue mode. Deposit phase only; allowed
     /// while paused. Reverts if the account is still blocked or has nothing excluded.
     function reinstate(address account) external;
 
@@ -211,11 +211,11 @@ interface IFixedPriceAuction is IRescuableAccess {
     /// @notice True while every token-moving function is stopped.
     function paused() external view returns (bool);
 
-    /// @notice The compliance list that screens bidders, and whose setBlocked grantees may exclude and reinstate.
+    /// @notice The compliance list that screens bidders, and whose blockers may exclude and reinstate.
     function complianceCheck() external view returns (address);
 
     /// @notice One-way: once true, nobody is blocked and the pointer can't change, so every excluded balance is
-    /// withdrawable once unpaused and list grants can no longer exclude or reinstate.
+    /// withdrawable once unpaused and blockers can no longer exclude or reinstate.
     function complianceDisabled() external view returns (bool);
 
     /// @notice When the auction settled (unix seconds). Zero until settled, and always zero if cancelled; the phase

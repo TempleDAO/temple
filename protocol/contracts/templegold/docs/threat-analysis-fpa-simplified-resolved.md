@@ -7,7 +7,7 @@ Companion to [threat-analysis-fpa-simplified.md](threat-analysis-fpa-simplified.
 Resolved since round 1: a pending executor proposal now dies when rescue mode switches on, and so does a pending implementation proposal on the factory. The rescuer can `cancel` in rescue mode, which ends the permanent-freeze case of unbounded windows ([T-3](#t-3-unbounded-windows-resolved-low)).
 
 ### T-2 (resolved part) Pending proposals die in rescue mode
-A proposal the hijacked msig leaves *pending* now dies when rescue mode switches on (`RescuableAccess.sol:35-39`), and nobody can propose during rescue mode. On the factory, rescue mode also cancels a pending implementation proposal (`AuctionFactory.sol:57-62`). The open part of T-2, an atomic propose-and-accept, is fixed on the factory and auctions by D11's one-day delay. On `ComplianceCheck` the msig can revoke grants and overwrite a proposal within the day (T-2).
+A proposal the hijacked msig leaves *pending* now dies when rescue mode switches on (`RescuableAccess.sol:35-39`), and nobody can propose during rescue mode. On the factory, rescue mode also cancels a pending implementation proposal (`AuctionFactory.sol:57-62`). The open part of T-2, an atomic propose-and-accept, is fixed on the factory and auctions by D11's one-day delay. On `ComplianceCheck` the msig can overwrite a proposal within the day (T-2).
 
 ### T-3 Unbounded windows (resolved, Low)
 **Low.** Proven (`test_XC_farFulfillmentEnd_rescuerCancels`, 100 years in). `FixedPriceAuction.sol:86-93`, `:231-242`.
@@ -15,6 +15,11 @@ A proposal the hijacked msig leaves *pending* now dies when rescue mode switches
 - **Now:** the rescuer can `cancel` in rescue mode at any time before `fulfillmentEnd`, which refunds everyone. With a far-future `fulfillmentEnd` that's always available.
 - **Residual:** depositors have no exit between `depositEnd` and whenever a multisig acts. "Genuine auctions finish under rescue mode by the clock" is false for a long window: in rescue mode they can only be cancelled, never settled. A freeze is permanent only if the rescuer is lost too.
 - **Mitigation:** a maximum fulfillment window is optional insurance, part of D1.
+
+### T-13 A `proposeNewExecutor` grant on `ComplianceCheck` handed over the list (resolved by design)
+**Resolved by design:** `ComplianceCheck` has no per-function grants; a blocker can only edit the list. Proven (`test_proposeNewExecutor_fail_blocker`). `ComplianceCheck.sol:22-36`.
+- **Before:** `ComplianceCheck` had per-function grants. A `proposeNewExecutor` grantee could propose itself, accept, and own the list (Medium: likelihood Low, impact High).
+- **Now:** the msig appoints blockers with `setBlocker`, and on `ComplianceCheck` a blocker can only call `setBlocked`. `proposeNewExecutor` and `setBlocker` are executor-only. D6 is resolved the same way.
 
 ### Test gaps closed
 
@@ -42,7 +47,7 @@ A later round ran slither-mutate over the six contracts (1,127 compiled mutants)
   - **No puppet rescuer or executor** can be passed in, and a pending rescuer handover doesn't leak into new auctions.
 - **Access bases:** the executor and rescuer can't collide under any order of handovers. Rescue mode locks every `onlyElevatedAccess` function on both the factory and the auction. No executor proposal can exist in rescue mode, so `acceptExecutor` needs no rescue check.
 - **Packed storage slot:** all six fields then in the slot survived interleaved writes in round 2. `treasuryClaimed` has since joined the slot, making seven (with `settledAt` narrowed to `uint40`); the invariant suite exercises it alongside the others.
-- **Grants:** a grantee can't widen its own grant, and `setExplicitAccess` and `acceptExecutor` aren't grantable.
+- **Blockers** (unit tests, not the analysis rounds): a blocker can only edit the list: it can't add blockers or propose an executor (`test_access_setBlocker`, `test_proposeNewExecutor_fail_blocker`).
 - **Both keys breached:** new code reaches only new auctions, and owed funds in existing clones still can't be redirected. With both keys an attacker can put arbitrary code behind `isAuction` for new auctions; that's the two-key design's limit. A delay between propose and accept would make a swap public before it takes effect.
 
 ## Cross-check against the original analysis

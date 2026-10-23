@@ -472,14 +472,13 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
         if (_isBlocked(msg.sender)) revert BlockedAccount(msg.sender);
     }
 
-    /// @dev Outside rescue mode only: the executor, or, while compliance is enabled, a caller the current list grants
-    /// setBlocked. ComplianceCheck has no rescue mode and the msig can repoint the list, so rescue mode must lock
-    /// grants out here.
+    /// @dev Outside rescue mode only: the executor, or, while compliance is enabled, a blocker on the current list.
+    /// ComplianceCheck has no rescue mode and the msig can repoint the list, so rescue mode must lock blockers out
+    /// here.
     function _onlyExclusionAdmin() private view {
         if (_isElevatedAccess(msg.sender, msg.sig)) return;
         if (inRescueMode) revert CommonEventsAndErrors.InvalidAccess();
-        bytes4 selector = IComplianceCheck.setBlocked.selector;
-        if (complianceDisabled || !IComplianceCheck(complianceCheck).explicitFunctionAccess(msg.sender, selector)) {
+        if (complianceDisabled || !IComplianceCheck(complianceCheck).isBlocker(msg.sender)) {
             revert CommonEventsAndErrors.InvalidAccess();
         }
     }

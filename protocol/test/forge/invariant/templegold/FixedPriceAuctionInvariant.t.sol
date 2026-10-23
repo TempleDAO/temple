@@ -5,7 +5,6 @@ import { FakeERC20CustomDecimals } from "contracts/fakes/FakeERC20CustomDecimals
 import { TempleMath } from "contracts/common/TempleMath.sol";
 
 import { IFixedPriceAuction } from "contracts/interfaces/templegold/IFixedPriceAuction.sol";
-import { ITempleElevatedAccess } from "contracts/interfaces/v2/access/ITempleElevatedAccess.sol";
 import { ComplianceCheck } from "contracts/templegold/ComplianceCheck.sol";
 import { FixedPriceAuctionTestBase } from "test/forge/unit/templegold/FixedPriceAuction.t.sol";
 import { FixedPriceAuctionHandler } from "./handlers/FixedPriceAuctionHandler.sol";
@@ -38,11 +37,9 @@ abstract contract FixedPriceAuctionInvariantBase is FixedPriceAuctionTestBase {
             : new FakeERC20CustomDecimals("Fill", "FILL", address(0), 0, fillDecimals);
         auction = _create(_config(address(bid), address(fill), price, 100));
         ComplianceCheck compliance2 = new ComplianceCheck(executor);
-        ITempleElevatedAccess.ExplicitAccess[] memory access = new ITempleElevatedAccess.ExplicitAccess[](1);
-        access[0] = ITempleElevatedAccess.ExplicitAccess(ComplianceCheck.setBlocked.selector, true);
         vm.startPrank(executor);
-        compliance.setExplicitAccess(blocker, access);
-        compliance2.setExplicitAccess(blocker, access);
+        compliance.setBlocker(blocker, true);
+        compliance2.setBlocker(blocker, true);
         vm.stopPrank();
         FakeERC20CustomDecimals stray = new FakeERC20CustomDecimals("Stray", "STRAY", address(0), 0, 18);
 
