@@ -53,7 +53,7 @@ The properties the contracts must always keep. The fuzz and invariant suites are
 | ID | Property | Checked by |
 |---|---|---|
 | C1 | A blocked account's `deposits`, `claimed` and `excluded` can't change by its own hand: its deposit, withdrawal, claim and `withdrawExcluded` revert. Only `exclude` moves a blocked account's deposit. | handler `_post` ("blocked call succeeded", "blocked state changed") on `deposit`, `withdrawDeposit`, `claim`, `withdrawExcluded`; handler `withdrawExcluded` ("failed withdrawExcluded moved the balance") |
-| C2 | The compliance pointer is never zero, and answers `isBlocked` when it is set. Once compliance is disabled it stays disabled, and the pointer is frozen. | `invariant_compliancePointer`; factory `test_createAuction_fail_complianceCheckNotAList`, unit `test_setComplianceCheck_fail_withoutCode` (no code), `test_setComplianceCheck_fail_wrongContract` (a token, a precompile) |
+| C2 | The compliance pointer is never zero, and answers `isBlocked(address(0))` with a bool when it is set; a list whose code changes later can still revert (T-14). Once compliance is disabled it stays disabled, and the pointer is frozen. | `invariant_compliancePointer`; factory `test_createAuction_fail_complianceCheckNotAList`, unit `test_setComplianceCheck_fail_withoutCode` (no code), `test_setComplianceCheck_fail_wrongContract` (a token, a precompile) |
 | C3 | The treasury paths (`fund`, `withdrawExcess`, `claimTreasury`) are never screened. | handler `fund` ("fund refused while open"), `claimTreasury` ("claimTreasury refused while due") and `withdrawExcess`, with `setBlocked` also blocking the funder and the treasury caller; unit `test_treasuryPaths_unscreened` |
 
 ## Exclusion
