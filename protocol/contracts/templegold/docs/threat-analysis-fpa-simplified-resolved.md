@@ -96,5 +96,5 @@ The original analysis (not in this branch) covered PRs 1304 and 1305. Every find
 
 The simplified design brings back three original threat classes in new places:
 - **Look-alike auctions:** now direct clones of the genuine implementation (T-16).
-- **Screening as a halting dependency:** now through a code-less pointer in the auctions (T-14).
+- **Screening as a halting dependency:** now only through a compliance pointer whose code changes after it is set (T-14).
 - **No bound on a freeze:** the 14-day pause timer is gone, which shows up as T-1.

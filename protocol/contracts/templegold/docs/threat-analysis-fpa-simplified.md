@@ -87,7 +87,7 @@ The [audit report](audit-report-fpa-simplified.md) (2026-10-22) scanned `fpa-sim
 | D2 | Let claims (`claim`, `claimTreasury`, `withdrawExcluded`) ignore the pause once `block.timestamp > fulfillmentEnd + N days`, so a breached or lost rescuer can't freeze settled funds for good? | T-1 | Medium | Open | Worth it. Claims only ever pay the depositor, so this can't redirect funds. |
 | D3 | Should the rescuer handover need a second key, or a delay? | T-4 | Medium | Open | A delay on `acceptRescuer` lets the msig see a takeover coming. A second key gives a hijacked msig a veto. Otherwise document it. |
 | D4 | Pay each `claim`/`claimTreasury` leg separately, or add the decision-6 setters? | T-6, T-7 | Medium | Open | At least split `claimTreasury`. Its addresses are fixed for the auction's life. |
-| D5 | Reject a code-less compliance pointer in `initialize` and `setComplianceCheck`? | T-14 | Low | Open | Yes. One line, and it turns a deploy typo into a revert. |
+| D5 | Reject a code-less compliance pointer in `initialize` and `setComplianceCheck`? | T-14 | Low | Fixed | Done: both reject a pointer that doesn't answer `isFlagged` (no code, or the wrong contract), so a deploy typo reverts. |
 | D6 | Reject `proposeNewExecutor` in `ComplianceCheck.setExplicitAccess`? | T-13 ([resolved](threat-analysis-fpa-simplified-resolved.md)) | Medium | Resolved by design: `ComplianceCheck` has no per-function grants; a flagger can only edit the list | — |
 | D7 | Minimum token decimals (for example ≥ 6)? | T-11 | Low | Fixed (audit finding 5) | Yes, as a deploy check, or enforce it in `initialize`. |
 | D8 | Is "settled" defined by `phase()` or by `AuctionSettled`? | T-9 ([resolved](threat-analysis-fpa-simplified-resolved.md)) | — (T-9 resolved) | Open (the event gap, T-9, is resolved on this branch) | Define it by `phase()` in the indexer spec: a settlement by the clock emits `AuctionSettled` only at its first claim or `emitSettlement`, possibly long after `fulfillmentEnd`. |
@@ -175,11 +175,11 @@ A decision's severity is the highest of the findings it cites.
 - **Scenario:** queued Safe transactions are public before they execute. The target sees `setFlagged` (and the `exclude` batched with it) coming and withdraws during Deposit, or claims after settlement. During Fulfillment it can't withdraw, so an exclusion lands. A flagged person can also use a fresh address.
 - **Mitigation:** process only. A hot key that is a flagger sends `setFlagged` directly through a private relay, and known addresses are flagged before `depositStart`.
 
-### T-14 A code-less or reverting compliance pointer halts the auction
-**Low** (likelihood Low, impact Medium). Proven (`test_XC_codelessCompliancePointer`). `initialize`, `setComplianceCheck` and `_isFlagged` in FixedPriceAuction.sol.
-- **Scenario:** `initialize` and `setComplianceCheck` reject only zero. An EOA or a non-conforming contract makes every `deposit`, `withdrawDeposit` and `claim` revert (it fails closed), and also `exclude`, `reinstate` and `withdrawExcluded`, which read the list.
+### T-14 A reverting compliance pointer halts the auction
+**Low** (likelihood Low, impact Medium). **D5 fixed: a pointer that doesn't answer `isFlagged` is now rejected.** Proven before the fix (`test_XC_codelessCompliancePointer`); the fix by `test_createAuction_configValidation`, `test_setComplianceCheck_fail_withoutCode` and `test_setComplianceCheck_fail_wrongContract`. `initialize`, `setComplianceCheck` and `_isFlagged` in FixedPriceAuction.sol.
+- **Fixed:** `initialize` and `setComplianceCheck` reject zero and any address that doesn't answer `isFlagged` (D5), so an EOA typo or the wrong contract reverts.
+- **Remains:** a pointer whose code changes after it is set (a proxy or a delegated account, accepted in T-17) can stop answering `isFlagged`, which makes every `deposit`, `withdrawDeposit` and `claim` revert (it fails closed), and also `exclude`, `reinstate` and `withdrawExcluded`, which read the list.
 - **Recovery:** one transaction, either the msig repoints or the rescuer disables.
-- **Mitigation:** D5.
 
 ### T-15 No minimum notice or window length
 **Low** (likelihood Low, impact Medium). Code. `initialize` in FixedPriceAuction.sol.

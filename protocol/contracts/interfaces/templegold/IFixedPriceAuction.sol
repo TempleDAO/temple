@@ -178,7 +178,8 @@ interface IFixedPriceAuction is IRescuableAccess {
     /// @notice Pause or unpause every token-moving function. The msig, or the rescuer instead in rescue mode.
     function setPaused(bool value) external;
 
-    /// @notice Repoint the compliance list. Msig only; reverts on zero and after `disableComplianceCheck`.
+    /// @notice Repoint the compliance list. Msig only; reverts on zero, on an address that doesn't answer `isFlagged`
+    /// (no code, or the wrong contract) and after `disableComplianceCheck`.
     function setComplianceCheck(address newComplianceCheck) external;
 
     /// @notice Switch screening off for good. Rescuer only.

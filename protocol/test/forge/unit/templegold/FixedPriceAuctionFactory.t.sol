@@ -158,6 +158,10 @@ contract FixedPriceAuctionFactoryTest is FixedPriceAuctionTestBase {
         c = _config(address(tgld), address(usds), PRICE, 0);
         c.complianceCheck = address(0);
         _expectInvalidAddress(c);
+        c.complianceCheck = alice;
+        _expectInvalidAddress(c);
+        c.complianceCheck = address(usds);
+        _expectInvalidAddress(c);
 
         FakeERC20CustomDecimals wide = new FakeERC20CustomDecimals("Wide", "WIDE", address(0), 0, 19);
         _expectInvalid(_config(address(wide), address(usds), PRICE, 0));
