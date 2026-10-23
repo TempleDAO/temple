@@ -165,6 +165,14 @@ contract AuctionFactoryTest is FixedPriceAuctionTestBase {
         _expectInvalid(_config(address(tgld), address(narrow), PRICE, 0));
     }
 
+    function test_createAuction_fail_complianceCheckNotAList() public {
+        IFixedPriceAuction.AuctionConfig memory c = _config(address(tgld), address(usds), PRICE, 0);
+        c.complianceCheck = alice;
+        _expectInvalidAddress(c);
+        c.complianceCheck = address(usds);
+        _expectInvalidAddress(c);
+    }
+
     function test_createAuction_fail_malformedConfig() public {
         bytes memory config = abi.encode(_config(address(tgld), address(usds), PRICE, 0));
         bytes memory short = new bytes(config.length - 32);

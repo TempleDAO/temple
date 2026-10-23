@@ -1299,7 +1299,7 @@ contract FixedPriceAuctionComplianceTest is FixedPriceAuctionTestBase {
         vm.stopPrank();
     }
 
-    /// @dev An invalid replacement leaves the existing compliance source and screening the same.
+    /// @dev A rejected repoint leaves the current list in place and still screening.
     function test_setComplianceCheck_fail_withoutCode() public {
         _toDeposit(auction);
         _deposit(auction, alice, 10e18);
@@ -1316,6 +1316,18 @@ contract FixedPriceAuctionComplianceTest is FixedPriceAuctionTestBase {
         vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.BlockedAccount.selector, alice));
         auction.withdrawDeposit(1);
         assertEq(auction.deposits(alice), 10e18);
+    }
+
+    /// @dev A contract that doesn't answer `isBlocked` with a bool, such as a token or a precompile, is rejected.
+    function test_setComplianceCheck_fail_wrongContract() public {
+        vm.prank(executor);
+        vm.expectRevert(CommonEventsAndErrors.InvalidAddress.selector);
+        auction.setComplianceCheck(address(tgld));
+        // The sha256 precompile returns one word, but not a bool.
+        vm.prank(executor);
+        vm.expectRevert(CommonEventsAndErrors.InvalidAddress.selector);
+        auction.setComplianceCheck(address(2));
+        assertEq(auction.complianceCheck(), address(compliance));
     }
 
     function test_access_setComplianceCheck() public {
@@ -1348,9 +1360,9 @@ contract FixedPriceAuctionComplianceTest is FixedPriceAuctionTestBase {
     function test_revertingComplianceCheck_failsClosed_disableFixes() public {
         _toDeposit(auction);
         _deposit(auction, alice, 10e18);
-        RevertingComplianceCheck broken = new RevertingComplianceCheck();
-        vm.prank(executor);
-        auction.setComplianceCheck(address(broken));
+        // The list's code changes after it was set, as a proxy or delegated list can; setComplianceCheck rejects one
+        // that reverts already.
+        vm.etch(address(compliance), address(new RevertingComplianceCheck()).code);
 
         vm.startPrank(alice);
         vm.expectRevert("Compliance unavailable");
@@ -1378,9 +1390,9 @@ contract FixedPriceAuctionComplianceTest is FixedPriceAuctionTestBase {
         _toDeposit(auction);
         _deposit(auction, alice, 60_000_000e18);
         _deposit(auction, bob, 40_000_000e18);
-        RevertingComplianceCheck broken = new RevertingComplianceCheck();
-        vm.prank(executor);
-        auction.setComplianceCheck(address(broken));
+        // The list's code changes after it was set, as a proxy or delegated list can; setComplianceCheck rejects one
+        // that reverts already.
+        vm.etch(address(compliance), address(new RevertingComplianceCheck()).code);
 
         _toFulfillment(auction);
         _fund(auction, 6_000_000e18);

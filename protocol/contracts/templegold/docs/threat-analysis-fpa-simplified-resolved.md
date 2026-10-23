@@ -10,7 +10,7 @@ Resolved since round 1: a pending executor proposal now dies when rescue mode sw
 A proposal the hijacked msig leaves *pending* now dies when rescue mode switches on (`RescuableAccess.sol:35-39`), and nobody can propose during rescue mode. On the factory, rescue mode also cancels a pending implementation proposal (`AuctionFactory.sol:57-62`). The open part of T-2, an atomic propose-and-accept, is fixed on the factory and auctions by D11's one-day delay. On `ComplianceCheck` the msig can overwrite a proposal within the day (T-2).
 
 ### T-3 Unbounded windows (resolved, Low)
-**Low.** Proven (`test_XC_farFulfillmentEnd_rescuerCancels`, 100 years in). `FixedPriceAuction.sol:86-93`, `:231-242`.
+**Low.** Proven (`test_XC_farFulfillmentEnd_rescuerCancels`, 100 years in). `FixedPriceAuction.sol:87-94`, `:232-243`.
 - **Before:** in round 1 a far-future `fulfillmentEnd` froze deposits for good, because the rescuer couldn't end an auction.
 - **Now:** the rescuer can `cancel` in rescue mode at any time before `fulfillmentEnd`, which refunds everyone. With a far-future `fulfillmentEnd` that's always available.
 - **Residual:** depositors have no exit between `depositEnd` and whenever a multisig acts. "Genuine auctions finish under rescue mode by the clock" is false for a long window: in rescue mode they can only be cancelled, never settled. A freeze is permanent only if the rescuer is lost too.
@@ -91,5 +91,5 @@ The original analysis (not in this branch) covered PRs 1304 and 1305. Every find
 
 The simplified design brings back three original threat classes in new places:
 - **Look-alike auctions:** now direct clones of the genuine implementation (T-16).
-- **Screening as a halting dependency:** now through a code-less pointer in the auctions (T-14).
+- **Screening as a halting dependency:** now only through a pointer in the auctions whose code changes after it is set (T-14). D5 rejects one that doesn't answer `isBlocked`.
 - **No bound on a freeze:** the 14-day pause timer is gone, which shows up as T-1.
