@@ -86,7 +86,7 @@ The [audit report](audit-report-fpa-simplified.md) (2026-10-22) is a code-level 
 | D11 | Add a delay before `acceptExecutor` (for example 24 hours after the proposal), or let the rescuer propose an executor while rescue mode is on? | T-2, T-5 | Medium | Fixed on the factory and auctions (audit finding 2). On `ComplianceCheck` the msig can overwrite a proposal before the delay ends (T-2) | Yes to the delay. Then rescue mode always has a window to cancel a hijacker's proposal, on the factory and auctions. The rescuer-proposes option adds a power to the rescuer. |
 | D2 | Let claims (`claim`, `claimTreasury`, `withdrawExcluded`) ignore the pause once `block.timestamp > fulfillmentEnd + N days`, so a breached or lost rescuer can't freeze settled funds for good? | T-1 | Medium | Open | Worth it. Claims only ever pay the depositor, so this can't redirect funds. |
 | D3 | Should the rescuer handover need a second key, or a delay? | T-4 | Medium | Decided: no change | No delay and no second key. The rescuer can pause, cancel and disable compliance, but can't move funds or change an auction's terms, so a stolen rescuer role costs a new factory, not funds. The msig checks `factory.rescuer()` in every `createAuction` batch. |
-| D4 | Pay each `claim`/`claimTreasury` leg separately, or add the decision-6 setters? | T-6, T-7 | Medium | Open | At least split `claimTreasury`. Its addresses are fixed for the auction's life. |
+| D4 | Pay each `claim`/`claimTreasury` leg separately, or add the decision-6 setters? | T-6, T-7 | Medium | Decided: no change | Keep both claims' legs coupled and the addresses fixed (model decisions 6 and 10). The team won't use tokens that can freeze an address, so the risk is very low. |
 | D5 | Reject a code-less compliance pointer in `initialize` and `setComplianceCheck`? | T-14 | Low | Fixed | Yes. A probe of `isBlocked` turns a deploy typo or the wrong contract into a revert. |
 | D6 | Reject `proposeNewExecutor` in `ComplianceCheck.setExplicitAccess`? | T-13 | Medium | Resolved by design: `ComplianceCheck` has no per-function grants; a blocker can only edit the list | — |
 | D7 | Minimum token decimals (for example ≥ 6)? | T-11 | Low | Fixed (audit finding 5) | Yes, as a deploy check, or enforce it in `initialize`. |
@@ -135,13 +135,13 @@ A decision's severity is the highest of the findings it cites.
 - **Coupling:** `claimTreasury` pays `filledDeposits` to `proceedsRecipient` and `funderRefund` to `funder` in one call. If a blocklisting token (USDC) blocks either address, or blocks the auction itself, both legs are stuck. Both addresses are fixed in the clone args, and `recoverToken` can't go below what's owed, so this is permanent.
 - **A compromised `proceedsRecipient` after `fulfillmentEnd`:** `cancel` is no longer possible, and the attacker can call `claimTreasury` itself. Pausing stops it, but also stops every depositor's claim. Before `fulfillmentEnd`, pause and cancel works.
 - **A compromised `funder`** can only lose its own tokens: `withdrawExcess` can't go below what fills every deposit. Any excess funding is lost whatever the msig does, because it reaches the same address as `funderRefund`. Fund exactly the requirement after `depositEnd`.
-- **Mitigation:** D4, either separate legs or the decision-6 setters.
+- **Accepted (D4):** the team won't use tokens that can freeze an address, so the legs stay coupled and the addresses fixed.
 
 ### T-7 A user's two claim legs are coupled
 **Low** (likelihood Low, impact Medium). Proven (`test_UA_blocklistedBidderAndRecipient`, round-1 `test_restrictedFill_unauthorisedClone_strandsUsers`). `FixedPriceAuction.sol:246-264`. TempleGold `_update` needs `from` or `to` authorized.
 - **USDC blocklists a claimant:** their other-token leg reverts with it. Only that user is affected.
 - **TGLD is one of the tokens and the clone isn't authorized on TempleGold** (never authorized, or de-authorized mid-life): every TGLD transfer from the auction to a user reverts, and every claim with it. Every user's other-token refund is stranded until the TempleGold owner authorizes the clone.
-- **Mitigation:** the TGLD process in [Operational risks](#operational-risks), and D4.
+- **Mitigation:** the TGLD process in [Operational risks](#operational-risks). D4 keeps the legs coupled.
 
 ### T-8 Rogue auctions through the genuine factory
 **Medium** (likelihood Low, impact High; was Medium, High before the rescuer reacts). **Decision D1.** Proven (round-1 `test_PR3_hijackedMsig_rugAuction_rescuerCheck`, round-2 `test_poc_noLeadTime`, `test_msigFrontRunsRescuerCancel`). `AuctionFactory.sol:32-38`, `FixedPriceAuction.sol:87-94`, `:223-229`, `:232-243`.

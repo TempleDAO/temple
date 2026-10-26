@@ -33,11 +33,11 @@ Numbered decisions refer to the list at the end.
 | Role | In code | Can do |
 |---|---|---|
 | **msig** (factory) | `executor`; locked out while the factory's rescue mode is on | `createAuction`, `proposeImplementation`, `proposeNewExecutor` |
-| **msig** (auction) | `executor`; locked out while rescue mode is on | `cancel`, `endFulfillment`, `setPaused`, `setComplianceCheck`, `recoverToken`, `exclude`, `reinstate`, `proposeNewExecutor`, and the proposed `setFunder`/`setProceedsRecipient` (decision 6) |
+| **msig** (auction) | `executor`; locked out while rescue mode is on | `cancel`, `endFulfillment`, `setPaused`, `setComplianceCheck`, `recoverToken`, `exclude`, `reinstate`, `proposeNewExecutor` |
 | **msig** (`ComplianceCheck`) | `executor` | `setBlocked`, `setBlocker`, `proposeNewExecutor` |
 | **blocker** | `isBlocker` on the list, set by the msig with `setBlocker`. Trusted: the msig picks and removes blockers | `setBlocked`, and `exclude` and `reinstate` on every auction pointing at that list, outside rescue mode, while compliance is enabled |
 | **rescuer** | `rescuer` (each auction takes the factory's current one) | factory: `acceptImplementation`, `setRescueMode`, and the two-step rescuer handover. Auction: `disableComplianceCheck` (one-way, any time), `setRescueMode`, `setPaused` and `cancel` while rescue mode is on, and the two-step rescuer handover. Nothing else. |
-| **funder** | `funder` (fixed at deploy, see decision 6) | `fund`, `withdrawExcess` |
+| **funder** | `funder` (fixed at deploy, decision 6) | `fund`, `withdrawExcess` |
 | **anyone** | — | `deposit`, `withdrawDeposit`, `claim`, `withdrawExcluded`, `claimTreasury` (pays the funder and proceeds addresses) |
 
 ## Contracts
@@ -103,7 +103,6 @@ Bidders deposit `bidToken`, and the funder supplies `fillToken`. `price` is fill
 | `proposeNewExecutor`/`acceptExecutor`, `proposeNewRescuer`/`acceptRescuer` | Two-step role handovers (see the rescue-mode callout). `acceptExecutor` waits `EXECUTOR_HANDOVER_DELAY` (2 days) after the proposal. | propose: `proposeNewExecutor` by the msig (locked out in rescue mode), `proposeNewRescuer` by the rescuer; accept: the proposed address | any | — | allowed |
 | `setComplianceCheck(addr)` | Points the auction at a `ComplianceCheck` contract, for example to replace a broken or rogue one. Reverts on `address(0)` and on an address that doesn't answer `isBlocked` (no code, or the wrong contract). Only `disableComplianceCheck` turns screening off. | msig | any, until disabled | — | allowed |
 | `disableComplianceCheck()` | Switches screening off for good. Afterwards `setComplianceCheck` reverts. | rescuer | any | — | allowed |
-| `setFunder(addr)`, `setProceedsRecipient(addr)` | Proposed (decision 6). Replace a compromised Treasury address. | msig | any | — | allowed |
 | views: `phase`, `getConfig`, `getTiming`, `previewSettlement`, `claimable`, `treasuryClaimable`, `withdrawableExcess` | Read the current phase, the deployment terms, the schedule, the settlement maths, what each party can claim, and how much funding the funder can withdraw now. | anyone | any | — | allowed |
 
 `fund`, `withdrawExcess` and `claimTreasury` aren't screened, because they only pay Treasury addresses.
@@ -199,7 +198,7 @@ Required funding rounds up. `userFunding`, and each bidder's share of it and of 
 
 The rescuer's answer to a rogue list is `disableComplianceCheck`: afterwards nobody is flagged, so nothing more can be excluded and every excluded balance becomes withdrawable once the auction is unpaused.
 
-**Events:** `Deposited`, `DepositWithdrawn`, `BidderExcluded`, `BidderReinstated`, `ExcludedWithdrawn`, `Funded`, `ExcessWithdrawn`, `AuctionSettled(settledAt, …)`, `AuctionCancelled`, `UserClaimed`, `TreasuryClaimed`, `PausedSet(bool)`, `RescueModeSet`, `ComplianceCheckSet`, `ComplianceCheckDisabled`, and `FunderSet`/`ProceedsRecipientSet` if decision 6 says yes. `initialize` emits `ComplianceCheckSet` for the initial pointer.
+**Events:** `Deposited`, `DepositWithdrawn`, `BidderExcluded`, `BidderReinstated`, `ExcludedWithdrawn`, `Funded`, `ExcessWithdrawn`, `AuctionSettled(settledAt, …)`, `AuctionCancelled`, `UserClaimed`, `TreasuryClaimed`, `PausedSet(bool)`, `RescueModeSet`, `ComplianceCheckSet`, `ComplianceCheckDisabled`. `initialize` emits `ComplianceCheckSet` for the initial pointer.
 
 ### 3. `WishingWell`: record-only, keyed by (account, from, to)
 
@@ -267,7 +266,7 @@ The factory deploys each auction with its own `executor` (the msig, which is the
 
 TGLD (TempleGold) moves only when the sender or the receiver is authorised on TempleGold, so authorise every TGLD auction before `depositStart`. Otherwise an authorised depositor can move TGLD into the auction, and that TGLD can then leave only to authorised receivers (not unauthorised bidders or the proceeds recipient) until the auction is authorised. `TempleGold.authorizeContract` is owner-only and the msig owns TempleGold, so the msig authorises each TGLD auction in a transaction after `createAuction`, using the address from `AuctionCreated` and before `depositStart`. Authorising in the same batch would mean predicting the clone's address from the factory's nonce, which goes wrong if queued creations run out of order. Never de-authorise an auction until its claims are done. The factory can't do it without being given control of TempleGold's whole authorisation list.
 
-TGLD auctions are meant to burn the TGLD they collect. No burner contract exists yet. Building one, and requiring TGLD auctions to use it as `proceedsRecipient`, is decision 11. If `setProceedsRecipient` exists (decision 6), it must keep the burner on TGLD auctions.
+TGLD auctions are meant to burn the TGLD they collect. No burner contract exists yet. Building one, and requiring TGLD auctions to use it as `proceedsRecipient`, is decision 11. `proceedsRecipient` is fixed at creation (decision 6), so a TGLD auction keeps its burner for life.
 
 - Indexers subscribe to one event on one address, `AuctionCreated`. Its `config` gives each auction's market (`bidToken` → `fillToken`).
 - Front-ends reject look-alike contracts with `isAuction`.
@@ -314,7 +313,7 @@ Open choices for the indexer (decision 9):
 |---|---|
 | One address must be blocked | msig or a blocker blocks it. Its deposit, withdrawal and claim revert, and its funds stay put. Before settlement, either can also `exclude` it, so its deposit leaves the fill and is refunded once it's cleared, unless it's reinstated during Deposit. |
 | Accounting bug, or a rush of depositors to withdraw | msig pauses the affected auction: every function that moves tokens stops. Investigate, then unpause, or `cancel` before `fulfillmentEnd`. |
-| Compromised `funder` or `proceedsRecipient` | If decision 6 adds the setters: msig pauses, replaces the address with `setFunder` or `setProceedsRecipient`, then unpauses. Without them, for `proceedsRecipient`: pause, then cancel before `fulfillmentEnd`, so no proceeds accrue. For `funder`, don't cancel, because cancelling returns all funding to the compromised address. Let the auction settle, so fills go to depositors and only the unused funding reaches the funder. |
+| Compromised `funder` or `proceedsRecipient` | Both addresses are fixed (decision 6). For `proceedsRecipient`: pause, then cancel before `fulfillmentEnd`, so no proceeds accrue. For `funder`, don't cancel, because cancelling returns all funding to the compromised address. Let the auction settle, so fills go to depositors and only the unused funding reaches the funder. |
 | Rogue blocker | msig removes it with `setBlocker` and fixes the list, or repoints the auctions to a new `ComplianceCheck`. |
 | Rogue msig pauses for good, or blocks everyone | rescuer switches rescue mode on, which locks the msig out. It unpauses and/or calls `disableComplianceCheck`, and switches rescue mode off once the msig can be trusted again. If the Safe can't be recovered, rescue mode stays on until the auction settles by the clock. |
 | Hijacked msig deploys rogue auctions through the factory | (1) The rescuer switches rescue mode on in the factory, which stops new auctions and code proposals, and in every live auction, which locks the hijacked msig out. It calls `disableComplianceCheck` on any auction whose list the msig has abused. (2) For each rogue auction already created, the rescuer switches rescue mode on and cancels it as soon as `AuctionCreated` appears, ideally before `depositStart` and at the latest before `depositEnd`: from `depositEnd` the hijacked msig can fund with junk and settle in one block, and a settled auction can't be cancelled. Anyone who already deposited gets a full refund at once, whatever the auction's windows. (3) If the Safe's signers recover it, the rescuer switches rescue mode off. If the Safe is lost for good, the team deploys a new Safe, `ComplianceCheck` and factory, and the indexer and front-ends add the new factory and stop counting new auctions from the old one. Genuine auctions finish under rescue mode, because claims settle them by the clock. |
@@ -341,7 +340,7 @@ Open choices for the indexer (decision 9):
 | The `remainingFunding`, `fullFundingRequired` and `liabilities` views | folded into `previewSettlement` and `claimable` |
 | `disableComplianceCheck` callable by the msig | now rescuer-only, so the rescuer can lift a rogue msig's blocks for good. The msig can still repoint to a permissive list, which the requirements allow, since the msig can update the pointer. |
 
-About 35 external functions shrink to 22, counting views but not access-control-base functions or public getters (24 with the decision 6 setters). Of 20 events and 23 errors, roughly half remain. These threats go away with the code that caused them:
+About 35 external functions shrink to 22, counting views but not access-control-base functions or public getters. Of 20 events and 23 errors, roughly half remain. These threats go away with the code that caused them:
 - frozen-release snapshot bugs
 - dust-counter accounting
 - a timed pause outlasting the windows
@@ -360,16 +359,16 @@ The record-only Well drops signed wishes and nonces, the on-chain balance and co
 
 ## Decisions for the team
 
-1. Are these cuts acceptable? That covers the timed emergency pause, the deposit pause (`setDepositsPaused`), the cap, early close (`endDeposit`) and permit.
+1. **Confirmed:** the cuts are acceptable. That covers the timed emergency pause, the deposit pause (`setDepositsPaused`), the cap, early close (`endDeposit`) and permit.
 2. ~~**Legal:** can a blocked account's deposit be filled, with its fill waiting until it's unblocked?~~ **Resolved** by the exclusion rules in [Excluding flagged bidders](#excluding-flagged-bidders): before settlement, `exclude` takes a flagged deposit out of the fill and it's refund-only; after settlement the fill stands and the payout waits.
 3. Should `withdrawDeposit` revert for blocked accounts? This proposal assumes yes, to match "funds stay where they are".
-4. The pause is per auction, so stopping everything takes one transaction per live auction. Is that acceptable, given only a few auctions run at once?
+4. **Confirmed:** the pause is per auction, so stopping everything takes one transaction per live auction. That's acceptable with only a few auctions running at once.
 5. Should a blocker also be able to pause? That needs `setPaused` to accept a blocker on the current list, as `exclude` does, locked out in rescue mode like the msig.
-6. Should the msig be able to change `funder` and `proceedsRecipient`? Today both are fixed. If yes, TGLD auctions must keep the burner. Without the setters, a compromised funder can't be recovered from. A hijacked msig could point both addresses at itself before the rescuer reacts, and the rescuer can't change them back.
+6. **No:** `funder` and `proceedsRecipient` stay fixed. Setters would let a hijacked msig point both addresses at itself before the rescuer reacts, and the rescuer couldn't change them back. A compromised funder or proceeds recipient is handled in the runbook.
 7. **Rescue mode (see the rescue-mode callout in [`FixedPriceAuction`](#2-fixedpriceauction-simplified)):** confirm the small access-control base, where rescue mode only locks the msig out and hands the rescuer the pause, and the accepted risk that a breached rescuer could lock the msig out of an auction.
-8. **One factory with swappable code:** confirm the two-key swap (msig proposes, rescuer accepts) and rescue mode on the factory. The cost is a Solady dependency, clone-arg reads in the auction, and an `initialize` step. Every auction version also depends on one factory contract, so one bug in it reaches every auction.
+8. **Confirmed: one factory with swappable code**, with the two-key swap (msig proposes, rescuer accepts) and rescue mode on the factory. The cost is a Solady dependency, clone-arg reads in the auction, and an `initialize` step. Every auction version also depends on one factory contract, so one bug in it reaches every auction.
 9. **Indexer choices:** does a new wish reset subtracted fills, and do tokens in a live auction count as held?
-10. Should `cancel` also be allowed after `fulfillmentEnd` while the auction is unsettled and paused? If added, should it stay msig-only?
+10. **No:** `cancel` stays unavailable from `fulfillmentEnd`. Claims can start then, and cancelling after some are paid would owe refunds on deposits and funding already paid out. An incident caught before `fulfillmentEnd` can already be cancelled.
 11. Should we build a TGLD burner contract and require TGLD auctions to use it as `proceedsRecipient`?
 12. Which `ComplianceCheck` does the indexer screen against? Does it stop screening when the rescuer disables compliance on the auctions? In this design, the rescuer's switch only reaches the auctions.
 13. Should the factory keep the supported-token check (`IAuctionTokenRegistry`) at `createAuction`?
