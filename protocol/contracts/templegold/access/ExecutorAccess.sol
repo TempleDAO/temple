@@ -18,7 +18,7 @@ abstract contract ExecutorAccess is IExecutorAccess {
     uint40 public override proposedExecutorAt;
 
     /// @inheritdoc IExecutorAccess
-    uint256 public constant override EXECUTOR_HANDOVER_DELAY = 1 days;
+    uint256 public constant override EXECUTOR_HANDOVER_DELAY = 2 days;
 
     /// @dev Call once, from the inheriting contract's constructor or initializer.
     function _initExecutorAccess(address initialExecutor) internal {
