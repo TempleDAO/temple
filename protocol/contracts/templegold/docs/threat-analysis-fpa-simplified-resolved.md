@@ -7,7 +7,7 @@ Companion to [threat-analysis-fpa-simplified.md](threat-analysis-fpa-simplified.
 Resolved since round 1: a pending executor proposal now dies when rescue mode switches on, and so does a pending implementation proposal on the factory. The rescuer can `cancel` in rescue mode, which ends the permanent-freeze case of unbounded windows ([T-3](#t-3-unbounded-windows-resolved-low)).
 
 ### T-2 (resolved part) Pending proposals die in rescue mode
-A proposal the hijacked msig leaves *pending* now dies when rescue mode switches on (`RescuableAccess.sol:35-41`), and nobody can propose during rescue mode. On the factory, rescue mode also cancels a pending implementation proposal (`FixedPriceAuctionFactory.sol:57-62`). The open part of T-2, an atomic propose-and-accept, is fixed on the factory and auctions by D11's one-day delay; on `ComplianceCheck` the msig can overwrite a proposal within the day (T-2).
+A proposal the hijacked msig leaves *pending* now dies when rescue mode switches on (`RescuableAccess.sol:35-41`), and nobody can propose during rescue mode. On the factory, rescue mode also cancels a pending implementation proposal (`FixedPriceAuctionFactory.sol:57-62`). The open part of T-2, an atomic propose-and-accept, is fixed on the factory and auctions by D11's two-day delay; on `ComplianceCheck` the msig can overwrite a proposal before the delay ends (T-2).
 
 ### T-3 Unbounded windows (resolved, Low)
 **Low.** Proven (`test_XC_farFulfillmentEnd_rescuerCancels`, 100 years in). `initialize` and `cancel` in FixedPriceAuction.sol.

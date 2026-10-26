@@ -21,7 +21,7 @@ Every finding also applied to `fpa-frozen-inputs` at `ef69ca8c`: the code each o
 | # | Finding | Fixed on this branch by | Note |
 | --- | --- | --- | --- |
 | 1 | An EIP-7702 EOA implementation lets its key holder rewrite every auction | Not fixed: accepted as operational risk | Any pointer can be a proxy or a delegated account whose code changes after review, and no on-chain check can rule that out. The rescuer's review before it accepts an implementation is the control. The factory still rejects an implementation with no code. |
-| 2 | A hijacked msig proposes and accepts a new executor in one transaction | `fix: make a proposed executor wait a day before it can accept` | On the factory and auctions rescue mode can now cancel the proposal. On `ComplianceCheck` the msig can overwrite a proposal within the day (T-2). |
+| 2 | A hijacked msig proposes and accepts a new executor in one transaction | `fix: make a proposed executor wait a day before it can accept` | On the factory and auctions rescue mode can now cancel the proposal. On `ComplianceCheck` the msig can overwrite a proposal before the delay ends (T-2). The delay is two days. |
 | 3 | A hijacked msig repoints the list, so rescue mode cannot stop exclude | `fix: lock compliance-list grants out of exclude and reinstate in rescue mode` | |
 | 4 | Settlement charges bidders for the funding, not the rounded-down fill | `fix: charge bidders only for the whole fill-token wei they get` | Option A of the report's fix. Option B was not used. |
 | 5 | A small bidder can pay bid tokens and get zero fill | `fix: require 6 to 18 decimals for both auction tokens` | Option A (decimals), for both tokens. |
