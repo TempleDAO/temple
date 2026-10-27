@@ -351,6 +351,11 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
     }
 
     /// @inheritdoc IFixedPriceAuction
+    function encodeConfig(AuctionConfig calldata config) external pure override returns (bytes memory) {
+        return abi.encode(config);
+    }
+
+    /// @inheritdoc IFixedPriceAuction
     function withdrawableExcess() external view override returns (uint256) {
         return _withdrawableExcess(_config());
     }

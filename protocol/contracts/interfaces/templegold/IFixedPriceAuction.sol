@@ -243,6 +243,9 @@ interface IFixedPriceAuction is IRescuableAccess {
     /// @notice The deployment terms read from the clone's code, with the current compliance list pointer.
     function getConfig() external view returns (AuctionConfig memory);
 
+    /// @notice The `config` bytes to pass to the factory's `createAuction`.
+    function encodeConfig(AuctionConfig calldata config) external pure returns (bytes memory);
+
     /// @notice Fill tokens the funder can withdraw now, in fill token base units: the funding above what fills
     /// every deposit during Fulfillment. Zero in any other phase and while paused.
     function withdrawableExcess() external view returns (uint256);

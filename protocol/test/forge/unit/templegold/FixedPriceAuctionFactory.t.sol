@@ -73,6 +73,14 @@ contract FixedPriceAuctionFactoryTest is FixedPriceAuctionTestBase {
         assertEq(abi.encode(stored), abi.encode(config));
     }
 
+    function test_createAuction_fromEncodeConfig() public {
+        IFixedPriceAuction.AuctionConfig memory config = _config(address(tgld), address(usds), PRICE, 1e18);
+        bytes memory encoded = implementation.encodeConfig(config);
+        vm.prank(executor);
+        FixedPriceAuction created = FixedPriceAuction(factory.createAuction(encoded));
+        assertEq(abi.encode(created.getConfig()), abi.encode(config));
+    }
+
     function test_createAuction_executorIsTheCaller() public {
         vm.prank(executor);
         factory.proposeNewExecutor(alice);
