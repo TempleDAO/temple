@@ -103,7 +103,7 @@ Bidders deposit `bidToken`, and the funder supplies `fillToken`. `price` is fill
 | `proposeNewExecutor`/`acceptExecutor`, `proposeNewRescuer`/`acceptRescuer` | Two-step role handovers (see the rescue-mode callout). `acceptExecutor` waits `EXECUTOR_HANDOVER_DELAY` (2 days) after the proposal. | propose: `proposeNewExecutor` by the msig (locked out in rescue mode), `proposeNewRescuer` by the rescuer; accept: the proposed address | any | — | allowed |
 | `setComplianceCheck(addr)` | Points the auction at a `ComplianceCheck` contract, for example to replace a broken or rogue one. Reverts on `address(0)` and on an address that doesn't answer `isBlocked` (no code, or the wrong contract). Only `disableComplianceCheck` turns screening off. | msig | any, until disabled | — | allowed |
 | `disableComplianceCheck()` | Switches screening off for good. Afterwards `setComplianceCheck` reverts. | rescuer | any | — | allowed |
-| views: `phase`, `getConfig`, `getTiming`, `previewSettlement`, `claimable`, `treasuryClaimable`, `withdrawableExcess` | Read the current phase, the deployment terms, the schedule, the settlement maths, what each party can claim, and how much funding the funder can withdraw now. | anyone | any | — | allowed |
+| views: `phase`, `getConfig`, `encodeConfig`, `getTiming`, `previewSettlement`, `claimable`, `treasuryClaimable`, `withdrawableExcess` | Read the current phase, the deployment terms, the `createAuction` bytes for a config (call it on the implementation), the schedule, the settlement maths, what each party can claim, and how much funding the funder can withdraw now. | anyone | any | — | allowed |
 
 `fund`, `withdrawExcess` and `claimTreasury` aren't screened, because they only pay Treasury addresses.
 

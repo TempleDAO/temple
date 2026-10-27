@@ -229,6 +229,9 @@ interface IFixedPriceAuction is IRescuableAccess {
     /// @notice The deployment terms read from the clone's code, with the current compliance list pointer.
     function getConfig() external view returns (AuctionConfig memory);
 
+    /// @notice The `config` bytes to pass to the factory's `createAuction`.
+    function encodeConfig(AuctionConfig calldata config) external pure returns (bytes memory);
+
     /// @notice The auction times and `settledAt`.
     function getTiming() external view returns (AuctionTiming memory);
 

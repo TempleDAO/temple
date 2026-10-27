@@ -338,6 +338,11 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
     }
 
     /// @inheritdoc IFixedPriceAuction
+    function encodeConfig(AuctionConfig calldata config) external pure override returns (bytes memory) {
+        return abi.encode(config);
+    }
+
+    /// @inheritdoc IFixedPriceAuction
     function getTiming() external view override returns (AuctionTiming memory) {
         AuctionConfig memory config = _config();
         return AuctionTiming(config.depositStart, config.depositEnd, config.fulfillmentEnd, settledAt);
