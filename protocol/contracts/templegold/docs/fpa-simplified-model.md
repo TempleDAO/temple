@@ -368,7 +368,7 @@ With a record-only Well, all judgement about demand happens off-chain. The index
 | Three cancel functions | merged into `cancel()` |
 | Supported-token registry check (`IAuctionTokenRegistry`) and the notice and maximum-duration rules | the msig chooses the tokens and schedule in `createAuction`; the auction relies on standard ERC-20s with exact transfers (decision 13) |
 | The `remainingFunding` and `fullFundingRequired` views | folded into `settlement` and `claimable`. `liabilities()` now exists, backed by the payout counters |
-| `disableComplianceCheck` callable by the msig | now rescuer-only, so the rescuer can lift a rogue msig's flags for good. The msig can still repoint to a permissive list, which the requirements allow, since the msig can update the pointer. |
+| `disableComplianceCheck` callable by the msig | now rescuer-only and only in rescue mode, so the rescuer can lift a rogue msig's flags for good. The msig can still repoint to a permissive list, which the requirements allow, since the msig can update the pointer. |
 
 About 35 external functions shrink to 24, counting `initialize` and the views but not access-control-base functions or public getters (42 in `IFixedPriceAuction` with the getters). Of 20 events and 23 errors, roughly half remain. These threats go away with the code that caused them:
 - frozen-release snapshot bugs
