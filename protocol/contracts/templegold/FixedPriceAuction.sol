@@ -34,6 +34,11 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
     uint8 private constant MIN_TOKEN_DECIMALS = 6;
 
     /// @inheritdoc IFixedPriceAuction
+    uint256 public constant override MIN_DEPOSIT_START_DELAY = 1 days;
+    /// @inheritdoc IFixedPriceAuction
+    uint256 public constant override MIN_DEPOSIT_WINDOW = 1 days;
+
+    /// @inheritdoc IFixedPriceAuction
     uint256 public override priceDenominator;
 
     /// @inheritdoc IFixedPriceAuction
@@ -85,8 +90,8 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
         if (config.complianceCheck == address(0)) revert CommonEventsAndErrors.InvalidAddress();
         _requireComplianceCheck(config.complianceCheck);
         if (
-            config.depositStart <= block.timestamp
-                || config.depositStart >= config.depositEnd
+            config.depositStart < block.timestamp + MIN_DEPOSIT_START_DELAY
+                || config.depositEnd < config.depositStart + MIN_DEPOSIT_WINDOW
                 || config.depositEnd >= config.fulfillmentEnd
                 || config.fulfillmentEnd > type(uint40).max
                 || config.bidToken == config.fillToken

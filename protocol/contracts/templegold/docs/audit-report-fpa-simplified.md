@@ -14,7 +14,7 @@ This report is from a scan of `fpa-simplified` at `860ea95d` on 2026-10-22.
 | 6 | Rescue mode does not stop a list grantee from calling exclude | `fix: lock compliance-list grants out of exclude and reinstate in rescue mode` | |
 | 7 | Exclusion in Fulfillment moves a partial fill to the other bidders | Not fixed: accepted, blockers are trusted | The msig picks and removes blockers, and trusts them as it trusts its own signers, so a blocker can still exclude in Fulfillment (T-5). |
 | 8 | A grantee gives a colluding bidder a free exit during Fulfillment | Not fixed: accepted, blockers are trusted | As finding 7. A bidder that gets itself blocked in Fulfillment can still get a full refund once it is excluded and the block is cleared (T-5). |
-| Lead | Initialize accepts a deposit window of one second | Not fixed | Open decision D1. |
+| Lead | Initialize accepts a deposit window of one second | `feat: require a day's notice and a day-long deposit window` | Decision D1: `MIN_DEPOSIT_START_DELAY` and `MIN_DEPOSIT_WINDOW`, one day each. |
 
 Each fix commit applies alone on the report commit.
 
