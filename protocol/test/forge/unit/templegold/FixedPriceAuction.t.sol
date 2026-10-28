@@ -976,6 +976,18 @@ contract FixedPriceAuctionPauseTest is FixedPriceAuctionTestBase {
         auction.recoverToken(address(usds), executor, 1);
     }
 
+    function test_paused_inDepositNeverFundedRefundsAfterExpiry() public {
+        _toDeposit(auction);
+        _deposit(auction, alice, 60_000_000e18);
+        _pause();
+
+        vm.warp(auction.getConfig().fulfillmentEnd + auction.CLAIM_PAUSE_EXPIRY() + 1);
+        vm.prank(alice);
+        auction.claim();
+        assertEq(tgld.balanceOf(alice), 60_000_000e18);
+        assertEq(usds.balanceOf(alice), 0);
+    }
+
     function test_paused_endFulfillmentWorks() public {
         _workedExample(1e18);
         _pause();
