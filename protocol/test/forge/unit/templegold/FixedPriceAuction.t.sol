@@ -24,6 +24,13 @@ contract RevertingComplianceCheck {
     }
 }
 
+/// @dev A list that answers `isBlocked` but has no `isBlocker`.
+contract NoBlockerComplianceCheck {
+    function isBlocked(address) external pure returns (bool) {
+        return false;
+    }
+}
+
 /// @dev All the TempleGold constructor needs from a LayerZero endpoint, so real TGLD deploys without a fork.
 contract LayerZeroEndpointStub {
     function setDelegate(address) external { }
@@ -883,6 +890,15 @@ contract FixedPriceAuctionPauseTest is FixedPriceAuctionTestBase {
         vm.prank(blocker);
         vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
         auction.setPaused(true);
+    }
+
+    function test_setPaused_msigPausesWhenListLacksIsBlocker() public {
+        NoBlockerComplianceCheck list = new NoBlockerComplianceCheck();
+        vm.startPrank(executor);
+        auction.setComplianceCheck(address(list));
+        auction.setPaused(true);
+        vm.stopPrank();
+        assertTrue(auction.paused());
     }
 
     function test_setPaused_events() public {
