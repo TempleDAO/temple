@@ -211,10 +211,10 @@ A decision's severity is the highest of the findings it cites.
 - **Implementation swaps:** `config` decodes "by implementation", but nothing on-chain names a layout. An indexer that falls back to the v1 decoder can decode a new layout wrongly. A changed event signature silently drops events. Trailing bytes after the 320-byte config are accepted, so a strict decoder or a hash check can mismatch.
 - **Proposal events:** a zero address in `ImplementationProposed` or `NewExecutorProposed` means the proposal was cancelled by rescue mode. `acceptImplementation` clears the proposal without its own event, so indexers clear it on `ImplementationSet`. The constructor now emits `ImplementationSet`, so an events-only allowlist is complete.
 - **Factory replacement:** the indexer tracks a set of factories plus a cutoff for the old one. The old factory's `isAuction` stays true for its rogue auctions, and the retired factory should stay in rescue mode for good.
-- **Compliance divergence:** each auction's pointer and disable are separate, the Well doesn't screen, and the indexer must screen with each target auction's pointer and its `ComplianceCheckDisabled` state.
+- **Compliance divergence:** each auction's pointer and disable are separate, the Well doesn't screen, so the dashboard screens wishers against each target auction's list at decision time, and keeps screening when that auction's compliance is disabled (decision 12).
 - **Rotation:** rotating the factory's rescuer or executor leaves live auctions on the old keys. A breach-driven rotation needs a handover on every live auction.
 - **Mutable code behind a pointer (accepted):** the implementation and the compliance list can each be a proxy, or an EIP-7702 delegated account, whose code changes after review. No on-chain check can rule that out, so the review before `proposeImplementation`, `acceptImplementation`, `createAuction` and `setComplianceCheck` is the control (audit finding 1). The factory still rejects an implementation with no code.
-- **Mitigation:** allowlist implementations and fail closed on `ImplementationSet` until a decoder exists. Decide decision 12.
+- **Mitigation:** allowlist implementations and fail closed on `ImplementationSet` until a decoder exists; the subgraph stores such auctions as unsupported and doesn't index them.
 
 ### T-18 Demand inflation off-chain
 **Medium** (likelihood High, impact Low: it feeds decisions, not funds; was Low). Design. `WishingWell.sol:11`, `:14-17`.
@@ -222,7 +222,7 @@ A decision's severity is the highest of the findings it cites.
 - **Borrowed or sampled balances:** an account borrows across the dashboard's balance read and wishes with the borrowed balance. A contract that makes arbitrary calls can be made to `wish()`, which attributes its balance to the attacker. TGLD bridged between per-chain snapshots can count twice.
 - **Input:** the Well validates nothing: `from == to`, zero or non-token addresses, `expiresAt` of 0 or in the past. Anyone can emit `WishSet` for any key, so an indexer that stores every key can be bloated.
 - **Mitigation:**
-  - an unpredictable snapshot block, or a minimum balance over a window;
+  - the dashboard reads balances at decision time, not at a time a wisher can predict, and can look at balances over a window;
   - count only bucket tokens with `from != to`, filtering at ingest;
   - document 0 as expired and `type(uint64).max` as "no expiry";
   - count only allowlisted contract wishers;
@@ -236,7 +236,7 @@ A decision's severity is the highest of the findings it cites.
 
 ### T-20 `deposits()` doesn't drop when an account claims
 **Low** (likelihood Medium, impact Low). Proven (`test_poc_depositsPersistAfterClaim`). `FixedPriceAuction.sol:63`, `:255-274`.
-- **Scenario:** an indexer that counts held tokens as wallet balance plus `deposits(account)` double-counts after a claim: the refund is in the wallet and `deposits()` still shows the full amount. The filled part has already gone to the proceeds recipient.
+- **Scenario:** a dashboard that counts held tokens as wallet balance plus `deposits(account)` double-counts after a claim: the refund is in the wallet and `deposits()` still shows the full amount. The filled part has already gone to the proceeds recipient.
 - **Mitigation:** D9. Held in auction is `deposits` plus `excluded(account)` while the auction is live, and `claimable(account).bidTokenRefund` plus `excluded(account)` once it's final.
 
 ### Info

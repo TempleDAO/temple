@@ -280,39 +280,53 @@ A new factory is only needed if the factory itself changes, or if the msig's Saf
 
 ## What the indexer does
 
-With a record-only Well, all judgement about demand happens off-chain. The indexer only counts auction events from addresses where `isAuction` is true. It reads:
+With a record-only Well, all judgement about demand happens off-chain. The indexer is a Goldsky subgraph, an extension of the Spice Bazaar subgraph. A spike against this branch's ABIs confirmed it needs no contract change, and that the dapp's auction list needs no RPC calls.
 
-| Need | Event |
+| Need | Source |
 |---|---|
-| The wish | `WishSet(account, from, to, amount, expiresAt)` |
-| Which auctions are genuine, and their market | `AuctionCreated` from the factory |
-| Who bid, and how much | `Deposited`, `DepositWithdrawn` |
-| How much filled, and when | `AuctionSettled`, which carries `settledAt` |
+| The wish | `WishSet(account, from, to, amount, expiresAt)` from the Well |
+| Which auctions are genuine, and their terms | `AuctionCreated(auction, implementation, config)` from the factory, with `config` decoded in the handler |
+| Who bid, and how much | `Deposited`, `DepositWithdrawn` (each carries the account's deposit and `totalDeposits`) |
+| Exclusions | `BidderExcluded`, `BidderReinstated`, `ExcludedWithdrawn` |
+| Funding | `Funded`, `ExcessWithdrawn` (each carries the funding held) |
+| How much filled, and when | The subgraph's own copy of `_calculateSettlement`, updated on every deposit, exclusion and funding change. `AuctionSettled` (carrying `settledAt`) arrives at `endFulfillment`, or for a settlement by the clock at its first claim or `claimTreasury` |
 | Cancelled auctions (no fills, deposits refundable) | `AuctionCancelled` |
-| Each auction's screening | `ComplianceCheckSet`, `ComplianceCheckDisabled` |
-| Balances (dashboard, at decision time) | `balanceOf` for every wisher in one multicall |
+| Claims | `UserClaimed(account, fillTokenAmount, bidTokenRefund)`, `TreasuryClaimed` |
+| Status | `PausedSet`, `RescueModeSet`, `ComplianceCheckSet`, `ComplianceCheckDisabled` |
+| Balances (dashboard, not the indexer) | `balanceOf` for every wisher in one multicall, at decision time |
 | Who is blocked (dapp and dashboard, not the indexer) | `isBlocked` read directly: one call for the connected user, a multicall over wishers at decision time |
 
-Rules:
+### Subgraph design
+
+- **Factory pattern:** the factory is a fixed data source. Its `AuctionCreated` handler starts a per-auction template, as `SpiceAuctionFactory` already does for `SpiceAuction`. Only the genuine factory's events create templates, so look-alike auctions are never indexed.
+- **Implementation list:** the handler decodes `config` only when `implementation` is on the subgraph's list, with one decoder per implementation. Any other auction is stored as unsupported and not indexed, so a new config layout can't be decoded wrongly. A new implementation needs a subgraph release that adds its decoder.
+- **Decoding the config:** the v1 config has only fixed-size fields, so `ethereum.decode("(address,address,uint256,uint64,uint64,uint64,uint256,address,address,address)", config)` decodes it directly, with no RPC call. Trailing bytes after the config, which the contract accepts, still decode.
+- **`initialize` events aren't needed:** `initialize` runs after `AuctionCreated` in the same transaction, and its only event, `ComplianceCheckSet`, repeats the config's compliance list.
+- **Settlement without the event:** every update recomputes the settlement as the contract does, so `filledDeposits`, `userFunding`, `userRefund` and `funderRefund` are right before any `AuctionSettled`. They're final once the outcome is set or `fulfillmentEnd` passes, because the totals can't change after that. When `AuctionSettled` arrives, the mapping checks it against its own figures and stops indexing on a mismatch. A cancel makes the figures (0, 0, `totalDeposits`, funding).
+- **No clock:** a subgraph can't act when time passes. It stores the timestamps, and the client derives the phase from `depositStart`, `depositEnd`, `fulfillmentEnd`, the outcome and the current time. Wish expiry is applied the same way, at query time.
+- **Raw amounts:** amounts are stored in raw token units, so the fill and wish maths stays exact. The client formats them with the token's decimals.
+- **Only indexing-time RPC calls:** one `name`, `symbol` and `decimals` call per new token.
+- **Flags and keys aren't indexed.** The compliance list each auction points at and whether compliance is disabled are indexed, but the flags themselves aren't, so repointing an auction to another list needs no subgraph change. The executor and rescuer are operational, not public, and aren't indexed either.
+
+### What the dapp and dashboard compute
+
+- **Auction list:** one query returns every past and current auction with its tokens, price, timing, minimum deposit, status, totals, funding, required funding, depositor count and settlement figures.
+- **A user's position:** positions are stored per auction and account. Once the auction is final, the user can claim `floor(deposit × userFunding / totalDeposits)` of the fill token and `floor(deposit × userRefund / totalDeposits)` of the bid token, as in `_claimable`.
+- **Funder's withdrawable excess:** `funding − requiredFunding` during Fulfillment while not paused.
+
+### Demand rules (decision 9)
+
 - A wish matches an auction when `bidToken == from` and `fillToken == to`.
-- **Demand is counted per account and bucket:** the sum of its active wishes in the bucket, minus its fills in that bucket from auctions settled after its latest `WishSet` in the bucket, floored at zero. Any `WishSet` in the bucket, including an update or a cancel (amount 0), restarts the fill count, because it restates what the account still wants. A wish expiring doesn't restart it. "Settled" is `settledAt` if non-zero, else `fulfillmentEnd`, and a fill counts only if it settled strictly after the `WishSet`.
-- An account's fill is `deposit − floor(deposit × userRefund / totalDeposits)` in `from` units. `userRefund` and `totalDeposits` come from `AuctionSettled`. Before it appears, take `userRefund` from `previewSettlement` and `totalDeposits` from `totalDeposits()`.
-- **No balance cap.** The indexer counts wishes whatever the wisher holds, because wishers may keep tokens staked or deployed elsewhere until the auction. Whoever decides on an auction reads wishers' balances (and where they sit) at that time, from the dashboard.
-- **Buckets** are indexer config that group pairs into markets, for example USDS and USDC as "stables". The team reads demand per bucket. Summing across a bucket normalises decimals (USDS has 18, USDC has 6).
-- Expired wishes and wishes with amount 0 count zero.
-- **Blocked accounts count zero.**
-
-Decided for the indexer (decision 9):
-- Fills count per bucket, and are subtracted exactly (above), not by zeroing the wish.
+- **Buckets** group pairs into markets, for example USDS and USDC as "stables". They're dashboard config, so the subgraph stores raw wishes and positions per pair and the dashboard sums them per bucket, normalising decimals (USDS has 18, USDC has 6).
+- **Demand is counted per account and bucket:** the sum of its active wishes in the bucket, minus its fills in that bucket from auctions settled after its latest `WishSet` in the bucket, floored at zero.
+  - Any `WishSet` in the bucket, including an update or a cancel (amount 0), restarts the fill count, because it restates what the account still wants. A wish expiring doesn't restart it.
+  - "Settled" is `settledAt` if set, else `fulfillmentEnd`, and a fill counts only if it settled strictly after the `WishSet`.
+  - An account's fill is `deposit − floor(deposit × userRefund / totalDeposits)` in `from` units.
+- Expired wishes and wishes with `amount` 0 count zero.
 - An excluded balance doesn't count as demand.
-- For the dashboard's balance check, tokens in a live auction count as held: `deposits(account) + excluded(account)` while the auction is live, and `claimable(account).refund + excluded(account)` once it's final, because `deposits()` doesn't drop when an account claims.
-
-Subgraph notes (the Spice Bazaar indexer is a Goldsky subgraph):
-- Index `AuctionCreated` and start a data source template for the auction only when `implementation` is on the indexer's list, with one template and one decoder per implementation. Skip unknown implementations. This is the pattern the subgraph already uses for `SpiceAuctionFactory` and its `SpiceAuction` template.
-- The v1 config has only static fields, so `ethereum.decode("(address,address,uint256,uint64,uint64,uint64,uint256,address,address,address)", config)` decodes it with no offset prefix. Calling `getConfig()` on the bound auction in the handler also works, as the Spice mappings read `name()` and `templeGold()` from a new auction; the call reads end-of-block state, so `initialize` has already run.
-- Events that `initialize` emits come after `AuctionCreated` in the same transaction and block; a template created in the `AuctionCreated` handler processes them.
-- A subgraph has no clock. Store `fulfillmentEnd` and `expiresAt`, and apply expiry and "settled" at query time. Fill amounts come from `AuctionSettled`, so ops calls `emitSettlement` once `fulfillmentEnd` passes, in case no one has claimed yet.
-- Bucket membership is dashboard config, so the subgraph stores raw wishes and fills per pair and the dashboard sums them per bucket.
+- **No balance cap.** Wishes count whatever the wisher holds, because wishers may keep tokens staked or deployed elsewhere until the auction. Demand figures are unbacked until the dashboard reads wishers' balances, and where they sit, when the team decides.
+  - For that check, tokens in a live auction count as held: `deposits(account) + excluded(account)` while the auction is live, and `claimable(account).bidTokenRefund + excluded(account)` once it's final, because `deposits()` doesn't drop when an account claims.
+- **Blocked accounts count zero.** The dashboard checks `isBlocked` against each target auction's list at decision time (decision 12).
 
 ## What happens when something goes wrong
 
