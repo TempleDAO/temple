@@ -641,7 +641,11 @@ contract FixedPriceAuctionHandler is Test {
             ok = true;
             ++successes["disableComplianceCheck"];
         } catch {}
-        _check(ok, "disableComplianceCheck reverted for the rescuer");
+        _check(ok == before.inRescueMode, "disableComplianceCheck not exactly when in rescue mode");
+        if (!ok) {
+            _check(_same(before, _state()), "a rejected disableComplianceCheck changed state");
+            return;
+        }
         before.complianceDisabled = true;
         _check(_same(before, _state()), "disableComplianceCheck changed more than the flag");
         if (!disabledSeen) {

@@ -186,7 +186,7 @@ interface IFixedPriceAuction is IRescuableAccess {
     /// (no code, or the wrong contract) and after `disableComplianceCheck`.
     function setComplianceCheck(address newComplianceCheck) external;
 
-    /// @notice Switch screening off for good. Rescuer only.
+    /// @notice Switch screening off for good. The rescuer, in rescue mode only.
     function disableComplianceCheck() external;
 
     /// @notice How long after `fulfillmentEnd` a pause still stops `claim`, `claimTreasury` and `withdrawExcluded`;

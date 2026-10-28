@@ -36,7 +36,7 @@ Numbered decisions refer to the list at the end.
 | **msig** (auction) | `executor`; locked out while rescue mode is on | `cancel`, `settleEarly`, `setPaused`, `setComplianceCheck`, `recoverToken`, `exclude`, `reinstate`, `proposeNewExecutor` |
 | **msig** (`ComplianceCheck`) | `executor` | `setFlagged`, `setFlagger`, `proposeNewExecutor` |
 | **flagger** | `isFlagger` on the list, set by the msig with `setFlagger`. Trusted: the msig picks and removes flaggers | `setFlagged`. It can also `exclude` and `reinstate` on every auction pointing at that list, outside rescue mode, while compliance is enabled |
-| **rescuer** | `rescuer` (each auction takes the factory's current one) | factory: `acceptImplementation`, `setRescueMode`, and the two-step rescuer handover. Auction: `disableComplianceCheck` (one-way, any time), `setRescueMode`, `setPaused` and `cancel` while rescue mode is on, and the two-step rescuer handover. Nothing else. |
+| **rescuer** | `rescuer` (each auction takes the factory's current one) | factory: `acceptImplementation`, `setRescueMode`, and the two-step rescuer handover. Auction: `setRescueMode`; `setPaused`, `cancel` and the one-way `disableComplianceCheck` while rescue mode is on; and the two-step rescuer handover. Nothing else. |
 | **funder** | `funder` (fixed at deploy, decision 6) | `fund`, `withdrawExcess` |
 | **anyone** | — | `deposit`, `withdrawDeposit`, `claim`, `withdrawExcluded`, `claimTreasury` (pays the funder and proceeds addresses), `emitSettlement` |
 
@@ -106,7 +106,7 @@ Bidders deposit `bidToken`, and the funder supplies `fillToken`. `price` is fill
 | `setRescueMode(bool)` | Switches rescue mode on or off. While it's on, the msig can't call any msig function on that auction and the rescuer controls the pause. | rescuer | any | — | allowed |
 | `proposeNewExecutor`/`acceptExecutor`, `proposeNewRescuer`/`acceptRescuer` | Two-step role handovers (see the rescue-mode callout). `acceptExecutor` waits `EXECUTOR_HANDOVER_DELAY` (2 days) after the proposal. | propose: `proposeNewExecutor` by the msig (locked out in rescue mode), `proposeNewRescuer` by the rescuer; accept: the proposed address | any | — | allowed |
 | `setComplianceCheck(addr)` | Points the auction at a `ComplianceCheck` contract, for example to replace a broken or rogue one. Reverts on `address(0)` and on an address that doesn't answer `isFlagged` (no code, or the wrong contract). Only `disableComplianceCheck` turns screening off. | msig | any, until disabled | — | allowed |
-| `disableComplianceCheck()` | Switches screening off for good. Afterwards `setComplianceCheck` reverts. | rescuer | any | — | allowed |
+| `disableComplianceCheck()` | Switches screening off for good. Afterwards `setComplianceCheck` reverts. | rescuer, in rescue mode | any | — | allowed |
 | views: `phase`, `getConfig`, `encodeConfig`, `settlement`, `claimable`, `treasuryClaimable`, `withdrawableExcess`, `liabilities` | Read the current phase, the deployment terms and schedule, the `createAuction` bytes for a config (call it on the implementation), the settlement maths, what each party can claim, how much funding the funder can withdraw now, and what the auction still owes in each token. | anyone | any | — | allowed |
 
 `fund`, `withdrawExcess` and `claimTreasury` aren't screened, because they only pay Treasury addresses.
@@ -175,7 +175,7 @@ stateDiagram-v2
 | Running · rescue mode | work, unless the account is flagged | locked out | rescuer |
 | Paused · rescue mode | revert; funds stay put (claims work more than 30 days after `fulfillmentEnd`) | locked out | rescuer |
 
-`disableComplianceCheck` sits outside these states. The rescuer can call it in any state; it's one-way, and afterwards nobody is flagged.
+`disableComplianceCheck` sits outside these states. The rescuer can call it in any state once rescue mode is on; it's one-way, and afterwards nobody is flagged.
 
 In rescue mode the rescuer can `cancel`, under the same rule as the msig: unsettled and before `fulfillmentEnd`. Cancelling only ever refunds, so it can't redirect funds, and it gives the rescuer a way to end an incident without the msig. The rescuer can't `settleEarly`, because settling a rogue auction with the attacker's junk funding would pay the deposits to the attacker. After `fulfillmentEnd` nobody can abort (decision 10).
 
@@ -202,7 +202,7 @@ Required funding rounds up. `userFill`, and each bidder's share of it and of `us
 
 **Legal (confirmed 2026-10-23):** once Fulfillment ends and Settlement begins, the filled bid tokens (TEMPLE) are the treasury's proceeds, even if the bidder is flagged afterwards. The bidder's unpaid fill tokens (USDS) stay frozen until the flag is removed: a freeze, not a confiscation, and fill tokens already claimed can't be frozen. Bought-back TEMPLE is unbacked, and its only use is being burnt. See decision 16 for the one case legal hasn't covered.
 
-The rescuer's answer to a rogue list is `disableComplianceCheck`: afterwards nobody is flagged, so nothing more can be excluded and every excluded balance becomes withdrawable once the auction is unpaused, or more than 30 days after `fulfillmentEnd`.
+The rescuer's answer to a rogue list is to switch rescue mode on and call `disableComplianceCheck`: afterwards nobody is flagged, so nothing more can be excluded and every excluded balance becomes withdrawable once the auction is unpaused, or more than 30 days after `fulfillmentEnd`.
 
 **Events:** `Deposited`, `DepositWithdrawn`, `BidderExcluded`, `BidderReinstated`, `ExcludedWithdrawn`, `Funded`, `ExcessWithdrawn`, `AuctionSettled(settledAt, …)` (from `settleEarly`, or once after a settlement by the clock from the first claim or `emitSettlement`), `AuctionCancelled`, `UserClaimed`, `TreasuryClaimed`, `PausedSet(bool)`, `RescueModeSet`, `ComplianceCheckSet`, `ComplianceCheckDisabled`. `initialize` emits `ComplianceCheckSet` for the initial pointer.
 

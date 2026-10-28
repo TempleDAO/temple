@@ -137,7 +137,7 @@ contract FixedPriceAuctionFuzzTest is FixedPriceAuctionTestBase {
         } else if (op == 14) {
             if ((r >> 200) % 8 != 0) return;
             vm.prank(resc);
-            auction.disableComplianceCheck();
+            try auction.disableComplianceCheck() { } catch { }
         } else if (op == 15) {
             vm.prank(exec);
             try auction.proposeNewExecutor(candidate) { } catch { }

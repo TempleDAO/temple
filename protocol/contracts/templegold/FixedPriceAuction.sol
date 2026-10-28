@@ -346,6 +346,7 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
 
     /// @inheritdoc IFixedPriceAuction
     function disableComplianceCheck() external override onlyRescuer {
+        if (!inRescueMode) revert CommonEventsAndErrors.InvalidAccess();
         emit ComplianceCheckDisabled();
         complianceDisabled = true;
     }
