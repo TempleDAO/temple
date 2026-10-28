@@ -1021,8 +1021,11 @@ contract FixedPriceAuctionPauseTest is FixedPriceAuctionTestBase {
         assertEq(auction.complianceCheck(), address(other));
         auction.cancel();
         vm.stopPrank();
-        vm.prank(rescuer);
+        vm.startPrank(rescuer);
+        auction.setRescueMode(true);
         auction.disableComplianceCheck();
+        auction.setRescueMode(false);
+        vm.stopPrank();
         assertTrue(auction.complianceDisabled());
         assertEq(uint256(auction.phase()), uint256(IFixedPriceAuction.Phase.Cancelled));
     }
@@ -1434,11 +1437,19 @@ contract FixedPriceAuctionComplianceTest is FixedPriceAuctionTestBase {
         vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
         auction.disableComplianceCheck();
 
+        // The rescuer needs rescue mode on first.
+        vm.prank(rescuer);
+        vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
+        auction.disableComplianceCheck();
+
         _setBlocked(alice, true);
+        vm.startPrank(rescuer);
+        auction.setRescueMode(true);
         vm.expectEmit(address(auction));
         emit IFixedPriceAuction.ComplianceCheckDisabled();
-        vm.prank(rescuer);
         auction.disableComplianceCheck();
+        auction.setRescueMode(false);
+        vm.stopPrank();
 
         vm.prank(executor);
         vm.expectRevert(IFixedPriceAuction.ComplianceCheckIsDisabled.selector);
@@ -1471,8 +1482,11 @@ contract FixedPriceAuctionComplianceTest is FixedPriceAuctionTestBase {
         vm.expectRevert("Compliance unavailable");
         auction.claim();
 
-        vm.prank(rescuer);
+        vm.startPrank(rescuer);
+        auction.setRescueMode(true);
         auction.disableComplianceCheck();
+        auction.setRescueMode(false);
+        vm.stopPrank();
         vm.prank(alice);
         auction.claim();
         // 10e18 TGLD at 0.0466 needs 0.466e18 USDS, under the 1e18 funded, so Alice fills in full.

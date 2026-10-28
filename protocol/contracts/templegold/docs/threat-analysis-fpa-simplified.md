@@ -101,7 +101,7 @@ A decision's severity is the highest of the findings it cites.
 ## Findings
 
 ### T-1 A breached rescuer can freeze or cancel auctions
-**Medium** (likelihood Low, impact High; was High). **Accepted risk.** Proven. `RescuableAccess.sol:31-42`, `FixedPriceAuction.sol:241-252`, `:319-323`, `:517-519`. `claim`, `claimTreasury` and `withdrawExcluded` ignore the pause more than `CLAIM_PAUSE_EXPIRY` (30 days) after `fulfillmentEnd`.
+**Medium** (likelihood Low, impact High; was High). **Accepted risk.** Proven. `RescuableAccess.sol:31-42`, `FixedPriceAuction.sol:241-252`, `:319-323`, `:518-520`. `claim`, `claimTreasury` and `withdrawExcluded` ignore the pause more than `CLAIM_PAUSE_EXPIRY` (30 days) after `fulfillmentEnd`.
 - **Freeze:** the attacker switches rescue mode on, then `setPaused(true)` on each auction. The msig can't unpause, cancel or `endFulfillment`. After `fulfillmentEnd` the auction is Settled, but every claim reverts until 30 days after `fulfillmentEnd`, when claims start ignoring the pause (D2). A lost rescuer key while paused in rescue mode has the same effect.
 - **Cancel:** the attacker batches `setRescueMode(true)` and `cancel()`. It can do this to a fully funded auction one block before `fulfillmentEnd`. The msig has no window to `endFulfillment` first. Everyone is refunded; the sale is lost.
 - **What stops it:** nothing on-chain. The msig's only levers (`cancel`, `endFulfillment`) must land before the rescuer's first transaction.
@@ -121,13 +121,13 @@ A decision's severity is the highest of the findings it cites.
 - **Mitigation:** the msig checks `factory.rescuer()` in every `createAuction` batch. D3 decided against a code change: the rescuer's powers are limited.
 
 ### T-5 Compliance control under compromise
-**Low** (likelihood Low, impact Medium; was Medium). **Narrowed by audit findings 3 and 6 (D13 fixed); findings 7 and 8 are accepted because blockers are trusted.** Code. `ComplianceCheck.sol:22-36`, `FixedPriceAuction.sol:326-338`, and `exclude`, `reinstate` and `_onlyExclusionAdmin` in FixedPriceAuction.sol.
-- **A hijacked msig on `ComplianceCheck`:** the contract has no rescue mode, so the hijacked msig can hand over its executor role for good after the two-day delay, unless the Safe's honest owners overwrite the proposal before the delay ends and remove any blocker it appointed (T-2). If it blocks everyone, the rescuer's only answer is `disableComplianceCheck` on each auction, which is one-way and ends screening. Unblocking a sanctioned address can't be stopped on-chain. Recovery is a new `ComplianceCheck` and repointing each auction, which needs each auction's executor.
+**Low** (likelihood Low, impact Medium; was Medium). **Narrowed by audit findings 3 and 6 (D13 fixed); findings 7 and 8 are accepted because blockers are trusted.** Code. `ComplianceCheck.sol:22-36`, `FixedPriceAuction.sol:326-339`, and `exclude`, `reinstate` and `_onlyExclusionAdmin` in FixedPriceAuction.sol.
+- **A hijacked msig on `ComplianceCheck`:** the contract has no rescue mode, so the hijacked msig can hand over its executor role for good after the two-day delay, unless the Safe's honest owners overwrite the proposal before the delay ends and remove any blocker it appointed (T-2). If it blocks everyone, the rescuer's only answer is rescue mode and `disableComplianceCheck` on each auction, which is one-way and ends screening. Unblocking a sanctioned address can't be stopped on-chain. Recovery is a new `ComplianceCheck` and repointing each auction, which needs each auction's executor.
 - **A breached rescuer:** it can disable compliance on every auction for good, one transaction each. The msig's only answer is to `cancel` before the rescuer switches rescue mode on for that auction.
 - **A rogue blocker:** blockers are trusted, so a rogue one is out of model, as a rogue msig signer is. If one is compromised, it can block any bidder and exclude it until settlement. An excluded bidder gets no fill (refund only once cleared, or reinstated if cleared during Deposit). The excluded deposit stays in the auction and is refundable once the account is cleared. In a partially funded auction an excluded bidder's share of the funding goes to the remaining bidders at the auction price, so a colluding bidder gains allocation. It can also block an ally, exclude it and unblock it, so the ally withdraws in full while the others stay locked in (audit findings 7 and 8, accepted). Example: Alice and Bob bid 100 TEMPLE each at 4 USDS. Alice is excluded, and the funder then funds 400 USDS: Bob gets all 400 instead of the 200 he'd get alongside Alice. The msig removes it (`setBlocker` is executor-only), repairs the list and reinstates bidders still in their deposit window. Bidders excluded after `depositEnd` can't be put back.
 - **Accepted because blockers are trusted:** any blocker can clear a block the msig set, and nothing records who set it. A blocker can unblock and `reinstate` a bidder the msig excluded during Deposit, or reinstate a cleared bidder just before `depositEnd`, so its excluded balance goes back into the fill without its consent. A block set just before `depositEnd` stops that bidder's `withdrawDeposit`, so it stays in the trade. `exclude` and `reinstate` work while paused, so a bidder excluded during a pause that crosses `depositEnd` later withdraws in full while the pause has locked the others in.
 - **A bidder that causes its own block:** it gets the same full refund once it is excluded after `depositEnd` and then cleared, with no rogue blocker involved. Accepted (model decision 17).
-- **In rescue mode:** rescue mode locks blockers out of `exclude` and `reinstate` on that auction, whichever list it points at, as it locks out the msig (audit findings 3 and 6, D13). A rogue blocker can still block bidders; the rescuer's answer to that is `disableComplianceCheck` on that auction.
+- **In rescue mode:** rescue mode locks blockers out of `exclude` and `reinstate` on that auction, whichever list it points at, as it locks out the msig (audit findings 3 and 6, D13). A rogue blocker can still block bidders; the rescuer's answer to that is rescue mode and `disableComplianceCheck` on that auction.
 - **Mitigation:** D10 and D11.
 
 ### T-6 Treasury payouts are coupled and fixed
@@ -155,7 +155,7 @@ A decision's severity is the highest of the findings it cites.
   - Front-ends list only announced auctions, and check `inRescueMode()`, `phase()` and the treasury addresses, not just `isAuction`.
 
 ### T-9 A clock-settled auction emits no event, and `settledAt` stays 0
-**Low** (likelihood Medium, impact Low). Proven. `FixedPriceAuction.sol:54`, `:357-360`, `:387-394`, `:438-454`.
+**Low** (likelihood Medium, impact Low). Proven. `FixedPriceAuction.sol:54`, `:358-361`, `:388-395`, `:439-455`.
 - **Scenario:** once `fulfillmentEnd` passes, `phase()` returns Settled, but `settledAt` stays 0 and `AuctionSettled` is only emitted by the first successful `claim` or `claimTreasury`. That never happens in three cases:
   - while the auction is paused;
   - when a non-depositor claims, because `NothingToClaim` rolls the settlement back;
@@ -164,7 +164,7 @@ A decision's severity is the highest of the findings it cites.
 - **Mitigation:** D8. Effective settlement time is the event's `settledAt` if present, else `fulfillmentEnd` once the phase is Settled.
 
 ### T-10 Indexer ordering and semantics
-**Medium** (likelihood High, impact Low; was Low): the fill-subtraction gaming below needs only an unprivileged wisher. Code and Design. `FixedPriceAuction.sol:237`, `:453`, `WishingWell.sol:14-17`.
+**Medium** (likelihood High, impact Low; was Low): the fill-subtraction gaming below needs only an unprivileged wisher. Code and Design. `FixedPriceAuction.sol:237`, `:454`, `WishingWell.sol:14-17`.
 - **Timing:** a lazy settlement's event lands long after `settledAt`. Compare `settledAt`, not the event's block time, against the wish. A fill counts only if it settled strictly after the `WishSet` (D9), so `endFulfillment` in the same second as a wish doesn't count against it. `wishOf` stores no timestamp, so the rule needs logs.
 - **Gaming the fill subtraction:**
   - **Fills via another pair:** fixed by D9. Matching is per bucket, so fills through any pair in the bucket are subtracted.
@@ -176,19 +176,19 @@ A decision's severity is the highest of the findings it cites.
 - **Mitigation:** the D9 rules: per-bucket matching, "settled strictly after the `WishSet`" on timestamps, a fill count that restarts at each `WishSet`, no demand from excluded balances, and preview fills reversed on `AuctionCancelled`.
 
 ### T-11 Low-decimal tokens lose each bidder's fractional fill
-**Low** (likelihood Medium, impact Low). **Decision D7, fixed, with dust remaining: see audit findings 4 and 5.** Proven (`test_UA_zeroDecimalFill_wholeTokenLossPerBidder`, `test_smallDepositorPaysForNothing`). `FixedPriceAuction.sol:103-111`, `:407-417`, `:426-436`.
+**Low** (likelihood Medium, impact Low). **Decision D7, fixed, with dust remaining: see audit findings 4 and 5.** Proven (`test_UA_zeroDecimalFill_wholeTokenLossPerBidder`, `test_smallDepositorPaysForNothing`). `FixedPriceAuction.sol:103-111`, `:408-418`, `:427-437`.
 - **Before the fixes:** with a 0-decimal fill token worth 100 USDC, bidders of 199 USDC each got 1 unit. A 99 USDC bidder got nothing and no refund, because the auction was fully filled. The treasury took all the USDC, and the leftover units stayed locked as dust. A 0-decimal bid token had the same problem on refunds.
 - **Fixed:** D7 and audit finding 5 require 6 to 18 decimals for both tokens, and audit finding 4 charges bidders only for the rounded-up cost of `userFunding`.
 - **Remaining:** each bidder's fill and refund still round down separately, so each bidder can lose under one base unit of each token. At TGLD→USDC/USDS that is at most 1e-6 USDC per bidder.
 - **Mitigation:** set `minDeposit` in every config.
 
 ### T-12 A target can front-run its own block
-**Medium** (likelihood High, impact Low; was Low). If legal treats the freeze as mandatory, impact is Medium and severity High. Design. `ComplianceCheck.sol:30-36`, `FixedPriceAuction.sol:137-153`, `:255-274`, `:500-502`.
+**Medium** (likelihood High, impact Low; was Low). If legal treats the freeze as mandatory, impact is Medium and severity High. Design. `ComplianceCheck.sol:30-36`, `FixedPriceAuction.sol:137-153`, `:255-274`, `:501-503`.
 - **Scenario:** queued Safe transactions are public before they execute. The target sees `setBlocked` (and the `exclude` batched with it) coming and withdraws during Deposit, or claims after settlement. During Fulfillment it can't withdraw, so an exclusion lands. A blocked person can also use a fresh address.
 - **Mitigation:** process only. A hot key appointed as a blocker sends `setBlocked` directly through a private relay, and known addresses are blocked before `depositStart`.
 
 ### T-14 A non-conforming compliance pointer halts the auction
-**Low** (likelihood Low, impact Medium). **Decision D5: a pointer that doesn't answer `isBlocked` is now rejected.** Proven before D5 (`test_XC_codelessCompliancePointer`); the D5 checks are tested by `test_createAuction_fail_complianceCheckNotAList`, `test_setComplianceCheck_fail_withoutCode` and `test_setComplianceCheck_fail_wrongContract`. `FixedPriceAuction.sol:92-93`, `:328-329`, `:468-471`, `:473-475`.
+**Low** (likelihood Low, impact Medium). **Decision D5: a pointer that doesn't answer `isBlocked` is now rejected.** Proven before D5 (`test_XC_codelessCompliancePointer`); the D5 checks are tested by `test_createAuction_fail_complianceCheckNotAList`, `test_setComplianceCheck_fail_withoutCode` and `test_setComplianceCheck_fail_wrongContract`. `FixedPriceAuction.sol:92-93`, `:328-329`, `:469-472`, `:474-476`.
 - **Scenario:** `initialize` and `setComplianceCheck` reject a pointer that doesn't answer `isBlocked` (D5), but a pointer whose code changes after it is set (a proxy or a delegated account, accepted in T-17) can stop answering. That makes every `deposit`, `withdrawDeposit` and `claim` revert (it fails closed), and also `exclude`, `reinstate` and `withdrawExcluded`, which read the list. `setPaused` never reads the list, so the msig and rescuer can still pause.
 - **Recovery:** one transaction, either the msig repoints or the rescuer disables.
 - **Mitigation:** D5 for a pointer that doesn't answer when it is set. For one that breaks later, recovery as above.
@@ -207,7 +207,7 @@ A decision's severity is the highest of the findings it cites.
   - **Optional hardening:** `initialize` requires the factory as caller.
 
 ### T-17 Integration across swaps, factories and compliance lists
-**Low** (likelihood Medium, impact Low). Design and Code. `AuctionFactory.sol:16`, `:24-62`, `FixedPriceAuction.sol:326-338`.
+**Low** (likelihood Medium, impact Low). Design and Code. `AuctionFactory.sol:16`, `:24-62`, `FixedPriceAuction.sol:326-339`.
 - **Implementation swaps:** `config` decodes "by implementation", but nothing on-chain names a layout. An indexer that falls back to the v1 decoder can decode a new layout wrongly. A changed event signature silently drops events. Trailing bytes after the 320-byte config are accepted, so a strict decoder or a hash check can mismatch.
 - **Proposal events:** a zero address in `ImplementationProposed` or `NewExecutorProposed` means the proposal was cancelled by rescue mode. `acceptImplementation` clears the proposal without its own event, so indexers clear it on `ImplementationSet`. The constructor now emits `ImplementationSet`, so an events-only allowlist is complete.
 - **Factory replacement:** the indexer tracks a set of factories plus a cutoff for the old one. The old factory's `isAuction` stays true for its rogue auctions, and the retired factory should stay in rescue mode for good.

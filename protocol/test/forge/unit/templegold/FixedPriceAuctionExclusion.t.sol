@@ -405,8 +405,11 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
         _exclude(executor, alice);
         _setBlocked(bob, true);
 
-        vm.prank(rescuer);
+        vm.startPrank(rescuer);
+        auction.setRescueMode(true);
         auction.disableComplianceCheck();
+        auction.setRescueMode(false);
+        vm.stopPrank();
         vm.prank(executor);
         vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.AccountNotBlocked.selector, bob));
         auction.exclude(bob);
@@ -424,8 +427,11 @@ contract FixedPriceAuctionExclusionTest is FixedPriceAuctionTestBase {
         _setBlocked(alice, true);
         _exclude(overlord, alice);
 
-        vm.prank(rescuer);
+        vm.startPrank(rescuer);
+        auction.setRescueMode(true);
         auction.disableComplianceCheck();
+        auction.setRescueMode(false);
+        vm.stopPrank();
         vm.prank(overlord);
         vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
         auction.reinstate(alice);
