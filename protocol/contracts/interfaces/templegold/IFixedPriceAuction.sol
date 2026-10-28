@@ -27,9 +27,9 @@ interface IFixedPriceAuction is IRescuableAccess {
         address fillToken;
         /// @notice Fill tokens per whole bid token, scaled by 1e18; decimals are applied on-chain.
         uint256 price;
-        /// @notice Unix seconds.
+        /// @notice Unix seconds, at least `MIN_DEPOSIT_START_DELAY` after creation.
         uint64 depositStart;
-        /// @notice Unix seconds.
+        /// @notice Unix seconds, at least `MIN_DEPOSIT_WINDOW` after `depositStart`.
         uint64 depositEnd;
         /// @notice Unix seconds, at most `type(uint40).max`.
         uint64 fulfillmentEnd;
@@ -184,6 +184,12 @@ interface IFixedPriceAuction is IRescuableAccess {
 
     /// @notice Switch screening off for good. Rescuer only.
     function disableComplianceCheck() external;
+
+    /// @notice The least time from creation to `depositStart`, so the rescuer has time to react to a rogue auction.
+    function MIN_DEPOSIT_START_DELAY() external view returns (uint256);
+
+    /// @notice The shortest deposit window, from `depositStart` to `depositEnd`.
+    function MIN_DEPOSIT_WINDOW() external view returns (uint256);
 
     /// @notice 10**(18 + bidDecimals - fillDecimals): a bid amount (bid token base units) times `price`, divided by
     /// this, gives fill token base units.

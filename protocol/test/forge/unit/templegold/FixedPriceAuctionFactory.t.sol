@@ -124,9 +124,21 @@ contract FixedPriceAuctionFactoryTest is FixedPriceAuctionTestBase {
         c.depositStart = uint64(block.timestamp);
         _expectInvalid(c);
 
+        // `_config` starts exactly `MIN_DEPOSIT_START_DELAY` out, so one second sooner fails.
+        c = _config(address(tgld), address(usds), PRICE, 0);
+        assertEq(c.depositStart, block.timestamp + implementation.MIN_DEPOSIT_START_DELAY());
+        c.depositStart -= 1;
+        _expectInvalid(c);
+
         c = _config(address(tgld), address(usds), PRICE, 0);
         c.depositEnd = c.depositStart;
         _expectInvalid(c);
+
+        c = _config(address(tgld), address(usds), PRICE, 0);
+        c.depositEnd = uint64(c.depositStart + implementation.MIN_DEPOSIT_WINDOW() - 1);
+        _expectInvalid(c);
+        c.depositEnd += 1;
+        _create(c);
 
         c = _config(address(tgld), address(usds), PRICE, 0);
         c.fulfillmentEnd = c.depositEnd;

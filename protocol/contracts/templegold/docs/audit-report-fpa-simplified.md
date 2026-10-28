@@ -28,7 +28,7 @@ Every finding also applied to `fpa-frozen-inputs` at `ef69ca8c`: the code each o
 | 6 | Rescue mode does not stop a list grantee from calling exclude | `fix: lock compliance-list grants out of exclude and reinstate in rescue mode` | |
 | 7 | Exclusion in Fulfillment moves a partial fill to the other bidders | Not fixed: accepted, flaggers are trusted | The msig picks and removes flaggers, and trusts them as it trusts its own signers, so a flagger can still exclude in Fulfillment (T-5). |
 | 8 | A grantee gives a colluding bidder a free exit during Fulfillment | Not fixed: accepted, flaggers are trusted | As finding 7. A bidder that gets itself flagged in Fulfillment can still get a full refund once it is excluded and the flag is cleared (T-5). |
-| Lead | Initialize accepts a deposit window of one second | Not fixed | Open decision D1. |
+| Lead | Initialize accepts a deposit window of one second | `feat: require a day's notice and a day-long deposit window` | Decision D1: `MIN_DEPOSIT_START_DELAY` and `MIN_DEPOSIT_WINDOW`, one day each. |
 
 Each fix commit applies alone on the report commit.
 

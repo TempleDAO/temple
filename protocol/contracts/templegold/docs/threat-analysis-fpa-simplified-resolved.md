@@ -14,7 +14,7 @@ A proposal the hijacked msig leaves *pending* now dies when rescue mode switches
 - **Before:** in round 1 a far-future `fulfillmentEnd` froze deposits for good, because the rescuer couldn't end an auction.
 - **Now:** the rescuer can `cancel` in rescue mode at any time before `fulfillmentEnd`, which refunds everyone. With a far-future `fulfillmentEnd` that's always available.
 - **Residual:** depositors have no exit between `depositEnd` and whenever a multisig acts. "Genuine auctions finish under rescue mode by the clock" is false for a long window: in rescue mode they can only be cancelled, never settled. A freeze is permanent only if the rescuer is lost too.
-- **Mitigation:** a maximum fulfillment window is optional insurance, part of D1.
+- **Mitigation:** a maximum fulfillment window was optional insurance in D1; the team didn't adopt it.
 
 ### T-9 A clock-settled auction emits no event (resolved)
 **Resolved on this branch.** Code. There is no stored settlement: the settlement is a view over `totalDeposits` and `funding`, which freeze once the phase is final. `settleEarly` emits `AuctionSettled`; for a settlement by the clock the first successful `claim` or `claimTreasury` emits it, with `settledAt` set to `fulfillmentEnd`, and anyone can call `emitSettlement` to emit it sooner. It goes out once either way. Indexers can still read `settlement()` once `phase()` is Settlement, and it can't drift from then. D8 asks the indexer spec to pin this.
@@ -74,7 +74,7 @@ The original analysis (not in this branch) covered PRs 1304 and 1305. Every find
 | L-8 Registry reads | Not applicable | — |
 | L-9 State changes without `WishSet` | Resolved | — |
 | L-10 Interfaces declared twice | Resolved | — |
-| L-11 Short-notice auctions | Still applies, with a weaker guard | T-15, T-8 |
+| L-11 Short-notice auctions | Fixed by D1: a day's notice and a day-long deposit window | T-15, T-8 |
 | L-12 No chain-id check | Still applies | Info, Operational 12 |
 | I-1 Dust and zero fills | Changed: the dust is now locked for good | Info, T-11 |
 | I-2 Front-running exclusion | Still applies: exclusion is back, and a target can front-run `setFlagged` plus `exclude` during Deposit | T-12, T-5 |
