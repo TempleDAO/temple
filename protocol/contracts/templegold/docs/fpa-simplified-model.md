@@ -308,8 +308,8 @@ Decided for the indexer (decision 9):
 - For the dashboard's balance check, tokens in a live auction count as held: `deposits(account) + excluded(account)` while the auction is live, and `claimable(account).refund + excluded(account)` once it's final, because `deposits()` doesn't drop when an account claims.
 
 Subgraph notes (the Spice Bazaar indexer is a Goldsky subgraph):
-- Index `AuctionCreated` and start a data source template for the auction only when `implementation` is on the indexer's list, with one template and one decoder per implementation. Skip unknown implementations.
-- The v1 config has only static fields, so `ethereum.decode("(address,address,uint256,uint64,uint64,uint64,uint256,address,address,address)", config)` decodes it with no offset prefix.
+- Index `AuctionCreated` and start a data source template for the auction only when `implementation` is on the indexer's list, with one template and one decoder per implementation. Skip unknown implementations. This is the pattern the subgraph already uses for `SpiceAuctionFactory` and its `SpiceAuction` template.
+- The v1 config has only static fields, so `ethereum.decode("(address,address,uint256,uint64,uint64,uint64,uint256,address,address,address)", config)` decodes it with no offset prefix. Calling `getConfig()` on the bound auction in the handler also works, as the Spice mappings read `name()` and `templeGold()` from a new auction; the call reads end-of-block state, so `initialize` has already run.
 - Events that `initialize` emits come after `AuctionCreated` in the same transaction and block; a template created in the `AuctionCreated` handler processes them.
 - A subgraph has no clock. Store `fulfillmentEnd` and `expiresAt`, and apply expiry and "settled" at query time. Fill amounts come from `AuctionSettled`, so ops calls `emitSettlement` once `fulfillmentEnd` passes, in case no one has claimed yet.
 - Bucket membership is dashboard config, so the subgraph stores raw wishes and fills per pair and the dashboard sums them per bucket.
