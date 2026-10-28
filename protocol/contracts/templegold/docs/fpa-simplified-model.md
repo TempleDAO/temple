@@ -35,7 +35,7 @@ Numbered decisions refer to the list at the end.
 | **msig** (factory) | `executor`; locked out while the factory's rescue mode is on | `createAuction`, `proposeImplementation`, `proposeNewExecutor` |
 | **msig** (auction) | `executor`; locked out while rescue mode is on | `cancel`, `endFulfillment`, `setPaused`, `setComplianceCheck`, `recoverToken`, `exclude`, `reinstate`, `proposeNewExecutor` |
 | **msig** (`ComplianceCheck`) | `executor` | `setBlocked`, `setBlocker`, `proposeNewExecutor` |
-| **blocker** | `isBlocker` on the list, set by the msig with `setBlocker`. Trusted: the msig picks and removes blockers | `setBlocked`, and `exclude` and `reinstate` on every auction pointing at that list, outside rescue mode, while compliance is enabled |
+| **blocker** | `isBlocker` on the list, set by the msig with `setBlocker`. Trusted: the msig picks and removes blockers | `setBlocked`, and `exclude`, `reinstate` and pause (not unpause) on every auction pointing at that list, outside rescue mode, while compliance is enabled |
 | **rescuer** | `rescuer` (each auction takes the factory's current one) | factory: `acceptImplementation`, `setRescueMode`, and the two-step rescuer handover. Auction: `disableComplianceCheck` (one-way, any time), `setRescueMode`, `setPaused` and `cancel` while rescue mode is on, and the two-step rescuer handover. Nothing else. |
 | **funder** | `funder` (fixed at deploy, decision 6) | `fund`, `withdrawExcess` |
 | **anyone** | — | `deposit`, `withdrawDeposit`, `claim`, `withdrawExcluded`, `claimTreasury` (pays the funder and proceeds addresses) |
@@ -98,7 +98,7 @@ Bidders deposit `bidToken`, and the funder supplies `fillToken`. `price` is fill
 | `claim()` | Settles if needed, then pays the caller their pro-rata fill tokens and the unfilled refund. On a cancelled auction it refunds the whole deposit. | depositor | Settled or Cancelled | revert; claim later | revert |
 | `claimTreasury()` | Settles if needed, then pays `filledDeposits` to `proceedsRecipient` and `funderRefund` to `funder` from the settlement snapshot. | anyone | Settled or Cancelled | — | revert |
 | `recoverToken(token, to, amount)` | Sends out tokens that aren't owed to anyone, such as tokens sent by mistake. | msig | any | — | revert |
-| `setPaused(bool)` | Pauses or unpauses the auction. | msig; the rescuer instead while rescue mode is on | any | — | allowed |
+| `setPaused(bool)` | Pauses or unpauses the auction. | msig; the rescuer instead while rescue mode is on; a blocker can pause (not unpause) outside rescue mode while compliance is enabled | any | — | allowed |
 | `setRescueMode(bool)` | Switches rescue mode on or off. While it's on, the msig can't call any msig function on that auction and the rescuer controls the pause. | rescuer | any | — | allowed |
 | `proposeNewExecutor`/`acceptExecutor`, `proposeNewRescuer`/`acceptRescuer` | Two-step role handovers (see the rescue-mode callout). `acceptExecutor` waits `EXECUTOR_HANDOVER_DELAY` (2 days) after the proposal. | propose: `proposeNewExecutor` by the msig (locked out in rescue mode), `proposeNewRescuer` by the rescuer; accept: the proposed address | any | — | allowed |
 | `setComplianceCheck(addr)` | Points the auction at a `ComplianceCheck` contract, for example to replace a broken or rogue one. Reverts on `address(0)` and on an address that doesn't answer `isBlocked` (no code, or the wrong contract). Only `disableComplianceCheck` turns screening off. | msig | any, until disabled | — | allowed |
@@ -113,7 +113,7 @@ function _isBlocked(address a) private view returns (bool) {
 }
 ```
 
-The pause stops every function that moves tokens. `endFulfillment` moves no tokens, so it works while paused, as it does today. The pause has no timer and no single-use limit, but `claim`, `claimTreasury` and `withdrawExcluded` ignore it from `CLAIM_PAUSE_EXPIRY` (30 days) after `fulfillmentEnd` (D2), so a lost or breached rescuer can't freeze payouts for good. The msig toggles the pause. The rescuer can take over the pause (see [Pause and rescue mode](#pause-and-rescue-mode)). The clock keeps running while paused, so a long pause can let the deposit or fulfillment window lapse.
+The pause stops every function that moves tokens. `endFulfillment` moves no tokens, so it works while paused, as it does today. The pause has no timer and no single-use limit, but `claim`, `claimTreasury` and `withdrawExcluded` ignore it from `CLAIM_PAUSE_EXPIRY` (30 days) after `fulfillmentEnd` (D2), so a lost or breached rescuer can't freeze payouts for good. The msig toggles the pause, and a blocker can pause but not unpause. The rescuer can take over the pause (see [Pause and rescue mode](#pause-and-rescue-mode)). The clock keeps running while paused, so a long pause can let the deposit or fulfillment window lapse.
 
 > [!NOTE]
 > **A pause during the fulfillment window decides the funding.** `fund` and `withdrawExcess` revert while paused, and the clock doesn't stop. If the auction is still paused when `fulfillmentEnd` passes, it settles with whatever funding it held when the pause began: a partial fill, or no fill and a full refund for every depositor. Unpause before `fulfillmentEnd` if the funder still needs to top up. A pause held across `depositEnd` likewise takes away depositors' right to withdraw.
@@ -361,9 +361,9 @@ The record-only Well drops signed wishes and nonces, the on-chain balance and co
 
 1. **Confirmed:** the cuts are acceptable. That covers the timed emergency pause, the deposit pause (`setDepositsPaused`), the cap, early close (`endDeposit`) and permit.
 2. ~~**Legal:** can a blocked account's deposit be filled, with its fill waiting until it's unblocked?~~ **Resolved** by the exclusion rules in [Excluding flagged bidders](#excluding-flagged-bidders): before settlement, `exclude` takes a flagged deposit out of the fill and it's refund-only; after settlement the fill stands and the payout waits.
-3. Should `withdrawDeposit` revert for blocked accounts? This proposal assumes yes, to match "funds stay where they are".
+3. **Confirmed:** `withdrawDeposit` reverts for blocked accounts, to match "funds stay where they are".
 4. **Confirmed:** the pause is per auction, so stopping everything takes one transaction per live auction. That's acceptable with only a few auctions running at once.
-5. Should a blocker also be able to pause? That needs `setPaused` to accept a blocker on the current list, as `exclude` does, locked out in rescue mode like the msig.
+5. **Yes:** a blocker on the current list can pause an auction, outside rescue mode and while compliance is enabled, so the automation bot can stop an auction during an incident. It can't unpause; that stays with the msig, or the rescuer in rescue mode.
 6. **No:** `funder` and `proceedsRecipient` stay fixed. Setters would let a hijacked msig point both addresses at itself before the rescuer reacts, and the rescuer couldn't change them back. A compromised funder or proceeds recipient is handled in the runbook.
 7. **Rescue mode (see the rescue-mode callout in [`FixedPriceAuction`](#2-fixedpriceauction-simplified)):** confirm the small access-control base, where rescue mode only locks the msig out and hands the rescuer the pause, and the accepted risk that a breached rescuer could lock the msig out of an auction.
 8. **Confirmed: one factory with swappable code**, with the two-key swap (msig proposes, rescuer accepts) and rescue mode on the factory. The cost is a Solady dependency, clone-arg reads in the auction, and an `initialize` step. Every auction version also depends on one factory contract, so one bug in it reaches every auction.
@@ -371,7 +371,7 @@ The record-only Well drops signed wishes and nonces, the on-chain balance and co
 10. **No:** `cancel` stays unavailable from `fulfillmentEnd`. Claims can start then, and cancelling after some are paid would owe refunds on deposits and funding already paid out. An incident caught before `fulfillmentEnd` can already be cancelled.
 11. Should we build a TGLD burner contract and require TGLD auctions to use it as `proceedsRecipient`?
 12. Which `ComplianceCheck` does the indexer screen against? Does it stop screening when the rescuer disables compliance on the auctions? In this design, the rescuer's switch only reaches the auctions.
-13. Should the factory keep the supported-token check (`IAuctionTokenRegistry`) at `createAuction`?
+13. **No:** the supported-token check (`IAuctionTokenRegistry`) stays cut. Which tokens to auction is an ops decision for the msig.
 14. How does the rescuer rotate? Options: a handover on each auction plus a new factory, or a factory that reads the rescuer from a rescuer-owned slot instead of an immutable. When the msig rotates, do `ComplianceCheck` and the factory get a two-step executor handover, or do we redeploy them and repoint the auctions?
 15. **Pending renames**, agreed, to apply on whichever branch is kept:
     - `endFulfillment()` → `settleEarly()`, because it only settles before `fulfillmentEnd`;
@@ -381,5 +381,5 @@ The record-only Well drops signed wishes and nonces, the on-chain balance and co
     - `AuctionFactory` / `IAuctionFactory` → `FixedPriceAuctionFactory` / `IFixedPriceAuctionFactory`.
 
     The `AuctionSettled` event keeps its name. `bidToken` / `fillToken`, `claimTreasury` and the Fulfillment phase names stay as they are.
-16. **Legal:** with partial funding, a bidder blocked after the fill also has an unfilled bid-token refund, and `claim` pays the fill and the refund together, so the refund is frozen too. Legal's answer covered the filled TEMPLE and the USDS; confirm that freezing the unfilled TEMPLE refund until the block is removed is acceptable.
+16. **Accepted:** with partial funding, a bidder blocked after the fill also has an unfilled bid-token refund, and `claim` pays the fill and the refund together, so the refund is frozen too. Legal's answer covered the filled TEMPLE and the USDS; freezing the unfilled TEMPLE refund until the block is removed is acceptable.
 17. **Accepted:** a bidder excluded in Fulfillment, or during a pause that crosses `depositEnd`, gets its whole deposit back once its block is cleared, while every other bidder is locked in. A bidder could cause its own block to force a refund when circumstances change, but it's unlikely and low-impact: it has little motive, and it risks its deposit staying frozen, because the bar to clear a block is high.

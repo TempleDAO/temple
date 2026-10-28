@@ -317,7 +317,8 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
 
     /// @inheritdoc IFixedPriceAuction
     function setPaused(bool value) external override {
-        _onlyExecutorOrRescuerInRescueMode();
+        // A blocker can pause but not unpause.
+        if (!(value && _isActiveBlocker(msg.sender))) _onlyExecutorOrRescuerInRescueMode();
         emit PausedSet(value);
         paused = value;
     }
@@ -505,11 +506,11 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
     /// ComplianceCheck has no rescue mode and the msig can repoint the list, so rescue mode must lock blockers out
     /// here.
     function _onlyExclusionAdmin() private view {
-        if (_isElevatedAccess(msg.sender)) return;
-        if (inRescueMode) revert CommonEventsAndErrors.InvalidAccess();
-        if (complianceDisabled || !IComplianceCheck(complianceCheck).isBlocker(msg.sender)) {
-            revert CommonEventsAndErrors.InvalidAccess();
-        }
+        if (!_isElevatedAccess(msg.sender) && !_isActiveBlocker(msg.sender)) revert CommonEventsAndErrors.InvalidAccess();
+    }
+
+    function _isActiveBlocker(address caller) private view returns (bool) {
+        return !inRescueMode && !complianceDisabled && IComplianceCheck(complianceCheck).isBlocker(caller);
     }
 
     function _onlyExecutorOrRescuerInRescueMode() private view {
