@@ -616,6 +616,24 @@ contract FixedPriceAuctionHandler is Test {
         _check(_same(before, _state()), "rescuer setPaused changed more than the pause");
     }
 
+    /// @dev The flagger may pause, never unpause, and is locked out in rescue mode or with compliance disabled.
+    function setPausedByFlagger(uint256 seed) external step {
+        bool value = seed % 4 == 0;
+        State memory before = _state();
+        vm.prank(flagger);
+        bool ok;
+        try auction.setPaused(value) {
+            ok = true;
+            ++successes["setPausedByFlagger"];
+        } catch {}
+        _check(
+            ok == (value && !before.inRescueMode && !before.complianceDisabled),
+            "flagger setPaused not exactly when allowed"
+        );
+        if (ok) before.paused = true;
+        _check(_same(before, _state()), "flagger setPaused changed more than the pause");
+    }
+
     /// @dev Switches rescue mode on a quarter of the time and off otherwise, so runs aren't mostly locked.
     function setRescueMode(uint256 seed) external step {
         bool value = seed % 4 == 0;
@@ -781,7 +799,8 @@ contract FixedPriceAuctionHandler is Test {
     }
 
     /// @dev Moves time forward only. Three times in four it lands on, or one second either side of, the next phase
-    /// boundary or the claim pause expiry, so every run passes through each in order. Otherwise it steps forward 1 second to 12 hours.
+    /// boundary or the claim pause expiry, so every run passes through each in order. Otherwise it steps forward 1
+    /// second to 12 hours.
     /// It skips the `depositEnd` jump until the deposit phase has had MIN_DEPOSIT_PHASE_CALLS calls, and the
     /// `fulfillmentEnd` jump until a fund succeeds or the fulfillment phase has had MIN_FULFILLMENT_PHASE_CALLS, so
     /// runs build deposits and funding first.
