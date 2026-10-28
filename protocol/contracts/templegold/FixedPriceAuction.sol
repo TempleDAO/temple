@@ -330,8 +330,9 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
 
     /// @inheritdoc IFixedPriceAuction
     function setPaused(bool value) external override {
-        // A flagger can pause but not unpause.
-        if (!(value && _isActiveFlagger(msg.sender))) _onlyExecutorOrRescuerInRescueMode();
+        if (!_isExecutorOrRescuerInRescueMode(msg.sender) && !(value && _isActiveFlagger(msg.sender))) {
+            revert CommonEventsAndErrors.InvalidAccess();
+        }
         emit PausedSet(value);
         paused = value;
     }
@@ -525,19 +526,25 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
         if (_isFlagged(msg.sender)) revert FlaggedAccount(msg.sender);
     }
 
-    /// @dev Outside rescue mode only: the executor, or, while compliance is enabled, a flagger on the current list.
-    /// ComplianceCheck has no rescue mode and the msig can repoint the list, so rescue mode must lock flaggers out
-    /// here.
+    /// @dev The executor or an active flagger.
     function _onlyExclusionAdmin() private view {
-        if (!_isElevatedAccess(msg.sender) && !_isActiveFlagger(msg.sender)) revert CommonEventsAndErrors.InvalidAccess();
+        if (!_isElevatedAccess(msg.sender) && !_isActiveFlagger(msg.sender)) {
+            revert CommonEventsAndErrors.InvalidAccess();
+        }
     }
 
+    /// @dev A flagger on the current list, outside rescue mode, while compliance is enabled.
+    /// ComplianceCheck has no rescue mode, so the lockout lives here.
     function _isActiveFlagger(address caller) private view returns (bool) {
         return !inRescueMode && !complianceDisabled && IComplianceCheck(complianceCheck).isFlagger(caller);
     }
 
     function _onlyExecutorOrRescuerInRescueMode() private view {
-        if (msg.sender != (inRescueMode ? rescuer : executor)) revert CommonEventsAndErrors.InvalidAccess();
+        if (!_isExecutorOrRescuerInRescueMode(msg.sender)) revert CommonEventsAndErrors.InvalidAccess();
+    }
+
+    function _isExecutorOrRescuerInRescueMode(address caller) private view returns (bool) {
+        return caller == (inRescueMode ? rescuer : executor);
     }
 
     function _onlyFunder(address funder) private view {

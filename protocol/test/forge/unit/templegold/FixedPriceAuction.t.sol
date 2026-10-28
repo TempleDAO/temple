@@ -24,6 +24,13 @@ contract RevertingComplianceCheck {
     }
 }
 
+/// @dev A list that answers `isFlagged` but has no `isFlagger`.
+contract NoFlaggerComplianceCheck {
+    function isFlagged(address) external pure returns (bool) {
+        return false;
+    }
+}
+
 /// @dev All the TempleGold constructor needs from a LayerZero endpoint, so real TGLD deploys without a fork.
 contract LayerZeroEndpointStub {
     function setDelegate(address) external { }
@@ -997,6 +1004,15 @@ contract FixedPriceAuctionPauseTest is FixedPriceAuctionTestBase {
         vm.prank(flagger);
         vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
         auction.setPaused(true);
+    }
+
+    function test_setPaused_msigPausesWhenListLacksIsFlagger() public {
+        NoFlaggerComplianceCheck list = new NoFlaggerComplianceCheck();
+        vm.startPrank(executor);
+        auction.setComplianceCheck(address(list));
+        auction.setPaused(true);
+        vm.stopPrank();
+        assertTrue(auction.paused());
     }
 
     function test_setPaused_events() public {
