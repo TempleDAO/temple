@@ -47,7 +47,7 @@ contract FixedPriceAuctionHandler is Test {
     /// @dev Who handovers pass either role to: shared and including both initial holders, so a handover can try to
     /// give both roles to one address.
     address[5] internal roleCandidates;
-    /// @dev Granted `setFlagged` on both lists.
+    /// @dev A flagger on both lists.
     address public immutable flagger;
     address public immutable outsider = makeAddr("outsider");
     address[4] public bidders;
@@ -163,7 +163,7 @@ contract FixedPriceAuctionHandler is Test {
             ok = true;
             ++successes["deposit"];
         } catch {}
-        _post(account, ok, before, flagged, deposit_, claimed_);
+        _post(account, ok, before, flagged, deposit_, claimed_, before.paused);
         _checkPhase(ok, before.phase, IFixedPriceAuction.Phase.Deposit, "deposit outside Deposit");
     }
 
@@ -179,7 +179,7 @@ contract FixedPriceAuctionHandler is Test {
             ok = true;
             ++successes["withdrawDeposit"];
         } catch {}
-        _post(account, ok, before, flagged, deposit_, claimed_);
+        _post(account, ok, before, flagged, deposit_, claimed_, before.paused);
         _checkPhase(ok, before.phase, IFixedPriceAuction.Phase.Deposit, "withdrawDeposit outside Deposit");
     }
 
@@ -194,7 +194,7 @@ contract FixedPriceAuctionHandler is Test {
         bool tokenBlocked = fillTokenBlocked[account] && expected.fill > 0;
         if (
             (before.phase == IFixedPriceAuction.Phase.Settlement || before.phase == IFixedPriceAuction.Phase.Cancelled)
-                && !before.paused && !flagged && !tokenBlocked && deposit_ > 0 && !claimed_
+                && !_claimPaused(before) && !flagged && !tokenBlocked && deposit_ > 0 && !claimed_
         ) ++claimChances;
         vm.prank(account);
         bool ok;
@@ -204,7 +204,7 @@ contract FixedPriceAuctionHandler is Test {
         } catch {
             _discardLogs();
         }
-        _post(account, ok, before, flagged, deposit_, claimed_);
+        _post(account, ok, before, flagged, deposit_, claimed_, _claimPaused(before));
         _check(!ok || _final(before.phase), "claim before an outcome");
         _checkClockSettlementRecorded(ok, before);
         if (tokenBlocked) _check(!ok, "claim paid fill tokens to a token-blocked account");
@@ -230,8 +230,7 @@ contract FixedPriceAuctionHandler is Test {
     /****** EXCLUSION ******/
 
     /// @dev Prefers a bidder with a deposit, flagged if possible, and half the time flags it first, so exclusions
-    /// happen often. The caller is the msig, the flagger (granted `setFlagged` on both lists), an outsider or the
-    /// rescuer (always refused).
+    /// happen often. The caller is the msig, the flagger (on both lists), an outsider or the rescuer (always refused).
     function exclude(uint256 seed, uint256 by) external step {
         address account = _pickFlagged(seed);
         if ((seed >> 8) % 2 == 0) _flag(account, true);
@@ -311,8 +310,8 @@ contract FixedPriceAuctionHandler is Test {
             ok = true;
             ++successes["withdrawExcluded"];
         } catch {}
-        _post(account, ok, before, flagged, deposit_, claimed_);
-        _check(ok == (!before.paused && !flagged && excluded_ > 0), "withdrawExcluded not exactly when allowed");
+        _post(account, ok, before, flagged, deposit_, claimed_, _claimPaused(before));
+        _check(ok == (!_claimPaused(before) && !flagged && excluded_ > 0), "withdrawExcluded not exactly when allowed");
         if (!ok) {
             _check(auction.excluded(account) == excluded_, "failed withdrawExcluded moved the balance");
             return;
@@ -324,10 +323,9 @@ contract FixedPriceAuctionHandler is Test {
         _check(auction.totalDeposits() == before.totalDeposits, "withdrawExcluded moved deposits");
     }
 
-    /// @dev The executor outside rescue mode, or the flagger, whose grant is on both lists, while compliance is
-    /// enabled.
+    /// @dev Outside rescue mode: the executor, or the flagger (on both lists) while compliance is enabled.
     function _mayExclude(address caller, State memory before) internal view returns (bool) {
-        return (caller == msig && !before.inRescueMode) || (caller == flagger && !before.complianceDisabled);
+        return !before.inRescueMode && (caller == msig || (caller == flagger && !before.complianceDisabled));
     }
 
     /// @dev Exclusion moves no tokens, leaves funding alone and touches no other bidder's deposit.
@@ -465,11 +463,11 @@ contract FixedPriceAuctionHandler is Test {
         } catch {
             _discardLogs();
         }
-        _checkPaused(ok, before);
+        if (_claimPaused(before)) _checkPaused(ok, before);
         _check(!ok || _final(before.phase), "claimTreasury before an outcome");
         _checkClockSettlementRecorded(ok, before);
         // Never screened: whoever calls, and whatever the treasury addresses' flag status, it pays once due.
-        _check(ok || before.paused || !_final(before.phase) || claimedBefore, "claimTreasury refused while due");
+        _check(ok || _claimPaused(before) || !_final(before.phase) || claimedBefore, "claimTreasury refused while due");
         if (ok) _bookTreasuryClaim(bidBefore, fillBefore);
     }
 
@@ -643,7 +641,11 @@ contract FixedPriceAuctionHandler is Test {
             ok = true;
             ++successes["disableComplianceCheck"];
         } catch {}
-        _check(ok, "disableComplianceCheck reverted for the rescuer");
+        _check(ok == before.inRescueMode, "disableComplianceCheck not exactly when in rescue mode");
+        if (!ok) {
+            _check(_same(before, _state()), "a rejected disableComplianceCheck changed state");
+            return;
+        }
         before.complianceDisabled = true;
         _check(_same(before, _state()), "disableComplianceCheck changed more than the flag");
         if (!disabledSeen) {
@@ -697,10 +699,11 @@ contract FixedPriceAuctionHandler is Test {
         _check(!ok || auction.proposedExecutor() == candidate, "executor proposal not recorded");
     }
 
-    /// @dev The proposed executor accepts. Only being the rescuer can stop it.
+    /// @dev The proposed executor accepts. Only being the rescuer, or the handover delay not yet passed, stops it.
     function acceptExecutor() external step {
         address proposed = auction.proposedExecutor();
         if (proposed == address(0)) return;
+        bool ready = block.timestamp >= auction.proposedExecutorAt() + auction.EXECUTOR_HANDOVER_DELAY();
         vm.prank(proposed);
         bool ok;
         try auction.acceptExecutor() {
@@ -708,7 +711,7 @@ contract FixedPriceAuctionHandler is Test {
             ++successes["acceptExecutor"];
             msig = proposed;
         } catch {}
-        _check(ok != (proposed == rescuer), "acceptExecutor: only the rescuer is refused");
+        _check(ok == (proposed != rescuer && ready), "acceptExecutor: refused other than for the rescuer or the delay");
         _check(auction.executor() == msig, "executor handover misrecorded");
     }
 
@@ -782,7 +785,8 @@ contract FixedPriceAuctionHandler is Test {
     }
 
     /// @dev Moves time forward only. Three times in four it lands on, or one second either side of, the next phase
-    /// boundary, so every run passes through each phase in order. Otherwise it steps forward 1 second to 12 hours.
+    /// boundary or the claim pause expiry, so every run passes through each in order. Otherwise it steps forward 1
+    /// second to 12 hours.
     /// It skips the `depositEnd` jump until the deposit phase has had MIN_DEPOSIT_PHASE_CALLS calls, and the
     /// `fulfillmentEnd` jump until a fund succeeds or the fulfillment phase has had MIN_FULFILLMENT_PHASE_CALLS, so
     /// runs build deposits and funding first.
@@ -796,7 +800,11 @@ contract FixedPriceAuctionHandler is Test {
         ) {
             uint256 milestone = currentTime < config.depositStart + 1
                 ? config.depositStart
-                : currentTime < config.depositEnd + 1 ? config.depositEnd : config.fulfillmentEnd;
+                : currentTime < config.depositEnd + 1
+                    ? config.depositEnd
+                    : currentTime < config.fulfillmentEnd + 1
+                        ? config.fulfillmentEnd
+                        : config.fulfillmentEnd + auction.CLAIM_PAUSE_EXPIRY();
             target = milestone + (offset % 3) - 1;
         }
         if (target <= currentTime) target = currentTime + _bound(offset, 1, 12 hours);
@@ -965,9 +973,10 @@ contract FixedPriceAuctionHandler is Test {
         State memory before,
         bool flagged,
         uint256 deposit_,
-        bool claimed_
+        bool claimed_,
+        bool pauseBlocks
     ) internal {
-        _checkPaused(ok, before);
+        if (pauseBlocks) _checkPaused(ok, before);
         // A flagged account can't move its deposit or claim.
         if (flagged) {
             _check(!ok, "flagged call succeeded");
@@ -989,6 +998,11 @@ contract FixedPriceAuctionHandler is Test {
         string memory why
     ) internal {
         _check(!ok || actual == expected, why);
+    }
+
+    /// @dev Whether the pause still stops claims: it lapses `CLAIM_PAUSE_EXPIRY` after `fulfillmentEnd`.
+    function _claimPaused(State memory s) internal view returns (bool) {
+        return s.paused && currentTime <= config.fulfillmentEnd + auction.CLAIM_PAUSE_EXPIRY();
     }
 
     /// @dev A token-moving call reverts while paused, and nothing changes.

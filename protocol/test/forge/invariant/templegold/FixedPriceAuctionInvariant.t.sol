@@ -6,7 +6,6 @@ import { TempleMath } from "contracts/common/TempleMath.sol";
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 
 import { IFixedPriceAuction } from "contracts/interfaces/templegold/IFixedPriceAuction.sol";
-import { ITempleElevatedAccess } from "contracts/interfaces/v2/access/ITempleElevatedAccess.sol";
 import { ComplianceCheck } from "contracts/templegold/ComplianceCheck.sol";
 import { FixedPriceAuctionTestBase } from "test/forge/unit/templegold/FixedPriceAuction.t.sol";
 import { FixedPriceAuctionHandler } from "./handlers/FixedPriceAuctionHandler.sol";
@@ -39,11 +38,9 @@ abstract contract FixedPriceAuctionInvariantBase is FixedPriceAuctionTestBase {
             : new FakeERC20CustomDecimals("Fill", "FILL", address(0), 0, fillDecimals);
         auction = _create(_config(address(bid), address(fill), price, 100));
         ComplianceCheck compliance2 = new ComplianceCheck(executor);
-        ITempleElevatedAccess.ExplicitAccess[] memory access = new ITempleElevatedAccess.ExplicitAccess[](1);
-        access[0] = ITempleElevatedAccess.ExplicitAccess(ComplianceCheck.setFlagged.selector, true);
         vm.startPrank(executor);
-        compliance.setExplicitAccess(flagger, access);
-        compliance2.setExplicitAccess(flagger, access);
+        compliance.setFlagger(flagger, true);
+        compliance2.setFlagger(flagger, true);
         vm.stopPrank();
         FakeERC20CustomDecimals stray = new FakeERC20CustomDecimals("Stray", "STRAY", address(0), 0, 18);
 
@@ -219,13 +216,16 @@ abstract contract FixedPriceAuctionInvariantBase is FixedPriceAuctionTestBase {
         assertEq(s.funderRefund, fundingHeld - s.userFill, "funderRefund != funding - userFill");
         // Bidders never get more than their filled deposits buy.
         assertLe(s.userFill, s.filledBids.mulDivRound(price, denominator, false), "userFill > filled value");
-        // Full funding fills everything, unless all deposits together buy under one fill wei (then the zero-fill
-        // guard wins).
+        // Bidders pay only for the fill tokens they get: filled bids are the rounded-up cost of userFill.
+        assertEq(s.filledBids, s.userFill.mulDivRound(denominator, price, true), "filled != cost of userFill");
+        // Full funding buys the whole fill-token wei of every deposit, and the refund is worth under one fill wei.
         if (
             auction.phase() == IFixedPriceAuction.Phase.Settlement
                 && fundingHeld >= total.mulDivRound(price, denominator, true)
-                && total.mulDivRound(price, denominator, false) > 0
-        ) assertEq(s.filledBids, total, "full funding didn't fill everything");
+        ) {
+            assertEq(s.userFill, total.mulDivRound(price, denominator, false), "full funding short of fill");
+            assertEq(s.userRefund.mulDivRound(price, denominator, false), 0, "full funding refunded a fill wei");
+        }
         // No fill tokens, no bid tokens taken.
         if (s.userFill == 0) assertEq(s.filledBids, 0, "bid tokens filled for no fill tokens");
     }

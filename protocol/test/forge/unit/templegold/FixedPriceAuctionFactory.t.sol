@@ -73,9 +73,18 @@ contract FixedPriceAuctionFactoryTest is FixedPriceAuctionTestBase {
         assertEq(abi.encode(stored), abi.encode(config));
     }
 
+    function test_createAuction_fromEncodeConfig() public {
+        IFixedPriceAuction.AuctionConfig memory config = _config(address(tgld), address(usds), PRICE, 1e18);
+        bytes memory encoded = implementation.encodeConfig(config);
+        vm.prank(executor);
+        FixedPriceAuction created = FixedPriceAuction(factory.createAuction(encoded));
+        assertEq(abi.encode(created.getConfig()), abi.encode(config));
+    }
+
     function test_createAuction_executorIsTheCaller() public {
         vm.prank(executor);
         factory.proposeNewExecutor(alice);
+        vm.warp(block.timestamp + factory.EXECUTOR_HANDOVER_DELAY());
         vm.prank(alice);
         factory.acceptExecutor();
 
@@ -116,8 +125,19 @@ contract FixedPriceAuctionFactoryTest is FixedPriceAuctionTestBase {
         _expectInvalid(c);
 
         c = _config(address(tgld), address(usds), PRICE, 0);
+        assertEq(c.depositStart, block.timestamp + implementation.MIN_DEPOSIT_START_DELAY());
+        c.depositStart -= 1;
+        _expectInvalid(c);
+
+        c = _config(address(tgld), address(usds), PRICE, 0);
         c.depositEnd = c.depositStart;
         _expectInvalid(c);
+
+        c = _config(address(tgld), address(usds), PRICE, 0);
+        c.depositEnd = uint64(c.depositStart + implementation.MIN_DEPOSIT_WINDOW() - 1);
+        _expectInvalid(c);
+        c.depositEnd += 1;
+        _create(c);
 
         c = _config(address(tgld), address(usds), PRICE, 0);
         c.fulfillmentEnd = c.depositEnd;
@@ -157,10 +177,17 @@ contract FixedPriceAuctionFactoryTest is FixedPriceAuctionTestBase {
         c = _config(address(tgld), address(usds), PRICE, 0);
         c.complianceCheck = address(0);
         _expectInvalidAddress(c);
+        c.complianceCheck = alice;
+        _expectInvalidAddress(c);
+        c.complianceCheck = address(usds);
+        _expectInvalidAddress(c);
 
         FakeERC20CustomDecimals wide = new FakeERC20CustomDecimals("Wide", "WIDE", address(0), 0, 19);
         _expectInvalid(_config(address(wide), address(usds), PRICE, 0));
         _expectInvalid(_config(address(tgld), address(wide), PRICE, 0));
+        FakeERC20CustomDecimals narrow = new FakeERC20CustomDecimals("Narrow", "NARROW", address(0), 0, 5);
+        _expectInvalid(_config(address(narrow), address(usds), PRICE, 0));
+        _expectInvalid(_config(address(tgld), address(narrow), PRICE, 0));
     }
 
     function test_createAuction_fail_malformedConfig() public {
@@ -450,6 +477,7 @@ contract FixedPriceAuctionFactoryFuzzTest is FixedPriceAuctionTestBase {
         } else if (op == 6) {
             address proposed = factory.proposedExecutor();
             if (proposed == address(0)) return;
+            vm.warp(block.timestamp + factory.EXECUTOR_HANDOVER_DELAY());
             vm.prank(proposed);
             try factory.acceptExecutor() {
                 ok = true;
