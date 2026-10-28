@@ -42,6 +42,8 @@ The finding sections below are the original report, unchanged, so their code, li
 
 |  |  |
 | --- | --- |
+| **Commit** | `fpa-simplified` @ `860ea95d` |
+| **Date** | 2026-10-22 |
 | **Mode** | filename |
 | **Files reviewed** | `contracts/templegold/AuctionFactory.sol` · `contracts/templegold/ComplianceCheck.sol` · `contracts/templegold/FixedPriceAuction.sol`<br>`contracts/templegold/WishingWell.sol` · `contracts/templegold/access/ExecutorAccess.sol` · `contracts/templegold/access/RescuableAccess.sol` |
 | **Confidence threshold (1-100)** | 75 |
