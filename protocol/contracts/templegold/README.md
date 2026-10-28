@@ -159,7 +159,7 @@ Roles:
 - proceedsRecipient: receives the filled bid tokens.
 - blocker: a trusted account the msig appoints on the compliance list to edit it; it can also exclude and reinstate on every auction pointing at that list, outside rescue mode, while compliance is enabled.
 
-Pausing stops every token-moving call; `endFulfillment`, `cancel`, `exclude`, `reinstate` and the setters still work. In rescue mode the msig is locked out of every elevated call and only the rescuer can pause, unpause or cancel. Rescue mode is per contract: the factory and each auction have their own, and switching it on cancels that contract's pending executor proposal, and on the factory its pending implementation proposal too.
+Pausing stops every token-moving call, except that claims and excluded-balance withdrawals ignore it from 30 days after `fulfillmentEnd`; `endFulfillment`, `cancel`, `exclude`, `reinstate` and the setters still work. In rescue mode the msig is locked out of every elevated call and only the rescuer can pause, unpause or cancel. Rescue mode is per contract: the factory and each auction have their own, and switching it on cancels that contract's pending executor proposal, and on the factory its pending implementation proposal too.
 
 All auctions share one `ComplianceCheck`. The msig can point an auction at another list, and the rescuer can disable compliance on an auction for good. A blocked account's `deposit`, `withdrawDeposit`, `claim` and `withdrawExcluded` revert, and its funds stay in the auction until it is unblocked or compliance is disabled.
 
