@@ -14,7 +14,8 @@ interface IComplianceCheck is IExecutorAccess {
 
     /// @notice Add or remove `account` as a flagger. A flagger can edit the list, and exclude and reinstate bidders
     /// and pause on every auction pointing at this list, outside that auction's rescue mode, while compliance is
-    /// enabled on it. It can't add flaggers or propose an executor. Flaggers are trusted: the executor picks and removes them.
+    /// enabled on it. It can't add flaggers or propose an executor. Flaggers are trusted: the executor picks and
+    /// removes them.
     /// @dev Executor only. Reverts on a zero `account`.
     function setFlagger(address account, bool value) external;
 
