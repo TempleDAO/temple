@@ -177,7 +177,8 @@ interface IFixedPriceAuction is IRescuableAccess {
     /// `InsufficientBalance` above that.
     function recoverToken(address token, address to, uint256 amount) external;
 
-    /// @notice Pause or unpause every token-moving function. The msig, or the rescuer instead in rescue mode.
+    /// @notice Pause or unpause every token-moving function. The msig, or the rescuer instead in rescue mode. A flagger
+    /// on the current list can pause but not unpause, outside rescue mode and while compliance is enabled.
     /// `claim`, `claimTreasury` and `withdrawExcluded` ignore the pause from `CLAIM_PAUSE_EXPIRY` after `fulfillmentEnd`.
     function setPaused(bool value) external;
 

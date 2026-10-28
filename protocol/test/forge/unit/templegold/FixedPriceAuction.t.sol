@@ -970,6 +970,35 @@ contract FixedPriceAuctionPauseTest is FixedPriceAuctionTestBase {
         auction.setPaused(true);
     }
 
+    function test_setPaused_flaggerPausesOnly() public {
+        address flagger = makeAddr("flagger");
+        vm.prank(executor);
+        compliance.setFlagger(flagger, true);
+
+        vm.prank(flagger);
+        auction.setPaused(true);
+        assertTrue(auction.paused());
+        vm.prank(flagger);
+        vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
+        auction.setPaused(false);
+
+        // Locked out in rescue mode and once compliance is disabled.
+        vm.prank(executor);
+        auction.setPaused(false);
+        vm.prank(rescuer);
+        auction.setRescueMode(true);
+        vm.prank(flagger);
+        vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
+        auction.setPaused(true);
+        vm.startPrank(rescuer);
+        auction.setRescueMode(false);
+        auction.disableComplianceCheck();
+        vm.stopPrank();
+        vm.prank(flagger);
+        vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
+        auction.setPaused(true);
+    }
+
     function test_setPaused_events() public {
         vm.startPrank(executor);
         vm.expectEmit(address(auction));

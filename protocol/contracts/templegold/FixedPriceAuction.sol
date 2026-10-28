@@ -330,7 +330,8 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
 
     /// @inheritdoc IFixedPriceAuction
     function setPaused(bool value) external override {
-        _onlyExecutorOrRescuerInRescueMode();
+        // A flagger can pause but not unpause.
+        if (!(value && _isActiveFlagger(msg.sender))) _onlyExecutorOrRescuerInRescueMode();
         emit PausedSet(value);
         paused = value;
     }
@@ -528,11 +529,11 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
     /// ComplianceCheck has no rescue mode and the msig can repoint the list, so rescue mode must lock flaggers out
     /// here.
     function _onlyExclusionAdmin() private view {
-        if (_isElevatedAccess(msg.sender)) return;
-        if (inRescueMode) revert CommonEventsAndErrors.InvalidAccess();
-        if (complianceDisabled || !IComplianceCheck(complianceCheck).isFlagger(msg.sender)) {
-            revert CommonEventsAndErrors.InvalidAccess();
-        }
+        if (!_isElevatedAccess(msg.sender) && !_isActiveFlagger(msg.sender)) revert CommonEventsAndErrors.InvalidAccess();
+    }
+
+    function _isActiveFlagger(address caller) private view returns (bool) {
+        return !inRescueMode && !complianceDisabled && IComplianceCheck(complianceCheck).isFlagger(caller);
     }
 
     function _onlyExecutorOrRescuerInRescueMode() private view {
