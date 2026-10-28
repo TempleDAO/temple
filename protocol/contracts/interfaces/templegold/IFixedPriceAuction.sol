@@ -9,7 +9,8 @@ import { IRescuableAccess } from "contracts/interfaces/templegold/IRescuableAcce
 /// window and the funder funds during the fulfillment window. If funding falls short, every depositor
 /// fills the same fraction and gets the rest of their bid back.
 /// @dev Assumes standard ERC-20s with exact transfers: no fee-on-transfer, rebasing or callbacks.
-/// A flagged or paused call reverts and the funds stay in the auction.
+/// A flagged or paused call reverts and the funds stay in the auction. Claims ignore a pause from
+/// `CLAIM_PAUSE_EXPIRY` after `fulfillmentEnd`.
 /// Before settlement, a flagged bidder's deposit can be moved out of the fill into a refund-only balance; see
 /// exclude, reinstate and withdrawExcluded.
 interface IFixedPriceAuction is IRescuableAccess {
@@ -136,7 +137,8 @@ interface IFixedPriceAuction is IRescuableAccess {
     /// Reverts if the account is still flagged or has nothing excluded.
     function reinstate(address account) external;
 
-    /// @notice Return the caller's whole excluded balance. Any phase, once unpaused and the caller isn't flagged.
+    /// @notice Return the caller's whole excluded balance. Any phase, once unpaused (or `CLAIM_PAUSE_EXPIRY` after
+    /// `fulfillmentEnd`) and the caller isn't flagged.
     function withdrawExcluded() external;
 
     /// @notice Pull `amount` fill tokens from the funder. Funder only, fulfillment phase only.
@@ -176,6 +178,7 @@ interface IFixedPriceAuction is IRescuableAccess {
     function recoverToken(address token, address to, uint256 amount) external;
 
     /// @notice Pause or unpause every token-moving function. The msig, or the rescuer instead in rescue mode.
+    /// `claim`, `claimTreasury` and `withdrawExcluded` ignore the pause from `CLAIM_PAUSE_EXPIRY` after `fulfillmentEnd`.
     function setPaused(bool value) external;
 
     /// @notice Repoint the compliance list. Msig only; reverts on zero, on an address that doesn't answer `isFlagged`
@@ -184,6 +187,10 @@ interface IFixedPriceAuction is IRescuableAccess {
 
     /// @notice Switch screening off for good. Rescuer only.
     function disableComplianceCheck() external;
+
+    /// @notice How long after `fulfillmentEnd` a pause still stops `claim`, `claimTreasury` and `withdrawExcluded`, so
+    /// a lost or breached rescuer can't freeze payouts for good.
+    function CLAIM_PAUSE_EXPIRY() external view returns (uint256);
 
     /// @notice The least time from creation to `depositStart`, so the rescuer has time to react to a rogue auction.
     function MIN_DEPOSIT_START_DELAY() external view returns (uint256);

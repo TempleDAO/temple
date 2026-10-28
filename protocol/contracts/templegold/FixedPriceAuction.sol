@@ -37,6 +37,8 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
     uint256 public constant override MIN_DEPOSIT_START_DELAY = 1 days;
     /// @inheritdoc IFixedPriceAuction
     uint256 public constant override MIN_DEPOSIT_WINDOW = 1 days;
+    /// @inheritdoc IFixedPriceAuction
+    uint256 public constant override CLAIM_PAUSE_EXPIRY = 30 days;
 
     /// @inheritdoc IFixedPriceAuction
     uint256 public override priceDenominator;
@@ -186,7 +188,9 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
     }
 
     /// @inheritdoc IFixedPriceAuction
-    function withdrawExcluded() external override whenNotPaused notFlagged {
+    function withdrawExcluded() external override notFlagged {
+        AuctionConfig memory config = _config();
+        _requireClaimNotPaused(config);
         uint256 amount = excluded[msg.sender];
         if (amount == 0) revert NothingToClaim();
 
@@ -194,7 +198,7 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
         totalExcluded -= amount;
 
         emit ExcludedWithdrawn(msg.sender, amount);
-        IERC20(_config().bidToken).safeTransfer(msg.sender, amount);
+        IERC20(config.bidToken).safeTransfer(msg.sender, amount);
     }
 
     /// @inheritdoc IFixedPriceAuction
@@ -258,8 +262,9 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
     }
 
     /// @inheritdoc IFixedPriceAuction
-    function claim() external override whenNotPaused notFlagged {
+    function claim() external override notFlagged {
         AuctionConfig memory config = _config();
+        _requireClaimNotPaused(config);
         _requireFinal(config);
         if (claimed[msg.sender]) revert AlreadyClaimed();
         if (deposits[msg.sender] == 0) revert NothingToClaim();
@@ -280,8 +285,9 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
     }
 
     /// @inheritdoc IFixedPriceAuction
-    function claimTreasury() external override whenNotPaused {
+    function claimTreasury() external override {
         AuctionConfig memory config = _config();
+        _requireClaimNotPaused(config);
         _requireFinal(config);
         if (treasuryClaimed) revert AlreadyClaimed();
         _emitClockSettlementIfDue(config);
@@ -503,6 +509,10 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
 
     function _requireNotPaused() private view {
         if (paused) revert IsPaused();
+    }
+
+    function _requireClaimNotPaused(AuctionConfig memory config) private view {
+        if (paused && block.timestamp <= config.fulfillmentEnd + CLAIM_PAUSE_EXPIRY) revert IsPaused();
     }
 
     modifier notFlagged() {

@@ -26,7 +26,7 @@ Numbered decisions refer to the list at the end.
 
 ## The design in brief
 
-`ComplianceCheck` flags addresses. Each auction has its own pause that stops every function that moves tokens. Flagged or paused means the call reverts and the money stays put. The rescuer can disable compliance for good. It can also switch on rescue mode, which locks the msig out of the auction and lets the rescuer pause and unpause until it switches rescue mode off.
+`ComplianceCheck` flags addresses. Each auction has its own pause that stops every function that moves tokens; claims ignore it from 30 days after `fulfillmentEnd`. Flagged or paused means the call reverts and the money stays put. The rescuer can disable compliance for good. It can also switch on rescue mode, which locks the msig out of the auction and lets the rescuer pause and unpause until it switches rescue mode off.
 
 ## Who can call what
 
@@ -117,7 +117,7 @@ function _isFlagged(address a) private view returns (bool) {
 }
 ```
 
-The pause stops every function that moves tokens. `settleEarly` moves no tokens, so it works while paused. The pause has no timer and no single-use limit. The msig toggles the pause. The rescuer can take over the pause (see [Pause and rescue mode](#pause-and-rescue-mode)). The clock keeps running while paused, so a long pause can let the deposit or fulfillment window lapse.
+The pause stops every function that moves tokens. `settleEarly` moves no tokens, so it works while paused. The pause has no timer and no single-use limit, but `claim`, `claimTreasury` and `withdrawExcluded` ignore it from `CLAIM_PAUSE_EXPIRY` (30 days) after `fulfillmentEnd` (D2), so a lost or breached rescuer can't freeze payouts for good. The msig toggles the pause. The rescuer can take over the pause (see [Pause and rescue mode](#pause-and-rescue-mode)). The clock keeps running while paused, so a long pause can let the deposit or fulfillment window lapse.
 
 > [!NOTE]
 > **A pause during the fulfillment window decides the funding.** `fund` and `withdrawExcess` revert while paused, and the clock doesn't stop. If the auction is still paused when `fulfillmentEnd` passes, it settles with whatever funding it held when the pause began: a partial fill, or no fill and a full refund for every depositor. Unpause before `fulfillmentEnd` if the funder still needs to top up. A pause held across `depositEnd` likewise takes away depositors' right to withdraw.
@@ -140,7 +140,7 @@ The pause stops every function that moves tokens. `settleEarly` moves no tokens,
 >
 > Don't inherit `TempleElevatedAccess` as it is. In its rescue mode the rescuer passes every `onlyElevatedAccess` check. In #1305 that means the three cancel functions, `endDeposit`, `endFulfillment`, `setDepositsPaused`, `setMaxTotalDeposits`, `recoverToken`, `excludeBidder`, `proposeRelease`/`executeRelease`, `disableComplianceCheck`, `setExplicitAccess` and `proposeNewExecutor`. Here it would also cover `setComplianceCheck`.
 >
-> **Accepted risk.** A breached rescuer could lock the msig out of an auction. It could keep the auction paused, even past settlement, unpause one the msig paused during an incident, or cancel a genuine auction, which refunds everyone and loses the sale. Claims only ever pay the depositor, so funds can't be redirected. The team accepts this risk because the rescuer is a separate, well-secured multisig.
+> **Accepted risk.** A breached rescuer could lock the msig out of an auction. It could keep the auction paused, even past settlement (claims ignore the pause from 30 days after `fulfillmentEnd`), unpause one the msig paused during an incident, or cancel a genuine auction, which refunds everyone and loses the sale. Claims only ever pay the depositor, so funds can't be redirected. The team accepts this risk because the rescuer is a separate, well-secured multisig.
 >
 > Rescue mode is per auction. Each auction keeps the two-step handovers from `TempleElevatedAccess`, with three changes. The rescuer can't propose a new executor, and switching rescue mode on cancels any pending executor proposal, so a hijacked msig can't leave one to be accepted once rescue mode lifts. On the factory it also cancels a pending implementation proposal. Rescue mode is per contract: switching it on at the factory doesn't touch the auctions' proposals. A proposed executor can accept only `EXECUTOR_HANDOVER_DELAY` (2 days) after the proposal, so a hijacked msig can't propose and accept in one transaction before the rescuer reacts. `proposeNewRescuer` is rescuer-only, and `acceptRescuer` is callable only by the proposed rescuer, so only the rescuer picks its successor. The factory already rotates its own rescuer two-step; rotating it on live auctions is decision 14. `ComplianceCheck` has the same delay but no rescuer and no rescue mode; there the msig can overwrite a proposal before the delay ends (T-2). The rescuer's answer to a rogue list is `disableComplianceCheck` on each auction.
 
@@ -171,9 +171,9 @@ stateDiagram-v2
 | State | Bidders (deposit, withdraw, claim) | msig functions | Who controls the pause |
 |---|---|---|---|
 | Running · msig | work, unless the account is flagged | work | msig |
-| Paused · msig | revert; funds stay put | work, except `recoverToken`; `cancel` only before `fulfillmentEnd` | msig |
+| Paused · msig | revert; funds stay put (claims work from 30 days after `fulfillmentEnd`) | work, except `recoverToken`; `cancel` only before `fulfillmentEnd` | msig |
 | Running · rescue mode | work, unless the account is flagged | locked out | rescuer |
-| Paused · rescue mode | revert; funds stay put | locked out | rescuer |
+| Paused · rescue mode | revert; funds stay put (claims work from 30 days after `fulfillmentEnd`) | locked out | rescuer |
 
 `disableComplianceCheck` sits outside these states. The rescuer can call it in any state; it's one-way, and afterwards nobody is flagged.
 

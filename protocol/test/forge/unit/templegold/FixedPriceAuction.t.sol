@@ -1026,6 +1026,41 @@ contract FixedPriceAuctionPauseTest is FixedPriceAuctionTestBase {
         _claimAll(auction);
     }
 
+    function test_paused_claimsIgnorePauseAfterExpiry() public {
+        _toDeposit(auction);
+        _deposit(auction, alice, 60_000_000e18);
+        _deposit(auction, bob, 40_000_000e18);
+        _setFlagged(bob, true);
+        vm.prank(executor);
+        auction.exclude(bob);
+        _setFlagged(bob, false);
+        _toFulfillment(auction);
+        _fund(auction, 6_000_000e18);
+        _pause();
+
+        vm.warp(auction.getConfig().fulfillmentEnd + auction.CLAIM_PAUSE_EXPIRY());
+        vm.prank(alice);
+        vm.expectRevert(IFixedPriceAuction.IsPaused.selector);
+        auction.claim();
+        vm.expectRevert(IFixedPriceAuction.IsPaused.selector);
+        auction.claimTreasury();
+        vm.prank(bob);
+        vm.expectRevert(IFixedPriceAuction.IsPaused.selector);
+        auction.withdrawExcluded();
+
+        // One second later the claims go through, and the rest stays paused.
+        vm.warp(block.timestamp + 1);
+        vm.prank(alice);
+        auction.claim();
+        auction.claimTreasury();
+        vm.prank(bob);
+        auction.withdrawExcluded();
+        usds.mint(address(auction), 1);
+        vm.prank(executor);
+        vm.expectRevert(IFixedPriceAuction.IsPaused.selector);
+        auction.recoverToken(address(usds), executor, 1);
+    }
+
     function test_paused_settleEarlyWorks() public {
         _workedExample(1e18);
         _pause();

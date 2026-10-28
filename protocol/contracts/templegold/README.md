@@ -159,7 +159,7 @@ Roles:
 - proceedsRecipient: receives the filled bid tokens.
 - flagger: a trusted account the msig adds with `setFlagger` on the compliance list; it can edit the list, and exclude and reinstate on every auction pointing at that list, outside rescue mode, while compliance is enabled.
 
-Pausing stops every token-moving call; `settleEarly`, `cancel`, `exclude`, `reinstate` and the setters still work. In rescue mode the msig is locked out of every elevated call and only the rescuer can pause, unpause or cancel. Rescue mode is per contract: the factory and each auction have their own, and switching it on cancels that contract's pending executor proposal, and on the factory its pending implementation proposal too.
+Pausing stops every token-moving call, except that claims and excluded-balance withdrawals ignore it from 30 days after `fulfillmentEnd`; `settleEarly`, `cancel`, `exclude`, `reinstate` and the setters still work. In rescue mode the msig is locked out of every elevated call and only the rescuer can pause, unpause or cancel. Rescue mode is per contract: the factory and each auction have their own, and switching it on cancels that contract's pending executor proposal, and on the factory its pending implementation proposal too.
 
 All auctions share one `ComplianceCheck`. The msig can point an auction at another list, and the rescuer can disable compliance on an auction for good. A flagged account's `deposit`, `withdrawDeposit`, `claim` and `withdrawExcluded` revert: its funds are frozen in the auction until the flag is removed or compliance is disabled.
 
