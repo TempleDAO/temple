@@ -5,7 +5,6 @@ import { TempleTest } from "test/forge/unit/TempleTest.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { IComplianceCheck } from "contracts/interfaces/templegold/IComplianceCheck.sol";
 import { IExecutorAccess } from "contracts/interfaces/templegold/IExecutorAccess.sol";
-import { ITempleElevatedAccess } from "contracts/interfaces/v2/access/ITempleElevatedAccess.sol";
 import { ComplianceCheck } from "contracts/templegold/ComplianceCheck.sol";
 
 contract ComplianceCheckTest is TempleTest {
@@ -27,24 +26,16 @@ contract ComplianceCheckTest is TempleTest {
         accounts[1] = bob;
     }
 
-    function _access(
-        bytes4 selector,
-        bool allowed
-    ) internal pure returns (ITempleElevatedAccess.ExplicitAccess[] memory access) {
-        access = new ITempleElevatedAccess.ExplicitAccess[](1);
-        access[0] = ITempleElevatedAccess.ExplicitAccess(selector, allowed);
-    }
-
-    function _grant(address account, bytes4 selector, bool allowed) internal {
+    function _setBlocker(address account, bool value) internal {
         vm.prank(executor);
-        compliance.setExplicitAccess(account, _access(selector, allowed));
+        compliance.setBlocker(account, value);
     }
 
     function test_initialization() public view {
         assertEq(compliance.executor(), executor);
         assertEq(compliance.proposedExecutor(), address(0));
         assertFalse(compliance.isBlocked(alice));
-        assertFalse(compliance.explicitFunctionAccess(blocker, ComplianceCheck.setBlocked.selector));
+        assertFalse(compliance.isBlocker(blocker));
     }
 
     function test_access_setBlocked() public {
@@ -53,46 +44,34 @@ contract ComplianceCheckTest is TempleTest {
         compliance.setBlocked(_accounts(), true);
     }
 
-    function test_access_setExplicitAccess() public {
+    function test_access_setBlocker() public {
         vm.prank(unauthorizedUser);
-        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
-        compliance.setExplicitAccess(blocker, _access(ComplianceCheck.setBlocked.selector, true));
+        vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
+        compliance.setBlocker(blocker, true);
 
-        // A grantee can't widen its own access.
-        _grant(blocker, ComplianceCheck.setBlocked.selector, true);
+        // A blocker can't appoint another.
+        _setBlocker(blocker, true);
         vm.prank(blocker);
         vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
-        compliance.setExplicitAccess(blocker, _access(ComplianceCheck.setExplicitAccess.selector, true));
-
-        // Nor can a grant of setExplicitAccess itself reach it: only the executor can.
-        _grant(blocker, ComplianceCheck.setExplicitAccess.selector, true);
-        vm.prank(blocker);
-        vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
-        compliance.setExplicitAccess(alice, _access(ComplianceCheck.setBlocked.selector, true));
+        compliance.setBlocker(alice, true);
     }
 
-    function test_setExplicitAccess_fail_zeroAddress() public {
+    function test_setBlocker_fail_zeroAddress() public {
         vm.prank(executor);
         vm.expectRevert(CommonEventsAndErrors.InvalidAddress.selector);
-        compliance.setExplicitAccess(address(0), _access(ComplianceCheck.setBlocked.selector, true));
+        compliance.setBlocker(address(0), true);
     }
 
-    function test_setExplicitAccess_success_grantAndRevoke() public {
-        ITempleElevatedAccess.ExplicitAccess[] memory access = new ITempleElevatedAccess.ExplicitAccess[](2);
-        access[0] = ITempleElevatedAccess.ExplicitAccess(ComplianceCheck.setBlocked.selector, true);
-        access[1] = ITempleElevatedAccess.ExplicitAccess(ComplianceCheck.setExplicitAccess.selector, false);
+    function test_setBlocker_success_appointAndRemove() public {
         vm.expectEmit(address(compliance));
-        emit IComplianceCheck.ExplicitAccessSet(blocker, ComplianceCheck.setBlocked.selector, true);
-        vm.expectEmit(address(compliance));
-        emit IComplianceCheck.ExplicitAccessSet(blocker, ComplianceCheck.setExplicitAccess.selector, false);
-        vm.prank(executor);
-        compliance.setExplicitAccess(blocker, access);
-        assertTrue(compliance.explicitFunctionAccess(blocker, ComplianceCheck.setBlocked.selector));
+        emit IComplianceCheck.BlockerSet(blocker, true);
+        _setBlocker(blocker, true);
+        assertTrue(compliance.isBlocker(blocker));
 
         vm.expectEmit(address(compliance));
-        emit IComplianceCheck.ExplicitAccessSet(blocker, ComplianceCheck.setBlocked.selector, false);
-        _grant(blocker, ComplianceCheck.setBlocked.selector, false);
-        assertFalse(compliance.explicitFunctionAccess(blocker, ComplianceCheck.setBlocked.selector));
+        emit IComplianceCheck.BlockerSet(blocker, false);
+        _setBlocker(blocker, false);
+        assertFalse(compliance.isBlocker(blocker));
     }
 
     function test_setBlocked_success_byExecutor() public {
@@ -112,12 +91,12 @@ contract ComplianceCheckTest is TempleTest {
         assertFalse(compliance.isBlocked(alice));
     }
 
-    function test_setBlocked_success_byGranteeUntilRevoked() public {
+    function test_setBlocked_success_byBlockerUntilRemoved() public {
         vm.prank(blocker);
         vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
         compliance.setBlocked(_accounts(), true);
 
-        _grant(blocker, ComplianceCheck.setBlocked.selector, true);
+        _setBlocker(blocker, true);
         vm.prank(blocker);
         compliance.setBlocked(_accounts(), true);
         assertTrue(compliance.isBlocked(bob));
@@ -125,14 +104,7 @@ contract ComplianceCheckTest is TempleTest {
         compliance.setBlocked(_accounts(), false);
         assertFalse(compliance.isBlocked(bob));
 
-        _grant(blocker, ComplianceCheck.setBlocked.selector, false);
-        vm.prank(blocker);
-        vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
-        compliance.setBlocked(_accounts(), true);
-    }
-
-    function test_setBlocked_fail_otherSelectorGranted() public {
-        _grant(blocker, ComplianceCheck.setExplicitAccess.selector, true);
+        _setBlocker(blocker, false);
         vm.prank(blocker);
         vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
         compliance.setBlocked(_accounts(), true);
@@ -148,6 +120,11 @@ contract ComplianceCheckTest is TempleTest {
         vm.prank(bob);
         vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
         compliance.acceptExecutor();
+        uint256 readyAt = block.timestamp + compliance.EXECUTOR_HANDOVER_DELAY();
+        vm.prank(alice);
+        vm.expectRevert(abi.encodeWithSelector(IExecutorAccess.ExecutorHandoverNotReady.selector, readyAt));
+        compliance.acceptExecutor();
+        vm.warp(readyAt);
         vm.prank(alice);
         compliance.acceptExecutor();
         assertEq(compliance.executor(), alice);
@@ -157,21 +134,11 @@ contract ComplianceCheckTest is TempleTest {
         compliance.setBlocked(_accounts(), true);
     }
 
-    /// @dev A proposeNewExecutor grant lets the grantee take the executor role.
-    function test_setExplicitAccess_proposeNewExecutorGrantHandsOverExecutor() public {
-        _grant(blocker, IExecutorAccess.proposeNewExecutor.selector, true);
-
-        vm.expectEmit(address(compliance));
-        emit IExecutorAccess.NewExecutorProposed(executor, address(0), blocker);
+    function test_proposeNewExecutor_fail_blocker() public {
+        _setBlocker(blocker, true);
         vm.prank(blocker);
-        compliance.proposeNewExecutor(blocker);
-        vm.prank(blocker);
-        compliance.acceptExecutor();
-
-        assertEq(compliance.executor(), blocker);
-        vm.prank(executor);
         vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
-        compliance.setBlocked(_accounts(), true);
+        compliance.proposeNewExecutor(blocker);
     }
 
     function test_proposeNewExecutor_selfReplacesPendingProposal() public {

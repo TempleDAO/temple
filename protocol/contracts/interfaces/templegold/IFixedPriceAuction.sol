@@ -9,7 +9,8 @@ import { IRescuableAccess } from "contracts/interfaces/templegold/IRescuableAcce
 /// window and the funder funds during the fulfillment window. If funding falls short, every depositor
 /// fills the same fraction and gets the rest of their bid back.
 /// @dev Assumes standard ERC-20s with exact transfers: no fee-on-transfer, rebasing or callbacks.
-/// A blocked or paused call reverts and the funds stay in the auction.
+/// A blocked or paused call reverts and the funds stay in the auction. Claims ignore a pause more than
+/// `CLAIM_PAUSE_EXPIRY` after `fulfillmentEnd`.
 /// Before settlement, a blocked bidder's deposit can be moved out of the fill into a refund-only balance; see
 /// exclude, reinstate and withdrawExcluded.
 interface IFixedPriceAuction is IRescuableAccess {
@@ -27,9 +28,9 @@ interface IFixedPriceAuction is IRescuableAccess {
         address fillToken;
         /// @notice Fill tokens per whole bid token, scaled by 1e18; decimals are applied on-chain.
         uint256 price;
-        /// @notice Unix seconds.
+        /// @notice Unix seconds, at least `MIN_DEPOSIT_START_DELAY` after creation.
         uint64 depositStart;
-        /// @notice Unix seconds.
+        /// @notice Unix seconds, at least `MIN_DEPOSIT_WINDOW` after `depositStart`.
         uint64 depositEnd;
         /// @notice Unix seconds, at most `type(uint40).max`.
         uint64 fulfillmentEnd;
@@ -132,17 +133,18 @@ interface IFixedPriceAuction is IRescuableAccess {
     function withdrawDeposit(uint256 amount) external;
 
     /// @notice Move a blocked bidder's whole deposit out of the fill into `excluded[account]`, lowering
-    /// `totalDeposits`. The msig outside rescue mode, or a caller the current compliance list grants `setBlocked`
-    /// (in rescue mode too). Deposit or Fulfillment phase only; allowed while paused. Reverts unless compliance is
-    /// enabled and `account` is blocked with a nonzero deposit.
+    /// `totalDeposits`. The msig, or a blocker on the current compliance list, both outside rescue mode. Deposit or
+    /// Fulfillment phase only; allowed while paused. Reverts unless compliance is enabled and `account` is blocked
+    /// with a nonzero deposit.
     function exclude(address account) external;
 
-    /// @notice Put an unblocked account's excluded balance back into its deposit. The msig outside rescue mode, or,
-    /// while compliance is enabled, a caller the current list grants `setBlocked`. Deposit phase only; allowed
+    /// @notice Put an unblocked account's excluded balance back into its deposit. The msig or, while compliance is
+    /// enabled, a blocker on the current list, both outside rescue mode. Deposit phase only; allowed
     /// while paused. Reverts if the account is still blocked or has nothing excluded.
     function reinstate(address account) external;
 
-    /// @notice Return the caller's whole excluded balance. Any phase, once unpaused and the caller isn't blocked.
+    /// @notice Return the caller's whole excluded balance. Any phase, once unpaused (or more than
+    /// `CLAIM_PAUSE_EXPIRY` after `fulfillmentEnd`) and the caller isn't blocked.
     function withdrawExcluded() external;
 
     /// @notice Pull `amount` fill tokens from the funder. Funder only, fulfillment phase only.
@@ -172,13 +174,26 @@ interface IFixedPriceAuction is IRescuableAccess {
     function recoverToken(address token, address to, uint256 amount) external;
 
     /// @notice Pause or unpause every token-moving function. The msig, or the rescuer instead in rescue mode.
+    /// `claim`, `claimTreasury` and `withdrawExcluded` ignore the pause more than `CLAIM_PAUSE_EXPIRY` after
+    /// `fulfillmentEnd`.
     function setPaused(bool value) external;
 
-    /// @notice Repoint the compliance list. Msig only; reverts on zero and after `disableComplianceCheck`.
+    /// @notice Repoint the compliance list. Msig only; reverts on an address that doesn't answer `isBlocked` (no code,
+    /// or the wrong contract) and after `disableComplianceCheck`.
     function setComplianceCheck(address newComplianceCheck) external;
 
-    /// @notice Switch screening off for good. Rescuer only.
+    /// @notice Switch screening off for good. The rescuer, in rescue mode only.
     function disableComplianceCheck() external;
+
+    /// @notice How long after `fulfillmentEnd` a pause still stops `claim`, `claimTreasury` and `withdrawExcluded`;
+    /// after that they ignore it.
+    function CLAIM_PAUSE_EXPIRY() external view returns (uint256);
+
+    /// @notice The least time from creation to `depositStart`, so the rescuer has time to react to a rogue auction.
+    function MIN_DEPOSIT_START_DELAY() external view returns (uint256);
+
+    /// @notice The shortest deposit window, from `depositStart` to `depositEnd`.
+    function MIN_DEPOSIT_WINDOW() external view returns (uint256);
 
     /// @notice 10**(18 + bidDecimals - fillDecimals): a bid amount (bid token base units) times `price`, divided by
     /// this, gives fill token base units.
@@ -208,14 +223,15 @@ interface IFixedPriceAuction is IRescuableAccess {
     /// held.
     function fillOwed() external view returns (uint256);
 
-    /// @notice True while every token-moving function is stopped.
+    /// @notice True while token-moving functions are stopped. `claim`, `claimTreasury` and `withdrawExcluded` ignore
+    /// it more than `CLAIM_PAUSE_EXPIRY` after `fulfillmentEnd`.
     function paused() external view returns (bool);
 
-    /// @notice The compliance list that screens bidders, and whose setBlocked grantees may exclude and reinstate.
+    /// @notice The compliance list that screens bidders, and whose blockers may exclude and reinstate.
     function complianceCheck() external view returns (address);
 
     /// @notice One-way: once true, nobody is blocked and the pointer can't change, so every excluded balance is
-    /// withdrawable once unpaused and list grants can no longer exclude or reinstate.
+    /// withdrawable once unpaused and blockers can no longer exclude or reinstate.
     function complianceDisabled() external view returns (bool);
 
     /// @notice When the auction settled (unix seconds). Zero until settled, and always zero if cancelled; the phase
@@ -227,6 +243,9 @@ interface IFixedPriceAuction is IRescuableAccess {
 
     /// @notice The deployment terms read from the clone's code, with the current compliance list pointer.
     function getConfig() external view returns (AuctionConfig memory);
+
+    /// @notice The `config` bytes to pass to the factory's `createAuction`.
+    function encodeConfig(AuctionConfig calldata config) external pure returns (bytes memory);
 
     /// @notice The auction times and `settledAt`.
     function getTiming() external view returns (AuctionTiming memory);

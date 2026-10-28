@@ -29,6 +29,16 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
 
     /// @dev The most decimals either token may have.
     uint8 private constant MAX_TOKEN_DECIMALS = 18;
+    /// @dev The fewest decimals either token may have. Below this, rounding each bidder's fill and refund down to
+    /// whole base units can cost them a material amount.
+    uint8 private constant MIN_TOKEN_DECIMALS = 6;
+
+    /// @inheritdoc IFixedPriceAuction
+    uint256 public constant override MIN_DEPOSIT_START_DELAY = 1 days;
+    /// @inheritdoc IFixedPriceAuction
+    uint256 public constant override MIN_DEPOSIT_WINDOW = 1 days;
+    /// @inheritdoc IFixedPriceAuction
+    uint256 public constant override CLAIM_PAUSE_EXPIRY = 30 days;
 
     /// @inheritdoc IFixedPriceAuction
     uint256 public override priceDenominator;
@@ -80,9 +90,10 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
         if (config.funder == address(0)) revert CommonEventsAndErrors.InvalidAddress();
         if (config.proceedsRecipient == address(0)) revert CommonEventsAndErrors.InvalidAddress();
         if (config.complianceCheck == address(0)) revert CommonEventsAndErrors.InvalidAddress();
+        _requireComplianceCheck(config.complianceCheck);
         if (
-            config.depositStart <= block.timestamp
-                || config.depositStart >= config.depositEnd
+            config.depositStart < block.timestamp + MIN_DEPOSIT_START_DELAY
+                || config.depositEnd < config.depositStart + MIN_DEPOSIT_WINDOW
                 || config.depositEnd >= config.fulfillmentEnd
                 || config.fulfillmentEnd > type(uint40).max
                 || config.bidToken == config.fillToken
@@ -91,7 +102,10 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
 
         uint8 bidDecimals = IERC20Metadata(config.bidToken).decimals();
         uint8 fillDecimals = IERC20Metadata(config.fillToken).decimals();
-        if (bidDecimals > MAX_TOKEN_DECIMALS || fillDecimals > MAX_TOKEN_DECIMALS) {
+        if (
+            bidDecimals > MAX_TOKEN_DECIMALS || fillDecimals > MAX_TOKEN_DECIMALS || bidDecimals < MIN_TOKEN_DECIMALS
+                || fillDecimals < MIN_TOKEN_DECIMALS
+        ) {
             revert CommonEventsAndErrors.InvalidParam();
         }
         priceDenominator = 10 ** (18 + uint256(bidDecimals) - fillDecimals);
@@ -172,7 +186,9 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
     }
 
     /// @inheritdoc IFixedPriceAuction
-    function withdrawExcluded() external override whenNotPaused notBlocked {
+    function withdrawExcluded() external override notBlocked {
+        AuctionConfig memory config = _config();
+        _requireClaimNotPaused(config);
         uint256 amount = excluded[msg.sender];
         if (amount == 0) revert NothingToClaim();
 
@@ -180,7 +196,7 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
         bidOwed -= amount;
 
         emit ExcludedWithdrawn(msg.sender, amount);
-        IERC20(_config().bidToken).safeTransfer(msg.sender, amount);
+        IERC20(config.bidToken).safeTransfer(msg.sender, amount);
     }
 
     /// @inheritdoc IFixedPriceAuction
@@ -236,8 +252,9 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
     }
 
     /// @inheritdoc IFixedPriceAuction
-    function claim() external override whenNotPaused notBlocked {
+    function claim() external override notBlocked {
         AuctionConfig memory config = _config();
+        _requireClaimNotPaused(config);
         _settleIfDue(config);
         if (claimed[msg.sender]) revert AlreadyClaimed();
         if (deposits[msg.sender] == 0) revert NothingToClaim();
@@ -257,8 +274,9 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
     }
 
     /// @inheritdoc IFixedPriceAuction
-    function claimTreasury() external override whenNotPaused {
+    function claimTreasury() external override {
         AuctionConfig memory config = _config();
+        _requireClaimNotPaused(config);
         _settleIfDue(config);
         if (treasuryClaimed) revert AlreadyClaimed();
 
@@ -308,12 +326,14 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
     function setComplianceCheck(address newComplianceCheck) external override onlyElevatedAccess {
         if (complianceDisabled) revert ComplianceCheckIsDisabled();
         if (newComplianceCheck == address(0)) revert CommonEventsAndErrors.InvalidAddress();
+        _requireComplianceCheck(newComplianceCheck);
         emit ComplianceCheckSet(newComplianceCheck);
         complianceCheck = newComplianceCheck;
     }
 
     /// @inheritdoc IFixedPriceAuction
     function disableComplianceCheck() external override onlyRescuer {
+        if (!inRescueMode) revert CommonEventsAndErrors.InvalidAccess();
         emit ComplianceCheckDisabled();
         complianceDisabled = true;
     }
@@ -327,6 +347,11 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
     function getConfig() external view override returns (AuctionConfig memory config) {
         config = _config();
         config.complianceCheck = complianceCheck;
+    }
+
+    /// @inheritdoc IFixedPriceAuction
+    function encodeConfig(AuctionConfig calldata config) external pure override returns (bytes memory) {
+        return abi.encode(config);
     }
 
     /// @inheritdoc IFixedPriceAuction
@@ -401,13 +426,13 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
 
     function _calculateSettlement(uint256 price) private view returns (Settlement memory) {
         uint256 denominator = priceDenominator;
-        // Fills, and the fill tokens they buy, round down, so bidders never get more than the funding covers.
+        // The fill tokens bought round down, so bidders never get more than the funding covers.
         uint256 filled = fillOwed >= _requiredFunding(totalDeposits, price)
             ? totalDeposits
             : fillOwed.mulDivRound(denominator, price, false);
         uint256 userFunding = filled.mulDivRound(price, denominator, false);
-        // A fill too small to buy one fill-token wei takes no bid tokens.
-        if (userFunding == 0) filled = 0;
+        // Charge the rounded-up cost of userFunding and refund the rest, so a zero userFunding takes no bid tokens.
+        filled = userFunding.mulDivRound(denominator, price, true);
         return Settlement(filled, userFunding, totalDeposits - filled, fillOwed - userFunding);
     }
 
@@ -439,6 +464,13 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
         return amount.mulDivRound(price, priceDenominator, true);
     }
 
+    /// @dev Reverts unless `list` answers `isBlocked` with a bool, which rejects an address with no code, a precompile
+    /// and most wrong contracts. A proxy or a delegated account still passes.
+    function _requireComplianceCheck(address list) private view {
+        (bool ok, bytes memory data) = list.staticcall(abi.encodeCall(IComplianceCheck.isBlocked, (address(0))));
+        if (!ok || data.length != 32 || abi.decode(data, (uint256)) > 1) revert CommonEventsAndErrors.InvalidAddress();
+    }
+
     function _isBlocked(address account) private view returns (bool) {
         return !complianceDisabled && IComplianceCheck(complianceCheck).isBlocked(account);
     }
@@ -457,6 +489,10 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
         if (paused) revert IsPaused();
     }
 
+    function _requireClaimNotPaused(AuctionConfig memory config) private view {
+        if (paused && block.timestamp <= config.fulfillmentEnd + CLAIM_PAUSE_EXPIRY) revert IsPaused();
+    }
+
     modifier notBlocked() {
         _requireNotBlocked();
         _;
@@ -466,14 +502,17 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
         if (_isBlocked(msg.sender)) revert BlockedAccount(msg.sender);
     }
 
-    /// @dev The executor outside rescue mode, or, while compliance is enabled, a caller the current list grants
-    /// setBlocked (in rescue mode too).
+    /// @dev The executor or an active blocker.
     function _onlyExclusionAdmin() private view {
-        if (_isElevatedAccess(msg.sender, msg.sig)) return;
-        bytes4 selector = IComplianceCheck.setBlocked.selector;
-        if (complianceDisabled || !IComplianceCheck(complianceCheck).explicitFunctionAccess(msg.sender, selector)) {
+        if (!_isElevatedAccess(msg.sender) && !_isActiveBlocker(msg.sender)) {
             revert CommonEventsAndErrors.InvalidAccess();
         }
+    }
+
+    /// @dev A blocker on the current list, outside rescue mode, while compliance is enabled.
+    /// ComplianceCheck has no rescue mode, so the lockout lives here.
+    function _isActiveBlocker(address caller) private view returns (bool) {
+        return !inRescueMode && !complianceDisabled && IComplianceCheck(complianceCheck).isBlocker(caller);
     }
 
     function _onlyExecutorOrRescuerInRescueMode() private view {

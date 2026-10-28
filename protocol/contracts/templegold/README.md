@@ -154,24 +154,24 @@ An auction moves through these phases:
 
 Roles:
 - executor (msig): creates auctions, ends fulfillment early, cancels, pauses, repoints compliance, excludes flagged bidders and reinstates cleared ones, recovers stray tokens and calls `proposeImplementation` on the factory.
-- rescuer: switches rescue mode on and off, pauses and cancels while it is on, accepts a proposed implementation on the factory, and can disable compliance for good.
+- rescuer: switches rescue mode on and off; while it is on, pauses, cancels and can disable compliance for good; accepts a proposed implementation on the factory.
 - funder: the only account that can `fund` and `withdrawExcess`.
 - proceedsRecipient: receives the filled bid tokens.
-- granted account: an account granted `setBlocked` on the compliance list; it can also exclude and reinstate on every auction pointing at that list, in rescue mode too, while compliance is enabled.
+- blocker: a trusted account the msig appoints on the compliance list to edit it; it can also exclude and reinstate on every auction pointing at that list, outside rescue mode, while compliance is enabled.
 
-Pausing stops every token-moving call; `endFulfillment`, `cancel`, `exclude`, `reinstate` and the setters still work. In rescue mode the msig is locked out of every elevated call and only the rescuer can pause, unpause or cancel. Rescue mode is per contract: the factory and each auction have their own, and switching it on cancels that contract's pending executor proposal, and on the factory its pending implementation proposal too.
+Pausing stops every token-moving call, except that claims and excluded-balance withdrawals ignore it more than 30 days after `fulfillmentEnd`; `endFulfillment`, `cancel`, `exclude`, `reinstate` and the setters still work. In rescue mode the msig is locked out of every elevated call and only the rescuer can pause, unpause or cancel. Rescue mode is per contract: the factory and each auction have their own, and switching it on cancels that contract's pending executor proposal, and on the factory its pending implementation proposal too.
 
-All auctions share one `ComplianceCheck`. The msig can point an auction at another list, and the rescuer can disable compliance on an auction for good. A blocked account's `deposit`, `withdrawDeposit`, `claim` and `withdrawExcluded` revert, and its funds stay in the auction until it is unblocked or compliance is disabled.
+All auctions share one `ComplianceCheck`. The msig can point an auction at another list, and the rescuer, in rescue mode, can disable compliance on an auction for good. A blocked account's `deposit`, `withdrawDeposit`, `claim` and `withdrawExcluded` revert, and its funds stay in the auction until it is unblocked or compliance is disabled.
 
-During Deposit or Fulfillment, the msig (outside rescue mode) or an account the current list grants `setBlocked` can `exclude` a blocked bidder: its whole deposit leaves the fill and moves to `excluded`, so it is never filled and the funder doesn't pay for it (funding already sent for it becomes withdrawable excess). If the bidder is cleared during Deposit, `reinstate` puts it back in full; otherwise, once unblocked, the bidder takes it back with `withdrawExcluded`, in any phase. A bidder blocked but not excluded is still filled, and its payout waits until it is unblocked. Once settled or cancelled, nobody can be excluded. Disabling compliance makes every excluded balance withdrawable once the auction is unpaused.
+During Deposit or Fulfillment, the msig or a blocker on the current list, both outside rescue mode, can `exclude` a blocked bidder: its whole deposit leaves the fill and moves to `excluded`, so it is never filled and the funder doesn't pay for it (funding already sent for it becomes withdrawable excess if the rest is fully funded; under partial funding the remaining bidders fill more). If the bidder is cleared during Deposit, `reinstate` puts it back in full; otherwise, once unblocked, the bidder takes it back with `withdrawExcluded`, in any phase. A bidder blocked but not excluded is still filled, and its payout waits until it is unblocked. Once settled or cancelled, nobody can be excluded. Disabling compliance makes every excluded balance withdrawable once the auction is unpaused, or more than 30 days after `fulfillmentEnd`.
 
-Settlement never owes more than it holds: the funding needed to fill every deposit rounds up, each fill and pro-rata share rounds down, and the dust stays in the auction.
+Settlement never owes more than it holds: the funding needed to fill every deposit rounds up, `userFunding` and each pro-rata share round down, and the dust stays in the auction. In aggregate, bidders pay only for the whole fill-token wei they get: `filledDeposits` is the rounded-up cost of `userFunding`, and the bid tokens worth less than one fill-token wei are refunded. Each bidder's fill and refund round down separately, so a bidder can lose dust.
 
 `AuctionFactory` clones its current implementation. The msig proposes a new implementation and the rescuer accepts it by address; existing auctions keep their code. `isAuction` is the only proof an auction is genuine.
 
 TGLD moves only when the sender or the receiver is authorized on `TempleGold`, so authorize every TGLD auction (`authorizeContract`) before `depositStart`. Otherwise an authorized depositor can move TGLD into the auction, and it can then leave only to authorized receivers until the auction is authorized.
 
-Both tokens must be standard ERC-20s with at most 18 decimals; fee-on-transfer and rebasing tokens are not supported.
+Both tokens must be standard ERC-20s with 6 to 18 decimals; fee-on-transfer and rebasing tokens are not supported.
 
 `WishingWell` only records wishes; the indexer does the counting.
 
