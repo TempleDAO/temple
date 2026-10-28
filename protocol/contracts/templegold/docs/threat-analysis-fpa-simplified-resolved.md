@@ -61,7 +61,7 @@ The original analysis (not in this branch) covered PRs 1304 and 1305. Every find
 
 | Original | Status here | Where it went |
 |---|---|---|
-| M-1 `totalStated` inflatable | Resolved | No on-chain totals. The indexer's balance cap carries the defence (T-18). |
+| M-1 `totalStated` inflatable | Resolved | No on-chain totals. Unbacked demand is accepted, and the dashboard checks wishers' balances at decision time (T-18, D9). |
 | M-2 Well compliance can't be switched off | Resolved for the Well. Changed for auctions. | T-14 |
 | M-3 No list of genuine auctions | Resolved by `isAuction`. Residuals remain. | T-16, T-17 |
 | L-1 One balance counts for every market | Still applies, off-chain | T-18 (one balance, many wishes) |
