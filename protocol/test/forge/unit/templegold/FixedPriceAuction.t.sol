@@ -890,6 +890,15 @@ contract FixedPriceAuctionPauseTest is FixedPriceAuctionTestBase {
         vm.prank(blocker);
         vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
         auction.setPaused(true);
+
+        // Only a blocker on the list the auction points at counts.
+        FixedPriceAuction other = _create(_config(address(tgld), address(usds), PRICE, 0));
+        vm.startPrank(executor);
+        other.setComplianceCheck(address(new ComplianceCheck(executor)));
+        vm.stopPrank();
+        vm.prank(blocker);
+        vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
+        other.setPaused(true);
     }
 
     function test_setPaused_msigPausesWhenListLacksIsBlocker() public {
@@ -979,8 +988,13 @@ contract FixedPriceAuctionPauseTest is FixedPriceAuctionTestBase {
         vm.expectRevert(IFixedPriceAuction.IsPaused.selector);
         auction.withdrawExcluded();
 
-        // One second later the claims go through, and the rest stays paused.
+        // One second later the claims go through, and the rest stays paused. A blocked depositor still can't claim.
         vm.warp(block.timestamp + 1);
+        _setBlocked(alice, true);
+        vm.prank(alice);
+        vm.expectRevert(abi.encodeWithSelector(IFixedPriceAuction.BlockedAccount.selector, alice));
+        auction.claim();
+        _setBlocked(alice, false);
         vm.prank(alice);
         auction.claim();
         auction.claimTreasury();
@@ -990,6 +1004,26 @@ contract FixedPriceAuctionPauseTest is FixedPriceAuctionTestBase {
         vm.prank(executor);
         vm.expectRevert(IFixedPriceAuction.IsPaused.selector);
         auction.recoverToken(address(usds), executor, 1);
+    }
+
+    function test_paused_expiryAnchoredOnFulfillmentEndAfterEndFulfillment() public {
+        _workedExample(6_000_000e18);
+        vm.prank(executor);
+        auction.endFulfillment();
+        _pause();
+        uint256 expiry = auction.CLAIM_PAUSE_EXPIRY();
+        uint256 fulfillmentEnd = auction.getConfig().fulfillmentEnd;
+        assertLt(auction.settledAt(), fulfillmentEnd);
+
+        vm.warp(auction.settledAt() + expiry + 1);
+        vm.prank(alice);
+        vm.expectRevert(IFixedPriceAuction.IsPaused.selector);
+        auction.claim();
+
+        vm.warp(fulfillmentEnd + expiry + 1);
+        vm.prank(alice);
+        auction.claim();
+        assertTrue(auction.claimed(alice));
     }
 
     function test_paused_inDepositNeverFundedRefundsAfterExpiry() public {
