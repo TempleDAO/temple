@@ -290,22 +290,29 @@ With a record-only Well, all judgement about demand happens off-chain. The index
 | How much filled, and when | `AuctionSettled`, which carries `settledAt` |
 | Cancelled auctions (no fills, deposits refundable) | `AuctionCancelled` |
 | Each auction's screening | `ComplianceCheckSet`, `ComplianceCheckDisabled` |
-| Balances | ERC-20 `Transfer`, or `balanceOf` at a pinned block |
+| Balances (dashboard, at decision time) | `balanceOf` for every wisher in one multicall |
 | Who is blocked | `BlockedSet` from `ComplianceCheck` |
 
 Rules:
 - A wish matches an auction when `bidToken == from` and `fillToken == to`.
-- **A wish counts the smaller of two numbers.** One is its amount minus fills from matching auctions settled after the wish. The other is the account's balance of `from`.
+- **Demand is counted per account and bucket:** the sum of its active wishes in the bucket, minus its fills in that bucket from auctions settled after its latest `WishSet` in the bucket, floored at zero. Any `WishSet` in the bucket, including an update or a cancel (amount 0), restarts the fill count, because it restates what the account still wants. A wish expiring doesn't restart it. "Settled" is `settledAt` if non-zero, else `fulfillmentEnd`, and a fill counts only if it settled strictly after the `WishSet`.
 - An account's fill is `deposit − floor(deposit × userRefund / totalDeposits)` in `from` units. `userRefund` and `totalDeposits` come from `AuctionSettled`. Before it appears, take `userRefund` from `previewSettlement` and `totalDeposits` from `totalDeposits()`.
-- **One balance cap per `from` asset.** The sum of an account's counted wishes that give the same asset can't exceed what it holds of it.
+- **No balance cap.** The indexer counts wishes whatever the wisher holds, because wishers may keep tokens staked or deployed elsewhere until the auction. Whoever decides on an auction reads wishers' balances (and where they sit) at that time, from the dashboard.
 - **Buckets** are indexer config that group pairs into markets, for example USDS and USDC as "stables". The team reads demand per bucket. Summing across a bucket normalises decimals (USDS has 18, USDC has 6).
 - Expired wishes and wishes with amount 0 count zero.
 - **Blocked accounts count zero.**
-- **Every batch of reads uses one pinned block,** so one balance can't be counted twice by moving it between reads.
 
-Open choices for the indexer (decision 9):
-- Does a new wish reset the fills already subtracted? Recommended: yes, because the latest wish replaces the old one.
-- Do tokens sitting in a live auction, or an unclaimed refund, count as held? Recommended: yes, otherwise demand drops to zero the moment a wisher bids. Count `deposits(account)` while the auction is live and `claimable(account).bidTokenRefund` once it's final: `deposits()` doesn't drop when an account claims, so using it after a claim double-counts the refund.
+Decided for the indexer (decision 9):
+- Fills count per bucket, and are subtracted exactly (above), not by zeroing the wish.
+- An excluded balance doesn't count as demand.
+- For the dashboard's balance check, tokens in a live auction count as held: `deposits(account) + excluded(account)` while the auction is live, and `claimable(account).refund + excluded(account)` once it's final, because `deposits()` doesn't drop when an account claims.
+
+Subgraph notes (the Spice Bazaar indexer is a Goldsky subgraph):
+- Index `AuctionCreated` and start a data source template for the auction only when `implementation` is on the indexer's list, with one template and one decoder per implementation. Skip unknown implementations.
+- The v1 config has only static fields, so `ethereum.decode("(address,address,uint256,uint64,uint64,uint64,uint256,address,address,address)", config)` decodes it with no offset prefix.
+- Events that `initialize` emits come after `AuctionCreated` in the same transaction and block; a template created in the `AuctionCreated` handler processes them.
+- A subgraph has no clock. Store `fulfillmentEnd` and `expiresAt`, and apply expiry and "settled" at query time. Fill amounts come from `AuctionSettled`, so ops calls `emitSettlement` once `fulfillmentEnd` passes, in case no one has claimed yet.
+- Bucket membership is dashboard config, so the subgraph stores raw wishes and fills per pair and the dashboard sums them per bucket.
 
 ## What happens when something goes wrong
 
@@ -367,7 +374,7 @@ The record-only Well drops signed wishes and nonces, the on-chain balance and co
 6. **No:** `funder` and `proceedsRecipient` stay fixed. Setters would let a hijacked msig point both addresses at itself before the rescuer reacts, and the rescuer couldn't change them back. A compromised funder or proceeds recipient is handled in the runbook.
 7. **Confirmed:** the small access-control base for rescue mode (see the rescue-mode callout in [`FixedPriceAuction`](#2-fixedpriceauction-simplified)), where rescue mode only locks the msig out and hands the rescuer the pause. Accepted risk: a breached rescuer can lock the msig out of an auction, and by pausing it can hold depositors' tokens until `fulfillmentEnd + CLAIM_PAUSE_EXPIRY`, after which claims pay out as usual (refunds in full if the auction was never funded).
 8. **Confirmed: one factory with swappable code**, with the two-key swap (msig proposes, rescuer accepts) and rescue mode on the factory. The cost is a Solady dependency, clone-arg reads in the auction, and an `initialize` step. Every auction version also depends on one factory contract, so one bug in it reaches every auction.
-9. **Partly decided (indexer):** fills count per bucket, not per pair. Tokens in a live auction count as held (`deposits + excluded` while live, `claimable().refund + excluded` once final), and an excluded balance counts as held but not as demand. Still open: whether a fill zeroes the wisher's earlier wishes in that bucket instead of subtracting the filled amount, and how one capped balance splits across pairs.
+9. **Decided (indexer):** fills count per bucket and are subtracted exactly: an account's demand in a bucket is its active wishes there minus its fills there settled after its latest `WishSet` in that bucket. The indexer applies no balance cap; the dashboard reads balances when the team decides. Tokens in a live auction count as held for that check, and an excluded balance doesn't count as demand.
 10. **No:** `cancel` stays unavailable from `fulfillmentEnd`. Claims can start then, and cancelling after some are paid would owe refunds on deposits and funding already paid out. An incident caught before `fulfillmentEnd` can already be cancelled.
 11. **No:** no TGLD burner contract. After `claimTreasury`, the `proceedsRecipient` burns its TGLD with `TempleGold.burn` as an ops step, as the Spice auction recipient does.
 12. **Decided (indexer):** screen wishes against the same `ComplianceCheck` the live auctions use, and keep screening when the rescuer disables compliance on the auctions, because wishes don't move money.
