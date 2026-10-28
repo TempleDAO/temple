@@ -63,7 +63,7 @@ The original analysis (not in this branch) covered PRs 1304 and 1305. Every find
 | L-2 Capital present only at sample blocks | Still applies, off-chain | T-18 |
 | L-3 A failed claim leg blocks the other | Still applies, wider | T-6, T-7 |
 | L-4 Cap squatting | Not applicable (no cap) | Pro-rata dilution, Info |
-| L-5 Natspec claims a burner is enforced | Changed: the false claim is gone, but nothing enforces a burner | Operational 10 |
+| L-5 Natspec claims a burner is enforced | Changed: the false claim is gone. No burner by design (model decision 11); the `proceedsRecipient` burns as an ops step. | Operational 10 |
 | L-6 Lazy settlement misplaces fills in time | Resolved in the event. A residual remains in the view. | T-9 |
 | L-7 The Well and auctions screen different people | Changed | T-17 |
 | L-8 Registry reads | Not applicable | — |
