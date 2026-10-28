@@ -861,44 +861,11 @@ contract FixedPriceAuctionPauseTest is FixedPriceAuctionTestBase {
         vm.prank(rescuer);
         vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
         auction.setPaused(true);
-    }
-
-    function test_setPaused_blockerPausesOnly() public {
-        address blocker = makeAddr("blocker");
         vm.prank(executor);
         compliance.setBlocker(blocker, true);
-
-        vm.prank(blocker);
-        auction.setPaused(true);
-        assertTrue(auction.paused());
-        vm.prank(blocker);
-        vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
-        auction.setPaused(false);
-
-        // Locked out in rescue mode and once compliance is disabled.
-        vm.prank(executor);
-        auction.setPaused(false);
-        vm.prank(rescuer);
-        auction.setRescueMode(true);
         vm.prank(blocker);
         vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
         auction.setPaused(true);
-        vm.startPrank(rescuer);
-        auction.setRescueMode(false);
-        auction.disableComplianceCheck();
-        vm.stopPrank();
-        vm.prank(blocker);
-        vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
-        auction.setPaused(true);
-
-        // Only a blocker on the list the auction points at counts.
-        FixedPriceAuction other = _create(_config(address(tgld), address(usds), PRICE, 0));
-        vm.startPrank(executor);
-        other.setComplianceCheck(address(new ComplianceCheck(executor)));
-        vm.stopPrank();
-        vm.prank(blocker);
-        vm.expectRevert(CommonEventsAndErrors.InvalidAccess.selector);
-        other.setPaused(true);
     }
 
     function test_setPaused_msigPausesWhenListLacksIsBlocker() public {

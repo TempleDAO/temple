@@ -13,9 +13,9 @@ interface IComplianceCheck is IExecutorAccess {
     event BlockerSet(address indexed account, bool blocker);
 
     /// @notice Appoint or remove `account` as a blocker. A blocker can edit the list, and can exclude and reinstate
-    /// bidders and pause on every auction pointing at this list, outside that auction's rescue mode, while compliance
-    /// is enabled on it. It can't change the executor or appoint blockers. Blockers are trusted: the executor picks
-    /// and removes them.
+    /// bidders on every auction pointing at this list, outside that auction's rescue mode, while compliance is enabled
+    /// on it. It can't change the executor or appoint blockers. Blockers are trusted: the executor picks and removes
+    /// them.
     /// @dev Executor only. Reverts on a zero `account`.
     function setBlocker(address account, bool value) external;
 
