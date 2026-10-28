@@ -299,7 +299,7 @@ With a record-only Well, all judgement about demand happens off-chain. The index
 | Cancelled auctions (no fills, deposits refundable) | `AuctionCancelled` |
 | Each auction's screening | `ComplianceCheckSet`, `ComplianceCheckDisabled` |
 | Balances (dashboard, at decision time) | `balanceOf` for every wisher in one multicall |
-| Who is flagged | `FlaggedSet` from `ComplianceCheck` |
+| Who is flagged (dapp and dashboard, not the indexer) | `isFlagged` read directly: one call for the connected user, a multicall over wishers at decision time |
 
 Rules:
 - A wish matches an auction when `bidToken == fromToken` and `fillToken == toToken`.
