@@ -9,7 +9,7 @@ import { IRescuableAccess } from "contracts/interfaces/templegold/IRescuableAcce
 /// window and the funder funds during the fulfillment window. If funding falls short, every depositor
 /// fills the same fraction and gets the rest of their bid back.
 /// @dev Assumes standard ERC-20s with exact transfers: no fee-on-transfer, rebasing or callbacks.
-/// A flagged or paused call reverts and the funds stay in the auction. Claims ignore a pause from
+/// A flagged or paused call reverts and the funds stay in the auction. Claims ignore a pause more than
 /// `CLAIM_PAUSE_EXPIRY` after `fulfillmentEnd`.
 /// Before settlement, a flagged bidder's deposit can be moved out of the fill into a refund-only balance; see
 /// exclude, reinstate and withdrawExcluded.
@@ -137,8 +137,8 @@ interface IFixedPriceAuction is IRescuableAccess {
     /// Reverts if the account is still flagged or has nothing excluded.
     function reinstate(address account) external;
 
-    /// @notice Return the caller's whole excluded balance. Any phase, once unpaused (or `CLAIM_PAUSE_EXPIRY` after
-    /// `fulfillmentEnd`) and the caller isn't flagged.
+    /// @notice Return the caller's whole excluded balance. Any phase, once unpaused (or more than
+    /// `CLAIM_PAUSE_EXPIRY` after `fulfillmentEnd`) and the caller isn't flagged.
     function withdrawExcluded() external;
 
     /// @notice Pull `amount` fill tokens from the funder. Funder only, fulfillment phase only.
@@ -153,8 +153,8 @@ interface IFixedPriceAuction is IRescuableAccess {
     function settleEarly() external;
 
     /// @notice Emit `AuctionSettled` for an auction the clock settled at `fulfillmentEnd`, if no claim has emitted it
-    /// yet, and record `fulfillmentEnd` in `settledAt`. Anyone, once; Settlement phase only. Moves no tokens and changes
-    /// no payout. Reverts `AlreadySettled` once the event has gone out.
+    /// yet, and record `fulfillmentEnd` in `settledAt`. Anyone, once; Settlement phase only. Moves no tokens and
+    /// changes no payout. Reverts `AlreadySettled` once the event has gone out.
     function emitSettlement() external;
 
     /// @notice Abort: no trade, and all deposits and funding become refundable. Msig only; the rescuer instead
@@ -177,9 +177,10 @@ interface IFixedPriceAuction is IRescuableAccess {
     /// `InsufficientBalance` above that.
     function recoverToken(address token, address to, uint256 amount) external;
 
-    /// @notice Pause or unpause every token-moving function. The msig, or the rescuer instead in rescue mode. A flagger
-    /// on the current list can pause but not unpause, outside rescue mode and while compliance is enabled.
-    /// `claim`, `claimTreasury` and `withdrawExcluded` ignore the pause from `CLAIM_PAUSE_EXPIRY` after `fulfillmentEnd`.
+    /// @notice Pause or unpause every token-moving function. The msig, or the rescuer instead in rescue mode. A
+    /// flagger on the current list can pause but not unpause, outside rescue mode and while compliance is enabled.
+    /// `claim`, `claimTreasury` and `withdrawExcluded` ignore the pause more than `CLAIM_PAUSE_EXPIRY` after
+    /// `fulfillmentEnd`.
     function setPaused(bool value) external;
 
     /// @notice Repoint the compliance list. Msig only; reverts on zero, on an address that doesn't answer `isFlagged`
@@ -189,8 +190,8 @@ interface IFixedPriceAuction is IRescuableAccess {
     /// @notice Switch screening off for good. Rescuer only.
     function disableComplianceCheck() external;
 
-    /// @notice How long after `fulfillmentEnd` a pause still stops `claim`, `claimTreasury` and `withdrawExcluded`, so
-    /// a lost or breached rescuer can't freeze payouts for good.
+    /// @notice How long after `fulfillmentEnd` a pause still stops `claim`, `claimTreasury` and `withdrawExcluded`;
+    /// after that they ignore it.
     function CLAIM_PAUSE_EXPIRY() external view returns (uint256);
 
     /// @notice The least time from creation to `depositStart`, so the rescuer has time to react to a rogue auction.
@@ -223,14 +224,15 @@ interface IFixedPriceAuction is IRescuableAccess {
     /// Fulfillment ends; claims don't change it.
     function funding() external view returns (uint256);
 
-    /// @notice True while every token-moving function is stopped.
+    /// @notice True while token-moving functions are stopped. `claim`, `claimTreasury` and `withdrawExcluded` ignore
+    /// it more than `CLAIM_PAUSE_EXPIRY` after `fulfillmentEnd`.
     function paused() external view returns (bool);
 
-    /// @notice The compliance list that screens bidders, and whose flaggers may exclude and reinstate.
+    /// @notice The compliance list that screens bidders, and whose flaggers may exclude, reinstate and pause.
     function complianceCheck() external view returns (address);
 
     /// @notice One-way: once true, nobody is flagged and the pointer can't change, so every excluded balance is
-    /// withdrawable once unpaused and flaggers can no longer exclude or reinstate.
+    /// withdrawable once unpaused and flaggers can no longer exclude, reinstate or pause.
     function complianceDisabled() external view returns (bool);
 
     /// @notice When the auction settled (unix seconds): set by `settleEarly`, or to `fulfillmentEnd` by the first
