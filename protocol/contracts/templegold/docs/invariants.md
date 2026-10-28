@@ -48,7 +48,6 @@ The properties the contracts must always keep. The fuzz and invariant suites are
 | P4 | No executor proposal exists while rescue mode is on, and on the factory no implementation proposal either. | `invariant_rolesStaySeparate`; fuzz `test_fuzz_liabilitiesAlwaysHeld` and `test_fuzz_factoryRulesHold` after every step |
 | P5 | The executor and the rescuer are never the same address, under any order of handovers. | `invariant_rolesStaySeparate` (handler `proposeExecutor`/`acceptExecutor`/`proposeRescuer`/`acceptRescuer` over a candidate pool shared by both roles); fuzz `test_fuzz_liabilitiesAlwaysHeld` and `test_fuzz_factoryRulesHold` |
 | P6 | A proposed executor can accept only `EXECUTOR_HANDOVER_DELAY` (2 days) after the latest proposal; a re-proposal restarts the clock. | unit `test_executorHandover`; handler `acceptExecutor` ("acceptExecutor: refused other than for the rescuer or the delay") |
-| P7 | A flagger on the current list can pause, never unpause, and is locked out in rescue mode or once compliance is disabled. A broken list never blocks the msig's or rescuer's pause. | handler `setPausedByFlagger` ("flagger setPaused not exactly when allowed", "flagger setPaused changed more than the pause"); unit `test_setPaused_flaggerPausesOnly`, `test_setPaused_msigPausesWhenListLacksIsFlagger` |
 
 ## Compliance
 

@@ -330,9 +330,7 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
 
     /// @inheritdoc IFixedPriceAuction
     function setPaused(bool value) external override {
-        if (!_isExecutorOrRescuerInRescueMode(msg.sender) && !(value && _isActiveFlagger(msg.sender))) {
-            revert CommonEventsAndErrors.InvalidAccess();
-        }
+        _onlyExecutorOrRescuerInRescueMode();
         emit PausedSet(value);
         paused = value;
     }
@@ -540,11 +538,7 @@ contract FixedPriceAuction is IFixedPriceAuction, RescuableAccess {
     }
 
     function _onlyExecutorOrRescuerInRescueMode() private view {
-        if (!_isExecutorOrRescuerInRescueMode(msg.sender)) revert CommonEventsAndErrors.InvalidAccess();
-    }
-
-    function _isExecutorOrRescuerInRescueMode(address caller) private view returns (bool) {
-        return caller == (inRescueMode ? rescuer : executor);
+        if (msg.sender != (inRescueMode ? rescuer : executor)) revert CommonEventsAndErrors.InvalidAccess();
     }
 
     function _onlyFunder(address funder) private view {

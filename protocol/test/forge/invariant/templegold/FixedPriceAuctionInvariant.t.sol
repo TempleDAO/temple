@@ -67,7 +67,6 @@ abstract contract FixedPriceAuctionInvariantBase is FixedPriceAuctionTestBase {
         i = _add(s, i, FixedPriceAuctionHandler.setPausedByMsig.selector, 1);
         i = _add(s, i, FixedPriceAuctionHandler.setComplianceCheck.selector, 1);
         i = _add(s, i, FixedPriceAuctionHandler.setPausedByRescuer.selector, 1);
-        i = _add(s, i, FixedPriceAuctionHandler.setPausedByFlagger.selector, 1);
         i = _add(s, i, FixedPriceAuctionHandler.setRescueMode.selector, 1);
         i = _add(s, i, FixedPriceAuctionHandler.cancelByRescuer.selector, 1);
         i = _add(s, i, FixedPriceAuctionHandler.disableComplianceCheck.selector, 1);

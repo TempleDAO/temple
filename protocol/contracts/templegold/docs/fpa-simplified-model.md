@@ -35,7 +35,7 @@ Numbered decisions refer to the list at the end.
 | **msig** (factory) | `executor`; locked out while the factory's rescue mode is on | `createAuction`, `proposeImplementation`, `proposeNewExecutor` |
 | **msig** (auction) | `executor`; locked out while rescue mode is on | `cancel`, `settleEarly`, `setPaused`, `setComplianceCheck`, `recoverToken`, `exclude`, `reinstate`, `proposeNewExecutor` |
 | **msig** (`ComplianceCheck`) | `executor` | `setFlagged`, `setFlagger`, `proposeNewExecutor` |
-| **flagger** | `isFlagger` on the list, set by the msig with `setFlagger`. Trusted: the msig picks and removes flaggers | `setFlagged`. It can also `exclude`, `reinstate` and pause (not unpause) every auction pointing at that list, outside rescue mode, while compliance is enabled |
+| **flagger** | `isFlagger` on the list, set by the msig with `setFlagger`. Trusted: the msig picks and removes flaggers | `setFlagged`. It can also `exclude` and `reinstate` on every auction pointing at that list, outside rescue mode, while compliance is enabled |
 | **rescuer** | `rescuer` (each auction takes the factory's current one) | factory: `acceptImplementation`, `setRescueMode`, and the two-step rescuer handover. Auction: `disableComplianceCheck` (one-way, any time), `setRescueMode`, `setPaused` and `cancel` while rescue mode is on, and the two-step rescuer handover. Nothing else. |
 | **funder** | `funder` (fixed at deploy, decision 6) | `fund`, `withdrawExcess` |
 | **anyone** | — | `deposit`, `withdrawDeposit`, `claim`, `withdrawExcluded`, `claimTreasury` (pays the funder and proceeds addresses), `emitSettlement` |
@@ -102,7 +102,7 @@ Bidders deposit `bidToken`, and the funder supplies `fillToken`. `price` is fill
 | `claimTreasury()` | Pays `filledBids` to `proceedsRecipient` and `funderRefund` to `funder` from the settlement. | anyone | Settlement or Cancelled | — | revert until more than `CLAIM_PAUSE_EXPIRY` after `fulfillmentEnd` |
 | `emitSettlement()` | Emits `AuctionSettled` for a settlement by the clock, if no claim has yet, and records `fulfillmentEnd` in `settledAt`. Once. | anyone | Settlement | — | allowed |
 | `recoverToken(token, to, amount)` | Sends out a token's surplus, such as tokens sent by mistake: the balance less `liabilities()` for the bid and fill tokens, the whole balance for any other token. | msig | any | — | revert |
-| `setPaused(bool)` | Pauses or unpauses the auction. | msig; the rescuer instead while rescue mode is on; a flagger can pause (not unpause) outside rescue mode while compliance is enabled | any | — | allowed |
+| `setPaused(bool)` | Pauses or unpauses the auction. | msig; the rescuer instead while rescue mode is on | any | — | allowed |
 | `setRescueMode(bool)` | Switches rescue mode on or off. While it's on, the msig can't call any msig function on that auction and the rescuer controls the pause. | rescuer | any | — | allowed |
 | `proposeNewExecutor`/`acceptExecutor`, `proposeNewRescuer`/`acceptRescuer` | Two-step role handovers (see the rescue-mode callout). `acceptExecutor` waits `EXECUTOR_HANDOVER_DELAY` (2 days) after the proposal. | propose: `proposeNewExecutor` by the msig (locked out in rescue mode), `proposeNewRescuer` by the rescuer; accept: the proposed address | any | — | allowed |
 | `setComplianceCheck(addr)` | Points the auction at a `ComplianceCheck` contract, for example to replace a broken or rogue one. Reverts on `address(0)` and on an address that doesn't answer `isFlagged` (no code, or the wrong contract). Only `disableComplianceCheck` turns screening off. | msig | any, until disabled | — | allowed |
@@ -117,7 +117,7 @@ function _isFlagged(address a) private view returns (bool) {
 }
 ```
 
-The pause stops every function that moves tokens. `settleEarly` moves no tokens, so it works while paused. The pause has no timer and no single-use limit, but `claim`, `claimTreasury` and `withdrawExcluded` ignore it more than `CLAIM_PAUSE_EXPIRY` (30 days) after `fulfillmentEnd` (D2), so a lost or breached rescuer can't freeze payouts for good. The msig toggles the pause, and a flagger can pause but not unpause. The rescuer can take over the pause (see [Pause and rescue mode](#pause-and-rescue-mode)). The clock keeps running while paused, so a long pause can let the deposit or fulfillment window lapse.
+The pause stops every function that moves tokens. `settleEarly` moves no tokens, so it works while paused. The pause has no timer and no single-use limit, but `claim`, `claimTreasury` and `withdrawExcluded` ignore it more than `CLAIM_PAUSE_EXPIRY` (30 days) after `fulfillmentEnd` (D2), so a lost or breached rescuer can't freeze payouts for good. The msig toggles the pause. The rescuer can take over the pause (see [Pause and rescue mode](#pause-and-rescue-mode)). The clock keeps running while paused, so a long pause can let the deposit or fulfillment window lapse.
 
 > [!NOTE]
 > **A pause during the fulfillment window decides the funding.** `fund` and `withdrawExcess` revert while paused, and the clock doesn't stop. If the auction is still paused when `fulfillmentEnd` passes, it settles with whatever funding it held when the pause began: a partial fill, or no fill and a full refund for every depositor. Unpause before `fulfillmentEnd` if the funder still needs to top up. A pause held across `depositEnd` likewise takes away depositors' right to withdraw.
@@ -132,10 +132,7 @@ The pause stops every function that moves tokens. `settleEarly` moves no tokens,
 > }
 >
 > function setPaused(bool value) external {
->     // The msig or rescuer is checked first, so a broken list can't block their pause.
->     if (msg.sender != (inRescueMode ? rescuer : executor) && !(value && _isActiveFlagger(msg.sender))) {
->         revert InvalidAccess();
->     }
+>     if (msg.sender != (inRescueMode ? rescuer : executor)) revert InvalidAccess();
 >     emit PausedSet(value);
 >     paused = value;
 > }
@@ -159,7 +156,6 @@ stateDiagram-v2
 
     [*] --> RunMsig
     RunMsig --> PauseMsig: msig setPaused(true)
-    RunMsig --> PauseMsig: flagger setPaused(true)
     PauseMsig --> RunMsig: msig setPaused(false)
 
     RunMsig --> RunRescue: rescuer setRescueMode(true)
@@ -174,8 +170,8 @@ stateDiagram-v2
 
 | State | Bidders (deposit, withdraw, claim) | msig functions | Who controls the pause |
 |---|---|---|---|
-| Running · msig | work, unless the account is flagged | work | msig; a flagger can pause (not unpause) |
-| Paused · msig | revert; funds stay put (claims work more than 30 days after `fulfillmentEnd`) | work, except `recoverToken`; `cancel` only before `fulfillmentEnd` | msig; a flagger can pause (not unpause) |
+| Running · msig | work, unless the account is flagged | work | msig |
+| Paused · msig | revert; funds stay put (claims work more than 30 days after `fulfillmentEnd`) | work, except `recoverToken`; `cancel` only before `fulfillmentEnd` | msig |
 | Running · rescue mode | work, unless the account is flagged | locked out | rescuer |
 | Paused · rescue mode | revert; funds stay put (claims work more than 30 days after `fulfillmentEnd`) | locked out | rescuer |
 
@@ -348,7 +344,7 @@ With a record-only Well, all judgement about demand happens off-chain. The index
 | One address must be flagged | msig or a flagger flags it. Its deposit, withdrawal and claim revert, and its funds stay put. Before settlement, either can also `exclude` it, so its deposit leaves the fill and is refunded once it's cleared, unless it's reinstated during Deposit. |
 | Accounting bug, or a rush of depositors to withdraw | msig pauses the affected auction: every function that moves tokens stops. Investigate, then unpause, or `cancel` before `fulfillmentEnd`. |
 | Compromised `funder` or `proceedsRecipient` | Both addresses are fixed (decision 6). For `proceedsRecipient`: pause, then cancel before `fulfillmentEnd`, so no proceeds accrue. For `funder`, don't cancel, because cancelling returns all funding to the compromised address. Let the auction settle, so fills go to depositors and only the unused funding reaches the funder. |
-| Rogue flagger | msig removes it with `setFlagger` and fixes the list, or repoints the auctions to a new `ComplianceCheck`, and unpauses any auction it paused. |
+| Rogue flagger | msig removes it with `setFlagger` and fixes the list, or repoints the auctions to a new `ComplianceCheck`. |
 | Rogue msig pauses for good, or flags everyone | rescuer switches rescue mode on, which locks the msig out. It unpauses and/or calls `disableComplianceCheck`, and switches rescue mode off once the msig can be trusted again. If the Safe can't be recovered, rescue mode stays on until the auction settles by the clock. |
 | Hijacked msig deploys rogue auctions through the factory | (1) The rescuer switches rescue mode on in the factory, which stops new auctions and code proposals, and in every live auction, which locks the hijacked msig out. It calls `disableComplianceCheck` on any auction whose list the msig has abused. (2) For each rogue auction already created, the rescuer switches rescue mode on and cancels it as soon as `AuctionCreated` appears, ideally before `depositStart` and at the latest before `depositEnd`: from `depositEnd` the hijacked msig can fund with junk and settle in one block, and a settled auction can't be cancelled. Anyone who already deposited gets a full refund at once, whatever the auction's windows. (3) If the Safe's signers recover it, the rescuer switches rescue mode off. If the Safe is lost for good, the team deploys a new Safe, `ComplianceCheck` and factory, and the indexer and front-ends add the new factory and stop counting new auctions from the old one. Genuine auctions finish under rescue mode, because they settle by the clock at fulfillmentEnd. |
 | Incident while the msig can't act | rescuer switches rescue mode on and pauses. To abort, it cancels before `fulfillmentEnd`, which refunds everyone. |
@@ -397,7 +393,7 @@ The record-only Well drops signed wishes and nonces, the on-chain balance and co
 2. ~~**Legal:** can a flagged account's deposit be filled, with its fill waiting until it's unflagged?~~ **Resolved** by the exclusion rules in [Excluding flagged bidders](#excluding-flagged-bidders): before settlement, `exclude` takes a flagged deposit out of the fill and it's refund-only; after settlement the fill stands and the payout waits.
 3. **Confirmed:** `withdrawDeposit` reverts for flagged accounts, to match "funds stay where they are".
 4. **Confirmed:** the pause is per auction, so stopping everything takes one transaction per live auction. That's acceptable with only a few auctions running at once.
-5. **Yes:** a flagger on the current list can pause an auction, outside rescue mode and while compliance is enabled, so the automation bot can stop an auction during an incident. It can't unpause; that stays with the msig, or the rescuer in rescue mode.
+5. **No:** a flagger can't pause. Pausing is a security response for the msig, or the rescuer in rescue mode; a flagger deals with one bad actor by flagging and excluding it. A compromised flagger key therefore can't freeze every auction on its list, and `setPaused` never calls the compliance list.
 6. **No:** `funder` and `proceedsRecipient` stay fixed. Setters would let a hijacked msig point both addresses at itself before the rescuer reacts, and the rescuer couldn't change them back. A compromised funder or proceeds recipient is handled in the runbook.
 7. **Confirmed:** the small access-control base for rescue mode (see the rescue-mode callout in [`FixedPriceAuction`](#2-fixedpriceauction-simplified)), where rescue mode only locks the msig out and hands the rescuer the pause. Accepted risk: a breached rescuer can lock the msig out of an auction, and by pausing it can hold depositors' tokens until `fulfillmentEnd + CLAIM_PAUSE_EXPIRY`, after which claims pay out as usual (refunds in full if the auction was never funded).
 8. **Confirmed: one factory with swappable code**, with the two-key swap (msig proposes, rescuer accepts) and rescue mode on the factory. The cost is a Solady dependency, clone-arg reads in the auction, and an `initialize` step. Every auction version also depends on one factory contract, so one bug in it reaches every auction.

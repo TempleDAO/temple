@@ -32,7 +32,7 @@ Every finding also applied to `fpa-frozen-inputs` at `ef69ca8c`: the code each o
 
 Each fix commit applies alone on the report commit.
 
-Not scanned: the scan never saw code that exists only on this branch. That is the settlement as a view over the frozen `totalDeposits` and `funding`; `emitSettlement` and the clock-settlement `AuctionSettled` event; `liabilities()` with the `totalExcluded`, `bidPaid` and `fillPaid` counters; `recoverToken` sending only the balance above `liabilities()`; the D1 bounds (`MIN_DEPOSIT_START_DELAY`, `MIN_DEPOSIT_WINDOW`); `CLAIM_PAUSE_EXPIRY`; and the flagger pause. An audit of this branch should cover these, and treat the findings above as known, with the status the table gives: check the fixes, and the open or narrowed items, rather than re-report them.
+Not scanned: the scan never saw code that exists only on this branch. That is the settlement as a view over the frozen `totalDeposits` and `funding`; `emitSettlement` and the clock-settlement `AuctionSettled` event; `liabilities()` with the `totalExcluded`, `bidPaid` and `fillPaid` counters; `recoverToken` sending only the balance above `liabilities()`; the D1 bounds (`MIN_DEPOSIT_START_DELAY`, `MIN_DEPOSIT_WINDOW`); and `CLAIM_PAUSE_EXPIRY`. An audit of this branch should cover these, and treat the findings above as known, with the status the table gives: check the fixes, and the open or narrowed items, rather than re-report them.
 
 The finding sections below are the original report, unchanged, so their code, line references and Fix diffs use `fpa-simplified`'s names.
 

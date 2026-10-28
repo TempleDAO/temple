@@ -177,8 +177,7 @@ interface IFixedPriceAuction is IRescuableAccess {
     /// `InsufficientBalance` above that.
     function recoverToken(address token, address to, uint256 amount) external;
 
-    /// @notice Pause or unpause every token-moving function. The msig, or the rescuer instead in rescue mode. A
-    /// flagger on the current list can pause but not unpause, outside rescue mode and while compliance is enabled.
+    /// @notice Pause or unpause every token-moving function. The msig, or the rescuer instead in rescue mode.
     /// `claim`, `claimTreasury` and `withdrawExcluded` ignore the pause more than `CLAIM_PAUSE_EXPIRY` after
     /// `fulfillmentEnd`.
     function setPaused(bool value) external;
@@ -228,11 +227,11 @@ interface IFixedPriceAuction is IRescuableAccess {
     /// it more than `CLAIM_PAUSE_EXPIRY` after `fulfillmentEnd`.
     function paused() external view returns (bool);
 
-    /// @notice The compliance list that screens bidders, and whose flaggers may exclude, reinstate and pause.
+    /// @notice The compliance list that screens bidders, and whose flaggers may exclude and reinstate.
     function complianceCheck() external view returns (address);
 
     /// @notice One-way: once true, nobody is flagged and the pointer can't change, so every excluded balance is
-    /// withdrawable once unpaused and flaggers can no longer exclude, reinstate or pause.
+    /// withdrawable once unpaused and flaggers can no longer exclude or reinstate.
     function complianceDisabled() external view returns (bool);
 
     /// @notice When the auction settled (unix seconds): set by `settleEarly`, or to `fulfillmentEnd` by the first
