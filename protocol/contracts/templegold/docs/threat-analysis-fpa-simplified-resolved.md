@@ -37,7 +37,7 @@ A later round ran slither-mutate over the six contracts (1,127 compiled mutants)
 - **Reentrancy:** state is written before every transfer, and a recipient-hook token re-entering `claim` hits `AlreadyClaimed`. `isBlocked` is a view and runs as a STATICCALL.
 - **Claims can't be DoS'd:** there are no loops. A claim whose shares both round to zero still succeeds.
 - **Donations:** settlement and `recoverToken` use the owed counters, not balances, so a stray transfer changes nothing.
-- **Exclusion accounting** (unit and invariant tests, not the analysis rounds): an excluded balance is never in the fill, stays held in the auction, and only its owner can withdraw it, once not flagged. `reinstate` works only during Deposit and re-runs the deposit overflow guard. `recoverToken` can't reach excluded balances.
+- **Exclusion accounting** (unit and invariant tests, not the analysis rounds): an excluded balance is never in the fill, stays held in the auction, and only its owner can withdraw it, once not blocked. `reinstate` works only during Deposit and re-runs the deposit overflow guard. `recoverToken` can't reach excluded balances.
 - **Rescuer cancel:** refunds exactly (`amount·T/T`) and can't redirect funds. It closes cleanly against `endFulfillment` in both directions and moves with a rescuer handover. The rescuer still can't `endFulfillment`, `recoverToken`, `setComplianceCheck`, `createAuction` or `proposeImplementation`.
 - **Factory and clones:**
   - **Swap safety:** acceptance is by address, so a proposal swapped after review reverts. Rescue mode on the factory cancels a pending proposal.
