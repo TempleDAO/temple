@@ -1,6 +1,8 @@
 import type { Auction, Phase, Token } from './types';
 
 // Client-side derivations over indexed fields, as the dapp will do them once wired.
+// Rules: spec/indexer-implementation-spec.md §6 (phase §6.1, claimable §6.4); fill % on
+// final auctions becomes filledBids / totalDeposits there, not funding / required.
 
 export const pairIdOf = (bid: Token, fill: Token) =>
   `${bid}-${fill}`.toLowerCase();

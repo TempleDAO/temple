@@ -19,9 +19,13 @@ import type { Auction, Token, Wish } from './types';
 
 // Every screen reads data through these hooks only. Each is shaped like the
 // indexer query or contract read that will replace it ({ data, isLoading }).
+// Spec: spec/indexer-implementation-spec.md at the repo root. §7 has the
+// GraphQL operations, §6 the render-time rules, §11 the full hook mapping and
+// what must change when wiring (bigint amounts, Token objects, address ids).
 
 const NowContext = createContext(FIXED_NOW);
 // Inject a different clock with <NowProvider value={date}>.
+// Wired: phase, deadlines and claims use T from Meta, not the wall clock (§6.1).
 export const NowProvider = NowContext.Provider;
 export const useNow = () => useContext(NowContext);
 
@@ -45,17 +49,22 @@ const query = <T>(data: T) => ({ data, isLoading: false });
 
 /* ---------- indexer reads ---------- */
 
+// AllAuctions.pairs (§7.1) + demand computed at a pinned block (§6.5, §7.6).
 export const usePairs = () => query(PAIRS);
 
+// PairPage.pair (§7.2); PairHistory.pair on the history page (§7.3).
 export const usePair = (pairId: string) =>
   query(PAIRS.find((p) => p.id === pairId));
 
+// AllAuctions.running + chart (§7.1); also EarnTgld (§7.4), MyActivity.running (§7.5).
 export const useAuctions = () => query(AUCTIONS);
 
 // Latest indexed block: freshness labels and the block wish demand is counted at.
+// Meta: _meta.block { number timestamp } → N, T for every other query (§7).
 export const useIndexerStatus = () => query(INDEXER_STATUS);
 
 // One pair's auctions, newest first.
+// PairPage.recent + running + selected (§7.2); history pages via PairHistory, number_lt cursor (§7.3).
 export const usePairAuctions = (pairId: string) =>
   query(
     useMemo(
@@ -67,17 +76,22 @@ export const usePairAuctions = (pairId: string) =>
     )
   );
 
+// MyActivity.positions (§7.5); per screen: AllAuctions.mine, PairPage.mine, EarnTgld.mine.
 export const useMyPositions = () => query(useAccount().positions);
 
+// MyActivity.wishes (§7.5); PairPage.myWish for one pair (§7.2).
 export const useMyWishes = () => query(useAccount().wishes);
 
 /* ---------- contract reads ---------- */
 
+// ERC-20 balanceOf(me) (§7.7).
 export const useWalletBalance = (token: Token) => query(WALLET[token] ?? 0);
 
+// Existing staking reads; out of the indexer's scope.
 export const useStaking = () => query(STAKING);
 
 // claimable(account) for one auction; null when nothing is owed.
+// Wired: display the §6.4 estimate from indexed fields; read claimable(me) on press (§7.7).
 export const useClaimable = (auction?: Auction) => {
   const now = useNow();
   const pos = useAccount().positions.find((p) => p.auction === auction?.id);
@@ -114,6 +128,7 @@ const setPosition = (
     };
   });
 
+// deposit / withdrawDeposit / claim txs, then poll _meta until ≥ the receipt block (§7).
 export const useAuctionActions = () => ({
   deposit: async (a: Auction, amount: number) => {
     await wallet();
@@ -129,6 +144,7 @@ export const useAuctionActions = () => ({
   },
 });
 
+// WishingWell.wish(from, to, amount, expiry), then the same _meta poll.
 // wish() replaces any earlier wish for the same pair.
 export const useWishActions = () => ({
   makeWish: async (w: Wish) => {

@@ -29,7 +29,11 @@ A pair page for a pair with no open auction redirects to the wish screen for tha
 
 ## Data
 
+The indexer and its queries are specified in [`spec/indexer-implementation-spec.md`](../../../../../../../../../spec/indexer-implementation-spec.md) (repo root). Each hook in `data/hooks.ts` has a comment naming the operation and section it maps to; §11 of the spec has the full mapping and the type changes needed when wiring.
+
 All dummy data is in `data/fixtures.ts`: the storyboard's example wallet (0x7a…41c2), its positions and wishes, and every auction. Screens read it only through the hooks in `data/hooks.ts`. Each hook returns `{ data, isLoading }` like react-query, so the hooks can be replaced with real reads without touching the screens.
+
+Summary (see the spec §11 for detail):
 
 | Hook                          | Replace with                                                                   |
 | ----------------------------- | ------------------------------------------------------------------------------ |
