@@ -97,5 +97,7 @@ export default defineConfig({
   envPrefix: 'VITE',
   server: {
     port: 3000,
+    // Local opt-in for sandboxes where macOS FSEvents delivers no events (CHOKIDAR_USEPOLLING doesn't override FSEvents).
+    watch: process.env.WATCH_POLLING ? { usePolling: true } : undefined,
   },
 });

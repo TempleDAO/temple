@@ -440,6 +440,11 @@ export const InputBox = styled.div`
   select {
     cursor: pointer;
   }
+  &:has(select)::after {
+    content: '▾';
+    color: ${C.muted};
+    pointer-events: none;
+  }
   option {
     background: #151312;
   }

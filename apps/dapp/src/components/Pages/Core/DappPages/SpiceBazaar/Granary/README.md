@@ -53,6 +53,12 @@ Simulated writes update an in-memory store, so a claim, deposit or new wish show
 
 Frame 11 embeds the existing `MyActivityTGLD` and `MyActivitySpice` components, so old Spice Bazaar claims keep working on real data. They take an `embedded` prop that hides their own sub-nav.
 
+## Local dev in a sandbox
+
+Inside the agent sandbox, macOS FSEvents delivers no file events, so Vite never sees edits. `CHOKIDAR_USEPOLLING` doesn't help, because chokidar still uses FSEvents on macOS. Start the dev server with `WATCH_POLLING=1 yarn dev` to switch Vite's watcher to polling. The flag is off by default, so the shared config and CI behave as before.
+
+Dependencies: yarn 1's tarball downloads abort through the sandbox proxy (curl, npm and plain Node download fine), so run `yarn install --frozen-lockfile` outside the sandbox. This branch was last checked against such an install (`yarn check --integrity --ignore-scripts` in sync).
+
 ## Not done yet
 
 - Phone layouts (the Moon Log).

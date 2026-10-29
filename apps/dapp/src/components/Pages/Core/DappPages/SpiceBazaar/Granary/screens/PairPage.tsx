@@ -108,7 +108,10 @@ export const PairPage = () => {
 
       {others.length > 0 && (
         <Row>
-          <Note>Two auctions are running on this pair.</Note>
+          <Note>
+            {running.length === 2 ? 'Two' : running.length} auctions are running
+            on this pair.
+          </Note>
           <Seg>
             {running.map((a) => {
               const p = phaseOf(a, now);
@@ -405,7 +408,7 @@ const ClaimCard = ({ a, phase }: { a: Auction; phase: Phase }) => {
           <Row>
             <K>Returned to you</K>
             <V>
-              {fmt(deposit - filled * (cancelled ? 0 : 1))} {a.bidToken}
+              {fmt(cancelled ? deposit : deposit - filled)} {a.bidToken}
             </V>
           </Row>
           <Row $start>
