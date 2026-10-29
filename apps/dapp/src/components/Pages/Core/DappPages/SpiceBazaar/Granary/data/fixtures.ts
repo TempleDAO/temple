@@ -243,9 +243,23 @@ export const POSITIONS: Position[] = [
 ];
 
 export const WISHES: Wish[] = [
+  // made a moment ago on the wish screen (storyboard frame 9), so it shows as new
+  {
+    from: 'TGLD',
+    to: 'wstETH',
+    amount: 2_000,
+    expiry: d('11-26T16:00'),
+    isNew: true,
+  },
   { from: 'TGLD', to: 'ENA', amount: 5_000, expiry: d('10-30T16:00') },
   { from: 'TEMPLE', to: 'USDS', amount: 25_000, expiry: d('11-26T16:00') },
 ];
+
+// The indexer's latest block, for "updated N min ago" and the pinned demand block.
+export const INDEXER_STATUS = {
+  blockNumber: 26_412_880,
+  blockTime: new Date(+FIXED_NOW - 2 * 60_000),
+};
 
 export const WALLET: Partial<Record<Token, number>> = {
   TEMPLE: 12_400,

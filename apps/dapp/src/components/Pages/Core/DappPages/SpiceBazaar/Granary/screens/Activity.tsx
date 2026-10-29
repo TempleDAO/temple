@@ -136,7 +136,7 @@ export const Activity = () => {
 const WishRow = ({ w }: { w: Wish }) => {
   const now = useNow();
   const navigate = useNavigate();
-  const { makeWish } = useWishActions();
+  const { extendWish } = useWishActions();
   const open = useRunning().find(
     ({ a }) => pairIdOf(a.bidToken, a.fillToken) === pairIdOf(w.from, w.to)
   );
@@ -170,7 +170,7 @@ const WishRow = ({ w }: { w: Wish }) => {
         )}
       </Note>
       {soon ? (
-        <Btn $ghost onClick={() => makeWish({ ...w, expiry: extendTo })}>
+        <Btn $ghost onClick={() => extendWish(w, extendTo)}>
           Extend to {fmtDay(extendTo)}
         </Btn>
       ) : (

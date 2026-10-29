@@ -11,6 +11,7 @@ import {
 } from '../data/derive';
 import {
   useAuctions,
+  useIndexerStatus,
   useMyPositions,
   useNow,
   usePairAuctions,
@@ -70,6 +71,7 @@ export const Auctions = () => {
 
 const List = () => {
   const now = useNow();
+  const indexed = useIndexerStatus().data;
   const auctions = useAuctions().data;
   const navigate = useNavigate();
   const positions = useMyPositions().data;
@@ -107,8 +109,9 @@ const List = () => {
           );
         })}
       </Card>
-      {/* shortcut: freshness is a fixed label, read the indexer's block time when wired */}
-      <SectionHead label="All pairs">updated 2 min ago</SectionHead>
+      <SectionHead label="All pairs">
+        updated {Math.round((+now - +indexed.blockTime) / 60_000)} min ago
+      </SectionHead>
       <Card $flush>
         {usePairs()
           .data.filter((p) =>

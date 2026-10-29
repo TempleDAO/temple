@@ -7,6 +7,7 @@ import {
 import {
   AUCTIONS,
   FIXED_NOW,
+  INDEXER_STATUS,
   PAIRS,
   POSITIONS,
   STAKING,
@@ -50,6 +51,9 @@ export const usePair = (pairId: string) =>
   query(PAIRS.find((p) => p.id === pairId));
 
 export const useAuctions = () => query(AUCTIONS);
+
+// Latest indexed block: freshness labels and the block wish demand is counted at.
+export const useIndexerStatus = () => query(INDEXER_STATUS);
 
 // One pair's auctions, newest first.
 export const usePairAuctions = (pairId: string) =>
@@ -129,15 +133,17 @@ export const useAuctionActions = () => ({
 export const useWishActions = () => ({
   makeWish: async (w: Wish) => {
     await wallet();
-    update((s) => ({
-      ...s,
-      wishes: [
-        {
-          ...w,
-          isNew: !s.wishes.some((x) => x.from === w.from && x.to === w.to),
-        },
-        ...s.wishes.filter((x) => x.from !== w.from || x.to !== w.to),
-      ],
-    }));
+    putWish({ ...w, isNew: true });
+  },
+  // Same wish() call with a later expiry; keeps the row's "new" tag as it was.
+  extendWish: async (w: Wish, expiry: Date) => {
+    await wallet();
+    putWish({ ...w, expiry });
   },
 });
+
+const putWish = (w: Wish) =>
+  update((s) => ({
+    ...s,
+    wishes: [w, ...s.wishes.filter((x) => x.from !== w.from || x.to !== w.to)],
+  }));
