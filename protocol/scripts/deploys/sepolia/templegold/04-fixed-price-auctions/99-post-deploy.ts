@@ -49,7 +49,10 @@ async function setFlagger({ owner, ADDRS }: DeployContext) {
     throw new Error('Set GRANARY.FLAGGER to the test Overlord address');
   }
 
-  const compliance = ComplianceCheck__factory.connect(ADDRS.GRANARY.COMPLIANCE_CHECK, owner);
+  const auction = FixedPriceAuction__factory.connect(ADDRS.GRANARY.FIXED_PRICE_AUCTION, owner);
+  const config = await auction.getConfig();
+  // Use the auction's current list, which may differ from the deployment config.
+  const compliance = ComplianceCheck__factory.connect(config.complianceCheck, owner);
   await mine(compliance.setFlagger(flagger, true));
 }
 

@@ -1,25 +1,13 @@
 # Sepolia FPA deployment scripts
 
 Prepared against `fpa-frozen-inputs` at `9239f7dae0b6247d6611d8f54f78b576ef32b2f6`.
-These files are a copy-in overlay for the Temple repository. Nothing has been deployed.
-
-## Copy into the branch
-
-Copy this folder's `protocol/` contents into the repository's `protocol/` directory.
-The seven scripts under `04-fixed-price-auctions/` are new. Three existing files have
-small additions: `default-settings.ts`, `contract-addresses/sepolia.ts` and
-`contract-addresses/types.ts`. Merge those additions if your branch has newer edits.
-
-The scripts use the existing TypeChain factories, `getDeployContext`, `deployAndMine`,
-`mine` and `runAsyncMain`. Shared helpers and the existing deployment scripts are unchanged.
-The new contracts are connected directly in the scripts that need them; no changes to
-the shared contract-instance connector are required.
 
 ## Before running
 
 - Run from `protocol/`, with the branch's dependencies installed (including Solady).
 - Run `yarn hardhat compile` to generate the current TypeChain factories.
-- Configure `SEPOLIA_RPC_URL` and `SEPOLIA_ADDRESS_PRIVATE_KEY` using your existing environment setup.
+- Configure `SEPOLIA_RPC_URL` using your existing environment setup.
+- The `yarn hh-run` wrapper prompts for the signing key without displaying it. Use your intended Sepolia signer.
 - Set `DEFAULT_SETTINGS.GRANARY.RESCUER` to a controlled test address different from
   the deployer. The existing `CORE.RESCUER_MSIG` public Anvil address is deliberately not used.
 - The deployer becomes the initial executor of the factory and compliance list.
@@ -34,25 +22,25 @@ command and saves constructor arguments under `scripts/deploys/sepolia/deploymen
 It does not automatically update `contract-addresses/sepolia.ts`.
 
 ```sh
-yarn hardhat run --network sepolia scripts/deploys/sepolia/templegold/04-fixed-price-auctions/01-fixed-price-auction-implementation.ts
+yarn hh-run sepolia scripts/deploys/sepolia/templegold/04-fixed-price-auctions/01-fixed-price-auction-implementation.ts
 ```
 
 Save the address in `GRANARY.FIXED_PRICE_AUCTION_IMPLEMENTATION`.
 
 ```sh
-yarn hardhat run --network sepolia scripts/deploys/sepolia/templegold/04-fixed-price-auctions/02-compliance-check.ts
+yarn hh-run sepolia scripts/deploys/sepolia/templegold/04-fixed-price-auctions/02-compliance-check.ts
 ```
 
 Save the address in `GRANARY.COMPLIANCE_CHECK`.
 
 ```sh
-yarn hardhat run --network sepolia scripts/deploys/sepolia/templegold/04-fixed-price-auctions/03-fixed-price-auction-factory.ts
+yarn hh-run sepolia scripts/deploys/sepolia/templegold/04-fixed-price-auctions/03-fixed-price-auction-factory.ts
 ```
 
 Save the address in `GRANARY.FIXED_PRICE_AUCTION_FACTORY`.
 
 ```sh
-yarn hardhat run --network sepolia scripts/deploys/sepolia/templegold/04-fixed-price-auctions/04-wishing-well.ts
+yarn hh-run sepolia scripts/deploys/sepolia/templegold/04-fixed-price-auctions/04-wishing-well.ts
 ```
 
 Save the address in `GRANARY.WISHING_WELL`.
@@ -69,7 +57,7 @@ the token pair of an already-created auction. Read its `getConfig()` and create 
 new auction if the existing instance uses different tokens.
 
 ```sh
-yarn hardhat run --network sepolia scripts/deploys/sepolia/templegold/04-fixed-price-auctions/05-usds-token.ts
+yarn hh-run sepolia scripts/deploys/sepolia/templegold/04-fixed-price-auctions/05-usds.ts
 ```
 
 Save the address in `EXTERNAL.SKY.USDS`. This is the existing `FakeERC20` with public
@@ -83,7 +71,7 @@ window. The extra lead hour allows transaction inclusion above the on-chain one-
 minimum. The deployer is both funder and proceeds recipient.
 
 ```sh
-yarn hardhat run --network sepolia scripts/deploys/sepolia/templegold/04-fixed-price-auctions/06-create-auction.ts
+yarn hh-run sepolia scripts/deploys/sepolia/templegold/04-fixed-price-auctions/06-create-auction.ts
 ```
 
 Save the emitted address in `GRANARY.FIXED_PRICE_AUCTION`. Each execution creates
@@ -97,7 +85,7 @@ bidder balances and allowances separately.
 `setFlagger`. Save the auction address and configure `GRANARY.FLAGGER` first.
 
 ```sh
-yarn hardhat run --network sepolia scripts/deploys/sepolia/templegold/04-fixed-price-auctions/99-post-deploy.ts
+yarn hh-run sepolia scripts/deploys/sepolia/templegold/04-fixed-price-auctions/99-post-deploy.ts
 ```
 
 TGLD authorization skips non-TGLD pairs and already-authorized auctions. If testing
@@ -112,9 +100,8 @@ script with the compliance executor. The authorization step will skip it on reru
 Existing TGLD ownership and balances still need checking; these scripts do not mint
 or bridge TGLD.
 
-Flagger setup grants `setFlagged` authority to the test Overlord. It does not flag
-any bidder. Exclusion still needs a separate call on each relevant auction. The two
-setup transactions are separate, not atomic.
+Flagger setup reads the configured auction's current `complianceCheck` and grants
+`setFlagged` authority on that list to the test Overlord.
 
 ## Indexer and verification handoff
 
@@ -127,7 +114,6 @@ clone is created by the factory, not by a standalone Solidity constructor deploy
 
 ## Validation
 
-TypeScript syntax was checked and constructor/function arguments compared with the
-pinned branch source. No deployment, transaction, Forge test, or full Hardhat/TypeChain
-type-check was run. Run `yarn hardhat compile` and the repository's TypeScript check
-after copying into the branch; this overlay alone does not contain the repo dependencies.
+Run `yarn hardhat compile` and the repository's TypeScript check before using these
+scripts. Confirm the configured addresses, roles and auction terms before sending
+transactions.
