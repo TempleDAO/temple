@@ -59,6 +59,15 @@ Save the address in `GRANARY.WISHING_WELL`.
 
 ## Optional test USDS and example auction
 
+For continuity with the frontend's earlier tests, the config now uses:
+
+- TEMPLE: `0x64a925B0fA211c44337148C0807f959Bd44b0B67`.
+- USDS stand-in: `0xBe9162230D9e637218D74C7f41f62ef2385fEe64` (previously configured as test DAI; its on-chain symbol may still be DAI).
+
+Skip step 05 when using these existing tokens. Changing this config does not change
+the token pair of an already-created auction. Read its `getConfig()` and create a
+new auction if the existing instance uses different tokens.
+
 ```sh
 yarn hardhat run --network sepolia scripts/deploys/sepolia/templegold/04-fixed-price-auctions/05-usds-token.ts
 ```
