@@ -1,6 +1,14 @@
 import {
   DaiGoldAuction,
   DaiGoldAuction__factory,
+  IComplianceCheck,
+  IComplianceCheck__factory,
+  IFixedPriceAuction,
+  IFixedPriceAuction__factory,
+  IFixedPriceAuctionFactory,
+  IFixedPriceAuctionFactory__factory,
+  IWishingWell,
+  IWishingWell__factory,
   SpiceAuction,
   SpiceAuction__factory,
   TempleCircuitBreakerAllUsersPerPeriod,
@@ -292,6 +300,41 @@ const SPICE_TOKEN_ON_ETH_SEPOLIA: TokenConfig = {
   symbol: 'SPICE',
 };
 
+// Temple Granary (PR #1312, branch fpa-frozen-inputs). The factory's
+// FixedPriceAuction implementation is 0x46F6da8E15519bC98296d9669A6E379D9db83056.
+const FIXED_PRICE_AUCTION_FACTORY_ON_ETH_SEPOLIA: ContractConfig<IFixedPriceAuctionFactory> =
+  {
+    chainId: ETH_SEPOLIA.id,
+    address: '0x3DF8314F17bfC2B1141210f3D18e2524a958A745',
+    contractFactory: IFixedPriceAuctionFactory__factory,
+  };
+
+const WISHING_WELL_ON_ETH_SEPOLIA: ContractConfig<IWishingWell> = {
+  chainId: ETH_SEPOLIA.id,
+  address: '0x3136A2Dd08dB68aB4Ce425A44a7F63084eB9668e',
+  contractFactory: IWishingWell__factory,
+};
+
+const COMPLIANCE_CHECK_ON_ETH_SEPOLIA: ContractConfig<IComplianceCheck> = {
+  chainId: ETH_SEPOLIA.id,
+  address: '0x3248B388A5BB67f1D56b2557427b38B415805B13',
+  contractFactory: IComplianceCheck__factory,
+};
+
+const FIXED_PRICE_AUCTIONS_ON_ETH_SEPOLIA: ContractConfig<IFixedPriceAuction>[] =
+  [
+    // TEMPLE → USDS #1, deposits from 31 Oct 2026 21:45 UTC
+    {
+      chainId: ETH_SEPOLIA.id,
+      address: '0x1056A19cf15AF54f77B81C89aD61Cb40445F3383',
+      contractFactory: IFixedPriceAuction__factory,
+    },
+  ];
+
+// TODO(granary-subgraph): the Granary indexer (spec/indexer-implementation-spec.md
+// on claude/granary-auctions-prototype-f26d20) isn't deployed yet.
+const GRANARY_SUBGRAPH_URL_ON_ETH_SEPOLIA = '';
+
 const testEnv: AppConfig = {
   chains: [ETH_SEPOLIA, BERACHAIN_BEPOLIA, ARB_SEPOLIA],
   tokens: {
@@ -348,6 +391,19 @@ const testEnv: AppConfig = {
       altchainTgldTokenKey: TICKER_SYMBOL.TEMPLE_GOLD_TOKEN_ARBITRUM,
       altchainDisplayName: 'Arbitrum',
     },
+  },
+  granary: {
+    chainId: ETH_SEPOLIA.id,
+    factory: FIXED_PRICE_AUCTION_FACTORY_ON_ETH_SEPOLIA,
+    wishingWell: WISHING_WELL_ON_ETH_SEPOLIA,
+    complianceCheck: COMPLIANCE_CHECK_ON_ETH_SEPOLIA,
+    auctions: FIXED_PRICE_AUCTIONS_ON_ETH_SEPOLIA,
+    wishTokens: [
+      TEMPLE_TOKEN_ON_ETH_SEPOLIA,
+      USDS_TOKEN_ON_ETH_SEPOLIA,
+      TGLD_TOKEN_ON_ETH_SEPOLIA,
+    ],
+    subgraphUrl: GRANARY_SUBGRAPH_URL_ON_ETH_SEPOLIA,
   },
 };
 

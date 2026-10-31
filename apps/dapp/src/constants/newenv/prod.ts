@@ -3,6 +3,13 @@ import { AppConfig, Chain, ContractConfig, TokenConfig } from './types';
 import {
   DaiGoldAuction,
   DaiGoldAuction__factory,
+  IComplianceCheck,
+  IComplianceCheck__factory,
+  IFixedPriceAuction,
+  IFixedPriceAuctionFactory,
+  IFixedPriceAuctionFactory__factory,
+  IWishingWell,
+  IWishingWell__factory,
   SpiceAuction,
   SpiceAuction__factory,
   TempleCircuitBreakerAllUsersPerPeriod,
@@ -265,6 +272,34 @@ const TGLD_ENA_AUCTION_ON_ETH_MAINNET: ContractConfig<SpiceAuction> = {
   contractFactory: SpiceAuction__factory,
 };
 
+// TODO(granary): Temple Granary (PR #1312) isn't deployed on mainnet yet.
+// Zero addresses until it is; the Granary shows no auctions meanwhile.
+const FIXED_PRICE_AUCTION_FACTORY_ON_ETH_MAINNET: ContractConfig<IFixedPriceAuctionFactory> =
+  {
+    chainId: ETH_MAINNET.id,
+    address: '0x0000000000000000000000000000000000000000',
+    contractFactory: IFixedPriceAuctionFactory__factory,
+  };
+
+const WISHING_WELL_ON_ETH_MAINNET: ContractConfig<IWishingWell> = {
+  chainId: ETH_MAINNET.id,
+  address: '0x0000000000000000000000000000000000000000',
+  contractFactory: IWishingWell__factory,
+};
+
+const COMPLIANCE_CHECK_ON_ETH_MAINNET: ContractConfig<IComplianceCheck> = {
+  chainId: ETH_MAINNET.id,
+  address: '0x0000000000000000000000000000000000000000',
+  contractFactory: IComplianceCheck__factory,
+};
+
+const FIXED_PRICE_AUCTIONS_ON_ETH_MAINNET: ContractConfig<IFixedPriceAuction>[] =
+  [];
+
+// TODO(granary-subgraph): the Granary indexer (spec/indexer-implementation-spec.md
+// on claude/granary-auctions-prototype-f26d20) isn't deployed yet.
+const GRANARY_SUBGRAPH_URL_ON_ETH_MAINNET = '';
+
 const prodEnv: AppConfig = {
   chains: [ETH_MAINNET, BERACHAIN_MAINNET],
   tokens: {
@@ -329,6 +364,19 @@ const prodEnv: AppConfig = {
       altchainTgldTokenKey: TICKER_SYMBOL.TEMPLE_GOLD_TOKEN_BERACHAIN,
       altchainDisplayName: 'Berachain',
     },
+  },
+  granary: {
+    chainId: ETH_MAINNET.id,
+    factory: FIXED_PRICE_AUCTION_FACTORY_ON_ETH_MAINNET,
+    wishingWell: WISHING_WELL_ON_ETH_MAINNET,
+    complianceCheck: COMPLIANCE_CHECK_ON_ETH_MAINNET,
+    auctions: FIXED_PRICE_AUCTIONS_ON_ETH_MAINNET,
+    wishTokens: [
+      TEMPLE_TOKEN_ON_ETH_MAINNET,
+      USDS_TOKEN_ON_ETH_MAINNET,
+      TGLD_TOKEN_ON_ETH_MAINNET,
+    ],
+    subgraphUrl: GRANARY_SUBGRAPH_URL_ON_ETH_MAINNET,
   },
 };
 

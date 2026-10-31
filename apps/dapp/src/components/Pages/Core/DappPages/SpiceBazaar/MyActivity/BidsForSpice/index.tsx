@@ -12,7 +12,12 @@ import { useWallet } from 'providers/WalletProvider';
 import { useSpiceAuction } from 'providers/SpiceAuctionProvider';
 import { formatNumberWithCommasAndDecimals } from 'utils/formatter';
 
-export const MyActivitySpice = () => {
+// embedded: shown inside another page (the Granary), so skip the sub-nav
+export const MyActivitySpice = ({
+  embedded = false,
+}: {
+  embedded?: boolean;
+}) => {
   const redeemAmount = useMyActivityRedeemAmountSpice();
 
   const { currentUser } = useSpiceAuction();
@@ -38,7 +43,7 @@ export const MyActivitySpice = () => {
 
   return (
     <PageContainer>
-      <MyActivityTopNav />
+      {!embedded && <MyActivityTopNav />}
       <Title>
         <TitleText>Bids for Spice</TitleText>
         <LinkIcon

@@ -42,6 +42,21 @@ export type SpiceAuctionConfig = {
   subgraphUrl: string;
 };
 
+// Temple Granary: FixedPriceAuction (cloned by FixedPriceAuctionFactory) and
+// WishingWell. A zero address means not deployed on this chain yet.
+export type GranaryConfig = {
+  chainId: ChainId;
+  factory: ContractConfig<Contract>;
+  wishingWell: ContractConfig<Contract>;
+  complianceCheck: ContractConfig<Contract>;
+  // TODO(granary-subgraph): the indexer will list every auction from the
+  // factory's AuctionCreated events. Until then the dapp reads these directly.
+  auctions: ContractConfig<Contract>[];
+  // Tokens the wish screen offers: any give → get pair of two of them.
+  wishTokens: TokenConfig[];
+  subgraphUrl: string;
+};
+
 export type AppConfig = {
   chains: Chain[];
   tokens: {
@@ -83,6 +98,7 @@ export type AppConfig = {
       altchainDisplayName: string;
     };
   };
+  granary: GranaryConfig;
 };
 
 type contractFactory<T extends Contract> = {
