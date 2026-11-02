@@ -3,8 +3,6 @@ import {
   DaiGoldAuction__factory,
   IComplianceCheck,
   IComplianceCheck__factory,
-  IFixedPriceAuction,
-  IFixedPriceAuction__factory,
   IFixedPriceAuctionFactory,
   IFixedPriceAuctionFactory__factory,
   IWishingWell,
@@ -321,19 +319,9 @@ const COMPLIANCE_CHECK_ON_ETH_SEPOLIA: ContractConfig<IComplianceCheck> = {
   contractFactory: IComplianceCheck__factory,
 };
 
-const FIXED_PRICE_AUCTIONS_ON_ETH_SEPOLIA: ContractConfig<IFixedPriceAuction>[] =
-  [
-    // TEMPLE → USDS #1, deposits from 31 Oct 2026 21:45 UTC
-    {
-      chainId: ETH_SEPOLIA.id,
-      address: '0x1056A19cf15AF54f77B81C89aD61Cb40445F3383',
-      contractFactory: IFixedPriceAuction__factory,
-    },
-  ];
-
-// TODO(granary-subgraph): the Granary indexer (spec/indexer-implementation-spec.md
-// on claude/granary-auctions-prototype-f26d20) isn't deployed yet.
-const GRANARY_SUBGRAPH_URL_ON_ETH_SEPOLIA = '';
+// The Granary indexer: the Spice Bazaar subgraph from v0.6.0.
+const GRANARY_SUBGRAPH_URL_ON_ETH_SEPOLIA =
+  'https://api.goldsky.com/api/public/project_cmgzm4q1q009c5np2angrczxw/subgraphs/spice-bazaar-sepolia/v0.6.0/gn';
 
 const testEnv: AppConfig = {
   chains: [ETH_SEPOLIA, BERACHAIN_BEPOLIA, ARB_SEPOLIA],
@@ -397,7 +385,6 @@ const testEnv: AppConfig = {
     factory: FIXED_PRICE_AUCTION_FACTORY_ON_ETH_SEPOLIA,
     wishingWell: WISHING_WELL_ON_ETH_SEPOLIA,
     complianceCheck: COMPLIANCE_CHECK_ON_ETH_SEPOLIA,
-    auctions: FIXED_PRICE_AUCTIONS_ON_ETH_SEPOLIA,
     wishTokens: [
       TEMPLE_TOKEN_ON_ETH_SEPOLIA,
       USDS_TOKEN_ON_ETH_SEPOLIA,

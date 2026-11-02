@@ -16,6 +16,7 @@ import {
   useGranaryWallet,
   useMyWishes,
   useNow,
+  useWallClock,
   usePair,
   usePairAuctions,
   useWalletBalance,
@@ -156,6 +157,8 @@ const WishPanel = ({
   initialAmount: string;
 }) => {
   const now = useNow();
+  // the wish's expiry is now + duration on the wall clock
+  const wall = useWallClock();
   const navigate = useNavigate();
   const { setWish } = useWishActions();
   const { account } = useGranaryWallet();
@@ -169,11 +172,11 @@ const WishPanel = ({
   const [stage, setStage] = useState<'form' | 'confirm' | 'well' | 'done'>(
     'form'
   );
-  const [made, setMade] = useState({ n: 0, until: now });
+  const [made, setMade] = useState({ n: 0, until: wall });
   const clean = amount.replace(/,/g, '').trim();
   const n = parseFloat(clean);
   const over = !!account && n > balance;
-  const until = addDays(now, days);
+  const until = addDays(wall, days);
 
   const cast = async () => {
     setStage('confirm');
@@ -267,7 +270,7 @@ const WishPanel = ({
             >
               {DURATIONS.map((d) => (
                 <option key={d} value={d}>
-                  {d} days · {fmtDayYear(addDays(now, d))}
+                  {d} days · {fmtDayYear(addDays(wall, d))}
                 </option>
               ))}
             </select>

@@ -14,6 +14,7 @@ import {
   useIndexerStatus,
   useMyPositions,
   useNow,
+  useWallClock,
   usePairAuctions,
   usePairs,
 } from '../data/hooks';
@@ -72,6 +73,7 @@ export const Auctions = () => {
 const List = () => {
   const now = useNow();
   const indexed = useIndexerStatus().data;
+  const wall = useWallClock();
   const auctions = useAuctions().data;
   const navigate = useNavigate();
   const positions = useMyPositions().data;
@@ -109,13 +111,11 @@ const List = () => {
           );
         })}
       </Card>
-      {/* TODO(granary-subgraph): "updated" should be the indexer's _meta.block
-          time; today it's the RPC's latest block, so it always reads 0. */}
       <SectionHead label="All pairs">
         {indexed &&
           `updated ${Math.max(
             0,
-            Math.round((+now - +indexed.blockTime) / 60_000)
+            Math.round((+wall - +indexed.blockTime) / 60_000)
           )} min ago`}
       </SectionHead>
       <Card $flush>
@@ -150,7 +150,7 @@ const PairRow = ({ pair }: { pair: Pair }) => {
         <Mk>
           {pair.bidToken} → {pair.fillToken}
         </Mk>
-        {pair.wishedFor !== undefined && (
+        {!!pair.wishedFor && (
           <Note>
             {fmtM(pair.wishedFor)} {pair.bidToken} wished for
           </Note>

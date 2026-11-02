@@ -49,11 +49,9 @@ export type GranaryConfig = {
   factory: ContractConfig<Contract>;
   wishingWell: ContractConfig<Contract>;
   complianceCheck: ContractConfig<Contract>;
-  // TODO(granary-subgraph): the indexer will list every auction from the
-  // factory's AuctionCreated events. Until then the dapp reads these directly.
-  auctions: ContractConfig<Contract>[];
   // Tokens the wish screen offers: any give → get pair of two of them.
   wishTokens: TokenConfig[];
+  // the Granary indexer (the Spice Bazaar subgraph, v0.6.0+); empty = none yet
   subgraphUrl: string;
 };
 

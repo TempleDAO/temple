@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { TopNav } from 'components/Pages/Core/DappPages/SpiceBazaar/components/TopNav';
 import Loader from 'components/Loader/Loader';
 import { GranaryProvider, useGranary } from 'providers/GranaryProvider';
-import { NowProvider, useTickingNow } from './data/hooks';
+import { NowProvider, useTickingNow, WallClockProvider } from './data/hooks';
 import { BASE, paths } from './paths';
 
 const TABS = [
@@ -27,7 +27,7 @@ const TABS = [
 
 export const GranaryLayout = () => (
   <GranaryProvider>
-    <NowProvider value={useTickingNow()}>
+    <Clocks>
       <Content>
         <Nav />
         <Body>
@@ -36,9 +36,20 @@ export const GranaryLayout = () => (
           </Ready>
         </Body>
       </Content>
-    </NowProvider>
+    </Clocks>
   </GranaryProvider>
 );
+
+// useNow() is the indexer's block time; useWallClock() the browser's.
+const Clocks = ({ children }: { children: JSX.Element }) => {
+  const wall = useTickingNow();
+  const indexed = useGranary().indexerStatus.data?.blockTime;
+  return (
+    <WallClockProvider value={wall}>
+      <NowProvider value={indexed ?? wall}>{children}</NowProvider>
+    </WallClockProvider>
+  );
+};
 
 const Nav = () => {
   const { pathname } = useLocation();

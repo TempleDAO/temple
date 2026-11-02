@@ -12,10 +12,13 @@ import {
   isRunning,
   pairName,
   phaseOf,
+  settlementFor,
 } from '../data/derive';
 import {
   useAuctionActions,
+  useClaimable,
   useGranaryWallet,
+  useIsFlagged,
   useMyPositions,
   useNow,
   usePair,
@@ -55,6 +58,17 @@ const useDeposit = (a?: Auction) =>
 const CLAIM_PAUSE_EXPIRY_DAYS = 30;
 const claimsPaused = (a: Auction, now: Date) =>
   a.paused && now <= addDays(a.fulfillmentEnd, CLAIM_PAUSE_EXPIRY_DAYS);
+
+// TempleGold only moves for authorised contracts: until this auction is,
+// TGLD can't go in or come out of it.
+const tgldBlocked = (a: Auction) =>
+  a.tgldAuthorized === false &&
+  (a.bidToken === 'TGLD' || a.fillToken === 'TGLD');
+
+const FLAGGED_NOTE =
+  "This wallet is on the auction's compliance list, so it can't deposit, withdraw or claim.";
+const TGLD_NOTE =
+  "Temple Gold hasn't authorised this auction yet, so TGLD can't move in or out of it.";
 
 export const PairPage = () => {
   const { pairId = '' } = useParams();
@@ -138,7 +152,7 @@ export const PairPage = () => {
 
       <Spine auction={selected} now={now} />
 
-      {phase === 'Deposit' && !selected.paused ? (
+      {phase === 'Deposit' && !selected.paused && !tgldBlocked(selected) ? (
         <Grid2>
           <DepositCard a={selected} balance={balance} />
           <PositionCard a={selected} />
@@ -205,7 +219,8 @@ const DepositCard = ({ a, balance }: { a: Auction; balance: number }) => {
   const n = parseFloat(clean);
   const over = !!account && n > balance;
   const below = n > 0 && current + n < a.minDeposit;
-  const ok = n > 0 && !over && !below;
+  const flagged = useIsFlagged(a);
+  const ok = n > 0 && !over && !below && !flagged;
   return (
     <Card $hot>
       <Row>
@@ -258,6 +273,7 @@ const DepositCard = ({ a, balance }: { a: Auction; balance: number }) => {
       >
         Deposit
       </TxBtn>
+      {flagged && <Note $bad>{FLAGGED_NOTE}</Note>}
       {done && <Note>{done}</Note>}
     </Card>
   );
@@ -266,6 +282,7 @@ const DepositCard = ({ a, balance }: { a: Auction; balance: number }) => {
 const PositionCard = ({ a }: { a: Auction }) => {
   const { withdrawDeposit } = useAuctionActions();
   const pos = useDeposit(a);
+  const flagged = useIsFlagged(a);
   if (!pos?.deposit) return null;
   return (
     <Card>
@@ -290,6 +307,7 @@ const PositionCard = ({ a }: { a: Auction }) => {
       <Row $start>
         <TxBtn
           $ghost
+          disabled={flagged}
           onClick={async () => {
             await withdrawDeposit(a, 'all');
           }}
@@ -341,6 +359,7 @@ const RunningCard = ({ a, phase }: { a: Auction; phase: Phase }) => {
           </V>
         </Row>
       ) : null}
+      {tgldBlocked(a) && <Note $bad>{TGLD_NOTE}</Note>}
       <Note>
         {a.paused
           ? `Paused by the Temple. ${
@@ -387,9 +406,28 @@ const ClaimCard = ({ a, phase }: { a: Auction; phase: Phase }) => {
   const now = useNow();
   const pos = useDeposit(a);
   const paused = claimsPaused(a, now);
+  const flagged = useIsFlagged(a);
+  const blocked = paused || flagged || tgldBlocked(a);
   const cancelled = phase === 'Cancelled';
   const deposit = pos?.deposit ?? 0;
-  const filled = deposit * (fillPct(a) / 100);
+  // Exact figures: what the claim paid once claimed, claimable(me) before;
+  // the settlement estimate only while that read is loading.
+  const claimable = useClaimable(a).data;
+  const paid =
+    pos?.claimed && pos.claimedFill !== undefined
+      ? {
+          filledBid: deposit - (pos.claimedRefund ?? 0),
+          fill: pos.claimedFill,
+          refund: pos.claimedRefund ?? 0,
+        }
+      : null;
+  const s = paid ??
+    claimable ??
+    settlementFor(a, deposit, now) ?? {
+      filledBid: 0,
+      fill: 0,
+      refund: deposit,
+    };
   return (
     <Card $hot={deposit > 0 && !pos?.claimed}>
       <Row>
@@ -425,21 +463,20 @@ const ClaimCard = ({ a, phase }: { a: Auction; phase: Phase }) => {
             <Row>
               <K>Filled at {fmtPrice(a.price)}</K>
               <V>
-                {fmt(filled)} {a.bidToken} → {fmt(filled * a.price)}{' '}
-                {a.fillToken}
+                {fmt(s.filledBid)} {a.bidToken} → {fmt(s.fill)} {a.fillToken}
               </V>
             </Row>
           )}
           <Row>
             <K>Returned to you</K>
             <V>
-              {fmt(cancelled ? deposit : deposit - filled)} {a.bidToken}
+              {fmt(s.refund)} {a.bidToken}
             </V>
           </Row>
           <Row $start>
             {!pos?.claimed ? (
               <TxBtn
-                disabled={paused}
+                disabled={blocked}
                 onClick={async () => {
                   await claim(a);
                 }}
@@ -451,7 +488,11 @@ const ClaimCard = ({ a, phase }: { a: Auction; phase: Phase }) => {
             )}
           </Row>
           <Note>
-            {paused && !pos?.claimed
+            {flagged && !pos?.claimed
+              ? FLAGGED_NOTE
+              : tgldBlocked(a) && !pos?.claimed
+              ? TGLD_NOTE
+              : paused && !pos?.claimed
               ? `Claims are paused by the Temple until it unpauses, or ${fmtDayTime(
                   addDays(a.fulfillmentEnd, CLAIM_PAUSE_EXPIRY_DAYS)
                 )} at the latest.`
@@ -470,8 +511,11 @@ const ExcludedCard = ({ a }: { a: Auction }) => {
   const { withdrawExcluded } = useAuctionActions();
   const now = useNow();
   const pos = useDeposit(a);
+  const flagged = useIsFlagged(a);
   if (!pos?.excluded) return null;
   const paused = claimsPaused(a, now);
+  // withdrawExcluded() pays bid tokens: only a TGLD bid needs authorisation
+  const tgld = a.bidToken === 'TGLD' && a.tgldAuthorized === false;
   return (
     <Card>
       <Row>
@@ -481,7 +525,11 @@ const ExcludedCard = ({ a }: { a: Auction }) => {
         </V>
       </Row>
       <Note>
-        {paused
+        {flagged
+          ? FLAGGED_NOTE
+          : tgld
+          ? TGLD_NOTE
+          : paused
           ? `The auction is paused. You can withdraw this once it unpauses, or ${fmtDayTime(
               addDays(a.fulfillmentEnd, CLAIM_PAUSE_EXPIRY_DAYS)
             )} at the latest.`
@@ -490,7 +538,7 @@ const ExcludedCard = ({ a }: { a: Auction }) => {
       <Row $start>
         <TxBtn
           $ghost
-          disabled={paused}
+          disabled={paused || flagged || tgld}
           onClick={async () => {
             await withdrawExcluded(a);
           }}

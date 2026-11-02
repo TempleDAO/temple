@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { fillPct, fmtDay, fmtMonth, pairIdOf, phaseOf } from '../data/derive';
-import { useAuctions, useNow, usePairs } from '../data/hooks';
+import { useAuctions, useNow, usePairs, useWallClock } from '../data/hooks';
 import type { Auction } from '../data/types';
 import { C, Moon, Note, Row, Seg, TextLink } from '../ui';
 import { paths } from '../paths';
@@ -29,10 +29,10 @@ const lanes = (auctions: Auction[]) => {
 
 export const SkyChart = () => {
   const now = useNow();
+  // the window and today line use the wall clock; phases use indexed time
+  const wall = useWallClock();
   const navigate = useNavigate();
   const pairs = usePairs().data;
-  // TODO(granary-subgraph): every auction in the chart window (spec §7.1).
-  // Today only the auctions listed in config.
   const auctions = useAuctions().data;
   const [range, setRange] = useState<Range>('4 months');
   const [showQuiet, setShowQuiet] = useState(false);
@@ -43,9 +43,9 @@ export const SkyChart = () => {
   );
   const start =
     range === '4 months'
-      ? monthStart(now, 3)
+      ? monthStart(wall, 3)
       : range === '1 year'
-      ? monthStart(now, 12)
+      ? monthStart(wall, 12)
       : monthStart(earliest);
   const rows = pairs.map((pair) => ({
     pair,
@@ -59,7 +59,7 @@ export const SkyChart = () => {
   const active = rows.filter((r) => r.ls.length);
   // Pairs with no auctions in range fold into one line; each gets a "+ Wish" when opened.
   const quiet = rows.filter((r) => !r.ls.length).map((r) => r.pair);
-  const end = new Date(+monthStart(now, -1) + 15 * 864e5);
+  const end = new Date(+monthStart(wall, -1) + 15 * 864e5);
   const x = (d: Date) =>
     `${Math.max(0, ((+d - +start) / (+end - +start)) * 100).toFixed(2)}%`;
   const w = (a: Date, b: Date) => `calc(${x(b)} - ${x(a)})`;
@@ -168,7 +168,7 @@ export const SkyChart = () => {
                     );
                   })
                 )}
-                <Today style={{ left: x(now) }} />
+                <Today style={{ left: x(wall) }} />
               </Track>,
             ];
           })}
@@ -204,7 +204,7 @@ export const SkyChart = () => {
         </Grid>
       </Scroll>
       <Note>
-        Dashed line: today, {fmtDay(now)}. Each line is one auction, ending in
+        Dashed line: today, {fmtDay(wall)}. Each line is one auction, ending in
         its moon. Click a moon to open it.
       </Note>
     </>

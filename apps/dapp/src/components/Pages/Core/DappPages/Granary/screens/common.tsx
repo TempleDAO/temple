@@ -211,7 +211,7 @@ export const WishLine = ({ pair }: { pair: Pair }) => {
           Your wish for {wish.give} → {wish.get}: {fmt(wish.amount)} {wish.give}{' '}
           until {fmtDayTime(wish.expiresAt)}.
         </Note>
-        <TextLink to={paths.wish(wish.give, wish.get, wish.amount)}>
+        <TextLink to={paths.wish(wish.give, wish.get, wish.amountExact)}>
           Edit wish
         </TextLink>
       </Row>

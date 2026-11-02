@@ -38,10 +38,9 @@ export const Earn = () => {
   const tgld = useWalletBalance('TGLD').data;
   const staking = useStaking().data;
   const positions = useMyPositions().data;
-  // TODO(granary-subgraph): also filter on tgldAuthorized (TempleGold's
-  // ContractAuthorizationSet for the auction), indexed per auction (spec §7.4).
+  // only auctions TempleGold has authorised to take TGLD
   const rows = useRunning()
-    .filter(({ a }) => a.bidToken === 'TGLD')
+    .filter(({ a }) => a.bidToken === 'TGLD' && a.tgldAuthorized === true)
     .sort((x, y) => RANK[x.p] - RANK[y.p]);
   const mine = (id: string) =>
     positions.find((p) => p.auction === id && p.deposit > 0)?.deposit;

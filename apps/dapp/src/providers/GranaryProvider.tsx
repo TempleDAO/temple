@@ -3,6 +3,7 @@ import {
   PropsWithChildren,
   useCallback,
   useContext,
+  useLayoutEffect,
   useMemo,
   useRef,
 } from 'react';
@@ -46,8 +47,9 @@ import {
 // claims, and WishingWell wishes. Screens read it through the hooks in
 // Granary/data/hooks.ts.
 //
-// All data comes from a GranaryDataSource: today liveSource.ts, reading the
-// contracts in getAppConfig().granary (Sepolia on test, mainnet on prod).
+// All data comes from a GranaryDataSource: liveSource.ts, reading the Granary
+// indexer and the contracts in getAppConfig().granary (Sepolia on test,
+// mainnet on prod).
 
 export type GranaryQuery<T> = {
   data: T;
@@ -82,6 +84,8 @@ type GranaryContextValue = {
   wishes: GranaryQuery<Wish[]>;
   balances: GranaryQuery<Balances>;
   staking: GranaryQuery<StakingSummary | undefined>;
+  // compliance lists that flag the connected account (indexer docs: design A)
+  flaggedLists: GranaryQuery<string[]>;
   actions: GranaryActions;
 };
 
@@ -102,6 +106,8 @@ export const granaryKeys = {
     [...granaryKeys.account(account), 'balances'] as const,
   staking: (account?: string) =>
     [...granaryKeys.account(account), 'staking'] as const,
+  flagged: (account: string | undefined, lists: string[]) =>
+    [...granaryKeys.account(account), 'flagged', ...lists] as const,
   claimable: (account: string | undefined, auctionId: string) =>
     [...granaryKeys.account(account), 'claimable', auctionId] as const,
 };
@@ -143,17 +149,20 @@ export const GranaryProvider = ({ children }: PropsWithChildren) => {
   // The source asks for the wallet when it sends; keep the latest callbacks.
   const config = getAppConfig();
   const wallet = useRef<GranaryWallet>();
-  wallet.current = {
-    getSigner: async () => {
-      await switchNetwork(config.granary.chainId);
-      const signer = getConnectedSigner();
-      if ((await signer.getChainId()) !== config.granary.chainId)
-        throw new GranaryError('WrongNetwork');
-      return signer;
-    },
-    ensureAllowance: (symbol, token, spender, amount, signer) =>
-      ensureAllowanceWithSigner(symbol, token, spender, amount, true, signer),
-  };
+  // written after commit, so a discarded render can't leave stale callbacks
+  useLayoutEffect(() => {
+    wallet.current = {
+      getSigner: async () => {
+        await switchNetwork(config.granary.chainId);
+        const signer = getConnectedSigner();
+        if ((await signer.getChainId()) !== config.granary.chainId)
+          throw new GranaryError('WrongNetwork');
+        return signer;
+      },
+      ensureAllowance: (symbol, token, spender, amount, signer) =>
+        ensureAllowanceWithSigner(symbol, token, spender, amount, true, signer),
+    };
+  });
   const source = useMemo(
     () =>
       createLiveSource({
@@ -231,6 +240,25 @@ export const GranaryProvider = ({ children }: PropsWithChildren) => {
     queryKey: granaryKeys.staking(account),
     queryFn: () => source.getStaking(account as string),
     ...accountOpts,
+  });
+
+  // isFlagged(me) once per distinct compliance list the auctions use
+  const lists = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          (auctions.data ?? [])
+            .map((a) => a.complianceCheck)
+            .filter((l): l is string => !!l)
+        )
+      ).sort(),
+    [auctions.data]
+  );
+  const flaggedLists = useQuery({
+    queryKey: granaryKeys.flagged(account, lists),
+    queryFn: () => source.getFlaggedLists(account as string, lists),
+    ...accountOpts,
+    enabled: !!account && lists.length > 0,
   });
 
   /* ---------- writes ---------- */
@@ -341,6 +369,7 @@ export const GranaryProvider = ({ children }: PropsWithChildren) => {
     wishes: toQuery(wishes, EMPTY),
     balances: toQuery(balances, {}),
     staking: toQuery(staking, undefined),
+    flaggedLists: toQuery(flaggedLists, EMPTY),
     actions,
   };
 

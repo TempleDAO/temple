@@ -13,7 +13,7 @@ export const paths = {
   auction: (a: Auction) =>
     paths.pair(pairIdOf(a.bidToken, a.fillToken), a.number),
   history: (pairId: string) => `${BASE}/pair/${pairId}/history`,
-  wish: (give?: Token, get?: Token, amount?: number) =>
+  wish: (give?: Token, get?: Token, amount?: string) =>
     `${BASE}/wish${
       give && get
         ? `?give=${give}&get=${get}${amount ? `&amount=${amount}` : ''}`

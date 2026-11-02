@@ -26,8 +26,6 @@ export const PairHistory = () => {
   const now = useNow();
   const navigate = useNavigate();
   const pair = usePair(pairId).data;
-  // TODO(granary-subgraph): a pair's full history, paged by `number` (spec
-  // §7.3). Today only the auctions listed in config.
   const auctions = usePairAuctions(pairId).data;
   const positions = useMyPositions().data;
   const [onlyMine, setOnlyMine] = useState(false);

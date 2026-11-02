@@ -5,7 +5,6 @@ import {
   DaiGoldAuction__factory,
   IComplianceCheck,
   IComplianceCheck__factory,
-  IFixedPriceAuction,
   IFixedPriceAuctionFactory,
   IFixedPriceAuctionFactory__factory,
   IWishingWell,
@@ -293,11 +292,7 @@ const COMPLIANCE_CHECK_ON_ETH_MAINNET: ContractConfig<IComplianceCheck> = {
   contractFactory: IComplianceCheck__factory,
 };
 
-const FIXED_PRICE_AUCTIONS_ON_ETH_MAINNET: ContractConfig<IFixedPriceAuction>[] =
-  [];
-
-// TODO(granary-subgraph): the Granary indexer (spec/indexer-implementation-spec.md
-// on claude/granary-auctions-prototype-f26d20) isn't deployed yet.
+// TODO(granary): the mainnet Granary indexer isn't deployed yet.
 const GRANARY_SUBGRAPH_URL_ON_ETH_MAINNET = '';
 
 const prodEnv: AppConfig = {
@@ -370,7 +365,6 @@ const prodEnv: AppConfig = {
     factory: FIXED_PRICE_AUCTION_FACTORY_ON_ETH_MAINNET,
     wishingWell: WISHING_WELL_ON_ETH_MAINNET,
     complianceCheck: COMPLIANCE_CHECK_ON_ETH_MAINNET,
-    auctions: FIXED_PRICE_AUCTIONS_ON_ETH_MAINNET,
     wishTokens: [
       TEMPLE_TOKEN_ON_ETH_MAINNET,
       USDS_TOKEN_ON_ETH_MAINNET,

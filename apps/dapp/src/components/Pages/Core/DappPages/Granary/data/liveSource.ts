@@ -14,6 +14,7 @@ import type {
 } from 'constants/newenv/types';
 import {
   ERC20__factory,
+  IComplianceCheck__factory,
   IFixedPriceAuction,
   IFixedPriceAuction__factory,
   IWishingWell,
@@ -23,10 +24,18 @@ import {
 } from 'types/typechain';
 import { estimateAndMine } from 'utils/ethers';
 import { pairIdOf } from './derive';
+import {
+  createIndexer,
+  RawAuction,
+  RawMeta,
+  RawPosition,
+  RawWish,
+} from './indexer';
 import { GranaryDataSource, GranaryError, GranaryErrorCode } from './source';
 import type {
   Auction,
   Balances,
+  IndexerStatus,
   Pair,
   Position,
   Token,
@@ -34,12 +43,10 @@ import type {
   Wish,
 } from './types';
 
-// GranaryDataSource over the contracts in getAppConfig().granary, read through
-// the chain's RPC with no indexer.
-//
-// TODO(granary-subgraph): the reads below that loop over every configured
-// auction or token pair, or can't be answered on-chain at all, move to the
-// Granary indexer (spec/indexer-implementation-spec.md §7). Each one is marked.
+// GranaryDataSource for getAppConfig().granary. Auctions, pairs, positions and
+// wishes come from the Granary indexer, each read pinned to its latest block.
+// Wallet balances, claimable(), staking and compliance are contract reads,
+// as the indexer docs prescribe. Writes wait until the indexer has the block.
 
 // What the source needs from the connected wallet, supplied by GranaryProvider.
 export type GranaryWallet = {
@@ -65,31 +72,21 @@ export type LiveSourceDeps = {
 
 type TokenMeta = { address: string; symbol: Token; decimals: number };
 
-// The auction's terms, fixed at creation.
-type AuctionTerms = {
-  bid: TokenMeta;
-  fill: TokenMeta;
-  price: number;
-  depositStart: Date;
-  depositEnd: Date;
-  fulfillmentEnd: Date;
-  minDeposit: number;
-};
-
-const PHASES = [
-  'Scheduled',
-  'Deposit',
-  'Fulfillment',
-  'Settlement',
-  'Cancelled',
-] as const;
+// How long one _meta read pins every read that follows it.
+const META_TTL_MS = 5_000;
+// After a transaction: how often and how long to wait for the indexer.
+const INDEX_POLL_MS = 2_000;
+const INDEX_TIMEOUT_MS = 90_000;
 
 export const isDeployed = (c?: { address?: string }) =>
   !!c?.address && c.address !== constants.AddressZero;
 
-const toNum = (v: BigNumber, decimals: number) =>
+const toNum = (v: BigNumber | string, decimals: number) =>
   Number(utils.formatUnits(v, decimals));
-const toDate = (secs: BigNumber | number) => new Date(Number(secs) * 1000);
+const toDate = (secs: BigNumber | number | string) =>
+  new Date(Number(secs) * 1000);
+const optDate = (secs: string) => (secs === '0' ? undefined : toDate(secs));
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 const parseAmount = (amount: string, decimals: number) => {
   let v: BigNumber;
@@ -146,6 +143,7 @@ const findRevertData = (err: unknown, depth = 0): string | undefined => {
 };
 
 const toGranaryError = (err: unknown): unknown => {
+  if (err instanceof GranaryError) return err;
   const e = err as { code?: unknown; message?: string };
   if (e?.code === 'ACTION_REJECTED' || e?.code === 4001)
     return new GranaryError('UserRejected');
@@ -163,6 +161,56 @@ const toGranaryError = (err: unknown): unknown => {
   return err;
 };
 
+/* ---------- wish demand (indexer docs, "Demand") ---------- */
+
+// Demand for one pair at time T: per account, its unexpired wish less what it
+// has bought in the pair's auctions settled since it set the wish. No balance
+// cap. Buckets (e.g. USDS + USDC as one "stables" side) aren't configured yet,
+// so each pair stands alone.
+const demandByPair = (
+  wishes: RawWish[],
+  positions: RawPosition[],
+  T: number,
+  tokenOf: (address: string) => TokenMeta | undefined
+) => {
+  const out = new Map<string, number>(); // pair id (addresses) → bid tokens
+  const pairKey = (from: string, to: string) =>
+    `${from}${to.slice(2)}`.toLowerCase();
+  for (const w of wishes) {
+    const from = tokenOf(w.fromToken);
+    if (!from) continue;
+    const active = w.fromAmount !== '0' && Number(w.expiresAt) > T;
+    const wished = active ? toNum(w.fromAmount, from.decimals) : 0;
+    if (!wished) continue;
+    const key = pairKey(w.fromToken, w.toToken);
+    // the wish's setAt is its pair's reset point: only later fills count
+    const R = Number(w.setAt);
+    let filled = 0;
+    for (const p of positions) {
+      const a = p.auctionInstance as RawAuction;
+      if (!a.id || p.user.id.toLowerCase() !== w.account.toLowerCase())
+        continue;
+      if (pairKey(a.bidToken.id, a.auctionToken.id) !== key) continue;
+      const final =
+        a.outcome === 'Settled' ||
+        (a.outcome === 'None' && T >= Number(a.fulfillmentEnd));
+      if (!final) continue;
+      const settleTime = a.settlementEmitted
+        ? Number(a.settledAt)
+        : Number(a.fulfillmentEnd);
+      if (settleTime <= R) continue;
+      const deposit = Number(p.totalBidAmount);
+      if (!deposit) continue;
+      if (p.hasClaimed) filled += deposit - Number(p.claimedRefundAmount);
+      else if (a.totalDeposits !== '0')
+        filled +=
+          deposit * (1 - Number(a.userRefund) / Number(a.totalDeposits));
+    }
+    out.set(key, (out.get(key) ?? 0) + Math.max(0, wished - filled));
+  }
+  return out;
+};
+
 /* ---------- the source ---------- */
 
 export const createLiveSource = ({
@@ -173,7 +221,7 @@ export const createLiveSource = ({
   getWallet,
 }: LiveSourceDeps): GranaryDataSource => {
   const provider = papi.getProvider(config.chainId);
-  const auctionConfigs = config.auctions.filter(isDeployed);
+  const indexer = config.subgraphUrl ? createIndexer(config.subgraphUrl) : null;
   const wellDeployed = isDeployed(config.wishingWell);
   const well = IWishingWell__factory.connect(
     config.wishingWell.address,
@@ -197,134 +245,94 @@ export const createLiveSource = ({
       }));
   const wishTokens = onChain(config.wishTokens);
 
-  const byAddress = new Map<string, Promise<TokenMeta>>();
-  // configured symbols win over the token's own (Sepolia's USDS calls itself DAI)
+  // Only tokens in the app's config are shown, with the config's symbol: the
+  // indexer reads symbols from the token contracts, and Sepolia's USDS calls
+  // itself DAI. Auctions and wishes in other tokens are left out.
+  const known = new Map<string, TokenMeta>();
   for (const t of [...wishTokens, ...onChain(tokens)]) {
     const key = t.address.toLowerCase();
-    if (!byAddress.has(key)) byAddress.set(key, Promise.resolve(t));
+    if (!known.has(key)) known.set(key, t);
   }
+  const tokenOf = (address: string) => known.get(address.toLowerCase());
 
-  const tokenAt = (address: string) => {
-    const key = address.toLowerCase();
-    let t = byAddress.get(key);
-    if (!t) {
-      const erc20 = ERC20__factory.connect(address, provider);
-      t = Promise.all([erc20.symbol(), erc20.decimals()]).then(
-        ([symbol, decimals]) => ({ address, symbol, decimals })
-      );
-      byAddress.set(key, t);
+  /* ----- the pinned block ----- */
+
+  let meta: { at: number; value: Promise<RawMeta> } | undefined;
+  const pinned = (fresh = false) => {
+    if (!indexer) throw new Error('No Granary indexer configured');
+    if (fresh || !meta || Date.now() - meta.at > META_TTL_MS) {
+      const value = indexer.meta();
+      value.catch(() => (meta = undefined));
+      meta = { at: Date.now(), value };
     }
-    return t;
+    return meta.value;
+  };
+
+  // After a write: wait for the indexer to reach the transaction's block.
+  const waitForIndexed = async (block: number) => {
+    if (!indexer) return;
+    const until = Date.now() + INDEX_TIMEOUT_MS;
+    while (Date.now() < until) {
+      if ((await pinned(true)).block.number >= block) return;
+      await sleep(INDEX_POLL_MS);
+    }
+    console.warn(`Granary indexer hasn't reached block ${block} yet`);
   };
 
   /* ----- auctions ----- */
 
-  // An auction's terms never change, so read them once.
-  const terms = new Map<string, Promise<AuctionTerms>>();
-  const termsOf = (address: string) => {
-    let t = terms.get(address);
-    if (!t) {
-      t = auctionAt(address)
-        .getConfig()
-        .then(async (c) => {
-          const [bid, fill] = await Promise.all([
-            tokenAt(c.bidToken),
-            tokenAt(c.fillToken),
-          ]);
-          return {
-            bid,
-            fill,
-            // fill tokens per whole bid token, scaled by 1e18
-            price: toNum(c.price, 18),
-            depositStart: toDate(c.depositStart),
-            depositEnd: toDate(c.depositEnd),
-            fulfillmentEnd: toDate(c.fulfillmentEnd),
-            minDeposit: toNum(c.minDeposit, bid.decimals),
-          };
-        });
-      t.catch(() => terms.delete(address));
-      terms.set(address, t);
-    }
-    return t;
-  };
-
-  const readAuction = async (address: string, blockTime: Date) => {
-    const fpa = auctionAt(address);
-    const [t, phase, paused, totalDeposits, funding, settledAt, settlement] =
-      await Promise.all([
-        termsOf(address),
-        fpa.phase(),
-        fpa.paused(),
-        fpa.totalDeposits(),
-        fpa.funding(),
-        fpa.settledAt(),
-        fpa.settlement(),
-      ]);
-    const p = PHASES[phase];
-    // phase() says Settlement before fulfillmentEnd only after settleEarly()
-    const early = p === 'Settlement' && blockTime < t.fulfillmentEnd;
-    const auction: Omit<Auction, 'number'> = {
-      id: address,
-      bidToken: t.bid.symbol,
-      fillToken: t.fill.symbol,
-      price: t.price,
-      // TODO(granary-subgraph): createdAt and cancelledAt come from the
-      // AuctionCreated / AuctionCancelled events.
-      createdAt: undefined,
-      depositStart: t.depositStart,
-      depositEnd: t.depositEnd,
-      fulfillmentEnd: t.fulfillmentEnd,
-      outcome: p === 'Cancelled' ? 'Cancelled' : early ? 'Settled' : 'None',
-      settledAt:
-        settledAt > 0 ? toDate(settledAt) : early ? blockTime : undefined,
-      cancelledAt: undefined,
-      paused,
-      totalDeposits: toNum(totalDeposits, t.bid.decimals),
-      funding: toNum(funding, t.fill.decimals),
-      filledBids: toNum(settlement.filledBids, t.bid.decimals),
-      minDeposit: t.minDeposit,
+  const toAuction = (r: RawAuction): Auction | null => {
+    const bid = tokenOf(r.bidToken.id);
+    const fill = tokenOf(r.auctionToken.id);
+    if (!bid || !fill) return null;
+    return {
+      id: r.fixedPriceAuction.id,
+      bidToken: bid.symbol,
+      fillToken: fill.symbol,
+      number: r.number,
+      // fill tokens per whole bid token, scaled by 1e18
+      price: toNum(r.fixedPrice, 18),
+      createdAt: toDate(r.createdAt),
+      depositStart: toDate(r.depositStart),
+      depositEnd: toDate(r.depositEnd),
+      fulfillmentEnd: toDate(r.fulfillmentEnd),
+      outcome: r.outcome,
+      settledAt: r.settlementEmitted ? optDate(r.settledAt) : undefined,
+      cancelledAt:
+        r.outcome === 'Cancelled' ? optDate(r.cancelledAt) : undefined,
+      paused: r.paused,
+      totalDeposits: toNum(r.totalDeposits, bid.decimals),
+      funding: toNum(r.funding, fill.decimals),
+      filledBids: toNum(r.filledBids, bid.decimals),
+      minDeposit: toNum(r.minDeposit, bid.decimals),
+      complianceCheck: r.complianceDisabled
+        ? undefined
+        : r.complianceCheck.toLowerCase(),
+      tgldAuthorized: r.tgldAuthorized,
     };
-    return auction;
   };
 
-  const blockTime = async () => {
-    const b = await provider.getBlock('latest');
-    return { blockNumber: b.number, blockTime: toDate(b.timestamp) };
+  // The auction's tokens, for amounts sent to the contract.
+  const termsOf = async (a: Auction) => {
+    const ts = Array.from(known.values());
+    const bid = ts.find((t) => t.symbol === a.bidToken);
+    const fill = ts.find((t) => t.symbol === a.fillToken);
+    if (!bid || !fill) throw new Error(`Unknown tokens for ${a.id}`);
+    return { bid, fill };
   };
 
-  // TODO(granary-subgraph): one query for every auction the factory created,
-  // with the indexer's per-pair `number`. Today: each configured auction, read
-  // directly (7 calls each), numbered per pair by deposit start.
-  const getAuctions = async (): Promise<Auction[]> => {
-    const { blockTime: now } = await blockTime();
-    const read = await Promise.all(
-      auctionConfigs.map((c) => readAuction(c.address, now))
-    );
-    const seen = new Map<string, number>();
-    return read
-      .sort((a, b) => +a.depositStart - +b.depositStart)
-      .map((a) => {
-        const pair = pairIdOf(a.bidToken, a.fillToken);
-        const number = (seen.get(pair) ?? 0) + 1;
-        seen.set(pair, number);
-        return { ...a, number };
-      });
-  };
-
-  const auctionTerms = async (a: Auction) => termsOf(a.id);
-
-  // Every ordered pair of wish tokens, plus every auction's pair.
-  const wishPairs = async () => {
-    const pairs = new Map<string, [TokenMeta, TokenMeta]>();
-    for (const g of wishTokens)
-      for (const t of wishTokens)
-        if (g.address !== t.address)
-          pairs.set(pairIdOf(g.symbol, t.symbol), [g, t]);
-    for (const c of auctionConfigs) {
-      const t = await termsOf(c.address);
-      pairs.set(pairIdOf(t.bid.symbol, t.fill.symbol), [t.bid, t.fill]);
-    }
-    return Array.from(pairs.values());
+  const toPosition = (p: RawPosition): Position | null => {
+    const a = p.auctionInstance as RawAuction;
+    if (!a.id || !tokenOf(a.bidToken.id) || !tokenOf(a.auctionToken.id))
+      return null;
+    return {
+      auction: a.fixedPriceAuction.id,
+      deposit: Number(p.totalBidAmount),
+      claimed: p.hasClaimed,
+      excluded: Number(p.excludedAmount),
+      claimedFill: p.hasClaimed ? Number(p.claimedAmount) : undefined,
+      claimedRefund: p.hasClaimed ? Number(p.claimedRefundAmount) : undefined,
+    };
   };
 
   /* ----- wallet ----- */
@@ -332,95 +340,131 @@ export const createLiveSource = ({
   const send = async (
     build: (signer: Signer) => Promise<PopulatedTransaction>
   ): Promise<TxReceipt> => {
+    let receipt;
     try {
       const signer = await getWallet().getSigner();
-      const receipt = await estimateAndMine(signer, await build(signer));
-      return { hash: receipt.transactionHash };
+      receipt = await estimateAndMine(signer, await build(signer));
     } catch (err) {
       throw toGranaryError(err);
     }
+    await waitForIndexed(receipt.blockNumber);
+    return { hash: receipt.transactionHash, blockNumber: receipt.blockNumber };
   };
 
   // Wishes made this session, for the "new" chip.
   const madeThisSession = new Set<string>();
+  const wishKey = (account: string, give: Token, get: Token) =>
+    `${account}:${pairIdOf(give, get)}`.toLowerCase();
+
+  const wishToken = (symbol: Token) =>
+    wishTokens.find((t) => t.symbol === symbol);
 
   return {
-    getAuctions,
+    async getIndexerStatus(): Promise<IndexerStatus> {
+      if (!indexer)
+        return {
+          blockNumber: 0,
+          blockTime: new Date(),
+          hasIndexingErrors: false,
+        };
+      const m = await pinned();
+      return {
+        blockNumber: m.block.number,
+        blockTime: toDate(m.block.timestamp),
+        hasIndexingErrors: m.hasIndexingErrors,
+      };
+    },
 
-    // TODO(granary-subgraph): Pair entities, with wishedFor computed from
-    // WishSet rows and fills at a pinned block (spec §6.5). Wish demand is
-    // aggregated across every account, so it can't be read from the contract.
-    // Today: one pair per configured auction's (bid, fill).
+    async getAuctions() {
+      if (!indexer) return [];
+      const N = (await pinned()).block.number;
+      return (await indexer.auctions(N))
+        .map(toAuction)
+        .filter((a): a is Auction => !!a);
+    },
+
+    // Every pair with an auction or a wish, with its wish demand.
     async getPairs() {
-      const pairs = new Map<string, Pair>();
-      for (const c of auctionConfigs) {
-        const t = await termsOf(c.address);
-        const id = pairIdOf(t.bid.symbol, t.fill.symbol);
-        pairs.set(id, {
+      if (!indexer) return [];
+      const m = await pinned();
+      const N = m.block.number;
+      const [pairs, wishes, positions] = await Promise.all([
+        indexer.pairs(N),
+        indexer.wishes(N),
+        indexer.demandPositions(N),
+      ]);
+      const demand = demandByPair(
+        wishes,
+        positions,
+        m.block.timestamp,
+        tokenOf
+      );
+      const out = new Map<string, Pair>();
+      const add = (bidAddr: string, fillAddr: string) => {
+        const bid = tokenOf(bidAddr);
+        const fill = tokenOf(fillAddr);
+        if (!bid || !fill) return;
+        const id = pairIdOf(bid.symbol, fill.symbol);
+        if (out.has(id)) return;
+        out.set(id, {
           id,
-          bidToken: t.bid.symbol,
-          fillToken: t.fill.symbol,
-          wishedFor: undefined,
+          bidToken: bid.symbol,
+          fillToken: fill.symbol,
+          // hidden while the indexer reports errors (docs: suppress demand)
+          wishedFor: m.hasIndexingErrors
+            ? undefined
+            : demand.get(`${bidAddr}${fillAddr.slice(2)}`.toLowerCase()) ?? 0,
         });
-      }
-      return Array.from(pairs.values());
+      };
+      pairs.forEach((p) => add(p.bidToken.id, p.fillToken.id));
+      wishes.forEach((w) => add(w.fromToken, w.toToken));
+      return Array.from(out.values());
     },
 
     async getWishTokens() {
       return wellDeployed ? wishTokens.map((t) => t.symbol) : [];
     },
 
-    getIndexerStatus: blockTime,
-
-    // TODO(granary-subgraph): FixedPriceAuctionPosition rows for the account
-    // (with claimedFill / claimedRefund). Today: 3 calls per configured auction.
     async getPositions(account) {
-      const rows = await Promise.all(
-        auctionConfigs.map(async (c): Promise<Position> => {
-          const fpa = auctionAt(c.address);
-          const [t, deposit, claimed, excluded] = await Promise.all([
-            termsOf(c.address),
-            fpa.deposits(account),
-            fpa.claimed(account),
-            fpa.excluded(account),
-          ]);
-          return {
-            auction: c.address,
-            deposit: toNum(deposit, t.bid.decimals),
-            claimed,
-            excluded: toNum(excluded, t.bid.decimals),
-          };
-        })
-      );
-      return rows.filter((p) => p.deposit > 0 || p.excluded > 0);
+      if (!indexer) return [];
+      const N = (await pinned()).block.number;
+      return (await indexer.myPositions(N, account.toLowerCase()))
+        .map(toPosition)
+        .filter(
+          (p): p is Position =>
+            !!p && (p.deposit > 0 || p.excluded > 0 || p.claimed)
+        );
     },
 
-    // TODO(granary-subgraph): the account's WishSet rows. Today: wishOf for
-    // every configured token pair, so wishes for other tokens don't show.
     async getWishes(account) {
-      if (!wellDeployed) return [];
-      const pairs = await wishPairs();
-      const rows = await Promise.all(
-        pairs.map(async ([give, get]): Promise<Wish | null> => {
-          const w = await well.wishOf(account, give.address, get.address);
-          if (w.fromAmount.isZero()) return null;
-          const key = `${account}:${pairIdOf(give.symbol, get.symbol)}`;
-          return {
+      if (!indexer || !wellDeployed) return [];
+      const N = (await pinned()).block.number;
+      const rows = await indexer.myWishes(N, account.toLowerCase());
+      return rows.flatMap((w): Wish[] => {
+        const give = tokenOf(w.fromToken);
+        const get = tokenOf(w.toToken);
+        if (!give || !get) return [];
+        return [
+          {
             give: give.symbol,
             get: get.symbol,
             amount: toNum(w.fromAmount, give.decimals),
+            amountExact: utils.formatUnits(w.fromAmount, give.decimals),
             expiresAt: toDate(w.expiresAt),
-            isNew: madeThisSession.has(key.toLowerCase()),
-          };
-        })
-      );
-      return rows.filter((w): w is Wish => !!w);
+            isNew: madeThisSession.has(
+              wishKey(account, give.symbol, get.symbol)
+            ),
+          },
+        ];
+      });
     },
+
+    /* ----- contract reads ----- */
 
     async getClaimable(account, a) {
       const fpa = auctionAt(a.id);
       const [t, c, deposit] = await Promise.all([
-        auctionTerms(a),
+        termsOf(a),
         fpa.claimable(account),
         fpa.deposits(account),
       ]);
@@ -432,21 +476,20 @@ export const createLiveSource = ({
       };
     },
 
+    // Every configured token on the Granary chain.
     async getBalances(account) {
-      const seen = new Map<string, TokenMeta>();
-      wishTokens.forEach((t) => seen.set(t.symbol, t));
-      for (const c of auctionConfigs) {
-        const t = await termsOf(c.address);
-        seen.set(t.bid.symbol, t.bid);
-        seen.set(t.fill.symbol, t.fill);
-      }
       const out: Balances = {};
       await Promise.all(
-        Array.from(seen.values()).map(async (t) => {
-          const v = await ERC20__factory.connect(t.address, provider).balanceOf(
-            account
-          );
-          out[t.symbol] = toNum(v, t.decimals);
+        Array.from(known.values()).map(async (t) => {
+          try {
+            const v = await ERC20__factory.connect(
+              t.address,
+              provider
+            ).balanceOf(account);
+            out[t.symbol] = toNum(v, t.decimals);
+          } catch (err) {
+            console.warn(`Granary: balanceOf failed for ${t.symbol}`, err);
+          }
         })
       );
       return out;
@@ -466,15 +509,33 @@ export const createLiveSource = ({
       return { staked: toNum(staked, 18), rewards: toNum(rewards, 18) };
     },
 
+    async getFlaggedLists(account, lists) {
+      const flagged = await Promise.all(
+        lists.map(async (list) => {
+          try {
+            return (await IComplianceCheck__factory.connect(
+              list,
+              provider
+            ).isFlagged(account))
+              ? list
+              : null;
+          } catch {
+            return list; // a reverted read counts as flagged
+          }
+        })
+      );
+      return flagged.filter((l): l is string => !!l);
+    },
+
     /* ----- writes ----- */
 
     async deposit(account, a, amount) {
-      const t = await auctionTerms(a);
-      const v = parseAmount(amount, t.bid.decimals);
+      const { bid } = await termsOf(a);
+      const v = parseAmount(amount, bid.decimals);
       return send(async (signer) => {
         await getWallet().ensureAllowance(
-          t.bid.symbol,
-          t.bid.address,
+          bid.symbol,
+          bid.address,
           a.id,
           v,
           signer
@@ -484,11 +545,11 @@ export const createLiveSource = ({
     },
 
     async withdrawDeposit(account, a, amount) {
-      const t = await auctionTerms(a);
+      const { bid } = await termsOf(a);
       const v =
         amount === 'all'
           ? await auctionAt(a.id).deposits(account)
-          : parseAmount(amount, t.bid.decimals);
+          : parseAmount(amount, bid.decimals);
       if (v.isZero()) throw new GranaryError('NothingToClaim');
       return send((signer) =>
         auctionAt(a.id).connect(signer).populateTransaction.withdrawDeposit(v)
@@ -509,35 +570,38 @@ export const createLiveSource = ({
 
     async setWish(account, { give, get, amount, durationDays }) {
       if (!wellDeployed) throw new GranaryError('NotDeployed');
-      const g = wishTokens.find((t) => t.symbol === give);
-      const r = wishTokens.find((t) => t.symbol === get);
+      const g = wishToken(give);
+      const r = wishToken(get);
       if (!g || !r || g === r) throw new GranaryError('InvalidAmount');
       const v = parseAmount(amount, g.decimals);
-      // the expiry is set from the wall clock (spec §6.1)
+      // the expiry is set from the wall clock (indexer docs, render rules)
       const expiresAt = Math.floor(Date.now() / 1000 + durationDays * 86_400);
       const receipt = await send((signer) =>
         well
           .connect(signer)
           .populateTransaction.wish(g.address, r.address, v, expiresAt)
       );
-      madeThisSession.add(`${account}:${pairIdOf(give, get)}`.toLowerCase());
+      madeThisSession.add(wishKey(account, give, get));
       return receipt;
     },
 
     async revokeWish(account, w) {
       if (!wellDeployed) throw new GranaryError('NotDeployed');
-      const g = await wishPairs().then((ps) =>
-        ps.find(([a, b]) => a.symbol === w.give && b.symbol === w.get)
+      const g = tokenOf(
+        Array.from(known.values()).find((t) => t.symbol === w.give)?.address ??
+          ''
       );
-      if (!g) throw new GranaryError('InvalidAmount');
+      const r = tokenOf(
+        Array.from(known.values()).find((t) => t.symbol === w.get)?.address ??
+          ''
+      );
+      if (!g || !r) throw new GranaryError('InvalidAmount');
       const receipt = await send((signer) =>
         well
           .connect(signer)
-          .populateTransaction.wish(g[0].address, g[1].address, 0, 0)
+          .populateTransaction.wish(g.address, r.address, 0, 0)
       );
-      madeThisSession.delete(
-        `${account}:${pairIdOf(w.give, w.get)}`.toLowerCase()
-      );
+      madeThisSession.delete(wishKey(account, w.give, w.get));
       return receipt;
     },
   };

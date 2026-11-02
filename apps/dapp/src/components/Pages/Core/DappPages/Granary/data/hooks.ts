@@ -11,10 +11,12 @@ import type { Auction, Token } from './types';
 
 const TICK_MS = 30_000;
 const NowContext = createContext<Date | null>(null);
-// Inject a fixed clock with <NowProvider value={date}> (stories, tests).
+const WallClockContext = createContext<Date | null>(null);
+// Inject clocks with these (stories, tests).
 export const NowProvider = NowContext.Provider;
+export const WallClockProvider = WallClockContext.Provider;
 
-// The current time, updated every 30s so countdowns and phases move.
+// The wall clock, updated every 30s.
 export const useTickingNow = () => {
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
@@ -24,9 +26,21 @@ export const useTickingNow = () => {
   return now;
 };
 
+// The indexer's block time: phases, countdowns and everything else derived
+// from indexed data use it, so they agree with that data (indexer docs,
+// render rules).
 export const useNow = () => {
   const now = useContext(NowContext);
   if (!now) throw new Error('useNow must be used inside NowProvider');
+  return now;
+};
+
+// The wall clock: only for freshness labels, chart "today" and wish expiry
+// dates, which the wish transaction sets from the wall clock.
+export const useWallClock = () => {
+  const now = useContext(WallClockContext);
+  if (!now)
+    throw new Error('useWallClock must be used inside WallClockProvider');
   return now;
 };
 
@@ -90,6 +104,12 @@ export const useClaimable = (auction?: Auction) => {
     data: owes ? q.data ?? null : null,
     isLoading: q.isInitialLoading,
   };
+};
+
+// Whether the connected account is blocked by this auction's compliance list.
+export const useIsFlagged = (auction?: Auction) => {
+  const lists = useGranary().flaggedLists.data;
+  return !!auction?.complianceCheck && lists.includes(auction.complianceCheck);
 };
 
 /* ---------- writes ---------- */

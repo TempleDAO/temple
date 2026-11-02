@@ -1,8 +1,7 @@
 import type { Auction, Phase, Token } from './types';
 
-// Client-side derivations over auction fields.
-// TODO(granary-subgraph): phase should use the indexer's _meta.block.timestamp,
-// not the wall clock (spec §6.1).
+// Client-side derivations over auction fields. Pass the indexer's block time
+// (useNow) as `now`, not the wall clock.
 
 export const pairIdOf = (bid: Token, fill: Token) =>
   `${bid}-${fill}`.toLowerCase();
@@ -57,15 +56,13 @@ const pad = (n: number) => String(n).padStart(2, '0');
 export const fmt = (n: number) =>
   n.toLocaleString('en-US', { maximumFractionDigits: 0 });
 
+// Millions for big figures; small ones in full, so a quiet auction doesn't read "0.0M".
 export const fmtM = (n: number) => {
+  if (Math.abs(n) < 100_000) return fmt(n);
   let s = (n / 1e6).toPrecision(3);
   if (s.includes('.')) s = s.replace(/0+$/, '').replace(/\.$/, '.0');
   return `${s}M`;
 };
-
-// A whole-token amount as a plain decimal string, for parseUnits.
-export const amountString = (n: number) =>
-  n.toLocaleString('en-US', { useGrouping: false, maximumFractionDigits: 18 });
 
 export const fmtPrice = (p: number) => p.toFixed(p < 0.1 ? 4 : 2);
 

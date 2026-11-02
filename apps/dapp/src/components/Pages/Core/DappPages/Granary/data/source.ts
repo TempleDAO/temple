@@ -13,25 +13,29 @@ import type {
 } from './types';
 
 // Everything GranaryProvider reads and writes goes through this interface.
-// liveSource.ts implements it on the contracts in getAppConfig().granary.
-// Reads marked TODO(granary-subgraph) are per-contract today and move to the
-// Granary indexer once it is deployed.
+// liveSource.ts implements it: auctions, pairs, positions and wishes from the
+// Granary indexer; balances, claims, staking and compliance from the contracts
+// in getAppConfig().granary.
 export interface GranaryDataSource {
-  /* ---------- auction and pair reads ---------- */
+  /* ---------- indexer reads, pinned to one block ---------- */
   getAuctions(): Promise<Auction[]>;
   getPairs(): Promise<Pair[]>;
   getWishTokens(): Promise<Token[]>;
-  // the block the data was read at (the indexer's _meta.block once it exists)
   getIndexerStatus(): Promise<IndexerStatus>;
 
   /* ---------- account reads ---------- */
   getPositions(account: string): Promise<Position[]>;
   getWishes(account: string): Promise<Wish[]>;
+
+  /* ---------- contract reads ---------- */
   getClaimable(account: string, auction: Auction): Promise<Settlement | null>;
   getBalances(account: string): Promise<Balances>;
   getStaking(account: string): Promise<StakingSummary>;
+  // The compliance lists (of those given) that flag the account. A list whose
+  // isFlagged() reverts counts as flagging it.
+  getFlaggedLists(account: string, lists: string[]): Promise<string[]>;
 
-  /* ---------- writes: each resolves once the transaction is mined ---------- */
+  /* ---------- writes: each resolves once mined and indexed ---------- */
   // FixedPriceAuction.deposit(amount), after ensuring the bid token allowance
   deposit(
     account: string,

@@ -57,7 +57,7 @@ export const MyActivityTGLD = ({
   );
 
   return (
-    <PageContainer>
+    <PageContainer $embedded={embedded}>
       {!embedded && <MyActivityTopNav />}
       <Title>
         <TitleText>Bids for TGLD</TitleText>
@@ -141,7 +141,8 @@ export const MyActivityTGLD = ({
   );
 };
 
-const PageContainer = styled.div`
+// The negative margin tucks the page under its sub-nav; embedded, there is none.
+const PageContainer = styled.div<{ $embedded?: boolean }>`
   margin-top: -40px;
   display: flex;
   flex-direction: column;
@@ -153,6 +154,8 @@ const PageContainer = styled.div`
     margin-top: -20px;
     gap: 40px;
   `)}
+
+  ${({ $embedded }) => ($embedded ? 'margin-top: 0;' : '')}
 `;
 
 const ContentContainer = styled.div`

@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import type { Auction, Phase, Wish } from '../data/types';
+import type { Auction, Phase, Position, Wish } from '../data/types';
 import {
   addDays,
-  amountString,
   auctionName,
   fillPct,
   fmt,
@@ -20,6 +19,7 @@ import {
   useMyPositions,
   useMyWishes,
   useNow,
+  useWallClock,
   useWishActions,
 } from '../data/hooks';
 import { MyActivityTGLD } from 'components/Pages/Core/DappPages/SpiceBazaar/MyActivity/BidsForTGLD';
@@ -72,9 +72,6 @@ export const Activity = () => {
   const now = useNow();
   const navigate = useNavigate();
   const auctions = useAuctions().data;
-  // TODO(granary-subgraph): the account's positions and activity rows across
-  // every auction, with claimed amounts (spec §7.5). Today: configured
-  // auctions only, and a claimed row can't show what it paid.
   const mine = useMyPositions()
     .data.filter((p) => p.deposit > 0)
     .flatMap((pos) => {
@@ -136,13 +133,7 @@ export const Activity = () => {
       <SectionHead label="Past auctions" />
       <Card $flush>
         {past.map(({ pos, a, p }) => (
-          <PastRow
-            key={a.id}
-            a={a}
-            p={p}
-            deposit={pos.deposit}
-            claimed={pos.claimed}
-          />
+          <PastRow key={a.id} a={a} p={p} pos={pos} />
         ))}
         {!past.length && <Note>No past auctions.</Note>}
       </Card>
@@ -154,13 +145,14 @@ const EXTEND_DAYS = 30;
 
 const WishRow = ({ w }: { w: Wish }) => {
   const now = useNow();
+  const wall = useWallClock();
   const navigate = useNavigate();
   const { setWish, revokeWish } = useWishActions();
   const open = useRunning().find(
     ({ a }) => pairIdOf(a.bidToken, a.fillToken) === pairIdOf(w.give, w.get)
   );
   const soon = +w.expiresAt - +now < 7 * 864e5;
-  const extendTo = addDays(now, EXTEND_DAYS);
+  const extendTo = addDays(wall, EXTEND_DAYS);
   return (
     <ListRow>
       <Coin />
@@ -197,7 +189,7 @@ const WishRow = ({ w }: { w: Wish }) => {
               await setWish({
                 give: w.give,
                 get: w.get,
-                amount: amountString(w.amount),
+                amount: w.amountExact,
                 durationDays: EXTEND_DAYS,
               });
             }}
@@ -207,7 +199,7 @@ const WishRow = ({ w }: { w: Wish }) => {
         ) : (
           <Btn
             $ghost
-            onClick={() => navigate(paths.wish(w.give, w.get, w.amount))}
+            onClick={() => navigate(paths.wish(w.give, w.get, w.amountExact))}
           >
             Edit wish
           </Btn>
@@ -233,20 +225,15 @@ const Actions = styled.span`
   gap: 6px;
 `;
 
-const PastRow = ({
-  a,
-  p,
-  deposit,
-  claimed,
-}: {
-  a: Auction;
-  p: Phase;
-  deposit: number;
-  claimed: boolean;
-}) => {
+const PastRow = ({ a, p, pos }: { a: Auction; p: Phase; pos: Position }) => {
   const now = useNow();
   const navigate = useNavigate();
-  const s = settlementFor(a, deposit, now);
+  const { claimed } = pos;
+  // claimed: what claim() paid; otherwise the estimate from the settlement
+  const s =
+    claimed && pos.claimedFill !== undefined
+      ? { fill: pos.claimedFill, refund: pos.claimedRefund ?? 0 }
+      : settlementFor(a, pos.deposit, now);
   const go = () => navigate(paths.auction(a));
   return (
     <ListRow {...clickable(go)}>

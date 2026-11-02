@@ -43,6 +43,10 @@ export type Auction = {
   // settlement().filledBids: bid tokens the funding fills
   filledBids?: number;
   minDeposit: number;
+  // the compliance list deposits and claims check; undefined once disabled
+  complianceCheck?: string;
+  // TempleGold allows this auction to move TGLD; null when neither leg is TGLD
+  tgldAuthorized: boolean | null;
 };
 
 // The connected account's deposit in one auction.
@@ -52,6 +56,9 @@ export type Position = {
   claimed: boolean;
   // deposit moved out of the fill by exclude(); refund only, via withdrawExcluded()
   excluded: number;
+  // what claim() paid, once claimed
+  claimedFill?: number;
+  claimedRefund?: number;
 };
 
 // What claim() pays one depositor (IFixedPriceAuction.UserClaim).
@@ -62,13 +69,22 @@ export type Settlement = { filledBid: number; fill: number; refund: number };
 export type Wish = {
   give: Token;
   get: Token;
-  amount: number;
+  amount: number; // for display
+  // the stored amount exactly, as a decimal string: edits and extensions
+  // resend it, and `amount` can be off in the last decimals
+  amountExact: string;
   expiresAt: Date;
   // made during this session (client-only, spec §7.5)
   isNew?: boolean;
 };
 
-export type IndexerStatus = { blockNumber: number; blockTime: Date };
+// The indexer's latest block: every read is pinned to it, and phases use its
+// time rather than the wall clock.
+export type IndexerStatus = {
+  blockNumber: number;
+  blockTime: Date;
+  hasIndexingErrors: boolean;
+};
 
 export type StakingSummary = { staked: number; rewards: number };
 
@@ -82,4 +98,4 @@ export type SetWishRequest = {
 };
 
 // A mined transaction.
-export type TxReceipt = { hash: string };
+export type TxReceipt = { hash: string; blockNumber: number };
