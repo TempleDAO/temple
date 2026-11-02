@@ -108,7 +108,7 @@
     "basic-ftp": "5.2.2",
     "gh-pages": "5.0.0",
     "underscore": "1.13.8",
-    "handlebars": "4.7.9",
+    "handlebars": "4.7.10",
     "crypto-es": "2.1.0",
     "axios": "0.32.0",
     "@coinbase/wallet-sdk": "4.3.0",

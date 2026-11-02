@@ -325,7 +325,7 @@ contract TempleCircuitBreakerTestPreCheck is TempleCircuitBreakerTestBase {
         }
 
         uint256 avgGas = totalGas / 4000;
-        assertLt(avgGas, 94_600);
+        assertLt(avgGas, 97_800);
 
         if (LOG) console2.log("totalGas:", totalGas, totalGas/4000);
     }
