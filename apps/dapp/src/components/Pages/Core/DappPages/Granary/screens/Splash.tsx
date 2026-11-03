@@ -1,5 +1,6 @@
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import styled from 'styled-components';
+import styled, { css } from 'styled-components';
+import { phone } from 'styles/breakpoints';
 import paintedWell from 'assets/images/granary-painted-well.webp';
 import type { Phase } from '../data/types';
 import { Btn, C, Eyebrow, Moon, Note, TextLink } from '../ui';
@@ -249,6 +250,27 @@ const Wrap = styled.div<{ $painted: boolean }>`
       url(${paintedWell}) center 40% / cover no-repeat;
     > div { max-width: 380px; padding-bottom: 0; }
   `}
+  /* one column on a phone: the words, then the art */
+  ${phone(css`
+    grid-template-columns: minmax(0, 1fr);
+    padding: 22px 20px 0;
+  `)}
+  ${({ $painted }) =>
+    $painted &&
+    phone(css`
+      min-height: 0;
+      padding: 220px 20px 24px;
+      background: linear-gradient(
+          180deg,
+          rgba(11, 10, 10, 0) 0,
+          rgba(11, 10, 10, 0) 110px,
+          #0b0a0a 220px
+        ),
+        url(${paintedWell}) center top / 100% auto no-repeat, #0b0a0a;
+      > div {
+        max-width: none;
+      }
+    `)}
 `;
 
 const Copy = styled.div`
@@ -266,6 +288,9 @@ const Title = styled.h2`
   font-size: 34px;
   line-height: 1.15;
   margin: 0;
+  ${phone(css`
+    font-size: 30px;
+  `)}
   color: ${({ theme }) => theme.palette.brandLight};
 `;
 

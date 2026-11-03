@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
+import styled, { css } from 'styled-components';
+import { phone } from 'styles/breakpoints';
 import { fillPct, fmtDay, fmtMonth, pairIdOf, phaseOf } from '../data/derive';
 import { useAuctions, useNow, usePairs, useWallClock } from '../data/hooks';
 import type { Auction } from '../data/types';
@@ -36,6 +37,13 @@ export const SkyChart = () => {
   const auctions = useAuctions().data;
   const [range, setRange] = useState<Range>('4 months');
   const [showQuiet, setShowQuiet] = useState(false);
+  // On a narrow screen the chart scrolls sideways: open it at the right-hand
+  // end, where today is.
+  const scroll = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const el = scroll.current;
+    if (el) el.scrollLeft = el.scrollWidth;
+  }, [range]);
 
   const earliest = auctions.reduce(
     (m, a) => (a.depositStart < m ? a.depositStart : m),
@@ -90,7 +98,7 @@ export const SkyChart = () => {
           ))}
         </Seg>
       </Row>
-      <Scroll>
+      <Scroll ref={scroll}>
         <Grid>
           <Label />
           <Axis>
@@ -220,8 +228,17 @@ const Grid = styled.div`
   grid-template-columns: 140px minmax(0, 1fr);
   font-size: 11px;
   padding-right: 34px;
+  ${phone(css`
+    min-width: 520px;
+    grid-template-columns: 96px minmax(0, 1fr);
+  `)}
 `;
+// Pinned to the left while the chart scrolls under it.
 const Label = styled.div`
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  background: #0b0a0a;
   ${({ theme }) => theme.typography.fonts.fontHeading};
   font-size: 13px;
   color: ${({ theme }) => theme.palette.brandLight};

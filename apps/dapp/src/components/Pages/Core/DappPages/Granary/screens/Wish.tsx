@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import styled, { keyframes } from 'styled-components';
+import styled, { css, keyframes } from 'styled-components';
+import { phone } from 'styles/breakpoints';
 import type { Token } from '../data/types';
 import {
   addDays,
@@ -306,6 +307,9 @@ const Fields = styled.div`
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 10px;
+  ${phone(css`
+    grid-template-columns: minmax(0, 1fr);
+  `)}
 `;
 
 /* ---------- the well: a coin drops in and the water ripples ---------- */

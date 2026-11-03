@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
-import styled from 'styled-components';
+import styled, { css } from 'styled-components';
+import { phone } from 'styles/breakpoints';
 import type { Auction } from '../data/types';
 import {
   fillPct,
@@ -86,11 +87,13 @@ export const PairHistory = () => {
             const kind =
               p === 'Cancelled' ? 'can' : p === 'Settlement' ? '' : 'live';
             return (
-              <div key={a.id}>
-                <span
-                  className={kind}
-                  style={{ height: `${kind ? 100 : fillPct(a)}%` }}
-                />
+              <div key={a.id} title={`#${a.number} · ${filled(a)}`}>
+                <b>
+                  <span
+                    className={kind}
+                    style={{ height: `${kind ? 100 : fillPct(a)}%` }}
+                  />
+                </b>
                 <i>#{a.number}</i>
               </div>
             );
@@ -101,44 +104,49 @@ export const PairHistory = () => {
           running.
         </Note>
       </div>
-      <Table>
-        <thead>
-          <tr>
-            <th>Auction</th>
-            <th>Dates</th>
-            <th>Price</th>
-            <th>Deposited</th>
-            <th>Filled</th>
-            <th>You</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((a) => {
-            const p = phaseOf(a, now);
-            return (
-              <tr key={a.id} {...clickable(() => navigate(paths.auction(a)))}>
-                <td>
-                  <span className="hm">
-                    <Moon phase={p} size={20} paused={a.paused} /> #{a.number}
-                  </span>
-                </td>
-                <td>
-                  {fmtRange(a.depositStart, a.cancelledAt ?? a.fulfillmentEnd)}
-                </td>
-                <td>
-                  <Price>{fmtPrice(a.price)}</Price>
-                </td>
-                <td>
-                  {fmtM(a.totalDeposits)} {a.bidToken}
-                  {p === 'Deposit' ? ' so far' : ''}
-                </td>
-                <td>{filled(a)}</td>
-                <td>{you(a) ?? <Note>—</Note>}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </Table>
+      <TableScroll>
+        <Table>
+          <thead>
+            <tr>
+              <th>Auction</th>
+              <th>Dates</th>
+              <th>Price</th>
+              <th>Deposited</th>
+              <th>Filled</th>
+              <th>You</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((a) => {
+              const p = phaseOf(a, now);
+              return (
+                <tr key={a.id} {...clickable(() => navigate(paths.auction(a)))}>
+                  <td>
+                    <span className="hm">
+                      <Moon phase={p} size={20} paused={a.paused} /> #{a.number}
+                    </span>
+                  </td>
+                  <td>
+                    {fmtRange(
+                      a.depositStart,
+                      a.cancelledAt ?? a.fulfillmentEnd
+                    )}
+                  </td>
+                  <td>
+                    <Price>{fmtPrice(a.price)}</Price>
+                  </td>
+                  <td data-k="Deposited">
+                    {fmtM(a.totalDeposits)} {a.bidToken}
+                    {p === 'Deposit' ? ' so far' : ''}
+                  </td>
+                  <td data-k="Filled">{filled(a)}</td>
+                  <td data-k="You">{you(a) ?? <Note>—</Note>}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </Table>
+      </TableScroll>
       <Row>
         <Note>
           Showing {rows.length} of {rows.length} · newest first · 20 per page
@@ -153,6 +161,7 @@ export const PairHistory = () => {
 
 const Fills = styled.div`
   display: flex;
+  overflow-x: auto;
   gap: 10px;
   align-items: flex-end;
   height: 92px;
@@ -165,9 +174,17 @@ const Fills = styled.div`
     height: 100%;
     width: 34px;
   }
-  span {
+  /* the full-height track, so an empty auction still shows a column */
+  b {
+    display: flex;
+    align-items: flex-end;
     width: 22px;
-    align-self: end;
+    background: #1d1916;
+    border-bottom: 1px solid ${C.line};
+    border-radius: 3px 3px 0 0;
+  }
+  span {
+    width: 100%;
     border-radius: 3px 3px 0 0;
     background: linear-gradient(180deg, #eab85b, #95613f);
   }
@@ -191,18 +208,26 @@ const Fills = styled.div`
   }
 `;
 
+// Scrolls sideways if it ever outgrows the page; on a phone the rows stack.
+const TableScroll = styled.div`
+  overflow-x: auto;
+  border: 1px solid ${C.line};
+  border-radius: 10px;
+`;
+
 const Table = styled.table`
   border-collapse: collapse;
   width: 100%;
   font-size: 14px;
-  border: 1px solid ${C.line};
-  border-radius: 10px;
   th,
   td {
     text-align: left;
     padding: 11px 14px;
     border-bottom: 1px solid ${C.line};
     white-space: nowrap;
+  }
+  tbody tr:last-child td {
+    border-bottom: 0;
   }
   th {
     font-family: ${C.mono};
@@ -224,4 +249,45 @@ const Table = styled.table`
     align-items: center;
     gap: 8px;
   }
+  /* on a phone each auction is a card: number, dates and price on top, the
+     rest labelled underneath */
+  ${phone(css`
+    &,
+    tbody {
+      display: block;
+    }
+    thead {
+      display: none;
+    }
+    tbody tr {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 6px 12px;
+      padding: 12px 14px;
+      border-bottom: 1px solid ${C.line};
+    }
+    tbody tr:last-child {
+      border-bottom: 0;
+    }
+    th,
+    td {
+      padding: 0;
+      border: 0;
+    }
+    td[data-k] {
+      grid-column: 1 / -1;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 13px;
+      white-space: normal;
+      text-align: right;
+    }
+    td[data-k]::before {
+      content: attr(data-k);
+      color: ${C.muted};
+      text-align: left;
+    }
+  `)}
 `;

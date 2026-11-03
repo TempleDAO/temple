@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
+import styled, { css } from 'styled-components';
+import { phone } from 'styles/breakpoints';
 import type { Auction, Phase, Position, Wish } from '../data/types';
 import {
   addDays,
@@ -218,13 +219,23 @@ const WishRow = ({ w }: { w: Wish }) => {
   );
 };
 
-// Stacked, at the width of the widest, so the buttons line up.
+// Stacked, at the width of the widest, so the buttons line up. On a phone
+// they sit side by side on their own line under the wish.
 const Actions = styled.span`
   display: grid;
   gap: 6px;
   > button {
     width: 100%;
   }
+  ${phone(css`
+    &&& {
+      grid-column: 2 / -1;
+      grid-row: 3;
+      justify-self: start;
+      grid-auto-flow: column;
+      margin-top: 6px;
+    }
+  `)}
 `;
 
 const PastRow = ({ a, p, pos }: { a: Auction; p: Phase; pos: Position }) => {

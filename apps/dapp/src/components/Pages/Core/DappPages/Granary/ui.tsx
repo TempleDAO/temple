@@ -10,6 +10,7 @@ import { Link } from 'react-router-dom';
 import styled, { css } from 'styled-components';
 import { Button } from 'components/Button/Button';
 import Loader from 'components/Loader/Loader';
+import { phone } from 'styles/breakpoints';
 import type { Auction, Phase } from './data/types';
 import { fmtDay, fmtDayTime, fmtLeft, fmtRange, phaseOf } from './data/derive';
 
@@ -150,6 +151,7 @@ export const H4 = styled.h4`
   ${({ theme }) => theme.typography.fonts.fontHeading};
   font-weight: 400;
   font-size: 16px;
+  line-height: 1.3;
   margin: 0;
   color: ${({ theme }) => theme.palette.brandLight};
 `;
@@ -205,6 +207,9 @@ export const Grid2 = styled.div`
   grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
   gap: 14px;
   align-items: start;
+  ${phone(css`
+    grid-template-columns: minmax(0, 1fr);
+  `)}
 `;
 export const Card = styled.div<{
   $hot?: boolean;
@@ -246,7 +251,8 @@ export const Banner = styled.div`
   border: 1px solid rgba(158, 135, 194, 0.35);
 `;
 
-// One line in a list: moon, name, detail, right-hand value or action.
+// One line in a list: moon, name, detail, right-hand value or action. On a
+// phone the detail drops to a second line under the name.
 export const ListRow = styled.div`
   display: grid;
   grid-template-columns: 30px minmax(0, 1.3fr) minmax(0, 1fr) 170px;
@@ -262,6 +268,18 @@ export const ListRow = styled.div`
     justify-self: end;
     text-align: right;
   }
+  ${phone(css`
+    grid-template-columns: 26px minmax(0, 1fr) auto;
+    gap: 4px 10px;
+    > :nth-child(3) {
+      grid-column: 2 / -1;
+      grid-row: 2;
+    }
+    > :last-child {
+      grid-column: 3;
+      grid-row: 1;
+    }
+  `)}
   ${({ onClick }) =>
     onClick &&
     css`
@@ -462,6 +480,9 @@ export const Seg = styled.div`
     display: inline-flex;
     gap: 6px;
     align-items: center;
+    ${phone(css`
+      padding: 6px 10px;
+    `)}
   }
   button[aria-pressed='true'] {
     background: #2a1d14;

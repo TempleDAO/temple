@@ -1,6 +1,10 @@
+import { useLayoutEffect, useRef } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
+import { useMediaQuery } from 'react-responsive';
+import { queryPhone } from 'styles/breakpoints';
 import { TopNav } from 'components/Pages/Core/DappPages/SpiceBazaar/components/TopNav';
+import { MobileTopNav } from 'components/Pages/Core/DappPages/SpiceBazaar/components/MobileTopNav';
 import Loader from 'components/Loader/Loader';
 import { GranaryProvider, useGranary } from 'providers/GranaryProvider';
 import { NowProvider, useTickingNow, WallClockProvider } from './data/hooks';
@@ -51,20 +55,45 @@ const Clocks = ({ children }: { children: JSX.Element }) => {
   );
 };
 
+// Spice Bazaar's nav: the tab bar, or below phone width its scrolling strip.
 const Nav = () => {
   const { pathname } = useLocation();
   const p = pathname.replace(/\/$/, '');
+  const wide = useMediaQuery({ query: queryPhone });
+  const items = TABS.map((t) => ({
+    label: t.label,
+    path: t.path,
+    selected: t.match(p),
+  }));
+  const strip = useRef<HTMLDivElement>(null);
+  const current = items.find((i) => i.selected)?.label;
+  // the strip doesn't show its selected tab by itself: scroll it to the middle
+  useLayoutEffect(() => {
+    const cell = Array.from(strip.current?.querySelectorAll('div') ?? []).find(
+      (d) => d.childElementCount === 0 && d.textContent === current
+    );
+    const scroller = cell?.parentElement?.parentElement;
+    if (!cell || !scroller) return;
+    const c = cell.getBoundingClientRect();
+    const s = scroller.getBoundingClientRect();
+    scroller.scrollLeft += c.left + c.width / 2 - (s.left + s.width / 2);
+  }, [current, wide]);
+  if (wide)
+    return (
+      <TopNav
+        menuNavItems={items}
+        onSelectMenuNavItems={() => undefined}
+        showSelector
+        positionSelector="-20%"
+      />
+    );
   return (
-    <TopNav
-      menuNavItems={TABS.map((t) => ({
-        label: t.label,
-        path: t.path,
-        selected: t.match(p),
-      }))}
-      onSelectMenuNavItems={() => undefined}
-      showSelector
-      positionSelector="-20%"
-    />
+    <div ref={strip}>
+      <MobileTopNav
+        menuNavItems={items}
+        onSelectMenuNavItems={() => undefined}
+      />
+    </div>
   );
 };
 

@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
+import styled, { css } from 'styled-components';
+import { phone } from 'styles/breakpoints';
 import { auctionName, fillPct, fmt, fmtLeft, fmtPrice } from '../data/derive';
 import { useMyPositions, useNow, useWalletBalance } from '../data/hooks';
 import {
@@ -98,4 +99,7 @@ export const Earn = () => {
 
 const Bal = styled.div`
   text-align: right;
+  ${phone(css`
+    text-align: left;
+  `)}
 `;
