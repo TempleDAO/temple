@@ -19,6 +19,8 @@ import {
   IFixedPriceAuction__factory,
   IWishingWell,
   IWishingWell__factory,
+  TempleGold,
+  TempleGold__factory,
   TempleGoldStaking,
   TempleGoldStaking__factory,
 } from 'types/typechain';
@@ -38,6 +40,7 @@ import type {
   IndexerStatus,
   Pair,
   Position,
+  StakingSummary,
   Token,
   TxReceipt,
   Wish,
@@ -46,7 +49,8 @@ import type {
 // GranaryDataSource for getAppConfig().granary. Auctions, pairs, positions and
 // wishes come from the Granary indexer, each read pinned to its latest block.
 // Wallet balances, claimable(), staking and compliance are contract reads,
-// as the indexer docs prescribe. Writes wait until the indexer has the block.
+// as the indexer docs prescribe. Writes wait until the indexer has the block,
+// except staking writes, which the indexer doesn't track.
 
 // What the source needs from the connected wallet, supplied by GranaryProvider.
 export type GranaryWallet = {
@@ -67,6 +71,7 @@ export type LiveSourceDeps = {
   // every token configured for the app; the source keeps the ones on its chain
   tokens: TokenConfig[];
   staking?: ContractConfig<Contract>;
+  templeGold?: ContractConfig<Contract>;
   getWallet: () => GranaryWallet;
 };
 
@@ -83,6 +88,9 @@ export const isDeployed = (c?: { address?: string }) =>
 
 const toNum = (v: BigNumber | string, decimals: number) =>
   Number(utils.formatUnits(v, decimals));
+// an exact decimal string for an input box: "4950", not "4950.0"
+const toExact = (v: BigNumber, decimals: number) =>
+  utils.formatUnits(v, decimals).replace(/\.0$/, '');
 const toDate = (secs: BigNumber | number | string) =>
   new Date(Number(secs) * 1000);
 const optDate = (secs: string) => (secs === '0' ? undefined : toDate(secs));
@@ -108,6 +116,10 @@ const ERRORS = new utils.Interface([
   'error ERC20InsufficientBalance(address sender, uint256 balance, uint256 needed)',
   'error ERC20InsufficientAllowance(address spender, uint256 allowance, uint256 needed)',
 ]);
+// TempleGoldStaking's (a separate interface: it shares some errors above)
+const STAKING_ERRORS = new utils.Interface(
+  TempleGoldStaking__factory.abi.filter((f) => f.type === 'error')
+);
 
 const ERROR_CODES: Record<string, GranaryErrorCode> = {
   InvalidPhase: 'InvalidPhase',
@@ -120,6 +132,9 @@ const ERROR_CODES: Record<string, GranaryErrorCode> = {
   NothingToClaim: 'NothingToClaim',
   ExpectedNonZero: 'ExpectedNonZero',
   InvalidAmount: 'InvalidAmount',
+  InvalidAddress: 'InvalidAddress',
+  EnforcedPause: 'StakingPaused',
+  UnstakeCooldown: 'UnstakeLocked',
 };
 
 // Wallets and ethers nest the revert data at different depths.
@@ -149,11 +164,13 @@ const toGranaryError = (err: unknown): unknown => {
     return new GranaryError('UserRejected');
   const data = findRevertData(err);
   if (data) {
-    try {
-      const code = ERROR_CODES[ERRORS.parseError(data).name];
-      if (code) return new GranaryError(code);
-    } catch {
-      // not one of ours; fall through
+    for (const iface of [ERRORS, STAKING_ERRORS]) {
+      try {
+        const code = ERROR_CODES[iface.parseError(data).name];
+        if (code) return new GranaryError(code);
+      } catch {
+        // not in this interface; try the next
+      }
     }
   }
   if (/exceeds balance/i.test(e?.message ?? ''))
@@ -218,6 +235,7 @@ export const createLiveSource = ({
   config,
   tokens,
   staking,
+  templeGold,
   getWallet,
 }: LiveSourceDeps): GranaryDataSource => {
   const provider = papi.getProvider(config.chainId);
@@ -281,10 +299,18 @@ export const createLiveSource = ({
 
   /* ----- auctions ----- */
 
+  // Tokens worth a balance read: the wish tokens and every shown auction's.
+  // (The app's token config also lists addresses with no contract on testnets.)
+  const inUse = new Map<string, TokenMeta>(
+    wishTokens.map((t) => [t.address.toLowerCase(), t])
+  );
+
   const toAuction = (r: RawAuction): Auction | null => {
     const bid = tokenOf(r.bidToken.id);
     const fill = tokenOf(r.auctionToken.id);
     if (!bid || !fill) return null;
+    inUse.set(bid.address.toLowerCase(), bid);
+    inUse.set(fill.address.toLowerCase(), fill);
     return {
       id: r.fixedPriceAuction.id,
       bidToken: bid.symbol,
@@ -338,7 +364,8 @@ export const createLiveSource = ({
   /* ----- wallet ----- */
 
   const send = async (
-    build: (signer: Signer) => Promise<PopulatedTransaction>
+    build: (signer: Signer) => Promise<PopulatedTransaction>,
+    { indexed = true } = {}
   ): Promise<TxReceipt> => {
     let receipt;
     try {
@@ -347,8 +374,39 @@ export const createLiveSource = ({
     } catch (err) {
       throw toGranaryError(err);
     }
-    await waitForIndexed(receipt.blockNumber);
+    if (indexed) await waitForIndexed(receipt.blockNumber);
     return { hash: receipt.transactionHash, blockNumber: receipt.blockNumber };
+  };
+
+  /* ----- staking ----- */
+
+  // TempleGoldStaking and TempleGold, when configured on the Granary's chain
+  const stakingOn = isDeployed(staking) && staking?.chainId === config.chainId;
+  const stakingC = stakingOn
+    ? (TempleGoldStaking__factory.connect(
+        (staking as ContractConfig<Contract>).address,
+        provider
+      ) as TempleGoldStaking)
+    : undefined;
+  const tgldC =
+    isDeployed(templeGold) && templeGold?.chainId === config.chainId
+      ? (TempleGold__factory.connect(
+          (templeGold as ContractConfig<Contract>).address,
+          provider
+        ) as TempleGold)
+      : undefined;
+  const stakingContract = () => {
+    if (!stakingC) throw new GranaryError('NotDeployed');
+    return stakingC;
+  };
+  // the staking token (TEMPLE), read once
+  let stakingToken: Promise<string> | undefined;
+  const stakingTokenAddress = () => {
+    if (!stakingToken) {
+      stakingToken = stakingContract().stakingToken();
+      stakingToken.catch(() => (stakingToken = undefined));
+    }
+    return stakingToken;
   };
 
   // Wishes made this session, for the "new" chip.
@@ -476,11 +534,10 @@ export const createLiveSource = ({
       };
     },
 
-    // Every configured token on the Granary chain.
     async getBalances(account) {
       const out: Balances = {};
       await Promise.all(
-        Array.from(known.values()).map(async (t) => {
+        Array.from(inUse.values()).map(async (t) => {
           try {
             const v = await ERC20__factory.connect(
               t.address,
@@ -495,18 +552,69 @@ export const createLiveSource = ({
       return out;
     },
 
-    async getStaking(account) {
-      if (!isDeployed(staking) || staking?.chainId !== config.chainId)
-        return { staked: 0, rewards: 0 };
-      const s = TempleGoldStaking__factory.connect(
-        staking.address,
+    async getStaking(account): Promise<StakingSummary> {
+      const empty: StakingSummary = {
+        totalStaked: 0,
+        circulatingTgld: 0,
+        weeklyRewards: 0,
+        cooldownDays: 0,
+        paused: false,
+        staked: 0,
+        stakedExact: '0',
+        available: 0,
+        availableExact: '0',
+        rewards: 0,
+        dailyReward: 0,
+      };
+      if (!stakingC) return empty;
+      const s = stakingC;
+      const [total, rewardData, cooldown, paused, circulating] =
+        await Promise.all([
+          s.totalSupply(),
+          s.getRewardData(),
+          s.unstakeCooldown(),
+          s.paused(),
+          tgldC?.circulatingSupply() ?? constants.Zero,
+        ]);
+      // rewards accrue at rewardRate (TGLD/s) until periodFinish
+      const live = rewardData.periodFinish > Date.now() / 1000;
+      const perSecond = live ? toNum(rewardData.rewardRate, 18) : 0;
+      const totalStaked = toNum(total, 18);
+      const pool = {
+        ...empty,
+        totalStaked,
+        circulatingTgld: toNum(circulating, 18),
+        weeklyRewards: perSecond * 7 * 86_400,
+        cooldownDays: Number(cooldown) / 86_400,
+        paused,
+      };
+      if (!account) return pool;
+      const token = ERC20__factory.connect(
+        await stakingTokenAddress(),
         provider
-      ) as TempleGoldStaking;
-      const [staked, rewards] = await Promise.all([
-        s.balanceOf(account),
-        s.earned(account),
-      ]);
-      return { staked: toNum(staked, 18), rewards: toNum(rewards, 18) };
+      );
+      const [staked, earned, available, unstakeAt, delegatee] =
+        await Promise.all([
+          s.balanceOf(account),
+          s.earned(account),
+          token.balanceOf(account),
+          s.getAccountUnstakeTime(account),
+          s.delegates(account),
+        ]);
+      const mine = toNum(staked, 18);
+      return {
+        ...pool,
+        staked: mine,
+        stakedExact: toExact(staked, 18),
+        available: toNum(available, 18),
+        availableExact: toExact(available, 18),
+        rewards: toNum(earned, 18),
+        dailyReward: totalStaked
+          ? (perSecond * 86_400 * mine) / totalStaked
+          : 0,
+        unstakeAt: unstakeAt.isZero() ? undefined : toDate(unstakeAt),
+        delegate: delegatee === constants.AddressZero ? undefined : delegatee,
+      };
     },
 
     async getFlaggedLists(account, lists) {
@@ -603,6 +711,54 @@ export const createLiveSource = ({
       );
       madeThisSession.delete(wishKey(account, w.give, w.get));
       return receipt;
+    },
+
+    async stake(account, amount) {
+      const s = stakingContract();
+      const v = parseAmount(amount, 18);
+      const temple = await stakingTokenAddress();
+      return send(
+        async (signer) => {
+          await getWallet().ensureAllowance(
+            'TEMPLE',
+            temple,
+            s.address,
+            v,
+            signer
+          );
+          return s.connect(signer).populateTransaction.stake(v);
+        },
+        { indexed: false }
+      );
+    },
+
+    async unstake(account, amount, claimRewards) {
+      const s = stakingContract();
+      const v = parseAmount(amount, 18);
+      return send(
+        (signer) =>
+          s.connect(signer).populateTransaction.withdraw(v, claimRewards),
+        { indexed: false }
+      );
+    },
+
+    async claimStakingRewards(account) {
+      const s = stakingContract();
+      return send(
+        (signer) => s.connect(signer).populateTransaction.getReward(account),
+        { indexed: false }
+      );
+    },
+
+    async delegate(account, delegatee) {
+      const s = stakingContract();
+      if (!utils.isAddress(delegatee.trim()))
+        throw new GranaryError('InvalidAddress');
+      const to = utils.getAddress(delegatee.trim());
+      return send(
+        (signer) => s.connect(signer).populateTransaction.delegate(to),
+        { indexed: false }
+      );
     },
   };
 };

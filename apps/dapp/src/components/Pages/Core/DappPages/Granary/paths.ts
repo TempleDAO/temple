@@ -21,5 +21,4 @@ export const paths = {
     }`,
   activity: `${BASE}/activity`,
   legacy: `${BASE}/activity/legacy`,
-  staking: '/dapp/spice/earn/staketemple/stake',
 };

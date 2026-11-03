@@ -218,11 +218,13 @@ const WishRow = ({ w }: { w: Wish }) => {
   );
 };
 
+// Stacked, at the width of the widest, so the buttons line up.
 const Actions = styled.span`
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
+  display: grid;
   gap: 6px;
+  > button {
+    width: 100%;
+  }
 `;
 
 const PastRow = ({ a, p, pos }: { a: Auction; p: Phase; pos: Position }) => {

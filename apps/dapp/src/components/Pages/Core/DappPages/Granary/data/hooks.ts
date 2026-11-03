@@ -120,6 +120,12 @@ export const useAuctionActions = () => {
   return { deposit, withdrawDeposit, claim, withdrawExcluded };
 };
 
+export const useStakingActions = () => {
+  const { stake, unstake, claimStakingRewards, delegate } =
+    useGranary().actions;
+  return { stake, unstake, claimStakingRewards, delegate };
+};
+
 export const useWishActions = () => {
   const { setWish, revokeWish } = useGranary().actions;
   return { setWish, revokeWish };

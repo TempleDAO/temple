@@ -44,7 +44,7 @@ import {
 } from 'components/Pages/Core/DappPages/Granary/data/derive';
 
 // State and actions for the Temple Granary: FixedPriceAuction deposits and
-// claims, and WishingWell wishes. Screens read it through the hooks in
+// claims, WishingWell wishes, and TempleGoldStaking. Screens read it through the hooks in
 // Granary/data/hooks.ts.
 //
 // All data comes from a GranaryDataSource: liveSource.ts, reading the Granary
@@ -70,6 +70,10 @@ export type GranaryActions = {
   withdrawExcluded: (auction: Auction) => Promise<boolean>;
   setWish: (req: SetWishRequest) => Promise<boolean>;
   revokeWish: (wish: Wish) => Promise<boolean>;
+  stake: (amount: string) => Promise<boolean>;
+  unstake: (amount: string, claimRewards: boolean) => Promise<boolean>;
+  claimStakingRewards: () => Promise<boolean>;
+  delegate: (delegatee: string) => Promise<boolean>;
 };
 
 type GranaryContextValue = {
@@ -124,9 +128,19 @@ const ERROR_TEXT: Record<GranaryErrorCode, string> = {
   NothingToClaim: 'Nothing to claim',
   ExpectedNonZero: 'Enter an amount',
   InvalidAmount: 'Check the amount',
+  InvalidAddress: 'Check the address',
+  StakingPaused: 'Staking is paused',
+  UnstakeLocked: 'Your stake is still locked',
   NotDeployed: 'Not deployed on this network yet',
   WrongNetwork: 'Switch your wallet to the Granary network',
   UserRejected: 'Transaction rejected',
+};
+
+const walletMessage = (err: unknown) => {
+  const e = err as { message?: unknown; error?: { message?: unknown } };
+  const m = e?.error?.message ?? e?.message;
+  if (typeof m !== 'string' || !m) return undefined;
+  return m.length > 120 ? `${m.slice(0, 117)}…` : m;
 };
 
 const toQuery = <T,>(q: UseQueryResult<T>, fallback: T): GranaryQuery<T> => ({
@@ -172,6 +186,7 @@ export const GranaryProvider = ({ children }: PropsWithChildren) => {
           (t): t is NonNullable<typeof t> => !!t
         ),
         staking: config.contracts.templeGoldStaking,
+        templeGold: config.contracts.templeGold,
         getWallet: () => {
           if (!wallet.current) throw new Error('No wallet');
           return wallet.current;
@@ -236,10 +251,12 @@ export const GranaryProvider = ({ children }: PropsWithChildren) => {
     queryFn: () => source.getBalances(account as string),
     ...accountOpts,
   });
+  // pool totals show without a wallet
   const staking = useQuery({
     queryKey: granaryKeys.staking(account),
-    queryFn: () => source.getStaking(account as string),
+    queryFn: () => source.getStaking(account),
     ...accountOpts,
+    enabled: true,
   });
 
   // isFlagged(me) once per distinct compliance list the auctions use
@@ -279,8 +296,11 @@ export const GranaryProvider = ({ children }: PropsWithChildren) => {
         return true;
       } catch (err) {
         console.error(label.fail, err);
+        // a contract error we can explain, else the wallet's own message
         const reason =
-          err instanceof GranaryError ? ERROR_TEXT[err.code] : undefined;
+          err instanceof GranaryError
+            ? ERROR_TEXT[err.code]
+            : walletMessage(err);
         openNotification({
           title: reason ? `${label.fail}: ${reason}` : label.fail,
           hash: `error-${Date.now()}`,
@@ -352,6 +372,34 @@ export const GranaryProvider = ({ children }: PropsWithChildren) => {
             fail: 'Error removing wish',
           },
           (acc) => source.revokeWish(acc, w)
+        ),
+      stake: (amount) =>
+        run(
+          {
+            ok: `Staked ${fmt(Number(amount))} TEMPLE`,
+            fail: 'Error staking TEMPLE',
+          },
+          (acc) => source.stake(acc, amount)
+        ),
+      unstake: (amount, claimRewards) =>
+        run(
+          {
+            ok: `Unstaked ${fmt(Number(amount))} TEMPLE`,
+            fail: 'Error unstaking TEMPLE',
+          },
+          (acc) => source.unstake(acc, amount, claimRewards)
+        ),
+      claimStakingRewards: () =>
+        run({ ok: 'Claimed your TGLD', fail: 'Error claiming TGLD' }, (acc) =>
+          source.claimStakingRewards(acc)
+        ),
+      delegate: (delegatee) =>
+        run(
+          {
+            ok: 'Delegated your voting rights',
+            fail: 'Error delegating voting rights',
+          },
+          (acc) => source.delegate(acc, delegatee)
         ),
     }),
     [run, source]

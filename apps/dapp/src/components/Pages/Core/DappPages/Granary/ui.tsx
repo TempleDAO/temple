@@ -1,7 +1,15 @@
-import React, { ReactNode } from 'react';
+import React, {
+  ComponentProps,
+  MouseEvent,
+  ReactNode,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { Link } from 'react-router-dom';
 import styled, { css } from 'styled-components';
 import { Button } from 'components/Button/Button';
+import Loader from 'components/Loader/Loader';
 import type { Auction, Phase } from './data/types';
 import { fmtDay, fmtDayTime, fmtLeft, fmtRange, phaseOf } from './data/derive';
 
@@ -328,9 +336,11 @@ export const Chips = styled.span`
 
 /* ---------- controls ---------- */
 
-export const Btn = styled(Button).attrs({ isSmall: true, autoWidth: true })<{
+const BtnBase = styled(Button).attrs({ isSmall: true, autoWidth: true })<{
   $ghost?: boolean;
+  $busy?: boolean;
 }>`
+  position: relative;
   height: auto;
   width: fit-content;
   padding: 10px 16px;
@@ -351,10 +361,67 @@ export const Btn = styled(Button).attrs({ isSmall: true, autoWidth: true })<{
       border-color: ${theme.palette.brandDark};
       font-weight: 600;
     `}
+  /* the spinner is drawn in this button's own copper; darken behind it, as
+     Spice Bazaar's buttons are */
+  ${({ $busy, $ghost }) =>
+    $busy &&
+    !$ghost &&
+    css`
+      background: linear-gradient(90deg, #58321a 20%, #95613f 84.5%);
+    `}
   &:disabled {
     opacity: 0.55;
     color: ${({ theme }) => theme.palette.light};
   }
+`;
+
+// The shared Button swaps its label for a spinner while an async onClick
+// runs, which shrinks a button sized to its label. Btn runs the click itself
+// and keeps the label in place, hidden under the spinner, so the size holds.
+export const Btn = ({
+  onClick,
+  children,
+  ...rest
+}: ComponentProps<typeof BtnBase>) => {
+  const [busy, setBusy] = useState(false);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+  const handle = (e?: MouseEvent) => {
+    if (busy || !onClick) return;
+    const result: unknown = onClick(e);
+    if (!(result instanceof Promise)) return;
+    setBusy(true);
+    result
+      .catch((err: unknown) => console.error(err))
+      .finally(() => {
+        if (mounted.current) setBusy(false);
+      });
+  };
+  return (
+    <BtnBase {...rest} $busy={busy} onClick={handle} aria-busy={busy}>
+      <BusyLabel $busy={busy}>{children}</BusyLabel>
+      {busy && (
+        <BusySpinner>
+          <Loader iconSize={20} />
+        </BusySpinner>
+      )}
+    </BtnBase>
+  );
+};
+const BusyLabel = styled.span<{ $busy: boolean }>`
+  visibility: ${({ $busy }) => ($busy ? 'hidden' : 'visible')};
+`;
+const BusySpinner = styled.span`
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 `;
 
 const linkCss = css`

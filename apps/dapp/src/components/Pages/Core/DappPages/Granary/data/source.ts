@@ -30,7 +30,8 @@ export interface GranaryDataSource {
   /* ---------- contract reads ---------- */
   getClaimable(account: string, auction: Auction): Promise<Settlement | null>;
   getBalances(account: string): Promise<Balances>;
-  getStaking(account: string): Promise<StakingSummary>;
+  // the pool's totals, plus the account's stake when given
+  getStaking(account?: string): Promise<StakingSummary>;
   // The compliance lists (of those given) that flag the account. A list whose
   // isFlagged() reverts counts as flagging it.
   getFlaggedLists(account: string, lists: string[]): Promise<string[]>;
@@ -56,6 +57,20 @@ export interface GranaryDataSource {
   setWish(account: string, req: SetWishRequest): Promise<TxReceipt>;
   // WishingWell.wish(give, get, 0, 0)
   revokeWish(account: string, wish: Wish): Promise<TxReceipt>;
+
+  /* ---------- staking writes: resolve once mined (not indexed) ---------- */
+  // TempleGoldStaking.stake(amount), after ensuring the TEMPLE allowance
+  stake(account: string, amount: string): Promise<TxReceipt>;
+  // TempleGoldStaking.withdraw(amount, claimRewards)
+  unstake(
+    account: string,
+    amount: string,
+    claimRewards: boolean
+  ): Promise<TxReceipt>;
+  // TempleGoldStaking.getReward(account)
+  claimStakingRewards(account: string): Promise<TxReceipt>;
+  // TempleGoldStaking.delegate(delegatee)
+  delegate(account: string, delegatee: string): Promise<TxReceipt>;
 }
 
 // Contract errors the UI explains in words. The data source decodes reverts
@@ -70,6 +85,9 @@ export type GranaryErrorCode =
   | 'NothingToClaim'
   | 'ExpectedNonZero'
   | 'InvalidAmount'
+  | 'InvalidAddress'
+  | 'StakingPaused'
+  | 'UnstakeLocked'
   | 'NotDeployed'
   | 'WrongNetwork'
   | 'UserRejected';

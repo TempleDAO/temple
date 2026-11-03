@@ -86,7 +86,28 @@ export type IndexerStatus = {
   hasIndexingErrors: boolean;
 };
 
-export type StakingSummary = { staked: number; rewards: number };
+// TempleGoldStaking: the pool's totals, and the account's stake when one is
+// connected (zeros otherwise).
+export type StakingSummary = {
+  totalStaked: number; // TEMPLE
+  circulatingTgld: number;
+  // TGLD the pool pays out over a week at the current rate; 0 once the reward
+  // period has finished
+  weeklyRewards: number;
+  cooldownDays: number; // lock after each stake
+  paused: boolean;
+  staked: number; // TEMPLE
+  // exact amounts as decimal strings, for Max
+  stakedExact: string;
+  available: number; // TEMPLE in the wallet
+  availableExact: string;
+  rewards: number; // TGLD earned, claimable now
+  dailyReward: number; // the account's share of a day's rewards
+  // when the stake can be withdrawn; undefined if it never staked
+  unstakeAt?: Date;
+  // undefined while undelegated
+  delegate?: string;
+};
 
 export type Balances = Partial<Record<Token, number>>;
 

@@ -1,15 +1,9 @@
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { auctionName, fillPct, fmt, fmtLeft, fmtPrice } from '../data/derive';
-import {
-  useMyPositions,
-  useNow,
-  useStaking,
-  useWalletBalance,
-} from '../data/hooks';
+import { useMyPositions, useNow, useWalletBalance } from '../data/hooks';
 import {
   Big,
-  Btn,
   Card,
   clickable,
   H4,
@@ -22,10 +16,10 @@ import {
   Row,
   Stack,
   TextLink,
-  V,
 } from '../ui';
 import { paths } from '../paths';
 import { stateText, useRunning, WishFooter } from './common';
+import { StakingCard } from './Staking';
 
 const RANK = { Deposit: 0, Scheduled: 1, Fulfillment: 2 } as Record<
   string,
@@ -36,7 +30,6 @@ export const Earn = () => {
   const now = useNow();
   const navigate = useNavigate();
   const tgld = useWalletBalance('TGLD').data;
-  const staking = useStaking().data;
   const positions = useMyPositions().data;
   // only auctions TempleGold has authorised to take TGLD
   const rows = useRunning()
@@ -63,22 +56,7 @@ export const Earn = () => {
           </Note>
         </Bal>
       </Row>
-      <Card>
-        <H4>Staking</H4>
-        <Row>
-          <K>Staked</K>
-          <V>{fmt(staking?.staked ?? 0)} TEMPLE</V>
-        </Row>
-        <Row>
-          <K>Rewards ready</K>
-          <V>{fmt(staking?.rewards ?? 0)} TGLD</V>
-        </Row>
-        <Row $start>
-          <Btn $ghost onClick={() => navigate(paths.staking)}>
-            Manage staking
-          </Btn>
-        </Row>
-      </Card>
+      <StakingCard />
       <Card $hot>
         <Row>
           <H4>Use your Temple Gold</H4>
