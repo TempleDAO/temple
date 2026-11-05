@@ -4,6 +4,7 @@ import {
   auctionName,
   fillPct,
   fmt,
+  fmtDay,
   fmtM,
   fmtPrice,
   isPositive,
@@ -154,7 +155,16 @@ const PairRow = ({ pair }: { pair: Pair }) => {
   const last = past[0];
   return (
     <ListRow {...clickable(() => navigate(paths.pair(pair.id)))}>
-      <Moon phase={running?.p ?? 'none'} size={24} paused={running?.a.paused} />
+      <Moon
+        phase={running?.p ?? 'none'}
+        size={24}
+        paused={running?.a.paused}
+        title={
+          running
+            ? `#${running.a.number} · ${stateText(running.a, now)}`
+            : 'No auction running'
+        }
+      />
       <div>
         <Mk>
           {pair.bidToken} → {pair.fillToken}
@@ -174,10 +184,12 @@ const PairRow = ({ pair }: { pair: Pair }) => {
           ))}
         {last && (
           <Note>
-            &nbsp;last #{last.number} ·{' '}
+            &nbsp;#{last.number}{' '}
             {phaseOf(last, now) === 'Cancelled'
-              ? 'cancelled'
-              : `${fillPct(last)}%`}
+              ? `cancelled ${fmtDay(last.cancelledAt ?? last.fulfillmentEnd)}`
+              : `settled ${fmtDay(
+                  last.settledAt ?? last.fulfillmentEnd
+                )} · ${fillPct(last)}% filled`}
           </Note>
         )}
       </Moons>

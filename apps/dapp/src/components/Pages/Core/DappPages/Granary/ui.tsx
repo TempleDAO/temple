@@ -54,10 +54,13 @@ export const Moon = ({
   phase,
   size = 28,
   paused = false,
+  title,
 }: {
   phase: MoonPhase;
   size?: number;
   paused?: boolean;
+  // a hover label; without one the moon is decorative
+  title?: string;
 }) => {
   const r = 10,
     c = 12,
@@ -65,7 +68,15 @@ export const Moon = ({
   const rx = (r * Math.abs(2 * f - 1)).toFixed(2);
   const dashed = phase === 'none' || phase === 'Scheduled';
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      {...(title
+        ? { role: 'img', 'aria-label': title }
+        : { 'aria-hidden': true })}
+    >
+      {title && <title>{title}</title>}
       <circle
         cx={c}
         cy={c}
