@@ -83,7 +83,7 @@ export const useMyWishes = () => useGranary().wishes;
 
 export const useWalletBalance = (token: Token) => {
   const { data, ...rest } = useGranary().balances;
-  return { ...rest, data: data[token] ?? 0 };
+  return { ...rest, data: data[token] ?? '0' };
 };
 
 export const useStaking = () => useGranary().staking;

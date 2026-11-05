@@ -109,7 +109,9 @@ export type StakingSummary = {
   delegate?: string;
 };
 
-export type Balances = Partial<Record<Token, number>>;
+// exact whole-token amounts (formatUnits), so a typed amount can be checked
+// against them; Number() them to display
+export type Balances = Partial<Record<Token, string>>;
 
 export type SetWishRequest = {
   give: Token;

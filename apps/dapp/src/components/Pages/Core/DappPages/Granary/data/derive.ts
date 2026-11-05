@@ -1,3 +1,4 @@
+import { utils } from 'ethers';
 import type { Auction, Phase, Token } from './types';
 
 // Client-side derivations over auction fields. Pass the indexer's block time
@@ -55,6 +56,17 @@ const pad = (n: number) => String(n).padStart(2, '0');
 
 export const fmt = (n: number) =>
   n.toLocaleString('en-US', { maximumFractionDigits: 0 });
+
+// A typed amount in 18-decimal units, or null if it isn't a valid amount.
+// Limits are checked on these, as a float can't tell 1 from
+// 1.000000000000000001. Tokens with fewer decimals compare correctly too.
+export const toWei = (text: string) => {
+  try {
+    return utils.parseUnits(text.replace(/,/g, '').trim() || '0', 18);
+  } catch {
+    return null;
+  }
+};
 
 // Millions for big figures; small ones in full, so a quiet auction doesn't read "0.0M".
 export const fmtM = (n: number) => {

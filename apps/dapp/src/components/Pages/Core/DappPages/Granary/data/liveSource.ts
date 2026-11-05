@@ -561,7 +561,7 @@ export const createLiveSource = ({
               t.address,
               provider
             ).balanceOf(account);
-            out[t.symbol] = toNum(v, t.decimals);
+            out[t.symbol] = utils.formatUnits(v, t.decimals);
           } catch (err) {
             console.warn(`Granary: balanceOf failed for ${t.symbol}`, err);
           }

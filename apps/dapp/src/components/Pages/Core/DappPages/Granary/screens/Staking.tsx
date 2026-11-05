@@ -1,7 +1,7 @@
 import { ReactNode, useState } from 'react';
 import styled from 'styled-components';
 import { constants, utils } from 'ethers';
-import { fmt, fmtDayTime, fmtLeft } from '../data/derive';
+import { fmt, fmtDayTime, fmtLeft, toWei } from '../data/derive';
 import {
   useGranaryWallet,
   useStaking,
@@ -43,15 +43,6 @@ const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 const same = (a?: string, b?: string) =>
   !!a && !!b && a.toLowerCase() === b.toLowerCase();
 const cleanAmount = (text: string) => text.replace(/,/g, '').trim();
-// TEMPLE in wei, or null if it isn't a valid amount. Limits are checked on
-// these, as a float can't tell 1 from 1.000000000000000001.
-const toWei = (text: string) => {
-  try {
-    return utils.parseUnits(text || '0', 18);
-  } catch {
-    return null;
-  }
-};
 
 export const StakingCard = () => {
   const s = useStaking().data;

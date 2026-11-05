@@ -30,7 +30,7 @@ const RANK = { Deposit: 0, Scheduled: 1, Fulfillment: 2 } as Record<
 export const Earn = () => {
   const now = useNow();
   const navigate = useNavigate();
-  const tgld = useWalletBalance('TGLD').data;
+  const tgld = Number(useWalletBalance('TGLD').data);
   const positions = useMyPositions().data;
   // only auctions TempleGold has authorised to take TGLD
   const rows = useRunning()

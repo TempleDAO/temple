@@ -13,6 +13,7 @@ import {
   pairName,
   phaseOf,
   settlementFor,
+  toWei,
 } from '../data/derive';
 import {
   useAuctionActions,
@@ -114,7 +115,7 @@ export const PairPage = () => {
           title={name}
           right={
             <Note>
-              {fmt(balance)} {pair.bidToken} in your wallet
+              {fmt(Number(balance))} {pair.bidToken} in your wallet
               {pair.bidToken === 'TGLD' && (
                 <>
                   {' · '}
@@ -210,7 +211,8 @@ const PriceRow = ({ a }: { a: Auction }) => (
   </Row>
 );
 
-const DepositCard = ({ a, balance }: { a: Auction; balance: number }) => {
+// balance: the exact whole-token amount, as useWalletBalance gives it
+const DepositCard = ({ a, balance }: { a: Auction; balance: string }) => {
   const { deposit } = useAuctionActions();
   const { account } = useGranaryWallet();
   const [text, setText] = useState('');
@@ -218,11 +220,12 @@ const DepositCard = ({ a, balance }: { a: Auction; balance: number }) => {
   const current = useDeposit(a)?.deposit ?? 0;
   const clean = text.replace(/,/g, '').trim();
   const n = parseFloat(clean);
-  const over = !!account && n > balance;
+  const wei = toWei(clean);
+  const over = !!account && !!wei && wei.gt(toWei(balance) ?? 0);
   const below = n > 0 && current + n < a.minDeposit;
   const flagged = useIsFlagged(a);
   const wait = useComplianceWait(a);
-  const ok = n > 0 && !over && !below && !flagged && !wait;
+  const ok = !!wei?.gt(0) && !over && !below && !flagged && !wait;
   return (
     <Card $hot>
       <Row>
@@ -250,7 +253,7 @@ const DepositCard = ({ a, balance }: { a: Auction; balance: number }) => {
             ? `Your deposit must total at least ${fmt(a.minDeposit)} ${
                 a.bidToken
               }`
-            : `${over ? 'More than the ' : ''}${fmt(balance)} ${
+            : `${over ? 'More than the ' : ''}${fmt(Number(balance))} ${
                 a.bidToken
               } in your wallet`}
         </Note>

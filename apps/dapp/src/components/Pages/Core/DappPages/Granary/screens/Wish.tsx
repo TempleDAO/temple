@@ -163,7 +163,7 @@ const WishPanel = ({
   const navigate = useNavigate();
   const { setWish } = useWishActions();
   const { account } = useGranaryWallet();
-  const balance = useWalletBalance(give).data;
+  const balance = Number(useWalletBalance(give).data);
   // one wish per (give, get): a new one replaces it
   const current = useMyWishes().data.find(
     (w) => w.give === give && w.get === get && w.expiresAt > now
