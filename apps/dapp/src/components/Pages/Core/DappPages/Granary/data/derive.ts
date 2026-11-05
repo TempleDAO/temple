@@ -59,7 +59,10 @@ export const fmt = (n: number) =>
 // Millions for big figures; small ones in full, so a quiet auction doesn't read "0.0M".
 export const fmtM = (n: number) => {
   if (Math.abs(n) < 100_000) return fmt(n);
-  let s = (n / 1e6).toPrecision(3);
+  const m = n / 1e6;
+  // toPrecision(3) turns to exponent notation from 999.5M
+  if (Math.abs(m) >= 999.5) return `${fmt(m)}M`;
+  let s = m.toPrecision(3);
   if (s.includes('.')) s = s.replace(/0+$/, '').replace(/\.$/, '.0');
   return `${s}M`;
 };

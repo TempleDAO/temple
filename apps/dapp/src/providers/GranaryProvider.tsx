@@ -88,8 +88,9 @@ type GranaryContextValue = {
   wishes: GranaryQuery<Wish[]>;
   balances: GranaryQuery<Balances>;
   staking: GranaryQuery<StakingSummary | undefined>;
-  // compliance lists that flag the connected account (indexer docs: design A)
-  flaggedLists: GranaryQuery<string[]>;
+  // compliance lists that flag the connected account (indexer docs: design A);
+  // undefined until the first read succeeds
+  flaggedLists: GranaryQuery<string[] | undefined>;
   actions: GranaryActions;
 };
 
@@ -246,10 +247,20 @@ export const GranaryProvider = ({ children }: PropsWithChildren) => {
     queryFn: () => source.getWishes(account as string),
     ...accountOpts,
   });
+  // getAuctions adds each auction's tokens to the balance reads, so wait for
+  // it, and read again when the auctions bring a new token
+  const auctionTokens = useMemo(
+    () =>
+      Array.from(
+        new Set((auctions.data ?? []).flatMap((a) => [a.bidToken, a.fillToken]))
+      ).sort(),
+    [auctions.data]
+  );
   const balances = useQuery({
-    queryKey: granaryKeys.balances(account),
+    queryKey: [...granaryKeys.balances(account), ...auctionTokens],
     queryFn: () => source.getBalances(account as string),
     ...accountOpts,
+    enabled: !!account && !auctions.isInitialLoading,
   });
   // pool totals show without a wallet
   const staking = useQuery({
@@ -417,7 +428,7 @@ export const GranaryProvider = ({ children }: PropsWithChildren) => {
     wishes: toQuery(wishes, EMPTY),
     balances: toQuery(balances, {}),
     staking: toQuery(staking, undefined),
-    flaggedLists: toQuery(flaggedLists, EMPTY),
+    flaggedLists: toQuery(flaggedLists, undefined),
     actions,
   };
 

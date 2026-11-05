@@ -1,6 +1,6 @@
 import { ReactNode, useState } from 'react';
 import styled from 'styled-components';
-import { utils } from 'ethers';
+import { constants, utils } from 'ethers';
 import { fmt, fmtDayTime, fmtLeft } from '../data/derive';
 import {
   useGranaryWallet,
@@ -43,6 +43,15 @@ const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 const same = (a?: string, b?: string) =>
   !!a && !!b && a.toLowerCase() === b.toLowerCase();
 const cleanAmount = (text: string) => text.replace(/,/g, '').trim();
+// TEMPLE in wei, or null if it isn't a valid amount. Limits are checked on
+// these, as a float can't tell 1 from 1.000000000000000001.
+const toWei = (text: string) => {
+  try {
+    return utils.parseUnits(text || '0', 18);
+  } catch {
+    return null;
+  }
+};
 
 export const StakingCard = () => {
   const s = useStaking().data;
@@ -176,9 +185,10 @@ const StakeForm = ({ s }: { s: StakingSummary }) => {
   const [bridged, setBridged] = useState(false);
   const [locked, setLocked] = useState(false);
   const clean = cleanAmount(text);
-  const n = parseFloat(clean);
-  const over = !!account && n > s.available;
-  const ok = n > 0 && !over && bridged && locked && !s.paused;
+  const wei = toWei(clean);
+  const over =
+    !!account && !!wei && wei.gt(toWei(s.availableExact) ?? constants.Zero);
+  const ok = !!wei?.gt(0) && !over && bridged && locked && !s.paused;
   const d = s.cooldownDays;
   const lock =
     d >= 1
@@ -234,10 +244,10 @@ const UnstakeForm = ({ s }: { s: StakingSummary }) => {
   const [text, setText] = useState('');
   const [claim, setClaim] = useState(false);
   const clean = cleanAmount(text);
-  const n = parseFloat(clean);
-  const over = n > s.staked;
+  const wei = toWei(clean);
+  const over = !!wei && wei.gt(toWei(s.stakedExact) ?? constants.Zero);
   const lockedUntil = s.unstakeAt && s.unstakeAt > wall ? s.unstakeAt : null;
-  const ok = n > 0 && !over && !lockedUntil && !s.paused;
+  const ok = !!wei?.gt(0) && !over && !lockedUntil && !s.paused;
   return (
     <Stack gap={12}>
       {lockedUntil && (

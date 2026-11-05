@@ -291,7 +291,12 @@ export const createLiveSource = ({
     if (!indexer) return;
     const until = Date.now() + INDEX_TIMEOUT_MS;
     while (Date.now() < until) {
-      if ((await pinned(true)).block.number >= block) return;
+      try {
+        if ((await pinned(true)).block.number >= block) return;
+      } catch (err) {
+        // the transaction is mined either way; keep polling until the timeout
+        console.warn('Granary: indexer status read failed', err);
+      }
       await sleep(INDEX_POLL_MS);
     }
     console.warn(`Granary indexer hasn't reached block ${block} yet`);
@@ -309,6 +314,19 @@ export const createLiveSource = ({
     const bid = tokenOf(r.bidToken.id);
     const fill = tokenOf(r.auctionToken.id);
     if (!bid || !fill) return null;
+    // the config's decimals scale every amount sent: skip the auction if they
+    // disagree with the token contract's, as the indexer read them
+    for (const [t, raw] of [
+      [bid, r.bidToken],
+      [fill, r.auctionToken],
+    ] as const) {
+      if (Number(raw.decimals) !== t.decimals) {
+        console.warn(
+          `Granary: ${t.symbol} has ${raw.decimals} decimals, config says ${t.decimals}`
+        );
+        return null;
+      }
+    }
     inUse.set(bid.address.toLowerCase(), bid);
     inUse.set(fill.address.toLowerCase(), fill);
     return {
@@ -627,8 +645,11 @@ export const createLiveSource = ({
             ).isFlagged(account))
               ? list
               : null;
-          } catch {
-            return list; // a reverted read counts as flagged
+          } catch (err) {
+            // a reverted read counts as flagged; a network error is retried
+            if ((err as { code?: string })?.code === 'CALL_EXCEPTION')
+              return list;
+            throw err;
           }
         })
       );

@@ -17,6 +17,7 @@ import {
 import {
   useAuctionActions,
   useClaimable,
+  useComplianceWait,
   useGranaryWallet,
   useIsFlagged,
   useMyPositions,
@@ -220,7 +221,8 @@ const DepositCard = ({ a, balance }: { a: Auction; balance: number }) => {
   const over = !!account && n > balance;
   const below = n > 0 && current + n < a.minDeposit;
   const flagged = useIsFlagged(a);
-  const ok = n > 0 && !over && !below && !flagged;
+  const wait = useComplianceWait(a);
+  const ok = n > 0 && !over && !below && !flagged && !wait;
   return (
     <Card $hot>
       <Row>
@@ -274,6 +276,13 @@ const DepositCard = ({ a, balance }: { a: Auction; balance: number }) => {
         Deposit
       </TxBtn>
       {flagged && <Note $bad>{FLAGGED_NOTE}</Note>}
+      {wait === 'checking' && <Note>Checking the compliance list…</Note>}
+      {wait === 'failed' && (
+        <Note $bad>
+          Couldn&apos;t check the compliance list, so deposits are off for now.
+          Try again shortly.
+        </Note>
+      )}
       {done && <Note>{done}</Note>}
     </Card>
   );

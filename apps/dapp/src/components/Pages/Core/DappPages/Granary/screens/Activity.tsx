@@ -73,13 +73,18 @@ export const Activity = () => {
   const now = useNow();
   const navigate = useNavigate();
   const auctions = useAuctions().data;
-  const mine = useMyPositions()
-    .data.filter((p) => p.deposit > 0)
+  const all = useMyPositions()
+    .data.filter((p) => p.deposit > 0 || p.excluded > 0)
     .flatMap((pos) => {
       const a = auctions.find((x) => x.id === pos.auction);
       return a ? [{ pos, a, p: phaseOf(a, now) }] : [];
     });
+  // excluded from the auction: nothing left in it but a refund to withdraw
+  const out = all.filter(({ pos }) => !pos.deposit);
+  const mine = all.filter(({ pos }) => pos.deposit > 0);
   const live = mine.filter(({ p }) => isRunning(p));
+  const liveOut = out.filter(({ p }) => isRunning(p));
+  const pastOut = out.filter(({ p }) => !isRunning(p));
   const past = mine
     .filter(({ p }) => !isRunning(p))
     .sort(
@@ -96,6 +101,9 @@ export const Activity = () => {
 
       <SectionHead label="In auctions" />
       <Card $flush>
+        {liveOut.map(({ pos, a, p }) => (
+          <ExcludedRow key={a.id} a={a} p={p} pos={pos} />
+        ))}
         {live.map(({ pos, a, p }) => (
           <ListRow key={a.id} {...clickable(() => navigate(paths.auction(a)))}>
             <Moon phase={p} size={24} paused={a.paused} />
@@ -120,7 +128,9 @@ export const Activity = () => {
             </Note>
           </ListRow>
         ))}
-        {!live.length && <Note>Nothing deposited in a running auction.</Note>}
+        {!live.length && !liveOut.length && (
+          <Note>Nothing deposited in a running auction.</Note>
+        )}
       </Card>
 
       <SectionHead label="Your wishes">no tokens leave your wallet</SectionHead>
@@ -133,10 +143,13 @@ export const Activity = () => {
 
       <SectionHead label="Past auctions" />
       <Card $flush>
+        {pastOut.map(({ pos, a, p }) => (
+          <ExcludedRow key={a.id} a={a} p={p} pos={pos} />
+        ))}
         {past.map(({ pos, a, p }) => (
           <PastRow key={a.id} a={a} p={p} pos={pos} />
         ))}
-        {!past.length && <Note>No past auctions.</Note>}
+        {!past.length && !pastOut.length && <Note>No past auctions.</Note>}
       </Card>
     </Stack>
   );
@@ -277,6 +290,36 @@ const PastRow = ({ a, p, pos }: { a: Auction; p: Phase; pos: Position }) => {
       ) : (
         <Note>claimed</Note>
       )}
+    </ListRow>
+  );
+};
+
+// A position the Treasury excluded: its deposit became a refund, withdrawn
+// from the auction's page.
+const ExcludedRow = ({
+  a,
+  p,
+  pos,
+}: {
+  a: Auction;
+  p: Phase;
+  pos: Position;
+}) => {
+  const navigate = useNavigate();
+  const go = () => navigate(paths.auction(a));
+  return (
+    <ListRow {...clickable(go)}>
+      <Moon phase={p} size={24} paused={a.paused} />
+      <div>
+        <Mk>{auctionName(a)}</Mk>
+        <Note>excluded from this auction</Note>
+      </div>
+      <Note>
+        {fmt(pos.excluded)} {a.bidToken} to withdraw
+      </Note>
+      <Btn $ghost onClick={go}>
+        Withdraw
+      </Btn>
     </ListRow>
   );
 };

@@ -109,7 +109,18 @@ export const useClaimable = (auction?: Auction) => {
 // Whether the connected account is blocked by this auction's compliance list.
 export const useIsFlagged = (auction?: Auction) => {
   const lists = useGranary().flaggedLists.data;
-  return !!auction?.complianceCheck && lists.includes(auction.complianceCheck);
+  return (
+    !!auction?.complianceCheck && !!lists?.includes(auction.complianceCheck)
+  );
+};
+
+// Whether the account's compliance result for this auction is still missing:
+// 'checking' while it loads, 'failed' if the read failed. Deposits wait for
+// it, so a flagged account doesn't pay for an approval first.
+export const useComplianceWait = (auction?: Auction) => {
+  const { account, flaggedLists } = useGranary();
+  if (!account || !auction?.complianceCheck || flaggedLists.data) return null;
+  return flaggedLists.isError ? 'failed' : 'checking';
 };
 
 /* ---------- writes ---------- */
