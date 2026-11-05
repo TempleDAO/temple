@@ -10,8 +10,17 @@ import { DeployContext, getDeployContext } from '../deploy-context';
 
 async function main() {
   const context = await getDeployContext(__dirname);
-  await authorizeTgldAuction(context);
-  await setFlagger(context);
+
+  if (process.env.POST_DEPLOY_ACTION === 'update-implementation') {
+    await updateImplementation(context);
+    return;
+  }
+  if (process.env.POST_DEPLOY_ACTION === 'setup') {
+    await authorizeTgldAuction(context);
+    await setFlagger(context);
+    return;
+  }
+  throw new Error('POST_DEPLOY_ACTION must be setup or update-implementation');
 }
 
 async function authorizeTgldAuction({ owner, ADDRS }: DeployContext) {
@@ -55,5 +64,40 @@ async function setFlagger({ owner, ADDRS }: DeployContext) {
   const compliance = ComplianceCheck__factory.connect(config.complianceCheck, owner);
   await mine(compliance.setFlagger(flagger, true));
 }
+
+async function updateImplementation({ owner, ADDRS }: DeployContext) {
+  const factory = FixedPriceAuctionFactory__factory.connect(ADDRS.GRANARY.FIXED_PRICE_AUCTION_FACTORY, owner);
+  const implementationAddress = ADDRS.GRANARY.FIXED_PRICE_AUCTION_IMPLEMENTATION;
+  if (!ethers.utils.isAddress(implementationAddress) || implementationAddress === ethers.constants.AddressZero) {
+    throw new Error('Set GRANARY.FIXED_PRICE_AUCTION_IMPLEMENTATION to the new deployed address');
+  }
+  const target = implementationAddress.toLowerCase();
+  if ((await factory.implementation()).toLowerCase() === target) {
+    console.log('Configured implementation is already active');
+    return;
+  }
+
+  const implementation = FixedPriceAuction__factory.connect(implementationAddress, owner);
+
+  const signer = (await owner.getAddress()).toLowerCase();
+  if ((await factory.proposedImplementation()).toLowerCase() !== target) {
+    if ((await factory.executor()).toLowerCase() !== signer) {
+      throw new Error('Run with the factory executor first to propose the configured implementation');
+    }
+    await mine(factory.proposeImplementation(implementationAddress));
+    console.log('Proposed implementation:', implementationAddress);
+  }
+
+  if ((await factory.rescuer()).toLowerCase() !== signer) {
+    console.log('Proposal ready. Rerun this action with the factory rescuer to accept it.');
+    return;
+  }
+  await mine(factory.acceptImplementation(implementationAddress));
+  if ((await factory.implementation()).toLowerCase() !== target) {
+    throw new Error('Factory implementation was not updated to the configured address');
+  }
+  console.log('Active implementation:', implementationAddress);
+}
+
 
 runAsyncMain(main);
