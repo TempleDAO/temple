@@ -30,6 +30,7 @@ import { Analytics } from 'components/Pages/Core/DappPages/SpiceBazaar/Analytics
 import { Details } from 'components/Pages/Core/DappPages/SpiceBazaar/Spend/Details/Details';
 import { MyActivitySpice } from 'components/Pages/Core/DappPages/SpiceBazaar/MyActivity/BidsForSpice';
 import { Bid } from 'components/Pages/Core/DappPages/SpiceBazaar/Bid';
+import * as Granary from 'components/Pages/Core/DappPages/Granary';
 import { Web3OnboardInitProvider } from 'components/Web3OnboardInitProvider';
 import { ApiManagerProvider } from 'hooks/use-api-manager';
 import { getAppConfig } from 'constants/newenv';
@@ -137,6 +138,23 @@ root.render(
                       element={<MyActivitySpice />}
                     />
                     <Route path="spice/analytics" element={<Analytics />} />
+                  </Route>
+                  {/* Temple Granary: Temple Gold auctions and the wishing well. Replaces Spice Bazaar Bid/Spend at switch-over. */}
+                  <Route path="granary" element={<Granary.GranaryLayout />}>
+                    <Route index element={<Granary.Splash />} />
+                    <Route path="earn" element={<Granary.Earn />} />
+                    <Route path="auctions" element={<Granary.Auctions />} />
+                    <Route path="pair/:pairId" element={<Granary.PairPage />} />
+                    <Route
+                      path="pair/:pairId/history"
+                      element={<Granary.PairHistory />}
+                    />
+                    <Route path="wish" element={<Granary.Wish />} />
+                    <Route path="activity" element={<Granary.Activity />} />
+                    <Route
+                      path="activity/legacy"
+                      element={<Granary.LegacyActivity />}
+                    />
                   </Route>
                 </Route>
                 {/* Redirect everything else to the home page */}

@@ -762,12 +762,18 @@ export function bidsHistoryGoldAuction(
       id
       startTime
       endTime
-      bidTransaction(orderBy: timestamp, orderDirection: desc) {
+    }
+    bidTransaction: auctionTransactions(
+      orderBy: timestamp
+      orderDirection: desc
+      where: { name: Bid, auctionInstance: "${id}" }
+    ) {
+      ... on BidTransaction {
         bidAmount
-        timestamp
-        hash
-        price
       }
+      timestamp
+      hash
+      price
     }
   }`;
   return {
@@ -777,11 +783,15 @@ export function bidsHistoryGoldAuction(
   };
 }
 
-const BidsHistoryGoldAuctionResp = z.object({
-  stableGoldAuctionInstance: z.object({
-    id: z.string(),
-    startTime: z.string(),
-    endTime: z.string(),
+// The subgraph lists an instance's bids under auctionTransactions (name: Bid)
+// since v0.6.0; they're put back on the instance so callers are unchanged.
+const BidsHistoryGoldAuctionResp = z
+  .object({
+    stableGoldAuctionInstance: z.object({
+      id: z.string(),
+      startTime: z.string(),
+      endTime: z.string(),
+    }),
     bidTransaction: z.array(
       z.object({
         bidAmount: z.string(),
@@ -790,8 +800,10 @@ const BidsHistoryGoldAuctionResp = z.object({
         price: z.string(),
       })
     ),
-  }),
-});
+  })
+  .transform(({ stableGoldAuctionInstance, bidTransaction }) => ({
+    stableGoldAuctionInstance: { ...stableGoldAuctionInstance, bidTransaction },
+  }));
 
 export type BidsHistoryGoldAuctionResp = z.infer<
   typeof BidsHistoryGoldAuctionResp
@@ -807,17 +819,20 @@ export function spiceBidHistoryQuery(
   const label = 'SpiceBidHistory';
   const request = `
   {
-    bidTransactions(
+    bidTransactions: auctionTransactions(
       orderBy: timestamp
       orderDirection: asc
       first: ${first}
       skip: ${skip}
       where: {
+        name: Bid
         auctionInstance_starts_with: "${auctionAddress.toLowerCase()}"
       }
     ) {
       price
-      bidAmount
+      ... on BidTransaction {
+        bidAmount
+      }
       hash
       timestamp
       auctionInstance {
