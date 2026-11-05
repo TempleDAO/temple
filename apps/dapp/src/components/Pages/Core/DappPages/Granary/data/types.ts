@@ -37,6 +37,8 @@ export type Auction = {
   depositStart: Date;
   depositEnd: Date;
   fulfillmentEnd: Date;
+  // claim() and withdrawExcluded() ignore a pause after this
+  claimPauseEndsAt: Date;
   // 'Settled' only for settleEarly(); a clock settlement stays 'None'.
   outcome: 'None' | 'Settled' | 'Cancelled';
   settledAt?: Date;

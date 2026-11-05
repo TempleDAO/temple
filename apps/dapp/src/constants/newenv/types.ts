@@ -51,7 +51,7 @@ export type GranaryConfig = {
   complianceCheck: ContractConfig<Contract>;
   // Tokens the wish screen offers: any give → get pair of two of them.
   wishTokens: TokenConfig[];
-  // the Granary indexer (the Spice Bazaar subgraph, v0.6.0+); empty = none yet
+  // the Granary indexer (the Spice Bazaar subgraph, v0.6.1+); empty = none yet
   subgraphUrl: string;
 };
 

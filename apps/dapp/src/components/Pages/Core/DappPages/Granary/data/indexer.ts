@@ -29,6 +29,7 @@ export type RawAuction = {
   depositStart: string;
   depositEnd: string;
   fulfillmentEnd: string;
+  claimPauseEndsAt: string;
   outcome: 'None' | 'Settled' | 'Cancelled';
   settledAt: string;
   settlementEmitted: boolean;
@@ -86,6 +87,7 @@ const AUCTION = `
   depositStart
   depositEnd
   fulfillmentEnd
+  claimPauseEndsAt
   outcome
   settledAt
   settlementEmitted

@@ -319,9 +319,9 @@ const COMPLIANCE_CHECK_ON_ETH_SEPOLIA: ContractConfig<IComplianceCheck> = {
   contractFactory: IComplianceCheck__factory,
 };
 
-// The Granary indexer: the Spice Bazaar subgraph from v0.6.0.
+// The Granary indexer: the Spice Bazaar subgraph from v0.6.1.
 const GRANARY_SUBGRAPH_URL_ON_ETH_SEPOLIA =
-  'https://api.goldsky.com/api/public/project_cmgzm4q1q009c5np2angrczxw/subgraphs/spice-bazaar-sepolia/v0.6.0/gn';
+  'https://api.goldsky.com/api/public/project_cmgzm4q1q009c5np2angrczxw/subgraphs/spice-bazaar-sepolia/v0.6.1/gn';
 
 const testEnv: AppConfig = {
   chains: [ETH_SEPOLIA, BERACHAIN_BEPOLIA, ARB_SEPOLIA],

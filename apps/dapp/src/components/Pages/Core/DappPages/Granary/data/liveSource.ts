@@ -370,6 +370,7 @@ export const createLiveSource = ({
       depositStart: toDate(r.depositStart),
       depositEnd: toDate(r.depositEnd),
       fulfillmentEnd: toDate(r.fulfillmentEnd),
+      claimPauseEndsAt: toDate(r.claimPauseEndsAt),
       outcome: r.outcome,
       settledAt: r.settlementEmitted ? optDate(r.settledAt) : undefined,
       cancelledAt:

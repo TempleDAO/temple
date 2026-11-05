@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Navigate, useParams, useSearchParams } from 'react-router-dom';
 import type { Amount, Auction, Phase } from '../data/types';
 import {
-  addDays,
   fillPct,
   fmt,
   fmtDay,
@@ -58,10 +57,8 @@ import { PageHead, PastAuctions, TxBtn, WishLine } from './common';
 const useDeposit = (a?: Auction) =>
   useMyPositions().data.find((p) => p.auction === a?.id);
 
-// claim() and withdrawExcluded() ignore a pause once it has outlasted this
-const CLAIM_PAUSE_EXPIRY_DAYS = 30;
 const claimsPaused = (a: Auction, now: Date) =>
-  a.paused && now <= addDays(a.fulfillmentEnd, CLAIM_PAUSE_EXPIRY_DAYS);
+  a.paused && now <= a.claimPauseEndsAt;
 
 // TempleGold only moves for authorised contracts: until this auction is,
 // TGLD can't go in or come out of it.
@@ -511,7 +508,7 @@ const ClaimCard = ({ a, phase }: { a: Auction; phase: Phase }) => {
               ? TGLD_NOTE
               : paused && !pos?.claimed
               ? `Claims are paused by the Temple until it unpauses, or ${fmtDayTime(
-                  addDays(a.fulfillmentEnd, CLAIM_PAUSE_EXPIRY_DAYS)
+                  a.claimPauseEndsAt
                 )} at the latest.`
               : 'One claim pays both. Nothing expires.'}
           </Note>
@@ -548,7 +545,7 @@ const ExcludedCard = ({ a }: { a: Auction }) => {
           ? TGLD_NOTE
           : paused
           ? `The auction is paused. You can withdraw this once it unpauses, or ${fmtDayTime(
-              addDays(a.fulfillmentEnd, CLAIM_PAUSE_EXPIRY_DAYS)
+              a.claimPauseEndsAt
             )} at the latest.`
           : 'This part of your deposit was taken out of the auction and is returned to you in full.'}
       </Note>
