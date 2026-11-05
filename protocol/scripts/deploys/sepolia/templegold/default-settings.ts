@@ -38,9 +38,9 @@ export const DEFAULT_SETTINGS = {
         FLAGGER: "0xC785695710292c042a2de8A0Ba16F3a054cC2eAD",
         AUCTION: {
             // Buffer above the on-chain one-day minimum for transaction inclusion.
-            START_DELAY: 3600 * 25,
-            DEPOSIT_DURATION: 3600 * 24,
-            FULFILLMENT_DURATION: 3600 * 24,
+            START_DELAY: 60 * 5,
+            DEPOSIT_DURATION: 60 * 60 * 4,
+            FULFILLMENT_DURATION: 60 * 60,
             PRICE: ethers.utils.parseUnits("4", 18),
             MIN_DEPOSIT: ethers.utils.parseUnits("1", 18),
         },

@@ -1,5 +1,5 @@
 import '@nomiclabs/hardhat-ethers';
-import { FixedPriceAuction__factory } from '../../../../../typechain';
+import { FixedPriceAuctionMock__factory } from '../../../../../typechain';
 import {
   deployAndMine,
   runAsyncMain,
@@ -9,7 +9,7 @@ import { getDeployContext } from '../deploy-context';
 async function main() {
   const { owner } = await getDeployContext(__dirname);
 
-  const factory = new FixedPriceAuction__factory(owner);
+  const factory = new FixedPriceAuctionMock__factory(owner);
   await deployAndMine(
     'FIXED_PRICE_AUCTION_IMPLEMENTATION',
     factory,
