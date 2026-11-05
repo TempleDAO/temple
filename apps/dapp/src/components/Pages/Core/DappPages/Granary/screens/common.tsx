@@ -170,7 +170,9 @@ export const PastAuctions = ({
           isPositive(pair.wishedFor) &&
           `${fmtM(pair.wishedFor)} ${pair.bidToken} wished for · `}
         <TextLink to={paths.history(pair.id)}>
-          See all {auctions.length} auctions
+          {auctions.length === 1
+            ? 'See its history'
+            : `See all ${auctions.length} auctions`}
         </TextLink>
       </SectionHead>
       <PastRow>

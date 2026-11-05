@@ -83,8 +83,10 @@ const List = () => {
   return (
     <>
       <SectionHead label="Running auctions">
-        {running.length - scheduled} running · {scheduled} scheduled · sorted by
-        next deadline
+        {running.length > 0 &&
+          `${
+            running.length - scheduled
+          } running · ${scheduled} scheduled · sorted by next deadline`}
       </SectionHead>
       <Card $flush>
         {running.map(({ a, p }) => {
@@ -111,6 +113,12 @@ const List = () => {
             </ListRow>
           );
         })}
+        {!running.length && (
+          <Note>
+            No auctions running right now. The Temple reads the wishes when
+            deciding which to open next.
+          </Note>
+        )}
       </Card>
       <SectionHead label="All pairs">
         {indexed &&
@@ -177,7 +185,7 @@ const PairRow = ({ pair }: { pair: Pair }) => {
         to={paths.history(pair.id)}
         onClick={(e) => e.stopPropagation()}
       >
-        {auctions.length} auctions
+        {auctions.length} {auctions.length === 1 ? 'auction' : 'auctions'}
       </TextLink>
     </ListRow>
   );
