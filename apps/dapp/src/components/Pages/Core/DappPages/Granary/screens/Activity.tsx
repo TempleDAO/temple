@@ -10,10 +10,13 @@ import {
   fmt,
   fmtDay,
   fmtDayTime,
+  isPositive,
   isRunning,
   pairIdOf,
   phaseOf,
+  plain,
   settlementFor,
+  ZERO,
 } from '../data/derive';
 import {
   useAuctions,
@@ -74,14 +77,14 @@ export const Activity = () => {
   const navigate = useNavigate();
   const auctions = useAuctions().data;
   const all = useMyPositions()
-    .data.filter((p) => p.deposit > 0 || p.excluded > 0)
+    .data.filter((p) => isPositive(p.deposit) || isPositive(p.excluded))
     .flatMap((pos) => {
       const a = auctions.find((x) => x.id === pos.auction);
       return a ? [{ pos, a, p: phaseOf(a, now) }] : [];
     });
   // excluded from the auction: nothing left in it but a refund to withdraw
-  const out = all.filter(({ pos }) => !pos.deposit);
-  const mine = all.filter(({ pos }) => pos.deposit > 0);
+  const out = all.filter(({ pos }) => !isPositive(pos.deposit));
+  const mine = all.filter(({ pos }) => isPositive(pos.deposit));
   const live = mine.filter(({ p }) => isRunning(p));
   const liveOut = out.filter(({ p }) => isRunning(p));
   const pastOut = out.filter(({ p }) => !isRunning(p));
@@ -110,8 +113,8 @@ export const Activity = () => {
             <div>
               <Mk>{auctionName(a)}</Mk>
               <Note>
-                {fmt(pos.deposit)} {a.bidToken} → {fmt(pos.deposit * a.price)}{' '}
-                {a.fillToken} at full funding
+                {fmt(pos.deposit)} {a.bidToken} →{' '}
+                {fmt(pos.deposit.mul(a.price))} {a.fillToken} at full funding
               </Note>
             </div>
             <Note>
@@ -203,7 +206,7 @@ const WishRow = ({ w }: { w: Wish }) => {
               await setWish({
                 give: w.give,
                 get: w.get,
-                amount: w.amountExact,
+                amount: plain(w.amount),
                 durationDays: EXTEND_DAYS,
               });
             }}
@@ -213,7 +216,7 @@ const WishRow = ({ w }: { w: Wish }) => {
         ) : (
           <Btn
             $ghost
-            onClick={() => navigate(paths.wish(w.give, w.get, w.amountExact))}
+            onClick={() => navigate(paths.wish(w.give, w.get, plain(w.amount)))}
           >
             Edit wish
           </Btn>
@@ -258,7 +261,7 @@ const PastRow = ({ a, p, pos }: { a: Auction; p: Phase; pos: Position }) => {
   // claimed: what claim() paid; otherwise the estimate from the settlement
   const s =
     claimed && pos.claimedFill !== undefined
-      ? { fill: pos.claimedFill, refund: pos.claimedRefund ?? 0 }
+      ? { fill: pos.claimedFill, refund: pos.claimedRefund ?? ZERO }
       : settlementFor(a, pos.deposit, now);
   const go = () => navigate(paths.auction(a));
   return (
@@ -280,7 +283,7 @@ const PastRow = ({ a, p, pos }: { a: Auction; p: Phase; pos: Position }) => {
           : p === 'Cancelled'
           ? `${fmt(s.refund)} ${a.bidToken} returned`
           : `${fmt(s.fill)} ${a.fillToken}${
-              s.refund ? ` + ${fmt(s.refund)} ${a.bidToken}` : ''
+              isPositive(s.refund) ? ` + ${fmt(s.refund)} ${a.bidToken}` : ''
             }`}
       </Note>
       {!claimed ? (

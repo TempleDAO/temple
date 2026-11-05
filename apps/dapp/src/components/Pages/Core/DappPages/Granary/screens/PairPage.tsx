@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Navigate, useParams, useSearchParams } from 'react-router-dom';
-import type { Auction, Phase } from '../data/types';
+import type { Amount, Auction, Phase } from '../data/types';
 import {
   addDays,
   fillPct,
@@ -9,11 +9,13 @@ import {
   fmtDayTime,
   fmtM,
   fmtPrice,
+  isPositive,
   isRunning,
   pairName,
+  parseTyped,
   phaseOf,
   settlementFor,
-  toWei,
+  ZERO,
 } from '../data/derive';
 import {
   useAuctionActions,
@@ -96,7 +98,7 @@ export const PairPage = () => {
   const past = !isRunning(phase);
   const name = pairName(pair.bidToken, pair.fillToken);
   const mine = (a: Auction) =>
-    positions.find((p) => p.auction === a.id && p.deposit > 0);
+    positions.find((p) => p.auction === a.id && isPositive(p.deposit));
   const others = past ? [] : running.filter((a) => a !== selected);
   const show = (a: Auction) => setParams({ auction: String(a.number) });
 
@@ -115,7 +117,7 @@ export const PairPage = () => {
           title={name}
           right={
             <Note>
-              {fmt(Number(balance))} {pair.bidToken} in your wallet
+              {fmt(balance)} {pair.bidToken} in your wallet
               {pair.bidToken === 'TGLD' && (
                 <>
                   {' · '}
@@ -174,9 +176,9 @@ export const PairPage = () => {
           <Row>
             <Note>
               {mine(a)
-                ? `You're also in #${a.number}: ${fmt(mine(a)?.deposit ?? 0)} ${
-                    a.bidToken
-                  }${a.paused ? ', paused' : ''}.`
+                ? `You're also in #${a.number}: ${fmt(
+                    mine(a)?.deposit ?? ZERO
+                  )} ${a.bidToken}${a.paused ? ', paused' : ''}.`
                 : `#${a.number} is also running: ${otherState(
                     a,
                     phaseOf(a, now)
@@ -211,21 +213,20 @@ const PriceRow = ({ a }: { a: Auction }) => (
   </Row>
 );
 
-// balance: the exact whole-token amount, as useWalletBalance gives it
-const DepositCard = ({ a, balance }: { a: Auction; balance: string }) => {
+const DepositCard = ({ a, balance }: { a: Auction; balance: Amount }) => {
   const { deposit } = useAuctionActions();
   const { account } = useGranaryWallet();
   const [text, setText] = useState('');
   const [done, setDone] = useState('');
-  const current = useDeposit(a)?.deposit ?? 0;
+  const current = useDeposit(a)?.deposit ?? ZERO;
   const clean = text.replace(/,/g, '').trim();
-  const n = parseFloat(clean);
-  const wei = toWei(clean);
-  const over = !!account && !!wei && wei.gt(toWei(balance) ?? 0);
-  const below = n > 0 && current + n < a.minDeposit;
+  const typed = parseTyped(clean) ?? ZERO;
+  const valid = parseTyped(clean) !== null;
+  const over = !!account && typed.gt(balance);
+  const below = isPositive(typed) && current.add(typed).lt(a.minDeposit);
   const flagged = useIsFlagged(a);
   const wait = useComplianceWait(a);
-  const ok = !!wei?.gt(0) && !over && !below && !flagged && !wait;
+  const ok = valid && isPositive(typed) && !over && !below && !flagged && !wait;
   return (
     <Card $hot>
       <Row>
@@ -253,14 +254,14 @@ const DepositCard = ({ a, balance }: { a: Auction; balance: string }) => {
             ? `Your deposit must total at least ${fmt(a.minDeposit)} ${
                 a.bidToken
               }`
-            : `${over ? 'More than the ' : ''}${fmt(Number(balance))} ${
+            : `${over ? 'More than the ' : ''}${fmt(balance)} ${
                 a.bidToken
               } in your wallet`}
         </Note>
       </Field>
       <Row>
         <K>You&apos;d get at full funding</K>
-        <V>{ok ? `${fmt(n * a.price)} ${a.fillToken}` : '–'}</V>
+        <V>{ok ? `${fmt(typed.mul(a.price))} ${a.fillToken}` : '–'}</V>
       </Row>
       <Note>
         If the Treasury funds less, you get a pro‑rata share and the rest of
@@ -272,7 +273,7 @@ const DepositCard = ({ a, balance }: { a: Auction; balance: string }) => {
         onClick={async () => {
           if (await deposit(a, clean)) {
             setText('');
-            setDone(`Deposited ${fmt(n)} ${a.bidToken}.`);
+            setDone(`Deposited ${fmt(typed)} ${a.bidToken}.`);
           }
         }}
       >
@@ -295,7 +296,7 @@ const PositionCard = ({ a }: { a: Auction }) => {
   const { withdrawDeposit } = useAuctionActions();
   const pos = useDeposit(a);
   const flagged = useIsFlagged(a);
-  if (!pos?.deposit) return null;
+  if (!pos || !isPositive(pos.deposit)) return null;
   return (
     <Card>
       <Row>
@@ -307,7 +308,7 @@ const PositionCard = ({ a }: { a: Auction }) => {
       <Row>
         <K>At full funding you receive</K>
         <V>
-          {fmt(pos.deposit * a.price)} {a.fillToken}
+          {fmt(pos.deposit.mul(a.price))} {a.fillToken}
         </V>
       </Row>
       <Row>
@@ -334,7 +335,7 @@ const PositionCard = ({ a }: { a: Auction }) => {
 // Fulfillment, or any running phase while paused: no actions, only state.
 const RunningCard = ({ a, phase }: { a: Auction; phase: Phase }) => {
   const pos = useDeposit(a);
-  const required = a.totalDeposits * a.price;
+  const required = a.totalDeposits.mul(a.price);
   return (
     <Card>
       <Row>
@@ -363,9 +364,9 @@ const RunningCard = ({ a, phase }: { a: Auction; phase: Phase }) => {
         <Row>
           <K>Your deposit</K>
           <V>
-            {pos?.deposit
+            {pos && isPositive(pos.deposit)
               ? `${fmt(pos.deposit)} ${a.bidToken} → ${fmt(
-                  pos.deposit * a.price
+                  pos.deposit.mul(a.price)
                 )} ${a.fillToken} at full funding`
               : 'none'}
           </V>
@@ -392,7 +393,11 @@ const RunningCard = ({ a, phase }: { a: Auction; phase: Phase }) => {
       {phase === 'Fulfillment' && (
         <Row>
           <K>Your deposit in #{a.number}</K>
-          <V>{pos?.deposit ? `${fmt(pos.deposit)} ${a.bidToken}` : 'none'}</V>
+          <V>
+            {pos && isPositive(pos.deposit)
+              ? `${fmt(pos.deposit)} ${a.bidToken}`
+              : 'none'}
+          </V>
         </Row>
       )}
     </Card>
@@ -421,27 +426,27 @@ const ClaimCard = ({ a, phase }: { a: Auction; phase: Phase }) => {
   const flagged = useIsFlagged(a);
   const blocked = paused || flagged || tgldBlocked(a);
   const cancelled = phase === 'Cancelled';
-  const deposit = pos?.deposit ?? 0;
+  const deposit = pos?.deposit ?? ZERO;
   // Exact figures: what the claim paid once claimed, claimable(me) before;
   // the settlement estimate only while that read is loading.
   const claimable = useClaimable(a).data;
   const paid =
     pos?.claimed && pos.claimedFill !== undefined
       ? {
-          filledBid: deposit - (pos.claimedRefund ?? 0),
+          filledBid: deposit.sub(pos.claimedRefund ?? ZERO),
           fill: pos.claimedFill,
-          refund: pos.claimedRefund ?? 0,
+          refund: pos.claimedRefund ?? ZERO,
         }
       : null;
   const s = paid ??
     claimable ??
     settlementFor(a, deposit, now) ?? {
-      filledBid: 0,
-      fill: 0,
+      filledBid: ZERO,
+      fill: ZERO,
       refund: deposit,
     };
   return (
-    <Card $hot={deposit > 0 && !pos?.claimed}>
+    <Card $hot={isPositive(deposit) && !pos?.claimed}>
       <Row>
         <H4>
           Auction #{a.number} · {cancelled ? 'cancelled' : 'settled'}{' '}
@@ -463,7 +468,7 @@ const ClaimCard = ({ a, phase }: { a: Auction; phase: Phase }) => {
           </V>
         </Row>
       )}
-      {deposit > 0 ? (
+      {isPositive(deposit) ? (
         <>
           <Row>
             <K>Your deposit</K>
@@ -524,7 +529,7 @@ const ExcludedCard = ({ a }: { a: Auction }) => {
   const now = useNow();
   const pos = useDeposit(a);
   const flagged = useIsFlagged(a);
-  if (!pos?.excluded) return null;
+  if (!pos || !isPositive(pos.excluded)) return null;
   const paused = claimsPaused(a, now);
   // withdrawExcluded() pays bid tokens: only a TGLD bid needs authorisation
   const tgld = a.bidToken === 'TGLD' && a.tgldAuthorized === false;

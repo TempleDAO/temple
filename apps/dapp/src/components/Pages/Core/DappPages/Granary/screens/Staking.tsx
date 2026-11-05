@@ -1,14 +1,24 @@
 import { ReactNode, useState } from 'react';
 import styled from 'styled-components';
-import { constants, utils } from 'ethers';
-import { fmt, fmtDayTime, fmtLeft, toWei } from '../data/derive';
+import { utils } from 'ethers';
+import {
+  fmt,
+  fmt2,
+  fmtDayTime,
+  fmtLeft,
+  isPositive,
+  parseTyped,
+  plain,
+  toNumber,
+  ZERO,
+} from '../data/derive';
 import {
   useGranaryWallet,
   useStaking,
   useStakingActions,
   useWallClock,
 } from '../data/hooks';
-import type { StakingSummary } from '../data/types';
+import type { Amount, StakingSummary } from '../data/types';
 import {
   Banner,
   Big,
@@ -36,8 +46,8 @@ const DOCS = 'https://docs.templedao.link/spice-bazaar';
 const TABS = ['Stake', 'Unstake', 'Delegate', 'Claim TGLD'] as const;
 type Tab = (typeof TABS)[number];
 
-// TGLD amounts are often fractional
-const fmt2 = (n: number) =>
+// the unstake lock, in days or hours
+const fmtCount = (n: number) =>
   n.toLocaleString('en-US', { maximumFractionDigits: 2 });
 const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 const same = (a?: string, b?: string) =>
@@ -48,7 +58,11 @@ export const StakingCard = () => {
   const s = useStaking().data;
   const { account } = useGranaryWallet();
   const [tab, setTab] = useState<Tab>('Stake');
-  const share = s?.totalStaked ? (s.staked / s.totalStaked) * 100 : 0;
+  // a percentage, for display only
+  const share =
+    s && isPositive(s.totalStaked)
+      ? toNumber(s.staked.div(s.totalStaked, 6)) * 100
+      : 0;
   return (
     <Card>
       <Row>
@@ -64,25 +78,27 @@ export const StakingCard = () => {
         </TextButton>
       </Row>
       <Stats>
-        <Stat k="Total staked" v={`${fmt(s?.totalStaked ?? 0)} TEMPLE`} />
+        <Stat k="Total staked" v={`${fmt(s?.totalStaked ?? ZERO)} TEMPLE`} />
         <Stat
           k="Circulating supply"
-          v={`${fmt(s?.circulatingTgld ?? 0)} TGLD`}
+          v={`${fmt(s?.circulatingTgld ?? ZERO)} TGLD`}
         />
-        <Stat k="Weekly rewards" v={`${fmt(s?.weeklyRewards ?? 0)} TGLD`} />
+        <Stat k="Weekly rewards" v={`${fmt(s?.weeklyRewards ?? ZERO)} TGLD`} />
         <Stat
           k={`Your stake${
-            account && s?.staked ? ` · ${share.toFixed(2)}% of total` : ''
+            account && isPositive(s?.staked)
+              ? ` · ${share.toFixed(2)}% of total`
+              : ''
           }`}
-          v={account ? `${fmt(s?.staked ?? 0)} TEMPLE` : '–'}
+          v={account ? `${fmt(s?.staked ?? ZERO)} TEMPLE` : '–'}
         />
         <Stat
           k="Your daily TGLD"
-          v={account ? `${fmt2(s?.dailyReward ?? 0)} TGLD` : '–'}
+          v={account ? `${fmt2(s?.dailyReward ?? ZERO)} TGLD` : '–'}
         />
         <Stat
           k="Claimable"
-          v={account ? `${fmt2(s?.rewards ?? 0)} TGLD` : '–'}
+          v={account ? `${fmt2(s?.rewards ?? ZERO)} TGLD` : '–'}
         />
       </Stats>
       {s?.paused && (
@@ -131,7 +147,6 @@ const AmountField = ({
   text,
   setText,
   max,
-  maxExact,
   hint,
   bad,
   disabled,
@@ -139,8 +154,7 @@ const AmountField = ({
   label: string;
   text: string;
   setText: (t: string) => void;
-  max: number;
-  maxExact: string;
+  max: Amount;
   hint: string;
   bad?: boolean;
   disabled?: boolean;
@@ -158,8 +172,8 @@ const AmountField = ({
       />
       <TextButton
         type="button"
-        disabled={disabled || !max}
-        onClick={() => setText(maxExact)}
+        disabled={disabled || !isPositive(max)}
+        onClick={() => setText(plain(max))}
       >
         Max
       </TextButton>
@@ -176,15 +190,14 @@ const StakeForm = ({ s }: { s: StakingSummary }) => {
   const [bridged, setBridged] = useState(false);
   const [locked, setLocked] = useState(false);
   const clean = cleanAmount(text);
-  const wei = toWei(clean);
-  const over =
-    !!account && !!wei && wei.gt(toWei(s.availableExact) ?? constants.Zero);
-  const ok = !!wei?.gt(0) && !over && bridged && locked && !s.paused;
+  const typed = parseTyped(clean);
+  const over = !!account && !!typed && typed.gt(s.available);
+  const ok = isPositive(typed) && !over && bridged && locked && !s.paused;
   const d = s.cooldownDays;
   const lock =
     d >= 1
-      ? `${fmt2(d)} day${d === 1 ? '' : 's'}`
-      : `${fmt2(d * 24)} hour${d * 24 === 1 ? '' : 's'}`;
+      ? `${fmtCount(d)} day${d === 1 ? '' : 's'}`
+      : `${fmtCount(d * 24)} hour${d * 24 === 1 ? '' : 's'}`;
   return (
     <Stack gap={12}>
       <AmountField
@@ -192,7 +205,6 @@ const StakeForm = ({ s }: { s: StakingSummary }) => {
         text={text}
         setText={setText}
         max={s.available}
-        maxExact={s.availableExact}
         bad={over}
         hint={`${over ? 'More than the ' : ''}${fmt2(
           s.available
@@ -235,10 +247,10 @@ const UnstakeForm = ({ s }: { s: StakingSummary }) => {
   const [text, setText] = useState('');
   const [claim, setClaim] = useState(false);
   const clean = cleanAmount(text);
-  const wei = toWei(clean);
-  const over = !!wei && wei.gt(toWei(s.stakedExact) ?? constants.Zero);
+  const typed = parseTyped(clean);
+  const over = !!typed && typed.gt(s.staked);
   const lockedUntil = s.unstakeAt && s.unstakeAt > wall ? s.unstakeAt : null;
-  const ok = !!wei?.gt(0) && !over && !lockedUntil && !s.paused;
+  const ok = isPositive(typed) && !over && !lockedUntil && !s.paused;
   return (
     <Stack gap={12}>
       {lockedUntil && (
@@ -252,7 +264,6 @@ const UnstakeForm = ({ s }: { s: StakingSummary }) => {
         text={text}
         setText={setText}
         max={s.staked}
-        maxExact={s.stakedExact}
         bad={over}
         disabled={!!lockedUntil}
         hint={`${over ? 'More than the ' : ''}${fmt2(s.staked)} TEMPLE staked`}
@@ -340,7 +351,7 @@ const DelegateForm = ({ s }: { s: StakingSummary }) => {
         </Field>
       )}
       <Note>
-        {s.staked
+        {isPositive(s.staked)
           ? `Your ${fmt(s.staked)} staked TEMPLE carry the votes.`
           : 'You have no TEMPLE staked yet; future stakes follow this delegate.'}
         {unchanged && target ? ' That is already your delegate.' : ''}
@@ -367,14 +378,14 @@ const ClaimForm = ({ s }: { s: StakingSummary }) => {
         <Big>{fmt2(s.rewards)} TGLD</Big>
         <Note>
           ready to claim
-          {s.dailyReward
+          {isPositive(s.dailyReward)
             ? ` · about ${fmt2(s.dailyReward)} more per day at the current rate`
             : ''}
         </Note>
       </div>
       <Row $start>
         <TxBtn
-          disabled={!(s.rewards > 0) || s.paused}
+          disabled={!isPositive(s.rewards) || s.paused}
           onClick={async () => {
             await claimStakingRewards();
           }}

@@ -10,8 +10,11 @@ import {
   fmtDayTime,
   fmtDayYear,
   fmtM,
+  isPositive,
   pairIdOf,
   pairName,
+  parseTyped,
+  ZERO,
 } from '../data/derive';
 import {
   useGranaryWallet,
@@ -98,7 +101,7 @@ const WishScreen = () => {
           <Note>
             {pair?.wishedFor === undefined
               ? null
-              : pair.wishedFor
+              : isPositive(pair.wishedFor)
               ? `${fmtM(pair.wishedFor)} ${give} wished for`
               : 'No wishes yet'}
           </Note>
@@ -163,7 +166,7 @@ const WishPanel = ({
   const navigate = useNavigate();
   const { setWish } = useWishActions();
   const { account } = useGranaryWallet();
-  const balance = Number(useWalletBalance(give).data);
+  const balance = useWalletBalance(give).data;
   // one wish per (give, get): a new one replaces it
   const current = useMyWishes().data.find(
     (w) => w.give === give && w.get === get && w.expiresAt > now
@@ -173,10 +176,10 @@ const WishPanel = ({
   const [stage, setStage] = useState<'form' | 'confirm' | 'well' | 'done'>(
     'form'
   );
-  const [made, setMade] = useState({ n: 0, until: wall });
+  const [made, setMade] = useState({ n: ZERO, until: wall });
   const clean = amount.replace(/,/g, '').trim();
-  const n = parseFloat(clean);
-  const over = !!account && n > balance;
+  const typed = parseTyped(clean);
+  const over = !!account && !!typed && typed.gt(balance);
   const until = addDays(wall, days);
 
   const cast = async () => {
@@ -186,7 +189,7 @@ const WishPanel = ({
       setStage('form');
       return;
     }
-    setMade({ n, until });
+    setMade({ n: typed ?? ZERO, until });
     setStage('well');
     // the coin lands ~1.06s into the toss; show the result just after
     setTimeout(() => setStage('done'), 1400);
@@ -291,7 +294,7 @@ const WishPanel = ({
       <Row $start>
         {/* not awaited, so the button shows the wallet prompt text instead of a spinner */}
         <TxBtn
-          disabled={!(n > 0) || stage === 'confirm'}
+          disabled={!isPositive(typed) || stage === 'confirm'}
           onClick={() => {
             cast();
           }}

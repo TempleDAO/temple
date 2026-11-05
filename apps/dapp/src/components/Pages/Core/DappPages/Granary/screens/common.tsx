@@ -8,11 +8,13 @@ import {
   fmt,
   fmtDayTime,
   fmtLeft,
-  fmtMonth,
   fmtM,
+  fmtMonth,
+  isPositive,
   isRunning,
   pairIdOf,
   phaseOf,
+  plain,
 } from '../data/derive';
 import {
   useAuctions,
@@ -114,7 +116,7 @@ const OneClaimStrip = ({ a }: { a: Auction }) => {
     <ClaimStrip>
       <span>
         <Moon phase={phaseOf(a, now)} size={18} />
-        {data.fill
+        {isPositive(data.fill)
           ? `${auctionName(a)} settled, ${fillPct(a)}% filled. Claim ${fmt(
               data.fill
             )} ${a.fillToken} and ${fmt(data.refund)} ${a.bidToken}.`
@@ -134,7 +136,7 @@ export const ClaimStrips = () => {
   return (
     <>
       {positions
-        .filter((p) => !p.claimed && p.deposit > 0)
+        .filter((p) => !p.claimed && isPositive(p.deposit))
         .map((p) => auctions.find((a) => a.id === p.auction))
         .map((a) => a && <OneClaimStrip key={a.id} a={a} />)}
     </>
@@ -157,12 +159,15 @@ export const PastAuctions = ({
   const past = auctions.filter((a) => !isRunning(phaseOf(a, now)));
   if (!past.length) return null;
   const open = (a: Auction) =>
-    positions.find((p) => p.auction === a.id && !p.claimed && p.deposit > 0);
+    positions.find(
+      (p) => p.auction === a.id && !p.claimed && isPositive(p.deposit)
+    );
   const shown = past.filter((a, i) => i < 4 || open(a));
   return (
     <>
       <SectionHead label="Past auctions">
-        {!!pair.wishedFor &&
+        {pair.wishedFor &&
+          isPositive(pair.wishedFor) &&
           `${fmtM(pair.wishedFor)} ${pair.bidToken} wished for · `}
         <TextLink to={paths.history(pair.id)}>
           See all {auctions.length} auctions
@@ -211,7 +216,7 @@ export const WishLine = ({ pair }: { pair: Pair }) => {
           Your wish for {wish.give} → {wish.get}: {fmt(wish.amount)} {wish.give}{' '}
           until {fmtDayTime(wish.expiresAt)}.
         </Note>
-        <TextLink to={paths.wish(wish.give, wish.get, wish.amountExact)}>
+        <TextLink to={paths.wish(wish.give, wish.get, plain(wish.amount))}>
           Edit wish
         </TextLink>
       </Row>

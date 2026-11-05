@@ -25,7 +25,15 @@ import {
   TempleGoldStaking__factory,
 } from 'types/typechain';
 import { estimateAndMine } from 'utils/ethers';
-import { pairIdOf } from './derive';
+import { DecimalBigNumber } from 'utils/DecimalBigNumber';
+import {
+  fromUnits,
+  isPositive,
+  pairIdOf,
+  roundTo,
+  whole,
+  ZERO,
+} from './derive';
 import {
   createIndexer,
   RawAuction,
@@ -35,6 +43,7 @@ import {
 } from './indexer';
 import { GranaryDataSource, GranaryError, GranaryErrorCode } from './source';
 import type {
+  Amount,
   Auction,
   Balances,
   IndexerStatus,
@@ -86,11 +95,21 @@ const INDEX_TIMEOUT_MS = 90_000;
 export const isDeployed = (c?: { address?: string }) =>
   !!c?.address && c.address !== constants.AddressZero;
 
-const toNum = (v: BigNumber | string, decimals: number) =>
-  Number(utils.formatUnits(v, decimals));
-// an exact decimal string for an input box: "4950", not "4950.0"
-const toExact = (v: BigNumber, decimals: number) =>
-  utils.formatUnits(v, decimals).replace(/\.0$/, '');
+// The indexer's whole-token decimal strings ("12.5"; also "1.5E-7"), exactly.
+const fromDecimal = (text: string, decimals: number) => {
+  const [mantissa, exp = '0'] = text.trim().toLowerCase().split('e');
+  const neg = mantissa.startsWith('-');
+  const [int, frac = ''] = mantissa.replace(/^[-+]/, '').split('.');
+  const digits = `${int}${frac}`;
+  const point = int.length + Number(exp);
+  const padded =
+    point <= 0
+      ? `0.${'0'.repeat(-point)}${digits}`
+      : point >= digits.length
+      ? digits + '0'.repeat(point - digits.length)
+      : `${digits.slice(0, point)}.${digits.slice(point)}`;
+  return DecimalBigNumber.parseUnits(`${neg ? '-' : ''}${padded}`, decimals);
+};
 const toDate = (secs: BigNumber | number | string) =>
   new Date(Number(secs) * 1000);
 const optDate = (secs: string) => (secs === '0' ? undefined : toDate(secs));
@@ -190,19 +209,19 @@ const demandByPair = (
   T: number,
   tokenOf: (address: string) => TokenMeta | undefined
 ) => {
-  const out = new Map<string, number>(); // pair id (addresses) → bid tokens
+  const out = new Map<string, Amount>(); // pair id (addresses) → bid tokens
   const pairKey = (from: string, to: string) =>
     `${from}${to.slice(2)}`.toLowerCase();
   for (const w of wishes) {
     const from = tokenOf(w.fromToken);
     if (!from) continue;
     const active = w.fromAmount !== '0' && Number(w.expiresAt) > T;
-    const wished = active ? toNum(w.fromAmount, from.decimals) : 0;
-    if (!wished) continue;
+    if (!active) continue;
+    const wished = fromUnits(w.fromAmount, from.decimals);
     const key = pairKey(w.fromToken, w.toToken);
     // the wish's setAt is its pair's reset point: only later fills count
     const R = Number(w.setAt);
-    let filled = 0;
+    let filled = ZERO;
     for (const p of positions) {
       const a = p.auctionInstance as RawAuction;
       if (!a.id || p.user.id.toLowerCase() !== w.account.toLowerCase())
@@ -216,14 +235,25 @@ const demandByPair = (
         ? Number(a.settledAt)
         : Number(a.fulfillmentEnd);
       if (settleTime <= R) continue;
-      const deposit = Number(p.totalBidAmount);
-      if (!deposit) continue;
-      if (p.hasClaimed) filled += deposit - Number(p.claimedRefundAmount);
-      else if (a.totalDeposits !== '0')
-        filled +=
-          deposit * (1 - Number(a.userRefund) / Number(a.totalDeposits));
+      const deposit = fromDecimal(p.totalBidAmount, from.decimals);
+      if (deposit.isZero()) continue;
+      if (p.hasClaimed)
+        filled = filled.add(
+          deposit.sub(fromDecimal(p.claimedRefundAmount, from.decimals))
+        );
+      else if (a.totalDeposits !== '0') {
+        // the unfilled share of the deposit comes back as a refund
+        const refund = roundTo(
+          deposit
+            .mul(fromUnits(a.userRefund, 0))
+            .div(fromUnits(a.totalDeposits, 0), from.decimals),
+          from.decimals
+        );
+        filled = filled.add(deposit.sub(refund));
+      }
     }
-    out.set(key, (out.get(key) ?? 0) + Math.max(0, wished - filled));
+    const left = wished.sub(filled);
+    out.set(key, (out.get(key) ?? ZERO).add(left.gt(ZERO) ? left : ZERO));
   }
   return out;
 };
@@ -335,7 +365,7 @@ export const createLiveSource = ({
       fillToken: fill.symbol,
       number: r.number,
       // fill tokens per whole bid token, scaled by 1e18
-      price: toNum(r.fixedPrice, 18),
+      price: fromUnits(r.fixedPrice, 18),
       createdAt: toDate(r.createdAt),
       depositStart: toDate(r.depositStart),
       depositEnd: toDate(r.depositEnd),
@@ -345,10 +375,10 @@ export const createLiveSource = ({
       cancelledAt:
         r.outcome === 'Cancelled' ? optDate(r.cancelledAt) : undefined,
       paused: r.paused,
-      totalDeposits: toNum(r.totalDeposits, bid.decimals),
-      funding: toNum(r.funding, fill.decimals),
-      filledBids: toNum(r.filledBids, bid.decimals),
-      minDeposit: toNum(r.minDeposit, bid.decimals),
+      totalDeposits: fromUnits(r.totalDeposits, bid.decimals),
+      funding: fromUnits(r.funding, fill.decimals),
+      filledBids: fromUnits(r.filledBids, bid.decimals),
+      minDeposit: fromUnits(r.minDeposit, bid.decimals),
       complianceCheck: r.complianceDisabled
         ? undefined
         : r.complianceCheck.toLowerCase(),
@@ -367,15 +397,20 @@ export const createLiveSource = ({
 
   const toPosition = (p: RawPosition): Position | null => {
     const a = p.auctionInstance as RawAuction;
-    if (!a.id || !tokenOf(a.bidToken.id) || !tokenOf(a.auctionToken.id))
-      return null;
+    const bid = a.id ? tokenOf(a.bidToken.id) : undefined;
+    const fill = a.id ? tokenOf(a.auctionToken.id) : undefined;
+    if (!bid || !fill) return null;
     return {
       auction: a.fixedPriceAuction.id,
-      deposit: Number(p.totalBidAmount),
+      deposit: fromDecimal(p.totalBidAmount, bid.decimals),
       claimed: p.hasClaimed,
-      excluded: Number(p.excludedAmount),
-      claimedFill: p.hasClaimed ? Number(p.claimedAmount) : undefined,
-      claimedRefund: p.hasClaimed ? Number(p.claimedRefundAmount) : undefined,
+      excluded: fromDecimal(p.excludedAmount, bid.decimals),
+      claimedFill: p.hasClaimed
+        ? fromDecimal(p.claimedAmount, fill.decimals)
+        : undefined,
+      claimedRefund: p.hasClaimed
+        ? fromDecimal(p.claimedRefundAmount, bid.decimals)
+        : undefined,
     };
   };
 
@@ -489,7 +524,8 @@ export const createLiveSource = ({
           // hidden while the indexer reports errors (docs: suppress demand)
           wishedFor: m.hasIndexingErrors
             ? undefined
-            : demand.get(`${bidAddr}${fillAddr.slice(2)}`.toLowerCase()) ?? 0,
+            : demand.get(`${bidAddr}${fillAddr.slice(2)}`.toLowerCase()) ??
+              ZERO,
         });
       };
       pairs.forEach((p) => add(p.bidToken.id, p.fillToken.id));
@@ -508,7 +544,8 @@ export const createLiveSource = ({
         .map(toPosition)
         .filter(
           (p): p is Position =>
-            !!p && (p.deposit > 0 || p.excluded > 0 || p.claimed)
+            !!p &&
+            (isPositive(p.deposit) || isPositive(p.excluded) || p.claimed)
         );
     },
 
@@ -524,8 +561,7 @@ export const createLiveSource = ({
           {
             give: give.symbol,
             get: get.symbol,
-            amount: toNum(w.fromAmount, give.decimals),
-            amountExact: utils.formatUnits(w.fromAmount, give.decimals),
+            amount: fromUnits(w.fromAmount, give.decimals),
             expiresAt: toDate(w.expiresAt),
             isNew: madeThisSession.has(
               wishKey(account, give.symbol, get.symbol)
@@ -546,9 +582,9 @@ export const createLiveSource = ({
       ]);
       if (c.fill.isZero() && c.refund.isZero()) return null;
       return {
-        filledBid: toNum(deposit.sub(c.refund), t.bid.decimals),
-        fill: toNum(c.fill, t.fill.decimals),
-        refund: toNum(c.refund, t.bid.decimals),
+        filledBid: fromUnits(deposit.sub(c.refund), t.bid.decimals),
+        fill: fromUnits(c.fill, t.fill.decimals),
+        refund: fromUnits(c.refund, t.bid.decimals),
       };
     },
 
@@ -561,7 +597,7 @@ export const createLiveSource = ({
               t.address,
               provider
             ).balanceOf(account);
-            out[t.symbol] = utils.formatUnits(v, t.decimals);
+            out[t.symbol] = fromUnits(v, t.decimals);
           } catch (err) {
             console.warn(`Granary: balanceOf failed for ${t.symbol}`, err);
           }
@@ -572,17 +608,15 @@ export const createLiveSource = ({
 
     async getStaking(account): Promise<StakingSummary> {
       const empty: StakingSummary = {
-        totalStaked: 0,
-        circulatingTgld: 0,
-        weeklyRewards: 0,
+        totalStaked: ZERO,
+        circulatingTgld: ZERO,
+        weeklyRewards: ZERO,
         cooldownDays: 0,
         paused: false,
-        staked: 0,
-        stakedExact: '0',
-        available: 0,
-        availableExact: '0',
-        rewards: 0,
-        dailyReward: 0,
+        staked: ZERO,
+        available: ZERO,
+        rewards: ZERO,
+        dailyReward: ZERO,
       };
       if (!stakingC) return empty;
       const s = stakingC;
@@ -596,13 +630,13 @@ export const createLiveSource = ({
         ]);
       // rewards accrue at rewardRate (TGLD/s) until periodFinish
       const live = rewardData.periodFinish > Date.now() / 1000;
-      const perSecond = live ? toNum(rewardData.rewardRate, 18) : 0;
-      const totalStaked = toNum(total, 18);
+      const perSecond = live ? fromUnits(rewardData.rewardRate, 18) : ZERO;
+      const totalStaked = fromUnits(total, 18);
       const pool = {
         ...empty,
         totalStaked,
-        circulatingTgld: toNum(circulating, 18),
-        weeklyRewards: perSecond * 7 * 86_400,
+        circulatingTgld: fromUnits(circulating, 18),
+        weeklyRewards: roundTo(perSecond.mul(whole(7 * 86_400)), 18),
         cooldownDays: Number(cooldown) / 86_400,
         paused,
       };
@@ -619,17 +653,15 @@ export const createLiveSource = ({
           s.getAccountUnstakeTime(account),
           s.delegates(account),
         ]);
-      const mine = toNum(staked, 18);
+      const mine = fromUnits(staked, 18);
       return {
         ...pool,
         staked: mine,
-        stakedExact: toExact(staked, 18),
-        available: toNum(available, 18),
-        availableExact: toExact(available, 18),
-        rewards: toNum(earned, 18),
-        dailyReward: totalStaked
-          ? (perSecond * 86_400 * mine) / totalStaked
-          : 0,
+        available: fromUnits(available, 18),
+        rewards: fromUnits(earned, 18),
+        dailyReward: totalStaked.isZero()
+          ? ZERO
+          : perSecond.mul(whole(86_400)).mul(mine).div(totalStaked, 18),
         unstakeAt: unstakeAt.isZero() ? undefined : toDate(unstakeAt),
         delegate: delegatee === constants.AddressZero ? undefined : delegatee,
       };

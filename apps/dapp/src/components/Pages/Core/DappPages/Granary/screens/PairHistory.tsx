@@ -9,6 +9,7 @@ import {
   fmtM,
   fmtPrice,
   fmtRange,
+  isPositive,
   pairName,
   phaseOf,
 } from '../data/derive';
@@ -33,7 +34,7 @@ export const PairHistory = () => {
   if (!pair) return <Navigate replace to={paths.auctions()} />;
 
   const mine = (a: Auction) =>
-    positions.find((p) => p.auction === a.id && p.deposit > 0);
+    positions.find((p) => p.auction === a.id && isPositive(p.deposit));
   const rows = onlyMine ? auctions.filter(mine) : auctions;
   const name = pairName(pair.bidToken, pair.fillToken);
 

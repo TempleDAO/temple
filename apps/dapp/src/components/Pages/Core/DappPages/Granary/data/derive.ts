@@ -1,5 +1,6 @@
-import { utils } from 'ethers';
-import type { Auction, Phase, Token } from './types';
+import { BigNumber, utils } from 'ethers';
+import { DBN_ZERO, DecimalBigNumber, minDBN } from 'utils/DecimalBigNumber';
+import type { Amount, Auction, Phase, Token } from './types';
 
 // Client-side derivations over auction fields. Pass the indexer's block time
 // (useNow) as `now`, not the wall clock.
@@ -30,23 +31,71 @@ export const deadlineOf = (a: Auction, p: Phase) =>
     ? a.depositEnd
     : a.cancelledAt ?? a.settledAt ?? a.fulfillmentEnd;
 
-export const fundedFraction = (a: Auction) => {
-  // settlement().filledBids: exact, including the contract's rounding
-  if (a.filledBids !== undefined && a.totalDeposits > 0)
-    return Math.min(1, a.filledBids / a.totalDeposits);
-  const required = a.totalDeposits * a.price;
-  return required > 0 ? Math.min(1, a.funding / required) : 0;
+/* ---------- amounts ---------- */
+
+export const ZERO = DBN_ZERO;
+const ONE = DecimalBigNumber.fromBN(BigNumber.from(1), 0);
+
+// A whole number as an Amount, e.g. seconds in a day.
+export const whole = (n: number) =>
+  DecimalBigNumber.fromBN(BigNumber.from(n), 0);
+
+// Base units (or their decimal string) with the token's decimals.
+export const fromUnits = (v: BigNumber | string, decimals: number) =>
+  DecimalBigNumber.fromBN(BigNumber.from(v), decimals);
+
+// Rounds to `decimals` places: a product's decimals add up, so this keeps
+// estimates at their token's precision.
+export const roundTo = (d: Amount, decimals: number) =>
+  DecimalBigNumber.fromBN(d.toBN(decimals), decimals);
+
+export const isPositive = (d?: Amount | null) => !!d && d.gt(ZERO);
+
+// For display and percentages only: a float, so the last digits can be off.
+export const toNumber = (d: Amount) => Number(d.formatUnits());
+
+// For an input box or a URL: "4950", not "4950.0".
+export const plain = (d: Amount) => d.formatUnits().replace(/\.0$/, '');
+
+// A typed amount, or null if it isn't a valid number with at most 18 decimals.
+export const parseTyped = (text: string): Amount | null => {
+  try {
+    const v = utils.parseUnits(text.replace(/,/g, '').trim() || '0', 18);
+    return DecimalBigNumber.fromBN(v, 18);
+  } catch {
+    return null;
+  }
 };
 
-export const fillPct = (a: Auction) => Math.round(fundedFraction(a) * 100);
+/* ---------- auction outcome ---------- */
+
+// The share of the deposits the funding fills, from 0 to 1.
+export const fundedFraction = (a: Auction): Amount => {
+  // settlement().filledBids: exact, including the contract's rounding
+  if (a.filledBids && !a.totalDeposits.isZero())
+    return minDBN(ONE, a.filledBids.div(a.totalDeposits, 18));
+  const required = a.totalDeposits.mul(a.price);
+  return required.isZero() ? ZERO : minDBN(ONE, a.funding.div(required, 18));
+};
+
+export const fillPct = (a: Auction) =>
+  Math.round(toNumber(fundedFraction(a)) * 100);
 
 // What claim() pays one depositor: the pro-rata fill and the unfilled refund.
-export const settlementFor = (a: Auction, deposit: number, now: Date) => {
+export const settlementFor = (a: Auction, deposit: Amount, now: Date) => {
   const p = phaseOf(a, now);
-  if (p === 'Cancelled') return { filledBid: 0, fill: 0, refund: deposit };
+  if (p === 'Cancelled')
+    return { filledBid: ZERO, fill: ZERO, refund: deposit };
   if (p !== 'Settlement') return null;
-  const filledBid = deposit * fundedFraction(a);
-  return { filledBid, fill: filledBid * a.price, refund: deposit - filledBid };
+  const filledBid = roundTo(
+    deposit.mul(fundedFraction(a)),
+    deposit.getDecimals()
+  );
+  return {
+    filledBid,
+    fill: filledBid.mul(a.price),
+    refund: deposit.sub(filledBid),
+  };
 };
 
 /* ---------- formatting ---------- */
@@ -54,32 +103,36 @@ export const settlementFor = (a: Auction, deposit: number, now: Date) => {
 const MONTHS = 'Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec'.split(' ');
 const pad = (n: number) => String(n).padStart(2, '0');
 
-export const fmt = (n: number) =>
+// Whole tokens, e.g. "4,950".
+export const fmt = (d: Amount) =>
+  toNumber(d).toLocaleString('en-US', { maximumFractionDigits: 0 });
+
+// A typed amount as fmt shows it, e.g. in a notification.
+export const fmtTyped = (text: string) => fmt(parseTyped(text) ?? ZERO);
+
+// Up to two decimals, for amounts that are often fractional (TGLD).
+export const fmt2 = (d: Amount) =>
+  toNumber(d).toLocaleString('en-US', { maximumFractionDigits: 2 });
+
+const fmtWhole = (n: number) =>
   n.toLocaleString('en-US', { maximumFractionDigits: 0 });
 
-// A typed amount in 18-decimal units, or null if it isn't a valid amount.
-// Limits are checked on these, as a float can't tell 1 from
-// 1.000000000000000001. Tokens with fewer decimals compare correctly too.
-export const toWei = (text: string) => {
-  try {
-    return utils.parseUnits(text.replace(/,/g, '').trim() || '0', 18);
-  } catch {
-    return null;
-  }
-};
-
 // Millions for big figures; small ones in full, so a quiet auction doesn't read "0.0M".
-export const fmtM = (n: number) => {
-  if (Math.abs(n) < 100_000) return fmt(n);
+export const fmtM = (d: Amount) => {
+  const n = toNumber(d);
+  if (Math.abs(n) < 100_000) return fmtWhole(n);
   const m = n / 1e6;
   // toPrecision(3) turns to exponent notation from 999.5M
-  if (Math.abs(m) >= 999.5) return `${fmt(m)}M`;
+  if (Math.abs(m) >= 999.5) return `${fmtWhole(m)}M`;
   let s = m.toPrecision(3);
   if (s.includes('.')) s = s.replace(/0+$/, '').replace(/\.$/, '.0');
   return `${s}M`;
 };
 
-export const fmtPrice = (p: number) => p.toFixed(p < 0.1 ? 4 : 2);
+export const fmtPrice = (d: Amount) => {
+  const p = toNumber(d);
+  return p.toFixed(p < 0.1 ? 4 : 2);
+};
 
 export const fmtMonth = (d: Date) => MONTHS[d.getUTCMonth()];
 export const fmtDay = (d: Date) => `${d.getUTCDate()} ${fmtMonth(d)}`;

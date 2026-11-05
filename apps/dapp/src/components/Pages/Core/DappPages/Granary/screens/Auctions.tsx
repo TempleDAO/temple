@@ -6,6 +6,7 @@ import {
   fmt,
   fmtM,
   fmtPrice,
+  isPositive,
   pairIdOf,
   phaseOf,
 } from '../data/derive';
@@ -88,7 +89,7 @@ const List = () => {
       <Card $flush>
         {running.map(({ a, p }) => {
           const you = positions.find(
-            (x) => x.auction === a.id && x.deposit > 0
+            (x) => x.auction === a.id && isPositive(x.deposit)
           );
           return (
             <ListRow
@@ -150,7 +151,7 @@ const PairRow = ({ pair }: { pair: Pair }) => {
         <Mk>
           {pair.bidToken} → {pair.fillToken}
         </Mk>
-        {!!pair.wishedFor && (
+        {pair.wishedFor && isPositive(pair.wishedFor) && (
           <Note>
             {fmtM(pair.wishedFor)} {pair.bidToken} wished for
           </Note>

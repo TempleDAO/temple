@@ -1,7 +1,15 @@
 import { useNavigate } from 'react-router-dom';
 import styled, { css } from 'styled-components';
 import { phone } from 'styles/breakpoints';
-import { auctionName, fillPct, fmt, fmtLeft, fmtPrice } from '../data/derive';
+import {
+  auctionName,
+  fillPct,
+  fmt,
+  fmtLeft,
+  fmtPrice,
+  isPositive,
+  ZERO,
+} from '../data/derive';
 import { useMyPositions, useNow, useWalletBalance } from '../data/hooks';
 import {
   Big,
@@ -30,14 +38,14 @@ const RANK = { Deposit: 0, Scheduled: 1, Fulfillment: 2 } as Record<
 export const Earn = () => {
   const now = useNow();
   const navigate = useNavigate();
-  const tgld = Number(useWalletBalance('TGLD').data);
+  const tgld = useWalletBalance('TGLD').data;
   const positions = useMyPositions().data;
   // only auctions TempleGold has authorised to take TGLD
   const rows = useRunning()
     .filter(({ a }) => a.bidToken === 'TGLD' && a.tgldAuthorized === true)
     .sort((x, y) => RANK[x.p] - RANK[y.p]);
   const mine = (id: string) =>
-    positions.find((p) => p.auction === id && p.deposit > 0)?.deposit;
+    positions.find((p) => p.auction === id && isPositive(p.deposit))?.deposit;
   const inAuctions = rows.filter(({ a }) => mine(a.id));
 
   return (
@@ -52,7 +60,8 @@ export const Earn = () => {
           <Note>
             in your wallet
             {inAuctions.map(
-              ({ a }) => ` · ${fmt(mine(a.id) ?? 0)} more in ${auctionName(a)}`
+              ({ a }) =>
+                ` · ${fmt(mine(a.id) ?? ZERO)} more in ${auctionName(a)}`
             )}
           </Note>
         </Bal>
@@ -80,7 +89,7 @@ export const Earn = () => {
               </div>
               <Note>
                 {mine(a.id)
-                  ? `You have ${fmt(mine(a.id) ?? 0)} in it`
+                  ? `You have ${fmt(mine(a.id) ?? ZERO)} in it`
                   : p === 'Scheduled'
                   ? `in ${fmtLeft(now, a.depositStart)}`
                   : p === 'Fulfillment'

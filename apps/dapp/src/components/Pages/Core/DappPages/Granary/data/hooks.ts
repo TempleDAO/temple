@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { granaryKeys, useGranary } from 'providers/GranaryProvider';
-import { pairIdOf } from './derive';
+import { isPositive, pairIdOf, ZERO } from './derive';
 import type { Auction, Token } from './types';
 
 // Every screen reads Granary data through these hooks. Each returns
@@ -83,7 +83,7 @@ export const useMyWishes = () => useGranary().wishes;
 
 export const useWalletBalance = (token: Token) => {
   const { data, ...rest } = useGranary().balances;
-  return { ...rest, data: data[token] ?? '0' };
+  return { ...rest, data: data[token] ?? ZERO };
 };
 
 export const useStaking = () => useGranary().staking;
@@ -92,7 +92,7 @@ export const useStaking = () => useGranary().staking;
 export const useClaimable = (auction?: Auction) => {
   const { source, account, positions } = useGranary();
   const pos = positions.data.find((p) => p.auction === auction?.id);
-  const owes = !!auction && !!pos && !pos.claimed && pos.deposit > 0;
+  const owes = !!auction && !!pos && !pos.claimed && isPositive(pos.deposit);
   const q = useQuery({
     queryKey: granaryKeys.claimable(account, auction?.id ?? ''),
     queryFn: () => source.getClaimable(account as string, auction as Auction),

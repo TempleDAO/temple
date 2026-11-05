@@ -40,7 +40,7 @@ import {
 } from 'components/Pages/Core/DappPages/Granary/data/liveSource';
 import {
   auctionName,
-  fmt,
+  fmtTyped,
 } from 'components/Pages/Core/DappPages/Granary/data/derive';
 
 // State and actions for the Temple Granary: FixedPriceAuction deposits and
@@ -330,9 +330,9 @@ export const GranaryProvider = ({ children }: PropsWithChildren) => {
       deposit: (a, amount) =>
         run(
           {
-            ok: `Deposited ${fmt(Number(amount))} ${
-              a.bidToken
-            } into ${auctionName(a)}`,
+            ok: `Deposited ${fmtTyped(amount)} ${a.bidToken} into ${auctionName(
+              a
+            )}`,
             fail: `Error depositing into ${auctionName(a)}`,
           },
           (acc) => source.deposit(acc, a, amount)
@@ -343,7 +343,7 @@ export const GranaryProvider = ({ children }: PropsWithChildren) => {
             ok:
               amount === 'all'
                 ? `Withdrew your deposit from ${auctionName(a)}`
-                : `Withdrew ${fmt(Number(amount))} ${
+                : `Withdrew ${fmtTyped(amount)} ${
                     a.bidToken
                   } from ${auctionName(a)}`,
             fail: `Error withdrawing from ${auctionName(a)}`,
@@ -369,9 +369,7 @@ export const GranaryProvider = ({ children }: PropsWithChildren) => {
       setWish: (req) =>
         run(
           {
-            ok: `Wish made: ${fmt(Number(req.amount))} ${req.give} → ${
-              req.get
-            }`,
+            ok: `Wish made: ${fmtTyped(req.amount)} ${req.give} → ${req.get}`,
             fail: 'Error making wish',
           },
           (acc) => source.setWish(acc, req)
@@ -387,7 +385,7 @@ export const GranaryProvider = ({ children }: PropsWithChildren) => {
       stake: (amount) =>
         run(
           {
-            ok: `Staked ${fmt(Number(amount))} TEMPLE`,
+            ok: `Staked ${fmtTyped(amount)} TEMPLE`,
             fail: 'Error staking TEMPLE',
           },
           (acc) => source.stake(acc, amount)
@@ -395,7 +393,7 @@ export const GranaryProvider = ({ children }: PropsWithChildren) => {
       unstake: (amount, claimRewards) =>
         run(
           {
-            ok: `Unstaked ${fmt(Number(amount))} TEMPLE`,
+            ok: `Unstaked ${fmtTyped(amount)} TEMPLE`,
             fail: 'Error unstaking TEMPLE',
           },
           (acc) => source.unstake(acc, amount, claimRewards)
