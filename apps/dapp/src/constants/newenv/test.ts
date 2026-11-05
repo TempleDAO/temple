@@ -298,8 +298,8 @@ const SPICE_TOKEN_ON_ETH_SEPOLIA: TokenConfig = {
   symbol: 'SPICE',
 };
 
-// Temple Granary (PR #1312, branch fpa-frozen-inputs). The factory's
-// FixedPriceAuction implementation is 0x46F6da8E15519bC98296d9669A6E379D9db83056.
+// Temple Granary. Only the factory is configured: auctions are clones it
+// creates, found through the subgraph.
 const FIXED_PRICE_AUCTION_FACTORY_ON_ETH_SEPOLIA: ContractConfig<IFixedPriceAuctionFactory> =
   {
     chainId: ETH_SEPOLIA.id,
