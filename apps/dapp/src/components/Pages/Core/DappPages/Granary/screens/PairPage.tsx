@@ -4,6 +4,7 @@ import type { Amount, Auction, Phase } from '../data/types';
 import {
   fillPct,
   fmt,
+  fmtTyped,
   fmtDay,
   fmtDayTime,
   fmtM,
@@ -217,8 +218,10 @@ const DepositCard = ({ a, balance }: { a: Auction; balance: Amount }) => {
   const [done, setDone] = useState('');
   const current = useDeposit(a)?.deposit ?? ZERO;
   const clean = text.replace(/,/g, '').trim();
-  const typed = parseTyped(clean) ?? ZERO;
-  const valid = parseTyped(clean) !== null;
+  // the bid token's decimals: more decimal places can't be sent
+  const decimals = a.minDeposit.getDecimals();
+  const typed = parseTyped(clean, decimals) ?? ZERO;
+  const valid = parseTyped(clean, decimals) !== null;
   const over = !!account && typed.gt(balance);
   const below = isPositive(typed) && current.add(typed).lt(a.minDeposit);
   const flagged = useIsFlagged(a);
@@ -246,8 +249,10 @@ const DepositCard = ({ a, balance }: { a: Auction; balance: Amount }) => {
           />
           <Tok>{a.bidToken}</Tok>
         </InputBox>
-        <Note $bad={over || below}>
-          {below
+        <Note $bad={over || below || !valid}>
+          {!valid
+            ? `Enter a number with at most ${decimals} decimal places`
+            : below
             ? `Your deposit must total at least ${fmt(a.minDeposit)} ${
                 a.bidToken
               }`
@@ -270,7 +275,7 @@ const DepositCard = ({ a, balance }: { a: Auction; balance: Amount }) => {
         onClick={async () => {
           if (await deposit(a, clean)) {
             setText('');
-            setDone(`Deposited ${fmt(typed)} ${a.bidToken}.`);
+            setDone(`Deposited ${fmtTyped(clean)} ${a.bidToken}.`);
           }
         }}
       >

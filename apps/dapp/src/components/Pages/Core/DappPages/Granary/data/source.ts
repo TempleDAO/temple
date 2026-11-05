@@ -7,9 +7,9 @@ import type {
   SetWishRequest,
   Settlement,
   StakingSummary,
-  Token,
   TxReceipt,
   Wish,
+  WishToken,
 } from './types';
 
 // Everything GranaryProvider reads and writes goes through this interface.
@@ -20,7 +20,7 @@ export interface GranaryDataSource {
   /* ---------- indexer reads, pinned to one block ---------- */
   getAuctions(): Promise<Auction[]>;
   getPairs(): Promise<Pair[]>;
-  getWishTokens(): Promise<Token[]>;
+  getWishTokens(): Promise<WishToken[]>;
   getIndexerStatus(): Promise<IndexerStatus>;
 
   /* ---------- account reads ---------- */

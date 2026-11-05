@@ -378,7 +378,10 @@ export const createLiveSource = ({
       paused: r.paused,
       totalDeposits: fromUnits(r.totalDeposits, bid.decimals),
       funding: fromUnits(r.funding, fill.decimals),
-      filledBids: fromUnits(r.filledBids, bid.decimals),
+      // the indexer sends 0 until the settlement is emitted
+      filledBids: r.settlementEmitted
+        ? fromUnits(r.filledBids, bid.decimals)
+        : undefined,
       minDeposit: fromUnits(r.minDeposit, bid.decimals),
       complianceCheck: r.complianceDisabled
         ? undefined
@@ -535,7 +538,9 @@ export const createLiveSource = ({
     },
 
     async getWishTokens() {
-      return wellDeployed ? wishTokens.map((t) => t.symbol) : [];
+      return wellDeployed
+        ? wishTokens.map(({ symbol, decimals }) => ({ symbol, decimals }))
+        : [];
     },
 
     async getPositions(account) {

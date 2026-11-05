@@ -25,9 +25,9 @@ import type {
   Position,
   SetWishRequest,
   StakingSummary,
-  Token,
   TxReceipt,
   Wish,
+  WishToken,
 } from 'components/Pages/Core/DappPages/Granary/data/types';
 import {
   GranaryDataSource,
@@ -82,7 +82,7 @@ type GranaryContextValue = {
   connect: () => void;
   auctions: GranaryQuery<Auction[]>;
   pairs: GranaryQuery<Pair[]>;
-  wishTokens: GranaryQuery<Token[]>;
+  wishTokens: GranaryQuery<WishToken[]>;
   indexerStatus: GranaryQuery<IndexerStatus | undefined>;
   positions: GranaryQuery<Position[]>;
   wishes: GranaryQuery<Wish[]>;

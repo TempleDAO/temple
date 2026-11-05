@@ -56,7 +56,8 @@ const WishScreen = () => {
   const now = useNow();
   const [params] = useSearchParams();
   // any two different wish tokens make a pair
-  const tokens = useWishTokens().data;
+  const wishTokens = useWishTokens().data;
+  const tokens = wishTokens.map((t) => t.symbol);
   const pick = (want: (string | null)[], not?: Token) =>
     [...want, ...tokens].find(
       (t): t is Token => !!t && tokens.includes(t) && t !== not
@@ -133,6 +134,7 @@ const WishScreen = () => {
           get={get}
           gives={tokens}
           gets={tokens.filter((t) => t !== give)}
+          decimals={wishTokens.find((t) => t.symbol === give)?.decimals ?? 18}
           setGive={setGive}
           setGet={setGet}
           initialAmount={params.get('amount') ?? ''}
@@ -148,6 +150,7 @@ const WishPanel = ({
   get,
   gives,
   gets,
+  decimals,
   setGive,
   setGet,
   initialAmount,
@@ -156,6 +159,8 @@ const WishPanel = ({
   get: Token;
   gives: Token[];
   gets: Token[];
+  // the give token's: more decimal places can't be sent
+  decimals: number;
   setGive: (t: Token) => void;
   setGet: (t: Token) => void;
   initialAmount: string;
@@ -178,7 +183,7 @@ const WishPanel = ({
   );
   const [made, setMade] = useState({ n: ZERO, until: wall });
   const clean = amount.replace(/,/g, '').trim();
-  const typed = parseTyped(clean);
+  const typed = parseTyped(clean, decimals);
   const over = !!account && !!typed && typed.gt(balance);
   const until = addDays(wall, days);
 
@@ -260,9 +265,12 @@ const WishPanel = ({
             />
             <Tok>{give}</Tok>
           </InputBox>
-          <Note $bad={over}>
-            {over ? 'More than the ' : ''}
-            {fmt(balance)} {give} you hold
+          <Note $bad={over || !typed}>
+            {!typed
+              ? `Enter a number with at most ${decimals} decimal places`
+              : `${over ? 'More than the ' : ''}${fmt(
+                  balance
+                )} ${give} you hold`}
           </Note>
         </Field>
         <Field>

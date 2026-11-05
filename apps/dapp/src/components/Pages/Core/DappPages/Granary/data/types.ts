@@ -10,6 +10,9 @@ export type Amount = DecimalBigNumber;
 // A token's symbol, as configured in constants/newenv for its address.
 export type Token = string;
 
+// A token the wish screen offers, with the decimal places it accepts.
+export type WishToken = { symbol: Token; decimals: number };
+
 export type Phase =
   | 'Scheduled'
   | 'Deposit'
@@ -46,7 +49,7 @@ export type Auction = {
   paused: boolean;
   totalDeposits: Amount;
   funding: Amount; // fill tokens held
-  // settlement().filledBids: bid tokens the funding fills
+  // settlement().filledBids: bid tokens the funding fills; once emitted
   filledBids?: Amount;
   minDeposit: Amount;
   // the compliance list deposits and claims check; undefined once disabled

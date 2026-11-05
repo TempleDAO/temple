@@ -57,11 +57,12 @@ export const toNumber = (d: Amount) => Number(d.formatUnits());
 // For an input box or a URL: "4950", not "4950.0".
 export const plain = (d: Amount) => d.formatUnits().replace(/\.0$/, '');
 
-// A typed amount, or null if it isn't a valid number with at most 18 decimals.
-export const parseTyped = (text: string): Amount | null => {
+// A typed amount, or null if it isn't a valid number with at most `decimals`
+// decimal places.
+export const parseTyped = (text: string, decimals = 18): Amount | null => {
   try {
-    const v = utils.parseUnits(text.replace(/,/g, '').trim() || '0', 18);
-    return DecimalBigNumber.fromBN(v, 18);
+    const v = utils.parseUnits(text.replace(/,/g, '').trim() || '0', decimals);
+    return DecimalBigNumber.fromBN(v, decimals);
   } catch {
     return null;
   }
@@ -107,8 +108,15 @@ const pad = (n: number) => String(n).padStart(2, '0');
 export const fmt = (d: Amount) =>
   toNumber(d).toLocaleString('en-US', { maximumFractionDigits: 0 });
 
-// A typed amount as fmt shows it, e.g. in a notification.
-export const fmtTyped = (text: string) => fmt(parseTyped(text) ?? ZERO);
+// Every digit, grouped: "1,234.5678".
+export const fmtExact = (d: Amount) => {
+  const [int, frac] = plain(d).split('.');
+  const grouped = int.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return frac ? `${grouped}.${frac}` : grouped;
+};
+
+// A typed amount, exactly as typed, e.g. in a notification.
+export const fmtTyped = (text: string) => fmtExact(parseTyped(text) ?? ZERO);
 
 // Up to two decimals, for amounts that are often fractional (TGLD).
 export const fmt2 = (d: Amount) =>
