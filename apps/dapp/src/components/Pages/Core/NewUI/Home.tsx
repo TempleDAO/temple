@@ -53,7 +53,7 @@ const Home = () => {
         <ContentContainer>
           <NewTempleText>The New Temple</NewTempleText>
           <TradeDetailText>
-            A Bazaar for Traders and Oasis for DeFi travelers.
+            A Bazaar for Traders and Oasis for DeFi travelers
           </TradeDetailText>
           <LearnMoreLink href="https://docs.templedao.link/" target={'_blank'}>
             Learn More
