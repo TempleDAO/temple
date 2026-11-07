@@ -85,7 +85,7 @@ root.render(
             <Routes>
               <>
                 <Route path="/" element={<Home />} />
-                <Route path="/tlc" element={<Home tlc={true} />} />
+                <Route path="/tlc" element={<Home />} />
                 <Route path="/" element={<PageLayout />}>
                   <Route path="disclaimer" element={<Disclaimer />} />
                   <Route path="privacypolicy" element={<PrivacyPolicy />} />
