@@ -57,7 +57,7 @@ export async function updateTemplePriceSidebarBot({
       state: formatTemplePriceErrorSidebarState(),
       logger,
     });
-    throw error
+    throw error;
   }
 }
 

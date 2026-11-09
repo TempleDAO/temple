@@ -1,14 +1,14 @@
-import { Address } from "viem";
-  
+import { Address } from 'viem';
+
 export interface ContractAddresses {
   CORE: {
     MULTISIG: Address;
-  },
+  };
   TREASURY_RESERVES_VAULT: {
-      ADDRESS: Address;
-      D_USD_TOKEN: Address;
-      D_TEMPLE_TOKEN: Address;
-      TPI_ORACLE: Address;
+    ADDRESS: Address;
+    D_USD_TOKEN: Address;
+    D_TEMPLE_TOKEN: Address;
+    TPI_ORACLE: Address;
   };
   TEMPLE_GOLD: {
     TEMPLE_GOLD: Address;
@@ -20,15 +20,15 @@ export interface ContractAddresses {
         ENA: Address;
         DAI: Address;
         SENA: Address;
-      },
-    },
-  },
+      };
+    };
+  };
   EXTERNAL: {
     MAKER_DAO: {
       DAI_TOKEN: Address;
-    },
+    };
     SKY: {
       USDS_TOKEN: Address;
-    }
-  }
+    };
+  };
 }

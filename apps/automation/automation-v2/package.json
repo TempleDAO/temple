@@ -12,6 +12,8 @@
     "dev": "yarn build && node ./dist/main.js",
     "dev:local:mainnet": "yarn build:localtest:mainnet && node ./dist/mainnet-localtest.js",
     "test": "vitest",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "install-abis": "./src/scripts/install-abis.sh"
   },
   "dependencies": {
@@ -30,10 +32,11 @@
   "devDependencies": {
     "@types/jquery": "^3.5.19",
     "esbuild": "^0.19.4",
+    "prettier": "^3.9.10",
     "tsc-alias": "^1.8.3",
     "tsx": "^4.7.2",
-    "vitest": "^4.1.4",
-    "typescript": "^5.1.6"
+    "typescript": "^5.1.6",
+    "vitest": "^4.1.4"
   },
   "lint-staged": {
     "*.{js,ts,tsx}": [

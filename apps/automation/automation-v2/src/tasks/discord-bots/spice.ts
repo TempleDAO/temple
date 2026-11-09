@@ -1,16 +1,15 @@
-import { BigRational } from "@mountainpath9/big-rational";
-import { Logger, TaskRunner } from "@mountainpath9/overlord-core";
-import { Client } from "discord.js";
-import { Address, getContract, PublicClient } from "viem";
-import * as SpiceAuction from "@/abi/ISpiceAuction";
-import * as vars from "@/config/variables";
+import { BigRational } from '@mountainpath9/big-rational';
+import { Logger, TaskRunner } from '@mountainpath9/overlord-core';
+import { Client } from 'discord.js';
+import { Address, getContract, PublicClient } from 'viem';
+import * as SpiceAuction from '@/abi/ISpiceAuction';
+import * as vars from '@/config/variables';
 import {
   SidebarState,
   applyDiscordSidebarState,
   startDiscordSidebarBot,
-} from "./runtime";
-import { ONE_DAY_MS } from "@/constants";
-
+} from './runtime';
+import { ONE_DAY_MS } from '@/constants';
 
 export interface SpiceAuctionEpoch {
   id: bigint;
@@ -22,7 +21,7 @@ export interface SpiceAuctionEpoch {
 export async function startSpiceSenaSidebarBot(runner: TaskRunner) {
   return startDiscordSidebarBot({
     runner,
-    botLabel: "spice sENA sidebar bot",
+    botLabel: 'spice sENA sidebar bot',
     tokenVariable: vars.spice_sena_bot_token,
   });
 }
@@ -30,11 +29,10 @@ export async function startSpiceSenaSidebarBot(runner: TaskRunner) {
 export async function startSpiceEnaSidebarBot(runner: TaskRunner) {
   return startDiscordSidebarBot({
     runner,
-    botLabel: "spice ENA sidebar bot",
+    botLabel: 'spice ENA sidebar bot',
     tokenVariable: vars.spice_ena_bot_token,
   });
 }
-
 
 export async function updateSpiceSidebarBot({
   bot,
@@ -79,7 +77,7 @@ export function formatSpiceSidebarState(
   return {
     nickname: `${epoch.price.toDecimalString(4)} ${ticker}`,
     activity: {
-      type: "watching",
+      type: 'watching',
       name: formatSpiceAuctionActivity(epoch, now),
     },
   };

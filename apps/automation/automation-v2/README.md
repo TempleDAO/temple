@@ -1,5 +1,9 @@
 # Overlord automation code to for Temple
 
+## Formatting
+
+Run `yarn format` to format this package or `yarn format:check` to check it. Prettier discovers the repository-root `.prettierrc` through its parent-directory lookup. The package's `.prettierignore` excludes generated ABIs, build output and local tooling files.
+
 ## Local testing against a local anvil fork
 
 Start a local fork via anvil (substituting your ALCHEMY_KEY)

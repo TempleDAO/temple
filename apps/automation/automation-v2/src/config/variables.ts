@@ -1,96 +1,103 @@
-import { StringVariable, NumberVariable } from "@mountainpath9/overlord-core";
-import { BigRationalVariable } from "./types";
-import { parseUnits } from "viem";
+import { StringVariable, NumberVariable } from '@mountainpath9/overlord-core';
+import { BigRationalVariable } from './types';
+import { parseUnits } from 'viem';
 
 export const env = new StringVariable({
-    name: 'env',
-    description: 'The contract environment in use (either testnet or arbitrumOne).',
+  name: 'env',
+  description:
+    'The contract environment in use (either testnet or arbitrumOne).',
 });
 
 export const error_webhook_url = new StringVariable({
-    name: 'error_webhook_url',
-    description: 'If configured, automation failures will be send to discord via this hook.',
-    isSecret: true,
+  name: 'error_webhook_url',
+  description:
+    'If configured, automation failures will be send to discord via this hook.',
+  isSecret: true,
 });
 
 // ----------\-----------------------------------------\
 // ----------\ stable gold auction variables -------------\
 
-export const stablegoldauction_start_auction_max_gas_price = new BigRationalVariable({
+export const stablegoldauction_start_auction_max_gas_price =
+  new BigRationalVariable({
     name: 'stablegoldauction_start_auction_max_gas_price',
     description: 'Skip a auction start if the gas price is greater than this. ',
     default: 200,
     min: 0,
     max: 1000,
-});
+  });
 
 export const start_stable_gold_auction_check_period_ms = new NumberVariable({
-    name: 'start_stable_gold_auction_check_period_ms ',
-    description: 'How many milliseconds to wait between start stable gold auction checks.',
-    default: 1000 * 1200,
-    min: 1000 * 600,
+  name: 'start_stable_gold_auction_check_period_ms ',
+  description:
+    'How many milliseconds to wait between start stable gold auction checks.',
+  default: 1000 * 1200,
+  min: 1000 * 600,
 });
 
 export const staking_distribute_rewards_check_period_ms = new NumberVariable({
-    name: 'staking_distribute_rewards_check_period_ms ',
-    description: 'How many milliseconds to wait between staking distribute rewards checks.',
-    default: 1000 * 1200,
-    min: 1000 * 600,
+  name: 'staking_distribute_rewards_check_period_ms ',
+  description:
+    'How many milliseconds to wait between staking distribute rewards checks.',
+  default: 1000 * 1200,
+  min: 1000 * 600,
 });
 
-export const staking_distribute_rewards_max_gas_price = new BigRationalVariable({
+export const staking_distribute_rewards_max_gas_price = new BigRationalVariable(
+  {
     name: 'staking_distribute_rewards_max_gas_price',
     description: 'Max gas price for staking rewards distribution',
     default: 0.2,
     min: 0,
-    max: 2
-});
+    max: 2,
+  }
+);
 
 export const check_signers_balance_min_balance = new BigRationalVariable({
-    name: 'check_signers_balance_min_balance',
-    description: 'Min balance for signers',
-    default: 0.1,
-    min: 0,
-    max: 2
+  name: 'check_signers_balance_min_balance',
+  description: 'Min balance for signers',
+  default: 0.1,
+  min: 0,
+  max: 2,
 });
 
 export const check_signers_balance_check_period_ms = new NumberVariable({
-    name: 'check_signers_balance_check_period_ms ',
-    description: 'How many milliseconds to wait between signers balance checks.',
-    default: 1000 * 3600,
-    min: 1000 * 1800,
+  name: 'check_signers_balance_check_period_ms ',
+  description: 'How many milliseconds to wait between signers balance checks.',
+  default: 1000 * 3600,
+  min: 1000 * 1800,
 });
 
 export const eth_mainnet_lz_eid = new NumberVariable({
-    name: 'eth_mainnet_lz_eid',
-    description: 'Ethereum mainnet layer zero EID',
-    default: 30101
+  name: 'eth_mainnet_lz_eid',
+  description: 'Ethereum mainnet layer zero EID',
+  default: 30101,
 });
 
 export const sepolia_lz_eid = new NumberVariable({
-    name: 'sepolia_lz_eid',
-    description: 'Sepolia layer zero EID',
-    default: 40161
+  name: 'sepolia_lz_eid',
+  description: 'Sepolia layer zero EID',
+  default: 40161,
 });
 
 export const mint_chain_id = new NumberVariable({
-    name: 'mint_chain_id',
-    description: 'Mint chain Id',
-    default: 1
+  name: 'mint_chain_id',
+  description: 'Mint chain Id',
+  default: 1,
 });
 
 export const mint_chain_id_sepolia = new NumberVariable({
-    name: 'mint_chain_id_sepolia',
-    description: 'Mint chain Id for testnet',
-    default: 11155111
+  name: 'mint_chain_id_sepolia',
+  description: 'Mint chain Id for testnet',
+  default: 11155111,
 });
 
 export const sepolia_tgld_max_gas_price = new BigRationalVariable({
-    name: 'sepolia_tgld_max_gas_price',
-    description: 'Max gas price for sepolia tgld transactions',
-    default: 0.2,
-    min: 0,
-    max: 2
+  name: 'sepolia_tgld_max_gas_price',
+  description: 'Max gas price for sepolia tgld transactions',
+  default: 0.2,
+  min: 0,
+  max: 2,
 });
 
 export const discord_thread_defcon_1 = new StringVariable({
@@ -120,47 +127,48 @@ export const discord_thread_defcon_5 = new StringVariable({
 
 export const webhook_url = new StringVariable({
   name: 'webhook_url',
-  description: 'If configured, automation notifications will be send to discord via this hook.',
+  description:
+    'If configured, automation notifications will be send to discord via this hook.',
   isSecret: true,
 });
 
 export const tgld_auction_bot_token = new StringVariable({
-  name: "tgld_auction_bot_token",
-  description: "Token for the TGLD auction sidebar bot.",
+  name: 'tgld_auction_bot_token',
+  description: 'Token for the TGLD auction sidebar bot.',
   isSecret: true,
 });
 
 export const temple_price_bot_token = new StringVariable({
-  name: "temple_price_bot_token",
-  description: "Token for the Temple price sidebar bot.",
+  name: 'temple_price_bot_token',
+  description: 'Token for the Temple price sidebar bot.',
   isSecret: true,
 });
 
 export const spice_sena_bot_token = new StringVariable({
-  name: "spice_sena_bot_token",
-  description: "Token for the TGLD/sENA sidebar bot.",
+  name: 'spice_sena_bot_token',
+  description: 'Token for the TGLD/sENA sidebar bot.',
   isSecret: true,
 });
 
 export const spice_ena_bot_token = new StringVariable({
-  name: "spice_ena_bot_token",
-  description: "Token for the TGLD/ENA sidebar bot.",
+  name: 'spice_ena_bot_token',
+  description: 'Token for the TGLD/ENA sidebar bot.',
   isSecret: true,
 });
 
 export const burn_tgld_max_gas_price = new BigRationalVariable({
-    name: 'burn_tgld_max_gas_price',
-    description: 'Max gas price for burning TGLD after auction',
-    default: 0.2,
-    min: 0,
-    max: 2
+  name: 'burn_tgld_max_gas_price',
+  description: 'Max gas price for burning TGLD after auction',
+  default: 0.2,
+  min: 0,
+  max: 2,
 });
 
 export const burn_tgld_check_period_ms = new NumberVariable({
-    name: 'burn_tgld_check_period_ms ',
-    description: 'How many milliseconds to wait between burn TGLD checks.',
-    default: 1000 * 1200,
-    min: 1000 * 600,
+  name: 'burn_tgld_check_period_ms ',
+  description: 'How many milliseconds to wait between burn TGLD checks.',
+  default: 1000 * 1200,
+  min: 1000 * 600,
 });
 
 //-------------------------------------------------------------------------------------------------------

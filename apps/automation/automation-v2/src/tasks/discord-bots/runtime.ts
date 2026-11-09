@@ -1,14 +1,18 @@
-import { assertNever } from "@/tlc/utils";
-import { Logger, StringVariable, TaskRunner } from "@mountainpath9/overlord-core";
-import { ActivityType, Client, GatewayIntentBits } from "discord.js";
+import { assertNever } from '@/tlc/utils';
+import {
+  Logger,
+  StringVariable,
+  TaskRunner,
+} from '@mountainpath9/overlord-core';
+import { ActivityType, Client, GatewayIntentBits } from 'discord.js';
 
 export type SidebarActivity =
   | {
-      type: "watching";
+      type: 'watching';
       name: string;
     }
   | {
-      type: "custom";
+      type: 'custom';
       state: string;
       name?: string;
       url?: string;
@@ -30,9 +34,7 @@ export async function startDiscordSidebarBot({
 }): Promise<Client | undefined> {
   const botToken = await runner.config.getString(tokenVariable.name());
   if (!botToken) {
-    runner.logger.info(
-      `${botLabel} not provided (${tokenVariable.name()})`
-    );
+    runner.logger.info(`${botLabel} not provided (${tokenVariable.name()})`);
     return undefined;
   }
 
@@ -40,15 +42,15 @@ export async function startDiscordSidebarBot({
   const bot = new Client({
     intents: [GatewayIntentBits.Guilds],
   });
-    try {
-        await bot.login(botToken);
-        return bot
-    } catch (error){
-        // since the log-in happens outside of the task runner task, must not fail
-        // otherwise it would crash the whole task runner
-        runner.logger.info(`Error logging in ${botLabel}`)
-        runner.logger.exceptionDetail(error)
-    }
+  try {
+    await bot.login(botToken);
+    return bot;
+  } catch (error) {
+    // since the log-in happens outside of the task runner task, must not fail
+    // otherwise it would crash the whole task runner
+    runner.logger.info(`Error logging in ${botLabel}`);
+    runner.logger.exceptionDetail(error);
+  }
 }
 
 export async function applyDiscordSidebarState({
@@ -61,11 +63,11 @@ export async function applyDiscordSidebarState({
   logger: Logger;
 }) {
   if (!bot.user) {
-    logger.error("No bot user");
+    logger.error('No bot user');
     return;
   }
 
-  logger.info(`Updating bot ${bot.user.id} state ${JSON.stringify(state)}`)
+  logger.info(`Updating bot ${bot.user.id} state ${JSON.stringify(state)}`);
   bot.user.setPresence({
     activities: [formatDiscordActivity(state.activity)],
   });
@@ -86,19 +88,19 @@ export async function applyDiscordSidebarState({
 
 function formatDiscordActivity(activity: SidebarActivity) {
   switch (activity.type) {
-    case "watching":
+    case 'watching':
       return {
         name: activity.name,
         type: ActivityType.Watching,
       };
-    case "custom":
+    case 'custom':
       return {
-        name: activity.name ?? "Custom Status",
+        name: activity.name ?? 'Custom Status',
         state: activity.state,
         type: ActivityType.Custom,
         url: activity.url,
       };
     default:
-      assertNever(activity)
+      assertNever(activity);
   }
 }
