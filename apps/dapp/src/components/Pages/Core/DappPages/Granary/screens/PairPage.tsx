@@ -111,7 +111,6 @@ export const PairPage = () => {
       ) : (
         <PageHead
           back={[paths.auctions(), 'All auctions']}
-          kicker="Pair"
           title={name}
           right={
             <Note>

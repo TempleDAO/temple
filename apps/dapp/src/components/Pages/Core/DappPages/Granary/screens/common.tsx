@@ -42,12 +42,10 @@ import { paths } from '../paths';
 
 export const PageHead = ({
   back,
-  kicker,
   title,
   right,
 }: {
   back?: [string, string];
-  kicker?: string;
   title: ReactNode;
   right?: ReactNode;
 }) => (
@@ -58,7 +56,6 @@ export const PageHead = ({
           <TextLink to={back[0]}>← {back[1]}</TextLink>
         </K>
       )}
-      {kicker && <K>{kicker}</K>}
       <Big>{title}</Big>
     </div>
     {right}

@@ -96,7 +96,6 @@ const WishScreen = () => {
     <Stack>
       <PageHead
         back={[paths.auctions(), 'All auctions']}
-        kicker="Pair"
         title={pairName(give, get)}
         right={
           <Note>

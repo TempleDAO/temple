@@ -68,7 +68,6 @@ export const PairHistory = () => {
     <Stack>
       <PageHead
         back={[paths.pair(pair.id), name]}
-        kicker="Pair"
         title={`${name} · all auctions`}
         right={
           <Seg>
