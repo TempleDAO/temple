@@ -446,6 +446,9 @@ const ClaimCard = ({ a, phase }: { a: Auction; phase: Phase }) => {
       fill: ZERO,
       refund: deposit,
     };
+  // nothing filled: the claim only returns the deposit
+  const refundOnly = !isPositive(s.fill);
+  const hasRefund = isPositive(s.refund);
   return (
     <Card $hot={isPositive(deposit) && !pos?.claimed}>
       <Row>
@@ -477,7 +480,7 @@ const ClaimCard = ({ a, phase }: { a: Auction; phase: Phase }) => {
               {fmt(deposit)} {a.bidToken}
             </V>
           </Row>
-          {!cancelled && (
+          {!refundOnly && (
             <Row>
               <K>Filled at {fmtPrice(a.price)}</K>
               <V>
@@ -485,12 +488,14 @@ const ClaimCard = ({ a, phase }: { a: Auction; phase: Phase }) => {
               </V>
             </Row>
           )}
-          <Row>
-            <K>Returned to you</K>
-            <V>
-              {fmt(s.refund)} {a.bidToken}
-            </V>
-          </Row>
+          {hasRefund && (
+            <Row>
+              <K>Returned to you</K>
+              <V>
+                {fmt(s.refund)} {a.bidToken}
+              </V>
+            </Row>
+          )}
           <Row $start>
             {!pos?.claimed ? (
               <TxBtn
@@ -499,7 +504,7 @@ const ClaimCard = ({ a, phase }: { a: Auction; phase: Phase }) => {
                   await claim(a);
                 }}
               >
-                Claim
+                {refundOnly ? 'Claim refund' : 'Claim'}
               </TxBtn>
             ) : (
               <Note>Claimed.</Note>
@@ -514,7 +519,13 @@ const ClaimCard = ({ a, phase }: { a: Auction; phase: Phase }) => {
               ? `Claims are paused by the Temple until it unpauses, or ${fmtDayTime(
                   a.claimPauseEndsAt
                 )} at the latest.`
-              : 'One claim pays both. Nothing expires.'}
+              : cancelled
+              ? 'Your whole deposit comes back. Nothing expires.'
+              : refundOnly
+              ? 'Nothing was filled, so your whole deposit comes back. Nothing expires.'
+              : hasRefund
+              ? 'One claim pays both. Nothing expires.'
+              : 'Nothing expires.'}
           </Note>
         </>
       ) : (

@@ -113,13 +113,21 @@ const OneClaimStrip = ({ a }: { a: Auction }) => {
     <ClaimStrip>
       <span>
         <Moon phase={phaseOf(a, now)} size={18} />
-        {isPositive(data.fill)
+        {phaseOf(a, now) === 'Cancelled'
+          ? `${auctionName(a)} cancelled. Claim ${fmt(data.refund)} ${
+              a.bidToken
+            }.`
+          : !isPositive(data.fill)
+          ? `${auctionName(a)} settled, nothing filled. Claim back ${fmt(
+              data.refund
+            )} ${a.bidToken}.`
+          : isPositive(data.refund)
           ? `${auctionName(a)} settled, ${fillPct(a)}% filled. Claim ${fmt(
               data.fill
             )} ${a.fillToken} and ${fmt(data.refund)} ${a.bidToken}.`
-          : `${auctionName(a)} cancelled. Claim ${fmt(data.refund)} ${
-              a.bidToken
-            }.`}
+          : `${auctionName(a)} settled, ${fillPct(a)}% filled. Claim ${fmt(
+              data.fill
+            )} ${a.fillToken}.`}
       </span>
       <Btn onClick={() => navigate(paths.auction(a))}>Claim</Btn>
     </ClaimStrip>
