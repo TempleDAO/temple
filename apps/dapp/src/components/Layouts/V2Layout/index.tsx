@@ -32,7 +32,7 @@ enum V2DashboardLocPaths {
   Trade = '/dapp/trade',
   Trv = '/dapp/dashboard/treasuryreservesvault',
   Borrow = '/dapp/borrow',
-  SpiceBazaar = '/dapp/spice',
+  Granary = '/dapp/granary',
   Legacy = '/dapp/legacy',
 }
 
@@ -46,10 +46,10 @@ const V2Layout = () => {
   const [geoblockModalOpen, setGeoblockModalOpen] = useState(false);
   const [menuNavItems, setMenuNavItems] = useState<Array<MenuNavItem>>([
     {
-      label: 'Spice Bazaar',
-      linkTo: V2DashboardLocPaths.SpiceBazaar,
+      label: 'Granary',
+      linkTo: V2DashboardLocPaths.Granary,
       Logo: StoreFront,
-      selected: V2DashboardLocPaths.SpiceBazaar === loc.pathname,
+      selected: V2DashboardLocPaths.Granary === loc.pathname,
     },
     {
       label: 'Trade',

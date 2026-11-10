@@ -104,7 +104,7 @@ root.render(
                 </Route>
                 <Route
                   path="/dapp"
-                  element={<Navigate replace to="/dapp/spice" />}
+                  element={<Navigate replace to="/dapp/granary" />}
                 />
                 <Route path="/dapp/*" element={<V2Layout />}>
                   <Route path="dashboard/*" element={<DashboardPage />} />

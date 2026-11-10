@@ -109,7 +109,6 @@ export const PairPage = () => {
         <PageHead
           back={[paths.pair(pair.id), name]}
           title={`${name} #${selected.number}`}
-          right={<Note>viewing a past auction</Note>}
         />
       ) : (
         <PageHead

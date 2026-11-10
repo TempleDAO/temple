@@ -59,7 +59,7 @@ const Home = () => {
             Learn More
           </LearnMoreLink>
           <ButtonContainer>
-            <Link to="/dapp/spice">
+            <Link to="/dapp/granary">
               <LaunchAppButton label={'Launch App'} role="button" />
             </Link>
           </ButtonContainer>
