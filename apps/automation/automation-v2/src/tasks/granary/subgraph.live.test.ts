@@ -9,7 +9,8 @@ describe.skipIf(!process.env.GRANARY_LIVE).each(GRANARY_DEPLOYMENTS)(
   (deployment) => {
     test('queries real indexed snapshots, auction instances and updated wishes', async () => {
       const graph = createGranarySubgraph(deployment.subgraphUrl);
-      const factory = deployment.fixedPriceAuctionFactory.toLowerCase();
+      const factory =
+        deployment.contracts.FIXED_PRICE_AUCTION_FACTORY.toLowerCase();
       const snapshot = await graph.snapshot();
 
       const auctions = await graph.auctions(snapshot, factory);
@@ -38,7 +39,8 @@ describe.skipIf(!process.env.GRANARY_LIVE).each(GRANARY_DEPLOYMENTS)(
       'pins auction queries to a historical block',
       async () => {
         const graph = createGranarySubgraph(deployment.subgraphUrl);
-        const factory = deployment.fixedPriceAuctionFactory.toLowerCase();
+        const factory =
+          deployment.contracts.FIXED_PRICE_AUCTION_FACTORY.toLowerCase();
 
         expect(
           await graph.auctions({ number: 12023502, timestamp: 0 }, factory)

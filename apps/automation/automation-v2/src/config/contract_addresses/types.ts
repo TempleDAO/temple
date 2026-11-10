@@ -1,6 +1,12 @@
 import { Address } from 'viem';
 
+export interface GranaryContracts {
+  FIXED_PRICE_AUCTION_FACTORY: Address;
+  WISHING_WELL: Address;
+}
+
 export interface ContractAddresses {
+  GRANARY?: GranaryContracts;
   CORE: {
     MULTISIG: Address;
   };

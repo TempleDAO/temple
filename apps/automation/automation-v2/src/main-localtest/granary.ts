@@ -379,7 +379,7 @@ async function granaryAuctionRangeTask(ctx: TaskContext, koa: Koa) {
   );
   const step = await collectAuctionAnnouncements({
     subgraph,
-    factory: DEPLOYMENT.fixedPriceAuctionFactory.toLowerCase(),
+    factory: DEPLOYMENT.contracts.FIXED_PRICE_AUCTION_FACTORY.toLowerCase(),
     auctionUrlTemplate:
       await DEPLOYMENT.vars.auctionUrlTemplate.requireValue(ctx),
     explorerUrl: EXPLORER_URL,

@@ -1,5 +1,7 @@
+import { CONTRACTS as SEPOLIA_CONTRACTS } from '@/config/contract_addresses/sepolia';
+import type { GranaryContracts } from '@/config/contract_addresses/types';
 import { StringVariable } from '@mountainpath9/overlord-core';
-import type { Address, Chain } from 'viem';
+import type { Chain } from 'viem';
 import { sepolia } from 'viem/chains';
 
 /**
@@ -13,8 +15,7 @@ export interface GranaryDeployment {
   chain: Chain;
   /** Subgraph indexing this deployment, pinned to a version with every field the tasks read. */
   subgraphUrl: string;
-  fixedPriceAuctionFactory: Address;
-  wishingWell: Address;
+  contracts: GranaryContracts;
   vars: ReturnType<typeof granaryVariables>;
 }
 
@@ -54,8 +55,7 @@ export const GRANARY_SEPOLIA = defineGranaryDeployment({
   chain: sepolia,
   subgraphUrl:
     'https://api.goldsky.com/api/public/project_cmgzm4q1q009c5np2angrczxw/subgraphs/spice-bazaar-sepolia/v0.6.1/gn',
-  fixedPriceAuctionFactory: '0x3DF8314F17bfC2B1141210f3D18e2524a958A745',
-  wishingWell: '0x3136A2Dd08dB68aB4Ce425A44a7F63084eB9668e',
+  contracts: SEPOLIA_CONTRACTS.GRANARY,
 });
 
 /** Deployments the production runner serves. */

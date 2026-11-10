@@ -77,8 +77,8 @@ const run = (
   granaryTasks(d)
     .find((t) => t.id === `granary-${kind}-notifications-${d.network}`)!
     .action(ctx);
-const auctionKey = `granary/auctions/11155111/${GRANARY_SEPOLIA.fixedPriceAuctionFactory.toLowerCase()}`;
-const wishKey = `granary/wishes/11155111/${GRANARY_SEPOLIA.wishingWell.toLowerCase()}`;
+const auctionKey = `granary/auctions/11155111/${GRANARY_SEPOLIA.contracts.FIXED_PRICE_AUCTION_FACTORY.toLowerCase()}`;
+const wishKey = `granary/wishes/11155111/${GRANARY_SEPOLIA.contracts.WISHING_WELL.toLowerCase()}`;
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -412,8 +412,10 @@ test('runs deployments side by side with separate settings and cursors', async (
     network: 'othernet',
     chain: mainnet,
     subgraphUrl: 'https://example.invalid/othernet',
-    fixedPriceAuctionFactory: '0x5555555555555555555555555555555555555555',
-    wishingWell: '0x6666666666666666666666666666666666666666',
+    contracts: {
+      FIXED_PRICE_AUCTION_FACTORY: '0x5555555555555555555555555555555555555555',
+      WISHING_WELL: '0x6666666666666666666666666666666666666666',
+    },
   });
 
   // Unconfigured: silent, no requests, no cursor.

@@ -1,6 +1,6 @@
 # Granary announcements
 
-Every Granary deployment is defined once in `config.ts`: its network name, chain, subgraph URL, auction factory and Wishing Well, plus its Overlord variables. `GRANARY_DEPLOYMENTS` lists the deployments the production runner serves, currently only Sepolia; mainnet is not deployed or indexed yet. For each deployment the runner registers `granary-auction-notifications-<network>` and `granary-wish-notifications-<network>` every 20 minutes, so deployments run side by side. Each job keeps one cursor in Overlord KV, scoped by chain and contract. A deployment's jobs stay idle while its webhook is unset.
+`config.ts` defines each Granary deployment once: its network name, chain, subgraph URL and contracts, plus its Overlord variables. `GRANARY_DEPLOYMENTS` lists the deployments the production runner serves. Today that is Sepolia alone: Granary has no mainnet deployment, and no subgraph indexes one. For each deployment the runner registers `granary-auction-notifications-<network>` and `granary-wish-notifications-<network>` every 20 minutes, so deployments run side by side. Each job keeps one cursor in Overlord KV, scoped by chain and contract. A deployment's jobs stay idle while its webhook is unset.
 
 `tasks.ts` wraps the notification implementations: it reads a deployment's settings and KV cursors, creates the subgraph and token API, sends digests and saves cursors after successful delivery. `auctions.ts` and `wishes.ts` accept dependencies and return announcements (Discord embeds) with the next cursor; they do not access Overlord or Discord delivery. `shared.ts` holds the `CursorStep` type, token labels, Discord timestamps and explorer links, and embed limit checks and batching.
 
@@ -13,9 +13,9 @@ Set these **Overlord variables** per deployment, replacing `<network>` with its 
 | `granary_<network>_wisher_role_id`            | String        | Role mentioned on wish messages; unset sends without a mention          |
 | `granary_<network>_auction_url_template`      | String        | App URL with `{id}`, `{address}` or `{epoch}` placeholders              |
 
-The chain, subgraph and contract addresses are static facts about a deployment, so they live in `config.ts` rather than in variables. Copy contract addresses from `protocol/scripts/deploys`; Sepolia's come from `protocol/scripts/deploys/sepolia/templegold/contract-addresses/sepolia.ts`. The subgraph URL is pinned to a version that has every field the tasks read.
+The chain, subgraph and contract addresses stay fixed for a deployment, so they live in code. Copy the factory and Wishing Well from the protocol's `GRANARY` block in `protocol/scripts/deploys/<network>/templegold/contract-addresses/<network>.ts` into the `GRANARY` block of `src/config/contract_addresses/<network>.ts`. `config.ts` pins the subgraph URL to a version that has the fields the tasks read.
 
-To add mainnet once Granary is deployed and indexed there, define `GRANARY_MAINNET` with `defineGranaryDeployment` like `GRANARY_SEPOLIA`, add it to `GRANARY_DEPLOYMENTS`, and set its `granary_mainnet_*` variables. The runner needs an RPC provider for each deployment's chain.
+When Granary launches on mainnet and a subgraph indexes it, add a `GRANARY` block to `src/config/contract_addresses/mainnet.ts`, define `GRANARY_MAINNET` with `defineGranaryDeployment` like `GRANARY_SEPOLIA`, add it to `GRANARY_DEPLOYMENTS`, and set its `granary_mainnet_*` variables. The runner needs an RPC provider for each deployment's chain.
 
 Use the app's canonical auction route in production. A dummy template such as `https://example.invalid/auctions/{id}` is suitable for the test server. Keep Discord role IDs as strings. Role creation and opt-in assignment belong to Discord server setup.
 

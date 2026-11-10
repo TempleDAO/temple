@@ -21,9 +21,9 @@ import {
 } from './subgraph';
 
 const auctionCursorKey = (d: GranaryDeployment) =>
-  `granary/auctions/${d.chain.id}/${addressSchema.parse(d.fixedPriceAuctionFactory)}`;
+  `granary/auctions/${d.chain.id}/${addressSchema.parse(d.contracts.FIXED_PRICE_AUCTION_FACTORY)}`;
 const wishCursorKey = (d: GranaryDeployment) =>
-  `granary/wishes/${d.chain.id}/${addressSchema.parse(d.wishingWell)}`;
+  `granary/wishes/${d.chain.id}/${addressSchema.parse(d.contracts.WISHING_WELL)}`;
 
 /** `roleId` is undefined when messages go out without a mention. */
 type Delivery = { webhookUrl: string; roleId: string | undefined };
@@ -136,7 +136,9 @@ async function granaryAuctionNotificationTask(
     (cursor) =>
       collectAuctionAnnouncements({
         subgraph: createGranarySubgraph(deployment.subgraphUrl),
-        factory: addressSchema.parse(deployment.fixedPriceAuctionFactory),
+        factory: addressSchema.parse(
+          deployment.contracts.FIXED_PRICE_AUCTION_FACTORY
+        ),
         auctionUrlTemplate,
         explorerUrl: deployment.chain.blockExplorers?.default.url,
         cursor,
