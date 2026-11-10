@@ -7,6 +7,11 @@
   resolved "https://registry.yarnpkg.com/@adllang/adl-runtime/-/adl-runtime-0.0.2.tgz#46a82bd13631ef252b0c7db7687ba41958f1511e"
   integrity sha512-D1UzR4kJMgGKYnAbBoAWE17X3O+0x9xWneD0xB4oTz1QNpG1aJv0B9176Vjzo5dLvJ27gTXsP/ESYoPdUEYk3Q==
 
+"@adllang/jsonbinding@^0.2.5":
+  version "0.2.5"
+  resolved "https://registry.yarnpkg.com/@adllang/jsonbinding/-/jsonbinding-0.2.5.tgz#6215b313705baf402ab9a0baff18763b4b202a1a"
+  integrity sha512-kb9a6l64N6bb77zWWqYS9DdjQ+E1aOPdi4HPLmkxglVNzssIYeipdxuXHAvDMEWH8c7onzwM1lyBWWJ2gLxJIA==
+
 "@adraffy/ens-normalize@^1.11.0":
   version "1.11.0"
   resolved "https://registry.yarnpkg.com/@adraffy/ens-normalize/-/ens-normalize-1.11.0.tgz#42cc67c5baa407ac25059fcd7d405cc5ecdb0c33"
@@ -356,12 +361,13 @@
   resolved "https://registry.yarnpkg.com/@mountainpath9/big-rational/-/big-rational-0.4.0.tgz#a7d65a6954de2ed5f9f41320cfb8755097af05f9"
   integrity sha512-MhIOX1KU0SmM7Uoa1jp3hnMdCQELqVe84Gaj9jb4YkZdFNDh98G3++0M7GTrvhDUD3n7KFNDSUVMOPgQbDevQA==
 
-"@mountainpath9/overlord-core@1.9.2":
-  version "1.9.2"
-  resolved "https://registry.yarnpkg.com/@mountainpath9/overlord-core/-/overlord-core-1.9.2.tgz#dfe8db155c00c0d6027cabde0288af43441f1798"
-  integrity sha512-LrpLNMbetIGUgNaaNclKngjvGiAnHBsOWigZNy1Ei9zC7mWEWWKbj6/uA8VkRat5O1vVf0taRisBaGZkman9Gw==
+"@mountainpath9/overlord-core@2.2.0", "@mountainpath9/overlord-core@^2.2.0":
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/@mountainpath9/overlord-core/-/overlord-core-2.2.0.tgz#faae0249c4d04a4cf6b88b338f0d426f6b802590"
+  integrity sha512-2VDjflPR8yHCJWCKuTEt/QACD5pu1BhM3gQpP4eYThgR/tkYv7zZQFCOgThYrlAAalco5xHoKdrxnxZWEU2qaw==
   dependencies:
     "@adllang/adl-runtime" "^0.0.2"
+    "@adllang/jsonbinding" "^0.2.5"
     "@types/estree" "^1.0.0"
     "@types/koa" "^2.13.5"
     "@types/koa-logger" "^3.1.2"
@@ -378,34 +384,12 @@
     koa-router "^12.0.0"
     uuid "^9.0.0"
 
-"@mountainpath9/overlord-core@1.9.3":
-  version "1.9.3"
-  resolved "https://registry.yarnpkg.com/@mountainpath9/overlord-core/-/overlord-core-1.9.3.tgz#442fb305c14a90816cb05323e09d38dc38789f6b"
-  integrity sha512-GEYcjWx2q80uBiV8w7crUj5HlveNzkak+rwsZBfL+FP12MWZT+ttbf1SggX6kGAxbXlYZjIbbmAnYmi9e+lUlQ==
+"@mountainpath9/overlord-viem@2.2.0":
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/@mountainpath9/overlord-viem/-/overlord-viem-2.2.0.tgz#2ce9f390c66bf9fd37f892b6ea93ee646644ee2a"
+  integrity sha512-Yh8fl/Rj+FGRskyclzHRAbFzspS9ptFimjecRyzGreyCYUC/HnmsCFTHLEQ6ucBFvjIfbjSRA4xvMuOB97tpBw==
   dependencies:
-    "@adllang/adl-runtime" "^0.0.2"
-    "@types/estree" "^1.0.0"
-    "@types/koa" "^2.13.5"
-    "@types/koa-logger" "^3.1.2"
-    "@types/koa-router" "^7.4.4"
-    "@types/node" "^18.16.3"
-    "@types/uuid" "^9.0.1"
-    async-mutex "^0.4.0"
-    base64-js "^1.5.1"
-    builtin-modules "^3.3.0"
-    cron-parser "^5.4.0"
-    jwt-decode "^3.1.2"
-    koa "^2.14.1"
-    koa-logger "^3.2.1"
-    koa-router "^12.0.0"
-    uuid "^9.0.0"
-
-"@mountainpath9/overlord-viem@1.9.2":
-  version "1.9.2"
-  resolved "https://registry.yarnpkg.com/@mountainpath9/overlord-viem/-/overlord-viem-1.9.2.tgz#76123e1a431ffa5976a8421ac4731e0ce5909da6"
-  integrity sha512-gbVm1gc94uLevT2taxCCIHu6tzgNmlJhWq9az8V+ehuHxBrnyoomjfi0/MHzOx6Hlnv74bnQYPJB9WD9OuM8SA==
-  dependencies:
-    "@mountainpath9/overlord-core" "1.9.2"
+    "@mountainpath9/overlord-core" "^2.2.0"
     "@types/node" "^18.16.3"
     async-mutex "^0.4.0"
 

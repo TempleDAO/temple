@@ -6,6 +6,8 @@ Run `yarn format` to format this package or `yarn format:check` to check it. Pre
 
 ## Local testing against a local anvil fork
 
+Requires Node 26 (see .nvmrc); yarn enforces the engines field.
+
 Start a local fork via anvil (substituting your ALCHEMY_KEY)
 
 ```bash

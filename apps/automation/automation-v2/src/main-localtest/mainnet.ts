@@ -68,7 +68,7 @@ const TASK_RUNNER_CONFIG = makeTaskRunnerConfig({
   manager: makeManagerConfig(
     'local',
     makeLocalManagerConfig({
-      providers: [{ chain_id: 1, rpc_url: ANVIL_URL }],
+      providers: [{ chain_id: 1, rpc_urls: [ANVIL_URL] }],
       signers: [
         link('owner', ANVIL_PRIVATE_KEY_0),
         link('tgld_daigold_auction_signer', ANVIL_PRIVATE_KEY_0),
@@ -226,7 +226,7 @@ async function stableAuctionTestSetup(config: Config, ctx: TaskContext) {
     account: await getAccount(ctx, 'owner'),
     chain: mainnet,
     mode: 'anvil',
-    transport: http(await ctx.getProviderUrl(mainnet.id)),
+    transport: http(ANVIL_URL),
   })
     .extend(publicActions)
     .extend(walletActions);
@@ -285,7 +285,7 @@ async function stakingTestSetup(config: Config, ctx: TaskContext) {
     account: await getAccount(ctx, 'owner'),
     chain: mainnet,
     mode: 'anvil',
-    transport: http(await ctx.getProviderUrl(mainnet.id)),
+    transport: http(ANVIL_URL),
   })
     .extend(publicActions)
     .extend(walletActions);
@@ -319,7 +319,7 @@ async function spiceAuctionTestSetup(config: Config, ctx: TaskContext) {
     account: await getAccount(ctx, 'owner'),
     chain: mainnet,
     mode: 'anvil',
-    transport: http(await ctx.getProviderUrl(mainnet.id)),
+    transport: http(ANVIL_URL),
   })
     .extend(publicActions)
     .extend(walletActions);
@@ -372,7 +372,7 @@ async function tlcSetupLiquidations(config: Config, ctx: TaskContext) {
     account: await getAccount(ctx, 'owner'),
     chain: mainnet,
     mode: 'anvil',
-    transport: http(await ctx.getProviderUrl(mainnet.id)),
+    transport: http(ANVIL_URL),
   })
     .extend(publicActions)
     .extend(walletActions);
