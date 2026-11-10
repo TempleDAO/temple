@@ -12,17 +12,26 @@ import {
   taskSuccess,
   taskSuccessSilent,
 } from '@mountainpath9/overlord-core';
-import { getPublicClient, getWalletClient, createTransactionManager } from "@mountainpath9/overlord-viem";
+import {
+  getPublicClient,
+  getWalletClient,
+  createTransactionManager,
+} from '@mountainpath9/overlord-viem';
 import { subgraphRequest } from './subgraph/subgraph-request';
 import { GetUserResponse } from './subgraph/types';
 import { backOff } from 'exponential-backoff';
 import { tlc_discord_webhook_url } from './variables';
-import { Address, Chain as ViemChain, getContract, getAddress,
-  encodeFunctionData, decodeEventLog } from 'viem';
-import { getMainnetSubmissionParams } from "@/config";
+import {
+  Address,
+  Chain as ViemChain,
+  getContract,
+  getAddress,
+  encodeFunctionData,
+  decodeEventLog,
+} from 'viem';
+import { getMainnetSubmissionParams } from '@/config';
 import { WebhookMessageCreateOptions } from 'discord.js';
 import { BigRational } from '@mountainpath9/big-rational';
-
 
 export interface Chain {
   chain: ViemChain;
@@ -46,16 +55,23 @@ export async function batchLiquidate(
   config: TlcBatchLiquidateConfig
 ): Promise<TaskResult> {
   const pclient = await getPublicClient(ctx, config.CHAIN.chain);
-  const wclient = await getWalletClient(ctx, config.CHAIN.chain, config.WALLET_NAME);
-  const transactionManager = await createTransactionManager(ctx, wclient, {...await getMainnetSubmissionParams(ctx)});
+  const wclient = await getWalletClient(
+    ctx,
+    config.CHAIN.chain,
+    config.WALLET_NAME
+  );
+  const transactionManager = await createTransactionManager(ctx, wclient, {
+    ...(await getMainnetSubmissionParams(ctx)),
+  });
   const walletAddress = wclient.account;
   const webhookUrl = await tlc_discord_webhook_url.getValue(ctx);
-  const discordTarget = webhookUrl && await connectDiscord(webhookUrl, ctx.logger);
+  const discordTarget =
+    webhookUrl && (await connectDiscord(webhookUrl, ctx.logger));
 
   const tlc = getContract({
-      address: config.TLC_ADDRESS,
-      abi: TLC_ABI,
-      client: pclient
+    address: config.TLC_ADDRESS,
+    abi: TLC_ABI,
+    client: pclient,
   });
 
   const submittedAt = new Date();
@@ -112,7 +128,7 @@ export async function batchLiquidate(
     const data = encodeFunctionData({
       abi: TLC_ABI,
       functionName: 'batchLiquidate',
-      args: [accBatch]
+      args: [accBatch],
     });
     const tx = { data, to: config.TLC_ADDRESS };
     const txr = await transactionManager.submitAndWait(tx);
@@ -124,7 +140,9 @@ export async function batchLiquidate(
     let totalDebtWiped = 0n;
 
     txr.logs
-      .filter((log) => log.address.toLowerCase() === config.TLC_ADDRESS.toLowerCase())
+      .filter(
+        (log) => log.address.toLowerCase() === config.TLC_ADDRESS.toLowerCase()
+      )
       .forEach((log) => {
         const decodedLog = decodeEventLog({
           abi: TLC_ABI,
@@ -147,19 +165,17 @@ export async function batchLiquidate(
               18,
               4
             )}\``,
-            `daiDebtWiped = \`${formatBigNumber(
-              args.daiDebtWiped,
-              18,
-              4
-            )}\``,
+            `daiDebtWiped = \`${formatBigNumber(args.daiDebtWiped, 18, 4)}\``,
           ];
           numberOfEvents += 1;
           totalCollateralSeized += args.collateralSeized;
           totalDebtWiped += args.daiDebtWiped;
           // Log the event details. Avoid bloating discord messages due to set 1k character limit
-          ctx.logger.info( `\n_What_: Liquidated` + `${details.map((d) => `\n\t\t\t\t• ${d}`)}`);
+          ctx.logger.info(
+            `\n_What_: Liquidated` + `${details.map((d) => `\n\t\t\t\t• ${d}`)}`
+          );
         }
-    });
+      });
 
     // Skip adding to discord messages if no liquidation happened in this chunk
     if (numberOfEvents === 0) continue;
@@ -168,7 +184,10 @@ export async function batchLiquidate(
     const metadata: TempleTaskDiscordMetadata = {
       title: 'TLC Batch Liquidate',
       numberOfEvents,
-      totalCollateralSeized: BigRational.fromBigIntWithDecimals(totalCollateralSeized, 18n),
+      totalCollateralSeized: BigRational.fromBigIntWithDecimals(
+        totalCollateralSeized,
+        18n
+      ),
       totalDebtWiped: BigRational.fromBigIntWithDecimals(totalDebtWiped, 18n),
       submittedAt,
       txReceipt: txr,
@@ -187,7 +206,7 @@ export async function batchLiquidate(
   // Post discord messages if any. Truncate messages to 1k characters
   if (discordTarget && messages.length > 0) {
     for (const message of messages) {
-       if (message.content){
+      if (message.content) {
         message.content = `${message.content.slice(0, 996)} ...`;
         await discordTarget.postMessage(message);
       }
@@ -195,7 +214,9 @@ export async function batchLiquidate(
   }
 
   // Send discord alert warning if signer wallet doesn't have sufficient eth balance
-  const ethBalance = await pclient.getBalance({ address: walletAddress.address });
+  const ethBalance = await pclient.getBalance({
+    address: walletAddress.address,
+  });
   if (discordTarget && ethBalance < config.MIN_ETH_BALANCE_WARNING) {
     const ethBalanceMessage = await buildDiscordMessageCheckEth(
       config.CHAIN,
