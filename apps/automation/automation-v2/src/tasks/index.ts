@@ -11,12 +11,7 @@ import { stakingDistributeRewards } from './staking-distribute-rewards';
 import { startAuction } from './stable-gold-auction-start';
 import { checkSignersEthBalance } from './check-signers-eth-balance';
 import { Client } from 'discord.js';
-import {
-  getOnchainTgldAuctionState,
-  updateTgldAuctionBot,
-} from './discord-bots/tgld-auction';
 import { updateTemplePriceSidebarBot } from './discord-bots/temple-price';
-import { updateSpiceSidebarBot } from './discord-bots/spice';
 import { burnAndUpdateCirculatingSupply as burnTempleGold } from './spice-auction-burn-and-notify';
 import { getPublicClient } from '@mountainpath9/overlord-viem';
 import { ContractAddresses } from '@/config/contract_addresses/types';
@@ -242,32 +237,6 @@ export async function checkSepoliaSignersBalance(
   });
 }
 
-export async function updateTgldAuctionBotTask(
-  config: Config,
-  ctx: TaskContext,
-  bot: Client | undefined
-) {
-  if (!bot) {
-    ctx.logger.info(`Discord tgld auction bot not provided.`);
-    return taskSuccessSilent();
-  }
-  const chain = chainFromId(config.chainId);
-  const pclient = await getPublicClient(ctx, chain);
-  const getTgldAuctionState = () =>
-    getOnchainTgldAuctionState(
-      config.contracts.TEMPLE_GOLD.AUCTIONS.BID_FOR_TGLD,
-      pclient
-    );
-
-  await updateTgldAuctionBot({
-    bot,
-    getTgldAuctionState,
-    logger: ctx.logger,
-  });
-
-  return taskSuccess();
-}
-
 export async function updateTemplePriceSidebarBotTask(
   config: Config,
   ctx: TaskContext,
@@ -285,54 +254,6 @@ export async function updateTemplePriceSidebarBotTask(
     bot,
     logger: ctx.logger,
     client: pclient,
-  });
-
-  return taskSuccess();
-}
-
-export async function updateSpiceSenaSidebarBotTask(
-  config: Config,
-  ctx: TaskContext,
-  bot: Client | undefined
-) {
-  if (!bot) {
-    ctx.logger.info(`Spice sENA sidebar bot not provided.`);
-    return taskSuccessSilent();
-  }
-
-  const chain = chainFromId(config.chainId);
-  const pclient = await getPublicClient(ctx, chain);
-
-  await updateSpiceSidebarBot({
-    bot,
-    client: pclient,
-    logger: ctx.logger,
-    ticker: 'TGLD/sENA',
-    address: config.contracts.TEMPLE_GOLD.AUCTIONS.BID_FOR_SPICE.SENA,
-  });
-
-  return taskSuccess();
-}
-
-export async function updateSpiceEnaSidebarBotTask(
-  config: Config,
-  ctx: TaskContext,
-  bot: Client | undefined
-) {
-  if (!bot) {
-    ctx.logger.info(`Spice ENA sidebar bot not provided.`);
-    return taskSuccessSilent();
-  }
-
-  const chain = chainFromId(config.chainId);
-  const pclient = await getPublicClient(ctx, chain);
-
-  await updateSpiceSidebarBot({
-    bot,
-    client: pclient,
-    logger: ctx.logger,
-    ticker: 'TGLD/ENA',
-    address: config.contracts.TEMPLE_GOLD.AUCTIONS.BID_FOR_SPICE.ENA,
   });
 
   return taskSuccess();

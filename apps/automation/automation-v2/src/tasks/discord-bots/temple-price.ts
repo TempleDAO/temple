@@ -71,7 +71,6 @@ export function formatTemplePriceSidebarState(
       2
     )}x TPI`,
     activity: {
-      type: 'watching',
       name: `TPI rise: $${formatNumber(metrics.tpi, 4)}`,
     },
   };
@@ -81,7 +80,6 @@ function formatTemplePriceErrorSidebarState(): SidebarState {
   return {
     nickname: 'ERROR',
     activity: {
-      type: 'watching',
       name: `TPI rise: $???`,
     },
   };

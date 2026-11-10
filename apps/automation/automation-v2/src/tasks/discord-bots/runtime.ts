@@ -1,4 +1,3 @@
-import { assertNever } from '@/tlc/utils';
 import {
   Logger,
   StringVariable,
@@ -6,17 +5,9 @@ import {
 } from '@mountainpath9/overlord-core';
 import { ActivityType, Client, GatewayIntentBits } from 'discord.js';
 
-export type SidebarActivity =
-  | {
-      type: 'watching';
-      name: string;
-    }
-  | {
-      type: 'custom';
-      state: string;
-      name?: string;
-      url?: string;
-    };
+export interface SidebarActivity {
+  name: string;
+}
 
 export interface SidebarState {
   nickname: string;
@@ -87,20 +78,5 @@ export async function applyDiscordSidebarState({
 }
 
 function formatDiscordActivity(activity: SidebarActivity) {
-  switch (activity.type) {
-    case 'watching':
-      return {
-        name: activity.name,
-        type: ActivityType.Watching,
-      };
-    case 'custom':
-      return {
-        name: activity.name ?? 'Custom Status',
-        state: activity.state,
-        type: ActivityType.Custom,
-        url: activity.url,
-      };
-    default:
-      assertNever(activity);
-  }
+  return { name: activity.name, type: ActivityType.Watching };
 }

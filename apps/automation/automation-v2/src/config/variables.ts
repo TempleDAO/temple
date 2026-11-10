@@ -132,27 +132,9 @@ export const webhook_url = new StringVariable({
   isSecret: true,
 });
 
-export const tgld_auction_bot_token = new StringVariable({
-  name: 'tgld_auction_bot_token',
-  description: 'Token for the TGLD auction sidebar bot.',
-  isSecret: true,
-});
-
 export const temple_price_bot_token = new StringVariable({
   name: 'temple_price_bot_token',
   description: 'Token for the Temple price sidebar bot.',
-  isSecret: true,
-});
-
-export const spice_sena_bot_token = new StringVariable({
-  name: 'spice_sena_bot_token',
-  description: 'Token for the TGLD/sENA sidebar bot.',
-  isSecret: true,
-});
-
-export const spice_ena_bot_token = new StringVariable({
-  name: 'spice_ena_bot_token',
-  description: 'Token for the TGLD/ENA sidebar bot.',
   isSecret: true,
 });
 
