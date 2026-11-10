@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Navigate, useParams, useSearchParams } from 'react-router-dom';
+import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import type { Amount, Auction, Phase } from '../data/types';
 import {
   fillPct,
@@ -73,8 +73,10 @@ const TGLD_NOTE =
   "Temple Gold hasn't authorised this auction yet, so TGLD can't move in or out of it.";
 
 export const PairPage = () => {
-  const { pairId = '' } = useParams();
-  const [params, setParams] = useSearchParams();
+  const { number, ...params } = useParams();
+  // pair IDs are lowercase; links may not be
+  const pairId = (params.pairId ?? '').toLowerCase();
+  const navigate = useNavigate();
   const now = useNow();
   const pair = usePair(pairId).data;
   const auctions = usePairAuctions(pairId).data;
@@ -84,11 +86,12 @@ export const PairPage = () => {
   const running = auctions
     .filter((a) => isRunning(phaseOf(a, now)))
     .sort((a, b) => +a.fulfillmentEnd - +b.fulfillmentEnd);
-  const selected =
-    auctions.find((a) => a.number === Number(params.get('auction'))) ??
-    running[0];
+  const selected = number
+    ? auctions.find((a) => String(a.number) === number)
+    : running[0];
 
   if (!pair) return <Navigate replace to={paths.auctions()} />;
+  if (number && !selected) return <Navigate replace to={paths.pair(pairId)} />;
   if (!selected)
     return <Navigate replace to={paths.wish(pair.bidToken, pair.fillToken)} />;
 
@@ -98,7 +101,7 @@ export const PairPage = () => {
   const mine = (a: Auction) =>
     positions.find((p) => p.auction === a.id && isPositive(p.deposit));
   const others = past ? [] : running.filter((a) => a !== selected);
-  const show = (a: Auction) => setParams({ auction: String(a.number) });
+  const show = (a: Auction) => navigate(paths.auction(a));
 
   return (
     <Stack>

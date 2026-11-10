@@ -1,5 +1,11 @@
 import { useState } from 'react';
-import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import {
+  Navigate,
+  useLocation,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from 'react-router-dom';
 import styled, { css, keyframes } from 'styled-components';
 import { phone } from 'styles/breakpoints';
 import type { Token } from '../data/types';
@@ -14,6 +20,7 @@ import {
   pairIdOf,
   pairName,
   parseTyped,
+  plain,
   ZERO,
 } from '../data/derive';
 import {
@@ -28,6 +35,7 @@ import {
   useWishTokens,
 } from '../data/hooks';
 import {
+  Banner,
   Btn,
   Card,
   Field,
@@ -48,13 +56,17 @@ import { PageHead, PastAuctions, TxBtn, useRunning } from './common';
 const DURATIONS = [30, 90];
 const DEFAULT: { give: Token; get: Token } = { give: 'TGLD', get: 'wstETH' };
 
-// Remount on a new query so links like "Edit wish" refill the form.
-export const Wish = () => <WishScreen key={useLocation().search} />;
-
 // The one screen where the wish leads: a pair with no auction open.
-const WishScreen = () => {
-  const now = useNow();
+export const Wish = () => {
+  const navigate = useNavigate();
+  // the URL names the pair: /wish/<give>-<get>; ?amount pre-fills a new wish
+  // pair IDs are lowercase; links may not be
+  const pairId = useParams().pairId?.toLowerCase();
   const [params] = useSearchParams();
+  // set when a link's pair wasn't available and we fell back to the default
+  const unavailable = !!(
+    useLocation().state as { unavailable?: boolean } | null
+  )?.unavailable;
   // any two different wish tokens make a pair
   const wishTokens = useWishTokens().data;
   const tokens = wishTokens.map((t) => t.symbol);
@@ -62,35 +74,80 @@ const WishScreen = () => {
     [...want, ...tokens].find(
       (t): t is Token => !!t && tokens.includes(t) && t !== not
     );
+  const [give, get] =
+    tokens
+      .flatMap((g) => tokens.map((t): [Token, Token] => [g, t]))
+      .find(([g, t]) => g !== t && pairIdOf(g, t) === pairId) ?? [];
 
-  const [give, setGiveRaw] = useState(() =>
-    pick([params.get('give'), DEFAULT.give])
-  );
-  const [get, setGet] = useState(() =>
-    pick([params.get('get'), DEFAULT.get], give)
-  );
-  const setGive = (t: Token) => {
-    setGiveRaw(t);
-    if (t === get) setGet(pick([], t));
-  };
+  // changing a token moves to that pair's URL
+  // changing a token keeps a link's ?amount
+  const go = (g: Token, t: Token) =>
+    navigate(paths.wish(g, t, params.get('amount') ?? undefined), {
+      replace: true,
+    });
+  const setGive = (t: Token) => go(t, t === get ? pick([], t) ?? t : get ?? t);
+  const setGet = (t: Token) => give && go(give, t);
 
-  const id = give && get ? pairIdOf(give, get) : '';
+  // no pair, or one the well doesn't take: the default pair, saying so if
+  // the link named a pair
+  if (!give || !get) {
+    const g = pick([DEFAULT.give]);
+    const t = pick([DEFAULT.get], g);
+    if (g && t)
+      return (
+        <Navigate
+          replace
+          to={paths.wish(g, t)}
+          state={pairId ? { unavailable: true } : null}
+        />
+      );
+  }
+
+  return give && get ? (
+    <WishPairScreen
+      give={give}
+      get={get}
+      tokens={tokens}
+      decimals={wishTokens.find((t) => t.symbol === give)?.decimals ?? 18}
+      setGive={setGive}
+      setGet={setGet}
+      linkAmount={params.get('amount') ?? undefined}
+      unavailable={unavailable}
+    />
+  ) : (
+    <Stack>
+      <PageHead back={[paths.auctions(), 'All auctions']} title="Make a wish" />
+      <Note>The wishing well isn&apos;t taking wishes yet.</Note>
+    </Stack>
+  );
+};
+
+const WishPairScreen = ({
+  give,
+  get,
+  tokens,
+  decimals,
+  setGive,
+  setGet,
+  linkAmount,
+  unavailable,
+}: {
+  give: Token;
+  get: Token;
+  tokens: Token[];
+  decimals: number;
+  setGive: (t: Token) => void;
+  setGet: (t: Token) => void;
+  linkAmount?: string;
+  unavailable?: boolean;
+}) => {
+  const now = useNow();
+  const id = pairIdOf(give, get);
   const pair = usePair(id).data;
   const auctions = usePairAuctions(id).data;
   const open = useRunning().find(
     ({ a }) => pairIdOf(a.bidToken, a.fillToken) === id
   );
-
-  if (!give || !get)
-    return (
-      <Stack>
-        <PageHead
-          back={[paths.auctions(), 'All auctions']}
-          title="Make a wish"
-        />
-        <Note>The wishing well isn&apos;t taking wishes yet.</Note>
-      </Stack>
-    );
 
   return (
     <Stack>
@@ -107,6 +164,9 @@ const WishScreen = () => {
           </Note>
         }
       />
+      {unavailable && (
+        <Banner>That pair isn&apos;t open for wishes. Pick one below.</Banner>
+      )}
       <Spine now={now} />
       <Card $hot>
         <Row>
@@ -133,10 +193,10 @@ const WishScreen = () => {
           get={get}
           gives={tokens}
           gets={tokens.filter((t) => t !== give)}
-          decimals={wishTokens.find((t) => t.symbol === give)?.decimals ?? 18}
+          decimals={decimals}
           setGive={setGive}
           setGet={setGet}
-          initialAmount={params.get('amount') ?? ''}
+          linkAmount={linkAmount}
         />
       </Card>
       {pair && <PastAuctions pair={pair} auctions={auctions} />}
@@ -152,7 +212,7 @@ const WishPanel = ({
   decimals,
   setGive,
   setGet,
-  initialAmount,
+  linkAmount,
 }: {
   give: Token;
   get: Token;
@@ -162,7 +222,8 @@ const WishPanel = ({
   decimals: number;
   setGive: (t: Token) => void;
   setGet: (t: Token) => void;
-  initialAmount: string;
+  // from a link's ?amount: pre-fills the form only when there's no wish yet
+  linkAmount?: string;
 }) => {
   const now = useNow();
   // the wish's expiry is now + duration on the wall clock
@@ -175,11 +236,11 @@ const WishPanel = ({
   const current = useMyWishes().data.find(
     (w) => w.give === give && w.get === get && w.expiresAt > now
   );
-  const [amount, setAmount] = useState(initialAmount);
+  // until you type, the form shows your wish for the pair, or the link's amount
+  const [edited, setAmount] = useState<string | null>(null);
+  const amount = edited ?? (current ? plain(current.amount) : linkAmount ?? '');
   const [days, setDays] = useState(DURATIONS[0]);
-  const [stage, setStage] = useState<'form' | 'confirm' | 'well' | 'done'>(
-    'form'
-  );
+  const [stage, setStage] = useState<'form' | 'well' | 'done'>('form');
   const [made, setMade] = useState({ n: ZERO, until: wall });
   const clean = amount.replace(/,/g, '').trim();
   const typed = parseTyped(clean, decimals);
@@ -187,12 +248,8 @@ const WishPanel = ({
   const until = addDays(wall, days);
 
   const cast = async () => {
-    setStage('confirm');
     const ok = await setWish({ give, get, amount: clean, durationDays: days });
-    if (!ok) {
-      setStage('form');
-      return;
-    }
+    if (!ok) return;
     setMade({ n: typed ?? ZERO, until });
     setStage('well');
     // the coin lands ~1.06s into the toss; show the result just after
@@ -254,7 +311,7 @@ const WishPanel = ({
       </Row>
       <Fields>
         <Field>
-          <span>I&apos;d give up to</span>
+          <span>{current ? 'Your total wish' : "I'd give up to"}</span>
           <InputBox>
             <input
               inputMode="decimal"
@@ -294,19 +351,13 @@ const WishPanel = ({
       </Note>
       {current && (
         <Note>
-          This replaces your wish of {fmt(current.amount)} {current.give} until{' '}
-          {fmtDayTime(current.expiresAt)}.
+          Saving replaces your wish of {fmt(current.amount)} {current.give}{' '}
+          until {fmtDayTime(current.expiresAt)}. It doesn&apos;t add to it.
         </Note>
       )}
       <Row $start>
-        {/* not awaited, so the button shows the wallet prompt text instead of a spinner */}
-        <TxBtn
-          disabled={!isPositive(typed) || stage === 'confirm'}
-          onClick={() => {
-            cast();
-          }}
-        >
-          {stage === 'confirm' ? 'Confirm in your wallet…' : 'Make wish'}
+        <TxBtn disabled={!isPositive(typed)} onClick={cast}>
+          {current ? 'Update wish' : 'Make wish'}
         </TxBtn>
       </Row>
     </Stack>

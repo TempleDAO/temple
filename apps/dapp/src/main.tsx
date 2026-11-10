@@ -146,10 +146,15 @@ root.render(
                     <Route path="auctions" element={<Granary.Auctions />} />
                     <Route path="pair/:pairId" element={<Granary.PairPage />} />
                     <Route
-                      path="pair/:pairId/history"
+                      path="pair/:pairId/auctions"
                       element={<Granary.PairHistory />}
                     />
+                    <Route
+                      path="pair/:pairId/auctions/:number"
+                      element={<Granary.PairPage />}
+                    />
                     <Route path="wish" element={<Granary.Wish />} />
+                    <Route path="wish/:pairId" element={<Granary.Wish />} />
                     <Route path="activity" element={<Granary.Activity />} />
                     <Route
                       path="activity/legacy"

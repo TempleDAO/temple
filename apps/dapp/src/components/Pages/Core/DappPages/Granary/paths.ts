@@ -8,16 +8,15 @@ export const paths = {
   overview: BASE,
   earn: `${BASE}/earn`,
   auctions: (view?: 'chart') => `${BASE}/auctions${view ? '?view=chart' : ''}`,
-  pair: (pairId: string, n?: number) =>
-    `${BASE}/pair/${pairId}${n ? `?auction=${n}` : ''}`,
+  pair: (pairId: string) => `${BASE}/pair/${pairId}`,
+  // all of a pair's auctions; one auction is /auctions/<number>
+  history: (pairId: string) => `${BASE}/pair/${pairId}/auctions`,
   auction: (a: Auction) =>
-    paths.pair(pairIdOf(a.bidToken, a.fillToken), a.number),
-  history: (pairId: string) => `${BASE}/pair/${pairId}/history`,
+    `${paths.history(pairIdOf(a.bidToken, a.fillToken))}/${a.number}`,
+  // your wish for a pair; amount only pre-fills the form for a new wish
   wish: (give?: Token, get?: Token, amount?: string) =>
-    `${BASE}/wish${
-      give && get
-        ? `?give=${give}&get=${get}${amount ? `&amount=${amount}` : ''}`
-        : ''
+    `${BASE}/wish${give && get ? `/${pairIdOf(give, get)}` : ''}${
+      amount ? `?amount=${amount}` : ''
     }`,
   activity: `${BASE}/activity`,
   legacy: `${BASE}/activity/legacy`,

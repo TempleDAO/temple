@@ -214,10 +214,7 @@ const WishRow = ({ w }: { w: Wish }) => {
             Extend to {fmtDay(extendTo)}
           </TxBtn>
         ) : (
-          <Btn
-            $ghost
-            onClick={() => navigate(paths.wish(w.give, w.get, plain(w.amount)))}
-          >
+          <Btn $ghost onClick={() => navigate(paths.wish(w.give, w.get))}>
             Edit wish
           </Btn>
         )}

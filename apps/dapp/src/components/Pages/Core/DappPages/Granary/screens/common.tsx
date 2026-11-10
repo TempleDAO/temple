@@ -14,7 +14,6 @@ import {
   isRunning,
   pairIdOf,
   phaseOf,
-  plain,
 } from '../data/derive';
 import {
   useAuctions,
@@ -223,9 +222,7 @@ export const WishLine = ({ pair }: { pair: Pair }) => {
           Your wish for {wish.give} → {wish.get}: {fmt(wish.amount)} {wish.give}{' '}
           until {fmtDayTime(wish.expiresAt)}.
         </Note>
-        <TextLink to={paths.wish(wish.give, wish.get, plain(wish.amount))}>
-          Edit wish
-        </TextLink>
+        <TextLink to={paths.wish(wish.give, wish.get)}>Edit wish</TextLink>
       </Row>
     </Card>
   );

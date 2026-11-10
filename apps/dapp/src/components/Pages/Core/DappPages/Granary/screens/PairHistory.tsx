@@ -24,7 +24,8 @@ import { paths } from '../paths';
 import { PageHead } from './common';
 
 export const PairHistory = () => {
-  const { pairId = '' } = useParams();
+  // pair IDs are lowercase; links may not be
+  const pairId = (useParams().pairId ?? '').toLowerCase();
   const now = useNow();
   const navigate = useNavigate();
   const pair = usePair(pairId).data;

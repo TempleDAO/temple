@@ -6,19 +6,20 @@ The Temple Gold section built on FixedPriceAuction and WishingWell (PR #1312, br
 
 It's a separate route, `/dapp/granary`, so the live Spice Bazaar at `/dapp/spice` is unchanged until the team switches over. The routes are declared in `src/main.tsx`; there is no side-nav entry yet.
 
-| Screen                   | Route                                                    |
-| ------------------------ | -------------------------------------------------------- |
-| Splash / Overview        | `/dapp/granary`                                          |
-| Earn Temple Gold         | `/dapp/granary/earn`                                     |
-| All auctions, List       | `/dapp/granary/auctions`                                 |
-| All auctions, Chart      | `/dapp/granary/auctions?view=chart`                      |
-| Pair page                | `/dapp/granary/pair/temple-usds` (`?auction=N` for #N)   |
-| Pair history             | `/dapp/granary/pair/temple-usds/history`                 |
-| Make a wish              | `/dapp/granary/wish` (`?give=TEMPLE&get=USDS&amount=10`) |
-| My Activity              | `/dapp/granary/activity`                                 |
-| My Activity, past Bazaar | `/dapp/granary/activity/legacy`                          |
+| Screen                   | Route                                           |
+| ------------------------ | ----------------------------------------------- |
+| Splash / Overview        | `/dapp/granary`                                 |
+| Earn Temple Gold         | `/dapp/granary/earn`                            |
+| All auctions, List       | `/dapp/granary/auctions`                        |
+| All auctions, Chart      | `/dapp/granary/auctions?view=chart`             |
+| Pair page                | `/dapp/granary/pair/temple-usds`                |
+| One auction              | `/dapp/granary/pair/temple-usds/auctions/4`     |
+| Pair history             | `/dapp/granary/pair/temple-usds/auctions`       |
+| Your wish for a pair     | `/dapp/granary/wish/temple-usds` (`?amount=10`) |
+| My Activity              | `/dapp/granary/activity`                        |
+| My Activity, past Bazaar | `/dapp/granary/activity/legacy`                 |
 
-A pair page for a pair with no auction redirects to the wish screen for that pair.
+A pair page for a pair with no auction redirects to the wish screen for that pair. `/dapp/granary/wish` goes to the default pair. The wish screen shows your current wish for the pair; `?amount` only pre-fills it when you have none.
 
 ## Data flow
 
