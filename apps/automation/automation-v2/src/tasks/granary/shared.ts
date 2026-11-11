@@ -1,10 +1,19 @@
 import { APIEmbed, escapeMarkdown } from 'discord.js';
 import type { Token } from './subgraph';
 
+/**
+ * Token symbols are attacker-controlled. Anything outside this allowlist
+ * falls back to the address instead of being sanitised: that rules out
+ * masked links (`[x](url)`), raw URLs (no `:` or `/`), and homoglyph,
+ * zero-width or bidi tricks (ASCII only), and avoids stripping a symbol
+ * down to something that impersonates a real token.
+ */
+const SAFE_SYMBOL = /^[A-Za-z0-9._-]{1,32}$/;
+
+/** The token's symbol if it is plain ASCII, else its address. */
 export function tokenLabel({ symbol, id }: Pick<Token, 'symbol' | 'id'>) {
-  return escapeMarkdown(
-    symbol && symbol !== '?' ? symbol.slice(0, 64).replace(/[\r\n]/g, ' ') : id
-  );
+  // `_` is still markdown (italic/underline), so escaping stays.
+  return escapeMarkdown(symbol && SAFE_SYMBOL.test(symbol) ? symbol : id);
 }
 
 export type Announcement = APIEmbed;
