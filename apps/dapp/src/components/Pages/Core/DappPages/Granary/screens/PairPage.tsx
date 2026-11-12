@@ -512,23 +512,26 @@ const ClaimCard = ({ a, phase }: { a: Auction; phase: Phase }) => {
               <Note>Claimed.</Note>
             )}
           </Row>
-          <Note>
-            {flagged && !pos?.claimed
-              ? FLAGGED_NOTE
-              : tgldBlocked(a) && !pos?.claimed
-              ? TGLD_NOTE
-              : paused && !pos?.claimed
-              ? `Claims are paused by the Temple until it unpauses, or ${fmtDayTime(
-                  a.claimPauseEndsAt
-                )} at the latest.`
-              : cancelled
-              ? 'Your whole deposit comes back. Nothing expires.'
-              : refundOnly
-              ? 'Nothing was filled, so your whole deposit comes back. Nothing expires.'
-              : hasRefund
-              ? 'One claim pays both. Nothing expires.'
-              : 'Nothing expires.'}
-          </Note>
+          {/* about the claim still to make: gone once claimed */}
+          {!pos?.claimed && (
+            <Note>
+              {flagged
+                ? FLAGGED_NOTE
+                : tgldBlocked(a)
+                ? TGLD_NOTE
+                : paused
+                ? `Claims are paused by the Temple until it unpauses, or ${fmtDayTime(
+                    a.claimPauseEndsAt
+                  )} at the latest.`
+                : cancelled
+                ? 'Your whole deposit comes back. Nothing expires.'
+                : refundOnly
+                ? 'Nothing was filled, so your whole deposit comes back. Nothing expires.'
+                : hasRefund
+                ? 'One claim pays both. Nothing expires.'
+                : 'Nothing expires.'}
+            </Note>
+          )}
         </>
       ) : (
         <Note>You had no deposit in this auction.</Note>
