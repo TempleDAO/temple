@@ -12,7 +12,12 @@ import { useSpiceBazaar } from 'providers/SpiceBazaarProvider';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { useEffect, useMemo } from 'react';
 
-export const MyActivityTGLD = () => {
+// embedded: shown inside another page (the Granary), so skip the sub-nav
+export const MyActivityTGLD = ({
+  embedded = false,
+}: {
+  embedded?: boolean;
+}) => {
   const { balance, updateBalance, wallet } = useWallet();
   const {
     daiGoldAuctionInfo,
@@ -52,8 +57,8 @@ export const MyActivityTGLD = () => {
   );
 
   return (
-    <PageContainer>
-      <MyActivityTopNav />
+    <PageContainer $embedded={embedded}>
+      {!embedded && <MyActivityTopNav />}
       <Title>
         <TitleText>Bids for TGLD</TitleText>
         <LinkIcon
@@ -136,7 +141,8 @@ export const MyActivityTGLD = () => {
   );
 };
 
-const PageContainer = styled.div`
+// The negative margin tucks the page under its sub-nav; embedded, there is none.
+const PageContainer = styled.div<{ $embedded?: boolean }>`
   margin-top: -40px;
   display: flex;
   flex-direction: column;
@@ -148,6 +154,8 @@ const PageContainer = styled.div`
     margin-top: -20px;
     gap: 40px;
   `)}
+
+  ${({ $embedded }) => ($embedded ? 'margin-top: 0;' : '')}
 `;
 
 const ContentContainer = styled.div`
