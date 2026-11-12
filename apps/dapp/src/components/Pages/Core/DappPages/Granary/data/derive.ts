@@ -153,9 +153,13 @@ export const fmtRange = (a: Date, b: Date) =>
     ? `${a.getUTCDate()} – ${fmtDay(b)}`
     : `${fmtDay(a)} – ${fmtDay(b)}`;
 
+// Time left: days and hours, hours and minutes under a day, minutes under an hour.
 export const fmtLeft = (from: Date, to: Date) => {
-  const h = Math.max(0, Math.floor((+to - +from) / 36e5));
-  return h >= 24 ? `${Math.floor(h / 24)}d ${h % 24}h` : `${h}h`;
+  const m = Math.max(0, Math.floor((+to - +from) / 6e4));
+  const h = Math.floor(m / 60);
+  if (h >= 24) return `${Math.floor(h / 24)}d ${h % 24}h`;
+  if (h >= 1) return `${h}h ${m % 60}m`;
+  return m >= 1 ? `${m}m` : 'under a minute';
 };
 
 export const addDays = (d: Date, days: number) => new Date(+d + days * 864e5);

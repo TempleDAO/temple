@@ -211,8 +211,9 @@ export const PastAuctions = ({
 
 // The quiet line a pair page shows when you have a wish for it.
 export const WishLine = ({ pair }: { pair: Pair }) => {
+  const now = useNow();
   const wish = useMyWishes().data.find(
-    (w) => pairIdOf(w.give, w.get) === pair.id
+    (w) => pairIdOf(w.give, w.get) === pair.id && w.expiresAt > now
   );
   if (!wish) return null;
   return (
