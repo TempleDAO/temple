@@ -12,7 +12,12 @@ import { useWallet } from 'providers/WalletProvider';
 import { useSpiceAuction } from 'providers/SpiceAuctionProvider';
 import { formatNumberWithCommasAndDecimals } from 'utils/formatter';
 
-export const MyActivitySpice = () => {
+// embedded: shown inside another page (the Granary), so skip the sub-nav
+export const MyActivitySpice = ({
+  embedded = false,
+}: {
+  embedded?: boolean;
+}) => {
   const redeemAmount = useMyActivityRedeemAmountSpice();
 
   const { currentUser } = useSpiceAuction();
@@ -37,8 +42,8 @@ export const MyActivitySpice = () => {
   }, [wallet, unclaimedAmount, currentUserMetricsLoading]);
 
   return (
-    <PageContainer>
-      <MyActivityTopNav />
+    <PageContainer $embedded={embedded}>
+      {!embedded && <MyActivityTopNav />}
       <Title>
         <TitleText>Bids for Spice</TitleText>
         <LinkIcon
@@ -101,7 +106,8 @@ export const MyActivitySpice = () => {
   );
 };
 
-const PageContainer = styled.div`
+// The negative margin tucks the page under its sub-nav; embedded, there is none.
+const PageContainer = styled.div<{ $embedded?: boolean }>`
   margin-top: -40px;
   display: flex;
   flex-direction: column;
@@ -113,6 +119,8 @@ const PageContainer = styled.div`
     margin-top: -20px;
     gap: 40px;
   `)}
+
+  ${({ $embedded }) => ($embedded ? 'margin-top: 0;' : '')}
 `;
 
 const ContentContainer = styled.div`
