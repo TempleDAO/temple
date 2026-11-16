@@ -128,7 +128,8 @@ const Content = styled.div`
   flex-direction: column;
   gap: 40px;
   position: relative;
-  z-index: 10;
+  /* its own layer, kept under app-wide popovers (z-index 9-10) */
+  z-index: 0;
   color: #e9dcd2;
   font-size: 15px;
   line-height: 1.6;
