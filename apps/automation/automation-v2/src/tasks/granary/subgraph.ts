@@ -1,13 +1,13 @@
 import axios from 'axios';
 import { z } from 'zod';
 
-const PAGE_SIZE = 1000;
+export const PAGE_SIZE = 1000;
 
 export const addressSchema = z
   .string()
   .regex(/^0x[\da-f]{40}$/i)
   .transform((s) => s.toLowerCase());
-const uintSchema = z
+export const uintSchema = z
   .string()
   .regex(/^\d+$/)
   .transform((s) => BigInt(s));
@@ -23,7 +23,7 @@ const tokenSchema = z.object({
 });
 const tokenFields = 'id symbol decimals metadataPending';
 
-const auctionSchema = z.object({
+export const auctionSchema = z.object({
   id: z.string().min(1),
   number: z.number().int().positive(),
   epoch: uintSchema,
@@ -62,7 +62,11 @@ export const snapshotSchema = z.object({
 export type Snapshot = z.infer<typeof snapshotSchema>;
 export type GranarySubgraph = ReturnType<typeof createGranarySubgraph>;
 
-async function paginate<T extends { id: string }>(
+/**
+ * Reads every page of an entity. `fetchPage(cursor)` returns up to
+ * PAGE_SIZE rows ordered by id ascending, filtered by `id_gt: cursor`.
+ */
+export async function paginate<T extends { id: string }>(
   entity: string,
   fetchPage: (cursor: string) => Promise<T[]>
 ): Promise<T[]> {
@@ -83,8 +87,12 @@ async function paginate<T extends { id: string }>(
   }
 }
 
-export function createGranarySubgraph(endpoint: string) {
-  async function query<S extends z.ZodTypeAny>(
+/**
+ * A GraphQL query function for the Granary subgraph at `endpoint`. It throws
+ * on a failed request or any GraphQL error, and parses the data with `schema`.
+ */
+export function granaryQuery(endpoint: string) {
+  return async function query<S extends z.ZodTypeAny>(
     document: string,
     variables: object,
     schema: S
@@ -109,7 +117,11 @@ export function createGranarySubgraph(endpoint: string) {
       throw new Error('Granary subgraph returned GraphQL errors');
 
     return schema.parse(envelope.data);
-  }
+  };
+}
+
+export function createGranarySubgraph(endpoint: string) {
+  const query = granaryQuery(endpoint);
 
   async function snapshot(): Promise<Snapshot> {
     const { _meta } = await query(
