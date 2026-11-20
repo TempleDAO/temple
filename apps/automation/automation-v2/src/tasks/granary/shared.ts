@@ -10,10 +10,15 @@ import type { Token } from './subgraph';
  */
 const SAFE_SYMBOL = /^[A-Za-z0-9._-]{1,32}$/;
 
+/** The token's symbol if it passes `SAFE_SYMBOL`, else undefined. */
+export function safeSymbol({ symbol }: Pick<Token, 'symbol'>) {
+  return symbol && SAFE_SYMBOL.test(symbol) ? symbol : undefined;
+}
+
 /** The token's symbol if it is plain ASCII, else its address. */
-export function tokenLabel({ symbol, id }: Pick<Token, 'symbol' | 'id'>) {
+export function tokenLabel(token: Pick<Token, 'symbol' | 'id'>) {
   // `_` is still markdown (italic/underline), so escaping stays.
-  return escapeMarkdown(symbol && SAFE_SYMBOL.test(symbol) ? symbol : id);
+  return escapeMarkdown(safeSymbol(token) ?? token.id);
 }
 
 export type Announcement = APIEmbed;

@@ -4,6 +4,7 @@ import {
   CursorStep,
   discordTimestamp,
   EMBED_LIMITS,
+  safeSymbol,
   tokenLabel,
   explorerTxUrl,
 } from './shared';
@@ -133,22 +134,19 @@ function phaseAt(auction: Auction, timestamp: number): Phase {
   return 'Settlement';
 }
 
-function validateAuctionUrl(url: string) {
-  const { protocol } = new URL(url);
+/**
+ * The auction's page in the app,
+ * `/dapp/granary/pair/<bid>-<fill>/auctions/<number>`, with the pair as both
+ * symbols lowercased, the way the app's `pairIdOf` builds it. Falls back to
+ * the auction list when a symbol is not plain ASCII.
+ */
+function auctionUrl(appUrl: string, auction: Auction) {
+  const bid = safeSymbol(auction.pair.bidToken);
+  const fill = safeSymbol(auction.pair.fillToken);
+  if (!bid || !fill) return `${appUrl}/dapp/granary/auctions`;
 
-  if (!['http:', 'https:'].includes(protocol) || /[<>\s]/.test(url))
-    throw new Error('Invalid Granary auction URL');
-
-  return url;
-}
-
-function formatAuctionUrl(template: string, auction: Auction) {
-  return validateAuctionUrl(
-    template
-      .replaceAll('{id}', encodeURIComponent(auction.id))
-      .replaceAll('{address}', auction.fixedPriceAuction.id)
-      .replaceAll('{epoch}', auction.epoch.toString())
-  );
+  const pairId = encodeURIComponent(`${bid}-${fill}`.toLowerCase());
+  return `${appUrl}/dapp/granary/pair/${pairId}/auctions/${auction.number}`;
 }
 
 function formatFill({ filledBids, totalDeposits }: Auction) {
@@ -211,18 +209,16 @@ function formatAuctionAnnouncement(
 export async function collectAuctionAnnouncements({
   subgraph,
   factory,
-  auctionUrlTemplate,
+  appUrl,
   explorerUrl,
   cursor,
 }: {
   subgraph: GranarySubgraph;
   factory: string;
-  auctionUrlTemplate: string;
+  appUrl: string;
   explorerUrl: string | undefined;
   cursor: Snapshot | undefined;
 }): Promise<CursorStep<Snapshot>> {
-  validateAuctionUrl(auctionUrlTemplate);
-
   const snapshot = await subgraph.snapshot();
 
   if (
@@ -284,7 +280,7 @@ export async function collectAuctionAnnouncements({
       formatAuctionAnnouncement(
         auction,
         phase,
-        formatAuctionUrl(auctionUrlTemplate, auction),
+        auctionUrl(appUrl, auction),
         explorerUrl
       )
     ),

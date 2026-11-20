@@ -125,9 +125,6 @@ async function granaryAuctionNotificationTask(
   );
   if (!delivery) return taskSuccessSilent();
 
-  const auctionUrlTemplate =
-    await deployment.vars.auctionUrlTemplate.requireValue(ctx);
-
   return advanceCursor(
     ctx,
     delivery,
@@ -139,7 +136,7 @@ async function granaryAuctionNotificationTask(
         factory: addressSchema.parse(
           deployment.contracts.FIXED_PRICE_AUCTION_FACTORY
         ),
-        auctionUrlTemplate,
+        appUrl: deployment.appUrl,
         explorerUrl: deployment.chain.blockExplorers?.default.url,
         cursor,
       })

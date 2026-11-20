@@ -47,6 +47,10 @@ const auction = {
   cancelledAt: '0',
 };
 
+/** The fixture pair's auction page, as the app routes it. */
+const auctionLink = (number: number) =>
+  `${GRANARY_SEPOLIA.appUrl}/dapp/granary/pair/tgld-usds/auctions/${number}`;
+
 let block: number;
 let timestamp: number;
 let auctions: (typeof auction)[];
@@ -95,8 +99,6 @@ beforeEach(() => {
       'https://discord.com/api/webhooks/123/test-token',
     granary_sepolia_moonwatcher_role_id: '1234567890123456789',
     granary_sepolia_wisher_role_id: '9876543210987654321',
-    granary_sepolia_auction_url_template:
-      'https://example.invalid/auctions/{id}',
   };
   ctx = {
     config: createConfigAccess(async (name) => values[name]),
@@ -151,11 +153,17 @@ beforeEach(() => {
     });
 });
 
-test('rejects an invalid app URL before committing the auction baseline', async () => {
-  values.granary_sepolia_auction_url_template = "javascript:alert('{id}')";
-  await expect(run('auction')).rejects.toThrow('Invalid Granary auction URL');
-  expect(state.size).toBe(0);
-  expect(postMessage).not.toHaveBeenCalled();
+test('links to the auction list when a symbol is not plain ASCII', async () => {
+  await run('auction');
+  block = 101;
+  timestamp = 1100;
+  auctions = [
+    { ...auction, pair: { bidToken: token(bidToken.id, 'T/G'), fillToken } },
+  ];
+  await run('auction');
+  expect(embeds(0)[0].url).toBe(
+    `${GRANARY_SEPOLIA.appUrl}/dapp/granary/auctions`
+  );
 });
 
 test('never announces a phase moving backwards and still advances the cursor', async () => {
@@ -193,9 +201,7 @@ test('announces only the current phase after downtime and treats another epoch a
     depositStart: '1400',
   });
   await run('auction');
-  expect(embeds(1).map((e) => e.url)).toEqual([
-    `https://example.invalid/auctions/${address}-2`,
-  ]);
+  expect(embeds(1).map((e) => e.url)).toEqual([auctionLink(4)]);
   block++;
   timestamp = 1360;
   await run('auction');
@@ -222,7 +228,7 @@ test('orders a run by when each auction entered its current phase', async () => 
     at(1, {}), // clock settlement at 1200
   ];
   const numberOf = new Map(
-    auctions.map((a) => [`https://example.invalid/auctions/${a.id}`, a.number])
+    auctions.map((a) => [auctionLink(a.number), a.number])
   );
   await run('auction');
   expect(embeds(0).map((e) => numberOf.get(e.url!))).toEqual([2, 5, 3, 1, 4]);
@@ -280,10 +286,7 @@ test('retries every auction digest chunk after a later send fails and redacts we
     .map((e) => e.url)
     .sort();
   expect(delivered).toEqual(
-    Array.from(
-      { length: 20 },
-      (_, n) => `https://example.invalid/auctions/${address}-${n + 1}`
-    ).sort()
+    Array.from({ length: 20 }, (_, n) => auctionLink(n + 1)).sort()
   );
 
   block++;
@@ -413,6 +416,7 @@ test('runs deployments side by side with separate settings and cursors', async (
     network: 'othernet',
     chain: mainnet,
     subgraphUrl: 'https://example.invalid/othernet',
+    appUrl: 'https://example.invalid/other',
     contracts: {
       FIXED_PRICE_AUCTION_FACTORY: '0x5555555555555555555555555555555555555555',
       WISHING_WELL: '0x6666666666666666666666666666666666666666',
@@ -428,8 +432,6 @@ test('runs deployments side by side with separate settings and cursors', async (
   values.granary_othernet_notifications_webhook_url =
     'https://discord.com/api/webhooks/456/other-token';
   values.granary_othernet_moonwatcher_role_id = '1111111111111111111';
-  values.granary_othernet_auction_url_template =
-    'https://example.invalid/other/{id}';
   await run('auction');
   await run('auction', other);
   await run('wish');
@@ -478,9 +480,7 @@ test('baselines auctions silently and announces a clock transition once across r
     content: '<@&1234567890123456789>',
     allowedMentions: { parse: [], roles: ['1234567890123456789'] },
   });
-  expect(embeds(0).map((e) => e.url)).toEqual([
-    `https://example.invalid/auctions/${address}-1`,
-  ]);
+  expect(embeds(0).map((e) => e.url)).toEqual([auctionLink(3)]);
   block = 102;
   timestamp = 1150;
   await run('auction');
@@ -498,10 +498,7 @@ test('announces outcomes decided since the cursor in one message and saves the s
   await run('auction');
 
   expect(postMessage).toHaveBeenCalledOnce();
-  expect(embeds(0).map((e) => e.url)).toEqual([
-    `https://example.invalid/auctions/${address}-1`,
-    `https://example.invalid/auctions/${address}-2`,
-  ]);
+  expect(embeds(0).map((e) => e.url)).toEqual([auctionLink(3), auctionLink(4)]);
   expect([...state.values()]).toEqual([{ number: 101, timestamp: 1050 }]);
 
   block = 102;

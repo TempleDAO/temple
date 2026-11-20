@@ -15,6 +15,8 @@ export interface GranaryDeployment {
   chain: Chain;
   /** Subgraph indexing this deployment, pinned to a version with every field the tasks read. */
   subgraphUrl: string;
+  /** Origin of the app the announcements link to, without a trailing slash. */
+  appUrl: string;
   contracts: GranaryContracts;
   vars: ReturnType<typeof granaryVariables>;
 }
@@ -36,10 +38,6 @@ function granaryVariables(network: string) {
       name: name('wisher_role_id'),
       description: `Discord role to mention on each ${network} Wishing Well announcement.`,
     }),
-    auctionUrlTemplate: new StringVariable({
-      name: name('auction_url_template'),
-      description: `${network} auction page URL containing {id}, {address} or {epoch} placeholders.`,
-    }),
   };
 }
 
@@ -55,6 +53,7 @@ export const GRANARY_SEPOLIA = defineGranaryDeployment({
   chain: sepolia,
   subgraphUrl:
     'https://api.goldsky.com/api/public/project_cmgzm4q1q009c5np2angrczxw/subgraphs/spice-bazaar-sepolia/v0.6.1/gn',
+  appUrl: 'https://pr-1322-preview.templedao.link',
   contracts: SEPOLIA_CONTRACTS.GRANARY,
 });
 

@@ -57,7 +57,6 @@ import { taskExceptionHandler } from '@/utils/task-exceptions';
 // from the production config.
 const DEPLOYMENT = GRANARY_SEPOLIA;
 const EXPLORER_URL = DEPLOYMENT.chain.blockExplorers?.default.url;
-const AUCTION_URL_TEMPLATE = 'https://example.invalid/auctions/{id}';
 
 // createTaskRunnerWithConfig does not resolve ENV_SECRET: values, so read the
 // environment directly.
@@ -87,7 +86,6 @@ function taskRunnerConfig() {
           { chain_id: DEPLOYMENT.chain.id, rpc_urls: [SEPOLIA_RPC_URL] },
         ],
         vars: {
-          [DEPLOYMENT.vars.auctionUrlTemplate.name()]: AUCTION_URL_TEMPLATE,
           [DEPLOYMENT.vars.webhookUrl.name()]: requireEnv(
             'GRANARY_NOTIFICATIONS_WEBHOOK_URL'
           ),
@@ -286,8 +284,7 @@ async function granaryFakeAuctionStatesTask(ctx: TaskContext) {
   const step = await collectAuctionAnnouncements({
     subgraph: fakeSubgraph,
     factory: FACTORY,
-    auctionUrlTemplate:
-      await DEPLOYMENT.vars.auctionUrlTemplate.requireValue(ctx),
+    appUrl: DEPLOYMENT.appUrl,
     explorerUrl: EXPLORER_URL,
     cursor: CURSOR,
   });
@@ -380,8 +377,7 @@ async function granaryAuctionRangeTask(ctx: TaskContext, koa: Koa) {
   const step = await collectAuctionAnnouncements({
     subgraph,
     factory: DEPLOYMENT.contracts.FIXED_PRICE_AUCTION_FACTORY.toLowerCase(),
-    auctionUrlTemplate:
-      await DEPLOYMENT.vars.auctionUrlTemplate.requireValue(ctx),
+    appUrl: DEPLOYMENT.appUrl,
     explorerUrl: EXPLORER_URL,
     cursor,
   });
