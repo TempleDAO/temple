@@ -6,7 +6,7 @@ import {
 import { WebhookClient, WebhookMessageCreateOptions } from 'discord.js';
 import * as vars from '@/config/variables';
 
-type NotificationLevel =
+export type NotificationLevel =
   | 'defcon1' // not used
   | 'defcon2' // not used
   | 'defcon3' // unexpected failures
