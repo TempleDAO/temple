@@ -1,9 +1,21 @@
-import { BigRational } from "@mountainpath9/big-rational";
-import { ConfigureVariableMeta, maybe, TaskContext, VariableBase } from "@mountainpath9/overlord-core";
-
+import { BigRational } from '@mountainpath9/big-rational';
+import {
+  ConfigureVariableMeta,
+  maybe,
+  TaskContext,
+  VariableBase,
+} from '@mountainpath9/overlord-core';
 
 export class BigRationalVariable extends VariableBase<BigRational> {
-  constructor(readonly params: { name: string, description: string, min?: number, max?: number, default?: number }) {
+  constructor(
+    readonly params: {
+      name: string;
+      description: string;
+      min?: number;
+      max?: number;
+      default?: number;
+    }
+  ) {
     super(params.name);
   }
 
@@ -21,11 +33,14 @@ export class BigRationalVariable extends VariableBase<BigRational> {
       name: this.params.name,
       description: this.params.description,
       is_secret: false,
-      vtype: { kind: 'number', value: {
-          min: this.params.min == undefined ? null: this.params.min,
-          max: this.params.max == undefined ? null: this.params.max,
-      } },
-      default_value:maybe(this.params.default)
-    }
+      vtype: {
+        kind: 'number',
+        value: {
+          min: this.params.min == undefined ? null : this.params.min,
+          max: this.params.max == undefined ? null : this.params.max,
+        },
+      },
+      default_value: maybe(this.params.default),
+    };
   }
 }

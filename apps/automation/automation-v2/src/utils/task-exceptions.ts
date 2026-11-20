@@ -1,8 +1,15 @@
-import { TaskContext, TaskException, logTaskException } from "@mountainpath9/overlord-core";
-import { discordLogTaskException } from "./discord";
-import * as vars from "@/config/variables";
+import {
+  TaskContext,
+  TaskException,
+  logTaskException,
+} from '@mountainpath9/overlord-core';
+import { discordLogTaskException } from './discord';
+import * as vars from '@/config/variables';
 
-export async function taskExceptionHandler(ctx: TaskContext, te: TaskException) {
+export async function taskExceptionHandler(
+  ctx: TaskContext,
+  te: TaskException
+) {
   // Log failure to overlord
   await logTaskException(ctx, te);
 

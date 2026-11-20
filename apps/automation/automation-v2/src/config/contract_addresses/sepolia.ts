@@ -1,14 +1,19 @@
-import { ContractAddresses } from "./types";
+import { ContractAddresses } from './types';
 
-export const CONTRACTS: ContractAddresses = {
+export const CONTRACTS = {
+  // protocol/scripts/deploys/sepolia/templegold/contract-addresses/sepolia.ts
+  GRANARY: {
+    FIXED_PRICE_AUCTION_FACTORY: '0x3DF8314F17bfC2B1141210f3D18e2524a958A745',
+    WISHING_WELL: '0x3136A2Dd08dB68aB4Ce425A44a7F63084eB9668e',
+  },
   CORE: {
     MULTISIG: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
   },
   TREASURY_RESERVES_VAULT: {
-      ADDRESS: '0x7f19419488274bcC363d93F70809cDd53C788aF7',
-      D_USD_TOKEN: '0x595309143e6716ebC9Ee239B7C6E76e9Dd6b1EB1',
-      D_TEMPLE_TOKEN: '0xB2a141998caC05742eC1C21a17e129947Ca64D9C',
-      TPI_ORACLE: '0x99a45931DB0Fdb14E1D3f6a7E25d14101534CA2f',
+    ADDRESS: '0x7f19419488274bcC363d93F70809cDd53C788aF7',
+    D_USD_TOKEN: '0x595309143e6716ebC9Ee239B7C6E76e9Dd6b1EB1',
+    D_TEMPLE_TOKEN: '0xB2a141998caC05742eC1C21a17e129947Ca64D9C',
+    TPI_ORACLE: '0x99a45931DB0Fdb14E1D3f6a7E25d14101534CA2f',
   },
   TEMPLE_GOLD: {
     TEMPLE_GOLD: '0x2ae6318e34bb97ae3755AFcE75559452aA223A5D',
@@ -28,7 +33,7 @@ export const CONTRACTS: ContractAddresses = {
       DAI_TOKEN: '0xBe9162230D9e637218D74C7f41f62ef2385fEe64',
     },
     SKY: {
-        USDS_TOKEN: '0x',
-    }
-  }
-}
+      USDS_TOKEN: '0x',
+    },
+  },
+} satisfies ContractAddresses;

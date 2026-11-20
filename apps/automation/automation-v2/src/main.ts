@@ -12,19 +12,16 @@ import {
   distributeStakingRewards,
   startStableGoldAuction,
   checkSignersBalance,
-  updateTgldAuctionBotTask,
   updateTemplePriceSidebarBotTask,
-  updateSpiceSenaSidebarBotTask,
   startSepoliaStableGoldAuction,
   distributeSepoliaStakingRewards,
   checkSepoliaSignersBalance,
   burnAndUpdateCirculatingSupplySepolia,
   burnAndUpdateCirculatingSupply,
-  updateSpiceEnaSidebarBotTask,
 } from './tasks';
-import { startAuctionSidebarBot } from './tasks/discord-bots/tgld-auction';
 import { startTemplePriceSidebarBot } from './tasks/discord-bots/temple-price';
-import { startSpiceSenaSidebarBot, startSpiceEnaSidebarBot  } from './tasks/discord-bots/spice';
+import { GRANARY_DEPLOYMENTS } from './tasks/granary/config';
+import { granaryTasks } from './tasks/granary/tasks';
 
 async function main() {
   const runner = createTaskRunner();
@@ -36,42 +33,42 @@ async function main() {
   runner.addPeriodicTask({
     id: 'tlc-batch-liquidate',
     cronSchedule: '*/10 * * * *',
-    action: async (ctx) => await batchLiquidate(ctx, TLC_BATCH_LIQUIDATE_CONFIG),
+    action: async (ctx) =>
+      await batchLiquidate(ctx, TLC_BATCH_LIQUIDATE_CONFIG),
   });
 
   const config = getConfig('mainnet');
   const sepoliaConfig = getConfig('sepolia');
 
-  const tgldAuctionBot = await startAuctionSidebarBot(runner);
   const templePriceSidebarBot = await startTemplePriceSidebarBot(runner);
-  const spiceSenaSidebarBot = await startSpiceSenaSidebarBot(runner);
-  const spiceEnaSidebarBot = await startSpiceEnaSidebarBot(runner);
   // dai gold auction start
   runner.addPeriodicTask({
     id: 'start-stable-gold-auction',
     cronSchedule: '*/5 * * * *', // every 5 minutes
-    action: async (ctx, _time) => startStableGoldAuction(config, ctx)
+    action: async (ctx, _time) => startStableGoldAuction(config, ctx),
   });
 
   // distribute staking rewards
   runner.addPeriodicTask({
     id: 'distribute-staking-rewards',
     cronSchedule: '*/5 * * * *', // every 5 minutes
-    action: async (ctx, _time) => distributeStakingRewards(config, ctx)
+    action: async (ctx, _time) => distributeStakingRewards(config, ctx),
   });
 
   runner.addPeriodicTask({
     id: 'check-accounts-balance',
     cronSchedule: '0 * * * *', // 0 minute of every hour
-    action: async (ctx, _time) => checkSignersBalance(config, ctx)
+    action: async (ctx, _time) => checkSignersBalance(config, ctx),
   });
 
-  runner.addPeriodicTask({
-    id: 'update-tgld-auction-sidebar-bot',
-    cronSchedule: '*/10 * * * *', // every 10 minutes
-    action: (ctx) =>
-      updateTgldAuctionBotTask(config, ctx, tgldAuctionBot),
-  });
+  // Granary auction and wish notifications, one pair per deployment.
+  for (const deployment of GRANARY_DEPLOYMENTS)
+    for (const task of granaryTasks(deployment))
+      runner.addPeriodicTask({
+        ...task,
+        cronSchedule: '*/20 * * * *',
+        allowConcurrent: false,
+      });
 
   runner.addPeriodicTask({
     id: 'update-temple-price-sidebar-bot',
@@ -80,25 +77,11 @@ async function main() {
       updateTemplePriceSidebarBotTask(config, ctx, templePriceSidebarBot),
   });
 
-  runner.addPeriodicTask({
-    id: 'update-spice-sena-sidebar-bot',
-    cronSchedule: '*/10 * * * *',
-    action: (ctx) =>
-      updateSpiceSenaSidebarBotTask(config, ctx, spiceSenaSidebarBot),
-  });
-
-  runner.addPeriodicTask({
-    id: 'update-spice-ena-sidebar-bot',
-    cronSchedule: '*/10 * * * *',
-    action: (ctx) =>
-      updateSpiceEnaSidebarBotTask(config, ctx, spiceEnaSidebarBot),
-  });
-
   // burn and notify TGLD for redemption
   runner.addPeriodicTask({
     id: 'burn-and-notify-tgld',
     cronSchedule: '0 */8 * * *', // once every 8 hours
-    action: async (ctx, _time) => burnAndUpdateCirculatingSupply(config, ctx)
+    action: async (ctx, _time) => burnAndUpdateCirculatingSupply(config, ctx),
   });
 
   // Seploia tasks
@@ -106,27 +89,31 @@ async function main() {
   runner.addPeriodicTask({
     id: 'start-stable-gold-auction-sepolia',
     cronSchedule: '*/5 * * * *', // every 5 minutes
-    action: async (ctx, _time) => startSepoliaStableGoldAuction(sepoliaConfig, ctx)
+    action: async (ctx, _time) =>
+      startSepoliaStableGoldAuction(sepoliaConfig, ctx),
   });
 
   // distribute staking rewards
   runner.addPeriodicTask({
     id: 'distribute-staking-rewards-sepolia',
     cronSchedule: '*/5 * * * *', // every 5 minutes
-    action: async (ctx, _time) => distributeSepoliaStakingRewards(sepoliaConfig, ctx)
+    action: async (ctx, _time) =>
+      distributeSepoliaStakingRewards(sepoliaConfig, ctx),
   });
 
   runner.addPeriodicTask({
     id: 'check-accounts-balance-sepolia',
     cronSchedule: '0 * * * *', // 0 minute of every hour
-    action: async (ctx, _time) => checkSepoliaSignersBalance(sepoliaConfig, ctx)
+    action: async (ctx, _time) =>
+      checkSepoliaSignersBalance(sepoliaConfig, ctx),
   });
 
   // burn and notify TGLD for redemption
   runner.addPeriodicTask({
     id: 'burn-and-notify-tgld-sepolia',
     cronSchedule: '0 */8 * * *', // once every 8 hours
-    action: async (ctx, _time) => burnAndUpdateCirculatingSupplySepolia(sepoliaConfig, ctx)
+    action: async (ctx, _time) =>
+      burnAndUpdateCirculatingSupplySepolia(sepoliaConfig, ctx),
   });
 
   runner.main();

@@ -17,7 +17,7 @@ export const subgraphRequest = <R extends SubGraphResponse<object>>(
     const res = await axios.post<R>(subgraphUrl, query);
     logger.info(`res status code ${res.status} ${res.statusText}`);
     if ((res.data?.errors || []).length > 0) {
-      const dataErrors = JSON.stringify(res.data.errors?.map(e => e.message));
+      const dataErrors = JSON.stringify(res.data.errors?.map((e) => e.message));
       throw new AxiosError(
         dataErrors,
         res.statusText,

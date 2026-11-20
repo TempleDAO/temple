@@ -1,4 +1,4 @@
-import { ContractAddresses } from "./types";
+import { ContractAddresses } from './types';
 
 export const CONTRACTS: ContractAddresses = {
   CORE: {
@@ -15,7 +15,7 @@ export const CONTRACTS: ContractAddresses = {
     TEMPLE_GOLD_STAKING: '0x4B7099FD879435a087C364aD2f9E7B3f94d20bBe',
     SPICE_AUCTION_FACTORY: '0xFBc00Fa47a7d3bbE3e82B5Aa560B47008c1bD64c',
     AUCTIONS: {
-      BID_FOR_TGLD:  '0x99aA73dA6309b8eC484eF2C95e96C131C1BBF7a0',
+      BID_FOR_TGLD: '0x99aA73dA6309b8eC484eF2C95e96C131C1BBF7a0',
       BID_FOR_SPICE: {
         ENA: '0x',
         DAI: '0xBd90822a325c234881C0197B15e3f391f26F79Ef',
@@ -29,6 +29,6 @@ export const CONTRACTS: ContractAddresses = {
     },
     SKY: {
       USDS_TOKEN: '0x',
-    }
-  }
-}
+    },
+  },
+};

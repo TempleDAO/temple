@@ -1,0 +1,300 @@
+import { Auction, GranarySubgraph, Snapshot } from './subgraph';
+import {
+  Announcement,
+  CursorStep,
+  EMBED_LIMITS,
+  safeSymbol,
+  tokenLabel,
+} from './shared';
+
+/**
+ * Auction phase state machine.
+ *
+ * Phases are derived, never stored, the way the contract's `_phase()` does:
+ * an early settlement or a cancellation sets `outcome`, otherwise the snapshot
+ * time is compared with the auction's deadlines (see `phaseAt`). Settlement at
+ * `fulfillmentEnd` leaves `outcome` as None by design. Each run compares the phase at the
+ * cursor with the phase now and announces the current phase only if
+ * `PHASES[previous].next` allows it. A run's announcements are ordered by
+ * when each phase began, so:
+ *
+ * - a late run (downtime, a replay) announces only where each auction is now,
+ *   not the phases it passed through, which are no longer actionable;
+ * - terminal phases have no exits, so a finished auction stays silent;
+ * - an unchanged or backwards move (e.g. an indexer reorg) is not an edge and
+ *   is never announced;
+ * - an auction first seen in this run is announced in whatever phase it is in.
+ *
+ *   Scheduled ─▶ Deposit ─▶ Fulfillment ─▶ Settlement  (terminal)
+ *                                          Cancelled   (terminal)
+ *
+ * Every open phase lists all later phases and both terminals as `next`: a
+ * late run skips phases, and an outcome can end the auction early.
+ */
+type Phase =
+  'Scheduled' | 'Deposit' | 'Fulfillment' | 'Settlement' | 'Cancelled';
+
+const PHASES: Record<
+  Phase,
+  {
+    name: string;
+    emoji: string;
+    /** Plain-words status shown after the moon name. */
+    status: string;
+    embedColor: number;
+    /** Phases this one can be observed to move to between two runs. */
+    next: readonly Phase[];
+    /** When the auction entered this phase, if known. */
+    startedAt: (auction: Auction) => bigint | undefined;
+    /**
+     * What is happening, until when, and what a reader can do now. Depositors
+     * bring `bid` and receive `fill`.
+     */
+    message: (auction: Auction, bid: string, fill: string) => string;
+  }
+> = {
+  Scheduled: {
+    name: 'New Moon',
+    emoji: '🌑',
+    status: 'Coming soon',
+    embedColor: 0x95a5a6,
+    next: ['Deposit', 'Fulfillment', 'Settlement', 'Cancelled'],
+    startedAt: (auction) => auction.createdAt,
+    message: (auction, bid, fill) =>
+      `A new auction to swap ${bid} for ${fill} at a fixed price. ` +
+      `Deposits open ${relative(auction.depositStart)}.`,
+  },
+  Deposit: {
+    name: 'Crescent',
+    emoji: '🌒',
+    status: 'Deposits open',
+    embedColor: 0x3498db,
+    next: ['Fulfillment', 'Settlement', 'Cancelled'],
+    startedAt: (auction) => auction.depositStart,
+    message: (auction, bid, fill) =>
+      `Deposit ${bid} now to get ${fill} at a fixed price. ` +
+      `Deposits close ${relative(auction.depositEnd)}, and you can withdraw until then.`,
+  },
+  Fulfillment: {
+    name: 'Gibbous',
+    emoji: '🌔',
+    status: 'Treasury funding',
+    embedColor: 0xf1c40f,
+    next: ['Settlement', 'Cancelled'],
+    startedAt: (auction) => auction.depositEnd,
+    message: (auction) =>
+      `Deposits are closed while the Treasury funds the auction. ` +
+      `It settles ${relative(auction.fulfillmentEnd)} at the latest; nothing to do until then.`,
+  },
+  Settlement: {
+    name: 'Full Moon',
+    emoji: '🌕',
+    status: 'Settled',
+    embedColor: 0x2ecc71,
+    next: [],
+    // Clock settlement emits no event; it happens at fulfillmentEnd.
+    startedAt: (auction) => auction.settledAt || auction.fulfillmentEnd,
+    message: (auction, bid, fill) => {
+      if (auction.totalDeposits === 0n)
+        return 'The auction has settled. Nothing was deposited this time.';
+      if (auction.filledBids === 0n)
+        return `The auction has settled with nothing filled. Claim your ${bid} deposit back in full.`;
+      return (
+        `The auction has settled, ${formatFill(auction)} filled. ` +
+        `Claim your ${fill}, plus any ${bid} that wasn't filled.`
+      );
+    },
+  },
+  Cancelled: {
+    name: 'Eclipse',
+    emoji: '🌘',
+    status: 'Cancelled',
+    embedColor: 0xe74c3c,
+    next: [],
+    startedAt: (auction) => auction.cancelledAt || undefined,
+    message: (_auction, bid) =>
+      `The auction was cancelled. Every depositor can claim their ${bid} deposit back in full.`,
+  },
+};
+
+/**
+ * Whether moving from `previous` (unseen if undefined) to `current` is
+ * announced: true for a newly seen auction or any forward move, including one
+ * that skipped phases between two reads (only `current` is announced, not the
+ * phases skipped). False when nothing changed, the phase moved backwards
+ * (e.g. a reindex), or the auction had already finished.
+ */
+function shouldAnnounce(previous: Phase | undefined, current: Phase) {
+  return previous === undefined || PHASES[previous].next.includes(current);
+}
+
+/**
+ * When the auction entered `phase`, capped at `now` so a deadline the indexer
+ * has not yet passed never shows as a future time. Undefined when unknown
+ * (e.g. a cancellation without its timestamp).
+ */
+function phaseStartedAt(auction: Auction, phase: Phase, now: number) {
+  const time = PHASES[phase].startedAt(auction);
+  if (time === undefined) return undefined;
+  return time < BigInt(now) ? time : BigInt(now);
+}
+
+function phaseAt(auction: Auction, timestamp: number): Phase {
+  if (auction.outcome === 'Settled') return 'Settlement';
+  if (auction.outcome === 'Cancelled') return 'Cancelled';
+
+  const time = BigInt(timestamp);
+
+  if (time < auction.depositStart) return 'Scheduled';
+  if (time < auction.depositEnd) return 'Deposit';
+  if (time < auction.fulfillmentEnd) return 'Fulfillment';
+
+  return 'Settlement';
+}
+
+/**
+ * The auction's page in the app,
+ * `/dapp/granary/pair/<bid>-<fill>/auctions/<number>`, with the pair as both
+ * symbols lowercased, the way the app's `pairIdOf` builds it. Falls back to
+ * the auction list when a symbol is not plain ASCII.
+ */
+function auctionUrl(appUrl: string, auction: Auction) {
+  const bid = safeSymbol(auction.pair.bidToken);
+  const fill = safeSymbol(auction.pair.fillToken);
+  if (!bid || !fill) return `${appUrl}/dapp/granary/auctions`;
+
+  const pairId = encodeURIComponent(`${bid}-${fill}`.toLowerCase());
+  return `${appUrl}/dapp/granary/pair/${pairId}/auctions/${auction.number}`;
+}
+
+/** How far away a time is ("in 2 days"), in the reader's locale. */
+function relative(seconds: bigint) {
+  return `<t:${seconds}:R>`;
+}
+
+/**
+ * The deadlines still ahead of `phase`, as dates in the reader's timezone:
+ * each one starts a phase that `phase` can still move to, so past deadlines
+ * are left out and a finished auction has none.
+ */
+function schedule(auction: Auction, phase: Phase) {
+  const deadlines: [Phase, string, bigint][] = [
+    ['Deposit', 'Deposits open', auction.depositStart],
+    ['Fulfillment', 'Deposits close', auction.depositEnd],
+    ['Settlement', 'Settles by', auction.fulfillmentEnd],
+  ];
+  return deadlines
+    .filter(([starts]) => PHASES[phase].next.includes(starts))
+    .map(
+      ([starts, label, at]) => `${PHASES[starts].emoji} ${label} <t:${at}:f>`
+    )
+    .join('\n');
+}
+
+/** The share of deposits filled; callers handle zero deposits. */
+function formatFill({ filledBids, totalDeposits }: Auction) {
+  const hundredths =
+    (filledBids * 20000n + totalDeposits) / (2n * totalDeposits);
+  return `${hundredths / 100n}.${(hundredths % 100n).toString().padStart(2, '0')}%`;
+}
+
+/** Truncates `text` to `limit` characters, marking the cut. */
+function truncate(text: string, limit: number) {
+  return text.length <= limit ? text : `${text.slice(0, limit - 1)}…`;
+}
+
+function formatAuctionAnnouncement(
+  auction: Auction,
+  phase: Phase,
+  url: string
+): Announcement {
+  const bid = tokenLabel(auction.pair.bidToken);
+  const fill = tokenLabel(auction.pair.fillToken);
+  const { name, emoji, status, embedColor, message } = PHASES[phase];
+  const upcoming = schedule(auction, phase);
+
+  return {
+    title: truncate(
+      `${bid} → ${fill} · Auction #${auction.number}`,
+      EMBED_LIMITS.title
+    ),
+    url,
+    color: embedColor,
+    description: `${emoji} **${name}** · ${status}\n${message(auction, bid, fill)}`,
+    fields: upcoming ? [{ name: 'Schedule', value: upcoming }] : [],
+  };
+}
+
+export async function collectAuctionAnnouncements({
+  subgraph,
+  factory,
+  appUrl,
+  cursor,
+}: {
+  subgraph: GranarySubgraph;
+  factory: string;
+  appUrl: string;
+  cursor: Snapshot | undefined;
+}): Promise<CursorStep<Snapshot>> {
+  const snapshot = await subgraph.snapshot();
+
+  if (
+    cursor &&
+    (snapshot.number < cursor.number || snapshot.timestamp < cursor.timestamp)
+  )
+    throw new Error('Granary subgraph is behind the auction checkpoint');
+
+  if (cursor?.number === snapshot.number) return { kind: 'unchanged' };
+
+  // Read every page even for a baseline, so a broken query fails before the
+  // cursor is first recorded.
+  const auctions = await subgraph.auctions(snapshot, factory);
+
+  if (!cursor) return { kind: 'baseline', cursor: snapshot };
+
+  const previousAuctions = await subgraph.auctions(cursor, factory);
+  const previousPhases = new Map(
+    previousAuctions.map((auction) => [
+      auction.id,
+      phaseAt(auction, cursor.timestamp),
+    ])
+  );
+
+  const announced: {
+    auction: Auction;
+    phase: Phase;
+    startedAt: bigint | undefined;
+  }[] = [];
+
+  for (const auction of auctions) {
+    const previous = previousPhases.get(auction.id);
+    const phase = phaseAt(auction, snapshot.timestamp);
+    if (!shouldAnnounce(previous, phase)) continue;
+
+    announced.push({
+      auction,
+      phase,
+      startedAt: phaseStartedAt(auction, phase, snapshot.timestamp),
+    });
+  }
+
+  // Oldest phase change first, an unknown time as now; same time by auction
+  // number.
+  const now = BigInt(snapshot.timestamp);
+  const sortTime = (entry: (typeof announced)[number]) =>
+    entry.startedAt ?? now;
+  announced.sort((a, b) => {
+    const [ta, tb] = [sortTime(a), sortTime(b)];
+    return (
+      (ta < tb ? -1 : ta > tb ? 1 : 0) || a.auction.number - b.auction.number
+    );
+  });
+
+  return {
+    kind: 'advanced',
+    cursor: snapshot,
+    announcements: announced.map(({ auction, phase }) =>
+      formatAuctionAnnouncement(auction, phase, auctionUrl(appUrl, auction))
+    ),
+  };
+}
