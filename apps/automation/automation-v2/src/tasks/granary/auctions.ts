@@ -2,11 +2,9 @@ import { Auction, GranarySubgraph, Snapshot } from './subgraph';
 import {
   Announcement,
   CursorStep,
-  discordTimestamp,
   EMBED_LIMITS,
   safeSymbol,
   tokenLabel,
-  explorerTxUrl,
 } from './shared';
 
 /**
@@ -41,63 +39,83 @@ const PHASES: Record<
   {
     name: string;
     emoji: string;
+    /** Plain-words status shown after the moon name. */
+    status: string;
     embedColor: number;
     /** Phases this one can be observed to move to between two runs. */
     next: readonly Phase[];
     /** When the auction entered this phase, if known. */
     startedAt: (auction: Auction) => bigint | undefined;
     /**
-     * The deadline that ends this phase; terminal phases have none. A
-     * cancellation or early settlement can still end an open phase sooner.
+     * What is happening, until when, and what a reader can do now. Depositors
+     * bring `bid` and receive `fill`.
      */
-    endsAt?: (auction: Auction) => bigint;
-    /** Transaction recorded for entering this phase; only creation has one. */
-    txHash?: (auction: Auction) => string;
+    message: (auction: Auction, bid: string, fill: string) => string;
   }
 > = {
   Scheduled: {
     name: 'New Moon',
     emoji: '🌑',
+    status: 'Coming soon',
     embedColor: 0x95a5a6,
     next: ['Deposit', 'Fulfillment', 'Settlement', 'Cancelled'],
     startedAt: (auction) => auction.createdAt,
-    endsAt: (auction) => auction.depositStart,
-    txHash: (auction) => auction.createdHash,
+    message: (auction, bid, fill) =>
+      `A new auction to swap ${bid} for ${fill} at a fixed price. ` +
+      `Deposits open ${relative(auction.depositStart)}.`,
   },
   Deposit: {
     name: 'Crescent',
     emoji: '🌒',
+    status: 'Deposits open',
     embedColor: 0x3498db,
     next: ['Fulfillment', 'Settlement', 'Cancelled'],
     startedAt: (auction) => auction.depositStart,
-    endsAt: (auction) => auction.depositEnd,
+    message: (auction, bid, fill) =>
+      `Deposit ${bid} now to get ${fill} at a fixed price. ` +
+      `Deposits close ${relative(auction.depositEnd)}, and you can withdraw until then.`,
   },
   Fulfillment: {
     name: 'Gibbous',
     emoji: '🌔',
+    status: 'Treasury funding',
     embedColor: 0xf1c40f,
     next: ['Settlement', 'Cancelled'],
     startedAt: (auction) => auction.depositEnd,
-    endsAt: (auction) => auction.fulfillmentEnd,
+    message: (auction) =>
+      `Deposits are closed while the Treasury funds the auction. ` +
+      `It settles ${relative(auction.fulfillmentEnd)} at the latest; nothing to do until then.`,
   },
   Settlement: {
     name: 'Full Moon',
     emoji: '🌕',
+    status: 'Settled',
     embedColor: 0x2ecc71,
     next: [],
     // Clock settlement emits no event; it happens at fulfillmentEnd.
     startedAt: (auction) => auction.settledAt || auction.fulfillmentEnd,
+    message: (auction, bid, fill) => {
+      if (auction.totalDeposits === 0n)
+        return 'The auction has settled. Nothing was deposited this time.';
+      if (auction.filledBids === 0n)
+        return `The auction has settled with nothing filled. Claim your ${bid} deposit back in full.`;
+      return (
+        `The auction has settled, ${formatFill(auction)} filled. ` +
+        `Claim your ${fill}, plus any ${bid} that wasn't filled.`
+      );
+    },
   },
   Cancelled: {
     name: 'Eclipse',
     emoji: '🌘',
+    status: 'Cancelled',
     embedColor: 0xe74c3c,
     next: [],
     startedAt: (auction) => auction.cancelledAt || undefined,
+    message: (_auction, bid) =>
+      `The auction was cancelled. Every depositor can claim their ${bid} deposit back in full.`,
   },
 };
-
-const isTerminal = (phase: Phase) => PHASES[phase].next.length === 0;
 
 /**
  * Whether moving from `previous` (unseen if undefined) to `current` is
@@ -149,9 +167,32 @@ function auctionUrl(appUrl: string, auction: Auction) {
   return `${appUrl}/dapp/granary/pair/${pairId}/auctions/${auction.number}`;
 }
 
-function formatFill({ filledBids, totalDeposits }: Auction) {
-  if (totalDeposits === 0n) return 'No deposits';
+/** How far away a time is ("in 2 days"), in the reader's locale. */
+function relative(seconds: bigint) {
+  return `<t:${seconds}:R>`;
+}
 
+/**
+ * The deadlines still ahead of `phase`, as dates in the reader's timezone:
+ * each one starts a phase that `phase` can still move to, so past deadlines
+ * are left out and a finished auction has none.
+ */
+function schedule(auction: Auction, phase: Phase) {
+  const deadlines: [Phase, string, bigint][] = [
+    ['Deposit', 'Deposits open', auction.depositStart],
+    ['Fulfillment', 'Deposits close', auction.depositEnd],
+    ['Settlement', 'Settles by', auction.fulfillmentEnd],
+  ];
+  return deadlines
+    .filter(([starts]) => PHASES[phase].next.includes(starts))
+    .map(
+      ([starts, label, at]) => `${PHASES[starts].emoji} ${label} <t:${at}:f>`
+    )
+    .join('\n');
+}
+
+/** The share of deposits filled; callers handle zero deposits. */
+function formatFill({ filledBids, totalDeposits }: Auction) {
   const hundredths =
     (filledBids * 20000n + totalDeposits) / (2n * totalDeposits);
   return `${hundredths / 100n}.${(hundredths % 100n).toString().padStart(2, '0')}%`;
@@ -165,44 +206,22 @@ function truncate(text: string, limit: number) {
 function formatAuctionAnnouncement(
   auction: Auction,
   phase: Phase,
-  url: string,
-  explorerUrl: string | undefined
+  url: string
 ): Announcement {
-  const { bidToken: bid, fillToken: fill } = auction.pair;
-  const { name, emoji, embedColor, txHash, endsAt } = PHASES[phase];
-  const tx = txHash && explorerTxUrl(explorerUrl, txHash(auction));
+  const bid = tokenLabel(auction.pair.bidToken);
+  const fill = tokenLabel(auction.pair.fillToken);
+  const { name, emoji, status, embedColor, message } = PHASES[phase];
+  const upcoming = schedule(auction, phase);
 
   return {
     title: truncate(
-      `${tokenLabel(bid)} → ${tokenLabel(fill)} · Auction #${auction.number}`,
+      `${bid} → ${fill} · Auction #${auction.number}`,
       EMBED_LIMITS.title
     ),
     url,
     color: embedColor,
-    description: `${emoji} Entered **${name}** (${phase})`,
-    fields: [
-      ...(endsAt
-        ? [
-            {
-              name: 'Phase ends',
-              value: discordTimestamp(endsAt(auction)),
-              inline: true,
-            },
-          ]
-        : []),
-      ...(isTerminal(phase)
-        ? [{ name: 'Fill', value: formatFill(auction), inline: true }]
-        : []),
-      ...(tx
-        ? [
-            {
-              name: 'Transaction',
-              value: `[View on explorer](${tx})`,
-              inline: true,
-            },
-          ]
-        : []),
-    ],
+    description: `${emoji} **${name}** · ${status}\n${message(auction, bid, fill)}`,
+    fields: upcoming ? [{ name: 'Schedule', value: upcoming }] : [],
   };
 }
 
@@ -210,13 +229,11 @@ export async function collectAuctionAnnouncements({
   subgraph,
   factory,
   appUrl,
-  explorerUrl,
   cursor,
 }: {
   subgraph: GranarySubgraph;
   factory: string;
   appUrl: string;
-  explorerUrl: string | undefined;
   cursor: Snapshot | undefined;
 }): Promise<CursorStep<Snapshot>> {
   const snapshot = await subgraph.snapshot();
@@ -277,12 +294,7 @@ export async function collectAuctionAnnouncements({
     kind: 'advanced',
     cursor: snapshot,
     announcements: announced.map(({ auction, phase }) =>
-      formatAuctionAnnouncement(
-        auction,
-        phase,
-        auctionUrl(appUrl, auction),
-        explorerUrl
-      )
+      formatAuctionAnnouncement(auction, phase, auctionUrl(appUrl, auction))
     ),
   };
 }

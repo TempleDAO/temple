@@ -137,7 +137,6 @@ async function granaryAuctionNotificationTask(
           deployment.contracts.FIXED_PRICE_AUCTION_FACTORY
         ),
         appUrl: deployment.appUrl,
-        explorerUrl: deployment.chain.blockExplorers?.default.url,
         cursor,
       })
   );

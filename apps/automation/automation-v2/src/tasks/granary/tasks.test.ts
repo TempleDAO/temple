@@ -11,7 +11,6 @@ import {
   GRANARY_SEPOLIA,
 } from './config';
 import { mainnet } from 'viem/chains';
-import { discordTimestamp } from './shared';
 import { granaryTasks } from './tasks';
 
 const { postMessage } = vi.hoisted(() => ({ postMessage: vi.fn() }));
@@ -69,7 +68,11 @@ let state: Map<string, Json>;
 let ctx: TaskContext;
 let values: Record<string, Json>;
 
-type Embed = { url?: string; fields?: { name: string; value: string }[] };
+type Embed = {
+  url?: string;
+  description?: string;
+  fields?: { name: string; value: string }[];
+};
 const embeds = (call: number) =>
   postMessage.mock.calls[call][0].embeds as Embed[];
 const allEmbeds = () =>
@@ -570,27 +573,84 @@ test.each([
     timestamp = 1250;
     auctions = [{ ...auction, filledBids, totalDeposits }];
     await run('auction');
-    expect(embeds(0)[0].fields!.find((f) => f.name === 'Fill')!.value).toBe(
-      fill
-    );
+    expect(embeds(0)[0].description).toContain(`settled, ${fill} filled`);
   }
 );
 
+const OPENS = '🌒 Deposits open <t:900:f>';
+const CLOSES = '🌔 Deposits close <t:1100:f>';
+const SETTLES = '🌕 Settles by <t:1200:f>';
+
 test.each([
-  { phase: 'Deposit', at: 950, endsAt: 1100n },
-  { phase: 'Fulfillment', at: 1150, endsAt: 1200n },
-  { phase: 'Settlement', at: 1250, endsAt: undefined },
-])('shows when $phase ends', async ({ at, endsAt }) => {
-  timestamp = 850; // Scheduled
-  await run('auction');
-  block = 101;
-  timestamp = at;
-  await run('auction');
-  const fields = embeds(0)[0].fields!;
-  expect(fields.find((f) => f.name === 'Phase ends')?.value).toBe(
-    endsAt === undefined ? undefined : discordTimestamp(endsAt)
-  );
-});
+  {
+    phase: 'Scheduled',
+    at: 860,
+    changes: {},
+    description:
+      '🌑 **New Moon** · Coming soon\nA new auction to swap TGLD for USDS at a fixed price. Deposits open <t:900:R>.',
+    schedule: [OPENS, CLOSES, SETTLES].join('\n'),
+  },
+  {
+    phase: 'Deposit',
+    at: 950,
+    changes: {},
+    description:
+      '🌒 **Crescent** · Deposits open\nDeposit TGLD now to get USDS at a fixed price. Deposits close <t:1100:R>, and you can withdraw until then.',
+    schedule: [CLOSES, SETTLES].join('\n'),
+  },
+  {
+    phase: 'Fulfillment',
+    at: 1150,
+    changes: {},
+    description:
+      '🌔 **Gibbous** · Treasury funding\nDeposits are closed while the Treasury funds the auction. It settles <t:1200:R> at the latest; nothing to do until then.',
+    schedule: SETTLES,
+  },
+  {
+    phase: 'Settlement',
+    at: 1250,
+    changes: {},
+    description:
+      "🌕 **Full Moon** · Settled\nThe auction has settled, 42.00% filled. Claim your USDS, plus any TGLD that wasn't filled.",
+  },
+  {
+    phase: 'Settlement with nothing filled',
+    at: 1250,
+    changes: { filledBids: '0' },
+    description:
+      '🌕 **Full Moon** · Settled\nThe auction has settled with nothing filled. Claim your TGLD deposit back in full.',
+  },
+  {
+    phase: 'Settlement with no deposits',
+    at: 1250,
+    changes: { filledBids: '0', totalDeposits: '0' },
+    description:
+      '🌕 **Full Moon** · Settled\nThe auction has settled. Nothing was deposited this time.',
+  },
+  {
+    phase: 'Cancelled',
+    at: 950,
+    changes: { outcome: 'Cancelled', cancelledAt: '940' },
+    description:
+      '🌘 **Eclipse** · Cancelled\nThe auction was cancelled. Every depositor can claim their TGLD deposit back in full.',
+  },
+])(
+  'tells readers what $phase means and what they can do',
+  async ({ at, changes, description, schedule }) => {
+    timestamp = 850;
+    auctions = [];
+    await run('auction'); // baseline with no auctions, so the next run announces it
+    block = 101;
+    timestamp = at;
+    auctions = [{ ...auction, ...changes }];
+    await run('auction');
+    const [embed] = embeds(0);
+    expect(embed.description).toBe(description);
+    expect(embed.fields).toEqual(
+      schedule ? [{ name: 'Schedule', value: schedule }] : []
+    );
+  }
+);
 
 test('settles at fulfillmentEnd while the outcome stays None, as the contract leaves it', async () => {
   timestamp = 1150;
@@ -601,7 +661,7 @@ test('settles at fulfillmentEnd while the outcome stays None, as the contract le
   auctions = [{ ...auction, settledAt: '1200' }];
   await run('auction');
   expect(allEmbeds()).toHaveLength(1);
-  expect(embeds(0)[0].fields!.map((f) => f.name)).toContain('Fill');
+  expect(embeds(0)[0].description).toContain('**Full Moon**');
 });
 
 // The fixture's deadlines: Scheduled before 900, Deposit until 1100,

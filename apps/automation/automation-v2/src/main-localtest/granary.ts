@@ -285,7 +285,6 @@ async function granaryFakeAuctionStatesTask(ctx: TaskContext) {
     subgraph: fakeSubgraph,
     factory: FACTORY,
     appUrl: DEPLOYMENT.appUrl,
-    explorerUrl: EXPLORER_URL,
     cursor: CURSOR,
   });
 
@@ -378,7 +377,6 @@ async function granaryAuctionRangeTask(ctx: TaskContext, koa: Koa) {
     subgraph,
     factory: DEPLOYMENT.contracts.FIXED_PRICE_AUCTION_FACTORY.toLowerCase(),
     appUrl: DEPLOYMENT.appUrl,
-    explorerUrl: EXPLORER_URL,
     cursor,
   });
 
