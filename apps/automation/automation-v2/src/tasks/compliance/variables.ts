@@ -22,6 +22,14 @@ export const compliance_max_flag_batch = new NumberVariable({
   max: 1000,
 });
 
+export const compliance_max_depositor_index_lag_blocks = new NumberVariable({
+  name: 'compliance_max_depositor_index_lag_blocks',
+  description:
+    'Raise DepositorIndexLagging when the Depositor index (Granary subgraph) Watermark is more than this many blocks behind head.',
+  default: 300,
+  min: 1,
+});
+
 export const compliance_finding_reminder_secs = new NumberVariable({
   name: 'compliance_finding_reminder_secs',
   description:

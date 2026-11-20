@@ -41,4 +41,25 @@ export interface ComplianceDeployment {
     FlaggedAddressesIndexConfig,
     'deployBlock' | 'confirmations'
   >;
+  /**
+   * The network's Granary subgraph, read as the Depositor index. Setting it
+   * enables `compliance-enforce-<name>`; unset, the Deployment only flags.
+   */
+  depositorIndex?: DepositorIndexConfig;
 }
+
+export interface DepositorIndexConfig {
+  /** A Granary subgraph version with Positions and each Auction's `complianceCheck`. */
+  subgraphUrl: string;
+  /**
+   * The genuine FixedPriceAuction factory. Only its Auctions that point at
+   * this Deployment's ComplianceCheck are enforced.
+   */
+  factory: Address;
+}
+
+/** A Deployment with a Depositor index: one that enforce runs for. */
+export type EnforcingDeployment = ComplianceDeployment & {
+  depositorIndex: DepositorIndexConfig;
+};
+
