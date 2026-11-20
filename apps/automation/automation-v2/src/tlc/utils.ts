@@ -56,9 +56,7 @@ export function min(v1: number, v2: number): number {
   return v1 < v2 ? v1 : v2;
 }
 
-export function assertNever(x: never): never {
-  throw new Error('Unexpected object: ' + x);
-}
+export { assertNever } from './assert-never';
 
 // String representation of a bigint, which is represented with a certain number of decimals
 export function formatBigNumber(

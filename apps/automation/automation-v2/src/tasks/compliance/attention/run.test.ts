@@ -1,0 +1,168 @@
+import { expect, test } from 'vitest';
+import {
+  type Json,
+  type TaskContext,
+  taskSuccessSilent,
+} from '@mountainpath9/overlord-core';
+import { Finding, FindingSink } from './findings';
+import { reportRun, runWithFindings } from './run';
+
+const absent: Finding = {
+  kind: 'SourceAbsent',
+  key: 'manual',
+  summary: 'none',
+};
+
+test('a body that throws fails the task, and saves or posts nothing', async () => {
+  const touched: string[] = [];
+  const ctx = {
+    kvGet: async (key: string) => {
+      touched.push(`get ${key}`);
+      return undefined;
+    },
+    kvSet: async (key: string) => {
+      touched.push(`set ${key}`);
+    },
+  } as unknown as TaskContext;
+  const thrown = new Error('replacement underpriced');
+
+  await expect(
+    runWithFindings(
+      ctx,
+      'flag:sepolia',
+      async (_, text) => {
+        touched.push(`post ${text}`);
+        return true;
+      },
+      async (sink) => {
+        sink.report(absent);
+        throw thrown;
+      }
+    )
+  ).rejects.toBe(thrown);
+  expect(touched).toEqual([]);
+});
+
+test('reporting a run with a send failure posts its Notices, then fails the run', async () => {
+  const failure = new Error('replacement underpriced');
+  const sink = new FindingSink();
+  const posted: string[] = [];
+  await expect(
+    reportRun(
+      {
+        findings: [absent],
+        notices: ['batch 1'],
+        sendFailure: failure,
+      },
+      sink,
+      async (n) => {
+        posted.push(n);
+      }
+    )
+  ).rejects.toBe(failure);
+  expect(posted).toEqual(['batch 1']);
+  expect(sink.all().map((f) => f.key)).toEqual(['manual']);
+});
+
+test("one owner's completed run never resolves another owner's Findings", async () => {
+  const { ctx } = fakeContext();
+  const posted = async () => true;
+  const reporting = (finding?: Finding) => async (sink: FindingSink) => {
+    if (finding) sink.report(finding);
+    return taskSuccessSilent();
+  };
+
+  // A run that opens, resolves or reminds posts, and so succeeds loudly.
+  expect(
+    (await runWithFindings(ctx, 'flag:a', posted, reporting(absent))).kind
+  ).toBe('success');
+  expect((await runWithFindings(ctx, 'flag:b', posted, reporting())).kind).toBe(
+    'successSilent'
+  );
+  expect(
+    (await runWithFindings(ctx, 'flag:a', posted, reporting(absent))).kind
+  ).toBe('successSilent');
+});
+
+test('a Finding that cannot be posted is logged, fails the run and saves nothing', async () => {
+  const { ctx, kv, logged } = fakeContext();
+  const unset = async () => false;
+
+  await expect(
+    runWithFindings(ctx, 'flag:a', unset, async (sink) => {
+      sink.report(absent);
+      return taskSuccessSilent();
+    })
+  ).rejects.toThrow(
+    'webhook_url is unset: compliance flag:a could not post: 🔴 `flag:a` **SourceAbsent** `manual`: none'
+  );
+  expect(kv.size).toBe(0);
+  expect(logged).toEqual([
+    expect.stringMatching(
+      /^warn 🔴 `flag:a` \*\*SourceAbsent\*\* `manual`: none\n> /
+    ),
+  ]);
+});
+
+test('a stored Finding of an unknown kind is dropped with a warning, and the rest are kept', async () => {
+  const { ctx, kv, logged } = fakeContext();
+  const posted: string[] = [];
+  const post = async (_: unknown, text: string) => {
+    posted.push(text);
+    return true;
+  };
+  const reporting = async (sink: FindingSink) => {
+    sink.report(absent);
+    return taskSuccessSilent();
+  };
+  await runWithFindings(ctx, 'flag:a', post, reporting);
+  const [[key, saved]] = [...kv.entries()];
+  kv.set(key, {
+    ...(saved as Record<string, Json>),
+    'NoLongerAKind:x': {
+      kind: 'NoLongerAKind',
+      key: 'x',
+      summary: 'old',
+      openedAtMs: 0,
+      lastPostedAtMs: 0,
+    },
+  });
+  posted.length = 0;
+  logged.length = 0;
+
+  const result = await runWithFindings(ctx, 'flag:a', post, reporting);
+
+  expect(result.kind).toBe('successSilent');
+  expect(posted).toEqual([]);
+  expect(Object.keys(kv.get(key) as Record<string, Json>)).toEqual([
+    Finding.id(absent),
+  ]);
+  expect(logged).toEqual([
+    expect.stringMatching(
+      /^warn compliance flag:a: dropped stored Finding NoLongerAKind:x: kind: /
+    ),
+  ]);
+});
+
+/** In-memory KV, logs captured, reminders every 900 s. */
+function fakeContext() {
+  const kv = new Map<string, Json>();
+  const logged: string[] = [];
+  const ctx = {
+    kvGet: async (key: string) => kv.get(key),
+    kvSet: async (key: string, value: Json) => {
+      kv.set(key, value);
+    },
+    logger: {
+      warn: (text: string) => logged.push(`warn ${text}`),
+      info: (text: string) => logged.push(`info ${text}`),
+    },
+    config: {
+      get: async () => undefined,
+      getString: async () => undefined,
+      getNumber: async (name: string) =>
+        name === 'compliance_finding_reminder_secs' ? 900 : undefined,
+    },
+  } as unknown as TaskContext;
+  return { ctx, kv, logged };
+}

@@ -3,6 +3,8 @@ import { Address } from 'viem';
 export interface GranaryContracts {
   FIXED_PRICE_AUCTION_FACTORY: Address;
   WISHING_WELL: Address;
+  /** The ComplianceCheck the factory's Auctions are created with. */
+  COMPLIANCE_CHECK: Address;
 }
 
 export interface ContractAddresses {

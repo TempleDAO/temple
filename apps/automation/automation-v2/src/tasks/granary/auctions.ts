@@ -1,3 +1,4 @@
+import { AuctionPhase, auctionPhaseAt } from './auction-phase';
 import { Auction, GranarySubgraph, Snapshot } from './subgraph';
 import {
   Announcement,
@@ -12,7 +13,7 @@ import {
  *
  * Phases are derived, never stored, the way the contract's `_phase()` does:
  * an early settlement or a cancellation sets `outcome`, otherwise the snapshot
- * time is compared with the auction's deadlines (see `phaseAt`). Settlement at
+ * time is compared with the auction's deadlines (see `auctionPhaseAt`). Settlement at
  * `fulfillmentEnd` leaves `outcome` as None by design. Each run compares the phase at the
  * cursor with the phase now and announces the current phase only if
  * `PHASES[previous].next` allows it. A run's announcements are ordered by
@@ -31,11 +32,8 @@ import {
  * Every open phase lists all later phases and both terminals as `next`: a
  * late run skips phases, and an outcome can end the auction early.
  */
-type Phase =
-  'Scheduled' | 'Deposit' | 'Fulfillment' | 'Settlement' | 'Cancelled';
-
 const PHASES: Record<
-  Phase,
+  AuctionPhase,
   {
     name: string;
     emoji: string;
@@ -43,7 +41,7 @@ const PHASES: Record<
     status: string;
     embedColor: number;
     /** Phases this one can be observed to move to between two runs. */
-    next: readonly Phase[];
+    next: readonly AuctionPhase[];
     /** When the auction entered this phase, if known. */
     startedAt: (auction: Auction) => bigint | undefined;
     /**
@@ -124,7 +122,10 @@ const PHASES: Record<
  * phases skipped). False when nothing changed, the phase moved backwards
  * (e.g. a reindex), or the auction had already finished.
  */
-function shouldAnnounce(previous: Phase | undefined, current: Phase) {
+function shouldAnnounce(
+  previous: AuctionPhase | undefined,
+  current: AuctionPhase
+) {
   return previous === undefined || PHASES[previous].next.includes(current);
 }
 
@@ -133,23 +134,10 @@ function shouldAnnounce(previous: Phase | undefined, current: Phase) {
  * has not yet passed never shows as a future time. Undefined when unknown
  * (e.g. a cancellation without its timestamp).
  */
-function phaseStartedAt(auction: Auction, phase: Phase, now: number) {
+function phaseStartedAt(auction: Auction, phase: AuctionPhase, now: number) {
   const time = PHASES[phase].startedAt(auction);
   if (time === undefined) return undefined;
   return time < BigInt(now) ? time : BigInt(now);
-}
-
-function phaseAt(auction: Auction, timestamp: number): Phase {
-  if (auction.outcome === 'Settled') return 'Settlement';
-  if (auction.outcome === 'Cancelled') return 'Cancelled';
-
-  const time = BigInt(timestamp);
-
-  if (time < auction.depositStart) return 'Scheduled';
-  if (time < auction.depositEnd) return 'Deposit';
-  if (time < auction.fulfillmentEnd) return 'Fulfillment';
-
-  return 'Settlement';
 }
 
 /**
@@ -177,8 +165,8 @@ function relative(seconds: bigint) {
  * each one starts a phase that `phase` can still move to, so past deadlines
  * are left out and a finished auction has none.
  */
-function schedule(auction: Auction, phase: Phase) {
-  const deadlines: [Phase, string, bigint][] = [
+function schedule(auction: Auction, phase: AuctionPhase) {
+  const deadlines: [AuctionPhase, string, bigint][] = [
     ['Deposit', 'Deposits open', auction.depositStart],
     ['Fulfillment', 'Deposits close', auction.depositEnd],
     ['Settlement', 'Settles by', auction.fulfillmentEnd],
@@ -205,7 +193,7 @@ function truncate(text: string, limit: number) {
 
 function formatAuctionAnnouncement(
   auction: Auction,
-  phase: Phase,
+  phase: AuctionPhase,
   url: string
 ): Announcement {
   const bid = tokenLabel(auction.pair.bidToken);
@@ -256,19 +244,19 @@ export async function collectAuctionAnnouncements({
   const previousPhases = new Map(
     previousAuctions.map((auction) => [
       auction.id,
-      phaseAt(auction, cursor.timestamp),
+      auctionPhaseAt(auction, cursor.timestamp),
     ])
   );
 
   const announced: {
     auction: Auction;
-    phase: Phase;
+    phase: AuctionPhase;
     startedAt: bigint | undefined;
   }[] = [];
 
   for (const auction of auctions) {
     const previous = previousPhases.get(auction.id);
-    const phase = phaseAt(auction, snapshot.timestamp);
+    const phase = auctionPhaseAt(auction, snapshot.timestamp);
     if (!shouldAnnounce(previous, phase)) continue;
 
     announced.push({
