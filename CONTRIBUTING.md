@@ -49,7 +49,7 @@ the action you have taken to solve it.
 
   - There are no spelling mistakes
   - It reads well
-  - All commit messages follow the expected format `(fix|chore|feat|docs):<short description>` - it is worth pointing out that PRs with many commits will likely be squashed when merged - unless there is a good reason to keep the commits separate
+  - All commit messages follow [Conventional Commits](https://www.conventionalcommits.org/): `<type>(<optional scope>): <short description>`, where type is one of `feat`, `fix`, `refactor`, `test`, `docs` or `chore` - it is worth pointing out that PRs with many commits will likely be squashed when merged - unless there is a good reason to keep the commits separate
   - Is it targeting the correct branch? By default, PRs should target the `stage` branch, rather than `main`
   - If you're solving an issue, is it [linked to the appropriate issue](https://docs.github.com/en/issues/tracking-your-work-with-issues/linking-a-pull-request-to-an-issue)?
 
