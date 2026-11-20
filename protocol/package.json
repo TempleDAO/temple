@@ -43,6 +43,7 @@
     "hardhat": "2.22.19",
     "hardhat-contract-sizer": "^2.10.0",
     "hardhat-gas-reporter": "^1.0.9",
+    "solady": "0.1.26",
     "solidity-bytes-utils": "^0.8.2",
     "solidity-coverage": "^0.8.4",
     "ts-node": "^10.9.1",

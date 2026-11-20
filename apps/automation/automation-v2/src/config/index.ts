@@ -1,29 +1,28 @@
-import { ContractAddresses} from "./contract_addresses/types";
-import { CONTRACTS as TESTNET_CONTRACTS } from "./contract_addresses/anvil";
-import { CONTRACTS as SEPOLIA_CONTRACTS } from "./contract_addresses/sepolia";
-import { CONTRACTS as MAINNET_CONTRACTS } from "./contract_addresses/mainnet";
-import { TxSubmissionParams } from "@mountainpath9/overlord-viem";
-import { Chain } from "viem";
-import { mainnet, berachain, sepolia } from "viem/chains";
-import { TaskContext } from "@mountainpath9/overlord-core";
-import * as vars from "./variables";
-
+import { ContractAddresses } from './contract_addresses/types';
+import { CONTRACTS as TESTNET_CONTRACTS } from './contract_addresses/anvil';
+import { CONTRACTS as SEPOLIA_CONTRACTS } from './contract_addresses/sepolia';
+import { CONTRACTS as MAINNET_CONTRACTS } from './contract_addresses/mainnet';
+import { TxSubmissionParams } from '@mountainpath9/overlord-viem';
+import { Chain } from 'viem';
+import { mainnet, berachain, sepolia } from 'viem/chains';
+import { TaskContext } from '@mountainpath9/overlord-core';
+import * as vars from './variables';
 
 export interface Config {
-  chainId: number,
+  chainId: number;
 
-  contracts: ContractAddresses,
+  contracts: ContractAddresses;
 
-  stableGoldAuctionSignerId: string,
+  stableGoldAuctionSignerId: string;
 
-  stakingSignerId: string,
+  stakingSignerId: string;
 }
 
 const TESTNET_CONFIG: Config = {
-    chainId: 42161, // arb one fork
-    stableGoldAuctionSignerId: 'tgld_daigold_auction_signer',
-    stakingSignerId: 'tgld_staking_signer',
-    contracts: TESTNET_CONTRACTS,
+  chainId: 42161, // arb one fork
+  stableGoldAuctionSignerId: 'tgld_daigold_auction_signer',
+  stakingSignerId: 'tgld_staking_signer',
+  contracts: TESTNET_CONTRACTS,
 };
 
 const SEPOLIA_CONFIG: Config = {
@@ -31,14 +30,14 @@ const SEPOLIA_CONFIG: Config = {
   stableGoldAuctionSignerId: 'tgld_daigold_auction_signer',
   stakingSignerId: 'tgld_staking_signer',
   contracts: SEPOLIA_CONTRACTS,
-}
+};
 
 const MAINNET_CONFIG: Config = {
   chainId: 1,
   stableGoldAuctionSignerId: 'tgld_daigold_auction_signer',
   stakingSignerId: 'tgld_staking_signer',
   contracts: MAINNET_CONTRACTS,
-}
+};
 
 export async function getMainnetSubmissionParams(
   ctx: TaskContext
@@ -82,14 +81,15 @@ export async function getMainnetSubmissionParams(
 }
 
 export function getConfig(env: string): Config {
-    switch(env) {
-      case 'testnet': return TESTNET_CONFIG;
-      case 'sepolia':
-        return SEPOLIA_CONFIG;
-      case 'mainnet':
-        return MAINNET_CONFIG;
-    }
-    throw new Error(`Unknown config env: ${env}`);
+  switch (env) {
+    case 'testnet':
+      return TESTNET_CONFIG;
+    case 'sepolia':
+      return SEPOLIA_CONFIG;
+    case 'mainnet':
+      return MAINNET_CONFIG;
+  }
+  throw new Error(`Unknown config env: ${env}`);
 }
 
 export function chainFromId(id: number): Chain {
@@ -99,7 +99,5 @@ export function chainFromId(id: number): Chain {
     return berachain;
   } else if (id == sepolia.id) {
     return sepolia;
-  }
-  else throw new Error("unsupported chain");
+  } else throw new Error('unsupported chain');
 }
-  

@@ -5,7 +5,9 @@ import { TransactionReceipt, formatUnits } from 'viem';
 import { PublicClient } from '@mountainpath9/overlord-viem';
 import { BigRational } from '@mountainpath9/big-rational';
 
-export async function getBlockTimestamp(provider: PublicClient): Promise<bigint> {
+export async function getBlockTimestamp(
+  provider: PublicClient
+): Promise<bigint> {
   const latestBlock = await provider.getBlock();
   if (!latestBlock) throw new Error('undefined block');
   return BigInt(latestBlock.timestamp);
@@ -140,7 +142,15 @@ export async function buildTempleTasksDiscordMessage(
   chainName: string,
   metadata: TempleTaskDiscordMetadata
 ): Promise<DiscordMessage> {
-  const { title, submittedAt, txReceipt, txUrl, numberOfEvents, totalCollateralSeized, totalDebtWiped } = metadata;
+  const {
+    title,
+    submittedAt,
+    txReceipt,
+    txUrl,
+    numberOfEvents,
+    totalCollateralSeized,
+    totalDebtWiped,
+  } = metadata;
 
   // Reduce event details in message to avoid bloating up to character limits
   const content = [
@@ -159,25 +169,25 @@ export async function buildTempleTasksDiscordMessage(
 }
 
 export async function buildDiscordMessageCheckEth(
-    chain: Chain,
-    submittedAt: Date,
-    watchAddress: string,
-    ethBalance: bigint,
-    minBalance: bigint
-  ): Promise<DiscordMessage> {
-    const content = [
-      DISCORD_TSY_OPS_TAG,
-      `**TEMPLE LOW ETH ALERT [${chain.name}]**`,
-      ``,
-      `_address:_ ${watchAddress}`,
-      `_required eth:_ ${formatBigNumber(minBalance, 18, 6)}`,
-      `_eth balance:_  ${formatBigNumber(ethBalance, 18, 6)}`,
-      `_submitted at:_ ${submittedAt.toISOString()}`,
-      ``,
-      `${chain.addressUrl(watchAddress)}`,
-    ];
-  
-    return {
-      content: content.join('\n'),
-    };
-  }
+  chain: Chain,
+  submittedAt: Date,
+  watchAddress: string,
+  ethBalance: bigint,
+  minBalance: bigint
+): Promise<DiscordMessage> {
+  const content = [
+    DISCORD_TSY_OPS_TAG,
+    `**TEMPLE LOW ETH ALERT [${chain.name}]**`,
+    ``,
+    `_address:_ ${watchAddress}`,
+    `_required eth:_ ${formatBigNumber(minBalance, 18, 6)}`,
+    `_eth balance:_  ${formatBigNumber(ethBalance, 18, 6)}`,
+    `_submitted at:_ ${submittedAt.toISOString()}`,
+    ``,
+    `${chain.addressUrl(watchAddress)}`,
+  ];
+
+  return {
+    content: content.join('\n'),
+  };
+}

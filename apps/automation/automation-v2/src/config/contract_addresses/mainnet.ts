@@ -1,4 +1,4 @@
-import { ContractAddresses } from "./types";
+import { ContractAddresses } from './types';
 
 export const CONTRACTS: ContractAddresses = {
   CORE: {
@@ -29,6 +29,6 @@ export const CONTRACTS: ContractAddresses = {
     },
     SKY: {
       USDS_TOKEN: '0xdC035D45d973E3EC169d2276DDab16f1e407384F',
-    }
-  }
-}
+    },
+  },
+};
