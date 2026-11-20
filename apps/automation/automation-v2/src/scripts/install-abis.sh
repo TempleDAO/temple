@@ -21,8 +21,11 @@ rm -f $VIEM_ABI_DIR/*.ts
 (cd $PROTOCOL_DIR; forge build contracts)
 
 mk_viem_abi IAuctionBase
+mk_viem_abi CommonEventsAndErrors
+mk_viem_abi IComplianceCheck
 mk_viem_abi IERC20
 mk_viem_abi IERC20Metadata
+mk_viem_abi IFixedPriceAuction
 mk_viem_abi ISpiceAuction
 mk_viem_abi ISpiceAuctionFactory
 mk_viem_abi IStableGoldAuction

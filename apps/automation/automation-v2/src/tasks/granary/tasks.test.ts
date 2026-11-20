@@ -422,6 +422,7 @@ test('runs deployments side by side with separate settings and cursors', async (
     appUrl: 'https://example.invalid/other',
     contracts: {
       FIXED_PRICE_AUCTION_FACTORY: '0x5555555555555555555555555555555555555555',
+      COMPLIANCE_CHECK: '0x7777777777777777777777777777777777777777',
       WISHING_WELL: '0x6666666666666666666666666666666666666666',
     },
   });
