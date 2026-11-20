@@ -20,6 +20,8 @@ import {
   burnAndUpdateCirculatingSupply,
 } from './tasks';
 import { startTemplePriceSidebarBot } from './tasks/discord-bots/temple-price';
+import { GRANARY_DEPLOYMENTS } from './tasks/granary/config';
+import { granaryTasks } from './tasks/granary/tasks';
 
 async function main() {
   const runner = createTaskRunner();
@@ -58,6 +60,15 @@ async function main() {
     cronSchedule: '0 * * * *', // 0 minute of every hour
     action: async (ctx, _time) => checkSignersBalance(config, ctx),
   });
+
+  // Granary auction and wish notifications, one pair per deployment.
+  for (const deployment of GRANARY_DEPLOYMENTS)
+    for (const task of granaryTasks(deployment))
+      runner.addPeriodicTask({
+        ...task,
+        cronSchedule: '*/20 * * * *',
+        allowConcurrent: false,
+      });
 
   runner.addPeriodicTask({
     id: 'update-temple-price-sidebar-bot',

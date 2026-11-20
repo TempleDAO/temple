@@ -1,6 +1,11 @@
 import { ContractAddresses } from './types';
 
-export const CONTRACTS: ContractAddresses = {
+export const CONTRACTS = {
+  // protocol/scripts/deploys/sepolia/templegold/contract-addresses/sepolia.ts
+  GRANARY: {
+    FIXED_PRICE_AUCTION_FACTORY: '0x3DF8314F17bfC2B1141210f3D18e2524a958A745',
+    WISHING_WELL: '0x3136A2Dd08dB68aB4Ce425A44a7F63084eB9668e',
+  },
   CORE: {
     MULTISIG: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
   },
@@ -31,4 +36,4 @@ export const CONTRACTS: ContractAddresses = {
       USDS_TOKEN: '0x',
     },
   },
-};
+} satisfies ContractAddresses;

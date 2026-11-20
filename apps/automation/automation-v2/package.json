@@ -11,6 +11,8 @@
     "build:image": "docker build --tag temple-tasks .",
     "dev": "yarn build && node ./dist/main.js",
     "dev:local:mainnet": "yarn build:localtest:mainnet && node ./dist/mainnet-localtest.js",
+    "build:localtest:granary": "yarn tsc --noEmit && yarn esbuild --platform=node --bundle --outfile=dist/granary-localtest.js src/main-localtest/granary.ts",
+    "dev:local:granary": "yarn build:localtest:granary && node ./dist/granary-localtest.js",
     "test": "vitest",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
