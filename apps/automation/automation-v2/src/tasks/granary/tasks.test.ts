@@ -11,6 +11,7 @@ import {
   GRANARY_SEPOLIA,
 } from './config';
 import { mainnet } from 'viem/chains';
+import { discordTimestamp } from './shared';
 import { granaryTasks } from './tasks';
 
 const { postMessage } = vi.hoisted(() => ({ postMessage: vi.fn() }));
@@ -577,6 +578,22 @@ test.each([
     );
   }
 );
+
+test.each([
+  { phase: 'Deposit', at: 950, endsAt: 1100n },
+  { phase: 'Fulfillment', at: 1150, endsAt: 1200n },
+  { phase: 'Settlement', at: 1250, endsAt: undefined },
+])('shows when $phase ends', async ({ at, endsAt }) => {
+  timestamp = 850; // Scheduled
+  await run('auction');
+  block = 101;
+  timestamp = at;
+  await run('auction');
+  const fields = embeds(0)[0].fields!;
+  expect(fields.find((f) => f.name === 'Phase ends')?.value).toBe(
+    endsAt === undefined ? undefined : discordTimestamp(endsAt)
+  );
+});
 
 test('settles at fulfillmentEnd while the outcome stays None, as the contract leaves it', async () => {
   timestamp = 1150;

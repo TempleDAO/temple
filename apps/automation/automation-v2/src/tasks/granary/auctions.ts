@@ -45,6 +45,11 @@ const PHASES: Record<
     next: readonly Phase[];
     /** When the auction entered this phase, if known. */
     startedAt: (auction: Auction) => bigint | undefined;
+    /**
+     * The deadline that ends this phase; terminal phases have none. A
+     * cancellation or early settlement can still end an open phase sooner.
+     */
+    endsAt?: (auction: Auction) => bigint;
     /** Transaction recorded for entering this phase; only creation has one. */
     txHash?: (auction: Auction) => string;
   }
@@ -55,6 +60,7 @@ const PHASES: Record<
     embedColor: 0x95a5a6,
     next: ['Deposit', 'Fulfillment', 'Settlement', 'Cancelled'],
     startedAt: (auction) => auction.createdAt,
+    endsAt: (auction) => auction.depositStart,
     txHash: (auction) => auction.createdHash,
   },
   Deposit: {
@@ -63,6 +69,7 @@ const PHASES: Record<
     embedColor: 0x3498db,
     next: ['Fulfillment', 'Settlement', 'Cancelled'],
     startedAt: (auction) => auction.depositStart,
+    endsAt: (auction) => auction.depositEnd,
   },
   Fulfillment: {
     name: 'Gibbous',
@@ -70,6 +77,7 @@ const PHASES: Record<
     embedColor: 0xf1c40f,
     next: ['Settlement', 'Cancelled'],
     startedAt: (auction) => auction.depositEnd,
+    endsAt: (auction) => auction.fulfillmentEnd,
   },
   Settlement: {
     name: 'Full Moon',
@@ -159,12 +167,11 @@ function truncate(text: string, limit: number) {
 function formatAuctionAnnouncement(
   auction: Auction,
   phase: Phase,
-  startedAt: bigint | undefined,
   url: string,
   explorerUrl: string | undefined
 ): Announcement {
   const { bidToken: bid, fillToken: fill } = auction.pair;
-  const { name, emoji, embedColor, txHash } = PHASES[phase];
+  const { name, emoji, embedColor, txHash, endsAt } = PHASES[phase];
   const tx = txHash && explorerTxUrl(explorerUrl, txHash(auction));
 
   return {
@@ -176,15 +183,15 @@ function formatAuctionAnnouncement(
     color: embedColor,
     description: `${emoji} Entered **${name}** (${phase})`,
     fields: [
-      ...(startedAt === undefined
-        ? []
-        : [
+      ...(endsAt
+        ? [
             {
-              name: 'Phase began',
-              value: discordTimestamp(startedAt),
+              name: 'Phase ends',
+              value: discordTimestamp(endsAt(auction)),
               inline: true,
             },
-          ]),
+          ]
+        : []),
       ...(isTerminal(phase)
         ? [{ name: 'Fill', value: formatFill(auction), inline: true }]
         : []),
@@ -273,11 +280,10 @@ export async function collectAuctionAnnouncements({
   return {
     kind: 'advanced',
     cursor: snapshot,
-    announcements: announced.map(({ auction, phase, startedAt }) =>
+    announcements: announced.map(({ auction, phase }) =>
       formatAuctionAnnouncement(
         auction,
         phase,
-        startedAt,
         formatAuctionUrl(auctionUrlTemplate, auction),
         explorerUrl
       )
