@@ -26,6 +26,7 @@ The Bot excludes Flagged ∩ Depositors, while the Exclusion window is open
 - **Ingest** checks each **Source** (OFAC SDN and a **Manual source**) once a minute and turns each acceptable **Publication** into a **Snapshot**. A Publication that breaks the Source's **Limits** is rejected, and the previous Snapshot stands.
 - **Flag** runs once per Deployment, every minute. It computes the Target set, reads `isFlagged` at chain head, and flags whatever is missing. It never unflags (**Add-only**).
 - **Enforce** runs once per Deployment that has it enabled, every 20 minutes. It reads Depositors from the Granary subgraph and `isFlagged` from the chain, and excludes every Flagged Depositor in an open Exclusion window. It never reinstates (**Add-only**).
+- **Flagger check** runs once per Deployment, daily. It reads whether the Bot holds the Flagger role on the Deployment's ComplianceCheck and raises `BotNotFlagger` while it doesn't, so a missing role shows before there is anything to flag.
 - Every Flagged address must be backed by a Source. A flag that no Source explains, including one the Admin set by hand, raises an **Unbacked flag** **Finding**. A human then either backs it in a Manual source or has the Admin unflag it.
 - Every hand-curated entry, whether in a Manual source or an **Exemption**, carries a written reason. Both directions therefore have an answer: "why is X Flagged?" points to a Source entry, and "why isn't X Flagged?" points to an Exemption.
 - Anything that needs a human is a Finding. A Finding opens once, sends reminders while it stays open, and resolves itself when its owner no longer observes the condition. Anything a human only needs to know about is a **Notice**.
@@ -152,43 +153,44 @@ Each `exclude` is tried optimistically and caught on its own (`attemptExclude` i
 10. As the Admin, I want the Bot never to unflag, so that a shrinking or truncated Publication can never release a sanctioned address without a human decision.
 11. As the Admin, I want to know that unflagging a Listed address will be undone by the Bot unless I add an Exemption first, so that I unflag in the right order.
 12. As the Admin, I want the flag task to fail, with its error posted on every run, while the Bot lacks the Flagger role, so that I can restore it or confirm the removal was intended.
-13. As an operator, I want a Publication that is suspiciously small, or that drops too many addresses at once, to be rejected while the last good Snapshot keeps standing, so that a bad upstream release doesn't reach the chain.
-14. As an operator, I want a Source that has never produced a Snapshot to count as unknown and not as empty, so that a first-run failure doesn't look like "nobody is sanctioned".
-15. As an operator, I want a Source that keeps failing to raise one Finding after it has gone unconfirmed for too long, and not one per failed check, so that a short outage doesn't page anyone.
-16. As an operator, I want a rejected Publication to raise a Finding immediately, so that someone fixes the data or the Limits.
-17. As an operator, I want the same rejected Publication not to be downloaded again every minute, so that a 30 MB OFAC file isn't fetched in a loop.
-18. As an operator, I want an OFAC Publication that doesn't change any crypto address to produce no Snapshot change and no Notice, so that the channel only carries real changes.
-19. As an operator, I want an Absent Source to stop no one else from flagging, so that the other Sources still protect the Deployment.
-20. As an operator, I want Unbacked flag checks to pause while any Source is Absent, so that an unknown Source doesn't produce a flood of false Unbacked flags.
-21. As an operator, I want a flag run to keep no record of its sends between runs, so that a dropped or failed transaction is simply retried by the next run.
-22. As an operator, I want flag transactions sent in bounded batches through Overlord's transaction manager, so that gas and nonce handling are the framework's job.
-23. As an operator, I want each Deployment to be able to submit through a private relay, so that flag transactions aren't front-run.
-24. As an operator, I want a Notice for every batch the Bot flags and every Snapshot that changes, so that there's a record of what happened without anyone being paged.
-25. As an operator, I want a task that throws to fail on every run, posted each time, and to leave its Findings as they were, so that a crash is never muted and never silently clears Findings.
-26. As an operator, I want each task to resolve only its own Findings, so that a flag run can't clear an ingest problem.
-27. As an operator, I want open Findings to send reminders at a configurable interval, so that an ignored problem resurfaces.
-28. As an operator, I want a long Flagged addresses index backfill to continue over several runs without holding up flagging, so that a new Deployment flags from its first run.
-29. As an operator, I want every Flagged addresses index candidate re-checked with `isFlagged` at head, so that an index that is behind can make a Finding late but never wrong.
-30. As an operator, I want the Flagged addresses index to influence Findings and Notice text only, never transactions, so that an index bug can't flag or unflag anyone.
-31. As a developer, I want to add a Source by implementing one interface and registering it, so that its ingest task, state machine, storage and Findings come for free.
-32. As a developer, I want the framework, not each Source, to own versioning, content hashing and Limits, so that Sources stay small and behave the same way.
-33. As a developer, I want to add another Manual source per kind of reason without new framework code, so that reasons can be grouped as the entries grow.
-34. As a developer, I want to register a new Deployment by adding one config entry, so that a new network or ComplianceCheck needs no new task code.
-35. As a developer, I want a whole flag run to be one function of an injected context, so that it can be tested without a chain, without a network and without mocks.
-36. As a compliance officer, I want every Flagged Depositor excluded from an Auction while its Exclusion window is open, whoever set the flag, so that flagged money never reaches the treasury's proceeds.
-37. As a compliance officer, I want an account that was excluded, unflagged, re-deposited and flagged again to be excluded again, so that an earlier Exclusion can't shield a new deposit.
-38. As a compliance officer, I want a Finding for every Missed exclusion, so that I know when a Flagged Depositor was filled and its payout frozen.
-39. As the Admin, I want the Bot never to reinstate, so that putting a deposit back into the fill is always a human decision.
-40. As the Admin, I want a Finding when an excluded account is no longer Flagged while its Auction is still in Deposit, so that I can reinstate it before the chance is gone.
-41. As the Admin, I want a Finding when an exclusion fails for a reason a retry won't fix (no Flagger role, rescue mode, a repointed ComplianceCheck), so that someone fixes it before the window closes.
-42. As an operator, I want an exclusion to cost no gas when it would revert, so that the Bot can try optimistically instead of reading Auction state defensively.
-43. As an operator, I want reverts that only mean "the index was behind" to be skipped silently, so that a lagging index doesn't page anyone.
-44. As an operator, I want a Finding when the Depositor index falls too far behind the chain head, so that I know exclusions may be late.
-45. As an operator, I want an enforce run to keep no record of its attempts between runs, so that a dropped exclusion is simply retried by the next run.
-46. As a developer, I want enforce to derive an Auction's phase with the same function the Granary notifications use, so that the two can never disagree.
-47. As a developer, I want a whole enforce run, attempts and their outcomes included, to be one function of an injected context, so that every row of the Depositor and Exclude attempt tables can be tested without a chain and without mocks.
-48. As a developer, I want each task's I/O to live in one context built in one place, so that there is exactly one untested adapter per task and I know where it is.
-49. As an agent working on this module, I want each state machine named with the one place it lives, so that I change behaviour by editing its table instead of adding conditions around it.
+13. As the Admin, I want a daily Finding while the Bot isn't a Flagger, so that I grant the role before there is anything to flag.
+14. As an operator, I want a Publication that is suspiciously small, or that drops too many addresses at once, to be rejected while the last good Snapshot keeps standing, so that a bad upstream release doesn't reach the chain.
+15. As an operator, I want a Source that has never produced a Snapshot to count as unknown and not as empty, so that a first-run failure doesn't look like "nobody is sanctioned".
+16. As an operator, I want a Source that keeps failing to raise one Finding after it has gone unconfirmed for too long, and not one per failed check, so that a short outage doesn't page anyone.
+17. As an operator, I want a rejected Publication to raise a Finding immediately, so that someone fixes the data or the Limits.
+18. As an operator, I want the same rejected Publication not to be downloaded again every minute, so that a 30 MB OFAC file isn't fetched in a loop.
+19. As an operator, I want an OFAC Publication that doesn't change any crypto address to produce no Snapshot change and no Notice, so that the channel only carries real changes.
+20. As an operator, I want an Absent Source to stop no one else from flagging, so that the other Sources still protect the Deployment.
+21. As an operator, I want Unbacked flag checks to pause while any Source is Absent, so that an unknown Source doesn't produce a flood of false Unbacked flags.
+22. As an operator, I want a flag run to keep no record of its sends between runs, so that a dropped or failed transaction is simply retried by the next run.
+23. As an operator, I want flag transactions sent in bounded batches through Overlord's transaction manager, so that gas and nonce handling are the framework's job.
+24. As an operator, I want each Deployment to be able to submit through a private relay, so that flag transactions aren't front-run.
+25. As an operator, I want a Notice for every batch the Bot flags and every Snapshot that changes, so that there's a record of what happened without anyone being paged.
+26. As an operator, I want a task that throws to fail on every run, posted each time, and to leave its Findings as they were, so that a crash is never muted and never silently clears Findings.
+27. As an operator, I want each task to resolve only its own Findings, so that a flag run can't clear an ingest problem.
+28. As an operator, I want open Findings to send reminders at a configurable interval, so that an ignored problem resurfaces.
+29. As an operator, I want a long Flagged addresses index backfill to continue over several runs without holding up flagging, so that a new Deployment flags from its first run.
+30. As an operator, I want every Flagged addresses index candidate re-checked with `isFlagged` at head, so that an index that is behind can make a Finding late but never wrong.
+31. As an operator, I want the Flagged addresses index to influence Findings and Notice text only, never transactions, so that an index bug can't flag or unflag anyone.
+32. As a developer, I want to add a Source by implementing one interface and registering it, so that its ingest task, state machine, storage and Findings come for free.
+33. As a developer, I want the framework, not each Source, to own versioning, content hashing and Limits, so that Sources stay small and behave the same way.
+34. As a developer, I want to add another Manual source per kind of reason without new framework code, so that reasons can be grouped as the entries grow.
+35. As a developer, I want to register a new Deployment by adding one config entry, so that a new network or ComplianceCheck needs no new task code.
+36. As a developer, I want a whole flag run to be one function of an injected context, so that it can be tested without a chain, without a network and without mocks.
+37. As a compliance officer, I want every Flagged Depositor excluded from an Auction while its Exclusion window is open, whoever set the flag, so that flagged money never reaches the treasury's proceeds.
+38. As a compliance officer, I want an account that was excluded, unflagged, re-deposited and flagged again to be excluded again, so that an earlier Exclusion can't shield a new deposit.
+39. As a compliance officer, I want a Finding for every Missed exclusion, so that I know when a Flagged Depositor was filled and its payout frozen.
+40. As the Admin, I want the Bot never to reinstate, so that putting a deposit back into the fill is always a human decision.
+41. As the Admin, I want a Finding when an excluded account is no longer Flagged while its Auction is still in Deposit, so that I can reinstate it before the chance is gone.
+42. As the Admin, I want a Finding when an exclusion fails for a reason a retry won't fix (no Flagger role, rescue mode, a repointed ComplianceCheck), so that someone fixes it before the window closes.
+43. As an operator, I want an exclusion to cost no gas when it would revert, so that the Bot can try optimistically instead of reading Auction state defensively.
+44. As an operator, I want reverts that only mean "the index was behind" to be skipped silently, so that a lagging index doesn't page anyone.
+45. As an operator, I want a Finding when the Depositor index falls too far behind the chain head, so that I know exclusions may be late.
+46. As an operator, I want an enforce run to keep no record of its attempts between runs, so that a dropped exclusion is simply retried by the next run.
+47. As a developer, I want enforce to derive an Auction's phase with the same function the Granary notifications use, so that the two can never disagree.
+48. As a developer, I want a whole enforce run, attempts and their outcomes included, to be one function of an injected context, so that every row of the Depositor and Exclude attempt tables can be tested without a chain and without mocks.
+49. As a developer, I want each task's I/O to live in one context built in one place, so that there is exactly one untested adapter per task and I know where it is.
+50. As an agent working on this module, I want each state machine named with the one place it lives, so that I change behaviour by editing its table instead of adding conditions around it.
 
 ## Implementation Decisions
 
@@ -198,10 +200,11 @@ Each `exclude` is tried optimistically and caught on its own (`attemptExclude` i
 - **Sources** are ingest's plugins. Each declares an id, a description, its Limits, a `fetch()`, and `versioned`: when true, it also has a cheap `latestVersion()`. Nothing outside ingest calls a Source.
 - **Flag** is one function, `runFlag(context, config)`, called by one periodic task per Deployment. Its internal steps are `TargetSet.from` and `planFlags` (`flag/plan.ts`). It reads each Source's stored state (`readSources`), never the Source itself.
 - **Enforce** is one function, `runEnforce(context, config)`, called by one periodic task per enforcing Deployment. Classifying Depositors (machine 4, `enforce/plan.ts`), the Depositor index's freshness and attempt outcomes are internal steps. It never reads a Source, a Snapshot, an Exemption or the Flagged addresses index.
+- **Flagger check** is one function, `runFlaggerCheck(context, config)`, called by one daily task per Deployment. Its context reads the Bot's address (the Deployment's signer) and `isFlagger` on the ComplianceCheck at head. It raises `BotNotFlagger` or nothing, and posts no Notices.
 - **Attention** owns the list of Finding kinds, the Finding lifecycle and Discord delivery. Every task reports to it. `runWithFindings(ctx, owner, post, body)` runs a task body with a `FindingSink`, then loads, reconciles and saves the owner's open Findings and posts what changed; a body that throws changes nothing. `reportRun(run, sink, post)` hands a run's Findings to the sink and posts its Notices, then throws its send failure if it has one. `runTask(ctx, owner, run, noticeText)` is the two together, as every task uses them: Notices go to `NOTICE_LEVEL` (defcon5), and the task succeeds loudly only when it posted.
 - **Flagged addresses index** is the Bot's own scan of its ComplianceCheck's `FlaggedSet` logs, kept in KV (`scanFlaggedAddressesIndex` in `flag/flagged-addresses-index.ts`, a function of an injected `FlaggedAddressesIndexContext`; the production context, `productionFlaggedAddressesIndexContext`, is in `flag/flagged-addresses-index-store.ts`).
 - **Addresses** are lower case and typed `LCAddress` inside every module (`shared/address.ts`); `lcAddress()` converts at each boundary where outside data enters.
-- **Contexts.** Each run takes everything it touches as an injected context, `IngestContext`, `FlagContext` or `EnforceContext`: an object of small async functions (read this, send that, the clock). The task builds the production context from viem, the subgraph and Overlord; tests build one from plain data. The task itself only builds the context, calls the run, and hands the run's Findings and Notices to attention.
+- **Contexts.** Each run takes everything it touches as an injected context, `IngestContext`, `FlagContext`, `EnforceContext` or `FlaggerCheckContext`: an object of small async functions (read this, send that, the clock). The task builds the production context from viem, the subgraph and Overlord; tests build one from plain data. The task itself only builds the context, calls the run, and hands the run's Findings and Notices to attention.
 - **Auction phase** lives in `granary/auction-phase.ts`, a module both the Granary notifications and enforce import.
 
 Data flows one way: Sources → ingest → Snapshots → flag → chain → enforce. Only attention takes input from every task.
@@ -214,7 +217,7 @@ There are three kinds of persisted state, each with a single writer, stored in O
 - the per-owner open Findings, written only by the owner's task;
 - the per-ComplianceCheck Flagged addresses index, written only by that Deployment's flag task (see [Flagged addresses index](#flagged-addresses-index)).
 
-Overlord skips a run while the previous run of the same task is still going, so no key has two concurrent writers. Enforce adds no persisted state of its own.
+Overlord skips a run while the previous run of the same task is still going, so no key has two concurrent writers. Enforce and the flagger check add no persisted state of their own.
 
 ### Source state machine
 
@@ -342,23 +345,24 @@ The Exclusion window closes at `fulfillmentEnd`, or earlier whenever the Admin c
 
 ### Findings
 
-- Identity is `(owner, kind, key)`. Owners are `ingest:<source>`, `flag:<name>` and `enforce:<name>`.
+- Identity is `(owner, kind, key)`. Owners are `ingest:<source>`, `flag:<name>`, `enforce:<name>` and `flagger-check:<name>`.
 - A completed run resolves its own Findings that it didn't report. A run that throws changes no Finding: the task fails, and the task exception handler posts the error on every failing run.
 - `FINDING_KINDS` (`attention/findings.ts`) is the one place each kind declares its human action, the Discord level it posts at (opened, reminded and resolved alike, so they share a thread) and its reminder period. A period of `'default'` uses `compliance_finding_reminder_secs` (15 minutes by default; 0 disables those reminders). `MissedExclusion` reminds daily: it can't resolve while the account is Flagged.
 - Every post, Finding or Notice, is also logged. If `webhook_url` is unset, a post fails the task; for Findings that happens before anything is saved, so the next run posts again.
 
-| Kind                             | Raised by | Key             | Human action                                                                                                                                                        |
-| -------------------------------- | --------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `SourceUnconfirmed`              | ingest    | source          | Check the publisher or the network                                                                                                                                  |
-| `SourceRejected`                 | ingest    | source          | Fix the data or the Limits                                                                                                                                          |
-| `SourceAbsent`                   | flag      | source          | Same as the Source's own Finding. Flagged addresses index checks are paused                                                                                         |
-| `UnbackedFlag`                   | flag      | address         | Back it in a Manual source, or the Admin unflags it                                                                                                                 |
-| `ExemptionInvalid`               | flag      | entry           | Fix the `compliance_exempt` entry                                                                                                                                   |
-| `ExcludeFailed`                  | enforce   | auction:account | Before `fulfillmentEnd`, and before any `settleEarly`: fix the cause (Flagger role, rescue mode, repointed ComplianceCheck), or the Admin excludes by hand          |
-| `MissedExclusion`                | enforce   | auction:account | Follow [Troubleshooting MissedExclusion](#troubleshooting-missedexclusion), then record it. The fill stands and the claim stays frozen while the account is Flagged |
-| `ReinstateAvailable`             | enforce   | auction:account | Reinstate before Deposit ends if appropriate, or leave it: the account can withdraw its excluded balance                                                            |
-| `AuctionComplianceCheckUnserved` | enforce   | auction         | Before `fulfillmentEnd`: add a Deployment for its ComplianceCheck (the Admin makes the Bot a Flagger there), or the Admin repoints the Auction                      |
-| `DepositorIndexLagging`          | enforce   | —               | Fix the Granary subgraph. Exclusions may be late                                                                                                                    |
+| Kind                             | Raised by     | Key             | Human action                                                                                                                                                        |
+| -------------------------------- | ------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SourceUnconfirmed`              | ingest        | source          | Check the publisher or the network                                                                                                                                  |
+| `SourceRejected`                 | ingest        | source          | Fix the data or the Limits                                                                                                                                          |
+| `SourceAbsent`                   | flag          | source          | Same as the Source's own Finding. Flagged addresses index checks are paused                                                                                         |
+| `UnbackedFlag`                   | flag          | address         | Back it in a Manual source, or the Admin unflags it                                                                                                                 |
+| `ExemptionInvalid`               | flag          | entry           | Fix the `compliance_exempt` entry                                                                                                                                   |
+| `ExcludeFailed`                  | enforce       | auction:account | Before `fulfillmentEnd`, and before any `settleEarly`: fix the cause (Flagger role, rescue mode, repointed ComplianceCheck), or the Admin excludes by hand          |
+| `MissedExclusion`                | enforce       | auction:account | Follow [Troubleshooting MissedExclusion](#troubleshooting-missedexclusion), then record it. The fill stands and the claim stays frozen while the account is Flagged |
+| `ReinstateAvailable`             | enforce       | auction:account | Reinstate before Deposit ends if appropriate, or leave it: the account can withdraw its excluded balance                                                            |
+| `AuctionComplianceCheckUnserved` | enforce       | auction         | Before `fulfillmentEnd`: add a Deployment for its ComplianceCheck (the Admin makes the Bot a Flagger there), or the Admin repoints the Auction                      |
+| `DepositorIndexLagging`          | enforce       | —               | Fix the Granary subgraph. Exclusions may be late                                                                                                                    |
+| `BotNotFlagger`                  | flagger-check | —               | The Admin grants the Bot the Flagger role (`setFlagger(bot, true)`), or confirms the removal was intended                                                           |
 
 ### Flagged addresses index
 
@@ -382,12 +386,12 @@ The ComplianceCheck is fixed in config, not discovered from the Auctions. The Bo
 
 A Deployment is rolled out in two steps, both config:
 
-| Stage                             | Tasks                                     | Precondition                                                                                 |
-| --------------------------------- | ----------------------------------------- | -------------------------------------------------------------------------------------------- |
-| added to `COMPLIANCE_DEPLOYMENTS` | ingest (shared), `compliance-flag-<name>` | ComplianceCheck address in the shared address tables; the Admin has made the Bot a Flagger   |
-| `depositorIndex` set              | plus `compliance-enforce-<name>`          | the network has a Granary subgraph; the Bot is a Flagger on the Deployment's ComplianceCheck |
+| Stage                             | Tasks                                                                        | Precondition                                                                                 |
+| --------------------------------- | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| added to `COMPLIANCE_DEPLOYMENTS` | ingest (shared), `compliance-flag-<name>`, `compliance-flagger-check-<name>` | ComplianceCheck address in the shared address tables; the Admin has made the Bot a Flagger   |
+| `depositorIndex` set              | plus `compliance-enforce-<name>`                                             | the network has a Granary subgraph; the Bot is a Flagger on the Deployment's ComplianceCheck |
 
-`complianceTasks` (`tasks.ts`) registers the tasks. Losing the Flagger role changes nothing in config: the flag task's `setFlagged` reverts at simulation and the task fails, and enforce's attempts fail with `ExcludeFailed`.
+`complianceTasks` (`tasks.ts`) registers the tasks. The flagger check runs from the first stage: it raises `BotNotFlagger` daily until the Admin grants the Bot the Flagger role, and again whenever the role is lost. Losing the Flagger role changes nothing in config: the flag task's `setFlagged` reverts at simulation and the task fails, and enforce's attempts fail with `ExcludeFailed`.
 
 ### Code conventions
 
@@ -400,6 +404,7 @@ Switches over a union are exhaustive and end with `assertNever()`. Each of the f
 - Seams, highest first. There is one per task, plus the two pure state machines that are already seams:
   - **Enforce:** `runEnforce(context, config)`. A test's context is a fake chain as data: Auctions in each phase, Positions, the flagged set, the head and Watermark, and an `exclude` that records calls and resolves or rejects with a given revert. It covers every row of machine 4 and of the Exclude attempt table, the re-deposit case, Cancelled Auctions, the lag table's rows for a withdrawal, an exclusion, `settleEarly` or `cancel`, `fulfillmentEnd` passing and a claim after the Watermark, the freshness states, the skipped `isFlagged` read, and the shared phase function. An unreachable index rejects the run before any `isFlagged` read or attempt.
   - **Flag:** `runFlag(context, config)`. It carries the invariant: Target-set flagging and batching, Exemptions, Unbacked flags from Exemptions and from the Flagged addresses index, the Absent-Source pause, `ExemptionInvalid`, a malformed `compliance_exempt` failing the run, and a Notice per batch.
+  - **Flagger check:** `runFlaggerCheck(context, config)`. A test's context is the Bot's address and a ComplianceCheck's Flaggers as data. It covers a Bot that isn't a Flagger (one `BotNotFlagger` naming it) and one that is (no Findings).
   - **Ingest:** `runIngest(context, config)`. A test's context is a Source as data: its persisted state, a `latestVersion` and `fetch` that return or throw, and the clock. It covers a first good fetch, an unchanged version, a failed fetch, a Publication that breaks a Limit, and `latestVersion` throwing.
   - **Source state machine:** `checkFetch`, `transition` and `sourceFindings`. They are pure over data and need no context. They cover acceptance, Limits, rejected-version memory, unconfirmed timing, and a refused entry rejecting the whole Publication.
   - **Finding lifecycle:** `reconcileFindings`, pure over data. It covers open, reminder (per kind), resolve and owner isolation. `runWithFindings` and `reportRun` are tested beside it: a body that throws fails the task and touches no KV, a Finding that can't be posted is logged and fails the run with nothing saved, and a run's send failure is thrown after its Notices are posted.
@@ -440,3 +445,4 @@ Each line is a decision the review took, and any of them can be reverted.
 - `SDN.XML` must end with `</sdnList>`, in addition to matching `Record_Count`.
 - The ingest task saves the Source state only after posting, so a failed post repeats the change Notice and never loses it.
 - Stored, config and time fields carry their units and GLOSSARY names: `…Ms` times, `watermark`, `compliance_manual_source`, `compliance_max_flag_batch`, `maxDropPerPublication`.
+- A daily flagger check per Deployment raises `BotNotFlagger` while the Bot isn't a Flagger on the ComplianceCheck, so a missing role shows before a `setFlagged` reverts. It checks only that role.

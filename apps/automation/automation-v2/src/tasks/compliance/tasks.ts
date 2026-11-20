@@ -2,13 +2,15 @@ import type { TaskContext, TaskResult } from '@mountainpath9/overlord-core';
 import type { ComplianceDeployment, EnforcingDeployment } from './config';
 import { enforceTask } from './enforce';
 import { flagTask } from './flag';
+import { flaggerCheckTask } from './flagger-check';
 import { ingestTask, SOURCES } from './ingest';
 import { chainAddressKey, lcAddress } from './shared';
 
 /**
  * Every compliance task with its schedule: one ingest task per Source some
  * Deployment uses and one flag task per Deployment, every minute; plus one
- * enforce task every 20 minutes per Deployment with a Depositor index.
+ * enforce task every 20 minutes per Deployment with a Depositor index; and
+ * one flagger-check task per Deployment, daily.
  * Overlord skips a run while the previous run of the same task is still
  * going.
  *
@@ -61,11 +63,16 @@ export function complianceTasks(deployments: readonly ComplianceDeployment[]): {
         cronSchedule: EVERY_20_MINUTES,
       };
     }),
+    ...deployments.map((deployment) => ({
+      ...flaggerCheckTask(deployment),
+      cronSchedule: DAILY,
+    })),
   ];
 }
 
 const EVERY_MINUTE = '* * * * *';
 const EVERY_20_MINUTES = '*/20 * * * *';
+const DAILY = '0 9 * * *';
 
 function enforces(
   deployment: ComplianceDeployment

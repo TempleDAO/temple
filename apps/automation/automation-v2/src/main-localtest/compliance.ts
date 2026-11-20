@@ -16,6 +16,7 @@
 //   curl -X POST http://localhost:8111/webhooks/compliance-ingest-manual
 //   curl -X POST http://localhost:8111/webhooks/compliance-flag-sepolia
 //   curl -X POST http://localhost:8111/webhooks/compliance-enforce-sepolia
+//   curl -X POST http://localhost:8111/webhooks/compliance-flagger-check-sepolia
 //
 //   # The Admin acting by hand, and mining past the Flagged addresses index's confirmations
 //   curl -X POST 'http://localhost:8111/webhooks/compliance-admin-unflag?account=0x…'

@@ -26,7 +26,10 @@ type FindingKindSpec = {
  * task never clears another task's findings.
  */
 export type FindingOwner =
-  `ingest:${string}` | `flag:${string}` | `enforce:${string}`;
+  | `ingest:${string}`
+  | `flag:${string}`
+  | `enforce:${string}`
+  | `flagger-check:${string}`;
 
 /** One condition a run observed. `kind` + `key` identify it across runs. */
 // Type aliases, not interfaces, so open findings are assignable to Overlord's Json.
@@ -122,6 +125,12 @@ export const FINDING_KINDS = {
     remindEverySecs: 'default',
     action:
       'An excluded account is no longer Flagged while its Auction is in Deposit. The Admin reinstates it before Deposit ends if appropriate, or leaves it: the account can withdraw its excluded balance. The Bot never reinstates.',
+  },
+  BotNotFlagger: {
+    level: 'defcon3',
+    remindEverySecs: 'default',
+    action:
+      "The Bot (the Deployment's signer) is not a Flagger on its ComplianceCheck, so every setFlagged and exclude will revert. The Admin calls setFlagger(<Bot address>, true) on the ComplianceCheck, or confirms the removal was intended.",
   },
 } as const satisfies Record<string, FindingKindSpec>;
 

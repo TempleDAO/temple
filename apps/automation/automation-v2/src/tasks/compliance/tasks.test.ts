@@ -27,10 +27,11 @@ const deployment = (
 const schedules = (d: ComplianceDeployment) =>
   complianceTasks([d]).map(({ id, cronSchedule }) => [id, cronSchedule]);
 
-test('a Deployment without a Depositor index registers no enforce task', () => {
+test('a Deployment without a Depositor index registers no enforce task, and checks its Flagger role daily', () => {
   expect(schedules(deployment())).toEqual([
     ['compliance-ingest-manual', '* * * * *'],
     ['compliance-flag-sepolia', '* * * * *'],
+    ['compliance-flagger-check-sepolia', '0 9 * * *'],
   ]);
 });
 
@@ -46,6 +47,7 @@ test('a Deployment with a Depositor index also enforces, every 20 minutes', () =
     ['compliance-ingest-manual', '* * * * *'],
     ['compliance-flag-sepolia', '* * * * *'],
     ['compliance-enforce-sepolia', '*/20 * * * *'],
+    ['compliance-flagger-check-sepolia', '0 9 * * *'],
   ]);
 });
 
@@ -65,6 +67,8 @@ test('two Deployments may serve two ComplianceChecks on one network, each with i
     'compliance-flag-sepolia-2',
     'compliance-enforce-sepolia',
     'compliance-enforce-sepolia-2',
+    'compliance-flagger-check-sepolia',
+    'compliance-flagger-check-sepolia-2',
   ]);
 });
 
