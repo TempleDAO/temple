@@ -13,6 +13,8 @@
     "dev:local:mainnet": "yarn build:localtest:mainnet && node ./dist/mainnet-localtest.js",
     "build:localtest:granary": "yarn tsc --noEmit && yarn esbuild --platform=node --bundle --outfile=dist/granary-localtest.js src/main-localtest/granary.ts",
     "dev:local:granary": "yarn build:localtest:granary && node ./dist/granary-localtest.js",
+    "build:localtest:compliance": "yarn tsc --noEmit && yarn esbuild --platform=node --bundle --outfile=dist/compliance-localtest.js src/main-localtest/compliance.ts",
+    "dev:local:compliance": "yarn build:localtest:compliance && node ./dist/compliance-localtest.js",
     "test": "vitest",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
