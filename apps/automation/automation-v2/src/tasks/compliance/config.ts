@@ -1,6 +1,9 @@
 import type { TaskContext } from '@mountainpath9/overlord-core';
 import type { TxSubmissionParams } from '@mountainpath9/overlord-viem';
 import type { Address, Chain } from 'viem';
+import { sepolia } from 'viem/chains';
+import { getMainnetSubmissionParams } from '@/config';
+import { GRANARY_SEPOLIA } from '@/tasks/granary/config';
 import type { FlaggedAddressesIndexConfig } from './flag';
 import type { SourceId } from './ingest';
 
@@ -63,3 +66,29 @@ export type EnforcingDeployment = ComplianceDeployment & {
   depositorIndex: DepositorIndexConfig;
 };
 
+/**
+ * The Sepolia ComplianceCheck, which the Granary factory's Auctions are
+ * created with. Flags and enforces once the Admin has made the Bot
+ * (`signerId`) a Flagger; until then every send reverts and the flag task
+ * fails.
+ */
+export const COMPLIANCE_SEPOLIA: ComplianceDeployment = {
+  name: 'sepolia',
+  chain: sepolia,
+  complianceCheck: GRANARY_SEPOLIA.contracts.COMPLIANCE_CHECK,
+  signerId: 'compliance_flagger_signer',
+  sourceIds: ['ofac-sdn', 'manual'],
+  privateSubmission: false,
+  submissionParams: getMainnetSubmissionParams,
+  // Deployed in 0xc58c8790ed861cc01d71852098fed6604069415cb6702bdb35d5e36a46aaa64a.
+  flaggedAddressesIndex: { deployBlock: 12_023_391n, confirmations: 12n },
+  depositorIndex: {
+    subgraphUrl: GRANARY_SEPOLIA.subgraphUrl,
+    factory: GRANARY_SEPOLIA.contracts.FIXED_PRICE_AUCTION_FACTORY,
+  },
+};
+
+/** Deployments the production runner serves. */
+export const COMPLIANCE_DEPLOYMENTS: readonly ComplianceDeployment[] = [
+  COMPLIANCE_SEPOLIA,
+];

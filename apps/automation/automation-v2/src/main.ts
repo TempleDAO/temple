@@ -22,6 +22,7 @@ import {
 import { startTemplePriceSidebarBot } from './tasks/discord-bots/temple-price';
 import { GRANARY_DEPLOYMENTS } from './tasks/granary/config';
 import { granaryTasks } from './tasks/granary/tasks';
+import { COMPLIANCE_DEPLOYMENTS, complianceTasks } from './tasks/compliance';
 
 async function main() {
   const runner = createTaskRunner();
@@ -69,6 +70,10 @@ async function main() {
         cronSchedule: '*/20 * * * *',
         allowConcurrent: false,
       });
+
+  // Compliance: ingest per Source, flag and enforce per Deployment.
+  for (const task of complianceTasks(COMPLIANCE_DEPLOYMENTS))
+    runner.addPeriodicTask({ ...task, allowConcurrent: false });
 
   runner.addPeriodicTask({
     id: 'update-temple-price-sidebar-bot',
