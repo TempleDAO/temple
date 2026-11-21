@@ -1,5 +1,7 @@
 import { ComponentProps, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
+import styled from 'styled-components';
+import linkSvg from 'assets/icons/link.svg?react';
 import type { Auction, Pair } from '../data/types';
 import {
   auctionName,
@@ -37,29 +39,68 @@ import {
   Row,
   TextLink,
 } from '../ui';
-import { paths } from '../paths';
+import { explorerUrl, paths } from '../paths';
 
 export const PageHead = ({
   back,
   title,
   right,
+  explorer,
 }: {
   back?: [string, string];
   title: ReactNode;
   right?: ReactNode;
-}) => (
-  <Row>
-    <div>
-      {back && (
-        <K>
-          <TextLink to={back[0]}>← {back[1]}</TextLink>
-        </K>
-      )}
-      <Big>{title}</Big>
-    </div>
-    {right}
-  </Row>
-);
+  // a contract to link on the block explorer, shown as the arrow icon after the title
+  explorer?: { address: string; label: string };
+}) => {
+  const href = explorer && explorerUrl(explorer.address);
+  return (
+    <Row>
+      <div>
+        {back && (
+          <K>
+            <TextLink to={back[0]}>← {back[1]}</TextLink>
+          </K>
+        )}
+        <Big>
+          {title}
+          {explorer && href && (
+            <ExplorerLink
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={explorer.label}
+              title={explorer.label}
+            >
+              <LinkIcon />
+            </ExplorerLink>
+          )}
+        </Big>
+      </div>
+      {right}
+    </Row>
+  );
+};
+
+const ExplorerLink = styled.a`
+  display: inline-flex;
+  vertical-align: middle;
+  margin-left: 8px;
+  color: ${({ theme }) => theme.palette.brand};
+  &:hover {
+    color: ${({ theme }) => theme.palette.brandLight};
+  }
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.palette.gold};
+    outline-offset: 2px;
+  }
+`;
+
+const LinkIcon = styled(linkSvg)`
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+`;
 
 export const SectionHead = ({
   label,

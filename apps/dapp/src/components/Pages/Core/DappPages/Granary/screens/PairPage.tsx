@@ -102,6 +102,10 @@ export const PairPage = () => {
     positions.find((p) => p.auction === a.id && isPositive(p.deposit));
   const others = past ? [] : running.filter((a) => a !== selected);
   const show = (a: Auction) => navigate(paths.auction(a));
+  const explorer = {
+    address: selected.id,
+    label: `Auction #${selected.number} contract on the block explorer`,
+  };
 
   return (
     <Stack>
@@ -109,11 +113,13 @@ export const PairPage = () => {
         <PageHead
           back={[paths.pair(pair.id), name]}
           title={`${name} #${selected.number}`}
+          explorer={explorer}
         />
       ) : (
         <PageHead
           back={[paths.auctions(), 'All auctions']}
           title={name}
+          explorer={explorer}
           right={
             <Note>
               {fmt(balance)} {pair.bidToken} in your wallet

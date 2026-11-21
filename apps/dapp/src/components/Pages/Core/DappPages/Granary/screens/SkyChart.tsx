@@ -5,7 +5,7 @@ import { phone } from 'styles/breakpoints';
 import { fillPct, fmtDay, fmtMonth, pairIdOf, phaseOf } from '../data/derive';
 import { useAuctions, useNow, usePairs, useWallClock } from '../data/hooks';
 import type { Auction } from '../data/types';
-import { C, Moon, Note, Row, Seg, TextLink } from '../ui';
+import { C, Moon, Note, Row, Seg } from '../ui';
 import { paths } from '../paths';
 
 type Range = '4 months' | '1 year' | 'All';
@@ -36,7 +36,6 @@ export const SkyChart = () => {
   const pairs = usePairs().data;
   const auctions = useAuctions().data;
   const [range, setRange] = useState<Range>('4 months');
-  const [showQuiet, setShowQuiet] = useState(false);
   // On a narrow screen the chart scrolls sideways: open it at the right-hand
   // end, where today is.
   const scroll = useRef<HTMLDivElement>(null);
@@ -64,9 +63,8 @@ export const SkyChart = () => {
       )
     ),
   }));
+  // pairs with no auctions in range don't get a row
   const active = rows.filter((r) => r.ls.length);
-  // Pairs with no auctions in range fold into one line; each gets a "+ Wish" when opened.
-  const quiet = rows.filter((r) => !r.ls.length).map((r) => r.pair);
   const end = new Date(+monthStart(wall, -1) + 15 * 864e5);
   const x = (d: Date) =>
     `${Math.max(0, ((+d - +start) / (+end - +start)) * 100).toFixed(2)}%`;
@@ -180,14 +178,9 @@ export const SkyChart = () => {
               </Track>,
             ];
           })}
-          {quiet.length > 0 && (
+          {active.length === 0 && (
             <>
-              <Label>
-                <QuietToggle onClick={() => setShowQuiet(!showQuiet)}>
-                  {showQuiet ? '− ' : '+ '}
-                  {quiet.length} quiet {quiet.length === 1 ? 'pair' : 'pairs'}
-                </QuietToggle>
-              </Label>
+              <Label />
               <Track style={{ height: 34 }}>
                 <Note
                   as="span"
@@ -196,17 +189,6 @@ export const SkyChart = () => {
                   No auctions in this range
                 </Note>
               </Track>
-              {showQuiet &&
-                quiet.map((pair) => [
-                  <Label key={`${pair.id}-l`}>
-                    {pair.bidToken} → {pair.fillToken}
-                  </Label>,
-                  <Track key={pair.id} style={{ height: 34 }}>
-                    <AddWish to={paths.wish(pair.bidToken, pair.fillToken)}>
-                      + Wish
-                    </AddWish>
-                  </Track>,
-                ])}
             </>
           )}
         </Grid>
@@ -308,21 +290,4 @@ const Today = styled.span`
   border-left: 1px dashed ${({ theme }) => theme.palette.gold};
   z-index: 1;
   pointer-events: none;
-`;
-
-const QuietToggle = styled.button`
-  all: unset;
-  cursor: pointer;
-  font-size: 12px;
-  color: ${({ theme }) => theme.palette.gold};
-  &:focus-visible {
-    outline: 2px solid ${({ theme }) => theme.palette.gold};
-  }
-`;
-const AddWish = styled(TextLink)`
-  position: absolute;
-  left: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 12px;
 `;

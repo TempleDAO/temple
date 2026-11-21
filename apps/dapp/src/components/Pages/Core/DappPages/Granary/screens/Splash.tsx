@@ -13,17 +13,30 @@ export const Splash = () => {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const painted = (params.get('art') ?? SPLASH_ART) === 'painted';
+  const head = (
+    <>
+      <Eyebrow>Temple Gold</Eyebrow>
+      <Title>The Temple Granary</Title>
+    </>
+  );
   return (
     <Wrap $painted={painted}>
-      <Copy>
-        <Eyebrow>Temple Gold</Eyebrow>
-        <Title>The Temple Granary</Title>
+      {/* drawn: the title, the scene large, then the words under it */}
+      {!painted && (
+        <>
+          <Head>{head}</Head>
+          <Scene />
+        </>
+      )}
+      <Copy $painted={painted}>
+        {painted && head}
         <Lore>
           {painted && 'Pilgrims bring their wishes to the well. '}
-          The Bazaar&apos;s stalls have folded. The Temple keeps a granary now,
-          and keeps it by the moon. At the new moon a price is carved in stone;
-          the waxing moon gathers tenders; the gibbous moon fills the stores; at
-          the full moon every tender is answered in the same measure.
+          The Merchant stalls in the Bazaar have been supplanted by the Granary,
+          an edifice for the Temple harvest. Granary Auctions are synced to the
+          moon cycles. At the new moon, a price is carved in stone; the waxing
+          moon gathers bid tenders; the gibbous moon fills the stores; at the
+          full moon every bid is answered in equal measure.
         </Lore>
         <Plain>
           Stake TEMPLE to earn Temple Gold. Deposit into fixed-price auctions
@@ -44,7 +57,6 @@ export const Splash = () => {
           </TextLink>
         </Note>
       </Copy>
-      {!painted && <Scene />}
     </Wrap>
   );
 };
@@ -225,10 +237,10 @@ const Scene = () => (
 
 const Wrap = styled.div<{ $painted: boolean }>`
   display: grid;
-  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.25fr);
-  gap: 8px;
-  align-items: center;
-  padding: 26px 26px 0;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  gap: 28px;
+  padding: 40px 32px 48px;
   border: 1px solid ${({ theme }) => theme.palette.brandDark};
   border-radius: 14px;
   overflow: hidden;
@@ -245,15 +257,15 @@ const Wrap = styled.div<{ $painted: boolean }>`
     min-height: 470px;
     padding: 32px;
     align-items: end;
+    justify-items: start;
     background:
       linear-gradient(90deg, rgba(11,10,10,.94) 0%, rgba(11,10,10,.78) 38%, rgba(11,10,10,.05) 72%),
       url(${paintedWell}) center 40% / cover no-repeat;
     > div { max-width: 380px; padding-bottom: 0; }
   `}
-  /* one column on a phone: the words, then the art */
   ${phone(css`
-    grid-template-columns: minmax(0, 1fr);
-    padding: 22px 20px 0;
+    gap: 22px;
+    padding: 28px 20px 32px;
   `)}
   ${({ $painted }) =>
     $painted &&
@@ -273,13 +285,42 @@ const Wrap = styled.div<{ $painted: boolean }>`
     `)}
 `;
 
-const Copy = styled.div`
+const Head = styled.div`
+  display: grid;
+  gap: 8px;
+  text-align: center;
+`;
+
+const Copy = styled.div<{ $painted: boolean }>`
   position: relative;
   z-index: 1;
   display: grid;
   gap: 14px;
   align-content: center;
   padding-bottom: 26px;
+  /* drawn: a centred column under the scene, with room between the blocks */
+  ${({ $painted }) =>
+    !$painted &&
+    css`
+      gap: 24px;
+      max-width: 640px;
+      padding-bottom: 0;
+      text-align: center;
+      justify-items: center;
+      ${Lore} {
+        border-left: 0;
+        padding-left: 0;
+        font-size: 18px;
+        line-height: 1.7;
+      }
+      ${Plain} {
+        max-width: 56ch;
+        line-height: 1.65;
+      }
+      ${Ctas} {
+        justify-content: center;
+      }
+    `}
 `;
 
 const Title = styled.h2`
@@ -318,6 +359,7 @@ const Ctas = styled.div`
 
 const SceneSvg = styled.svg`
   width: 100%;
+  max-width: 880px;
   height: auto;
   display: block;
   overflow: visible;

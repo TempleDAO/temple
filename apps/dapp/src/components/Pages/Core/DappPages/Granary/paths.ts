@@ -1,5 +1,13 @@
 import type { Auction, Token } from './data/types';
 import { pairIdOf } from './data/derive';
+import { getAppConfig } from 'constants/newenv';
+
+// A contract on the Granary chain's block explorer, if that chain has one configured.
+export const explorerUrl = (address: string) => {
+  const config = getAppConfig();
+  const chain = config.chains.find((c) => c.id === config.granary.chainId);
+  return chain?.explorer.contractUrl(address, {});
+};
 
 // The Granary lives beside the live Spice Bazaar until the team switches over.
 export const BASE = '/dapp/granary';
