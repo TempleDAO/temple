@@ -8,7 +8,7 @@ import type { ComplianceDeployment } from '../config';
 import { explorerTxUrl } from '@/tasks/granary/shared';
 import { readSourceState, SourceState } from '../ingest';
 import { createSender, listUpTo, readIsFlagged } from '../shared';
-import { compliance_exempt, compliance_max_flag_batch } from '../variables';
+import { compliance_exemptions, compliance_max_flag_batch } from '../variables';
 import { scanFlaggedAddressesIndex } from './flagged-addresses-index';
 import {
   FLAGGED_ADDRESSES_INDEX_SCAN,
@@ -56,7 +56,7 @@ async function productionFlagContext(
             (await readSourceState(ctx, id)) ?? SourceState.initial(Date.now()),
         }))
       ),
-    readExemptions: () => compliance_exempt.getValue(ctx),
+    readExemptions: () => compliance_exemptions.getValue(ctx),
     readFlaggedAddressesIndex: async (atBlock) => {
       const index = await scanFlaggedAddressesIndex(
         productionFlaggedAddressesIndexContext(ctx, deployment, pclient),
@@ -92,7 +92,7 @@ function noticeText(deployment: ComplianceDeployment, n: FlagNotice): string {
       return (
         `flagged ${n.addresses.length} on ${deployment.name}: ${explorerTxUrl(deployment.chain.blockExplorers?.default.url, n.txHash) ?? n.txHash}` +
         (n.reflagged.length
-          ? `\nflagged again after an unflag: ${listUpTo(n.reflagged, NOTICE_LIST_MAX)}. To unflag a Listed address for good, add it to compliance_exempt first.`
+          ? `\nflagged again after an unflag: ${listUpTo(n.reflagged, NOTICE_LIST_MAX)}. To unflag a Listed address for good, add it to compliance_exemptions first.`
           : '')
       );
     default:

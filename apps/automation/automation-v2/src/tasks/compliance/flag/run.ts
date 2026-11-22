@@ -19,7 +19,7 @@ export interface FlagContext {
    */
   readSources(): Promise<{ id: string; state: SourceState }[]>;
   /**
-   * The raw `compliance_exempt` value. A value set to anything but a JSON
+   * The raw `compliance_exemptions` value. A value set to anything but a JSON
    * object of address → reason fails the run before any chain read.
    */
   readExemptions(): Promise<Json | undefined>;
@@ -85,7 +85,7 @@ export async function runFlag(
   // human fixes it.
   if (exemptions === 'malformed')
     throw new Error(
-      `compliance_exempt is not ${CuratedList.FORMAT}: no flag run until it is fixed`
+      `compliance_exemptions is not ${CuratedList.FORMAT}: no flag run until it is fixed`
     );
   const atBlock = await ctx.readHeadBlock();
   const sources = await ctx.readSources();

@@ -93,7 +93,7 @@ export const FINDING_KINDS = {
     level: 'defcon3',
     remindEverySecs: 'default',
     action:
-      'An entry in compliance_exempt is invalid. A bad address exempts nothing; a valid address with no reason still exempts it. Add the reason or fix the address.',
+      'An entry in compliance_exemptions is invalid. A bad address exempts nothing; a valid address with no reason still exempts it. Add the reason or fix the address.',
   },
   ExcludeFailed: {
     level: 'defcon3',

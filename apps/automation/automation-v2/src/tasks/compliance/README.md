@@ -44,7 +44,7 @@ flowchart LR
     I2[compliance-ingest-manual]
   end
   KV[(Overlord KV<br/>Snapshots)]
-  EX[/compliance_exempt<br/>Exemptions/]
+  EX[/compliance_exemptions<br/>Exemptions/]
   subgraph Flag["flag/ — one task per Deployment"]
     S1[compliance-flag-&lt;name&gt;]
   end
@@ -116,7 +116,7 @@ Overlord skips a run while the previous run of the same task is in progress, so 
 | Variable                                    | Purpose                                                                                                    |
 | ------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
 | `compliance_manual_source`                  | The Manual source: JSON object of address → reason                                                         |
-| `compliance_exempt`                         | Exemptions: JSON object of address → reason                                                                |
+| `compliance_exemptions`                     | Exemptions: JSON object of address → reason                                                                |
 | `compliance_max_flag_batch`                 | Most addresses per `setFlagged`                                                                            |
 | `compliance_max_depositor_index_lag_blocks` | `DepositorIndexLagging` threshold                                                                          |
 | `compliance_finding_reminder_secs`          | Default reminder period, 900 (15 minutes), for open Findings whose kind uses `'default'`. 0 disables those |

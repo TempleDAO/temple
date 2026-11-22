@@ -255,11 +255,11 @@ A whole ingest run for one Source is one function, `runIngest(context, config)` 
 
 ### Hand-curated lists
 
-The Manual source and the Exemptions are Overlord JSON variables (`compliance_manual_source`, `compliance_exempt`), each a JSON object mapping address → reason. `CuratedList.parse` (`shared/curated-list.ts`) reads both: unset or null is empty, a value set to anything that isn't a JSON object is `malformed`, and otherwise each entry stands alone. Its key must be an address ("not an address") and its value a non-empty string once trimmed ("no reason"). One bad entry never rejects the others; valid entries come out as an `LCAddress` and its reason, invalid ones with their problem and, when the key is an address, that address.
+The Manual source and the Exemptions are Overlord JSON variables (`compliance_manual_source`, `compliance_exemptions`), each a JSON object mapping address → reason. `CuratedList.parse` (`shared/curated-list.ts`) reads both: unset or null is empty, a value set to anything that isn't a JSON object is `malformed`, and otherwise each entry stands alone. Its key must be an address ("not an address") and its value a non-empty string once trimmed ("no reason"). One bad entry never rejects the others; valid entries come out as an `LCAddress` and its reason, invalid ones with their problem and, when the key is an address, that address.
 
 - In a Manual source, an entry without a reason, or with a bad address, rejects the whole Publication, and so does a malformed value. The previous Snapshot stands.
 - In the Exemptions, an entry with a bad address exempts nothing, and an entry with a valid address but no reason still exempts it. Both raise `ExemptionInvalid`. Dropping a reasonless entry, or rejecting the whole Exemption list, would make the Bot flag exempt addresses, and since the Bot never unflags, that can't be undone without the Admin. Per-entry tolerance is the safe direction.
-- A malformed `compliance_exempt` can't be read per entry, and treating it as empty would flag every exempt address. So `runFlag` throws before any chain read: the flag task fails, and its exception handler posts the error on every run until a human fixes the variable.
+- A malformed `compliance_exemptions` can't be read per entry, and treating it as empty would flag every exempt address. So `runFlag` throws before any chain read: the flag task fails, and its exception handler posts the error on every run until a human fixes the variable.
 - There is one Manual source for now. More, one per kind of reason, are added as more Sources.
 
 ### Flag run
@@ -356,7 +356,7 @@ The Exclusion window closes at `fulfillmentEnd`, or earlier whenever the Admin c
 | `SourceRejected`                 | ingest        | source          | Fix the data or the Limits                                                                                                                                          |
 | `SourceAbsent`                   | flag          | source          | Same as the Source's own Finding. Flagged addresses index checks are paused                                                                                         |
 | `UnbackedFlag`                   | flag          | address         | Back it in a Manual source, or the Admin unflags it                                                                                                                 |
-| `ExemptionInvalid`               | flag          | entry           | Fix the `compliance_exempt` entry                                                                                                                                   |
+| `ExemptionInvalid`               | flag          | entry           | Fix the `compliance_exemptions` entry                                                                                                                               |
 | `ExcludeFailed`                  | enforce       | auction:account | Before `fulfillmentEnd`, and before any `settleEarly`: fix the cause (Flagger role, rescue mode, repointed ComplianceCheck), or the Admin excludes by hand          |
 | `MissedExclusion`                | enforce       | auction:account | Follow [Troubleshooting MissedExclusion](#troubleshooting-missedexclusion), then record it. The fill stands and the claim stays frozen while the account is Flagged |
 | `ReinstateAvailable`             | enforce       | auction:account | Reinstate before Deposit ends if appropriate, or leave it: the account can withdraw its excluded balance                                                            |
@@ -403,7 +403,7 @@ Switches over a union are exhaustive and end with `assertNever()`. Each of the f
 - A good test calls one seam with a context and asserts on what it returns: the next Source state and events, the Findings, the Notices, what was sent (the flagged batches, the attempted exclusions and their outcomes). Tests don't assert on KV keys, call order inside a run, or internal helpers.
 - Seams, highest first. There is one per task, plus the two pure state machines that are already seams:
   - **Enforce:** `runEnforce(context, config)`. A test's context is a fake chain as data: Auctions in each phase, Positions, the flagged set, the head and Watermark, and an `exclude` that records calls and resolves or rejects with a given revert. It covers every row of machine 4 and of the Exclude attempt table, the re-deposit case, Cancelled Auctions, the lag table's rows for a withdrawal, an exclusion, `settleEarly` or `cancel`, `fulfillmentEnd` passing and a claim after the Watermark, the freshness states, the skipped `isFlagged` read, and the shared phase function. An unreachable index rejects the run before any `isFlagged` read or attempt.
-  - **Flag:** `runFlag(context, config)`. It carries the invariant: Target-set flagging and batching, Exemptions, Unbacked flags from Exemptions and from the Flagged addresses index, the Absent-Source pause, `ExemptionInvalid`, a malformed `compliance_exempt` failing the run, and a Notice per batch.
+  - **Flag:** `runFlag(context, config)`. It carries the invariant: Target-set flagging and batching, Exemptions, Unbacked flags from Exemptions and from the Flagged addresses index, the Absent-Source pause, `ExemptionInvalid`, a malformed `compliance_exemptions` failing the run, and a Notice per batch.
   - **Flagger check:** `runFlaggerCheck(context, config)`. A test's context is the Bot's address and a ComplianceCheck's Flaggers as data. It covers a Bot that isn't a Flagger (one `BotNotFlagger` naming it) and one that is (no Findings).
   - **Ingest:** `runIngest(context, config)`. A test's context is a Source as data: its persisted state, a `latestVersion` and `fetch` that return or throw, and the clock. It covers a first good fetch, an unchanged version, a failed fetch, a Publication that breaks a Limit, and `latestVersion` throwing.
   - **Source state machine:** `checkFetch`, `transition` and `sourceFindings`. They are pure over data and need no context. They cover acceptance, Limits, rejected-version memory, unconfirmed timing, and a refused entry rejecting the whole Publication.
@@ -437,7 +437,7 @@ Each line is a decision the review took, and any of them can be reverted.
 
 - Enforce runs every 20 minutes, not 30: Fulfillment has no minimum length.
 - A Limit rejection still compares against the last accepted Snapshot, so a large genuine delisting blocks later Publications until the Limits change (left as is; `SourceRejected` reports it).
-- A `compliance_exempt` entry with a valid address and no reason still exempts it and raises `ExemptionInvalid`.
+- A `compliance_exemptions` entry with a valid address and no reason still exempts it and raises `ExemptionInvalid`.
 - Each Finding kind declares its DEFCON level and reminder period in `FINDING_KINDS`, beside its action. Notices post at `NOTICE_LEVEL`.
 - `MissedExclusion` reminds daily: it can't resolve while the account is Flagged.
 - Every Finding and Notice line is logged before it is posted. A post that can't be sent (`webhook_url` unset) fails the task, and nothing is saved as posted.

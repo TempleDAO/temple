@@ -121,7 +121,7 @@ test.each<[string, Json]>([
   ['a string', B],
   ['a number', 1],
 ])(
-  'compliance_exempt set to %s fails the run before any chain read',
+  'compliance_exemptions set to %s fails the run before any chain read',
   async (_, exempt) => {
     const ctx: FlagContext = {
       ...deployment({
@@ -131,7 +131,7 @@ test.each<[string, Json]>([
       readHeadBlock: () => Promise.reject(new Error('read the chain')),
     };
     await expect(runFlag(ctx, config)).rejects.toThrow(
-      'compliance_exempt is not a JSON object of address → reason'
+      'compliance_exemptions is not a JSON object of address → reason'
     );
   }
 );
