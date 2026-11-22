@@ -76,6 +76,17 @@ export const FailedVersion = {
       ? undefined
       : { version: event.version, atMs: event.atMs };
   },
+  /**
+   * The failed version to keep after a `failed` event: the event's own, or,
+   * when the version check itself failed, the one already held, so its
+   * cooldown isn't reset.
+   */
+  after(
+    event: { version?: string; atMs: number },
+    held: FailedVersion | undefined
+  ): FailedVersion | undefined {
+    return FailedVersion.from(event) ?? held;
+  },
   /** Whether `latest` failed less than RETRY_MS before `atMs`. */
   holds(f: FailedVersion | undefined, latest: string, atMs: number): boolean {
     return f?.version === latest && atMs - f.atMs < FailedVersion.RETRY_MS;
@@ -239,19 +250,25 @@ export function transition(
           // A rejection outlives a failed check: SourceRejected stays open.
           if (state.problemStatus === 'rejected')
             return {
-              state: { ...state, failedVersion: FailedVersion.from(event) },
+              state: {
+                ...state,
+                failedVersion: FailedVersion.after(event, state.failedVersion),
+              },
             };
           return {
             state: {
               ...state,
               problem: event.error,
               problemStatus: 'failing',
-              failedVersion: FailedVersion.from(event),
+              failedVersion: FailedVersion.after(event, state.failedVersion),
             },
           };
         case 'rejected':
           return {
-            state: { ...state, failedVersion: FailedVersion.from(event) },
+            state: {
+              ...state,
+              failedVersion: FailedVersion.after(event, state.failedVersion),
+            },
           };
         case 'fresh':
         case 'failing':
@@ -261,7 +278,10 @@ export function transition(
               snapshot: state.snapshot,
               confirmedAtMs: state.confirmedAtMs,
               problem: event.error,
-              failedVersion: FailedVersion.from(event),
+              failedVersion: FailedVersion.after(
+                event,
+                state.status === 'failing' ? state.failedVersion : undefined
+              ),
             },
           };
         default:

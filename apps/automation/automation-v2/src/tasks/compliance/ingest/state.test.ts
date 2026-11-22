@@ -185,6 +185,27 @@ test('a failing Source skips the version that failed, and fetches a new one', ()
   );
 });
 
+test('a failed version check keeps the failed version and its cooldown', () => {
+  const failing = transition(
+    fresh([A, B], 'v1'),
+    { kind: 'failed', atMs: 10, error: 'truncated SDN.XML', version: 'v2' },
+    limits
+  ).state;
+  const checkFailed = transition(
+    failing,
+    { kind: 'failed', atMs: 20, error: 'version check: HTTP 503' },
+    limits
+  ).state;
+  expect(checkFailed).toMatchObject({
+    status: 'failing',
+    failedVersion: { version: 'v2', atMs: 10 },
+  });
+  expect(IngestEvent.probe(checkFailed, 'v2', 30)).toEqual({
+    kind: 'stillFailing',
+    atMs: 30,
+  });
+});
+
 test('a Rejected or Absent Source also skips a version that failed', () => {
   const failedV3 = {
     kind: 'failed',
