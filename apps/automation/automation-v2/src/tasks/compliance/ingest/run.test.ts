@@ -31,15 +31,15 @@ function source(s: {
     nowMs: () => s.now ?? 1_000,
   };
   const latest = s.latest;
+  // Assign, not spread: a copy's `fetched` would never count.
   return latest === undefined
     ? ctx
-    : {
-        ...ctx,
+    : Object.assign(ctx, {
         latestVersion: async () => {
           if (latest instanceof Error) throw latest;
           return latest;
         },
-      };
+      });
 }
 
 test('a first good fetch makes the Source fresh, with everything added', async () => {
