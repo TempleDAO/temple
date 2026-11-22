@@ -1,3 +1,5 @@
+import { isDeepStrictEqual } from 'node:util';
+import type { Json } from '@mountainpath9/overlord-core';
 import { assertNever } from '@/tlc/assert-never';
 import type { Finding } from '../attention';
 import { SourceState } from '../ingest';
@@ -104,6 +106,24 @@ export function planFlags(
     toFlag: target.addresses.filter((a) => !isFlagged.has(a)),
     findings,
   };
+}
+
+/**
+ * The Exemptions value to use: `compliance_exemptions`, or while it is unset
+ * the value of its old name, `compliance_exempt`. Both set and different
+ * fails the run: guessing could flag an exempt address, and the Bot never
+ * unflags.
+ */
+export function chooseExemptions(
+  current: Json | undefined,
+  legacy: Json | undefined
+): Json | undefined {
+  if (current === undefined) return legacy;
+  if (legacy !== undefined && !isDeepStrictEqual(current, legacy))
+    throw new Error(
+      'compliance_exemptions and compliance_exempt are both set and differ: unset compliance_exempt once compliance_exemptions holds every Exemption'
+    );
+  return current;
 }
 
 function isAbsent(state: SourceState): boolean {
