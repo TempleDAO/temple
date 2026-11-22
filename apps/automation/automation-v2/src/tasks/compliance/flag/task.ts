@@ -1,13 +1,18 @@
 import type { TaskContext } from '@mountainpath9/overlord-core';
 import { getPublicClient } from '@mountainpath9/overlord-viem';
-import { encodeFunctionData } from 'viem';
+import { encodeFunctionData, type Hex } from 'viem';
 import { ABI as ComplianceCheckAbi } from '@/abi/IComplianceCheck';
 import { assertNever } from '@/tlc/assert-never';
 import { runTask } from '../attention';
 import type { ComplianceDeployment } from '../config';
 import { explorerTxUrl } from '@/tasks/granary/shared';
 import { readSourceState, SourceState } from '../ingest';
-import { createSender, listUpTo, readIsFlagged } from '../shared';
+import {
+  createSender,
+  type LCAddress,
+  listUpTo,
+  readIsFlagged,
+} from '../shared';
 import { compliance_exemptions, compliance_max_flag_batch } from '../variables';
 import { scanFlaggedAddressesIndex } from './flagged-addresses-index';
 import {
@@ -81,15 +86,17 @@ async function productionFlagContext(
     readFlags: (addresses, atBlock) =>
       readIsFlagged(pclient, deployment.complianceCheck, addresses, atBlock),
     setFlagged: (batch) =>
-      send(
-        deployment.complianceCheck,
-        encodeFunctionData({
-          abi: ComplianceCheckAbi,
-          functionName: 'setFlagged',
-          args: [batch, true],
-        })
-      ),
+      send(deployment.complianceCheck, setFlaggedData(batch)),
   };
+}
+
+/** Calldata for `setFlagged(batch, true)`. Add-only: the Bot never unflags. */
+export function setFlaggedData(batch: readonly LCAddress[]): Hex {
+  return encodeFunctionData({
+    abi: ComplianceCheckAbi,
+    functionName: 'setFlagged',
+    args: [batch, true],
+  });
 }
 
 function noticeText(deployment: ComplianceDeployment, n: FlagNotice): string {
