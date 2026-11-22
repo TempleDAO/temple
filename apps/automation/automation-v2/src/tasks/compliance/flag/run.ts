@@ -23,7 +23,11 @@ export interface FlagContext {
    * object of address → reason fails the run before any chain read.
    */
   readExemptions(): Promise<Json | undefined>;
-  /** Scans `FlaggedSet` logs up to `atBlock` minus the confirmations. */
+  /**
+   * Scans `FlaggedSet` logs up to `atBlock` minus the confirmations. If it
+   * throws, the run flags as usual with an empty index and raises
+   * FlaggedAddressesIndexFailing.
+   */
   readFlaggedAddressesIndex(
     atBlock: bigint
   ): Promise<FlaggedAddressesIndexRead>;
@@ -89,14 +93,19 @@ export async function runFlag(
     );
   const atBlock = await ctx.readHeadBlock();
   const sources = await ctx.readSources();
-  const index = await ctx.readFlaggedAddressesIndex(atBlock);
+  const indexRead = await readIndexOrEmpty(ctx, atBlock);
+  const index = indexRead.index;
 
   const target = TargetSet.from(sources, exemptions);
   const isFlagged = await ctx.readFlags(
     [...new Set([...target.addresses, ...target.exempt, ...index.flagged])],
     atBlock
   );
-  const { toFlag, findings } = planFlags(target, index, isFlagged);
+  const planned = planFlags(target, index, isFlagged);
+  const toFlag = planned.toFlag;
+  const findings = indexRead.finding
+    ? [...planned.findings, indexRead.finding]
+    : planned.findings;
 
   const notices: FlagNotice[] = [];
   for (const batch of chunk(toFlag, config.maxFlagBatch)) {
@@ -115,6 +124,29 @@ export async function runFlag(
   }
 
   return { findings, notices };
+}
+
+/**
+ * The index only finds UnbackedFlags and names re-flags, so a failed scan
+ * never holds up flagging: it reads as empty and incomplete, and raises
+ * FlaggedAddressesIndexFailing instead.
+ */
+async function readIndexOrEmpty(
+  ctx: FlagContext,
+  atBlock: bigint
+): Promise<{ index: FlaggedAddressesIndexRead; finding?: Finding }> {
+  try {
+    return { index: await ctx.readFlaggedAddressesIndex(atBlock) };
+  } catch (e) {
+    return {
+      index: { flagged: new Set(), unflagged: new Set(), complete: false },
+      finding: {
+        kind: 'FlaggedAddressesIndexFailing',
+        key: '',
+        summary: `Flagged addresses index scan failed: ${String(e).split('\n')[0]}`,
+      },
+    };
+  }
 }
 
 function chunk<T>(items: readonly T[], size: number): T[][] {

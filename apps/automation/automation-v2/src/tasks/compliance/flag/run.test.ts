@@ -246,3 +246,21 @@ test('nothing missing: nothing sent and no Notice', async () => {
   expect((await runFlag(ctx, config)).notices).toEqual([]);
   expect(ctx.sent).toEqual([]);
 });
+
+test('a failed Flagged addresses index scan still flags, and raises FlaggedAddressesIndexFailing', async () => {
+  const ctx: FlagContext & { sent: LCAddress[][] } = {
+    ...deployment({ sources: [source('ofac-sdn', [A])], exempt: {} }),
+    readFlaggedAddressesIndex: () =>
+      Promise.reject(new Error('eth_getLogs: block range too large')),
+  };
+  const run = await runFlag(ctx, config);
+  expect(ctx.sent).toEqual([[A]]);
+  expect(run.findings).toEqual([
+    {
+      kind: 'FlaggedAddressesIndexFailing',
+      key: '',
+      summary:
+        'Flagged addresses index scan failed: Error: eth_getLogs: block range too large',
+    },
+  ]);
+});

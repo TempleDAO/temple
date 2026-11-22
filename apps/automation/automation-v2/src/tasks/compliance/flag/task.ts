@@ -65,7 +65,13 @@ async function productionFlagContext(
           ...FLAGGED_ADDRESSES_INDEX_SCAN,
         },
         atBlock
-      );
+      ).catch((e: unknown) => {
+        // runFlag carries on without the index; keep the full error here.
+        ctx.logger.warn(
+          `flag:${deployment.name} Flagged addresses index scan failed: ${String(e)}`
+        );
+        throw e;
+      });
       if (!index.complete)
         ctx.logger.info(
           `flag:${deployment.name} Flagged addresses index backfill continues next run`

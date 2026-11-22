@@ -89,6 +89,12 @@ export const FINDING_KINDS = {
     action:
       'Flagged, but not in the Target set: no Source lists it, or it is Exempt. The Bot never unflags. Back it by adding it to a Manual source, or the Admin unflags it.',
   },
+  FlaggedAddressesIndexFailing: {
+    level: 'defcon3',
+    remindEverySecs: 'default',
+    action:
+      'The Flagged addresses index scan failed (an RPC error such as an eth_getLogs range cap, or a stored index that no longer parses). Flagging continues; UnbackedFlag checks against the index and re-flag names are paused. Fix the RPC provider or the stored index.',
+  },
   ExemptionInvalid: {
     level: 'defcon3',
     remindEverySecs: 'default',
