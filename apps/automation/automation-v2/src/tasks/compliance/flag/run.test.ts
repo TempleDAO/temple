@@ -1,6 +1,7 @@
 import { expect, test } from 'vitest';
 import type { Hash } from 'viem';
 import type { Json } from '@mountainpath9/overlord-core';
+import { assertNever } from '@/tlc/assert-never';
 import { LCAddress, lcAddress } from '../shared';
 import { SourceState } from '../ingest';
 import type { FlaggedAddressesIndexRead } from './flagged-addresses-index';
@@ -19,17 +20,31 @@ const config: FlagConfig = { maxFlagBatch: 200 };
 function source(
   id: string,
   listed?: LCAddress[],
-  status: 'fresh' | 'failing' = 'fresh'
+  status: 'fresh' | 'failing' | 'rejected' = 'fresh'
 ): { id: string; state: SourceState } {
   if (!listed) return { id, state: SourceState.initial(0) };
   const snapshot = { addresses: listed, contentHash: '', firstSeenAtMs: 0 };
-  return {
-    id,
-    state:
-      status === 'fresh'
-        ? { status, snapshot, confirmedAtMs: 0 }
-        : { status, snapshot, confirmedAtMs: 0, problem: 'HTTP 503' },
-  };
+  switch (status) {
+    case 'fresh':
+      return { id, state: { status, snapshot, confirmedAtMs: 0 } };
+    case 'failing':
+      return {
+        id,
+        state: { status, snapshot, confirmedAtMs: 0, problem: 'HTTP 503' },
+      };
+    case 'rejected':
+      return {
+        id,
+        state: {
+          status,
+          snapshot,
+          confirmedAtMs: 0,
+          problem: '0 addresses, fewer than minCount 1',
+        },
+      };
+    default:
+      return assertNever(status);
+  }
 }
 
 /** A Deployment as plain data, at head block HEAD. `setFlagged` records each batch in `sent`. */
@@ -245,6 +260,13 @@ test('nothing missing: nothing sent and no Notice', async () => {
   });
   expect((await runFlag(ctx, config)).notices).toEqual([]);
   expect(ctx.sent).toEqual([]);
+});
+
+test('a Rejected Source still lists its last Snapshot and is not Absent', async () => {
+  const ctx = deployment({ sources: [source('ofac-sdn', [A], 'rejected')] });
+  const run = await runFlag(ctx, config);
+  expect(ctx.sent).toEqual([[A]]);
+  expect(run.findings.map((f) => f.kind)).not.toContain('SourceAbsent');
 });
 
 test('a failed Flagged addresses index scan still flags, and raises FlaggedAddressesIndexFailing', async () => {
