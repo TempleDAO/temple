@@ -19,7 +19,9 @@ export const compliance_max_flag_batch = new NumberVariable({
   description: 'Most addresses in one setFlagged transaction.',
   default: 200,
   min: 1,
-  max: 1000,
+  // A fresh flag costs ~25k gas: 500 is ~12.5M, 13.8M with the 1.1 estimate
+  // factor, under the 16,777,216 per-transaction cap (EIP-7825).
+  max: 500,
 });
 
 export const compliance_max_depositor_index_lag_blocks = new NumberVariable({
