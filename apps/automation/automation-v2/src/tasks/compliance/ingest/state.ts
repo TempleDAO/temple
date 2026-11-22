@@ -28,7 +28,8 @@ export interface Snapshot {
  * `problem` is why the last attempt failed or was rejected; on absent,
  * `problemStatus` says which.
  * `rejectedVersion` lets a Source with `latestVersion()` skip re-downloading
- * a Publication it already rejected.
+ * a Publication it already rejected, and `failedVersion` one whose download
+ * or parse failed, until `FailedVersion.RETRY_MS` has passed.
  */
 export type SourceState =
   | {
@@ -37,6 +38,7 @@ export type SourceState =
       problem?: string;
       problemStatus?: 'failing' | 'rejected';
       rejectedVersion?: string;
+      failedVersion?: FailedVersion;
     }
   | { status: 'fresh'; snapshot: Snapshot; confirmedAtMs: number }
   | {
@@ -44,6 +46,7 @@ export type SourceState =
       snapshot: Snapshot;
       confirmedAtMs: number;
       problem: string;
+      failedVersion?: FailedVersion;
     }
   | {
       status: 'rejected';
@@ -51,7 +54,33 @@ export type SourceState =
       confirmedAtMs: number;
       problem: string;
       rejectedVersion?: string;
+      failedVersion?: FailedVersion;
     };
+
+/** A version whose fetch failed, and when. */
+export interface FailedVersion {
+  version: string;
+  atMs: number;
+}
+
+export const FailedVersion = {
+  /**
+   * How long a run skips a version that failed. Long enough not to download
+   * a ~30 MB Publication every minute, short enough to retry a transient
+   * network error well within `unconfirmedAfterSecs`.
+   */
+  RETRY_MS: 60 * 60 * 1000,
+  /** The failure a `failed` event records, if it knows the version. */
+  from(event: { version?: string; atMs: number }): FailedVersion | undefined {
+    return event.version === undefined
+      ? undefined
+      : { version: event.version, atMs: event.atMs };
+  },
+  /** Whether `latest` failed less than RETRY_MS before `atMs`. */
+  holds(f: FailedVersion | undefined, latest: string, atMs: number): boolean {
+    return f?.version === latest && atMs - f.atMs < FailedVersion.RETRY_MS;
+  },
+};
 
 /** What a run observed. The ingest task produces exactly one per run. */
 export type IngestEvent =
@@ -59,6 +88,8 @@ export type IngestEvent =
   | { kind: 'unchanged'; atMs: number }
   /** `latestVersion()` matched a version already rejected: still rejected. */
   | { kind: 'stillRejected'; atMs: number }
+  /** `latestVersion()` matched a version that failed within RETRY_MS: skipped. */
+  | { kind: 'stillFailing'; atMs: number }
   | {
       kind: 'fetched';
       atMs: number;
@@ -67,7 +98,13 @@ export type IngestEvent =
       invalid?: readonly string[];
       version?: string;
     }
-  | { kind: 'failed'; atMs: number; error: string };
+  | {
+      kind: 'failed';
+      atMs: number;
+      error: string;
+      /** The `latestVersion()` this run was fetching, if any. */
+      version?: string;
+    };
 
 export interface SnapshotChange {
   added: LCAddress[];
@@ -111,15 +148,19 @@ export const IngestEvent = {
     switch (state.status) {
       case 'absent':
       case 'rejected':
-        return state.rejectedVersion === latest
-          ? { kind: 'stillRejected', atMs }
-          : 'fetch';
+        if (state.rejectedVersion === latest)
+          return { kind: 'stillRejected', atMs };
+        break;
       case 'fresh':
       case 'failing':
-        return 'fetch';
+        break;
       default:
         return assertNever(state);
     }
+    return state.status !== 'fresh' &&
+      FailedVersion.holds(state.failedVersion, latest, atMs)
+      ? { kind: 'stillFailing', atMs }
+      : 'fetch';
   },
 };
 
@@ -189,22 +230,29 @@ export function transition(
         : { state };
 
     case 'stillRejected':
+    case 'stillFailing':
       return { state };
 
     case 'failed':
       switch (state.status) {
         case 'absent':
           // A rejection outlives a failed check: SourceRejected stays open.
-          if (state.problemStatus === 'rejected') return { state };
+          if (state.problemStatus === 'rejected')
+            return {
+              state: { ...state, failedVersion: FailedVersion.from(event) },
+            };
           return {
             state: {
               ...state,
               problem: event.error,
               problemStatus: 'failing',
+              failedVersion: FailedVersion.from(event),
             },
           };
         case 'rejected':
-          return { state };
+          return {
+            state: { ...state, failedVersion: FailedVersion.from(event) },
+          };
         case 'fresh':
         case 'failing':
           return {
@@ -213,6 +261,7 @@ export function transition(
               snapshot: state.snapshot,
               confirmedAtMs: state.confirmedAtMs,
               problem: event.error,
+              failedVersion: FailedVersion.from(event),
             },
           };
         default:
@@ -226,7 +275,8 @@ export function transition(
           case 'absent':
             return {
               state: {
-                ...state,
+                status: 'absent',
+                absentSinceMs: state.absentSinceMs,
                 problem: checked.problem,
                 problemStatus: 'rejected',
                 rejectedVersion: event.version,

@@ -56,7 +56,7 @@ stateDiagram-v2
   fresh --> fresh: accepted / unchanged
   fresh --> failing: check failed
   fresh --> rejected: Publication breaks a Limit
-  failing --> failing: check failed
+  failing --> failing: check failed / same failed version again
   failing --> fresh: accepted / unchanged
   failing --> rejected: Publication breaks a Limit
   rejected --> fresh: accepted / unchanged
@@ -70,7 +70,7 @@ stateDiagram-v2
 | `failing`  | its last Snapshot               | `SourceUnconfirmed` once the last successful check is `unconfirmedAfterSecs` old                   |
 | `rejected` | its last Snapshot               | `SourceRejected`, immediately                                                                      |
 
-A Snapshot change (content hash differs) posts a Notice. "Unconfirmed source" is a condition on `confirmedAtMs` (or `absentSinceMs` while absent), not a state. `problem` is the last failure or rejection, a string; while absent, `problemStatus` (`failing` or `rejected`) says which. Stored states from before `sinceMs` was renamed `absentSinceMs`, and the absent `problem` became a string, are upgraded when read (`parseStoredSourceState`, `ingest/store.ts`).
+A Snapshot change (content hash differs) posts a Notice. "Unconfirmed source" is a condition on `confirmedAtMs` (or `absentSinceMs` while absent), not a state. `problem` is the last failure or rejection, a string; while absent, `problemStatus` (`failing` or `rejected`) says which. A versioned Source skips a version it rejected (`rejectedVersion`, the event `stillRejected`), and for `FailedVersion.RETRY_MS` (1 h) one whose download or parse failed (`failedVersion`, the event `stillFailing`), so neither re-downloads every minute. A failed version is retried after that, in case the failure was transient. Stored states from before `sinceMs` was renamed `absentSinceMs`, and the absent `problem` became a string, are upgraded when read (`parseStoredSourceState`, `ingest/store.ts`).
 
 ### 2. Finding
 
@@ -158,7 +158,7 @@ Each `exclude` is tried optimistically and caught on its own (`attemptExclude` i
 15. As an operator, I want a Source that has never produced a Snapshot to count as unknown and not as empty, so that a first-run failure doesn't look like "nobody is sanctioned".
 16. As an operator, I want a Source that keeps failing to raise one Finding after it has gone unconfirmed for too long, and not one per failed check, so that a short outage doesn't page anyone.
 17. As an operator, I want a rejected Publication to raise a Finding immediately, so that someone fixes the data or the Limits.
-18. As an operator, I want the same rejected Publication not to be downloaded again every minute, so that a 30 MB OFAC file isn't fetched in a loop.
+18. As an operator, I want the same rejected or unparsable Publication not to be downloaded again every minute, so that a 30 MB OFAC file isn't fetched in a loop.
 19. As an operator, I want an OFAC Publication that doesn't change any crypto address to produce no Snapshot change and no Notice, so that the channel only carries real changes.
 20. As an operator, I want an Absent Source to stop no one else from flagging, so that the other Sources still protect the Deployment.
 21. As an operator, I want Unbacked flag checks to pause while any Source is Absent, so that an unknown Source doesn't produce a flood of false Unbacked flags.
@@ -405,7 +405,7 @@ Switches over a union are exhaustive and end with `assertNever()`. Each of the f
   - **Enforce:** `runEnforce(context, config)`. A test's context is a fake chain as data: Auctions in each phase, Positions, the flagged set, the head and Watermark, and an `exclude` that records calls and resolves or rejects with a given revert. It covers every row of machine 4 and of the Exclude attempt table, the re-deposit case, Cancelled Auctions, the lag table's rows for a withdrawal, an exclusion, `settleEarly` or `cancel`, `fulfillmentEnd` passing and a claim after the Watermark, the freshness states, the skipped `isFlagged` read, and the shared phase function. An unreachable index rejects the run before any `isFlagged` read or attempt.
   - **Flag:** `runFlag(context, config)`. It carries the invariant: Target-set flagging and batching, Exemptions, Unbacked flags from Exemptions and from the Flagged addresses index, the Absent-Source pause, `ExemptionInvalid`, a malformed `compliance_exemptions` failing the run, and a Notice per batch.
   - **Flagger check:** `runFlaggerCheck(context, config)`. A test's context is the Bot's address and a ComplianceCheck's Flaggers as data. It covers a Bot that isn't a Flagger (one `BotNotFlagger` naming it) and one that is (no Findings).
-  - **Ingest:** `runIngest(context, config)`. A test's context is a Source as data: its persisted state, a `latestVersion` and `fetch` that return or throw, and the clock. It covers a first good fetch, an unchanged version, a failed fetch, a Publication that breaks a Limit, and `latestVersion` throwing.
+  - **Ingest:** `runIngest(context, config)`. A test's context is a Source as data: its persisted state, a `latestVersion` and `fetch` that return or throw, and the clock. It covers a first good fetch, an unchanged version, a failed fetch, a version that failed not being fetched again, a Publication that breaks a Limit, and `latestVersion` throwing.
   - **Source state machine:** `checkFetch`, `transition` and `sourceFindings`. They are pure over data and need no context. They cover acceptance, Limits, rejected-version memory, unconfirmed timing, and a refused entry rejecting the whole Publication.
   - **Finding lifecycle:** `reconcileFindings`, pure over data. It covers open, reminder (per kind), resolve and owner isolation. `runWithFindings` and `reportRun` are tested beside it: a body that throws fails the task and touches no KV, a Finding that can't be posted is logged and fails the run with nothing saved, and a run's send failure is thrown after its Notices are posted.
 - The Target set and flag rules, the Depositor index's freshness, the Auction phase function, and the classification of Depositors and attempt outcomes are internal helpers. They are tested only through `runFlag` and `runEnforce`, with one exception: `enforce/plan.test.ts` tests machine 4 (`DepositorState.from`) against `PositionRead.forPhase` directly, since no run can show a Position the read never fetched. The Flagged addresses index scan is tested on its own (`scanFlaggedAddressesIndex`).

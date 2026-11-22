@@ -169,3 +169,24 @@ test('latestVersion throwing fails the check without fetching', async () => {
     snapshot: { addresses: [A, B] },
   });
 });
+
+test('a new version that fails to download or parse is not fetched again within FailedVersion.RETRY_MS', async () => {
+  const run = await runIngest(
+    source({
+      state: await freshV1([A, B]),
+      latest: 'v2',
+      publication: new Error('Record_Count 3 but 2 entries'),
+    }),
+    config
+  );
+  expect(run.next).toMatchObject({
+    status: 'failing',
+    failedVersion: { version: 'v2', atMs: 1_000 },
+  });
+
+  const again = source({ state: run.next, latest: 'v2', now: 2_000 });
+  const second = await runIngest(again, config);
+  expect(second.event).toEqual({ kind: 'stillFailing', atMs: 2_000 });
+  expect(second.next).toEqual(run.next);
+  expect(again.fetched).toBe(0);
+});

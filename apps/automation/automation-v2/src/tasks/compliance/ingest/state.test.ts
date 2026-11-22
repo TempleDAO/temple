@@ -1,6 +1,12 @@
 import { expect, test } from 'vitest';
 import type { SourceLimits } from './sources';
-import { IngestEvent, sourceFindings, SourceState, transition } from './state';
+import {
+  FailedVersion,
+  IngestEvent,
+  sourceFindings,
+  SourceState,
+  transition,
+} from './state';
 import { parseStoredSourceState } from './store';
 
 const A = '0x00000000000000000000000000000000000000aa';
@@ -157,6 +163,49 @@ test('rejected raises SourceRejected at once', () => {
   expect(sourceFindings('s', rejected, limits, 5)).toMatchObject([
     { kind: 'SourceRejected' },
   ]);
+});
+
+test('a failing Source skips the version that failed, and fetches a new one', () => {
+  const failing = transition(
+    fresh([A, B], 'v1'),
+    { kind: 'failed', atMs: 10, error: 'truncated SDN.XML', version: 'v2' },
+    limits
+  ).state;
+  expect(failing).toMatchObject({
+    status: 'failing',
+    failedVersion: { version: 'v2', atMs: 10 },
+  });
+  expect(IngestEvent.probe(failing, 'v2', 20)).toEqual({
+    kind: 'stillFailing',
+    atMs: 20,
+  });
+  expect(IngestEvent.probe(failing, 'v3', 20)).toBe('fetch');
+  expect(IngestEvent.probe(failing, 'v2', 10 + FailedVersion.RETRY_MS)).toBe(
+    'fetch'
+  );
+});
+
+test('a Rejected or Absent Source also skips a version that failed', () => {
+  const failedV3 = {
+    kind: 'failed',
+    atMs: 10,
+    error: 'truncated',
+    version: 'v3',
+  } as const;
+  const rejected = transition(
+    fresh([A, B]),
+    fetched(5, [], 'v2'),
+    limits
+  ).state;
+  const absent = SourceState.initial(0);
+  for (const state of [rejected, absent]) {
+    const next = transition(state, failedV3, limits).state;
+    expect(next.status).toBe(state.status);
+    expect(IngestEvent.probe(next, 'v3', 20)).toEqual({
+      kind: 'stillFailing',
+      atMs: 20,
+    });
+  }
 });
 
 test('a stored absent state from before the rename still parses', () => {

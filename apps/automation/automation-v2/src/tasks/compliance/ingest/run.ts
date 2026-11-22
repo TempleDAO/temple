@@ -55,8 +55,9 @@ export async function runIngest(
   const previous = (await ctx.readState()) ?? SourceState.initial(nowMs);
 
   let event: IngestEvent;
+  let latest: string | undefined;
   try {
-    const latest = await ctx.latestVersion?.();
+    latest = await ctx.latestVersion?.();
     const probed = IngestEvent.probe(previous, latest, nowMs);
     event =
       probed === 'fetch'
@@ -67,6 +68,7 @@ export async function runIngest(
       kind: 'failed',
       atMs: nowMs,
       error: String(e).slice(0, CHECK_ERROR_MAX_CHARS),
+      ...(latest !== undefined && { version: latest }),
     };
   }
 
