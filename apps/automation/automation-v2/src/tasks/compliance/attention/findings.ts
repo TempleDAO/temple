@@ -95,13 +95,13 @@ export const FINDING_KINDS = {
     action:
       'An entry in compliance_exemptions is invalid. A bad address exempts nothing; a valid address with no reason still exempts it. Add the reason or fix the address.',
   },
-  ExcludeFailed: {
+  ExclusionFailed: {
     level: 'defcon3',
     remindEverySecs: 'default',
     action:
       'The Bot could not exclude a Flagged Depositor from an Auction. Before fulfillmentEnd, and before any settleEarly: fix the cause (Flagger role, rescue mode, repointed ComplianceCheck), or the Admin excludes by hand.',
   },
-  AuctionComplianceCheckUnserved: {
+  AuctionComplianceCheckUnenforced: {
     level: 'defcon3',
     remindEverySecs: 'default',
     action:

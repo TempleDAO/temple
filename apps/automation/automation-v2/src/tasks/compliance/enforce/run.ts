@@ -88,7 +88,7 @@ export type EnforceConfig = {
   /**
    * ComplianceChecks some Deployment enforces on this factory's Auctions.
    * Set on one Deployment per factory (the first registered), which raises
-   * AuctionComplianceCheckUnserved for Auctions on any other; undefined on
+   * AuctionComplianceCheckUnenforced for Auctions on any other; undefined on
    * the rest, so the Finding isn't raised once per owner.
    */
   enforcedComplianceChecks: ReadonlySet<LCAddress> | undefined;
@@ -216,7 +216,7 @@ export async function runEnforce(
         beforeWindowCloses(auctionPhaseAt(a, nowSecs))
       )
         findings.push({
-          kind: 'AuctionComplianceCheckUnserved',
+          kind: 'AuctionComplianceCheckUnenforced',
           key: a.address,
           summary: `Auction ${a.address} points at ComplianceCheck ${a.complianceCheck}, which no Deployment enforces. Its Flagged Depositors won't be excluded. Its Exclusion window closes at fulfillmentEnd ${isoAt(a.fulfillmentEnd)}.`,
         });
@@ -311,13 +311,13 @@ async function attemptExclude(
   }
 }
 
-/** The ExcludeFailed Finding for a failed attempt, keyed by (Auction, account). */
+/** The ExclusionFailed Finding for a failed attempt, keyed by (Auction, account). */
 function excludeFailed(
   attempt: ExcludeAttempt & { outcome: 'failed' },
   auction: EnforcedAuction
 ): Finding {
   return {
-    kind: 'ExcludeFailed',
+    kind: 'ExclusionFailed',
     key: pairKey(attempt.auction, attempt.account),
     summary:
       `exclude ${attempt.account} on Auction ${attempt.auction} failed: ${attempt.error}. ` +
