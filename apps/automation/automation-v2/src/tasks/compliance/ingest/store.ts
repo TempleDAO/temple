@@ -9,7 +9,41 @@ export async function readSourceState(
   sourceId: string
 ): Promise<SourceState | undefined> {
   const saved = await ctx.kvGet(sourceStateKey(sourceId));
-  return saved === undefined ? undefined : sourceStateSchema.parse(saved);
+  return saved === undefined ? undefined : parseStoredSourceState(saved);
+}
+
+/**
+ * A stored Source state, including one written before `sinceMs` became
+ * `absentSinceMs` and an absent `problem` became a string plus
+ * `problemStatus`.
+ */
+export function parseStoredSourceState(saved: unknown): SourceState {
+  return sourceStateSchema.parse(upgradeAbsent(saved));
+}
+
+// shortcut: upgrades the pre-rename absent shape on read; drop once every
+// stored Source has been rewritten (each ingest run rewrites its state).
+function upgradeAbsent(saved: unknown): unknown {
+  if (
+    typeof saved !== 'object' ||
+    saved === null ||
+    !('status' in saved) ||
+    saved.status !== 'absent' ||
+    !('sinceMs' in saved)
+  )
+    return saved;
+  const { sinceMs, problem, ...rest } = saved as {
+    sinceMs: unknown;
+    problem?: { kind?: unknown; message?: unknown };
+  };
+  return {
+    ...rest,
+    absentSinceMs: sinceMs,
+    ...(problem && {
+      problem: problem.message,
+      problemStatus: problem.kind === 'failed' ? 'failing' : problem.kind,
+    }),
+  };
 }
 
 export async function writeSourceState(
@@ -39,13 +73,9 @@ const sourceStateSchema: z.ZodType<SourceState, z.ZodTypeDef, unknown> =
   z.discriminatedUnion('status', [
     z.object({
       status: z.literal('absent'),
-      sinceMs: z.number(),
-      problem: z
-        .object({
-          kind: z.enum(['failed', 'rejected']),
-          message: z.string(),
-        })
-        .optional(),
+      absentSinceMs: z.number(),
+      problem: z.string().optional(),
+      problemStatus: z.enum(['failing', 'rejected']).optional(),
       rejectedVersion: z.string().optional(),
     }),
     z.object({

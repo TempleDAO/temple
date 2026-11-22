@@ -24,16 +24,18 @@ export interface Snapshot {
  * - rejected: the latest Publication broke the Limits; the Snapshot still stands.
  *
  * `confirmedAtMs` is the last successful check, the clock for
- * SourceUnconfirmed; an absent Source uses `sinceMs`.
+ * SourceUnconfirmed; an absent Source uses `absentSinceMs`.
+ * `problem` is why the last attempt failed or was rejected; on absent,
+ * `problemStatus` says which.
  * `rejectedVersion` lets a Source with `latestVersion()` skip re-downloading
  * a Publication it already rejected.
  */
 export type SourceState =
   | {
       status: 'absent';
-      sinceMs: number;
-      /** Why the last attempt produced nothing, if it failed or was rejected. */
-      problem?: { kind: 'failed' | 'rejected'; message: string };
+      absentSinceMs: number;
+      problem?: string;
+      problemStatus?: 'failing' | 'rejected';
       rejectedVersion?: string;
     }
   | { status: 'fresh'; snapshot: Snapshot; confirmedAtMs: number }
@@ -76,7 +78,7 @@ export const SourceState = {
   /** A Source that has never produced a Snapshot. */
   initial: (nowMs: number): SourceState => ({
     status: 'absent',
-    sinceMs: nowMs,
+    absentSinceMs: nowMs,
   }),
   /** Its last accepted Snapshot; undefined only when Absent. */
   snapshot(s: SourceState): Snapshot | undefined {
@@ -193,11 +195,12 @@ export function transition(
       switch (state.status) {
         case 'absent':
           // A rejection outlives a failed check: SourceRejected stays open.
-          if (state.problem?.kind === 'rejected') return { state };
+          if (state.problemStatus === 'rejected') return { state };
           return {
             state: {
               ...state,
-              problem: { kind: 'failed', message: event.error },
+              problem: event.error,
+              problemStatus: 'failing',
             },
           };
         case 'rejected':
@@ -224,7 +227,8 @@ export function transition(
             return {
               state: {
                 ...state,
-                problem: { kind: 'rejected', message: checked.problem },
+                problem: checked.problem,
+                problemStatus: 'rejected',
                 rejectedVersion: event.version,
               },
             };
@@ -291,20 +295,20 @@ export function sourceFindings(
           ]
         : [];
     case 'absent':
-      if (state.problem?.kind === 'rejected')
+      if (state.problem !== undefined && state.problemStatus === 'rejected')
         return [
           {
             kind: 'SourceRejected',
             key: sourceId,
-            summary: state.problem.message,
+            summary: state.problem,
           },
         ];
-      return nowMs - state.sinceMs >= unconfirmedMs
+      return nowMs - state.absentSinceMs >= unconfirmedMs
         ? [
             {
               kind: 'SourceUnconfirmed',
               key: sourceId,
-              summary: `never fetched successfully: ${state.problem?.message ?? 'no attempt completed'}`,
+              summary: `never fetched successfully: ${state.problem ?? 'no attempt completed'}`,
             },
           ]
         : [];

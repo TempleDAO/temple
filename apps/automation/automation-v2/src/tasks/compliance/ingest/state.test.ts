@@ -1,6 +1,7 @@
 import { expect, test } from 'vitest';
 import type { SourceLimits } from './sources';
 import { IngestEvent, sourceFindings, SourceState, transition } from './state';
+import { parseStoredSourceState } from './store';
 
 const A = '0x00000000000000000000000000000000000000aa';
 const B = '0x00000000000000000000000000000000000000bb';
@@ -79,7 +80,8 @@ test('a source that never succeeded stays absent, with the reason', () => {
   const { state } = transition(SourceState.initial(0), fetched(1, [A]), limits);
   expect(state).toMatchObject({
     status: 'absent',
-    problem: { kind: 'rejected' },
+    problem: '1 addresses, fewer than minCount 2',
+    problemStatus: 'rejected',
   });
 });
 
@@ -155,4 +157,37 @@ test('rejected raises SourceRejected at once', () => {
   expect(sourceFindings('s', rejected, limits, 5)).toMatchObject([
     { kind: 'SourceRejected' },
   ]);
+});
+
+test('a stored absent state from before the rename still parses', () => {
+  expect(
+    parseStoredSourceState({
+      status: 'absent',
+      sinceMs: 5,
+      problem: { kind: 'failed', message: 'HTTP 503' },
+    })
+  ).toEqual({
+    status: 'absent',
+    absentSinceMs: 5,
+    problem: 'HTTP 503',
+    problemStatus: 'failing',
+  });
+  expect(
+    parseStoredSourceState({
+      status: 'absent',
+      sinceMs: 5,
+      problem: { kind: 'rejected', message: 'too few' },
+      rejectedVersion: 'v1',
+    })
+  ).toEqual({
+    status: 'absent',
+    absentSinceMs: 5,
+    problem: 'too few',
+    problemStatus: 'rejected',
+    rejectedVersion: 'v1',
+  });
+  expect(parseStoredSourceState({ status: 'absent', sinceMs: 5 })).toEqual({
+    status: 'absent',
+    absentSinceMs: 5,
+  });
 });
