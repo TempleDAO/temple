@@ -70,7 +70,7 @@ stateDiagram-v2
 | `failing`  | its last Snapshot               | `SourceUnconfirmed` once the last successful check is `unconfirmedAfterSecs` old                   |
 | `rejected` | its last Snapshot               | `SourceRejected`, immediately                                                                      |
 
-A Snapshot change (content hash differs) posts a Notice. "Unconfirmed source" is a condition on `confirmedAtMs` (or `absentSinceMs` while absent), not a state. `problem` is the last failure or rejection, a string; while absent, `problemStatus` (`failing` or `rejected`) says which. A versioned Source skips a version it rejected (`rejectedVersion`, the event `stillRejected`), and for `FailedVersion.RETRY_MS` (1 h) one whose download or parse failed (`failedVersion`, the event `stillFailing`), so neither re-downloads every minute. A failed version is retried after that, in case the failure was transient. Stored states from before `sinceMs` was renamed `absentSinceMs`, and the absent `problem` became a string, are upgraded when read (`parseStoredSourceState`, `ingest/store.ts`).
+A Snapshot change (content hash differs) posts a Notice. "Unconfirmed source" is a condition on `confirmedAtMs` (or `absentSinceMs` while absent), not a state. `problem` is the last failure or rejection, a string; while absent, `problemStatus` (`failing` or `rejected`) says which. A versioned Source skips a version it rejected (`rejectedVersion`, the event `stillRejected`), and for `FailedVersion.RETRY_MS` (1 h) one whose download or parse failed (`failedVersion`, the event `stillFailing`), so neither re-downloads every minute. A failed version is retried after that, in case the failure was transient.
 
 ### 2. Finding
 

@@ -7,7 +7,6 @@ import {
   SourceState,
   transition,
 } from './state';
-import { parseStoredSourceState } from './store';
 
 const A = '0x00000000000000000000000000000000000000aa';
 const B = '0x00000000000000000000000000000000000000bb';
@@ -227,37 +226,4 @@ test('a Rejected or Absent Source also skips a version that failed', () => {
       atMs: 20,
     });
   }
-});
-
-test('a stored absent state from before the rename still parses', () => {
-  expect(
-    parseStoredSourceState({
-      status: 'absent',
-      sinceMs: 5,
-      problem: { kind: 'failed', message: 'HTTP 503' },
-    })
-  ).toEqual({
-    status: 'absent',
-    absentSinceMs: 5,
-    problem: 'HTTP 503',
-    problemStatus: 'failing',
-  });
-  expect(
-    parseStoredSourceState({
-      status: 'absent',
-      sinceMs: 5,
-      problem: { kind: 'rejected', message: 'too few' },
-      rejectedVersion: 'v1',
-    })
-  ).toEqual({
-    status: 'absent',
-    absentSinceMs: 5,
-    problem: 'too few',
-    problemStatus: 'rejected',
-    rejectedVersion: 'v1',
-  });
-  expect(parseStoredSourceState({ status: 'absent', sinceMs: 5 })).toEqual({
-    status: 'absent',
-    absentSinceMs: 5,
-  });
 });
