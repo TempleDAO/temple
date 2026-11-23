@@ -14,13 +14,6 @@ export const compliance_exemptions = new JsonVariable({
     'Exemptions, as a JSON object of address → reason: {"0xabc…": "why it must not be flagged"}. Addresses a Source lists that must not be flagged. Removed from the Target set, so the Bot never flags them. If one is flagged, the Admin unflags it (an UnbackedFlag finding says so). An entry with a bad address exempts nothing and raises ExemptionInvalid; an entry with a valid address but no reason still exempts it and raises ExemptionInvalid. A value that is not a JSON object fails every flag run until it is fixed; unset or null means no Exemptions.',
 });
 
-// shortcut: the Exemptions variable's name before it became compliance_exemptions, read only so values already set under it keep working; delete once compliance_exemptions is set on every network.
-export const compliance_exempt_legacy = new JsonVariable({
-  name: 'compliance_exempt',
-  description:
-    'Deprecated: set compliance_exemptions instead. Read only while compliance_exemptions is unset; if both are set and differ, every flag run fails.',
-});
-
 export const compliance_max_flag_batch = new NumberVariable({
   name: 'compliance_max_flag_batch',
   description: 'Most addresses in one setFlagged transaction.',

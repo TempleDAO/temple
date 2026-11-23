@@ -13,17 +13,12 @@ import {
   listUpTo,
   readIsFlagged,
 } from '../shared';
-import {
-  compliance_exempt_legacy,
-  compliance_exemptions,
-  compliance_max_flag_batch,
-} from '../variables';
+import { compliance_exemptions, compliance_max_flag_batch } from '../variables';
 import { scanFlaggedAddressesIndex } from './flagged-addresses-index';
 import {
   FLAGGED_ADDRESSES_INDEX_SCAN,
   productionFlaggedAddressesIndexContext,
 } from './flagged-addresses-index-store';
-import { chooseExemptions } from './plan';
 import { FlagContext, FlagNotice, runFlag } from './run';
 
 /**
@@ -66,11 +61,7 @@ async function productionFlagContext(
             (await readSourceState(ctx, id)) ?? SourceState.initial(Date.now()),
         }))
       ),
-    readExemptions: async () =>
-      chooseExemptions(
-        await compliance_exemptions.getValue(ctx),
-        await compliance_exempt_legacy.getValue(ctx)
-      ),
+    readExemptions: () => compliance_exemptions.getValue(ctx),
     readFlaggedAddressesIndex: async (atBlock) => {
       const index = await scanFlaggedAddressesIndex(
         productionFlaggedAddressesIndexContext(ctx, deployment, pclient),
