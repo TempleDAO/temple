@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
+import styled from 'styled-components';
 import type { Amount, Auction, Phase } from '../data/types';
 import {
   fillPct,
@@ -14,6 +15,7 @@ import {
   pairName,
   parseTyped,
   phaseOf,
+  plain,
   settlementFor,
   ZERO,
 } from '../data/derive';
@@ -31,11 +33,12 @@ import {
 } from '../data/hooks';
 import {
   Bar,
+  C,
   Card,
   Chips,
   Field,
   Grid2,
-  H4,
+  H4 as BaseH4,
   InputBox,
   K,
   Moon,
@@ -210,13 +213,51 @@ const otherState = (a: Auction, p: Phase) =>
     : `opens ${fmtDayTime(a.depositStart)}`;
 
 const PriceRow = ({ a }: { a: Auction }) => (
-  <Row>
-    <K>Fixed price</K>
-    <Price>
+  <Spaced>
+    <Label>Fixed price offered per {a.bidToken}</Label>
+    <BigPrice>
       1 {a.bidToken} = {fmtPrice(a.price)} {a.fillToken}
-    </Price>
-  </Row>
+    </BigPrice>
+  </Spaced>
 );
+
+// The auction cards' titles, a step up from the shared H4.
+const H4 = styled(BaseH4)`
+  font-size: 18px;
+`;
+// Room above and below the price, under the card's title.
+const Spaced = styled(Row)`
+  padding: 6px 0 4px;
+`;
+// Upper-case, like the DEPOSIT field label.
+const Label = styled.span`
+  font-size: 11px;
+  color: ${C.muted};
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+`;
+const BigPrice = styled(Price)`
+  font-size: 14px;
+`;
+// The DEPOSIT label, with the wallet balance on the same line.
+const FieldHead = styled.span`
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+`;
+const Balance = styled(TextButton)`
+  font-size: 12px;
+  letter-spacing: normal;
+  text-transform: none;
+  &:disabled {
+    color: ${C.muted};
+    font-weight: 400;
+    cursor: default;
+    text-decoration: none;
+  }
+`;
 
 const DepositCard = ({ a, balance }: { a: Auction; balance: Amount }) => {
   const { deposit } = useAuctionActions();
@@ -241,10 +282,26 @@ const DepositCard = ({ a, balance }: { a: Auction; balance: Amount }) => {
         <PhaseChip phase="Deposit" />
       </Row>
       <PriceRow a={a} />
-      <Field>
-        <span>Deposit</span>
+      <Field as="div">
+        <FieldHead>
+          <Label as="label" htmlFor={`deposit-${a.id}`}>
+            Deposit
+          </Label>
+          {/* click to deposit the whole balance */}
+          <Balance
+            type="button"
+            disabled={!account || !isPositive(balance)}
+            onClick={() => {
+              setText(plain(balance));
+              setDone('');
+            }}
+          >
+            {fmt(balance)} {a.bidToken} in your wallet
+          </Balance>
+        </FieldHead>
         <InputBox>
           <input
+            id={`deposit-${a.id}`}
             inputMode="decimal"
             placeholder="0"
             value={text}
@@ -256,25 +313,28 @@ const DepositCard = ({ a, balance }: { a: Auction; balance: Amount }) => {
           />
           <Tok>{a.bidToken}</Tok>
         </InputBox>
-        <Note $bad={over || below || !valid}>
-          {!valid
-            ? `Enter a number with at most ${decimals} decimal places`
-            : below
-            ? `Your deposit must total at least ${fmt(a.minDeposit)} ${
-                a.bidToken
-              }`
-            : `${over ? 'More than the ' : ''}${fmt(balance)} ${
-                a.bidToken
-              } in your wallet`}
-        </Note>
+        {(over || below || !valid) && (
+          <Note $bad>
+            {!valid
+              ? `Enter a number with at most ${decimals} decimal places`
+              : below
+              ? `Your deposit must total at least ${fmt(a.minDeposit)} ${
+                  a.bidToken
+                }`
+              : `More than the ${fmt(balance)} ${a.bidToken} in your wallet`}
+          </Note>
+        )}
       </Field>
       <Row>
-        <K>You&apos;d get at full funding</K>
+        <K>At full funding, you will receive</K>
         <V>{ok ? `${fmt(typed.mul(a.price))} ${a.fillToken}` : '–'}</V>
       </Row>
       <Note>
-        If the Treasury funds less, you get a pro‑rata share and the rest of
-        your {a.bidToken} back. You can withdraw until{' '}
+        If the Treasury funds &lt;100%, you will get a pro‑rata share of{' '}
+        {a.fillToken} plus a refund of any unfilled {a.bidToken}.
+      </Note>
+      <Note>
+        You may make deposits or withdraw your deposit until{' '}
         {fmtDayTime(a.depositEnd)}.
       </Note>
       <TxBtn
@@ -315,7 +375,7 @@ const PositionCard = ({ a }: { a: Auction }) => {
         </V>
       </Row>
       <Row>
-        <K>At full funding you receive</K>
+        <K>At full funding, you will receive</K>
         <V>
           {fmt(pos.deposit.mul(a.price))} {a.fillToken}
         </V>

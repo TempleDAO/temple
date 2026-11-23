@@ -40,6 +40,7 @@ import {
   Card,
   Field,
   H4,
+  InfoBanner,
   InputBox,
   Note,
   Row,
@@ -345,10 +346,19 @@ const WishPanel = ({
           </InputBox>
         </Field>
       </Fields>
-      <Note>
-        No tokens leave your wallet. Your wish counts until it expires, less
-        what you buy in {give} → {get} auctions after making it.
-      </Note>
+      <InfoBanner>
+        <p>
+          Wishes are petitions to the Temple and are non-binding. The Treasury
+          may or may not create the Auction for the wished token pair.
+        </p>
+        <p>
+          Your wish will be submitted and will be valid until it expires. Your
+          wish will be reduced by any Auction fills for the same token.
+        </p>
+        <p>
+          <i>No Tokens will leave or enter your wallet when you make a wish!</i>
+        </p>
+      </InfoBanner>
       {current && (
         <Note>
           Saving replaces your wish of {fmt(current.amount)} {current.give}{' '}

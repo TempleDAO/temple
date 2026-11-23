@@ -23,6 +23,19 @@ export const phaseOf = (a: Auction, now: Date): Phase => {
 
 export const isRunning = (p: Phase) => p !== 'Settlement' && p !== 'Cancelled';
 
+// The phase a cancelled auction was in when it was cancelled.
+export const phaseAtCancel = (a: Auction): Phase => {
+  const t = a.cancelledAt;
+  if (!t) return 'Cancelled';
+  return t >= a.fulfillmentEnd
+    ? 'Settlement'
+    : t >= a.depositEnd
+    ? 'Fulfillment'
+    : t >= a.depositStart
+    ? 'Deposit'
+    : 'Scheduled';
+};
+
 // The time the current phase ends; for a finished auction, when it ended.
 export const deadlineOf = (a: Auction, p: Phase) =>
   p === 'Scheduled'

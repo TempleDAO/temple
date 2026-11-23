@@ -39,30 +39,20 @@ export const PairHistory = () => {
   const rows = onlyMine ? auctions.filter(mine) : auctions;
   const name = pairName(pair.bidToken, pair.fillToken);
 
+  // the fill is only final at settlement
   const filled = (a: Auction) => {
     const p = phaseOf(a, now);
-    return p === 'Deposit' || p === 'Scheduled'
-      ? p === 'Scheduled'
-        ? 'scheduled'
-        : 'taking deposits'
-      : p === 'Fulfillment'
-      ? `${fillPct(a)}% funded so far`
+    return p === 'Scheduled'
+      ? 'Scheduled'
+      : p === 'Deposit' || p === 'Fulfillment'
+      ? 'Pending'
       : p === 'Cancelled'
-      ? 'cancelled'
+      ? 'Cancelled'
       : `${fillPct(a)}%`;
   };
   const you = (a: Auction) => {
     const pos = mine(a);
-    if (!pos) return null;
-    const p = phaseOf(a, now);
-    const status = a.paused
-      ? 'paused'
-      : pos.claimed
-      ? 'claimed'
-      : p === 'Settlement' || p === 'Cancelled'
-      ? 'claim ready'
-      : 'in';
-    return `${fmt(pos.deposit)} ${a.bidToken} · ${status}`;
+    return pos ? `${fmt(pos.deposit)} ${a.bidToken}` : null;
   };
 
   return (
@@ -114,7 +104,7 @@ export const PairHistory = () => {
               <th>Price</th>
               <th>Deposited</th>
               <th>Filled</th>
-              <th>You</th>
+              <th>Your Deposit</th>
             </tr>
           </thead>
           <tbody>
@@ -141,7 +131,7 @@ export const PairHistory = () => {
                     {p === 'Deposit' ? ' so far' : ''}
                   </td>
                   <td data-k="Filled">{filled(a)}</td>
-                  <td data-k="You">{you(a) ?? <Note>—</Note>}</td>
+                  <td data-k="Your Deposit">{you(a) ?? <Note>—</Note>}</td>
                 </tr>
               );
             })}

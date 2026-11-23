@@ -11,6 +11,7 @@ import styled, { css } from 'styled-components';
 import { Button } from 'components/Button/Button';
 import Loader from 'components/Loader/Loader';
 import { phone } from 'styles/breakpoints';
+import infoSvg from 'assets/icons/info.svg?react';
 import type { Auction, Phase } from './data/types';
 import { fmtDay, fmtDayTime, fmtLeft, fmtRange, phaseOf } from './data/derive';
 
@@ -260,6 +261,47 @@ export const Banner = styled.div`
   font-size: 13px;
   background: rgba(158, 135, 194, 0.08);
   border: 1px solid rgba(158, 135, 194, 0.35);
+`;
+
+// A note that matters: a gold bar on the left and an info icon.
+export const InfoBanner = ({ children }: { children: ReactNode }) => (
+  <InfoWrap role="note">
+    <InfoIcon aria-hidden />
+    <InfoText>{children}</InfoText>
+  </InfoWrap>
+);
+const InfoWrap = styled.div`
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 14px;
+  border-left: 3px solid ${({ theme }) => theme.palette.gold};
+  border-radius: 6px;
+  background: rgba(234, 184, 91, 0.08);
+  font-size: 13px;
+  line-height: 1.5;
+  color: ${C.text};
+`;
+// one line of text, or several paragraphs with a gap between them
+const InfoText = styled.div`
+  display: grid;
+  gap: 8px;
+  /* the app styles <p> globally; keep the banner's own size and spacing */
+  p {
+    margin: 0;
+    font: inherit;
+    color: inherit;
+  }
+`;
+const InfoIcon = styled(infoSvg)`
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  color: ${({ theme }) => theme.palette.gold};
+  path {
+    fill: currentColor;
+  }
 `;
 
 // One line in a list: moon, name, detail, right-hand value or action. On a

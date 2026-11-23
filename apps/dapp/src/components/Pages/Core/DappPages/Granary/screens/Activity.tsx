@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { ReactNode, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled, { css } from 'styled-components';
 import { phone } from 'styles/breakpoints';
@@ -13,6 +13,7 @@ import {
   isPositive,
   isRunning,
   pairIdOf,
+  phaseAtCancel,
   phaseOf,
   plain,
   settlementFor,
@@ -41,6 +42,7 @@ import {
   Seg,
   Stack,
   TextLink,
+  V,
   WishChip,
 } from '../ui';
 import { paths } from '../paths';
@@ -74,7 +76,6 @@ const Tabs = ({ on }: { on: 'now' | 'legacy' }) => {
 
 export const Activity = () => {
   const now = useNow();
-  const navigate = useNavigate();
   const auctions = useAuctions().data;
   const all = useMyPositions()
     .data.filter((p) => isPositive(p.deposit) || isPositive(p.excluded))
@@ -108,28 +109,23 @@ export const Activity = () => {
           <ExcludedRow key={a.id} a={a} p={p} pos={pos} />
         ))}
         {live.map(({ pos, a, p }) => (
-          <ListRow key={a.id} {...clickable(() => navigate(paths.auction(a)))}>
-            <Moon phase={p} size={24} paused={a.paused} />
-            <div>
-              <Mk>{auctionName(a)}</Mk>
-              <Note>
-                {fmt(pos.deposit)} {a.bidToken} →{' '}
-                {fmt(pos.deposit.mul(a.price))} {a.fillToken} at full funding
-              </Note>
-            </div>
-            <Note>
-              {a.paused
-                ? 'paused: no deposits or withdrawals'
+          <AuctionRow
+            key={a.id}
+            a={a}
+            p={p}
+            sub={`${fmt(pos.deposit)} ${a.bidToken} → ${fmt(
+              pos.deposit.mul(a.price)
+            )} ${a.fillToken} at full funding`}
+            status={
+              a.paused
+                ? 'Paused'
                 : p === 'Deposit'
-                ? `withdraw until ${fmtDayTime(a.depositEnd)}`
-                : `locked while the Treasury funds, until ${fmtDayTime(
-                    a.fulfillmentEnd
-                  )}`}
-            </Note>
-            <Note>
-              {a.paused ? 'paused' : p === 'Deposit' ? 'open' : 'funding'}
-            </Note>
-          </ListRow>
+                ? `Deposit or withdraw offer until ${fmtDayTime(a.depositEnd)}`
+                : p === 'Fulfillment'
+                ? `Fill is in progress until ${fmtDayTime(a.fulfillmentEnd)}`
+                : `Opens ${fmtDayTime(a.depositStart)}`
+            }
+          />
         ))}
         {!live.length && !liveOut.length && (
           <Note>Nothing deposited in a running auction.</Note>
@@ -251,6 +247,73 @@ const Actions = styled.span`
   `)}
 `;
 
+// One auction you're in. Line 1: the auction and the Phase and Status labels;
+// line 2: your position, the phase, and what you can do now.
+const AuctionRow = ({
+  a,
+  p,
+  sub,
+  status,
+  action,
+}: {
+  a: Auction;
+  p: Phase;
+  sub: string;
+  status: string;
+  action?: ReactNode;
+}) => {
+  const navigate = useNavigate();
+  return (
+    <ARow {...clickable(() => navigate(paths.auction(a)))}>
+      <Moon phase={p} size={24} paused={a.paused} />
+      <div>
+        <Mk>{auctionName(a)}</Mk>
+        <Note>{sub}</Note>
+      </div>
+      <div>
+        <Label>Phase</Label>
+        <V>{p === 'Cancelled' ? phaseAtCancel(a) : p}</V>
+      </div>
+      <div>
+        <Label>Status</Label>
+        <V>{status}</V>
+      </div>
+      <span>{action}</span>
+    </ARow>
+  );
+};
+
+const ARow = styled(ListRow)`
+  grid-template-columns: 30px minmax(0, 1.3fr) 110px minmax(0, 1.3fr) 90px;
+  > :last-child:empty {
+    display: none;
+  }
+  ${phone(css`
+    grid-template-columns: 26px minmax(0, 0.8fr) minmax(0, 1.2fr);
+    align-items: start;
+    > :nth-child(2) {
+      grid-column: 2 / -1;
+    }
+    && > :nth-child(3) {
+      grid-column: 2;
+      grid-row: 2;
+    }
+    && > :nth-child(4) {
+      grid-column: 3;
+      grid-row: 2;
+    }
+    && > :nth-child(5) {
+      grid-column: 2 / -1;
+      grid-row: 3;
+      justify-self: start;
+    }
+  `)}
+`;
+
+const Label = styled(Mk)`
+  font-size: 13px;
+`;
+
 const PastRow = ({ a, p, pos }: { a: Auction; p: Phase; pos: Position }) => {
   const now = useNow();
   const navigate = useNavigate();
@@ -260,37 +323,39 @@ const PastRow = ({ a, p, pos }: { a: Auction; p: Phase; pos: Position }) => {
     claimed && pos.claimedFill !== undefined
       ? { fill: pos.claimedFill, refund: pos.claimedRefund ?? ZERO }
       : settlementFor(a, pos.deposit, now);
-  const go = () => navigate(paths.auction(a));
+  const cancelled = p === 'Cancelled';
   return (
-    <ListRow {...clickable(go)}>
-      <Moon phase={p} size={24} />
-      <div>
-        <Mk>{auctionName(a)}</Mk>
-        <Note>
-          {p === 'Cancelled'
-            ? `cancelled ${fmtDay(a.cancelledAt ?? a.fulfillmentEnd)}`
-            : `${fillPct(a)}% filled · settled ${fmtDay(
-                a.settledAt ?? a.fulfillmentEnd
-              )}`}
-        </Note>
-      </div>
-      <Note>
-        {!s
-          ? ''
-          : p === 'Cancelled'
-          ? `${fmt(s.refund)} ${a.bidToken} returned`
-          : `${fmt(s.fill)} ${a.fillToken}${
-              isPositive(s.refund) ? ` + ${fmt(s.refund)} ${a.bidToken}` : ''
-            }`}
-      </Note>
-      {!claimed ? (
-        <Btn $ghost onClick={go}>
-          Claim
-        </Btn>
-      ) : (
-        <Note>claimed</Note>
-      )}
-    </ListRow>
+    <AuctionRow
+      a={a}
+      p={p}
+      sub={
+        cancelled
+          ? s
+            ? `${fmt(s.refund)} ${a.bidToken} ${
+                claimed ? 'returned' : 'to claim back'
+              }`
+            : ''
+          : `${fillPct(a)}% filled${
+              s
+                ? ` · ${fmt(s.fill)} ${a.fillToken}${
+                    isPositive(s.refund)
+                      ? ` + ${fmt(s.refund)} ${a.bidToken}`
+                      : ''
+                  }`
+                : ''
+            }`
+      }
+      status={
+        cancelled ? 'Cancelled' : claimed ? 'Claimed' : 'Claim Your Tokens'
+      }
+      action={
+        !claimed && (
+          <Btn $ghost onClick={() => navigate(paths.auction(a))}>
+            Claim
+          </Btn>
+        )
+      }
+    />
   );
 };
 
@@ -306,21 +371,18 @@ const ExcludedRow = ({
   pos: Position;
 }) => {
   const navigate = useNavigate();
-  const go = () => navigate(paths.auction(a));
   return (
-    <ListRow {...clickable(go)}>
-      <Moon phase={p} size={24} paused={a.paused} />
-      <div>
-        <Mk>{auctionName(a)}</Mk>
-        <Note>excluded from this auction</Note>
-      </div>
-      <Note>
-        {fmt(pos.excluded)} {a.bidToken} to withdraw
-      </Note>
-      <Btn $ghost onClick={go}>
-        Withdraw
-      </Btn>
-    </ListRow>
+    <AuctionRow
+      a={a}
+      p={p}
+      sub={`${fmt(pos.excluded)} ${a.bidToken} to withdraw`}
+      status="Excluded: withdraw your refund"
+      action={
+        <Btn $ghost onClick={() => navigate(paths.auction(a))}>
+          Withdraw
+        </Btn>
+      }
+    />
   );
 };
 
