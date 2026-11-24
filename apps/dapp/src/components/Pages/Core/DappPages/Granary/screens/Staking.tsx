@@ -3,7 +3,6 @@ import styled from 'styled-components';
 import { utils } from 'ethers';
 import {
   fmt,
-  fmt2,
   fmtDayTime,
   fmtLeft,
   isPositive,
@@ -94,11 +93,11 @@ export const StakingCard = () => {
         />
         <Stat
           k="Your daily TGLD"
-          v={account ? `${fmt2(s?.dailyReward ?? ZERO)} TGLD` : '–'}
+          v={account ? `${fmt(s?.dailyReward ?? ZERO)} TGLD` : '–'}
         />
         <Stat
           k="Claimable"
-          v={account ? `${fmt2(s?.rewards ?? ZERO)} TGLD` : '–'}
+          v={account ? `${fmt(s?.rewards ?? ZERO)} TGLD` : '–'}
         />
       </Stats>
       {s?.paused && (
@@ -206,7 +205,7 @@ const StakeForm = ({ s }: { s: StakingSummary }) => {
         setText={setText}
         max={s.available}
         bad={over}
-        hint={`${over ? 'More than the ' : ''}${fmt2(
+        hint={`${over ? 'More than the ' : ''}${fmt(
           s.available
         )} TEMPLE in your wallet`}
       />
@@ -266,10 +265,10 @@ const UnstakeForm = ({ s }: { s: StakingSummary }) => {
         max={s.staked}
         bad={over}
         disabled={!!lockedUntil}
-        hint={`${over ? 'More than the ' : ''}${fmt2(s.staked)} TEMPLE staked`}
+        hint={`${over ? 'More than the ' : ''}${fmt(s.staked)} TEMPLE staked`}
       />
       <Check checked={claim} onChange={setClaim} disabled={!!lockedUntil}>
-        Also claim my {fmt2(s.rewards)} TGLD
+        Also claim my {fmt(s.rewards)} TGLD
       </Check>
       <Row $start>
         <TxBtn
@@ -375,11 +374,11 @@ const ClaimForm = ({ s }: { s: StakingSummary }) => {
   return (
     <Stack gap={12}>
       <div>
-        <Big>{fmt2(s.rewards)} TGLD</Big>
+        <Big>{fmt(s.rewards)} TGLD</Big>
         <Note>
           ready to claim
           {isPositive(s.dailyReward)
-            ? ` · about ${fmt2(s.dailyReward)} more per day at the current rate`
+            ? ` · about ${fmt(s.dailyReward)} more per day at the current rate`
             : ''}
         </Note>
       </div>

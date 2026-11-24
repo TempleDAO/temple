@@ -117,9 +117,10 @@ export const settlementFor = (a: Auction, deposit: Amount, now: Date) => {
 const MONTHS = 'Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec'.split(' ');
 const pad = (n: number) => String(n).padStart(2, '0');
 
-// Whole tokens, e.g. "4,950".
+// Up to two decimals, so a fractional amount doesn't round away: "4,950",
+// "12.5", "0.4".
 export const fmt = (d: Amount) =>
-  toNumber(d).toLocaleString('en-US', { maximumFractionDigits: 0 });
+  toNumber(d).toLocaleString('en-US', { maximumFractionDigits: 2 });
 
 // Every digit, grouped: "1,234.5678".
 export const fmtExact = (d: Amount) => {
@@ -130,10 +131,6 @@ export const fmtExact = (d: Amount) => {
 
 // A typed amount, exactly as typed, e.g. in a notification.
 export const fmtTyped = (text: string) => fmtExact(parseTyped(text) ?? ZERO);
-
-// Up to two decimals, for amounts that are often fractional (TGLD).
-export const fmt2 = (d: Amount) =>
-  toNumber(d).toLocaleString('en-US', { maximumFractionDigits: 2 });
 
 const fmtWhole = (n: number) =>
   n.toLocaleString('en-US', { maximumFractionDigits: 0 });
