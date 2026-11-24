@@ -42,6 +42,19 @@ export type SpiceAuctionConfig = {
   subgraphUrl: string;
 };
 
+// Temple Granary: FixedPriceAuction (cloned by FixedPriceAuctionFactory) and
+// WishingWell. A zero address means not deployed on this chain yet.
+export type GranaryConfig = {
+  chainId: ChainId;
+  factory: ContractConfig<Contract>;
+  wishingWell: ContractConfig<Contract>;
+  complianceCheck: ContractConfig<Contract>;
+  // Tokens the wish screen offers: any give → get pair of two of them.
+  wishTokens: TokenConfig[];
+  // the Granary indexer (the Spice Bazaar subgraph, v0.6.1+); empty = none yet
+  subgraphUrl: string;
+};
+
 export type AppConfig = {
   chains: Chain[];
   tokens: {
@@ -83,6 +96,7 @@ export type AppConfig = {
       altchainDisplayName: string;
     };
   };
+  granary: GranaryConfig;
 };
 
 type contractFactory<T extends Contract> = {
