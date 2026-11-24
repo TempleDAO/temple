@@ -24,7 +24,7 @@ export const paths = {
   // your wish for a pair; amount only pre-fills the form for a new wish
   wish: (give?: Token, get?: Token, amount?: string) =>
     `${BASE}/wish${give && get ? `/${pairIdOf(give, get)}` : ''}${
-      amount ? `?amount=${amount}` : ''
+      amount ? `?amount=${encodeURIComponent(amount)}` : ''
     }`,
   activity: `${BASE}/activity`,
   legacy: `${BASE}/activity/legacy`,

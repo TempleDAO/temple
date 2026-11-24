@@ -98,7 +98,7 @@ export const Wish = () => {
       return (
         <Navigate
           replace
-          to={paths.wish(g, t)}
+          to={paths.wish(g, t, params.get('amount') ?? undefined)}
           state={pairId ? { unavailable: true } : null}
         />
       );
