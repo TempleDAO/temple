@@ -644,7 +644,7 @@ describe('attempt outcomes', () => {
       new Error('transaction-timed-out'),
       'Error: transaction-timed-out',
     ],
-  ])('%s fails with ExcludeFailed', async (_, error, named) => {
+  ])('%s fails with ExclusionFailed', async (_, error, named) => {
     const a = auction(1, 'Deposit');
 
     const result = await runEnforce(rejecting(a, error), config);
@@ -660,7 +660,7 @@ describe('attempt outcomes', () => {
     ]);
     expect(result.findings).toEqual([
       {
-        kind: 'ExcludeFailed',
+        kind: 'ExclusionFailed',
         key: `${a.address}:${ALICE}`,
         summary: `exclude ${ALICE} on Auction ${a.address} failed: ${named}. The Auction is in Deposit; its Exclusion window closes at fulfillmentEnd ${new Date(Number(a.fulfillmentEnd) * 1000).toISOString()}.`,
       },
@@ -680,7 +680,7 @@ describe('attempt outcomes', () => {
       { account: ALICE, outcome: 'failed', error: 'AccountNotFlagged' },
     ]);
     expect(first.findings.map((f) => [f.kind, f.key])).toEqual([
-      ['ExcludeFailed', `${a.address}:${ALICE}`],
+      ['ExclusionFailed', `${a.address}:${ALICE}`],
     ]);
 
     const { context, sent } = chain({
@@ -694,7 +694,7 @@ describe('attempt outcomes', () => {
     expect(next.findings).toEqual([]);
   });
 
-  test('in Fulfillment ExcludeFailed is marked as the last chance', async () => {
+  test('in Fulfillment ExclusionFailed is marked as the last chance', async () => {
     const a = auction(1, 'Fulfillment');
 
     const result = await runEnforce(
@@ -730,7 +730,7 @@ const OWN = lcAddress('0x00000000000000000000000000000000000000c1');
 const ENFORCED = lcAddress('0x00000000000000000000000000000000000000c2');
 const UNENFORCED = lcAddress('0x00000000000000000000000000000000000000c3');
 
-test('an Auction on a ComplianceCheck no Deployment enforces raises AuctionComplianceCheckUnserved until its window closes', async () => {
+test('an Auction on a ComplianceCheck no Deployment enforces raises AuctionComplianceCheckUnenforced until its window closes', async () => {
   const elsewhere = [
     onComplianceCheck(1, 'Scheduled', UNENFORCED),
     onComplianceCheck(2, 'Deposit', UNENFORCED),
@@ -752,9 +752,9 @@ test('an Auction on a ComplianceCheck no Deployment enforces raises AuctionCompl
   });
 
   expect(result.findings.map((f) => [f.kind, f.key])).toEqual([
-    ['AuctionComplianceCheckUnserved', elsewhere[0].address],
-    ['AuctionComplianceCheckUnserved', elsewhere[1].address],
-    ['AuctionComplianceCheckUnserved', elsewhere[2].address],
+    ['AuctionComplianceCheckUnenforced', elsewhere[0].address],
+    ['AuctionComplianceCheckUnenforced', elsewhere[1].address],
+    ['AuctionComplianceCheckUnenforced', elsewhere[2].address],
   ]);
 });
 

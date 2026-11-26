@@ -33,7 +33,7 @@
 //   ANVIL_URL                    the fork, default http://127.0.0.1:8545
 //   COMPLIANCE_KV_DIR            where KV files go
 //   COMPLIANCE_MANUAL_SOURCE     compliance_manual_source, JSON address → reason
-//   COMPLIANCE_EXEMPT            compliance_exempt, JSON address → reason
+//   COMPLIANCE_EXEMPTIONS            compliance_exemptions, JSON address → reason
 //   COMPLIANCE_DISCORD_WEBHOOK   posts Notices, Findings and task failures;
 //                                without it a run that has something to post
 //                                logs it, then fails
@@ -65,7 +65,7 @@ import { ABI as ElevatedAccessAbi } from '@/abi/ITempleElevatedAccess';
 import * as vars from '@/config/variables';
 import {
   COMPLIANCE_SEPOLIA,
-  compliance_exempt,
+  compliance_exemptions,
   compliance_manual_source,
   complianceTasks,
 } from '@/tasks/compliance';
@@ -110,7 +110,10 @@ function taskRunnerConfig() {
             compliance_manual_source.name(),
             jsonEnv('COMPLIANCE_MANUAL_SOURCE')
           ),
-          ...optional(compliance_exempt.name(), jsonEnv('COMPLIANCE_EXEMPT')),
+          ...optional(
+            compliance_exemptions.name(),
+            jsonEnv('COMPLIANCE_EXEMPTIONS')
+          ),
           ...optional(
             vars.webhook_url.name(),
             process.env.COMPLIANCE_DISCORD_WEBHOOK

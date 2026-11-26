@@ -5,4 +5,4 @@
  */
 export { complianceTasks } from './tasks';
 export { COMPLIANCE_DEPLOYMENTS, COMPLIANCE_SEPOLIA } from './config';
-export { compliance_exempt, compliance_manual_source } from './variables';
+export { compliance_exemptions, compliance_manual_source } from './variables';

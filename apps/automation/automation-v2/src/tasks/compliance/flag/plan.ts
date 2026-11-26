@@ -10,7 +10,7 @@ export interface TargetSet {
   /** Exempt addresses, including those of entries with no reason. Sorted. */
   exempt: LCAddress[];
   /**
-   * `compliance_exempt` entries with a problem: a bad address (exempts
+   * `compliance_exemptions` entries with a problem: a bad address (exempts
    * nothing) or no reason (still exempts).
    */
   invalidExemptions: string[];
@@ -80,7 +80,7 @@ export function planFlags(
     findings.push({
       kind: 'ExemptionInvalid',
       key: e,
-      summary: `compliance_exempt entry invalid: ${e}`,
+      summary: `compliance_exemptions entry invalid: ${e}`,
     });
 
   for (const a of target.exempt)

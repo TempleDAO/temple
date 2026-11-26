@@ -16,7 +16,7 @@ import type { SourceId } from './ingest';
  * following `setComplianceCheck` would let whoever repoints an Auction steer
  * the Bot. Moving Auctions to a new ComplianceCheck means adding a
  * Deployment for it, and keeping the old one while any Auction still points
- * at it. Enforce raises AuctionComplianceCheckUnserved for an Auction whose
+ * at it. Enforce raises AuctionComplianceCheckUnenforced for an Auction whose
  * ComplianceCheck no Deployment enforces.
  */
 export interface ComplianceDeployment {

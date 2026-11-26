@@ -35,18 +35,20 @@ const snapshotSchema = z.object({
   firstSeenAtMs: z.number(),
 });
 
+const failedVersionSchema = z.object({
+  version: z.string(),
+  atMs: z.number(),
+});
+
 const sourceStateSchema: z.ZodType<SourceState, z.ZodTypeDef, unknown> =
   z.discriminatedUnion('status', [
     z.object({
       status: z.literal('absent'),
-      sinceMs: z.number(),
-      problem: z
-        .object({
-          kind: z.enum(['failed', 'rejected']),
-          message: z.string(),
-        })
-        .optional(),
+      absentSinceMs: z.number(),
+      problem: z.string().optional(),
+      problemStatus: z.enum(['failing', 'rejected']).optional(),
       rejectedVersion: z.string().optional(),
+      failedVersion: failedVersionSchema.optional(),
     }),
     z.object({
       status: z.literal('fresh'),
@@ -58,6 +60,7 @@ const sourceStateSchema: z.ZodType<SourceState, z.ZodTypeDef, unknown> =
       snapshot: snapshotSchema,
       confirmedAtMs: z.number(),
       problem: z.string(),
+      failedVersion: failedVersionSchema.optional(),
     }),
     z.object({
       status: z.literal('rejected'),
@@ -65,5 +68,6 @@ const sourceStateSchema: z.ZodType<SourceState, z.ZodTypeDef, unknown> =
       confirmedAtMs: z.number(),
       problem: z.string(),
       rejectedVersion: z.string().optional(),
+      failedVersion: failedVersionSchema.optional(),
     }),
   ]);

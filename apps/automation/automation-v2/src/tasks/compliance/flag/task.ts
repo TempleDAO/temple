@@ -1,14 +1,19 @@
 import type { TaskContext } from '@mountainpath9/overlord-core';
 import { getPublicClient } from '@mountainpath9/overlord-viem';
-import { encodeFunctionData } from 'viem';
+import { encodeFunctionData, type Hex } from 'viem';
 import { ABI as ComplianceCheckAbi } from '@/abi/IComplianceCheck';
 import { assertNever } from '@/tlc/assert-never';
 import { runTask } from '../attention';
 import type { ComplianceDeployment } from '../config';
 import { explorerTxUrl } from '@/tasks/granary/shared';
 import { readSourceState, SourceState } from '../ingest';
-import { createSender, listUpTo, readIsFlagged } from '../shared';
-import { compliance_exempt, compliance_max_flag_batch } from '../variables';
+import {
+  createSender,
+  type LCAddress,
+  listUpTo,
+  readIsFlagged,
+} from '../shared';
+import { compliance_exemptions, compliance_max_flag_batch } from '../variables';
 import { scanFlaggedAddressesIndex } from './flagged-addresses-index';
 import {
   FLAGGED_ADDRESSES_INDEX_SCAN,
@@ -56,7 +61,7 @@ async function productionFlagContext(
             (await readSourceState(ctx, id)) ?? SourceState.initial(Date.now()),
         }))
       ),
-    readExemptions: () => compliance_exempt.getValue(ctx),
+    readExemptions: () => compliance_exemptions.getValue(ctx),
     readFlaggedAddressesIndex: async (atBlock) => {
       const index = await scanFlaggedAddressesIndex(
         productionFlaggedAddressesIndexContext(ctx, deployment, pclient),
@@ -65,7 +70,13 @@ async function productionFlagContext(
           ...FLAGGED_ADDRESSES_INDEX_SCAN,
         },
         atBlock
-      );
+      ).catch((e: unknown) => {
+        // runFlag carries on without the index; keep the full error here.
+        ctx.logger.warn(
+          `flag:${deployment.name} Flagged addresses index scan failed: ${String(e)}`
+        );
+        throw e;
+      });
       if (!index.complete)
         ctx.logger.info(
           `flag:${deployment.name} Flagged addresses index backfill continues next run`
@@ -75,15 +86,17 @@ async function productionFlagContext(
     readFlags: (addresses, atBlock) =>
       readIsFlagged(pclient, deployment.complianceCheck, addresses, atBlock),
     setFlagged: (batch) =>
-      send(
-        deployment.complianceCheck,
-        encodeFunctionData({
-          abi: ComplianceCheckAbi,
-          functionName: 'setFlagged',
-          args: [batch, true],
-        })
-      ),
+      send(deployment.complianceCheck, setFlaggedData(batch)),
   };
+}
+
+/** Calldata for `setFlagged(batch, true)`. Add-only: the Bot never unflags. */
+export function setFlaggedData(batch: readonly LCAddress[]): Hex {
+  return encodeFunctionData({
+    abi: ComplianceCheckAbi,
+    functionName: 'setFlagged',
+    args: [batch, true],
+  });
 }
 
 function noticeText(deployment: ComplianceDeployment, n: FlagNotice): string {
@@ -92,7 +105,7 @@ function noticeText(deployment: ComplianceDeployment, n: FlagNotice): string {
       return (
         `flagged ${n.addresses.length} on ${deployment.name}: ${explorerTxUrl(deployment.chain.blockExplorers?.default.url, n.txHash) ?? n.txHash}` +
         (n.reflagged.length
-          ? `\nflagged again after an unflag: ${listUpTo(n.reflagged, NOTICE_LIST_MAX)}. To unflag a Listed address for good, add it to compliance_exempt first.`
+          ? `\nflagged again after an unflag: ${listUpTo(n.reflagged, NOTICE_LIST_MAX)}. To unflag a Listed address for good, add it to compliance_exemptions first.`
           : '')
       );
     default:

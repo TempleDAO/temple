@@ -1,6 +1,7 @@
 import { expect, test } from 'vitest';
 import type { Hash } from 'viem';
 import type { Json } from '@mountainpath9/overlord-core';
+import { assertNever } from '@/tlc/assert-never';
 import { LCAddress, lcAddress } from '../shared';
 import { SourceState } from '../ingest';
 import type { FlaggedAddressesIndexRead } from './flagged-addresses-index';
@@ -19,17 +20,31 @@ const config: FlagConfig = { maxFlagBatch: 200 };
 function source(
   id: string,
   listed?: LCAddress[],
-  status: 'fresh' | 'failing' = 'fresh'
+  status: 'fresh' | 'failing' | 'rejected' = 'fresh'
 ): { id: string; state: SourceState } {
   if (!listed) return { id, state: SourceState.initial(0) };
   const snapshot = { addresses: listed, contentHash: '', firstSeenAtMs: 0 };
-  return {
-    id,
-    state:
-      status === 'fresh'
-        ? { status, snapshot, confirmedAtMs: 0 }
-        : { status, snapshot, confirmedAtMs: 0, problem: 'HTTP 503' },
-  };
+  switch (status) {
+    case 'fresh':
+      return { id, state: { status, snapshot, confirmedAtMs: 0 } };
+    case 'failing':
+      return {
+        id,
+        state: { status, snapshot, confirmedAtMs: 0, problem: 'HTTP 503' },
+      };
+    case 'rejected':
+      return {
+        id,
+        state: {
+          status,
+          snapshot,
+          confirmedAtMs: 0,
+          problem: '0 addresses, fewer than minCount 1',
+        },
+      };
+    default:
+      return assertNever(status);
+  }
 }
 
 /** A Deployment as plain data, at head block HEAD. `setFlagged` records each batch in `sent`. */
@@ -121,7 +136,7 @@ test.each<[string, Json]>([
   ['a string', B],
   ['a number', 1],
 ])(
-  'compliance_exempt set to %s fails the run before any chain read',
+  'compliance_exemptions set to %s fails the run before any chain read',
   async (_, exempt) => {
     const ctx: FlagContext = {
       ...deployment({
@@ -131,7 +146,7 @@ test.each<[string, Json]>([
       readHeadBlock: () => Promise.reject(new Error('read the chain')),
     };
     await expect(runFlag(ctx, config)).rejects.toThrow(
-      'compliance_exempt is not a JSON object of address → reason'
+      'compliance_exemptions is not a JSON object of address → reason'
     );
   }
 );
@@ -245,4 +260,29 @@ test('nothing missing: nothing sent and no Notice', async () => {
   });
   expect((await runFlag(ctx, config)).notices).toEqual([]);
   expect(ctx.sent).toEqual([]);
+});
+
+test('a Rejected Source still lists its last Snapshot and is not Absent', async () => {
+  const ctx = deployment({ sources: [source('ofac-sdn', [A], 'rejected')] });
+  const run = await runFlag(ctx, config);
+  expect(ctx.sent).toEqual([[A]]);
+  expect(run.findings.map((f) => f.kind)).not.toContain('SourceAbsent');
+});
+
+test('a failed Flagged addresses index scan still flags, and raises FlaggedAddressesIndexFailing', async () => {
+  const ctx: FlagContext & { sent: LCAddress[][] } = {
+    ...deployment({ sources: [source('ofac-sdn', [A])], exempt: {} }),
+    readFlaggedAddressesIndex: () =>
+      Promise.reject(new Error('eth_getLogs: block range too large')),
+  };
+  const run = await runFlag(ctx, config);
+  expect(ctx.sent).toEqual([[A]]);
+  expect(run.findings).toEqual([
+    {
+      kind: 'FlaggedAddressesIndexFailing',
+      key: '',
+      summary:
+        'Flagged addresses index scan failed: Error: eth_getLogs: block range too large',
+    },
+  ]);
 });

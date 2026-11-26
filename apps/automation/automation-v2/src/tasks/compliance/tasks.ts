@@ -51,7 +51,7 @@ export function complianceTasks(deployments: readonly ComplianceDeployment[]): {
     })),
     ...enforcing.map(({ deployment, factoryKey }) => {
       const sameFactory = enforcing.filter((e) => e.factoryKey === factoryKey);
-      // The first Deployment per factory reports AuctionComplianceCheckUnserved.
+      // The first Deployment per factory reports AuctionComplianceCheckUnenforced.
       const enforcedComplianceChecks =
         sameFactory[0].deployment === deployment
           ? new Set(

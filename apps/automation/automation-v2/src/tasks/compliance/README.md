@@ -6,7 +6,7 @@ Terms in bold are defined in [GLOSSARY.md](./GLOSSARY.md). This README uses them
 
 ## Status
 
-Prototype. The interfaces, state machines, flagging and attention model are in place and tested. Enforce excludes Flagged Depositors and raises its Findings (`ExcludeFailed`, `MissedExclusion`, `ReinstateAvailable`, `AuctionComplianceCheckUnserved`, `DepositorIndexLagging`). A daily flagger check per Deployment raises `BotNotFlagger` while the Bot isn't a Flagger on its ComplianceCheck. The OFAC Source reads SDN.XML, and the Flagged addresses index is the Bot's own scan of `FlaggedSet` logs. One Deployment is registered, `sepolia` (flagging and enforcing), and `main.ts` runs its tasks. It acts once the Admin makes the Bot (`compliance_flagger_signer`) a Flagger; until then, the flagger check raises `BotNotFlagger`.
+Prototype. The interfaces, state machines, flagging and attention model are in place and tested. Enforce excludes Flagged Depositors and raises its Findings (`ExclusionFailed`, `MissedExclusion`, `ReinstateAvailable`, `AuctionComplianceCheckUnenforced`, `DepositorIndexLagging`). A daily flagger check per Deployment raises `BotNotFlagger` while the Bot isn't a Flagger on its ComplianceCheck. The OFAC Source reads SDN.XML, and the Flagged addresses index is the Bot's own scan of `FlaggedSet` logs. One Deployment is registered, `sepolia` (flagging and enforcing), and `main.ts` runs its tasks. It acts once the Admin makes the Bot (`compliance_flagger_signer`) a Flagger; until then, the flagger check raises `BotNotFlagger`.
 
 > **⚠️ Known limit:** the Flagged addresses index can silently lose a `FlaggedSet` log when a lagging RPC node answers `eth_getLogs`, so an `UnbackedFlag` can go missing for good. Flagging and enforcement are unaffected. See [SPEC § Flagged addresses index](./SPEC.md#flagged-addresses-index).
 
@@ -44,7 +44,7 @@ flowchart LR
     I2[compliance-ingest-manual]
   end
   KV[(Overlord KV<br/>Snapshots)]
-  EX[/compliance_exempt<br/>Exemptions/]
+  EX[/compliance_exemptions<br/>Exemptions/]
   subgraph Flag["flag/ — one task per Deployment"]
     S1[compliance-flag-&lt;name&gt;]
   end
@@ -109,15 +109,15 @@ Overlord skips a run while the previous run of the same task is in progress, so 
 
 ## Configuration
 
-**Per Deployment (code, `config.ts`):** `name`, `chain`, `complianceCheck`, `signerId`, `sourceIds`, `privateSubmission`, `submissionParams`, `flaggedAddressesIndex` (`deployBlock`, `confirmations`) and, optionally, `depositorIndex` (the Granary subgraph URL and the FixedPriceAuction factory). Setting `depositorIndex` registers `compliance-enforce-<name>`. The name is the Deployment's identity: the network for its first ComplianceCheck (`mainnet`), then a suffix (`mainnet-2`). Each ComplianceCheck is its own Deployment, so moving Auctions to a new ComplianceCheck means adding one and keeping the old one until no Auction points at it; `AuctionComplianceCheckUnserved` catches an Auction whose ComplianceCheck no Deployment enforces. `complianceTasks` refuses a duplicate name, or the same ComplianceCheck twice on one chain.
+**Per Deployment (code, `config.ts`):** `name`, `chain`, `complianceCheck`, `signerId`, `sourceIds`, `privateSubmission`, `submissionParams`, `flaggedAddressesIndex` (`deployBlock`, `confirmations`) and, optionally, `depositorIndex` (the Granary subgraph URL and the FixedPriceAuction factory). Setting `depositorIndex` registers `compliance-enforce-<name>`. The name is the Deployment's identity: the network for its first ComplianceCheck (`mainnet`), then a suffix (`mainnet-2`). Each ComplianceCheck is its own Deployment, so moving Auctions to a new ComplianceCheck means adding one and keeping the old one until no Auction points at it; `AuctionComplianceCheckUnenforced` catches an Auction whose ComplianceCheck no Deployment enforces. `complianceTasks` refuses a duplicate name, or the same ComplianceCheck twice on one chain.
 
 **Overlord variables (shared, `variables.ts`):**
 
 | Variable                                    | Purpose                                                                                                    |
 | ------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
 | `compliance_manual_source`                  | The Manual source: JSON object of address → reason                                                         |
-| `compliance_exempt`                         | Exemptions: JSON object of address → reason                                                                |
-| `compliance_max_flag_batch`                 | Most addresses per `setFlagged`                                                                            |
+| `compliance_exemptions`                     | Exemptions: JSON object of address → reason                                                                |
+| `compliance_max_flag_batch`                 | Most addresses per `setFlagged`, at most 500 (EIP-7825 per-transaction gas cap)                            |
 | `compliance_max_depositor_index_lag_blocks` | `DepositorIndexLagging` threshold                                                                          |
 | `compliance_finding_reminder_secs`          | Default reminder period, 900 (15 minutes), for open Findings whose kind uses `'default'`. 0 disables those |
 

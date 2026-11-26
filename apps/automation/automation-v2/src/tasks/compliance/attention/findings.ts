@@ -89,19 +89,25 @@ export const FINDING_KINDS = {
     action:
       'Flagged, but not in the Target set: no Source lists it, or it is Exempt. The Bot never unflags. Back it by adding it to a Manual source, or the Admin unflags it.',
   },
+  FlaggedAddressesIndexFailing: {
+    level: 'defcon3',
+    remindEverySecs: 'default',
+    action:
+      'The Flagged addresses index scan failed (an RPC error such as an eth_getLogs range cap, or a stored index that no longer parses). Flagging continues; UnbackedFlag checks against the index and re-flag names are paused. Fix the RPC provider or the stored index.',
+  },
   ExemptionInvalid: {
     level: 'defcon3',
     remindEverySecs: 'default',
     action:
-      'An entry in compliance_exempt is invalid. A bad address exempts nothing; a valid address with no reason still exempts it. Add the reason or fix the address.',
+      'An entry in compliance_exemptions is invalid. A bad address exempts nothing; a valid address with no reason still exempts it. Add the reason or fix the address.',
   },
-  ExcludeFailed: {
+  ExclusionFailed: {
     level: 'defcon3',
     remindEverySecs: 'default',
     action:
       'The Bot could not exclude a Flagged Depositor from an Auction. Before fulfillmentEnd, and before any settleEarly: fix the cause (Flagger role, rescue mode, repointed ComplianceCheck), or the Admin excludes by hand.',
   },
-  AuctionComplianceCheckUnserved: {
+  AuctionComplianceCheckUnenforced: {
     level: 'defcon3',
     remindEverySecs: 'default',
     action:
