@@ -135,11 +135,31 @@ export async function postDefconNotification(
   const header = `**${ctx.getRunnerLabel()}/${ctx.getTaskLabel()}**\n${discordDefconChannel?.mentions.join(' ')}`;
 
   await discord?.postMessage({
-    content: [header, message].join('\n'),
+    content: fitDiscordContent([header, message].join('\n')),
     threadId: discordDefconChannel.threadId,
   });
 
   return true;
+}
+
+/** Discord rejects a message whose content is longer than this. */
+export const DISCORD_CONTENT_MAX = 2000;
+
+/**
+ * `content` as is when Discord accepts it; otherwise cut to fit, ending
+ * with how many characters were cut and a pointer to the logs.
+ */
+export function fitDiscordContent(
+  content: string,
+  max = DISCORD_CONTENT_MAX
+): string {
+  if (content.length <= max) return content;
+  const note = (cut: number) =>
+    `\n… (${cut} characters truncated, check the logs for the full message)`;
+  // The note's length depends on the count it prints, so settle it first.
+  let cut = content.length - max;
+  while (content.length - cut + note(cut).length > max) cut++;
+  return content.slice(0, content.length - cut) + note(cut);
 }
 
 export const DISCORD_TSY_OPS_TAG = `<@&929860072123797515>`;
