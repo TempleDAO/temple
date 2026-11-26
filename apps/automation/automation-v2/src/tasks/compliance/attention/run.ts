@@ -108,6 +108,10 @@ export async function runWithFindings(
  * Hands a run on: reports its Findings to the sink, posts its Notices, then
  * throws its send failure if it has one, so the Notices of what was sent
  * are posted before the task fails.
+ *
+ * A Notice that fails to post doesn't stop the rest: what it reports is
+ * already on chain, so no later run makes it again. Every Notice is tried,
+ * then the task fails with each error: one as thrown, several together.
  */
 export async function reportRun<N>(
   run: RunReport<N>,
@@ -115,8 +119,21 @@ export async function reportRun<N>(
   post: (notice: N) => Promise<unknown>
 ): Promise<void> {
   for (const f of run.findings) sink.report(f);
-  for (const n of run.notices) await post(n);
-  if ('sendFailure' in run) throw run.sendFailure;
+  const errors: unknown[] = [];
+  for (const n of run.notices) {
+    try {
+      await post(n);
+    } catch (e) {
+      errors.push(e);
+    }
+  }
+  if ('sendFailure' in run) errors.unshift(run.sendFailure);
+  if (errors.length === 1) throw errors[0];
+  if (errors.length > 1)
+    throw new AggregateError(
+      errors,
+      errors.map((e) => (e instanceof Error ? e.message : String(e))).join('; ')
+    );
 }
 
 /**
