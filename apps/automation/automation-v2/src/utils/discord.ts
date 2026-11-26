@@ -4,6 +4,10 @@ import {
   TaskException,
 } from '@mountainpath9/overlord-core';
 import { WebhookClient, WebhookMessageCreateOptions } from 'discord.js';
+import {
+  createLoggingTarget,
+  grafanaTaskUrl,
+} from '@mountainpath9/overlord-core/utils/grafana';
 import * as vars from '@/config/variables';
 
 export type NotificationLevel =
@@ -47,12 +51,14 @@ export async function discordLogTaskException(
   ctx: TaskContext,
   te: TaskException
 ) {
+  const taskUrl = ctx.getDashboardTaskUrl();
   const content = [
     DISCORD_TSY_OPS_TAG,
     `**Automation Task Failed**`,
     `task runner: ${ctx.getRunnerLabel()}`,
     `task label: ${te.label}`,
-    `task id: ${te.taskId}`,
+    `task id: ${taskUrl ? `[${te.taskId}](${taskUrl})` : te.taskId}`,
+    `logs: ${await grafanaLogsLink(ctx, te)}`,
   ];
 
   if (te.exception instanceof Error) {
@@ -68,7 +74,39 @@ export async function discordLogTaskException(
   }
 
   const discord = await connectDiscord(webhookUrl, ctx.logger);
-  await discord.postMessage({ content: content.join('\n') });
+  await discord.postMessage({ content: fitDiscordContent(content.join('\n')) });
+}
+
+/**
+ * A markdown link to the failed run's logs in Grafana, or why there is
+ * none. Never throws: a missing link mustn't stop the failure being posted.
+ */
+async function grafanaLogsLink(
+  ctx: TaskContext,
+  te: TaskException
+): Promise<string> {
+  try {
+    const config = await ctx.getGrafanaConfig();
+    if (!config) return 'grafana is not configured';
+    // The run's start isn't known here; the URL's window is an hour either side.
+    const now = Date.now();
+    const url = grafanaTaskUrl(
+      createLoggingTarget(config, config.logging_target),
+      {
+        id: te.taskId,
+        runner_name: ctx.getRunnerLabel(),
+        task_type_name: te.label,
+        created_at: now,
+        finished_at: now,
+      }
+    );
+    return `[grafana](${url})`;
+  } catch (e) {
+    ctx.logger.warn(
+      `could not build the grafana logs url: ${e instanceof Error ? e.message : String(e)}`
+    );
+    return 'unable to build the grafana url';
+  }
 }
 
 export function decodeWebhookUrl(url: string): { id: string; token: string } {
