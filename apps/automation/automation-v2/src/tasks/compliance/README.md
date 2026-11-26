@@ -140,12 +140,14 @@ yarn test --run src/tasks/compliance
 
 ## End-to-end test on a Sepolia fork
 
-`src/main-localtest/compliance.ts` runs the production tasks against an anvil fork of Sepolia, as webhooks. Anvil's first account is the Bot, and `compliance-grant-flagger` makes it a Flagger by impersonating the ComplianceCheck's executor. KV is saved to disk, one file per key (URI-encoded, because Overlord's on-disk store refuses `/` and `:`), so every Snapshot, Finding and the Flagged addresses index can be read with `cat`.
+`src/main-localtest/compliance.ts` runs the production tasks against an anvil fork of Sepolia, as webhooks. Anvil's first account is the Bot, and `compliance-grant-flagger` makes it a Flagger by impersonating the ComplianceCheck's executor. KV is saved to disk, one file per key (URI-encoded, because Overlord's on-disk store refuses `/` and `:`), so every Snapshot, Finding and the Flagged addresses index can be read with `cat`. Ingest each Source before flagging: the flag task reads only stored Snapshots, never `COMPLIANCE_MANUAL_SOURCE`, so a Source that hasn't run flags nothing.
 
 ```sh
 anvil --fork-url $SEPOLIA_RPC_URL
 COMPLIANCE_MANUAL_SOURCE='{"0x…": "why"}' yarn dev:local:compliance
 curl -X POST http://localhost:8111/webhooks/compliance-grant-flagger
+curl -X POST http://localhost:8111/webhooks/compliance-ingest-ofac-sdn
+curl -X POST http://localhost:8111/webhooks/compliance-ingest-manual
 curl -X POST http://localhost:8111/webhooks/compliance-flag-sepolia
 ls localtest-kv/compliance
 ```
