@@ -61,7 +61,7 @@ async function latestPublicationId(): Promise<string> {
   for (const y of [year, year - 1]) {
     const res = await fetch(
       `${SANCTIONS_LIST_SERVICE_URL}/changes/history/${y}`,
-      { headers: HEADERS }
+      { headers: HEADERS, signal: AbortSignal.timeout(HISTORY_TIMEOUT_MS) }
     );
     if (!res.ok) throw new Error(`OFAC history ${y}: HTTP ${res.status}`);
     const entries = historySchema.parse(await res.json());
@@ -120,6 +120,9 @@ const SANCTIONS_LIST_SERVICE_URL =
 // The service may answer 403 without a User-Agent. Keep it generic.
 const HEADERS = { 'User-Agent': 'temple-automation/compliance' };
 const DOWNLOAD_TIMEOUT_MS = 5 * 60 * 1000;
+// A small JSON document. A request that hangs would hold the ingest task
+// (Overlord skips a run while one is in progress) and raise no Finding.
+const HISTORY_TIMEOUT_MS = 60 * 1000;
 
 const historySchema = z.array(z.object({ publicationID: z.number().int() }));
 
