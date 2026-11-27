@@ -83,6 +83,7 @@ function chain(opts: {
   flagged: LCAddress[];
   rejects?: Partial<Record<LCAddress, unknown>>;
   watermark?: bigint;
+  watermarkTimestamp?: bigint;
   head?: bigint;
 }) {
   const sent: Sent[] = [];
@@ -94,6 +95,7 @@ function chain(opts: {
       elsewhere: opts.elsewhere ?? [],
       positions: opts.positions,
       watermark: opts.watermark ?? 90n,
+      watermarkTimestamp: opts.watermarkTimestamp ?? T,
     }),
     readFlags: async (accounts, atBlock) => {
       if (atBlock !== head) throw new Error(`read at ${atBlock}, not the head`);
@@ -314,7 +316,71 @@ test('no isFlagged read when no account needs a flag check', async () => {
   );
 
   expect(flagReads).toBe(0);
-  expect(result).toEqual({ attempts: [], findings: [], notices: [] });
+  expect(result).toEqual({
+    attempts: [],
+    settleEarly: [],
+    findings: [],
+    notices: [],
+  });
+});
+
+describe('settleEarly check, for each Auction in Fulfillment', () => {
+  const ful = auction(1, 'Fulfillment'); // depositEnd T − 1h
+  const dep = auction(2, 'Deposit');
+
+  test('safe once the index is past depositEnd and no Depositor with a deposit is Flagged', async () => {
+    const { context } = chain({
+      auctions: [ful, dep],
+      positions: [deposit(ful, BOB), deposit(dep, ALICE)],
+      // ALICE is Flagged in the Deposit Auction only: not this one's blocker.
+      flagged: [ALICE],
+      head: 100n,
+    });
+    expect((await runEnforce(context, config)).settleEarly).toEqual([
+      { auction: ful.address, atBlock: 100n, blockers: [] },
+    ]);
+  });
+
+  test('not safe while the index is before depositEnd: a deposit may be missing', async () => {
+    const { context } = chain({
+      auctions: [ful],
+      positions: [],
+      flagged: [],
+      watermarkTimestamp: ful.depositEnd - 1n,
+    });
+    expect((await runEnforce(context, config)).settleEarly).toEqual([
+      {
+        auction: ful.address,
+        atBlock: 100n,
+        blockers: [
+          {
+            kind: 'depositorIndexBeforeDepositEnd',
+            watermarkTimestamp: ful.depositEnd - 1n,
+            depositEnd: ful.depositEnd,
+          },
+        ],
+      },
+    ]);
+  });
+
+  test('not safe while a Flagged Depositor still has a deposit, even if this run excludes it or fails to', async () => {
+    const { context } = chain({
+      auctions: [ful],
+      positions: [deposit(ful, ALICE), deposit(ful, BOB)],
+      flagged: [ALICE, BOB],
+      rejects: { [BOB]: new ExcludeReverted('InvalidAccess') },
+      watermarkTimestamp: ful.depositEnd,
+    });
+    const run = await runEnforce(context, config);
+    expect(run.attempts.map((a) => a.outcome)).toEqual(['excluded', 'failed']);
+    expect(run.settleEarly).toEqual([
+      {
+        auction: ful.address,
+        atBlock: 100n,
+        blockers: [{ kind: 'flaggedDepositors', accounts: [ALICE, BOB] }],
+      },
+    ]);
+  });
 });
 
 test('a Flagged Depositor filled unexcluded in a settled Auction is a Missed exclusion', async () => {

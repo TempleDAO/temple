@@ -9,7 +9,7 @@ import { chainAddressKey, lcAddress } from './shared';
 /**
  * Every compliance task with its schedule: one ingest task per Source some
  * Deployment uses and one flag task per Deployment, every minute; plus one
- * enforce task every 20 minutes per Deployment with a Depositor index; and
+ * enforce task every 2 minutes per Deployment with a Depositor index; and
  * one flagger-check task per Deployment, daily.
  * Overlord skips a run while the previous run of the same task is still
  * going.
@@ -60,7 +60,7 @@ export function complianceTasks(deployments: readonly ComplianceDeployment[]): {
           : undefined;
       return {
         ...enforceTask(deployment, enforcedComplianceChecks),
-        cronSchedule: EVERY_20_MINUTES,
+        cronSchedule: EVERY_2_MINUTES,
       };
     }),
     ...deployments.map((deployment) => ({
@@ -71,7 +71,7 @@ export function complianceTasks(deployments: readonly ComplianceDeployment[]): {
 }
 
 const EVERY_MINUTE = '* * * * *';
-const EVERY_20_MINUTES = '*/20 * * * *';
+const EVERY_2_MINUTES = '*/2 * * * *';
 const DAILY = '0 9 * * *';
 
 function enforces(

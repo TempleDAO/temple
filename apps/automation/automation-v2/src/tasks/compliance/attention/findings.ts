@@ -53,10 +53,23 @@ export type OpenFinding = Finding & {
 /** Persisted per owner: finding id → open finding. */
 export type OpenFindings = Record<string, OpenFinding>;
 
+/**
+ * What paused a check: a Finding that stands (the index scan failing, a
+ * Source Absent), or `FlaggedAddressesIndexBackfill`, a Flagged addresses
+ * index backfill still under way, which by design raises no Finding.
+ */
+export type PauseReason = FindingKind | 'FlaggedAddressesIndexBackfill';
+
+/** A check a run couldn't make: `kind`'s conditions can't be observed because of `by`. */
+export type PausedCheck = { kind: FindingKind; by: PauseReason };
+
+/** A reminder, naming what paused its check when it was carried, not seen. */
+export type Reminder = OpenFinding & { pausedBy?: PauseReason };
+
 export interface Reconciled {
   next: OpenFindings;
   opened: OpenFinding[];
-  reminded: OpenFinding[];
+  reminded: Reminder[];
   resolved: OpenFinding[];
 }
 
@@ -81,19 +94,25 @@ export const FINDING_KINDS = {
     level: 'defcon3',
     remindEverySecs: 'default',
     action:
-      'A Source this Deployment uses has never produced a Snapshot. The Bot flags what the other Sources list, but UnbackedFlag checks against the Flagged addresses index are paused.',
+      'A Source this Deployment uses has never produced a Snapshot. The Bot flags what the other Sources list, but UnbackedFlag checks are paused: open ones stay open, new ones wait.',
   },
   UnbackedFlag: {
     level: 'defcon3',
     remindEverySecs: 'default',
     action:
-      'Flagged, but not in the Target set: no Source lists it, or it is Exempt. The Bot never unflags. Back it by adding it to a Manual source, or the Admin unflags it.',
+      'Flagged, but no Source lists it and it is not Exempt. The Bot never unflags. Back it by adding it to a Manual source, or the Admin unflags it.',
+  },
+  ExemptFlag: {
+    level: 'defcon3',
+    remindEverySecs: 'default',
+    action:
+      'Flagged, but Exempt. The Bot never unflags. The Admin unflags it, or remove the Exemption if it should stay Flagged.',
   },
   FlaggedAddressesIndexFailing: {
     level: 'defcon3',
     remindEverySecs: 'default',
     action:
-      'The Flagged addresses index scan failed (an RPC error such as an eth_getLogs range cap, or a stored index that no longer parses). Flagging continues; UnbackedFlag checks against the index and re-flag names are paused. Fix the RPC provider or the stored index.',
+      'The Flagged addresses index scan failed (an RPC error such as an eth_getLogs range cap, or a stored index that no longer parses). Flagging continues; UnbackedFlag checks and re-flag names are paused, and open UnbackedFlags stay open. Fix the RPC provider or the stored index.',
   },
   ExemptionInvalid: {
     level: 'defcon3',
@@ -124,7 +143,7 @@ export const FINDING_KINDS = {
     // It can't resolve while the account is Flagged, so a daily reminder is enough.
     remindEverySecs: 24 * 60 * 60,
     action:
-      'A Flagged account has a filled, unclaimed deposit in a settled Auction that it was not excluded from. It may have been flagged after the Exclusion window closed, or the Depositor index may be behind (a false positive). See SPEC.md § Troubleshooting MissedExclusion. The fill stands and the claim stays frozen while the account is Flagged.',
+      'A Flagged account has a filled, unclaimed deposit in a settled Auction that it was not excluded from. It may have been flagged after the Exclusion window closed, or the Depositor index may be behind (a false positive). See the compliance README § Troubleshooting MissedExclusion. The fill stands and the claim stays frozen while the account is Flagged.',
   },
   ReinstateAvailable: {
     level: 'defcon3',
@@ -148,16 +167,30 @@ export const Finding = {
   id: (f: Pick<Finding, 'kind' | 'key'>) => `${f.kind}:${f.key}`,
 };
 
-/** Collects findings while a run proceeds. Reporting the same id twice keeps the last summary. */
+/**
+ * Collects findings while a run proceeds. Reporting the same id twice keeps
+ * the last summary. A kind whose check the run couldn't make is `pause`d.
+ */
 export class FindingSink {
   private readonly byId = new Map<string, Finding>();
+  private readonly paused = new Map<FindingKind, PauseReason>();
 
   report(finding: Finding): void {
     this.byId.set(Finding.id(finding), finding);
   }
 
+  /** This run couldn't check `kind` because of `by`. */
+  pause({ kind, by }: PausedCheck): void {
+    this.paused.set(kind, by);
+  }
+
   all(): Finding[] {
     return [...this.byId.values()];
+  }
+
+  /** Each paused kind → what paused it. */
+  allPaused(): ReadonlyMap<FindingKind, PauseReason> {
+    return this.paused;
   }
 }
 
@@ -167,6 +200,10 @@ export class FindingSink {
  * - A completed run's findings are the whole truth for its owner: new ones
  *   open, missing ones resolve, the rest stay open. A run that throws never
  *   gets here, so it changes nothing.
+ * - Except for the kinds whose check it paused: absent from a run that
+ *   couldn't check them isn't resolved, so their open findings stay open
+ *   (and keep reminding, naming what paused the check) until a run checks
+ *   them again.
  * - An open finding is posted again after its kind's `remindEverySecs`
  *   (`'default'` = `defaultReminderSecs`; 0 = never).
  */
@@ -174,14 +211,28 @@ export function reconcileFindings(
   prev: OpenFindings,
   current: readonly Finding[],
   nowMs: number,
-  defaultReminderSecs: number
+  defaultReminderSecs: number,
+  paused: ReadonlyMap<FindingKind, PauseReason> = new Map()
 ): Reconciled {
+  const reported = new Map(current.map((f) => [Finding.id(f), f]));
+  // An open finding whose check this run paused is carried as last seen.
+  const carried = new Map<string, PauseReason>();
+  for (const [id, before] of Object.entries(prev)) {
+    const by = paused.get(before.kind);
+    if (reported.has(id) || !by) continue;
+    reported.set(id, {
+      kind: before.kind,
+      key: before.key,
+      summary: before.summary,
+    });
+    carried.set(id, by);
+  }
+
   const next: OpenFindings = {};
   const opened: OpenFinding[] = [];
-  const reminded: OpenFinding[] = [];
+  const reminded: Reminder[] = [];
 
-  for (const f of current) {
-    const id = Finding.id(f);
+  for (const [id, f] of reported) {
     const before = prev[id];
     if (!before) {
       next[id] = { ...f, openedAtMs: nowMs, lastPostedAtMs: nowMs };
@@ -199,7 +250,8 @@ export function reconcileFindings(
       openedAtMs: before.openedAtMs,
       lastPostedAtMs: due ? nowMs : before.lastPostedAtMs,
     };
-    if (due) reminded.push(next[id]);
+    const pausedBy = carried.get(id);
+    if (due) reminded.push(pausedBy ? { ...next[id], pausedBy } : next[id]);
   }
 
   const resolved = Object.entries(prev)

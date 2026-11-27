@@ -14,6 +14,7 @@ import type { EnforcingDeployment } from '../config';
 import { explorerTxUrl } from '@/tasks/granary/shared';
 import { createSender, type LCAddress, readIsFlagged } from '../shared';
 import { readDepositorIndex } from './depositor-index';
+import type { SettleEarlyBlocker, SettleEarlyCheck } from './plan';
 import {
   EnforceContext,
   EnforceNotice,
@@ -54,6 +55,9 @@ export function enforceTask(
             ctx.logger.info(
               `enforce:${deployment.name} exclude ${a.account} on ${a.auction} (${a.phase}): ${JSON.stringify(a)}`
             );
+          // The Admin reads the latest of these before a settleEarly.
+          for (const c of run.settleEarly)
+            ctx.logger.info(settleEarlyLine(deployment, c));
           return run;
         },
         (n) => noticeText(deployment, n)
@@ -130,6 +134,33 @@ function asExcludeReverted(e: unknown): ExcludeReverted | undefined {
   if (viemError.kind !== 'reverted') return undefined;
   return decodeExcludeRevert(viemError.data ?? '0x');
 }
+
+/**
+ * One line per Auction in Fulfillment, found by searching the enforce logs
+ * for `settleEarly <auction>`: README.md § Before settleEarly.
+ */
+function settleEarlyLine(
+  deployment: EnforcingDeployment,
+  c: SettleEarlyCheck
+): string {
+  const head = `enforce:${deployment.name} settleEarly ${c.auction}`;
+  if (!c.blockers.length)
+    return `${head}: safe as of block ${c.atBlock}: every Depositor indexed, none Flagged with a deposit`;
+  return `${head}: NOT safe as of block ${c.atBlock}: ${c.blockers.map(blockerText).join('; ')}`;
+}
+
+function blockerText(b: SettleEarlyBlocker): string {
+  switch (b.kind) {
+    case 'depositorIndexBeforeDepositEnd':
+      return `the Depositor index is at ${iso(b.watermarkTimestamp)}, before depositEnd ${iso(b.depositEnd)}, so a deposit may be missing`;
+    case 'flaggedDepositors':
+      return `${b.accounts.length} Flagged Depositor(s) still to exclude: ${b.accounts.join(', ')}`;
+    default:
+      return assertNever(b);
+  }
+}
+
+const iso = (secs: bigint) => new Date(Number(secs) * 1000).toISOString();
 
 function noticeText(deployment: EnforcingDeployment, n: EnforceNotice): string {
   switch (n.kind) {

@@ -1,11 +1,11 @@
-import { expect, test } from 'vitest';
+import { expect, test, vi } from 'vitest';
 import {
   type Json,
   type TaskContext,
   taskSuccessSilent,
 } from '@mountainpath9/overlord-core';
 import { Finding, FindingSink } from './findings';
-import { reportRun, runWithFindings } from './run';
+import { reportRun, RunReport, runWithFindings } from './run';
 
 const absent: Finding = {
   kind: 'SourceAbsent',
@@ -64,6 +64,35 @@ test('reporting a run with a send failure posts its Notices, then fails the run'
   expect(sink.all().map((f) => f.key)).toEqual(['manual']);
 });
 
+test('a Notice that fails to post leaves the rest posted, then fails the run with every error', async () => {
+  const failure = new Error('replacement underpriced');
+  const discordDown = new Error('discord 503');
+  const posted: string[] = [];
+  const post = async (n: string) => {
+    if (n === 'batch 1') throw discordDown;
+    posted.push(n);
+  };
+
+  await expect(
+    reportRun(
+      { findings: [], notices: ['batch 1', 'batch 2'] },
+      new FindingSink(),
+      post
+    )
+  ).rejects.toBe(discordDown);
+  expect(posted).toEqual(['batch 2']);
+
+  posted.length = 0;
+  const thrown = await reportRun(
+    { findings: [], notices: ['batch 1', 'batch 2'], sendFailure: failure },
+    new FindingSink(),
+    post
+  ).catch((e: unknown) => e);
+  expect(posted).toEqual(['batch 2']);
+  expect(thrown).toBeInstanceOf(AggregateError);
+  expect((thrown as AggregateError).errors).toEqual([failure, discordDown]);
+});
+
 test("one owner's completed run never resolves another owner's Findings", async () => {
   const { ctx } = fakeContext();
   const posted = async () => true;
@@ -82,6 +111,56 @@ test("one owner's completed run never resolves another owner's Findings", async 
   expect(
     (await runWithFindings(ctx, 'flag:a', posted, reporting(absent))).kind
   ).toBe('successSilent');
+});
+
+test('a run that pauses a check posts no resolve for its open Findings, and reminds naming the pause', async () => {
+  const { ctx } = fakeContext(); // reminders every 900 s
+  const posted: string[] = [];
+  const post = async (_: unknown, text: string) => {
+    posted.push(text.split('\n')[0]);
+    return true;
+  };
+  const unbacked: Finding = {
+    kind: 'UnbackedFlag',
+    key: '0xee',
+    summary: 'Flagged but no Source lists it',
+  };
+  const flagRun =
+    (run: Pick<RunReport<never>, 'findings' | 'paused'>) =>
+    async (sink: FindingSink) => {
+      await reportRun({ ...run, notices: [] }, sink, async () => {});
+      return taskSuccessSilent();
+    };
+  const indexFailing = flagRun({
+    findings: [],
+    paused: [{ kind: 'UnbackedFlag', by: 'FlaggedAddressesIndexFailing' }],
+  });
+
+  vi.useFakeTimers({ now: 0 });
+  try {
+    await runWithFindings(
+      ctx,
+      'flag:a',
+      post,
+      flagRun({ findings: [unbacked] })
+    );
+    await runWithFindings(ctx, 'flag:a', post, indexFailing);
+    vi.setSystemTime(900_000);
+    await runWithFindings(ctx, 'flag:a', post, indexFailing);
+    vi.setSystemTime(1_000_000);
+    await runWithFindings(
+      ctx,
+      'flag:a',
+      post,
+      flagRun({ findings: [unbacked] })
+    );
+  } finally {
+    vi.useRealTimers();
+  }
+  expect(posted).toEqual([
+    '🔴 `flag:a` **UnbackedFlag** `0xee`: Flagged but no Source lists it',
+    '🟠 still open (check paused by FlaggedAddressesIndexFailing): `flag:a` **UnbackedFlag** `0xee`: Flagged but no Source lists it',
+  ]);
 });
 
 test('a Finding that cannot be posted is logged, fails the run and saves nothing', async () => {

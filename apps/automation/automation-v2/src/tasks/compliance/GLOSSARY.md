@@ -74,7 +74,7 @@ _Avoid_: sanctioned, blocked, blacklisted
 A Flagged address that is in the Deployment's Target set.
 
 **Unbacked flag**:
-A Flagged address that is not in the Deployment's Target set: no Source lists it, or it is Exempt.
+A Flagged address that is not in the Deployment's Target set: no Source lists it (Finding `UnbackedFlag`), or it is Exempt (Finding `ExemptFlag`).
 _Avoid_: delisted, orphan
 
 **Flagged addresses index**:
@@ -130,7 +130,7 @@ The part of an Auction in which an Exclusion is possible: its Deposit and Fulfil
 _Avoid_: cutoff, deadline
 
 **Missed exclusion**:
-A Flagged Depositor with a filled, unclaimed deposit in a settled Auction that it was not excluded from. The account may have been flagged only after the Exclusion window closed, so nothing could have excluded it. The fill stands, and the account's claim stays frozen while it is Flagged. While the Depositor index is behind, an exclusion or claim it hasn't seen yet makes a false one, which resolves once the index catches up. See [SPEC § Troubleshooting MissedExclusion](./SPEC.md#troubleshooting-missedexclusion).
+A Flagged Depositor with a filled, unclaimed deposit in a settled Auction that it was not excluded from. The account may have been flagged only after the Exclusion window closed, so nothing could have excluded it. The fill stands, and the account's claim stays frozen while it is Flagged. While the Depositor index is behind, an exclusion or claim it hasn't seen yet makes a false one, which resolves once the index catches up. See [README § Troubleshooting MissedExclusion](./README.md#troubleshooting-missedexclusion).
 _Avoid_: leak, late exclusion
 
 ## Attention

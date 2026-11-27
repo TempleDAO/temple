@@ -52,3 +52,31 @@ test('a MissedExclusion reminds daily while other kinds use the default', () => 
   const day = reconcileFindings(next, [missed], 24 * hourMs, 900);
   expect(day.reminded.map(Finding.id)).toEqual(['MissedExclusion:0x01:0xaa']);
 });
+
+test('an open finding whose check the run paused stays open, and its reminder names what paused it', () => {
+  const { next } = reconcileFindings({}, [unbacked, unconfirmed], 0, 60);
+  const paused = new Map([['UnbackedFlag', 'SourceAbsent']] as const);
+
+  const blind = reconcileFindings(next, [], 60_000, 60, paused);
+  expect(blind.resolved.map(Finding.id)).toEqual([
+    'SourceUnconfirmed:ofac-sdn',
+  ]);
+  expect(blind.reminded).toEqual([
+    {
+      ...unbacked,
+      openedAtMs: 0,
+      lastPostedAtMs: 60_000,
+      pausedBy: 'SourceAbsent',
+    },
+  ]);
+  // Only the reminder says what paused it; the open finding saved is plain.
+  expect(blind.next['UnbackedFlag:0xaa']).toEqual({
+    ...unbacked,
+    openedAtMs: 0,
+    lastPostedAtMs: 60_000,
+  });
+
+  // Checked again and no longer observed: now it resolves.
+  const checked = reconcileFindings(blind.next, [], 120_000, 60);
+  expect(checked.resolved.map(Finding.id)).toEqual(['UnbackedFlag:0xaa']);
+});

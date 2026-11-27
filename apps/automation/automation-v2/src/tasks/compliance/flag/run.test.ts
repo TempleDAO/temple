@@ -102,7 +102,7 @@ test('an Exemption keeps a Listed address out of the Target set', async () => {
   expect(ctx.sent).toEqual([[A]]);
 });
 
-test('a Flagged Exempt address is an UnbackedFlag even while a Source is Absent', async () => {
+test('a Flagged Exempt address is an ExemptFlag even while a Source is Absent', async () => {
   const run = await runFlag(
     deployment({
       sources: [source('ofac-sdn'), source('manual', [A])],
@@ -112,7 +112,7 @@ test('a Flagged Exempt address is an UnbackedFlag even while a Source is Absent'
     config
   );
   expect(run.findings).toContainEqual({
-    kind: 'UnbackedFlag',
+    kind: 'ExemptFlag',
     key: B,
     summary: `${B} is Flagged but Exempt`,
   });
@@ -162,7 +162,7 @@ test('an Absent Source still lets the others flag, and raises SourceAbsent', asy
   ]);
 });
 
-test('while a Source is Absent, an address Flagged only in the index raises no UnbackedFlag', async () => {
+test('while a Source is Absent, an address Flagged only in the index raises no UnbackedFlag, and SourceAbsent pauses the check', async () => {
   const ctx = deployment({
     sources: [source('ofac-sdn'), source('manual', [A])],
     index: { flagged: new Set([A, D]) },
@@ -170,6 +170,7 @@ test('while a Source is Absent, an address Flagged only in the index raises no U
   });
   const run = await runFlag(ctx, config);
   expect(run.findings.map((f) => f.kind)).toEqual(['SourceAbsent']);
+  expect(run.paused).toEqual([{ kind: 'UnbackedFlag', by: 'SourceAbsent' }]);
 });
 
 test('UnbackedFlag from the Flagged addresses index only for addresses still Flagged at head', async () => {
@@ -188,6 +189,29 @@ test('UnbackedFlag from the Flagged addresses index only for addresses still Fla
       key: B,
       summary: `${B} is Flagged but no Source lists it`,
     },
+  ]);
+  expect(run.paused).toEqual([]);
+});
+
+test('while the index backfill is under way, UnbackedFlags it has seen still raise, and the check is paused', async () => {
+  const run = await runFlag(
+    deployment({
+      sources: [source('manual', [A])],
+      // B is Flagged too, in blocks the backfill hasn't reached.
+      index: { flagged: new Set([A, D]), complete: false },
+      flagged: [A, B, D],
+    }),
+    config
+  );
+  expect(run.findings).toEqual([
+    {
+      kind: 'UnbackedFlag',
+      key: D,
+      summary: `${D} is Flagged but no Source lists it`,
+    },
+  ]);
+  expect(run.paused).toEqual([
+    { kind: 'UnbackedFlag', by: 'FlaggedAddressesIndexBackfill' },
   ]);
 });
 
@@ -269,7 +293,7 @@ test('a Rejected Source still lists its last Snapshot and is not Absent', async 
   expect(run.findings.map((f) => f.kind)).not.toContain('SourceAbsent');
 });
 
-test('a failed Flagged addresses index scan still flags, and raises FlaggedAddressesIndexFailing', async () => {
+test('a failed Flagged addresses index scan still flags, raises FlaggedAddressesIndexFailing, and pauses the UnbackedFlag check', async () => {
   const ctx: FlagContext & { sent: LCAddress[][] } = {
     ...deployment({ sources: [source('ofac-sdn', [A])], exempt: {} }),
     readFlaggedAddressesIndex: () =>
@@ -284,5 +308,8 @@ test('a failed Flagged addresses index scan still flags, and raises FlaggedAddre
       summary:
         'Flagged addresses index scan failed: Error: eth_getLogs: block range too large',
     },
+  ]);
+  expect(run.paused).toEqual([
+    { kind: 'UnbackedFlag', by: 'FlaggedAddressesIndexFailing' },
   ]);
 });

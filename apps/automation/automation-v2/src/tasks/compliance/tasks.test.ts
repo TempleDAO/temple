@@ -35,7 +35,7 @@ test('a Deployment without a Depositor index registers no enforce task, and chec
   ]);
 });
 
-test('a Deployment with a Depositor index also enforces, every 20 minutes', () => {
+test('a Deployment with a Depositor index also enforces, every 2 minutes', () => {
   expect(
     schedules(
       deployment({
@@ -46,7 +46,7 @@ test('a Deployment with a Depositor index also enforces, every 20 minutes', () =
   ).toEqual([
     ['compliance-ingest-manual', '* * * * *'],
     ['compliance-flag-sepolia', '* * * * *'],
-    ['compliance-enforce-sepolia', '*/20 * * * *'],
+    ['compliance-enforce-sepolia', '*/2 * * * *'],
     ['compliance-flagger-check-sepolia', '0 9 * * *'],
   ]);
 });

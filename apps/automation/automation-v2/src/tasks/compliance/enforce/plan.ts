@@ -1,5 +1,6 @@
 import type { AuctionPhase } from '@/tasks/granary/auction-phase';
 import { assertNever } from '@/tlc/assert-never';
+import type { LCAddress } from '../shared';
 import type { DepositorPosition } from './run';
 
 /** Machine 4: what one (Auction, account) needs. */
@@ -102,5 +103,58 @@ export const DepositorIndexFreshness = {
     maxLagBlocks: bigint
   ): DepositorIndexFreshness {
     return headBlock - watermark > maxLagBlocks ? 'lagging' : 'withinLag';
+  },
+};
+
+/**
+ * Whether the Admin can `settleEarly` an Auction in Fulfillment without
+ * missing an exclusion, as of `atBlock`: no `blockers`. Two hold it back:
+ *
+ * - `depositorIndexBeforeDepositEnd`: the Depositor index's Watermark is
+ *   older than `depositEnd`, so a deposit may not be indexed yet. Once it
+ *   isn't, the Depositor list is final: nobody deposits after `depositEnd`.
+ * - `flaggedDepositors`: Depositors Flagged at `atBlock` that still have a
+ *   deposit. A failed exclusion stays here; a successful one leaves once
+ *   the index sees it.
+ *
+ * Flags are read at head, so a check at `atBlock` sees every flag up to it.
+ * It is only logged: settleEarly is rare, and the Admin reads the latest
+ * run's line (README.md § Before settleEarly).
+ */
+export type SettleEarlyCheck = {
+  auction: LCAddress;
+  atBlock: bigint;
+  blockers: SettleEarlyBlocker[];
+};
+
+export type SettleEarlyBlocker =
+  | {
+      kind: 'depositorIndexBeforeDepositEnd';
+      watermarkTimestamp: bigint;
+      depositEnd: bigint;
+    }
+  | { kind: 'flaggedDepositors'; accounts: LCAddress[] };
+
+export const SettleEarlyCheck = {
+  from(
+    auction: { address: LCAddress; depositEnd: bigint },
+    atBlock: bigint,
+    watermarkTimestamp: bigint,
+    flaggedDepositors: readonly LCAddress[]
+  ): SettleEarlyCheck {
+    const blockers: SettleEarlyBlocker[] = [];
+    // A deposit lands only while block time < depositEnd (auctionPhaseAt).
+    if (watermarkTimestamp < auction.depositEnd)
+      blockers.push({
+        kind: 'depositorIndexBeforeDepositEnd',
+        watermarkTimestamp,
+        depositEnd: auction.depositEnd,
+      });
+    if (flaggedDepositors.length)
+      blockers.push({
+        kind: 'flaggedDepositors',
+        accounts: [...flaggedDepositors].sort(),
+      });
+    return { auction: auction.address, atBlock, blockers };
   },
 };

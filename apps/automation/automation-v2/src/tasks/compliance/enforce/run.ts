@@ -7,7 +7,11 @@ import {
 } from '@/tasks/granary/auction-phase';
 import type { Finding } from '../attention';
 import type { LCAddress } from '../shared';
-import { DepositorIndexFreshness, DepositorState } from './plan';
+import {
+  DepositorIndexFreshness,
+  DepositorState,
+  SettleEarlyCheck,
+} from './plan';
 
 /**
  * An Auction this Deployment enforces, as the Depositor index sees it: its
@@ -51,6 +55,8 @@ export type DepositorIndexRead = {
   positions: readonly DepositorPosition[];
   /** The block the index is complete up to. */
   watermark: bigint;
+  /** The Watermark block's timestamp, in seconds. */
+  watermarkTimestamp: bigint;
 };
 
 /**
@@ -94,7 +100,7 @@ export type EnforceConfig = {
   enforcedComplianceChecks: ReadonlySet<LCAddress> | undefined;
 };
 
-/** How one `exclude` attempt ended (SPEC.md § Exclude attempt). */
+/** How one `exclude` attempt ended (README.md § Exclude attempt). */
 export type ExcludeAttempt = {
   auction: LCAddress;
   account: LCAddress;
@@ -121,6 +127,8 @@ export interface EnforceNotice {
 
 export type EnforceRun = {
   attempts: ExcludeAttempt[];
+  /** One per Auction in Fulfillment, made before this run's attempts. */
+  settleEarly: SettleEarlyCheck[];
   findings: Finding[];
   notices: EnforceNotice[];
 };
@@ -254,6 +262,19 @@ export async function runEnforce(
     }
   }
 
+  const settleEarly = [...auctions.values()]
+    .filter(({ phase }) => phase === 'Fulfillment')
+    .map(({ auction }) =>
+      SettleEarlyCheck.from(
+        auction,
+        head,
+        index.watermarkTimestamp,
+        toExclude
+          .filter((p) => p.auction.id === auction.id)
+          .map((p) => p.position.account)
+      )
+    );
+
   const attempts: ExcludeAttempt[] = [];
   const notices: EnforceNotice[] = [];
   for (const { auction, phase, position } of toExclude) {
@@ -284,7 +305,7 @@ export async function runEnforce(
     }
   }
 
-  return { attempts, findings, notices };
+  return { attempts, settleEarly, findings, notices };
 }
 
 /** One `exclude`, caught on its own so a failure never stops the run. */
