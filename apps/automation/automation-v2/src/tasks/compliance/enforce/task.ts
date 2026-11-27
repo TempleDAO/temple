@@ -144,9 +144,10 @@ function settleEarlyLine(
   c: SettleEarlyCheck
 ): string {
   const head = `enforce:${deployment.name} settleEarly ${c.auction}`;
+  const blocks = `(flags at block ${c.atBlock}, Depositors indexed to block ${c.watermark})`;
   if (!c.blockers.length)
-    return `${head}: safe as of block ${c.atBlock}: every Depositor indexed, none Flagged with a deposit`;
-  return `${head}: NOT safe as of block ${c.atBlock}: ${c.blockers.map(blockerText).join('; ')}`;
+    return `${head}: safe as of block ${c.atBlock} ${blocks}: every Depositor indexed, none Flagged with a deposit`;
+  return `${head}: NOT safe as of block ${c.atBlock} ${blocks}: ${c.blockers.map(blockerText).join('; ')}`;
 }
 
 function blockerText(b: SettleEarlyBlocker): string {

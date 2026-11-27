@@ -268,7 +268,7 @@ export async function runEnforce(
       SettleEarlyCheck.from(
         auction,
         head,
-        index.watermarkTimestamp,
+        { block: index.watermark, timestamp: index.watermarkTimestamp },
         toExclude
           .filter((p) => p.auction.id === auction.id)
           .map((p) => p.position.account)

@@ -337,7 +337,7 @@ describe('settleEarly check, for each Auction in Fulfillment', () => {
       head: 100n,
     });
     expect((await runEnforce(context, config)).settleEarly).toEqual([
-      { auction: ful.address, atBlock: 100n, blockers: [] },
+      { auction: ful.address, atBlock: 100n, watermark: 90n, blockers: [] },
     ]);
   });
 
@@ -352,6 +352,7 @@ describe('settleEarly check, for each Auction in Fulfillment', () => {
       {
         auction: ful.address,
         atBlock: 100n,
+        watermark: 90n,
         blockers: [
           {
             kind: 'depositorIndexBeforeDepositEnd',
@@ -377,6 +378,7 @@ describe('settleEarly check, for each Auction in Fulfillment', () => {
       {
         auction: ful.address,
         atBlock: 100n,
+        watermark: 90n,
         blockers: [{ kind: 'flaggedDepositors', accounts: [ALICE, BOB] }],
       },
     ]);

@@ -118,12 +118,18 @@ export const DepositorIndexFreshness = {
  *   the index sees it.
  *
  * Flags are read at head, so a check at `atBlock` sees every flag up to it.
+ * The Depositors come from the index at `watermark`, a separate source that
+ * may be ahead of or behind `atBlock`; the result holds at `atBlock`, and a
+ * flag after it is the known gap the Admin's re-check covers.
  * It is only logged: settleEarly is rare, and the Admin reads the latest
  * run's line (README.md § Before settleEarly).
  */
 export type SettleEarlyCheck = {
   auction: LCAddress;
+  /** The head block the flags were read at. */
   atBlock: bigint;
+  /** The Depositor index's Watermark the Depositors were read at. */
+  watermark: bigint;
   blockers: SettleEarlyBlocker[];
 };
 
@@ -139,9 +145,10 @@ export const SettleEarlyCheck = {
   from(
     auction: { address: LCAddress; depositEnd: bigint },
     atBlock: bigint,
-    watermarkTimestamp: bigint,
+    watermark: { block: bigint; timestamp: bigint },
     flaggedDepositors: readonly LCAddress[]
   ): SettleEarlyCheck {
+    const watermarkTimestamp = watermark.timestamp;
     const blockers: SettleEarlyBlocker[] = [];
     // A deposit lands only while block time < depositEnd (auctionPhaseAt).
     if (watermarkTimestamp < auction.depositEnd)
@@ -155,6 +162,11 @@ export const SettleEarlyCheck = {
         kind: 'flaggedDepositors',
         accounts: [...flaggedDepositors].sort(),
       });
-    return { auction: auction.address, atBlock, blockers };
+    return {
+      auction: auction.address,
+      atBlock,
+      watermark: watermark.block,
+      blockers,
+    };
   },
 };
