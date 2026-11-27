@@ -64,8 +64,9 @@ export interface FlagNotice {
 export interface FlagRun {
   findings: Finding[];
   /**
-   * The UnbackedFlag check, paused by FlaggedAddressesIndexFailing or
-   * SourceAbsent when the run couldn't make it, so the open ones stay open.
+   * The UnbackedFlag check, paused by FlaggedAddressesIndexFailing,
+   * SourceAbsent or FlaggedAddressesIndexBackfill when the run couldn't
+   * make it, so the open ones stay open.
    */
   paused: PausedCheck[];
   /** One per batch mined, including those before a failed one. */
@@ -111,11 +112,11 @@ export async function runFlag(
   const findings = indexRead.finding
     ? [...planned.findings, indexRead.finding]
     : planned.findings;
-  const paused: PausedCheck[] = indexRead.finding
-    ? [{ kind: 'UnbackedFlag', by: 'FlaggedAddressesIndexFailing' }]
-    : planned.unbackedChecked
-      ? []
-      : [{ kind: 'UnbackedFlag', by: 'SourceAbsent' }];
+  const paused = pausedUnbackedFlagCheck(
+    indexRead.finding !== undefined,
+    planned.unbackedChecked,
+    index.complete
+  );
 
   const notices: FlagNotice[] = [];
   for (const batch of chunk(toFlag, config.maxFlagBatch)) {
@@ -158,6 +159,27 @@ async function readIndexOrEmpty(
       },
     };
   }
+}
+
+/**
+ * The UnbackedFlag check needs the whole Flagged set and every Source, so
+ * it pauses while the index scan fails, a Source is Absent, or a backfill
+ * hasn't reached head yet: an open UnbackedFlag the run can't see then
+ * stays open instead of resolving. The first cause wins.
+ */
+function pausedUnbackedFlagCheck(
+  indexFailing: boolean,
+  everySourcePresent: boolean,
+  indexComplete: boolean
+): PausedCheck[] {
+  const by: PausedCheck['by'] | undefined = indexFailing
+    ? 'FlaggedAddressesIndexFailing'
+    : !everySourcePresent
+      ? 'SourceAbsent'
+      : !indexComplete
+        ? 'FlaggedAddressesIndexBackfill'
+        : undefined;
+  return by ? [{ kind: 'UnbackedFlag', by }] : [];
 }
 
 function chunk<T>(items: readonly T[], size: number): T[][] {

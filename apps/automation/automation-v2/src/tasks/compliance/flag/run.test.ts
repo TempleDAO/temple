@@ -193,6 +193,28 @@ test('UnbackedFlag from the Flagged addresses index only for addresses still Fla
   expect(run.paused).toEqual([]);
 });
 
+test('while the index backfill is under way, UnbackedFlags it has seen still raise, and the check is paused', async () => {
+  const run = await runFlag(
+    deployment({
+      sources: [source('manual', [A])],
+      // B is Flagged too, in blocks the backfill hasn't reached.
+      index: { flagged: new Set([A, D]), complete: false },
+      flagged: [A, B, D],
+    }),
+    config
+  );
+  expect(run.findings).toEqual([
+    {
+      kind: 'UnbackedFlag',
+      key: D,
+      summary: `${D} is Flagged but no Source lists it`,
+    },
+  ]);
+  expect(run.paused).toEqual([
+    { kind: 'UnbackedFlag', by: 'FlaggedAddressesIndexBackfill' },
+  ]);
+});
+
 test('sends the missing addresses in batches of at most maxFlagBatch, with a Notice per batch', async () => {
   const ctx = deployment({
     sources: [source('manual', [A, B, C, D])],

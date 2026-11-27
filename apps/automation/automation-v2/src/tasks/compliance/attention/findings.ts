@@ -54,13 +54,17 @@ export type OpenFinding = Finding & {
 export type OpenFindings = Record<string, OpenFinding>;
 
 /**
- * A check a run couldn't make: `kind`'s conditions can't be observed while
- * the `by` Finding stands (the index scan failing, a Source Absent).
+ * What paused a check: a Finding that stands (the index scan failing, a
+ * Source Absent), or `FlaggedAddressesIndexBackfill`, a Flagged addresses
+ * index backfill still under way, which by design raises no Finding.
  */
-export type PausedCheck = { kind: FindingKind; by: FindingKind };
+export type PauseReason = FindingKind | 'FlaggedAddressesIndexBackfill';
+
+/** A check a run couldn't make: `kind`'s conditions can't be observed because of `by`. */
+export type PausedCheck = { kind: FindingKind; by: PauseReason };
 
 /** A reminder, naming what paused its check when it was carried, not seen. */
-export type Reminder = OpenFinding & { pausedBy?: FindingKind };
+export type Reminder = OpenFinding & { pausedBy?: PauseReason };
 
 export interface Reconciled {
   next: OpenFindings;
@@ -169,13 +173,13 @@ export const Finding = {
  */
 export class FindingSink {
   private readonly byId = new Map<string, Finding>();
-  private readonly paused = new Map<FindingKind, FindingKind>();
+  private readonly paused = new Map<FindingKind, PauseReason>();
 
   report(finding: Finding): void {
     this.byId.set(Finding.id(finding), finding);
   }
 
-  /** This run couldn't check `kind` because of the `by` Finding. */
+  /** This run couldn't check `kind` because of `by`. */
   pause({ kind, by }: PausedCheck): void {
     this.paused.set(kind, by);
   }
@@ -184,8 +188,8 @@ export class FindingSink {
     return [...this.byId.values()];
   }
 
-  /** Each paused kind → the Finding kind that paused it. */
-  allPaused(): ReadonlyMap<FindingKind, FindingKind> {
+  /** Each paused kind → what paused it. */
+  allPaused(): ReadonlyMap<FindingKind, PauseReason> {
     return this.paused;
   }
 }
@@ -208,11 +212,11 @@ export function reconcileFindings(
   current: readonly Finding[],
   nowMs: number,
   defaultReminderSecs: number,
-  paused: ReadonlyMap<FindingKind, FindingKind> = new Map()
+  paused: ReadonlyMap<FindingKind, PauseReason> = new Map()
 ): Reconciled {
   const reported = new Map(current.map((f) => [Finding.id(f), f]));
   // An open finding whose check this run paused is carried as last seen.
-  const carried = new Map<string, FindingKind>();
+  const carried = new Map<string, PauseReason>();
   for (const [id, before] of Object.entries(prev)) {
     const by = paused.get(before.kind);
     if (reported.has(id) || !by) continue;
