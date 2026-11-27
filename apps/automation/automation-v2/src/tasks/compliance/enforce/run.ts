@@ -100,7 +100,7 @@ export type EnforceConfig = {
   enforcedComplianceChecks: ReadonlySet<LCAddress> | undefined;
 };
 
-/** How one `exclude` attempt ended (SPEC.md § Exclude attempt). */
+/** How one `exclude` attempt ended (README.md § Exclude attempt). */
 export type ExcludeAttempt = {
   auction: LCAddress;
   account: LCAddress;

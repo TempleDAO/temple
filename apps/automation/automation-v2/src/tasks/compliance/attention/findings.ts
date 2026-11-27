@@ -139,7 +139,7 @@ export const FINDING_KINDS = {
     // It can't resolve while the account is Flagged, so a daily reminder is enough.
     remindEverySecs: 24 * 60 * 60,
     action:
-      'A Flagged account has a filled, unclaimed deposit in a settled Auction that it was not excluded from. It may have been flagged after the Exclusion window closed, or the Depositor index may be behind (a false positive). See SPEC.md § Troubleshooting MissedExclusion. The fill stands and the claim stays frozen while the account is Flagged.',
+      'A Flagged account has a filled, unclaimed deposit in a settled Auction that it was not excluded from. It may have been flagged after the Exclusion window closed, or the Depositor index may be behind (a false positive). See the compliance README § Troubleshooting MissedExclusion. The fill stands and the claim stays frozen while the account is Flagged.',
   },
   ReinstateAvailable: {
     level: 'defcon3',

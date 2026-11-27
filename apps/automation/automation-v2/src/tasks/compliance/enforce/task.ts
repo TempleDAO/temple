@@ -137,7 +137,7 @@ function asExcludeReverted(e: unknown): ExcludeReverted | undefined {
 
 /**
  * One line per Auction in Fulfillment, found by searching the enforce logs
- * for `settleEarly <auction>`: SPEC.md § When the Exclusion window closes.
+ * for `settleEarly <auction>`: README.md § Before settleEarly.
  */
 function settleEarlyLine(
   deployment: EnforcingDeployment,

@@ -119,7 +119,7 @@ export const DepositorIndexFreshness = {
  *
  * Flags are read at head, so a check at `atBlock` sees every flag up to it.
  * It is only logged: settleEarly is rare, and the Admin reads the latest
- * run's line (SPEC.md § When the Exclusion window closes).
+ * run's line (README.md § Before settleEarly).
  */
 export type SettleEarlyCheck = {
   auction: LCAddress;

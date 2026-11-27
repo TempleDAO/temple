@@ -45,7 +45,7 @@ export function productionFlaggedAddressesIndexContext(
         flagged: [...state.flagged],
         unflagged: [...state.unflagged],
       }),
-    // KNOWN LIMIT (SPEC § Flagged addresses index): this request may reach a
+    // KNOWN LIMIT (README § Known limits): this request may reach a
     // different node than the head read (fallback transport, load-balanced
     // providers). A node more than `confirmations` behind that clamps
     // `toBlock` returns [] for blocks it hasn't seen, and the scan still
