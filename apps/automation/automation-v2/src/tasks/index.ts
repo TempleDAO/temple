@@ -10,6 +10,7 @@ import { distributeGold } from './stable-gold-auction-distribute-gold';
 import { stakingDistributeRewards } from './staking-distribute-rewards';
 import { startAuction } from './stable-gold-auction-start';
 import { checkSignersEthBalance } from './check-signers-eth-balance';
+import { COMPLIANCE_SEPOLIA } from './compliance';
 import { Client } from 'discord.js';
 import { updateTemplePriceSidebarBot } from './discord-bots/temple-price';
 import { burnAndUpdateCirculatingSupply as burnTempleGold } from './spice-auction-burn-and-notify';
@@ -214,6 +215,15 @@ export async function checkSepoliaSignersBalance(
       prevBalance: kvPersistedValue(
         ctx,
         'sepolia_tgld_staking_signer_prev_balance',
+        JB_BIGRATIONAL
+      ),
+    },
+    {
+      // The compliance Bot: flags and excludes on the Sepolia Deployment.
+      signer: COMPLIANCE_SEPOLIA.signerId,
+      prevBalance: kvPersistedValue(
+        ctx,
+        'sepolia_compliance_flagger_signer_prev_balance',
         JB_BIGRATIONAL
       ),
     },
