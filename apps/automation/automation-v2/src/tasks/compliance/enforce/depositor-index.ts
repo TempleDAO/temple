@@ -37,7 +37,7 @@ export async function readDepositorIndex(
   nowSecs: number
 ): Promise<DepositorIndexRead> {
   const query = granaryQuery(index.subgraphUrl);
-  const { number: watermark } = await createGranarySubgraph(
+  const { number: watermark, timestamp } = await createGranarySubgraph(
     index.subgraphUrl
   ).snapshot();
 
@@ -140,6 +140,7 @@ export async function readDepositorIndex(
 
   return {
     watermark: BigInt(watermark),
+    watermarkTimestamp: BigInt(timestamp),
     enforced: enforced.map((a): EnforcedAuction => ({
       id: a.id,
       address: a.fixedPriceAuction.id,
