@@ -19,7 +19,7 @@ Listed           Snapshot(ofac-sdn) + Snapshot(manual) + ...
 Target set       Listed - Exempt
 In sync when     Flagged == Target set
 The Bot flags    Target set - Flagged
-A human decides  Flagged - Target set   (one UnbackedFlag each)
+A human decides  Flagged - Target set   (one UnbackedFlag or ExemptFlag each)
 ```
 
 Each direction has provenance, so "why is X flagged?" and "why isn't X flagged?" both have an answer that a human or a publisher wrote down:
@@ -27,7 +27,8 @@ Each direction has provenance, so "why is X flagged?" and "why isn't X flagged?"
 | Deviation                            | Who fixes it | How                                                                                        |
 | ------------------------------------ | ------------ | ------------------------------------------------------------------------------------------ |
 | In the Target set, not Flagged       | the Bot      | `setFlagged(batch, true)` on the next run                                                  |
-| Flagged, not in the Target set       | a human      | `UnbackedFlag` finding: back it by adding it to a Manual source, or the Admin unflags      |
+| Flagged, listed by no Source         | a human      | `UnbackedFlag` finding: back it by adding it to a Manual source, or the Admin unflags      |
+| Flagged and Exempt                   | a human      | `ExemptFlag` finding: the Admin unflags, or remove the Exemption                           |
 | Flagged by the Admin outside the Bot | a human      | the same `UnbackedFlag`, unless a Source already lists it                                  |
 | Unflagged by the Admin, still Listed | the Bot      | the Bot flags it again, and its Notice says so. To unflag for good, add an Exemption first |
 

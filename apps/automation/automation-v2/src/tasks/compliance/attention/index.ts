@@ -3,5 +3,5 @@
  * `runTask`, which reconciles the run's Findings with the open ones, posts
  * what opened, resolved or is due a reminder, and posts the run's Notices.
  */
-export type { Finding } from './findings';
+export type { Finding, PausedCheck } from './findings';
 export { runTask } from './run';

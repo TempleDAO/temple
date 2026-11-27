@@ -74,7 +74,7 @@ _Avoid_: sanctioned, blocked, blacklisted
 A Flagged address that is in the Deployment's Target set.
 
 **Unbacked flag**:
-A Flagged address that is not in the Deployment's Target set: no Source lists it, or it is Exempt.
+A Flagged address that is not in the Deployment's Target set: no Source lists it (Finding `UnbackedFlag`), or it is Exempt (Finding `ExemptFlag`).
 _Avoid_: delisted, orphan
 
 **Flagged addresses index**:

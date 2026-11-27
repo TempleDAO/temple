@@ -52,10 +52,12 @@ export const TargetSet = {
  * Pure, and the only code that decides an address's fate:
  *
  * - in the Target set, not Flagged: the Bot flags it;
- * - Exempt and Flagged: UnbackedFlag;
+ * - Exempt and Flagged: ExemptFlag;
  * - Flagged in the index, not in the Target set, not Exempt, and still
  *   Flagged: UnbackedFlag, but only while no Source is Absent, since
- *   "listed by no Source" can't be told apart from "Source unknown";
+ *   "listed by no Source" can't be told apart from "Source unknown".
+ *   While it can't check, the run pauses the UnbackedFlag check, so the
+ *   ones already open stay open;
  * - anything else: nothing to do.
  *
  * Add-only: extra flags are Findings, never transactions.
@@ -64,7 +66,7 @@ export function planFlags(
   target: TargetSet,
   index: FlaggedAddressesIndexRead,
   isFlagged: ReadonlySet<LCAddress>
-): { toFlag: LCAddress[]; findings: Finding[] } {
+): { toFlag: LCAddress[]; findings: Finding[]; unbackedChecked: boolean } {
   const inTarget = new Set(target.addresses);
   const exempt = new Set(target.exempt);
   const findings: Finding[] = [];
@@ -86,12 +88,13 @@ export function planFlags(
   for (const a of target.exempt)
     if (isFlagged.has(a))
       findings.push({
-        kind: 'UnbackedFlag',
+        kind: 'ExemptFlag',
         key: a,
         summary: `${a} is Flagged but Exempt`,
       });
 
-  if (!target.absentSources.length)
+  const unbackedChecked = !target.absentSources.length;
+  if (unbackedChecked)
     for (const a of index.flagged)
       if (!inTarget.has(a) && !exempt.has(a) && isFlagged.has(a))
         findings.push({
@@ -103,6 +106,7 @@ export function planFlags(
   return {
     toFlag: target.addresses.filter((a) => !isFlagged.has(a)),
     findings,
+    unbackedChecked,
   };
 }
 

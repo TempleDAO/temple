@@ -16,12 +16,18 @@ import {
   NOTICE_LEVEL,
   OpenFinding,
   OpenFindings,
+  PausedCheck,
   reconcileFindings,
 } from './findings';
 
-/** What a run hands to attention. A send failure fails the task once its Notices are posted. */
+/**
+ * What a run hands to attention. A send failure fails the task once its
+ * Notices are posted. `paused` names the checks the run couldn't make, and
+ * why: their open Findings stay open instead of resolving.
+ */
 export type RunReport<N> = {
   findings: readonly Finding[];
+  paused?: readonly PausedCheck[];
   notices: readonly N[];
   sendFailure?: unknown;
 };
@@ -75,7 +81,8 @@ export async function runWithFindings(
     prev,
     sink.all(),
     Date.now(),
-    await compliance_finding_reminder_secs.requireValue(ctx)
+    await compliance_finding_reminder_secs.requireValue(ctx),
+    sink.allPaused()
   );
 
   // Post before saving: if posting fails, the next run posts again.
@@ -89,7 +96,7 @@ export async function runWithFindings(
     ...reminded.map((f) => ({
       f,
       log: 'warn' as const,
-      text: `🟠 still open: ${line(owner, f)}`,
+      text: `🟠 still open${f.pausedBy ? ` (check paused by ${f.pausedBy})` : ''}: ${line(owner, f)}`,
     })),
     ...resolved.map((f) => ({
       f,
@@ -105,7 +112,7 @@ export async function runWithFindings(
 }
 
 /**
- * Hands a run on: reports its Findings to the sink, posts its Notices, then
+ * Hands a run on: reports its Findings and paused checks to the sink, posts its Notices, then
  * throws its send failure if it has one, so the Notices of what was sent
  * are posted before the task fails.
  *
@@ -119,6 +126,7 @@ export async function reportRun<N>(
   post: (notice: N) => Promise<unknown>
 ): Promise<void> {
   for (const f of run.findings) sink.report(f);
+  for (const p of run.paused ?? []) sink.pause(p);
   const errors: unknown[] = [];
   for (const n of run.notices) {
     try {

@@ -11,7 +11,7 @@ export const compliance_manual_source = new JsonVariable({
 export const compliance_exemptions = new JsonVariable({
   name: 'compliance_exemptions',
   description:
-    'Exemptions, as a JSON object of address → reason: {"0xabc…": "why it must not be flagged"}. Addresses a Source lists that must not be flagged. Removed from the Target set, so the Bot never flags them. If one is flagged, the Admin unflags it (an UnbackedFlag finding says so). An entry with a bad address exempts nothing and raises ExemptionInvalid; an entry with a valid address but no reason still exempts it and raises ExemptionInvalid. A value that is not a JSON object fails every flag run until it is fixed; unset or null means no Exemptions.',
+    'Exemptions, as a JSON object of address → reason: {"0xabc…": "why it must not be flagged"}. Addresses a Source lists that must not be flagged. Removed from the Target set, so the Bot never flags them. If one is flagged, the Admin unflags it (an ExemptFlag finding says so). An entry with a bad address exempts nothing and raises ExemptionInvalid; an entry with a valid address but no reason still exempts it and raises ExemptionInvalid. A value that is not a JSON object fails every flag run until it is fixed; unset or null means no Exemptions.',
 });
 
 export const compliance_max_flag_batch = new NumberVariable({

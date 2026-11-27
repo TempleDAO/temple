@@ -1,6 +1,6 @@
 import type { Json } from '@mountainpath9/overlord-core';
 import type { Hash } from 'viem';
-import type { Finding } from '../attention';
+import type { Finding, PausedCheck } from '../attention';
 import type { SourceState } from '../ingest';
 import { CuratedList, type LCAddress } from '../shared';
 import type { FlaggedAddressesIndexRead } from './flagged-addresses-index';
@@ -63,6 +63,11 @@ export interface FlagNotice {
 
 export interface FlagRun {
   findings: Finding[];
+  /**
+   * The UnbackedFlag check, paused by FlaggedAddressesIndexFailing or
+   * SourceAbsent when the run couldn't make it, so the open ones stay open.
+   */
+  paused: PausedCheck[];
   /** One per batch mined, including those before a failed one. */
   notices: FlagNotice[];
   /**
@@ -106,6 +111,11 @@ export async function runFlag(
   const findings = indexRead.finding
     ? [...planned.findings, indexRead.finding]
     : planned.findings;
+  const paused: PausedCheck[] = indexRead.finding
+    ? [{ kind: 'UnbackedFlag', by: 'FlaggedAddressesIndexFailing' }]
+    : planned.unbackedChecked
+      ? []
+      : [{ kind: 'UnbackedFlag', by: 'SourceAbsent' }];
 
   const notices: FlagNotice[] = [];
   for (const batch of chunk(toFlag, config.maxFlagBatch)) {
@@ -113,7 +123,7 @@ export async function runFlag(
     try {
       txHash = await ctx.setFlagged(batch);
     } catch (e) {
-      return { findings, notices, sendFailure: e };
+      return { findings, paused, notices, sendFailure: e };
     }
     notices.push({
       kind: 'Flagged',
@@ -123,13 +133,14 @@ export async function runFlag(
     });
   }
 
-  return { findings, notices };
+  return { findings, paused, notices };
 }
 
 /**
  * The index only finds UnbackedFlags and names re-flags, so a failed scan
  * never holds up flagging: it reads as empty and incomplete, and raises
- * FlaggedAddressesIndexFailing instead.
+ * FlaggedAddressesIndexFailing instead. The run then pauses the
+ * UnbackedFlag check, so the empty index resolves none of them.
  */
 async function readIndexOrEmpty(
   ctx: FlagContext,
