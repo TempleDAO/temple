@@ -8,6 +8,7 @@ import {
 } from '@mountainpath9/overlord-core';
 import { getPublicClient } from '@mountainpath9/overlord-viem';
 import { z } from 'zod';
+import { assertNever } from '@/tlc/assert-never';
 import { createBaseApi } from '@/utils/api';
 import { connectDiscord } from '@/utils/discord';
 import { collectAuctionAnnouncements } from './auctions';
@@ -111,6 +112,8 @@ async function advanceCursor<Cursor extends Json>(
       await sendAnnouncements(ctx, delivery, step.announcements);
       await ctx.kvSet(key, step.cursor);
       return step.announcements.length ? taskSuccess() : taskSuccessSilent();
+    default:
+      return assertNever(step);
   }
 }
 

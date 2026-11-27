@@ -191,6 +191,31 @@ Required funding rounds up. `userFill`, and each bidder's share of it and of `us
 
 "Flagged" means the auction's current compliance list flags the account, with compliance enabled. A flagged bidder's deposit stays in the fill unless the msig or a flagger calls `exclude`. Exclusion is a balance, `excluded[account]`, not a sticky flag: settlement, claims and `withdrawableExcess` use `totalDeposits`, which no longer counts it, so they need no exclusion logic. Exclusion zeroes deposits. An account cleared during Deposit can deposit again; unless the msig or a flagger calls reinstate, only that new deposit is filled.
 
+**Automated exclusion.** The compliance Bot, a flagger, excludes every flagged depositor of every open auction every 2 minutes, and never reinstates ([`compliance/enforce`](../../../../apps/automation/automation-v2/src/tasks/compliance/README.md#enforce-run)). An exclusion can still be late or fail: the account was flagged between two runs, the Bot lost the flagger role, the auction is in rescue mode, or the Granary subgraph is behind. What that costs, and how to fix it, depends on the phase the auction is in when it's noticed:
+
+| Phase | Still fixable? | What a flagged depositor that isn't excluded yet means | Fix |
+|---|---|---|---|
+| **Deposit** | yes, and reversible | Nothing yet. The account can't withdraw or add to its deposit while flagged | The Bot's next run excludes it. If its exclusion fails, the msig or any flagger calls `exclude`. A mistaken exclusion can still be undone with `reinstate` |
+| **Fulfillment** (`depositEnd` → `fulfillmentEnd`) | yes, but not reversible | **The last chance.** Depositors are locked in and nobody can claim yet, but the deposit is counted in `totalDeposits`, so the funder funds it and under partial funding it takes a share of the fill | Same as Deposit, but before `fulfillmentEnd`, and before any `settleEarly`. Pausing doesn't help: the clock keeps running. The msig shouldn't call `settleEarly` while a flagged depositor remains. Excluding now makes the funding sent for it withdrawable excess, or raises the other bidders' share under partial funding |
+| **Settlement** | no | A **missed exclusion**: the deposit has been filled | See below |
+| **Cancelled** | nothing to fix | Nothing filled. The account's refund stays frozen like its other funds | None |
+
+Fulfillment exists so that funding can be decided after deposits close, but it also catches any exclusion missed during Deposit. `settleEarly` cuts it short, which is why the msig checks for flagged depositors first. The Bot reports a failed exclusion as soon as it happens, so that it can be fixed while the auction is still in Deposit or Fulfillment.
+
+What a missed exclusion means, once the auction settles:
+
+- The deposit is filled like any other. Its filled bid tokens are part of `filledBids`, which `claimTreasury` pays to `proceedsRecipient` in one sum. Anyone can call `claimTreasury`, so the flagged share can't be held back on-chain.
+- Its fill tokens and unfilled refund are frozen while the account stays flagged. There's no expiry, and `recoverToken` can't take them because they count as liabilities. They pay out normally once the account is unflagged.
+- Under partial funding it took part of the funding, so every other bidder filled less than they would have if it had been excluded. Under full funding, the funder paid for it.
+- In a TGLD auction the proceeds are burnt after `claimTreasury`, so the flagged share is gone for good once the burn happens.
+
+Nothing on-chain undoes the fill: `cancel` reverts once the auction has settled or `fulfillmentEnd` has passed (decision 10), and `exclude` reverts in Settlement. What remains is accounting:
+
+1. Work out the flagged account's filled share: `deposit − floor(deposit × userRefund / totalDeposits)` bid tokens.
+2. If proceeds must be held back while that is decided, the msig can pause the auction. `claimTreasury` reverts until `fulfillmentEnd + CLAIM_PAUSE_EXPIRY`, but so does every other bidder's `claim`, so use it only for a short time.
+3. The treasury sets that share aside from the proceeds it receives, and for TGLD doesn't burn it, until legal decides (decision 18).
+4. The account's own payout needs no action: it stays in the auction until the account is unflagged.
+
 | Flagged during | At the flag | Cleared in the same phase | Cleared later |
 |---|---|---|---|
 | Scheduled | Nothing to exclude; can't deposit while flagged | Deposits normally | Same |
@@ -417,3 +442,4 @@ The record-only Well drops signed wishes and nonces, the on-chain balance and co
     The `AuctionSettled` event keeps its name. `bidToken` / `fillToken`, `claimTreasury` and the other phase names stay as they are. A token's own blocklist (USDC-style) is still called blocking.
 16. **Accepted:** with partial funding, a bidder flagged after the fill also has an unfilled bid-token refund, and `claim` pays the fill and the refund together, so the refund is frozen too. Legal's answer covered the filled TEMPLE and the USDS; freezing the unfilled TEMPLE refund until the flag is removed is acceptable.
 17. **Accepted:** a bidder excluded in Fulfillment, or during a pause that crosses `depositEnd`, gets its whole deposit back once its flag is cleared, while every other bidder is locked in. A bidder could cause its own flag to force a refund when circumstances change, but it's unlikely and low-impact: it has little motive, and it risks its deposit staying frozen, because the bar to clear a flag is high.
+18. **Open (legal):** a missed exclusion. Legal's 2026-10-23 answer covers a bidder flagged *after* Fulfillment ends: its filled bid tokens are the treasury's proceeds. It doesn't cover a bidder flagged *before* the window closed but not excluded in time, whose filled bid tokens still reach `proceedsRecipient`. Can the treasury keep that share, does it have to set it aside, or (for TGLD) can it burn it? See [Excluding flagged bidders](#excluding-flagged-bidders) for the recovery steps.
