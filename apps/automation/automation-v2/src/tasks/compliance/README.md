@@ -73,11 +73,48 @@ How each part works is in SPEC: [the ingest run](./SPEC.md#ingest-run) and [the 
 
 ## Rules
 
-1. **Add-only.** The Flagger role allows unflagging and reinstating, but the Bot does neither: every call is `setFlagged(batch, true)` or `exclude(account)`. A Source shrinking or a new Exemption never unflags anyone. They raise `UnbackedFlag`, and the Admin decides. An excluded account that is no longer Flagged raises `ReinstateAvailable`, and a human decides.
+1. **Add-only.** The Flagger role allows unflagging and reinstating, but the Bot does neither: every call is `setFlagged(batch, true)` or `exclude(account)`. A Source shrinking or a new Exemption never unflags anyone. They raise `UnbackedFlag` or `ExemptFlag`, and the Admin decides. An excluded account that is no longer Flagged raises `ReinstateAvailable`, and a human decides.
 2. **Absent is unknown, never empty.** A Source that has never produced a Snapshot is Absent, not `[]`. A Failing or Rejected Source keeps its last Snapshot.
 3. **Stateless reconcile.** The flag task keeps no record of what it sent. It recomputes the Target set, reads `isFlagged` at head, and sends what's missing. A dropped or failed transaction is retried by the next run, and `setFlagged(true)` is idempotent.
 4. **Every message is a Finding or a Notice.** A Finding needs a human; it opens and resolves. A Notice records that something happened (a Snapshot changed, the Bot flagged a batch or excluded an account) and needs nobody.
 5. **The Flagged addresses index affects Findings only.** It never affects transactions.
+
+## Admin playbook
+
+For the Admin (the msig signers) and whoever operates the Overlord tasks.
+
+### Levers
+
+**Overlord variables** change what the Bot does, with no deploy. They're read on every run.
+
+| Variable                   | What it does                                                                                                                                                                                                                                                                             |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `compliance_manual_source` | Addresses to flag that OFAC doesn't list. JSON object, address → reason: `{"0xabc…": "why it must be flagged"}`. Every entry needs a reason: one bad entry rejects the whole list (`SourceRejected`), and the last good list keeps standing until it's fixed. Shared by every Deployment |
+| `compliance_exemptions`    | Addresses never to flag, even when a Source lists them. Same format: `{"0xabc…": "why it must not be flagged"}`. A bad address exempts nothing; a missing reason still exempts. Both raise `ExemptionInvalid`. A value that isn't a JSON object stops every flag run until it's fixed    |
+
+The tuning variables (`compliance_max_flag_batch`, `compliance_max_depositor_index_lag_blocks`, `compliance_finding_reminder_secs`) are in [Configuration](#configuration).
+
+**On-chain calls** are the Admin's own: unflagging (`setFlagged([account], false)` on the ComplianceCheck), `reinstate`, `settleEarly`, `cancel`, `setComplianceCheck`, and granting the Bot the Flagger role. The Bot never unflags or reinstates, so these are the only way to undo anything.
+
+**Code** (`config.ts`, then a deploy): which Sources a Deployment uses, whether it enforces, private submission, and adding a Deployment.
+
+### What you'll see
+
+- **Findings** post to the defcon3 Discord thread, with the TSY ops tag. An opened Finding includes what to do, sends a reminder every 15 minutes while it stays open (`MissedExclusion` daily), and posts once more when it resolves. Every kind and its action is listed in [SPEC § Findings](./SPEC.md#findings).
+- **Notices** (the Bot flagged a batch, excluded an account, or a Source's list changed) post to defcon5. Nobody needs to act.
+- **Task failures** post to `error_webhook_url`, with links to the task and its Grafana logs. A failing task fails on every run until it's fixed, and its Findings stay as they were.
+
+The Bot acts within about two minutes of a variable change: the Source's ingest task picks it up within a minute, and the flag task acts on it in the minute after. Exclusions happen within 20 minutes of a flag.
+
+### Common tasks
+
+- **Flag an address OFAC doesn't list:** add it to `compliance_manual_source` with a reason. The Bot flags it, and enforce excludes it from any Auction in its Exclusion window.
+- **Unflag an address for good:** add it to `compliance_exemptions` first, then unflag it on chain. In the other order, the Bot flags it again on the next run if a Source still lists it (its Notice says so).
+- **Remove a Manual source entry:** delete it from `compliance_manual_source`. The address stays Flagged, because the Bot never unflags, and `UnbackedFlag` asks you to decide. Either unflag it on chain or back it again.
+- **Flag by hand on chain:** also add it to `compliance_manual_source`, so the flag has a recorded reason. Otherwise it raises `UnbackedFlag`.
+- **Reinstate an excluded account** that is no longer Flagged: `ReinstateAvailable` asks for it. You can call `reinstate` only while the Auction is in Deposit; after that the account can withdraw its excluded balance.
+- **Before `settleEarly`:** search the Deployment's enforce logs for `settleEarly <auction>`. Go ahead only if the latest line is less than 20 minutes old and reads `safe as of block …`, and check again just before the msig executes. See [SPEC § When the Exclusion window closes](./SPEC.md#when-the-exclusion-window-closes).
+- **`BotNotFlagger`:** the Bot can't flag or exclude anything until the Admin calls `setFlagger(<Bot address>, true)` on the ComplianceCheck.
 
 ## How to read this module
 
