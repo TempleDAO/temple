@@ -16,12 +16,16 @@ import type {
 } from './flagged-addresses-index';
 
 /**
- * 1,000 blocks per `eth_getLogs`, within every common provider's range cap.
- * A backfill does at most 100 per run (100,000 blocks, about two weeks of
- * mainnet) and continues next run.
+ * 10,000 blocks per `eth_getLogs`: within the range cap of every paid
+ * Ethereum provider we'd use (QuickNode's is exactly 10,000, Alchemy's 10,000
+ * or none, Goldsky's 20,000; Infura caps results, not blocks). Free tiers
+ * cap at 5 to 10 blocks and can't serve this scan at any size. One contract's
+ * FlaggedSet logs are far below any result cap. A backfill does at most 100
+ * per run (1,000,000 blocks, about four and a half months of mainnet) and
+ * continues next run.
  */
 export const FLAGGED_ADDRESSES_INDEX_SCAN = {
-  chunkBlocks: 1_000n,
+  chunkBlocks: 10_000n,
   maxChunksPerRun: 100,
 };
 
