@@ -104,7 +104,7 @@ The tuning variables (`compliance_max_flag_batch`, `compliance_max_depositor_ind
 - **Notices** (the Bot flagged a batch, excluded an account, or a Source's list changed) post to defcon5. Nobody needs to act.
 - **Task failures** post to `error_webhook_url`, with links to the task and its Grafana logs. A failing task fails on every run until it's fixed, and its Findings stay as they were.
 
-The Bot acts within about two minutes of a variable change: the Source's ingest task picks it up within a minute, and the flag task acts on it in the minute after. Exclusions happen within 20 minutes of a flag.
+The Bot acts within about two minutes of a variable change: the Source's ingest task picks it up within a minute, and the flag task acts on it in the minute after. Exclusions happen within a few minutes of a flag: enforce runs every 2 minutes.
 
 ### Common tasks
 
@@ -113,7 +113,7 @@ The Bot acts within about two minutes of a variable change: the Source's ingest 
 - **Remove a Manual source entry:** delete it from `compliance_manual_source`. The address stays Flagged, because the Bot never unflags, and `UnbackedFlag` asks you to decide. Either unflag it on chain or back it again.
 - **Flag by hand on chain:** also add it to `compliance_manual_source`, so the flag has a recorded reason. Otherwise it raises `UnbackedFlag`.
 - **Reinstate an excluded account** that is no longer Flagged: `ReinstateAvailable` asks for it. You can call `reinstate` only while the Auction is in Deposit; after that the account can withdraw its excluded balance.
-- **Before `settleEarly`:** search the Deployment's enforce logs for `settleEarly <auction>`. Go ahead only if the latest line is less than 20 minutes old and reads `safe as of block …`, and check again just before the msig executes. See [SPEC § When the Exclusion window closes](./SPEC.md#when-the-exclusion-window-closes).
+- **Before `settleEarly`:** search the Deployment's enforce logs for `settleEarly <auction>`. Go ahead only if the latest line is a few minutes old at most and reads `safe as of block …`, and check again just before the msig executes. See [SPEC § When the Exclusion window closes](./SPEC.md#when-the-exclusion-window-closes).
 - **`BotNotFlagger`:** the Bot can't flag or exclude anything until the Admin calls `setFlagger(<Bot address>, true)` on the ComplianceCheck.
 
 ## How to read this module

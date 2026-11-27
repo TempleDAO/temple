@@ -25,7 +25,7 @@ The Bot excludes Flagged ∩ Depositors, while the Exclusion window is open
 
 - **Ingest** checks each **Source** (OFAC SDN and a **Manual source**) once a minute and turns each acceptable **Publication** into a **Snapshot**. A Publication that breaks the Source's **Limits** is rejected, and the previous Snapshot stands.
 - **Flag** runs once per Deployment, every minute. It computes the Target set, reads `isFlagged` at chain head, and flags whatever is missing. It never unflags (**Add-only**).
-- **Enforce** runs once per Deployment that has it enabled, every 20 minutes. It reads Depositors from the Granary subgraph and `isFlagged` from the chain, and excludes every Flagged Depositor in an open Exclusion window. It never reinstates (**Add-only**).
+- **Enforce** runs once per Deployment that has it enabled, every 2 minutes. It reads Depositors from the Granary subgraph and `isFlagged` from the chain, and excludes every Flagged Depositor in an open Exclusion window. It never reinstates (**Add-only**).
 - **Flagger check** runs once per Deployment, daily. It reads whether the Bot holds the Flagger role on the Deployment's ComplianceCheck and raises `BotNotFlagger` while it doesn't, so a missing role shows before there is anything to flag.
 - Every Flagged address must be backed by a Source. A flag that no Source explains, including one the Admin set by hand, raises an **Unbacked flag** **Finding**. A human then either backs it in a Manual source or has the Admin unflag it.
 - Every hand-curated entry, whether in a Manual source or an **Exemption**, carries a written reason. Both directions therefore have an answer: "why is X Flagged?" points to a Source entry, and "why isn't X Flagged?" points to an Exemption.
@@ -276,7 +276,7 @@ The Manual source and the Exemptions are Overlord JSON variables (`compliance_ma
 
 ### Enforce run
 
-Task `compliance-enforce-<name>`, every 20 minutes, Finding owner `enforce:<name>`. It acts on `isFlagged` at head, whoever set the flag.
+Task `compliance-enforce-<name>`, every 2 minutes, Finding owner `enforce:<name>`. It acts on `isFlagged` at head, whoever set the flag.
 
 `runEnforce(context, config)` takes an `EnforceContext` with five members:
 
@@ -341,13 +341,13 @@ Lag never causes a wrong exclusion: it only delays one. `DepositorIndexLagging` 
 
 #### When the Exclusion window closes
 
-The Exclusion window closes at `fulfillmentEnd`, or earlier whenever the Admin calls `settleEarly` or `cancel`. A 20-minute cadence comfortably covers Deposit (at least a day), but Fulfillment has no minimum length. A flag that lands, or an exclusion that fails, in the last run interval before the window closes can be missed. `MissedExclusion` makes that visible.
+The Exclusion window closes at `fulfillmentEnd`, or earlier whenever the Admin calls `settleEarly` or `cancel`. A 2-minute cadence covers Deposit (at least a day) with room to spare, and keeps the gap short in Fulfillment, which has no minimum length. A flag that lands, or an exclusion that fails, in the last run interval before the window closes can be missed. `MissedExclusion` makes that visible.
 
 `settleEarly` is safe at block H when no Depositor with a deposit is Flagged at H and the Depositor list is complete. The list is complete once the Depositor index's Watermark block is at or after `depositEnd`: a deposit lands only before `depositEnd`, and a Flagged account can't deposit at all. Flags are read at head, so the check needs no history: when the last flag landed, and whether an exclusion failed earlier, are already in it. A successful exclusion counts once the index has seen it.
 
 Every enforce run checks this for each Auction in Fulfillment (`SettleEarlyCheck.from`, `enforce/plan.ts`) and logs one line, never a post: `settleEarly` is rare, and one Notice per Auction would be noise. Before proposing `settleEarly`:
 
-1. Search the Deployment's enforce logs for `settleEarly <auction>` and take the latest line. It must be from the last run interval (20 minutes): an older one means the task is failing or stopped.
+1. Search the Deployment's enforce logs for `settleEarly <auction>` and take the latest line. It must be from the last few minutes (enforce runs every 2): an older one means the task is failing or stopped.
 2. Go ahead only if it reads `safe as of block H`. Otherwise it names what's in the way: `the Depositor index is at … before depositEnd` (wait for the index, or fix the Granary subgraph) or `N Flagged Depositor(s) still to exclude` (wait for the next run, or follow their `ExclusionFailed`).
 3. Repeat step 1 just before the msig executes.
 
@@ -431,7 +431,7 @@ Switches over a union are exhaustive and end with `assertNever()`. Each of the f
 - Applying OFAC's per-Publication delta files. The Source downloads the whole `SDN.XML` once per Publication instead.
 - Indexing flags in the Granary subgraph. `fpa-simplified-model.md` keeps the subgraph free of flags; the Bot scans its own.
 - Reinstating automatically.
-- Running enforce on demand (a webhook or manual trigger). Overlord webhooks aren't wired up for this app.
+- Running enforce on demand (a webhook, a manual trigger, or after a flag run). It would add a second writer of the `enforce:<name>` Findings beside the scheduled run; enforce runs every 2 minutes instead.
 - Choosing the private relay behind `mev_protected_provider_url_<chainId>`.
 - Final Finding thresholds, wording and paging policy.
 - Any automatic unflagging.
@@ -447,7 +447,8 @@ Switches over a union are exhaustive and end with `assertNever()`. Each of the f
 
 Each line is a decision the review took, and any of them can be reverted.
 
-- Enforce runs every 20 minutes, not 30: Fulfillment has no minimum length.
+- Enforce runs every 2 minutes, not 20: Fulfillment has no minimum length, so a flag near its end must be excluded quickly. Not every minute: each run makes about 4 subgraph queries, and an `isFlagged` read whenever any Position could depend on a flag (in practice every run, once a settled Auction has unclaimed deposits).
+- Enforce isn't triggered by a flag run. Calling `runEnforce` from the flag task, or spawning it, would add a second writer of the `enforce:<name>` Findings beside the scheduled run, and attention relies on one writer per owner. The 2-minute schedule bounds the gap after a flag instead.
 - A Limit rejection still compares against the last accepted Snapshot, so a large genuine delisting blocks later Publications until the Limits change (left as is; `SourceRejected` reports it).
 - A `compliance_exemptions` entry with a valid address and no reason still exempts it and raises `ExemptionInvalid`.
 - Each Finding kind declares its DEFCON level and reminder period in `FINDING_KINDS`, beside its action. Notices post at `NOTICE_LEVEL`.
